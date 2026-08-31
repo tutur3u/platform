@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.2](https://github.com/tutur3u/platform/compare/ui-v0.30.1...ui-v0.30.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* **finance:** allow advance subscription invoices ([d307068](https://github.com/tutur3u/platform/commit/d3070683a7c74b9f18f65dabdf482132fa02cf13))
+* **tasks:** restore description checklist controls ([7976f78](https://github.com/tutur3u/platform/commit/7976f78292237e8047509e4243dafa14acea1b54))
+
 ## [0.30.1](https://github.com/tutur3u/platform/compare/ui-v0.30.0...ui-v0.30.1) (2026-08-27)
 
 

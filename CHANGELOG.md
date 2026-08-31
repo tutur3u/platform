@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.44.0](https://github.com/tutur3u/platform/compare/platform-v0.43.1...platform-v0.44.0) (2026-08-31)
+
+
+### Features
+
+* **command:** make Tasks launcher task-first ([aa899f8](https://github.com/tutur3u/platform/commit/aa899f846496799adf744a2fe61ddf035025d340))
+
+
+### Bug Fixes
+
+* **contacts:** hide superseded attendance sessions ([3fd0615](https://github.com/tutur3u/platform/commit/3fd0615f838d7bf63f32eda868d0a028200f3170))
+* **contacts:** hide superseded attendance sessions ([#5180](https://github.com/tutur3u/platform/issues/5180)) ([962690c](https://github.com/tutur3u/platform/commit/962690c8d19560f841effafa9204fd1f4dd59e02))
+* **external-projects:** cap submission slugs ([#5177](https://github.com/tutur3u/platform/issues/5177)) ([e694251](https://github.com/tutur3u/platform/commit/e694251a65b4a479aa2d9d45c7f998a4dfcd79ca))
+* **external-projects:** preserve long submission messages ([#5178](https://github.com/tutur3u/platform/issues/5178)) ([ae208db](https://github.com/tutur3u/platform/commit/ae208dbdd2d3d5a1a48f0aaa6b496338823f421a))
+* **finance:** allow advance subscription invoices ([d307068](https://github.com/tutur3u/platform/commit/d3070683a7c74b9f18f65dabdf482132fa02cf13))
+* **tasks:** restore description checklist controls ([7976f78](https://github.com/tutur3u/platform/commit/7976f78292237e8047509e4243dafa14acea1b54))
+* **turnstile:** support trusted server relays ([#5174](https://github.com/tutur3u/platform/issues/5174)) ([fe14df8](https://github.com/tutur3u/platform/commit/fe14df8cc0d7559593cb96859d8d22c434abf192))
+
 ## [0.43.1](https://github.com/tutur3u/platform/compare/platform-v0.43.0...platform-v0.43.1) (2026-08-29)
 
 

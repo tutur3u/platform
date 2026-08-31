@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.3](https://github.com/tutur3u/platform/compare/rewise-v0.37.2...rewise-v0.37.3) (2026-08-31)
+
+
+### Bug Fixes
+
+* **tasks:** restore description checklist controls ([7976f78](https://github.com/tutur3u/platform/commit/7976f78292237e8047509e4243dafa14acea1b54))
+
 ## [0.37.2](https://github.com/tutur3u/platform/compare/rewise-v0.37.1...rewise-v0.37.2) (2026-08-29)
 
 

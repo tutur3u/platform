@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/tasks-v0.31.1...tasks-v0.32.0) (2026-08-31)
+
+
+### Features
+
+* **command:** make Tasks launcher task-first ([aa899f8](https://github.com/tutur3u/platform/commit/aa899f846496799adf744a2fe61ddf035025d340))
+
+
+### Bug Fixes
+
+* **tasks:** restore description checklist controls ([7976f78](https://github.com/tutur3u/platform/commit/7976f78292237e8047509e4243dafa14acea1b54))
+
 ## [0.31.1](https://github.com/tutur3u/platform/compare/tasks-v0.31.0...tasks-v0.31.1) (2026-08-29)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.15.0...tasks-ui-v0.15.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* **tasks:** restore description checklist controls ([7976f78](https://github.com/tutur3u/platform/commit/7976f78292237e8047509e4243dafa14acea1b54))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.14.0...tasks-ui-v0.15.0) (2026-08-26)
 
 
