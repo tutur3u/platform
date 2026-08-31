@@ -87,5 +87,8 @@ apps/database/supabase/.temp/project-names.json
 /research/
 /credentials/
 
+# Local generated artifacts
+/output/
+
 # Codex
 **/.codex/config.*
