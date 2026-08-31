@@ -99,6 +99,9 @@ export function useWorkspacePeopleOptions({
       onLoadMore: () => {
         if (query.hasNextPage) void query.fetchNextPage();
       },
+      onOpenChange: (open: boolean) => {
+        if (!open) setSearch('');
+      },
       onSearchChange: setSearch,
       options,
     },
