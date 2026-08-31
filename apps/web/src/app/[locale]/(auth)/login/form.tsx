@@ -584,7 +584,6 @@ export default function LoginForm({
   const authStageTransitionClassName = `space-y-6 animate-in fade-in-0 duration-200 ${
     transitionDirection > 0 ? 'slide-in-from-right-4' : 'slide-in-from-left-4'
   }`;
-
   const setRedirectingAfterAuthState = useCallback((value: boolean) => {
     redirectingAfterAuthRef.current = value;
     setRedirectingAfterAuth(value);
