@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   capitalize,
+  cn,
   formatBytes,
   formatCurrency,
   formatDuration,
@@ -10,6 +11,42 @@ import {
 } from '../format';
 
 describe('Format Utilities', () => {
+  describe('cn', () => {
+    it('joins conditional class values with clsx-compatible semantics', () => {
+      expect(
+        cn('flex', false, null, undefined, [
+          'items-center',
+          { 'opacity-50': true, hidden: false },
+        ])
+      ).toBe('flex items-center opacity-50');
+    });
+
+    it('resolves conflicting Tailwind utilities using the last value', () => {
+      expect(cn('px-2 py-1', 'px-4', 'py-3')).toBe('px-4 py-3');
+    });
+
+    it('keeps independent responsive and state variants', () => {
+      expect(
+        cn(
+          'text-sm hover:text-base md:text-lg',
+          'text-xl hover:text-2xl md:text-3xl'
+        )
+      ).toBe('text-xl hover:text-2xl md:text-3xl');
+    });
+
+    it('resolves arbitrary values and important modifiers', () => {
+      expect(cn('w-[10px] w-[var(--panel-width)]', '!p-4 p-2')).toBe(
+        'w-[var(--panel-width)] !p-4 p-2'
+      );
+    });
+
+    it('preserves non-Tailwind application classes', () => {
+      expect(cn('app-shell', 'feature-card', { selected: true })).toBe(
+        'app-shell feature-card selected'
+      );
+    });
+  });
+
   describe('capitalize', () => {
     it('capitalizes first letter of a word', () => {
       expect(capitalize('hello')).toBe('Hello');
