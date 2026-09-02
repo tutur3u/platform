@@ -34,6 +34,12 @@ describe('Format Utilities', () => {
       ).toBe('text-xl hover:text-2xl md:text-3xl');
     });
 
+    it('preserves non-conflicting variants from separate inputs', () => {
+      expect(cn('text-sm hover:text-base', 'md:text-lg')).toBe(
+        'text-sm hover:text-base md:text-lg'
+      );
+    });
+
     it('resolves arbitrary values and important modifiers', () => {
       expect(cn('w-[10px] w-[var(--panel-width)]', '!p-4 p-2')).toBe(
         'w-[var(--panel-width)] !p-4 p-2'
