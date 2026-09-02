@@ -217,6 +217,11 @@
       "import": "./dist/task-history.js",
       "require": "./dist/task-history.js"
     },
+    "./tutoring": {
+      "types": "./dist/tutoring.d.ts",
+      "import": "./dist/tutoring.js",
+      "require": "./dist/tutoring.js"
+    },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",
       "import": "./dist/task-templates.js",

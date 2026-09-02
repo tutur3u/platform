@@ -1,5 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { findConflictsWithExistingSessions } from './shared';
+import {
+  findConflictsWithExistingSessions,
+  TutoringSessionListQuerySchema,
+} from './shared';
+
+describe('TutoringSessionListQuerySchema', () => {
+  it('keeps the legacy newest-first ordering when sortOrder is omitted', () => {
+    const parsed = TutoringSessionListQuerySchema.parse({});
+    expect(parsed.sortOrder).toBe('desc');
+  });
+
+  it('accepts an explicit chronological ordering', () => {
+    expect(
+      TutoringSessionListQuerySchema.parse({ sortOrder: 'asc' }).sortOrder
+    ).toBe('asc');
+  });
+
+  it('rejects an unknown ordering rather than silently defaulting', () => {
+    expect(
+      TutoringSessionListQuerySchema.safeParse({ sortOrder: 'sideways' })
+        .success
+    ).toBe(false);
+  });
+});
 
 describe('findConflictsWithExistingSessions', () => {
   it('omits existing session identifiers from conflict payloads', () => {

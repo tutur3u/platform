@@ -256,6 +256,8 @@
                   "platform/applications/nova",
                   "platform/applications/qr",
                   "platform/applications/tasks",
+                  "platform/applications/contacts-modules",
+                  "platform/applications/tutoring",
                   "platform/applications/learn",
                   "platform/applications/teach",
                   "platform/applications/hive",

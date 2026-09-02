@@ -18,7 +18,9 @@ export {
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
   ENABLE_CMS_GAMES_CONFIG_ID,
+  ENABLE_FEEDBACKS_CONFIG_ID,
   ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+  ENABLE_TUTORING_CONFIG_ID,
   FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
   WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
   WORKSPACE_USER_PROFILE_LINK_DEFAULT_EXPIRATION_CONFIG_ID,
@@ -132,6 +134,30 @@ export async function updateWorkspaceConfig(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ value }),
+    }
+  );
+}
+
+/**
+ * Flip a module on/off switch that lives in `workspace_secrets` rather than
+ * `workspace_configs` (currently only topic announcements). Restricted
+ * server-side to an allowlist of toggle names and boolean values.
+ */
+export async function updateWorkspaceFeatureSecret(
+  workspaceId: string,
+  secretName: string,
+  enabled: boolean,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/feature-secrets/${encodePathSegment(secretName)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ value: enabled ? 'true' : 'false' }),
     }
   );
 }

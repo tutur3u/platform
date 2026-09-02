@@ -1,0 +1,104 @@
+---
+title: 'Tutoring'
+description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
+updatedAt: '2026-08-29'
+---
+
+Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
+two existing signals — attendance deficits and flagged group feedback — into
+scheduled make-up sessions, then tracks attendance and exports the result for
+payroll.
+
+## Surfaces
+
+- **Schedule** lists every session for a date-range preset (upcoming, today,
+  next 7 days, this month, past, all) and can be narrowed by status, group,
+  learner, teacher, and reason. Filters drive both the table and the export.
+  Forward-looking presets request `sortOrder=asc` so the nearest session is
+  first; `past` and `all` keep the API default of newest-first.
+- **Needs support** is the queue of learners with an absence deficit
+  (`ABSENT_RECOVERY`), a `require_attention` feedback (`WEAK_SUPPORT`), or both.
+  Scheduling from a queue row prefills the session form with the learner, the
+  group, the reason, and one slot per missing session.
+- **Headline counts** run as bounded `count: exact` queries, so they stay
+  correct on workspaces with more sessions than one page.
+
+Row actions mark a session done, no-show, cancelled, or back to pending, and
+generate the parent-facing message for the session.
+
+## Enablement
+
+Tutoring is gated by the `ENABLE_TUTORING` workspace config:
+
+| Workspace | `ENABLE_TUTORING` unset | `'true'` | `'false'` |
+| --- | --- | --- | --- |
+| Shared | Enabled | Enabled | Disabled |
+| Personal | Disabled | Enabled | Disabled |
+
+A disabled workspace renders an enable screen rather than a 404. Members with
+`manage_workspace_settings` get an **Enable tutoring** button that writes
+`ENABLE_TUTORING=true` through
+`PUT /api/v1/workspaces/{wsId}/settings/ENABLE_TUTORING`; everyone else is told
+to ask an admin. Reading the toggle only needs `view_user_groups`.
+
+Tutoring shares this gate with the other Contacts modules — see
+[Contacts module availability](/platform/applications/contacts-modules) for the
+full set of toggles and states.
+
+<Note>
+  The page previously called `notFound()` for personal workspaces, so the
+  sidebar link 404'd even though the tutoring APIs normalize `personal` into a
+  real workspace id. Personal workspaces now opt in explicitly instead.
+</Note>
+
+## Permissions
+
+- `view_user_groups` — open tutoring and read sessions, the queue, and exports.
+- `update_user_groups_scores` — schedule sessions, mark attendance, and
+  generate parent messages.
+- `manage_workspace_settings` — enable or disable the module.
+
+Three non-404 states replace the old blanket 404 so an operator can tell the
+cases apart:
+
+| State | Cause | Recovery |
+| --- | --- | --- |
+| Disabled | `ENABLE_TUTORING` is off for this workspace | Enable it, or ask an admin |
+| No access | Caller lacks `view_user_groups` | Ask an admin for the permission |
+| Unavailable | Workspace or `workspace_user_linked_users` profile unresolved | Refresh; if it persists, re-invite the member |
+
+## Scheduling rules
+
+One create request can carry up to 50 slots. Overlaps are rejected twice: in
+the form (the offending rows are highlighted before submit) and again in
+`POST /api/v1/workspaces/{wsId}/tutoring/sessions` against both the other
+incoming slots and the sessions already stored. A teacher conflict needs the
+same teacher on both slots; a learner conflict needs only the same learner.
+
+Teachers are the managers of the selected group. Choosing a group with exactly
+one manager assigns that teacher to every slot.
+
+## Exports
+
+Detailed (per session) and payroll (per teacher, completed sessions and total
+minutes) exports are available as CSV and XLSX. Exports use the active filters,
+including the date range, and are generated server-side in pages of 1,000 rows.
+
+## Troubleshooting
+
+### The sidebar link 404s
+
+Confirm the caller resolves a workspace profile at all. A missing
+`workspace_user_linked_users` row now renders the **Unavailable** screen; a
+still-hard 404 means `WorkspaceWrapper` could not resolve the workspace itself,
+which points at the app session rather than at tutoring.
+
+### The queue is empty but learners are behind
+
+The queue reads absence deficits and `user_feedbacks.require_attention`. Check
+that group attendance is being recorded and that feedback is flagged.
+
+### A session cannot be created
+
+The create button stays disabled until the group, learner, and every slot
+(date, time, 1–480 minutes, teacher) are complete and no two slots overlap.

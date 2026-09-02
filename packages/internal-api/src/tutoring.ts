@@ -87,6 +87,8 @@ export interface ListTutoringSessionsParams extends InternalApiQuery {
   studentUserId?: string;
   reasonType?: TutoringReasonType;
   attendanceStatus?: TutoringAttendanceStatus;
+  /** `asc` lists the nearest session first; defaults to `desc` (newest first). */
+  sortOrder?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
 }
