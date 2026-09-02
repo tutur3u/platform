@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.18.6](https://github.com/tutur3u/platform/compare/contacts-v0.18.5...contacts-v0.18.6) (2026-09-02)
+
+
+### Bug Fixes
+
+* **contacts:** clarify module permission guidance ([8668c53](https://github.com/tutur3u/platform/commit/8668c53073a0c6301ed2cf0d3959b0a529482be1))
+* **contacts:** replace module 404s with an actionable availability gate ([#5179](https://github.com/tutur3u/platform/issues/5179)) ([2427785](https://github.com/tutur3u/platform/commit/24277858ed8ce38c17b3e79413c7f81c98008eb7))
+* **contacts:** reset tutoring people search on close ([2f2c866](https://github.com/tutur3u/platform/commit/2f2c866b7dd2c3677a506260dc89088cd5a2d699))
+
 ## [0.18.5](https://github.com/tutur3u/platform/compare/contacts-v0.18.4...contacts-v0.18.5) (2026-08-31)
 
 

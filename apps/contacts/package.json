@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/contacts",
-  "version": "0.18.5",
+  "version": "0.18.6",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
