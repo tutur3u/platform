@@ -13,9 +13,16 @@ from auth import DiscordAuth
 from commands import CommandHandler
 from config import DiscordInteractionType, DiscordResponseType
 from markitdown_service import handle_markitdown
-from utils import get_supabase_client
+from utils import claim_discord_interaction, get_supabase_client
 
 logger = logging.getLogger(__name__)
+
+
+def _duplicate_interaction_response(interaction_type: int) -> dict[str, int]:
+    """Return a protocol-valid acknowledgement without repeating side effects."""
+    if interaction_type == DiscordInteractionType.PING:
+        return {"type": DiscordResponseType.PONG}
+    return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
@@ -909,11 +916,48 @@ def web_app():
         print("🤖: parsing request")
         data = json.loads(body.decode())
 
-        if data.get("type") == DiscordInteractionType.PING:
+        if not isinstance(data, dict):
+            raise HTTPException(status_code=400, detail="Bad request")
+
+        interaction_id = data.get("id")
+        interaction_type = data.get("type")
+        supported_interaction_types = {
+            DiscordInteractionType.PING,
+            DiscordInteractionType.APPLICATION_COMMAND,
+            DiscordInteractionType.MESSAGE_COMPONENT,
+            DiscordInteractionType.MODAL_SUBMIT,
+        }
+        if (
+            not isinstance(interaction_id, str)
+            or not interaction_id.isdigit()
+            or not isinstance(interaction_type, int)
+            or interaction_type not in supported_interaction_types
+        ):
+            raise HTTPException(status_code=400, detail="Bad request")
+
+        try:
+            claimed = claim_discord_interaction(interaction_id, interaction_type)
+        except Exception as error:
+            logger.exception(
+                "Failed to claim Discord interaction",
+                extra={"interaction_type": interaction_type},
+            )
+            raise HTTPException(
+                status_code=503, detail="Interaction claim unavailable"
+            ) from error
+
+        if not claimed:
+            logger.info(
+                "Acknowledging duplicate Discord interaction",
+                extra={"interaction_type": interaction_type},
+            )
+            return _duplicate_interaction_response(interaction_type)
+
+        if interaction_type == DiscordInteractionType.PING:
             print("🤖: acking PING from Discord during auth check")
             return {"type": DiscordResponseType.PONG}
 
-        if data.get("type") == DiscordInteractionType.APPLICATION_COMMAND:
+        if interaction_type == DiscordInteractionType.APPLICATION_COMMAND:
             print("🤖: handling slash command")
             app_id = data["application_id"]
             interaction_token = data["token"]
@@ -999,7 +1043,7 @@ def web_app():
             # respond immediately with defer message
             return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
-        if data.get("type") == DiscordInteractionType.MESSAGE_COMPONENT:
+        if interaction_type == DiscordInteractionType.MESSAGE_COMPONENT:
             print("🤖: handling component interaction")
             app_id = data["application_id"]
             interaction_token = data["token"]
@@ -1076,7 +1120,7 @@ def web_app():
 
             return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
-        if data.get("type") == DiscordInteractionType.MODAL_SUBMIT:
+        if interaction_type == DiscordInteractionType.MODAL_SUBMIT:
             print("🤖: handling modal submission")
             app_id = data["application_id"]
             interaction_token = data["token"]

@@ -10,6 +10,8 @@ from supabase import Client, create_client
 
 from config import DEFAULT_SLUG_LENGTH, MAX_SLUG_LENGTH
 
+DISCORD_INTERACTION_RETENTION_SECONDS = 86400
+
 
 def is_valid_url(url: str) -> bool:
     """Validate URL format."""
@@ -53,6 +55,22 @@ def get_supabase_client() -> Client:
         raise Exception("Supabase credentials not found in environment variables")
 
     return create_client(supabase_url, supabase_key)
+
+
+def claim_discord_interaction(interaction_id: str, interaction_type: int) -> bool:
+    """Atomically claim an opaque Discord interaction id for dispatch."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+        "p_retention_seconds": DISCORD_INTERACTION_RETENTION_SECONDS,
+    }
+    response = (
+        get_supabase_client()
+        .schema("private")
+        .rpc("claim_discord_interaction", params)
+        .execute()
+    )
+    return response.data is True
 
 
 def is_user_authorized_for_guild(discord_user_id: str, guild_id: str) -> bool:
