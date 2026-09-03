@@ -5,12 +5,14 @@ const {
   createGraphClientMock,
   fetchMicrosoftEventsMock,
   performIncrementalActiveSyncMock,
+  resolveSessionAuthContextMock,
   verifyWorkspaceMembershipTypeMock,
 } = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
   createGraphClientMock: vi.fn(),
   fetchMicrosoftEventsMock: vi.fn(),
   performIncrementalActiveSyncMock: vi.fn(),
+  resolveSessionAuthContextMock: vi.fn(),
   verifyWorkspaceMembershipTypeMock: vi.fn(),
 }));
 
@@ -24,6 +26,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 vi.mock('@/lib/calendar/incremental-active-sync', () => ({
   performIncrementalActiveSync: performIncrementalActiveSyncMock,
+}));
+
+vi.mock('@/lib/api-auth', () => ({
+  resolveSessionAuthContext: resolveSessionAuthContextMock,
 }));
 
 vi.mock('@tuturuuu/microsoft', () => ({
@@ -62,8 +68,10 @@ function createAwaitableQuery<T>(result: T) {
 
 function createAdminSupabaseMock({
   additionalGoogleConnections = [],
+  recentRuns = [],
 }: {
   additionalGoogleConnections?: Array<Record<string, unknown>>;
+  recentRuns?: Array<Record<string, unknown>>;
 } = {}) {
   const tokenRows = [
     {
@@ -204,7 +212,7 @@ function createAdminSupabaseMock({
           }),
           select: () =>
             createAwaitableQuery({
-              data: [],
+              data: recentRuns,
               error: null,
             }),
           update: () =>
@@ -227,11 +235,154 @@ describe('workspace calendar sync route', () => {
     createAdminClientMock.mockResolvedValue(createAdminSupabaseMock());
     createGraphClientMock.mockReturnValue('graph-client');
     fetchMicrosoftEventsMock.mockResolvedValue([]);
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: { auth: {} },
+      user: { id: 'manual-user-id' },
+    });
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
     performIncrementalActiveSyncMock.mockResolvedValue({
       eventsDeleted: 0,
       eventsInserted: 1,
       eventsUpdated: 2,
     });
+  });
+
+  it.each(['anonymous', 'wrong-target app session'])(
+    'rejects %s callers before membership or admin work',
+    async () => {
+      const { NextResponse } = await import('next/server');
+      resolveSessionAuthContextMock.mockResolvedValue({
+        ok: false,
+        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      });
+
+      const response = await POST(
+        new Request(
+          `http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`,
+          {
+            method: 'POST',
+          }
+        ) as never,
+        { params: Promise.resolve({ wsId: WS_ID }) }
+      );
+
+      expect(response.status).toBe(401);
+      expect(resolveSessionAuthContextMock).toHaveBeenCalledWith(
+        expect.any(Request),
+        { allowAppSessionAuth: true }
+      );
+      expect(verifyWorkspaceMembershipTypeMock).not.toHaveBeenCalled();
+      expect(createAdminClientMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it('rejects a nonmember before admin work', async () => {
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: false });
+
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when membership lookup fails', async () => {
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({
+      error: 'membership_lookup_failed',
+      ok: false,
+    });
+
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+
+    expect(response.status).toBe(500);
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
+
+  it('returns the existing-running state without starting another sync', async () => {
+    createAdminClientMock.mockResolvedValue(
+      createAdminSupabaseMock({
+        recentRuns: [
+          {
+            id: 'running-sync-id',
+            start_time: new Date().toISOString(),
+            status: 'running',
+          },
+        ],
+      })
+    );
+
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(202);
+    expect(body).toMatchObject({
+      alreadyRunning: true,
+      code: 'sync_already_running',
+      ok: true,
+    });
+    expect(performIncrementalActiveSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('enforces the manual sync cooldown', async () => {
+    createAdminClientMock.mockResolvedValue(
+      createAdminSupabaseMock({
+        recentRuns: [
+          {
+            id: 'recent-sync-id',
+            start_time: new Date().toISOString(),
+            status: 'success',
+          },
+        ],
+      })
+    );
+
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(body).toMatchObject({ code: 'sync_cooldown_active' });
+    expect(performIncrementalActiveSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('runs a manual sync for an authorized workspace member', async () => {
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        body: JSON.stringify({ direction: 'inbound' }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toMatchObject({ direction: 'inbound', ok: true });
+    expect(verifyWorkspaceMembershipTypeMock).toHaveBeenCalledWith({
+      supabase: { auth: {} },
+      userId: 'manual-user-id',
+      wsId: WS_ID,
+    });
+    expect(performIncrementalActiveSyncMock).toHaveBeenCalled();
   });
 
   afterEach(() => {
