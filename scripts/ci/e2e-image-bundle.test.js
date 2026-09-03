@@ -186,6 +186,7 @@ test('publish builds the planned services once and pushes the ready marker last'
 
   await publishBundle(
     {
+      frontend: 'next',
       producerProject: 'producer',
       repository: REPOSITORY,
       tagPrefix: TAG_PREFIX,
@@ -209,7 +210,7 @@ test('publish builds the planned services once and pushes the ready marker last'
 
   assert.deepEqual(
     buildOptions.services,
-    getBundleServices({}).filter((service) => service !== 'web-blue')
+    getBundleServices({}, 'next').filter((service) => service !== 'web-blue')
   );
   assert.equal(buildOptions.buildStrategy, 'bake');
   assert.match(buildOptions.bakeFile, /registry-output\.json$/u);
@@ -232,7 +233,7 @@ test('publish builds the planned services once and pushes the ready marker last'
     calls.filter(
       ([, args]) => args.slice(0, 3).join(' ') === 'buildx imagetools create'
     ).length,
-    getBundleServices({}).length + 2
+    getBundleServices({}, 'next').length + 2
   );
   const sentinelIndex = calls.findIndex(([, args]) =>
     args.includes(`${REPOSITORY}:${SENTINEL_TAG}`)
@@ -242,13 +243,18 @@ test('publish builds the planned services once and pushes the ready marker last'
   );
   assert.ok(sentinelIndex >= 0);
   assert.ok(firstBundleIndex > sentinelIndex);
-  for (const service of getBundleServices({})) {
+  for (const service of getBundleServices({}, 'next')) {
     assert.ok(
       calls.some(([, args]) =>
         args.includes(`${REPOSITORY}:${TAG_PREFIX}-${service}`)
       )
     );
   }
+  assert.ok(
+    !calls.some(([, args]) =>
+      args.includes(`${REPOSITORY}:${TAG_PREFIX}-tanstack-web-blue`)
+    )
+  );
   assert.ok(calls.at(-1)[1].includes(`${REPOSITORY}:${TAG_PREFIX}-ready`));
 });
 

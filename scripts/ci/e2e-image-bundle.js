@@ -357,6 +357,7 @@ async function publishBundle(
   });
   const manifest = createBundleManifest({
     env: buildEnv,
+    frontend: options.frontend,
     producerProject: options.producerProject,
     repository: options.repository,
     tagPrefix: options.tagPrefix,
