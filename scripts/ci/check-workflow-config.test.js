@@ -93,6 +93,7 @@ test('CI orchestration changes do not rebuild application artifacts', () => {
     '.github/workflows/vercel-production.yaml',
     'scripts/ci/resolve-production-vercel-targets.ts',
     'scripts/ci/workflow-config-core.ts',
+    'tuturuuu.ci.ts',
     'tuturuuu.ts',
   ];
 

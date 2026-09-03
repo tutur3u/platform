@@ -310,6 +310,7 @@ const databaseMigrationAffectingPaths = new Set([
   'scripts/ci/resolve-changed-files-core.ts',
   'scripts/ci/resolve-changed-files.ts',
   'scripts/ci/workflow-config-core.ts',
+  'tuturuuu.ci.ts',
   'tuturuuu.ts',
 ]);
 
