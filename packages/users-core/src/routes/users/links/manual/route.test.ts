@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -45,8 +45,13 @@ interface Mutation {
   table: string;
 }
 
+type Query = Omit<Mutation, 'operation'> & {
+  operation: Mutation['operation'] | 'select';
+};
+
 class SupabaseFixture {
   readonly mutations: Mutation[] = [];
+  readonly queries: Query[] = [];
   readonly responses = new Map<string, QueryResult[]>();
   readonly from = vi.fn((table: string) => new SupabaseQuery(table, this));
   readonly admin = { from: this.from };
@@ -63,6 +68,10 @@ class SupabaseFixture {
       throw new Error(`Unexpected query for ${table}`);
     }
     return response;
+  }
+
+  assertConsumed() {
+    expect([...this.responses.values()].flat()).toEqual([]);
   }
 }
 
@@ -137,14 +146,16 @@ class SupabaseQuery implements PromiseLike<QueryResult> {
 
   private execute() {
     this.result ??= Promise.resolve().then(() => {
+      const query = {
+        filters: [...this.filters],
+        operation: this.operation,
+        options: this.options,
+        payload: this.payload,
+        table: this.table,
+      };
+      this.fixture.queries.push(query);
       if (this.operation !== 'select') {
-        this.fixture.mutations.push({
-          filters: [...this.filters],
-          operation: this.operation,
-          options: this.options,
-          payload: this.payload,
-          table: this.table,
-        });
+        this.fixture.mutations.push(query as Mutation);
       }
       return this.fixture.consume(this.table);
     });
@@ -237,6 +248,8 @@ describe('manual profile linking route', () => {
     mocks.createAdminClient.mockResolvedValue(fixture.admin);
   });
 
+  afterEach(() => fixture.assertConsumed());
+
   it('returns 404 without route access and creates no admin client', async () => {
     mocks.getPermissions.mockResolvedValue(null);
 
@@ -295,6 +308,22 @@ describe('manual profile linking route', () => {
       expect(await responseJson(response)).toEqual({
         error: 'Both profiles must belong to this workspace',
       });
+      expect(fixture.queries.slice(0, 2)).toMatchObject([
+        {
+          filters: [
+            { field: 'id', value: VIRTUAL_USER_ID },
+            { field: 'ws_id', value: WORKSPACE_ID },
+          ],
+          table: 'workspace_users',
+        },
+        {
+          filters: [
+            { field: 'user_id', value: PLATFORM_USER_ID },
+            { field: 'ws_id', value: WORKSPACE_ID },
+          ],
+          table: 'workspace_members',
+        },
+      ]);
       expect(fixture.mutations).toEqual([]);
     }
   );
