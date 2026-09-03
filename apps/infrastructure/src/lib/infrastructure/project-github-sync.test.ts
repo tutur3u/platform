@@ -181,7 +181,10 @@ describe('Infrastructure GitHub project sync', () => {
       new Map([
         [
           1,
-          [branch('main', 'first-sha', false), branch('main', 'other-sha', true)],
+          [
+            branch('main', 'first-sha', false),
+            branch('main', 'other-sha', true),
+          ],
         ],
       ])
     );

@@ -10,8 +10,7 @@ vi.mock('@/lib/infrastructure/projects', () => ({
 }));
 
 vi.mock('../../_shared', () => ({
-  handleInfrastructureProjectRequest:
-    mocks.handleInfrastructureProjectRequest,
+  handleInfrastructureProjectRequest: mocks.handleInfrastructureProjectRequest,
 }));
 
 import { POST } from './route';
@@ -20,8 +19,7 @@ describe('POST infrastructure project sync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.handleInfrastructureProjectRequest.mockImplementation(
-      async (_request, _route, handler) =>
-        Response.json(await handler())
+      async (_request, _route, handler) => Response.json(await handler())
     );
   });
 
