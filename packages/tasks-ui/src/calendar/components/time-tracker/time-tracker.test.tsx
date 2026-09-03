@@ -92,10 +92,7 @@ function installFetchRouter({
       const url = String(input);
 
       if (failMutation && init?.method) {
-        return jsonResponse(
-          { error: 'synthetic mutation failure' },
-          500
-        );
+        return jsonResponse({ error: 'synthetic mutation failure' }, 500);
       }
 
       if (init?.method === 'POST' && url.endsWith('/tasks')) {
