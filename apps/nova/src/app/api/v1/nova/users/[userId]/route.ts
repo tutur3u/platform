@@ -1,46 +1,52 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { authorizeNovaRoleManager } from '@/lib/nova-team-api-auth';
 
-export async function PUT(req: NextRequest) {
-  const {
-    userId,
-    enabled,
-    allow_challenge_management,
-    allow_manage_all_challenges,
-    allow_role_management,
-  } = (await req.json()) as {
-    userId: string;
-    enabled: boolean;
-    allow_challenge_management: boolean;
-    allow_manage_all_challenges: boolean;
-    allow_role_management: boolean;
-  };
+const userIdSchema = z.string().uuid();
 
-  if (!userId) {
-    return NextResponse.json(
-      { message: 'User Id is required' },
-      { status: 400 }
-    );
+const roleUpdateSchema = z
+  .object({
+    allow_challenge_management: z.boolean(),
+    allow_manage_all_challenges: z.boolean(),
+    allow_role_management: z.boolean(),
+    enabled: z.boolean(),
+  })
+  .strict();
+
+type RouteContext = {
+  params: Promise<{ userId?: string }>;
+};
+
+function invalidRequest() {
+  return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
+}
+
+export async function PUT(request: NextRequest, { params }: RouteContext) {
+  const authorization = await authorizeNovaRoleManager(request);
+  if (!authorization.ok) return authorization.response;
+
+  const parsedUserId = userIdSchema.safeParse((await params).userId);
+  if (!parsedUserId.success) return invalidRequest();
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return invalidRequest();
   }
 
-  const sbAdmin = await createAdminClient();
+  const parsedBody = roleUpdateSchema.safeParse(body);
+  if (!parsedBody.success) return invalidRequest();
 
-  const updateData = {
-    enabled: enabled ?? false,
-    allow_challenge_management: allow_challenge_management ?? false,
-    allow_manage_all_challenges: allow_manage_all_challenges ?? false,
-    allow_role_management: allow_role_management ?? false,
-  };
-
-  const { error } = await sbAdmin
+  const { error } = await authorization.value.sbAdmin
     .from('platform_user_roles')
-    .update(updateData)
-    .eq('user_id', userId);
+    .update(parsedBody.data)
+    .eq('user_id', parsedUserId.data);
 
   if (error) {
-    console.error('Error updating user roles:', error);
+    console.error('Failed to update Nova user permissions', error);
     return NextResponse.json(
-      { message: 'Error updating user permissions', error: error.message },
+      { message: 'Error updating user permissions' },
       { status: 500 }
     );
   }
@@ -48,30 +54,22 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ success: true }, { status: 200 });
 }
 
-export async function DELETE(
-  _: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
+  const authorization = await authorizeNovaRoleManager(request);
+  if (!authorization.ok) return authorization.response;
 
-  if (!userId) {
-    return NextResponse.json(
-      { message: 'User Id is required' },
-      { status: 400 }
-    );
-  }
+  const parsedUserId = userIdSchema.safeParse((await params).userId);
+  if (!parsedUserId.success) return invalidRequest();
 
-  const sbAdmin = await createAdminClient();
-
-  const { error } = await sbAdmin
+  const { error } = await authorization.value.sbAdmin
     .from('platform_user_roles')
     .delete()
-    .eq('user_id', userId);
+    .eq('user_id', parsedUserId.data);
 
   if (error) {
-    console.log(error);
+    console.error('Failed to delete Nova user permissions', error);
     return NextResponse.json(
-      { message: 'Error fetching AI Models' },
+      { message: 'Error deleting user permissions' },
       { status: 500 }
     );
   }
