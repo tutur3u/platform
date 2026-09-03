@@ -138,8 +138,10 @@ describe('task project workspace resolver', () => {
   });
 
   it('rejects more than 1000 project IDs before querying', async () => {
-    const projectIds = Array.from({ length: 1001 }, (_, index) =>
-      `00000000-0000-4000-8000-${index.toString().padStart(12, '0')}`
+    const projectIds = Array.from(
+      { length: 1001 },
+      (_, index) =>
+        `00000000-0000-4000-8000-${index.toString().padStart(12, '0')}`
     );
 
     const response = await POST(request({ projectIds }));
@@ -193,7 +195,9 @@ describe('task project workspace resolver', () => {
     const response = await POST(request({ boardId: BOARD_ID }));
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ workspaceId: WORKSPACE_ID });
+    await expect(response.json()).resolves.toEqual({
+      workspaceId: WORKSPACE_ID,
+    });
     expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith(
       expect.objectContaining({ userId: USER_ID, wsId: WORKSPACE_ID })
     );
@@ -203,7 +207,9 @@ describe('task project workspace resolver', () => {
     const response = await POST(request({ projectIds: [PROJECT_ID] }));
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ workspaceId: WORKSPACE_ID });
+    await expect(response.json()).resolves.toEqual({
+      workspaceId: WORKSPACE_ID,
+    });
   });
 
   it('returns 404 without disclosure when no candidate is found', async () => {

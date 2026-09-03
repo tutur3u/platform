@@ -70,7 +70,10 @@ export async function authorizeTaskUpdateInteraction(
   if (!update) {
     return {
       ok: false,
-      response: NextResponse.json({ error: 'Update not found' }, { status: 404 }),
+      response: NextResponse.json(
+        { error: 'Update not found' },
+        { status: 404 }
+      ),
     } as const;
   }
 
