@@ -1,16 +1,22 @@
 import 'server-only';
 
 import { cacheLife, cacheTag } from 'next/cache';
-import { githubRequest } from './api';
+import { githubRequest, githubRequestWithMetadata } from './api';
 import { requireRegisteredRepository } from './registry';
 import type {
   GitHubCommit,
   GitHubContent,
   GitHubContributor,
   GitHubIssue,
+  GitHubIssueComment,
+  GitHubPage,
+  GitHubPullFile,
   GitHubPullRequest,
+  GitHubPullReview,
   GitHubRelease,
   GitHubRepository,
+  GitHubWorkflowArtifact,
+  GitHubWorkflowJob,
   GitHubWorkflowRun,
   RepositoryOverview,
 } from './types';
@@ -178,41 +184,54 @@ export async function getRepositoryActionRun(
   'use cache';
   mutableCache(owner, name, `action:${runId}`);
   const repository = await requireRegisteredRepository(owner, name);
-  const [run, jobs, artifacts] = await Promise.all([
-    githubRequest<GitHubWorkflowRun>({
-      path: `/actions/runs/${runId}`,
-      repository,
-    }),
-    githubRequest<{
-      jobs: Array<{
-        completed_at: string | null;
-        conclusion: string | null;
-        html_url: string;
-        id: number;
-        name: string;
-        started_at: string | null;
-        status: string;
-        steps?: Array<{
-          conclusion: string | null;
-          name: string;
-          number: number;
-          status: string;
-        }>;
-      }>;
-    }>({ path: `/actions/runs/${runId}/jobs`, repository }),
-    githubRequest<{
-      artifacts: Array<{
-        archive_download_url: string;
-        expired: boolean;
-        expires_at: string | null;
-        id: number;
-        name: string;
-        size_in_bytes: number;
-      }>;
-    }>({ path: `/actions/runs/${runId}/artifacts`, repository }),
-  ]);
+  return githubRequest<GitHubWorkflowRun>({
+    path: `/actions/runs/${runId}`,
+    repository,
+  });
+}
 
-  return { artifacts: artifacts.artifacts, jobs: jobs.jobs, run };
+export async function getRepositoryActionRunJobs(
+  owner: string,
+  name: string,
+  runId: number,
+  page: number
+): Promise<GitHubPage<GitHubWorkflowJob>> {
+  'use cache';
+  mutableCache(owner, name, `action:${runId}:jobs:${page}`);
+  const repository = await requireRegisteredRepository(owner, name);
+  const result = await githubRequestWithMetadata<{
+    jobs: GitHubWorkflowJob[];
+  }>({
+    path: `/actions/runs/${runId}/jobs`,
+    query: { page, per_page: 50 },
+    repository,
+  });
+  return {
+    items: result.body.jobs,
+    nextPage: result.hasNextPage ? page + 1 : null,
+  };
+}
+
+export async function getRepositoryActionRunArtifacts(
+  owner: string,
+  name: string,
+  runId: number,
+  page: number
+): Promise<GitHubPage<GitHubWorkflowArtifact>> {
+  'use cache';
+  mutableCache(owner, name, `action:${runId}:artifacts:${page}`);
+  const repository = await requireRegisteredRepository(owner, name);
+  const result = await githubRequestWithMetadata<{
+    artifacts: GitHubWorkflowArtifact[];
+  }>({
+    path: `/actions/runs/${runId}/artifacts`,
+    query: { page, per_page: 50 },
+    repository,
+  });
+  return {
+    items: result.body.artifacts,
+    nextPage: result.hasNextPage ? page + 1 : null,
+  };
 }
 
 export async function getRepositoryContributors(
@@ -260,21 +279,26 @@ export async function getRepositoryIssue(
   'use cache';
   mutableCache(owner, name, `issue:${number}`);
   const repository = await requireRegisteredRepository(owner, name);
-  const [issue, comments] = await Promise.all([
-    githubRequest<
-      GitHubIssue & { body: string | null; closed_at: string | null }
-    >({ path: `/issues/${number}`, repository }),
-    githubRequest<
-      Array<{
-        body: string;
-        created_at: string;
-        html_url: string;
-        id: number;
-        user: { avatar_url: string; login: string };
-      }>
-    >({ path: `/issues/${number}/comments`, repository }),
-  ]);
-  return { comments, issue };
+  return githubRequest<
+    GitHubIssue & { body: string | null; closed_at: string | null }
+  >({ path: `/issues/${number}`, repository });
+}
+
+export async function getRepositoryIssueComments(
+  owner: string,
+  name: string,
+  number: number,
+  page: number
+): Promise<GitHubPage<GitHubIssueComment>> {
+  'use cache';
+  mutableCache(owner, name, `issue:${number}:comments:${page}`);
+  const repository = await requireRegisteredRepository(owner, name);
+  return pagedArrayRequest({
+    page,
+    path: `/issues/${number}/comments`,
+    perPage: 50,
+    repository,
+  });
 }
 
 export async function getRepositoryPull(
@@ -285,37 +309,71 @@ export async function getRepositoryPull(
   'use cache';
   mutableCache(owner, name, `pull:${number}`);
   const repository = await requireRegisteredRepository(owner, name);
-  const [pull, files, reviews] = await Promise.all([
-    githubRequest<
-      GitHubPullRequest & {
-        body: string | null;
-        commits: number;
-        additions: number;
-        deletions: number;
-        changed_files: number;
-      }
-    >({ path: `/pulls/${number}`, repository }),
-    githubRequest<
-      Array<{
-        additions: number;
-        changes: number;
-        deletions: number;
-        filename: string;
-        patch?: string;
-        status: string;
-      }>
-    >({ path: `/pulls/${number}/files`, query: { per_page: 100 }, repository }),
-    githubRequest<
-      Array<{
-        body: string;
-        id: number;
-        state: string;
-        submitted_at: string;
-        user: { avatar_url: string; login: string };
-      }>
-    >({ path: `/pulls/${number}/reviews`, repository }),
-  ]);
-  return { files, pull, reviews };
+  return githubRequest<
+    GitHubPullRequest & {
+      body: string | null;
+      commits: number;
+      additions: number;
+      deletions: number;
+      changed_files: number;
+    }
+  >({ path: `/pulls/${number}`, repository });
+}
+
+export async function getRepositoryPullFiles(
+  owner: string,
+  name: string,
+  number: number,
+  page: number
+): Promise<GitHubPage<GitHubPullFile>> {
+  'use cache';
+  mutableCache(owner, name, `pull:${number}:files:${page}`);
+  const repository = await requireRegisteredRepository(owner, name);
+  return pagedArrayRequest({
+    page,
+    path: `/pulls/${number}/files`,
+    perPage: 100,
+    repository,
+  });
+}
+
+export async function getRepositoryPullReviews(
+  owner: string,
+  name: string,
+  number: number,
+  page: number
+): Promise<GitHubPage<GitHubPullReview>> {
+  'use cache';
+  mutableCache(owner, name, `pull:${number}:reviews:${page}`);
+  const repository = await requireRegisteredRepository(owner, name);
+  return pagedArrayRequest({
+    page,
+    path: `/pulls/${number}/reviews`,
+    perPage: 50,
+    repository,
+  });
+}
+
+async function pagedArrayRequest<T>({
+  page,
+  path,
+  perPage,
+  repository,
+}: {
+  page: number;
+  path: string;
+  perPage: number;
+  repository: Awaited<ReturnType<typeof requireRegisteredRepository>>;
+}): Promise<GitHubPage<T>> {
+  const result = await githubRequestWithMetadata<T[]>({
+    path,
+    query: { page, per_page: perPage },
+    repository,
+  });
+  return {
+    items: result.body,
+    nextPage: result.hasNextPage ? page + 1 : null,
+  };
 }
 
 export async function getRepositoryCommit(
