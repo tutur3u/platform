@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.2](https://github.com/tutur3u/platform/compare/users-core-v0.8.1...users-core-v0.8.2) (2026-09-02)
+
+
+### Bug Fixes
+
+* **contacts:** address review findings on the tutoring gate work ([fc86e08](https://github.com/tutur3u/platform/commit/fc86e08e6cbe62c8b933596f0cf56fa580221ded))
+* **contacts:** replace module 404s with an actionable availability gate ([d49bef9](https://github.com/tutur3u/platform/commit/d49bef97e0047fff6c8322c19fef66932b25f4a8))
+* **contacts:** replace module 404s with an actionable availability gate ([#5179](https://github.com/tutur3u/platform/issues/5179)) ([2427785](https://github.com/tutur3u/platform/commit/24277858ed8ce38c17b3e79413c7f81c98008eb7))
+
 ## [0.8.1](https://github.com/tutur3u/platform/compare/users-core-v0.8.0...users-core-v0.8.1) (2026-08-21)
 
 

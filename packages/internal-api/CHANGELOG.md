@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.33.1](https://github.com/tutur3u/platform/compare/internal-api-v0.33.0...internal-api-v0.33.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **contacts:** replace module 404s with an actionable availability gate ([d49bef9](https://github.com/tutur3u/platform/commit/d49bef97e0047fff6c8322c19fef66932b25f4a8))
+* **contacts:** replace module 404s with an actionable availability gate ([#5179](https://github.com/tutur3u/platform/issues/5179)) ([2427785](https://github.com/tutur3u/platform/commit/24277858ed8ce38c17b3e79413c7f81c98008eb7))
+
 ## [0.33.0](https://github.com/tutur3u/platform/compare/internal-api-v0.32.0...internal-api-v0.33.0) (2026-08-26)
 
 
