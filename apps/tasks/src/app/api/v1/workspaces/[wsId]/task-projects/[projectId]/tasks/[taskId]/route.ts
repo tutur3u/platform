@@ -56,7 +56,15 @@ export const DELETE = withSessionAuth<RouteParams>(
       }
 
       const permissions = await getPermissions({ user, wsId });
-      if (!permissions?.containsPermission('manage_projects')) {
+      if (!permissions) {
+        console.error('Failed to resolve workspace permissions');
+        return NextResponse.json(
+          { error: 'Failed to resolve workspace permissions' },
+          { status: 500 }
+        );
+      }
+
+      if (!permissions.containsPermission('manage_projects')) {
         return NextResponse.json(
           { error: "You don't have permission to perform this operation" },
           { status: 403 }

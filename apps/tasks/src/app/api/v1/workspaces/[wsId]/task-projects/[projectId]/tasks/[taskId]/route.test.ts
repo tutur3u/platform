@@ -135,12 +135,15 @@ describe('DELETE project task link', () => {
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('fails closed when permissions cannot be resolved', async () => {
+  it('surfaces permission-resolution failures', async () => {
     mocks.getPermissions.mockResolvedValue(null);
 
     const response = await DELETE(request, context);
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to resolve workspace permissions',
+    });
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
