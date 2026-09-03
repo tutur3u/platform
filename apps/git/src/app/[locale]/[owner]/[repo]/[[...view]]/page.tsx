@@ -82,7 +82,7 @@ export default async function RepositoryPage({
   params,
   searchParams,
 }: PageProps) {
-  const { owner, repo, view = [] } = await params;
+  const { locale, owner, repo, view = [] } = await params;
   const query = await searchParams;
   const activeView = resolveActiveView(view);
 
