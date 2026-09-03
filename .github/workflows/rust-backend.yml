@@ -24,6 +24,7 @@ on:
       - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
+      - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
   push:
     branches: ["main", "production"]
@@ -49,6 +50,7 @@ on:
       - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
+      - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
   workflow_dispatch:
     inputs:
