@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-08-01"
+updatedAt: "2026-09-03"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -13,10 +13,12 @@ service for this migration; extend `apps/backend` route groups and keep API
 contracts documented in `apps/backend/api/openapi.yaml`.
 
 <Warning>
-  `apps/backend` is not currently deployed and receives no production traffic.
-  `apps/web` remains the live API runtime. A route marked `migrated` in this
-  document means its future Rust source contract is implemented and tested; it
-  does not mean that request routing has cut over.
+  Active development of `apps/tanstack-web` and `apps/backend` is paused. Their
+  combined `rust-backend.yml` CI/Cloudflare workflow and automatic TanStack
+  Vercel production builds are disabled in `tuturuuu.ts`. `apps/backend` is not
+  deployed and receives no production traffic; `apps/web` remains the live API
+  runtime. A route marked `migrated` below records implemented source work, not
+  a production cutover or a currently maintained migration target.
 </Warning>
 
 The crate can run as a native container and keeps a Cloudflare Workers Rust

@@ -301,7 +301,7 @@ test('unrelated package changes do not deploy apps that do not consume them', ()
   );
 });
 
-test('bun.lock-only changes run all Vercel app deploys', () => {
+test('bun.lock-only changes run enabled Vercel app deploys', () => {
   const rootDir = createFixtureRoot();
 
   for (const workflowName of vercelWorkflows) {
@@ -311,7 +311,7 @@ test('bun.lock-only changes run all Vercel app deploys', () => {
         rootDir,
         workflowName,
       },
-      true
+      workflowName !== 'vercel-production-tanstack-web.yaml'
     );
   }
 });

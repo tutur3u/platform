@@ -11,7 +11,9 @@ export const ci = {
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
   'docker-setup-check.yaml': true,
-  'rust-backend.yml': true,
+  // TanStack Start and Rust migration work is paused. Keep its combined CI and
+  // Cloudflare deployment workflow disabled until active maintenance resumes.
+  'rust-backend.yml': false,
   'i18n-check.yaml': true,
   'mobile.yaml': true,
   'release-ai-package.yaml': true,
@@ -56,7 +58,8 @@ export const ci = {
   'vercel-production-meet.yaml': true,
   'vercel-production-learn.yaml': true,
   'vercel-production-mail.yaml': true,
-  'vercel-production-tanstack-web.yaml': true,
+  // Avoid automatic TanStack production builds while the migration is paused.
+  'vercel-production-tanstack-web.yaml': false,
   'vercel-production-teach.yaml': true,
   'vercel-production-pay.yaml': true,
   'vercel-production-contacts.yaml': true,

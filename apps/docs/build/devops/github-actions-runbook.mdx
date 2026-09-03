@@ -230,6 +230,12 @@ generator/formatter unit test. Keep `scripts/generate-tanstack-route-tree.*`
 in this workflow's path filters so route-tree generation changes run before
 TanStack/Rust deployment handoff.
 
+The TanStack/Rust migration is currently paused. Keep `rust-backend.yml` and
+`vercel-production-tanstack-web.yaml` set to `false` in `tuturuuu.ts`; the
+shared `ci-check.yml` switchboard will leave the expensive Rust/TanStack jobs
+skipped. Re-enable them only when active maintenance resumes and the full
+workflow is again an intentional delivery gate.
+
 ### TanStack/Rust Cloudflare deployment
 
 `rust-backend.yml` is also the manually dispatched Cloudflare preview deployment
@@ -241,7 +247,8 @@ workflow for the migration pair:
   `tuturuuu-tanstack-web`.
 
 The workflow stays switchboard-controlled by the `rust-backend.yml` entry in
-`tuturuuu.ts`. Pull request and push runs are validation-only and use
+`tuturuuu.ts`, which is currently disabled while the migration is paused. Pull
+request and push runs are validation-only and use
 `contents: read`; they do not require Cloudflare secrets just to type-check,
 test, lint config, build the Rust Worker bundle, or build the backend Docker
 image.
