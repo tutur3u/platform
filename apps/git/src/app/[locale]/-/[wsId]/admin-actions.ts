@@ -226,7 +226,8 @@ export async function toggleRepositoryAction(
       .select('id,name,owner_login')
       .single();
 
-    if (error || !data) throw new Error('Repository update failed');
+    if (error) throw error;
+    if (!data) throw new Error('Repository update failed');
 
     await recordGitAuditEvent({
       eventType: enabled ? 'repository.enabled' : 'repository.disabled',
@@ -238,8 +239,8 @@ export async function toggleRepositoryAction(
       'max'
     );
     destination = adminPath(wsId, 'repositories', { updated: '1' });
-  } catch {
-    console.error('Failed to update Git repository state');
+  } catch (error) {
+    console.error('Failed to update Git repository state', error);
   }
 
   redirect(destination);

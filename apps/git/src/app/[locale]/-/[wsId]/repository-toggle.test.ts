@@ -146,6 +146,10 @@ describe('toggleRepositoryAction', () => {
 
       expect(mocks.recordGitAuditEvent).not.toHaveBeenCalled();
       expect(mocks.revalidateTag).not.toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to update Git repository state',
+        error ?? expect.any(Error)
+      );
     }
   );
 
