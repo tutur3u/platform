@@ -94,7 +94,7 @@ export type WorkflowDecisionInput = {
   workspaceManifests?: readonly WorkspaceManifest[];
 };
 
-export type VercelWorkflowTarget = {
+type VercelWorkflowTargetBase = {
   app: string;
   appPath: string;
   packageName: string;
@@ -102,10 +102,23 @@ export type VercelWorkflowTarget = {
   productionWorkflow: string;
 };
 
+export type VercelWorkflowTarget = VercelWorkflowTargetBase &
+  (
+    | {
+        buildInfoApp: string;
+        framework: 'next';
+      }
+    | {
+        framework: 'tanstack-start';
+      }
+  );
+
 export const vercelWorkflowTargets = [
   {
     app: 'ai',
     appPath: 'apps/ai',
+    buildInfoApp: 'ai',
+    framework: 'next',
     packageName: '@tuturuuu/ai-studio',
     previewWorkflow: 'vercel-preview-ai.yaml',
     productionWorkflow: 'vercel-production-ai.yaml',
@@ -113,6 +126,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'apps',
     appPath: 'apps/apps',
+    buildInfoApp: 'apps',
+    framework: 'next',
     packageName: '@tuturuuu/apps',
     previewWorkflow: 'vercel-preview-apps.yaml',
     productionWorkflow: 'vercel-production-apps.yaml',
@@ -120,6 +135,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'calendar',
     appPath: 'apps/calendar',
+    buildInfoApp: 'calendar',
+    framework: 'next',
     packageName: '@tuturuuu/calendar',
     previewWorkflow: 'vercel-preview-calendar.yaml',
     productionWorkflow: 'vercel-production-calendar.yaml',
@@ -127,6 +144,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'chat',
     appPath: 'apps/chat',
+    buildInfoApp: 'chat',
+    framework: 'next',
     packageName: '@tuturuuu/chat',
     previewWorkflow: 'vercel-preview-chat.yaml',
     productionWorkflow: 'vercel-production-chat.yaml',
@@ -134,6 +153,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'cms',
     appPath: 'apps/cms',
+    buildInfoApp: 'cms',
+    framework: 'next',
     packageName: '@tuturuuu/cms',
     previewWorkflow: 'vercel-preview-cms.yaml',
     productionWorkflow: 'vercel-production-cms.yaml',
@@ -141,6 +162,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'drive',
     appPath: 'apps/drive',
+    buildInfoApp: 'drive',
+    framework: 'next',
     packageName: '@tuturuuu/drive',
     previewWorkflow: 'vercel-preview-drive.yaml',
     productionWorkflow: 'vercel-production-drive.yaml',
@@ -148,6 +171,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'finance',
     appPath: 'apps/finance',
+    buildInfoApp: 'finance',
+    framework: 'next',
     packageName: '@tuturuuu/finance',
     previewWorkflow: 'vercel-preview-finance.yaml',
     productionWorkflow: 'vercel-production-finance.yaml',
@@ -155,6 +180,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'inventory',
     appPath: 'apps/inventory',
+    buildInfoApp: 'inventory',
+    framework: 'next',
     packageName: '@tuturuuu/inventory',
     previewWorkflow: 'vercel-preview-inventory.yaml',
     productionWorkflow: 'vercel-production-inventory.yaml',
@@ -162,6 +189,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'infrastructure',
     appPath: 'apps/infrastructure',
+    buildInfoApp: 'infrastructure',
+    framework: 'next',
     packageName: '@tuturuuu/infrastructure',
     previewWorkflow: 'vercel-preview-infrastructure.yaml',
     productionWorkflow: 'vercel-production-infrastructure.yaml',
@@ -169,6 +198,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'storefront',
     appPath: 'apps/storefront',
+    buildInfoApp: 'storefront',
+    framework: 'next',
     packageName: '@tuturuuu/storefront',
     previewWorkflow: 'vercel-preview-storefront.yaml',
     productionWorkflow: 'vercel-production-storefront.yaml',
@@ -176,6 +207,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'meet',
     appPath: 'apps/meet',
+    buildInfoApp: 'meet',
+    framework: 'next',
     packageName: '@tuturuuu/meet',
     previewWorkflow: 'vercel-preview-meet.yaml',
     productionWorkflow: 'vercel-production-meet.yaml',
@@ -183,6 +216,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'mail',
     appPath: 'apps/mail',
+    buildInfoApp: 'mail',
+    framework: 'next',
     packageName: '@tuturuuu/mail',
     previewWorkflow: 'vercel-preview-mail.yaml',
     productionWorkflow: 'vercel-production-mail.yaml',
@@ -190,6 +225,7 @@ export const vercelWorkflowTargets = [
   {
     app: 'tanstack-web',
     appPath: 'apps/tanstack-web',
+    framework: 'tanstack-start',
     packageName: '@tuturuuu/tanstack-web',
     previewWorkflow: 'vercel-preview-tanstack-web.yaml',
     productionWorkflow: 'vercel-production-tanstack-web.yaml',
@@ -197,6 +233,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'mind',
     appPath: 'apps/mind',
+    buildInfoApp: 'mind',
+    framework: 'next',
     packageName: '@tuturuuu/mind',
     previewWorkflow: 'vercel-preview-mind.yaml',
     productionWorkflow: 'vercel-production-mind.yaml',
@@ -204,6 +242,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'nova',
     appPath: 'apps/nova',
+    buildInfoApp: 'nova',
+    framework: 'next',
     packageName: '@tuturuuu/nova',
     previewWorkflow: 'vercel-preview-nova.yaml',
     productionWorkflow: 'vercel-production-nova.yaml',
@@ -211,6 +251,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'platform',
     appPath: 'apps/web',
+    buildInfoApp: 'web',
+    framework: 'next',
     packageName: '@tuturuuu/web',
     previewWorkflow: 'vercel-preview-platform.yaml',
     productionWorkflow: 'vercel-production-platform.yaml',
@@ -218,6 +260,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'tools',
     appPath: 'apps/tools',
+    buildInfoApp: 'tools',
+    framework: 'next',
     packageName: '@tuturuuu/tools',
     previewWorkflow: 'vercel-preview-tools.yaml',
     productionWorkflow: 'vercel-production-tools.yaml',
@@ -225,6 +269,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'rewise',
     appPath: 'apps/rewise',
+    buildInfoApp: 'rewise',
+    framework: 'next',
     packageName: '@tuturuuu/rewise',
     previewWorkflow: 'vercel-preview-rewise.yaml',
     productionWorkflow: 'vercel-production-rewise.yaml',
@@ -232,6 +278,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'shortener',
     appPath: 'apps/shortener',
+    buildInfoApp: 'shortener',
+    framework: 'next',
     packageName: '@tuturuuu/shortener',
     previewWorkflow: 'vercel-preview-shortener.yaml',
     productionWorkflow: 'vercel-production-shortener.yaml',
@@ -239,6 +287,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'tasks',
     appPath: 'apps/tasks',
+    buildInfoApp: 'tasks',
+    framework: 'next',
     packageName: '@tuturuuu/tasks',
     previewWorkflow: 'vercel-preview-tasks.yaml',
     productionWorkflow: 'vercel-production-tasks.yaml',
@@ -246,6 +296,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'teach',
     appPath: 'apps/teach',
+    buildInfoApp: 'teach',
+    framework: 'next',
     packageName: '@tuturuuu/teach',
     previewWorkflow: 'vercel-preview-teach.yaml',
     productionWorkflow: 'vercel-production-teach.yaml',
@@ -253,6 +305,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'track',
     appPath: 'apps/track',
+    buildInfoApp: 'track',
+    framework: 'next',
     packageName: '@tuturuuu/track',
     previewWorkflow: 'vercel-preview-track.yaml',
     productionWorkflow: 'vercel-production-track.yaml',
@@ -260,6 +314,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'learn',
     appPath: 'apps/learn',
+    buildInfoApp: 'learn',
+    framework: 'next',
     packageName: '@tuturuuu/learn',
     previewWorkflow: 'vercel-preview-learn.yaml',
     productionWorkflow: 'vercel-production-learn.yaml',
@@ -267,6 +323,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'pay',
     appPath: 'apps/pay',
+    buildInfoApp: 'pay',
+    framework: 'next',
     packageName: '@tuturuuu/pay',
     previewWorkflow: 'vercel-preview-pay.yaml',
     productionWorkflow: 'vercel-production-pay.yaml',
@@ -274,6 +332,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'contacts',
     appPath: 'apps/contacts',
+    buildInfoApp: 'contacts',
+    framework: 'next',
     packageName: '@tuturuuu/contacts',
     previewWorkflow: 'vercel-preview-contacts.yaml',
     productionWorkflow: 'vercel-production-contacts.yaml',
@@ -281,6 +341,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'forms',
     appPath: 'apps/forms',
+    buildInfoApp: 'forms',
+    framework: 'next',
     packageName: '@tuturuuu/forms',
     previewWorkflow: 'vercel-preview-forms.yaml',
     productionWorkflow: 'vercel-production-forms.yaml',
@@ -288,6 +350,8 @@ export const vercelWorkflowTargets = [
   {
     app: 'git',
     appPath: 'apps/git',
+    buildInfoApp: 'git',
+    framework: 'next',
     packageName: '@tuturuuu/git',
     previewWorkflow: 'vercel-preview-git.yaml',
     productionWorkflow: 'vercel-production-git.yaml',
