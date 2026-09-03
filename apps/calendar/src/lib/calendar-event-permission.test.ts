@@ -32,34 +32,43 @@ describe('authorizeCalendarEventManagement', () => {
     vi.clearAllMocks();
   });
 
-  it('returns a controlled error when workspace normalization fails', async () => {
-    const supabase = { rpc: vi.fn() };
-    resolveSessionAuthContextMock.mockResolvedValue({
-      ok: true,
-      supabase,
-      user: { id: 'user-1' },
-    });
-    normalizeWorkspaceIdMock.mockRejectedValue(new Error('lookup failed'));
-    const consoleError = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined);
+  it.each([
+    ['User not authenticated', 401],
+    ['Personal workspace not found', 404],
+    ['lookup failed', 500],
+  ])(
+    'returns a controlled error when normalization reports %s',
+    async (message, expectedStatus) => {
+      const supabase = { rpc: vi.fn() };
+      resolveSessionAuthContextMock.mockResolvedValue({
+        ok: true,
+        supabase,
+        user: { id: 'user-1' },
+      });
+      const normalizationError = new Error(message);
+      normalizeWorkspaceIdMock.mockRejectedValue(normalizationError);
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
 
-    const result = await authorizeCalendarEventManagement(
-      new Request('http://localhost/api'),
-      'personal'
-    );
+      const result = await authorizeCalendarEventManagement(
+        new Request('http://localhost/api'),
+        'personal'
+      );
 
-    expect('error' in result).toBe(true);
-    if (!('error' in result)) throw new Error('Expected an error response');
-    expect(result.error.status).toBe(500);
-    expect(await result.error.json()).toEqual({
-      error: 'Failed to resolve workspace',
-    });
-    expect(verifyWorkspaceMembershipTypeMock).not.toHaveBeenCalled();
-    expect(supabase.rpc).not.toHaveBeenCalled();
-    expect(createAdminClientMock).not.toHaveBeenCalled();
-    expect(consoleError).toHaveBeenCalledWith(
-      'Failed to normalize workspace identifier'
-    );
-  });
+      expect('error' in result).toBe(true);
+      if (!('error' in result)) throw new Error('Expected an error response');
+      expect(result.error.status).toBe(expectedStatus);
+      expect(await result.error.json()).toEqual({
+        error: expectedStatus === 500 ? 'Failed to resolve workspace' : message,
+      });
+      expect(verifyWorkspaceMembershipTypeMock).not.toHaveBeenCalled();
+      expect(supabase.rpc).not.toHaveBeenCalled();
+      expect(createAdminClientMock).not.toHaveBeenCalled();
+      expect(consoleError).toHaveBeenCalledWith(
+        'Failed to normalize workspace identifier',
+        normalizationError
+      );
+    }
+  );
 });

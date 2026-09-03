@@ -28,12 +28,19 @@ export async function authorizeCalendarEventManagement(
   let wsId: string;
   try {
     wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  } catch {
-    console.error('Failed to normalize workspace identifier');
+  } catch (error) {
+    console.error('Failed to normalize workspace identifier', error);
+    const normalizationFailure =
+      error instanceof Error && error.message === 'User not authenticated'
+        ? { error: 'User not authenticated', status: 401 }
+        : error instanceof Error &&
+            error.message === 'Personal workspace not found'
+          ? { error: 'Personal workspace not found', status: 404 }
+          : { error: 'Failed to resolve workspace', status: 500 };
     return {
       error: NextResponse.json(
-        { error: 'Failed to resolve workspace' },
-        { status: 500 }
+        { error: normalizationFailure.error },
+        { status: normalizationFailure.status }
       ),
     } as const;
   }
