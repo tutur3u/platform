@@ -1,5 +1,6 @@
 """Validation and replay protection for Discord interaction dispatch."""
 
+import asyncio
 import json
 import logging
 import re
@@ -30,6 +31,7 @@ INTERACTION_ID_PATTERN = re.compile(r"^[0-9]{1,32}$")
 CLAIM_ID_STATE_KEY = "discord_interaction_claim_id"
 CLAIM_OWNERSHIP_STATE_KEY = "discord_interaction_claim_ownership"
 CLAIM_TYPE_STATE_KEY = "discord_interaction_claim_type"
+DISPATCH_TIMEOUT_SECONDS = 45
 
 
 async def prepare_interaction_dispatch(
@@ -60,7 +62,9 @@ async def prepare_interaction_dispatch(
         raise HTTPException(status_code=400, detail="Bad request")
 
     try:
-        claim = claim_discord_interaction(interaction_id, interaction_type)
+        claim = await asyncio.to_thread(
+            claim_discord_interaction, interaction_id, interaction_type
+        )
     except Exception as error:
         logger.exception(
             "Failed to claim Discord interaction",
@@ -101,7 +105,10 @@ def with_discord_interaction_replay(
     @wraps(handler)
     async def guarded(request: Request, *args: Any, **kwargs: Any) -> dict[str, Any]:
         try:
-            response = await handler(request, *args, **kwargs)
+            response = await asyncio.wait_for(
+                handler(request, *args, **kwargs),
+                timeout=DISPATCH_TIMEOUT_SECONDS,
+            )
         except BaseException:
             interaction_id = getattr(request.state, CLAIM_ID_STATE_KEY, None)
             claim_token = getattr(request.state, CLAIM_OWNERSHIP_STATE_KEY, None)
@@ -112,7 +119,12 @@ def with_discord_interaction_replay(
                 and isinstance(interaction_type, int)
             ):
                 try:
-                    release_discord_interaction(interaction_id, interaction_type, claim_token)
+                    await asyncio.to_thread(
+                        release_discord_interaction,
+                        interaction_id,
+                        interaction_type,
+                        claim_token,
+                    )
                 except Exception:
                     logger.exception(
                         "Failed to release Discord interaction claim",
@@ -129,8 +141,12 @@ def with_discord_interaction_replay(
             and isinstance(interaction_type, int)
         ):
             try:
-                complete_discord_interaction(
-                    interaction_id, interaction_type, claim_token, response
+                await asyncio.to_thread(
+                    complete_discord_interaction,
+                    interaction_id,
+                    interaction_type,
+                    claim_token,
+                    response,
                 )
             except Exception as error:
                 logger.exception(
@@ -138,7 +154,12 @@ def with_discord_interaction_replay(
                     extra={"interaction_type": interaction_type},
                 )
                 try:
-                    release_discord_interaction(interaction_id, interaction_type, claim_token)
+                    await asyncio.to_thread(
+                        release_discord_interaction,
+                        interaction_id,
+                        interaction_type,
+                        claim_token,
+                    )
                 except Exception:
                     logger.exception(
                         "Failed to release Discord interaction claim",

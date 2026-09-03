@@ -143,16 +143,19 @@ language sql
 security invoker
 set search_path = ''
 as $$
-  update private.discord_interaction_claims
-  set
-    completed_at = clock_timestamp(),
-    response_payload = p_response_payload,
-    lease_expires_at = expires_at
-  where interaction_id = p_interaction_id
-    and interaction_type = p_interaction_type
-    and claim_token = p_claim_token
-    and response_payload is null
-  returning true;
+  with completed as (
+    update private.discord_interaction_claims
+    set
+      completed_at = clock_timestamp(),
+      response_payload = p_response_payload,
+      lease_expires_at = expires_at
+    where interaction_id = p_interaction_id
+      and interaction_type = p_interaction_type
+      and claim_token = p_claim_token
+      and response_payload is null
+    returning 1
+  )
+  select exists(select 1 from completed);
 $$;
 
 create or replace function private.release_discord_interaction(

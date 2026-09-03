@@ -1,3 +1,4 @@
+import asyncio
 import json
 import threading
 import time
@@ -6,6 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi.exceptions import HTTPException
+from fastapi.requests import Request
 from fastapi.testclient import TestClient
 from nacl.signing import SigningKey
 
@@ -359,3 +361,31 @@ def test_completion_failure_releases_the_owned_claim_for_retry(
     interaction_lifecycle["release"].assert_called_once_with(
         "623456789012345678", 2, CLAIM_OWNERSHIP_ID
     )
+
+
+def test_dispatch_timeout_releases_claim_before_lease_expiry(
+    interaction_lifecycle: dict[str, Mock], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(interaction_replay, "DISPATCH_TIMEOUT_SECONDS", 0.01)
+
+    async def slow_dispatch(_request: Request) -> dict[str, int]:
+        await asyncio.sleep(0.05)
+        return {"type": 5}
+
+    request = Request({"type": "http", "method": "POST", "path": "/"})
+    setattr(request.state, interaction_replay.CLAIM_ID_STATE_KEY, "723456789012345678")
+    setattr(
+        request.state,
+        interaction_replay.CLAIM_OWNERSHIP_STATE_KEY,
+        CLAIM_OWNERSHIP_ID,
+    )
+    setattr(request.state, interaction_replay.CLAIM_TYPE_STATE_KEY, 2)
+
+    guarded = interaction_replay.with_discord_interaction_replay(slow_dispatch)
+    with pytest.raises(TimeoutError):
+        asyncio.run(guarded(request))
+
+    interaction_lifecycle["release"].assert_called_once_with(
+        "723456789012345678", 2, CLAIM_OWNERSHIP_ID
+    )
+    interaction_lifecycle["complete"].assert_not_called()
