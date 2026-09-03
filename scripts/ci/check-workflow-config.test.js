@@ -9,6 +9,7 @@ const {
   repoRoot,
   vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
+const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ci.ts'), 'utf8');
 
 function readWorkflowYaml(workflowName) {
   const workflowPath = path.join(
@@ -546,12 +547,10 @@ test('mobile store deployment workflow is production-push beta delivery only', (
     workflowName
   );
   const workflow = fs.readFileSync(workflowPath, 'utf8');
-  const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
-
   assert.match(
     ciConfig,
     /["']mobile-deploy-stores\.yaml["']:\s*true/,
-    'mobile store deployment workflow must be registered in tuturuuu.ts'
+    'mobile store deployment workflow must be registered in the CI config'
   );
 
   execFileSync(
@@ -653,12 +652,10 @@ test('closed PR cancellation workflow is registered and avoids PR head code', ()
     path.join(repoRoot, '.github', 'workflows', workflowName),
     'utf8'
   );
-  const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
-
   assert.match(
     ciConfig,
     /["']cancel-pr-runs-on-close\.yaml["']:\s*true/,
-    'closed PR cancellation workflow must be registered in tuturuuu.ts'
+    'closed PR cancellation workflow must be registered in the CI config'
   );
   assert.ok(readWorkflowYaml(workflowName));
   assert.match(
