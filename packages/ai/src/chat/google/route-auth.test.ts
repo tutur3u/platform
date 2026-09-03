@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   normalizeWorkspaceId: vi.fn(),
   validateAiTempAuthRequest: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
+  WorkspaceAuthError: class WorkspaceAuthError extends Error {},
+  WorkspaceNotFoundError: class WorkspaceNotFoundError extends Error {},
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -26,6 +28,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: (
     ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
   ) => mocks.verifyWorkspaceMembershipType(...args),
+  WorkspaceAuthError: mocks.WorkspaceAuthError,
+  WorkspaceNotFoundError: mocks.WorkspaceNotFoundError,
 }));
 
 import { authorizeAiWorkspace, resolveAiRouteAuth } from './route-auth.js';
@@ -49,6 +53,10 @@ describe('resolveAiRouteAuth', () => {
       membershipType: 'MEMBER',
       ok: true,
     });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('uses a valid AI temp token without calling Supabase getUser', async () => {
@@ -143,13 +151,13 @@ describe('resolveAiRouteAuth', () => {
   );
 
   it.each([
-    ['User not authenticated', 401],
-    ['Personal workspace not found', 404],
-    ['database unavailable', 500],
+    [new mocks.WorkspaceAuthError('User not authenticated'), 401],
+    [new mocks.WorkspaceNotFoundError('Personal workspace not found'), 404],
+    [new Error('database unavailable'), 500],
   ])(
     'classifies workspace resolution failure %s as %i',
-    async (message, status) => {
-      mocks.normalizeWorkspaceId.mockRejectedValueOnce(new Error(message));
+    async (error, status) => {
+      mocks.normalizeWorkspaceId.mockRejectedValueOnce(error);
       const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(() => undefined);

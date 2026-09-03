@@ -63,7 +63,12 @@ function createSupabase() {
   });
   const messageEq = vi.fn(() => ({ order: messageOrder }));
   const messageSelect = vi.fn(() => ({ eq: messageEq }));
-  const updateCreatorEq = vi.fn().mockResolvedValue({ error: null });
+  const updateMaybeSingle = vi.fn().mockResolvedValue({
+    data: { id: 'chat-1' },
+    error: null,
+  });
+  const updateSelect = vi.fn(() => ({ maybeSingle: updateMaybeSingle }));
+  const updateCreatorEq = vi.fn(() => ({ select: updateSelect }));
   const updateIdEq = vi.fn(() => ({ eq: updateCreatorEq }));
   const update = vi.fn(() => ({ eq: updateIdEq }));
   const from = vi.fn((table: string) =>
@@ -83,6 +88,8 @@ function createSupabase() {
     update,
     updateCreatorEq,
     updateIdEq,
+    updateMaybeSingle,
+    updateSelect,
   };
 }
 
@@ -214,6 +221,26 @@ describe('chat google summary route workspace authorization', () => {
     expect(response.status).toBe(404);
     expect(supabase.messageSelect).not.toHaveBeenCalled();
     expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when ownership changes before summary persistence', async () => {
+    const supabase = createSupabase();
+    supabase.updateMaybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const response = await createPATCH({
+      requireWorkspaceId: true,
+      resolveAuth: async () => ({
+        ok: true,
+        supabase: supabase as never,
+        user: { id: 'rewise-user' } as never,
+      }),
+    })(request({ id: 'chat-1', wsId: WORKSPACE_A }));
+
+    expect(response.status).toBe(404);
+    await expect(response.text()).resolves.toBe('Chat not found');
   });
 
   it.each([

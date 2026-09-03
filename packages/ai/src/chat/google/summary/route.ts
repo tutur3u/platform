@@ -148,16 +148,19 @@ export function createPATCH(
       if (!messages[messages.length - 1]?.id)
         return new Response('Internal Server Error', { status: 500 });
 
-      const { error } = await supabase
+      const { data: updatedChat, error } = await supabase
         .from('ai_chats')
         .update({
           latest_summarized_message_id: messages[messages.length - 1]?.id,
           summary: completion,
         })
         .eq('id', id)
-        .eq('creator_id', auth.user.id);
+        .eq('creator_id', auth.user.id)
+        .select('id')
+        .maybeSingle();
 
       if (error) return new Response(error.message, { status: 500 });
+      if (!updatedChat) return new Response('Chat not found', { status: 404 });
 
       return new Response(JSON.stringify({ response: completion }), {
         status: 200,

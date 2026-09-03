@@ -10,6 +10,8 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
+  WorkspaceAuthError,
+  WorkspaceNotFoundError,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -56,11 +58,10 @@ export async function authorizeAiWorkspace({
       'Workspace ID normalization failed:',
       error instanceof Error ? error.message : error
     );
-    const message = error instanceof Error ? error.message : '';
     const status =
-      message === 'User not authenticated'
+      error instanceof WorkspaceAuthError
         ? 401
-        : message === 'Personal workspace not found'
+        : error instanceof WorkspaceNotFoundError
           ? 404
           : 500;
     return {
