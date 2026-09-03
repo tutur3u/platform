@@ -81,6 +81,14 @@ test('parseArgs resolves CI interfaces and rejects missing command inputs', () =
     }).frontend,
     'tanstack'
   );
+  assert.equal(
+    parseArgs(['publish', '--frontend', 'next'], {
+      E2E_IMAGE_BUNDLE_REPOSITORY: REPOSITORY,
+      E2E_IMAGE_BUNDLE_TAG_PREFIX: TAG_PREFIX,
+      GITHUB_RUN_ID: '12345',
+    }).frontend,
+    'next'
+  );
   assert.throws(() => parseArgs(['publish'], {}));
   assert.throws(() => parseArgs(['unknown'], {}));
 });

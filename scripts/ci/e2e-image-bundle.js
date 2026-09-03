@@ -184,7 +184,7 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
           )
         : null,
     frontend:
-      command === 'pull'
+      command === 'pull' || command === 'publish'
         ? validateBundleFrontend(
             getOptionValue(
               argv,
