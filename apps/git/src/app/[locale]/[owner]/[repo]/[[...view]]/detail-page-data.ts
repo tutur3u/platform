@@ -5,9 +5,16 @@ import {
   type DetailPageParameter,
   type DetailPaginationLabels,
   type DetailSearchParams,
-} from '@/components/repository/repository-detail-pagination';
-import { GitHubMirrorError } from '@/lib/github/errors';
-import type { GitHubPage } from '@/lib/github/types';
+  MAX_DETAIL_PAGE,
+} from '../../../../../components/repository/repository-detail-pagination';
+import { GitHubMirrorError } from '../../../../../lib/github/errors';
+import type { GitHubPage } from '../../../../../lib/github/types';
+
+const REPOSITORY_FAILURE_CODES = new Set([
+  'github_access_denied',
+  'github_rate_limited',
+  'github_request_failed',
+]);
 
 export async function getDetailPaginationLabels(
   locale: string
@@ -49,7 +56,7 @@ export async function loadDetailCollection<T>({
       items: result.items,
       labels,
       nextHref:
-        result.nextPage === null
+        result.nextPage === null || result.nextPage > MAX_DETAIL_PAGE
           ? undefined
           : buildDetailPaginationHref({
               owner,
@@ -75,6 +82,7 @@ export async function loadDetailCollection<T>({
     };
   } catch (error) {
     if (!(error instanceof GitHubMirrorError)) throw error;
+    if (REPOSITORY_FAILURE_CODES.has(error.code)) throw error;
     return {
       failed: true,
       items: [],

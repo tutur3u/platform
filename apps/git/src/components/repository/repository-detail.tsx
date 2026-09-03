@@ -57,9 +57,9 @@ export function IssueDetail({
       {data.comments.items.map((comment) => (
         <MarkdownCard
           key={comment.id}
-          avatar={comment.user.avatar_url}
+          avatar={comment.user?.avatar_url}
           body={comment.body}
-          login={comment.user.login}
+          login={comment.user?.login ?? 'Unknown'}
         />
       ))}
       <Card className="overflow-hidden py-0">

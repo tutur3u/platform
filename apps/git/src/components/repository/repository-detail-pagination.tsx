@@ -9,6 +9,7 @@ export const DETAIL_PAGE_PARAMETERS = [
   'jobsPage',
   'artifactsPage',
 ] as const;
+export const MAX_DETAIL_PAGE = 1000;
 
 export type DetailPageParameter = (typeof DETAIL_PAGE_PARAMETERS)[number];
 
@@ -36,7 +37,7 @@ export type DetailCollectionPage<T> = {
 
 export function normalizeDetailPage(value: string | undefined): number {
   if (!value || !/^\d+$/u.test(value)) return 1;
-  return Math.min(1000, Math.max(1, Number(value)));
+  return Math.min(MAX_DETAIL_PAGE, Math.max(1, Number(value)));
 }
 
 export function buildDetailPaginationHref({

@@ -123,7 +123,7 @@ export type GitHubIssueComment = {
   created_at: string;
   html_url: string;
   id: number;
-  user: GitHubActor;
+  user: GitHubActor | null;
 };
 
 export type GitHubPullFile = {
@@ -139,7 +139,7 @@ export type GitHubPullReview = {
   body: string;
   id: number;
   state: string;
-  submitted_at: string;
+  submitted_at?: string | null;
   user: GitHubActor;
 };
 

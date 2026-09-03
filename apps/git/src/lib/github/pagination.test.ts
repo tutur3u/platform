@@ -59,6 +59,7 @@ function jsonResponse(
 
 describe('GitHub pagination metadata', () => {
   beforeEach(() => {
+    vi.unstubAllGlobals();
     vi.clearAllMocks();
     mocks.getInstallationToken.mockResolvedValue(null);
     mocks.requireRegisteredRepository.mockResolvedValue(repository);
