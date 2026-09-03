@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
@@ -59,6 +60,7 @@ Widget _buildRouterApp({
         shad.ShadcnLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: ShadcnMaterialBridge.appBuilder,
       routerConfig: router,
     ),
   );

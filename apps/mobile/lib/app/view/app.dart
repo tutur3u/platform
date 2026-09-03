@@ -4,7 +4,6 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide NavigationBar, NavigationBarTheme, ThemeData, ThemeMode;
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/app/view/auth_session_boundary.dart';
@@ -14,9 +13,9 @@ import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/theme/colors.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -733,7 +732,7 @@ class _AppState extends State<App> {
                     final authIdentity = context.select<AuthCubit, String?>(
                       (cubit) => cubit.state.user?.id,
                     );
-                    return _ShadcnMaterialBridge(
+                    return ShadcnMaterialBridge(
                       child: AuthSessionBoundary(
                         identity: authIdentity,
                         child: DismissKeyboardOnPointerDown(
@@ -767,27 +766,5 @@ final class _AppLifecycleObserver extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _onStateChanged(state);
-  }
-}
-
-class _ShadcnMaterialBridge extends StatelessWidget {
-  const _ShadcnMaterialBridge({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final overlayStyle = AppTheme.systemUiOverlayStyleFor(theme.brightness);
-
-    return Theme(
-      data: theme.brightness == Brightness.light
-          ? AppTheme.light
-          : AppTheme.dark,
-      child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: overlayStyle,
-        child: child,
-      ),
-    );
   }
 }

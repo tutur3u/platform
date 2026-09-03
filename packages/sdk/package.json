@@ -100,11 +100,11 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "yaml": "^2.9.0",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.4.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.11"
   },

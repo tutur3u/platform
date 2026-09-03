@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/features/time_tracker/widgets/threshold_settings_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -16,6 +17,7 @@ Future<void> _pumpDialogHarness(WidgetTester tester, Widget child) {
         shad.ShadcnLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: ShadcnMaterialBridge.appBuilder,
       home: Scaffold(body: child),
     ),
   );

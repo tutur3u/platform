@@ -16,7 +16,7 @@
     "@tuturuuu/realtime": "workspace:*",
     "jose": "^6.2.10",
     "postgres": "^3.4.9",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

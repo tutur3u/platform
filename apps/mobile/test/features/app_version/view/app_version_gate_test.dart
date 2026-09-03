@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/mobile_version_check.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
@@ -136,6 +137,7 @@ Widget _buildTestApp(AppVersionCubit cubit) {
       shad.ShadcnLocalizations.delegate,
     ],
     supportedLocales: AppLocalizations.supportedLocales,
+    builder: ShadcnMaterialBridge.appBuilder,
     home: BlocProvider.value(
       value: cubit,
       child: const AppVersionGate(child: Text('Home')),

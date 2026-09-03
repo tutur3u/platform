@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/features/tasks/widgets/task_section_accordion.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -69,6 +70,7 @@ void main() {
             shad.ShadcnLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
+          builder: ShadcnMaterialBridge.appBuilder,
           routerConfig: router,
         ),
       );

@@ -22,11 +22,11 @@
   "packageManager": "bun@1.4.0",
   "dependencies": {
     "yjs": "^13.6.32",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.4.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.11"
   }
