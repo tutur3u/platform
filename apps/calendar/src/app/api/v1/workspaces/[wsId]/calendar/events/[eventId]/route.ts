@@ -8,7 +8,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
-import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import {
   createProviderEvent,
   deleteProviderEvent,
@@ -24,6 +23,7 @@ import {
   getCalendarSyncPreferences,
   resolveOutboundSyncSource,
 } from '@/lib/calendar/sync-preferences';
+import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import {
   decryptEventFromStorage,
   encryptEventForStorage,

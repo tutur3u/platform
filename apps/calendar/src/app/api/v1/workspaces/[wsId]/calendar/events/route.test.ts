@@ -59,7 +59,8 @@ function request(method: string, body?: unknown) {
     {
       method,
       body: body === undefined ? undefined : JSON.stringify(body),
-      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+      headers:
+        body === undefined ? undefined : { 'content-type': 'application/json' },
     }
   );
 }
@@ -110,20 +111,26 @@ describe('workspace calendar event collection authorization', () => {
   it.each([
     ['GET', GET],
     ['POST', POST],
-  ])('returns anonymous denial before admin access for %s', async (method, handler) => {
-    mocks.resolveAuth.mockResolvedValue({
-      ok: false,
-      response: Response.json({ error: 'Unauthorized' }, { status: 401 }),
-    });
-    const req = request(method, method === 'POST' ? { title: 'Ignored' } : undefined);
-    const jsonSpy = vi.spyOn(req, 'json');
+  ])(
+    'returns anonymous denial before admin access for %s',
+    async (method, handler) => {
+      mocks.resolveAuth.mockResolvedValue({
+        ok: false,
+        response: Response.json({ error: 'Unauthorized' }, { status: 401 }),
+      });
+      const req = request(
+        method,
+        method === 'POST' ? { title: 'Ignored' } : undefined
+      );
+      const jsonSpy = vi.spyOn(req, 'json');
 
-    const response = await handler(req, params());
+      const response = await handler(req, params());
 
-    expect(response.status).toBe(401);
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-    expect(jsonSpy).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(401);
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      expect(jsonSpy).not.toHaveBeenCalled();
+    }
+  );
 
   it('requires the Calendar app-session audience', async () => {
     mocks.resolveAuth.mockResolvedValue({
@@ -158,29 +165,35 @@ describe('workspace calendar event collection authorization', () => {
   it.each([
     ['GET', GET],
     ['POST', POST],
-  ])('denies a member without manage_calendar before downstream work for %s', async (method, handler) => {
-    const rpc = vi.fn(async () => ({ data: false, error: null }));
-    mocks.resolveAuth.mockResolvedValue({
-      ok: true,
-      supabase: { rpc },
-      user: { id: USER_ID },
-    });
-    const req = request(method, method === 'POST' ? { title: 'Ignored' } : undefined);
-    const jsonSpy = vi.spyOn(req, 'json');
+  ])(
+    'denies a member without manage_calendar before downstream work for %s',
+    async (method, handler) => {
+      const rpc = vi.fn(async () => ({ data: false, error: null }));
+      mocks.resolveAuth.mockResolvedValue({
+        ok: true,
+        supabase: { rpc },
+        user: { id: USER_ID },
+      });
+      const req = request(
+        method,
+        method === 'POST' ? { title: 'Ignored' } : undefined
+      );
+      const jsonSpy = vi.spyOn(req, 'json');
 
-    const response = await handler(req, params());
+      const response = await handler(req, params());
 
-    expect(response.status).toBe(403);
-    expect(rpc).toHaveBeenCalledWith('has_workspace_permission', {
-      p_permission: 'manage_calendar',
-      p_user_id: USER_ID,
-      p_ws_id: WS_ID,
-    });
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-    expect(jsonSpy).not.toHaveBeenCalled();
-    expect(mocks.decryptEvents).not.toHaveBeenCalled();
-    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(403);
+      expect(rpc).toHaveBeenCalledWith('has_workspace_permission', {
+        p_permission: 'manage_calendar',
+        p_user_id: USER_ID,
+        p_ws_id: WS_ID,
+      });
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      expect(jsonSpy).not.toHaveBeenCalled();
+      expect(mocks.decryptEvents).not.toHaveBeenCalled();
+      expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+    }
+  );
 
   it('normalizes personal before membership and permission checks', async () => {
     const rpc = vi.fn(async () => ({ data: true, error: null }));

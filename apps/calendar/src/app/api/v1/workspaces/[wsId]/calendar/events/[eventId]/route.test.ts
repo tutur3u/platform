@@ -51,7 +51,8 @@ function request(method: string, body?: unknown) {
   return new Request(`https://calendar.test/events/${EVENT_ID}`, {
     method,
     body: body === undefined ? undefined : JSON.stringify(body),
-    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+    headers:
+      body === undefined ? undefined : { 'content-type': 'application/json' },
   });
 }
 
@@ -84,20 +85,26 @@ describe('workspace calendar event item authorization', () => {
     ['GET', GET],
     ['PUT', PUT],
     ['DELETE', DELETE],
-  ])('returns denial before parsing or querying for %s', async (method, handler) => {
-    mocks.authorize.mockResolvedValue({
-      error: Response.json({ error: 'Forbidden' }, { status: 403 }),
-    });
-    const req = request(method, method === 'PUT' ? { locked: true } : undefined);
-    const jsonSpy = vi.spyOn(req, 'json');
+  ])(
+    'returns denial before parsing or querying for %s',
+    async (method, handler) => {
+      mocks.authorize.mockResolvedValue({
+        error: Response.json({ error: 'Forbidden' }, { status: 403 }),
+      });
+      const req = request(
+        method,
+        method === 'PUT' ? { locked: true } : undefined
+      );
+      const jsonSpy = vi.spyOn(req, 'json');
 
-    const response = await handler(req, params());
+      const response = await handler(req, params());
 
-    expect(response.status).toBe(403);
-    expect(jsonSpy).not.toHaveBeenCalled();
-    expect(mocks.decryptEvent).not.toHaveBeenCalled();
-    expect(mocks.deleteProviderEvent).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(403);
+      expect(jsonSpy).not.toHaveBeenCalled();
+      expect(mocks.decryptEvent).not.toHaveBeenCalled();
+      expect(mocks.deleteProviderEvent).not.toHaveBeenCalled();
+    }
+  );
 
   it('preserves authorized GET response', async () => {
     const event = { id: EVENT_ID, provider: 'tuturuuu', title: 'Planning' };

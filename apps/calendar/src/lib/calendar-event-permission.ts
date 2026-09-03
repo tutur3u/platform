@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -6,10 +7,18 @@ import {
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
+type CalendarEventManagementAccess =
+  | { error: NextResponse }
+  | {
+      sbAdmin: TypedSupabaseClient;
+      userId: string;
+      wsId: string;
+    };
+
 export async function authorizeCalendarEventManagement(
   request: Request,
   rawWsId: string
-) {
+): Promise<CalendarEventManagementAccess> {
   const auth = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: { targetApp: 'calendar' },
   });

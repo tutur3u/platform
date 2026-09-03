@@ -7,7 +7,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
-import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
   type ResolvedCalendarSource,
@@ -17,6 +16,7 @@ import {
   getCalendarSyncPreferences,
   resolveOutboundSyncSource,
 } from '@/lib/calendar/sync-preferences';
+import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import {
   decryptEventsFromStorage,
   encryptEventForStorage,
