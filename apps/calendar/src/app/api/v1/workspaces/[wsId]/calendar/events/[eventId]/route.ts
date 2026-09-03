@@ -1,4 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
@@ -6,14 +5,10 @@ import {
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
+import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import {
   createProviderEvent,
   deleteProviderEvent,
@@ -99,53 +94,9 @@ function applyProviderSyncFields(
   (updatePayload as any).sync_status = 'local_only';
 }
 
-async function authorizeWorkspaceCalendarEventAccess(
-  request: Request,
-  rawWsId: string
-) {
-  const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: true,
-  });
-  if (!auth.ok) {
-    return { error: auth.response };
-  }
-  const { user, supabase } = auth;
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!membership.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return {
-    sbAdmin: await createAdminClient(),
-    wsId,
-    userId: user.id,
-  };
-}
-
 export async function GET(request: Request, { params }: Params) {
   const { wsId: rawWsId, eventId } = await params;
-  const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
+  const access = await authorizeCalendarEventManagement(request, rawWsId);
   if ('error' in access) return access.error;
   const { sbAdmin, wsId } = access;
 
@@ -179,7 +130,7 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   const { wsId: rawWsId, eventId } = await params;
-  const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
+  const access = await authorizeCalendarEventManagement(request, rawWsId);
   if ('error' in access) return access.error;
   const { sbAdmin, wsId, userId } = access;
 
@@ -504,7 +455,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(request: Request, { params }: Params) {
   const { wsId: rawWsId, eventId } = await params;
-  const access = await authorizeWorkspaceCalendarEventAccess(request, rawWsId);
+  const access = await authorizeCalendarEventManagement(request, rawWsId);
   if ('error' in access) return access.error;
   const { sbAdmin, wsId, userId } = access;
 

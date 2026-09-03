@@ -1,18 +1,13 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_CALENDAR_EVENT_DESCRIPTION_LENGTH,
   MAX_CALENDAR_EVENT_TITLE_LENGTH,
   MAX_COLOR_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
+import { authorizeCalendarEventManagement } from '@/lib/calendar-event-permission';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
   type ResolvedCalendarSource,
@@ -98,52 +93,8 @@ function getProviderSyncFields(args: {
   };
 }
 
-async function authorizeWorkspaceCalendarAccess(
-  request: Request,
-  rawWsId: string
-) {
-  const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: true,
-  });
-  if (!auth.ok) {
-    return { error: auth.response };
-  }
-  const { user, supabase } = auth;
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!membership.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return {
-    sbAdmin: await createAdminClient(),
-    userId: user.id,
-    wsId,
-  };
-}
-
 export async function GET(request: Request, { params }: Params) {
-  const access = await authorizeWorkspaceCalendarAccess(
+  const access = await authorizeCalendarEventManagement(
     request,
     (await params).wsId
   );
@@ -196,7 +147,7 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const access = await authorizeWorkspaceCalendarAccess(
+  const access = await authorizeCalendarEventManagement(
     request,
     (await params).wsId
   );
