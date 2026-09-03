@@ -62,9 +62,7 @@ async def prepare_interaction_dispatch(
         raise HTTPException(status_code=400, detail="Bad request")
 
     try:
-        claim = await asyncio.to_thread(
-            claim_discord_interaction, interaction_id, interaction_type
-        )
+        claim = await asyncio.to_thread(claim_discord_interaction, interaction_id, interaction_type)
     except Exception as error:
         logger.exception(
             "Failed to claim Discord interaction",
