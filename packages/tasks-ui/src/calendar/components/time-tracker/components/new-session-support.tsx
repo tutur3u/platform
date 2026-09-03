@@ -13,6 +13,7 @@ import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
+import { getTasksAppUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import {
   Select,
   SelectContent,
@@ -109,9 +110,11 @@ export function TaskSuggestionCard({
 export function LinkedTaskCard({
   task,
   onUnlink,
+  wsId,
 }: {
   task?: ExtendedWorkspaceTask;
   onUnlink: () => void;
+  wsId: string;
 }) {
   if (!task) return null;
   return (
@@ -127,7 +130,7 @@ export function LinkedTaskCard({
             </span>
             <div className="flex items-center">
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0" asChild>
-                <a href={`/tasks/${task.id}`}>
+                <a href={getTasksAppUrl(`/${wsId}/tasks/${task.id}`)}>
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </Button>

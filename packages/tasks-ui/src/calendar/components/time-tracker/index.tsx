@@ -22,6 +22,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import {
   Select,
   SelectContent,
@@ -84,8 +85,9 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
 
   useEffect(() => {
     if (!tracker.isOpen) return;
-    void fetch(`/api/v1/workspaces/${wsId}/boards-with-lists`, {
+    void fetch(getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards-with-lists`), {
       cache: 'no-store',
+      credentials: 'include',
     })
       .then(async (response) => {
         if (!response.ok) throw new Error('Failed to fetch boards');
@@ -201,15 +203,19 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     setIsCreatingTask(true);
 
     try {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newTaskName,
-          description: newTaskDescription || null,
-          listId: selectedListId,
-        }),
-      });
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/tasks`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newTaskName,
+            description: newTaskDescription || null,
+            listId: selectedListId,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to create task');
 
@@ -369,6 +375,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                       />
                     ) : (
                       <NewSessionForm
+                        wsId={wsId}
                         sessionMode={sessionMode}
                         onSessionModeChange={handleSessionModeChange}
                         newSessionTitle={newSessionTitle}
@@ -473,6 +480,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
 }
 
 function NewSessionForm({
+  wsId,
   sessionMode,
   onSessionModeChange,
   newSessionTitle,
@@ -650,6 +658,7 @@ function NewSessionForm({
             {selectedTaskId && !showTaskSuggestion && (
               <LinkedTaskCard
                 task={tasks.find((t) => t.id === selectedTaskId)}
+                wsId={wsId}
                 onUnlink={() => {
                   onTaskSelectionChange('');
                 }}

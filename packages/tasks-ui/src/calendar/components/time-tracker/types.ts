@@ -12,6 +12,7 @@ export interface TaskBoard {
 }
 
 export interface NewSessionFormProps {
+  wsId: string;
   sessionMode: 'task' | 'manual';
   onSessionModeChange: (mode: 'task' | 'manual') => void;
   newSessionTitle: string;

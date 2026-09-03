@@ -24,7 +24,7 @@ export function TimeTrackerTrigger({
       onClick={onClick}
     >
       {isRunning && (
-        <div className="absolute inset-0 animate-pulse bg-linear-to-r from-red-600/20 to-transparent" />
+        <div className="absolute inset-0 animate-pulse bg-linear-to-r from-dynamic-red/20 to-transparent" />
       )}
       <div className="relative flex items-center gap-2">
         {isRunning ? (

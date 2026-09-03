@@ -38,11 +38,11 @@ beforeAll(() => {
   HTMLElement.prototype.scrollIntoView = () => {};
 });
 
-function jsonResponse(body: unknown, ok = true, status = 200) {
+function jsonResponse(body: unknown, status = 200) {
   return Promise.resolve(
     new Response(JSON.stringify(body), {
       headers: { 'Content-Type': 'application/json' },
-      status: ok ? status : status,
+      status,
     })
   );
 }
@@ -94,7 +94,6 @@ function installFetchRouter({
       if (failMutation && init?.method) {
         return jsonResponse(
           { error: 'synthetic mutation failure' },
-          false,
           500
         );
       }
@@ -246,7 +245,7 @@ describe('live time tracker contracts', () => {
         '/api/v1/workspaces/workspace-1/time-tracking/sessions?type=recent&limit=20',
         '/api/v1/workspaces/workspace-1/time-tracking/sessions?type=stats',
         '/api/v1/workspaces/workspace-1/time-tracking/templates',
-        '/api/v1/workspaces/workspace-1/boards-with-lists',
+        'http://localhost:7809/api/v1/workspaces/workspace-1/boards-with-lists',
       ])
     );
     expect(
@@ -491,6 +490,7 @@ describe('live time tracker contracts', () => {
         description: null,
         listId: 'list-1',
       });
+      expect(create?.[1]?.credentials).toBe('include');
       const start = fetchMock.mock.calls.find(
         ([url, init]) =>
           String(url).endsWith('/time-tracking/sessions') &&
@@ -540,9 +540,7 @@ describe('live time tracker contracts', () => {
   it('surfaces the live load failure toast', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        jsonResponse({ error: 'synthetic failure' }, false, 500)
-      )
+      vi.fn(async () => jsonResponse({ error: 'synthetic failure' }, 500))
     );
     const queryClient = new QueryClient();
     render(
