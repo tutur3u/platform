@@ -103,6 +103,8 @@ interface CommandBarProps {
   wsId?: string;
   onCreateNewLabel?: () => void;
   onCreateNewProject?: () => void;
+  onLabelsRequested?: () => void;
+  onProjectsRequested?: () => void;
   value: string;
   onValueChange: (value: string) => void;
   aiCreditsExhausted?: boolean;
@@ -130,6 +132,8 @@ export function CommandBar({
   workspaceEstimationConfig = null,
   onCreateNewLabel,
   onCreateNewProject,
+  onLabelsRequested,
+  onProjectsRequested,
   value,
   onValueChange,
   aiCreditsExhausted = false,
@@ -587,49 +591,49 @@ export function CommandBar({
                                 </button>
                               )}
 
-                            {workspaceProjects.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setActiveSettingsView('projects')
-                                }
-                                className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Box className="h-4 w-4 text-dynamic-sky" />
-                                  <span>{t('cmd_projects')}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {selectedProjectIds.length > 0 && (
-                                    <span className="font-medium text-muted-foreground text-xs">
-                                      {selectedProjectIds.length}
-                                    </span>
-                                  )}
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onProjectsRequested?.();
+                                setActiveSettingsView('projects');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Box className="h-4 w-4 text-dynamic-sky" />
+                                <span>{t('cmd_projects')}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {selectedProjectIds.length > 0 && (
+                                  <span className="font-medium text-muted-foreground text-xs">
+                                    {selectedProjectIds.length}
+                                  </span>
+                                )}
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </button>
 
-                            {workspaceLabels.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setActiveSettingsView('labels')}
-                                className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Tag className="h-4 w-4 text-dynamic-cyan" />
-                                  <span>{t('cmd_labels')}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {selectedLabelIds.length > 0 && (
-                                    <span className="font-medium text-muted-foreground text-xs">
-                                      {selectedLabelIds.length}
-                                    </span>
-                                  )}
-                                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                              </button>
-                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onLabelsRequested?.();
+                                setActiveSettingsView('labels');
+                              }}
+                              className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Tag className="h-4 w-4 text-dynamic-cyan" />
+                                <span>{t('cmd_labels')}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {selectedLabelIds.length > 0 && (
+                                  <span className="font-medium text-muted-foreground text-xs">
+                                    {selectedLabelIds.length}
+                                  </span>
+                                )}
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </button>
 
                             {workspaceMembers.length > 0 && (
                               <button

@@ -31,6 +31,8 @@ interface LabelProjectFilterProps {
   selectedProjectIds: string[];
   onSelectedLabelIdsChange: (ids: string[]) => void;
   onSelectedProjectIdsChange: (ids: string[]) => void;
+  onLabelsRequested?: () => void;
+  onProjectsRequested?: () => void;
 }
 
 type ViewType = 'main' | 'labels' | 'projects';
@@ -42,6 +44,8 @@ export function LabelProjectFilter({
   selectedProjectIds,
   onSelectedLabelIdsChange,
   onSelectedProjectIdsChange,
+  onLabelsRequested,
+  onProjectsRequested,
 }: LabelProjectFilterProps) {
   const t = useTranslations('ws-tasks');
   const [open, setOpen] = useState(false);
@@ -90,7 +94,10 @@ export function LabelProjectFilter({
             <div className="p-2">
               <button
                 type="button"
-                onClick={() => setView('labels')}
+                onClick={() => {
+                  onLabelsRequested?.();
+                  setView('labels');
+                }}
                 className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
               >
                 <div className="flex items-center gap-2">
@@ -103,7 +110,10 @@ export function LabelProjectFilter({
               </button>
               <button
                 type="button"
-                onClick={() => setView('projects')}
+                onClick={() => {
+                  onProjectsRequested?.();
+                  setView('projects');
+                }}
                 className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-muted"
               >
                 <div className="flex items-center gap-2">
