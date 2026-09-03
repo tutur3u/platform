@@ -141,30 +141,29 @@ describe('API Key Validation with Permissions', () => {
     const collidingHash = await hashApiKey(collidingKey);
     const matchingHash = await hashApiKey(matchingKey);
 
+    const or = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'collision-key',
+          ws_id: 'collision-workspace',
+          key_hash: collidingHash,
+          role_id: null,
+          expires_at: null,
+        },
+        {
+          id: 'matching-key',
+          ws_id: 'matching-workspace',
+          key_hash: matchingHash,
+          role_id: null,
+          expires_at: null,
+        },
+      ],
+      error: null,
+    });
+    const eq = vi.fn().mockReturnValue({ or });
+    const select = vi.fn().mockReturnValue({ eq });
     const mockApiKeyQuery = {
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          or: vi.fn().mockResolvedValue({
-            data: [
-              {
-                id: 'collision-key',
-                ws_id: 'collision-workspace',
-                key_hash: collidingHash,
-                role_id: null,
-                expires_at: null,
-              },
-              {
-                id: 'matching-key',
-                ws_id: 'matching-workspace',
-                key_hash: matchingHash,
-                role_id: null,
-                expires_at: null,
-              },
-            ],
-            error: null,
-          }),
-        }),
-      }),
+      select,
     };
     const mockDefaultPermissionsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -191,6 +190,10 @@ describe('API Key Validation with Permissions', () => {
       roleId: null,
       permissions: [],
     });
+    expect(select).toHaveBeenCalledWith(
+      'id, ws_id, key_hash, role_id, expires_at'
+    );
+    expect(eq).toHaveBeenCalledWith('key_prefix', keyPrefix);
   });
 
   it('should return null when no colliding prefix candidate hash matches', async () => {
@@ -199,34 +202,35 @@ describe('API Key Validation with Permissions', () => {
     const firstHash = await hashApiKey(`${keyPrefix}${'b'.repeat(56)}`);
     const secondHash = await hashApiKey(`${keyPrefix}${'c'.repeat(56)}`);
 
-    mockSupabase.from.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          or: vi.fn().mockResolvedValue({
-            data: [
-              {
-                id: 'collision-key-1',
-                ws_id: 'workspace-1',
-                key_hash: firstHash,
-                role_id: null,
-                expires_at: null,
-              },
-              {
-                id: 'collision-key-2',
-                ws_id: 'workspace-2',
-                key_hash: secondHash,
-                role_id: null,
-                expires_at: null,
-              },
-            ],
-            error: null,
-          }),
-        }),
-      }),
+    const or = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'collision-key-1',
+          ws_id: 'workspace-1',
+          key_hash: firstHash,
+          role_id: null,
+          expires_at: null,
+        },
+        {
+          id: 'collision-key-2',
+          ws_id: 'workspace-2',
+          key_hash: secondHash,
+          role_id: null,
+          expires_at: null,
+        },
+      ],
+      error: null,
     });
+    const eq = vi.fn().mockReturnValue({ or });
+    const select = vi.fn().mockReturnValue({ eq });
+    mockSupabase.from.mockReturnValue({ select });
 
     await expect(validateApiKey(requestedKey)).resolves.toBeNull();
     expect(mockSupabase.from).toHaveBeenCalledOnce();
+    expect(select).toHaveBeenCalledWith(
+      'id, ws_id, key_hash, role_id, expires_at'
+    );
+    expect(eq).toHaveBeenCalledWith('key_prefix', keyPrefix);
   });
 
   it('should merge role and default permissions', async () => {
