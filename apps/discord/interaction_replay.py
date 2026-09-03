@@ -176,7 +176,7 @@ def with_discord_interaction_replay(
                     claim_token,
                     response,
                 )
-            except BaseException as error:
+            except (Exception, asyncio.CancelledError) as error:
                 logger.exception(
                     "Failed to complete Discord interaction claim",
                     extra={"interaction_type": interaction_type},
