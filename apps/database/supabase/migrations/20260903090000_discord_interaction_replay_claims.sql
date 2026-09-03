@@ -157,6 +157,7 @@ begin
     and interaction_type = p_interaction_type
     and claim_token = p_claim_token
     and response_payload is null
+    and lease_expires_at > clock_timestamp()
     and expires_at > clock_timestamp();
 
   return found;

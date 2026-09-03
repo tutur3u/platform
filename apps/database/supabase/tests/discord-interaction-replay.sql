@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(28);
+select plan(29);
 
 select has_table(
   'private',
@@ -196,6 +196,12 @@ select is(
   'a stale owner cannot renew another claim lease'
 );
 
+truncate first_claim_snapshot;
+insert into first_claim_snapshot
+select *
+from private.discord_interaction_claims
+where interaction_id = '100000000000000001';
+
 select ok(
   private.claim_discord_interaction('100000000000000001', 2, 86400)->>'state'
     = 'processing'
@@ -209,6 +215,28 @@ select ok(
       and current_claim.expires_at = original_claim.expires_at
   ),
   'an active duplicate loses without replacing the first lease'
+);
+
+create temporary table expired_claim_snapshot as
+select private.claim_discord_interaction(
+  '100000000000000004', 3, 86400
+) as claim;
+
+update private.discord_interaction_claims
+set
+  claimed_at = clock_timestamp() - interval '2 minutes',
+  lease_expires_at = clock_timestamp() - interval '1 minute'
+where interaction_id = '100000000000000004';
+
+select is(
+  private.renew_discord_interaction_claim(
+    '100000000000000004',
+    3,
+    ((select claim from expired_claim_snapshot)->>'claimToken')::uuid,
+    120
+  ),
+  false,
+  'an owner cannot renew an already expired lease'
 );
 
 select ok(

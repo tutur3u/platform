@@ -3,6 +3,7 @@ import json
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -457,7 +458,7 @@ def test_canceled_completion_waits_then_releases_owned_claim(
 
     async def run() -> None:
         guarded = interaction_replay.with_discord_interaction_replay(handler)
-        task = asyncio.create_task(guarded(request))
+        task: asyncio.Task[dict[str, Any]] = asyncio.create_task(guarded(request))
         await asyncio.to_thread(completion_started.wait, 1)
         task.cancel()
         finish_completion.set()
