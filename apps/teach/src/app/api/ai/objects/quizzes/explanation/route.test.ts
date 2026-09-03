@@ -6,7 +6,7 @@ describe('quiz explanation object request', () => {
     expect(
       quizExplanationRequestSchema.parse({
         option: {
-          explanation: '',
+          explanation: null,
           id: 'option-1',
           is_correct: true,
           value: 'Chlorophyll',
@@ -16,7 +16,7 @@ describe('quiz explanation object request', () => {
       })
     ).toEqual({
       option: {
-        explanation: '',
+        explanation: null,
         id: 'option-1',
         is_correct: true,
         value: 'Chlorophyll',
@@ -24,5 +24,20 @@ describe('quiz explanation object request', () => {
       question: 'Which pigment absorbs light?',
       wsId: 'workspace-1',
     });
+  });
+
+  it('rejects unknown persisted option fields', () => {
+    expect(() =>
+      quizExplanationRequestSchema.parse({
+        option: {
+          explanation: null,
+          is_correct: true,
+          unexpected: true,
+          value: 'Chlorophyll',
+        },
+        question: 'Which pigment absorbs light?',
+        wsId: 'workspace-1',
+      })
+    ).toThrow();
   });
 });

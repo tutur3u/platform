@@ -6,11 +6,16 @@ const mocks = vi.hoisted(() => ({
   capMaxOutputTokensByCredits: vi.fn(),
   checkAiCredits: vi.fn(),
   consumeStream: vi.fn(),
-  deductAiCredits: vi.fn(),
   featureQueryResult: { count: 1, error: null as unknown },
   google: vi.fn((modelId: string) => ({ modelId })),
   requireTeachWorkspaceAccess: vi.fn(),
+  releaseFixedAiCreditReservation: vi.fn(),
+  reserveFixedAiCredits: vi.fn(),
   sessionOptions: undefined as unknown,
+  settleResult: {
+    data: [{ credits_deducted: 1, remaining_credits: 19, success: true }],
+    error: null as unknown,
+  },
   streamText: vi.fn(),
   toTextStreamResponse: vi.fn(
     () =>
@@ -34,8 +39,15 @@ vi.mock('@tuturuuu/ai/credits/cap-output-tokens', () => ({
 vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
   checkAiCredits: (...args: Parameters<typeof mocks.checkAiCredits>) =>
     mocks.checkAiCredits(...args),
-  deductAiCredits: (...args: Parameters<typeof mocks.deductAiCredits>) =>
-    mocks.deductAiCredits(...args),
+}));
+
+vi.mock('@tuturuuu/ai/credits/reservations', () => ({
+  releaseFixedAiCreditReservation: (
+    ...args: Parameters<typeof mocks.releaseFixedAiCreditReservation>
+  ) => mocks.releaseFixedAiCreditReservation(...args),
+  reserveFixedAiCredits: (
+    ...args: Parameters<typeof mocks.reserveFixedAiCredits>
+  ) => mocks.reserveFixedAiCredits(...args),
 }));
 
 vi.mock('@tuturuuu/ai/memory', () => ({
@@ -97,6 +109,13 @@ function createFeatureQuery() {
 
 const sbAdmin = {
   from: vi.fn(() => createFeatureQuery()),
+  rpc: vi.fn(async () => mocks.settleResult),
+  schema: vi.fn(() => ({
+    rpc: vi.fn(async () => ({
+      data: [{ billed_credits: 4 }],
+      error: null,
+    })),
+  })),
 };
 
 function createRequest(
@@ -145,12 +164,21 @@ describe('Teach object-generation handler', () => {
       tier: 'PRO',
     });
     mocks.capMaxOutputTokensByCredits.mockResolvedValue(256);
-    mocks.deductAiCredits.mockResolvedValue({
-      creditsDeducted: 1,
+    mocks.reserveFixedAiCredits.mockResolvedValue({
       errorCode: null,
-      remainingCredits: 19,
+      remainingCredits: 16,
+      reservationId: 'reservation-1',
       success: true,
     });
+    mocks.releaseFixedAiCreditReservation.mockResolvedValue({
+      errorCode: null,
+      remainingCredits: 20,
+      success: true,
+    });
+    mocks.settleResult = {
+      data: [{ credits_deducted: 1, remaining_credits: 19, success: true }],
+      error: null,
+    };
     mocks.consumeStream.mockImplementation(async () => {
       const options = mocks.streamText.mock.calls.at(-1)?.[0] as {
         onFinish?: (event: unknown) => Promise<void>;
@@ -169,7 +197,7 @@ describe('Teach object-generation handler', () => {
     }));
   });
 
-  it('accepts a Teach app session and settles normalized usage exactly once', async () => {
+  it('reserves before generation and settles normalized usage exactly once', async () => {
     const POST = await createHandler();
     const response = await POST(createRequest());
 
@@ -206,23 +234,50 @@ describe('Teach object-generation handler', () => {
         wsId: 'normalized-ws',
       })
     );
-    await vi.waitFor(() =>
-      expect(mocks.deductAiCredits).toHaveBeenCalledTimes(1)
-    );
-    expect(mocks.deductAiCredits).toHaveBeenCalledWith({
-      feature: 'generate',
-      inputTokens: 120,
-      metadata: {
-        source: 'test_generation',
-        surface: 'test_generation',
+    expect(mocks.reserveFixedAiCredits).toHaveBeenCalledWith(
+      {
+        amount: 4,
+        expiresInSeconds: 900,
+        feature: 'generate',
+        metadata: {
+          source: 'test_generation',
+          surface: 'test_generation',
+        },
+        modelId: 'google/gemini-3.1-flash-lite',
+        userId: 'actor-user',
+        wsId: 'normalized-ws',
       },
-      modelId: 'google/gemini-3.1-flash-lite',
-      outputTokens: 32,
-      reasoningTokens: 7,
-      userId: 'actor-user',
-      wsId: 'normalized-ws',
-    });
+      sbAdmin
+    );
+    expect(
+      mocks.reserveFixedAiCredits.mock.invocationCallOrder[0]
+    ).toBeLessThan(mocks.streamText.mock.invocationCallOrder[0] ?? Infinity);
+    await vi.waitFor(() => expect(sbAdmin.rpc).toHaveBeenCalledTimes(1));
+    expect(sbAdmin.rpc).toHaveBeenCalledWith(
+      'settle_metered_ai_credit_reservation',
+      {
+        p_input_tokens: 120,
+        p_metadata: {
+          source: 'test_generation',
+          surface: 'test_generation',
+        },
+        p_output_tokens: 32,
+        p_reasoning_tokens: 7,
+        p_reservation_id: 'reservation-1',
+      }
+    );
+    expect(mocks.releaseFixedAiCreditReservation).not.toHaveBeenCalled();
     expect(mocks.consumeStream).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a null output cap before reserving or starting the provider', async () => {
+    mocks.capMaxOutputTokensByCredits.mockResolvedValueOnce(null);
+    const POST = await createHandler();
+    const response = await POST(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(mocks.reserveFixedAiCredits).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -339,6 +394,15 @@ describe('Teach object-generation handler', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Internal Server Error',
     });
-    expect(mocks.deductAiCredits).not.toHaveBeenCalled();
+    expect(mocks.releaseFixedAiCreditReservation).toHaveBeenCalledWith(
+      'reservation-1',
+      {
+        reason: 'provider_start_error',
+        source: 'test_generation',
+        surface: 'test_generation',
+      },
+      sbAdmin
+    );
+    expect(sbAdmin.rpc).not.toHaveBeenCalled();
   });
 });

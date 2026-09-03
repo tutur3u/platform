@@ -1,9 +1,10 @@
 import { google } from '@ai-sdk/google';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
+import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import {
-  checkAiCredits,
-  deductAiCredits,
-} from '@tuturuuu/ai/credits/check-credits';
+  releaseFixedAiCreditReservation,
+  reserveFixedAiCredits,
+} from '@tuturuuu/ai/credits/reservations';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -15,6 +16,7 @@ import { withSessionAuth } from '@/lib/api-auth';
 const MODEL_ID = 'google/gemini-3.1-flash-lite';
 const MODEL_NAME = 'gemini-3.1-flash-lite';
 const CREDIT_FEATURE = 'generate';
+const RESERVATION_TTL_SECONDS = 15 * 60;
 
 const SAFETY_SETTINGS = [
   {
@@ -37,6 +39,81 @@ type ObjectGenerationConfig<TInput extends { wsId: string }> = {
   source: string;
   surface: string;
 };
+
+type MeteredSettlementRow = {
+  credits_deducted?: number | string;
+  error_code?: string | null;
+  remaining_credits?: number | string;
+  success?: boolean;
+};
+
+type UsageCostRow = {
+  billed_credits?: number | string;
+};
+
+type PrivateRpcClient = {
+  schema: (schema: 'private') => {
+    rpc: (
+      fn: 'calculate_ai_studio_usage_cost',
+      params: Record<string, unknown>
+    ) => Promise<{ data: UsageCostRow[] | null; error: unknown }>;
+  };
+  rpc: (
+    fn: 'settle_metered_ai_credit_reservation',
+    params: Record<string, unknown>
+  ) => Promise<{ data: MeteredSettlementRow[] | null; error: unknown }>;
+};
+
+async function calculateReservationCredits(
+  sbAdmin: TypedSupabaseClient,
+  input: {
+    inputTokens: number;
+    maxOutputTokens: number;
+    modelId: string;
+    wsId: string;
+  }
+): Promise<number | null> {
+  const client = sbAdmin as unknown as PrivateRpcClient;
+  const { data, error } = await client
+    .schema('private')
+    .rpc('calculate_ai_studio_usage_cost', {
+      p_input_tokens: input.inputTokens,
+      p_model_id: input.modelId,
+      p_output_tokens: input.maxOutputTokens,
+      p_reasoning_tokens: 0,
+      p_ws_id: input.wsId,
+    });
+  const credits = Number(data?.[0]?.billed_credits ?? 0);
+  return error || !Number.isFinite(credits) || credits <= 0 ? null : credits;
+}
+
+async function settleReservation(
+  sbAdmin: TypedSupabaseClient,
+  input: {
+    inputTokens: number;
+    metadata: Record<string, unknown>;
+    outputTokens: number;
+    reasoningTokens: number;
+    reservationId: string;
+  }
+): Promise<boolean> {
+  const client = sbAdmin as unknown as PrivateRpcClient;
+  try {
+    const { data, error } = await client.rpc(
+      'settle_metered_ai_credit_reservation',
+      {
+        p_input_tokens: input.inputTokens,
+        p_metadata: input.metadata,
+        p_output_tokens: input.outputTokens,
+        p_reasoning_tokens: input.reasoningTokens,
+        p_reservation_id: input.reservationId,
+      }
+    );
+    return !error && data?.[0]?.success === true;
+  } catch {
+    return false;
+  }
+}
 
 async function isChatEnabled(
   sbAdmin: TypedSupabaseClient,
@@ -130,12 +207,64 @@ export function createTeachObjectGenerationHandler<
         creditCheck.maxOutputTokens ?? null,
         creditCheck.remainingCredits
       );
-      if (cappedMaxOutput === null && creditCheck.remainingCredits <= 0) {
+      if (cappedMaxOutput === null) {
         return NextResponse.json(
           { error: 'AI credits insufficient', code: 'CREDITS_EXHAUSTED' },
           { status: 403 }
         );
       }
+
+      const prompt = config.buildPrompt(parsedBody.data);
+      // UTF-8 bytes are a deliberately conservative upper bound for prompt
+      // tokens and keep the reservation safe without provider tokenization.
+      const estimatedInputTokens = new TextEncoder().encode(prompt).length;
+      const reservationCredits = await calculateReservationCredits(sbAdmin, {
+        inputTokens: estimatedInputTokens,
+        maxOutputTokens: cappedMaxOutput,
+        modelId: MODEL_ID,
+        wsId: normalizedWsId,
+      });
+      if (reservationCredits === null) {
+        return NextResponse.json(
+          { error: 'Internal Server Error' },
+          { status: 500 }
+        );
+      }
+
+      const reservation = await reserveFixedAiCredits(
+        {
+          amount: reservationCredits,
+          expiresInSeconds: RESERVATION_TTL_SECONDS,
+          feature: CREDIT_FEATURE,
+          metadata: { source: config.source, surface: config.surface },
+          modelId: MODEL_ID,
+          userId: context.user.id,
+          wsId: normalizedWsId,
+        },
+        sbAdmin
+      );
+      if (!reservation.success || !reservation.reservationId) {
+        return NextResponse.json(
+          {
+            error: 'AI credits insufficient',
+            code: reservation.errorCode ?? 'CREDITS_EXHAUSTED',
+          },
+          { status: 403 }
+        );
+      }
+
+      const reservationId = reservation.reservationId;
+      let reservationState: 'reserved' | 'settling' | 'settled' = 'reserved';
+      const releaseReservation = async (reason: string) => {
+        if (reservationState !== 'reserved') return;
+        reservationState = 'settling';
+        await releaseFixedAiCreditReservation(
+          reservationId,
+          { reason, source: config.source, surface: config.surface },
+          sbAdmin
+        );
+        reservationState = 'settled';
+      };
 
       try {
         const result = streamText({
@@ -148,29 +277,38 @@ export function createTeachObjectGenerationHandler<
             userId: context.user.id,
             wsId: normalizedWsId,
           }),
-          prompt: config.buildPrompt(parsedBody.data),
+          prompt,
           output: Output.object({ schema: config.outputSchema }),
           ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
           onFinish: async ({ usage }) => {
-            const deduction = await deductAiCredits({
-              feature: CREDIT_FEATURE,
+            if (reservationState !== 'reserved') return;
+            reservationState = 'settling';
+            const settled = await settleReservation(sbAdmin, {
               inputTokens: usage.inputTokens ?? 0,
               metadata: { source: config.source, surface: config.surface },
-              modelId: MODEL_ID,
               outputTokens: usage.outputTokens ?? 0,
               reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
-              userId: context.user.id,
-              wsId: normalizedWsId,
+              reservationId,
             });
 
-            if (!deduction.success) {
-              console.warn('Failed to deduct Teach object-generation credits', {
-                errorCode: deduction.errorCode,
+            if (!settled) {
+              console.warn('Failed to settle Teach credit reservation', {
+                reservationId,
                 source: config.source,
                 userId: context.user.id,
                 wsId: normalizedWsId,
               });
+              await releaseFixedAiCreditReservation(
+                reservationId,
+                {
+                  reason: 'settlement_failed',
+                  source: config.source,
+                  surface: config.surface,
+                },
+                sbAdmin
+              );
             }
+            reservationState = 'settled';
           },
           providerOptions: {
             google: { safetySettings: SAFETY_SETTINGS },
@@ -180,13 +318,15 @@ export function createTeachObjectGenerationHandler<
         // Remove client backpressure so onFinish and its awaited credit settlement
         // complete even if the browser disconnects from the response stream.
         void result.consumeStream({
-          onError: (error) =>
+          onError: (error) => {
             console.error('Teach object-generation stream failed', {
               error,
               source: config.source,
               userId: context.user.id,
               wsId: normalizedWsId,
-            }),
+            });
+            void releaseReservation('stream_error');
+          },
         });
 
         const response = result.toTextStreamResponse();
@@ -196,6 +336,7 @@ export function createTeachObjectGenerationHandler<
           statusText: response.statusText,
         });
       } catch (error) {
+        await releaseReservation('provider_start_error');
         console.error('Failed to start Teach object generation', {
           error,
           source: config.source,

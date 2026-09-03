@@ -13,4 +13,13 @@ describe('quiz object request', () => {
       wsId: 'workspace-1',
     });
   });
+
+  it('rejects oversized provider context', () => {
+    expect(() =>
+      contextObjectRequestSchema.parse({
+        context: 'x'.repeat(20_001),
+        wsId: 'workspace-1',
+      })
+    ).toThrow();
+  });
 });
