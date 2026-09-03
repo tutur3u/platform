@@ -115,8 +115,8 @@ export interface WorkspaceContext {
  *
  * @remarks
  * This function uses an admin client to bypass RLS policies.
- * Requires a unique index on key_prefix for optimal performance:
- * CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_api_keys_key_prefix ON workspace_api_keys(key_prefix);
+ * Uses a non-unique partial index on key_prefix to select candidates efficiently.
+ * Full hash verification remains authoritative because prefixes may collide.
  */
 export async function validateApiKey(
   apiKey: string
@@ -132,8 +132,8 @@ export async function validateApiKey(
 
     const sbAdmin = await createAdminClient();
 
-    // Query by key_prefix to fetch only the candidate row
-    // This assumes a unique index exists on key_prefix for single-row matches
+    // Query by key_prefix to fetch candidate rows through the partial index.
+    // Prefix collisions are expected and resolved by full hash verification below.
     const { data: keys, error } = await sbAdmin
       .from('workspace_api_keys')
       .select('id, ws_id, key_hash, role_id, expires_at')
