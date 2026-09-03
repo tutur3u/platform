@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from nacl.signing import SigningKey
 
 import app
+import interaction_replay
 from auth import DISCORD_SIGNATURE_FRESHNESS_SECONDS, DiscordAuth
 
 
@@ -33,9 +34,7 @@ def signing_key(monkeypatch: pytest.MonkeyPatch) -> SigningKey:
     "offset",
     [-DISCORD_SIGNATURE_FRESHNESS_SECONDS, DISCORD_SIGNATURE_FRESHNESS_SECONDS],
 )
-def test_signature_freshness_accepts_exact_boundaries(
-    signing_key: SigningKey, offset: int
-) -> None:
+def test_signature_freshness_accepts_exact_boundaries(signing_key: SigningKey, offset: int) -> None:
     now = 2_000_000_000
     body = b'{"id":"1","type":1}'
     timestamp = now + offset
@@ -112,13 +111,9 @@ def command_payload(interaction_id: str) -> dict:
     }
 
 
-def post_signed(
-    client: TestClient, signing_key: SigningKey, payload: dict, timestamp: int
-):
+def post_signed(client: TestClient, signing_key: SigningKey, payload: dict, timestamp: int):
     body = json.dumps(payload, separators=(",", ":")).encode()
-    return client.post(
-        "/api", content=body, headers=signed_headers(signing_key, timestamp, body)
-    )
+    return client.post("/api", content=body, headers=signed_headers(signing_key, timestamp, body))
 
 
 def test_duplicate_delivery_is_acknowledged_without_spawning(
@@ -127,7 +122,7 @@ def test_duplicate_delivery_is_acknowledged_without_spawning(
     claims = iter([True, False])
     claim = Mock(side_effect=lambda *_args: next(claims))
     spawn = Mock()
-    monkeypatch.setattr(app, "claim_discord_interaction", claim)
+    monkeypatch.setattr(interaction_replay, "claim_discord_interaction", claim)
     monkeypatch.setattr(app.reply_ticket, "spawn", spawn)
     client = TestClient(app.web_app.get_raw_f()())
     payload = command_payload("123456789012345678")
@@ -158,7 +153,7 @@ def test_concurrent_duplicate_delivery_spawns_once(
             return True
 
     spawn = Mock()
-    monkeypatch.setattr(app, "claim_discord_interaction", claim_once)
+    monkeypatch.setattr(interaction_replay, "claim_discord_interaction", claim_once)
     monkeypatch.setattr(app.reply_ticket, "spawn", spawn)
     client = TestClient(app.web_app.get_raw_f()())
     payload = command_payload("223456789012345678")
@@ -181,7 +176,7 @@ def test_claim_store_failure_fails_closed_before_spawn(
 ) -> None:
     spawn = Mock()
     monkeypatch.setattr(
-        app,
+        interaction_replay,
         "claim_discord_interaction",
         Mock(side_effect=RuntimeError("claim unavailable")),
     )
@@ -197,3 +192,17 @@ def test_claim_store_failure_fails_closed_before_spawn(
 
     assert response.status_code == 503
     spawn.assert_not_called()
+
+
+def test_ping_does_not_depend_on_claim_storage(
+    monkeypatch: pytest.MonkeyPatch, signing_key: SigningKey
+) -> None:
+    claim = Mock(side_effect=RuntimeError("claim unavailable"))
+    monkeypatch.setattr(interaction_replay, "claim_discord_interaction", claim)
+    client = TestClient(app.web_app.get_raw_f()())
+
+    response = post_signed(client, signing_key, {"type": 1}, int(time.time()))
+
+    assert response.status_code == 200
+    assert response.json() == {"type": 1}
+    claim.assert_not_called()

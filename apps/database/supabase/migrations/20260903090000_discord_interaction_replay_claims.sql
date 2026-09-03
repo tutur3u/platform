@@ -6,7 +6,7 @@ create table private.discord_interaction_claims (
   constraint discord_interaction_claims_id_valid
     check (interaction_id ~ '^[0-9]{1,32}$'),
   constraint discord_interaction_claims_type_valid
-    check (interaction_type in (1, 2, 3, 5)),
+    check (interaction_type in (2, 3, 5)),
   constraint discord_interaction_claims_expiry_valid
     check (expires_at > claimed_at)
 );
@@ -35,7 +35,7 @@ declare
 begin
   if p_interaction_id is null
     or p_interaction_id !~ '^[0-9]{1,32}$'
-    or p_interaction_type not in (1, 2, 3, 5)
+    or p_interaction_type not in (2, 3, 5)
     or p_retention_seconds < 300
     or p_retention_seconds > 604800
   then

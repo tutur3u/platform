@@ -65,10 +65,7 @@ def claim_discord_interaction(interaction_id: str, interaction_type: int) -> boo
         "p_retention_seconds": DISCORD_INTERACTION_RETENTION_SECONDS,
     }
     response = (
-        get_supabase_client()
-        .schema("private")
-        .rpc("claim_discord_interaction", params)
-        .execute()
+        get_supabase_client().schema("private").rpc("claim_discord_interaction", params).execute()
     )
     return response.data is True
 
