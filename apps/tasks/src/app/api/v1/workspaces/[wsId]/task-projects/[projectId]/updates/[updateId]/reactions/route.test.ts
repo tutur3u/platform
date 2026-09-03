@@ -14,17 +14,27 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 type Builder = Record<
-  'select' | 'eq' | 'is' | 'insert' | 'delete' | 'maybeSingle' | 'single' | 'then',
+  | 'select'
+  | 'eq'
+  | 'is'
+  | 'insert'
+  | 'delete'
+  | 'maybeSingle'
+  | 'single'
+  | 'then',
   ReturnType<typeof vi.fn>
 >;
 function builder(terminal: 'maybeSingle' | 'single' | 'then', result: unknown) {
   const value = {} as Builder;
-  for (const method of ['select', 'eq', 'is', 'insert', 'delete'])
+  for (const method of ['select', 'eq', 'is', 'insert', 'delete'] as const)
     value[method] = vi.fn(() => value);
-  if (terminal === 'then') value.then = vi.fn((resolve) => Promise.resolve(result).then(resolve));
-  else value[terminal] = vi.fn(async () => result);
+  if (terminal === 'then') {
+    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
+    value.then = vi.fn((resolve) => Promise.resolve(result).then(resolve));
+  } else value[terminal] = vi.fn(async () => result);
   value.maybeSingle ??= vi.fn();
   value.single ??= vi.fn();
+  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   value.then ??= vi.fn();
   return value;
 }
@@ -45,28 +55,58 @@ describe('task project update reactions route', () => {
     vi.clearAllMocks();
     parent = builder('maybeSingle', { data: { id: 'update-1' }, error: null });
     reaction = builder('single', { data: { id: 'reaction-1' }, error: null });
-    supabase = { from: vi.fn((table: string) => table === 'task_project_updates' ? parent : reaction) };
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({ authError: null, supabase, user: { id: 'user-1' } });
+    supabase = {
+      from: vi.fn((table: string) =>
+        table === 'task_project_updates' ? parent : reaction
+      ),
+    };
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: null,
+      supabase,
+      user: { id: 'user-1' },
+    });
     mocks.normalizeWorkspaceId.mockResolvedValue('ws-normalized');
     mocks.membership.mockResolvedValue({ ok: true });
   });
 
   const methods = [
-    ['POST', async () => {
-      const { POST } = await import('./route');
-      return POST(new Request('http://localhost/reactions', {
-        method: 'POST', body: JSON.stringify({ emoji: '👍' }),
-      }) as never, { params });
-    }],
-    ['DELETE', async () => {
-      reaction.then = vi.fn((resolve) => Promise.resolve({ error: null }).then(resolve));
-      const { DELETE } = await import('./route');
-      return DELETE(new Request('http://localhost/reactions?emoji=%F0%9F%91%8D', { method: 'DELETE' }) as never, { params });
-    }],
+    [
+      'POST',
+      async () => {
+        const { POST } = await import('./route');
+        return POST(
+          new Request('http://localhost/reactions', {
+            method: 'POST',
+            body: JSON.stringify({ emoji: '👍' }),
+          }) as never,
+          { params }
+        );
+      },
+    ],
+    [
+      'DELETE',
+      async () => {
+        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
+        reaction.then = vi.fn((resolve) =>
+          Promise.resolve({ error: null }).then(resolve)
+        );
+        const { DELETE } = await import('./route');
+        return DELETE(
+          new Request('http://localhost/reactions?emoji=%F0%9F%91%8D', {
+            method: 'DELETE',
+          }) as never,
+          { params }
+        );
+      },
+    ],
   ] as const;
 
   it.each(methods)('%s rejects unauthenticated callers', async (_, call) => {
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({ authError: new Error('no'), supabase: null, user: null });
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: new Error('no'),
+      supabase: null,
+      user: null,
+    });
     const response = await call();
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: 'Unauthorized' });
@@ -74,23 +114,34 @@ describe('task project update reactions route', () => {
   });
 
   it.each(methods)('%s surfaces membership lookup failure', async (_, call) => {
-    mocks.membership.mockResolvedValue({ error: 'membership_lookup_failed', ok: false });
+    mocks.membership.mockResolvedValue({
+      error: 'membership_lookup_failed',
+      ok: false,
+    });
     const response = await call();
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: 'Failed to verify workspace access' });
+    expect(await response.json()).toEqual({
+      error: 'Failed to verify workspace access',
+    });
     expect(supabase.from).not.toHaveBeenCalled();
   });
 
-  it.each(methods)('%s rejects route-workspace non-members', async (_, call) => {
-    mocks.membership.mockResolvedValue({ ok: false });
-    const response = await call();
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ error: 'Forbidden' });
-    expect(supabase.from).not.toHaveBeenCalled();
-  });
+  it.each(methods)(
+    '%s rejects route-workspace non-members',
+    async (_, call) => {
+      mocks.membership.mockResolvedValue({ ok: false });
+      const response = await call();
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: 'Forbidden' });
+      expect(supabase.from).not.toHaveBeenCalled();
+    }
+  );
 
   it.each(methods)('%s surfaces update lookup failure', async (_, call) => {
-    parent.maybeSingle.mockResolvedValue({ data: null, error: { message: 'failed' } });
+    parent.maybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'failed' },
+    });
     const response = await call();
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'Failed to load update' });
@@ -98,37 +149,63 @@ describe('task project update reactions route', () => {
     expect(reaction.delete).not.toHaveBeenCalled();
   });
 
-  it.each(methods)('%s hides foreign project, workspace, missing, or deleted parents', async (_, call) => {
-    parent.maybeSingle.mockResolvedValue({ data: null, error: null });
-    const response = await call();
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: 'Update not found' });
-    expect(parent.eq).toHaveBeenCalledWith('id', routeParams.updateId);
-    expect(parent.eq).toHaveBeenCalledWith('project_id', routeParams.projectId);
-    expect(parent.eq).toHaveBeenCalledWith('task_projects.ws_id', 'ws-normalized');
-    expect(parent.is).toHaveBeenCalledWith('deleted_at', null);
-    expect(reaction.insert).not.toHaveBeenCalled();
-    expect(reaction.delete).not.toHaveBeenCalled();
-  });
+  it.each(methods)(
+    '%s hides foreign project, workspace, missing, or deleted parents',
+    async (_, call) => {
+      parent.maybeSingle.mockResolvedValue({ data: null, error: null });
+      const response = await call();
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'Update not found' });
+      expect(parent.eq).toHaveBeenCalledWith('id', routeParams.updateId);
+      expect(parent.eq).toHaveBeenCalledWith(
+        'project_id',
+        routeParams.projectId
+      );
+      expect(parent.eq).toHaveBeenCalledWith(
+        'task_projects.ws_id',
+        'ws-normalized'
+      );
+      expect(parent.is).toHaveBeenCalledWith('deleted_at', null);
+      expect(reaction.insert).not.toHaveBeenCalled();
+      expect(reaction.delete).not.toHaveBeenCalled();
+    }
+  );
 
   it('POST authorizes cookie sessions and inserts under the bound update', async () => {
     const { POST } = await import('./route');
     const request = new Request('http://localhost/reactions', {
-      method: 'POST', body: JSON.stringify({ emoji: '👍' }), headers: { cookie: 'sb-access-token=session' },
+      method: 'POST',
+      body: JSON.stringify({ emoji: '👍' }),
+      headers: { cookie: 'sb-access-token=session' },
     });
     const response = await POST(request as never, { params });
     expect(response.status).toBe(201);
     expect(mocks.resolveAuthenticatedSessionUser).toHaveBeenCalledWith(request);
-    expect(mocks.membership).toHaveBeenCalledWith({ supabase, userId: 'user-1', wsId: 'ws-normalized' });
-    expect(reaction.insert).toHaveBeenCalledWith({ emoji: '👍', update_id: routeParams.updateId, user_id: 'user-1' });
+    expect(mocks.membership).toHaveBeenCalledWith({
+      supabase,
+      userId: 'user-1',
+      wsId: 'ws-normalized',
+    });
+    expect(reaction.insert).toHaveBeenCalledWith({
+      emoji: '👍',
+      update_id: routeParams.updateId,
+      user_id: 'user-1',
+    });
   });
 
   it('DELETE authorizes Tasks app sessions and scopes the deletion', async () => {
-    reaction.then = vi.fn((resolve) => Promise.resolve({ error: null }).then(resolve));
+    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
+    reaction.then = vi.fn((resolve) =>
+      Promise.resolve({ error: null }).then(resolve)
+    );
     const { DELETE } = await import('./route');
-    const request = new Request('http://localhost/reactions?emoji=%F0%9F%91%8D', {
-      method: 'DELETE', headers: { cookie: 'tuturuuu_app_session=token' },
-    });
+    const request = new Request(
+      'http://localhost/reactions?emoji=%F0%9F%91%8D',
+      {
+        method: 'DELETE',
+        headers: { cookie: 'tuturuuu_app_session=token' },
+      }
+    );
     const response = await DELETE(request as never, { params });
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true });

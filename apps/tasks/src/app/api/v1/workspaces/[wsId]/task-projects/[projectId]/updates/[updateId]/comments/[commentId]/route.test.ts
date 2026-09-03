@@ -24,13 +24,15 @@ type Builder = Record<
 >;
 function builder(terminal: 'maybeSingle' | 'single' | 'then', result: unknown) {
   const value = {} as Builder;
-  for (const method of ['select', 'eq', 'is', 'update'])
+  for (const method of ['select', 'eq', 'is', 'update'] as const)
     value[method] = vi.fn(() => value);
   if (terminal === 'then') {
+    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     value.then = vi.fn((resolve) => Promise.resolve(result).then(resolve));
   } else value[terminal] = vi.fn(async () => result);
   value.maybeSingle ??= vi.fn();
   value.single ??= vi.fn();
+  // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   value.then ??= vi.fn();
   return value;
 }
@@ -79,23 +81,31 @@ describe('task project update comment item route', () => {
   });
 
   const methods = [
-    ['PATCH', async () => {
-      const { PATCH } = await import('./route');
-      return PATCH(
-        new Request('http://localhost/comment', {
-          method: 'PATCH',
-          body: JSON.stringify({ content: 'Updated' }),
-        }) as never,
-        { params }
-      );
-    }],
-    ['DELETE', async () => {
-      const { DELETE } = await import('./route');
-      return DELETE(
-        new Request('http://localhost/comment', { method: 'DELETE' }) as never,
-        { params }
-      );
-    }],
+    [
+      'PATCH',
+      async () => {
+        const { PATCH } = await import('./route');
+        return PATCH(
+          new Request('http://localhost/comment', {
+            method: 'PATCH',
+            body: JSON.stringify({ content: 'Updated' }),
+          }) as never,
+          { params }
+        );
+      },
+    ],
+    [
+      'DELETE',
+      async () => {
+        const { DELETE } = await import('./route');
+        return DELETE(
+          new Request('http://localhost/comment', {
+            method: 'DELETE',
+          }) as never,
+          { params }
+        );
+      },
+    ],
   ] as const;
 
   it.each(methods)('%s rejects unauthenticated callers', async (_, call) => {
@@ -111,50 +121,73 @@ describe('task project update comment item route', () => {
   });
 
   it.each(methods)('%s surfaces membership lookup failure', async (_, call) => {
-    mocks.membership.mockResolvedValue({ error: 'membership_lookup_failed', ok: false });
+    mocks.membership.mockResolvedValue({
+      error: 'membership_lookup_failed',
+      ok: false,
+    });
     const response = await call();
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: 'Failed to verify workspace access' });
+    expect(await response.json()).toEqual({
+      error: 'Failed to verify workspace access',
+    });
     expect(supabase.from).not.toHaveBeenCalled();
   });
 
-  it.each(methods)('%s rejects route-workspace non-members', async (_, call) => {
-    mocks.membership.mockResolvedValue({ ok: false });
-    const response = await call();
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ error: 'Forbidden' });
-    expect(supabase.from).not.toHaveBeenCalled();
-  });
+  it.each(methods)(
+    '%s rejects route-workspace non-members',
+    async (_, call) => {
+      mocks.membership.mockResolvedValue({ ok: false });
+      const response = await call();
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: 'Forbidden' });
+      expect(supabase.from).not.toHaveBeenCalled();
+    }
+  );
 
   it.each(methods)('%s surfaces update lookup failure', async (_, call) => {
-    parent.maybeSingle.mockResolvedValue({ data: null, error: { message: 'failed' } });
+    parent.maybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'failed' },
+    });
     const response = await call();
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'Failed to load update' });
     expect(lookup.single).not.toHaveBeenCalled();
   });
 
-  it.each(methods)('%s hides foreign, missing, or deleted update parents', async (_, call) => {
-    parent.maybeSingle.mockResolvedValue({ data: null, error: null });
-    const response = await call();
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: 'Update not found' });
-    expect(parent.eq).toHaveBeenCalledWith('project_id', routeParams.projectId);
-    expect(parent.eq).toHaveBeenCalledWith('task_projects.ws_id', 'ws-normalized');
-    expect(parent.is).toHaveBeenCalledWith('deleted_at', null);
-    expect(lookup.single).not.toHaveBeenCalled();
-  });
+  it.each(methods)(
+    '%s hides foreign, missing, or deleted update parents',
+    async (_, call) => {
+      parent.maybeSingle.mockResolvedValue({ data: null, error: null });
+      const response = await call();
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'Update not found' });
+      expect(parent.eq).toHaveBeenCalledWith(
+        'project_id',
+        routeParams.projectId
+      );
+      expect(parent.eq).toHaveBeenCalledWith(
+        'task_projects.ws_id',
+        'ws-normalized'
+      );
+      expect(parent.is).toHaveBeenCalledWith('deleted_at', null);
+      expect(lookup.single).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each(methods)('%s rejects a comment from another update before mutation', async (_, call) => {
-    lookup.single.mockResolvedValue({ data: null, error: null });
-    const response = await call();
-    expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({ error: 'Comment not found' });
-    expect(lookup.eq).toHaveBeenCalledWith('id', routeParams.commentId);
-    expect(lookup.eq).toHaveBeenCalledWith('update_id', routeParams.updateId);
-    expect(mutation.update).not.toHaveBeenCalled();
-    expect(mocks.admin).not.toHaveBeenCalled();
-  });
+  it.each(methods)(
+    '%s rejects a comment from another update before mutation',
+    async (_, call) => {
+      lookup.single.mockResolvedValue({ data: null, error: null });
+      const response = await call();
+      expect(response.status).toBe(404);
+      expect(await response.json()).toEqual({ error: 'Comment not found' });
+      expect(lookup.eq).toHaveBeenCalledWith('id', routeParams.commentId);
+      expect(lookup.eq).toHaveBeenCalledWith('update_id', routeParams.updateId);
+      expect(mutation.update).not.toHaveBeenCalled();
+      expect(mocks.admin).not.toHaveBeenCalled();
+    }
+  );
 
   it('PATCH binds both lookup and final mutation to the route update', async () => {
     const { PATCH } = await import('./route');
@@ -183,7 +216,10 @@ describe('task project update comment item route', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true });
     expect(adminMutation.eq).toHaveBeenCalledWith('id', routeParams.commentId);
-    expect(adminMutation.eq).toHaveBeenCalledWith('update_id', routeParams.updateId);
+    expect(adminMutation.eq).toHaveBeenCalledWith(
+      'update_id',
+      routeParams.updateId
+    );
     expect(adminMutation.eq).toHaveBeenCalledWith('user_id', 'user-1');
     expect(adminMutation.is).toHaveBeenCalledWith('deleted_at', null);
   });

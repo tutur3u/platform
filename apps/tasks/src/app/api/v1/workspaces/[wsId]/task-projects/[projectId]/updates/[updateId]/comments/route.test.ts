@@ -22,7 +22,7 @@ type Builder = Record<
 
 function createBuilder(terminal: 'maybeSingle' | 'single', result: unknown) {
   const builder = {} as Builder;
-  for (const method of ['select', 'eq', 'is', 'order', 'insert']) {
+  for (const method of ['select', 'eq', 'is', 'order', 'insert'] as const) {
     builder[method] = vi.fn(() => builder);
   }
   builder[terminal] = vi.fn(async () => result);
@@ -44,7 +44,10 @@ describe('task project update comments collection route', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    parent = createBuilder('maybeSingle', { data: { id: 'update-1' }, error: null });
+    parent = createBuilder('maybeSingle', {
+      data: { id: 'update-1' },
+      error: null,
+    });
     comments = createBuilder('single', {
       data: { id: 'comment-1' },
       error: null,
@@ -65,74 +68,94 @@ describe('task project update comments collection route', () => {
   });
 
   const methodCases = [
-    ['GET', async () => {
-      const { GET } = await import('./route');
-      return GET(new Request('http://localhost/comments') as never, { params });
-    }],
-    ['POST', async () => {
-      const { POST } = await import('./route');
-      return POST(
-        new Request('http://localhost/comments', {
-          body: JSON.stringify({ content: 'Hello' }),
-          headers: { 'Content-Type': 'application/json' },
-          method: 'POST',
-        }) as never,
-        { params }
-      );
-    }],
+    [
+      'GET',
+      async () => {
+        const { GET } = await import('./route');
+        return GET(new Request('http://localhost/comments') as never, {
+          params,
+        });
+      },
+    ],
+    [
+      'POST',
+      async () => {
+        const { POST } = await import('./route');
+        return POST(
+          new Request('http://localhost/comments', {
+            body: JSON.stringify({ content: 'Hello' }),
+            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+          }) as never,
+          { params }
+        );
+      },
+    ],
   ] as const;
 
-  it.each(methodCases)('%s rejects unauthenticated callers', async (_, call) => {
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
-      authError: new Error('unauthorized'),
-      supabase: null,
-      user: null,
-    });
+  it.each(methodCases)(
+    '%s rejects unauthenticated callers',
+    async (_, call) => {
+      mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+        authError: new Error('unauthorized'),
+        supabase: null,
+        user: null,
+      });
 
-    const response = await call();
+      const response = await call();
 
-    expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({ error: 'Unauthorized' });
-    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
-    expect(supabase.from).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual({ error: 'Unauthorized' });
+      expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+      expect(supabase.from).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each(methodCases)('%s surfaces membership lookup failure', async (_, call) => {
-    mocks.membership.mockResolvedValue({
-      error: 'membership_lookup_failed',
-      ok: false,
-    });
+  it.each(methodCases)(
+    '%s surfaces membership lookup failure',
+    async (_, call) => {
+      mocks.membership.mockResolvedValue({
+        error: 'membership_lookup_failed',
+        ok: false,
+      });
 
-    const response = await call();
+      const response = await call();
 
-    expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({
-      error: 'Failed to verify workspace access',
-    });
-    expect(supabase.from).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(500);
+      expect(await response.json()).toEqual({
+        error: 'Failed to verify workspace access',
+      });
+      expect(supabase.from).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each(methodCases)('%s rejects route-workspace non-members', async (_, call) => {
-    mocks.membership.mockResolvedValue({ ok: false });
+  it.each(methodCases)(
+    '%s rejects route-workspace non-members',
+    async (_, call) => {
+      mocks.membership.mockResolvedValue({ ok: false });
 
-    const response = await call();
+      const response = await call();
 
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ error: 'Forbidden' });
-    expect(supabase.from).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ error: 'Forbidden' });
+      expect(supabase.from).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each(methodCases)('%s surfaces update lookup failures', async (_, call) => {
-    parent.maybeSingle.mockResolvedValue({
-      data: null,
-      error: { message: 'lookup failed' },
-    });
+  it.each(methodCases)(
+    '%s surfaces update lookup failures',
+    async (_, call) => {
+      parent.maybeSingle.mockResolvedValue({
+        data: null,
+        error: { message: 'lookup failed' },
+      });
 
-    const response = await call();
+      const response = await call();
 
-    expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: 'Failed to load update' });
-  });
+      expect(response.status).toBe(500);
+      expect(await response.json()).toEqual({ error: 'Failed to load update' });
+    }
+  );
 
   it.each(methodCases)(
     '%s returns the same 404 for a missing or mismatched parent',

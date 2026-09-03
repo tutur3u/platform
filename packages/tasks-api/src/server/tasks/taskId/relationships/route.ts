@@ -159,40 +159,36 @@ async function authorizeRelationshipMutation({
     });
 
     if ('error' in access) {
-      if (access.error.status !== 404) return { error: access.error };
-      return {
-        error: NextResponse.json(
-          {
-            error: relationshipTaskNotFoundMessage({
-              candidateTaskId,
-              isRouteTaskSource,
-              routeTaskId,
-            }),
-          },
-          { status: 404 }
-        ),
-      };
+      if (access.error.status !== 404) return access.error;
+      return NextResponse.json(
+        {
+          error: relationshipTaskNotFoundMessage({
+            candidateTaskId,
+            isRouteTaskSource,
+            routeTaskId,
+          }),
+        },
+        { status: 404 }
+      );
     }
 
     if (access.wsId !== wsId) {
-      return {
-        error: NextResponse.json(
-          {
-            error: relationshipTaskNotFoundMessage({
-              candidateTaskId,
-              isRouteTaskSource,
-              routeTaskId,
-            }),
-          },
-          { status: 404 }
-        ),
-      };
+      return NextResponse.json(
+        {
+          error: relationshipTaskNotFoundMessage({
+            candidateTaskId,
+            isRouteTaskSource,
+            routeTaskId,
+          }),
+        },
+        { status: 404 }
+      );
     }
 
     accessByTaskId.set(candidateTaskId, access);
   }
 
-  return { accessByTaskId };
+  return null;
 }
 
 function toTaskInfo(task: RelationshipTaskRow): RelatedTaskInfo {
@@ -467,7 +463,7 @@ export async function handleTaskRelationshipRoutePOST(
     }
 
     const sbAdmin = await createAdminClient();
-    const authorization = await authorizeRelationshipMutation({
+    const authorizationError = await authorizeRelationshipMutation({
       payload,
       routeTaskId: taskId,
       sbAdmin,
@@ -475,7 +471,7 @@ export async function handleTaskRelationshipRoutePOST(
       user,
       wsId,
     });
-    if ('error' in authorization) return authorization.error;
+    if (authorizationError) return authorizationError;
 
     const { data: relationship, error: insertError } = await sbAdmin
       .from('task_relationships')
@@ -557,7 +553,7 @@ export async function handleTaskRelationshipRouteDELETE(
     }
 
     const sbAdmin = await createAdminClient();
-    const authorization = await authorizeRelationshipMutation({
+    const authorizationError = await authorizeRelationshipMutation({
       payload,
       routeTaskId: taskId,
       sbAdmin,
@@ -565,7 +561,7 @@ export async function handleTaskRelationshipRouteDELETE(
       user,
       wsId,
     });
-    if ('error' in authorization) return authorization.error;
+    if (authorizationError) return authorizationError;
 
     const deleteRelationship = async (
       sourceTaskId: string,
