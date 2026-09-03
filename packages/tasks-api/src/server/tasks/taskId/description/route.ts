@@ -114,23 +114,6 @@ function normalizePersistedTaskDescription(
     : null;
 }
 
-async function persistTaskDescriptionYjsState({
-  sbAdmin,
-  taskId,
-  yjsState,
-}: {
-  sbAdmin: TypedSupabaseClient;
-  taskId: string;
-  yjsState: number[] | null;
-}) {
-  return sbAdmin
-    .from('tasks')
-    .update({ description_yjs_state: yjsState })
-    .eq('id', taskId)
-    .select('id, description, description_yjs_state')
-    .maybeSingle();
-}
-
 async function deriveTaskDescriptionYjsState(
   description: string | null | undefined
 ) {
@@ -299,50 +282,38 @@ async function persistTaskDescriptionUpdate({
         : undefined;
 
   let persistedTaskDescription: PersistedTaskDescription | null = null;
+  const taskUpdates: {
+    description?: string | null;
+    description_yjs_state?: number[] | null;
+  } = {};
 
   if (normalizedDescription !== undefined) {
-    const updateTaskPayload: TaskActorRpcArgs<'update_task_fields_with_actor'> =
-      {
-        p_task_id: taskId,
-        p_task_updates: { description: normalizedDescription },
-        p_actor_user_id: userId,
-      };
-    const { data, error } = await sbAdmin
-      .rpc('update_task_fields_with_actor', updateTaskPayload)
-      .maybeSingle();
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to update task description' },
-        { status: 500 }
-      );
-    }
-
-    persistedTaskDescription = normalizePersistedTaskDescription(
-      data as PersistedTaskDescription | null,
-      taskId
-    );
+    taskUpdates.description = normalizedDescription;
   }
-
   if (normalizedYjsState !== undefined) {
-    const { data, error } = await persistTaskDescriptionYjsState({
-      sbAdmin,
-      taskId,
-      yjsState: normalizedYjsState,
-    });
+    taskUpdates.description_yjs_state = normalizedYjsState;
+  }
 
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to update task description state' },
-        { status: 500 }
-      );
-    }
+  const updateTaskPayload: TaskActorRpcArgs<'update_task_fields_with_actor'> = {
+    p_task_id: taskId,
+    p_task_updates: taskUpdates,
+    p_actor_user_id: userId,
+  };
+  const { data, error } = await sbAdmin
+    .rpc('update_task_fields_with_actor', updateTaskPayload)
+    .maybeSingle();
 
-    persistedTaskDescription = normalizePersistedTaskDescription(
-      data as PersistedTaskDescription | null,
-      taskId
+  if (error) {
+    return NextResponse.json(
+      { error: 'Failed to update task description' },
+      { status: 500 }
     );
   }
+
+  persistedTaskDescription = normalizePersistedTaskDescription(
+    data as PersistedTaskDescription | null,
+    taskId
+  );
 
   if (!persistedTaskDescription) {
     // The actor RPC can be idempotent when the description is already current.
