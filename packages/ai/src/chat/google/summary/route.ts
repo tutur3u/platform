@@ -5,7 +5,11 @@ import {
   resolveAiMemoryWorkspaceIdForUser,
   withAiMemory,
 } from '../../../memory';
-import { resolveAiRouteAuth } from '../route-auth';
+import {
+  type AiRouteAuthResult,
+  authorizeAiWorkspace,
+  resolveAiRouteAuth,
+} from '../route-auth';
 
 const model = 'gemini-3.1-flash-lite';
 
@@ -15,18 +19,51 @@ type RawChatMessage = {
   role: string;
 };
 
-export function createPATCH() {
+export function createPATCH(
+  options: {
+    requireWorkspaceId?: boolean;
+    resolveAuth?: (request: NextRequest) => Promise<AiRouteAuthResult | null>;
+  } = {}
+) {
   return async function handler(req: NextRequest) {
-    const { id } = (await req.json()) as {
+    const { id, wsId } = (await req.json()) as {
       id?: string;
+      wsId?: string;
     };
 
     try {
       if (!id) return new Response('Missing chat ID', { status: 400 });
 
-      const auth = await resolveAiRouteAuth(req);
+      const auth =
+        (await options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
       const { supabase } = auth;
+
+      if (!wsId && options.requireWorkspaceId) {
+        return NextResponse.json(
+          { error: 'Invalid workspace identifier' },
+          { status: 422 }
+        );
+      }
+
+      let selectedWsId: string;
+      if (wsId) {
+        const workspaceAuthorization = await authorizeAiWorkspace({
+          request: req,
+          supabase,
+          userId: auth.user.id,
+          wsId,
+        });
+        if (!workspaceAuthorization.ok) {
+          return workspaceAuthorization.response;
+        }
+        selectedWsId = workspaceAuthorization.wsId;
+      } else {
+        selectedWsId = await resolveAiMemoryWorkspaceIdForUser({
+          supabase,
+          userId: auth.user.id,
+        });
+      }
 
       const { data: rawMessages, error: messagesError } = await supabase
         .from('ai_chat_messages')
@@ -56,11 +93,6 @@ export function createPATCH() {
         return new Response('Cannot summarize user message', { status: 400 });
 
       const aiMessages = await convertToModelMessages(messages);
-      const wsId = await resolveAiMemoryWorkspaceIdForUser({
-        supabase,
-        userId: auth.user.id,
-      });
-
       const result = await generateText({
         model: await withAiMemory({
           addMemory: 'never',
@@ -70,7 +102,7 @@ export function createPATCH() {
           source: 'ai_chat_summary',
           surface: 'ai_chat_summary',
           userId: auth.user.id,
-          wsId,
+          wsId: selectedWsId,
         }),
         messages: aiMessages,
         system: systemInstruction,

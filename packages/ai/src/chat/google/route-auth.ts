@@ -7,7 +7,14 @@ import {
   validateAiTempAuthRequest,
 } from '@tuturuuu/utils/ai-temp-auth';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const WorkspaceIdSchema = z.uuid();
 
 export type AiRouteAuthResult =
   | {
@@ -22,6 +29,81 @@ export type AiRouteAuthResult =
     };
 
 export const resolveSupabaseSessionUser = resolveAuthenticatedSessionUser;
+
+export async function authorizeAiWorkspace({
+  membershipClient,
+  request,
+  supabase,
+  userId,
+  wsId,
+}: {
+  membershipClient?: TypedSupabaseClient;
+  request: Request;
+  supabase: TypedSupabaseClient;
+  userId: string;
+  wsId: string;
+}): Promise<{ ok: true; wsId: string } | { ok: false; response: Response }> {
+  let normalizedWsId: string;
+  try {
+    normalizedWsId = await normalizeWorkspaceId(
+      wsId,
+      supabase,
+      request as never
+    );
+  } catch (error) {
+    console.error(
+      'Workspace ID normalization failed:',
+      error instanceof Error ? error.message : error
+    );
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Invalid workspace identifier' },
+        { status: 422 }
+      ),
+    };
+  }
+
+  if (!WorkspaceIdSchema.safeParse(normalizedWsId).success) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Invalid workspace identifier' },
+        { status: 422 }
+      ),
+    };
+  }
+
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: normalizedWsId,
+    userId,
+    supabase: membershipClient ?? supabase,
+    requiredType: 'MEMBER',
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    console.error('DB error checking workspace membership');
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Internal error verifying workspace access' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!membership.ok) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { ok: true, wsId: normalizedWsId };
+}
 
 export async function resolveAiRouteAuth(
   request: Request

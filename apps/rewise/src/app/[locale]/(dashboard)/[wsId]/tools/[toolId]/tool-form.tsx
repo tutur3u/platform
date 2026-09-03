@@ -12,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Tool } from '../data';
 
-export function ToolForm({ tool }: { tool: Tool }) {
+export function ToolForm({ tool, wsId }: { tool: Tool; wsId: string }) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -25,6 +25,7 @@ export function ToolForm({ tool }: { tool: Tool }) {
       body: JSON.stringify({
         model: 'gemini-2.5-flash-lite',
         message: input,
+        wsId,
       }),
     });
 
@@ -38,7 +39,7 @@ export function ToolForm({ tool }: { tool: Tool }) {
 
     const { id } = (await res.json()) as AIChat;
     if (id) {
-      router.push(`/c/${id}`);
+      router.push(`/${wsId}/c/${id}`);
       router.refresh();
     }
   };

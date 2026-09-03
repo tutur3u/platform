@@ -64,7 +64,7 @@ export interface ChatPanelProps
   currentUserId?: string;
   apiKey?: string;
   apiKeyProvided?: boolean;
-  wsId?: string;
+  wsId: string;
 }
 
 export function ChatPanel({

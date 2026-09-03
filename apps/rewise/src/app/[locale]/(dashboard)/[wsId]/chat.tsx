@@ -7,7 +7,6 @@ import type { UIMessage } from '@tuturuuu/ai/types';
 import { getCurrentUserProfile, updateAiChat } from '@tuturuuu/internal-api';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -28,6 +27,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   locale: string;
   noEmptyPage?: boolean;
   disabled?: boolean;
+  wsId: string;
 }
 
 const DEFAULT_MODEL: AIModelUI = {
@@ -51,6 +51,7 @@ export default function Chat({
   locale,
   noEmptyPage,
   disabled,
+  wsId,
 }: ChatProps) {
   const t = useTranslations();
 
@@ -87,7 +88,7 @@ export default function Chat({
       body: {
         // DO NOT PUT ID HERE AS IT WILL BE OVERRIDDEN BY chatId IN useChat
         model: chat?.model || model?.value,
-        wsId: ROOT_WORKSPACE_ID,
+        wsId,
       },
     }),
     onError() {
@@ -116,7 +117,7 @@ export default function Chat({
         {
           credentials: 'include',
           method: 'PATCH',
-          body: JSON.stringify({ id, model: modelId }),
+          body: JSON.stringify({ id, model: modelId, wsId }),
         }
       );
       if (!res.ok) throw new Error(res.statusText);
@@ -144,7 +145,7 @@ export default function Chat({
       const res = await fetch(`/api/ai/chat/${extractProvider(modelId)}/new`, {
         credentials: 'include',
         method: 'POST',
-        body: JSON.stringify({ id, model: modelId, message }),
+        body: JSON.stringify({ id, model: modelId, message, wsId }),
       });
       if (!res.ok) throw new Error(res.statusText);
       return (await res.json()) as AIChat;
@@ -387,7 +388,7 @@ export default function Chat({
         setCollapsed={setCollapsed}
         disabled={disabled}
         currentUserId={currentUserId}
-        wsId={ROOT_WORKSPACE_ID}
+        wsId={wsId}
       />
     </div>
   );
