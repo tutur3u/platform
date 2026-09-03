@@ -24,15 +24,25 @@ export type HoursSettingsData = {
   meetingHours: WeekTimeRanges;
 };
 
-const defaultTimeBlock: TimeBlock = {
+export const DEFAULT_TIME_BLOCK: TimeBlock = {
   startTime: '07:00',
   endTime: '23:00',
 };
 
 const defaultTimeRange: DayTimeRange = {
   enabled: true,
-  timeBlocks: [{ ...defaultTimeBlock }],
+  timeBlocks: [{ ...DEFAULT_TIME_BLOCK }],
 };
+
+export const DAY_KEYS: Array<keyof WeekTimeRanges> = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+];
 
 export const defaultWeekTimeRanges: WeekTimeRanges = {
   monday: { ...defaultTimeRange },

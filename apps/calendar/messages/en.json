@@ -1587,6 +1587,174 @@
     "violations": "Violations",
     "visualization": "Visualization"
   },
+  "calendar_settings": {
+    "categories": {
+      "add": "Add",
+      "add_all_missing": "Add All Missing",
+      "browse_suggestions": "Browse suggestions",
+      "category_placeholder": "Category name",
+      "done": "Done",
+      "edit": "Edit",
+      "event_preview": "{name} Event",
+      "failed_to_load": "Failed to load categories",
+      "info_example": "For example, if you have a \"Work\" category with blue color, events with \"work\" or \"meeting\" in the title will be colored blue.",
+      "info_text": "Categories help organize your events by color. The AI will automatically assign colors to events based on their title and these categories.",
+      "new_category_placeholder": "New category name",
+      "no_categories": "No categories yet. Add one to get started.",
+      "remove_category": "Remove {name}",
+      "select_color": "Select a color:",
+      "suggestion_names": {
+        "appointment": "Appointment",
+        "education": "Education",
+        "family": "Family",
+        "health": "Health",
+        "meeting": "Meeting",
+        "other": "Other",
+        "personal": "Personal",
+        "social": "Social",
+        "travel": "Travel",
+        "work": "Work"
+      },
+      "suggestions": "Suggestions",
+      "try_refreshing": "Please try refreshing the page.",
+      "your_categories": "Your Categories"
+    },
+    "colors": {
+      "names": {
+        "blue": "Blue",
+        "cyan": "Cyan",
+        "gray": "Gray",
+        "green": "Green",
+        "indigo": "Indigo",
+        "orange": "Orange",
+        "pink": "Pink",
+        "purple": "Purple",
+        "red": "Red",
+        "yellow": "Yellow"
+      },
+      "select": "Select {color} color"
+    },
+    "days": {
+      "friday": {
+        "full": "Friday",
+        "narrow": "F",
+        "short": "Fri"
+      },
+      "monday": {
+        "full": "Monday",
+        "narrow": "M",
+        "short": "Mon"
+      },
+      "saturday": {
+        "full": "Saturday",
+        "narrow": "S",
+        "short": "Sat"
+      },
+      "sunday": {
+        "full": "Sunday",
+        "narrow": "S",
+        "short": "Sun"
+      },
+      "thursday": {
+        "full": "Thursday",
+        "narrow": "T",
+        "short": "Thu"
+      },
+      "tuesday": {
+        "full": "Tuesday",
+        "narrow": "T",
+        "short": "Tue"
+      },
+      "wednesday": {
+        "full": "Wednesday",
+        "narrow": "W",
+        "short": "Wed"
+      }
+    },
+    "hours": {
+      "all_days": "All days",
+      "day_count": "{count, plural, one {# day} other {# days}}",
+      "info": "Configure your available hours for different activities. These settings help the calendar optimize scheduling and provide better suggestions.",
+      "load_failed": "Failed to load hour settings",
+      "no_days": "No days",
+      "no_hours_provided": "No hours provided",
+      "overview": "Overview",
+      "total_hours": "{hours}h/week",
+      "total_hours_minutes": "{hours}h {minutes}m/week",
+      "try_again": "Try again",
+      "types": {
+        "meeting": {
+          "description": "Define when you are available for meetings. Others can see this when scheduling.",
+          "label": "Meeting Hours",
+          "short_label": "Meeting"
+        },
+        "personal": {
+          "description": "Block off personal time for breaks, exercise, or personal commitments.",
+          "label": "Personal Hours",
+          "short_label": "Personal"
+        },
+        "work": {
+          "description": "Set your regular working hours. This helps with scheduling tasks and managing workload.",
+          "label": "Work Hours",
+          "short_label": "Work"
+        }
+      },
+      "update_failed": "Failed to update settings",
+      "updated": "{type} hours updated"
+    },
+    "overview": {
+      "no_hours_set": "No hours set",
+      "summary": "{total} ({count, plural, one {# day} other {# days}})",
+      "total_hours": "{hours}h/wk",
+      "total_hours_minutes": "{hours}h {minutes}m/wk",
+      "types": {
+        "meeting": "Meeting",
+        "personal": "Personal",
+        "work": "Work"
+      }
+    },
+    "sections": {
+      "colors": {
+        "description": "Customize colors for different event categories",
+        "title": "Category Colors"
+      },
+      "hours": {
+        "description": "Configure your work, meeting, and personal hours",
+        "title": "Hours"
+      },
+      "preferences": {
+        "description": "Set workspace-level calendar preferences",
+        "title": "Timezone & First Day of Week"
+      }
+    },
+    "time_range": {
+      "add_block": "Add Time Block",
+      "add_block_tooltip": "Add a new time block",
+      "auto_corrected_end": "{message}. End time was corrected automatically.",
+      "auto_corrected_start": "{message}. Start time was corrected automatically.",
+      "cancel": "Cancel",
+      "click_to_enable": "(Click to enable)",
+      "confirm_copy_all": "Yes, copy to all days",
+      "copy_all": "Copy to all days",
+      "copy_all_description": "This will overwrite the hours for all days with the current day's settings. Are you sure you want to continue?",
+      "copy_all_title": "Copy to all days?",
+      "disabled_day": "This day is disabled. Toggle the switch above to set availability.",
+      "end": "End",
+      "end_after_start": "End time must be after start time",
+      "end_too_late": "End time cannot be after 11:59 PM",
+      "invalid": "Invalid time range",
+      "maximum_blocks": "Maximum blocks reached",
+      "minimum_duration": "Time block must be at least 30 minutes",
+      "new_block_overlaps": "New block overlaps with previous block",
+      "no_time_left": "No time left in the day for a 30-minute block",
+      "not_enough_time": "Not enough time left in the day for a 30-minute block",
+      "overlaps_next": "End time overlaps with next block",
+      "overlaps_previous": "Start time overlaps with previous block",
+      "remove_block": "Remove time block",
+      "start": "Start",
+      "start_too_early": "Start time cannot be before 12:00 AM"
+    }
+  },
   "calendar-sidebar": {
     "collapse": "Collapse sidebar",
     "due": "Due",
