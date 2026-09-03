@@ -17,6 +17,7 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveTaskBoardAccess } from '../../../board-access';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -106,25 +107,92 @@ async function resolveTaskRelationshipRequestAuth(
   };
 }
 
-async function getWorkspaceTaskRow(
-  sbAdmin: TypedSupabaseClient,
-  taskId: string
-) {
-  return sbAdmin
-    .from('tasks')
-    .select(
-      `
-        id,
-        list:task_lists!inner(
-          board:workspace_boards!inner(
-            ws_id
-          )
-        )
-      `
-    )
-    .eq('id', taskId)
-    .is('deleted_at', null)
-    .maybeSingle();
+type RelationshipMutation = z.infer<typeof relationshipMutationSchema>;
+
+function relationshipTaskNotFoundMessage({
+  candidateTaskId,
+  isRouteTaskSource,
+  routeTaskId,
+}: {
+  candidateTaskId: string;
+  isRouteTaskSource: boolean;
+  routeTaskId: string;
+}) {
+  if (candidateTaskId === routeTaskId) return 'Task not found';
+  return isRouteTaskSource ? 'Related task not found' : 'Source task not found';
+}
+
+async function authorizeRelationshipMutation({
+  payload,
+  routeTaskId,
+  sbAdmin,
+  supabase,
+  user,
+  wsId,
+}: {
+  payload: RelationshipMutation;
+  routeTaskId: string;
+  sbAdmin: TypedSupabaseClient;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+  wsId: string;
+}) {
+  const isRouteTaskSource = payload.source_task_id === routeTaskId;
+  const accessByTaskId = new Map<
+    string,
+    Awaited<ReturnType<typeof resolveTaskBoardAccess>>
+  >();
+
+  for (const candidateTaskId of [
+    payload.source_task_id,
+    payload.target_task_id,
+  ]) {
+    if (accessByTaskId.has(candidateTaskId)) continue;
+
+    const access = await resolveTaskBoardAccess({
+      requiredPermission: 'edit',
+      sbAdmin,
+      supabase,
+      taskId: candidateTaskId,
+      user,
+      wsId,
+    });
+
+    if ('error' in access) {
+      if (access.error.status !== 404) return { error: access.error };
+      return {
+        error: NextResponse.json(
+          {
+            error: relationshipTaskNotFoundMessage({
+              candidateTaskId,
+              isRouteTaskSource,
+              routeTaskId,
+            }),
+          },
+          { status: 404 }
+        ),
+      };
+    }
+
+    if (access.wsId !== wsId) {
+      return {
+        error: NextResponse.json(
+          {
+            error: relationshipTaskNotFoundMessage({
+              candidateTaskId,
+              isRouteTaskSource,
+              routeTaskId,
+            }),
+          },
+          { status: 404 }
+        ),
+      };
+    }
+
+    accessByTaskId.set(candidateTaskId, access);
+  }
+
+  return { accessByTaskId };
 }
 
 function toTaskInfo(task: RelationshipTaskRow): RelatedTaskInfo {
@@ -380,23 +448,6 @@ export async function handleTaskRelationshipRoutePOST(
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const parsedBody = relationshipMutationSchema.safeParse(
       await request.json()
     );
@@ -416,45 +467,15 @@ export async function handleTaskRelationshipRoutePOST(
     }
 
     const sbAdmin = await createAdminClient();
-
-    const { data: taskRow, error: taskError } = await getWorkspaceTaskRow(
+    const authorization = await authorizeRelationshipMutation({
+      payload,
+      routeTaskId: taskId,
       sbAdmin,
-      taskId
-    );
-
-    if (taskError) {
-      return NextResponse.json(
-        { error: 'Failed to load task' },
-        { status: 500 }
-      );
-    }
-
-    if (!taskRow || taskRow.list?.board?.ws_id !== wsId) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
-    const otherTaskId = isSourceTask
-      ? payload.target_task_id
-      : payload.source_task_id;
-
-    if (otherTaskId !== taskId) {
-      const { data: otherTask, error: otherTaskError } =
-        await getWorkspaceTaskRow(sbAdmin, otherTaskId);
-
-      if (otherTaskError) {
-        return NextResponse.json(
-          { error: 'Failed to load related task' },
-          { status: 500 }
-        );
-      }
-
-      if (!otherTask || otherTask.list?.board?.ws_id !== wsId) {
-        const notFoundMessage = isSourceTask
-          ? 'Related task not found'
-          : 'Source task not found';
-        return NextResponse.json({ error: notFoundMessage }, { status: 404 });
-      }
-    }
+      supabase,
+      user,
+      wsId,
+    });
+    if ('error' in authorization) return authorization.error;
 
     const { data: relationship, error: insertError } = await sbAdmin
       .from('task_relationships')
@@ -517,23 +538,6 @@ export async function handleTaskRelationshipRouteDELETE(
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const parsedBody = relationshipMutationSchema.safeParse(
       await request.json()
     );
@@ -553,45 +557,15 @@ export async function handleTaskRelationshipRouteDELETE(
     }
 
     const sbAdmin = await createAdminClient();
-
-    const { data: taskRow, error: taskError } = await getWorkspaceTaskRow(
+    const authorization = await authorizeRelationshipMutation({
+      payload,
+      routeTaskId: taskId,
       sbAdmin,
-      taskId
-    );
-
-    if (taskError) {
-      return NextResponse.json(
-        { error: 'Failed to load task' },
-        { status: 500 }
-      );
-    }
-
-    if (!taskRow || taskRow.list?.board?.ws_id !== wsId) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
-
-    const otherTaskId = isSourceTask
-      ? payload.target_task_id
-      : payload.source_task_id;
-
-    if (otherTaskId !== taskId) {
-      const { data: otherTask, error: otherTaskError } =
-        await getWorkspaceTaskRow(sbAdmin, otherTaskId);
-
-      if (otherTaskError) {
-        return NextResponse.json(
-          { error: 'Failed to load related task' },
-          { status: 500 }
-        );
-      }
-
-      if (!otherTask || otherTask.list?.board?.ws_id !== wsId) {
-        const notFoundMessage = isSourceTask
-          ? 'Related task not found'
-          : 'Source task not found';
-        return NextResponse.json({ error: notFoundMessage }, { status: 404 });
-      }
-    }
+      supabase,
+      user,
+      wsId,
+    });
+    if ('error' in authorization) return authorization.error;
 
     const deleteRelationship = async (
       sourceTaskId: string,
