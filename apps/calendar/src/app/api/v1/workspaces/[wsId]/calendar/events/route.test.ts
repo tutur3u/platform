@@ -198,9 +198,19 @@ describe('workspace calendar event collection authorization', () => {
   it('normalizes personal before membership and permission checks', async () => {
     const rpc = vi.fn(async () => ({ data: true, error: null }));
     const query = getQueryResult([]);
+    const maybeSingle = vi.fn(async () => ({
+      data: { id: WS_ID },
+      error: null,
+    }));
+    const personalQuery: any = {
+      eq: vi.fn(() => personalQuery),
+      maybeSingle,
+      select: vi.fn(() => personalQuery),
+    };
+    const from = vi.fn(() => personalQuery);
     mocks.resolveAuth.mockResolvedValue({
       ok: true,
-      supabase: { rpc },
+      supabase: { from, rpc },
       user: { id: USER_ID },
     });
     mocks.createAdminClient.mockResolvedValue({ from: vi.fn(() => query) });
@@ -208,10 +218,8 @@ describe('workspace calendar event collection authorization', () => {
     const response = await GET(request('GET'), params('personal'));
 
     expect(response.status).toBe(200);
-    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
-      'personal',
-      expect.anything()
-    );
+    expect(from).toHaveBeenCalledWith('workspaces');
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
     expect(mocks.membership).toHaveBeenCalledWith(
       expect.objectContaining({ wsId: WS_ID, userId: USER_ID })
     );
