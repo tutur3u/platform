@@ -83,7 +83,8 @@ begin
     update public.workspace_ai_credit_balances
        set total_used = greatest(total_used - v_reservation.amount, 0),
            updated_at = now()
-     where id = v_reservation.balance_id;
+     where id = v_reservation.balance_id
+    returning * into v_balance;
 
     update private.ai_credit_reservations
        set status = 'expired',
@@ -94,7 +95,15 @@ begin
      where id = v_reservation.id;
 
     return query
-      select false, 0::numeric, 0::numeric, 'RESERVATION_EXPIRED'::text;
+      select
+        false,
+        0::numeric,
+        (
+          v_balance.total_allocated + v_balance.bonus_credits
+            - v_balance.total_used
+            + coalesce(public._get_active_payg_credits(v_reservation.ws_id), 0)
+        )::numeric,
+        'RESERVATION_EXPIRED'::text;
     return;
   end if;
 

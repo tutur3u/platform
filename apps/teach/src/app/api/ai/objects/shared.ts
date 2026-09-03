@@ -8,6 +8,7 @@ import {
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { invalidateAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
 import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
@@ -97,6 +98,8 @@ async function settleReservation(
     outputTokens: number;
     reasoningTokens: number;
     reservationId: string;
+    userId: string;
+    wsId: string;
   }
 ): Promise<boolean> {
   const client = sbAdmin as unknown as PrivateRpcClient;
@@ -111,7 +114,14 @@ async function settleReservation(
         p_reservation_id: input.reservationId,
       }
     );
-    return !error && data?.[0]?.success === true;
+    const success = !error && data?.[0]?.success === true;
+    if (success) {
+      await invalidateAiCreditSnapshot({
+        userId: input.userId,
+        wsId: input.wsId,
+      });
+    }
+    return success;
   } catch {
     return false;
   }
@@ -318,6 +328,8 @@ export function createTeachObjectGenerationHandler<
               outputTokens: usage.outputTokens ?? 0,
               reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
               reservationId,
+              userId: context.user.id,
+              wsId: normalizedWsId,
             });
 
             if (!settled) {

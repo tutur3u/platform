@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   consumeStream: vi.fn(),
   featureQueryResult: { count: 1, error: null as unknown },
   google: vi.fn((modelId: string) => ({ modelId })),
+  invalidateAiCreditSnapshot: vi.fn(),
   requireTeachWorkspaceAccess: vi.fn(),
   releaseFixedAiCreditReservation: vi.fn(),
   reserveFixedAiCredits: vi.fn(),
@@ -60,6 +61,12 @@ vi.mock('@tuturuuu/education-core/teach/api', () => ({
   requireTeachWorkspaceAccess: (
     ...args: Parameters<typeof mocks.requireTeachWorkspaceAccess>
   ) => mocks.requireTeachWorkspaceAccess(...args),
+}));
+
+vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
+  invalidateAiCreditSnapshot: (
+    ...args: Parameters<typeof mocks.invalidateAiCreditSnapshot>
+  ) => mocks.invalidateAiCreditSnapshot(...args),
 }));
 
 vi.mock('ai', () => ({
@@ -278,6 +285,10 @@ describe('Teach object-generation handler', () => {
         p_reservation_id: 'reservation-1',
       }
     );
+    expect(mocks.invalidateAiCreditSnapshot).toHaveBeenCalledWith({
+      userId: 'actor-user',
+      wsId: 'normalized-ws',
+    });
     expect(mocks.releaseFixedAiCreditReservation).not.toHaveBeenCalled();
     expect(mocks.consumeStream).toHaveBeenCalledTimes(1);
   });

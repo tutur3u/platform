@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(17);
 
 insert into public.users (id, display_name)
 values (
@@ -176,6 +176,112 @@ select is(
       = '31000000-0000-4000-8000-000000002031'),
   0,
   'zero usage does not create a ledger charge'
+);
+
+insert into private.workspace_credit_packs (
+  id,
+  name,
+  description,
+  price,
+  currency,
+  tokens,
+  expiry_days
+)
+values (
+  '31000000-0000-4000-8000-000000002040',
+  'Metered reservation test credits',
+  'Credits used to verify expired settlement balances',
+  100,
+  'usd',
+  25,
+  30
+);
+
+insert into public.workspace_credit_pack_purchases (
+  id,
+  ws_id,
+  credit_pack_id,
+  polar_subscription_id,
+  tokens_granted,
+  tokens_remaining,
+  expires_at,
+  status
+)
+values (
+  '31000000-0000-4000-8000-000000002041',
+  '31000000-0000-4000-8000-000000002010',
+  '31000000-0000-4000-8000-000000002040',
+  'metered-reservation-expiry-test',
+  25,
+  25,
+  now() + interval '30 days',
+  'active'
+);
+
+update public.workspace_ai_credit_balances
+set total_used = total_used + 10
+where id = '31000000-0000-4000-8000-000000002020';
+
+insert into private.ai_credit_reservations (
+  id,
+  ws_id,
+  user_id,
+  balance_id,
+  amount,
+  model_id,
+  feature,
+  status,
+  expires_at,
+  metadata
+)
+values (
+  '31000000-0000-4000-8000-000000002032',
+  '31000000-0000-4000-8000-000000002010',
+  '31000000-0000-4000-8000-000000002001',
+  '31000000-0000-4000-8000-000000002020',
+  10,
+  'google/gemini-3.1-flash-lite',
+  'generate',
+  'reserved',
+  now() - interval '1 minute',
+  '{"source":"expired-reservation-test"}'::jsonb
+);
+
+create temporary table expired_settlement_result as
+select *
+from public.settle_metered_ai_credit_reservation(
+  p_reservation_id => '31000000-0000-4000-8000-000000002032',
+  p_input_tokens => 1,
+  p_output_tokens => 1,
+  p_reasoning_tokens => 0,
+  p_metadata => '{"surface":"teach"}'::jsonb
+);
+
+select is(
+  (select success from expired_settlement_result),
+  false,
+  'expired reservation settlement fails'
+);
+
+select is(
+  (select error_code from expired_settlement_result),
+  'RESERVATION_EXPIRED',
+  'expired reservation settlement returns its error code'
+);
+
+select is(
+  (select remaining_credits from expired_settlement_result),
+  (
+    125 - (select credits_deducted from metered_settlement_result)
+  )::numeric,
+  'expired settlement returns released included and active PAYG credits'
+);
+
+select is(
+  (select status from private.ai_credit_reservations
+    where id = '31000000-0000-4000-8000-000000002032'),
+  'expired',
+  'expired settlement marks the reservation expired'
 );
 
 select ok(
