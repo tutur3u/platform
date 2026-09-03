@@ -17,7 +17,8 @@ import {
 import { type CategoryColor, colorMap } from './color-picker';
 
 // Common category suggestions with predefined colors
-type CategorySuggestion = CategoryColor & {
+type CategorySuggestion = {
+  color: SupportedColor;
   translationKey:
     | 'appointment'
     | 'education'
@@ -32,16 +33,16 @@ type CategorySuggestion = CategoryColor & {
 };
 
 const CATEGORY_SUGGESTIONS: CategorySuggestion[] = [
-  { name: 'Work', color: 'BLUE', translationKey: 'work' },
-  { name: 'Personal', color: 'GREEN', translationKey: 'personal' },
-  { name: 'Family', color: 'PURPLE', translationKey: 'family' },
-  { name: 'Health', color: 'RED', translationKey: 'health' },
-  { name: 'Social', color: 'YELLOW', translationKey: 'social' },
-  { name: 'Education', color: 'INDIGO', translationKey: 'education' },
-  { name: 'Travel', color: 'ORANGE', translationKey: 'travel' },
-  { name: 'Meeting', color: 'CYAN', translationKey: 'meeting' },
-  { name: 'Appointment', color: 'PINK', translationKey: 'appointment' },
-  { name: 'Other', color: 'GRAY', translationKey: 'other' },
+  { color: 'BLUE', translationKey: 'work' },
+  { color: 'GREEN', translationKey: 'personal' },
+  { color: 'PURPLE', translationKey: 'family' },
+  { color: 'RED', translationKey: 'health' },
+  { color: 'YELLOW', translationKey: 'social' },
+  { color: 'INDIGO', translationKey: 'education' },
+  { color: 'ORANGE', translationKey: 'travel' },
+  { color: 'CYAN', translationKey: 'meeting' },
+  { color: 'PINK', translationKey: 'appointment' },
+  { color: 'GRAY', translationKey: 'other' },
 ];
 
 type CategoryColorsSettingsProps = {
