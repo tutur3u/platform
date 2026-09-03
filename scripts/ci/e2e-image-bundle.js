@@ -184,7 +184,7 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
           )
         : null,
     frontend:
-      command === 'pull'
+      command === 'pull' || command === 'publish'
         ? validateBundleFrontend(
             getOptionValue(
               argv,
@@ -357,6 +357,7 @@ async function publishBundle(
   });
   const manifest = createBundleManifest({
     env: buildEnv,
+    frontend: options.frontend,
     producerProject: options.producerProject,
     repository: options.repository,
     tagPrefix: options.tagPrefix,

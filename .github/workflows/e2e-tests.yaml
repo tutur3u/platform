@@ -167,7 +167,9 @@ jobs:
       - name: Build and publish E2E image bundle
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/ci/e2e-image-bundle.js publish
+        # The TanStack/Rust migration is paused. Build only the live Next.js
+        # frontend bundle needed by the maintained Playwright matrix.
+        run: node scripts/ci/e2e-image-bundle.js publish --frontend next
 
       - name: Remove Turbo BuildKit secret files
         if: always()
@@ -653,7 +655,9 @@ jobs:
   migration-e2e:
     name: Migration E2E (${{ matrix.mode }})
     needs: [prepare-e2e-images]
-    if: ${{ always() && github.ref != 'refs/heads/production' }}
+    # Preserve the matrix for an intentional future restart, but do not spend
+    # CI capacity on the paused TanStack/Rust migration.
+    if: ${{ false }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:

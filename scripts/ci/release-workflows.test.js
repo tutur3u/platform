@@ -1194,7 +1194,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.doesNotMatch(e2eJob, /name: test-results-/u);
 });
 
-test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', () => {
+test('E2E workflow retains the paused migration restart contract', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
     'utf8'
@@ -1211,8 +1211,8 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
 
   assert.match(workflow, /\n {2}workflow_dispatch:\n/u);
   assert.match(migrationJob, /needs: \[prepare-e2e-images\]/u);
-  assert.match(migrationJob, /if: \$\{\{ always\(\)/u);
-  assert.match(migrationJob, /github\.ref != 'refs\/heads\/production'/u);
+  assert.match(migrationJob, /if: \$\{\{ false \}\}/u);
+  assert.doesNotMatch(migrationJob, /refs\/heads\/production/u);
   assert.match(migrationJob, /mode: tanstack-dual-stack/u);
   assert.match(
     migrationJob,

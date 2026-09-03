@@ -41,7 +41,7 @@ released, or recovered.
   `scripts/check-discord-python.js`.
 - Vercel handles hosted satellite web deployments, platform preview build validation, and the hosted platform production deploy. Automatic TanStack production builds are disabled while that migration is paused. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
 - Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
-- The TanStack/Rust migration is paused. Its source remains available for local or explicitly approved manual work, but automatic Rust/TanStack CI, Cloudflare workflow jobs, and TanStack production builds stay disabled in `tuturuuu.ts` until maintenance resumes. `apps/web` remains the production source of truth.
+- The TanStack/Rust migration is paused. Its source remains available for local or explicitly approved manual work, but automatic Rust/TanStack CI, Cloudflare workflow jobs, TanStack production builds, and the migration E2E matrix stay disabled until maintenance resumes. The shared E2E bundle now builds only the maintained Next.js frontend, and `apps/web` remains the production source of truth.
 - Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.
 
 ## Vercel Cost Controls

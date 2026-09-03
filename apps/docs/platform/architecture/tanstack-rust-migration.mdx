@@ -15,10 +15,11 @@ contracts documented in `apps/backend/api/openapi.yaml`.
 <Warning>
   Active development of `apps/tanstack-web` and `apps/backend` is paused. Their
   combined `rust-backend.yml` CI/Cloudflare workflow and automatic TanStack
-  Vercel production builds are disabled in `tuturuuu.ts`. `apps/backend` is not
-  deployed and receives no production traffic; `apps/web` remains the live API
-  runtime. A route marked `migrated` below records implemented source work, not
-  a production cutover or a currently maintained migration target.
+  Vercel production builds are disabled in `tuturuuu.ts`, and the shared E2E
+  workflow skips its migration matrix and TanStack image build. `apps/backend`
+  is not deployed and receives no production traffic; `apps/web` remains the
+  live API runtime. A route marked `migrated` below records implemented source
+  work, not a production cutover or a currently maintained migration target.
 </Warning>
 
 The crate can run as a native container and keeps a Cloudflare Workers Rust
