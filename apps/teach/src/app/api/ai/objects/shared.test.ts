@@ -419,7 +419,10 @@ describe('Teach object-generation handler', () => {
   });
 
   it('retries a failed release after settlement fails', async () => {
-    mocks.settleResult = { data: null, error: new Error('settlement failed') };
+    mocks.settleResult = {
+      data: [{ credits_deducted: 0, remaining_credits: 20, success: false }],
+      error: new Error('settlement failed'),
+    };
     mocks.releaseFixedAiCreditReservation
       .mockRejectedValueOnce(new Error('temporary release failure'))
       .mockResolvedValueOnce({
