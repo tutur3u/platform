@@ -5,6 +5,7 @@ import {
   createWorkspaceLabel,
   createWorkspaceTaskBoard,
   createWorkspaceTaskProject,
+  InternalApiError,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceMembers,
@@ -285,15 +286,23 @@ export function useMyTasksState({
         >['boards'] = [];
         let page = 1;
 
-        while (true) {
-          const payload = await listWorkspaceTaskBoards(workspaceId, {
-            page,
-            pageSize,
-          });
-          const pageBoards = payload.boards ?? [];
-          boards.push(...pageBoards);
-          if (pageBoards.length < pageSize) break;
-          page += 1;
+        try {
+          while (true) {
+            const payload = await listWorkspaceTaskBoards(workspaceId, {
+              page,
+              pageSize,
+              status: 'all',
+            });
+            const pageBoards = payload.boards ?? [];
+            boards.push(...pageBoards);
+            if (pageBoards.length < pageSize) break;
+            page += 1;
+          }
+        } catch (error) {
+          if (error instanceof InternalApiError && error.status === 403) {
+            return [];
+          }
+          throw error;
         }
 
         return boards;

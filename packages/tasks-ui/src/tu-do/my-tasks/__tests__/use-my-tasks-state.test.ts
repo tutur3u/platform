@@ -4,6 +4,7 @@ import { LABEL_COLOR_PRESETS } from '../../utils/label-colors';
 
 // ── Hoisted mocks ──────────────────────────────────────────────────────────
 const {
+  MockInternalApiError,
   mockCreateWorkspaceLabel,
   mockCreateWorkspaceTaskProject,
   mockListWorkspaceLabels,
@@ -29,6 +30,14 @@ const {
   mockCreateTaskFn,
   mockFetch,
 } = vi.hoisted(() => ({
+  MockInternalApiError: class MockInternalApiError extends Error {
+    constructor(
+      message: string,
+      public readonly status: number
+    ) {
+      super(message);
+    }
+  },
   mockCreateWorkspaceLabel: vi.fn(),
   mockCreateWorkspaceTaskProject: vi.fn(),
   mockListWorkspaceLabels: vi.fn(),
@@ -64,6 +73,7 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
+  InternalApiError: MockInternalApiError,
   createWorkspaceLabel: mockCreateWorkspaceLabel,
   createWorkspaceTaskBoard: vi.fn(),
   createWorkspaceTaskProject: mockCreateWorkspaceTaskProject,
@@ -308,8 +318,43 @@ describe('useMyTasksState', () => {
 
       await expect(boardQuery?.queryFn()).resolves.toHaveLength(200);
       expect(mockListWorkspaceTaskBoards.mock.calls).toEqual([
-        ['ws-a', { page: 1, pageSize: 200 }],
-        ['ws-a', { page: 2, pageSize: 200 }],
+        ['ws-a', { page: 1, pageSize: 200, status: 'all' }],
+        ['ws-a', { page: 2, pageSize: 200, status: 'all' }],
+      ]);
+    });
+
+    it('keeps accessible boards when another workspace rejects catalog access', async () => {
+      const workspaces = [
+        { id: 'ws-allowed', name: 'Allowed', personal: false },
+        { id: 'ws-forbidden', name: 'Forbidden', personal: false },
+      ];
+      setupPersonalQueries(workspaces);
+      mockListWorkspaces.mockResolvedValue(workspaces);
+      mockListWorkspaceTaskBoards.mockImplementation(async (workspaceId) => {
+        if (workspaceId === 'ws-forbidden') {
+          throw new MockInternalApiError('Forbidden', 403);
+        }
+        return {
+          boards: [
+            {
+              deleted_at: null,
+              id: 'board-allowed',
+              name: 'Allowed board',
+              ws_id: 'ws-allowed',
+            },
+          ],
+        };
+      });
+
+      renderHook(() => useMyTasksState({ ...DEFAULT_PROPS, isPersonal: true }));
+      const boardQuery = findQueryOptions('all-user-boards');
+
+      await expect(boardQuery?.queryFn()).resolves.toEqual([
+        {
+          id: 'board-allowed',
+          name: 'Allowed board',
+          ws_id: 'ws-allowed',
+        },
       ]);
     });
 
