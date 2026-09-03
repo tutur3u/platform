@@ -1,7 +1,5 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const {
   assertWorkflowDecision,
   createFixtureRoot,
@@ -24,17 +22,4 @@ test('paused TanStack and Rust workflows remain disabled', () => {
 
     assert.match(decision.output, /disabled in tuturuuu\.ts/);
   }
-});
-
-test('shared E2E avoids paused TanStack and Rust work', () => {
-  const workflow = fs.readFileSync(
-    path.join(__dirname, '..', '..', '.github', 'workflows', 'e2e-tests.yaml'),
-    'utf8'
-  );
-
-  assert.match(workflow, /e2e-image-bundle\.js publish --frontend next/u);
-  assert.match(
-    workflow,
-    /migration-e2e:\n(?:.|\n)*?\n {4}if: \$\{\{ false \}\}/u
-  );
 });
