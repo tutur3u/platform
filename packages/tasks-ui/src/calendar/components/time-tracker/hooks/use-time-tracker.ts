@@ -10,7 +10,7 @@ import type {
 } from '@tuturuuu/ui/time-tracker/types';
 import { useCallback, useEffect, useState } from 'react';
 
-interface SessionTemplate {
+export interface SessionTemplate {
   title: string;
   description?: string;
   category_id?: string;
@@ -47,13 +47,13 @@ interface UseTimeTrackerReturn {
     description?: string;
     categoryId?: string;
     taskId?: string;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   startTimerWithTask: (
     taskId: string,
     taskName: string,
     description?: string,
     categoryId?: string
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   stopTimer: () => Promise<void>;
   pauseTimer: () => Promise<void>;
   resumeSession: (session: SessionWithRelations) => Promise<void>;
@@ -211,9 +211,11 @@ export function useTimeTracker({
         });
         fetchData();
         toast.success('Timer started!');
+        return true;
       } catch (error) {
         console.error('Error starting timer:', error);
         toast.error('Failed to start timer');
+        return false;
       } finally {
         setIsLoading(false);
       }
@@ -231,7 +233,7 @@ export function useTimeTracker({
     }) => {
       if (!params.title.trim()) {
         toast.error('Please enter a title for your time session');
-        return;
+        return false;
       }
 
       setIsLoading(true);
@@ -259,9 +261,11 @@ export function useTimeTracker({
         });
         fetchData();
         toast.success('Timer started!');
+        return true;
       } catch (error) {
         console.error('Error starting timer:', error);
         toast.error('Failed to start timer');
+        return false;
       } finally {
         setIsLoading(false);
       }
