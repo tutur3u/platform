@@ -417,4 +417,32 @@ describe('Teach object-generation handler', () => {
     );
     expect(sbAdmin.rpc).not.toHaveBeenCalled();
   });
+
+  it('retries a failed release after settlement fails', async () => {
+    mocks.settleResult = { data: null, error: new Error('settlement failed') };
+    mocks.releaseFixedAiCreditReservation
+      .mockRejectedValueOnce(new Error('temporary release failure'))
+      .mockResolvedValueOnce({
+        errorCode: null,
+        remainingCredits: 20,
+        success: true,
+      });
+
+    const POST = await createHandler();
+    const response = await POST(createRequest());
+
+    expect(response.status).toBe(200);
+    await vi.waitFor(() =>
+      expect(mocks.releaseFixedAiCreditReservation).toHaveBeenCalledTimes(2)
+    );
+    expect(mocks.releaseFixedAiCreditReservation).toHaveBeenLastCalledWith(
+      'reservation-1',
+      {
+        reason: 'settlement_failed',
+        source: 'test_generation',
+        surface: 'test_generation',
+      },
+      sbAdmin
+    );
+  });
 });

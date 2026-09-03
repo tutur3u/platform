@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(9);
+select plan(13);
 
 insert into public.users (id, display_name)
 values (
@@ -34,8 +34,8 @@ values (
   '31000000-0000-4000-8000-000000002020',
   '31000000-0000-4000-8000-000000002010',
   null,
-  '2026-09-01T00:00:00Z',
-  '2026-10-01T00:00:00Z',
+  date_trunc('month', now()),
+  date_trunc('month', now()) + interval '1 month',
   100,
   10
 );
@@ -111,6 +111,71 @@ select is(
       = '31000000-0000-4000-8000-000000002030'),
   1,
   'actual usage has exactly one ledger entry'
+);
+
+update public.workspace_ai_credit_balances
+set total_used = total_used + 10
+where id = '31000000-0000-4000-8000-000000002020';
+
+insert into private.ai_credit_reservations (
+  id,
+  ws_id,
+  user_id,
+  balance_id,
+  amount,
+  model_id,
+  feature,
+  status,
+  metadata
+)
+values (
+  '31000000-0000-4000-8000-000000002031',
+  '31000000-0000-4000-8000-000000002010',
+  '31000000-0000-4000-8000-000000002001',
+  '31000000-0000-4000-8000-000000002020',
+  10,
+  'google/gemini-3.1-flash-lite',
+  'generate',
+  'reserved',
+  '{"source":"zero-usage-test"}'::jsonb
+);
+
+create temporary table zero_usage_settlement_result as
+select *
+from public.settle_metered_ai_credit_reservation(
+  p_reservation_id => '31000000-0000-4000-8000-000000002031',
+  p_input_tokens => 0,
+  p_output_tokens => 0,
+  p_reasoning_tokens => 0,
+  p_metadata => '{"surface":"teach"}'::jsonb
+);
+
+select is(
+  (select success from zero_usage_settlement_result),
+  true,
+  'zero usage releases successfully'
+);
+
+select is(
+  (select status from private.ai_credit_reservations
+    where id = '31000000-0000-4000-8000-000000002031'),
+  'released',
+  'zero usage releases rather than commits the reservation'
+);
+
+select is(
+  (select amount from private.ai_credit_reservations
+    where id = '31000000-0000-4000-8000-000000002031'),
+  10::numeric,
+  'zero usage preserves the positive reserved amount for audit history'
+);
+
+select is(
+  (select count(*)::integer from public.ai_credit_transactions
+    where metadata ->> 'reservation_id'
+      = '31000000-0000-4000-8000-000000002031'),
+  0,
+  'zero usage does not create a ledger charge'
 );
 
 select ok(

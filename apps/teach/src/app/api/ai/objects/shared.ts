@@ -258,14 +258,41 @@ export function createTeachObjectGenerationHandler<
       const reservationId = reservation.reservationId;
       let reservationState: 'reserved' | 'settling' | 'settled' = 'reserved';
       const releaseReservation = async (reason: string) => {
-        if (reservationState !== 'reserved') return;
+        if (reservationState !== 'reserved') return false;
         reservationState = 'settling';
-        await releaseFixedAiCreditReservation(
-          reservationId,
-          { reason, source: config.source, surface: config.surface },
-          sbAdmin
-        );
-        reservationState = 'settled';
+
+        for (let attempt = 1; attempt <= 2; attempt += 1) {
+          try {
+            const released = await releaseFixedAiCreditReservation(
+              reservationId,
+              { reason, source: config.source, surface: config.surface },
+              sbAdmin
+            );
+            if (released.success) {
+              reservationState = 'settled';
+              return true;
+            }
+
+            console.warn('Failed to release Teach credit reservation', {
+              attempt,
+              errorCode: released.errorCode,
+              reason,
+              reservationId,
+            });
+          } catch (error) {
+            console.warn('Failed to release Teach credit reservation', {
+              attempt,
+              error,
+              reason,
+              reservationId,
+            });
+          }
+        }
+
+        // A later cleanup path may retry, and the database reservation remains
+        // reserved until its TTL rather than being mistaken for settled.
+        reservationState = 'reserved';
+        return false;
       };
 
       try {
@@ -300,15 +327,9 @@ export function createTeachObjectGenerationHandler<
                 userId: context.user.id,
                 wsId: normalizedWsId,
               });
-              await releaseFixedAiCreditReservation(
-                reservationId,
-                {
-                  reason: 'settlement_failed',
-                  source: config.source,
-                  surface: config.surface,
-                },
-                sbAdmin
-              );
+              reservationState = 'reserved';
+              await releaseReservation('settlement_failed');
+              return;
             }
             reservationState = 'settled';
           },
