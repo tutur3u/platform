@@ -5,7 +5,6 @@ import {
   createWorkspaceLabel,
   createWorkspaceTaskBoard,
   createWorkspaceTaskProject,
-  listCurrentUserTaskBoards,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceMembers,
@@ -278,8 +277,33 @@ export function useMyTasksState({
   const { data: allBoardsData = [] } = useQuery({
     queryKey: ['all-user-boards'],
     queryFn: async () => {
-      const payload = await listCurrentUserTaskBoards();
-      return (payload.boards ?? [])
+      const workspaces = await listWorkspaces();
+      const fetchAllWorkspaceBoards = async (workspaceId: string) => {
+        const pageSize = 200;
+        const boards: Awaited<
+          ReturnType<typeof listWorkspaceTaskBoards>
+        >['boards'] = [];
+        let page = 1;
+
+        while (true) {
+          const payload = await listWorkspaceTaskBoards(workspaceId, {
+            page,
+            pageSize,
+          });
+          const pageBoards = payload.boards ?? [];
+          boards.push(...pageBoards);
+          if (pageBoards.length < pageSize) break;
+          page += 1;
+        }
+
+        return boards;
+      };
+      const boardGroups = await Promise.all(
+        workspaces.map((workspace) => fetchAllWorkspaceBoards(workspace.id))
+      );
+
+      return boardGroups
+        .flat()
         .filter((board) => !board.deleted_at)
         .map((board) => ({
           id: board.id,
@@ -393,8 +417,12 @@ export function useMyTasksState({
     : ((boardsDataRaw as any)?.boards ?? []);
 
   const allWorkspaceIds = useMemo(
-    () => (workspacesData?.map((ws) => ws.id) || []).toSorted(),
-    [workspacesData]
+    () =>
+      (isPersonal
+        ? workspacesData?.map((ws) => ws.id) || []
+        : [wsId]
+      ).toSorted(),
+    [isPersonal, workspacesData, wsId]
   );
 
   // Fetch workspace labels
@@ -406,9 +434,8 @@ export function useMyTasksState({
       const results = await Promise.all(promises);
       return results.flat().filter(Boolean);
     },
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: 5 * 60 * 1000,
     enabled:
-      isPersonal &&
       allWorkspaceIds.length > 0 &&
       (labelCatalogRequested || taskFilters.labelIds.length > 0),
   });
@@ -431,9 +458,8 @@ export function useMyTasksState({
 
       return projectGroups.flat().sort((a, b) => a.name.localeCompare(b.name));
     },
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: 5 * 60 * 1000,
     enabled:
-      isPersonal &&
       allWorkspaceIds.length > 0 &&
       (projectCatalogRequested || taskFilters.projectIds.length > 0),
   });

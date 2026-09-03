@@ -6,8 +6,8 @@ import { LABEL_COLOR_PRESETS } from '../../utils/label-colors';
 const {
   mockCreateWorkspaceLabel,
   mockCreateWorkspaceTaskProject,
-  mockListCurrentUserTaskBoards,
   mockListWorkspaceLabels,
+  mockListWorkspaceTaskBoards,
   mockListWorkspaceTaskProjects,
   mockListWorkspaces,
   mockInvalidateQueries,
@@ -31,8 +31,8 @@ const {
 } = vi.hoisted(() => ({
   mockCreateWorkspaceLabel: vi.fn(),
   mockCreateWorkspaceTaskProject: vi.fn(),
-  mockListCurrentUserTaskBoards: vi.fn(),
   mockListWorkspaceLabels: vi.fn(),
+  mockListWorkspaceTaskBoards: vi.fn(),
   mockListWorkspaceTaskProjects: vi.fn(),
   mockListWorkspaces: vi.fn(),
   mockInvalidateQueries: vi.fn(),
@@ -67,12 +67,11 @@ vi.mock('@tuturuuu/internal-api', () => ({
   createWorkspaceLabel: mockCreateWorkspaceLabel,
   createWorkspaceTaskBoard: vi.fn(),
   createWorkspaceTaskProject: mockCreateWorkspaceTaskProject,
-  listCurrentUserTaskBoards: mockListCurrentUserTaskBoards,
   listWorkspaceBoardsWithLists: vi.fn(),
   listWorkspaceLabels: mockListWorkspaceLabels,
   listWorkspaceMembers: vi.fn(),
   listWorkspaces: mockListWorkspaces,
-  listWorkspaceTaskBoards: vi.fn(),
+  listWorkspaceTaskBoards: mockListWorkspaceTaskBoards,
   listWorkspaceTaskLists: vi.fn(),
   listWorkspaceTaskProjects: mockListWorkspaceTaskProjects,
   updateWorkspaceTaskList: vi.fn(),
@@ -243,28 +242,28 @@ describe('useMyTasksState', () => {
         ],
       },
     ])(
-      'uses one workspace query and one board summary for $name workspaces',
+      'loads complete board catalogs for $name workspaces',
       async ({ workspaces }) => {
         setupPersonalQueries(workspaces);
         mockListWorkspaces.mockResolvedValue(workspaces);
-        mockListCurrentUserTaskBoards.mockResolvedValue({
-          boards: [
-            {
-              access_type: 'guest',
-              deleted_at: null,
-              id: 'guest-board',
-              name: 'Guest board',
-              ws_id: 'ws-guest',
-            },
-            {
-              access_type: 'member',
-              deleted_at: '2026-01-01T00:00:00.000Z',
-              id: 'deleted-board',
-              name: 'Deleted board',
-              ws_id: 'ws-a',
-            },
-          ],
-        });
+        mockListWorkspaceTaskBoards.mockImplementation(
+          async (workspaceId: string) => ({
+            boards: [
+              {
+                deleted_at: null,
+                id: `board-${workspaceId}`,
+                name: `Board ${workspaceId}`,
+                ws_id: workspaceId,
+              },
+              {
+                deleted_at: '2026-01-01T00:00:00.000Z',
+                id: `deleted-${workspaceId}`,
+                name: 'Deleted board',
+                ws_id: workspaceId,
+              },
+            ],
+          })
+        );
 
         renderHook(() =>
           useMyTasksState({ ...DEFAULT_PROPS, isPersonal: true })
@@ -273,19 +272,46 @@ describe('useMyTasksState', () => {
         const workspaceQuery = findQueryOptions('user-workspaces');
         const boardQuery = findQueryOptions('all-user-boards');
         await expect(workspaceQuery?.queryFn()).resolves.toEqual(workspaces);
-        await expect(boardQuery?.queryFn()).resolves.toEqual([
-          {
-            id: 'guest-board',
-            name: 'Guest board',
-            ws_id: 'ws-guest',
-          },
-        ]);
-        expect(mockListWorkspaces).toHaveBeenCalledOnce();
-        expect(mockListCurrentUserTaskBoards).toHaveBeenCalledOnce();
+        await expect(boardQuery?.queryFn()).resolves.toEqual(
+          workspaces.map((workspace) => ({
+            id: `board-${workspace.id}`,
+            name: `Board ${workspace.id}`,
+            ws_id: workspace.id,
+          }))
+        );
+        expect(mockListWorkspaces).toHaveBeenCalledTimes(2);
+        expect(mockListWorkspaceTaskBoards).toHaveBeenCalledTimes(
+          workspaces.length
+        );
         expect(findQueryOptions('workspaceLabels')?.enabled).toBe(false);
         expect(findQueryOptions('workspaceProjects')?.enabled).toBe(false);
       }
     );
+
+    it('paginates every workspace board catalog until a short page', async () => {
+      setupPersonalQueries([{ id: 'ws-a', name: 'A', personal: false }]);
+      mockListWorkspaces.mockResolvedValue([
+        { id: 'ws-a', name: 'A', personal: false },
+      ]);
+      const firstPage = Array.from({ length: 200 }, (_, index) => ({
+        deleted_at: null,
+        id: `board-${index}`,
+        name: `Board ${index}`,
+        ws_id: 'ws-a',
+      }));
+      mockListWorkspaceTaskBoards
+        .mockResolvedValueOnce({ boards: firstPage })
+        .mockResolvedValueOnce({ boards: [] });
+
+      renderHook(() => useMyTasksState({ ...DEFAULT_PROPS, isPersonal: true }));
+      const boardQuery = findQueryOptions('all-user-boards');
+
+      await expect(boardQuery?.queryFn()).resolves.toHaveLength(200);
+      expect(mockListWorkspaceTaskBoards.mock.calls).toEqual([
+        ['ws-a', { page: 1, pageSize: 200 }],
+        ['ws-a', { page: 2, pageSize: 200 }],
+      ]);
+    });
 
     it('loads each workspace label catalog only after demand and keeps a stable key', async () => {
       setupPersonalQueries([
@@ -305,6 +331,7 @@ describe('useMyTasksState', () => {
 
       const requestedQuery = findQueryOptions('workspaceLabels');
       expect(requestedQuery?.enabled).toBe(true);
+      expect(requestedQuery?.staleTime).toBe(5 * 60 * 1000);
       expect(requestedQuery?.queryKey).toEqual([
         'workspaceLabels',
         'ws-a',
@@ -328,10 +355,31 @@ describe('useMyTasksState', () => {
       expect(findQueryOptions('workspaceProjects')?.enabled).toBe(false);
       act(() => result.current.requestProjectCatalog());
       expect(findQueryOptions('workspaceProjects')?.enabled).toBe(true);
+      expect(findQueryOptions('workspaceProjects')?.staleTime).toBe(
+        5 * 60 * 1000
+      );
 
       act(() => result.current.handleLabelFilterChange(['label-persisted']));
       expect(findQueryOptions('workspaceLabels')?.enabled).toBe(true);
       expect(result.current.taskFilters.labelIds).toEqual(['label-persisted']);
+    });
+
+    it('loads the current workspace catalogs on demand outside personal mode', () => {
+      const { result } = renderHook(() =>
+        useMyTasksState({ ...DEFAULT_PROPS, isPersonal: false })
+      );
+
+      act(() => result.current.requestProjectCatalog());
+      expect(findQueryOptions('workspaceProjects')).toMatchObject({
+        enabled: true,
+        queryKey: ['workspaceProjects', 'ws-1'],
+      });
+
+      act(() => result.current.requestLabelCatalog());
+      expect(findQueryOptions('workspaceLabels')).toMatchObject({
+        enabled: true,
+        queryKey: ['workspaceLabels', 'ws-1'],
+      });
     });
   });
 
