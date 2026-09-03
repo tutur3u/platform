@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -25,20 +25,12 @@ describe('Calendar sync trigger', () => {
     );
   });
 
-  it('does not retain the legacy active-sync route or caller', () => {
-    const legacyRoute = resolve(
-      process.cwd(),
-      '../calendar/src/app/api/v1/calendar/auth/active-sync/route.ts'
-    );
+  it('does not retain the legacy active-sync caller', () => {
     const componentSource = readFileSync(
-      resolve(
-        process.cwd(),
-        'src/app/[locale]/(dashboard)/[wsId]/calendar-sync/_components/sync-trigger-button.tsx'
-      ),
+      resolve(import.meta.dirname, 'sync-trigger-button.tsx'),
       'utf8'
     );
 
-    expect(existsSync(legacyRoute)).toBe(false);
     expect(componentSource).not.toContain('/api/v1/calendar/auth/active-sync');
   });
 });

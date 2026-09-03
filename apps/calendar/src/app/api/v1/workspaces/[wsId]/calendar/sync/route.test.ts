@@ -248,34 +248,28 @@ describe('workspace calendar sync route', () => {
     });
   });
 
-  it.each(['anonymous', 'wrong-target app session'])(
-    'rejects %s callers before membership or admin work',
-    async () => {
-      const { NextResponse } = await import('next/server');
-      resolveSessionAuthContextMock.mockResolvedValue({
-        ok: false,
-        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-      });
+  it('rejects anonymous callers before membership or admin work', async () => {
+    const { NextResponse } = await import('next/server');
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: false,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    });
 
-      const response = await POST(
-        new Request(
-          `http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`,
-          {
-            method: 'POST',
-          }
-        ) as never,
-        { params: Promise.resolve({ wsId: WS_ID }) }
-      );
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
 
-      expect(response.status).toBe(401);
-      expect(resolveSessionAuthContextMock).toHaveBeenCalledWith(
-        expect.any(Request),
-        { allowAppSessionAuth: true }
-      );
-      expect(verifyWorkspaceMembershipTypeMock).not.toHaveBeenCalled();
-      expect(createAdminClientMock).not.toHaveBeenCalled();
-    }
-  );
+    expect(response.status).toBe(401);
+    expect(resolveSessionAuthContextMock).toHaveBeenCalledWith(
+      expect.any(Request),
+      { allowAppSessionAuth: true }
+    );
+    expect(verifyWorkspaceMembershipTypeMock).not.toHaveBeenCalled();
+    expect(createAdminClientMock).not.toHaveBeenCalled();
+  });
 
   it('rejects a nonmember before admin work', async () => {
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: false });
