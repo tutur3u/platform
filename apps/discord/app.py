@@ -1,18 +1,15 @@
 """Main Discord bot application."""
 
-import json
 import logging
 import os
 import traceback
-from typing import cast
 
 import modal
 import requests
 
-from auth import DiscordAuth
+import interaction_replay
 from commands import CommandHandler
 from config import DiscordInteractionType, DiscordResponseType
-from interaction_replay import prepare_interaction_dispatch
 from markitdown_service import handle_markitdown
 from utils import get_supabase_client
 
@@ -35,6 +32,7 @@ image = (
         "commands",
         "config",
         "discord_client",
+        "interaction_replay",
         "link_shortener",
         "markitdown_service",
         "utils",
@@ -900,13 +898,14 @@ def web_app():
         return bool(query_secret and query_secret.strip() == secret)
 
     @web_app.post("/api")
+    @interaction_replay.with_discord_interaction_replay
     async def get_api(request: Request):
         """Handle Discord interactions."""
-        body = await request.body()
-        DiscordAuth.verify_request(cast(dict, request.headers), body)
-
-        data = json.loads(body.decode())
-        interaction_type, duplicate_response = prepare_interaction_dispatch(data)
+        (
+            data,
+            interaction_type,
+            duplicate_response,
+        ) = await interaction_replay.prepare_interaction_dispatch(request)
         if duplicate_response is not None:
             return duplicate_response
 

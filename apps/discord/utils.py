@@ -57,8 +57,8 @@ def get_supabase_client() -> Client:
     return create_client(supabase_url, supabase_key)
 
 
-def claim_discord_interaction(interaction_id: str, interaction_type: int) -> bool:
-    """Atomically claim an opaque Discord interaction id for dispatch."""
+def claim_discord_interaction(interaction_id: str, interaction_type: int) -> dict:
+    """Claim an interaction or retrieve its previously completed response."""
     params: dict[str, Any] = {
         "p_interaction_id": interaction_id,
         "p_interaction_type": interaction_type,
@@ -67,7 +67,37 @@ def claim_discord_interaction(interaction_id: str, interaction_type: int) -> boo
     response = (
         get_supabase_client().schema("private").rpc("claim_discord_interaction", params).execute()
     )
-    return response.data is True
+    if not isinstance(response.data, dict):
+        raise RuntimeError("Invalid Discord interaction claim response")
+    return response.data
+
+
+def complete_discord_interaction(
+    interaction_id: str, interaction_type: int, response_payload: dict
+) -> None:
+    """Persist a protocol response after dispatch has completed successfully."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+        "p_response_payload": response_payload,
+    }
+    response = (
+        get_supabase_client()
+        .schema("private")
+        .rpc("complete_discord_interaction", params)
+        .execute()
+    )
+    if response.data is not True:
+        raise RuntimeError("Discord interaction completion was not recorded")
+
+
+def release_discord_interaction(interaction_id: str, interaction_type: int) -> None:
+    """Release an unfinished claim so a delivery retry can dispatch it."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+    }
+    get_supabase_client().schema("private").rpc("release_discord_interaction", params).execute()
 
 
 def is_user_authorized_for_guild(discord_user_id: str, guild_id: str) -> bool:

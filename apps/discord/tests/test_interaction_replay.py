@@ -30,6 +30,15 @@ def signing_key(monkeypatch: pytest.MonkeyPatch) -> SigningKey:
     return key
 
 
+@pytest.fixture(autouse=True)
+def interaction_lifecycle(monkeypatch: pytest.MonkeyPatch) -> dict[str, Mock]:
+    complete = Mock()
+    release = Mock()
+    monkeypatch.setattr(interaction_replay, "complete_discord_interaction", complete)
+    monkeypatch.setattr(interaction_replay, "release_discord_interaction", release)
+    return {"complete": complete, "release": release}
+
+
 @pytest.mark.parametrize(
     "offset",
     [-DISCORD_SIGNATURE_FRESHNESS_SECONDS, DISCORD_SIGNATURE_FRESHNESS_SECONDS],
@@ -117,9 +126,17 @@ def post_signed(client: TestClient, signing_key: SigningKey, payload: dict, time
 
 
 def test_duplicate_delivery_is_acknowledged_without_spawning(
-    monkeypatch: pytest.MonkeyPatch, signing_key: SigningKey
+    interaction_lifecycle: dict[str, Mock],
+    monkeypatch: pytest.MonkeyPatch,
+    signing_key: SigningKey,
 ) -> None:
-    claims = iter([True, False])
+    response_payload = {"type": 5}
+    claims = iter(
+        [
+            {"state": "claimed"},
+            {"state": "completed", "response": response_payload},
+        ]
+    )
     claim = Mock(side_effect=lambda *_args: next(claims))
     spawn = Mock()
     monkeypatch.setattr(interaction_replay, "claim_discord_interaction", claim)
@@ -137,6 +154,9 @@ def test_duplicate_delivery_is_acknowledged_without_spawning(
     assert second.json() == {"type": 5}
     assert claim.call_count == 2
     spawn.assert_called_once()
+    interaction_lifecycle["complete"].assert_called_once_with(
+        "123456789012345678", 2, response_payload
+    )
 
 
 def test_concurrent_duplicate_delivery_spawns_once(
@@ -144,27 +164,27 @@ def test_concurrent_duplicate_delivery_spawns_once(
 ) -> None:
     claimed_ids: set[str] = set()
     claim_lock = threading.Lock()
+    request_barrier = threading.Barrier(2)
 
-    def claim_once(interaction_id: str, _interaction_type: int) -> bool:
+    def claim_once(interaction_id: str, _interaction_type: int) -> dict[str, str]:
         with claim_lock:
             if interaction_id in claimed_ids:
-                return False
+                return {"state": "processing"}
             claimed_ids.add(interaction_id)
-            return True
+            return {"state": "claimed"}
+
+    def send_delivery(_: int):
+        with TestClient(app.web_app.get_raw_f()()) as client:
+            request_barrier.wait()
+            return post_signed(client, signing_key, payload, int(time.time()))
 
     spawn = Mock()
     monkeypatch.setattr(interaction_replay, "claim_discord_interaction", claim_once)
     monkeypatch.setattr(app.reply_ticket, "spawn", spawn)
-    client = TestClient(app.web_app.get_raw_f()())
     payload = command_payload("223456789012345678")
 
     with ThreadPoolExecutor(max_workers=2) as executor:
-        responses = list(
-            executor.map(
-                lambda _: post_signed(client, signing_key, payload, int(time.time())),
-                range(2),
-            )
-        )
+        responses = list(executor.map(send_delivery, range(2)))
 
     assert [response.status_code for response in responses] == [200, 200]
     assert [response.json() for response in responses] == [{"type": 5}, {"type": 5}]
@@ -192,6 +212,87 @@ def test_claim_store_failure_fails_closed_before_spawn(
 
     assert response.status_code == 503
     spawn.assert_not_called()
+
+
+def test_failed_dispatch_releases_the_claim_for_retry(
+    interaction_lifecycle: dict[str, Mock],
+    monkeypatch: pytest.MonkeyPatch,
+    signing_key: SigningKey,
+) -> None:
+    monkeypatch.setattr(
+        interaction_replay,
+        "claim_discord_interaction",
+        Mock(return_value={"state": "claimed"}),
+    )
+    monkeypatch.setattr(
+        app.reply_ticket,
+        "spawn",
+        Mock(side_effect=RuntimeError("dispatch failed")),
+    )
+    client = TestClient(app.web_app.get_raw_f()(), raise_server_exceptions=False)
+
+    response = post_signed(
+        client,
+        signing_key,
+        command_payload("423456789012345678"),
+        int(time.time()),
+    )
+
+    assert response.status_code == 500
+    interaction_lifecycle["release"].assert_called_once_with("423456789012345678", 2)
+    interaction_lifecycle["complete"].assert_not_called()
+
+
+def test_completed_component_delivery_replays_the_original_modal(
+    interaction_lifecycle: dict[str, Mock],
+    monkeypatch: pytest.MonkeyPatch,
+    signing_key: SigningKey,
+) -> None:
+    modal_response = {
+        "type": 9,
+        "data": {"custom_id": "ticket_form|board|list", "title": "Ticket"},
+    }
+    monkeypatch.setattr(
+        interaction_replay,
+        "claim_discord_interaction",
+        Mock(return_value={"state": "completed", "response": modal_response}),
+    )
+    client = TestClient(app.web_app.get_raw_f()())
+
+    response = post_signed(
+        client,
+        signing_key,
+        {"id": "523456789012345678", "type": 3},
+        int(time.time()),
+    )
+
+    assert response.status_code == 200
+    assert response.json() == modal_response
+    interaction_lifecycle["complete"].assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "interaction_id",
+    ["1" * 33, "\uff11\uff12\uff13", "123-not-numeric"],
+)
+def test_invalid_interaction_ids_are_bad_requests_before_claim(
+    interaction_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+    signing_key: SigningKey,
+) -> None:
+    claim = Mock()
+    monkeypatch.setattr(interaction_replay, "claim_discord_interaction", claim)
+    client = TestClient(app.web_app.get_raw_f()())
+
+    response = post_signed(
+        client,
+        signing_key,
+        command_payload(interaction_id),
+        int(time.time()),
+    )
+
+    assert response.status_code == 400
+    claim.assert_not_called()
 
 
 def test_ping_does_not_depend_on_claim_storage(

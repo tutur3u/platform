@@ -2,13 +2,20 @@ create table private.discord_interaction_claims (
   interaction_id text primary key,
   interaction_type smallint not null,
   claimed_at timestamptz not null default clock_timestamp(),
+  lease_expires_at timestamptz not null,
+  completed_at timestamptz,
+  response_payload jsonb,
   expires_at timestamptz not null,
   constraint discord_interaction_claims_id_valid
     check (interaction_id ~ '^[0-9]{1,32}$'),
   constraint discord_interaction_claims_type_valid
     check (interaction_type in (2, 3, 5)),
   constraint discord_interaction_claims_expiry_valid
-    check (expires_at > claimed_at)
+    check (expires_at > claimed_at),
+  constraint discord_interaction_claims_lease_valid
+    check (lease_expires_at > claimed_at and lease_expires_at <= expires_at),
+  constraint discord_interaction_claims_completion_valid
+    check ((completed_at is null) = (response_payload is null))
 );
 
 alter table private.discord_interaction_claims enable row level security;
@@ -18,20 +25,21 @@ create index discord_interaction_claims_expires_at_idx
   on private.discord_interaction_claims (expires_at);
 
 revoke all on table private.discord_interaction_claims from public, anon, authenticated;
-grant select, insert, delete on table private.discord_interaction_claims to service_role;
+grant select, insert, update, delete on table private.discord_interaction_claims to service_role;
 
 create or replace function private.claim_discord_interaction(
   p_interaction_id text,
   p_interaction_type smallint,
   p_retention_seconds integer default 86400
 )
-returns boolean
+returns jsonb
 language plpgsql
 security invoker
 set search_path = ''
 as $$
 declare
   v_claimed boolean;
+  v_existing private.discord_interaction_claims%rowtype;
 begin
   if p_interaction_id is null
     or p_interaction_id !~ '^[0-9]{1,32}$'
@@ -54,23 +62,98 @@ begin
   insert into private.discord_interaction_claims (
     interaction_id,
     interaction_type,
+    lease_expires_at,
     expires_at
   )
   values (
     p_interaction_id,
     p_interaction_type,
+    clock_timestamp() + interval '1 minute',
     clock_timestamp() + make_interval(secs => p_retention_seconds)
   )
   on conflict (interaction_id) do nothing
   returning true into v_claimed;
 
-  return coalesce(v_claimed, false);
+  if coalesce(v_claimed, false) then
+    return jsonb_build_object('state', 'claimed');
+  end if;
+
+  select * into v_existing
+  from private.discord_interaction_claims
+  where interaction_id = p_interaction_id;
+
+  if v_existing.response_payload is not null then
+    return jsonb_build_object(
+      'state', 'completed',
+      'response', v_existing.response_payload
+    );
+  end if;
+
+  update private.discord_interaction_claims
+  set
+    interaction_type = p_interaction_type,
+    claimed_at = clock_timestamp(),
+    lease_expires_at = clock_timestamp() + interval '1 minute',
+    expires_at = clock_timestamp() + make_interval(secs => p_retention_seconds)
+  where interaction_id = p_interaction_id
+    and response_payload is null
+    and lease_expires_at <= clock_timestamp()
+  returning true into v_claimed;
+
+  return jsonb_build_object(
+    'state', case when coalesce(v_claimed, false) then 'claimed' else 'processing' end
+  );
 end;
 $$;
 
 revoke all on function private.claim_discord_interaction(text, smallint, integer)
   from public, anon, authenticated;
 grant execute on function private.claim_discord_interaction(text, smallint, integer)
+  to service_role;
+
+create or replace function private.complete_discord_interaction(
+  p_interaction_id text,
+  p_interaction_type smallint,
+  p_response_payload jsonb
+)
+returns boolean
+language sql
+security invoker
+set search_path = ''
+as $$
+  update private.discord_interaction_claims
+  set
+    completed_at = clock_timestamp(),
+    response_payload = p_response_payload,
+    lease_expires_at = expires_at
+  where interaction_id = p_interaction_id
+    and interaction_type = p_interaction_type
+    and response_payload is null
+  returning true;
+$$;
+
+create or replace function private.release_discord_interaction(
+  p_interaction_id text,
+  p_interaction_type smallint
+)
+returns void
+language sql
+security invoker
+set search_path = ''
+as $$
+  delete from private.discord_interaction_claims
+  where interaction_id = p_interaction_id
+    and interaction_type = p_interaction_type
+    and response_payload is null;
+$$;
+
+revoke all on function private.complete_discord_interaction(text, smallint, jsonb)
+  from public, anon, authenticated;
+grant execute on function private.complete_discord_interaction(text, smallint, jsonb)
+  to service_role;
+revoke all on function private.release_discord_interaction(text, smallint)
+  from public, anon, authenticated;
+grant execute on function private.release_discord_interaction(text, smallint)
   to service_role;
 
 create or replace function private.prune_discord_interaction_claims(
@@ -84,7 +167,7 @@ as $$
 declare
   v_deleted bigint;
 begin
-  if p_limit < 1 or p_limit > 10000 then
+  if p_limit is null or p_limit < 1 or p_limit > 10000 then
     raise exception 'invalid Discord interaction prune limit';
   end if;
 

@@ -3,7 +3,7 @@
 import logging
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 
 from fastapi.exceptions import HTTPException
 from nacl.exceptions import BadSignatureError
@@ -22,7 +22,7 @@ class DiscordAuth:
 
     @staticmethod
     def verify_request(
-        headers: dict,
+        headers: Mapping[str, str],
         body: bytes,
         *,
         clock: Callable[[], float] = time.time,

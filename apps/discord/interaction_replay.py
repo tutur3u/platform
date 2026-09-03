@@ -1,11 +1,22 @@
 """Validation and replay protection for Discord interaction dispatch."""
 
+import json
 import logging
+import re
+from collections.abc import Awaitable, Callable
+from functools import wraps
+from typing import Any
 
 from fastapi.exceptions import HTTPException
+from fastapi.requests import Request
 
+from auth import DiscordAuth
 from config import DiscordInteractionType, DiscordResponseType
-from utils import claim_discord_interaction
+from utils import (
+    claim_discord_interaction,
+    complete_discord_interaction,
+    release_discord_interaction,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -15,10 +26,19 @@ SUPPORTED_INTERACTION_TYPES = {
     DiscordInteractionType.MESSAGE_COMPONENT,
     DiscordInteractionType.MODAL_SUBMIT,
 }
+INTERACTION_ID_PATTERN = re.compile(r"^[0-9]{1,32}$")
+CLAIM_ID_STATE_KEY = "discord_interaction_claim_id"
+CLAIM_TYPE_STATE_KEY = "discord_interaction_claim_type"
 
 
-def prepare_interaction_dispatch(data: object) -> tuple[int, dict[str, int] | None]:
-    """Validate an interaction and claim side-effecting deliveries once."""
+async def prepare_interaction_dispatch(
+    request: Request,
+) -> tuple[dict, int, dict[str, Any] | None]:
+    """Verify, parse, validate, and claim an interaction for dispatch."""
+    body = await request.body()
+    DiscordAuth.verify_request(request.headers, body)
+    data = json.loads(body.decode())
+
     if not isinstance(data, dict):
         raise HTTPException(status_code=400, detail="Bad request")
 
@@ -29,14 +49,14 @@ def prepare_interaction_dispatch(data: object) -> tuple[int, dict[str, int] | No
     # PING is a side-effect-free endpoint handshake. Keeping it independent of
     # claim storage avoids turning database availability into endpoint downtime.
     if interaction_type == DiscordInteractionType.PING:
-        return interaction_type, None
+        return data, interaction_type, None
 
     interaction_id = data.get("id")
-    if not isinstance(interaction_id, str) or not interaction_id.isdigit():
+    if not isinstance(interaction_id, str) or not INTERACTION_ID_PATTERN.fullmatch(interaction_id):
         raise HTTPException(status_code=400, detail="Bad request")
 
     try:
-        claimed = claim_discord_interaction(interaction_id, interaction_type)
+        claim = claim_discord_interaction(interaction_id, interaction_type)
     except Exception as error:
         logger.exception(
             "Failed to claim Discord interaction",
@@ -44,11 +64,65 @@ def prepare_interaction_dispatch(data: object) -> tuple[int, dict[str, int] | No
         )
         raise HTTPException(status_code=503, detail="Interaction claim unavailable") from error
 
-    if claimed:
-        return interaction_type, None
+    state = claim.get("state")
+    if state == "claimed":
+        setattr(request.state, CLAIM_ID_STATE_KEY, interaction_id)
+        setattr(request.state, CLAIM_TYPE_STATE_KEY, interaction_type)
+        return data, interaction_type, None
+
+    if state == "completed" and isinstance(claim.get("response"), dict):
+        return data, interaction_type, claim["response"]
+
+    if state != "processing":
+        raise HTTPException(status_code=503, detail="Interaction claim unavailable")
 
     logger.info(
         "Acknowledging duplicate Discord interaction",
         extra={"interaction_type": interaction_type},
     )
-    return interaction_type, {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
+    return (
+        data,
+        interaction_type,
+        {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE},
+    )
+
+
+def with_discord_interaction_replay(
+    handler: Callable[..., Awaitable[dict[str, Any]]],
+) -> Callable[..., Awaitable[dict[str, Any]]]:
+    """Release failed dispatches and cache successful protocol responses."""
+
+    @wraps(handler)
+    async def guarded(request: Request, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        try:
+            response = await handler(request, *args, **kwargs)
+        except BaseException:
+            interaction_id = getattr(request.state, CLAIM_ID_STATE_KEY, None)
+            interaction_type = getattr(request.state, CLAIM_TYPE_STATE_KEY, None)
+            if isinstance(interaction_id, str) and isinstance(interaction_type, int):
+                try:
+                    release_discord_interaction(interaction_id, interaction_type)
+                except Exception:
+                    logger.exception(
+                        "Failed to release Discord interaction claim",
+                        extra={"interaction_type": interaction_type},
+                    )
+            raise
+
+        interaction_id = getattr(request.state, CLAIM_ID_STATE_KEY, None)
+        interaction_type = getattr(request.state, CLAIM_TYPE_STATE_KEY, None)
+        if isinstance(interaction_id, str) and isinstance(interaction_type, int):
+            try:
+                complete_discord_interaction(interaction_id, interaction_type, response)
+            except Exception as error:
+                logger.exception(
+                    "Failed to complete Discord interaction claim",
+                    extra={"interaction_type": interaction_type},
+                )
+                raise HTTPException(
+                    status_code=503, detail="Interaction completion unavailable"
+                ) from error
+
+        return response
+
+    return guarded
