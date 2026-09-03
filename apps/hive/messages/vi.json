@@ -41,6 +41,12 @@
     "water": "Nước",
     "worldState": "Trạng thái thế giới"
   },
+  "browserStateRecovery": {
+    "button": "Đặt lại trạng thái trình duyệt",
+    "description": "Thao tác này xóa dữ liệu Hive được lưu trong trình duyệt và đăng xuất bạn. Chỉ tiếp tục nếu Hive không tải đúng cách.",
+    "forbidden": "Việc đặt lại trạng thái trình duyệt yêu cầu xác nhận từ cùng nguồn.",
+    "title": "Đặt lại trạng thái trình duyệt"
+  },
   "chat": {
     "first_activity": "Hoạt động đầu tiên",
     "last_activity": "Hoạt động gần nhất",

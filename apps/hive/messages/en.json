@@ -41,6 +41,12 @@
     "water": "Water",
     "worldState": "World state"
   },
+  "browserStateRecovery": {
+    "button": "Reset browser state",
+    "description": "This clears cached Hive browser data and signs you out. Continue only if Hive is not loading correctly.",
+    "forbidden": "Browser state reset requires same-origin confirmation.",
+    "title": "Reset browser state"
+  },
   "chat": {
     "first_activity": "First activity",
     "last_activity": "Last activity",
