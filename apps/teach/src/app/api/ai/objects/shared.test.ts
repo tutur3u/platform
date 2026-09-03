@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 const mocks = vi.hoisted(() => ({
   capMaxOutputTokensByCredits: vi.fn(),
+  calculateUsageCost: vi.fn(),
   checkAiCredits: vi.fn(),
   consumeStream: vi.fn(),
   featureQueryResult: { count: 1, error: null as unknown },
@@ -111,10 +112,7 @@ const sbAdmin = {
   from: vi.fn(() => createFeatureQuery()),
   rpc: vi.fn(async () => mocks.settleResult),
   schema: vi.fn(() => ({
-    rpc: vi.fn(async () => ({
-      data: [{ billed_credits: 4 }],
-      error: null,
-    })),
+    rpc: mocks.calculateUsageCost,
   })),
 };
 
@@ -164,6 +162,10 @@ describe('Teach object-generation handler', () => {
       tier: 'PRO',
     });
     mocks.capMaxOutputTokensByCredits.mockResolvedValue(256);
+    mocks.calculateUsageCost.mockResolvedValue({
+      data: [{ billed_credits: 4 }],
+      error: null,
+    });
     mocks.reserveFixedAiCredits.mockResolvedValue({
       errorCode: null,
       remainingCredits: 16,
@@ -248,6 +250,16 @@ describe('Teach object-generation handler', () => {
         wsId: 'normalized-ws',
       },
       sbAdmin
+    );
+    expect(mocks.calculateUsageCost).toHaveBeenCalledWith(
+      'calculate_ai_studio_usage_cost',
+      {
+        p_input_tokens: 20,
+        p_model_id: 'google/gemini-3.1-flash-lite',
+        p_output_tokens: 256,
+        p_reasoning_tokens: 256,
+        p_ws_id: 'normalized-ws',
+      }
     );
     expect(
       mocks.reserveFixedAiCredits.mock.invocationCallOrder[0]

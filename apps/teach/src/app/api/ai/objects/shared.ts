@@ -80,7 +80,9 @@ async function calculateReservationCredits(
       p_input_tokens: input.inputTokens,
       p_model_id: input.modelId,
       p_output_tokens: input.maxOutputTokens,
-      p_reasoning_tokens: 0,
+      // Providers account reasoning separately from visible output. Reserving
+      // the cap for both is conservative and guarantees actual settlement fits.
+      p_reasoning_tokens: input.maxOutputTokens,
       p_ws_id: input.wsId,
     });
   const credits = Number(data?.[0]?.billed_credits ?? 0);
