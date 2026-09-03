@@ -5,4 +5,3 @@ export * from './app-session-policy';
 export * from './cli-session';
 export * from './cross-app';
 export * from './identity-linking';
-export * from './multi-session';

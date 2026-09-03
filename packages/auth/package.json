@@ -17,8 +17,7 @@
     "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
     "./mfa-mobile-approval": "./src/mfa-mobile-approval.ts",
     "./identity-linking": "./src/identity-linking.ts",
-    "./api-keys": "./src/api-keys.ts",
-    "./multi-session": "./src/multi-session/index.ts"
+    "./api-keys": "./src/api-keys.ts"
   },
   "license": "MIT",
   "scripts": {
