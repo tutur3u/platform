@@ -14,6 +14,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api-fetch';
 import type {
@@ -33,25 +34,19 @@ const HOUR_TYPE_CONFIG = {
   work: {
     type: 'WORK' as HourType,
     icon: Briefcase,
-    label: 'Work Hours',
-    description:
-      'Set your regular working hours. This helps with scheduling tasks and managing workload.',
+    translationKey: 'work',
     field: 'workHours' as const,
   },
   meeting: {
     type: 'MEETING' as HourType,
     icon: Calendar,
-    label: 'Meeting Hours',
-    description:
-      'Define when you are available for meetings. Others can see this when scheduling.',
+    translationKey: 'meeting',
     field: 'meetingHours' as const,
   },
   personal: {
     type: 'PERSONAL' as HourType,
     icon: User,
-    label: 'Personal Hours',
-    description:
-      'Block off personal time for breaks, exercise, or personal commitments.',
+    translationKey: 'personal',
     field: 'personalHours' as const,
   },
 } as const;
@@ -81,6 +76,7 @@ async function updateHourSettings(params: {
 }
 
 export function HoursSettings({ wsId }: HoursSettingsProps) {
+  const t = useTranslations('calendar_settings');
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<
     'overview' | 'work' | 'meeting' | 'personal'
@@ -126,7 +122,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
       return { previousSettings };
     },
-    onError: (err, _variables, context) => {
+    onError: (_err, _variables, context) => {
       // Rollback on error
       if (context?.previousSettings) {
         queryClient.setQueryData(
@@ -134,14 +130,13 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           context.previousSettings
         );
       }
-      toast.error(
-        err instanceof Error ? err.message : 'Failed to update settings'
-      );
+      toast.error(t('hours.update_failed'));
     },
     onSuccess: (_, variables) => {
-      const typeLabel =
-        variables.type.charAt(0) + variables.type.slice(1).toLowerCase();
-      toast.success(`${typeLabel} hours updated`);
+      const key = variables.type.toLowerCase() as keyof typeof HOUR_TYPE_CONFIG;
+      toast.success(
+        t('hours.updated', { type: t(`hours.types.${key}.short_label`) })
+      );
     },
   });
 
@@ -150,7 +145,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
     newHours?: WeekTimeRanges | null
   ) => {
     if (!newHours || !wsId) {
-      toast.error('No hours provided');
+      toast.error(t('hours.no_hours_provided'));
       return;
     }
 
@@ -162,20 +157,20 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
   };
 
   const getActiveDaysSummary = (hours?: WeekTimeRanges | null): string => {
-    if (!hours) return 'No days';
+    if (!hours) return t('hours.no_days');
 
     const days = Object.entries(hours)
       .filter(([_, value]) => value.enabled)
-      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1, 3));
+      .map(([key]) => t(`days.${key}.short`));
 
-    if (days.length === 7) return 'All days';
-    if (days.length === 0) return 'No days';
+    if (days.length === 7) return t('hours.all_days');
+    if (days.length === 0) return t('hours.no_days');
     if (days.length <= 3) return days.join(', ');
-    return `${days.length} days`;
+    return t('hours.day_count', { count: days.length });
   };
 
   const getTotalHours = (hours?: WeekTimeRanges | null): string => {
-    if (!hours) return '0h';
+    if (!hours) return t('hours.total_hours', { hours: 0 });
 
     let totalMinutes = 0;
     Object.values(hours).forEach((day) => {
@@ -199,8 +194,8 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 
     const hours_ = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    if (minutes === 0) return `${hours_}h/week`;
-    return `${hours_}h ${minutes}m/week`;
+    if (minutes === 0) return t('hours.total_hours', { hours: hours_ });
+    return t('hours.total_hours_minutes', { hours: hours_, minutes });
   };
 
   if (isLoading) {
@@ -217,9 +212,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
     return (
       <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
         <p className="text-destructive">
-          {error instanceof Error
-            ? error.message
-            : 'Failed to load hour settings'}
+          {error instanceof Error ? error.message : t('hours.load_failed')}
         </p>
         <button
           type="button"
@@ -230,7 +223,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           }
           className="mt-4 text-primary text-sm underline hover:no-underline"
         >
-          Try again
+          {t('hours.try_again')}
         </button>
       </div>
     );
@@ -242,11 +235,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         <div className="flex items-start gap-2">
           <Clock className="mt-0.5 h-4 w-4 text-muted-foreground" />
           <div className="text-muted-foreground text-sm">
-            <p>
-              Configure your available hours for different activities. These
-              settings help the calendar optimize scheduling and provide better
-              suggestions.
-            </p>
+            <p>{t('hours.info')}</p>
           </div>
         </div>
       </div>
@@ -259,7 +248,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
           <TabsList className="grid w-full max-w-xl grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center gap-1.5">
               <Layers className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
+              <span className="hidden sm:inline">{t('hours.overview')}</span>
             </TabsTrigger>
             {(
               Object.keys(HOUR_TYPE_CONFIG) as Array<
@@ -268,6 +257,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
             ).map((key) => {
               const config = HOUR_TYPE_CONFIG[key];
               const Icon = config.icon;
+              const label = t(`hours.types.${config.translationKey}.label`);
               return (
                 <TabsTrigger
                   key={key}
@@ -275,9 +265,9 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
                   className="flex items-center gap-1.5"
                 >
                   <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{config.label}</span>
+                  <span className="hidden sm:inline">{label}</span>
                   <span className="sm:hidden">
-                    {config.label.split(' ')[0]}
+                    {t(`hours.types.${config.translationKey}.short_label`)}
                   </span>
                 </TabsTrigger>
               );
@@ -311,9 +301,11 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
                   <div className="flex items-center gap-2">
                     <Icon className="h-5 w-5" />
                     <div>
-                      <h3 className="font-medium">{config.label}</h3>
+                      <h3 className="font-medium">
+                        {t(`hours.types.${config.translationKey}.label`)}
+                      </h3>
                       <p className="text-muted-foreground text-xs">
-                        {config.description}
+                        {t(`hours.types.${config.translationKey}.description`)}
                       </p>
                     </div>
                   </div>
