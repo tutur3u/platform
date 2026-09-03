@@ -19,7 +19,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import type { TimeBlock, WeekTimeRanges } from './hour-settings-shared';
+import {
+  DEFAULT_TIME_BLOCK,
+  type TimeBlock,
+  type WeekTimeRanges,
+} from './hour-settings-shared';
 import {
   createSafeTimeRanges,
   DAY_KEYS,
@@ -28,14 +32,9 @@ import {
   timeToMinutes,
 } from './time-range-picker-helpers';
 
-const defaultTimeBlock: TimeBlock = {
-  startTime: '07:00',
-  endTime: '23:00',
-};
-
 const defaultTimeRange = {
   enabled: true,
-  timeBlocks: [{ ...defaultTimeBlock }],
+  timeBlocks: [{ ...DEFAULT_TIME_BLOCK }],
 };
 
 type TimeRangePickerProps = {

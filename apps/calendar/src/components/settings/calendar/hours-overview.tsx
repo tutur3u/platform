@@ -191,7 +191,18 @@ export function HoursOverview({
   const format = useFormatter();
   const formatTime = (time: string): string => {
     const [hours, minutes] = time.split(':').map(Number);
-    if (hours === undefined || minutes === undefined) return time;
+    if (
+      hours === undefined ||
+      minutes === undefined ||
+      !Number.isFinite(hours) ||
+      !Number.isFinite(minutes) ||
+      hours < 0 ||
+      hours > 23 ||
+      minutes < 0 ||
+      minutes > 59
+    ) {
+      return time;
+    }
     return format.dateTime(new Date(Date.UTC(2020, 0, 1, hours, minutes)), {
       hour: 'numeric',
       minute: '2-digit',

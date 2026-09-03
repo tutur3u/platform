@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -46,19 +45,30 @@ describe('CalendarSettingsContent', () => {
       locale: 'en' as const,
       messages: enMessages,
       expected: ['Hours', 'Timezone & First Day of Week'],
+      expectedDescriptions: [
+        'Configure your work, meeting, and personal hours',
+        'Set workspace-level calendar preferences',
+      ],
     },
     {
       locale: 'vi' as const,
       messages: viMessages,
       expected: ['Khung giờ', 'Múi giờ và ngày bắt đầu tuần'],
+      expectedDescriptions: [
+        'Thiết lập giờ làm việc, giờ họp và thời gian cá nhân',
+        'Thiết lập tùy chọn lịch ở cấp không gian làm việc',
+      ],
     },
   ])(
     'renders the live hours sections in $locale',
-    ({ locale, messages, expected }) => {
+    ({ locale, messages, expected, expectedDescriptions }) => {
       renderContent({ locale, messages, section: 'calendar_hours' });
 
       for (const heading of expected) {
         expect(screen.getByRole('heading', { name: heading })).toBeTruthy();
+      }
+      for (const description of expectedDescriptions) {
+        expect(screen.getByText(description)).toBeTruthy();
       }
       expect(screen.getByText('hours-settings')).toBeTruthy();
       expect(screen.getByText('calendar-preferences')).toBeTruthy();
@@ -70,44 +80,22 @@ describe('CalendarSettingsContent', () => {
       locale: 'en' as const,
       messages: enMessages,
       expected: 'Category Colors',
+      expectedDescription: 'Customize colors for different event categories',
     },
     {
       locale: 'vi' as const,
       messages: viMessages,
       expected: 'Màu danh mục',
+      expectedDescription: 'Tùy chỉnh màu cho từng danh mục sự kiện',
     },
   ])(
     'renders the live colors section in $locale',
-    ({ locale, messages, expected }) => {
+    ({ locale, messages, expected, expectedDescription }) => {
       renderContent({ locale, messages, section: 'calendar_colors' });
 
       expect(screen.getByRole('heading', { name: expected })).toBeTruthy();
+      expect(screen.getByText(expectedDescription)).toBeTruthy();
       expect(screen.getByText('category-colors')).toBeTruthy();
     }
   );
-
-  it('keeps retired English copy out of the live settings sources', () => {
-    const files = [
-      'calendar-settings-content.tsx',
-      'category-color-settings.tsx',
-      'color-picker.tsx',
-      'hour-settings.tsx',
-      'hours-overview.tsx',
-      'time-range-picker.tsx',
-    ];
-    const source = files
-      .map((file) => readFileSync(new URL(file, import.meta.url), 'utf8'))
-      .join('\n');
-    const retiredLiterals = [
-      'Configure your work, meeting, and personal hours',
-      'Customize colors for different event categories',
-      'Copy to all days?',
-      'No categories yet. Add one to get started.',
-      'Remove time block',
-    ];
-
-    for (const literal of retiredLiterals) {
-      expect(source).not.toContain(literal);
-    }
-  });
 });

@@ -17,10 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { apiFetch } from '@/lib/api-fetch';
-import type {
-  HoursSettingsData,
-  HourType,
-  WeekTimeRanges,
+import {
+  DAY_KEYS,
+  type HoursSettingsData,
+  type HourType,
+  type WeekTimeRanges,
 } from './hour-settings-shared';
 import { HoursOverview } from './hours-overview';
 import { TimeRangePicker } from './time-range-picker';
@@ -159,9 +160,9 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
   const getActiveDaysSummary = (hours?: WeekTimeRanges | null): string => {
     if (!hours) return t('hours.no_days');
 
-    const days = Object.entries(hours)
-      .filter(([_, value]) => value.enabled)
-      .map(([key]) => t(`days.${key}.short`));
+    const days = DAY_KEYS.filter((day) => hours[day]?.enabled).map((day) =>
+      t(`days.${day}.short`)
+    );
 
     if (days.length === 7) return t('hours.all_days');
     if (days.length === 0) return t('hours.no_days');

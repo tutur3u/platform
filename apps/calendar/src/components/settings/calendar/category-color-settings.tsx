@@ -73,6 +73,8 @@ export function CategoryColorsSettings({
   const [localCategories, setLocalCategories] = useState<CalendarCategory[]>(
     []
   );
+  const getSuggestionName = (suggestion: CategorySuggestion) =>
+    t(`categories.suggestion_names.${suggestion.translationKey}`);
 
   // Sync local state with fetched categories
   useEffect(() => {
@@ -140,17 +142,18 @@ export function CategoryColorsSettings({
   };
 
   // Add a suggested category
-  const addSuggestedCategory = (suggestion: CategoryColor) => {
+  const addSuggestedCategory = (suggestion: CategorySuggestion) => {
+    const localizedName = getSuggestionName(suggestion);
     // Check if this category name or color already exists (case insensitive)
     const exists = localCategories.some(
       (cat) =>
-        cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+        cat.name.toLowerCase() === localizedName.toLowerCase() ||
         cat.color === suggestion.color
     );
 
     if (!exists) {
       createCategory({
-        name: suggestion.name,
+        name: localizedName,
         color: suggestion.color,
       });
     }
@@ -165,14 +168,15 @@ export function CategoryColorsSettings({
 
     const missingCategories = CATEGORY_SUGGESTIONS.filter(
       (suggestion) =>
-        !currentCategoryNames.has(suggestion.name.toLowerCase()) &&
-        !currentColors.has(suggestion.color)
+        !currentCategoryNames.has(
+          getSuggestionName(suggestion).toLowerCase()
+        ) && !currentColors.has(suggestion.color)
     );
 
     // Add each missing category
     missingCategories.forEach((category) => {
       createCategory({
-        name: category.name,
+        name: getSuggestionName(category),
         color: category.color,
       });
     });
@@ -336,7 +340,7 @@ export function CategoryColorsSettings({
                     localCategories.some(
                       (cat) =>
                         cat.name.toLowerCase() ===
-                          suggestion.name.toLowerCase() ||
+                          getSuggestionName(suggestion).toLowerCase() ||
                         cat.color === suggestion.color
                     )
                   )
@@ -511,7 +515,8 @@ export function CategoryColorsSettings({
               // Check if this category name or color already exists
               const exists = localCategories.some(
                 (cat) =>
-                  cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+                  cat.name.toLowerCase() ===
+                    getSuggestionName(suggestion).toLowerCase() ||
                   cat.color === suggestion.color
               );
 
