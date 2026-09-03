@@ -193,6 +193,54 @@ describe('task project update reactions route', () => {
     });
   });
 
+  it('POST maps duplicate reactions to a conflict', async () => {
+    reaction.single.mockResolvedValue({
+      data: null,
+      error: { code: '23505' },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/reactions', {
+        method: 'POST',
+        body: JSON.stringify({ emoji: '👍' }),
+      }) as never,
+      { params }
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'Already reacted with this emoji',
+    });
+  });
+
+  it('POST rejects an invalid emoji', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/reactions', {
+        method: 'POST',
+        body: JSON.stringify({ emoji: 'not-an-emoji' }),
+      }) as never,
+      { params }
+    );
+
+    expect(response.status).toBe(400);
+    expect(reaction.insert).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['missing', 'http://localhost/reactions'],
+    ['invalid', 'http://localhost/reactions?emoji=not-an-emoji'],
+  ])('DELETE rejects a %s emoji parameter', async (_, url) => {
+    const { DELETE } = await import('./route');
+    const response = await DELETE(
+      new Request(url, { method: 'DELETE' }) as never,
+      { params }
+    );
+
+    expect(response.status).toBe(400);
+    expect(reaction.delete).not.toHaveBeenCalled();
+  });
+
   it('DELETE authorizes Tasks app sessions and scopes the deletion', async () => {
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
     reaction.then = vi.fn((resolve) =>

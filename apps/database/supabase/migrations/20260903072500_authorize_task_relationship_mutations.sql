@@ -23,6 +23,13 @@ with check (
     join public.workspace_boards target_board on target_board.id = target_list.board_id
     where source_task.id = task_relationships.source_task_id
       and source_board.ws_id = target_board.ws_id
+      and exists (
+        select 1
+        from public.workspace_members member
+        where member.ws_id = source_board.ws_id
+          and member.user_id = (select auth.uid())
+          and member.type = 'MEMBER'::public.workspace_member_type
+      )
       and public.has_workspace_permission(
         source_board.ws_id,
         (select auth.uid()),
@@ -51,6 +58,13 @@ using (
     join public.workspace_boards target_board on target_board.id = target_list.board_id
     where source_task.id = task_relationships.source_task_id
       and source_board.ws_id = target_board.ws_id
+      and exists (
+        select 1
+        from public.workspace_members member
+        where member.ws_id = source_board.ws_id
+          and member.user_id = (select auth.uid())
+          and member.type = 'MEMBER'::public.workspace_member_type
+      )
       and public.has_workspace_permission(
         source_board.ws_id,
         (select auth.uid()),
@@ -74,6 +88,13 @@ with check (
     join public.workspace_boards target_board on target_board.id = target_list.board_id
     where source_task.id = task_relationships.source_task_id
       and source_board.ws_id = target_board.ws_id
+      and exists (
+        select 1
+        from public.workspace_members member
+        where member.ws_id = source_board.ws_id
+          and member.user_id = (select auth.uid())
+          and member.type = 'MEMBER'::public.workspace_member_type
+      )
       and public.has_workspace_permission(
         source_board.ws_id,
         (select auth.uid()),
@@ -102,6 +123,13 @@ using (
     join public.workspace_boards target_board on target_board.id = target_list.board_id
     where source_task.id = task_relationships.source_task_id
       and source_board.ws_id = target_board.ws_id
+      and exists (
+        select 1
+        from public.workspace_members member
+        where member.ws_id = source_board.ws_id
+          and member.user_id = (select auth.uid())
+          and member.type = 'MEMBER'::public.workspace_member_type
+      )
       and public.has_workspace_permission(
         source_board.ws_id,
         (select auth.uid()),

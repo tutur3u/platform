@@ -189,6 +189,21 @@ describe('task project update comment item route', () => {
     }
   );
 
+  it.each(methods)(
+    '%s rejects a comment created by another user before mutation',
+    async (_, call) => {
+      lookup.single.mockResolvedValue({
+        data: { id: routeParams.commentId, user_id: 'user-2' },
+        error: null,
+      });
+      const response = await call();
+
+      expect(response.status).toBe(403);
+      expect(mutation.update).not.toHaveBeenCalled();
+      expect(mocks.admin).not.toHaveBeenCalled();
+    }
+  );
+
   it('PATCH binds both lookup and final mutation to the route update', async () => {
     const { PATCH } = await import('./route');
     const request = new Request('http://localhost/comment', {

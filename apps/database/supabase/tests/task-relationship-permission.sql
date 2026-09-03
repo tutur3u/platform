@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(18);
+select plan(19);
 
 select ok(
   exists (
@@ -176,6 +176,30 @@ select is(
 );
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-00000000f901', true);
+
+set local role service_role;
+delete from public.workspace_members
+where ws_id = '00000000-0000-4000-8000-00000000f101'
+  and user_id = '00000000-0000-4000-8000-00000000f901';
+set local role authenticated;
+
+select throws_ok(
+  $$insert into public.task_relationships (source_task_id, target_task_id, type)
+    values ('00000000-0000-4000-8000-00000000f402', '00000000-0000-4000-8000-00000000f403', 'blocks')$$,
+  '42501',
+  'new row violates row-level security policy for table "task_relationships"',
+  'stale role grants cannot authorize a non-member relationship write'
+);
+
+set local role service_role;
+insert into public.workspace_members (ws_id, user_id, type)
+values (
+  '00000000-0000-4000-8000-00000000f101',
+  '00000000-0000-4000-8000-00000000f901',
+  'MEMBER'
+)
+on conflict (ws_id, user_id) do update set type = excluded.type;
+set local role authenticated;
 
 select lives_ok(
   $$insert into public.task_relationships (source_task_id, target_task_id, type)
