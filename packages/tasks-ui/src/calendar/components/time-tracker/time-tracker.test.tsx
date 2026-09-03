@@ -240,14 +240,17 @@ describe('live time tracker contracts', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(6));
     expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual(
       expect.arrayContaining([
-        '/api/v1/workspaces/workspace-1/time-tracking/categories',
-        '/api/v1/workspaces/workspace-1/time-tracking/sessions?type=running',
-        '/api/v1/workspaces/workspace-1/time-tracking/sessions?type=recent&limit=20',
-        '/api/v1/workspaces/workspace-1/time-tracking/sessions?type=stats',
-        '/api/v1/workspaces/workspace-1/time-tracking/templates',
+        'http://localhost:7809/api/v1/workspaces/workspace-1/time-tracking/categories',
+        'http://localhost:7809/api/v1/workspaces/workspace-1/time-tracking/sessions?type=running',
+        'http://localhost:7809/api/v1/workspaces/workspace-1/time-tracking/sessions?type=recent&limit=20',
+        'http://localhost:7809/api/v1/workspaces/workspace-1/time-tracking/sessions?type=stats',
+        'http://localhost:7809/api/v1/workspaces/workspace-1/time-tracking/templates',
         'http://localhost:7809/api/v1/workspaces/workspace-1/boards-with-lists',
       ])
     );
+    expect(
+      fetchMock.mock.calls.every(([, init]) => init?.credentials === 'include')
+    ).toBe(true);
     expect(
       screen.getByText(
         'Track your time across tasks and projects with detailed analytics'

@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
+import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { toast } from '@tuturuuu/ui/sonner';
 import type {
   ExtendedWorkspaceTask,
@@ -93,7 +94,8 @@ export function useTimeTracker({
   // API call helper
   const apiCall = useCallback(
     async (url: string, options: RequestInit = {}) => {
-      const response = await fetch(url, {
+      const response = await fetch(getTaskApiUrl(url), {
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           ...options.headers,

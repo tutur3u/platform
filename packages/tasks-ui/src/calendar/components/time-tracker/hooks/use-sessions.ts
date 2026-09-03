@@ -1,6 +1,7 @@
 'use client';
 
 import { toast } from '@tuturuuu/ui/sonner';
+import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import type { SessionWithRelations } from '@tuturuuu/ui/time-tracker/types';
 import { useCallback, useState } from 'react';
 
@@ -65,7 +66,8 @@ export function useSessions({
   // API call helper
   const apiCall = useCallback(
     async (url: string, options: RequestInit = {}) => {
-      const response = await fetch(url, {
+      const response = await fetch(getTaskApiUrl(url), {
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           ...options.headers,
