@@ -49,7 +49,7 @@ export default async function ClientPage({
         </CardHeader>
         <Separator className="mb-4" />
         <CardContent>
-          <ToolForm tool={tool} wsId={wsId} />
+          <ToolForm tool={tool} workspaceSlug={workspaceSlug} wsId={wsId} />
         </CardContent>
       </Card>
     </div>

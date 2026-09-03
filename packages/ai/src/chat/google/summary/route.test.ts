@@ -44,6 +44,13 @@ vi.mock('../route-auth', () => ({
 import { createPATCH } from './route';
 
 function createSupabase() {
+  const chatMaybeSingle = vi.fn().mockResolvedValue({
+    data: { id: 'chat-1' },
+    error: null,
+  });
+  const chatCreatorEq = vi.fn(() => ({ maybeSingle: chatMaybeSingle }));
+  const chatIdEq = vi.fn(() => ({ eq: chatCreatorEq }));
+  const chatSelect = vi.fn(() => ({ eq: chatIdEq }));
   const messageOrder = vi.fn().mockResolvedValue({
     data: [
       {
@@ -56,19 +63,26 @@ function createSupabase() {
   });
   const messageEq = vi.fn(() => ({ order: messageOrder }));
   const messageSelect = vi.fn(() => ({ eq: messageEq }));
-  const updateEq = vi.fn().mockResolvedValue({ error: null });
-  const update = vi.fn(() => ({ eq: updateEq }));
+  const updateCreatorEq = vi.fn().mockResolvedValue({ error: null });
+  const updateIdEq = vi.fn(() => ({ eq: updateCreatorEq }));
+  const update = vi.fn(() => ({ eq: updateIdEq }));
   const from = vi.fn((table: string) =>
-    table === 'ai_chat_messages' ? { select: messageSelect } : { update }
+    table === 'ai_chat_messages'
+      ? { select: messageSelect }
+      : { select: chatSelect, update }
   );
 
   return {
+    chatCreatorEq,
+    chatMaybeSingle,
+    chatSelect,
     from,
     messageEq,
     messageOrder,
     messageSelect,
     update,
-    updateEq,
+    updateCreatorEq,
+    updateIdEq,
   };
 }
 
@@ -146,7 +160,7 @@ describe('chat google summary route workspace authorization', () => {
   });
 
   it.each([WORKSPACE_A, WORKSPACE_B])(
-    'isolates summary memory and persistence in workspace %s',
+    'propagates workspace %s to summary memory and authorizes persistence',
     async (wsId) => {
       const supabase = createSupabase();
 
@@ -173,8 +187,34 @@ describe('chat google summary route workspace authorization', () => {
         latest_summarized_message_id: 'message-1',
         summary: 'Summary',
       });
+      expect(supabase.chatCreatorEq).toHaveBeenCalledWith(
+        'creator_id',
+        'rewise-user'
+      );
+      expect(supabase.updateCreatorEq).toHaveBeenCalledWith(
+        'creator_id',
+        'rewise-user'
+      );
     }
   );
+
+  it('rejects a chat not owned by the authenticated actor before reading messages', async () => {
+    const supabase = createSupabase();
+    supabase.chatMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    const response = await createPATCH({
+      requireWorkspaceId: true,
+      resolveAuth: async () => ({
+        ok: true,
+        supabase: supabase as never,
+        user: { id: 'rewise-user' } as never,
+      }),
+    })(request({ id: 'other-user-chat', wsId: WORKSPACE_A }));
+
+    expect(response.status).toBe(404);
+    expect(supabase.messageSelect).not.toHaveBeenCalled();
+    expect(mocks.generateText).not.toHaveBeenCalled();
+  });
 
   it.each([
     ['malformed workspace', 422],

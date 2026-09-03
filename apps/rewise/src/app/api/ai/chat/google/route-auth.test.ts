@@ -80,6 +80,7 @@ describe('Rewise AI route app-session authorization', () => {
     const result = await resolveRewiseAiRouteAuth(request);
 
     expect(result).toEqual({
+      messageInsertMode: 'direct',
       ok: true,
       supabase: attachedClient,
       user: { email: 'user@example.com', id: 'user-1' },

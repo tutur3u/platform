@@ -111,11 +111,13 @@ describe('resolveAiRouteAuth', () => {
   });
 
   it.each([WORKSPACE_A, WORKSPACE_B])(
-    'authorizes and returns normalized workspace %s',
+    'authorizes and returns a normalized workspace for %s',
     async (wsId) => {
       const request = new Request('http://localhost/api/ai/chat');
       const supabase = { from: vi.fn() } as never;
       const membershipClient = { from: vi.fn() } as never;
+      const normalizedWsId = wsId === WORKSPACE_A ? WORKSPACE_B : WORKSPACE_A;
+      mocks.normalizeWorkspaceId.mockResolvedValueOnce(normalizedWsId);
 
       const result = await authorizeAiWorkspace({
         membershipClient,
@@ -125,7 +127,7 @@ describe('resolveAiRouteAuth', () => {
         wsId,
       });
 
-      expect(result).toEqual({ ok: true, wsId });
+      expect(result).toEqual({ ok: true, wsId: normalizedWsId });
       expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
         wsId,
         supabase,
@@ -135,8 +137,33 @@ describe('resolveAiRouteAuth', () => {
         requiredType: 'MEMBER',
         supabase: membershipClient,
         userId: 'user-1',
-        wsId,
+        wsId: normalizedWsId,
       });
+    }
+  );
+
+  it.each([
+    ['User not authenticated', 401],
+    ['Personal workspace not found', 404],
+    ['database unavailable', 500],
+  ])(
+    'classifies workspace resolution failure %s as %i',
+    async (message, status) => {
+      mocks.normalizeWorkspaceId.mockRejectedValueOnce(new Error(message));
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+
+      const result = await authorizeAiWorkspace({
+        request: new Request('http://localhost/api/ai/chat'),
+        supabase: {} as never,
+        userId: 'user-1',
+        wsId: 'personal',
+      });
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.response.status).toBe(status);
+      expect(consoleError).toHaveBeenCalled();
     }
   );
 

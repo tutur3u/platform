@@ -164,7 +164,7 @@ export function createPOST(
       const auth =
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
-      const { supabase, user } = auth;
+      const { messageInsertMode = 'rpc', supabase, user } = auth;
 
       if (isMiraMode && !(await isInternalTuturuuuAiUser(auth))) {
         return NextResponse.json(
@@ -408,7 +408,17 @@ export function createPOST(
         processedMessages,
         chatId,
         insertChatMessage: async (args) => {
-          if (persistenceRequestId) {
+          if (messageInsertMode === 'direct' || persistenceRequestId) {
+            if (!persistenceRequestId) {
+              const { error } = await supabase.from('ai_chat_messages').insert({
+                chat_id: chatId,
+                content: args.message,
+                creator_id: user.id,
+                metadata: { source: args.source },
+                role: 'USER',
+              });
+              return { error };
+            }
             return persistRequestScopedUserMessage({
               chatId,
               content: args.message,

@@ -4,6 +4,7 @@ import type { Tool } from '../data';
 import { ToolForm } from './tool-form';
 
 const WORKSPACE_ID = '11111111-1111-4111-8111-111111111111';
+const WORKSPACE_SLUG = 'workspace-handle';
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -47,7 +48,13 @@ describe('Rewise tool chat workspace propagation', () => {
   });
 
   it('creates and navigates to the tool chat inside the selected workspace', async () => {
-    render(<ToolForm tool={tool} wsId={WORKSPACE_ID} />);
+    render(
+      <ToolForm
+        tool={tool}
+        workspaceSlug={WORKSPACE_SLUG}
+        wsId={WORKSPACE_ID}
+      />
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'common.generate' }));
 
@@ -56,6 +63,6 @@ describe('Rewise tool chat workspace propagation', () => {
     expect(JSON.parse(String(options?.body))).toEqual(
       expect.objectContaining({ wsId: WORKSPACE_ID })
     );
-    expect(mocks.push).toHaveBeenCalledWith(`/${WORKSPACE_ID}/c/chat-1`);
+    expect(mocks.push).toHaveBeenCalledWith(`/${WORKSPACE_SLUG}/c/chat-1`);
   });
 });

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   generateText: vi.fn(),
   google: vi.fn(),
   isBackendRateLimitError: vi.fn(),
+  isInternalTuturuuuAiUser: vi.fn(),
   resolveAiMemoryWorkspaceIdForUser: vi.fn(),
   validateAiTempAuthRequest: vi.fn(),
   withAiMemory: vi.fn(),
@@ -63,6 +64,9 @@ vi.mock('../route-auth', async (importOriginal) => {
     authorizeAiWorkspace: (
       ...args: Parameters<typeof mocks.authorizeAiWorkspace>
     ) => mocks.authorizeAiWorkspace(...args),
+    isInternalTuturuuuAiUser: (
+      ...args: Parameters<typeof mocks.isInternalTuturuuuAiUser>
+    ) => mocks.isInternalTuturuuuAiUser(...args),
   };
 });
 
@@ -82,6 +86,7 @@ describe('chat google new route', () => {
     mocks.google.mockReturnValue('mock-model');
     mocks.generateText.mockResolvedValue({ text: 'New title' });
     mocks.isBackendRateLimitError.mockReturnValue(false);
+    mocks.isInternalTuturuuuAiUser.mockResolvedValue(true);
     mocks.validateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
     mocks.authorizeAiWorkspace.mockImplementation(async ({ wsId }) => ({
       ok: true,
@@ -366,5 +371,35 @@ describe('chat google new route', () => {
     expect(from).not.toHaveBeenCalled();
     expect(mocks.generateText).not.toHaveBeenCalled();
     expect(mocks.withAiMemory).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthorized Mira access before resolving the selected workspace', async () => {
+    const from = vi.fn();
+    mocks.isInternalTuturuuuAiUser.mockResolvedValueOnce(false);
+
+    const response = await createPOST({
+      requireWorkspaceId: true,
+      resolveGatewayAuth: async () => ({
+        auth: {
+          supabase: { from } as never,
+          user: { email: 'external@example.com', id: 'rewise-user' } as never,
+        },
+        ok: true,
+      }),
+    })(
+      new Request('http://localhost/api/ai/chat/new', {
+        body: JSON.stringify({
+          isMiraMode: true,
+          message: 'hello',
+          wsId: '11111111-1111-4111-8111-111111111111',
+        }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.authorizeAiWorkspace).not.toHaveBeenCalled();
+    expect(mocks.resolveAiMemoryWorkspaceIdForUser).not.toHaveBeenCalled();
+    expect(mocks.generateText).not.toHaveBeenCalled();
   });
 });

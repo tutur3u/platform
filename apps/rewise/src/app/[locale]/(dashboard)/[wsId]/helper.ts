@@ -9,9 +9,9 @@ import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 
 export const resolveRewiseWorkspace = cache(async (workspaceId: string) => {
   const user = await getSatelliteAppSessionUser('rewise');
-  if (!user?.id) redirect('/login');
+  if (!user?.id || !user.email) redirect('/login');
 
-  if (user.email && !(await isCurrentUserAIWhitelisted())) {
+  if (!(await isCurrentUserAIWhitelisted())) {
     redirect('/not-whitelisted');
   }
 

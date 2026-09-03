@@ -19,6 +19,7 @@ const WorkspaceIdSchema = z.uuid();
 export type AiRouteAuthResult =
   | {
       ok: true;
+      messageInsertMode?: 'direct' | 'rpc';
       supabase: TypedSupabaseClient;
       user: SupabaseUser;
       tempAuthContext?: AiTempAuthContext;
@@ -55,11 +56,18 @@ export async function authorizeAiWorkspace({
       'Workspace ID normalization failed:',
       error instanceof Error ? error.message : error
     );
+    const message = error instanceof Error ? error.message : '';
+    const status =
+      message === 'User not authenticated'
+        ? 401
+        : message === 'Personal workspace not found'
+          ? 404
+          : 500;
     return {
       ok: false,
       response: NextResponse.json(
-        { error: 'Invalid workspace identifier' },
-        { status: 422 }
+        { error: 'Unable to resolve workspace identifier' },
+        { status }
       ),
     };
   }

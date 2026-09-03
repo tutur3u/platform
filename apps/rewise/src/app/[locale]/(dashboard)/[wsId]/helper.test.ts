@@ -76,4 +76,52 @@ describe('Rewise canonical workspace resolution', () => {
       'redirect:/'
     );
   });
+
+  it('redirects a missing satellite user to login before workspace access', async () => {
+    mocks.getSatelliteAppSessionUser.mockResolvedValue(null);
+    mocks.redirect.mockImplementation((destination: string) => {
+      throw new Error(`redirect:${destination}`);
+    });
+
+    await expect(requireRewiseWorkspace('workspace-handle')).rejects.toThrow(
+      'redirect:/login'
+    );
+    expect(mocks.isCurrentUserAIWhitelisted).not.toHaveBeenCalled();
+    expect(mocks.getWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('redirects a session without an email to login', async () => {
+    mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
+    mocks.redirect.mockImplementation((destination: string) => {
+      throw new Error(`redirect:${destination}`);
+    });
+
+    await expect(requireRewiseWorkspace('workspace-handle')).rejects.toThrow(
+      'redirect:/login'
+    );
+    expect(mocks.isCurrentUserAIWhitelisted).not.toHaveBeenCalled();
+  });
+
+  it('redirects a non-whitelisted user before workspace access', async () => {
+    mocks.isCurrentUserAIWhitelisted.mockResolvedValue(false);
+    mocks.redirect.mockImplementation((destination: string) => {
+      throw new Error(`redirect:${destination}`);
+    });
+
+    await expect(requireRewiseWorkspace('workspace-handle')).rejects.toThrow(
+      'redirect:/not-whitelisted'
+    );
+    expect(mocks.getWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('returns not found when the workspace does not exist', async () => {
+    mocks.getWorkspace.mockResolvedValue(null);
+    mocks.notFound.mockImplementation(() => {
+      throw new Error('not-found');
+    });
+
+    await expect(requireRewiseWorkspace('missing')).rejects.toThrow(
+      'not-found'
+    );
+  });
 });

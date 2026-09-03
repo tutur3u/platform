@@ -188,6 +188,23 @@ export function createPOST(options: CreatePostOptions = {}) {
         );
       }
 
+      if (isMiraMode) {
+        const allowed = await isInternalTuturuuuAiUser({
+          ok: true,
+          supabase,
+          user,
+          ...(tempAuth.status === 'valid'
+            ? { tempAuthContext: tempAuth.context }
+            : {}),
+        });
+        if (!allowed) {
+          return NextResponse.json(
+            { error: 'Mira mode is limited to @tuturuuu.com accounts' },
+            { status: 403 }
+          );
+        }
+      }
+
       let selectedWsId: string;
       if (wsId) {
         const workspaceAuthorization = await authorizeAiWorkspace({
@@ -205,23 +222,6 @@ export function createPOST(options: CreatePostOptions = {}) {
           supabase,
           userId: user.id,
         });
-      }
-
-      if (isMiraMode) {
-        const allowed = await isInternalTuturuuuAiUser({
-          ok: true,
-          supabase,
-          user,
-          ...(tempAuth.status === 'valid'
-            ? { tempAuthContext: tempAuth.context }
-            : {}),
-        });
-        if (!allowed) {
-          return NextResponse.json(
-            { error: 'Mira mode is limited to @tuturuuu.com accounts' },
-            { status: 403 }
-          );
-        }
       }
 
       const prompt = buildPrompt([

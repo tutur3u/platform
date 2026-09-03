@@ -46,6 +46,7 @@ export async function resolveRewiseAiRouteAuth(
   if (!resolution?.ok) return resolution;
 
   return {
+    messageInsertMode: 'direct',
     ok: true,
     supabase: resolution.auth.supabase,
     user: resolution.auth.user,

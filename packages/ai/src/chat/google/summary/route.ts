@@ -65,6 +65,17 @@ export function createPATCH(
         });
       }
 
+      const { data: ownedChat, error: chatAccessError } = await supabase
+        .from('ai_chats')
+        .select('id')
+        .eq('id', id)
+        .eq('creator_id', auth.user.id)
+        .maybeSingle();
+
+      if (chatAccessError)
+        return new Response(chatAccessError.message, { status: 500 });
+      if (!ownedChat) return new Response('Chat not found', { status: 404 });
+
       const { data: rawMessages, error: messagesError } = await supabase
         .from('ai_chat_messages')
         .select('id, content, role')
@@ -143,7 +154,8 @@ export function createPATCH(
           latest_summarized_message_id: messages[messages.length - 1]?.id,
           summary: completion,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('creator_id', auth.user.id);
 
       if (error) return new Response(error.message, { status: 500 });
 
