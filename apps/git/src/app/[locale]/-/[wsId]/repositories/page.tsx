@@ -46,7 +46,7 @@ export default async function RepositoriesPage({
       </header>
       {query.error && (
         <Alert variant="destructive">
-          <AlertTitle>Repository was not added</AlertTitle>
+          <AlertTitle>Repository operation failed</AlertTitle>
           <AlertDescription>{query.error}</AlertDescription>
         </Alert>
       )}
