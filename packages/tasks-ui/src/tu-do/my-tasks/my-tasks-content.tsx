@@ -121,6 +121,8 @@ export default function MyTasksContent({
           wsId={wsId}
           onCreateNewLabel={() => state.setNewLabelDialogOpen(true)}
           onCreateNewProject={() => state.setNewProjectDialogOpen(true)}
+          onLabelsRequested={state.requestLabelCatalog}
+          onProjectsRequested={state.requestProjectCatalog}
           aiCreditsExhausted={aiCreditsExhausted}
           aiCreditsTooltip={
             aiCreditsExhausted ? t('ai_credits_exhausted_tooltip') : undefined
@@ -155,6 +157,8 @@ export default function MyTasksContent({
             state.setNewBoardName('');
             state.setNewBoardDialogOpen(true);
           }}
+          onLabelsRequested={state.requestLabelCatalog}
+          onProjectsRequested={state.requestProjectCatalog}
         />
       )}
 

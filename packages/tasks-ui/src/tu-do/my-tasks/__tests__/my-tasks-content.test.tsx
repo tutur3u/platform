@@ -2,14 +2,21 @@ import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Hoisted mocks ──────────────────────────────────────────────────────────
-const { mockUseMyTasksState, mockUseQueryClient, mockUseUserConfig } =
-  vi.hoisted(() => ({
-    mockUseMyTasksState: vi.fn(),
-    mockUseQueryClient: vi.fn(() => ({
-      invalidateQueries: vi.fn(),
-    })),
-    mockUseUserConfig: vi.fn(() => ({ data: 'enter' })),
-  }));
+const {
+  mockCommandBar,
+  mockMyTasksFilters,
+  mockUseMyTasksState,
+  mockUseQueryClient,
+  mockUseUserConfig,
+} = vi.hoisted(() => ({
+  mockCommandBar: vi.fn((_props: any) => undefined),
+  mockMyTasksFilters: vi.fn((_props: any) => undefined),
+  mockUseMyTasksState: vi.fn(),
+  mockUseQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
+  mockUseUserConfig: vi.fn(() => ({ data: 'enter' })),
+}));
 
 // Mock the state hook
 vi.mock('../use-my-tasks-state', () => ({
@@ -44,9 +51,10 @@ vi.mock('../my-tasks-header', () => ({
 }));
 
 vi.mock('../command-bar', () => ({
-  CommandBar: (props: any) => (
-    <div data-testid="command-bar" data-loading={props.isLoading} />
-  ),
+  CommandBar: (props: any) => {
+    mockCommandBar(props);
+    return <div data-testid="command-bar" data-loading={props.isLoading} />;
+  },
 }));
 
 vi.mock('../ai-credit-indicator', () => ({
@@ -54,9 +62,12 @@ vi.mock('../ai-credit-indicator', () => ({
 }));
 
 vi.mock('../my-tasks-filters', () => ({
-  MyTasksFilters: (props: any) => (
-    <div data-testid="my-tasks-filters" data-props={JSON.stringify(props)} />
-  ),
+  MyTasksFilters: (props: any) => {
+    mockMyTasksFilters(props);
+    return (
+      <div data-testid="my-tasks-filters" data-props={JSON.stringify(props)} />
+    );
+  },
 }));
 
 vi.mock('../task-list', () => ({
@@ -239,6 +250,8 @@ function createDefaultState(overrides?: Record<string, any>) {
     handleProjectFilterChange: vi.fn(),
     handleCreateNewLabel: vi.fn(),
     handleCreateNewProject: vi.fn(),
+    requestLabelCatalog: vi.fn(),
+    requestProjectCatalog: vi.fn(),
 
     ...overrides,
   };
@@ -329,6 +342,29 @@ describe('MyTasksContent', () => {
 
   // ── Prop threading ───────────────────────────────────────────────────────
   describe('prop threading', () => {
+    it('threads catalog demand callbacks to task creation and filter controls', () => {
+      const requestLabelCatalog = vi.fn();
+      const requestProjectCatalog = vi.fn();
+      mockUseMyTasksState.mockReturnValue(
+        createDefaultState({ requestLabelCatalog, requestProjectCatalog })
+      );
+
+      render(<MyTasksContent wsId="ws-1" userId="user-1" isPersonal={true} />);
+
+      expect(mockCommandBar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          onLabelsRequested: requestLabelCatalog,
+          onProjectsRequested: requestProjectCatalog,
+        })
+      );
+      expect(mockMyTasksFilters).toHaveBeenCalledWith(
+        expect.objectContaining({
+          onLabelsRequested: requestLabelCatalog,
+          onProjectsRequested: requestProjectCatalog,
+        })
+      );
+    });
+
     it('passes task counts from filteredTasks to MyTasksHeader', () => {
       mockUseMyTasksState.mockReturnValue(
         createDefaultState({

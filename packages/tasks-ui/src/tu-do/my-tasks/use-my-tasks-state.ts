@@ -5,6 +5,7 @@ import {
   createWorkspaceLabel,
   createWorkspaceTaskBoard,
   createWorkspaceTaskProject,
+  listCurrentUserTaskBoards,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceMembers,
@@ -85,6 +86,16 @@ export function useMyTasksState({
     projectIds: [],
     selfManagedOnly: false,
   });
+  const [labelCatalogRequested, setLabelCatalogRequested] = useState(false);
+  const [projectCatalogRequested, setProjectCatalogRequested] = useState(false);
+  const requestLabelCatalog = useCallback(
+    () => setLabelCatalogRequested(true),
+    []
+  );
+  const requestProjectCatalog = useCallback(
+    () => setProjectCatalogRequested(true),
+    []
+  );
 
   // Fetch tasks via TanStack Query (filters applied server-side)
   const { data: queryData, isLoading: queryLoading } = useMyTasksQuery(
@@ -164,7 +175,17 @@ export function useMyTasksState({
   >([]);
 
   // Preview state
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewOpen, setPreviewOpenState] = useState(false);
+  const setPreviewOpen = useCallback(
+    (open: boolean) => {
+      if (open) {
+        requestLabelCatalog();
+        requestProjectCatalog();
+      }
+      setPreviewOpenState(open);
+    },
+    [requestLabelCatalog, requestProjectCatalog]
+  );
   const [previewEntry, setPreviewEntry] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<any | null>(null);
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
@@ -185,17 +206,28 @@ export function useMyTasksState({
     getRandomNewLabelColor()
   );
   const [creatingLabel, setCreatingLabel] = useState(false);
-  const setNewLabelDialogOpen = useCallback((open: boolean) => {
-    if (open) {
-      setNewLabelColor((previousColor) =>
-        getRandomNewLabelColor(previousColor)
-      );
-    }
-    setNewLabelDialogOpenState(open);
-  }, []);
+  const setNewLabelDialogOpen = useCallback(
+    (open: boolean) => {
+      if (open) {
+        requestLabelCatalog();
+        setNewLabelColor((previousColor) =>
+          getRandomNewLabelColor(previousColor)
+        );
+      }
+      setNewLabelDialogOpenState(open);
+    },
+    [requestLabelCatalog]
+  );
 
   // Project creation dialog state
-  const [newProjectDialogOpen, setNewProjectDialogOpen] = useState(false);
+  const [newProjectDialogOpen, setNewProjectDialogOpenState] = useState(false);
+  const setNewProjectDialogOpen = useCallback(
+    (open: boolean) => {
+      if (open) requestProjectCatalog();
+      setNewProjectDialogOpenState(open);
+    },
+    [requestProjectCatalog]
+  );
   const [newProjectName, setNewProjectName] = useState('');
   const [creatingProject, setCreatingProject] = useState(false);
 
@@ -246,41 +278,8 @@ export function useMyTasksState({
   const { data: allBoardsData = [] } = useQuery({
     queryKey: ['all-user-boards'],
     queryFn: async () => {
-      const workspaces = await listWorkspaces();
-      const workspaceIds = workspaces.map((workspace) => workspace.id);
-      if (workspaceIds.length === 0) return [];
-
-      const fetchAllWorkspaceBoards = async (workspaceId: string) => {
-        const pageSize = 200;
-        const boards: Awaited<
-          ReturnType<typeof listWorkspaceTaskBoards>
-        >['boards'] = [];
-        let page = 1;
-
-        while (true) {
-          const payload = await listWorkspaceTaskBoards(workspaceId, {
-            page,
-            pageSize,
-          });
-          const pageBoards = payload.boards ?? [];
-          boards.push(...pageBoards);
-
-          if (pageBoards.length < pageSize) {
-            break;
-          }
-
-          page += 1;
-        }
-
-        return boards;
-      };
-
-      const boardGroups = await Promise.all(
-        workspaceIds.map((workspaceId) => fetchAllWorkspaceBoards(workspaceId))
-      );
-
-      return boardGroups
-        .flat()
+      const payload = await listCurrentUserTaskBoards();
+      return (payload.boards ?? [])
         .filter((board) => !board.deleted_at)
         .map((board) => ({
           id: board.id,
@@ -394,25 +393,29 @@ export function useMyTasksState({
     : ((boardsDataRaw as any)?.boards ?? []);
 
   const allWorkspaceIds = useMemo(
-    () => workspacesData?.map((ws) => ws.id) || [],
+    () => (workspacesData?.map((ws) => ws.id) || []).toSorted(),
     [workspacesData]
   );
 
   // Fetch workspace labels
   const { data: workspaceLabels = [] } = useQuery({
-    queryKey: ['workspaceLabels', JSON.stringify(allWorkspaceIds)],
+    queryKey: ['workspaceLabels', ...allWorkspaceIds],
     queryFn: async () => {
       if (allWorkspaceIds.length === 0) return [];
       const promises = allWorkspaceIds.map((id) => listWorkspaceLabels(id));
       const results = await Promise.all(promises);
       return results.flat().filter(Boolean);
     },
-    enabled: isPersonal && allWorkspaceIds.length > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+    enabled:
+      isPersonal &&
+      allWorkspaceIds.length > 0 &&
+      (labelCatalogRequested || taskFilters.labelIds.length > 0),
   });
 
   // Fetch workspace projects
   const { data: workspaceProjects = [] } = useQuery({
-    queryKey: ['workspaceProjects', JSON.stringify(allWorkspaceIds)],
+    queryKey: ['workspaceProjects', ...allWorkspaceIds],
     queryFn: async () => {
       if (allWorkspaceIds.length === 0) return [];
       const projectGroups = await Promise.all(
@@ -428,7 +431,11 @@ export function useMyTasksState({
 
       return projectGroups.flat().sort((a, b) => a.name.localeCompare(b.name));
     },
-    enabled: isPersonal && allWorkspaceIds.length > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+    enabled:
+      isPersonal &&
+      allWorkspaceIds.length > 0 &&
+      (projectCatalogRequested || taskFilters.projectIds.length > 0),
   });
 
   // Fetch workspace members
@@ -1004,6 +1011,8 @@ export function useMyTasksState({
     boardsLoading,
     workspaceLabels,
     workspaceProjects,
+    requestLabelCatalog,
+    requestProjectCatalog,
     workspaceMembers,
     boardConfig,
     availableLists,
