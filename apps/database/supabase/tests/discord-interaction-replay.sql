@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(26);
+select plan(28);
 
 select has_table(
   'private',
@@ -119,6 +119,16 @@ select ok(
   )
   and not has_function_privilege(
     'anon',
+    'private.renew_discord_interaction_claim(text,smallint,uuid,integer)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.renew_discord_interaction_claim(text,smallint,uuid,integer)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
     'private.prune_discord_interaction_claims(integer)',
     'execute'
   )
@@ -143,6 +153,11 @@ select ok(
   )
   and has_function_privilege(
     'service_role',
+    'private.renew_discord_interaction_claim(text,smallint,uuid,integer)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
     'private.prune_discord_interaction_claims(integer)',
     'execute'
   ),
@@ -159,6 +174,27 @@ create temporary table first_claim_snapshot as
 select *
 from private.discord_interaction_claims
 where interaction_id = '100000000000000001';
+
+select ok(
+  private.renew_discord_interaction_claim(
+    '100000000000000001',
+    2,
+    (select claim_token from first_claim_snapshot),
+    120
+  ),
+  'the claim owner can renew its completion lease'
+);
+
+select is(
+  private.renew_discord_interaction_claim(
+    '100000000000000001',
+    2,
+    gen_random_uuid(),
+    120
+  ),
+  false,
+  'a stale owner cannot renew another claim lease'
+);
 
 select ok(
   private.claim_discord_interaction('100000000000000001', 2, 86400)->>'state'

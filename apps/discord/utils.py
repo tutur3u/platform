@@ -95,6 +95,26 @@ def complete_discord_interaction(
         raise RuntimeError("Discord interaction completion was not recorded")
 
 
+def renew_discord_interaction_claim(
+    interaction_id: str, interaction_type: int, claim_token: str
+) -> None:
+    """Extend an owned claim before persisting its dispatched response."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+        "p_claim_token": claim_token,
+        "p_lease_seconds": 60,
+    }
+    response = (
+        get_supabase_client()
+        .schema("private")
+        .rpc("renew_discord_interaction_claim", params)
+        .execute()
+    )
+    if response.data is not True:
+        raise RuntimeError("Discord interaction claim lease was not renewed")
+
+
 def release_discord_interaction(
     interaction_id: str, interaction_type: int, claim_token: str
 ) -> None:

@@ -38,9 +38,11 @@ def signing_key(monkeypatch: pytest.MonkeyPatch) -> SigningKey:
 def interaction_lifecycle(monkeypatch: pytest.MonkeyPatch) -> dict[str, Mock]:
     complete = Mock()
     release = Mock()
+    renew = Mock()
     monkeypatch.setattr(interaction_replay, "complete_discord_interaction", complete)
     monkeypatch.setattr(interaction_replay, "release_discord_interaction", release)
-    return {"complete": complete, "release": release}
+    monkeypatch.setattr(interaction_replay, "renew_discord_interaction_claim", renew)
+    return {"complete": complete, "release": release, "renew": renew}
 
 
 @pytest.mark.parametrize(
@@ -160,6 +162,9 @@ def test_duplicate_delivery_is_acknowledged_without_spawning(
     spawn.assert_called_once()
     interaction_lifecycle["complete"].assert_called_once_with(
         "123456789012345678", 2, CLAIM_OWNERSHIP_ID, response_payload
+    )
+    interaction_lifecycle["renew"].assert_called_once_with(
+        "123456789012345678", 2, CLAIM_OWNERSHIP_ID
     )
 
 
@@ -389,3 +394,77 @@ def test_dispatch_timeout_releases_claim_before_lease_expiry(
         "723456789012345678", 2, CLAIM_OWNERSHIP_ID
     )
     interaction_lifecycle["complete"].assert_not_called()
+
+
+def test_canceled_claim_releases_late_ownership(monkeypatch: pytest.MonkeyPatch) -> None:
+    claim_started = threading.Event()
+    finish_claim = threading.Event()
+
+    def delayed_claim(*_args: object) -> dict[str, str]:
+        claim_started.set()
+        finish_claim.wait(timeout=1)
+        return {"state": "claimed", "claimToken": CLAIM_OWNERSHIP_ID}
+
+    monkeypatch.setattr(interaction_replay.DiscordAuth, "verify_request", Mock())
+    monkeypatch.setattr(interaction_replay, "claim_discord_interaction", delayed_claim)
+    release = Mock()
+    monkeypatch.setattr(interaction_replay, "release_discord_interaction", release)
+
+    async def run() -> None:
+        body = json.dumps(command_payload("823456789012345678")).encode()
+
+        async def receive() -> dict[str, object]:
+            return {"type": "http.request", "body": body, "more_body": False}
+
+        request = Request(
+            {"type": "http", "method": "POST", "path": "/", "headers": []},
+            receive,
+        )
+        task = asyncio.create_task(interaction_replay.prepare_interaction_dispatch(request))
+        await asyncio.to_thread(claim_started.wait, 1)
+        task.cancel()
+        finish_claim.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(run())
+    release.assert_called_once_with("823456789012345678", 2, CLAIM_OWNERSHIP_ID)
+
+
+def test_canceled_completion_waits_then_releases_owned_claim(
+    interaction_lifecycle: dict[str, Mock],
+) -> None:
+    completion_started = threading.Event()
+    finish_completion = threading.Event()
+
+    def delayed_completion(*_args: object) -> None:
+        completion_started.set()
+        finish_completion.wait(timeout=1)
+
+    interaction_lifecycle["complete"].side_effect = delayed_completion
+
+    async def handler(_request: Request) -> dict[str, int]:
+        return {"type": 5}
+
+    request = Request({"type": "http", "method": "POST", "path": "/"})
+    setattr(request.state, interaction_replay.CLAIM_ID_STATE_KEY, "923456789012345678")
+    setattr(
+        request.state,
+        interaction_replay.CLAIM_OWNERSHIP_STATE_KEY,
+        CLAIM_OWNERSHIP_ID,
+    )
+    setattr(request.state, interaction_replay.CLAIM_TYPE_STATE_KEY, 2)
+
+    async def run() -> None:
+        guarded = interaction_replay.with_discord_interaction_replay(handler)
+        task = asyncio.create_task(guarded(request))
+        await asyncio.to_thread(completion_started.wait, 1)
+        task.cancel()
+        finish_completion.set()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    asyncio.run(run())
+    interaction_lifecycle["release"].assert_called_once_with(
+        "923456789012345678", 2, CLAIM_OWNERSHIP_ID
+    )

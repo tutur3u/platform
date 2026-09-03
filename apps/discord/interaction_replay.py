@@ -17,6 +17,7 @@ from utils import (
     claim_discord_interaction,
     complete_discord_interaction,
     release_discord_interaction,
+    renew_discord_interaction_claim,
 )
 
 logger = logging.getLogger(__name__)
@@ -61,8 +62,31 @@ async def prepare_interaction_dispatch(
     if not isinstance(interaction_id, str) or not INTERACTION_ID_PATTERN.fullmatch(interaction_id):
         raise HTTPException(status_code=400, detail="Bad request")
 
+    claim_task = asyncio.create_task(
+        asyncio.to_thread(claim_discord_interaction, interaction_id, interaction_type)
+    )
     try:
-        claim = await asyncio.to_thread(claim_discord_interaction, interaction_id, interaction_type)
+        claim = await asyncio.shield(claim_task)
+    except asyncio.CancelledError:
+        # Cancelling an await does not stop its worker thread. Wait for the
+        # claim result and release any late ownership before propagating the
+        # request cancellation, otherwise retries remain fenced until expiry.
+        try:
+            late_claim = await claim_task
+            late_token = late_claim.get("claimToken")
+            if late_claim.get("state") == "claimed" and isinstance(late_token, str):
+                await asyncio.to_thread(
+                    release_discord_interaction,
+                    interaction_id,
+                    interaction_type,
+                    late_token,
+                )
+        except Exception:
+            logger.exception(
+                "Failed to clean up canceled Discord interaction claim",
+                extra={"interaction_type": interaction_type},
+            )
+        raise
     except Exception as error:
         logger.exception(
             "Failed to claim Discord interaction",
@@ -139,20 +163,26 @@ def with_discord_interaction_replay(
             and isinstance(interaction_type, int)
         ):
             try:
-                await asyncio.to_thread(
+                await _run_blocking_to_completion(
+                    renew_discord_interaction_claim,
+                    interaction_id,
+                    interaction_type,
+                    claim_token,
+                )
+                await _run_blocking_to_completion(
                     complete_discord_interaction,
                     interaction_id,
                     interaction_type,
                     claim_token,
                     response,
                 )
-            except Exception as error:
+            except BaseException as error:
                 logger.exception(
                     "Failed to complete Discord interaction claim",
                     extra={"interaction_type": interaction_type},
                 )
                 try:
-                    await asyncio.to_thread(
+                    await _run_blocking_to_completion(
                         release_discord_interaction,
                         interaction_id,
                         interaction_type,
@@ -163,6 +193,8 @@ def with_discord_interaction_replay(
                         "Failed to release Discord interaction claim",
                         extra={"interaction_type": interaction_type},
                     )
+                if isinstance(error, asyncio.CancelledError):
+                    raise
                 raise HTTPException(
                     status_code=503, detail="Interaction completion unavailable"
                 ) from error
@@ -170,3 +202,16 @@ def with_discord_interaction_replay(
         return response
 
     return guarded
+
+
+async def _run_blocking_to_completion(function: Callable[..., Any], *args: Any) -> Any:
+    """Let an ownership-changing RPC finish even if its request is canceled."""
+    task = asyncio.create_task(asyncio.to_thread(function, *args))
+    try:
+        return await asyncio.shield(task)
+    except asyncio.CancelledError:
+        try:
+            await task
+        except Exception:
+            logger.exception("Canceled Discord interaction RPC failed")
+        raise

@@ -132,6 +132,44 @@ revoke all on function private.claim_discord_interaction(text, smallint, integer
 grant execute on function private.claim_discord_interaction(text, smallint, integer)
   to service_role;
 
+create or replace function private.renew_discord_interaction_claim(
+  p_interaction_id text,
+  p_interaction_type smallint,
+  p_claim_token uuid,
+  p_lease_seconds integer default 60
+)
+returns boolean
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if p_lease_seconds is null or p_lease_seconds < 15 or p_lease_seconds > 300 then
+    raise exception 'invalid Discord interaction lease duration';
+  end if;
+
+  update private.discord_interaction_claims
+  set lease_expires_at = least(
+    clock_timestamp() + make_interval(secs => p_lease_seconds),
+    expires_at
+  )
+  where interaction_id = p_interaction_id
+    and interaction_type = p_interaction_type
+    and claim_token = p_claim_token
+    and response_payload is null
+    and expires_at > clock_timestamp();
+
+  return found;
+end;
+$$;
+
+revoke all on function private.renew_discord_interaction_claim(
+  text, smallint, uuid, integer
+) from public, anon, authenticated;
+grant execute on function private.renew_discord_interaction_claim(
+  text, smallint, uuid, integer
+) to service_role;
+
 create or replace function private.complete_discord_interaction(
   p_interaction_id text,
   p_interaction_type smallint,
