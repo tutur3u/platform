@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -26,23 +27,48 @@ export async function authorizeCalendarEventManagement(
 
   const { user, supabase } = auth;
   let wsId: string;
-  try {
-    wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  } catch (error) {
-    console.error('Failed to normalize workspace identifier', error);
-    const normalizationFailure =
-      error instanceof Error && error.message === 'User not authenticated'
-        ? { error: 'User not authenticated', status: 401 }
-        : error instanceof Error &&
-            error.message === 'Personal workspace not found'
-          ? { error: 'Personal workspace not found', status: 404 }
-          : { error: 'Failed to resolve workspace', status: 500 };
-    return {
-      error: NextResponse.json(
-        { error: normalizationFailure.error },
-        { status: normalizationFailure.status }
-      ),
-    } as const;
+  if (rawWsId.trim().toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    const { data: personalWorkspace, error: personalWorkspaceError } =
+      await supabase
+        .from('workspaces')
+        .select('id, workspace_members!inner(user_id, type)')
+        .eq('personal', true)
+        .eq('workspace_members.user_id', user.id)
+        .eq('workspace_members.type', 'MEMBER')
+        .maybeSingle();
+
+    if (personalWorkspaceError) {
+      console.error('Failed to resolve personal workspace', {
+        error: personalWorkspaceError,
+      });
+      return {
+        error: NextResponse.json(
+          { error: 'Failed to resolve workspace' },
+          { status: 500 }
+        ),
+      } as const;
+    }
+    if (!personalWorkspace) {
+      return {
+        error: NextResponse.json(
+          { error: 'Personal workspace not found' },
+          { status: 404 }
+        ),
+      } as const;
+    }
+    wsId = personalWorkspace.id;
+  } else {
+    try {
+      wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    } catch (error) {
+      console.error('Failed to normalize workspace identifier', error);
+      return {
+        error: NextResponse.json(
+          { error: 'Failed to resolve workspace' },
+          { status: 500 }
+        ),
+      } as const;
+    }
   }
   const membership = await verifyWorkspaceMembershipType({
     wsId,
