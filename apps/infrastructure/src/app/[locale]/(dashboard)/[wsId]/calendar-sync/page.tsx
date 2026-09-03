@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { CALENDAR_APP_URL } from '@/constants/common';
 import ErrorTrackingSection from './_components/error-tracking';
 import MetricCards from './_components/metric-cards';
 import PerformanceCharts from './_components/performance-charts';
@@ -122,7 +123,10 @@ export default async function CalendarSyncMonitoringPage({
                     errors, and optimize sync operations for your workspace.
                   </p>
                 </div>
-                <SyncTriggerButton wsId={wsId} />
+                <SyncTriggerButton
+                  calendarAppUrl={CALENDAR_APP_URL}
+                  wsId={wsId}
+                />
               </div>
             </div>
 
