@@ -4,6 +4,7 @@ import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -290,6 +291,17 @@ export const POST = withSessionAuth<RouteParams>(
 
       if (!membership.ok) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const permissions = await getPermissions({
+        user,
+        wsId: normalizedWorkspaceId,
+      });
+      if (!permissions?.containsPermission('manage_projects')) {
+        return NextResponse.json(
+          { error: "You don't have permission to perform this operation" },
+          { status: 403 }
+        );
       }
 
       const body = await request.json();
