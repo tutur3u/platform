@@ -104,6 +104,31 @@ describe('task board direct share access', () => {
     expect((sbAdmin as any).from).toHaveBeenCalledTimes(1);
   });
 
+  it('excludes soft-deleted tasks while resolving their board context', async () => {
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+    const taskQuery = createQuery({ data: null, error: null });
+    const sbAdmin = {
+      from: vi.fn(() => taskQuery),
+    } as unknown as TypedSupabaseClient;
+
+    const result = await resolveTaskBoardAccess({
+      sbAdmin,
+      supabase: createSupabaseMock({}),
+      taskId: '00000000-0000-4000-8000-000000000011',
+      user,
+      wsId: '00000000-0000-4000-8000-000000000020',
+    });
+
+    expect(taskQuery.eq).toHaveBeenCalledWith(
+      'id',
+      '00000000-0000-4000-8000-000000000011'
+    );
+    expect(taskQuery.is).toHaveBeenCalledWith('deleted_at', null);
+    expect(result).toMatchObject({
+      error: expect.objectContaining({ status: 404 }),
+    });
+  });
+
   it('returns read access for a workspace member without manage_projects', async () => {
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
     getPermissionsMock.mockResolvedValue({

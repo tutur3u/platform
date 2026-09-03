@@ -10,8 +10,13 @@ import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 const requestSchema = z
   .object({
     boardId: z.guid().optional(),
-    projectIds: z.array(z.guid()).default([]),
+    projectIds: z
+      .array(z.guid())
+      .max(1000)
+      .default([])
+      .transform((projectIds) => [...new Set(projectIds)]),
   })
+  .strict()
   .refine((value) => !!value.boardId || value.projectIds.length > 0, {
     message: 'boardId or projectIds is required',
   });
@@ -61,7 +66,7 @@ export async function POST(request: Request) {
         throw new Error('WORKSPACE_MEMBERSHIP_LOOKUP_FAILED');
       }
 
-      return !!membership;
+      return membership.ok;
     };
 
     const candidateWorkspaceIds = new Set<string>();

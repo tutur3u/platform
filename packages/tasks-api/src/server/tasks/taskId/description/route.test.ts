@@ -178,7 +178,7 @@ async function callPatch(request: NextRequest) {
   return response;
 }
 
-describe('task description route chunked PATCH', () => {
+describe('task description route PATCH', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.adminQueues.clear();
@@ -195,6 +195,164 @@ describe('task description route chunked PATCH', () => {
     } as never);
     vi.mocked(normalizeWorkspaceId).mockResolvedValue(WORKSPACE_ID);
     vi.mocked(verifyWorkspaceMembershipType).mockResolvedValue({ ok: true });
+  });
+
+  it('persists a direct description and its derived Yjs state in one actor RPC', async () => {
+    const description = JSON.stringify({
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Direct description' }],
+        },
+      ],
+    });
+    queueTaskAccess();
+    queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
+      data: {
+        description,
+        description_yjs_state: [1, 2, 3],
+        id: TASK_ID,
+      },
+      error: null,
+    });
+
+    const response = await callPatch(patchRequest({ description }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      description,
+      description_yjs_state: [1, 2, 3],
+    });
+    expect(mocks.adminClient.rpc).toHaveBeenCalledOnce();
+    expect(mocks.adminClient.rpc).toHaveBeenCalledWith(
+      'update_task_fields_with_actor',
+      {
+        p_actor_user_id: USER_ID,
+        p_task_id: TASK_ID,
+        p_task_updates: {
+          description,
+          description_yjs_state: [1, 2, 3],
+        },
+      }
+    );
+    expect(mocks.adminMutations).not.toContainEqual(
+      expect.objectContaining({ operation: 'update', table: 'tasks' })
+    );
+  });
+
+  it('persists an explicit description and Yjs state together', async () => {
+    const description = JSON.stringify({ type: 'doc', content: [] });
+    const descriptionYjsState = [4, 5, 6];
+    queueTaskAccess();
+    queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
+      data: {
+        description,
+        description_yjs_state: descriptionYjsState,
+        id: TASK_ID,
+      },
+      error: null,
+    });
+
+    const response = await callPatch(
+      patchRequest({
+        description,
+        description_yjs_state: descriptionYjsState,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminClient.rpc).toHaveBeenCalledWith(
+      'update_task_fields_with_actor',
+      expect.objectContaining({
+        p_task_updates: {
+          description,
+          description_yjs_state: descriptionYjsState,
+        },
+      })
+    );
+  });
+
+  it('persists a Yjs-only save without inventing a description value', async () => {
+    const descriptionYjsState = [7, 8, 9];
+    queueTaskAccess();
+    queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
+      data: {
+        description: null,
+        description_yjs_state: descriptionYjsState,
+        id: TASK_ID,
+      },
+      error: null,
+    });
+
+    const response = await callPatch(
+      patchRequest({ description_yjs_state: descriptionYjsState })
+    );
+
+    expect(response.status).toBe(200);
+    const rpcPayload = vi.mocked(mocks.adminClient.rpc).mock.calls.at(0)?.[1];
+    expect(rpcPayload).toMatchObject({
+      p_actor_user_id: USER_ID,
+      p_task_id: TASK_ID,
+      p_task_updates: {
+        description_yjs_state: descriptionYjsState,
+      },
+    });
+    expect((rpcPayload as TaskRpcPayload).p_task_updates).not.toHaveProperty(
+      'description'
+    );
+    expect(mocks.adminMutations).not.toContainEqual(
+      expect.objectContaining({ operation: 'update', table: 'tasks' })
+    );
+  });
+
+  it('returns the existing failure response without a second mutation when the actor RPC fails', async () => {
+    const description = JSON.stringify({ type: 'doc', content: [] });
+    queueTaskAccess();
+    queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
+      data: null,
+      error: new Error('atomic update failed'),
+    });
+
+    const response = await callPatch(patchRequest({ description }));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to update task description',
+    });
+    expect(mocks.adminClient.rpc).toHaveBeenCalledOnce();
+    expect(mocks.adminMutations).not.toContainEqual(
+      expect.objectContaining({ operation: 'update', table: 'tasks' })
+    );
+  });
+
+  it('reads back an idempotent direct save when the actor RPC returns no row', async () => {
+    const description = JSON.stringify({ type: 'doc', content: [] });
+    queueTaskAccess();
+    queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
+      data: null,
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: {
+        description,
+        description_yjs_state: [1, 2, 3],
+        id: TASK_ID,
+      },
+      error: null,
+    });
+
+    const response = await callPatch(patchRequest({ description }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      description,
+      description_yjs_state: [1, 2, 3],
+    });
+    expect(mocks.adminClient.rpc).toHaveBeenCalledOnce();
+    expect(mocks.adminMutations).not.toContainEqual(
+      expect.objectContaining({ operation: 'update', table: 'tasks' })
+    );
   });
 
   it('returns 400 for malformed JSON after access checks', async () => {
@@ -319,7 +477,7 @@ describe('task description route chunked PATCH', () => {
     ).toBe(false);
   });
 
-  it('assembles committed chunks while keeping Yjs state out of the actor RPC', async () => {
+  it('assembles and persists committed chunks in one actor RPC', async () => {
     const description = JSON.stringify({
       type: 'doc',
       content: [
@@ -355,11 +513,7 @@ describe('task description route chunked PATCH', () => {
       error: null,
     });
     queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
-      data: {
-        description,
-        description_yjs_state: null,
-        id: TASK_ID,
-      },
+      data: null,
       error: null,
     });
     queueResult(mocks.adminQueues, 'tasks', {
@@ -393,21 +547,21 @@ describe('task description route chunked PATCH', () => {
       p_task_id: TASK_ID,
       p_task_updates: {
         description,
-      },
-    });
-    expect((rpcPayload as TaskRpcPayload).p_task_updates).not.toHaveProperty(
-      'description_yjs_state'
-    );
-    expect(mocks.adminMutations).toContainEqual({
-      operation: 'update',
-      table: 'tasks',
-      value: {
         description_yjs_state: [1, 2, 3],
       },
     });
+    expect(mocks.adminClient.rpc).toHaveBeenCalledOnce();
+    expect(mocks.adminMutations).not.toContainEqual(
+      expect.objectContaining({ operation: 'update', table: 'tasks' })
+    );
+    expect(mocks.privateMutations).toContainEqual({
+      operation: 'delete',
+      table: 'task_description_chunk_sessions',
+      value: null,
+    });
   });
 
-  it('keeps the chunk session when Yjs state persistence fails', async () => {
+  it('keeps the chunk session when the atomic actor RPC fails', async () => {
     const description = JSON.stringify({
       type: 'doc',
       content: [
@@ -438,16 +592,8 @@ describe('task description route chunked PATCH', () => {
       error: null,
     });
     queueResult(mocks.rpcQueues, 'update_task_fields_with_actor', {
-      data: {
-        description,
-        description_yjs_state: null,
-        id: TASK_ID,
-      },
-      error: null,
-    });
-    queueResult(mocks.adminQueues, 'tasks', {
       data: null,
-      error: new Error('failed to persist yjs state'),
+      error: new Error('failed to persist description representations'),
     });
 
     const response = await callPatch(
@@ -459,8 +605,12 @@ describe('task description route chunked PATCH', () => {
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
-      error: 'Failed to update task description state',
+      error: 'Failed to update task description',
     });
+    expect(mocks.adminClient.rpc).toHaveBeenCalledOnce();
+    expect(mocks.adminMutations).not.toContainEqual(
+      expect.objectContaining({ operation: 'update', table: 'tasks' })
+    );
     expect(mocks.privateMutations).not.toContainEqual(
       expect.objectContaining({
         operation: 'delete',
