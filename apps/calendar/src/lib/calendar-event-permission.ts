@@ -25,7 +25,18 @@ export async function authorizeCalendarEventManagement(
   if (!auth.ok) return { error: auth.response } as const;
 
   const { user, supabase } = auth;
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+  let wsId: string;
+  try {
+    wsId = await normalizeWorkspaceId(rawWsId, supabase);
+  } catch {
+    console.error('Failed to normalize workspace identifier');
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to resolve workspace' },
+        { status: 500 }
+      ),
+    } as const;
+  }
   const membership = await verifyWorkspaceMembershipType({
     wsId,
     userId: user.id,

@@ -15,10 +15,16 @@ on public.workspace_calendar_events
 for select
 to authenticated
 using (
-  public.has_workspace_permission(
-    workspace_calendar_events.ws_id,
-    (select auth.uid()),
-    'manage_calendar'
+  exists (
+    select 1
+    from public.workspace_members
+    where workspace_members.ws_id = workspace_calendar_events.ws_id
+      and workspace_members.user_id = (select auth.uid())
+  )
+  and public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_calendar'
   )
 );
 
@@ -27,10 +33,16 @@ on public.workspace_calendar_events
 for insert
 to authenticated
 with check (
-  public.has_workspace_permission(
-    workspace_calendar_events.ws_id,
-    (select auth.uid()),
-    'manage_calendar'
+  exists (
+    select 1
+    from public.workspace_members
+    where workspace_members.ws_id = workspace_calendar_events.ws_id
+      and workspace_members.user_id = (select auth.uid())
+  )
+  and public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_calendar'
   )
 );
 
@@ -39,17 +51,29 @@ on public.workspace_calendar_events
 for update
 to authenticated
 using (
-  public.has_workspace_permission(
-    workspace_calendar_events.ws_id,
-    (select auth.uid()),
-    'manage_calendar'
+  exists (
+    select 1
+    from public.workspace_members
+    where workspace_members.ws_id = workspace_calendar_events.ws_id
+      and workspace_members.user_id = (select auth.uid())
+  )
+  and public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_calendar'
   )
 )
 with check (
-  public.has_workspace_permission(
-    workspace_calendar_events.ws_id,
-    (select auth.uid()),
-    'manage_calendar'
+  exists (
+    select 1
+    from public.workspace_members
+    where workspace_members.ws_id = workspace_calendar_events.ws_id
+      and workspace_members.user_id = (select auth.uid())
+  )
+  and public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_calendar'
   )
 );
 
@@ -58,9 +82,15 @@ on public.workspace_calendar_events
 for delete
 to authenticated
 using (
-  public.has_workspace_permission(
-    workspace_calendar_events.ws_id,
-    (select auth.uid()),
-    'manage_calendar'
+  exists (
+    select 1
+    from public.workspace_members
+    where workspace_members.ws_id = workspace_calendar_events.ws_id
+      and workspace_members.user_id = (select auth.uid())
+  )
+  and public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_calendar'
   )
 );

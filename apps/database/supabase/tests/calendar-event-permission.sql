@@ -9,7 +9,8 @@ insert into public.users (id)
 values
   ('00000000-0000-4000-8000-000000008601'),
   ('00000000-0000-4000-8000-000000008602'),
-  ('00000000-0000-4000-8000-000000008603')
+  ('00000000-0000-4000-8000-000000008603'),
+  ('00000000-0000-4000-8000-000000008604')
 on conflict (id) do nothing;
 
 insert into public.workspaces (id, name, personal, creator_id)
@@ -41,11 +42,41 @@ values
     'MEMBER'
   ),
   (
+    '00000000-0000-4000-8000-000000008611',
+    '00000000-0000-4000-8000-000000008604',
+    'MEMBER'
+  ),
+  (
     '00000000-0000-4000-8000-000000008612',
     '00000000-0000-4000-8000-000000008603',
     'MEMBER'
   )
 on conflict (ws_id, user_id) do update set type = excluded.type;
+
+insert into public.workspace_roles (id, ws_id, name)
+values (
+  '00000000-0000-4000-8000-000000008631',
+  '00000000-0000-4000-8000-000000008611',
+  'Calendar manager'
+)
+on conflict (id) do nothing;
+
+insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled)
+values (
+  '00000000-0000-4000-8000-000000008611',
+  '00000000-0000-4000-8000-000000008631',
+  'manage_calendar',
+  true
+)
+on conflict (ws_id, permission, role_id)
+do update set enabled = excluded.enabled;
+
+insert into public.workspace_role_members (role_id, user_id)
+values (
+  '00000000-0000-4000-8000-000000008631',
+  '00000000-0000-4000-8000-000000008604'
+)
+on conflict (role_id, user_id) do nothing;
 
 insert into public.workspace_calendar_events (
   id,
@@ -79,7 +110,7 @@ select policies_are(
 set local role authenticated;
 select set_config(
   'request.jwt.claim.sub',
-  '00000000-0000-4000-8000-000000008601',
+  '00000000-0000-4000-8000-000000008604',
   true
 );
 
