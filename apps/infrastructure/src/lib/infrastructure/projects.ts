@@ -11,8 +11,8 @@ import {
   reconcileInfrastructureProjectGitHub,
 } from './project-github-sync';
 
-export { parsePublicGitHubRepoUrl } from './project-github-sync';
 export type { ParsedGitHubRepository } from './project-github-sync';
+export { parsePublicGitHubRepoUrl } from './project-github-sync';
 
 interface ProjectRow {
   app_root: string;

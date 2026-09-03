@@ -309,41 +309,46 @@ export async function reconcileInfrastructureProjectGitHub({
   sql,
 }: ReconcileInfrastructureProjectGitHubOptions) {
   const parsed = parsePublicGitHubRepoUrl(project.repo_url);
-  const [repository, branches] = await Promise.all([
-    fetchGitHubRepository(parsed, fetchImpl),
-    fetchCompleteGitHubBranchSnapshot(parsed, fetchImpl),
-  ]);
-  const selectedBranch = normalizeBranch(
-    project.selected_branch,
-    repository.defaultBranch
-  );
-  const selectedCommit = await fetchGitHubCommit(
-    parsed,
-    selectedBranch,
-    fetchImpl
-  );
-  const selectedHash =
-    selectedCommit?.sha ??
-    branches.find((branch) => branch.name === selectedBranch)?.commitSha ??
-    null;
-  const selectedSubject = firstLine(selectedCommit?.commit?.message);
-  const branchSnapshot = JSON.stringify(
-    branches.map((branch) => {
-      const commit = branch.name === selectedBranch ? selectedCommit : null;
-      const commitHash = branch.commitSha || commit?.sha || null;
-      return {
-        commit_hash: commitHash,
-        commit_short_hash: shortHash(commitHash),
-        commit_subject: firstLine(commit?.commit?.message),
-        committed_at: commit?.commit?.author?.date ?? null,
-        default_branch: branch.name === repository.defaultBranch,
-        name: branch.name,
-        protected: branch.protected,
-      };
-    })
-  );
 
   await sql.begin(async (transaction) => {
+    await transaction`
+      SELECT pg_advisory_xact_lock(hashtextextended(${projectId}::text, 0))
+    `;
+
+    const [repository, branches] = await Promise.all([
+      fetchGitHubRepository(parsed, fetchImpl),
+      fetchCompleteGitHubBranchSnapshot(parsed, fetchImpl),
+    ]);
+    const selectedBranch = normalizeBranch(
+      project.selected_branch,
+      repository.defaultBranch
+    );
+    const selectedCommit = await fetchGitHubCommit(
+      parsed,
+      selectedBranch,
+      fetchImpl
+    );
+    const selectedHash =
+      selectedCommit?.sha ??
+      branches.find((branch) => branch.name === selectedBranch)?.commitSha ??
+      null;
+    const selectedSubject = firstLine(selectedCommit?.commit?.message);
+    const branchSnapshot = JSON.stringify(
+      branches.map((branch) => {
+        const commit = branch.name === selectedBranch ? selectedCommit : null;
+        const commitHash = branch.commitSha || commit?.sha || null;
+        return {
+          commit_hash: commitHash,
+          commit_short_hash: shortHash(commitHash),
+          commit_subject: firstLine(commit?.commit?.message),
+          committed_at: commit?.commit?.author?.date ?? null,
+          default_branch: branch.name === repository.defaultBranch,
+          name: branch.name,
+          protected: branch.protected,
+        };
+      })
+    );
+
     await transaction`
       UPDATE infrastructure_projects
       SET
@@ -393,8 +398,16 @@ export async function reconcileInfrastructureProjectGitHub({
       ON CONFLICT (project_id, name) DO UPDATE SET
         commit_hash = EXCLUDED.commit_hash,
         commit_short_hash = EXCLUDED.commit_short_hash,
-        commit_subject = COALESCE(EXCLUDED.commit_subject, infrastructure_project_branches.commit_subject),
-        committed_at = COALESCE(EXCLUDED.committed_at, infrastructure_project_branches.committed_at),
+        commit_subject = CASE
+          WHEN EXCLUDED.commit_hash IS DISTINCT FROM infrastructure_project_branches.commit_hash
+            THEN EXCLUDED.commit_subject
+          ELSE COALESCE(EXCLUDED.commit_subject, infrastructure_project_branches.commit_subject)
+        END,
+        committed_at = CASE
+          WHEN EXCLUDED.commit_hash IS DISTINCT FROM infrastructure_project_branches.commit_hash
+            THEN EXCLUDED.committed_at
+          ELSE COALESCE(EXCLUDED.committed_at, infrastructure_project_branches.committed_at)
+        END,
         protected = EXCLUDED.protected,
         default_branch = EXCLUDED.default_branch,
         last_synced_at = EXCLUDED.last_synced_at

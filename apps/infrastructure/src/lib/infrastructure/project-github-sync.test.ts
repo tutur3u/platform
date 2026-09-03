@@ -170,8 +170,11 @@ describe('Infrastructure GitHub project sync', () => {
           syncOptions(fetchImpl, recorder.sql)
         )
       ).rejects.toThrow();
-      expect(recorder.beginCount).toBe(0);
-      expect(recorder.transactionQueries).toHaveLength(0);
+      expect(recorder.beginCount).toBe(1);
+      expect(recorder.transactionQueries).toHaveLength(1);
+      expect(recorder.transactionQueries[0]?.text).toContain(
+        'pg_advisory_xact_lock'
+      );
     }
   );
 
@@ -192,7 +195,10 @@ describe('Infrastructure GitHub project sync', () => {
     await expect(
       reconcileInfrastructureProjectGitHub(syncOptions(fetchImpl, recorder.sql))
     ).rejects.toThrow('GitHub returned conflicting duplicate branch data.');
-    expect(recorder.beginCount).toBe(0);
+    expect(recorder.beginCount).toBe(1);
+    expect(recorder.transactionQueries[0]?.text).toContain(
+      'pg_advisory_xact_lock'
+    );
   });
 
   it('treats a successful empty snapshot as authoritative', async () => {
@@ -204,15 +210,15 @@ describe('Infrastructure GitHub project sync', () => {
     );
 
     expect(recorder.beginCount).toBe(1);
-    expect(recorder.transactionQueries).toHaveLength(3);
-    expect(recorder.transactionQueries[1]?.text).toContain(
+    expect(recorder.transactionQueries).toHaveLength(4);
+    expect(recorder.transactionQueries[2]?.text).toContain(
       'INSERT INTO infrastructure_project_branches'
     );
-    expect(recorder.transactionQueries[1]?.values).toContain('[]');
-    expect(recorder.transactionQueries[2]?.text).toContain(
+    expect(recorder.transactionQueries[2]?.values).toContain('[]');
+    expect(recorder.transactionQueries[3]?.text).toContain(
       'DELETE FROM infrastructure_project_branches'
     );
-    expect(recorder.transactionQueries[2]?.values).toContain('[]');
+    expect(recorder.transactionQueries[3]?.values).toContain('[]');
   });
 
   it('uses a complete snapshot for selected-branch fallback and stale deletion', async () => {
@@ -231,12 +237,12 @@ describe('Infrastructure GitHub project sync', () => {
     const result = await reconcileInfrastructureProjectGitHub(options);
 
     expect(result).toBe(await options.reloadProject.mock.results[0]?.value);
-    expect(recorder.transactionQueries).toHaveLength(3);
-    expect(recorder.transactionQueries[0]?.values).toContain('release-sha');
-    expect(recorder.transactionQueries[1]?.values).toContainEqual(
+    expect(recorder.transactionQueries).toHaveLength(4);
+    expect(recorder.transactionQueries[1]?.values).toContain('release-sha');
+    expect(recorder.transactionQueries[2]?.values).toContainEqual(
       expect.stringContaining('"name":"release"')
     );
-    expect(recorder.transactionQueries[2]?.text).toContain('NOT EXISTS');
+    expect(recorder.transactionQueries[3]?.text).toContain('NOT EXISTS');
     expect(warning).toHaveBeenCalledOnce();
     warning.mockRestore();
   });
@@ -255,6 +261,12 @@ describe('Infrastructure GitHub project sync', () => {
     );
 
     expect(recorder.beginCount).toBe(1);
-    expect(recorder.transactionQueries).toHaveLength(3);
+    expect(recorder.transactionQueries).toHaveLength(4);
+    expect(recorder.transactionQueries[0]?.text).toContain(
+      'pg_advisory_xact_lock'
+    );
+    expect(recorder.transactionQueries[2]?.text).toContain(
+      'EXCLUDED.commit_hash IS DISTINCT FROM infrastructure_project_branches.commit_hash'
+    );
   });
 });
