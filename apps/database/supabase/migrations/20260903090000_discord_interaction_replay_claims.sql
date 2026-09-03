@@ -1,6 +1,7 @@
 create table private.discord_interaction_claims (
   interaction_id text primary key,
   interaction_type smallint not null,
+  claim_token uuid not null default gen_random_uuid(),
   claimed_at timestamptz not null default clock_timestamp(),
   lease_expires_at timestamptz not null,
   completed_at timestamptz,
@@ -39,6 +40,7 @@ set search_path = ''
 as $$
 declare
   v_claimed boolean;
+  v_claim_token uuid;
   v_existing private.discord_interaction_claims%rowtype;
 begin
   if p_interaction_id is null
@@ -59,50 +61,69 @@ begin
     limit 100
   );
 
-  insert into private.discord_interaction_claims (
-    interaction_id,
-    interaction_type,
-    lease_expires_at,
-    expires_at
-  )
-  values (
-    p_interaction_id,
-    p_interaction_type,
-    clock_timestamp() + interval '1 minute',
-    clock_timestamp() + make_interval(secs => p_retention_seconds)
-  )
-  on conflict (interaction_id) do nothing
-  returning true into v_claimed;
+  loop
+    v_claimed := false;
+    v_claim_token := null;
 
-  if coalesce(v_claimed, false) then
-    return jsonb_build_object('state', 'claimed');
-  end if;
+    insert into private.discord_interaction_claims (
+      interaction_id,
+      interaction_type,
+      lease_expires_at,
+      expires_at
+    )
+    values (
+      p_interaction_id,
+      p_interaction_type,
+      clock_timestamp() + interval '1 minute',
+      clock_timestamp() + make_interval(secs => p_retention_seconds)
+    )
+    on conflict (interaction_id) do nothing
+    returning true, claim_token into v_claimed, v_claim_token;
 
-  select * into v_existing
-  from private.discord_interaction_claims
-  where interaction_id = p_interaction_id;
+    if coalesce(v_claimed, false) then
+      return jsonb_build_object(
+        'state', 'claimed',
+        'claimToken', v_claim_token
+      );
+    end if;
 
-  if v_existing.response_payload is not null then
-    return jsonb_build_object(
-      'state', 'completed',
-      'response', v_existing.response_payload
-    );
-  end if;
+    select * into v_existing
+    from private.discord_interaction_claims
+    where interaction_id = p_interaction_id
+    for update;
 
-  update private.discord_interaction_claims
-  set
-    interaction_type = p_interaction_type,
-    claimed_at = clock_timestamp(),
-    lease_expires_at = clock_timestamp() + interval '1 minute',
-    expires_at = clock_timestamp() + make_interval(secs => p_retention_seconds)
-  where interaction_id = p_interaction_id
-    and response_payload is null
-    and lease_expires_at <= clock_timestamp()
-  returning true into v_claimed;
+    if not found then
+      continue;
+    end if;
 
-  return jsonb_build_object(
-    'state', case when coalesce(v_claimed, false) then 'claimed' else 'processing' end
-  );
+    if v_existing.response_payload is not null then
+      return jsonb_build_object(
+        'state', 'completed',
+        'response', v_existing.response_payload
+      );
+    end if;
+
+    update private.discord_interaction_claims
+    set
+      interaction_type = p_interaction_type,
+      claim_token = gen_random_uuid(),
+      claimed_at = clock_timestamp(),
+      lease_expires_at = clock_timestamp() + interval '1 minute',
+      expires_at = clock_timestamp() + make_interval(secs => p_retention_seconds)
+    where interaction_id = p_interaction_id
+      and response_payload is null
+      and lease_expires_at <= clock_timestamp()
+    returning claim_token into v_claim_token;
+
+    if v_claim_token is not null then
+      return jsonb_build_object(
+        'state', 'claimed',
+        'claimToken', v_claim_token
+      );
+    end if;
+
+    return jsonb_build_object('state', 'processing');
+  end loop;
 end;
 $$;
 
@@ -114,6 +135,7 @@ grant execute on function private.claim_discord_interaction(text, smallint, inte
 create or replace function private.complete_discord_interaction(
   p_interaction_id text,
   p_interaction_type smallint,
+  p_claim_token uuid,
   p_response_payload jsonb
 )
 returns boolean
@@ -128,13 +150,15 @@ as $$
     lease_expires_at = expires_at
   where interaction_id = p_interaction_id
     and interaction_type = p_interaction_type
+    and claim_token = p_claim_token
     and response_payload is null
   returning true;
 $$;
 
 create or replace function private.release_discord_interaction(
   p_interaction_id text,
-  p_interaction_type smallint
+  p_interaction_type smallint,
+  p_claim_token uuid
 )
 returns void
 language sql
@@ -144,16 +168,17 @@ as $$
   delete from private.discord_interaction_claims
   where interaction_id = p_interaction_id
     and interaction_type = p_interaction_type
+    and claim_token = p_claim_token
     and response_payload is null;
 $$;
 
-revoke all on function private.complete_discord_interaction(text, smallint, jsonb)
+revoke all on function private.complete_discord_interaction(text, smallint, uuid, jsonb)
   from public, anon, authenticated;
-grant execute on function private.complete_discord_interaction(text, smallint, jsonb)
+grant execute on function private.complete_discord_interaction(text, smallint, uuid, jsonb)
   to service_role;
-revoke all on function private.release_discord_interaction(text, smallint)
+revoke all on function private.release_discord_interaction(text, smallint, uuid)
   from public, anon, authenticated;
-grant execute on function private.release_discord_interaction(text, smallint)
+grant execute on function private.release_discord_interaction(text, smallint, uuid)
   to service_role;
 
 create or replace function private.prune_discord_interaction_claims(

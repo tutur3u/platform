@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(22);
+select plan(26);
 
 select has_table(
   'private',
@@ -17,6 +17,7 @@ select columns_are(
   array[
     'interaction_id',
     'interaction_type',
+    'claim_token',
     'claimed_at',
     'lease_expires_at',
     'completed_at',
@@ -98,29 +99,54 @@ select ok(
 select ok(
   not has_function_privilege(
     'anon',
-    'private.complete_discord_interaction(text,smallint,jsonb)',
+    'private.complete_discord_interaction(text,smallint,uuid,jsonb)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'private.release_discord_interaction(text,smallint,uuid)',
     'execute'
   )
   and not has_function_privilege(
     'authenticated',
-    'private.release_discord_interaction(text,smallint)',
+    'private.complete_discord_interaction(text,smallint,uuid,jsonb)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.release_discord_interaction(text,smallint,uuid)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'private.prune_discord_interaction_claims(integer)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.prune_discord_interaction_claims(integer)',
     'execute'
   ),
-  'non-service roles cannot complete or release Discord interactions'
+  'non-service roles cannot complete, release, or prune Discord interactions'
 );
 
 select ok(
   has_function_privilege(
     'service_role',
-    'private.complete_discord_interaction(text,smallint,jsonb)',
+    'private.complete_discord_interaction(text,smallint,uuid,jsonb)',
     'execute'
   )
   and has_function_privilege(
     'service_role',
-    'private.release_discord_interaction(text,smallint)',
+    'private.release_discord_interaction(text,smallint,uuid)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'private.prune_discord_interaction_claims(integer)',
     'execute'
   ),
-  'service role can complete and release Discord interactions'
+  'service role can complete, release, and prune Discord interactions'
 );
 
 select is(
@@ -153,6 +179,7 @@ select ok(
   private.complete_discord_interaction(
     '100000000000000001',
     2,
+    (select claim_token from first_claim_snapshot),
     '{"type": 9, "data": {"title": "Ticket"}}'::jsonb
   ),
   'a claimed interaction can persist its callback response'
@@ -170,8 +197,16 @@ select is(
   'a second interaction can be claimed before a failed dispatch'
 );
 
+create temporary table second_claim_snapshot as
+select *
+from private.discord_interaction_claims
+where interaction_id = '100000000000000003';
+
 select lives_ok(
-  $$select private.release_discord_interaction('100000000000000003', 5)$$,
+  format(
+    $$select private.release_discord_interaction('100000000000000003', 5, %L::uuid)$$,
+    (select claim_token from second_claim_snapshot)
+  ),
   'an unfinished interaction claim can be released'
 );
 
@@ -179,6 +214,46 @@ select is(
   private.claim_discord_interaction('100000000000000003', 5, 86400)->>'state',
   'claimed',
   'a released interaction can be claimed by a retry'
+);
+
+create temporary table retried_claim_snapshot as
+select *
+from private.discord_interaction_claims
+where interaction_id = '100000000000000003';
+
+select isnt(
+  (select claim_token from retried_claim_snapshot),
+  (select claim_token from second_claim_snapshot),
+  'a retried interaction receives a fresh ownership token'
+);
+
+select is(
+  private.complete_discord_interaction(
+    '100000000000000003',
+    5,
+    (select claim_token from second_claim_snapshot),
+    '{"type": 5}'::jsonb
+  ),
+  false,
+  'a stale owner cannot complete a newer interaction claim'
+);
+
+select lives_ok(
+  format(
+    $$select private.release_discord_interaction('100000000000000003', 5, %L::uuid)$$,
+    (select claim_token from second_claim_snapshot)
+  ),
+  'a stale release is safely ignored'
+);
+
+select is(
+  (
+    select count(*)
+    from private.discord_interaction_claims
+    where interaction_id = '100000000000000003'
+  ),
+  1::bigint,
+  'a stale owner cannot release a newer interaction claim'
 );
 
 select throws_ok(

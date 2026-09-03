@@ -73,12 +73,16 @@ def claim_discord_interaction(interaction_id: str, interaction_type: int) -> dic
 
 
 def complete_discord_interaction(
-    interaction_id: str, interaction_type: int, response_payload: dict
+    interaction_id: str,
+    interaction_type: int,
+    claim_token: str,
+    response_payload: dict,
 ) -> None:
     """Persist a protocol response after dispatch has completed successfully."""
     params: dict[str, Any] = {
         "p_interaction_id": interaction_id,
         "p_interaction_type": interaction_type,
+        "p_claim_token": claim_token,
         "p_response_payload": response_payload,
     }
     response = (
@@ -91,11 +95,14 @@ def complete_discord_interaction(
         raise RuntimeError("Discord interaction completion was not recorded")
 
 
-def release_discord_interaction(interaction_id: str, interaction_type: int) -> None:
+def release_discord_interaction(
+    interaction_id: str, interaction_type: int, claim_token: str
+) -> None:
     """Release an unfinished claim so a delivery retry can dispatch it."""
     params: dict[str, Any] = {
         "p_interaction_id": interaction_id,
         "p_interaction_type": interaction_type,
+        "p_claim_token": claim_token,
     }
     get_supabase_client().schema("private").rpc("release_discord_interaction", params).execute()
 

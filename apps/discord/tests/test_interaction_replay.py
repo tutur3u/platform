@@ -13,6 +13,8 @@ import app
 import interaction_replay
 from auth import DISCORD_SIGNATURE_FRESHNESS_SECONDS, DiscordAuth
 
+CLAIM_OWNERSHIP_ID = "11111111-1111-4111-8111-111111111111"
+
 
 def signed_headers(signing_key: SigningKey, timestamp: int, body: bytes) -> dict[str, str]:
     timestamp_text = str(timestamp)
@@ -133,7 +135,7 @@ def test_duplicate_delivery_is_acknowledged_without_spawning(
     response_payload = {"type": 5}
     claims = iter(
         [
-            {"state": "claimed"},
+            {"state": "claimed", "claimToken": CLAIM_OWNERSHIP_ID},
             {"state": "completed", "response": response_payload},
         ]
     )
@@ -155,7 +157,7 @@ def test_duplicate_delivery_is_acknowledged_without_spawning(
     assert claim.call_count == 2
     spawn.assert_called_once()
     interaction_lifecycle["complete"].assert_called_once_with(
-        "123456789012345678", 2, response_payload
+        "123456789012345678", 2, CLAIM_OWNERSHIP_ID, response_payload
     )
 
 
@@ -171,7 +173,7 @@ def test_concurrent_duplicate_delivery_spawns_once(
             if interaction_id in claimed_ids:
                 return {"state": "processing"}
             claimed_ids.add(interaction_id)
-            return {"state": "claimed"}
+            return {"state": "claimed", "claimToken": CLAIM_OWNERSHIP_ID}
 
     def send_delivery(_: int):
         with TestClient(app.web_app.get_raw_f()()) as client:
@@ -222,7 +224,7 @@ def test_failed_dispatch_releases_the_claim_for_retry(
     monkeypatch.setattr(
         interaction_replay,
         "claim_discord_interaction",
-        Mock(return_value={"state": "claimed"}),
+        Mock(return_value={"state": "claimed", "claimToken": CLAIM_OWNERSHIP_ID}),
     )
     monkeypatch.setattr(
         app.reply_ticket,
@@ -239,7 +241,9 @@ def test_failed_dispatch_releases_the_claim_for_retry(
     )
 
     assert response.status_code == 500
-    interaction_lifecycle["release"].assert_called_once_with("423456789012345678", 2)
+    interaction_lifecycle["release"].assert_called_once_with(
+        "423456789012345678", 2, CLAIM_OWNERSHIP_ID
+    )
     interaction_lifecycle["complete"].assert_not_called()
 
 
@@ -307,3 +311,51 @@ def test_ping_does_not_depend_on_claim_storage(
     assert response.status_code == 200
     assert response.json() == {"type": 1}
     claim.assert_not_called()
+
+
+@pytest.mark.parametrize("body", [b"\xff", b"{"])
+def test_signed_malformed_payload_is_a_bad_request(
+    body: bytes,
+    monkeypatch: pytest.MonkeyPatch,
+    signing_key: SigningKey,
+) -> None:
+    claim = Mock()
+    monkeypatch.setattr(interaction_replay, "claim_discord_interaction", claim)
+    timestamp = int(time.time())
+    client = TestClient(app.web_app.get_raw_f()())
+
+    response = client.post(
+        "/api",
+        content=body,
+        headers=signed_headers(signing_key, timestamp, body),
+    )
+
+    assert response.status_code == 400
+    claim.assert_not_called()
+
+
+def test_completion_failure_releases_the_owned_claim_for_retry(
+    interaction_lifecycle: dict[str, Mock],
+    monkeypatch: pytest.MonkeyPatch,
+    signing_key: SigningKey,
+) -> None:
+    interaction_lifecycle["complete"].side_effect = RuntimeError("completion unavailable")
+    monkeypatch.setattr(
+        interaction_replay,
+        "claim_discord_interaction",
+        Mock(return_value={"state": "claimed", "claimToken": CLAIM_OWNERSHIP_ID}),
+    )
+    monkeypatch.setattr(app.reply_ticket, "spawn", Mock())
+    client = TestClient(app.web_app.get_raw_f()())
+
+    response = post_signed(
+        client,
+        signing_key,
+        command_payload("623456789012345678"),
+        int(time.time()),
+    )
+
+    assert response.status_code == 503
+    interaction_lifecycle["release"].assert_called_once_with(
+        "623456789012345678", 2, CLAIM_OWNERSHIP_ID
+    )

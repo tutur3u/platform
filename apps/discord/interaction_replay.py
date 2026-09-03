@@ -28,6 +28,7 @@ SUPPORTED_INTERACTION_TYPES = {
 }
 INTERACTION_ID_PATTERN = re.compile(r"^[0-9]{1,32}$")
 CLAIM_ID_STATE_KEY = "discord_interaction_claim_id"
+CLAIM_OWNERSHIP_STATE_KEY = "discord_interaction_claim_ownership"
 CLAIM_TYPE_STATE_KEY = "discord_interaction_claim_type"
 
 
@@ -37,7 +38,10 @@ async def prepare_interaction_dispatch(
     """Verify, parse, validate, and claim an interaction for dispatch."""
     body = await request.body()
     DiscordAuth.verify_request(request.headers, body)
-    data = json.loads(body.decode())
+    try:
+        data = json.loads(body.decode())
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise HTTPException(status_code=400, detail="Bad request") from error
 
     if not isinstance(data, dict):
         raise HTTPException(status_code=400, detail="Bad request")
@@ -65,8 +69,10 @@ async def prepare_interaction_dispatch(
         raise HTTPException(status_code=503, detail="Interaction claim unavailable") from error
 
     state = claim.get("state")
-    if state == "claimed":
+    claim_token = claim.get("claimToken")
+    if state == "claimed" and isinstance(claim_token, str):
         setattr(request.state, CLAIM_ID_STATE_KEY, interaction_id)
+        setattr(request.state, CLAIM_OWNERSHIP_STATE_KEY, claim_token)
         setattr(request.state, CLAIM_TYPE_STATE_KEY, interaction_type)
         return data, interaction_type, None
 
@@ -98,10 +104,15 @@ def with_discord_interaction_replay(
             response = await handler(request, *args, **kwargs)
         except BaseException:
             interaction_id = getattr(request.state, CLAIM_ID_STATE_KEY, None)
+            claim_token = getattr(request.state, CLAIM_OWNERSHIP_STATE_KEY, None)
             interaction_type = getattr(request.state, CLAIM_TYPE_STATE_KEY, None)
-            if isinstance(interaction_id, str) and isinstance(interaction_type, int):
+            if (
+                isinstance(interaction_id, str)
+                and isinstance(claim_token, str)
+                and isinstance(interaction_type, int)
+            ):
                 try:
-                    release_discord_interaction(interaction_id, interaction_type)
+                    release_discord_interaction(interaction_id, interaction_type, claim_token)
                 except Exception:
                     logger.exception(
                         "Failed to release Discord interaction claim",
@@ -110,15 +121,29 @@ def with_discord_interaction_replay(
             raise
 
         interaction_id = getattr(request.state, CLAIM_ID_STATE_KEY, None)
+        claim_token = getattr(request.state, CLAIM_OWNERSHIP_STATE_KEY, None)
         interaction_type = getattr(request.state, CLAIM_TYPE_STATE_KEY, None)
-        if isinstance(interaction_id, str) and isinstance(interaction_type, int):
+        if (
+            isinstance(interaction_id, str)
+            and isinstance(claim_token, str)
+            and isinstance(interaction_type, int)
+        ):
             try:
-                complete_discord_interaction(interaction_id, interaction_type, response)
+                complete_discord_interaction(
+                    interaction_id, interaction_type, claim_token, response
+                )
             except Exception as error:
                 logger.exception(
                     "Failed to complete Discord interaction claim",
                     extra={"interaction_type": interaction_type},
                 )
+                try:
+                    release_discord_interaction(interaction_id, interaction_type, claim_token)
+                except Exception:
+                    logger.exception(
+                        "Failed to release Discord interaction claim",
+                        extra={"interaction_type": interaction_type},
+                    )
                 raise HTTPException(
                     status_code=503, detail="Interaction completion unavailable"
                 ) from error
