@@ -12,15 +12,35 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import Link from 'next/link';
+import type {
+  GitHubIssueComment,
+  GitHubPullFile,
+  GitHubPullReview,
+  GitHubWorkflowArtifact,
+  GitHubWorkflowJob,
+} from '@/lib/github/types';
+import {
+  type DetailCollectionPage,
+  RepositoryDetailPagination,
+} from './repository-detail-pagination';
+import {
+  PullFilesSection,
+  PullReviewsSection,
+  WorkflowArtifactsSection,
+  WorkflowJobsSection,
+} from './repository-detail-sections';
 import { RepositoryMarkdown } from './repository-markdown';
 import { RepositorySource } from './repository-source';
 
 export function IssueDetail({
   data,
 }: {
-  data: Awaited<
-    ReturnType<typeof import('@/lib/github/queries').getRepositoryIssue>
-  >;
+  data: {
+    comments: DetailCollectionPage<GitHubIssueComment>;
+    issue: Awaited<
+      ReturnType<typeof import('@/lib/github/queries').getRepositoryIssue>
+    >;
+  };
 }) {
   return (
     <DetailFrame
@@ -34,24 +54,33 @@ export function IssueDetail({
         body={data.issue.body}
         login={data.issue.user?.login ?? 'Unknown'}
       />
-      {data.comments.map((comment) => (
+      {data.comments.items.map((comment) => (
         <MarkdownCard
           key={comment.id}
-          avatar={comment.user.avatar_url}
+          avatar={comment.user?.avatar_url}
           body={comment.body}
-          login={comment.user.login}
+          login={comment.user?.login ?? 'Unknown'}
         />
       ))}
+      <Card className="overflow-hidden py-0">
+        <RepositoryDetailPagination {...data.comments} />
+      </Card>
     </DetailFrame>
   );
 }
 
 export function PullDetail({
   data,
+  reviewsTitle,
 }: {
-  data: Awaited<
-    ReturnType<typeof import('@/lib/github/queries').getRepositoryPull>
-  >;
+  data: {
+    files: DetailCollectionPage<GitHubPullFile>;
+    pull: Awaited<
+      ReturnType<typeof import('@/lib/github/queries').getRepositoryPull>
+    >;
+    reviews: DetailCollectionPage<GitHubPullReview>;
+  };
+  reviewsTitle: string;
 }) {
   return (
     <DetailFrame
@@ -65,30 +94,8 @@ export function PullDetail({
         body={data.pull.body}
         login={data.pull.user?.login ?? 'Unknown'}
       />
-      <Card className="overflow-hidden">
-        <div className="border-b px-4 py-3 font-semibold text-sm">
-          Changed files
-        </div>
-        <div className="divide-y">
-          {data.files.map((file) => (
-            <div key={file.filename} className="space-y-3 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <code className="truncate text-xs">{file.filename}</code>
-                <Badge variant="outline">
-                  +{file.additions} −{file.deletions}
-                </Badge>
-              </div>
-              {file.patch && (
-                <RepositorySource
-                  className="rounded-md border bg-muted/15"
-                  filename={`${file.filename}.diff`}
-                  source={file.patch}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
+      <PullFilesSection files={data.files} />
+      <PullReviewsSection reviews={data.reviews} title={reviewsTitle} />
     </DetailFrame>
   );
 }
@@ -162,9 +169,13 @@ export function CommitDetail({
 export function ActionRunDetail({
   data,
 }: {
-  data: Awaited<
-    ReturnType<typeof import('@/lib/github/queries').getRepositoryActionRun>
-  >;
+  data: {
+    artifacts: DetailCollectionPage<GitHubWorkflowArtifact>;
+    jobs: DetailCollectionPage<GitHubWorkflowJob>;
+    run: Awaited<
+      ReturnType<typeof import('@/lib/github/queries').getRepositoryActionRun>
+    >;
+  };
 }) {
   return (
     <DetailFrame
@@ -173,69 +184,8 @@ export function ActionRunDetail({
       subtitle={`Run #${data.run.run_number} · ${data.run.event} · ${data.run.head_sha.slice(0, 7)}`}
       title={data.run.name}
     >
-      <Card className="overflow-hidden">
-        <div className="border-b px-4 py-3 font-semibold text-sm">Jobs</div>
-        <div className="divide-y">
-          {data.jobs.map((job) => (
-            <div key={job.id} className="space-y-3 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <Link
-                  className="font-medium hover:underline"
-                  href={job.html_url}
-                >
-                  {job.name}
-                </Link>
-                <Badge variant="outline">{job.conclusion ?? job.status}</Badge>
-              </div>
-              {job.steps?.length ? (
-                <div className="grid gap-1 text-muted-foreground text-xs">
-                  {job.steps.map((step) => (
-                    <div
-                      key={`${job.id}-${step.number}`}
-                      className="flex items-center justify-between gap-3"
-                    >
-                      <span>
-                        {step.number}. {step.name}
-                      </span>
-                      <span>{step.conclusion ?? step.status}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </Card>
-      <Card className="overflow-hidden">
-        <div className="border-b px-4 py-3 font-semibold text-sm">
-          Artifacts
-        </div>
-        <div className="divide-y">
-          {data.artifacts.length ? (
-            data.artifacts.map((artifact) => (
-              <div
-                key={artifact.id}
-                className="flex items-center justify-between gap-3 p-4"
-              >
-                <div>
-                  <p className="font-medium">{artifact.name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {formatBytes(artifact.size_in_bytes)}
-                    {artifact.expired ? ' · expired' : ''}
-                  </p>
-                </div>
-                <Badge variant="outline">
-                  {artifact.expired ? 'Expired' : 'Available'}
-                </Badge>
-              </div>
-            ))
-          ) : (
-            <p className="p-4 text-muted-foreground text-sm">
-              No artifacts were retained for this run.
-            </p>
-          )}
-        </div>
-      </Card>
+      <WorkflowJobsSection jobs={data.jobs} />
+      <WorkflowArtifactsSection artifacts={data.artifacts} />
     </DetailFrame>
   );
 }
@@ -377,10 +327,4 @@ function MarkdownCard({
       </RepositoryMarkdown>
     </Card>
   );
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
