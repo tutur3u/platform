@@ -12,16 +12,10 @@ const VALID_ROLE_FLAGS = {
 
 const mocks = vi.hoisted(() => ({
   authorizeNovaRoleManager: vi.fn(),
-  createAdminClient: vi.fn(),
-  directAdminFrom: vi.fn(),
 }));
 
 vi.mock('@/lib/nova-team-api-auth', () => ({
   authorizeNovaRoleManager: mocks.authorizeNovaRoleManager,
-}));
-
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: mocks.createAdminClient,
 }));
 
 function routeParams(userId?: string) {
@@ -97,7 +91,6 @@ describe('Nova user role route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mocks.createAdminClient.mockResolvedValue({ from: mocks.directAdminFrom });
   });
 
   it('rejects anonymous PUT requests before parsing or querying', async () => {
@@ -109,8 +102,6 @@ describe('Nova user role route', () => {
 
     expect(response.status).toBe(401);
     expect(request.json).not.toHaveBeenCalled();
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-    expect(mocks.directAdminFrom).not.toHaveBeenCalled();
   });
 
   it('rejects enabled users without role management before parsing or querying', async () => {
@@ -122,8 +113,6 @@ describe('Nova user role route', () => {
 
     expect(response.status).toBe(403);
     expect(request.json).not.toHaveBeenCalled();
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-    expect(mocks.directAdminFrom).not.toHaveBeenCalled();
   });
 
   it('rejects disabled role managers before resolving params or querying', async () => {
@@ -132,14 +121,18 @@ describe('Nova user role route', () => {
     const params = new Promise<{ userId: string }>((resolve) => {
       resolveParams = resolve;
     });
+    let paramsSettled = false;
+    void params.then(() => {
+      paramsSettled = true;
+    });
 
     const { DELETE } = await import('./route');
     const response = await DELETE({} as never, { params });
 
     expect(response.status).toBe(403);
-    expect(resolveParams).toBeTypeOf('function');
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-    expect(mocks.directAdminFrom).not.toHaveBeenCalled();
+    expect(paramsSettled).toBe(false);
+    resolveParams?.({ userId: TARGET_USER_ID });
+    await params;
   });
 
   it('updates exactly the route-targeted user for an authorized manager', async () => {

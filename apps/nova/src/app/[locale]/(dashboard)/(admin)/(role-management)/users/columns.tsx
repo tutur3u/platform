@@ -75,7 +75,6 @@ export const getUserColumns = ({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
           enabled,
           allow_challenge_management,
           allow_manage_all_challenges,
