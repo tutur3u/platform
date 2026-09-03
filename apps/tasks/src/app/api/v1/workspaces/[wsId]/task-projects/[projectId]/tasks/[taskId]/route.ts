@@ -2,6 +2,7 @@ import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -52,6 +53,22 @@ export const DELETE = withSessionAuth<RouteParams>(
 
       if (!membership.ok) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const permissions = await getPermissions({ user, wsId });
+      if (!permissions) {
+        console.error('Failed to resolve workspace permissions');
+        return NextResponse.json(
+          { error: 'Failed to resolve workspace permissions' },
+          { status: 500 }
+        );
+      }
+
+      if (!permissions.containsPermission('manage_projects')) {
+        return NextResponse.json(
+          { error: "You don't have permission to perform this operation" },
+          { status: 403 }
+        );
       }
 
       const sbAdmin = await createAdminClient();
