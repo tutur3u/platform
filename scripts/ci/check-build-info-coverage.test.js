@@ -184,7 +184,7 @@ test('the canonical Vercel registry has complete build-info coverage', async () 
   );
 });
 
-test('Apps and Tools routes expose matching no-store build information', () => {
+test('Apps and Tools routes expose matching no-store build information', (t) => {
   const script = `
     const results = [];
     for (const app of ['apps', 'tools']) {
@@ -204,6 +204,12 @@ test('Apps and Tools routes expose matching no-store build information', () => {
     encoding: 'utf8',
   });
 
+  if (result.error?.code === 'ENOENT') {
+    t.skip('Bun is required to execute TypeScript workspace route modules');
+    return;
+  }
+
+  assert.ifError(result.error);
   assert.equal(result.status, 0, result.stderr);
   const responses = JSON.parse(result.stdout);
 

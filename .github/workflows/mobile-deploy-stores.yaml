@@ -13,6 +13,7 @@ on:
       - ".github/workflows/mobile-deploy-stores.yaml"
       - ".github/workflows/ci-check.yml"
       - "scripts/mobile-deployment/**"
+      - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
 
 permissions:
