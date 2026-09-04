@@ -1,10 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { authorizeTaskUpdateInteraction } from '../../_interaction-access';
 
 const updateCommentSchema = z.object({
   content: z.string().max(MAX_LONG_TEXT_LENGTH), // Plain text (TipTap handles JSONContent conversion)
@@ -24,41 +23,18 @@ export async function PATCH(
   }
 ) {
   try {
-    const { wsId, commentId } = await params;
-
-    // Get current user
-    const {
-      supabase,
-      user,
-      authError: userError,
-    } = await resolveAuthenticatedSessionUser();
-    if (userError || !user || !supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify user has access to workspace
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const routeParams = await params;
+    const { commentId, updateId } = routeParams;
+    const access = await authorizeTaskUpdateInteraction(request, routeParams);
+    if (!access.ok) return access.response;
+    const { supabase, user } = access;
 
     // Verify comment exists and user is the creator
     const { data: existingComment } = await supabase
       .from('task_project_update_comments')
       .select('id, user_id')
       .eq('id', commentId)
+      .eq('update_id', updateId)
       .is('deleted_at', null)
       .single();
 
@@ -83,6 +59,8 @@ export async function PATCH(
       .from('task_project_update_comments')
       .update({ content })
       .eq('id', commentId)
+      .eq('update_id', updateId)
+      .is('deleted_at', null)
       .select(
         `
         *,
@@ -120,7 +98,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   {
     params,
   }: {
@@ -133,40 +111,18 @@ export async function DELETE(
   }
 ) {
   try {
-    const { wsId, commentId } = await params;
-
-    // Get current user
-    const {
-      supabase,
-      user,
-      authError: userError,
-    } = await resolveAuthenticatedSessionUser();
-    if (userError || !user || !supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const routeParams = await params;
+    const { commentId, updateId } = routeParams;
+    const access = await authorizeTaskUpdateInteraction(request, routeParams);
+    if (!access.ok) return access.response;
+    const { supabase, user } = access;
 
     // Verify comment exists and user is the creator
     const { data: existingComment } = await supabase
       .from('task_project_update_comments')
       .select('id, user_id')
       .eq('id', commentId)
+      .eq('update_id', updateId)
       .is('deleted_at', null)
       .single();
 
@@ -189,6 +145,8 @@ export async function DELETE(
       .from('task_project_update_comments')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', commentId)
+      .eq('update_id', updateId)
+      .is('deleted_at', null)
       .eq('user_id', user.id); // Extra safety: double-check user owns this comment
 
     if (deleteError) {

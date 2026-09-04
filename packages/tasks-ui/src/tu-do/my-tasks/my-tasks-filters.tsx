@@ -38,6 +38,8 @@ interface MyTasksFiltersProps {
   onLabelFilterChange: (ids: string[]) => void;
   onProjectFilterChange: (ids: string[]) => void;
   onCreateNewBoard: () => void;
+  onLabelsRequested?: () => void;
+  onProjectsRequested?: () => void;
 }
 
 export function MyTasksFilters({
@@ -53,6 +55,8 @@ export function MyTasksFilters({
   onLabelFilterChange,
   onProjectFilterChange,
   onCreateNewBoard,
+  onLabelsRequested,
+  onProjectsRequested,
 }: MyTasksFiltersProps) {
   const t = useTranslations();
   const hasActiveFilters =
@@ -83,6 +87,8 @@ export function MyTasksFilters({
           selectedProjectIds={taskFilters.projectIds}
           onSelectedLabelIdsChange={onLabelFilterChange}
           onSelectedProjectIdsChange={onProjectFilterChange}
+          onLabelsRequested={onLabelsRequested}
+          onProjectsRequested={onProjectsRequested}
         />
 
         <Button

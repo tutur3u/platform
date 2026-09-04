@@ -1,15 +1,13 @@
 """Main Discord bot application."""
 
-import json
 import logging
 import os
 import traceback
-from typing import cast
 
 import modal
 import requests
 
-from auth import DiscordAuth
+import interaction_replay
 from commands import CommandHandler
 from config import DiscordInteractionType, DiscordResponseType
 from markitdown_service import handle_markitdown
@@ -34,6 +32,7 @@ image = (
         "commands",
         "config",
         "discord_client",
+        "interaction_replay",
         "link_shortener",
         "markitdown_service",
         "utils",
@@ -899,21 +898,21 @@ def web_app():
         return bool(query_secret and query_secret.strip() == secret)
 
     @web_app.post("/api")
+    @interaction_replay.with_discord_interaction_replay
     async def get_api(request: Request):
         """Handle Discord interactions."""
-        body = await request.body()
+        (
+            data,
+            interaction_type,
+            duplicate_response,
+        ) = await interaction_replay.prepare_interaction_dispatch(request)
+        if duplicate_response is not None:
+            return duplicate_response
 
-        # confirm this is a request from Discord
-        DiscordAuth.verify_request(cast(dict, request.headers), body)
-
-        print("🤖: parsing request")
-        data = json.loads(body.decode())
-
-        if data.get("type") == DiscordInteractionType.PING:
-            print("🤖: acking PING from Discord during auth check")
+        if interaction_type == DiscordInteractionType.PING:
             return {"type": DiscordResponseType.PONG}
 
-        if data.get("type") == DiscordInteractionType.APPLICATION_COMMAND:
+        if interaction_type == DiscordInteractionType.APPLICATION_COMMAND:
             print("🤖: handling slash command")
             app_id = data["application_id"]
             interaction_token = data["token"]
@@ -999,7 +998,7 @@ def web_app():
             # respond immediately with defer message
             return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
-        if data.get("type") == DiscordInteractionType.MESSAGE_COMPONENT:
+        if interaction_type == DiscordInteractionType.MESSAGE_COMPONENT:
             print("🤖: handling component interaction")
             app_id = data["application_id"]
             interaction_token = data["token"]
@@ -1076,7 +1075,7 @@ def web_app():
 
             return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
-        if data.get("type") == DiscordInteractionType.MODAL_SUBMIT:
+        if interaction_type == DiscordInteractionType.MODAL_SUBMIT:
             print("🤖: handling modal submission")
             app_id = data["application_id"]
             interaction_token = data["token"]

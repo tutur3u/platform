@@ -199,6 +199,23 @@ test('trusted AI SDK and next-intl packages bypass the release-age delay', () =>
   }
 });
 
+test('all locked Vitest packages bypass the dependency release-age delay', () => {
+  const bunfig = fs.readFileSync(path.join(repoRoot, 'bunfig.toml'), 'utf8');
+  const lockfile = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');
+  const vitestPackages = new Set(['vitest']);
+
+  for (const match of lockfile.matchAll(/"(@vitest\/[^"@]+)(?:@[^"}]*)?"/gu)) {
+    vitestPackages.add(match[1]);
+  }
+
+  for (const packageName of vitestPackages) {
+    assert.ok(
+      bunfig.split(/\r?\n/u).includes(`  "${packageName}",`),
+      `${packageName} must bypass the release-age delay`
+    );
+  }
+});
+
 test('trusted Lucide and Cloudflare packages bypass the release-age delay', () => {
   const bunfig = fs.readFileSync(path.join(repoRoot, 'bunfig.toml'), 'utf8');
   const lockfile = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');

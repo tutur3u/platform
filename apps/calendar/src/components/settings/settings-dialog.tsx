@@ -32,7 +32,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
 import { CalendarSettingsContent } from './calendar/calendar-settings-content';
-import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 
 interface SettingsDialogProps {
   wsId?: string;
@@ -192,15 +191,13 @@ export function SettingsDialog({
 
       {(activeTab === 'calendar_hours' || activeTab === 'calendar_colors') &&
         wsId && (
-          <CalendarSettingsWrapper wsId={wsId}>
-            <div className="h-full">
-              <CalendarSettingsContent
-                section={activeTab}
-                wsId={wsId}
-                workspace={workspace ?? null}
-              />
-            </div>
-          </CalendarSettingsWrapper>
+          <div className="h-full">
+            <CalendarSettingsContent
+              section={activeTab}
+              wsId={wsId}
+              workspace={workspace ?? null}
+            />
+          </div>
         )}
 
       {activeTab === 'calendar_integrations' && wsId && (

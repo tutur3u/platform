@@ -849,13 +849,13 @@ test('secretless Turbo fallback caches are task-scoped and trusted-write only', 
   assert.doesNotMatch(setupAction, /TURBO_TOKEN|TURBO_TEAM|node_modules/);
 });
 
-test('TanStack migration E2E workflow keeps dual-stack and compare coverage', () => {
+test('paused TanStack migration E2E retains its restartable matrix', () => {
   const workflow = readWorkflowYaml('e2e-tests.yaml');
   const job = workflow.jobs?.['migration-e2e'];
 
   assert.ok(job, 'e2e-tests.yaml must define the migration-e2e job');
   assert.deepEqual(job.needs, ['prepare-e2e-images']);
-  assert.match(job.if, /always\(\)/u);
+  assert.equal(job.if, githubExpression('false'));
   assert.equal(job['timeout-minutes'], 60);
   assert.equal(job.strategy?.['fail-fast'], false);
 
@@ -1036,7 +1036,7 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   assert.deepEqual(e2e.needs, ['prepare-e2e-images']);
   assert.deepEqual(migration.needs, ['prepare-e2e-images']);
   assert.match(e2e.if, /always\(\)/u);
-  assert.match(migration.if, /always\(\)/u);
+  assert.equal(migration.if, githubExpression('false'));
   assert.equal(producer['continue-on-error'], true);
   assert.equal(producer.permissions?.contents, 'read');
   assert.equal(producer.permissions?.packages, 'write');
@@ -1108,7 +1108,7 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
     producer.steps.some(
       (step) =>
         step.name === 'Build and publish E2E image bundle' &&
-        step.run === 'node scripts/ci/e2e-image-bundle.js publish'
+        step.run.endsWith('publish --frontend next')
     )
   );
 });

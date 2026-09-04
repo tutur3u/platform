@@ -1,4 +1,3 @@
-import { Card } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -15,10 +14,17 @@ import {
   IssueDetail,
   PullDetail,
 } from '@/components/repository/repository-detail';
+import {
+  type DetailSearchParams,
+  normalizeDetailPage,
+} from '@/components/repository/repository-detail-pagination';
+import { RepositoryFailure } from '@/components/repository/repository-failure';
 import { RepositoryOverviewView } from '@/components/repository/repository-overview';
 import { GitHubMirrorError } from '@/lib/github/errors';
 import {
   getRepositoryActionRun,
+  getRepositoryActionRunArtifacts,
+  getRepositoryActionRunJobs,
   getRepositoryActions,
   getRepositoryBranches,
   getRepositoryCommit,
@@ -27,14 +33,21 @@ import {
   getRepositoryContent,
   getRepositoryContributors,
   getRepositoryIssue,
+  getRepositoryIssueComments,
   getRepositoryIssues,
   getRepositoryMetadata,
   getRepositoryOverview,
   getRepositoryPull,
+  getRepositoryPullFiles,
+  getRepositoryPullReviews,
   getRepositoryPulls,
   getRepositoryReleases,
   getRepositoryTags,
 } from '@/lib/github/queries';
+import {
+  getDetailPaginationLabels,
+  loadDetailCollection,
+} from './detail-page-data';
 
 type PageProps = {
   params: Promise<{
@@ -44,9 +57,14 @@ type PageProps = {
     view?: string[];
   }>;
   searchParams: Promise<{
+    artifactsPage?: string;
+    commentsPage?: string;
+    filesPage?: string;
+    jobsPage?: string;
     page?: string;
     q?: string;
     ref?: string;
+    reviewsPage?: string;
   }>;
 };
 
@@ -64,7 +82,7 @@ export default async function RepositoryPage({
   params,
   searchParams,
 }: PageProps) {
-  const { owner, repo, view = [] } = await params;
+  const { locale, owner, repo, view = [] } = await params;
   const query = await searchParams;
   const activeView = resolveActiveView(view);
 
@@ -82,6 +100,7 @@ export default async function RepositoryPage({
 
     return await renderView({
       activeView,
+      locale,
       owner,
       query,
       repo,
@@ -118,14 +137,16 @@ export default async function RepositoryPage({
 
 async function renderView({
   activeView,
+  locale,
   owner,
   query,
   repo,
   view,
 }: {
   activeView: string;
+  locale: string;
   owner: string;
-  query: { page?: string; q?: string; ref?: string };
+  query: DetailSearchParams;
   repo: string;
   view: string[];
 }) {
@@ -161,7 +182,22 @@ async function renderView({
   if (activeView === 'issues' && view[1]) {
     const number = Number.parseInt(view[1], 10);
     if (!Number.isFinite(number)) notFound();
-    return <IssueDetail data={await getRepositoryIssue(owner, repo, number)} />;
+    const commentsPage = normalizeDetailPage(query.commentsPage);
+    const labels = await getDetailPaginationLabels(locale);
+    const [issue, comments] = await Promise.all([
+      getRepositoryIssue(owner, repo, number),
+      loadDetailCollection({
+        labels,
+        owner,
+        page: commentsPage,
+        pageParameter: 'commentsPage',
+        query,
+        repository: repo,
+        request: getRepositoryIssueComments(owner, repo, number, commentsPage),
+        view,
+      }),
+    ]);
+    return <IssueDetail data={{ comments, issue }} />;
   }
 
   if (activeView === 'issues') {
@@ -178,7 +214,38 @@ async function renderView({
   if (activeView === 'pull' && view[1]) {
     const number = Number.parseInt(view[1], 10);
     if (!Number.isFinite(number)) notFound();
-    return <PullDetail data={await getRepositoryPull(owner, repo, number)} />;
+    const filesPage = normalizeDetailPage(query.filesPage);
+    const reviewsPage = normalizeDetailPage(query.reviewsPage);
+    const labels = await getDetailPaginationLabels(locale);
+    const [pull, files, reviews] = await Promise.all([
+      getRepositoryPull(owner, repo, number),
+      loadDetailCollection({
+        labels,
+        owner,
+        page: filesPage,
+        pageParameter: 'filesPage',
+        query,
+        repository: repo,
+        request: getRepositoryPullFiles(owner, repo, number, filesPage),
+        view,
+      }),
+      loadDetailCollection({
+        labels,
+        owner,
+        page: reviewsPage,
+        pageParameter: 'reviewsPage',
+        query,
+        repository: repo,
+        request: getRepositoryPullReviews(owner, repo, number, reviewsPage),
+        view,
+      }),
+    ]);
+    return (
+      <PullDetail
+        data={{ files, pull, reviews }}
+        reviewsTitle={labels.reviews}
+      />
+    );
   }
 
   if (activeView === 'pulls') {
@@ -195,11 +262,38 @@ async function renderView({
   if (activeView === 'actions' && view[1]) {
     const runId = Number.parseInt(view[1], 10);
     if (!Number.isFinite(runId)) notFound();
-    return (
-      <ActionRunDetail
-        data={await getRepositoryActionRun(owner, repo, runId)}
-      />
-    );
+    const jobsPage = normalizeDetailPage(query.jobsPage);
+    const artifactsPage = normalizeDetailPage(query.artifactsPage);
+    const labels = await getDetailPaginationLabels(locale);
+    const [run, jobs, artifacts] = await Promise.all([
+      getRepositoryActionRun(owner, repo, runId),
+      loadDetailCollection({
+        labels,
+        owner,
+        page: jobsPage,
+        pageParameter: 'jobsPage',
+        query,
+        repository: repo,
+        request: getRepositoryActionRunJobs(owner, repo, runId, jobsPage),
+        view,
+      }),
+      loadDetailCollection({
+        labels,
+        owner,
+        page: artifactsPage,
+        pageParameter: 'artifactsPage',
+        query,
+        repository: repo,
+        request: getRepositoryActionRunArtifacts(
+          owner,
+          repo,
+          runId,
+          artifactsPage
+        ),
+        view,
+      }),
+    ]);
+    return <ActionRunDetail data={{ artifacts, jobs, run }} />;
   }
 
   if (activeView === 'actions') {
@@ -276,23 +370,6 @@ async function renderView({
   }
 
   notFound();
-}
-
-function RepositoryFailure({
-  description,
-  title,
-}: {
-  description: string;
-  title: string;
-}) {
-  return (
-    <main className="grid min-h-screen place-items-center p-6">
-      <Card className="max-w-lg space-y-3 p-6 text-center">
-        <h1 className="font-semibold text-2xl">{title}</h1>
-        <p className="text-muted-foreground text-sm leading-6">{description}</p>
-      </Card>
-    </main>
-  );
 }
 
 function collection(

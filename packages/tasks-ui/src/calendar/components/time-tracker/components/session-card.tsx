@@ -52,7 +52,7 @@ export function SessionCard({
       className={cn(
         'group relative rounded-lg border @lg:p-4 p-3 transition-all hover:bg-accent/50 hover:shadow-sm',
         isHighlighted &&
-          'slide-in-from-top animate-in bg-dynamic-green/10 ring-2 ring-dynamic-green duration-500'
+          'slide-in-from-top animate-in bg-green-50 ring-2 ring-green-500 duration-500 dark:bg-green-950/20'
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -92,7 +92,7 @@ export function SessionCard({
                 <MapPin className="h-3 w-3" />
                 <span>{taskWithDetails.board_name}</span>
               </div>
-              <span>-</span>
+              <span>•</span>
               <div className="flex items-center gap-1">
                 <Tag className="h-3 w-3" />
                 <span>{taskWithDetails.list_name}</span>

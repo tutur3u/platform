@@ -17,8 +17,7 @@
     "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
     "./mfa-mobile-approval": "./src/mfa-mobile-approval.ts",
     "./identity-linking": "./src/identity-linking.ts",
-    "./api-keys": "./src/api-keys.ts",
-    "./multi-session": "./src/multi-session/index.ts"
+    "./api-keys": "./src/api-keys.ts"
   },
   "license": "MIT",
   "scripts": {
@@ -41,7 +40,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "typescript": "7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.0"
   },
   "packageManager": "bun@1.4.0"
 }

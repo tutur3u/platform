@@ -1587,6 +1587,174 @@
     "violations": "Vi phạm",
     "visualization": "Trực quan hóa"
   },
+  "calendar_settings": {
+    "categories": {
+      "add": "Thêm",
+      "add_all_missing": "Thêm tất cả còn thiếu",
+      "browse_suggestions": "Xem gợi ý",
+      "category_placeholder": "Tên danh mục",
+      "done": "Xong",
+      "edit": "Sửa",
+      "event_preview": "Sự kiện {name}",
+      "failed_to_load": "Không thể tải danh mục",
+      "info_example": "Ví dụ, nếu bạn có danh mục \"Công việc\" màu xanh dương, các sự kiện có từ \"công việc\" hoặc \"cuộc họp\" trong tiêu đề sẽ được tô màu xanh dương.",
+      "info_text": "Danh mục giúp sắp xếp sự kiện theo màu. AI sẽ tự động gán màu cho sự kiện dựa trên tiêu đề và các danh mục này.",
+      "new_category_placeholder": "Tên danh mục mới",
+      "no_categories": "Chưa có danh mục. Hãy thêm một danh mục để bắt đầu.",
+      "remove_category": "Xóa {name}",
+      "select_color": "Chọn màu:",
+      "suggestion_names": {
+        "appointment": "Cuộc hẹn",
+        "education": "Học tập",
+        "family": "Gia đình",
+        "health": "Sức khỏe",
+        "meeting": "Cuộc họp",
+        "other": "Khác",
+        "personal": "Cá nhân",
+        "social": "Xã hội",
+        "travel": "Du lịch",
+        "work": "Công việc"
+      },
+      "suggestions": "Gợi ý",
+      "try_refreshing": "Vui lòng thử làm mới trang.",
+      "your_categories": "Danh mục của bạn"
+    },
+    "colors": {
+      "names": {
+        "blue": "xanh dương",
+        "cyan": "xanh lơ",
+        "gray": "xám",
+        "green": "xanh lá",
+        "indigo": "chàm",
+        "orange": "cam",
+        "pink": "hồng",
+        "purple": "tím",
+        "red": "đỏ",
+        "yellow": "vàng"
+      },
+      "select": "Chọn màu {color}"
+    },
+    "days": {
+      "friday": {
+        "full": "Thứ sáu",
+        "narrow": "T6",
+        "short": "T6"
+      },
+      "monday": {
+        "full": "Thứ hai",
+        "narrow": "T2",
+        "short": "T2"
+      },
+      "saturday": {
+        "full": "Thứ bảy",
+        "narrow": "T7",
+        "short": "T7"
+      },
+      "sunday": {
+        "full": "Chủ nhật",
+        "narrow": "CN",
+        "short": "CN"
+      },
+      "thursday": {
+        "full": "Thứ năm",
+        "narrow": "T5",
+        "short": "T5"
+      },
+      "tuesday": {
+        "full": "Thứ ba",
+        "narrow": "T3",
+        "short": "T3"
+      },
+      "wednesday": {
+        "full": "Thứ tư",
+        "narrow": "T4",
+        "short": "T4"
+      }
+    },
+    "hours": {
+      "all_days": "Mọi ngày",
+      "day_count": "{count} ngày",
+      "info": "Thiết lập thời gian khả dụng cho từng hoạt động. Các cài đặt này giúp lịch tối ưu việc sắp xếp và đưa ra gợi ý phù hợp hơn.",
+      "load_failed": "Không thể tải cài đặt khung giờ",
+      "no_days": "Không có ngày nào",
+      "no_hours_provided": "Chưa cung cấp khung giờ",
+      "overview": "Tổng quan",
+      "total_hours": "{hours} giờ/tuần",
+      "total_hours_minutes": "{hours} giờ {minutes} phút/tuần",
+      "try_again": "Thử lại",
+      "types": {
+        "meeting": {
+          "description": "Xác định thời gian bạn có thể tham gia cuộc họp. Người khác có thể xem khi lên lịch.",
+          "label": "Giờ họp",
+          "short_label": "Họp"
+        },
+        "personal": {
+          "description": "Dành thời gian cho nghỉ ngơi, tập luyện hoặc các cam kết cá nhân.",
+          "label": "Giờ cá nhân",
+          "short_label": "Cá nhân"
+        },
+        "work": {
+          "description": "Đặt giờ làm việc thường lệ để hỗ trợ lên lịch công việc và quản lý khối lượng.",
+          "label": "Giờ làm việc",
+          "short_label": "Làm việc"
+        }
+      },
+      "update_failed": "Không thể cập nhật cài đặt",
+      "updated": "Đã cập nhật giờ {type}"
+    },
+    "overview": {
+      "no_hours_set": "Chưa đặt khung giờ",
+      "summary": "{total} ({count} ngày)",
+      "total_hours": "{hours} giờ/tuần",
+      "total_hours_minutes": "{hours} giờ {minutes} phút/tuần",
+      "types": {
+        "meeting": "Họp",
+        "personal": "Cá nhân",
+        "work": "Làm việc"
+      }
+    },
+    "sections": {
+      "colors": {
+        "description": "Tùy chỉnh màu cho từng danh mục sự kiện",
+        "title": "Màu danh mục"
+      },
+      "hours": {
+        "description": "Thiết lập giờ làm việc, giờ họp và thời gian cá nhân",
+        "title": "Khung giờ"
+      },
+      "preferences": {
+        "description": "Thiết lập tùy chọn lịch ở cấp không gian làm việc",
+        "title": "Múi giờ và ngày bắt đầu tuần"
+      }
+    },
+    "time_range": {
+      "add_block": "Thêm khung giờ",
+      "add_block_tooltip": "Thêm một khung giờ mới",
+      "auto_corrected_end": "{message}. Giờ kết thúc đã được tự động điều chỉnh.",
+      "auto_corrected_start": "{message}. Giờ bắt đầu đã được tự động điều chỉnh.",
+      "cancel": "Hủy",
+      "click_to_enable": "(Nhấn để bật)",
+      "confirm_copy_all": "Có, sao chép sang mọi ngày",
+      "copy_all": "Sao chép sang mọi ngày",
+      "copy_all_description": "Thao tác này sẽ ghi đè khung giờ của mọi ngày bằng cài đặt của ngày hiện tại. Bạn có chắc muốn tiếp tục?",
+      "copy_all_title": "Sao chép sang mọi ngày?",
+      "disabled_day": "Ngày này đang tắt. Bật công tắc phía trên để đặt thời gian khả dụng.",
+      "end": "Kết thúc",
+      "end_after_start": "Giờ kết thúc phải sau giờ bắt đầu",
+      "end_too_late": "Giờ kết thúc không được sau 23:59",
+      "invalid": "Khung giờ không hợp lệ",
+      "maximum_blocks": "Đã đạt số khung giờ tối đa",
+      "minimum_duration": "Khung giờ phải kéo dài ít nhất 30 phút",
+      "new_block_overlaps": "Khung giờ mới chồng lấn với khung giờ trước",
+      "no_time_left": "Không còn đủ 30 phút trống trong ngày",
+      "not_enough_time": "Không còn đủ thời gian trong ngày cho một khung 30 phút",
+      "overlaps_next": "Giờ kết thúc chồng lấn với khung giờ sau",
+      "overlaps_previous": "Giờ bắt đầu chồng lấn với khung giờ trước",
+      "remove_block": "Xóa khung giờ",
+      "start": "Bắt đầu",
+      "start_too_early": "Giờ bắt đầu không được trước 00:00"
+    }
+  },
   "calendar-sidebar": {
     "collapse": "Thu gọn thanh bên",
     "due": "Hạn",

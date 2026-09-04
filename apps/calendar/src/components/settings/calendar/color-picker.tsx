@@ -3,6 +3,7 @@
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 
 // Color map with display names and CSS classes - Using dynamic colors that adapt to theme
 export const colorMap: Record<
@@ -12,7 +13,6 @@ export const colorMap: Record<
     cbg: string;
     activeBg: string;
     text: string;
-    name: string;
   }
 > = {
   RED: {
@@ -20,70 +20,60 @@ export const colorMap: Record<
     cbg: 'bg-dynamic-red',
     activeBg: 'bg-dynamic-light-red ring-dynamic-light-red',
     text: 'text-dynamic-light-red',
-    name: 'Red',
   },
   ORANGE: {
     bg: 'bg-calendar-bg-orange ring-calendar-bg-orange',
     cbg: 'bg-dynamic-orange',
     activeBg: 'bg-dynamic-light-orange ring-dynamic-light-orange',
     text: 'text-dynamic-light-orange',
-    name: 'Orange',
   },
   YELLOW: {
     bg: 'bg-calendar-bg-yellow ring-calendar-bg-yellow',
     cbg: 'bg-dynamic-yellow',
     activeBg: 'bg-dynamic-light-yellow ring-dynamic-light-yellow',
     text: 'text-dynamic-light-yellow',
-    name: 'Yellow',
   },
   GREEN: {
     bg: 'bg-calendar-bg-green ring-calendar-bg-green',
     cbg: 'bg-dynamic-green',
     activeBg: 'bg-dynamic-light-green ring-dynamic-light-green',
     text: 'text-dynamic-light-green',
-    name: 'Green',
   },
   BLUE: {
     bg: 'bg-calendar-bg-blue ring-calendar-bg-blue',
     cbg: 'bg-dynamic-blue',
     activeBg: 'bg-dynamic-light-blue ring-dynamic-light-blue',
     text: 'text-dynamic-light-blue',
-    name: 'Blue',
   },
   PURPLE: {
     bg: 'bg-calendar-bg-purple ring-calendar-bg-purple',
     cbg: 'bg-dynamic-purple',
     activeBg: 'bg-dynamic-light-purple ring-dynamic-light-purple',
     text: 'text-dynamic-light-purple',
-    name: 'Purple',
   },
   PINK: {
     bg: 'bg-calendar-bg-pink ring-calendar-bg-pink',
     cbg: 'bg-dynamic-pink',
     activeBg: 'bg-dynamic-light-pink ring-dynamic-light-pink',
     text: 'text-dynamic-light-pink',
-    name: 'Pink',
   },
   INDIGO: {
     bg: 'bg-calendar-bg-indigo ring-calendar-bg-indigo',
     cbg: 'bg-dynamic-indigo',
     activeBg: 'bg-dynamic-light-indigo ring-dynamic-light-indigo',
     text: 'text-dynamic-light-indigo',
-    name: 'Indigo',
   },
   CYAN: {
     bg: 'bg-calendar-bg-cyan ring-calendar-bg-cyan',
     cbg: 'bg-dynamic-cyan',
     activeBg: 'bg-dynamic-light-cyan ring-dynamic-light-cyan',
     text: 'text-dynamic-light-cyan',
-    name: 'Cyan',
   },
   GRAY: {
     bg: 'bg-calendar-bg-gray ring-calendar-bg-gray',
     cbg: 'bg-dynamic-gray',
     activeBg: 'bg-dynamic-light-gray ring-dynamic-light-gray',
     text: 'text-dynamic-light-gray',
-    name: 'Gray',
   },
 };
 
@@ -105,6 +95,7 @@ export function ColorPicker({
   size = 'md',
   showTooltips = true,
 }: ColorPickerProps) {
+  const t = useTranslations('calendar_settings');
   const sizeClasses = {
     sm: 'h-5 w-5',
     md: 'h-6 w-6',
@@ -115,6 +106,7 @@ export function ColorPicker({
     <div className="flex flex-wrap gap-1.5">
       {Object.entries(colorMap).map(([colorKey, colorInfo]) => {
         const isSelected = value === colorKey;
+        const colorName = t(`colors.names.${colorKey.toLowerCase()}`);
         const colorButton = (
           <button
             key={colorKey}
@@ -128,7 +120,7 @@ export function ColorPicker({
                 : 'hover:shadow-md'
             )}
             onClick={() => onChange(colorKey as SupportedColor)}
-            aria-label={`Select ${colorInfo.name} color`}
+            aria-label={t('colors.select', { color: colorName })}
           />
         );
 
@@ -136,7 +128,7 @@ export function ColorPicker({
           <Tooltip key={colorKey}>
             <TooltipTrigger asChild>{colorButton}</TooltipTrigger>
             <TooltipContent side="bottom" className="px-2 py-1">
-              {colorInfo.name}
+              {colorName}
             </TooltipContent>
           </Tooltip>
         ) : (
