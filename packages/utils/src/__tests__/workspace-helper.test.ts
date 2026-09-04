@@ -17,6 +17,9 @@ import {
   isPersonalWorkspace,
   isWorkspaceUuidLiteral,
   normalizeWorkspaceId,
+  WorkspaceAuthError,
+  WorkspaceNotFoundError,
+  WorkspaceResolutionError,
 } from '../workspace-helper';
 
 describe('isWorkspaceUuidLiteral', () => {
@@ -408,6 +411,41 @@ describe('normalizeWorkspaceId', () => {
       'user-1'
     );
     expect(query.eq).toHaveBeenCalledWith('workspace_members.type', 'MEMBER');
+  });
+
+  it('uses a typed error when personal workspace authentication is missing', async () => {
+    mockCreateClient.mockResolvedValue({
+      auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
+    });
+
+    await expect(normalizeWorkspaceId('personal')).rejects.toBeInstanceOf(
+      WorkspaceAuthError
+    );
+  });
+
+  it.each([
+    [new Error('database unavailable'), WorkspaceResolutionError],
+    [null, WorkspaceNotFoundError],
+  ])('distinguishes personal lookup failures', async (error, ErrorType) => {
+    const query = {
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error }),
+      select: vi.fn(),
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    mockCreateClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'user-1' } },
+        }),
+      },
+      from: vi.fn(() => query),
+    });
+
+    await expect(normalizeWorkspaceId('personal')).rejects.toBeInstanceOf(
+      ErrorType
+    );
   });
 
   it('resolves handle via admin fallback when request-scoped lookup cannot see workspace', async () => {

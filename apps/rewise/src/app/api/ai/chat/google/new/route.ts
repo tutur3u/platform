@@ -1,47 +1,12 @@
 import { createPOST } from '@tuturuuu/ai/chat/google/new/route';
-import {
-  attachSupabaseAuthUser,
-  createAppSessionUser,
-  getAppSessionTokenFromRequest,
-  verifyAppSessionRequest,
-} from '@tuturuuu/auth/app-session';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { resolveRewiseGatewayAuth } from '../route-auth';
+
+const resolveGatewayAuth = (request: Request) =>
+  resolveRewiseGatewayAuth(request, { targetApp: 'rewise' });
 
 const POST = createPOST({
-  async resolveGatewayAuth(request) {
-    const appSessionToken = getAppSessionTokenFromRequest(request);
-
-    if (!appSessionToken) {
-      return null;
-    }
-
-    const verification = verifyAppSessionRequest(request, {
-      targetApp: 'rewise',
-    });
-
-    if (!verification.ok) {
-      return {
-        ok: false,
-        response: new Response('Unauthorized', { status: 401 }),
-      };
-    }
-
-    const user = createAppSessionUser(verification.claims);
-
-    return {
-      auth: {
-        supabase: attachSupabaseAuthUser(
-          (await createAdminClient({
-            noCookie: true,
-          })) as TypedSupabaseClient,
-          user
-        ),
-        user,
-      },
-      ok: true,
-    };
-  },
+  requireWorkspaceId: true,
+  resolveGatewayAuth,
 });
 
 export { POST };

@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  authorizeAiWorkspace: vi.fn(),
   cascadeBackendRateLimitToProxyBan: vi.fn(),
   createClient: vi.fn(),
   extractIPFromHeaders: vi.fn(),
   generateText: vi.fn(),
   google: vi.fn(),
   isBackendRateLimitError: vi.fn(),
+  isInternalTuturuuuAiUser: vi.fn(),
+  resolveAiMemoryWorkspaceIdForUser: vi.fn(),
   validateAiTempAuthRequest: vi.fn(),
+  withAiMemory: vi.fn(),
 }));
 
 vi.mock('@ai-sdk/google', () => ({
@@ -45,6 +49,27 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
   ) => mocks.validateAiTempAuthRequest(...args),
 }));
 
+vi.mock('../../../memory', () => ({
+  resolveAiMemoryWorkspaceIdForUser: (
+    ...args: Parameters<typeof mocks.resolveAiMemoryWorkspaceIdForUser>
+  ) => mocks.resolveAiMemoryWorkspaceIdForUser(...args),
+  withAiMemory: (...args: Parameters<typeof mocks.withAiMemory>) =>
+    mocks.withAiMemory(...args),
+}));
+
+vi.mock('../route-auth', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../route-auth')>();
+  return {
+    ...actual,
+    authorizeAiWorkspace: (
+      ...args: Parameters<typeof mocks.authorizeAiWorkspace>
+    ) => mocks.authorizeAiWorkspace(...args),
+    isInternalTuturuuuAiUser: (
+      ...args: Parameters<typeof mocks.isInternalTuturuuuAiUser>
+    ) => mocks.isInternalTuturuuuAiUser(...args),
+  };
+});
+
 import { createPOST } from './route';
 
 describe('chat google new route', () => {
@@ -61,7 +86,16 @@ describe('chat google new route', () => {
     mocks.google.mockReturnValue('mock-model');
     mocks.generateText.mockResolvedValue({ text: 'New title' });
     mocks.isBackendRateLimitError.mockReturnValue(false);
+    mocks.isInternalTuturuuuAiUser.mockResolvedValue(true);
     mocks.validateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
+    mocks.authorizeAiWorkspace.mockImplementation(async ({ wsId }) => ({
+      ok: true,
+      wsId,
+    }));
+    mocks.resolveAiMemoryWorkspaceIdForUser.mockResolvedValue(
+      '00000000-0000-0000-0000-000000000000'
+    );
+    mocks.withAiMemory.mockResolvedValue('memory-model');
   });
 
   it('returns 429 and seeds the proxy ban cache when auth is rate limited', async () => {
@@ -188,5 +222,184 @@ describe('chat google new route', () => {
     expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({ creator_id: 'temp-user-1' })
     );
+  });
+
+  it('preserves optional workspace behavior for legacy callers', async () => {
+    const single = vi.fn().mockResolvedValue({
+      data: { id: '11111111-1111-4111-8111-111111111111' },
+      error: null,
+    });
+    const supabase = {
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'legacy-user' } },
+          error: null,
+        }),
+      },
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({ single }),
+        }),
+      }),
+      rpc: vi.fn().mockResolvedValue({ error: null }),
+    };
+    mocks.createClient.mockResolvedValue(supabase);
+
+    const response = await createPOST()(
+      new Request('http://localhost/api/ai/chat/new', {
+        body: JSON.stringify({ message: 'hello' }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.authorizeAiWorkspace).not.toHaveBeenCalled();
+    expect(mocks.resolveAiMemoryWorkspaceIdForUser).toHaveBeenCalledWith({
+      supabase,
+      userId: 'legacy-user',
+    });
+  });
+
+  it('requires a workspace at the Rewise factory boundary before downstream work', async () => {
+    const from = vi.fn();
+    const response = await createPOST({
+      requireWorkspaceId: true,
+      resolveGatewayAuth: async () => ({
+        auth: {
+          supabase: { from } as never,
+          user: { id: 'rewise-user' } as never,
+        },
+        ok: true,
+      }),
+    })(
+      new Request('http://localhost/api/ai/chat/new', {
+        body: JSON.stringify({ message: 'hello' }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(422);
+    expect(from).not.toHaveBeenCalled();
+    expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+  ])(
+    'attributes Rewise title and persistence work to workspace %s',
+    async (wsId) => {
+      const chatInsert = vi.fn().mockResolvedValue({ error: null });
+      const single = vi.fn().mockResolvedValue({
+        data: { id: '33333333-3333-4333-8333-333333333333' },
+        error: null,
+      });
+      const from = vi.fn((table: string) => {
+        if (table === 'ai_chats') {
+          return {
+            insert: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({ single }),
+            }),
+          };
+        }
+        return { insert: chatInsert };
+      });
+      const supabase = { from };
+
+      const response = await createPOST({
+        requireWorkspaceId: true,
+        resolveGatewayAuth: async () => ({
+          auth: {
+            supabase: supabase as never,
+            user: { id: 'rewise-user' } as never,
+          },
+          ok: true,
+        }),
+      })(
+        new Request('http://localhost/api/ai/chat/new', {
+          body: JSON.stringify({ message: 'hello', wsId }),
+          method: 'POST',
+        })
+      );
+
+      expect(response.status).toBe(200);
+      expect(mocks.authorizeAiWorkspace).toHaveBeenCalledWith({
+        request: expect.any(Request),
+        supabase,
+        userId: 'rewise-user',
+        wsId,
+      });
+      expect(mocks.withAiMemory).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'rewise-user', wsId })
+      );
+      expect(chatInsert).toHaveBeenCalledWith(
+        expect.objectContaining({ creator_id: 'rewise-user' })
+      );
+    }
+  );
+
+  it('rejects an unauthorized selected workspace before title or persistence work', async () => {
+    const from = vi.fn();
+    mocks.authorizeAiWorkspace.mockResolvedValueOnce({
+      ok: false,
+      response: Response.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      ),
+    });
+
+    const response = await createPOST({
+      requireWorkspaceId: true,
+      resolveGatewayAuth: async () => ({
+        auth: {
+          supabase: { from } as never,
+          user: { id: 'rewise-user' } as never,
+        },
+        ok: true,
+      }),
+    })(
+      new Request('http://localhost/api/ai/chat/new', {
+        body: JSON.stringify({
+          message: 'hello',
+          wsId: '11111111-1111-4111-8111-111111111111',
+        }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(from).not.toHaveBeenCalled();
+    expect(mocks.generateText).not.toHaveBeenCalled();
+    expect(mocks.withAiMemory).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthorized Mira access before resolving the selected workspace', async () => {
+    const from = vi.fn();
+    mocks.isInternalTuturuuuAiUser.mockResolvedValueOnce(false);
+
+    const response = await createPOST({
+      requireWorkspaceId: true,
+      resolveGatewayAuth: async () => ({
+        auth: {
+          supabase: { from } as never,
+          user: { email: 'external@example.com', id: 'rewise-user' } as never,
+        },
+        ok: true,
+      }),
+    })(
+      new Request('http://localhost/api/ai/chat/new', {
+        body: JSON.stringify({
+          isMiraMode: true,
+          message: 'hello',
+          wsId: '11111111-1111-4111-8111-111111111111',
+        }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.authorizeAiWorkspace).not.toHaveBeenCalled();
+    expect(mocks.resolveAiMemoryWorkspaceIdForUser).not.toHaveBeenCalled();
+    expect(mocks.generateText).not.toHaveBeenCalled();
   });
 });

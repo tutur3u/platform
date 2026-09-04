@@ -6,15 +6,17 @@ import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { requireRewiseWorkspace } from '../../helper';
 import { tools } from '../data';
 import { ToolForm } from './tool-form';
 
 export default async function ClientPage({
   params,
 }: {
-  params: Promise<{ toolId: string }>;
+  params: Promise<{ toolId: string; wsId: string }>;
 }) {
-  const { toolId } = await params;
+  const { toolId, wsId: workspaceSlug } = await params;
+  const { wsId } = await requireRewiseWorkspace(workspaceSlug);
   const t = await getTranslations();
   const tool = tools.find((tool) => tool.id === toolId);
   if (!tool) notFound();
@@ -47,7 +49,7 @@ export default async function ClientPage({
         </CardHeader>
         <Separator className="mb-4" />
         <CardContent>
-          <ToolForm tool={tool} />
+          <ToolForm tool={tool} workspaceSlug={workspaceSlug} wsId={wsId} />
         </CardContent>
       </Card>
     </div>

@@ -15,6 +15,7 @@ export default async function ToolDetailsPage({
   params: Promise<{
     locale: string;
     toolId: string;
+    wsId: string;
   }>;
 }) {
   return (

@@ -1,16 +1,15 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { AIChat } from '@tuturuuu/types';
 import { notFound, redirect } from 'next/navigation';
-import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 import Chat from '../../chat';
-import { getChats } from '../../helper';
+import { getChats, requireRewiseWorkspace } from '../../helper';
 
 interface Props {
   params: Promise<{
     chatId?: string;
+    wsId: string;
   }>;
   searchParams: Promise<{
     lang: string;
@@ -18,16 +17,13 @@ interface Props {
 }
 
 export default async function AIPage({ params, searchParams }: Props) {
-  const { chatId } = await params;
+  const { chatId, wsId: workspaceSlug } = await params;
   if (!chatId) notFound();
 
   const { lang: locale } = await searchParams;
 
-  // Check if user is whitelisted
-  const user = await getSatelliteAppSessionUser('rewise');
+  const { user, wsId } = await requireRewiseWorkspace(workspaceSlug);
   if (!user?.email) redirect('/login');
-
-  if (!(await isCurrentUserAIWhitelisted())) redirect('/not-whitelisted');
 
   // Get chat data
   const chat = await getChat(chatId, user);
@@ -42,6 +38,7 @@ export default async function AIPage({ params, searchParams }: Props) {
         chats={chats}
         count={count}
         locale={locale}
+        wsId={wsId}
       />
     </div>
   );

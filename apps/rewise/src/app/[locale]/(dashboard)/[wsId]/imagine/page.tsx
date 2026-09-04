@@ -1,8 +1,7 @@
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { AIModelUI } from '@tuturuuu/types';
 import { redirect } from 'next/navigation';
 import Chat from '../chat';
-import { getChats } from '../helper';
+import { getChats, requireRewiseWorkspace } from '../helper';
 
 const IMAGEN_MODEL: AIModelUI = {
   value: 'vertex/imagen-3.0-fast-generate-001',
@@ -12,14 +11,16 @@ const IMAGEN_MODEL: AIModelUI = {
 };
 
 interface Props {
+  params: Promise<{ wsId: string }>;
   searchParams: Promise<{
     lang: string;
   }>;
 }
 
-export default async function AIPage({ searchParams }: Props) {
+export default async function AIPage({ params, searchParams }: Props) {
+  const { wsId: workspaceSlug } = await params;
   const { lang: locale } = await searchParams;
-  const user = await getSatelliteAppSessionUser('rewise');
+  const { user, wsId } = await requireRewiseWorkspace(workspaceSlug);
   if (!user?.email) redirect('/login');
 
   const { data: chats, count } = await getChats(user);
@@ -33,6 +34,7 @@ export default async function AIPage({ searchParams }: Props) {
       chats={chats}
       count={count}
       locale={locale}
+      wsId={wsId}
       noEmptyPage
       disabled
     />

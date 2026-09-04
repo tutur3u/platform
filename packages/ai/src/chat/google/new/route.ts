@@ -17,6 +17,7 @@ import {
   withAiMemory,
 } from '../../../memory';
 import {
+  authorizeAiWorkspace,
   isInternalTuturuuuAiUser,
   resolveSupabaseSessionUser,
 } from '../route-auth';
@@ -27,6 +28,13 @@ const AI_PROMPT = '\n\nAssistant:';
 /** Always use a lightweight model for title generation */
 const TITLE_MODEL = 'gemini-3.1-flash-lite';
 const NewChatIdSchema = z.string().trim().pipe(z.uuid());
+const NewChatBodySchema = z.object({
+  id: NewChatIdSchema.optional(),
+  isMiraMode: z.boolean().optional(),
+  message: z.string().optional(),
+  model: z.string().optional(),
+  wsId: z.string().optional(),
+});
 
 async function buildRateLimitResponse(
   req: Request,
@@ -94,6 +102,7 @@ type CreatePostOptions = {
   resolveGatewayAuth?: (request: Request) => Promise<GatewayAuthResolution>;
   /** Gateway provider prefix for bare model names. Defaults to 'google'. */
   defaultProvider?: string;
+  requireWorkspaceId?: boolean;
 };
 
 type ChatMessageInsertMode = 'direct' | 'rpc';
@@ -105,21 +114,17 @@ type AuthenticatedContext = GatewayAuthenticatedClient & {
 export function createPOST(options: CreatePostOptions = {}) {
   return async function handler(req: Request) {
     try {
-      const requestBody = (await req.json()) as {
-        id?: string;
-        model?: string;
-        message?: string;
-        isMiraMode?: boolean;
-      };
-      const parsedId =
-        requestBody.id === undefined
-          ? { data: undefined, success: true as const }
-          : NewChatIdSchema.safeParse(requestBody.id);
-      if (!parsedId.success) {
-        return NextResponse.json('Invalid chat id', { status: 400 });
+      const requestBody = NewChatBodySchema.safeParse(await req.json());
+      if (!requestBody.success) {
+        const invalidId = requestBody.error.issues.some(
+          (issue) => issue.path[0] === 'id'
+        );
+        return NextResponse.json(
+          invalidId ? 'Invalid chat id' : 'Invalid request body',
+          { status: 400 }
+        );
       }
-      const { model, message, isMiraMode } = requestBody;
-      const id = parsedId.data;
+      const { id, isMiraMode, message, model, wsId } = requestBody.data;
 
       if (!message)
         return NextResponse.json('No message provided', { status: 400 });
@@ -176,6 +181,13 @@ export function createPOST(options: CreatePostOptions = {}) {
 
       const { messageInsertMode, supabase, user } = auth;
 
+      if (!wsId && options.requireWorkspaceId) {
+        return NextResponse.json(
+          { error: 'Invalid workspace identifier' },
+          { status: 422 }
+        );
+      }
+
       if (isMiraMode) {
         const allowed = await isInternalTuturuuuAiUser({
           ok: true,
@@ -193,6 +205,25 @@ export function createPOST(options: CreatePostOptions = {}) {
         }
       }
 
+      let selectedWsId: string;
+      if (wsId) {
+        const workspaceAuthorization = await authorizeAiWorkspace({
+          request: req,
+          supabase,
+          userId: user.id,
+          wsId,
+        });
+        if (!workspaceAuthorization.ok) {
+          return workspaceAuthorization.response;
+        }
+        selectedWsId = workspaceAuthorization.wsId;
+      } else {
+        selectedWsId = await resolveAiMemoryWorkspaceIdForUser({
+          supabase,
+          userId: user.id,
+        });
+      }
+
       const prompt = buildPrompt([
         {
           id: 'initial-message',
@@ -200,11 +231,6 @@ export function createPOST(options: CreatePostOptions = {}) {
           role: 'user',
         },
       ]);
-
-      const wsId = await resolveAiMemoryWorkspaceIdForUser({
-        supabase,
-        userId: user.id,
-      });
 
       // Always use TITLE_MODEL for generating chat titles (cheap + fast)
       const result = await generateText({
@@ -216,7 +242,7 @@ export function createPOST(options: CreatePostOptions = {}) {
           source: 'ai_chat_title',
           surface: 'ai_chat_title',
           userId: user.id,
-          wsId,
+          wsId: selectedWsId,
         }),
         prompt,
         providerOptions: {

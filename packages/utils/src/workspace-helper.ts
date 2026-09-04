@@ -28,6 +28,20 @@ export class WorkspaceAuthError extends Error {
   }
 }
 
+export class WorkspaceNotFoundError extends Error {
+  constructor(message = 'Workspace not found') {
+    super(message);
+    this.name = 'WorkspaceNotFoundError';
+  }
+}
+
+export class WorkspaceResolutionError extends Error {
+  constructor(message = 'Workspace resolution failed') {
+    super(message);
+    this.name = 'WorkspaceResolutionError';
+  }
+}
+
 export class WorkspaceAccessError extends Error {
   constructor(message = 'Workspace access denied') {
     super(message);
@@ -1096,7 +1110,7 @@ export async function normalizeWorkspaceId(
     const principal = await resolveAuthenticatedPrincipal(sb);
 
     if (!principal) {
-      throw new Error('User not authenticated');
+      throw new WorkspaceAuthError();
     }
 
     const userId = principal.id;
@@ -1109,8 +1123,11 @@ export async function normalizeWorkspaceId(
       .eq('workspace_members.type', 'MEMBER')
       .maybeSingle();
 
-    if (error || !workspace) {
-      throw new Error('Personal workspace not found');
+    if (error) {
+      throw new WorkspaceResolutionError('Personal workspace lookup failed');
+    }
+    if (!workspace) {
+      throw new WorkspaceNotFoundError('Personal workspace not found');
     }
 
     return workspace.id;

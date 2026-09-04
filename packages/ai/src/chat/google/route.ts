@@ -39,6 +39,7 @@ import {
 } from './request-persistence-lease';
 import {
   type AiRouteAuthResult,
+  authorizeAiWorkspace,
   isInternalTuturuuuAiUser,
   resolveAiRouteAuth,
 } from './route-auth';
@@ -102,6 +103,7 @@ export function createPOST(
     serverAPIKeyFallback?: boolean;
     /** Gateway provider prefix for bare model names (e.g., 'openai', 'anthropic', 'vertex'). Defaults to 'google'. */
     defaultProvider?: string;
+    requireWorkspaceId?: boolean;
     resolveAuth?: (request: NextRequest) => Promise<AiRouteAuthResult | null>;
   } = {}
 ) {
@@ -162,7 +164,7 @@ export function createPOST(
       const auth =
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
-      const { supabase, user } = auth;
+      const { messageInsertMode = 'rpc', supabase, user } = auth;
 
       if (isMiraMode && !(await isInternalTuturuuuAiUser(auth))) {
         return NextResponse.json(
@@ -171,13 +173,30 @@ export function createPOST(
         );
       }
 
-      // Normalize both workspace identifiers so slugs like 'personal' resolve to UUIDs.
       let normalizedWsId: string | null = null;
       let requestedCreditWsId: string | undefined;
+      if (!wsId && _options.requireWorkspaceId) {
+        return NextResponse.json(
+          { error: 'Invalid workspace identifier' },
+          { status: 422 }
+        );
+      }
+
+      if (wsId) {
+        const workspaceAuthorization = await authorizeAiWorkspace({
+          membershipClient: sbAdmin,
+          request: req,
+          supabase,
+          userId: user.id,
+          wsId,
+        });
+        if (!workspaceAuthorization.ok) {
+          return workspaceAuthorization.response;
+        }
+        normalizedWsId = workspaceAuthorization.wsId;
+      }
+
       try {
-        normalizedWsId = wsId
-          ? await normalizeWorkspaceId(wsId, supabase, req)
-          : null;
         requestedCreditWsId = rawCreditWsId
           ? await normalizeWorkspaceId(rawCreditWsId, supabase, req)
           : undefined;
@@ -190,30 +209,6 @@ export function createPOST(
           { error: 'Invalid workspace identifier' },
           { status: 422 }
         );
-      }
-
-      if (normalizedWsId) {
-        const contextMembership = await verifyWorkspaceMembershipType({
-          wsId: normalizedWsId,
-          userId: user.id,
-          supabase: sbAdmin,
-          requiredType: 'MEMBER',
-        });
-
-        if (contextMembership.error === 'membership_lookup_failed') {
-          console.error('DB error checking workspace membership');
-          return NextResponse.json(
-            { error: 'Internal error verifying workspace access' },
-            { status: 500 }
-          );
-        }
-
-        if (!contextMembership.ok) {
-          return NextResponse.json(
-            { error: 'Workspace access denied' },
-            { status: 403 }
-          );
-        }
       }
 
       const requestedCreditSource: SharedCreditSource =
@@ -413,7 +408,17 @@ export function createPOST(
         processedMessages,
         chatId,
         insertChatMessage: async (args) => {
-          if (persistenceRequestId) {
+          if (messageInsertMode === 'direct' || persistenceRequestId) {
+            if (!persistenceRequestId) {
+              const { error } = await supabase.from('ai_chat_messages').insert({
+                chat_id: chatId,
+                content: args.message,
+                creator_id: user.id,
+                metadata: { source: args.source },
+                role: 'USER',
+              });
+              return { error };
+            }
             return persistRequestScopedUserMessage({
               chatId,
               content: args.message,

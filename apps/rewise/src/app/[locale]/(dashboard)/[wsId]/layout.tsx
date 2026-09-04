@@ -1,4 +1,3 @@
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
   getPendingWorkspaceInvitation,
@@ -11,15 +10,14 @@ import {
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
-import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
+import { resolveRewiseWorkspace } from './helper';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
 
@@ -35,17 +33,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
   const requestHeaders = await headers();
 
-  const user = await getSatelliteAppSessionUser('rewise');
-  if (!user?.id) redirect('/login');
-
-  // Whitelist check — preserve AI access gating
-  if (user.email) {
-    if (!(await isCurrentUserAIWhitelisted())) {
-      redirect('/not-whitelisted');
-    }
-  }
-
-  const workspace = await getWorkspace(id, { useAdmin: true, user });
+  const { user, workspace } = await resolveRewiseWorkspace(id);
 
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
