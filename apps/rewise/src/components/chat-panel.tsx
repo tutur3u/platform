@@ -130,9 +130,9 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 bg-linear-to-b from-0% from-muted/30 to-50% to-muted/30 dark:from-10% dark:from-background/0 dark:to-background/80">
-        <div className="pointer-events-auto mx-auto sm:max-w-2xl sm:px-4">
-          <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-linear-to-b from-transparent via-background/75 to-background px-3 pt-10 pb-3 sm:px-5 sm:pb-5">
+        <div className="pointer-events-auto mx-auto max-w-3xl">
+          <div className="space-y-3 rounded-2xl border border-border/60 bg-background/95 px-3 py-2.5 shadow-lg backdrop-blur-xl sm:px-4 sm:py-3">
             {showExtraOptions && (
               <ChatModelSelector
                 open={showExtraOptions}

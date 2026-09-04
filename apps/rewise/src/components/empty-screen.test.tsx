@@ -19,6 +19,10 @@ describe('Rewise assistant home', () => {
     fireEvent.click(screen.getByRole('button', { name: /starter_plan/ }));
 
     expect(setInput).toHaveBeenCalledWith('starter_plan_prompt');
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'assistant_heading' })
+    ).toBeTruthy();
+    expect(screen.queryByText('capability_tools_title')).toBeNull();
   });
 
   it('keeps recent conversations inside the selected workspace', () => {

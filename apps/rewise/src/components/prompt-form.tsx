@@ -82,14 +82,6 @@ export function PromptForm({
   const images = files.filter((f) => f.rawFile.type.startsWith('image/'));
   const others = files.filter((f) => !pdfs.includes(f) && !images.includes(f));
   const [showPermissionDenied, setShowPermissionDenied] = useState(false);
-  const [element, setElement] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    setElement(document.getElementById('main-content'));
-    return () => setElement(null);
-  }, []);
-
-  if (!element) return null;
 
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
@@ -99,8 +91,11 @@ export function PromptForm({
           if (!input?.trim()) return;
           const submittedInput = input;
           setInput('');
-          element.scrollTo({
-            top: element.scrollHeight,
+          const scrollContainer =
+            document.getElementById('main-chat-content') ??
+            document.scrollingElement;
+          scrollContainer?.scrollTo({
+            top: scrollContainer.scrollHeight,
             behavior: 'smooth',
           });
           try {

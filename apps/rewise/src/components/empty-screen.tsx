@@ -6,7 +6,6 @@ import {
   Lightbulb,
   MessageCircle,
   Sparkles,
-  WandSparkles,
 } from '@tuturuuu/icons';
 import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -56,70 +55,56 @@ export function EmptyScreen({
   ];
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-3 pt-4 md:px-6 md:pt-8">
-      <section className="relative overflow-hidden rounded-3xl border bg-card/80 px-5 py-8 shadow-sm md:px-10 md:py-12">
+    <main className="mx-auto flex min-h-[calc(100dvh-8rem)] w-full max-w-3xl flex-col justify-center px-4 pt-8 pb-44 sm:px-6">
+      <section className="relative py-8 sm:py-12">
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-linear-to-br from-dynamic-blue/10 via-transparent to-dynamic-purple/10"
+          className="absolute top-0 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-dynamic-purple/10 blur-3xl"
         />
-        <div className="relative max-w-3xl">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
-            <Sparkles className="h-3.5 w-3.5" />
-            {t('workspace_intelligence')}
+        <div
+          aria-hidden="true"
+          className="absolute top-28 right-12 h-32 w-32 rounded-full bg-dynamic-cyan/6 blur-3xl"
+        />
+
+        <div className="relative flex flex-col items-center text-center">
+          <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl border border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple shadow-sm">
+            <Sparkles className="h-4 w-4" />
           </div>
-          <h1 className="max-w-2xl text-balance font-bold text-3xl tracking-tight md:text-5xl">
+          <p className="font-medium text-muted-foreground text-xs tracking-wide">
+            {t('workspace_intelligence')}
+          </p>
+          <h1 className="mt-2 max-w-2xl text-balance font-semibold text-3xl tracking-tight sm:text-4xl">
             {t('assistant_heading')}
           </h1>
-          <p className="mt-4 max-w-2xl text-balance text-muted-foreground text-sm leading-6 md:text-base">
+          <p className="mt-3 max-w-xl text-pretty text-muted-foreground text-sm leading-6">
             {t('assistant_description')}
           </p>
 
-          <div className="mt-7 grid gap-2 sm:grid-cols-2">
+          <div className="mt-8 grid w-full gap-2 sm:grid-cols-2">
             {starters.map((starter) => (
               <Button
                 key={starter.label}
                 type="button"
-                variant="outline"
-                className="h-auto min-h-12 justify-start gap-3 whitespace-normal rounded-xl bg-background/70 px-4 py-3 text-left hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5"
+                variant="ghost"
+                className="group h-auto min-h-12 justify-start gap-3 whitespace-normal rounded-xl border border-border/40 bg-background/30 px-3.5 py-3 text-left transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5 active:scale-[0.99]"
                 onClick={() => setInput(starter.prompt)}
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dynamic-blue/10 text-dynamic-blue">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/70 text-muted-foreground transition-colors group-hover:bg-dynamic-purple/10 group-hover:text-dynamic-purple">
                   {starter.icon}
                 </span>
-                <span>{starter.label}</span>
+                <span className="font-medium text-sm">{starter.label}</span>
               </Button>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-3">
-        {[
-          [<MessageCircle key="chat" />, 'capability_conversation'],
-          [<WandSparkles key="tools" />, 'capability_tools'],
-          [<FileText key="files" />, 'capability_files'],
-        ].map(([icon, key]) => (
-          <div
-            key={key as string}
-            className="rounded-2xl border bg-card p-4 text-sm"
-          >
-            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-dynamic-purple/10 text-dynamic-purple [&>svg]:h-4 [&>svg]:w-4">
-              {icon}
-            </div>
-            <p className="font-semibold">{t(`${key}_title`)}</p>
-            <p className="mt-1 text-muted-foreground leading-5">
-              {t(`${key}_description`)}
-            </p>
-          </div>
-        ))}
-      </section>
-
       {chats.length > 0 ? (
-        <section className="rounded-2xl border bg-card p-4 md:p-5">
-          <div className="mb-3 flex items-center justify-between gap-3">
+        <section className="border-border/50 border-t pt-5">
+          <div className="mb-3 flex items-end justify-between gap-3 px-1">
             <div>
-              <h2 className="font-semibold">{t('continue_working')}</h2>
-              <p className="text-muted-foreground text-sm">
+              <h2 className="font-medium text-sm">{t('continue_working')}</h2>
+              <p className="mt-0.5 text-muted-foreground text-xs">
                 {t('continue_working_description')}
               </p>
             </div>
@@ -129,9 +114,9 @@ export function EmptyScreen({
               <Link
                 key={chat.id}
                 href={getRewiseChatPath(workspaceSlug, chat.id)}
-                className="group flex items-center gap-3 rounded-xl border bg-background/60 p-3 transition-colors hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5"
+                className="group flex items-center gap-3 rounded-xl border border-transparent bg-muted/35 p-3 transition-all duration-200 hover:border-dynamic-purple/20 hover:bg-dynamic-purple/5 active:scale-[0.99]"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/70 text-muted-foreground">
                   <MessageCircle className="h-4 w-4" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -142,7 +127,7 @@ export function EmptyScreen({
                     {chat.summary || chat.model || t('recent_conversations')}
                   </span>
                 </span>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
             ))}
           </div>

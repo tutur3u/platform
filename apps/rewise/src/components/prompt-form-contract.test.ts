@@ -3,6 +3,17 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('Rewise prompt form controls', () => {
+  it('renders without depending on the retired main-content shell id', async () => {
+    const source = await readFile(
+      resolve(process.cwd(), 'src/components/prompt-form.tsx'),
+      'utf8'
+    );
+
+    expect(source).not.toContain("document.getElementById('main-content')");
+    expect(source).not.toContain('if (!element) return null;');
+    expect(source).toContain("document.getElementById('main-chat-content')");
+  });
+
   it('keeps toolbar actions from accidentally submitting the prompt', async () => {
     const source = await readFile(
       resolve(process.cwd(), 'src/components/prompt-form.tsx'),
