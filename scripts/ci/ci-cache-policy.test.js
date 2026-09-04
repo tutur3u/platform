@@ -209,9 +209,8 @@ test('all locked Vitest packages bypass the dependency release-age delay', () =>
   }
 
   for (const packageName of vitestPackages) {
-    assert.match(
-      bunfig,
-      new RegExp(`^  "${packageName.replaceAll('/', '\\/')}",$`, 'mu'),
+    assert.ok(
+      bunfig.split(/\r?\n/u).includes(`  "${packageName}",`),
       `${packageName} must bypass the release-age delay`
     );
   }
