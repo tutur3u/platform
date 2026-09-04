@@ -34,6 +34,7 @@ export default async function AIPage({ params, searchParams }: Props) {
       chats={chats}
       count={count}
       locale={locale}
+      workspaceSlug={workspaceSlug}
       wsId={wsId}
       noEmptyPage
       disabled

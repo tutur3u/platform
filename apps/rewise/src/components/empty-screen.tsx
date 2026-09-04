@@ -1,177 +1,153 @@
 import {
-  ArrowDownToDot,
+  ArrowUpRight,
+  BrainCircuit,
+  FileText,
   GraduationCap,
-  Mail,
-  Microscope,
-  NotebookPen,
-  Sigma,
+  Lightbulb,
+  MessageCircle,
+  Sparkles,
+  WandSparkles,
 } from '@tuturuuu/icons';
 import type { AIChat } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
-import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
-import 'dayjs/locale/vi';
-import relativeTime from 'dayjs/plugin/relativeTime';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import { getRewiseChatPath } from '@/lib/workspace-routes';
+
+interface PromptStarter {
+  icon: ReactNode;
+  label: string;
+  prompt: string;
+}
 
 export function EmptyScreen({
-  locale,
-  // chats,
+  chats = [],
   setInput,
+  workspaceSlug,
 }: {
-  locale: string;
   chats?: AIChat[];
+  locale: string;
   setInput: (input: string) => void;
+  workspaceSlug: string;
 }) {
-  dayjs.extend(relativeTime);
-  dayjs.locale(locale);
-
   const t = useTranslations('ai_chat');
-
-  const exampleMessages = [
+  const starters: PromptStarter[] = [
     {
-      heading: t('example_1'),
-      message: t('example_1_prompt'),
-      color: 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20',
-      icon: <Microscope />,
+      icon: <BrainCircuit className="h-4 w-4" />,
+      label: t('starter_plan'),
+      prompt: t('starter_plan_prompt'),
     },
     {
-      heading: t('example_2'),
-      message: t('example_2_prompt'),
-      color: 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20',
-      icon: <Sigma />,
+      icon: <GraduationCap className="h-4 w-4" />,
+      label: t('starter_learn'),
+      prompt: t('starter_learn_prompt'),
     },
     {
-      heading: t('example_3'),
-      message: t('example_3_prompt'),
-      color:
-        'bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20',
-      icon: <GraduationCap />,
+      icon: <FileText className="h-4 w-4" />,
+      label: t('starter_summarize'),
+      prompt: t('starter_summarize_prompt'),
     },
     {
-      heading: t('example_4'),
-      message: t('example_4_prompt'),
-      color:
-        'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
-      icon: <ArrowDownToDot />,
-    },
-    {
-      heading: t('example_5'),
-      message: t('example_5_prompt'),
-      color: 'bg-dynamic-sky/10 text-dynamic-sky border-dynamic-sky/20',
-      icon: <Mail />,
-    },
-    {
-      heading: t('example_6'),
-      message: t('example_6_prompt'),
-      color: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
-      icon: <NotebookPen />,
+      icon: <Lightbulb className="h-4 w-4" />,
+      label: t('starter_brainstorm'),
+      prompt: t('starter_brainstorm_prompt'),
     },
   ];
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-4xl xl:max-w-6xl">
-      <div className="rounded-lg border bg-background p-4 md:p-8">
-        <div className="flex flex-col items-center justify-center text-center">
-          <h1 className="mb-2 font-semibold text-lg">
-            {t('welcome_to')}{' '}
-            <span className="overflow-hidden bg-linear-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text font-bold text-transparent">
-              Rewise
-            </span>
-            .
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-3 pt-4 md:px-6 md:pt-8">
+      <section className="relative overflow-hidden rounded-3xl border bg-card/80 px-5 py-8 shadow-sm md:px-10 md:py-12">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-linear-to-br from-dynamic-blue/10 via-transparent to-dynamic-purple/10"
+        />
+        <div className="relative max-w-3xl">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
+            <Sparkles className="h-3.5 w-3.5" />
+            {t('workspace_intelligence')}
+          </div>
+          <h1 className="max-w-2xl text-balance font-bold text-3xl tracking-tight md:text-5xl">
+            {t('assistant_heading')}
           </h1>
-          <p className="text-foreground/90 text-sm leading-normal md:text-base">
-            {t('welcome_msg')}
+          <p className="mt-4 max-w-2xl text-balance text-muted-foreground text-sm leading-6 md:text-base">
+            {t('assistant_description')}
           </p>
 
-          <div className="mt-4 grid w-full gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {exampleMessages.map((message, index) => (
+          <div className="mt-7 grid gap-2 sm:grid-cols-2">
+            {starters.map((starter) => (
               <Button
-                key={index}
-                variant="link"
-                className={cn(
-                  'w-full items-center justify-center gap-2 border p-2 text-left text-sm md:p-8',
-                  message.color
-                )}
-                onClick={() => setInput(message.message)}
+                key={starter.label}
+                type="button"
+                variant="outline"
+                className="h-auto min-h-12 justify-start gap-3 whitespace-normal rounded-xl bg-background/70 px-4 py-3 text-left hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5"
+                onClick={() => setInput(starter.prompt)}
               >
-                {message.icon}
-                <div className="line-clamp-1 whitespace-normal break-all">
-                  {message.heading}
-                </div>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dynamic-blue/10 text-dynamic-blue">
+                  {starter.icon}
+                </span>
+                <span>{starter.label}</span>
               </Button>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* {chats && chats.length > 0 && (
-          <>
-            <Separator className="my-4" />
-            <div>
-              <h2 className="line-clamp-1 text-lg font-semibold">
-                {t('recent_conversations')}
-              </h2>
-              <div className="mt-2 grid items-start gap-2 lg:grid-cols-2">
-                {chats.slice(0, 2).map((chat) => (
-                  <div
-                    key={chat.id}
-                    className="bg-foreground/5 flex w-full items-center gap-2 rounded border p-2"
-                  >
-                    <MessageCircle className="text-foreground/80 shrink-0" />
-                    <div className="flex w-full flex-col items-start">
-                      <Link
-                        href={`/c/${chat.id}`}
-                        className="line-clamp-1 text-sm hover:underline md:text-base"
-                      >
-                        {chat.title}
-                      </Link>
-
-                      <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase',
-                            chat.is_public
-                              ? 'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20'
-                              : 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20'
-                          )}
-                        >
-                          {chat.is_public ? (
-                            <>
-                              <Globe className="h-3 w-3" />
-                              {t('public')}
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="h-3 w-3" />
-                              {t('only_me')}
-                            </>
-                          )}
-                        </span>
-                        {chat.model && (
-                          <span className="bg-dynamic-yellow/10 text-dynamic-yellow border-dynamic-yellow/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
-                            <Sparkle className="h-3 w-3" />
-                            {chat.model}
-                          </span>
-                        )}
-                        {chat.summary && (
-                          <span className="bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20 inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
-                            <Box className="h-3 w-3" />
-                            {t('summarized')}
-                          </span>
-                        )}
-                        <span className="opacity-70">
-                          {chat.model && <span className="mr-1">•</span>}
-                          {capitalize(dayjs(chat?.created_at).fromNow())}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      <section className="grid gap-3 md:grid-cols-3">
+        {[
+          [<MessageCircle key="chat" />, 'capability_conversation'],
+          [<WandSparkles key="tools" />, 'capability_tools'],
+          [<FileText key="files" />, 'capability_files'],
+        ].map(([icon, key]) => (
+          <div
+            key={key as string}
+            className="rounded-2xl border bg-card p-4 text-sm"
+          >
+            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-dynamic-purple/10 text-dynamic-purple [&>svg]:h-4 [&>svg]:w-4">
+              {icon}
             </div>
-          </>
-        )} */}
-      </div>
-    </div>
+            <p className="font-semibold">{t(`${key}_title`)}</p>
+            <p className="mt-1 text-muted-foreground leading-5">
+              {t(`${key}_description`)}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      {chats.length > 0 ? (
+        <section className="rounded-2xl border bg-card p-4 md:p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold">{t('continue_working')}</h2>
+              <p className="text-muted-foreground text-sm">
+                {t('continue_working_description')}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {chats.slice(0, 4).map((chat) => (
+              <Link
+                key={chat.id}
+                href={getRewiseChatPath(workspaceSlug, chat.id)}
+                className="group flex items-center gap-3 rounded-xl border bg-background/60 p-3 transition-colors hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                  <MessageCircle className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-sm">
+                    {chat.title || t('untitled')}
+                  </span>
+                  <span className="block truncate text-muted-foreground text-xs">
+                    {chat.summary || chat.model || t('recent_conversations')}
+                  </span>
+                </span>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </main>
   );
 }

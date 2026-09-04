@@ -6,6 +6,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { getRewiseWorkspacePath } from '@/lib/workspace-routes';
 import { requireRewiseWorkspace } from '../../helper';
 import { tools } from '../data';
 import { ToolForm } from './tool-form';
@@ -29,7 +30,7 @@ export default async function ClientPage({
         asChild
         className="flex items-center gap-2"
       >
-        <Link href="/tools">
+        <Link href={getRewiseWorkspacePath(workspaceSlug, 'tools')}>
           <ChevronLeft className="h-4 w-4" />
           {t('common.back')}
         </Link>

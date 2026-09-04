@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
+import WorkspaceAssistantPage from '../page';
 
-export default function NewChatPage() {
-  redirect('./');
-}
+export default WorkspaceAssistantPage;

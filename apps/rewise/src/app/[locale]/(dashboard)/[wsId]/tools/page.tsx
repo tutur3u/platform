@@ -1,18 +1,33 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { getRewiseWorkspacePath } from '@/lib/workspace-routes';
 import { recommendedTools, tools } from './data';
 
-export default function ToolsPage() {
+export default async function ToolsPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  const { wsId: workspaceSlug } = await params;
+  const t = await getTranslations('ai_chat');
+
   return (
     <div className="grid gap-8 py-8">
       <section>
-        <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 font-bold text-transparent text-xl lg:text-3xl">
-          Recommended For You
-        </h2>
+        <div className="mb-4 space-y-1">
+          <h1 className="font-bold text-2xl tracking-tight lg:text-3xl">
+            {t('tool_library')}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {t('tool_library_description')}
+          </p>
+        </div>
+        <h2 className="mb-4 font-semibold text-lg">{t('recommended_tools')}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {recommendedTools.map((tool) => (
             <Link
-              href={`/tools/${tool.id}`}
+              href={getRewiseWorkspacePath(workspaceSlug, `tools/${tool.id}`)}
               key={tool.name}
               className="group h-full"
             >
@@ -40,13 +55,11 @@ export default function ToolsPage() {
       </section>
 
       <section>
-        <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 font-bold text-transparent text-xl lg:text-3xl">
-          All Tools
-        </h2>
+        <h2 className="mb-4 font-semibold text-lg">{t('all_tools')}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {tools.map((tool) => (
             <Link
-              href={`/tools/${tool.id}`}
+              href={getRewiseWorkspacePath(workspaceSlug, `tools/${tool.id}`)}
               key={tool.name}
               className="group h-full"
             >

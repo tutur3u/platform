@@ -55,13 +55,17 @@ export function ToolForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await createChat(
-      `## ${tool.name}\n> ${tool.description}\n\n` +
-        formData.fields
-          .filter((field) => field.value)
-          .map((field) => `- **${field.label}:** ${field.value}`)
-          .join('\n')
-    );
+    try {
+      await createChat(
+        `## ${tool.name}\n> ${tool.description}\n\n` +
+          formData.fields
+            .filter((field) => field.value)
+            .map((field) => `- **${field.label}:** ${field.value}`)
+            .join('\n')
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fillPlaceholderContent = () => {
@@ -84,6 +88,7 @@ export function ToolForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex gap-2">
         <Button
+          type="button"
           onClick={fillPlaceholderContent}
           disabled={
             isLoading ||
@@ -97,6 +102,7 @@ export function ToolForm({
           {t('common.example_content')}
         </Button>
         <Button
+          type="button"
           variant="secondary"
           onClick={resetContent}
           disabled={isLoading || formData.fields.every((field) => !field.value)}
@@ -111,7 +117,9 @@ export function ToolForm({
           <div key={field.label} className="space-y-2">
             <Label htmlFor={field.label}>
               {field.label}
-              {field.required && <span className="ml-1 text-red-500">*</span>}
+              {field.required && (
+                <span className="ml-1 text-dynamic-red">*</span>
+              )}
             </Label>
             {field.type === 'text' ? (
               <Input
