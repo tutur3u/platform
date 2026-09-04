@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.27.5](https://github.com/tutur3u/platform/compare/calendar-v0.27.4...calendar-v0.27.5) (2026-09-04)
+
+
+### Bug Fixes
+
+* **calendar:** enforce event management permission ([#5191](https://github.com/tutur3u/platform/issues/5191)) ([85c1ae0](https://github.com/tutur3u/platform/commit/85c1ae0a9dc3c6c83ccd3f5473400e47539a50c7))
+* **calendar:** retire unsafe active sync trigger ([736cf98](https://github.com/tutur3u/platform/commit/736cf981d1ebedaebefe51cc61006c4f07ae72b0))
+* **calendar:** retire unsafe active sync trigger ([#5190](https://github.com/tutur3u/platform/issues/5190)) ([7e9d319](https://github.com/tutur3u/platform/commit/7e9d3192c51b3269f7b87090354df34ee157701a))
+
 ## [0.27.4](https://github.com/tutur3u/platform/compare/calendar-v0.27.3...calendar-v0.27.4) (2026-08-31)
 
 

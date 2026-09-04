@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.3](https://github.com/tutur3u/platform/compare/git-v0.8.2...git-v0.8.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* **git:** preserve locale in repository views ([#5210](https://github.com/tutur3u/platform/issues/5210)) ([86c7575](https://github.com/tutur3u/platform/commit/86c7575f0b2b98cae5e2fdab800285e5f2f83f84))
+* **git:** surface repository toggle failures ([#5196](https://github.com/tutur3u/platform/issues/5196)) ([e9d2336](https://github.com/tutur3u/platform/commit/e9d2336583ff5267bfaae6325d138099c341d3bc))
+
+
+### Performance Improvements
+
+* **git:** paginate repository detail collections ([#5199](https://github.com/tutur3u/platform/issues/5199)) ([505f4df](https://github.com/tutur3u/platform/commit/505f4dfd5608faf6c528633824860ac217f97364))
+
 ## [0.8.2](https://github.com/tutur3u/platform/compare/git-v0.8.1...git-v0.8.2) (2026-08-29)
 
 

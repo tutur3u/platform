@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.2](https://github.com/tutur3u/platform/compare/tasks-ui-v0.15.1...tasks-ui-v0.15.2) (2026-09-04)
+
+
+### Performance Improvements
+
+* **tasks:** defer My Tasks filter catalogs ([#5200](https://github.com/tutur3u/platform/issues/5200)) ([ac8afdc](https://github.com/tutur3u/platform/commit/ac8afdc52883c8eded24a06296cb1dedb44eaa2d))
+
 ## [0.15.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.15.0...tasks-ui-v0.15.1) (2026-08-31)
 
 
