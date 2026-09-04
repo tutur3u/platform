@@ -14,6 +14,7 @@ export const ci = {
   // TanStack Start and Rust migration work is paused. Keep its combined CI and
   // Cloudflare deployment workflow disabled until active maintenance resumes.
   'rust-backend.yml': false,
+  'tanstack-route-manifest.yaml': false,
   'i18n-check.yaml': true,
   'mobile.yaml': true,
   'release-ai-package.yaml': true,

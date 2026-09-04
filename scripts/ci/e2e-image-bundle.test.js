@@ -132,7 +132,6 @@ test('bundle manifest follows the blue-green planner and maps all consumer tags'
     `${REPOSITORY}:${TAG_PREFIX}-ready`
   );
   assert.deepEqual(getBundleServices({}, 'next'), [
-    'backend',
     'hive-blue',
     'hive-realtime',
     'markitdown',

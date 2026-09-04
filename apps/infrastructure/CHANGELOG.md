@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.6](https://github.com/tutur3u/platform/compare/infra-v0.22.5...infra-v0.22.6) (2026-09-03)
+
+
+### Bug Fixes
+
+* **infrastructure:** authorize blocked IP management ([6015f35](https://github.com/tutur3u/platform/commit/6015f3555b39a07b3c96476d5443a90adf7cdaaa))
+* **infrastructure:** authorize blocked IP management ([#5185](https://github.com/tutur3u/platform/issues/5185)) ([a5fa9b4](https://github.com/tutur3u/platform/commit/a5fa9b43ad0ed4a9525d9b0e549f21a559e40744))
+
 ## [0.22.5](https://github.com/tutur3u/platform/compare/infra-v0.22.4...infra-v0.22.5) (2026-08-31)
 
 

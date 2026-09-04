@@ -67,6 +67,6 @@ jobs:
         # otherwise-fast mocked unit tests during repository-wide test runs.
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run test --concurrency=4
+          command: bun turbo:local run test --concurrency=4 --filter='!@tuturuuu/tanstack-web'
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}

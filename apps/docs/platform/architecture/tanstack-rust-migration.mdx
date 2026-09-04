@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-09-03"
+updatedAt: "2026-09-04"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -14,13 +14,24 @@ contracts documented in `apps/backend/api/openapi.yaml`.
 
 <Warning>
   Active development of `apps/tanstack-web` and `apps/backend` is paused. Their
-  combined `rust-backend.yml` CI/Cloudflare workflow and automatic TanStack
-  Vercel production builds are disabled in `tuturuuu.ts`, and the shared E2E
-  workflow skips its migration matrix and TanStack image build. `apps/backend`
-  is not deployed and receives no production traffic; `apps/web` remains the
-  live API runtime. A route marked `migrated` below records implemented source
-  work, not a production cutover or a currently maintained migration target.
+  combined `rust-backend.yml` CI/Cloudflare workflow, route-manifest CI, and
+  automatic TanStack Vercel production builds are disabled in `tuturuuu.ci.ts`.
+  Direct TanStack preview/production dispatches also skip their build jobs.
+  Shared type-check, unit-test, coverage, and Biome workflows exclude both
+  migration source trees; Docker CI skips the TanStack/Rust image and dual-stack
+  steps; and maintained Next.js E2E disables the Rust support service while the
+  migration matrix remains skipped. `apps/backend` is not deployed and receives
+  no production traffic; `apps/web` remains the live API runtime. A route marked
+  `migrated` below records implemented source work, not a production cutover or
+  a currently maintained migration target.
 </Warning>
+
+The pause is enforced by
+`node --test scripts/ci/paused-migration-workflows.test.js`. Resume migration CI
+only as an intentional policy change: re-enable the switchboard entries and
+direct deploy jobs, restore the shared-workflow package/source coverage and
+Docker/E2E runtime services together, then update this warning and its guard
+test in the same pull request.
 
 The crate can run as a native container and keeps a Cloudflare Workers Rust
 entrypoint in `apps/backend/wrangler.jsonc` for future, explicitly approved
