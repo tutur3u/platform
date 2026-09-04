@@ -218,6 +218,10 @@ function getBundleServices(env = {}, frontend = 'both') {
   const selectedFrontend = validateBundleFrontend(frontend);
   const baseEnv = {
     ...env,
+    // The maintained Next.js lane does not use the paused Rust migration
+    // backend. Keep it out of the build bundle even if callers omit the CI env.
+    DOCKER_BACKEND_ENABLED:
+      selectedFrontend === 'next' ? '0' : (env.DOCKER_BACKEND_ENABLED ?? '1'),
     DOCKER_SUPERMEMORY_ENABLED: 'false',
     DOCKER_WEB_CRON_RUNNER_ENABLED: '0',
     SUPERMEMORY_ENABLED: 'false',

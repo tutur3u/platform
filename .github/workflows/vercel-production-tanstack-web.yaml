@@ -12,7 +12,9 @@ concurrency:
 
 jobs:
   Build-Production:
-    if: github.ref == 'refs/heads/production'
+    # This reusable workflow can also be dispatched directly, so enforce the
+    # migration pause here in addition to the tuturuuu.ts planner switch.
+    if: ${{ false }}
     environment: vercel-production-tanstack-web
     runs-on: ubuntu-latest
     permissions:
