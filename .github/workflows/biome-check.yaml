@@ -42,9 +42,8 @@ jobs:
         id: format-check
         run: |
           # Capture biome format output and exit code
-          mapfile -d '' biome_paths < <(git ls-files -z -- ':!apps/backend/**' ':!apps/tanstack-web/**')
           set +e
-          biome_output=$(npx --yes @biomejs/biome@2.5.11 format "${biome_paths[@]}" 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.11 format . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -129,9 +128,8 @@ jobs:
         id: lint-check
         run: |
           # Capture biome lint output and exit code
-          mapfile -d '' biome_paths < <(git ls-files -z -- ':!apps/backend/**' ':!apps/tanstack-web/**')
           set +e
-          biome_output=$(npx --yes @biomejs/biome@2.5.11 lint "${biome_paths[@]}" 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.11 lint . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -205,9 +203,7 @@ jobs:
           node-version: 24
 
       - name: Apply Biome format
-        run: |
-          mapfile -d '' biome_paths < <(git ls-files -z -- ':!apps/backend/**' ':!apps/tanstack-web/**')
-          npx --yes @biomejs/biome@2.5.11 format --write "${biome_paths[@]}"
+        run: npx --yes @biomejs/biome@2.5.11 format --write .
 
       - name: Check for changes
         id: git-check

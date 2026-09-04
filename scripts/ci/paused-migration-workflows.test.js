@@ -88,15 +88,12 @@ test('root test and type-check commands exclude the paused TanStack package', ()
 });
 
 test('Biome CI excludes both paused migration source trees', () => {
-  const workflow = readWorkflow('biome-check.yaml');
-  const exclusion =
-    "git ls-files -z -- ':!apps/backend/**' ':!apps/tanstack-web/**'";
-
-  assert.equal(
-    workflow.split(exclusion).length - 1,
-    3,
-    'format check, lint check, and format repair must share the exclusions'
+  const biomeConfig = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, 'biome.json'), 'utf8')
   );
+
+  assert.ok(biomeConfig.files.includes.includes('!apps/backend'));
+  assert.ok(biomeConfig.files.includes.includes('!apps/tanstack-web'));
 });
 
 test('Docker CI keeps migration-only execution skipped', () => {
