@@ -66,6 +66,7 @@ const {
   getBlueGreenFrontendPort,
   getDeterministicBlueGreenBuildEnv,
   getBlueGreenServiceName,
+  getBlueGreenSupportBuildInputHashes,
   getBlueGreenBuildxBakeArgs,
   getBlueGreenComposeMigration,
   getBlueGreenDeploymentBuildServices,
@@ -78,6 +79,7 @@ const {
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
+  isBlueGreenBackendEnabled,
   isBlueGreenWebBuildSkipped,
   isBlueGreenCronRunnerEnabled,
   isBlueGreenSupermemoryEnabled,
@@ -742,6 +744,76 @@ test('blue-green support services honor explicit Supermemory disablement', () =>
       targetColor: 'green',
     }),
     ['web-green']
+  );
+});
+
+test('blue-green support services honor explicit backend disablement', () => {
+  const disabledEnv = { DOCKER_BACKEND_ENABLED: '0' };
+
+  assert.equal(isBlueGreenBackendEnabled({}), true);
+  assert.equal(isBlueGreenBackendEnabled(disabledEnv), false);
+  assert.deepEqual(getBlueGreenHealthGateSupportServices(disabledEnv), [
+    'markitdown',
+    'storage-unzip-proxy',
+    'supermemory',
+    'web-docker-control',
+    'web-cron-runner',
+  ]);
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      env: disabledEnv,
+      forceBuildSupportServices: true,
+      targetColor: 'blue',
+    }),
+    [
+      'web-blue',
+      'hive-blue',
+      'hive-realtime',
+      'meet-realtime',
+      'markitdown',
+      'storage-unzip-proxy',
+      'supermemory',
+      'web-docker-control',
+      'web-cron-runner',
+    ]
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: ['apps/backend/src/main.rs'],
+      env: disabledEnv,
+      targetColor: 'green',
+    }),
+    ['web-green']
+  );
+});
+
+test('paused backend hashes force a rebuild when backend is re-enabled', async () => {
+  const listedPaths = [];
+  const disabledHashes = await getBlueGreenSupportBuildInputHashes({
+    env: { DOCKER_BACKEND_ENABLED: '0' },
+    runCommand: async (_command, args) => {
+      listedPaths.push(...args.slice(args.indexOf('--') + 1));
+      return createCommandResult('');
+    },
+    targetColor: 'green',
+  });
+
+  assert.equal(disabledHashes.backend, 'disabled');
+  assert.equal(
+    listedPaths.some((filePath) => filePath === 'apps/backend/'),
+    false
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      env: { DOCKER_BACKEND_ENABLED: '1' },
+      previousSupportBuildHashes: disabledHashes,
+      supportBuildHashes: {
+        ...disabledHashes,
+        backend: 'current-backend-hash',
+      },
+      targetColor: 'green',
+    }),
+    ['web-green', 'backend']
   );
 });
 

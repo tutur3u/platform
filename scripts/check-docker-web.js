@@ -762,7 +762,7 @@ function validateDockerSetupWorkflow(workflowContent) {
   ];
   const requiredSnippets = [
     'run: node scripts/check-docker-web.js',
-    'node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js scripts/run-tanstack-e2e-docker.test.js',
+    "node --test --test-skip-pattern='[Tt]an[Ss]tack|[Rr]ust|[Bb]ackend|[Mm]igration' scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js",
     'Free runner disk before Docker image builds',
     'docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml',
     'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',

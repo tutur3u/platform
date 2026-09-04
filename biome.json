@@ -16,6 +16,8 @@
       "!**/*.svg",
       "!dist",
       "!**/dist",
+      "!apps/backend",
+      "!apps/tanstack-web",
       "!apps/tanstack-web/src/routeTree.gen.ts",
       "!apps/mobile",
       "!.worktrees"

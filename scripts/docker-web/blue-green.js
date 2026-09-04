@@ -147,6 +147,7 @@ const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
   'web-cron-runner',
 ]);
 const BLUE_GREEN_BUILD_HASH_VERSION = 1;
+const BLUE_GREEN_DISABLED_BUILD_HASH = 'disabled';
 const DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_ATTEMPTS = 4;
 const DEFAULT_BLUE_GREEN_BUILD_RETRY_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_DELAY_MS = 60_000;
@@ -274,12 +275,20 @@ function isBlueGreenCronRunnerEnabled(env = {}) {
   return !isExplicitFalseEnvValue(env.DOCKER_WEB_CRON_RUNNER_ENABLED);
 }
 
+function isBlueGreenBackendEnabled(env = {}) {
+  return !isExplicitFalseEnvValue(env.DOCKER_BACKEND_ENABLED);
+}
+
 function getBlueGreenHealthGateSupportServices(env = {}) {
-  const services = isBlueGreenSupermemoryEnabled(env)
+  let services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE]
     : BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  if (!isBlueGreenBackendEnabled(env)) {
+    services = services.filter((serviceName) => serviceName !== 'backend');
+  }
 
   return isBlueGreenCronRunnerEnabled(env)
     ? services
@@ -287,11 +296,15 @@ function getBlueGreenHealthGateSupportServices(env = {}) {
 }
 
 function getBlueGreenSupportBuildServiceNames(env = {}) {
-  const services = isBlueGreenSupermemoryEnabled(env)
+  let services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES]
     : BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  if (!isBlueGreenBackendEnabled(env)) {
+    services = services.filter((serviceName) => serviceName !== 'backend');
+  }
 
   return isBlueGreenCronRunnerEnabled(env)
     ? services
@@ -1782,6 +1795,10 @@ function getBlueGreenSupportBuildInputSpecs(targetColor, env = {}) {
   ];
 
   return specs.filter((spec) => {
+    if (spec.serviceName === 'backend') {
+      return isBlueGreenBackendEnabled(env);
+    }
+
     if (spec.serviceName === 'supermemory') {
       return isBlueGreenSupermemoryEnabled(env);
     }
@@ -1881,6 +1898,12 @@ async function getBlueGreenSupportBuildInputHashes({
       });
     }
 
+    if (!isBlueGreenBackendEnabled(env)) {
+      // Replace any previous backend input hash while paused. When the service
+      // is re-enabled, its real input hash differs and forces a fresh image.
+      hashes.backend = BLUE_GREEN_DISABLED_BUILD_HASH;
+    }
+
     return hashes;
   } catch {
     return null;
@@ -1924,6 +1947,7 @@ function getBlueGreenChangedSupportBuildServices(
   }
 
   if (
+    isBlueGreenBackendEnabled(env) &&
     BLUE_GREEN_BACKEND_BUILD_PATHS.some((watchedPath) =>
       changedFilesIncludePath(changedFiles, watchedPath)
     )
@@ -4728,6 +4752,7 @@ module.exports = {
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
+  isBlueGreenBackendEnabled,
   isBlueGreenWebBuildSkipped,
   isBlueGreenCronRunnerEnabled,
   isBlueGreenSupermemoryEnabled,

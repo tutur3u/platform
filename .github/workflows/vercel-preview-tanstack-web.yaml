@@ -16,7 +16,9 @@ permissions:
 
 jobs:
   Build-Preview:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor))
+    # Keep the manual entrypoint visible for an intentional future restart,
+    # but never spend CI capacity while the migration is paused.
+    if: ${{ false }}
     environment: vercel-preview-tanstack-web
     runs-on: ubuntu-latest
     permissions:

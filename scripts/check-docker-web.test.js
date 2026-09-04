@@ -139,7 +139,7 @@ test('validateDockerfile accepts the current web Dockerfile', () => {
   );
 });
 
-test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
+test('validateDockerSetupWorkflow keeps paused migration Docker paths explicit', () => {
   const workflowContent = fs.readFileSync(DOCKER_SETUP_WORKFLOW_PATH, 'utf8');
 
   assert.deepEqual(validateDockerSetupWorkflow(workflowContent), []);
@@ -164,13 +164,21 @@ test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
     /cloudflared/
   );
   assert.match(
+    workflowContent,
+    /Build TanStack web prod image\n\s+if: \$\{\{ false \}\}/u
+  );
+  assert.match(
+    workflowContent,
+    /Build backend image\n\s+if: \$\{\{ false \}\}/u
+  );
+  assert.match(
     validateDockerSetupWorkflow(
       workflowContent.replace(
         '--cache-from type=gha,scope=docker-tanstack-web-prod',
-        ''
+        '--cache-from type=gha,scope=docker-tanstack-web-paused'
       )
     ).join('\n'),
-    /docker-tanstack-web-prod/
+    /docker-tanstack-web-prod/u
   );
   assert.match(
     validateDockerSetupWorkflow(

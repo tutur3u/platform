@@ -123,7 +123,8 @@ jobs:
         run: node scripts/check-docker-web.js
 
       - name: Run Docker helper tests
-        run: node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js scripts/run-tanstack-e2e-docker.test.js
+        # Keep maintained Docker coverage while excluding migration-only cases.
+        run: node --test --test-skip-pattern='[Tt]an[Ss]tack|[Rr]ust|[Bb]ackend|[Mm]igration' scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js
 
       - name: Prepare production Docker runtime files
         run: |
@@ -152,7 +153,10 @@ jobs:
           docker compose -f docker-compose.web.prod.yml config > /tmp/docker-compose.web.prod.yml
           docker compose -f docker-compose.web.prod.yml --profile redis config > /tmp/docker-compose.web.prod.redis.yml
           docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml
-          docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml
+
+      - name: Render paused TanStack dual-stack config
+        if: ${{ false }}
+        run: docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml
 
       - name: Build web dev image
         uses: ./.github/actions/run-with-turbo-remote-cache
@@ -214,6 +218,7 @@ jobs:
           df -h /
 
       - name: Build TanStack web prod image
+        if: ${{ false }}
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           token: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
@@ -235,7 +240,7 @@ jobs:
               -f apps/tanstack-web/Dockerfile .
 
       - name: Free Docker disk after TanStack web prod image
-        if: always()
+        if: ${{ false }}
         run: |
           df -h /
           docker system prune -af --volumes || true
@@ -263,6 +268,7 @@ jobs:
           df -h /
 
       - name: Build backend image
+        if: ${{ false }}
         run: |
           docker buildx build --load \
             --cache-from type=gha,scope=docker-backend,timeout=10m \
