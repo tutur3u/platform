@@ -6,8 +6,8 @@ export const DEFAULT_CHAT_MODEL: AIModelUI = {
   provider: 'google',
 };
 
-export function getChatProvider(modelId: string) {
-  return modelId.includes('/') ? modelId.split('/')[0]! : 'google';
+export function getChatRouteProvider() {
+  return 'google';
 }
 
 export function toChatModel(modelId: string | null | undefined) {
@@ -17,6 +17,6 @@ export function toChatModel(modelId: string | null | undefined) {
   return {
     value: qualified ? modelId : `google/${modelId}`,
     label: qualified ? modelId.split('/').slice(1).join('/') : modelId,
-    provider: getChatProvider(modelId),
+    provider: qualified ? modelId.split('/')[0]! : 'google',
   } satisfies AIModelUI;
 }

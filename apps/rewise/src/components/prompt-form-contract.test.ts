@@ -11,7 +11,8 @@ describe('Rewise prompt form controls', () => {
 
     expect(source).toContain('onClick={toggleChatFileUpload}');
     expect(source).toContain('onClick={toggleChatVisibility}');
-    expect(source.match(/type="button"/g)?.length).toBeGreaterThanOrEqual(7);
+    const buttons = [...source.matchAll(/<Button\b[\s\S]*?>/g)];
+    expect(buttons.every(([button]) => button.includes('type='))).toBe(true);
     expect(source.match(/type="submit"/g)).toHaveLength(1);
   });
 
@@ -22,6 +23,9 @@ describe('Rewise prompt form controls', () => {
     );
 
     expect(source).toContain('const submittedInput = input;');
+    expect(source.indexOf("setInput('');")).toBeLessThan(
+      source.indexOf('await onSubmit(submittedInput);')
+    );
     expect(source).toContain('setInput(submittedInput);');
   });
 });

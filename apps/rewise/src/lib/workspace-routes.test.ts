@@ -21,5 +21,8 @@ describe('Rewise workspace routes', () => {
     expect(getRewiseChatPath('/personal/', 'chat with spaces')).toBe(
       '/personal/c/chat%20with%20spaces'
     );
+    expect(getRewiseWorkspacePath('personal', 'tools/custom workflow')).toBe(
+      '/personal/tools/custom%20workflow'
+    );
   });
 });

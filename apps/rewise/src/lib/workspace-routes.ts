@@ -3,11 +3,13 @@ function cleanSegment(value: string) {
 }
 
 export function getRewiseWorkspacePath(workspaceSlug: string, suffix = '') {
-  const normalizedSuffix = suffix ? `/${suffix.replace(/^\/+|\/+$/g, '')}` : '';
+  const normalizedSuffix = suffix
+    ? `/${suffix.split('/').filter(Boolean).map(cleanSegment).join('/')}`
+    : '';
 
   return `/${cleanSegment(workspaceSlug)}${normalizedSuffix}`;
 }
 
 export function getRewiseChatPath(workspaceSlug: string, chatId: string) {
-  return getRewiseWorkspacePath(workspaceSlug, `c/${cleanSegment(chatId)}`);
+  return getRewiseWorkspacePath(workspaceSlug, `c/${chatId}`);
 }

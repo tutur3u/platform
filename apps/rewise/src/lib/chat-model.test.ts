@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getChatProvider, toChatModel } from './chat-model';
+import { getChatRouteProvider, toChatModel } from './chat-model';
 
 describe('Rewise chat models', () => {
   it('normalizes legacy unqualified Google model IDs', () => {
@@ -10,8 +10,8 @@ describe('Rewise chat models', () => {
     });
   });
 
-  it('preserves gateway model providers', () => {
-    expect(getChatProvider('anthropic/claude-sonnet')).toBe('anthropic');
+  it('preserves gateway model providers behind the supported Rewise route', () => {
+    expect(getChatRouteProvider()).toBe('google');
     expect(toChatModel('anthropic/claude-sonnet')).toEqual({
       label: 'claude-sonnet',
       provider: 'anthropic',

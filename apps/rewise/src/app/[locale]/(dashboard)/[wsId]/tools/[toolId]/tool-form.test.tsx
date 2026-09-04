@@ -110,4 +110,21 @@ describe('Rewise tool chat workspace propagation', () => {
     await waitFor(() => expect(generate.hasAttribute('disabled')).toBe(false));
     expect(mocks.push).not.toHaveBeenCalled();
   });
+
+  it('recovers from a network failure without navigating', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Network unavailable'));
+    render(
+      <ToolForm
+        tool={tool}
+        workspaceSlug={WORKSPACE_SLUG}
+        wsId={WORKSPACE_ID}
+      />
+    );
+
+    const generate = screen.getByRole('button', { name: 'common.generate' });
+    fireEvent.click(generate);
+
+    await waitFor(() => expect(generate.hasAttribute('disabled')).toBe(false));
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
 });

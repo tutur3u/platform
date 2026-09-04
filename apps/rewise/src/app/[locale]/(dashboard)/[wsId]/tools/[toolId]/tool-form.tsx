@@ -63,6 +63,11 @@ export function ToolForm({
             .map((field) => `- **${field.label}:** ${field.value}`)
             .join('\n')
       );
+    } catch {
+      toast({
+        title: t('ai_chat.something_went_wrong'),
+        description: t('ai_chat.try_again_later'),
+      });
     } finally {
       setIsLoading(false);
     }

@@ -89,7 +89,7 @@ describe('Rewise workspace page propagation', () => {
     ['workspace-a', WORKSPACE_A],
     ['workspace-b', WORKSPACE_B],
   ])(
-    'passes canonical workspace %s through new, existing, and imagine pages',
+    'passes canonical workspace %s through assistant, new, existing, and imagine pages',
     async (workspaceSlug, canonicalWsId) => {
       mocks.requireRewiseWorkspace.mockResolvedValue({
         user: { email: 'user@example.com', id: 'user-1' },

@@ -19,7 +19,7 @@ import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
 import {
   DEFAULT_CHAT_MODEL,
-  getChatProvider,
+  getChatRouteProvider,
   toChatModel,
 } from '@/lib/chat-model';
 import {
@@ -79,7 +79,7 @@ export default function Chat({
     transport: new DefaultChatTransport({
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${getChatProvider(chat?.model ?? model?.value ?? DEFAULT_CHAT_MODEL.value)}`
+          ? `/api/ai/chat/${getChatRouteProvider()}`
           : undefined,
       credentials: 'include',
       headers: { 'Custom-Header': 'value' },
@@ -110,7 +110,7 @@ export default function Chat({
       model: string;
     }) => {
       const res = await fetch(
-        `/api/ai/chat/${getChatProvider(modelId)}/summary`,
+        `/api/ai/chat/${getChatRouteProvider()}/summary`,
         {
           credentials: 'include',
           method: 'PATCH',
@@ -139,7 +139,7 @@ export default function Chat({
       model: string;
       message: string;
     }) => {
-      const res = await fetch(`/api/ai/chat/${getChatProvider(modelId)}/new`, {
+      const res = await fetch(`/api/ai/chat/${getChatRouteProvider()}/new`, {
         credentials: 'include',
         method: 'POST',
         body: JSON.stringify({ id, model: modelId, message, wsId }),

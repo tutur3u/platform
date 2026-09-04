@@ -74,9 +74,7 @@ export function PromptForm({
 
   const [isInternalLoading, setIsInternalLoading] = useState(isLoading);
 
-  useEffect(() => {
-    setIsInternalLoading(isLoading);
-  }, [isLoading]);
+  useEffect(() => setIsInternalLoading(isLoading), [isLoading]);
 
   const pdfs = files.filter((f) =>
     f.rawFile.type.startsWith('application/pdf')
@@ -100,13 +98,13 @@ export function PromptForm({
           e.preventDefault();
           if (!input?.trim()) return;
           const submittedInput = input;
+          setInput('');
           element.scrollTo({
             top: element.scrollHeight,
             behavior: 'smooth',
           });
           try {
             await onSubmit(submittedInput);
-            setInput('');
           } catch {
             setInput(submittedInput);
           }
@@ -210,6 +208,7 @@ export function PromptForm({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  type="button"
                   size="icon"
                   variant="ghost"
                   className={cn(
