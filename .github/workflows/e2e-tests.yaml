@@ -44,6 +44,9 @@ permissions:
   packages: read
 
 env:
+  # apps/backend is a paused migration target and is not part of the live
+  # Next.js E2E runtime.
+  DOCKER_BACKEND_ENABLED: "0"
   E2E_IMAGE_BUNDLE_REPOSITORY: ghcr.io/tutur3u/platform-e2e
   E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
   E2E_IMAGE_BUNDLE_WAIT_SECONDS: "10"
@@ -62,7 +65,6 @@ jobs:
       packages: write
     env:
       COMPOSE_PROJECT_NAME: ttr-e2e-bundle-${{ github.run_id }}-${{ github.run_attempt }}
-      DOCKER_WEB_CACHE_BACKEND_FROM: type=gha,scope=docker-backend,timeout=10m
       DOCKER_WEB_CACHE_CHAT_REALTIME_FROM: type=gha,scope=docker-chat-realtime,timeout=10m
       DOCKER_WEB_CACHE_HIVE_FROM: type=gha,scope=docker-hive-prod,timeout=10m
       DOCKER_WEB_CACHE_HIVE_REALTIME_FROM: type=gha,scope=docker-hive-realtime,timeout=10m
@@ -247,7 +249,6 @@ jobs:
 
     env:
       BASE_URL: https://tuturuuu.localhost:1355
-      DOCKER_WEB_CACHE_BACKEND_FROM: type=gha,scope=docker-backend,timeout=10m
       DOCKER_WEB_CACHE_CHAT_REALTIME_FROM: type=gha,scope=docker-chat-realtime,timeout=10m
       DOCKER_WEB_CACHE_HIVE_FROM: type=gha,scope=docker-hive-prod,timeout=10m
       DOCKER_WEB_CACHE_HIVE_REALTIME_FROM: type=gha,scope=docker-hive-realtime,timeout=10m
@@ -412,7 +413,7 @@ jobs:
 
           docker ps -a --filter "label=com.docker.compose.project=${DOCKER_WEB_COMPOSE_PROJECT_NAME}" --format "table {{.Names}}\t{{.Status}}\t{{.Image}}" > "$diagnostics_dir/docker-containers.txt" 2>&1 || true
           docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" ps -a > "$diagnostics_dir/docker-compose-ps.txt" 2>&1 || true
-          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime backend markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
+          docker compose --env-file tmp/e2e/web.env -f docker-compose.web.prod.yml -p "${DOCKER_WEB_COMPOSE_PROJECT_NAME}" logs --tail=1000 web-proxy web-blue web-green hive-blue hive-green hive-realtime meet-realtime markitdown storage-unzip-proxy web-cron-runner > "$diagnostics_dir/docker-compose-services.log" 2>&1 || true
           docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" > "$diagnostics_dir/docker-images.txt" 2>&1 || true
           web_proxy_login_url="http://127.0.0.1:${DOCKER_WEB_PROXY_HOST_PORT:-7803}/login"
           curl -i --max-time 10 "$web_proxy_login_url" > "$diagnostics_dir/web-proxy-login.txt" 2>&1 || true

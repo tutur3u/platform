@@ -274,12 +274,20 @@ function isBlueGreenCronRunnerEnabled(env = {}) {
   return !isExplicitFalseEnvValue(env.DOCKER_WEB_CRON_RUNNER_ENABLED);
 }
 
+function isBlueGreenBackendEnabled(env = {}) {
+  return !isExplicitFalseEnvValue(env.DOCKER_BACKEND_ENABLED);
+}
+
 function getBlueGreenHealthGateSupportServices(env = {}) {
-  const services = isBlueGreenSupermemoryEnabled(env)
+  let services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE]
     : BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  if (!isBlueGreenBackendEnabled(env)) {
+    services = services.filter((serviceName) => serviceName !== 'backend');
+  }
 
   return isBlueGreenCronRunnerEnabled(env)
     ? services
@@ -287,11 +295,15 @@ function getBlueGreenHealthGateSupportServices(env = {}) {
 }
 
 function getBlueGreenSupportBuildServiceNames(env = {}) {
-  const services = isBlueGreenSupermemoryEnabled(env)
+  let services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES]
     : BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  if (!isBlueGreenBackendEnabled(env)) {
+    services = services.filter((serviceName) => serviceName !== 'backend');
+  }
 
   return isBlueGreenCronRunnerEnabled(env)
     ? services
@@ -1924,6 +1936,7 @@ function getBlueGreenChangedSupportBuildServices(
   }
 
   if (
+    isBlueGreenBackendEnabled(env) &&
     BLUE_GREEN_BACKEND_BUILD_PATHS.some((watchedPath) =>
       changedFilesIncludePath(changedFiles, watchedPath)
     )
@@ -4728,6 +4741,7 @@ module.exports = {
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
+  isBlueGreenBackendEnabled,
   isBlueGreenWebBuildSkipped,
   isBlueGreenCronRunnerEnabled,
   isBlueGreenSupermemoryEnabled,

@@ -78,6 +78,7 @@ const {
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
+  isBlueGreenBackendEnabled,
   isBlueGreenWebBuildSkipped,
   isBlueGreenCronRunnerEnabled,
   isBlueGreenSupermemoryEnabled,
@@ -738,6 +739,46 @@ test('blue-green support services honor explicit Supermemory disablement', () =>
   assert.deepEqual(
     getBlueGreenDeploymentBuildServices({
       changedFiles: ['apps/supermemory/db/001_schema.sql'],
+      env: disabledEnv,
+      targetColor: 'green',
+    }),
+    ['web-green']
+  );
+});
+
+test('blue-green support services honor explicit backend disablement', () => {
+  const disabledEnv = { DOCKER_BACKEND_ENABLED: '0' };
+
+  assert.equal(isBlueGreenBackendEnabled({}), true);
+  assert.equal(isBlueGreenBackendEnabled(disabledEnv), false);
+  assert.deepEqual(getBlueGreenHealthGateSupportServices(disabledEnv), [
+    'markitdown',
+    'storage-unzip-proxy',
+    'supermemory',
+    'web-docker-control',
+    'web-cron-runner',
+  ]);
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      env: disabledEnv,
+      forceBuildSupportServices: true,
+      targetColor: 'blue',
+    }),
+    [
+      'web-blue',
+      'hive-blue',
+      'hive-realtime',
+      'meet-realtime',
+      'markitdown',
+      'storage-unzip-proxy',
+      'supermemory',
+      'web-docker-control',
+      'web-cron-runner',
+    ]
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: ['apps/backend/src/main.rs'],
       env: disabledEnv,
       targetColor: 'green',
     }),
