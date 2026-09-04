@@ -9,7 +9,13 @@ import { withAiMemory } from '@tuturuuu/ai/memory';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { invalidateAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
-import { Output, streamText } from 'ai';
+import {
+  createTextStreamResponse,
+  Output,
+  streamText,
+  type TextStreamPart,
+  type ToolSet,
+} from 'ai';
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -18,6 +24,7 @@ const MODEL_ID = 'google/gemini-3.1-flash-lite';
 const MODEL_NAME = 'gemini-3.1-flash-lite';
 const CREDIT_FEATURE = 'generate';
 const RESERVATION_TTL_SECONDS = 15 * 60;
+const STREAM_ERROR_MESSAGE = 'AI object generation stream failed';
 
 const SAFETY_SETTINGS = [
   {
@@ -64,6 +71,55 @@ type PrivateRpcClient = {
     params: Record<string, unknown>
   ) => Promise<{ data: MeteredSettlementRow[] | null; error: unknown }>;
 };
+
+function createObjectTextStream<TOOLS extends ToolSet>(
+  stream: ReadableStream<TextStreamPart<TOOLS>>
+): ReadableStream<string> {
+  const reader = stream.getReader();
+  let readerReleased = false;
+  const releaseReader = () => {
+    if (readerReleased) return;
+    readerReleased = true;
+    reader.releaseLock();
+  };
+
+  return new ReadableStream<string>({
+    async cancel(reason) {
+      try {
+        await reader.cancel(reason);
+      } finally {
+        releaseReader();
+      }
+    },
+    async pull(controller) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            releaseReader();
+            controller.close();
+            return;
+          }
+
+          if (value.type === 'error') {
+            await reader.cancel();
+            releaseReader();
+            controller.error(new Error(STREAM_ERROR_MESSAGE));
+            return;
+          }
+
+          if (value.type === 'text-delta') {
+            controller.enqueue(value.text);
+            return;
+          }
+        }
+      } catch {
+        releaseReader();
+        controller.error(new Error(STREAM_ERROR_MESSAGE));
+      }
+    },
+  });
+}
 
 async function calculateReservationCredits(
   sbAdmin: TypedSupabaseClient,
@@ -306,6 +362,15 @@ export function createTeachObjectGenerationHandler<
       };
 
       try {
+        const handleStreamError = async (error: unknown) => {
+          console.error('Teach object-generation stream failed', {
+            error,
+            source: config.source,
+            userId: context.user.id,
+            wsId: normalizedWsId,
+          });
+          await releaseReservation('stream_error');
+        };
         const result = streamText({
           model: await withAiMemory({
             customId: `${config.customIdPrefix}-${Date.now()}`,
@@ -345,6 +410,7 @@ export function createTeachObjectGenerationHandler<
             }
             reservationState = 'settled';
           },
+          onError: ({ error }) => handleStreamError(error),
           providerOptions: {
             google: { safetySettings: SAFETY_SETTINGS },
           },
@@ -354,17 +420,13 @@ export function createTeachObjectGenerationHandler<
         // complete even if the browser disconnects from the response stream.
         void result.consumeStream({
           onError: (error) => {
-            console.error('Teach object-generation stream failed', {
-              error,
-              source: config.source,
-              userId: context.user.id,
-              wsId: normalizedWsId,
-            });
-            void releaseReservation('stream_error');
+            void handleStreamError(error);
           },
         });
 
-        const response = result.toTextStreamResponse();
+        const response = createTextStreamResponse({
+          stream: createObjectTextStream(result.stream),
+        });
         return new NextResponse(response.body, {
           headers: response.headers,
           status: response.status,

@@ -7,6 +7,12 @@ const mocks = vi.hoisted(() => ({
   calculateUsageCost: vi.fn(),
   checkAiCredits: vi.fn(),
   consumeStream: vi.fn(),
+  createTextStreamResponse: vi.fn(
+    ({ stream }: { stream: ReadableStream<string> }) =>
+      new Response(stream.pipeThrough(new TextEncoderStream()), {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      })
+  ),
   featureQueryResult: { count: 1, error: null as unknown },
   google: vi.fn((modelId: string) => ({ modelId })),
   invalidateAiCreditSnapshot: vi.fn(),
@@ -19,12 +25,6 @@ const mocks = vi.hoisted(() => ({
     error: null as unknown,
   },
   streamText: vi.fn(),
-  toTextStreamResponse: vi.fn(
-    () =>
-      new Response('streamed-object', {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-      })
-  ),
   withAiMemory: vi.fn(async ({ model }: { model: unknown }) => model),
 }));
 
@@ -70,6 +70,9 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
 }));
 
 vi.mock('ai', () => ({
+  createTextStreamResponse: (
+    ...args: Parameters<typeof mocks.createTextStreamResponse>
+  ) => mocks.createTextStreamResponse(...args),
   Output: { object: vi.fn(({ schema }) => ({ schema })) },
   streamText: (...args: Parameters<typeof mocks.streamText>) =>
     mocks.streamText(...args),
@@ -202,7 +205,16 @@ describe('Teach object-generation handler', () => {
     });
     mocks.streamText.mockImplementation(() => ({
       consumeStream: mocks.consumeStream,
-      toTextStreamResponse: mocks.toTextStreamResponse,
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue({
+            id: 'text-1',
+            text: 'streamed-object',
+            type: 'text-delta',
+          });
+          controller.close();
+        },
+      }),
     }));
   });
 
@@ -425,6 +437,50 @@ describe('Teach object-generation handler', () => {
         surface: 'test_generation',
       },
       sbAdmin
+    );
+    expect(sbAdmin.rpc).not.toHaveBeenCalled();
+  });
+
+  it('errors an already-started response and releases its reservation on provider failure', async () => {
+    const providerError = new Error('provider-sensitive-detail');
+    mocks.consumeStream.mockImplementationOnce(async () => {
+      const options = mocks.streamText.mock.calls.at(-1)?.[0] as {
+        onError?: (event: { error: unknown }) => Promise<void>;
+      };
+      await options.onError?.({ error: providerError });
+    });
+    mocks.streamText.mockImplementationOnce(() => ({
+      consumeStream: mocks.consumeStream,
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue({
+            id: 'text-1',
+            text: '{"value":"partial',
+            type: 'text-delta',
+          });
+          controller.enqueue({ error: providerError, type: 'error' });
+          controller.close();
+        },
+      }),
+    }));
+
+    const POST = await createHandler();
+    const response = await POST(createRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).rejects.toThrow(
+      'AI object generation stream failed'
+    );
+    await vi.waitFor(() =>
+      expect(mocks.releaseFixedAiCreditReservation).toHaveBeenCalledWith(
+        'reservation-1',
+        {
+          reason: 'stream_error',
+          source: 'test_generation',
+          surface: 'test_generation',
+        },
+        sbAdmin
+      )
     );
     expect(sbAdmin.rpc).not.toHaveBeenCalled();
   });
