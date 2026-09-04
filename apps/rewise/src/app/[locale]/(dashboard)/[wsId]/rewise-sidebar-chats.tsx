@@ -64,7 +64,7 @@ export function RewiseSidebarChats({
             <AccordionContent>
               <Nav
                 basePath={`/${personalOrWsId}`}
-                className="pt-0"
+                className="pt-2"
                 currentUser={null}
                 isCollapsed={isCollapsed}
                 links={chatLinks}
