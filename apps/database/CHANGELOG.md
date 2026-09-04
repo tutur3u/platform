@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.30.1](https://github.com/tutur3u/platform/compare/database-v1.30.0...database-v1.30.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **calendar:** enforce event management permission ([#5191](https://github.com/tutur3u/platform/issues/5191)) ([85c1ae0](https://github.com/tutur3u/platform/commit/85c1ae0a9dc3c6c83ccd3f5473400e47539a50c7))
+* **discord:** prevent interaction replay ([#5192](https://github.com/tutur3u/platform/issues/5192)) ([208bf81](https://github.com/tutur3u/platform/commit/208bf81ba20ab4d2fe33c8d2f461ee14b7ebae52))
+* **tasks:** authorize project task links ([7a1cbb7](https://github.com/tutur3u/platform/commit/7a1cbb7a36904d3fe4a01fe403afcc09d4c3473d))
+* **tasks:** authorize project task links ([#5187](https://github.com/tutur3u/platform/issues/5187)) ([96e643e](https://github.com/tutur3u/platform/commit/96e643e6f0c813e6eccd21f0fc6d928849b23d72))
+* **tasks:** settle retained authorization and persistence fixes ([#5186](https://github.com/tutur3u/platform/issues/5186)) ([6e2eda5](https://github.com/tutur3u/platform/commit/6e2eda5e3d91d4b05faebac1d5b88715433601f4))
+
 ## [1.30.0](https://github.com/tutur3u/platform/compare/database-v1.29.0...database-v1.30.0) (2026-08-26)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.1](https://github.com/tutur3u/platform/compare/tasks-api-v0.5.0...tasks-api-v0.5.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **tasks:** persist description representations atomically ([#5209](https://github.com/tutur3u/platform/issues/5209)) ([a65fe23](https://github.com/tutur3u/platform/commit/a65fe235582ee32983fc8a8366e534ea4bdc42f4))
+* **tasks:** settle retained authorization and persistence fixes ([#5186](https://github.com/tutur3u/platform/issues/5186)) ([6e2eda5](https://github.com/tutur3u/platform/commit/6e2eda5e3d91d4b05faebac1d5b88715433601f4))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.3...tasks-api-v0.5.0) (2026-08-26)
 
 

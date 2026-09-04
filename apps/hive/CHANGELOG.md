@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.2](https://github.com/tutur3u/platform/compare/hive-v0.20.1...hive-v0.20.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* **hive:** confirm browser state recovery ([#5197](https://github.com/tutur3u/platform/issues/5197)) ([97e0b05](https://github.com/tutur3u/platform/commit/97e0b054c255802559d0ed0d8af7fe4e977d2e3b))
+
 ## [0.20.1](https://github.com/tutur3u/platform/compare/hive-v0.20.0...hive-v0.20.1) (2026-08-21)
 
 

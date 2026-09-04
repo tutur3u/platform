@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.3](https://github.com/tutur3u/platform/compare/nova-v0.36.2...nova-v0.36.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* **nova:** authorize role management ([#5195](https://github.com/tutur3u/platform/issues/5195)) ([05ce3f2](https://github.com/tutur3u/platform/commit/05ce3f29473726489455f55523b67226dac69e01))
+
 ## [0.36.2](https://github.com/tutur3u/platform/compare/nova-v0.36.1...nova-v0.36.2) (2026-08-29)
 
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.32.1](https://github.com/tutur3u/platform/compare/tasks-v0.32.0...tasks-v0.32.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **tasks:** authorize project task links ([7a1cbb7](https://github.com/tutur3u/platform/commit/7a1cbb7a36904d3fe4a01fe403afcc09d4c3473d))
+* **tasks:** authorize project task links ([#5187](https://github.com/tutur3u/platform/issues/5187)) ([96e643e](https://github.com/tutur3u/platform/commit/96e643e6f0c813e6eccd21f0fc6d928849b23d72))
+* **tasks:** settle retained authorization and persistence fixes ([#5186](https://github.com/tutur3u/platform/issues/5186)) ([6e2eda5](https://github.com/tutur3u/platform/commit/6e2eda5e3d91d4b05faebac1d5b88715433601f4))
+* **tasks:** surface project permission failures ([2205ab2](https://github.com/tutur3u/platform/commit/2205ab27f9bd973175ad331d7fe564d9ca968bf2))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/tasks-v0.31.1...tasks-v0.32.0) (2026-08-31)
 
 
