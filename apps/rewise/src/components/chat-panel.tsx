@@ -17,13 +17,11 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useState } from 'react';
 import sanitize from 'sanitize-filename';
 import { ChatPermissions } from '@/components/chat-permissions';
-import { ChatModelSelector } from './chat-model-selector';
 import { PromptForm } from './prompt-form';
 
 interface PresenceUser {
@@ -52,7 +50,6 @@ export interface ChatPanelProps
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   setInput: (input: string) => void;
   model?: AIModelUI;
-  setModel: (model: AIModelUI) => void;
   createChat: (input: string) => Promise<void>;
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
@@ -76,7 +73,6 @@ export function ChatPanel({
   inputRef,
   setInput,
   model,
-  setModel,
   createChat,
   updateChat,
   disabled,
@@ -86,10 +82,7 @@ export function ChatPanel({
   const t = useTranslations('ai_chat');
 
   const [showDialog, setShowDialog] = useState(false);
-  const [dialogType, setDialogType] = useState<
-    'files' | 'visibility' | 'api'
-  >();
-  const [showExtraOptions, setShowExtraOptions] = useState(false);
+  const [dialogType, setDialogType] = useState<'files' | 'visibility'>();
 
   const [files, setFiles] = useState<StatedFile[]>([]);
 
@@ -130,84 +123,48 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-linear-to-b from-transparent via-background/75 to-background px-3 pt-10 pb-3 sm:px-5 sm:pb-5">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-linear-to-b from-transparent via-background/75 to-background px-3 pt-10 pb-3 sm:px-5 sm:pb-4">
         <div className="pointer-events-auto mx-auto max-w-3xl">
-          <div className="space-y-3 rounded-2xl border border-border/60 bg-background/95 px-3 py-2.5 shadow-lg backdrop-blur-xl sm:px-4 sm:py-3">
-            {showExtraOptions && (
-              <ChatModelSelector
-                open={showExtraOptions}
-                setOpen={setShowExtraOptions}
-                model={model}
-                onChange={setModel}
-              />
-            )}
-            <PromptForm
-              id={id}
-              key={`${model?.provider}-${model?.value}`}
-              provider={model?.provider}
-              model={model?.label}
-              chat={chat}
-              onSubmit={async (value) => {
-                if (!id) return await handleCreateChat(value);
+          <PromptForm
+            id={id}
+            model={model}
+            chat={chat}
+            onSubmit={async (value) => {
+              if (!id) return await handleCreateChat(value);
 
-                await sendMessage({
-                  role: 'user',
-                  parts: [{ type: 'text', text: value }],
-                });
-              }}
-              files={files}
-              setFiles={setFiles}
-              input={input}
-              inputRef={inputRef}
-              setInput={setInput}
-              isLoading={status === 'streaming'}
-              showExtraOptions={showExtraOptions}
-              setShowExtraOptions={setShowExtraOptions}
-              toggleChatFileUpload={() => {
-                setDialogType('files');
-                setShowDialog((prev) => !prev);
-              }}
-              toggleChatVisibility={() => {
-                setDialogType('visibility');
-                setShowDialog((prev) => !prev);
-              }}
-              disabled={disabled}
-            />
-          </div>
+              await sendMessage({
+                role: 'user',
+                parts: [{ type: 'text', text: value }],
+              });
+            }}
+            files={files}
+            setFiles={setFiles}
+            input={input}
+            inputRef={inputRef}
+            setInput={setInput}
+            isLoading={status === 'streaming'}
+            toggleChatFileUpload={() => {
+              setDialogType('files');
+              setShowDialog((prev) => !prev);
+            }}
+            toggleChatVisibility={() => {
+              setDialogType('visibility');
+              setShowDialog((prev) => !prev);
+            }}
+            disabled={disabled}
+          />
         </div>
       </div>
 
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {dialogType === 'files'
-              ? t('upload_files')
-              : dialogType === 'api'
-                ? t('api_input')
-                : t('chat_visibility')}
+            {dialogType === 'files' ? t('upload_files') : t('chat_visibility')}
           </DialogTitle>
           <DialogDescription>
-            {dialogType === 'files' ? (
-              t('upload_file_description')
-            ) : dialogType === 'api' ? (
-              <span className="flex flex-col gap-2">
-                {t('api_input_description')}
-                <br />
-                <span className="flex items-center gap-2">
-                  {t('get-api-key-from')}:
-                  <Link
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline hover:no-underline"
-                  >
-                    Google AI Studio
-                  </Link>
-                </span>
-              </span>
-            ) : (
-              t('chat_visibility_description')
-            )}
+            {dialogType === 'files'
+              ? t('upload_file_description')
+              : t('chat_visibility_description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -232,13 +189,6 @@ export function ChatPanel({
               maxSize={50 * 1024 * 1024}
               onUpload={onUpload}
             />
-          </div>
-        )}
-
-        {dialogType === 'api' && (
-          <div className="grid gap-4">
-            {/* TODO: Add API key input component when available */}
-            <p>{t('api_input_coming_soon')}</p>
           </div>
         )}
       </DialogContent>

@@ -33,10 +33,30 @@ describe('Rewise prompt form controls', () => {
       'utf8'
     );
 
-    expect(source).toContain('const submittedInput = input;');
+    expect(source).toContain('const submittedInput = input.trim();');
     expect(source.indexOf("setInput('');")).toBeLessThan(
       source.indexOf('await onSubmit(submittedInput);')
     );
     expect(source).toContain('setInput(submittedInput);');
+  });
+
+  it('uses a compact always-visible composer without an empty model picker', async () => {
+    const [panelSource, promptSource, chatSource] = await Promise.all([
+      readFile(resolve(process.cwd(), 'src/components/chat-panel.tsx'), 'utf8'),
+      readFile(
+        resolve(process.cwd(), 'src/components/prompt-form.tsx'),
+        'utf8'
+      ),
+      readFile(
+        resolve(process.cwd(), 'src/app/[locale]/(dashboard)/[wsId]/chat.tsx'),
+        'utf8'
+      ),
+    ]);
+
+    expect(panelSource).not.toContain('ChatModelSelector');
+    expect(panelSource).not.toContain('showExtraOptions');
+    expect(promptSource).not.toContain('showExtraOptions');
+    expect(promptSource).toContain("t('ai_chat.prompt_placeholder')");
+    expect(chatSource).toContain('id="main-chat-content"');
   });
 });

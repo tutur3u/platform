@@ -1,5 +1,4 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { AIChat } from '@tuturuuu/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EmptyScreen } from './empty-screen';
 
@@ -12,38 +11,21 @@ describe('Rewise assistant home', () => {
 
   it('moves a guided workflow into the persistent composer', () => {
     const setInput = vi.fn();
-    render(
-      <EmptyScreen locale="en" setInput={setInput} workspaceSlug="personal" />
-    );
+    render(<EmptyScreen setInput={setInput} />);
 
     fireEvent.click(screen.getByRole('button', { name: /starter_plan/ }));
 
     expect(setInput).toHaveBeenCalledWith('starter_plan_prompt');
     expect(
-      screen.getByRole('heading', { level: 1, name: 'assistant_heading' })
+      screen.getByRole('heading', { level: 1, name: 'Rewise' })
     ).toBeTruthy();
+    expect(screen.getByText('assistant_heading')).toBeTruthy();
     expect(screen.queryByText('capability_tools_title')).toBeNull();
   });
 
-  it('keeps recent conversations inside the selected workspace', () => {
-    render(
-      <EmptyScreen
-        chats={
-          [
-            {
-              id: 'chat-1',
-              title: 'Roadmap review',
-            },
-          ] as AIChat[]
-        }
-        locale="en"
-        setInput={vi.fn()}
-        workspaceSlug="personal"
-      />
-    );
+  it('keeps recent conversations in the sidebar instead of crowding the prompt', () => {
+    render(<EmptyScreen setInput={vi.fn()} />);
 
-    expect(
-      screen.getByRole('link', { name: /Roadmap review/ }).getAttribute('href')
-    ).toBe('/personal/c/chat-1');
+    expect(screen.queryByRole('link', { name: /Roadmap review/ })).toBeNull();
   });
 });

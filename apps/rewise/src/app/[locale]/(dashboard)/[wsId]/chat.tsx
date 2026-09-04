@@ -59,7 +59,7 @@ export default function Chat({
   const searchParams = useSearchParams();
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
-  const [model, setModel] = useState<AIModelUI | undefined>(inputModel);
+  const model = inputModel;
   const [input, setInput] = useState('');
   const { data: currentUser } = useQuery({
     queryKey: ['current-user-profile'],
@@ -324,8 +324,11 @@ export default function Chat({
   }, [chat?.id, pathname, messages, workspaceSlug]);
 
   return (
-    <div className="relative">
-      <div className={cn('min-h-[calc(100vh-8rem)] pb-32 md:pt-10', className)}>
+    <div className="relative flex h-[calc(100dvh-2rem)] min-h-0 flex-col overflow-hidden max-md:h-[calc(100dvh-5.25rem)]">
+      <div
+        id="main-chat-content"
+        className={cn('min-h-0 flex-1 overflow-y-auto pb-32', className)}
+      >
         {(chat && messages.length) || pendingPrompt ? (
           <>
             <ChatList
@@ -358,12 +361,7 @@ export default function Chat({
             {t('common.coming_soon')} ✨
           </div>
         ) : (
-          <EmptyScreen
-            chats={chats}
-            setInput={setInput}
-            locale={locale}
-            workspaceSlug={workspaceSlug}
-          />
+          <EmptyScreen setInput={setInput} />
         )}
       </div>
 
@@ -379,7 +377,6 @@ export default function Chat({
         inputRef={inputRef}
         setInput={setInput}
         model={toChatModel(chat?.model) ?? model}
-        setModel={setModel}
         messages={messages}
         collapsed={collapsed}
         createChat={createChat}
