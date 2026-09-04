@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/tutur3u/platform/compare/auth-v0.3.2...auth-v0.3.3) (2026-09-04)
+
+
+### Performance Improvements
+
+* **auth:** index API key prefixes ([#5206](https://github.com/tutur3u/platform/issues/5206)) ([2a343d9](https://github.com/tutur3u/platform/commit/2a343d929b4a1e3cca3843a1da2f56725e1570c1))
+
 ## [0.3.2](https://github.com/tutur3u/platform/compare/auth-v0.3.1...auth-v0.3.2) (2026-08-21)
 
 

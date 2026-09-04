@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.3](https://github.com/tutur3u/platform/compare/teach-v0.20.2...teach-v0.20.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* **teach:** authorize AI object generation ([#5207](https://github.com/tutur3u/platform/issues/5207)) ([2a7f368](https://github.com/tutur3u/platform/commit/2a7f3685c55bd34f40ca8f03e875fc20abd6657d))
+
 ## [0.20.2](https://github.com/tutur3u/platform/compare/teach-v0.20.1...teach-v0.20.2) (2026-08-29)
 
 
