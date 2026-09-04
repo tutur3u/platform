@@ -58,7 +58,7 @@ export default function ChatLink({
 
   if (!isCollapsed)
     return (
-      <div className="flex items-center gap-2 group-hover:gap-2 md:gap-0">
+      <div className="group flex min-w-0 items-center gap-1">
         <Link
           target={link.newTab ? '_blank' : undefined}
           href={link.disabled ? '#' : link.forceRefresh ? '/new' : link.href}
@@ -67,13 +67,13 @@ export default function ChatLink({
               variant: 'ghost',
               size: 'sm',
             }),
-            'w-full justify-start',
-            'whitespace-normal font-semibold',
+            'h-9 min-w-0 flex-1 justify-start rounded-lg px-2.5',
+            'whitespace-normal font-medium text-sm',
             isActive
-              ? 'bg-linear-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
+              ? 'bg-accent text-accent-foreground shadow-sm hover:bg-accent/90'
               : urlToLoad === link.href
-                ? 'animate-pulse bg-linear-to-br from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground'
-                : 'bg-foreground/5 hover:bg-foreground/10',
+                ? 'animate-pulse bg-accent/60 text-accent-foreground'
+                : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
             link.disabled &&
               link.showDisabled &&
               'cursor-not-allowed bg-transparent opacity-50 hover:bg-transparent'
@@ -95,7 +95,7 @@ export default function ChatLink({
             <span
               className={cn(
                 'ml-auto flex-none',
-                isActive && 'text-background dark:text-white'
+                isActive && 'text-accent-foreground'
               )}
             >
               {link.trailing}
@@ -106,7 +106,7 @@ export default function ChatLink({
           <Button
             size="xs"
             variant={loading ? 'secondary' : link.pinned ? 'ghost' : 'ghost'}
-            className="opacity-0 transition-all duration-300 group-hover:w-8 group-hover:p-2 group-hover:opacity-100 md:w-0 md:p-0"
+            className="size-8 shrink-0 p-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
             onClick={handlePin}
             disabled={loading}
           >
@@ -127,7 +127,7 @@ export default function ChatLink({
   return (
     <Tooltip delayDuration={0}>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-2 group-hover:gap-2 md:gap-0">
+        <div className="group flex items-center gap-1">
           <Link
             target={link.newTab ? '_blank' : undefined}
             href={link.disabled ? '#' : link.forceRefresh ? '/new' : link.href}
@@ -139,10 +139,10 @@ export default function ChatLink({
               'h-9 w-9',
               'whitespace-normal font-semibold',
               isActive
-                ? 'bg-linear-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
+                ? 'bg-accent text-accent-foreground shadow-sm hover:bg-accent/90'
                 : urlToLoad === link.href
-                  ? 'animate-pulse bg-linear-to-br from-dynamic-light-red/30 via-dynamic-light-purple/30 to-dynamic-light-sky/30 text-accent-foreground'
-                  : 'bg-foreground/5 hover:bg-foreground/10',
+                  ? 'animate-pulse bg-accent/60 text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground',
               link.disabled &&
                 link.showDisabled &&
                 'cursor-not-allowed bg-transparent opacity-50 hover:bg-transparent'
@@ -155,7 +155,7 @@ export default function ChatLink({
             <Button
               size="xs"
               variant={loading ? 'secondary' : link.pinned ? 'ghost' : 'ghost'}
-              className="opacity-0 transition-all duration-300 group-hover:w-8 group-hover:p-2 group-hover:opacity-100 md:w-0 md:p-0"
+              className="size-8 shrink-0 p-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
               onClick={handlePin}
               disabled={loading}
             >

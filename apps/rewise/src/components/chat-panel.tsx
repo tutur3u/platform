@@ -65,6 +65,7 @@ export interface ChatPanelProps
   apiKey?: string;
   apiKeyProvided?: boolean;
   wsId: string;
+  workspaceSlug: string;
 }
 
 export function ChatPanel({
@@ -83,6 +84,7 @@ export function ChatPanel({
   disabled,
   currentUserId,
   wsId,
+  workspaceSlug,
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
@@ -139,12 +141,13 @@ export function ChatPanel({
                 }
               : undefined
           }
+          workspaceSlug={workspaceSlug}
         />
       </div>
 
       <div className="absolute right-0 bottom-0 left-0 z-10 flex min-w-0 max-w-full flex-col p-3 sm:p-4">
         <div className="mb-2 max-h-16 min-w-0 opacity-100">
-          <AssistantToolbar model={model} />
+          <AssistantToolbar model={model} wsId={wsId} />
         </div>
         <div className="min-w-0">
           <PromptForm

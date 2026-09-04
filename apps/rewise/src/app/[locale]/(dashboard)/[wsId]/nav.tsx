@@ -2,14 +2,14 @@
 
 import { CirclePlus } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Button } from '@tuturuuu/ui/button';
+import { Button, buttonVariants } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
@@ -80,7 +80,6 @@ export function Nav({
   className,
   onClick,
 }: NavProps) {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -189,7 +188,7 @@ export function Nav({
     <div
       data-collapsed={isCollapsed}
       className={cn(
-        'group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2',
+        'group flex flex-col gap-3 py-2 data-[collapsed=true]:py-2',
         className
       )}
     >
@@ -229,21 +228,20 @@ export function Nav({
         ) : (
           <Link
             href={`${basePath}/new`}
-            className="mt-2 flex items-center justify-start"
+            className={cn(
+              buttonVariants({ variant: 'secondary' }),
+              'h-9 w-full justify-start gap-2 rounded-lg px-3 shadow-none',
+              pathname === basePath &&
+                !searchParams.get('id') &&
+                'pointer-events-none opacity-50'
+            )}
+            aria-disabled={pathname === basePath && !searchParams.get('id')}
             onClick={() => {
-              router.push(`${basePath}/new`);
-              router.refresh();
               onClick?.();
             }}
           >
-            <Button
-              onClick={onClick}
-              className="w-full"
-              disabled={pathname === basePath && !searchParams.get('id')}
-            >
-              <CirclePlus className="h-6 w-6" />
-              <span className="ml-2">{t('ai_chat.new_chat')}</span>
-            </Button>
+            <CirclePlus className="size-4" />
+            <span>{t('ai_chat.new_chat')}</span>
           </Link>
         )}
 
@@ -255,53 +253,81 @@ export function Nav({
           <>
             {links.length === 0 || (
               <>
-                <Separator />
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-chat-name"
-                    checked={configs.showChatName}
-                    onCheckedChange={(checked) =>
-                      setConfigs((prev) => ({
-                        ...prev,
-                        showChatName: Boolean(checked),
-                      }))
-                    }
-                  />
+                <Separator className="my-1" />
+                <div className="grid gap-0.5 rounded-lg bg-foreground/3 p-1">
                   <label
                     htmlFor="show-chat-name"
-                    className="line-clamp-1 break-all font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="flex min-h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-sm transition-colors hover:bg-foreground/5"
                   >
-                    {t('ai_chat.show_chat_name')}
+                    <Checkbox
+                      id="show-chat-name"
+                      checked={configs.showChatName}
+                      onCheckedChange={(checked) =>
+                        setConfigs((prev) => ({
+                          ...prev,
+                          showChatName: Boolean(checked),
+                        }))
+                      }
+                    />
+                    <span className="line-clamp-1 font-medium">
+                      {t('ai_chat.show_chat_name')}
+                    </span>
                   </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="show-favorites"
-                    checked={configs.showFavorites}
-                    onCheckedChange={(checked) =>
-                      setConfigs((prev) => ({
-                        ...prev,
-                        showFavorites: Boolean(checked),
-                      }))
-                    }
-                  />
                   <label
                     htmlFor="show-favorites"
-                    className="line-clamp-1 break-all font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="flex min-h-8 cursor-pointer items-center gap-2 rounded-md px-2 text-sm transition-colors hover:bg-foreground/5"
                   >
-                    {t('ai_chat.show_favorites')}
+                    <Checkbox
+                      id="show-favorites"
+                      checked={configs.showFavorites}
+                      onCheckedChange={(checked) =>
+                        setConfigs((prev) => ({
+                          ...prev,
+                          showFavorites: Boolean(checked),
+                        }))
+                      }
+                    />
+                    <span className="line-clamp-1 font-medium">
+                      {t('ai_chat.show_favorites')}
+                    </span>
                   </label>
                 </div>
               </>
             )}
 
-            <Separator />
+            <Separator className="my-1" />
 
-            {configs.showFavorites &&
-              Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
-                if (dateTag === 'Favorites') {
-                  return (
-                    <>
+            <div className="grid gap-4 pt-1">
+              {configs.showFavorites &&
+                Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
+                  if (dateTag === 'Favorites') {
+                    return (
+                      <div key={dateTag} className="grid gap-4">
+                        <div>
+                          {!isCollapsed && (
+                            <div className="mb-2 font-semibold text-muted-foreground text-sm">
+                              {dateTag.charAt(0).toUpperCase() +
+                                dateTag.slice(1)}
+                            </div>
+                          )}
+                          <div className="grid gap-1">
+                            {dateLinks.map((link) => renderLink(link, configs))}
+                          </div>
+                        </div>
+                        <Separator />
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              {links.length === 0 ? (
+                <div className="flex items-center justify-center py-4 text-center text-muted-foreground text-sm">
+                  {t('ai_chat.no_chats_yet')}
+                </div>
+              ) : (
+                Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
+                  if (!configs.showFavorites || dateTag !== 'Favorites') {
+                    return (
                       <div key={dateTag}>
                         {!isCollapsed && (
                           <div className="mb-2 font-semibold text-muted-foreground text-sm">
@@ -312,35 +338,12 @@ export function Nav({
                           {dateLinks.map((link) => renderLink(link, configs))}
                         </div>
                       </div>
-                      <Separator />
-                    </>
-                  );
-                }
-                return null;
-              })}
-            {links.length === 0 ? (
-              <div className="flex items-center justify-center text-center opacity-50">
-                {t('ai_chat.no_chats_yet')}
-              </div>
-            ) : (
-              Object.entries(groupedLinks).map(([dateTag, dateLinks]) => {
-                if (!configs.showFavorites || dateTag !== 'Favorites') {
-                  return (
-                    <div key={dateTag}>
-                      {!isCollapsed && (
-                        <div className="mb-2 font-semibold text-muted-foreground text-sm">
-                          {dateTag.charAt(0).toUpperCase() + dateTag.slice(1)}
-                        </div>
-                      )}
-                      <div className="grid gap-1">
-                        {dateLinks.map((link) => renderLink(link, configs))}
-                      </div>
-                    </div>
-                  );
-                }
-                return null;
-              })
-            )}
+                    );
+                  }
+                  return null;
+                })
+              )}
+            </div>
           </>
         )}
       </nav>

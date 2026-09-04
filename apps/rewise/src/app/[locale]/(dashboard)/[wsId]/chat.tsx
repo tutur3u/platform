@@ -407,6 +407,7 @@ export default function Chat({
             disabled={disabled}
             currentUserId={currentUserId}
             wsId={wsId}
+            workspaceSlug={workspaceSlug}
           />
         </div>
       </div>

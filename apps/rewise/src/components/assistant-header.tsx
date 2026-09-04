@@ -3,10 +3,12 @@
 import {
   AudioLines,
   Brain,
+  Calendar,
   Check,
   ChevronDown,
   Ellipsis,
   Eye,
+  ListTodo,
   MessageSquarePlus,
   MessageSquareText,
 } from '@tuturuuu/icons';
@@ -19,15 +21,34 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import {
+  getLaunchableApp,
+  resolveLaunchableAppUrl,
+} from '@tuturuuu/utils/launchable-apps';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+function openWorkspaceApp(slug: 'calendar' | 'tasks', path: string) {
+  const app = getLaunchableApp(slug);
+  if (!app) return;
+
+  window.location.assign(
+    resolveLaunchableAppUrl({
+      app,
+      currentOrigin: window.location.origin,
+      path,
+    })
+  );
+}
 
 export function AssistantHeader({
   onNewConversation,
   onVisibility,
+  workspaceSlug,
 }: {
   onNewConversation: () => void;
   onVisibility?: () => void;
+  workspaceSlug: string;
 }) {
   const t = useTranslations('ai_chat');
   const [moreOpen, setMoreOpen] = useState(false);
@@ -101,23 +122,23 @@ export function AssistantHeader({
           <TooltipContent>{t('new_chat')}</TooltipContent>
         </Tooltip>
 
-        <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2"
-              aria-label={t('more_actions')}
-            >
-              <Ellipsis className="size-4" />
-              <span className="hidden text-xs sm:inline">
-                {t('more_actions')}
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            {onVisibility ? (
+        {onVisibility ? (
+          <DropdownMenu open={moreOpen} onOpenChange={setMoreOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2"
+                aria-label={t('more_actions')}
+              >
+                <Ellipsis className="size-4" />
+                <span className="hidden text-xs sm:inline">
+                  {t('more_actions')}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuItem
                 onSelect={() => {
                   onVisibility();
@@ -127,18 +148,48 @@ export function AssistantHeader({
                 <Eye className="size-4" />
                 {t('chat_visibility')}
               </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem
-              onSelect={() => {
-                onNewConversation();
-                setMoreOpen(false);
-              }}
-            >
-              <MessageSquarePlus className="size-4" />
-              {t('new_chat')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+
+        <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-background/85 p-1 shadow-sm backdrop-blur-md">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-md border border-transparent text-muted-foreground hover:text-foreground"
+                aria-label={t('my_tasks')}
+                onClick={() =>
+                  openWorkspaceApp('tasks', `/${workspaceSlug}/tasks`)
+                }
+              >
+                <ListTodo className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('my_tasks')}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-md border border-transparent text-muted-foreground hover:text-foreground"
+                aria-label={t('upcoming_events')}
+                onClick={() =>
+                  openWorkspaceApp('calendar', `/${workspaceSlug}`)
+                }
+              >
+                <Calendar className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {t('upcoming_events')}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );

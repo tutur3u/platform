@@ -1,6 +1,8 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronDown, Coins, Sparkles, Zap } from '@tuturuuu/icons';
+import { getWorkspaceAiCreditStatus } from '@tuturuuu/internal-api';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -10,9 +12,56 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
-export function AssistantToolbar({ model }: { model?: AIModelUI }) {
+function CreditMeter({ wsId }: { wsId: string }) {
+  const t = useTranslations('ai_chat');
+  const { data } = useQuery({
+    queryKey: ['ai-credits', wsId],
+    queryFn: () => getWorkspaceAiCreditStatus(wsId),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  if (!data || data.totalAllocated === 0) return null;
+
+  const percentRemaining = Math.max(0, Math.min(100, 100 - data.percentUsed));
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="ml-auto flex cursor-default items-center gap-2">
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-foreground/10">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all',
+                percentRemaining > 30
+                  ? 'bg-dynamic-green'
+                  : percentRemaining > 10
+                    ? 'bg-dynamic-yellow'
+                    : 'bg-dynamic-red'
+              )}
+              style={{ width: `${percentRemaining}%` }}
+            />
+          </div>
+          <span className="font-mono text-[10px] text-muted-foreground">
+            {Math.round(percentRemaining)}%
+          </span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{t('credits_remaining')}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+export function AssistantToolbar({
+  model,
+  wsId,
+}: {
+  model?: AIModelUI;
+  wsId: string;
+}) {
   const t = useTranslations('ai_chat');
 
   return (
@@ -74,6 +123,8 @@ export function AssistantToolbar({ model }: { model?: AIModelUI }) {
         </TooltipTrigger>
         <TooltipContent>{t('credit_source_personal')}</TooltipContent>
       </Tooltip>
+
+      <CreditMeter wsId={wsId} />
     </div>
   );
 }
