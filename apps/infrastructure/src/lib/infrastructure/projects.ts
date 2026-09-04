@@ -5,41 +5,14 @@ import type {
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { readBlueGreenMonitoringSnapshot } from './blue-green-monitoring';
 import { ensureLogDrainSchema, getLogDrainSqlClient } from './log-drain';
+import {
+  fetchGitHubRepository,
+  parsePublicGitHubRepoUrl,
+  reconcileInfrastructureProjectGitHub,
+} from './project-github-sync';
 
-export interface ParsedGitHubRepository {
-  owner: string;
-  repo: string;
-  repoUrl: string;
-}
-
-interface GitHubRepositoryResponse {
-  default_branch?: string;
-  full_name?: string;
-  html_url?: string;
-  name?: string;
-  owner?: {
-    login?: string;
-  };
-  private?: boolean;
-}
-
-interface GitHubBranchResponse {
-  commit?: {
-    sha?: string;
-  };
-  name?: string;
-  protected?: boolean;
-}
-
-interface GitHubCommitResponse {
-  commit?: {
-    author?: {
-      date?: string;
-    };
-    message?: string;
-  };
-  sha?: string;
-}
+export type { ParsedGitHubRepository } from './project-github-sync';
+export { parsePublicGitHubRepoUrl } from './project-github-sync';
 
 interface ProjectRow {
   app_root: string;
@@ -132,46 +105,6 @@ export interface UpdateInfrastructureProjectInput {
   name?: string;
   redisEnabled?: boolean;
   selectedBranch?: string;
-}
-
-export function parsePublicGitHubRepoUrl(
-  rawUrl: string
-): ParsedGitHubRepository {
-  const trimmed = rawUrl.trim();
-  if (!trimmed) {
-    throw new Error('GitHub repository URL is required.');
-  }
-
-  let parsed: URL;
-  try {
-    parsed = new URL(trimmed);
-  } catch {
-    throw new Error('Enter a valid GitHub repository URL.');
-  }
-
-  if (parsed.protocol !== 'https:' || parsed.hostname !== 'github.com') {
-    throw new Error(
-      'Only public https://github.com repositories are supported.'
-    );
-  }
-
-  const [owner, repoSegment, ...rest] = parsed.pathname
-    .split('/')
-    .filter(Boolean);
-  if (!owner || !repoSegment || rest.length > 0) {
-    throw new Error('Use a repository URL like https://github.com/owner/repo.');
-  }
-
-  const repo = repoSegment.replace(/\.git$/i, '');
-  if (!repo || repo.includes('/')) {
-    throw new Error('Use a repository URL like https://github.com/owner/repo.');
-  }
-
-  return {
-    owner,
-    repo,
-    repoUrl: `https://github.com/${owner}/${repo}`,
-  };
 }
 
 function normalizeHostname(hostname: string) {
@@ -289,82 +222,6 @@ async function getSql() {
   }
 
   return sql;
-}
-
-function getGitHubHeaders() {
-  const headers: Record<string, string> = {
-    Accept: 'application/vnd.github+json',
-    'User-Agent': 'Tuturuuu-Platform',
-    'X-GitHub-Api-Version': '2022-11-28',
-  };
-  const token = process.env.GITHUB_TOKEN?.trim();
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  return headers;
-}
-
-async function fetchGitHubJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    headers: getGitHubHeaders(),
-    next: { revalidate: 0 },
-  });
-
-  if (!response.ok) {
-    throw new Error(`GitHub returned ${response.status} for ${url}.`);
-  }
-
-  return response.json() as Promise<T>;
-}
-
-async function fetchGitHubRepository(repo: ParsedGitHubRepository) {
-  const repository = await fetchGitHubJson<GitHubRepositoryResponse>(
-    `https://api.github.com/repos/${repo.owner}/${repo.repo}`
-  );
-
-  if (repository.private) {
-    throw new Error('Private GitHub repositories are not supported in v1.');
-  }
-
-  const owner = repository.owner?.login ?? repo.owner;
-  const repoName = repository.name ?? repo.repo;
-
-  return {
-    defaultBranch: repository.default_branch || 'main',
-    name: repository.full_name ?? `${owner}/${repoName}`,
-    owner,
-    repo: repoName,
-    repoUrl: repository.html_url ?? repo.repoUrl,
-  };
-}
-
-async function fetchGitHubBranches(repo: ParsedGitHubRepository) {
-  return fetchGitHubJson<GitHubBranchResponse[]>(
-    `https://api.github.com/repos/${repo.owner}/${repo.repo}/branches?per_page=100`
-  );
-}
-
-async function fetchGitHubCommit(
-  repo: ParsedGitHubRepository,
-  ref: string
-): Promise<GitHubCommitResponse | null> {
-  try {
-    return await fetchGitHubJson<GitHubCommitResponse>(
-      `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits/${encodeURIComponent(ref)}`
-    );
-  } catch (error) {
-    console.warn('Unable to sync GitHub commit metadata', {
-      error: error instanceof Error ? error.message : String(error),
-      ref,
-      repo: repo.repoUrl,
-    });
-    return null;
-  }
-}
-
-function firstLine(value: string | null | undefined) {
-  return value?.split('\n')[0]?.trim() || null;
 }
 
 function shortHash(value: string | null | undefined) {
@@ -564,10 +421,8 @@ export async function createInfrastructureProject(
 ) {
   const parsed = parsePublicGitHubRepoUrl(input.repoUrl);
   const repository = await fetchGitHubRepository(parsed);
-  const selectedBranch = normalizeBranch(
-    input.selectedBranch,
-    repository.defaultBranch
-  );
+  const selectedBranch =
+    input.selectedBranch?.trim() || repository.defaultBranch;
   const projectId = makeProjectId(
     repository.owner,
     repository.repo,
@@ -714,86 +569,12 @@ export async function syncInfrastructureProject(projectId: string) {
     throw new Error('Project not found.');
   }
 
-  const parsed = parsePublicGitHubRepoUrl(project.repo_url);
-  const [repository, branches] = await Promise.all([
-    fetchGitHubRepository(parsed),
-    fetchGitHubBranches(parsed),
-  ]);
-  const selectedBranch = normalizeBranch(
-    project.selected_branch,
-    repository.defaultBranch
-  );
-  const selectedCommit = await fetchGitHubCommit(parsed, selectedBranch);
-  const selectedHash =
-    selectedCommit?.sha ??
-    branches.find((branch) => branch.name === selectedBranch)?.commit?.sha ??
-    null;
-  const selectedSubject = firstLine(selectedCommit?.commit?.message);
-
-  await sql.begin(async (transaction) => {
-    await transaction`
-      UPDATE infrastructure_projects
-      SET
-        name = ${repository.name},
-        repo_url = ${repository.repoUrl},
-        github_owner = ${repository.owner},
-        github_repo = ${repository.repo},
-        latest_commit_hash = ${selectedHash},
-        latest_commit_short_hash = ${shortHash(selectedHash)},
-        latest_commit_subject = ${selectedSubject},
-        latest_synced_at = now(),
-        updated_at = now()
-      WHERE id = ${projectId}
-    `;
-
-    for (const branch of branches) {
-      if (!branch.name) {
-        continue;
-      }
-
-      const commit = branch.name === selectedBranch ? selectedCommit : null;
-      const commitHash = branch.commit?.sha ?? commit?.sha ?? null;
-      await transaction`
-        INSERT INTO infrastructure_project_branches (
-          project_id,
-          name,
-          commit_hash,
-          commit_short_hash,
-          commit_subject,
-          committed_at,
-          protected,
-          default_branch,
-          last_synced_at
-        )
-        VALUES (
-          ${projectId},
-          ${branch.name},
-          ${commitHash},
-          ${shortHash(commitHash)},
-          ${firstLine(commit?.commit?.message)},
-          ${commit?.commit?.author?.date ? new Date(commit.commit.author.date) : null},
-          ${branch.protected ?? false},
-          ${branch.name === repository.defaultBranch},
-          now()
-        )
-        ON CONFLICT (project_id, name) DO UPDATE SET
-          commit_hash = EXCLUDED.commit_hash,
-          commit_short_hash = EXCLUDED.commit_short_hash,
-          commit_subject = COALESCE(EXCLUDED.commit_subject, infrastructure_project_branches.commit_subject),
-          committed_at = COALESCE(EXCLUDED.committed_at, infrastructure_project_branches.committed_at),
-          protected = EXCLUDED.protected,
-          default_branch = EXCLUDED.default_branch,
-          last_synced_at = EXCLUDED.last_synced_at
-      `;
-    }
+  return reconcileInfrastructureProjectGitHub({
+    project,
+    projectId,
+    reloadProject: getInfrastructureProject,
+    sql,
   });
-
-  const synced = await getInfrastructureProject(projectId);
-  if (!synced) {
-    throw new Error('Project was synced but could not be reloaded.');
-  }
-
-  return synced;
 }
 
 export async function queueInfrastructureProjectDeployment(projectId: string) {
