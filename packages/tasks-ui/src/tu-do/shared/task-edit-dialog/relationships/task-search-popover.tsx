@@ -6,7 +6,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
@@ -16,6 +15,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../relationship-task-identifier';
+import { TaskCommandSearchInput } from '../../task-command-search-input';
 import type {
   TaskSearchPopoverContentProps,
   TaskSearchPopoverProps,
@@ -76,7 +76,7 @@ export function TaskSearchPopoverContent({
 
   return (
     <Command shouldFilter={false}>
-      <CommandInput
+      <TaskCommandSearchInput
         placeholder="Search tasks..."
         value={searchQuery}
         onValueChange={setSearchQuery}

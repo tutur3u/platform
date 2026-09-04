@@ -6,7 +6,11 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const TASKS_DIR = path.join(ROOT_DIR, 'apps', 'tasks');
 const TASKS_PORT = '7809';
 const TASKS_ROUTE_NAME = 'tasks.tuturuuu';
-const TASKS_LIFECYCLE_SPEC = 'tasks-workspace-lifecycle.noauth.spec.ts';
+const TASKS_E2E_SPECS = Object.freeze([
+  'tasks-workspace-lifecycle.noauth.spec.ts',
+  'workspace-invite-tasks-access.noauth.spec.ts',
+]);
+const TASKS_LIFECYCLE_SPEC = TASKS_E2E_SPECS[0];
 const TASKS_HOST_REDIS_REST_URL = 'http://127.0.0.1:8079';
 const DEFAULT_LOG_PATH = path.join(
   ROOT_DIR,
@@ -32,9 +36,10 @@ function shouldStartTasksSatellite(
   if (isTruthy(env.E2E_TASKS_SATELLITE_ENABLED)) return true;
   if (playwrightArgs.length === 0) return true;
 
-  return (
-    playwrightArgs.some((arg) => String(arg).includes(TASKS_LIFECYCLE_SPEC)) ||
-    String(playwrightTestList).includes(TASKS_LIFECYCLE_SPEC)
+  return TASKS_E2E_SPECS.some(
+    (spec) =>
+      playwrightArgs.some((arg) => String(arg).includes(spec)) ||
+      String(playwrightTestList).includes(spec)
   );
 }
 
@@ -50,8 +55,8 @@ function shouldDiscoverTasksSatelliteFromTestList(
     return false;
   }
 
-  return !playwrightArgs.some((arg) =>
-    String(arg).includes(TASKS_LIFECYCLE_SPEC)
+  return !TASKS_E2E_SPECS.some((spec) =>
+    playwrightArgs.some((arg) => String(arg).includes(spec))
   );
 }
 
@@ -193,6 +198,7 @@ module.exports = {
   startTasksSatellite,
   stopTasksSatellite,
   TASKS_DIR,
+  TASKS_E2E_SPECS,
   TASKS_HOST_REDIS_REST_URL,
   TASKS_LIFECYCLE_SPEC,
   TASKS_PORT,

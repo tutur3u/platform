@@ -94,13 +94,14 @@ export async function saveConfigurationAction(
 }
 
 export async function validateConfigurationAction(wsId: string) {
+  const admin = await requireGitAdmin();
+  if (!admin) redirect('/login');
+
   let destination = adminPath(wsId, 'github-app', {
     error: 'Unable to validate configuration',
   });
 
   try {
-    const admin = await requireGitAdmin();
-    if (!admin) redirect('/login');
     const token = await getInstallationToken(536896722);
     if (!token) throw new Error('Enable and save the GitHub App first');
     await fetchRepository('tutur3u', 'platform', token);
@@ -208,28 +209,39 @@ export async function toggleRepositoryAction(
 ) {
   const admin = await requireGitAdmin();
   if (!admin) redirect('/login');
-  const { data, error } = await privateDb(admin.db)
-    .from('git_repositories')
-    .update({
-      enabled,
-      updated_at: new Date().toISOString(),
-      updated_by: admin.user.id,
-    })
-    .eq('id', repositoryId)
-    .select('id,name,owner_login')
-    .single();
 
-  if (!error && data) {
+  let destination = adminPath(wsId, 'repositories', {
+    error: 'Unable to update repository',
+  });
+
+  try {
+    const { data, error } = await privateDb(admin.db)
+      .from('git_repositories')
+      .update({
+        enabled,
+        updated_at: new Date().toISOString(),
+        updated_by: admin.user.id,
+      })
+      .eq('id', repositoryId)
+      .select('id,name,owner_login')
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Repository update failed');
+
     await recordGitAuditEvent({
       eventType: enabled ? 'repository.enabled' : 'repository.disabled',
-      repositoryId,
+      repositoryId: data.id,
       userId: admin.user.id,
-    });
+    }).catch(() => undefined);
     revalidateTag(
       `git:${String(data.owner_login).toLowerCase()}/${String(data.name).toLowerCase()}`,
       'max'
     );
+    destination = adminPath(wsId, 'repositories', { updated: '1' });
+  } catch (error) {
+    console.error('Failed to update Git repository state', error);
   }
 
-  redirect(adminPath(wsId, 'repositories', { updated: '1' }));
+  redirect(destination);
 }

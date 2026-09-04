@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.8.2](https://github.com/tutur3u/platform/compare/users-core-v0.8.1...users-core-v0.8.2) (2026-09-02)
+
+
+### Bug Fixes
+
+* **contacts:** address review findings on the tutoring gate work ([fc86e08](https://github.com/tutur3u/platform/commit/fc86e08e6cbe62c8b933596f0cf56fa580221ded))
+* **contacts:** replace module 404s with an actionable availability gate ([d49bef9](https://github.com/tutur3u/platform/commit/d49bef97e0047fff6c8322c19fef66932b25f4a8))
+* **contacts:** replace module 404s with an actionable availability gate ([#5179](https://github.com/tutur3u/platform/issues/5179)) ([2427785](https://github.com/tutur3u/platform/commit/24277858ed8ce38c17b3e79413c7f81c98008eb7))
+
+## [0.8.1](https://github.com/tutur3u/platform/compare/users-core-v0.8.0...users-core-v0.8.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.8.0](https://github.com/tutur3u/platform/compare/users-core-v0.7.3...users-core-v0.8.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+
+
+### Bug Fixes
+
+* **contacts:** restore invited member data access ([9a1e079](https://github.com/tutur3u/platform/commit/9a1e079881e72529330203582dcfc4d0a8c509c4))
+
+## [0.7.3](https://github.com/tutur3u/platform/compare/users-core-v0.7.2...users-core-v0.7.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* **contacts:** harden satellite workspace access ([b160723](https://github.com/tutur3u/platform/commit/b160723b509062a4f8edf2694c0af27c25c05775))
+* **contacts:** preserve teacher report feedback ([a4fc9d4](https://github.com/tutur3u/platform/commit/a4fc9d4c0b86b6bcc06614495f278da7208c9251))
+* **workspaces:** restore invited member access ([f81bd3e](https://github.com/tutur3u/platform/commit/f81bd3e912179636f002eda5f6b4e16504cff782))
+
+## [0.7.2](https://github.com/tutur3u/platform/compare/users-core-v0.7.1...users-core-v0.7.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **contacts:** authorize user group tags ([0773c3c](https://github.com/tutur3u/platform/commit/0773c3ce2ff80e446cccb6f67a5af39f58373ded))
+* **users:** authorize group indicator updates ([9461142](https://github.com/tutur3u/platform/commit/9461142c04b0ea84445498897cf7bf9e1d5f54db))
+
 ## [0.7.1](https://github.com/tutur3u/platform/compare/users-core-v0.7.0...users-core-v0.7.1) (2026-08-04)
 
 

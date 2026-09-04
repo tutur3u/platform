@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, '..');
 const REGISTERED_APPS = [
   'ai',
   'calendar',
+  'chat',
   'cms',
   'contacts',
   'drive',
@@ -17,6 +18,8 @@ const REGISTERED_APPS = [
   'inventory',
   'storefront',
   'learn',
+  'mail',
+  'meet',
   'mind',
   'nova',
   'pay',
@@ -28,6 +31,7 @@ const REGISTERED_APPS = [
 const REGISTERED_APP_TARGETS = {
   ai: 'ai',
   calendar: 'calendar',
+  chat: 'chat',
   cms: 'cms',
   contacts: 'contacts',
   drive: 'drive',
@@ -38,6 +42,8 @@ const REGISTERED_APP_TARGETS = {
   inventory: 'inventory',
   storefront: 'storefront',
   learn: 'learn',
+  mail: 'mail',
+  meet: 'meet',
   mind: 'mind',
   nova: 'nova',
   pay: 'pay',
@@ -48,30 +54,13 @@ const REGISTERED_APP_TARGETS = {
 };
 const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/calendar/src/lib/api-auth.ts',
-  'apps/finance/src/app/api/workspaces/[wsId]/transactions/import/money-lover/route.ts',
-  'apps/finance/src/app/api/workspaces/[wsId]/wallets/migrate/route.ts',
   'apps/hive/src/lib/api-auth.ts',
-  'apps/hive/src/lib/hive-page-context.ts',
-  'apps/inventory/src/__tests__/products-routes.test.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/integrations/sepay/shared.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/count/route.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/options/route.test.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/options/route.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/route.ts',
   'apps/inventory/src/lib/api-auth.ts',
   'apps/learn/src/lib/api-auth.ts',
+  'apps/mail/src/lib/mail/auth.ts',
   'apps/mind/src/lib/api-auth.ts',
-  'apps/pay/src/app/[locale]/[wsId]/billing/actions.ts',
-  'apps/pay/src/app/[locale]/[wsId]/billing/page.tsx',
-  'apps/pay/src/app/api/payment/credit-packs/checkouts/route.ts',
-  'apps/pay/src/app/api/payment/customer-portal/subscriptions/[subscriptionId]/route.ts',
-  'apps/pay/src/app/api/payment/orders/[orderId]/invoice/route.ts',
-  'apps/pay/src/app/api/payment/seats/route.ts',
-  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/change/route.ts',
-  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/checkouts/route.ts',
-  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/preview/route.ts',
-  'apps/pay/src/app/api/v1/workspaces/[wsId]/billing/route.ts',
   'apps/teach/src/lib/api-auth.ts',
+  'packages/satellite/src/workspace-access.ts',
 ]);
 const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([
   'apps/hive/src/app/api/v1/hive/_shared.ts',
@@ -92,10 +81,7 @@ const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([
 // apps/pay is a KNOWN outstanding instance of this bug, allowlisted only so the
 // rule can be enforced for every other app. Its billing pages need the same
 // app-local wrapper treatment.
-const SHARED_WORKSPACE_WRAPPER_ALLOWED_FILES = new Set([
-  'apps/pay/src/app/[locale]/[wsId]/billing/page.tsx',
-  'apps/pay/src/app/[locale]/[wsId]/billing/success/page.tsx',
-]);
+const SHARED_WORKSPACE_WRAPPER_ALLOWED_FILES = new Set();
 const FORBIDDEN_PATTERNS = [
   {
     allowedFiles: COMPATIBLE_SESSION_FALLBACK_FILES,
@@ -164,12 +150,13 @@ const failures = [];
 // mode). A registered app must always pass the app-session `user` (or a
 // `request` for route handlers), normally via its `src/lib/workspace.ts`.
 //
-// Rolled out per-app. apps/contacts is audited and clean; apps/calendar,
-// apps/tasks, apps/track, apps/teach, apps/hive, and apps/inventory each still
-// have actorless call sites and must be audited before they are added here.
-const ACTORLESS_CHECK_APPS = new Set(['contacts', 'forms', 'git']);
+// Registered satellites must keep the verified app-session actor through every
+// workspace lookup. Do not allow new per-app debt: all registered apps are
+// checked together after the actor-aware migration.
+const ACTORLESS_CHECK_APPS = new Set(REGISTERED_APPS);
 const ACTORLESS_WORKSPACE_CALL = /\bgetWorkspace\(\s*[\w.]+\s*\)/gu;
 const ACTORLESS_PERMISSIONS_CALL = /\bgetPermissions\(\s*\{([\s\S]*?)\}\s*\)/gu;
+const ACTORLESS_NORMALIZE_CALL = /\bnormalizeWorkspaceId\(\s*[^,()]+\s*\)/gu;
 
 // Comments routinely quote the very call shapes this rule forbids (including in
 // the helpers written to fix them), so strip them before matching.
@@ -181,6 +168,13 @@ function stripComments(source) {
 
 function findActorlessWorkspaceCalls(filePath, rawSource) {
   const problems = [];
+
+  if (
+    /\.(test|spec)\.(ts|tsx)$/u.test(filePath) ||
+    filePath.includes('/__tests__/')
+  ) {
+    return problems;
+  }
 
   const app = filePath.split('/')[1];
   if (!ACTORLESS_CHECK_APPS.has(app)) {
@@ -203,15 +197,56 @@ function findActorlessWorkspaceCalls(filePath, rawSource) {
 
   for (const match of source.matchAll(ACTORLESS_PERMISSIONS_CALL)) {
     const args = match[1] ?? '';
-    if (!/\buser\b/u.test(args) && !/\brequest\b/u.test(args)) {
+    if (!/\buser\b/u.test(args)) {
       problems.push(
-        'getPermissions() called without an actor. Pass the app-session user: getPermissions({ user, wsId }).'
+        'getPermissions() called without an explicit actor. A request-only client is anonymous for satellite app sessions; pass getPermissions({ user, wsId }).'
       );
       break;
     }
   }
 
+  if (ACTORLESS_NORMALIZE_CALL.test(source)) {
+    problems.push(
+      'normalizeWorkspaceId() called without actor-bearing context. Resolve the satellite actor first or pass the authenticated client from the app auth wrapper.'
+    );
+  }
+  ACTORLESS_NORMALIZE_CALL.lastIndex = 0;
+
   return problems;
+}
+
+function findMissingSessionRequestBoundary(filePath, rawSource) {
+  if (
+    !filePath.endsWith('/layout.tsx') ||
+    /\.(test|spec)\.tsx$/u.test(filePath)
+  ) {
+    return [];
+  }
+
+  const source = stripComments(rawSource);
+  const sessionCallIndex = source.indexOf('getSatelliteAppSessionUser(');
+  if (sessionCallIndex === -1) {
+    return [];
+  }
+
+  const connectionCallIndex = source.indexOf('await connection()');
+  if (connectionCallIndex === -1 || connectionCallIndex > sessionCallIndex) {
+    return [
+      'Workspace layouts must call await connection() before satellite session resolution so Cache Components never prerenders request-specific auth state.',
+    ];
+  }
+
+  if (
+    !/import\s*\{[^}]*\bconnection\b[^}]*\}\s*from\s*['"]next\/server['"]/su.test(
+      source
+    )
+  ) {
+    return [
+      'Workspace layouts that call await connection() must import connection from next/server.',
+    ];
+  }
+
+  return [];
 }
 
 for (const filePath of files) {
@@ -221,13 +256,24 @@ for (const filePath of files) {
   // call shape they replaced, and quoting it must not re-trip the guard.
   const executableSource = stripComments(source);
 
+  const isTestFile =
+    /\.(test|spec)\.(ts|tsx)$/u.test(filePath) ||
+    filePath.includes('/__tests__/');
   for (const { allowedFiles, pattern, message } of FORBIDDEN_PATTERNS) {
-    if (pattern.test(executableSource) && !allowedFiles?.has(filePath)) {
+    if (
+      !isTestFile &&
+      pattern.test(executableSource) &&
+      !allowedFiles?.has(filePath)
+    ) {
       failures.push(`${filePath}: ${message}`);
     }
   }
 
   for (const problem of findActorlessWorkspaceCalls(filePath, source)) {
+    failures.push(`${filePath}: ${problem}`);
+  }
+
+  for (const problem of findMissingSessionRequestBoundary(filePath, source)) {
     failures.push(`${filePath}: ${problem}`);
   }
 }
@@ -364,6 +410,7 @@ if (/\bsupabase-session-user\b/u.test(authIndexSource)) {
 const registeredProxyPaths = [
   'apps/ai/src/proxy.ts',
   'apps/calendar/src/proxy.ts',
+  'apps/chat/src/proxy.ts',
   'apps/cms/src/proxy.ts',
   'apps/contacts/src/proxy.ts',
   'apps/drive/src/proxy.ts',
@@ -374,6 +421,8 @@ const registeredProxyPaths = [
   'apps/inventory/src/proxy.ts',
   'apps/storefront/src/proxy.ts',
   'apps/learn/src/proxy.ts',
+  'apps/mail/src/proxy.ts',
+  'apps/meet/src/proxy.ts',
   'apps/mind/src/proxy.ts',
   'apps/nova/src/proxy.ts',
   'apps/pay/src/proxy.ts',
@@ -395,6 +444,7 @@ for (const proxyPath of registeredProxyPaths) {
 const registeredAppConstantPaths = [
   ['apps/ai/src/constants/common.ts', REGISTERED_APP_TARGETS.ai],
   ['apps/calendar/src/constants/common.ts', REGISTERED_APP_TARGETS.calendar],
+  ['apps/chat/src/constants/common.ts', REGISTERED_APP_TARGETS.chat],
   ['apps/cms/src/constants/common.ts', REGISTERED_APP_TARGETS.cms],
   ['apps/contacts/src/constants/common.ts', REGISTERED_APP_TARGETS.contacts],
   ['apps/drive/src/constants/common.ts', REGISTERED_APP_TARGETS.drive],
@@ -408,6 +458,8 @@ const registeredAppConstantPaths = [
     REGISTERED_APP_TARGETS.storefront,
   ],
   ['apps/learn/src/constants/common.ts', REGISTERED_APP_TARGETS.learn],
+  ['apps/mail/src/constants/common.ts', REGISTERED_APP_TARGETS.mail],
+  ['apps/meet/src/constants/common.ts', REGISTERED_APP_TARGETS.meet],
   ['apps/mind/src/constants/common.ts', REGISTERED_APP_TARGETS.mind],
   ['apps/nova/src/constants/common.ts', REGISTERED_APP_TARGETS.nova],
   ['apps/pay/src/constants/common.ts', REGISTERED_APP_TARGETS.pay],

@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.33.1](https://github.com/tutur3u/platform/compare/internal-api-v0.33.0...internal-api-v0.33.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **contacts:** replace module 404s with an actionable availability gate ([d49bef9](https://github.com/tutur3u/platform/commit/d49bef97e0047fff6c8322c19fef66932b25f4a8))
+* **contacts:** replace module 404s with an actionable availability gate ([#5179](https://github.com/tutur3u/platform/issues/5179)) ([2427785](https://github.com/tutur3u/platform/commit/24277858ed8ce38c17b3e79413c7f81c98008eb7))
+
+## [0.33.0](https://github.com/tutur3u/platform/compare/internal-api-v0.32.0...internal-api-v0.33.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+* **external-projects:** assign roles to invitations ([1cd04e8](https://github.com/tutur3u/platform/commit/1cd04e8dc0db419c2b1b7bc526012f7b7ee3f7dc))
+
+
+### Bug Fixes
+
+* **command:** resolve task search review feedback ([2a300fe](https://github.com/tutur3u/platform/commit/2a300fea33781841dfd3ae604592bec4c96afcfb))
+* **command:** secure task mutations across apps ([cc71d3d](https://github.com/tutur3u/platform/commit/cc71d3daa82b05fd56f21446daac126cc2cd8d2e))
+
+## [0.32.0](https://github.com/tutur3u/platform/compare/internal-api-v0.31.1...internal-api-v0.32.0) (2026-08-25)
+
+
+### Features
+
+* **tasks:** restore task history versions ([695afac](https://github.com/tutur3u/platform/commit/695afac81a6937c4dbe8148173b151a4654cd271))
+
+## [0.31.1](https://github.com/tutur3u/platform/compare/internal-api-v0.31.0...internal-api-v0.31.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **tasks:** restore pasted image uploads ([3edef4e](https://github.com/tutur3u/platform/commit/3edef4e04a1fc6963904b7861d422f8db9d5b749))
+
+## [0.31.0](https://github.com/tutur3u/platform/compare/internal-api-v0.30.0...internal-api-v0.31.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+
+## [0.30.0](https://github.com/tutur3u/platform/compare/internal-api-v0.29.1...internal-api-v0.30.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
+## [0.29.1](https://github.com/tutur3u/platform/compare/internal-api-v0.29.0...internal-api-v0.29.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **ai:** bound meeting transcription input ([07c1710](https://github.com/tutur3u/platform/commit/07c1710ec80441e8d230a3c8cd99c610cf73a10a))
+
+
+### Performance Improvements
+
+* **nova:** bound submission user search ([8a0c92b](https://github.com/tutur3u/platform/commit/8a0c92b24beee7aa0d9fa76a872381ae1fccaf6b))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/internal-api-v0.28.1...internal-api-v0.29.0) (2026-08-07)
 
 

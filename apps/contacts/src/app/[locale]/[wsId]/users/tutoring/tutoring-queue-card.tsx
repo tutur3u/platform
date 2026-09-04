@@ -1,92 +1,88 @@
 'use client';
 
-import {
-  keepPreviousData,
-  useInfiniteQuery,
-  useQuery,
-} from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
-import type {
-  TutoringQueueItem,
-  WorkspaceBasicUserRecord,
-} from '@tuturuuu/internal-api';
-import {
-  getNextWorkspaceUserGroupsPageParam,
-  listTutoringQueue,
-  listWorkspaceBasicUsers,
-  listWorkspaceUserGroups,
-} from '@tuturuuu/internal-api';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { CalendarPlus, PartyPopper, RotateCcw, Search } from '@tuturuuu/icons';
+import type { TutoringQueueItem } from '@tuturuuu/internal-api';
+import { listTutoringQueue } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-import { getDisplayName, queueSummary } from './tutoring-types';
+import { useMemo } from 'react';
+import { TutoringReasonBadge } from './tutoring-badges';
+import { WorkspacePersonPicker } from './tutoring-people-picker';
 
 interface TutoringQueueFilters {
-  reasonType: string;
   groupId: string;
-  studentUserId: string;
+  reasonType: string;
   search: string;
-}
-
-interface TutoringQueuePagination {
-  page: number;
-  pageSize: number;
-}
-
-interface TutoringQueueLookupState {
-  groups: UserGroup[];
-  students: WorkspaceBasicUserRecord[];
+  studentUserId: string;
 }
 
 interface TutoringQueueActions {
-  onReasonTypeChange: (value: string) => void;
   onGroupIdChange: (value: string) => void;
-  onStudentUserIdChange: (value: string) => void;
-  onSearchChange: (value: string) => void;
   onParamsChange: (params: { page?: number; pageSize?: string }) => void;
+  onReasonTypeChange: (value: string) => void;
   onResetFilters: () => void;
-  onActivate: (item: TutoringQueueItem) => void;
+  onSchedule: (item: TutoringQueueItem) => void;
+  onSearchChange: (value: string) => void;
+  onStudentUserIdChange: (value: string) => void;
 }
 
 interface Props {
-  wsId: string;
+  actions: TutoringQueueActions;
   canManage: boolean;
   enabled: boolean;
   filters: TutoringQueueFilters;
-  pagination: TutoringQueuePagination;
-  lookup: TutoringQueueLookupState;
-  actions: TutoringQueueActions;
+  groups: UserGroup[];
+  pagination: { page: number; pageSize: number };
+  wsId: string;
+}
+
+const REASON_FILTERS = ['all', 'ABSENT_RECOVERY', 'WEAK_SUPPORT', 'BOTH'];
+
+function QueueEmptyState({ isFiltered }: { isFiltered: boolean }) {
+  const t = useTranslations('ws-tutoring');
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 px-4 py-14 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-dynamic-green/25 bg-dynamic-green/10 text-dynamic-green">
+        <PartyPopper className="h-6 w-6" />
+      </span>
+      <div className="space-y-1">
+        <p className="font-medium">
+          {isFiltered ? t('no_queue_filtered') : t('no_queue')}
+        </p>
+        <p className="mx-auto max-w-sm text-muted-foreground text-sm">
+          {isFiltered
+            ? t('no_queue_filtered_description')
+            : t('no_queue_description')}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export function TutoringQueueCard({
-  wsId,
+  actions,
   canManage,
   enabled,
   filters,
+  groups,
   pagination,
-  lookup,
-  actions,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-tutoring');
   const tCommon = useTranslations();
+
   const queueQuery = useQuery({
+    enabled,
+    placeholderData: keepPreviousData,
     queryKey: [
       'tutoring-queue',
       wsId,
@@ -99,228 +95,114 @@ export function TutoringQueueCard({
     ],
     queryFn: () =>
       listTutoringQueue(wsId, {
-        reasonType:
-          filters.reasonType === 'all' ? undefined : filters.reasonType,
         groupId: filters.groupId === 'all' ? undefined : filters.groupId,
-        q: filters.search.trim() || undefined,
-        studentUserId:
-          filters.studentUserId === 'all' ? undefined : filters.studentUserId,
         page: pagination.page,
         pageSize: pagination.pageSize,
+        q: filters.search.trim() || undefined,
+        reasonType:
+          filters.reasonType === 'all' ? undefined : filters.reasonType,
+        studentUserId:
+          filters.studentUserId === 'all' ? undefined : filters.studentUserId,
       }),
-    placeholderData: keepPreviousData,
-    enabled,
-  });
-  const queueRows = queueQuery.isLoading ? undefined : queueQuery.data?.data;
-  const summary = queueQuery.data?.summary ?? queueSummary([]);
-  const isFetching = queueQuery.isFetching && !queueQuery.isLoading;
-  const [groupSearch, setGroupSearch] = useState('');
-  const [studentSearch, setStudentSearch] = useState('');
-  const [debouncedGroupSearch] = useDebounce(groupSearch, 250);
-  const [debouncedStudentSearch] = useDebounce(studentSearch, 250);
-
-  const groupsQuery = useInfiniteQuery({
-    queryKey: ['tutoring-queue-filter-groups', wsId, debouncedGroupSearch],
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) =>
-      listWorkspaceUserGroups(wsId, {
-        status: 'active',
-        q: debouncedGroupSearch || undefined,
-        page: pageParam,
-        pageSize: 20,
-      }),
-    getNextPageParam: (lastPage, allPages) =>
-      getNextWorkspaceUserGroupsPageParam(lastPage, allPages),
   });
 
-  const studentsQuery = useInfiniteQuery({
-    queryKey: ['tutoring-queue-filter-students', wsId, debouncedStudentSearch],
-    initialPageParam: 0,
-    queryFn: ({ pageParam }) =>
-      listWorkspaceBasicUsers(wsId, {
-        from: pageParam,
-        limit: 20,
-        q: debouncedStudentSearch || undefined,
-      }),
-    getNextPageParam: (lastPage, allPages) => {
-      const loadedCount = allPages.reduce(
-        (total, page) => total + page.data.length,
-        0
-      );
-      if (loadedCount >= (lastPage.count ?? 0) || lastPage.data.length < 20) {
-        return undefined;
-      }
+  const summary = queueQuery.data?.summary ?? { absent: 0, weak: 0 };
+  const isFiltered =
+    filters.search.trim().length > 0 ||
+    filters.reasonType !== 'all' ||
+    filters.groupId !== 'all' ||
+    filters.studentUserId !== 'all';
 
-      return loadedCount;
-    },
-  });
-
-  const loadedGroups = useMemo(
-    () => groupsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [],
-    [groupsQuery.data?.pages]
-  );
-  const loadedStudents = useMemo(
-    () => studentsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? [],
-    [studentsQuery.data?.pages]
-  );
-  const groups = loadedGroups.length > 0 ? loadedGroups : lookup.groups;
-  const students = loadedStudents.length > 0 ? loadedStudents : lookup.students;
-
-  const studentMap = useMemo(() => {
-    const map = new Map<string, WorkspaceBasicUserRecord>();
-    for (const student of students) {
-      map.set(student.id, student);
-    }
-    return map;
-  }, [students]);
-
-  const groupOptions: ComboboxOption[] = useMemo(() => {
-    const options: ComboboxOption[] = [
-      { value: 'all', label: t('all_groups') },
+  const groupOptions = useMemo<ComboboxOption[]>(
+    () => [
+      { label: t('all_groups'), value: 'all' },
       ...groups.map((group) => ({
+        label: group.name || group.id,
         value: group.id,
-        label: group.name ?? 'Unnamed',
       })),
-    ];
+    ],
+    [groups, t]
+  );
 
-    const seen = new Set(options.map((option) => option.value));
-    for (const item of queueRows ?? []) {
-      if (!item.group_id || seen.has(item.group_id)) {
-        continue;
-      }
-
-      options.push({
-        value: item.group_id,
-        label: item.group_name || item.group_id,
-      });
-      seen.add(item.group_id);
-    }
-
-    return options;
-  }, [groups, queueRows, t]);
-
-  const studentOptions: ComboboxOption[] = useMemo(() => {
-    const options: ComboboxOption[] = [
-      { value: 'all', label: t('all_students') },
-      ...students.map((student) => ({
-        value: student.id,
-        label: getDisplayName(student),
-      })),
-    ];
-
-    const seen = new Set(options.map((option) => option.value));
-    for (const item of queueRows ?? []) {
-      if (!item.student_user_id || seen.has(item.student_user_id)) {
-        continue;
-      }
-
-      options.push({
-        value: item.student_user_id,
-        label: item.student_name || item.student_user_id,
-      });
-      seen.add(item.student_user_id);
-    }
-
-    return options;
-  }, [queueRows, students, t]);
+  const reasonLabels: Record<string, string> = {
+    all: t('all_reasons'),
+    ABSENT_RECOVERY: t('absent_recovery'),
+    BOTH: t('both_reason'),
+    WEAK_SUPPORT: t('weak_support'),
+  };
 
   const columns = ({ t: tableT }: { t: ReturnType<typeof useTranslations> }) =>
     [
       {
+        // Server-paginated: client-side sorting would only reorder this page.
+        enableSorting: false,
         id: 'student_name',
         header: ({ column }) => (
           <DataTableColumnHeader
-            t={tableT}
             column={column}
+            t={tableT}
             title={t('student')}
           />
         ),
-        cell: ({ row }) => {
-          const student = studentMap.get(row.original.student_user_id);
-          return student
-            ? getDisplayName(student)
-            : row.original.student_name || '-';
-        },
-      },
-      {
-        accessorKey: 'group_name',
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            t={tableT}
-            column={column}
-            title={t('group')}
-          />
+        cell: ({ row }) => (
+          <div className="min-w-40">
+            <p className="font-medium">{row.original.student_name || '-'}</p>
+            <p className="truncate text-muted-foreground text-xs">
+              {row.original.group_name || '-'}
+            </p>
+          </div>
         ),
       },
       {
+        enableSorting: false,
         accessorKey: 'reason_type',
         header: ({ column }) => (
           <DataTableColumnHeader
-            t={tableT}
             column={column}
+            t={tableT}
             title={t('reason')}
           />
         ),
-        cell: ({ row }) => {
-          const reason = row.original.reason_type;
-          if (reason === 'BOTH') {
-            return (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className="cursor-help rounded-full border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400"
-                  >
-                    {t('both_reason')}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t('both_reason_tooltip')}</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          }
-          if (reason === 'ABSENT_RECOVERY') {
-            return (
-              <Badge
-                variant="outline"
-                className="rounded-full border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
-              >
-                {t('absent_recovery')}
-              </Badge>
-            );
-          }
-          if (reason === 'WEAK_SUPPORT') {
-            return (
-              <Badge
-                variant="outline"
-                className="rounded-full border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400"
-              >
-                {t('weak_support')}
-              </Badge>
-            );
-          }
-          return reason;
-        },
-      },
-      {
-        accessorKey: 'absence_deficit',
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            t={tableT}
-            column={column}
-            title={t('deficit_label')}
-          />
+        cell: ({ row }) => (
+          <TutoringReasonBadge reason={row.original.reason_type} />
         ),
       },
       {
+        enableSorting: false,
+        accessorKey: 'absence_deficit',
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            t={tableT}
+            title={t('deficit_label')}
+          />
+        ),
+        cell: ({ row }) =>
+          row.original.absence_deficit > 0 ? (
+            <Badge
+              className="rounded-full border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange"
+              variant="outline"
+            >
+              {t('deficit_sessions', { count: row.original.absence_deficit })}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          ),
+      },
+      {
+        enableSorting: false,
         accessorKey: 'feedback_content',
         header: ({ column }) => (
           <DataTableColumnHeader
-            t={tableT}
             column={column}
+            t={tableT}
             title={t('feedback')}
           />
+        ),
+        cell: ({ row }) => (
+          <p className="line-clamp-2 max-w-80 text-sm">
+            {row.original.feedback_content || '-'}
+          </p>
         ),
       },
       {
@@ -330,11 +212,11 @@ export function TutoringQueueCard({
           canManage ? (
             <div className="flex justify-end">
               <Button
+                onClick={() => actions.onSchedule(row.original)}
                 size="sm"
-                variant="outline"
-                onClick={() => actions.onActivate(row.original)}
               >
-                {t('activate')}
+                <CalendarPlus className="h-4 w-4" />
+                {t('schedule_support')}
               </Button>
             </div>
           ) : null,
@@ -343,114 +225,104 @@ export function TutoringQueueCard({
 
   return (
     <section className="space-y-3">
-      <FeatureSummary
-        title={
-          <h3 className="font-semibold text-lg">
-            {t('queue_title', {
-              absent: summary.absent,
-              weak: summary.weak,
-            })}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-lg tracking-tight">
+            {t('queue_title_plain')}
           </h3>
-        }
-      />
-
-      <div className="relative">
-        {isFetching && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
-            <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span className="text-muted-foreground text-sm">
-                {tCommon('common.loading')}
-              </span>
-            </div>
-          </div>
-        )}
-        <DataTable
-          t={tCommon}
-          data={queueRows}
-          count={queueQuery.data?.count ?? 0}
-          pageIndex={(queueQuery.data?.page ?? pagination.page) - 1}
-          pageSize={queueQuery.data?.pageSize ?? pagination.pageSize}
-          namespace="tutoring-queue-table"
-          columnGenerator={columns}
-          disableSearch
-          setParams={actions.onParamsChange}
-          filters={
-            <div className="flex flex-wrap items-center gap-2">
-              <Input
-                value={filters.search}
-                onChange={(event) =>
-                  actions.onSearchChange(event.currentTarget.value)
-                }
-                placeholder={t('search_queue')}
-                className="h-9 w-56"
-              />
-
-              <Select
-                value={filters.reasonType}
-                onValueChange={actions.onReasonTypeChange}
-              >
-                <SelectTrigger className="w-44">
-                  <SelectValue placeholder={t('reason')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('all_reasons')}</SelectItem>
-                  <SelectItem value="ABSENT_RECOVERY">
-                    {t('absent_recovery')}
-                  </SelectItem>
-                  <SelectItem value="WEAK_SUPPORT">
-                    {t('weak_support')}
-                  </SelectItem>
-                  <SelectItem value="BOTH">{t('both_reason')}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Combobox
-                options={groupOptions}
-                selected={filters.groupId}
-                onChange={(value) => actions.onGroupIdChange(value as string)}
-                placeholder={t('all_groups')}
-                searchPlaceholder={t('search_groups')}
-                onSearchChange={setGroupSearch}
-                hasMore={Boolean(groupsQuery.hasNextPage)}
-                loadingMore={groupsQuery.isFetchingNextPage}
-                onLoadMore={() => {
-                  if (groupsQuery.hasNextPage) {
-                    void groupsQuery.fetchNextPage();
-                  }
-                }}
-                className="w-52"
-              />
-
-              <Combobox
-                options={studentOptions}
-                selected={filters.studentUserId}
-                onChange={(value) =>
-                  actions.onStudentUserIdChange(value as string)
-                }
-                placeholder={t('all_students')}
-                searchPlaceholder={t('search_students')}
-                onSearchChange={setStudentSearch}
-                hasMore={Boolean(studentsQuery.hasNextPage)}
-                loadingMore={studentsQuery.isFetchingNextPage}
-                onLoadMore={() => {
-                  if (studentsQuery.hasNextPage) {
-                    void studentsQuery.fetchNextPage();
-                  }
-                }}
-                className="w-56"
-              />
-            </div>
-          }
-          resetParams={actions.onResetFilters}
-          isFiltered={
-            filters.search.trim().length > 0 ||
-            filters.reasonType !== 'all' ||
-            filters.groupId !== 'all' ||
-            filters.studentUserId !== 'all'
-          }
-        />
+          <p className="text-muted-foreground text-sm">
+            {t('queue_description')}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge
+            className="rounded-full border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange"
+            variant="outline"
+          >
+            {t('queue_absent_count', { count: summary.absent })}
+          </Badge>
+          <Badge
+            className="rounded-full border-dynamic-sky/25 bg-dynamic-sky/10 text-dynamic-sky"
+            variant="outline"
+          >
+            {t('queue_weak_count', { count: summary.weak })}
+          </Badge>
+        </div>
       </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3">
+        <div className="relative w-full sm:w-56">
+          <Search className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="h-9 pl-8"
+            onChange={(event) =>
+              actions.onSearchChange(event.currentTarget.value)
+            }
+            placeholder={t('search_queue')}
+            value={filters.search}
+          />
+        </div>
+
+        <Combobox
+          className="w-full sm:w-44"
+          emptyText={t('no_reasons')}
+          onChange={(value) => actions.onReasonTypeChange(value as string)}
+          options={REASON_FILTERS.map((reason) => ({
+            label: reasonLabels[reason] ?? reason,
+            value: reason,
+          }))}
+          placeholder={t('all_reasons')}
+          searchPlaceholder={t('reason')}
+          selected={filters.reasonType}
+        />
+
+        <Combobox
+          className="w-full sm:w-52"
+          emptyText={t('no_groups')}
+          onChange={(value) => actions.onGroupIdChange(value as string)}
+          options={groupOptions}
+          placeholder={t('all_groups')}
+          searchPlaceholder={t('search_groups')}
+          selected={filters.groupId}
+        />
+
+        <WorkspacePersonPicker
+          className="w-full sm:w-52"
+          emptyText={t('no_students')}
+          extraOptions={[{ label: t('all_students'), value: 'all' }]}
+          onChange={actions.onStudentUserIdChange}
+          placeholder={t('all_students')}
+          searchPlaceholder={t('search_students')}
+          value={filters.studentUserId}
+          wsId={wsId}
+        />
+
+        {isFiltered ? (
+          <Button
+            className="ml-auto"
+            onClick={actions.onResetFilters}
+            size="sm"
+            variant="ghost"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {t('reset_filters')}
+          </Button>
+        ) : null}
+      </div>
+
+      <DataTable
+        columnGenerator={columns}
+        count={queueQuery.data?.count ?? 0}
+        data={queueQuery.isLoading ? undefined : queueQuery.data?.data}
+        disableSearch
+        emptyState={<QueueEmptyState isFiltered={isFiltered} />}
+        hideToolbar
+        namespace="tutoring-queue-table"
+        pageIndex={(queueQuery.data?.page ?? pagination.page) - 1}
+        pageSize={queueQuery.data?.pageSize ?? pagination.pageSize}
+        setParams={actions.onParamsChange}
+        t={tCommon}
+      />
     </section>
   );
 }

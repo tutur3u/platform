@@ -19,8 +19,17 @@ const {
 const forms = OWNED_E2E_SATELLITES.find(
   (satellite) => satellite.appName === 'forms'
 );
+const contacts = OWNED_E2E_SATELLITES.find(
+  (satellite) => satellite.appName === 'contacts'
+);
+const finance = OWNED_E2E_SATELLITES.find(
+  (satellite) => satellite.appName === 'finance'
+);
 const infrastructure = OWNED_E2E_SATELLITES.find(
   (satellite) => satellite.appName === 'infrastructure'
+);
+const mail = OWNED_E2E_SATELLITES.find(
+  (satellite) => satellite.appName === 'mail'
 );
 
 test('selects only satellite owners present in a Playwright shard', () => {
@@ -41,6 +50,42 @@ test('selects only satellite owners present in a Playwright shard', () => {
     ['infrastructure']
   );
   assert.deepEqual(
+    getRequiredOwnedSatellites(
+      ['--shard=4/4'],
+      {},
+      'workspace-invite-cross-app-access.noauth.spec.ts'
+    ).map((satellite) => satellite.appName),
+    ['contacts']
+  );
+  assert.deepEqual(
+    getRequiredOwnedSatellites(
+      ['finance-subscription-advance-month.noauth.spec.ts'],
+      {}
+    ).map((satellite) => satellite.appName),
+    ['finance']
+  );
+  assert.deepEqual(
+    getRequiredOwnedSatellites(
+      ['workspace-invite-finance-access.noauth.spec.ts'],
+      {}
+    ).map((satellite) => satellite.appName),
+    ['finance']
+  );
+  assert.deepEqual(
+    getRequiredOwnedSatellites(
+      ['workspace-invite-account-shapes.noauth.spec.ts'],
+      {}
+    ).map((satellite) => satellite.appName),
+    ['contacts', 'finance']
+  );
+  assert.deepEqual(
+    getRequiredOwnedSatellites(
+      ['workspace-invite-mail-access.noauth.spec.ts'],
+      {}
+    ).map((satellite) => satellite.appName),
+    ['mail']
+  );
+  assert.deepEqual(
     getRequiredOwnedSatellites(['public-marketing-routes.noauth.spec.ts'], {}),
     []
   );
@@ -56,14 +101,17 @@ test('supports explicit satellite enable and disable controls', () => {
   );
   assert.equal(
     shouldDiscoverOwnedSatellitesFromTestList(['--shard=1/4'], {
+      E2E_CONTACTS_SATELLITE_ENABLED: '0',
+      E2E_FINANCE_SATELLITE_ENABLED: '0',
       E2E_FORMS_SATELLITE_ENABLED: '0',
       E2E_INFRASTRUCTURE_SATELLITE_ENABLED: '0',
+      E2E_MAIL_SATELLITE_ENABLED: '0',
     }),
     false
   );
 });
 
-test('builds host-safe Forms and Infrastructure runtime environments', () => {
+test('builds host-safe owned-satellite runtime environments', () => {
   const env = {
     BASE_URL: 'https://tuturuuu.localhost:1355',
     DOCKER_WEB_PROXY_HOST_PORT: '7803',
@@ -76,9 +124,33 @@ test('builds host-safe Forms and Infrastructure runtime environments', () => {
     'https://forms.tuturuuu.localhost:1355'
   );
   assert.equal(
+    getOwnedSatelliteUrl(contacts, env),
+    'https://contacts.tuturuuu.localhost:1355'
+  );
+  assert.equal(
+    getOwnedSatelliteUrl(finance, env),
+    'https://finance.tuturuuu.localhost:1355'
+  );
+  assert.equal(
+    getOwnedSatelliteReadinessUrl(contacts),
+    'http://127.0.0.1:7827'
+  );
+  assert.equal(getOwnedSatelliteReadinessUrl(finance), 'http://127.0.0.1:7808');
+  assert.deepEqual(getOwnedSatelliteDependencyBuildArgs(finance), [
+    'turbo:local',
+    'run',
+    'build',
+    '--filter=@tuturuuu/finance^...',
+  ]);
+  assert.equal(
     getOwnedSatelliteUrl(infrastructure, env),
     'https://infra.tuturuuu.localhost:1355'
   );
+  assert.equal(
+    getOwnedSatelliteUrl(mail, env),
+    'https://mail.tuturuuu.localhost:1355'
+  );
+  assert.equal(getOwnedSatelliteReadinessUrl(mail), 'http://127.0.0.1:7820');
   assert.equal(getOwnedSatelliteReadinessUrl(forms), 'http://127.0.0.1:7828');
   assert.deepEqual(getOwnedSatelliteDependencyBuildArgs(forms), [
     'turbo:local',
@@ -93,6 +165,7 @@ test('builds host-safe Forms and Infrastructure runtime environments', () => {
     'https://forms.tuturuuu.localhost:1355'
   );
   assert.equal(formsRuntime.INTERNAL_WEB_API_ORIGIN, 'http://127.0.0.1:7803');
+  assert.equal(formsRuntime.NEXT_WEBPACK_BUILD, '1');
   assert.equal(formsRuntime.SUPABASE_SERVER_URL, 'http://127.0.0.1:8001');
 
   const infraPortless = getOwnedSatellitePortlessEnv(infrastructure, env);
@@ -100,7 +173,7 @@ test('builds host-safe Forms and Infrastructure runtime environments', () => {
   assert.equal(infraPortless.DOCKER_WEB_PROXY_HOST_PORT, '7823');
 
   const playwright = getOwnedSatellitesPlaywrightEnv(
-    [forms, infrastructure],
+    [contacts, finance, forms, infrastructure, mail],
     env
   );
   assert.equal(
@@ -108,8 +181,30 @@ test('builds host-safe Forms and Infrastructure runtime environments', () => {
     'https://forms.tuturuuu.localhost:1355'
   );
   assert.equal(
+    playwright.CONTACTS_BASE_URL,
+    'https://contacts.tuturuuu.localhost:1355'
+  );
+  assert.equal(
+    playwright.FINANCE_BASE_URL,
+    'https://finance.tuturuuu.localhost:1355'
+  );
+  assert.equal(
     playwright.INFRASTRUCTURE_BASE_URL,
     'https://infra.tuturuuu.localhost:1355'
+  );
+  assert.equal(
+    playwright.MAIL_BASE_URL,
+    'https://mail.tuturuuu.localhost:1355'
+  );
+
+  const mailRuntime = createOwnedSatelliteEnv(mail, env);
+  assert.equal(
+    mailRuntime.MAIL_APP_URL,
+    'https://mail.tuturuuu.localhost:1355'
+  );
+  assert.equal(
+    mailRuntime.NEXT_PUBLIC_MAIL_APP_URL,
+    'https://mail.tuturuuu.localhost:1355'
   );
 });
 
@@ -137,8 +232,8 @@ test('starts an owned satellite and reports an early readiness exit', async () =
     },
   });
 
-  assert.equal(calls[0].command, 'bun');
-  assert.deepEqual(calls[0].args, ['run', 'dev:app']);
+  assert.equal(calls[0].command, 'bunx');
+  assert.deepEqual(calls[0].args, ['next', 'dev', '-p', '7828', '--webpack']);
   assert.equal(calls[0].options.cwd, '/repo/apps/forms');
   assert.equal(calls[0].options.env.PORT, '7828');
   assert.equal(runtime.readinessUrl, 'http://127.0.0.1:7828');

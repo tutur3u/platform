@@ -83,11 +83,15 @@ export function TaskSnapshotDialog({
     },
     t,
   });
+  const snapshot = snapshotData?.snapshot;
 
   const handleRevert = async (fields: RevertibleField[]) => {
+    if (!snapshot) return;
+
     await revertMutation.mutateAsync({
       historyId: historyEntry.id,
       fields,
+      snapshot,
     });
   };
 
@@ -140,9 +144,10 @@ export function TaskSnapshotDialog({
                     {error.message}
                   </p>
                 </div>
-              ) : snapshotData?.snapshot ? (
+              ) : snapshot ? (
                 <SelectiveRevertPanel
-                  snapshot={snapshotData.snapshot}
+                  key={historyEntry.id}
+                  snapshot={snapshot}
                   currentTask={currentTask}
                   onRevert={handleRevert}
                   isReverting={revertMutation.isPending}

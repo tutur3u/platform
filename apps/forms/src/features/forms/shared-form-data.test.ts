@@ -3,6 +3,7 @@ import {
   buildSharedFormMetadata,
   getSharedFormPresentation,
 } from './shared-form-data';
+import { createTestFormDefinition } from './test-support/form-fixtures';
 
 const strings = {
   brand: 'Tuturuuu Forms',
@@ -54,47 +55,17 @@ describe('shared-form-data', () => {
 
   it('builds form-based presentation using plain-text title and description', () => {
     const presentation = getSharedFormPresentation(
-      {
-        id: 'form-1',
-        wsId: 'ws-1',
-        creatorId: 'user-1',
+      createTestFormDefinition({
         title: '<p><strong>Quarterly feedback</strong></p>',
         description: '<p>Help us improve the next release.</p>',
-        status: 'published',
-        accessMode: 'anonymous',
-        openAt: null,
-        closeAt: null,
-        maxResponses: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         shareCode: 'abc123',
         theme: {
-          presetId: 'editorial-moss',
-          density: 'balanced',
-          accentColor: 'dynamic-green',
-          headlineFontId: 'noto-serif',
-          bodyFontId: 'be-vietnam-pro',
-          surfaceStyle: 'paper',
-          coverHeadline: '',
+          ...createTestFormDefinition().theme,
           coverImage: {
             storagePath: '',
             url: 'https://example.com/cover.png',
             alt: 'Cover',
           },
-          sectionImages: {},
-          typography: {
-            displaySize: 'md',
-            headingSize: 'md',
-            bodySize: 'md',
-          },
-        },
-        settings: {
-          showProgressBar: true,
-          allowMultipleSubmissions: true,
-          oneResponsePerUser: false,
-          requireTurnstile: true,
-          confirmationTitle: 'Thanks',
-          confirmationMessage: 'Done',
         },
         sections: [
           {
@@ -117,8 +88,7 @@ describe('shared-form-data', () => {
             ],
           },
         ],
-        logicRules: [],
-      },
+      }),
       strings
     );
 
@@ -133,51 +103,11 @@ describe('shared-form-data', () => {
       shareCode: 'share-1',
       status: 200,
       strings,
-      form: {
-        id: 'form-2',
-        wsId: 'ws-1',
-        creatorId: 'user-1',
+      form: createTestFormDefinition({
         title: '<p><strong>Employee Pulse Survey</strong></p>',
         description: '<p>Share your feedback for this sprint.</p>',
-        status: 'published',
-        accessMode: 'anonymous',
-        openAt: null,
-        closeAt: null,
-        maxResponses: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         shareCode: 'share-1',
-        theme: {
-          presetId: 'editorial-moss',
-          density: 'balanced',
-          accentColor: 'dynamic-green',
-          headlineFontId: 'noto-serif',
-          bodyFontId: 'be-vietnam-pro',
-          surfaceStyle: 'paper',
-          coverHeadline: '',
-          coverImage: {
-            storagePath: '',
-            url: '',
-            alt: '',
-          },
-          sectionImages: {},
-          typography: {
-            displaySize: 'md',
-            headingSize: 'md',
-            bodySize: 'md',
-          },
-        },
-        settings: {
-          showProgressBar: true,
-          allowMultipleSubmissions: true,
-          oneResponsePerUser: false,
-          requireTurnstile: true,
-          confirmationTitle: 'Thanks',
-          confirmationMessage: 'Done',
-        },
-        sections: [],
-        logicRules: [],
-      },
+      }),
     });
 
     expect(metadata.title).toBe('Employee Pulse Survey | Tuturuuu Forms');
@@ -194,5 +124,81 @@ describe('shared-form-data', () => {
     expect(metadata.twitter?.description).toBe(
       'Share your feedback for this sprint.'
     );
+  });
+
+  it('marks unavailable forms as noindex', () => {
+    // The page a crawler reaches for a missing or closed form is an error
+    // state, not the form, so it must never be indexed regardless of what the
+    // form itself configured.
+    const metadata = buildSharedFormMetadata({
+      shareCode: 'share-1',
+      status: 404,
+      strings,
+      form: null,
+    });
+
+    expect(metadata.robots).toMatchObject({ index: false, follow: false });
+  });
+
+  it('honours per-form SEO overrides', () => {
+    const metadata = buildSharedFormMetadata({
+      shareCode: 'share-1',
+      status: 200,
+      strings,
+      form: createTestFormDefinition({
+        title: 'Internal only',
+        shareCode: 'share-1',
+        seo: {
+          title: 'Apply to the 2027 cohort',
+          description: 'Applications close on 30 September.',
+          image: {
+            storagePath: 'ws/forms/social/card.png',
+            url: 'https://cdn.example.com/card.png',
+            alt: 'Cohort banner',
+          },
+          keywords: ['cohort', 'applications'],
+          canonicalUrl: 'https://example.com/apply',
+          noIndex: true,
+        },
+      }),
+    });
+
+    // An author-supplied title is used verbatim: no item count, no brand
+    // suffix eating the characters a social card has room for.
+    expect(metadata.title).toBe('Apply to the 2027 cohort');
+    expect(metadata.description).toBe('Applications close on 30 September.');
+    expect(metadata.keywords).toEqual(['cohort', 'applications']);
+    expect(metadata.alternates?.canonical).toBe('https://example.com/apply');
+    expect(metadata.robots).toMatchObject({ index: false, follow: false });
+    expect(metadata.openGraph?.images).toEqual([
+      {
+        url: 'https://cdn.example.com/card.png',
+        width: 1200,
+        height: 630,
+        alt: 'Cohort banner',
+      },
+    ]);
+    expect(metadata.twitter?.images).toEqual([
+      'https://cdn.example.com/card.png',
+    ]);
+  });
+
+  it('keeps the derived title and generated card when no overrides are set', () => {
+    const metadata = buildSharedFormMetadata({
+      shareCode: 'share-1',
+      status: 200,
+      strings,
+      form: createTestFormDefinition({
+        title: 'Employee Pulse Survey',
+        shareCode: 'share-1',
+      }),
+    });
+
+    expect(metadata.title).toBe('Employee Pulse Survey | Tuturuuu Forms');
+    expect(metadata.alternates?.canonical).toContain('/f/share-1');
+    expect(metadata.robots).toBeUndefined();
+    expect(metadata.twitter?.images).toEqual([
+      expect.stringContaining('/f/share-1/twitter-image'),
+    ]);
   });
 });

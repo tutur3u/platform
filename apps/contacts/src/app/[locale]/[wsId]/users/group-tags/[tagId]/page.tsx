@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { getUserGroupColumns } from './columns';
 import UserGroupForm from './form';
 
@@ -40,7 +41,16 @@ export default async function GroupTagDetailsPage({
   await connection();
 
   const t = await getTranslations();
-  const { locale, wsId, tagId } = await params;
+  const { locale, wsId: id, tagId } = await params;
+  const permissions = await getContactsWorkspacePermissions(id);
+  if (
+    !permissions ||
+    (permissions.withoutPermission('manage_users') &&
+      permissions.withoutPermission('view_user_groups'))
+  ) {
+    notFound();
+  }
+  const wsId = permissions.wsId;
 
   const tag = await getData(wsId, tagId);
 
@@ -83,7 +93,7 @@ export default async function GroupTagDetailsPage({
 }
 
 async function getData(wsId: string, tagId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const { data, error } = await supabase
     .from('workspace_user_group_tags')
@@ -109,7 +119,7 @@ async function getGroupData(
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const queryBuilder = supabase
     .from('workspace_user_group_tag_groups')

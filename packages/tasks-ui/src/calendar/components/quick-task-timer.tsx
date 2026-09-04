@@ -1,11 +1,13 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Clock, Play } from '@tuturuuu/icons';
 import type { WorkspaceTask } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
+import { startTaskTimeTrackingSession } from '../../tu-do/shared/task-time-tracking-api';
 
 interface QuickTaskTimerProps {
   wsId: string;
@@ -20,29 +22,8 @@ export default function QuickTaskTimer({
   className,
   size = 'xs',
 }: QuickTaskTimerProps) {
+  const queryClient = useQueryClient();
   const [isStarting, setIsStarting] = useState(false);
-
-  const apiCall = useCallback(
-    async (url: string, options: RequestInit = {}) => {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        const error = await response
-          .json()
-          .catch(() => ({ error: 'Unknown error' }));
-        throw new Error(error.error || `HTTP ${response.status}`);
-      }
-
-      return response.json();
-    },
-    []
-  );
 
   const startTimerForTask = async () => {
     if (!task.id || !task.name) return;
@@ -50,14 +31,13 @@ export default function QuickTaskTimer({
     setIsStarting(true);
 
     try {
-      await apiCall(`/api/v1/workspaces/${wsId}/time-tracking/quick-start`, {
-        method: 'POST',
-        body: JSON.stringify({
-          taskId: task.id,
-          taskName: task.name,
-          taskDescription: task.description || null,
-        }),
+      const session = await startTaskTimeTrackingSession(wsId, {
+        taskId: task.id,
+        taskName: task.name,
+        description: task.description || null,
       });
+
+      queryClient.setQueryData(['running-time-session', wsId], session);
 
       toast.success(`Timer started for "${task.name}"`);
     } catch (error) {
@@ -76,7 +56,7 @@ export default function QuickTaskTimer({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          startTimerForTask();
+          void startTimerForTask();
         }}
         disabled={isStarting}
         className={cn(

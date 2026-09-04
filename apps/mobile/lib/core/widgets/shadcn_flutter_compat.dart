@@ -19,8 +19,7 @@ Future<T?> showDialog<T>({
   AlignmentGeometry? alignment,
   bool fullScreen = false,
 }) {
-  return shad.DialogConfiguration<T>(
-    builder: builder,
+  return shad.DialogConfiguration(
     useRootNavigator: useRootNavigator,
     barrierDismissible: barrierDismissible,
     barrierColor: barrierColor,
@@ -31,7 +30,7 @@ Future<T?> showDialog<T>({
     traversalEdgeBehavior: traversalEdgeBehavior,
     alignment: alignment,
     fullScreen: fullScreen,
-  ).show(context).future;
+  ).show<T>(context, builder).future;
 }
 
 /// Compatibility wrapper for the Future-based drawer helper removed in

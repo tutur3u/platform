@@ -107,7 +107,7 @@ authorize resources using the resolved `user.id`.
    non-user-authenticated exception.
 
 5. **Run gates.** Run the helper test and all newly added representative route
-   tests, then `bun check`, `bun --cwd apps/pay run build`, and
+   tests, then `bun check`, `bun run --cwd apps/pay build`, and
    `git diff --check`; expect all Bun commands to exit 0 and no whitespace
    output.
 

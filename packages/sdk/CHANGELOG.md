@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.1](https://github.com/tutur3u/platform/compare/sdk-v0.20.0...sdk-v0.20.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **cli:** handle browser launch errors ([3bdcbf3](https://github.com/tutur3u/platform/commit/3bdcbf39c2eb2094e662c45eb62f3afecfef3cc9))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/sdk-v0.19.0...sdk-v0.20.0) (2026-08-04)
 
 

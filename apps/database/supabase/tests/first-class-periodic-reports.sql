@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(28);
+select plan(34);
 
 select ok(
   exists (
@@ -151,6 +151,24 @@ select has_function(
 
 select has_function(
   'private',
+  'search_periodic_reports',
+  array['uuid', 'text', 'text', 'uuid[]']
+);
+
+select has_function(
+  'private',
+  'search_report_groups_for_selector',
+  array['uuid', 'text', 'uuid[]', 'integer']
+);
+
+select has_function(
+  'private',
+  'get_report_user_status_summary',
+  array['uuid', 'uuid', 'uuid[]']
+);
+
+select has_function(
+  'private',
   'skip_rejected_post_email_queue',
   array[]::text[]
 );
@@ -189,6 +207,33 @@ select ok(
     'execute'
   ),
   'authenticated clients cannot call private report aggregates'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.search_periodic_reports(uuid,text,text,uuid[])',
+    'execute'
+  ),
+  'service role can search periodic reports'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.search_report_groups_for_selector(uuid,text,uuid[],integer)',
+    'execute'
+  ),
+  'authenticated clients cannot call private report group search'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'private.get_report_user_status_summary(uuid,uuid,uuid[])',
+    'execute'
+  ),
+  'anonymous clients cannot call private report user aggregates'
 );
 
 select ok(

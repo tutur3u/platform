@@ -13,6 +13,7 @@
     "allowJs": true,
     "jsx": "preserve",
     "noEmit": true,
+    "types": ["node"],
     "declaration": false,
     "declarationMap": false,
     "composite": false

@@ -2,6 +2,12 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  apps: {
+    avatar: null as string | null,
+    avatarUpload: null as string | null,
+    credits: null as string | null,
+    workspace: null as string | null,
+  },
   avatarDelete: vi.fn(),
   avatarPatch: vi.fn(),
   avatarUploadPost: vi.fn(),
@@ -16,10 +22,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@tuturuuu/satellite/workspace-settings-route-handlers', () => ({
   createSatelliteAiCreditsRouteHandler: (app: string) => {
+    mocks.apps.credits = app;
     mocks.createAiCreditsHandler(app);
     return mocks.creditsGet;
   },
   createSatelliteWorkspaceAvatarRouteHandlers: (app: string) => {
+    mocks.apps.avatar = app;
     mocks.createAvatarHandlers(app);
     return {
       DELETE: mocks.avatarDelete,
@@ -27,10 +35,12 @@ vi.mock('@tuturuuu/satellite/workspace-settings-route-handlers', () => ({
     };
   },
   createSatelliteWorkspaceAvatarUploadRouteHandler: (app: string) => {
+    mocks.apps.avatarUpload = app;
     mocks.createAvatarUploadHandler(app);
     return mocks.avatarUploadPost;
   },
   createSatelliteWorkspaceRouteHandlers: (app: string) => {
+    mocks.apps.workspace = app;
     mocks.createWorkspaceHandlers(app);
     return {
       GET: mocks.workspaceGet,
@@ -52,10 +62,12 @@ import {
 
 describe('AI Studio workspace settings routes', () => {
   it('owns every shared workspace-settings endpoint with AI satellite auth', () => {
-    expect(mocks.createWorkspaceHandlers).toHaveBeenCalledWith('ai');
-    expect(mocks.createAvatarHandlers).toHaveBeenCalledWith('ai');
-    expect(mocks.createAvatarUploadHandler).toHaveBeenCalledWith('ai');
-    expect(mocks.createAiCreditsHandler).toHaveBeenCalledWith('ai');
+    expect(mocks.apps).toEqual({
+      avatar: 'ai',
+      avatarUpload: 'ai',
+      credits: 'ai',
+      workspace: 'ai',
+    });
 
     expect(getWorkspace).toBe(mocks.workspaceGet);
     expect(updateWorkspace).toBe(mocks.workspacePut);

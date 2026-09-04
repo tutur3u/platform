@@ -5,16 +5,23 @@ import dayjs from 'dayjs';
 import '@tuturuuu/users-core/lib/dayjs-setup';
 import { buildZonedIso, DEFAULT_SCHEDULE_TIMEZONE } from './session-time-utils';
 
-export const QUICK_WEEKLY_DEFAULT_DAYS: readonly number[] = [];
 export const QUICK_WEEKLY_PREVIEW_LIMIT = 6;
+const ROLLING_PREVIEW_MONTHS = 12;
+
+export type ScheduleEndMode = 'date' | 'never';
+
+export interface QuickWeeklySchedulePattern {
+  daysOfWeek: number[];
+  endTime: string;
+  id: string;
+  startTime: string;
+}
 
 export interface QuickWeeklyScheduleDraft {
-  daysOfWeek: number[];
-  endDate: string;
-  endTime: string;
+  endMode: ScheduleEndMode;
   intervalWeeks: number;
+  patterns: QuickWeeklySchedulePattern[];
   startDate: string;
-  startTime: string;
   timezone: string;
   untilDate: string;
 }
@@ -22,13 +29,28 @@ export interface QuickWeeklyScheduleDraft {
 export interface QuickWeeklySchedulePreviewDate {
   endsAt: string;
   label: string;
+  patternId: string;
   startsAt: string;
 }
 
 export interface QuickWeeklySchedulePreview {
-  count: number;
+  count: number | null;
   firstDates: QuickWeeklySchedulePreviewDate[];
   offsetLabel: string;
+  previewUntilDate: string;
+}
+
+export function createQuickWeeklySchedulePattern(
+  index: number,
+  startTime = '19:00',
+  endTime = '20:30'
+): QuickWeeklySchedulePattern {
+  return {
+    daysOfWeek: [],
+    endTime,
+    id: `timeframe-${index + 1}`,
+    startTime,
+  };
 }
 
 export function createQuickWeeklyScheduleDraft(
@@ -37,12 +59,10 @@ export function createQuickWeeklyScheduleDraft(
   const start = now.tz(DEFAULT_SCHEDULE_TIMEZONE);
 
   return {
-    daysOfWeek: [...QUICK_WEEKLY_DEFAULT_DAYS],
-    endDate: start.format('YYYY-MM-DD'),
-    endTime: '20:30',
+    endMode: 'date',
     intervalWeeks: 1,
+    patterns: [createQuickWeeklySchedulePattern(0)],
     startDate: start.format('YYYY-MM-DD'),
-    startTime: '19:00',
     timezone: DEFAULT_SCHEDULE_TIMEZONE,
     untilDate: start.add(12, 'month').format('YYYY-MM-DD'),
   };
@@ -70,16 +90,36 @@ function occurrenceEndDate(date: string, startTime: string, endTime: string) {
     : date;
 }
 
-function isDraftDateIncluded(
+function isPatternDateIncluded(
   draft: QuickWeeklyScheduleDraft,
+  pattern: QuickWeeklySchedulePattern,
   date: dayjs.Dayjs
 ) {
-  if (!draft.daysOfWeek.includes(date.day())) return false;
-
+  if (!pattern.daysOfWeek.includes(date.day())) return false;
   const weeksSinceStart = Math.floor(
     date.diff(dayjs(draft.startDate, 'YYYY-MM-DD'), 'day') / 7
   );
   return weeksSinceStart % Math.max(draft.intervalWeeks, 1) === 0;
+}
+
+export function isQuickWeeklyScheduleDraftValid(
+  draft: QuickWeeklyScheduleDraft
+) {
+  const start = dayjs(draft.startDate, 'YYYY-MM-DD', true);
+  const until = dayjs(draft.untilDate, 'YYYY-MM-DD', true);
+  return (
+    start.isValid() &&
+    draft.intervalWeeks >= 1 &&
+    draft.patterns.length > 0 &&
+    draft.patterns.every(
+      (pattern) =>
+        pattern.daysOfWeek.length > 0 &&
+        !!pattern.startTime &&
+        !!pattern.endTime
+    ) &&
+    (draft.endMode === 'never' ||
+      (until.isValid() && !until.isBefore(start, 'day')))
+  );
 }
 
 export function buildQuickWeeklySchedulePreview(
@@ -88,59 +128,66 @@ export function buildQuickWeeklySchedulePreview(
   limit = QUICK_WEEKLY_PREVIEW_LIMIT
 ): QuickWeeklySchedulePreview {
   const start = dayjs(draft.startDate, 'YYYY-MM-DD', true);
-  const until = dayjs(draft.untilDate, 'YYYY-MM-DD', true);
+  const finiteUntil = dayjs(draft.untilDate, 'YYYY-MM-DD', true);
+  const previewUntil =
+    draft.endMode === 'never'
+      ? start.add(ROLLING_PREVIEW_MONTHS, 'month')
+      : finiteUntil;
   const offsetLabel = `UTC/GMT ${dayjs
-    .tz(
-      `${draft.startDate} ${draft.startTime}`,
-      'YYYY-MM-DD HH:mm',
-      draft.timezone
-    )
+    .tz(`${draft.startDate} 12:00`, 'YYYY-MM-DD HH:mm', draft.timezone)
     .format('Z')}`;
 
-  if (
-    !start.isValid() ||
-    !until.isValid() ||
-    until.isBefore(start, 'day') ||
-    draft.daysOfWeek.length === 0
-  ) {
-    return { count: 0, firstDates: [], offsetLabel };
+  if (!isQuickWeeklyScheduleDraftValid(draft)) {
+    return {
+      count: draft.endMode === 'never' ? null : 0,
+      firstDates: [],
+      offsetLabel,
+      previewUntilDate: previewUntil.isValid()
+        ? previewUntil.format('YYYY-MM-DD')
+        : '',
+    };
   }
 
-  let count = 0;
-  const firstDates: QuickWeeklySchedulePreviewDate[] = [];
-
+  const generated: QuickWeeklySchedulePreviewDate[] = [];
   for (
     let date = start;
-    date.isSame(until, 'day') || date.isBefore(until, 'day');
+    date.isSame(previewUntil, 'day') || date.isBefore(previewUntil, 'day');
     date = date.add(1, 'day')
   ) {
-    if (!isDraftDateIncluded(draft, date)) continue;
-
     const localDate = date.format('YYYY-MM-DD');
-    const startsAt = buildZonedIso(localDate, draft.startTime, draft.timezone);
-    const endsAt = buildZonedIso(
-      occurrenceEndDate(localDate, draft.startTime, draft.endTime),
-      draft.endTime,
-      draft.timezone
-    );
-
-    count += 1;
-    if (firstDates.length < limit) {
-      firstDates.push({
-        endsAt,
+    for (const pattern of draft.patterns) {
+      if (!isPatternDateIncluded(draft, pattern, date)) continue;
+      const startsAt = buildZonedIso(
+        localDate,
+        pattern.startTime,
+        draft.timezone
+      );
+      generated.push({
+        endsAt: buildZonedIso(
+          occurrenceEndDate(localDate, pattern.startTime, pattern.endTime),
+          pattern.endTime,
+          draft.timezone
+        ),
         label: dayjs(startsAt)
           .tz(draft.timezone)
           .locale(locale)
           .format('ddd, MMM D, HH:mm'),
+        patternId: pattern.id,
         startsAt,
       });
     }
   }
 
-  return { count, firstDates, offsetLabel };
+  generated.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  return {
+    count: draft.endMode === 'never' ? null : generated.length,
+    firstDates: generated.slice(0, limit),
+    offsetLabel,
+    previewUntilDate: previewUntil.format('YYYY-MM-DD'),
+  };
 }
 
-export function buildQuickWeeklySchedulePayload({
+export function buildQuickWeeklySchedulePayloads({
   draft,
   groupId,
   groupName,
@@ -148,29 +195,22 @@ export function buildQuickWeeklySchedulePayload({
   draft: QuickWeeklyScheduleDraft;
   groupId: string;
   groupName?: string | null;
-}): CreateWorkspaceUserGroupSessionPayload {
-  const startsAt = buildZonedIso(
-    draft.startDate,
-    draft.startTime,
-    draft.timezone
-  );
-  const endsAt = buildZonedIso(
-    occurrenceEndDate(draft.startDate, draft.startTime, draft.endTime),
-    draft.endTime,
-    draft.timezone
-  );
-
-  return {
+}): CreateWorkspaceUserGroupSessionPayload[] {
+  return draft.patterns.map((pattern) => ({
     endTimezone: draft.timezone,
-    endsAt,
+    endsAt: buildZonedIso(
+      occurrenceEndDate(draft.startDate, pattern.startTime, pattern.endTime),
+      pattern.endTime,
+      draft.timezone
+    ),
     groupId,
     recurrence: {
-      daysOfWeek: draft.daysOfWeek,
+      daysOfWeek: pattern.daysOfWeek,
       intervalWeeks: draft.intervalWeeks,
-      untilDate: draft.untilDate || null,
+      untilDate: draft.endMode === 'never' ? null : draft.untilDate,
     },
     startTimezone: draft.timezone,
-    startsAt,
+    startsAt: buildZonedIso(draft.startDate, pattern.startTime, draft.timezone),
     title: groupName ?? null,
-  };
+  }));
 }

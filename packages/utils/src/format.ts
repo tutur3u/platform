@@ -1,11 +1,6 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+export { cn } from 'cn';
 
 import { getCurrencyLocale as getCurrencyLocaleFromConfig } from './currencies';
-
-export function cn(...inputs: ClassValue[]): string {
-  return twMerge(clsx(inputs));
-}
 
 export const capitalize = (s?: string | null): string => {
   if (!s) return '';

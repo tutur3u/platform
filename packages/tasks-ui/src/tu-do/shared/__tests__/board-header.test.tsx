@@ -128,6 +128,7 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
       {children}
     </button>
   ),
+  DropdownMenuSeparator: () => <hr />,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
@@ -279,6 +280,19 @@ describe('BoardHeader', () => {
     expect(settingsButton).not.toHaveTextContent(
       'ws-task-boards.actions.board_settings'
     );
+  });
+
+  it('keeps board actions in the canonical settings dialog', () => {
+    renderBoardHeader();
+
+    expect(
+      screen.queryByRole('button', { name: 'common.actions' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'ws-task-boards.actions.board_settings',
+      })
+    ).toBeInTheDocument();
   });
 
   it('renders a compact hide-sidebar button when sidebar context is available', () => {

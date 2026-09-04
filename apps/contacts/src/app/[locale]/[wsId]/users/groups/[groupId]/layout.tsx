@@ -6,6 +6,7 @@ import {
   FileUser,
   UserCheck,
 } from '@tuturuuu/icons';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
@@ -13,10 +14,9 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
-  getUserGroupMemberships,
-  verifyGroupAccess,
+  getUserGroupMembershipsForActor,
+  verifyGroupAccessForActor,
 } from '@tuturuuu/users-core/lib/user-groups/groups-utils';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
@@ -46,24 +46,25 @@ async function GroupLayoutContent({ children, params }: LayoutProps) {
   await connection();
 
   const { wsId: id, groupId } = await params;
-  const wsId = await normalizeWorkspaceId(id);
-
-  const permissions = await getContactsWorkspacePermissions(wsId);
+  const actor = await getSatelliteAppSessionUser('contacts');
+  if (!actor?.id) notFound();
+  const permissions = await getContactsWorkspacePermissions(id, actor);
   if (!permissions) notFound();
+  const wsId = permissions.wsId;
   const { containsPermission } = permissions;
   const hasManageUsersPermission = containsPermission('manage_users');
 
   if (groupId === '~') {
     const accessibleGroupIds = hasManageUsersPermission
       ? null
-      : await getUserGroupMemberships(wsId);
+      : await getUserGroupMembershipsForActor(wsId, actor.id);
     return (
       <SelectGroupGateway wsId={wsId} accessibleGroupIds={accessibleGroupIds} />
     );
   }
 
   if (!hasManageUsersPermission) {
-    await verifyGroupAccess(wsId, groupId);
+    await verifyGroupAccessForActor(wsId, groupId, actor.id);
   }
 
   const t = await getTranslations();

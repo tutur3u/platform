@@ -92,6 +92,31 @@ export function workspaceContactsPostsRedirectHref(
   return url.toString();
 }
 
+export function workspaceContactsUsersRedirectHref(
+  wsId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+    splat?: string;
+  } = {}
+) {
+  const normalizedSplat = options.splat?.replace(/^\/+|\/+$/g, '');
+  const encodedSplat = normalizedSplat
+    ?.split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  const suffix = encodedSplat ? `/${encodedSplat}` : '';
+  const url = new URL(
+    `/${encodeURIComponent(wsId)}/users${suffix}`,
+    `${getContactsAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams, {
+    preserveEmptyStringValues: true,
+  });
+
+  return url.toString();
+}
+
 export function workspaceDashboardRedirectHref(wsId: string) {
   return `/${wsId}`;
 }
@@ -285,7 +310,7 @@ export function getInfraAppOrigin() {
     ],
     fallback:
       process.env.NODE_ENV === 'production'
-        ? 'https://infra.tuturuuu.com'
+        ? 'https://infrastructure.tuturuuu.com'
         : getLocalInternalAppUrl('infra', 'http://localhost:7823'),
   });
 }

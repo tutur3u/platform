@@ -30,6 +30,7 @@ const FULL_TAGS = new Set([
   'a',
   'blockquote',
   'br',
+  'details',
   'em',
   'h2',
   'h3',
@@ -43,6 +44,7 @@ const FULL_TAGS = new Set([
   's',
   'span',
   'strong',
+  'summary',
   'u',
   'ul',
 ]);

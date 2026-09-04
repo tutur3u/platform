@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import { siteConfig } from '@/constants/configs';
 import { componentDocs, componentDocsByCategory } from '../component-docs';
 import { getComponentById } from '../component-docs-core';
@@ -17,10 +18,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
-  const t = await getTranslations({
-    locale: normalizedLocale,
-    namespace: 'ui-showcase.docs.metadata',
-  });
+  const t = await getTranslations('ui-showcase.docs.metadata');
 
   return {
     title: t('componentsTitle'),
@@ -31,19 +29,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function UiComponentsPage({ params }: Props) {
+export async function UiComponentsRuntime({ params }: Props) {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
-  setRequestLocale(normalizedLocale);
 
-  const t = await getTranslations({
-    locale: normalizedLocale,
-    namespace: 'ui-showcase.docs',
-  });
-  const tCategories = await getTranslations({
-    locale: normalizedLocale,
-    namespace: 'ui-showcase.categories',
-  });
+  const t = await getTranslations('ui-showcase.docs');
+  const tCategories = await getTranslations('ui-showcase.categories');
   const baseHref = `/${normalizedLocale}/ui/components`;
   const tocItems = componentDocsByCategory.map((group) => ({
     id: group.category,
@@ -108,5 +99,13 @@ export default async function UiComponentsPage({ params }: Props) {
       </div>
       <OnThisPage items={tocItems} title={t('onThisPage')} />
     </div>
+  );
+}
+
+export default function UiComponentsPage(props: Props) {
+  return (
+    <Suspense fallback={<div className="min-h-96" />}>
+      <UiComponentsRuntime {...props} />
+    </Suspense>
   );
 }

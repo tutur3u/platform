@@ -1256,19 +1256,7 @@ export {
   type WorkspaceMeetingStream,
   type WorkspaceMeetingStreamResponse,
 } from './meet';
-export {
-  createWorkspaceMeeting,
-  deleteWorkspaceMeeting,
-  deleteWorkspaceMeetingRecording,
-  getWorkspaceMeetingRecordingPlayback,
-  getWorkspaceMeetingRecordings,
-  getWorkspaceMeetings,
-  toggleWorkspaceMeetingRecording,
-  transcribeWorkspaceMeetingAudio,
-  updateWorkspaceMeeting,
-  updateWorkspaceMeetingRecording,
-  uploadWorkspaceMeetingRecording,
-} from './meetings';
+export * from './meetings';
 export {
   applyMindAiPatch,
   archiveMindBoard,
@@ -1317,7 +1305,7 @@ export {
   type WorkspaceNotificationPreferencesResponse,
   type WorkspaceNotificationPreferenceUpdate,
 } from './notifications';
-export { getCurrentUserNovaTeam } from './nova';
+export * from './nova';
 export {
   type ConnectedOnboardingProgress,
   type ConnectedOnboardingUpdate,

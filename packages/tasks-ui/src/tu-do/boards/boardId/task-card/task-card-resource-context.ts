@@ -5,6 +5,7 @@ import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-ex
 export interface TaskCardResourceContextInput {
   boardId: string;
   pageWorkspaceId?: string;
+  preferPageWorkspaceResources?: boolean;
   propAvailableLists?: TaskList[];
   task: Task;
 }
@@ -19,9 +20,26 @@ export interface TaskCardResourceContext {
   taskBoardId: string;
 }
 
+export function getTaskCardActionLists({
+  task,
+  pageAvailableLists,
+  resourceAvailableLists,
+}: {
+  task: Task;
+  pageAvailableLists?: TaskList[];
+  resourceAvailableLists: TaskList[];
+}) {
+  if (isPersonalExternalOverlayTask(task) && pageAvailableLists) {
+    return pageAvailableLists;
+  }
+
+  return resourceAvailableLists;
+}
+
 export function getTaskCardResourceContext({
   boardId,
   pageWorkspaceId,
+  preferPageWorkspaceResources = false,
   propAvailableLists,
   task,
 }: TaskCardResourceContextInput): TaskCardResourceContext {
@@ -30,9 +48,10 @@ export function getTaskCardResourceContext({
   const isSourceWorkspaceTask = Boolean(
     task.source_workspace_id || task.source_board_id
   );
-  const relationshipWorkspaceId = isPersonalExternalOverlayTask(task)
-    ? pageWorkspaceId
-    : effectiveWorkspaceId;
+  const relationshipWorkspaceId =
+    preferPageWorkspaceResources || isPersonalExternalOverlayTask(task)
+      ? pageWorkspaceId
+      : effectiveWorkspaceId;
   const boardViewableMembersWorkspaceId =
     task.source_workspace_id ?? pageWorkspaceId;
   const boardViewableMembersBoardId =

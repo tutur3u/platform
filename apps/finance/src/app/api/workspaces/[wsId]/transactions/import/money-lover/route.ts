@@ -1,8 +1,5 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface MoneyLoverTransaction {
@@ -23,23 +20,32 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   try {
-    const { wsId } = await params;
-    const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
+    const { wsId: rawWsId } = await params;
 
     console.info('[Money Lover Import] Starting import for workspace', {
-      wsId,
+      wsId: rawWsId,
     });
 
-    // Get the current user
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user) {
+    const actor = await resolveSatelliteRequestActor(req, 'finance');
+    if (!actor) {
       console.error('[Money Lover Import] Unauthorized - no user found', {
-        wsId,
+        wsId: rawWsId,
       });
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+    const permissions = await getPermissions({
+      user: actor.user,
+      wsId: rawWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json(
+        { message: 'User not found in workspace' },
+        { status: 403 }
+      );
+    }
+    const { admin: supabase, user } = actor;
+    const wsId = permissions.wsId;
+    const sbAdmin = supabase;
 
     console.info('[Money Lover Import] User authenticated', {
       userId: user.id,
@@ -47,7 +53,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // Get workspace user ID from linked users table
-    const { data: linkedUser, error: linkedUserError } = await supabase
+    const { data: linkedUser, error: linkedUserError } = await sbAdmin
       .from('workspace_user_linked_users')
       .select('virtual_user_id')
       .eq('ws_id', wsId)

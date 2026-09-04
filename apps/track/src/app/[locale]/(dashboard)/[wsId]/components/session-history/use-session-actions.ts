@@ -14,6 +14,11 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import type { SessionWithRelations } from '../../types';
+import {
+  optimisticallyRemoveTimeTrackingSession,
+  restoreTimeTrackingSessionCache,
+  type TimeTrackingSessionCacheSnapshot,
+} from './session-history-cache';
 import type { ActionStates, EditFormState } from './session-types';
 
 /**
@@ -419,7 +424,13 @@ export function useSessionActions({
   const deleteSession = useCallback(async () => {
     if (!sessionToDelete) return;
     setIsDeleting(true);
+    let cacheSnapshot: TimeTrackingSessionCacheSnapshot | undefined;
     try {
+      cacheSnapshot = await optimisticallyRemoveTimeTrackingSession(
+        queryClient,
+        wsId,
+        sessionToDelete.id
+      );
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToDelete.id}`,
         { method: 'DELETE' }
@@ -437,6 +448,9 @@ export function useSessionActions({
       router.refresh();
       toast.success(t('session_deleted_successfully'));
     } catch (error) {
+      if (cacheSnapshot) {
+        restoreTimeTrackingSessionCache(queryClient, cacheSnapshot);
+      }
       console.error('Error deleting session:', error);
       const errorMessage =
         error instanceof Error ? error.message : t('failed_to_delete_session');
@@ -444,7 +458,14 @@ export function useSessionActions({
     } finally {
       setIsDeleting(false);
     }
-  }, [sessionToDelete, wsId, router, t, invalidateTimeTrackerQueries]);
+  }, [
+    sessionToDelete,
+    queryClient,
+    wsId,
+    router,
+    t,
+    invalidateTimeTrackerQueries,
+  ]);
 
   const openMoveDialog = useCallback(
     (session: SessionWithRelations | undefined) => {

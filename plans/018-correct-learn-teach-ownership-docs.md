@@ -9,7 +9,10 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** DONE
+- **Verified implementation:** commit `14e0f810068ff8c1b2af4e5609fd1222986ba8c5`
+  on branch `docs/education-satellite-ownership`; route inventory, stale-claim
+  checks, `bun check`, whitespace, and hooks passed
 - **Priority:** P2
 - **Effort:** S
 - **Risk:** LOW

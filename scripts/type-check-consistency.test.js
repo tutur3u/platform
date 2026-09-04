@@ -170,6 +170,39 @@ test('workspace TypeScript dependencies use TypeScript 7', () => {
   assert.deepEqual(invalidPackages, []);
 });
 
+test('app TypeScript configs override the compatibility types wildcard', () => {
+  const nextConfigPath = 'packages/typescript-config/nextjs.json';
+  const nextConfig = readJson(nextConfigPath);
+
+  assert.deepEqual(nextConfig.compilerOptions?.types, ['node'], nextConfigPath);
+
+  for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
+    if (!packageJsonPath.startsWith('apps/')) {
+      continue;
+    }
+
+    const configPath = path.join(
+      path.dirname(packageJsonPath),
+      'tsconfig.json'
+    );
+    const absoluteConfigPath = path.join(repoRoot, configPath);
+
+    if (!fs.existsSync(absoluteConfigPath)) {
+      continue;
+    }
+
+    const config = readJson(configPath);
+    const appTypes = config.compilerOptions?.types;
+    const inheritsExplicitNextTypes =
+      config.extends === '@tuturuuu/typescript-config/nextjs.json';
+    const declaresExplicitTypes =
+      Array.isArray(appTypes) && !appTypes.includes('*');
+
+    assert.ok(!Array.isArray(appTypes) || !appTypes.includes('*'), configPath);
+    assert.ok(inheritsExplicitNextTypes || declaresExplicitTypes, configPath);
+  }
+});
+
 test('Next build workspaces declare native-preview TypeScript for TS7 builds', () => {
   const invalidPackages = [];
 

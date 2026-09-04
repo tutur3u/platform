@@ -1,7 +1,7 @@
 ---
 title: 'CMS'
 description: 'Dedicated Tuturuuu CMS app for site editing, preview, publishing, media, and team access.'
-updatedAt: '2026-05-31'
+updatedAt: '2026-08-10'
 ---
 
 ## Overview
@@ -12,8 +12,11 @@ continues to use the existing external-project implementation contracts behind
 the scenes.
 
 - It owns the CMS UI, routing, workspace picker, and root-level `/{wsId}/projects` linking console.
-- It remains a satellite frontend. Protected APIs still live in `apps/web`.
-- All CMS `/api/*` traffic is forwarded to `apps/web`.
+- It remains a satellite frontend with mixed API ownership: CMS-local handlers
+  own root administration and commerce integration, while the larger
+  external-project content API remains in `apps/web`.
+- Unmatched CMS `/api/*` traffic falls back to `apps/web`; an exact local route
+  is served by `apps/cms` before that fallback is considered.
 
 ## Product Vocabulary
 
@@ -56,10 +59,28 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 
 ## API Ownership
 
-- `apps/cms` rewrites `/api/:path*` to `apps/web`.
+- `apps/cms` owns host-local auth/session and build-info routes. It also owns
+  the root administration handlers for external-project audits, bindings, and
+  project templates under `/api/v1/admin/*`, plus commerce overview, insights,
+  products, and storefront under `/api/v1/commerce/*`.
+- The workspace external-project families for content models, collections,
+  entries, blocks, assets, publishing and delivery, sync, and CMS-aware team
+  access remain in `apps/web`. Requests with no CMS-local handler reach them
+  through the fallback `/api/:path*` rewrite.
+- Keep clients on typed `@tuturuuu/internal-api` helpers. Browser calls should
+  stay same-origin so local routes win and fallback routes are forwarded;
+  request-scoped server calls must preserve forwarded authentication.
+- CMS-local protected handlers resolve the CMS app-session actor and then apply
+  `getCmsWorkspaceAccess` or the root-admin gate. Forwarded Web handlers still
+  require the coordinated Web-issued session and enforce their own workspace
+  permissions; the proxy guard is not a replacement for route authorization.
 - The rewrite target must resolve to the central web app, not the CMS app origin. Prefer `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, or `WEB_APP_URL` for the central origin. If a deployment-level `NEXT_PUBLIC_APP_URL` points at `cms.tuturuuu.com` or the current CMS Vercel preview URL, the CMS config ignores it and falls back to `https://tuturuuu.com` to avoid self-rewriting `/api/*` requests.
-- New CMS backend behavior should be added in `apps/web`, then exposed through `packages/internal-api`.
-- The root linking console reads the workspace-indexed binding summary from `GET /api/v1/admin/external-project-bindings`.
+- Add new behavior to the host that owns its route family. Extend the CMS-local
+  admin or commerce handler for those families; extend the Web-owned
+  external-project handler for content, media, publishing, sync, or team
+  behavior, and expose shared access through `packages/internal-api`.
+- The root linking console reads the workspace-indexed binding summary from the
+  CMS-local `GET /api/v1/admin/external-project-bindings` handler.
 - The root linking console may load its initial server-render payload directly with the request-scoped CMS Supabase admin path after `getCmsWorkspaceAccess` proves root admin access. Avoid server-to-server Internal API fetches during that initial render, because production auth/origin forwarding failures turn `/internal/projects` into a hard RSC error page. Keep workspace-secret lookups batched; one `.in('ws_id', allWorkspaceIds)` query can exceed PostgREST/proxy URL limits and return `400 Bad Request` in production.
 - Backend naming stays on `external-project*` contracts even though the product surface is branded as Tuturuuu CMS.
 - Add or update the CMS product-copy hygiene test whenever new visible CMS
@@ -95,7 +116,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - CMS media uploads show per-file progress for cover images, gallery media, and WebGL ZIP packages. Cover and gallery media must use the external-project asset app-server upload route so Tuturuuu measures the actual bytes before writing storage objects, then store the returned Drive path on the CMS asset row. WebGL ZIP package uploads still upload directly to the signed storage URL returned by the self-hosted web API, then call the WebGL package finalize route so the ZIP can be extracted and mapped to a playable artifact. The WebGL asset-serving route must infer browser content types from the requested WebGL filename for known outputs such as `index.html`, `.js`, `.jpg`, `.wasm`, `.data`, and compressed `.gz`/`.br` files, because extracted storage metadata can be too generic or incorrectly recorded as `text/plain`. Served WebGL files must include a CSP `sandbox` header that omits `allow-same-origin`; served HTML is also adjusted for the CMS player so Unity canvases fill the iframe viewport instead of keeping the default fixed-size template layout, hide the stock Unity footer chrome, resize the canvas backing buffer to the iframe viewport, inject a route-local `<base>` and artifact-map URL resolver so `Build/*` and `TemplateData/*` load through the same WebGL package API route even when the Unity template creates scripts dynamically, and show in-frame resource download progress when the runtime fetches package assets.
 - CMS asset delivery must respect the workspace Drive provider. Supabase assets may use signed image transforms, while R2-backed assets should resolve through the workspace storage provider signed-read path and ignore Supabase-only transform parameters.
 - CMS asset rows may only store workspace storage paths under `external-projects/`; asset delivery and cleanup must not operate on paths from other workspace modules such as Drive or finance.
-- CMS does not register the shared offline service worker or emit the shared web app manifest. It is a Vercel-hosted satellite that proxies protected APIs to `apps/web`, so PWA routes owned by `apps/web` must not be advertised from `cms.tuturuuu.com`.
+- CMS does not register the shared offline service worker or emit the shared web app manifest. It is a Vercel-hosted satellite whose unmatched, Web-owned protected API families fall back to `apps/web`, so PWA routes owned by `apps/web` must not be advertised from `cms.tuturuuu.com`.
 - Library taxonomy edits should stay lightweight: category/tag assignment, creation, and removal can happen directly from the library dialog, while deeper editorial changes still live in the entry sidebar taxonomy card.
 
 ## Local Development

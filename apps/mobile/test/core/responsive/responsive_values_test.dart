@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 void main() {
@@ -10,6 +11,7 @@ void main() {
       child: shad.ShadcnApp(
         theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
         localizationsDelegates: const [shad.ShadcnLocalizations.delegate],
+        builder: ShadcnMaterialBridge.appBuilder,
         home: Builder(builder: (context) => child),
       ),
     );

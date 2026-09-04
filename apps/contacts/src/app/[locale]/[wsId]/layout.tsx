@@ -10,12 +10,13 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { getContactsWorkspaceAccess } from '@/lib/workspace';
 import NavbarActions from '../navbar-actions';
 import { UserNav } from '../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -68,7 +69,12 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
     personal: !!workspace.personal,
   });
 
-  const permissions = await getPermissions({ user, wsId: workspace.id });
+  // A small number of legacy/partially accepted members have valid workspace
+  // membership but no Contacts profile link. Repair that once at the shared
+  // workspace shell so every Contacts module sees the same actor profile
+  // instead of returning an empty state or a route-specific 404.
+  const access = await getContactsWorkspaceAccess(workspace.id);
+  const permissions = access?.permissions;
 
   const cookieStore = await cookies();
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
@@ -100,7 +106,7 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions />
+            <NavbarActions userId={user.id} />
           </Suspense>
         }
         notificationPopover={<NotificationPopover userId={user.id} />}

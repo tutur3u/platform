@@ -6,7 +6,10 @@ import {
   getUserGroupMembershipsForActor,
 } from '@tuturuuu/users-core/lib/user-groups/groups-utils';
 import { sortWorkspaceUsersByArchive } from '@tuturuuu/users-core/reports/user-archive';
-import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  MAX_SEARCH_LENGTH,
+  MAX_SHORT_TEXT_LENGTH,
+} from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserGroupRoutePermissions } from '../../../../../../lib/user-groups/route-auth';
@@ -14,11 +17,15 @@ import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '../../../../../../lib/user-groups/route-helpers';
+import { isMissingReportSearchRpc } from '../../../report-search';
 
 const SearchParamsSchema = z.object({
   reportId: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
+  userQuery: z.string().trim().max(MAX_SEARCH_LENGTH).optional(),
   userId: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
 });
+
+const USER_SEARCH_LIMIT = 40;
 
 interface Params {
   params: Promise<{ groupId: string; wsId: string }>;
@@ -86,14 +93,14 @@ export async function GET(request: Request, { params }: Params) {
       }
     }
 
-    const { userId, reportId } = parsed.data;
+    const { userId, reportId, userQuery } = parsed.data;
     const sbAdmin = await createAdminClient();
     const privateDb = sbAdmin.schema('private');
     const [
       groupResult,
       usersResult,
+      selectedUserResult,
       managersByGroup,
-      statusResult,
       reportsResult,
       detailResult,
       metricsResult,
@@ -109,16 +116,26 @@ export async function GET(request: Request, { params }: Params) {
           _ws_id: wsId,
           included_groups: [groupId],
           excluded_groups: [],
-          search_query: '',
+          search_query: userQuery ?? '',
           include_archived: true,
         })
         .select('id, full_name, archived, archived_until, note')
-        .order('full_name', { ascending: true, nullsFirst: false }),
+        .order('full_name', { ascending: true, nullsFirst: false })
+        .limit(USER_SEARCH_LIMIT + 1),
+      userId
+        ? sbAdmin
+            .rpc('get_workspace_users', {
+              _ws_id: wsId,
+              included_groups: [groupId],
+              excluded_groups: [],
+              search_query: '',
+              include_archived: true,
+            })
+            .select('id, full_name, archived, archived_until, note')
+            .eq('id', userId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
       fetchManagersForGroups(sbAdmin, [groupId]),
-      sbAdmin.rpc('get_user_report_status_summary', {
-        _group_id: groupId,
-        _ws_id: wsId,
-      }),
       userId
         ? privateDb
             .from('external_user_monthly_reports_workspace_view')
@@ -152,7 +169,7 @@ export async function GET(request: Request, { params }: Params) {
     const failed = [
       groupResult,
       usersResult,
-      statusResult,
+      selectedUserResult,
       reportsResult,
       detailResult,
       metricsResult,
@@ -171,12 +188,76 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
+    const matchingUsers = (usersResult.data ?? []) as WorkspaceUser[];
+    const userSearchHasMore = matchingUsers.length > USER_SEARCH_LIMIT;
+    const visibleUsers = matchingUsers.slice(0, USER_SEARCH_LIMIT);
+    const selectedUser = selectedUserResult.data as WorkspaceUser | null;
     const users = sortWorkspaceUsersByArchive(
-      ((usersResult.data ?? []) as WorkspaceUser[]).map((user) => ({
+      [
+        ...visibleUsers,
+        ...(selectedUser &&
+        !visibleUsers.some((candidate) => candidate.id === selectedUser.id)
+          ? [selectedUser]
+          : []),
+      ].map((user) => ({
         ...user,
         note: user.note ?? undefined,
       }))
     );
+    const visibleUserIds = users.map((user) => user.id).filter(Boolean);
+    const statusResult = await (
+      privateDb.rpc as unknown as (
+        name: string,
+        args: {
+          p_group_id: string;
+          p_user_ids: string[];
+          p_ws_id: string;
+        }
+      ) => Promise<{
+        data: Array<{
+          approved_count: number;
+          pending_count: number;
+          rejected_count: number;
+          user_id: string;
+        }> | null;
+        error: unknown;
+      }>
+    )('get_report_user_status_summary', {
+      p_group_id: groupId,
+      p_user_ids: visibleUserIds,
+      p_ws_id: wsId,
+    });
+    let userStatusSummary = statusResult.data ?? [];
+    if (statusResult.error) {
+      if (!isMissingReportSearchRpc(statusResult.error)) {
+        console.error('Reports user status fetch failed:', statusResult.error);
+        return NextResponse.json(
+          { code: 'REPORTS_FETCH_FAILED', message: 'Error fetching reports' },
+          { status: 500 }
+        );
+      }
+      const fallbackStatusResult = await sbAdmin.rpc(
+        'get_user_report_status_summary',
+        {
+          _group_id: groupId,
+          _ws_id: wsId,
+        }
+      );
+      if (fallbackStatusResult.error) {
+        console.error(
+          'Reports user status fallback failed:',
+          fallbackStatusResult.error
+        );
+        return NextResponse.json(
+          { code: 'REPORTS_FETCH_FAILED', message: 'Error fetching reports' },
+          { status: 500 }
+        );
+      }
+      const visibleUserIdSet = new Set(visibleUserIds);
+      userStatusSummary = (fallbackStatusResult.data ?? []).filter((row) =>
+        visibleUserIdSet.has(row.user_id)
+      );
+    }
     const userGroupMetrics = (metricsResult.data ?? [])
       .sort((left: any, right: any) =>
         String(left.user_group_metrics.created_at).localeCompare(
@@ -196,7 +277,9 @@ export async function GET(request: Request, { params }: Params) {
       group: groupResult.data,
       managers: managersByGroup[groupId] ?? [],
       users,
-      userStatusSummary: statusResult.data ?? [],
+      userSearchHasMore,
+      userSearchTotal: visibleUsers.length,
+      userStatusSummary,
       reports: (reportsResult.data ?? []).map((report) =>
         mapReport(report as Record<string, unknown>)
       ),

@@ -108,7 +108,7 @@ export default async function RootLayout({
             <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
           }
         >
-          <NavbarActions />
+          <NavbarActions userId={user.id} />
         </Suspense>
       }
       userPopover={

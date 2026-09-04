@@ -1,4 +1,5 @@
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -73,8 +74,10 @@ export const PATCH = withSessionAuth<RouteParams>(
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
 
+      const sbAdmin = await createAdminClient();
+
       // Verify the label exists and belongs to the workspace
-      const { data: existingLabel } = await supabase
+      const { data: existingLabel } = await sbAdmin
         .from('workspace_task_labels')
         .select('id, ws_id')
         .eq('id', validatedLabelId)
@@ -86,7 +89,7 @@ export const PATCH = withSessionAuth<RouteParams>(
       }
 
       // Update the label
-      const { data: updatedLabel, error: updateError } = await supabase
+      const { data: updatedLabel, error: updateError } = await sbAdmin
         .from('workspace_task_labels')
         .update({
           name: name.trim(),
@@ -150,8 +153,10 @@ export const DELETE = withSessionAuth<RouteParams>(
         return NextResponse.json({ error: 'Access denied' }, { status: 403 });
       }
 
+      const sbAdmin = await createAdminClient();
+
       // Verify the label exists and belongs to the workspace
-      const { data: existingLabel } = await supabase
+      const { data: existingLabel } = await sbAdmin
         .from('workspace_task_labels')
         .select('id, ws_id')
         .eq('id', validatedLabelId)
@@ -163,7 +168,7 @@ export const DELETE = withSessionAuth<RouteParams>(
       }
 
       // Delete the label
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await sbAdmin
         .from('workspace_task_labels')
         .delete()
         .eq('id', validatedLabelId)

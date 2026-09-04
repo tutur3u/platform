@@ -9,6 +9,7 @@ import {
   InternalApiError,
   withTaskApiBaseUrl,
 } from './client';
+import { resolveTaskMediaUploadFilename } from './task-media-filename';
 
 export interface WorkspaceUploadUrlResponse {
   signedUrl?: string;
@@ -31,7 +32,6 @@ export interface WorkspaceTaskMediaAccess {
     name: string;
   }>;
 }
-
 interface WorkspaceStorageShareResponse {
   signedUrl?: string;
 }
@@ -486,7 +486,7 @@ export async function uploadWorkspaceTaskFile(
   try {
     uploadUrlResult = await createWorkspaceTaskUploadUrl(
       workspaceId,
-      file.name,
+      resolveTaskMediaUploadFilename(file),
       uploadOptions,
       clientOptions
     );

@@ -873,6 +873,7 @@
     "all_states": "All states",
     "branches": "Branches",
     "code": "Code",
+    "collection_failed": "This collection could not be loaded.",
     "commits": "Commits",
     "contributors": "Contributors",
     "filter_collection": "Filter {collection}",
@@ -885,6 +886,10 @@
     "github_unavailable": "GitHub did not complete this request",
     "github_unavailable_description": "GitHub returned an access or service error. This is not being reported as a rate limit.",
     "issues": "Issues",
+    "next_page": "Next page",
+    "page_number": "Page {page}",
+    "partial_results": "This page is part of a larger collection.",
+    "previous_page": "Previous page",
     "pull_requests": "Pull requests",
     "rate_limited": "GitHub rate limit reached",
     "rate_limited_description": "GitHub explicitly reported that its API limit was exhausted or throttled. Try again after the limit resets.",
@@ -894,6 +899,7 @@
     "repository_not_found_description": "This repository is not registered, is private, or is currently unavailable.",
     "result_count": "{count} results",
     "retry": "Retry",
+    "reviews": "Reviews",
     "sort": "Sort items",
     "sort_name": "Name A-Z",
     "sort_oldest": "Oldest first",
@@ -1725,8 +1731,40 @@
     "trigger_label": "Open version details",
     "version": "Version"
   },
+  "ws-members": {
+    "assign_invitation_role": "Assign role",
+    "clear_all_roles": "Clear all",
+    "invitation_role": "Invitation role",
+    "invitation_role_helper": "Applied when this person accepts the invitation.",
+    "invitation_role_updated": "Invitation role updated",
+    "invite_access_guest_tab": "Guest",
+    "invite_access_member_tab": "Member",
+    "invite_access_pos_tab": "POS",
+    "invite_access_title": "Access and roles",
+    "invite_emails_helper": "Separate multiple addresses with commas, spaces, or new lines.",
+    "invite_emails_label": "Email addresses",
+    "invite_membership_guest_description": "Limited guest access without workspace roles.",
+    "invite_membership_member_description": "Full workspace membership with optional roles.",
+    "invite_recipients_title": "Recipients",
+    "invite_roles_description": "Assign one or more roles now. You can change them while the invitation is pending.",
+    "invite_roles_no_match": "No roles match your search.",
+    "invite_roles_optional": "Optional",
+    "invite_roles_search": "Search workspace roles...",
+    "no_role_assigned": "No role assigned",
+    "no_roles_assigned": "No roles assigned",
+    "recipients_count": "{count, plural, =0 {No recipients} =1 {# recipient} other {# recipients}}",
+    "roles_selected": "{count, plural, =0 {No roles selected} =1 {# role selected} other {# roles selected}}"
+  },
   "ws-roles": {
     "manage_git_repositories": "Manage Git repositories",
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git."
+  },
+  "ws-task-boards": {
+    "manual_ordering_disabled": {
+      "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
+      "keep_sorting": "Keep current sorting",
+      "title": "Manual ordering is paused",
+      "use_manual": "Use manual order"
+    }
   }
 }

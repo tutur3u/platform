@@ -7,6 +7,8 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Community Profile',
@@ -20,7 +22,8 @@ interface Props {
   }>;
 }
 
-export default async function UserProfilePage({ params }: Props) {
+export async function UserProfileRuntime({ params }: Props) {
+  await connection();
   const supabase = await createClient();
   const { handle } = await params;
 
@@ -110,6 +113,14 @@ export default async function UserProfilePage({ params }: Props) {
           )}
         </div> */}
     </div>
+  );
+}
+
+export default function UserProfilePage(props: Props) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-root-background" />}>
+      <UserProfileRuntime {...props} />
+    </Suspense>
   );
 }
 

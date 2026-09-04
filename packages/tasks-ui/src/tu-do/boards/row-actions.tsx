@@ -40,14 +40,19 @@ import { BoardShareDialog } from './board-share-dialog';
 import { TaskBoardForm } from './form';
 
 interface BoardActionsProps {
-  board: WorkspaceTaskBoard;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'> &
+    Partial<WorkspaceTaskBoard>;
   canManageBoards?: boolean;
+  display?: 'menu' | 'settings';
+  onBoardUnavailable?: () => void;
   wsId?: string;
 }
 
 export function BoardActions({
   board,
   canManageBoards = true,
+  display = 'menu',
+  onBoardUnavailable,
   wsId,
 }: BoardActionsProps) {
   const t = useTranslations();
@@ -59,7 +64,18 @@ export function BoardActions({
     archiveBoard,
     unarchiveBoard,
     duplicateBoard,
+    isArchiving,
+    isDeleting,
+    isPermanentlyDeleting,
+    isRestoring,
+    isUnarchiving,
   } = useBoardActions(wsId || data.ws_id);
+  const isPending =
+    isArchiving ||
+    isDeleting ||
+    isPermanentlyDeleting ||
+    isRestoring ||
+    isUnarchiving;
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -90,128 +106,191 @@ export function BoardActions({
           </Link>
         )}
 
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Ellipsis className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+        {display === 'settings' ? (
+          <div className="grid w-full gap-3 sm:grid-cols-2">
             {data.deleted_at ? (
-              // Deleted board options
               <>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowRestoreDialog(true);
-                  }}
+                <Button
+                  className="justify-start gap-2"
+                  disabled={isPending}
+                  onClick={() => setShowRestoreDialog(true)}
+                  type="button"
+                  variant="outline"
                 >
-                  <RotateCcw className="mr-2 h-4 w-4" />
+                  <RotateCcw className="h-4 w-4" />
                   {t('ws-task-boards.row_actions.restore')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowPermanentDeleteDialog(true);
-                  }}
-                  className="text-dynamic-red focus:text-dynamic-red"
+                </Button>
+                <Button
+                  className="justify-start gap-2 text-dynamic-red hover:text-dynamic-red"
+                  disabled={isPending}
+                  onClick={() => setShowPermanentDeleteDialog(true)}
+                  type="button"
+                  variant="outline"
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                   {t('ws-task-boards.row_actions.delete_forever')}
-                </DropdownMenuItem>
-              </>
-            ) : data.archived_at ? (
-              // Archived board options
-              <>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowUnarchiveDialog(true);
-                  }}
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  {t('ws-task-boards.row_actions.unarchive')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDeleteDialog(true);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('common.delete')}
-                </DropdownMenuItem>
+                </Button>
               </>
             ) : (
-              // Active board options
               <>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowShareDialog(true);
-                  }}
+                <Button
+                  className="justify-start gap-2"
+                  disabled={isPending}
+                  onClick={() =>
+                    data.archived_at
+                      ? setShowUnarchiveDialog(true)
+                      : setShowArchiveDialog(true)
+                  }
+                  type="button"
+                  variant="outline"
                 >
-                  <Share2 className="mr-2 h-4 w-4" />
-                  {t('ws-task-boards.share.action')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowEditDialog(true);
-                  }}
+                  {data.archived_at ? (
+                    <RotateCcw className="h-4 w-4" />
+                  ) : (
+                    <Archive className="h-4 w-4" />
+                  )}
+                  {data.archived_at
+                    ? t('ws-task-boards.row_actions.unarchive')
+                    : t('ws-task-boards.row_actions.archive')}
+                </Button>
+                <Button
+                  className="justify-start gap-2 text-dynamic-red hover:text-dynamic-red"
+                  disabled={isPending}
+                  onClick={() => setShowDeleteDialog(true)}
+                  type="button"
+                  variant="outline"
                 >
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('common.edit')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    duplicateBoard(data.id);
-                  }}
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  {t('ws-task-boards.row_actions.duplicate')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowSaveAsTemplateDialog(true);
-                  }}
-                >
-                  <Bookmark className="mr-2 h-4 w-4" />
-                  {t('ws-task-boards.row_actions.save_as_template')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowArchiveDialog(true);
-                  }}
-                >
-                  <Archive className="mr-2 h-4 w-4" />
-                  {t('ws-task-boards.row_actions.archive')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowDeleteDialog(true);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                   {t('common.delete')}
-                </DropdownMenuItem>
+                </Button>
               </>
             )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </div>
+        ) : (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+                aria-label={t('common.actions')}
+                disabled={isPending}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Ellipsis className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {data.deleted_at ? (
+                // Deleted board options
+                <>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowRestoreDialog(true);
+                    }}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.row_actions.restore')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPermanentDeleteDialog(true);
+                    }}
+                    className="text-dynamic-red focus:text-dynamic-red"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.row_actions.delete_forever')}
+                  </DropdownMenuItem>
+                </>
+              ) : data.archived_at ? (
+                // Archived board options
+                <>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUnarchiveDialog(true);
+                    }}
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.row_actions.unarchive')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteDialog(true);
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('common.delete')}
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                // Active board options
+                <>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowShareDialog(true);
+                    }}
+                  >
+                    <Share2 className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.share.action')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowEditDialog(true);
+                    }}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t('common.edit')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      duplicateBoard(data.id);
+                    }}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.row_actions.duplicate')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSaveAsTemplateDialog(true);
+                    }}
+                  >
+                    <Bookmark className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.row_actions.save_as_template')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowArchiveDialog(true);
+                    }}
+                  >
+                    <Archive className="mr-2 h-4 w-4" />
+                    {t('ws-task-boards.row_actions.archive')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteDialog(true);
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('common.delete')}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <ModifiableDialogTrigger
           data={data}
@@ -256,10 +335,21 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => softDeleteBoard(data.id)}
+              disabled={isDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                softDeleteBoard(data.id, {
+                  onSuccess: () => {
+                    setShowDeleteDialog(false);
+                    onBoardUnavailable?.();
+                  },
+                });
+              }}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
-              {t('ws-task-boards.row_actions.dialog.delete_button')}
+              {isDeleting
+                ? t('ws-task-boards.row_actions.dialog.delete_button_moving')
+                : t('ws-task-boards.row_actions.dialog.delete_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -286,10 +376,20 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => restoreBoard(data.id)}
+              disabled={isRestoring}
+              onClick={(event) => {
+                event.preventDefault();
+                restoreBoard(data.id, {
+                  onSuccess: () => setShowRestoreDialog(false),
+                });
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {t('ws-task-boards.row_actions.dialog.restore_button')}
+              {isRestoring
+                ? t(
+                    'ws-task-boards.row_actions.dialog.restore_button_restoring'
+                  )
+                : t('ws-task-boards.row_actions.dialog.restore_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -319,10 +419,20 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => permanentDeleteBoard(data.id)}
+              disabled={isPermanentlyDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                permanentDeleteBoard(data.id, {
+                  onSuccess: () => setShowPermanentDeleteDialog(false),
+                });
+              }}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
-              {t('ws-task-boards.row_actions.dialog.delete_perm_button')}
+              {isPermanentlyDeleting
+                ? t(
+                    'ws-task-boards.row_actions.dialog.delete_perm_button_deleting'
+                  )
+                : t('ws-task-boards.row_actions.dialog.delete_perm_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -349,10 +459,23 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => archiveBoard(data.id)}
+              disabled={isArchiving}
+              onClick={(event) => {
+                event.preventDefault();
+                archiveBoard(data.id, {
+                  onSuccess: () => {
+                    setShowArchiveDialog(false);
+                    onBoardUnavailable?.();
+                  },
+                });
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {t('ws-task-boards.row_actions.dialog.archive_button')}
+              {isArchiving
+                ? t(
+                    'ws-task-boards.row_actions.dialog.archive_button_archiving'
+                  )
+                : t('ws-task-boards.row_actions.dialog.archive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -382,10 +505,20 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => unarchiveBoard(data.id)}
+              disabled={isUnarchiving}
+              onClick={(event) => {
+                event.preventDefault();
+                unarchiveBoard(data.id, {
+                  onSuccess: () => setShowUnarchiveDialog(false),
+                });
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {t('ws-task-boards.row_actions.dialog.unarchive_button')}
+              {isUnarchiving
+                ? t(
+                    'ws-task-boards.row_actions.dialog.unarchive_button_unarchiving'
+                  )
+                : t('ws-task-boards.row_actions.dialog.unarchive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -378,26 +378,24 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<void> _pickAttachments() async {
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty || !mounted) {
-      return;
-    }
-
+    final result = await FilePicker.pickFiles();
+    if (result.isEmpty || !mounted) return;
     final availableSlots = _maxTransactionAttachmentCount - _attachments.length;
     if (availableSlots <= 0) {
       _showAttachmentToast(context.l10n.financeAttachmentLimitReached);
       return;
     }
 
-    final acceptedFiles = result.files
-        .where((file) => file.size <= _maxTransactionAttachmentSizeBytes)
+    final filesWithSizes = await Future.wait(
+      result.map((file) async => (file: file, size: await file.length())),
+    );
+    if (!mounted) return;
+    final acceptedFiles = filesWithSizes
+        .where((entry) => entry.size <= _maxTransactionAttachmentSizeBytes)
         .take(availableSlots)
         .toList(growable: false);
 
-    final rejectedCount = result.files.length - acceptedFiles.length;
+    final rejectedCount = filesWithSizes.length - acceptedFiles.length;
     if (rejectedCount > 0) {
       _showAttachmentToast(
         context.l10n.financeAttachmentRejected(
@@ -407,18 +405,16 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       );
     }
 
-    if (acceptedFiles.isEmpty) {
-      return;
-    }
-
+    if (acceptedFiles.isEmpty) return;
     final now = DateTime.now().microsecondsSinceEpoch;
     setState(() {
       _attachments = <_TransactionAttachmentDraft>[
         ..._attachments,
         for (final indexed in acceptedFiles.indexed)
           _TransactionAttachmentDraft(
-            id: '$now-${indexed.$1}-${indexed.$2.name}',
-            file: indexed.$2,
+            id: '$now-${indexed.$1}-${indexed.$2.file.name}',
+            file: indexed.$2.file,
+            size: indexed.$2.size,
           ),
       ];
     });
@@ -433,17 +429,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<Uint8List?> _readAttachmentBytes(PlatformFile file) async {
-    final bytes = file.bytes;
-    if (bytes != null) {
-      return bytes;
-    }
-
-    final path = file.path;
-    if (path == null || path.isEmpty) {
-      return null;
-    }
-
-    return io.File(path).readAsBytes();
+    return file.readAsBytes();
   }
 
   void _setAttachmentStatus(

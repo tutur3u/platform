@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
@@ -198,6 +199,7 @@ Widget buildTestApp({
         shad.ShadcnLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: ShadcnMaterialBridge.appBuilder,
       routerConfig: routerConfig,
     ),
   );

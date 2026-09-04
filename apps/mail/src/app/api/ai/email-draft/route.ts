@@ -1,29 +1,28 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
+import type { NextRequest } from 'next/server';
+import { resolveMailRouteContext } from '@/lib/mail/auth';
 import { emailDraftSchema } from './schema';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    // Get the current user
-    const supabase = await createClient(req);
     const tempAuth = await validateAiTempAuthRequest(req);
     if (tempAuth.status === 'revoked') {
       return Response.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    const payload = await req.json();
     let user: SupabaseUser | null = null;
     if (tempAuth.status === 'valid') {
       user = tempAuth.context.user as SupabaseUser;
     } else {
-      const { user: sessionUser } =
-        await resolveAuthenticatedSessionUser(supabase);
-      user = sessionUser;
+      const auth = await resolveMailRouteContext(req, payload.wsId);
+      if (!auth.ok) return auth.response;
+      user = auth.context.user as SupabaseUser;
     }
 
     if (!user) {
@@ -57,7 +56,7 @@ export async function POST(req: Request) {
       userEmail,
       userDisplayName,
       wsId,
-    } = await req.json();
+    } = payload;
 
     const isRevision = revisionInstructions && existingContent;
 

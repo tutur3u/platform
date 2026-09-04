@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
@@ -57,7 +57,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
 }
 
 async function getData(wsId: string, groupId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const { data, error } = await supabase
     .from('workspace_user_groups')

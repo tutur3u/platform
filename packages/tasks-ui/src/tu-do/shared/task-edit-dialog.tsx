@@ -17,7 +17,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { SUPABASE_PROVIDER_SYNC_ORIGIN } from '@tuturuuu/ui/hooks/supabase-provider';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
-import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -51,13 +50,14 @@ import { DescriptionOverflowWarningDialog } from './description-overflow-warning
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import {
-  normalizeTaskDialogPresentation,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
   type TaskDialogPresentation,
+  type TaskDialogPresentationPreferences,
 } from './task-dialog-presentation';
 import { CompactTaskDialogPanel } from './task-edit-dialog/components/compact-task-create-popover';
+import { CompactTaskDescriptionPreview } from './task-edit-dialog/components/compact-task-description-preview';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
 import {
   SmartTaskSuggestionsButton,
@@ -198,8 +198,8 @@ export interface TaskEditDialogProps {
   sharedContext?: SharedTaskContext;
   /** Whether draft mode is enabled from user settings */
   draftModeEnabled?: boolean;
-  /** Preferred opening presentation for normal task dialogs */
-  defaultPresentation?: TaskDialogPresentation;
+  /** Preferred opening presentation by task/document and create/edit flow. */
+  presentationPreferences?: TaskDialogPresentationPreferences;
   /** When editing an existing draft, this is the draft ID */
   draftId?: string;
   onClose: () => void;
@@ -240,7 +240,12 @@ export function TaskEditDialog({
   currentUser: propsCurrentUser,
   sharedContext,
   draftModeEnabled = false,
-  defaultPresentation = 'focused',
+  presentationPreferences = {
+    taskCreate: 'compact',
+    taskEdit: 'focused',
+    documentCreate: 'compact',
+    documentEdit: 'fullscreen',
+  },
   draftId,
   onClose,
   onUpdate,
@@ -254,15 +259,8 @@ export function TaskEditDialog({
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const effectiveTaskWsId = !isCreateMode ? (taskWsId ?? wsId) : wsId;
-  const relationshipTask = task
-    ? ({ ...task, ...visibleTaskSnapshot } as Task)
-    : undefined;
   const relationshipWorkspaceId =
-    !isCreateMode &&
-    isPersonalWorkspace &&
-    isPersonalExternalOverlayTask(relationshipTask)
-      ? wsId
-      : effectiveTaskWsId;
+    !isCreateMode && isPersonalWorkspace ? wsId : effectiveTaskWsId;
   const pathname = usePathname();
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -685,19 +683,15 @@ export function TaskEditDialog({
   const currentList = availableLists?.find(
     (list) => list.id === formState.selectedListId
   );
-  const normalizedDefaultPresentation = useMemo(
-    () => normalizeTaskDialogPresentation(defaultPresentation),
-    [defaultPresentation]
-  );
   const openingPresentation = useMemo(
     () =>
       resolveTaskDialogOpeningPresentation({
-        defaultPresentation: normalizedDefaultPresentation,
+        preferences: presentationPreferences,
         draftId,
         mode,
         selectedListStatus: currentList?.status,
       }),
-    [currentList?.status, draftId, mode, normalizedDefaultPresentation]
+    [currentList?.status, draftId, mode, presentationPreferences]
   );
 
   // Update browser tab title
@@ -2313,15 +2307,10 @@ export function TaskEditDialog({
       return;
     }
 
-    // Wait for hydration before applying the documents rule. Otherwise a
-    // deep-linked document task resizes the dialog a beat after it opens —
-    // skeletons first, then a jump to fullscreen — instead of settling once.
-    if (
-      !isCreateMode &&
-      !isHydratingTask &&
-      currentList?.status === 'documents'
-    ) {
-      setPresentation('fullscreen');
+    // Deep links learn the list type during hydration. Apply the matching
+    // task/document preference once that context is available.
+    if (!isCreateMode && !isHydratingTask && currentList?.status) {
+      setPresentation(openingPresentation);
     }
   }, [
     currentList?.status,
@@ -2401,7 +2390,9 @@ export function TaskEditDialog({
       formState.description
     ).trim();
 
-    return previewText || null;
+    return previewText ? (
+      <CompactTaskDescriptionPreview content={formState.description} />
+    ) : null;
   }, [formState.description, isCreateMode]);
   const taskHydrationNotice = taskLoadError ? (
     <div
@@ -2580,6 +2571,46 @@ export function TaskEditDialog({
     />
   );
 
+  const renderTaskActivitySection = () => {
+    if (isCreateMode || !task) return undefined;
+    const currentListId = formState.selectedListId || task.list_id || '';
+    return (
+      <TaskActivitySection
+        embedded
+        wsId={effectiveTaskWsId}
+        taskId={task.id}
+        boardId={boardId}
+        currentTask={{
+          id: task.id,
+          name: formState.name || task.name || '',
+          description: formState.description,
+          priority: formState.priority,
+          start_date: formState.startDate?.toISOString() || null,
+          end_date: formState.endDate?.toISOString() || null,
+          estimation_points: formState.estimationPoints ?? null,
+          list_id: currentListId,
+          list_name:
+            availableLists?.find((list) => list.id === currentListId)?.name ||
+            null,
+          completed: !!task.completed_at,
+          assignees: formState.selectedAssignees.map((assignee) => ({
+            id: assignee.id,
+            user_id: assignee.id,
+          })),
+          labels: formState.selectedLabels.map((label) => ({ id: label.id })),
+          projects: formState.selectedProjects.map((project) => ({
+            id: project.id,
+          })),
+        }}
+        onTaskUpdate={() => {
+          onUpdate();
+          onClose();
+        }}
+        onRestoreDescriptionVersion={handleRestoreDescriptionVersion}
+        restoringDescriptionVersionId={restoringDescriptionVersionId}
+      />
+    );
+  };
   return (
     <>
       <TaskSuggestionMenus
@@ -2812,6 +2843,7 @@ export function TaskEditDialog({
 
                     {!disabled && (
                       <TaskDetailsSection
+                        activity={renderTaskActivitySection()}
                         assigneeCount={formState.selectedAssignees.length}
                         defaultTab={
                           parentTaskId || pendingRelationship?.relatedTaskId
@@ -3030,48 +3062,6 @@ export function TaskEditDialog({
                         scheduledEvents={localCalendarEvents}
                         onLockToggle={handleLockToggle}
                         isLocking={lockingEventId}
-                      />
-                    )}
-
-                    {!disabled && !isCreateMode && task && (
-                      <TaskActivitySection
-                        wsId={effectiveTaskWsId}
-                        taskId={task.id}
-                        boardId={boardId}
-                        currentTask={{
-                          id: task.id,
-                          name: formState.name || task.name || '',
-                          description: formState.description,
-                          priority: formState.priority,
-                          start_date:
-                            formState.startDate?.toISOString() || null,
-                          end_date: formState.endDate?.toISOString() || null,
-                          estimation_points: formState.estimationPoints ?? null,
-                          list_id:
-                            formState.selectedListId || task.list_id || '',
-                          list_name:
-                            availableLists?.find(
-                              (l) => l.id === formState.selectedListId
-                            )?.name || null,
-                          completed: !!task.completed_at,
-                          assignees: formState.selectedAssignees.map((a) => ({
-                            id: a.id,
-                            user_id: a.id,
-                          })),
-                          labels: formState.selectedLabels.map((l) => ({
-                            id: l.id,
-                          })),
-                          projects: formState.selectedProjects.map((p) => ({
-                            id: p.id,
-                          })),
-                        }}
-                        onRestoreDescriptionVersion={
-                          handleRestoreDescriptionVersion
-                        }
-                        revertDisabled={true}
-                        restoringDescriptionVersionId={
-                          restoringDescriptionVersionId
-                        }
                       />
                     )}
                   </div>

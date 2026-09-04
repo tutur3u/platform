@@ -524,7 +524,9 @@ export const getAvailableMonths = (
       ? getMonthStartDate(selectedMonthFallback)
       : currentMonthStart;
   const resolvedRangeEnd =
-    futureMonthHorizon > 0 && !latestEnd ? futureHorizonEnd : resolvedLatestEnd;
+    futureMonthHorizon > 0 && futureHorizonEnd > resolvedLatestEnd
+      ? futureHorizonEnd
+      : resolvedLatestEnd;
 
   const months: AvailableMonthOption[] = [];
   const currentDate = new Date(earliestStart);

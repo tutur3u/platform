@@ -1,10 +1,6 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -14,32 +10,18 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
   const data = await req.json();
   const { wsId: id } = await params;
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(req, 'finance');
+  if (!actor) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: id,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { error: 'Failed to verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
+  const permissions = await getPermissions({ user: actor.user, wsId: id });
+  if (!permissions) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
+  const { admin: sbAdmin } = actor;
+  const wsId = permissions.wsId;
 
   const { error } = await sbAdmin
     .schema('private')
@@ -47,7 +29,7 @@ export async function PUT(req: Request, { params }: Params) {
     .upsert(
       (data?.wallets || []).map((p: Wallet) => ({
         ...p,
-        ws_id: id,
+        ws_id: wsId,
       }))
     )
     .eq('id', data.id);

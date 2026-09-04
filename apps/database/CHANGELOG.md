@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.30.0](https://github.com/tutur3u/platform/compare/database-v1.29.0...database-v1.30.0) (2026-08-26)
+
+
+### Features
+
+* **forms:** add landing page and per-form SEO controls ([99c5fda](https://github.com/tutur3u/platform/commit/99c5fda3a7d15649a3571b9ccc72759cd815a7ec))
+* **forms:** add landing page, per-form SEO, realtime collaboration, and embeds ([#5145](https://github.com/tutur3u/platform/issues/5145)) ([6896515](https://github.com/tutur3u/platform/commit/6896515b099b28bbebc873f98733879bf108ef89))
+* **forms:** add realtime studio collaboration ([1110c36](https://github.com/tutur3u/platform/commit/1110c36ef68081e6d181b32491f44ff814bc43e0))
+
+## [1.29.0](https://github.com/tutur3u/platform/compare/database-v1.28.0...database-v1.29.0) (2026-08-25)
+
+
+### Features
+
+* **tasks:** restore task history versions ([695afac](https://github.com/tutur3u/platform/commit/695afac81a6937c4dbe8148173b151a4654cd271))
+
+
+### Bug Fixes
+
+* **contacts:** restore long group post creation ([036b45e](https://github.com/tutur3u/platform/commit/036b45e22c475e7f797e8d4f7622ab79f1778144))
+* **database:** resolve task restore trigger tables ([28988fd](https://github.com/tutur3u/platform/commit/28988fd1c18bddf05763aa972b035394d4841933))
+* **database:** restore task snapshot schema path ([deddddf](https://github.com/tutur3u/platform/commit/deddddfb38901c76f1bee284d2e065f8c78a75f1))
+* **tasks:** restore cross-workspace task context ([0a8c6fa](https://github.com/tutur3u/platform/commit/0a8c6fa2c893da1fdbbc5e2421bbad3fa9513642))
+
+## [1.28.0](https://github.com/tutur3u/platform/compare/database-v1.27.0...database-v1.28.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+
+## [1.27.0](https://github.com/tutur3u/platform/compare/database-v1.26.0...database-v1.27.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **contacts:** harden satellite workspace access ([b160723](https://github.com/tutur3u/platform/commit/b160723b509062a4f8edf2694c0af27c25c05775))
+* **workspaces:** restore invited member access ([f81bd3e](https://github.com/tutur3u/platform/commit/f81bd3e912179636f002eda5f6b4e16504cff782))
+
 ## [1.26.0](https://github.com/tutur3u/platform/compare/database-v1.25.0...database-v1.26.0) (2026-08-06)
 
 

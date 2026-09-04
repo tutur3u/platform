@@ -24,8 +24,12 @@ export default function SharedFormContent({
   readOnlyResponseSessionId,
   canRequestResponseCopy,
   responseCopyAlreadySent,
+  onSubmitted,
+  layout = 'page',
 }: {
   form: FormDefinition;
+  /** `inline` when this is embedded rather than the whole page. */
+  layout?: 'page' | 'inline';
   shareCode: string;
   sessionId?: string;
   readOnly?: boolean;
@@ -37,6 +41,8 @@ export default function SharedFormContent({
   readOnlyResponseSessionId?: string | null;
   canRequestResponseCopy?: boolean;
   responseCopyAlreadySent?: boolean;
+  /** Fired after a successful submission; used by the embed to notify the host. */
+  onSubmitted?: () => void;
 }) {
   const submitMutation = usePublicFormSubmit(shareCode);
   const responseCopyMutation = usePublicFormResponseCopy(shareCode);
@@ -44,6 +50,7 @@ export default function SharedFormContent({
   return (
     <FormRuntime
       form={form}
+      layout={layout}
       mode="public"
       readOnly={readOnly}
       initialAnswers={initialAnswers}
@@ -56,12 +63,14 @@ export default function SharedFormContent({
       responseCopyAlreadySent={responseCopyAlreadySent}
       onSubmit={async ({ answers, turnstileToken, sendResponseCopy }) => {
         if (!sessionId) return;
-        return submitMutation.mutateAsync({
+        const result = await submitMutation.mutateAsync({
           sessionId,
           answers,
           turnstileToken,
           sendResponseCopy: sendResponseCopy ?? false,
         });
+        onSubmitted?.();
+        return result;
       }}
       onRequestResponseCopy={({
         responseId,

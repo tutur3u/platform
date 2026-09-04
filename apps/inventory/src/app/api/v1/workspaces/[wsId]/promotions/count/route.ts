@@ -1,5 +1,5 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
@@ -10,13 +10,13 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
 
   const apiKey = (await headers()).get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, apiKey })
-    : getDataFromSession({ wsId });
+    : getDataFromSession({ request, wsId });
 }
 
 async function getDataWithApiKey({
@@ -56,11 +56,16 @@ async function getDataWithApiKey({
   return NextResponse.json(data?.count || 0);
 }
 
-async function getDataFromSession({ wsId }: { wsId: string }) {
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+async function getDataFromSession({
+  request,
+  wsId,
+}: {
+  request: Request;
+  wsId: string;
+}) {
+  const authorization = await authorizeInventoryWorkspace(request, wsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions } = authorization.value;
 
   const sbAdmin = await createAdminClient();
   const privateDb = sbAdmin.schema('private');

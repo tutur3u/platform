@@ -2,9 +2,10 @@ import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 import '@tuturuuu/users-core/lib/dayjs-setup';
 import {
-  buildQuickWeeklySchedulePayload,
+  buildQuickWeeklySchedulePayloads,
   buildQuickWeeklySchedulePreview,
   createQuickWeeklyScheduleDraft,
+  isQuickWeeklyScheduleDraftValid,
 } from './quick-weekly-schedule-utils';
 import { DEFAULT_SCHEDULE_TIMEZONE } from './session-time-utils';
 
@@ -19,12 +20,17 @@ describe('quick weekly schedule setup helpers', () => {
     );
 
     expect(draft).toMatchObject({
-      daysOfWeek: [],
-      endDate: '2026-06-19',
-      endTime: '20:30',
+      endMode: 'date',
       intervalWeeks: 1,
+      patterns: [
+        {
+          daysOfWeek: [],
+          endTime: '20:30',
+          id: 'timeframe-1',
+          startTime: '19:00',
+        },
+      ],
       startDate: '2026-06-19',
-      startTime: '19:00',
       timezone: 'Asia/Ho_Chi_Minh',
       untilDate: '2027-06-19',
     });
@@ -38,7 +44,7 @@ describe('quick weekly schedule setup helpers', () => {
         DEFAULT_SCHEDULE_TIMEZONE
       )
     );
-    draft.daysOfWeek = [2, 4, 6];
+    draft.patterns[0]!.daysOfWeek = [2, 4, 6];
 
     const preview = buildQuickWeeklySchedulePreview(draft, 'en');
 
@@ -62,26 +68,75 @@ describe('quick weekly schedule setup helpers', () => {
         DEFAULT_SCHEDULE_TIMEZONE
       )
     );
-    draft.daysOfWeek = [2, 4, 6];
+    draft.patterns[0]!.daysOfWeek = [2, 4, 6];
 
     expect(
-      buildQuickWeeklySchedulePayload({
+      buildQuickWeeklySchedulePayloads({
         draft,
         groupId: '00000000-0000-4000-8000-000000000101',
         groupName: 'Math A1',
       })
-    ).toEqual({
-      endTimezone: 'Asia/Ho_Chi_Minh',
-      endsAt: '2026-06-19T13:30:00.000Z',
-      groupId: '00000000-0000-4000-8000-000000000101',
-      recurrence: {
-        daysOfWeek: [2, 4, 6],
-        intervalWeeks: 1,
-        untilDate: '2027-06-19',
+    ).toEqual([
+      {
+        endTimezone: 'Asia/Ho_Chi_Minh',
+        endsAt: '2026-06-19T13:30:00.000Z',
+        groupId: '00000000-0000-4000-8000-000000000101',
+        recurrence: {
+          daysOfWeek: [2, 4, 6],
+          intervalWeeks: 1,
+          untilDate: '2027-06-19',
+        },
+        startTimezone: 'Asia/Ho_Chi_Minh',
+        startsAt: '2026-06-19T12:00:00.000Z',
+        title: 'Math A1',
       },
-      startTimezone: 'Asia/Ho_Chi_Minh',
-      startsAt: '2026-06-19T12:00:00.000Z',
-      title: 'Math A1',
-    });
+    ]);
+  });
+
+  it('supports separate weekday timeframes that repeat forever', () => {
+    const draft = createQuickWeeklyScheduleDraft(
+      dayjs.tz(
+        '2026-06-19 09:00',
+        'YYYY-MM-DD HH:mm',
+        DEFAULT_SCHEDULE_TIMEZONE
+      )
+    );
+    draft.endMode = 'never';
+    draft.patterns = [
+      {
+        daysOfWeek: [6],
+        endTime: '20:30',
+        id: 'timeframe-1',
+        startTime: '19:00',
+      },
+      {
+        daysOfWeek: [0],
+        endTime: '09:30',
+        id: 'timeframe-2',
+        startTime: '08:00',
+      },
+    ];
+
+    expect(isQuickWeeklyScheduleDraftValid(draft)).toBe(true);
+    const preview = buildQuickWeeklySchedulePreview(draft, 'en');
+    expect(preview.count).toBeNull();
+    expect(preview.firstDates.map((date) => date.startsAt)).toEqual([
+      '2026-06-20T12:00:00.000Z',
+      '2026-06-21T01:00:00.000Z',
+      '2026-06-27T12:00:00.000Z',
+      '2026-06-28T01:00:00.000Z',
+      '2026-07-04T12:00:00.000Z',
+      '2026-07-05T01:00:00.000Z',
+    ]);
+    expect(
+      buildQuickWeeklySchedulePayloads({
+        draft,
+        groupId: '00000000-0000-4000-8000-000000000101',
+        groupName: 'Math A1',
+      }).map((payload) => payload.recurrence)
+    ).toEqual([
+      { daysOfWeek: [6], intervalWeeks: 1, untilDate: null },
+      { daysOfWeek: [0], intervalWeeks: 1, untilDate: null },
+    ]);
   });
 });

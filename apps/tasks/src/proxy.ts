@@ -53,6 +53,76 @@ const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS';
 const CORS_HEADERS =
   'authorization,content-type,x-requested-with,x-sdk-client,x-tuturuuu-client';
+const TASKS_OWNED_WORKSPACE_ROUTE_PREFIXES = new Set([
+  'analytics',
+  'boards',
+  'cycles',
+  'goals',
+  'leaderboard',
+  'progress',
+  'tasks',
+]);
+const TASKS_NON_WORKSPACE_SEGMENTS = new Set([
+  'login',
+  'shared',
+  'verify-token',
+]);
+const SOCIAL_LINK_PREVIEW_USER_AGENT =
+  /(?:facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|google-pagerenderer|googlebot|bingbot|pinterestbot)/iu;
+
+function isTaskLinkPreviewRequest(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+
+  const userAgent = req.headers.get('user-agent') ?? '';
+  if (!SOCIAL_LINK_PREVIEW_USER_AGENT.test(userAgent)) return false;
+
+  const segments = req.nextUrl.pathname.split('/').filter(Boolean);
+  if (supportedLocales.includes(segments[0] as Locale)) segments.shift();
+
+  if (segments[0] === 'shared' && segments[1] === 'task' && segments[2]) {
+    return true;
+  }
+
+  const routeRoot = segments[1];
+  if (routeRoot === 'tasks' && segments[2]) return true;
+
+  return (
+    routeRoot === 'boards' &&
+    Boolean(segments[2]) &&
+    Boolean(req.nextUrl.searchParams.get('task'))
+  );
+}
+
+function getTaskLinkPreviewRewrite(req: NextRequest) {
+  if (!isTaskLinkPreviewRequest(req)) return null;
+
+  const { locale } = getLocale(req);
+  const previewUrl = new URL(`/${locale}/task-link-preview`, req.url);
+  previewUrl.search = '';
+  const response = NextResponse.rewrite(previewUrl);
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+  response.headers.append('Vary', 'User-Agent');
+  return response;
+}
+
+function getNonTasksWorkspaceRedirect(req: NextRequest) {
+  const segments = req.nextUrl.pathname.split('/').filter(Boolean);
+  if (supportedLocales.includes(segments[0] as Locale)) segments.shift();
+
+  const workspaceSegment = segments[0];
+  if (!workspaceSegment || TASKS_NON_WORKSPACE_SEGMENTS.has(workspaceSegment)) {
+    return null;
+  }
+
+  const routeRoot = segments[1];
+  if (routeRoot && TASKS_OWNED_WORKSPACE_ROUTE_PREFIXES.has(routeRoot)) {
+    return null;
+  }
+
+  return NextResponse.redirect(
+    new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, TTR_URL)
+  );
+}
 
 function getAllowedFirstPartyOrigin(origin: string | null) {
   if (!origin) return null;
@@ -143,6 +213,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const taskLinkPreviewRewrite = getTaskLinkPreviewRewrite(req);
+  if (taskLinkPreviewRewrite) return taskLinkPreviewRewrite;
+
   const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
     locales: supportedLocales,
   });
@@ -198,6 +271,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
+  }
+
+  const nonTasksWorkspaceRedirect = getNonTasksWorkspaceRedirect(req);
+  if (nonTasksWorkspaceRedirect) {
+    propagateAuthCookies(authRes, nonTasksWorkspaceRedirect);
+    return nonTasksWorkspaceRedirect;
   }
 
   if (pathSegments.length >= 1) {

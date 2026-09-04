@@ -2,9 +2,9 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createAdminClientMock = vi.fn();
-const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
+const authMocks = vi.hoisted(() => ({ withSessionAuth: vi.fn() }));
 
 const sessionSupabase = { from: vi.fn() };
 const sessionUser = {
@@ -66,8 +66,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
-    getPermissionsMock(...args),
   normalizeWorkspaceId: (
     ...args: Parameters<typeof normalizeWorkspaceIdMock>
   ) => normalizeWorkspaceIdMock(...args),
@@ -77,7 +75,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth:
+  withSessionAuth: authMocks.withSessionAuth.mockImplementation(
     <T>(
       handler: (
         request: NextRequest,
@@ -85,19 +83,20 @@ vi.mock('@/lib/api-auth', () => ({
         params: T
       ) => Promise<Response> | Response
     ) =>
-    async (
-      request: NextRequest,
-      routeContext?: { params?: Promise<T> | T }
-    ) => {
-      const params = routeContext?.params
-        ? await Promise.resolve(routeContext.params)
-        : ({} as T);
-      return handler(
-        request,
-        { supabase: sessionSupabase, user: sessionUser },
-        params
-      );
-    },
+      async (
+        request: NextRequest,
+        routeContext?: { params?: Promise<T> | T }
+      ) => {
+        const params = routeContext?.params
+          ? await Promise.resolve(routeContext.params)
+          : ({} as T);
+        return handler(
+          request,
+          { supabase: sessionSupabase, user: sessionUser },
+          params
+        );
+      }
+  ),
 }));
 
 import { DELETE, PATCH, PUT } from './route';
@@ -132,9 +131,6 @@ describe('workspace boards/[boardId] route', () => {
 
     normalizeWorkspaceIdMock.mockResolvedValue(WS_ID);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
-    getPermissionsMock.mockResolvedValue({
-      containsPermission: vi.fn().mockReturnValue(true),
-    });
 
     const fromMock = vi.fn((table: string) => {
       if (table !== 'workspace_boards') {
@@ -153,23 +149,39 @@ describe('workspace boards/[boardId] route', () => {
     createAdminClientMock.mockResolvedValue({ from: fromMock });
   });
 
+  it('accepts configured app sessions for every lifecycle mutation', async () => {
+    vi.resetModules();
+    authMocks.withSessionAuth.mockClear();
+
+    await import('./route');
+
+    expect(authMocks.withSessionAuth).toHaveBeenCalledTimes(3);
+    for (const call of authMocks.withSessionAuth.mock.calls) {
+      expect(call).toEqual([
+        expect.any(Function),
+        {
+          allowAppSessionAuth: {
+            targetApp: ['platform', 'calendar', 'tasks'],
+          },
+        },
+      ]);
+    }
+  });
+
   it.each([
     ['PUT', PUT, undefined],
     ['PATCH', PATCH, { restore: true }],
     ['DELETE', DELETE, undefined],
   ] as const)(
-    'rejects %s for a workspace member without manage_projects',
+    'rejects %s when the user is not a workspace member',
     async (method, handler, body) => {
-      getPermissionsMock.mockResolvedValueOnce({
-        containsPermission: (permission: string) =>
-          permission !== 'manage_projects',
-      });
+      verifyWorkspaceMembershipTypeMock.mockResolvedValueOnce({ ok: false });
 
       const response = await handler(createRequest(method, body), routeContext);
 
       expect(response.status).toBe(403);
       await expect(response.json()).resolves.toEqual({
-        error: "You don't have permission to perform this operation",
+        error: "You don't have access to this workspace",
       });
       expect(createAdminClientMock).not.toHaveBeenCalled();
     }

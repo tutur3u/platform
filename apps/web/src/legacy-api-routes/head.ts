@@ -1,7 +1,18 @@
+import { connection } from 'next/server';
+
 type LegacyHeadSourceResponse =
   | Response
   | undefined
   | Promise<Response | undefined>;
+
+export function createLegacyGetHandler<Args extends unknown[]>(
+  get: (...args: Args) => LegacyHeadSourceResponse
+) {
+  return async function GET(...args: Args) {
+    await connection();
+    return get(...args);
+  };
+}
 
 export function createLegacyHeadHandler<Args extends unknown[]>(
   get: (...args: Args) => LegacyHeadSourceResponse

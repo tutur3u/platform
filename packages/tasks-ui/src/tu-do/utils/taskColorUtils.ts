@@ -3,6 +3,29 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { LIST_COLOR_CLASSES, PRIORITY_BORDER_COLORS } from './taskConstants';
 
+const CARD_HOVER_GLOW_CLASSES: Record<SupportedColor, string> = {
+  BLUE: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-blue/45',
+  CYAN: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-cyan/45',
+  GRAY: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-gray/45',
+  GREEN: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-green/45',
+  INDIGO: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-indigo/45',
+  ORANGE: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-orange/45',
+  PINK: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-pink/45',
+  PURPLE: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-purple/45',
+  RED: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-red/45',
+  YELLOW: 'hover:shadow-[0_0_12px_-3px] hover:shadow-dynamic-yellow/45',
+};
+
+const PRIORITY_HOVER_GLOW_COLORS: Record<
+  NonNullable<Task['priority']>,
+  SupportedColor
+> = {
+  critical: 'RED',
+  high: 'ORANGE',
+  normal: 'YELLOW',
+  low: 'BLUE',
+};
+
 /**
  * Get color classes for a task list
  */
@@ -23,15 +46,35 @@ export function getPriorityBorderColor(priority: Task['priority']): string {
  */
 export function getCardColorClasses(
   taskList?: TaskList,
-  priority?: Task['priority']
+  priority?: Task['priority'],
+  includeHoverGlow = false
 ): string {
+  const withHoverGlow = (classes: string) =>
+    includeHoverGlow
+      ? `${classes} ${getCardHoverGlowClasses(taskList, priority)}`
+      : classes;
+
   if (taskList?.color) {
-    return getListColorClasses(taskList.color);
+    return withHoverGlow(getListColorClasses(taskList.color));
   }
   if (priority) {
-    return getPriorityBorderColor(priority);
+    return withHoverGlow(getPriorityBorderColor(priority));
   }
-  return 'border-l-dynamic-gray/30';
+  return withHoverGlow('border-l-dynamic-gray/30');
+}
+
+/**
+ * Glow a card from the same tone that owns its visible border.
+ */
+export function getCardHoverGlowClasses(
+  taskList?: TaskList,
+  priority?: Task['priority']
+): string {
+  const color =
+    taskList?.color ??
+    (priority ? PRIORITY_HOVER_GLOW_COLORS[priority] : 'GRAY');
+
+  return CARD_HOVER_GLOW_CLASSES[color] ?? CARD_HOVER_GLOW_CLASSES.GRAY;
 }
 
 /**

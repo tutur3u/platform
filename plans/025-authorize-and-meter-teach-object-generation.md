@@ -11,7 +11,11 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
+- **Blocked by:** mandatory Teach production build repeatedly fails in the
+  current execution environment with Turbopack `EPERM` while creating its CSS
+  worker process/internal port; reviewed uncommitted work remains in
+  `.worktrees/fix-teach-object-generation-auth`
 - **Priority:** P0
 - **Effort:** M
 - **Risk:** MED
@@ -54,11 +58,11 @@ notes, and do not start while another owner claims these exact routes.
 
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
-| Focused tests | `bun --cwd apps/teach vitest run 'src/app/api/ai/objects/**/*.test.ts'` | auth, tenant, validation, provider, and credit cases pass |
-| Teach tests | `bun --cwd apps/teach run test` | exit 0 |
-| Typechecks | `bun --cwd apps/teach run type-check && bun --cwd packages/ai run type-check && bun --cwd packages/internal-api run type-check` | all exit 0 |
+| Focused tests | `bun --cwd apps/teach vitest run src/app/api/ai/objects/**/*.test.ts` | auth, tenant, validation, provider, and credit cases pass |
+| Teach tests | `bun run --cwd apps/teach test` | exit 0 |
+| Typechecks | `bun run --cwd apps/teach type-check && bun run --cwd packages/ai type-check && bun run --cwd packages/internal-api type-check` | all exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Teach build | `bun --cwd apps/teach run build` | exit 0 |
+| Teach build | `bun run --cwd apps/teach build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

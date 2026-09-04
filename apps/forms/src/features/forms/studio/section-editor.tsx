@@ -19,9 +19,7 @@ import {
   ChevronUp,
   ClipboardList,
   Copy,
-  FileText,
   GripVertical,
-  MessageSquare,
   MoreHorizontal,
   Trash,
 } from '@tuturuuu/icons';
@@ -47,14 +45,11 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
-import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { FieldLabel } from '../form-icons';
 import { FormsMarkdown } from '../forms-markdown';
-import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import type { getFormToneClasses } from '../theme';
 import {
   getBodyTypographyClassName,
@@ -63,8 +58,8 @@ import {
 import { createQuestionInput } from './block-catalog';
 import { BlockInserter } from './block-inserter';
 import { DestructiveActionDialog } from './destructive-action-dialog';
-import { FormMediaField } from './form-media-field';
 import { QuestionEditor } from './question-editor';
+import { SectionFields } from './section-fields';
 import { duplicateQuestionInput, type StudioForm } from './studio-utils';
 
 export function SectionEditor({
@@ -130,10 +125,6 @@ export function SectionEditor({
   const sectionDescription = useWatch({
     control: form.control,
     name: `sections.${index}.description`,
-  });
-  const sectionImage = useWatch({
-    control: form.control,
-    name: `sections.${index}.image`,
   });
   const watchedQuestions = useWatch({
     control: form.control,
@@ -421,70 +412,13 @@ export function SectionEditor({
                   </CollapsibleTrigger>
 
                   <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                    <div className="grid gap-5 border-border/60 border-t px-4 pt-4 pb-5">
-                      <div className="space-y-1.5">
-                        <Label className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          <FieldLabel icon={FileText}>
-                            {t('studio.section_title')}
-                          </FieldLabel>
-                        </Label>
-                        <FormsRichTextEditor
-                          value={sectionTitle || ''}
-                          onChange={(nextValue) =>
-                            form.setValue(
-                              `sections.${index}.title`,
-                              nextValue,
-                              {
-                                shouldDirty: true,
-                              }
-                            )
-                          }
-                          toneClasses={toneClasses}
-                          compact
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                          <FieldLabel icon={MessageSquare}>
-                            {t('studio.section_description')}
-                          </FieldLabel>
-                        </Label>
-                        <FormsRichTextEditor
-                          value={sectionDescription || ''}
-                          onChange={(nextValue) =>
-                            form.setValue(
-                              `sections.${index}.description`,
-                              nextValue,
-                              {
-                                shouldDirty: true,
-                              }
-                            )
-                          }
-                          placeholder={t('studio.section_description_hint')}
-                          toneClasses={toneClasses}
-                        />
-                      </div>
-                      <div className="mt-2">
-                        <FormMediaField
-                          wsId={wsId}
-                          scope="section"
-                          value={
-                            sectionImage ?? {
-                              storagePath: '',
-                              url: '',
-                              alt: '',
-                            }
-                          }
-                          onChange={(value) =>
-                            form.setValue(`sections.${index}.image`, value, {
-                              shouldDirty: true,
-                            })
-                          }
-                          toneClasses={toneClasses}
-                          label={t('studio.section_image')}
-                          hint={t('studio.section_image_hint')}
-                        />
-                      </div>
+                    <div className="border-border/60 border-t px-4 pt-4 pb-5">
+                      <SectionFields
+                        wsId={wsId}
+                        form={form}
+                        sectionIndex={index}
+                        toneClasses={toneClasses}
+                      />
                     </div>
                   </CollapsibleContent>
                 </Collapsible>

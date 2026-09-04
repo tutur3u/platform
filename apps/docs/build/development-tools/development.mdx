@@ -1,7 +1,7 @@
 ---
 title: 'Development'
 description: 'Learn how to preview changes locally.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-08-21'
 ---
 
 <Info>
@@ -59,6 +59,10 @@ bun i
 This repository's Bun configuration enforces a minimum release age of 1 day for
 new npm package versions. If Bun skips a just-published release during install,
 wait for the package to age past the gate or choose an older published version.
+First-party package families that publish coordinated releases together may be
+explicitly excluded from the age gate in `bunfig.toml`; keep each trusted
+family's exact-name list aligned with the packages resolved in `bun.lock` and
+cover the list with a policy test.
 
 To complete the initial setup, please restart your IDE so that it can recognize the newly installed dependencies. Additionally, some recommended VS Code Extensions may only work after restarting your IDE.
 
@@ -95,7 +99,10 @@ it, so include Zed's default VCS/system exclusions whenever adding project
 exclusions. The project uses TypeScript 7 RC's `tsc` for compiler checks and a
 single TypeScript language server path for TypeScript, TSX, and JavaScript;
 avoid enabling competing TypeScript language servers for the same language
-unless you are deliberately comparing language server behavior.
+unless you are deliberately comparing language server behavior. Every app
+configuration overrides TypeScript 7's `types` compatibility wildcard with its
+explicit runtime globals, so editors with an older bundled language service do
+not report `Cannot find type definition file for '*'` across the app tree.
 
 ## Development
 

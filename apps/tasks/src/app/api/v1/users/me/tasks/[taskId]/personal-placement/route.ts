@@ -16,6 +16,11 @@ import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import {
+  getTerminalDefaultColumn,
+  isTerminalDefaultColumnUnavailable,
+  shouldMoveSourceTaskToTerminalList,
+} from './personal-placement-terminal';
 
 const TERMINAL_STATUSES = ['done', 'closed'] as const;
 
@@ -175,23 +180,6 @@ function buildPlacedTask(sourceTask: SourceTaskRow, placement: PlacementRow) {
     list_id: effectiveListId,
     sort_key: placement.personal_sort_key ?? sourceTask.sort_key,
   };
-}
-
-function getTerminalDefaultColumn(status: TerminalStatus) {
-  return status === 'done' ? 'default_done_list_id' : 'default_closed_list_id';
-}
-
-function isTerminalDefaultColumnUnavailable(
-  error: { code?: string; message?: string } | null | undefined,
-  status: TerminalStatus
-) {
-  if (!error) return false;
-  const column = getTerminalDefaultColumn(status);
-  return (
-    error.code === '42703' ||
-    error.code === 'PGRST204' ||
-    (typeof error.message === 'string' && error.message.includes(column))
-  );
 }
 
 async function loadTerminalDefaultListId(
@@ -852,24 +840,31 @@ export const PUT = withSessionAuth<{ taskId: string }>(
         );
       }
 
-      const resolvedSourceTerminalList = await resolveTerminalListForBoard({
-        boardId: sourceBoardId,
-        sbAdmin,
-        status: terminal_status,
-      });
+      if (
+        shouldMoveSourceTaskToTerminalList(
+          sourceTask.task_lists?.status,
+          terminal_status
+        )
+      ) {
+        const resolvedSourceTerminalList = await resolveTerminalListForBoard({
+          boardId: sourceBoardId,
+          sbAdmin,
+          status: terminal_status,
+        });
 
-      if (resolvedSourceTerminalList.response) {
-        return resolvedSourceTerminalList.response;
+        if (resolvedSourceTerminalList.response) {
+          return resolvedSourceTerminalList.response;
+        }
+
+        if (!resolvedSourceTerminalList.list) {
+          return NextResponse.json(
+            { error: `Source board has no ${terminal_status} list` },
+            { status: 400 }
+          );
+        }
+
+        sourceTerminalList = resolvedSourceTerminalList.list;
       }
-
-      if (!resolvedSourceTerminalList.list) {
-        return NextResponse.json(
-          { error: `Source board has no ${terminal_status} list` },
-          { status: 400 }
-        );
-      }
-
-      sourceTerminalList = resolvedSourceTerminalList.list;
     }
 
     const destinationAccessResponse =

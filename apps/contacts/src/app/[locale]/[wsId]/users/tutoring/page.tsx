@@ -1,9 +1,21 @@
+import { ENABLE_TUTORING_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import {
+  isWorkspaceFeatureEnabled,
+  resolveWorkspaceFeatureAccess,
+} from '@/components/feature-gate/workspace-feature-access';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getContactsWorkspacePermissions } from '@/lib/workspace';
+import {
+  getContactsWorkspaceConfigValue,
+  getContactsWorkspacePermissions,
+} from '@/lib/workspace';
 import { TutoringClient } from './tutoring-client';
+import {
+  TutoringDisabledGate,
+  TutoringForbiddenGate,
+  TutoringUnavailableGate,
+} from './tutoring-gate';
 
 export const metadata: Metadata = {
   title: 'Tutoring',
@@ -20,23 +32,45 @@ export default async function TutoringPage({ params }: PageProps) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, isPersonal }) => {
-        if (isPersonal) {
-          notFound();
-        }
-
         const permissions = await getContactsWorkspacePermissions(wsId);
-        if (!permissions || permissions.withoutPermission('view_user_groups')) {
-          notFound();
+        const configValue = permissions
+          ? await getContactsWorkspaceConfigValue(
+              wsId,
+              ENABLE_TUTORING_CONFIG_ID
+            )
+          : null;
+
+        const access = resolveWorkspaceFeatureAccess({
+          canEnableFeature: Boolean(
+            permissions?.containsPermission('manage_workspace_settings')
+          ),
+          canManageFeature: Boolean(
+            permissions?.containsPermission('update_user_groups_scores')
+          ),
+          canView: Boolean(permissions?.containsPermission('view_user_groups')),
+          enabled: isWorkspaceFeatureEnabled({
+            defaultEnabled: true,
+            isPersonal,
+            value: configValue,
+          }),
+          hasWorkspaceAccess: Boolean(permissions),
+        });
+
+        if (access.status === 'unavailable') {
+          return <TutoringUnavailableGate />;
         }
 
-        return (
-          <TutoringClient
-            wsId={wsId}
-            canManage={
-              !permissions.withoutPermission('update_user_groups_scores')
-            }
-          />
-        );
+        if (access.status === 'forbidden') {
+          return <TutoringForbiddenGate />;
+        }
+
+        if (access.status === 'disabled') {
+          return (
+            <TutoringDisabledGate canEnable={access.canEnable} wsId={wsId} />
+          );
+        }
+
+        return <TutoringClient wsId={wsId} canManage={access.canManage} />;
       }}
     </WorkspaceWrapper>
   );

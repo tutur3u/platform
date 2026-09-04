@@ -15,6 +15,8 @@ interface Props {
 export const generateMetadata = async ({
   params,
 }: Props): Promise<Metadata> => {
+  await connection();
+
   const { locale, planId } = await params;
 
   const enDescription = 'Find the best time slot for everyone, hassle-free.';

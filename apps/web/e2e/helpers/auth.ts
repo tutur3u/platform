@@ -237,9 +237,6 @@ export async function openPasswordStage(
     .getByPlaceholder('Enter your email or username')
     .first();
   await emailInput.waitFor({ state: 'visible', timeout: 60_000 });
-  await emailInput.clear();
-  await emailInput.fill(email);
-  await expect(emailInput).toHaveValue(email);
 
   const passwordInput = page.getByPlaceholder('Enter your password');
   if (!(await passwordInput.isVisible())) {
@@ -248,7 +245,18 @@ export async function openPasswordStage(
       .filter({ hasText: /continue/i })
       .first();
     await continueButton.waitFor({ state: 'visible', timeout: 30_000 });
-    await continueButton.waitFor({ enabled: true, timeout: 10_000 });
+
+    // The login shell can become visible before React hydrates. Filling during
+    // that window succeeds at the DOM level, then hydration resets the
+    // controlled input to an empty value. Retry the user action until both the
+    // value and submit state remain stable across a hydration turn.
+    await expect(async () => {
+      await emailInput.fill(email);
+      await expect(emailInput).toHaveValue(email);
+      await expect(continueButton).toBeEnabled();
+      await page.waitForTimeout(250);
+      await expect(emailInput).toHaveValue(email);
+    }).toPass({ timeout: 60_000 });
     await continueButton.click();
 
     // Wait for the form transition to complete.

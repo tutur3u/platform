@@ -2,6 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 import {
+  hasActiveNovaChallengeSession,
+  isManagerCatalogAccess,
+  resolveNovaCatalogActor,
+  resolveNovaChallengeCatalogAccess,
+} from '@/lib/challenge-catalog-access';
+import {
   canManageNovaChallenge,
   getNovaProblemChallengeId,
 } from '@/lib/challenge-management-auth';
@@ -23,6 +29,56 @@ export async function GET(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
+    const { data: problemChallenge, error: problemChallengeError } =
+      await sbAdmin
+        .schema('private')
+        .from('nova_problems')
+        .select('challenge_id')
+        .eq('id', problemId)
+        .maybeSingle();
+
+    if (problemChallengeError) throw problemChallengeError;
+    if (!problemChallenge) {
+      return NextResponse.json(
+        { message: 'Problem not found' },
+        { status: 404 }
+      );
+    }
+
+    const { data: challenge, error: challengeError } = await sbAdmin
+      .schema('private')
+      .from('nova_challenges')
+      .select('id, enabled, previewable_at, whitelisted_only')
+      .eq('id', problemChallenge.challenge_id)
+      .maybeSingle();
+
+    if (challengeError) throw challengeError;
+    if (!challenge) {
+      return NextResponse.json(
+        { message: 'Problem not found' },
+        { status: 404 }
+      );
+    }
+
+    const actor = await resolveNovaCatalogActor({ sbAdmin, user });
+    const access = await resolveNovaChallengeCatalogAccess({
+      actor,
+      challenge,
+      sbAdmin,
+    });
+
+    if (
+      access === 'denied' ||
+      (!isManagerCatalogAccess(access) &&
+        !(await hasActiveNovaChallengeSession({
+          challengeId: challenge.id,
+          sbAdmin,
+          userId: user.id,
+        })))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const { data: problem, error } = await sbAdmin
       .schema('private')
       .from('nova_problems')

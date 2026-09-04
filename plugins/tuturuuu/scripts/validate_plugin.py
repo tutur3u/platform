@@ -491,7 +491,7 @@ def validate_docs(repo_root: Path) -> None:
 
 def validate_ci(repo_root: Path) -> None:
     workflow_path = repo_root / ".github" / "workflows" / WORKFLOW_NAME
-    ci_config_path = repo_root / "tuturuuu.ts"
+    ci_config_path = repo_root / "tuturuuu.ci.ts"
     if not workflow_path.exists():
         fail(f"missing plugin CI workflow at {workflow_path}")
     if not ci_config_path.exists():

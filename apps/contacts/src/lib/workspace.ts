@@ -1,9 +1,12 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   getWorkspace,
   type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
+import { cache } from 'react';
 
 export type ContactsWorkspace = NonNullable<
   Awaited<ReturnType<typeof getWorkspace>>
@@ -48,5 +51,78 @@ export async function getContactsWorkspacePermissions(
     return null;
   }
 
+  // Contacts permissions authorize the workspace, while most Contacts data is
+  // scoped through workspace_user_linked_users. Repair that profile first so a
+  // newly invited or historically incomplete member cannot pass permission
+  // checks and then receive an empty module or page-level 404.
+  const linkedUser = await getContactsWorkspaceUserLink(wsId, user);
+  if (!linkedUser) return null;
+
   return getPermissions({ user, wsId });
 }
+
+export async function getContactsWorkspaceUserLink(
+  wsId: string,
+  actor?: ContactsActor
+) {
+  const user = actor ?? (await getSatelliteAppSessionUser('contacts'));
+
+  if (!user?.id) {
+    return null;
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  return getWorkspaceUserLinkForUser(wsId, user.id, {
+    authorizationClient: sbAdmin,
+  });
+}
+
+/**
+ * Read one `workspace_configs` row with the admin client.
+ *
+ * Satellite pages cannot reach the workspace-config HTTP route during render,
+ * and a missing row is a legitimate "never configured" answer rather than an
+ * error, so both the missing row and a read failure resolve to `null` and let
+ * the caller apply its own default.
+ */
+export async function getContactsWorkspaceConfigValue(
+  wsId: string,
+  configId: string
+): Promise<string | null> {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data, error } = await sbAdmin
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', wsId)
+    .eq('id', configId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to read workspace config', { configId, error, wsId });
+    return null;
+  }
+
+  return data?.value ?? null;
+}
+
+async function resolveContactsWorkspaceAccess(wsId: string) {
+  const actor = await getSatelliteAppSessionUser('contacts');
+  if (!actor?.id) return null;
+
+  const user = await getContactsWorkspaceUserLink(wsId, actor);
+  if (!user) return null;
+
+  const permissions = await getPermissions({ user: actor, wsId });
+  if (!permissions) return null;
+
+  return { actor, permissions, user };
+}
+
+/**
+ * One request-scoped access result shared by the Contacts layout and page.
+ * React cache prevents parallel route segments from racing independent repair
+ * and permission reads for the same workspace.
+ */
+export const getContactsWorkspaceAccess = cache(async (wsId: string) =>
+  resolveContactsWorkspaceAccess(wsId)
+);

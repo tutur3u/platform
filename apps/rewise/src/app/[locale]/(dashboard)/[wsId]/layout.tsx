@@ -12,6 +12,7 @@ import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provid
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
@@ -28,6 +29,7 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
   const { wsId: id } = await params;
   const requestHeaders = await headers();
 
@@ -85,7 +87,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions />
+            <NavbarActions userId={user.id} />
           </Suspense>
         }
         notificationPopover={<NotificationPopover userId={user.id} />}

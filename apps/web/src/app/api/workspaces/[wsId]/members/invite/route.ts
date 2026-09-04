@@ -19,7 +19,82 @@ const InviteMemberSchema = z.object({
   confirmDefaultAdminMigration: z.boolean().optional().default(false),
   email: z.email().max(MAX_EMAIL_LENGTH),
   memberType: z.enum(['MEMBER', 'GUEST']).optional().default('MEMBER'),
+  roleIds: z.array(z.uuid()).max(50).optional().default([]),
+  roleId: z.uuid().nullable().optional(),
 });
+
+const UpdateInvitationRoleSchema = z
+  .object({
+    email: z.email().max(MAX_EMAIL_LENGTH).nullable().optional(),
+    roleIds: z.array(z.uuid()).max(50).optional(),
+    roleId: z.uuid().nullable().optional(),
+    userId: z.uuid().nullable().optional(),
+  })
+  .refine(
+    ({ email, userId }) => Boolean(email) !== Boolean(userId),
+    'Expected exactly one invitation identifier.'
+  )
+  .refine(
+    ({ roleId, roleIds }) => roleId !== undefined || roleIds !== undefined,
+    'Expected invitation roles.'
+  );
+
+function normalizeRequestedRoleIds({
+  roleId,
+  roleIds,
+}: {
+  roleId?: null | string;
+  roleIds?: string[];
+}) {
+  return [...new Set([...(roleIds ?? []), ...(roleId ? [roleId] : [])])];
+}
+
+type InvitationRoleListRow = {
+  email: null | string;
+  role_ids: string[];
+  user_id: null | string;
+};
+
+type InvitationRoleRpcClient = {
+  rpc: (
+    functionName: 'list_workspace_invitation_role_ids',
+    args: { p_ws_id: string }
+  ) => Promise<{
+    data: InvitationRoleListRow[] | null;
+    error: { code?: string; message?: string } | null;
+  }>;
+};
+
+type SetInvitationRolesRpcClient = {
+  rpc: (
+    functionName: 'set_workspace_invitation_roles',
+    args: {
+      p_email: null | string;
+      p_role_ids: string[];
+      p_user_id: null | string;
+      p_ws_id: string;
+    }
+  ) => Promise<{
+    data: null;
+    error: { code?: string; message?: string } | null;
+  }>;
+};
+
+type CreateEmailInvitationRpcClient = {
+  rpc: (
+    functionName: 'create_workspace_email_invitation_with_roles',
+    args: {
+      p_email: string;
+      p_invited_by: string;
+      p_member_type: 'GUEST' | 'MEMBER';
+      p_role_ids: string[];
+      p_ws_id: string;
+    }
+  ) => Promise<{
+    data: null;
+    error: { code?: string; message?: string } | null;
+  }>;
+};
 
 type PosOperatorSetupResult = {
   adminRoleId: string | null;
@@ -48,6 +123,201 @@ function isUniqueViolation(error: { code?: string; message?: string }) {
     error.message?.toLowerCase().includes('duplicate key value') ||
     error.message?.toLowerCase().includes('unique constraint')
   );
+}
+
+export async function GET(req: Request, { params }: Params) {
+  const { wsId: requestedWsId } = await params;
+  const access = await resolveWorkspaceRouteAccess(req, requestedWsId, [
+    'manage_workspace_members',
+    'manage_workspace_roles',
+  ]);
+  if (!access.ok) return access.response;
+
+  const wsId = access.permissions.wsId;
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const privateDb = sbAdmin.schema(
+    'private'
+  ) as unknown as InvitationRoleRpcClient;
+  const invitationsResult = await privateDb.rpc(
+    'list_workspace_invitation_role_ids',
+    { p_ws_id: wsId }
+  );
+
+  if (invitationsResult.error) {
+    console.error('Failed to list workspace invitation roles', {
+      error: invitationsResult.error,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error fetching workspace invitation roles.' },
+      { status: 500 }
+    );
+  }
+
+  const roleIds = [
+    ...new Set(
+      (invitationsResult.data ?? []).flatMap(
+        (invitation) => invitation.role_ids
+      )
+    ),
+  ];
+  const roleById = new Map<string, { id: string; name: string }>();
+
+  if (roleIds.length > 0) {
+    const { data: roles, error: rolesError } = await sbAdmin
+      .from('workspace_roles')
+      .select('id, name')
+      .eq('ws_id', wsId)
+      .in('id', roleIds);
+
+    if (rolesError) {
+      console.error('Failed to resolve workspace invitation roles', {
+        error: rolesError,
+        wsId,
+      });
+      return NextResponse.json(
+        { message: 'Error fetching workspace invitation roles.' },
+        { status: 500 }
+      );
+    }
+
+    for (const role of roles ?? []) roleById.set(role.id, role);
+  }
+
+  return NextResponse.json([
+    ...(invitationsResult.data ?? []).map((invitation) => ({
+      email: invitation.email,
+      roles: invitation.role_ids.flatMap((roleId) => {
+        const role = roleById.get(roleId);
+        return role ? [role] : [];
+      }),
+      userId: invitation.user_id,
+    })),
+  ]);
+}
+
+export async function PATCH(req: Request, { params }: Params) {
+  const { wsId: requestedWsId } = await params;
+  const access = await resolveWorkspaceRouteAccess(req, requestedWsId);
+  if (!access.ok) return access.response;
+
+  if (
+    access.permissions.membershipType !== 'MEMBER' ||
+    access.permissions.withoutPermission('manage_workspace_roles')
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'You do not have permission to assign workspace roles to invitations.',
+      },
+      { status: 403 }
+    );
+  }
+
+  let rawPayload: unknown;
+  try {
+    rawPayload = await req.json();
+  } catch {
+    return NextResponse.json(
+      { message: 'Invalid invitation role update.' },
+      { status: 400 }
+    );
+  }
+  const parsed = UpdateInvitationRoleSchema.safeParse(rawPayload);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid invitation role update.' },
+      { status: 400 }
+    );
+  }
+
+  const wsId = access.permissions.wsId;
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const userId = parsed.data.userId ?? null;
+  const email = parsed.data.email?.trim().toLowerCase() ?? null;
+  const roleIds = normalizeRequestedRoleIds(parsed.data);
+  const inviteResult = userId
+    ? await sbAdmin
+        .from('workspace_invites')
+        .select('type')
+        .eq('ws_id', wsId)
+        .eq('user_id', userId)
+        .maybeSingle()
+    : await sbAdmin
+        .from('workspace_email_invites')
+        .select('type')
+        .eq('ws_id', wsId)
+        .eq('email', email as string)
+        .maybeSingle();
+
+  if (inviteResult.error) {
+    console.error('Failed to find workspace invitation for role update', {
+      error: inviteResult.error,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error updating workspace invitation role.' },
+      { status: 500 }
+    );
+  }
+
+  if (!inviteResult.data) {
+    return NextResponse.json(
+      { message: 'Pending workspace invitation not found.' },
+      { status: 404 }
+    );
+  }
+
+  if (inviteResult.data.type !== 'MEMBER' && roleIds.length > 0) {
+    return NextResponse.json(
+      {
+        message: 'Workspace roles can only be assigned to member invitations.',
+      },
+      { status: 400 }
+    );
+  }
+
+  if (roleIds.length > 0) {
+    const { data: matchingRoles, error: roleError } = await sbAdmin
+      .from('workspace_roles')
+      .select('id')
+      .eq('ws_id', wsId)
+      .in('id', roleIds);
+
+    if (roleError || matchingRoles?.length !== roleIds.length) {
+      return NextResponse.json(
+        {
+          message: roleError
+            ? 'Error validating workspace invitation role.'
+            : 'One or more selected workspace roles are not available.',
+        },
+        { status: roleError ? 500 : 400 }
+      );
+    }
+  }
+
+  const privateDb = sbAdmin.schema(
+    'private'
+  ) as unknown as SetInvitationRolesRpcClient;
+  const updateResult = await privateDb.rpc('set_workspace_invitation_roles', {
+    p_email: email,
+    p_role_ids: roleIds,
+    p_user_id: userId,
+    p_ws_id: wsId,
+  });
+
+  if (updateResult.error) {
+    console.error('Failed to update workspace invitation role', {
+      error: updateResult.error,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error updating workspace invitation role.' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ message: 'success' });
 }
 
 // Helper to trigger immediate notification processing
@@ -144,7 +414,26 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const email = payload.email.trim().toLowerCase();
+  const roleIds = normalizeRequestedRoleIds(payload);
   const isPosOperatorInvite = payload.accessPreset === 'pos_operator';
+  const isGuestInvite =
+    payload.accessPreset === 'guest' || payload.memberType === 'GUEST';
+
+  if (isPosOperatorInvite && roleIds.length > 0) {
+    return NextResponse.json(
+      { message: 'POS operator invitations manage their role automatically.' },
+      { status: 400 }
+    );
+  }
+
+  if (isGuestInvite && roleIds.length > 0) {
+    return NextResponse.json(
+      {
+        message: 'Workspace roles can only be assigned to member invitations.',
+      },
+      { status: 400 }
+    );
+  }
 
   if (
     isPosOperatorInvite &&
@@ -158,6 +447,45 @@ export async function POST(req: Request, { params }: Params) {
       },
       { status: 403 }
     );
+  }
+
+  if (
+    roleIds.length > 0 &&
+    permissions.withoutPermission('manage_workspace_roles')
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'You do not have permission to assign workspace roles to invitations.',
+      },
+      { status: 403 }
+    );
+  }
+
+  if (roleIds.length > 0) {
+    const { data: matchingRoles, error: roleError } = await sbAdmin
+      .from('workspace_roles')
+      .select('id')
+      .eq('ws_id', wsId)
+      .in('id', roleIds);
+
+    if (roleError) {
+      console.error('Failed to validate workspace invitation role', {
+        error: roleError,
+        wsId,
+      });
+      return NextResponse.json(
+        { message: 'Error validating workspace invitation role.' },
+        { status: 500 }
+      );
+    }
+
+    if (matchingRoles?.length !== roleIds.length) {
+      return NextResponse.json(
+        { message: 'One or more selected workspace roles are not available.' },
+        { status: 400 }
+      );
+    }
   }
 
   const { data: disableInvite, error: disableInviteError } = await sbAdmin
@@ -236,14 +564,18 @@ export async function POST(req: Request, { params }: Params) {
     posOperatorSetup = data;
   }
 
+  const invitationDb = sbAdmin.schema(
+    'private'
+  ) as unknown as CreateEmailInvitationRpcClient;
   const { error } = isPosOperatorInvite
     ? { error: null }
-    : await sbAdmin.from('workspace_email_invites').insert({
-        ws_id: wsId,
-        email,
-        invited_by: user.id,
-        role_id: null,
-        type: payload.accessPreset === 'guest' ? 'GUEST' : payload.memberType,
+    : await invitationDb.rpc('create_workspace_email_invitation_with_roles', {
+        p_email: email,
+        p_invited_by: user.id,
+        p_member_type:
+          payload.accessPreset === 'guest' ? 'GUEST' : payload.memberType,
+        p_role_ids: roleIds,
+        p_ws_id: wsId,
       });
 
   if (error) {

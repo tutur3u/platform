@@ -4220,11 +4220,38 @@
     "clear_recent_title": "Xóa Mục Gần Đây",
     "commands": "Lệnh",
     "continue": "Tiếp tục",
+    "create_from_query": "Tạo “{query}”",
     "create_in_product": "Tạo trong {product}",
     "create_in_product_description": "Bắt đầu một quy trình {product} mới từ bảng lệnh.",
     "create_task": "Tạo nhiệm vụ \"{taskName}\"",
     "create_task_tip": "Mẹo: Nhấn ⌘↵ để nhanh chóng tạo nhiệm vụ",
     "current_theme": "Hiện tại",
+    "description": "Tìm kiếm, thao tác và di chuyển mà không ngắt mạch công việc.",
+    "empty": {
+      "description": "Nhập từ khóa, chọn một tab hoặc dùng tiền tố tìm kiếm nhanh.",
+      "no_matches": "Không có kết quả cho “{query}”. Hãy điều chỉnh bộ lọc hoặc tạo thành nhiệm vụ.",
+      "title": "Chưa tìm thấy kết quả"
+    },
+    "filters": {
+      "label": "Lọc",
+      "priority": {
+        "all": "Mọi ưu tiên",
+        "critical": "Khẩn cấp",
+        "high": "Cao",
+        "low": "Thấp",
+        "normal": "Bình thường"
+      },
+      "priority_label": "Lọc theo ưu tiên",
+      "status": {
+        "all": "Mọi trạng thái",
+        "assigned": "Giao cho tôi",
+        "completed": "Đã hoàn thành",
+        "due-soon": "Sắp đến hạn",
+        "open": "Đang mở",
+        "overdue": "Quá hạn"
+      },
+      "status_label": "Lọc theo trạng thái"
+    },
     "generic_action_name_label": "Tên",
     "generic_action_name_placeholder": "Đặt tên cho mục {product} này",
     "generic_action_notes_label": "Ghi chú",
@@ -4233,8 +4260,10 @@
     "inline_action_description": "Thêm nhanh thông tin tại đây, rồi tiếp tục trong {product} để hoàn tất các trường riêng của sản phẩm.",
     "keyboard_hints": {
       "clear_recent": "xóa gần đây",
+      "create": "tạo nhiệm vụ",
       "esc_to_close": "Nhấn Esc để đóng",
       "navigate": "điều hướng",
+      "open": "mở",
       "select": "chọn",
       "to_close": "để đóng",
       "to_toggle": "để chuyển đổi"
@@ -4253,6 +4282,11 @@
     "open_item_description": "Điều hướng đến {item}.",
     "overdue": "Quá hạn",
     "personal": "Cá Nhân",
+    "power_hints": {
+      "actions": "thao tác",
+      "pages": "trang",
+      "tasks": "nhiệm vụ"
+    },
     "powered_by": "Được hỗ trợ bởi tìm kiếm ngữ nghĩa",
     "priority": {
       "critical": "Khẩn Cấp",
@@ -4266,8 +4300,39 @@
     "result_count": "{count} kết quả",
     "result_count_plural": "{count} kết quả",
     "search_placeholder": "Tìm lệnh, nhiệm vụ, hoặc điều hướng...",
+    "search_placeholder_navigation": "Tìm trang, ứng dụng và thao tác — dùng /, @ hoặc >",
+    "search_placeholder_power": "Tìm nhiệm vụ, trang và thao tác — dùng #, / hoặc >",
+    "search_placeholder_tasks": "Tìm nhiệm vụ, ứng dụng và thao tác — dùng #, @ hoặc >",
     "searching_tasks": "Đang tìm nhiệm vụ...",
     "smart_actions": "Hành Động Thông Minh",
+    "sort": {
+      "due": "Hạn chót",
+      "label": "Sắp xếp nhiệm vụ",
+      "newest": "Mới nhất",
+      "priority": "Ưu tiên",
+      "relevance": "Phù hợp nhất"
+    },
+    "tabs": {
+      "actions": "Thao tác",
+      "all": "Tất cả",
+      "apps": "Ứng dụng",
+      "label": "Danh mục tìm kiếm",
+      "navigate": "Trang",
+      "tasks": "Nhiệm vụ"
+    },
+    "task_actions": {
+      "completed": "Đã hoàn thành nhiệm vụ",
+      "copy_link": "Sao chép liên kết nhiệm vụ",
+      "due": "Đến hạn {date}",
+      "link_copied": "Đã sao chép liên kết nhiệm vụ",
+      "link_copy_failed": "Không thể sao chép liên kết nhiệm vụ",
+      "mark_complete": "Hoàn thành nhiệm vụ",
+      "mark_open": "Mở lại nhiệm vụ",
+      "reopened": "Đã mở lại nhiệm vụ",
+      "update_failed": "Không thể cập nhật nhiệm vụ này"
+    },
+    "task_first": "Ưu tiên nhiệm vụ",
+    "task_results": "{count} nhiệm vụ",
     "tasks": "Nhiệm Vụ",
     "title": "Trung Tâm Lệnh",
     "try_searching": "Thử tìm kiếm nhiệm vụ, trang, hoặc hành động",
@@ -4448,6 +4513,7 @@
     "crm": "CRM",
     "crm-description": "Xây dựng và duy trì các mối quan hệ khách hàng có giá trị.",
     "current_plan": "Gói hiện tại",
+    "current_timer_will_stop": "Bộ tính giờ hiện tại sẽ tự động dừng.",
     "currently_online": "Đang trực tuyến",
     "currently_related": "Đang liên quan",
     "custom_date": "Ngày tùy chỉnh",
@@ -4556,6 +4622,8 @@
     "failed_to_delete": "Không thể xóa",
     "failed_to_delete_tasks": "Không thể xóa công việc.",
     "failed_to_restore": "Không thể khôi phục công việc",
+    "failed_to_start_timer": "Không thể bắt đầu tính giờ",
+    "failed_to_stop_timer": "Không thể dừng tính giờ",
     "failed_to_update_assignees": "Không thể cập nhật người thực hiện: {error}",
     "faq": "Câu hỏi thường gặp",
     "feature_coming_soon": "Tính năng sắp ra mắt",
@@ -4946,11 +5014,14 @@
     "start_date": "Ngày bắt đầu",
     "start_timer": "Bắt đầu hẹn giờ",
     "start_tracking_time": "Bắt đầu tính giờ",
+    "starting_timer": "Đang bắt đầu tính giờ…",
     "starts": "Bắt đầu",
     "starts_at": "Bắt đầu {date}",
     "status": "Trạng thái",
     "status_category": "Nhóm trạng thái",
     "stay-updated": "Cập nhật thường xuyên",
+    "stop_tracking_time": "Dừng tính giờ",
+    "stopping_timer": "Đang dừng tính giờ…",
     "stress": "căng thẳng",
     "styles": "Kiểu dáng",
     "submit": "Gửi",
@@ -4964,6 +5035,7 @@
     "suggestion-improve": "Đề xuất cải thiện",
     "suggestion-placeholder": "Mô tả vấn đề và bất kỳ đề xuất nào bạn có để cải thiện tình hình...",
     "switch_to": "Chuyển sang chế độ {theme}",
+    "switch_tracking_to_task": "Chuyển bộ tính giờ sang công việc này",
     "system": "Hệ thống",
     "task": "công việc",
     "task_duplicated_successfully": "Đã nhân bản công việc thành công",
@@ -5049,11 +5121,20 @@
     "timeline_unscheduled_prompt": "Công việc chưa lên lịch",
     "timeline_view": "Dòng thời gian",
     "timeline_zoom": "Thu phóng dòng thời gian",
+    "timer_is_running": "Thời gian của công việc này đang được theo dõi.",
+    "timer_started": "Đã bắt đầu tính giờ",
+    "timer_started_for": "Đang theo dõi {name}.",
+    "timer_starts_immediately": "Bắt đầu ngay mà không rời khỏi bảng.",
+    "timer_stopped": "Đã dừng tính giờ",
+    "timer_stopped_for": "Đã dừng theo dõi {name}.",
+    "timer_switched_to": "Đã dừng bộ tính giờ trước và bắt đầu {name}.",
     "title": "Tiêu đề",
     "to": "Đến",
     "today": "Hôm nay",
     "toggle-columns": "Hiển thị cột",
     "tomorrow": "Ngày mai",
+    "tracking_task_named": "Đang tính giờ {name}",
+    "tracking_this_task": "Đang tính giờ công việc này",
     "ui": "Giao diện",
     "ui-description": "Duyệt thư viện thành phần giao diện Tuturuuu.",
     "unarchive": "Bỏ lưu trữ",
@@ -5085,6 +5166,7 @@
     "vietnamese-womens-day": "Ngày Phụ Nữ Việt Nam",
     "view": "Xem",
     "view_email": "Xem Email",
+    "view_task": "Xem nhiệm vụ",
     "view-full-documentation": "Xem tài liệu đầy đủ",
     "view-options": "Trình bày",
     "visibility_updated": "Đã cập nhật quyền truy cập thành công",
@@ -9349,6 +9431,15 @@
       "operate": "Vận hành doanh nghiệp",
       "plan": "Lên kế hoạch & thực thi"
     },
+    "index": {
+      "description": "Một không gian làm việc, một lần đăng nhập, một hoá đơn. Mỗi ứng dụng bên dưới dùng riêng được, và dùng cùng nhau thì tốt hơn.",
+      "learn_more": "Tìm hiểu thêm",
+      "seo": {
+        "description": "Mọi ứng dụng Tuturuuu ở cùng một nơi — lập kế hoạch, sáng tạo và vận hành doanh nghiệp.",
+        "title": "Sản phẩm"
+      },
+      "title": "Mọi ứng dụng đội ngũ của bạn cần"
+    },
     "products": {
       "ai": {
         "description": "Mira và các trợ lý vận hành mọi bề mặt sản phẩm.",
@@ -11083,6 +11174,10 @@
         "subtitle": "Mỗi phần làm một việc, còn bạn chỉ cần nói chuyện với một trong số đó.",
         "title": "Thứ đang thật sự chạy bên dưới"
       },
+      "seo": {
+        "description": "Xem cách Tuturuuu AI tăng tốc tự động hoá và công việc hằng ngày.",
+        "title": "Không gian làm việc AI"
+      },
       "title": "Năm hệ thống, một trợ lý để bạn trò chuyện",
       "useCases": {
         "eyebrow": "Dùng vào việc gì",
@@ -11157,6 +11252,10 @@
           "title": "Múi giờ được xử lý lặng lẽ"
         },
         "title": "Xếp lịch mà không phải hỏi tới hỏi lui"
+      },
+      "seo": {
+        "description": "Sắp xếp lịch làm việc cùng nhau với lịch chia sẻ của Tuturuuu.",
+        "title": "Lịch chung cho đội ngũ"
       },
       "title": "Cuốn lịch biết giữ ngày của bạn",
       "useCases": {
@@ -11233,6 +11332,10 @@
           "title": "Cá nhân và không gian làm việc cạnh nhau"
         }
       },
+      "seo": {
+        "description": "Kênh, tin nhắn riêng và tệp nằm chung không gian với công việc của bạn.",
+        "title": "Trò chuyện và kênh nhóm"
+      },
       "title": "Cuộc trò chuyện nằm cạnh công việc",
       "useCases": {
         "eyebrow": "Trong thực tế",
@@ -11307,6 +11410,10 @@
         },
         "subtitle": "Không phải thêm một cơ sở dữ liệu để chăm. Hồ sơ khách hàng nằm cạnh công việc, lịch và hoá đơn, nên ngữ cảnh đến cùng với cái tên.",
         "title": "Mối quan hệ, được ghi lại"
+      },
+      "seo": {
+        "description": "Theo dõi quan hệ và cơ hội bán hàng ngay trong CRM liên thông của Tuturuuu.",
+        "title": "Quản lý quan hệ khách hàng"
       },
       "title": "Mọi khách hàng, và mọi điều bạn đã hứa với họ",
       "useCases": {
@@ -11383,6 +11490,10 @@
           "title": "Sửa mà không mất gì"
         }
       },
+      "seo": {
+        "description": "Cùng soạn tài liệu với quy trình có AI hỗ trợ trong Tuturuuu.",
+        "title": "Tài liệu cộng tác"
+      },
       "title": "Viết ngay tại nơi công việc đang diễn ra",
       "useCases": {
         "business": {
@@ -11457,6 +11568,10 @@
           "description": "Thay thế một tệp không xoá mất bản trước. Các phiên bản cũ vẫn còn, nên ghi đè không còn là một buổi chiều mất trắng.",
           "title": "Mỗi lần tải lên đều giữ bản cũ"
         }
+      },
+      "seo": {
+        "description": "Lưu trữ, sắp xếp và chia sẻ tệp an toàn với Tuturuuu Drive.",
+        "title": "Lưu trữ đám mây an toàn"
       },
       "title": "Tệp của bạn, ở nơi công việc đang diễn ra",
       "useCases": {
@@ -11533,6 +11648,10 @@
         "subtitle": "Mỗi con số nằm cạnh công việc đã tạo ra nó, nên bạn không phải đối chiếu hai phiên bản sự thật.",
         "title": "Phần sổ sách, gần như đã có người lo"
       },
+      "seo": {
+        "description": "Quản lý hoá đơn, ngân sách và kiểm soát chi tiêu với Tuturuuu Finance.",
+        "title": "Quản lý tài chính và chi phí"
+      },
       "title": "Biết tiền đã đi đâu, không cần bảng tính",
       "useCases": {
         "business": {
@@ -11607,6 +11726,10 @@
           "title": "Nhìn ra là của bạn"
         },
         "title": "Từ câu hỏi tới câu trả lời, không vòng vèo"
+      },
+      "seo": {
+        "description": "Tạo biểu mẫu, chia sẻ liên kết và đọc mọi phản hồi ngay tại nơi chúng đến.",
+        "title": "Biểu mẫu và khảo sát trực tuyến"
       },
       "title": "Hỏi một lần, đọc câu trả lời ở một chỗ",
       "useCases": {
@@ -11683,6 +11806,10 @@
           "title": "Thế giới bạn tự dựng"
         }
       },
+      "seo": {
+        "description": "Giữ những gì đội ngũ bạn biết ở nơi tìm được, thay vì rải rác khắp nơi.",
+        "title": "Kho tri thức đội ngũ"
+      },
       "title": "Phòng thí nghiệm cho bầy tác nhân",
       "useCases": {
         "design": {
@@ -11757,6 +11884,10 @@
           "description": "Theo dõi tồn kho từng địa điểm và mọi lần điều chuyển, không cần mỗi kho một bảng tính.",
           "title": "Nhiều kho, một bức tranh"
         }
+      },
+      "seo": {
+        "description": "Theo dõi tồn kho và quy trình giao hàng với Tuturuuu Inventory.",
+        "title": "Quản lý kho hàng"
       },
       "title": "Số liệu tồn kho khớp với hàng trên kệ",
       "useCases": {
@@ -11833,6 +11964,10 @@
         "subtitle": "Tài liệu, bài nộp và tiến độ trong một hệ thống, trên cùng cuốn lịch với mọi thứ khác người học đang xoay xở.",
         "title": "Dạy học, với ít việc hành chính xung quanh hơn"
       },
+      "seo": {
+        "description": "Tổ chức đào tạo và đo lường hiệu quả học tập với Tuturuuu LMS.",
+        "title": "Hệ thống quản lý học tập"
+      },
       "title": "Khoá học, bài tập và vị trí của từng người học",
       "useCases": {
         "centers": {
@@ -11907,6 +12042,10 @@
         },
         "subtitle": "Phân loại, soạn thư, hẹn giờ và hộp thư dùng chung ở cùng một nơi.",
         "title": "Ít hộp thư hơn, xong việc nhiều hơn"
+      },
+      "seo": {
+        "description": "Vận hành liên hệ khách hàng và hộp thư chung với Tuturuuu Mail.",
+        "title": "Email nhóm và hộp thư chung"
       },
       "title": "Hộp thư biết chuyển việc sang phần còn lại của ngày",
       "useCases": {
@@ -12017,6 +12156,12 @@
         "title": "Bất cứ khi nào có hơn ba người"
       }
     },
+    "meet-together": {
+      "seo": {
+        "description": "So lịch rảnh và chốt giờ họp mà không cần hỏi qua hỏi lại.",
+        "title": "Tìm giờ họp hợp cho tất cả"
+      }
+    },
     "qr": {
       "closing": {
         "description": "Dán đường liên kết, chọn màu, và tải về tệp bạn có thể đem in.",
@@ -12057,6 +12202,10 @@
         },
         "subtitle": "Mọi nội dung, ba kiểu bố cục, màu của bạn, logo của bạn, và tệp đủ lớn để in.",
         "title": "Đủ tùy chỉnh để in một lần là xong"
+      },
+      "seo": {
+        "description": "Tạo và theo dõi mã QR gắn với chính công việc phía sau chúng.",
+        "title": "Mã QR cho không gian làm việc"
       },
       "title": "Một mã cho thứ bạn phải lặp đi lặp lại",
       "useCases": {
@@ -12133,6 +12282,10 @@
           "title": "Công khai hoặc riêng tư"
         }
       },
+      "seo": {
+        "description": "Bán hàng trực tuyến với gian hàng nối liền kho hàng và tài chính của bạn.",
+        "title": "Gian hàng trực tuyến"
+      },
       "title": "Kho hàng của bạn, mở ra cho người mua",
       "useCases": {
         "buyers": {
@@ -12207,6 +12360,10 @@
           "description": "Đổi cách xem mà không phải dời công việc. Vẫn là những việc đó, sắp xếp cho lập kế hoạch, họp nhanh hoặc bàn giao.",
           "title": "Danh sách, bảng hoặc dòng thời gian"
         }
+      },
+      "seo": {
+        "description": "Giữ dự án đúng tiến độ với Tuturuuu Tasks và bảng cộng tác.",
+        "title": "Quản lý dự án và công việc"
       },
       "title": "Công việc nằm đúng chỗ bạn để lại",
       "useCases": {
@@ -12283,6 +12440,10 @@
         },
         "title": "Bộ đếm giờ nằm ngay cạnh công việc"
       },
+      "seo": {
+        "description": "Biết thời gian thực sự đã đi đâu, theo từng người và từng dự án.",
+        "title": "Theo dõi thời gian"
+      },
       "title": "Số giờ bạn có thể giải trình",
       "useCases": {
         "eyebrow": "Trong thực tế",
@@ -12357,6 +12518,10 @@
           "description": "Các phiên bản được giữ lại khi quy trình thay đổi, nên bạn thấy được cái gì đã đổi và quay về nếu bản mới tệ hơn.",
           "title": "Thay đổi có thể truy lại"
         }
+      },
+      "seo": {
+        "description": "Tự động hoá quy trình liên phòng ban với Tuturuuu Workflows.",
+        "title": "Tự động hoá quy trình"
       },
       "title": "Phần lặp đi lặp lại, chạy mà không cần bạn",
       "useCases": {
@@ -13477,6 +13642,14 @@
       "default_list": "Danh sách mặc định",
       "delete_board": "Xoá bảng",
       "delete_board_description": "Chuyển “{name}” vào thùng rác. Bạn có thể khôi phục từ các bảng đã xoá cho đến khi bảng bị xoá vĩnh viễn.",
+      "dialog_create_document": "Tạo tài liệu bằng",
+      "dialog_create_document_description": "Chọn bố cục ban đầu khi tạo công việc dạng tài liệu.",
+      "dialog_create_task": "Tạo công việc bằng",
+      "dialog_create_task_description": "Chọn bố cục ban đầu khi tạo công việc.",
+      "dialog_edit_document": "Mở tài liệu bằng",
+      "dialog_edit_document_description": "Chọn bố cục ban đầu khi xem hoặc chỉnh sửa công việc dạng tài liệu.",
+      "dialog_edit_task": "Mở công việc bằng",
+      "dialog_edit_task_description": "Chọn bố cục ban đầu khi xem hoặc chỉnh sửa công việc.",
       "dialog_presentation": "Mở công việc bằng",
       "dialog_presentation_compact": "Gọn",
       "dialog_presentation_description": "Chọn bố cục hộp thoại mặc định cho thẻ công việc, liên kết và thao tác tạo công việc",
@@ -15583,6 +15756,7 @@
     "added_label": "đã thêm nhãn",
     "assigned": "đã giao cho",
     "created_task": "đã tạo công việc",
+    "destination_list": "Đích đến",
     "failed_to_load": "Không thể tải hoạt động",
     "field_updated": {
       "completed": "đã thay đổi trạng thái",
@@ -15609,9 +15783,11 @@
     "removed_label": "đã xóa nhãn",
     "show_less": "Ẩn bớt",
     "show_more": "Xem thêm {count}",
+    "source_list": "Nguồn",
     "unassigned": "đã hủy giao cho",
     "unknown_change": "đã thực hiện một thay đổi không xác định",
     "unknown_label": "Nhãn không xác định",
+    "unknown_list": "Danh sách không xác định",
     "unknown_project": "Dự án không xác định",
     "unknown_user": "Người dùng không xác định",
     "unlinked_from_project": "đã hủy liên kết với dự án",
@@ -20169,10 +20345,12 @@
     "admin_status": "Trạng thái Quyền Quản trị",
     "all": "Tất cả",
     "all_members": "Tất cả thành viên",
+    "assign_invitation_role": "Gán vai trò",
     "board_guest_can_edit": "Có thể sửa bảng đã chia sẻ",
     "board_guest_can_view": "Có thể xem bảng đã chia sẻ",
     "cancel_invitation": "Hủy lời mời",
     "cannot-delete-last-owner": "Bạn không thể xóa chủ sở hữu cuối cùng của không gian làm việc.",
+    "clear_all_roles": "Xóa tất cả",
     "clear_filters": "Xóa bộ lọc",
     "collapse_permissions": "Thu gọn quyền",
     "creator_badge": "Người tạo",
@@ -20212,22 +20390,38 @@
     "invitation_error_already_exist": "Người dùng đã là thành viên hoặc lời mời đã được gửi.",
     "invitation_error_user_not_found": "Người dùng không tìm thấy hoặc chưa đăng ký trên nền tảng.",
     "invitation_revoked": "Lời mời đã bị thu hồi",
+    "invitation_role": "Vai trò khi mời",
+    "invitation_role_helper": "Vai trò này sẽ được áp dụng khi người này chấp nhận lời mời.",
+    "invitation_role_updated": "Đã cập nhật vai trò của lời mời",
     "invitation_sent": "Lời mời đã được gửi",
     "invitation_to": "Lời mời đến",
     "invitation-failed": "Không thể mời thành viên",
     "invitation-failed-description": "Đã xảy ra lỗi khi gửi lời mời. Vui lòng thử lại.",
     "invitation-sent": "Lời mời đã được gửi",
     "invitation-sent-description": "Lời mời đã được gửi đến {email}.",
+    "invite_access_guest_tab": "Khách",
+    "invite_access_member_tab": "Thành viên",
+    "invite_access_pos_tab": "POS",
+    "invite_access_title": "Quyền truy cập và vai trò",
     "invite_dialog_description": "Gửi lời mời qua email. Chọn họ tham gia với tư cách thành viên đầy đủ hoặc khách.",
     "invite_dialog_title": "Mời vào không gian làm việc",
     "invite_email_label": "Email",
+    "invite_emails_helper": "Phân tách nhiều địa chỉ bằng dấu phẩy, khoảng trắng hoặc dòng mới.",
+    "invite_emails_label": "Địa chỉ email",
     "invite_member": "Mời thành viên",
     "invite_member_disabled": "Đã tắt lời mời",
     "invite_membership_guest": "Khách — quyền hạn chế",
+    "invite_membership_guest_description": "Quyền truy cập khách hạn chế, không có vai trò không gian làm việc.",
     "invite_membership_label": "Quyền truy cập",
     "invite_membership_member": "Thành viên — truy cập đầy đủ không gian làm việc",
+    "invite_membership_member_description": "Thành viên đầy đủ của không gian làm việc với các vai trò tùy chọn.",
     "invite_membership_pos_operator": "Nhân viên POS — chỉ bắt đầu thanh toán",
     "invite_no_permission": "Bạn không có quyền mời thành viên.",
+    "invite_recipients_title": "Người nhận",
+    "invite_roles_description": "Gán một hoặc nhiều vai trò ngay bây giờ. Bạn có thể thay đổi khi lời mời đang chờ.",
+    "invite_roles_no_match": "Không có vai trò nào khớp với tìm kiếm.",
+    "invite_roles_optional": "Không bắt buộc",
+    "invite_roles_search": "Tìm kiếm vai trò trong không gian làm việc...",
     "invite_submit": "Gửi lời mời",
     "invited": "Đã mời",
     "invited_members": "Đã mời",
@@ -20249,6 +20443,8 @@
     "no_members_match_filters": "Không có thành viên nào phù hợp với bộ lọc đã chọn",
     "no_permissions": "Chưa được gán quyền",
     "no_permissions_found": "Không tìm thấy quyền",
+    "no_role_assigned": "Chưa gán vai trò",
+    "no_roles_assigned": "Chưa gán vai trò nào",
     "no_roles_found": "Không tìm thấy vai trò",
     "only_default": "Chỉ mặc định",
     "only_roles": "Chỉ vai trò",
@@ -20276,6 +20472,7 @@
     "profile_display_name_placeholder": "Tên hiển thị trong không gian này",
     "profile_display_name_update_error": "Không thể cập nhật tên hiển thị trong không gian làm việc.",
     "profile_display_name_updated": "Đã cập nhật tên hiển thị trong không gian làm việc.",
+    "recipients_count": "{count} người nhận",
     "redundancy_description": "{count, plural, =1 {1 quyền được} other {# quyền được}} cấp bởi nhiều nguồn. Hãy xem xét tối ưu hóa phân quyền vai trò.",
     "redundancy_detected": "Phát hiện Quyền Trùng lặp",
     "remove_error": "Đã xảy ra lỗi khi xóa thành viên",
@@ -20289,6 +20486,7 @@
     "role-title": "Vị trí",
     "role-title-placeholder": "Thiết kế, Quản lý dự án, v.v.",
     "roles": "Vai trò",
+    "roles_selected": "Đã chọn {count} vai trò",
     "save_profile_display_name": "Lưu tên hiển thị",
     "search_members": "Tìm kiếm thành viên...",
     "search_permissions": "Tìm kiếm quyền...",
@@ -21415,6 +21613,24 @@
     "delete_workspace_warning": "Khi bạn xóa một không gian làm việc, sẽ không thể hoàn tác. Xin hãy cẩn thận.",
     "deleting": "Đang xóa",
     "description": "Quản lý các thiết lập không gian làm việc.",
+    "email_policy": {
+      "blocked_badge": "Mặc định bị chặn",
+      "description": "Kiểm soát việc trang web được liên kết có thể gửi email vận hành hay không và chính xác các miền người nhận được phép.",
+      "domains_description": "Chỉ miền chính xác. Ký tự đại diện và miền con không được tự động bao gồm.",
+      "domains_label": "Miền người nhận được phép",
+      "domains_required": "Thêm ít nhất một miền được phép trước khi bật email.",
+      "enable_description": "Khi tắt, mọi yêu cầu gửi email từ trang web được liên kết đều bị từ chối.",
+      "enable_label": "Cho phép gửi email",
+      "enabled_badge": "Đã cho phép rõ ràng",
+      "save": "Lưu chính sách email",
+      "save_error": "Không thể lưu chính sách email.",
+      "saved": "Đã lưu chính sách email",
+      "saving": "Đang lưu...",
+      "shared_credentials_admin_only": "Chỉ quản trị viên nền tảng mới có thể cấp hoặc thu hồi thông tin gửi dùng chung.",
+      "shared_credentials_description": "Dùng người gửi được Tuturuuu quản lý nhưng vẫn giữ giới hạn, kiểm tra danh sách chặn và nhật ký kiểm toán của không gian làm việc này.",
+      "shared_credentials_label": "Dùng thông tin gửi của nền tảng",
+      "title": "Bảo mật email cho trang liên kết"
+    },
     "features": "Các tính năng",
     "features_description": "Quản lý các tính năng của không gian làm việc.",
     "general-description": "Quản lý thông tin và cài đặt cơ bản của không gian làm việc",
@@ -21821,6 +22037,7 @@
       "description_storage_counter": "Còn {percent}%",
       "description_storage_helper": "Còn chỗ trong mô tả. Định dạng, nhắc tên và nội dung nhúng cũng được tính.",
       "description_storage_over_limit": "Mô tả quá dài và sẽ không đồng bộ. Hãy rút gọn để tiếp tục.",
+      "description_storage_usage": "Đã dùng {used} trên {limit}",
       "description_storage_warning": "Gần hết chỗ trong mô tả — còn {percent}%.",
       "description_too_long_description": "Hãy rút gọn mô tả xuống dưới {max} ký tự trước khi lưu.",
       "description_too_long_title": "Mô tả quá dài",
@@ -21829,6 +22046,16 @@
       "disconnected": "Đã ngắt kết nối",
       "due_date": "Ngày đến hạn",
       "edit_task": "Chỉnh sửa công việc",
+      "editor_copy": {
+        "copy": "Sao chép nội dung",
+        "copy_as_markdown": "Sao chép dạng Markdown",
+        "copy_as_plain_text": "Sao chép dạng văn bản thuần túy",
+        "copy_failed": "Không thể sao chép nội dung",
+        "markdown_copied": "Đã sao chép dạng Markdown",
+        "markdown_description": "Giữ tiêu đề, danh sách, liên kết và cú pháp định dạng",
+        "plain_text_copied": "Đã sao chép dạng văn bản thuần túy",
+        "plain_text_description": "Văn bản gọn gàng cho trò chuyện, email hoặc tài liệu"
+      },
       "enlarge_dialog": "Mở rộng hộp thoại",
       "estimate": "Ước lượng",
       "estimated_duration": "Thời lượng ước tính",
@@ -21952,6 +22179,7 @@
       "task_restored_description": "\"{name}\" đã được khôi phục do thao tác hoàn tác",
       "title_too_long_description": "Hãy rút gọn tiêu đề công việc xuống dưới {max} ký tự trước khi lưu.",
       "title_too_long_title": "Tiêu đề công việc quá dài",
+      "toggle_block": "Danh sách hoặc tiêu đề thu gọn",
       "unassigned": "đã hủy phân công",
       "unknown_change": "đã thực hiện thay đổi",
       "unknown_label": "Nhãn không xác định",
@@ -22069,6 +22297,12 @@
       "status_category": "Nhóm trạng thái",
       "title": "Cài đặt bố cục bảng",
       "yellow": "Vàng"
+    },
+    "manual_ordering_disabled": {
+      "description": "Công việc đang được sắp xếp theo một tiêu chí nên thao tác kéo không thể thay đổi thứ tự thủ công. Hãy chuyển sang sắp xếp thủ công để sắp xếp lại.",
+      "keep_sorting": "Giữ cách sắp xếp hiện tại",
+      "title": "Sắp xếp thủ công đang tạm dừng",
+      "use_manual": "Dùng thứ tự thủ công"
     },
     "messages": {
       "task_id_copied": "Đã sao chép ID nhiệm vụ",

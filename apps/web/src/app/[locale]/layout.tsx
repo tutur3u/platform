@@ -1,6 +1,6 @@
 import { AppThemeProvider, Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
-import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import { supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
 import '@/style/react-easy-crop.css';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -8,11 +8,13 @@ import '@tuturuuu/tasks-ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { locale as getRootLocale } from 'next/root-params';
+import { getMessages } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
+import { getPublicClientMessages } from '@/i18n/client-messages';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -21,6 +23,16 @@ interface Props {
   params: Promise<{
     locale: string;
   }>;
+}
+
+async function PublicClientProviders({ children }: { children: ReactNode }) {
+  const publicClientMessages = getPublicClientMessages(await getMessages());
+
+  return (
+    <NuqsAdapter>
+      <Providers messages={publicClientMessages}>{children}</Providers>
+    </NuqsAdapter>
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -108,18 +120,14 @@ async function ProductionDatabaseIndicator() {
   return <ProductionIndicator />;
 }
 
-export default async function RootLayout({ children, params }: Props) {
-  const { locale } = await params;
+export default async function RootLayout({ children }: Props) {
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
   const deploymentStamp =
     process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
   const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
-
-  // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes(locale as Locale)) {
-    notFound();
-  }
-
-  setRequestLocale(locale as Locale);
 
   return (
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
@@ -133,9 +141,7 @@ export default async function RootLayout({ children, params }: Props) {
           <VercelRuntimeSignals />
           <AppThemeProvider>
             <Suspense>
-              <NuqsAdapter>
-                <Providers>{children}</Providers>
-              </NuqsAdapter>
+              <PublicClientProviders>{children}</PublicClientProviders>
             </Suspense>
           </AppThemeProvider>
           <TailwindIndicator />

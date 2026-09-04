@@ -6,6 +6,26 @@ interface Params {
   params: Promise<{ wsId: string }>;
 }
 
+type CategoryBreakdownPrivateClient = {
+  schema(schema: 'private'): {
+    rpc(
+      fn: 'get_category_breakdown',
+      args: {
+        _actor_id: string;
+        _anchor_to_latest: boolean;
+        _end_date?: string;
+        _interval: 'daily';
+        _start_date?: string;
+        _timezone: string;
+        _transaction_type: string;
+        _wallet_ids?: string[];
+        _ws_id: string;
+        include_confidential: boolean;
+      }
+    ): Promise<{ data: unknown[] | null; error: unknown }>;
+  };
+};
+
 export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
   const access = await getFinanceRouteContext(
@@ -18,7 +38,7 @@ export async function GET(request: Request, { params }: Params) {
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const url = new URL(request.url);
 
   if (!permissions || permissions.withoutPermission('view_transactions')) {
@@ -31,17 +51,22 @@ export async function GET(request: Request, { params }: Params) {
   const type = url.searchParams.get('type') ?? 'expense';
   const timezone = url.searchParams.get('timezone') ?? 'UTC';
 
-  const { data, error } = await supabase.rpc('get_category_breakdown', {
-    _ws_id: normalizedWsId,
-    _start_date: startDate || undefined,
-    _end_date: endDate || undefined,
-    include_confidential: true,
-    _transaction_type: type,
-    _interval: 'daily',
-    _anchor_to_latest: false,
-    _timezone: timezone,
-    _wallet_ids: walletId ? [walletId] : undefined,
-  });
+  const { data, error } = await (
+    sbAdmin as unknown as CategoryBreakdownPrivateClient
+  )
+    .schema('private')
+    .rpc('get_category_breakdown', {
+      _actor_id: user.id,
+      _ws_id: normalizedWsId,
+      _start_date: startDate || undefined,
+      _end_date: endDate || undefined,
+      include_confidential: true,
+      _transaction_type: type,
+      _interval: 'daily',
+      _anchor_to_latest: false,
+      _timezone: timezone,
+      _wallet_ids: walletId ? [walletId] : undefined,
+    });
 
   if (error) {
     console.error('Error fetching category breakdown:', error);

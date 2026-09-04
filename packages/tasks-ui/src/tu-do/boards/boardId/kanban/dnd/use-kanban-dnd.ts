@@ -13,11 +13,9 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   getPersonalExternalStagingBoardId,
-  getPersonalExternalStagingListId,
   isPersonalExternalStagingListId,
 } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
@@ -30,6 +28,7 @@ import { getColumnReorderUpdates } from './column-reorder';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import {
   applyTaskDropPreviewToCache,
+  getPersonalPlacementDropTask,
   hasTaskLocalMutationAt,
   mergePersonalPlacementMutationTask,
   setBoardTaskCache,
@@ -52,7 +51,13 @@ import {
   removePendingTaskIds,
 } from './task-drag-pending';
 import {
+  getPersonalPlacementTargetBoardId,
+  shouldPersistTaskDropDirectly,
+  usesPersonalPlacement,
+} from './task-drag-persistence';
+import {
   dragPreviewPositionsEqual,
+  getDragPreviewStationaryTaskCount,
   getTaskDropEndPreviewFromRects,
   getTaskDropPreviewFromListSurface,
   getTaskDropPreviewFromRects,
@@ -72,6 +77,7 @@ import {
 export {
   applyTaskDropPreviewToCache,
   getTaskDropPreviewCacheTasks,
+  getTaskTerminalFieldsForList,
   hasTaskLocalMutationAt,
   mergePersonalPlacementMutationTask,
   mergeTaskIntoBoardTaskCache,
@@ -120,27 +126,6 @@ interface UseKanbanDndProps {
   reorderTaskMutation: any;
   taskHeightsRef: React.RefObject<Map<string, number>>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-}
-
-export function usesPersonalPlacement(task: Task) {
-  return isPersonalExternalOverlayTask(task);
-}
-
-export function getPersonalPlacementTargetBoardId({
-  boardId,
-  columns,
-  targetListId,
-}: {
-  boardId: string | null;
-  columns: Pick<TaskList, 'board_id' | 'id'>[];
-  targetListId: string;
-}) {
-  const stagingBoardId = getPersonalExternalStagingBoardId(targetListId);
-  if (stagingBoardId) return stagingBoardId;
-
-  return (
-    columns.find((column) => column.id === targetListId)?.board_id ?? boardId
-  );
 }
 
 function getTaskDropPosition(
@@ -302,8 +287,6 @@ export function useKanbanDnd({
   const [optimisticUpdateInProgress, setOptimisticUpdateInProgress] = useState<
     Set<string>
   >(new Set());
-
-  // Refs for drag state
   const pickedUpTaskColumn = useRef<string | null>(null);
   const isDraggingRef = useRef(false);
   const lastTargetListIdRef = useRef<string | null>(null);
@@ -359,12 +342,19 @@ export function useKanbanDnd({
           ? dragSession.height
           : (taskHeightsRef.current.get(activeTask.id) ?? 96);
       const visibleTaskRects = getCachedVisibleTaskRects(listId);
+      const taskIndexes = dragStartTaskIndexesByListRef.current.get(listId);
+      const stationaryTaskCount = getDragPreviewStationaryTaskCount({
+        activeTaskId: activeTask.id,
+        taskIndexes,
+        visibleTaskCount: visibleTaskRects.length,
+      });
       const preview = preferEnd
         ? getTaskDropEndPreviewFromRects({
             activeTask,
             height,
             listId,
             rects: visibleTaskRects,
+            stationaryTaskCount,
           })
         : getTaskDropPreviewFromRects({
             activeRect,
@@ -373,6 +363,7 @@ export function useKanbanDnd({
             height,
             listId,
             rects: visibleTaskRects,
+            stationaryTaskCount,
           });
 
       if (
@@ -404,6 +395,12 @@ export function useKanbanDnd({
           ? dragSession.height
           : (taskHeightsRef.current.get(activeTask.id) ?? 96);
       const visibleTaskRects = getCachedVisibleTaskRects(listId);
+      const taskIndexes = dragStartTaskIndexesByListRef.current.get(listId);
+      const stationaryTaskCount = getDragPreviewStationaryTaskCount({
+        activeTaskId: activeTask.id,
+        taskIndexes,
+        visibleTaskCount: visibleTaskRects.length,
+      });
       const preview = getTaskDropPreviewFromListSurface({
         activeRect,
         activeTask,
@@ -411,6 +408,7 @@ export function useKanbanDnd({
         height,
         listId,
         rects: visibleTaskRects,
+        stationaryTaskCount,
       });
 
       if (
@@ -473,20 +471,14 @@ export function useKanbanDnd({
         targetList?.status === 'done' || targetList?.status === 'closed'
           ? targetList.status
           : undefined;
-      const nextTask = {
-        ...task,
-        list_id: isStagingTarget
-          ? getPersonalExternalStagingListId(targetBoardId)
-          : targetListId,
-        sort_key: isStagingTarget ? null : newSortKey,
-        personal_board_id: targetBoardId,
-        personal_list_id: isStagingTarget ? null : targetListId,
-        personal_sort_key: isStagingTarget ? null : newSortKey,
-        personal_placed_at: isStagingTarget ? null : new Date().toISOString(),
-        is_personal_external: true,
-        is_personal_external_default: isStagingTarget,
-        _localMutationAt: Date.now(),
-      } as Task & { _localMutationAt: number };
+      const nextTask = getPersonalPlacementDropTask({
+        isStagingTarget,
+        newSortKey,
+        targetBoardId,
+        targetList,
+        targetListId,
+        task,
+      });
 
       const previousTasks = queryClient.getQueryData<Task[]>([
         'tasks',
@@ -573,7 +565,6 @@ export function useKanbanDnd({
     [boardId, columns, queryClient]
   );
 
-  // Use the extracted calculateSortKeyWithRetry helper
   const calculateSortKeyWithRetry = useCallback(
     (
       prevSortKey: number | null | undefined,
@@ -755,7 +746,6 @@ export function useKanbanDnd({
 
         if (!sourceListExists || !targetListExists) return;
 
-        // Skip if target list unchanged for current drag set to avoid redundant cache writes
         if (lastTargetListIdRef.current === targetListId) {
           return;
         }
@@ -775,13 +765,11 @@ export function useKanbanDnd({
     ]
   );
 
-  // Capture drag start card left position
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
     const { active } = event;
     if (!active.data?.current) return;
 
-    // Enable auto-scroll
     isDraggingRef.current = true;
     updateAutoScrollFromDragEvent(event);
     startAutoScroll();
@@ -856,7 +844,6 @@ export function useKanbanDnd({
         sourceListId,
       };
 
-      // If this is a multi-select drag, include all selected tasks
       if (isMultiSelectMode && selectedTasks.has(task.id)) {
         setActiveTask(task); // Set the dragged task as active for overlay
       } else {
@@ -881,12 +868,10 @@ export function useKanbanDnd({
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
-    // Store the original list ID before resetting drag state
     const originalListId = pickedUpTaskColumn.current;
     const activeType = active.data?.current?.type;
 
     if (!over) {
-      // Reset drag state only on invalid drop
       if (activeType === 'Task') {
         restoreDragStartCache();
       }
@@ -905,7 +890,6 @@ export function useKanbanDnd({
       return;
     }
 
-    // Handle column reordering
     if (activeType === 'Column') {
       const activeColumn = active.data?.current?.column;
       const overColumn = over.data?.current?.column;
@@ -1059,11 +1043,8 @@ export function useKanbanDnd({
         return;
       }
 
-      // Calculate target position based on drop location
-      // Get all tasks in the target list (INCLUDE the dragged task if it's in the same list)
       let targetListTasks = baseTasks.filter((t) => t.list_id === targetListId);
 
-      // Find the target list to check its status
       const targetList = columns.find((col) => String(col.id) === targetListId);
       const targetIsExternalStaging =
         isPersonalExternalStagingListId(targetListId) ||
@@ -1080,12 +1061,9 @@ export function useKanbanDnd({
         return;
       }
 
-      // IMPORTANT: For "done" and "closed" lists, always place at first position (top)
       const isCompletionList =
         targetList?.status === 'done' || targetList?.status === 'closed';
 
-      // Sort tasks from the drag-start snapshot so release persists exactly
-      // the same order shown in the live preview.
       targetListTasks = sortTasksForList({
         disableSort,
         targetList,
@@ -1156,12 +1134,11 @@ export function useKanbanDnd({
           }
         }
 
-        if (optimisticDropPreview.previousFullTasks) {
-          const currentFullTasks = queryClient.getQueryData<Task[]>([
-            'tasks-full',
-            boardId,
-          ]);
-
+        for (const [
+          queryKey,
+          previousFullTasks,
+        ] of optimisticDropPreview.previousFullTaskEntries) {
+          const currentFullTasks = queryClient.getQueryData<Task[]>(queryKey);
           if (
             hasTaskLocalMutationAt(
               currentFullTasks,
@@ -1169,10 +1146,7 @@ export function useKanbanDnd({
               optimisticDropPreview.localMutationAt
             )
           ) {
-            queryClient.setQueryData(
-              ['tasks-full', boardId],
-              optimisticDropPreview.previousFullTasks
-            );
+            queryClient.setQueryData(queryKey, previousFullTasks);
           }
         }
       };
@@ -1507,15 +1481,22 @@ export function useKanbanDnd({
 
           clearSelection();
         } else {
-          if (activeUsesPersonalPlacement || targetIsExternalStaging) {
+          const repairedTaskSortKeys =
+            optimisticDropPreview?.repairedTaskSortKeys ?? [];
+
+          if (
+            shouldPersistTaskDropDirectly(
+              activeUsesPersonalPlacement,
+              repairedTaskSortKeys.length,
+              targetIsExternalStaging
+            )
+          ) {
             persistPersonalPlacementMove(
               activeTaskForDrop,
               newSortKey,
               personalPlacementOrder
             );
           } else {
-            const repairedTaskSortKeys =
-              optimisticDropPreview?.repairedTaskSortKeys ?? [];
             const pendingTaskIds = getPendingTaskIdsForDrop({
               activeTaskId: activeTaskForDrop.id,
               repairedTaskSortKeys,
@@ -1578,6 +1559,8 @@ export function useKanbanDnd({
                           newSortKey: repair.sortKey,
                           optimisticPreviousFullTasks:
                             optimisticDropPreview?.previousFullTasks,
+                          optimisticPreviousFullTaskEntries:
+                            optimisticDropPreview?.previousFullTaskEntries,
                           optimisticPreviousTasks:
                             optimisticDropPreview?.previousTasks,
                         },
@@ -1622,6 +1605,8 @@ export function useKanbanDnd({
                   newSortKey: newSortKey ?? MAX_SAFE_INTEGER_SORT,
                   optimisticPreviousFullTasks:
                     optimisticDropPreview?.previousFullTasks,
+                  optimisticPreviousFullTaskEntries:
+                    optimisticDropPreview?.previousFullTaskEntries,
                   optimisticPreviousTasks: optimisticDropPreview?.previousTasks,
                 },
                 {

@@ -1,7 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
@@ -18,7 +17,7 @@ export async function GET(request: Request, { params }: Params) {
 
   if (apiKey) {
     return getDataWithApiKey({
-      wsId: await normalizeWorkspaceId(id),
+      wsId: id,
       apiKey,
     });
   }

@@ -444,11 +444,9 @@ fn parse_query(request_url: Option<&str>) -> ParsedQuery {
     for (key, value) in parsed.query_pairs() {
         match key.as_ref() {
             // `searchParams.get('compact')` returns the first occurrence.
-            "compact" => {
-                if !compact_seen {
-                    compact_seen = true;
-                    compact = value.as_ref() == "true";
-                }
+            "compact" if !compact_seen => {
+                compact_seen = true;
+                compact = value.as_ref() == "true";
             }
             // `searchParams.getAll('id')` collects every `id` param in order.
             "id" => id_values.push(value.into_owned()),

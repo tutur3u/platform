@@ -10,7 +10,10 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
+- **Blocked by:** Plan 025 remains build-blocked with its reviewed Teach object
+  route implementation uncommitted; this plan's overlapping error-envelope
+  work cannot start until that dependency is DONE
 - **Priority:** P1
 - **Effort:** S
 - **Risk:** LOW
@@ -45,7 +48,7 @@ messages, but is OpenAI-specific and should not become the generic route API.
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
 | Focused tests | `bun --cwd packages/ai vitest run src/generate src/executions src/chat/google src/route-error.test.ts` | representative thrown errors are sanitized |
-| AI typecheck | `bun --cwd packages/ai run type-check` | exit 0 |
+| AI typecheck | `bun run --cwd packages/ai type-check` | exit 0 |
 | Leak scan | `rg -n "error\\.stack|Stack trace|No stack trace available" packages/ai/src --glob 'route.ts'` | no output |
 | Repository gate | `bun check` | exit 0 |
 | Whitespace | `git diff --check` | no output |

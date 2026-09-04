@@ -9,6 +9,16 @@ export const FORM_QUESTION_DESCRIPTION_MAX_LENGTH = 16000;
 export const FORM_RESPONSE_ANSWER_MAX_LENGTH = 16000;
 export const FORM_CONFIRMATION_TITLE_MAX_LENGTH = 120;
 export const FORM_CONFIRMATION_MESSAGE_MAX_LENGTH = 1000;
+/**
+ * SEO limits track what search engines and social cards actually render, not
+ * what the column can hold: titles are truncated around 60 characters in a
+ * result listing and descriptions around 160, so allowing more would only let
+ * someone write copy that silently gets cut.
+ */
+export const FORM_SEO_TITLE_MAX_LENGTH = 120;
+export const FORM_SEO_DESCRIPTION_MAX_LENGTH = 320;
+export const FORM_SEO_KEYWORD_MAX_LENGTH = 60;
+export const FORM_SEO_KEYWORDS_MAX_COUNT = 12;
 
 export const FORM_STATUS_VALUES = ['draft', 'published', 'closed'] as const;
 export const FORM_ACCESS_MODE_VALUES = [
@@ -17,6 +27,12 @@ export const FORM_ACCESS_MODE_VALUES = [
   'authenticated_email',
 ] as const;
 export const FORM_DENSITY_VALUES = ['airy', 'balanced', 'compact'] as const;
+/**
+ * `sections` shows a whole section per screen (the original behaviour);
+ * `one_question` gives each answerable question its own screen. Branching still
+ * runs at section boundaries in both.
+ */
+export const FORM_DISPLAY_MODE_VALUES = ['sections', 'one_question'] as const;
 export const FORM_SURFACE_STYLE_VALUES = ['paper', 'glass', 'panel'] as const;
 export const FORM_OPTION_LAYOUT_VALUES = ['list', 'grid'] as const;
 export const FORM_THEME_ACCENT_VALUES = [
@@ -55,11 +71,17 @@ export const FORM_FONT_VALUES = [
 export const FORM_QUESTION_TYPE_VALUES = [
   'short_text',
   'long_text',
+  'email',
+  'phone',
+  'number',
+  'url',
   'single_choice',
   'multiple_choice',
   'dropdown',
+  'ranking',
   'linear_scale',
   'rating',
+  'nps',
   'date',
   'time',
   'section_break',
@@ -132,6 +154,12 @@ export const formQuestionSettingsSchema = z.object({
   validationMax: z.number().nullable().optional(),
   validationPattern: z.string().max(500).nullable().optional(),
   validationMessage: z.string().max(200).nullable().optional(),
+  /**
+   * Step for the `number` type's spinner and its "must be a multiple of"
+   * check. `null` leaves the input unconstrained rather than defaulting to 1,
+   * so decimals stay typeable unless the author asks for whole numbers.
+   */
+  numberStep: z.number().positive().nullable().optional(),
 });
 
 export const formQuestionSchema = z.object({
@@ -243,7 +271,77 @@ export const formThemeSchema = z.object({
     }),
 });
 
+export const formSeoSchema = z.object({
+  /** Overrides the title derived from the form's cover headline or title. */
+  title: z.string().trim().max(FORM_SEO_TITLE_MAX_LENGTH).default(''),
+  /** Overrides the description derived from the form or its first section. */
+  description: z
+    .string()
+    .trim()
+    .max(FORM_SEO_DESCRIPTION_MAX_LENGTH)
+    .default(''),
+  /** Replaces the generated Open Graph card with an uploaded image. */
+  image: formMediaSchema.default(defaultFormMediaValue),
+  /** Replaces the derived keyword list. Empty means "derive". */
+  keywords: z
+    .array(z.string().trim().min(1).max(FORM_SEO_KEYWORD_MAX_LENGTH))
+    .max(FORM_SEO_KEYWORDS_MAX_COUNT)
+    .default([]),
+  /** Points crawlers at a different canonical URL for this form. */
+  canonicalUrl: z.union([z.literal(''), z.url().max(2000)]).default(''),
+  /** Emits `noindex, nofollow` for the public page. */
+  noIndex: z.boolean().default(false),
+});
+
+export const FORM_WELCOME_TITLE_MAX_LENGTH = 120;
+export const FORM_WELCOME_DESCRIPTION_MAX_LENGTH = 600;
+export const FORM_WELCOME_BUTTON_MAX_LENGTH = 40;
+
+/**
+ * The display mode every form gets unless its author chose otherwise.
+ *
+ * One question at a time: a long scroll of fields reads as paperwork, and
+ * answering one thing at a time is what makes a form feel like a conversation.
+ */
+export const FORM_DEFAULT_DISPLAY_MODE = 'one_question' as const;
+
 export const formSettingsSchema = z.object({
+  // `settings` is jsonb, so a form saved before this field existed has no key
+  // for it and is backfilled here on read. That means this default reaches
+  // EXISTING forms too, not just new ones — a deliberate product decision, so
+  // the one-question experience is what a Tuturuuu form is rather than
+  // something each author has to find and switch on. An author who wants the
+  // old scroll sets `sections` explicitly and it sticks.
+  displayMode: z
+    .enum(FORM_DISPLAY_MODE_VALUES)
+    .default(FORM_DEFAULT_DISPLAY_MODE),
+  /** Optional cover screen shown before the first question. */
+  welcomeEnabled: z.boolean().default(false),
+  welcomeTitle: z.string().max(FORM_WELCOME_TITLE_MAX_LENGTH).default(''),
+  welcomeDescription: z
+    .string()
+    .max(FORM_WELCOME_DESCRIPTION_MAX_LENGTH)
+    .default(''),
+  /**
+   * Move to the next question automatically once a single-answer question is
+   * answered. Only meaningful in `one_question` mode.
+   *
+   * On by default: picking an option and then reaching for a Continue button
+   * is the click a one-question form exists to remove. Types where the
+   * respondent may still be composing — text, multi-select, ranking — never
+   * auto-advance, because leaving mid-thought is the one thing worse than an
+   * extra click.
+   */
+  autoAdvance: z.boolean().default(true),
+  /**
+   * Where to send the respondent after they submit. Empty keeps them on the
+   * confirmation screen.
+   */
+  redirectUrl: z.string().max(2000).default(''),
+  welcomeButtonLabel: z
+    .string()
+    .max(FORM_WELCOME_BUTTON_MAX_LENGTH)
+    .default(''),
   showProgressBar: z.boolean().default(true),
   allowMultipleSubmissions: z.boolean().default(true),
   oneResponsePerUser: z.boolean().default(false),
@@ -320,6 +418,14 @@ export const formStudioSchema = z.object({
   maxResponses: z.number().int().positive().nullable().optional(),
   theme: formThemeSchema,
   settings: formSettingsSchema,
+  seo: formSeoSchema.default({
+    title: '',
+    description: '',
+    image: defaultFormMediaValue,
+    keywords: [],
+    canonicalUrl: '',
+    noIndex: false,
+  }),
   sections: z.array(formSectionSchema).min(1),
   logicRules: z.array(formLogicRuleSchema).default([]),
 });
@@ -361,6 +467,7 @@ export type FormQuestionInput = z.infer<typeof formQuestionSchema>;
 export type FormLogicRuleInput = z.infer<typeof formLogicRuleSchema>;
 export type FormThemeInput = z.infer<typeof formThemeSchema>;
 export type FormSettingsInput = z.infer<typeof formSettingsSchema>;
+export type FormSeoInput = z.infer<typeof formSeoSchema>;
 export type FormSubmitInput = z.infer<typeof formSubmitSchema>;
 
 export function createDefaultFormStudioInput(): FormStudioInput {
@@ -393,12 +500,33 @@ export function createDefaultFormStudioInput(): FormStudioInput {
       },
     },
     settings: {
+      displayMode: FORM_DEFAULT_DISPLAY_MODE,
+      // A cover screen is the natural opening for a one-question form: it says
+      // what the form is before the first question arrives with no context.
+      autoAdvance: true,
+      redirectUrl: '',
+      welcomeEnabled: true,
+      welcomeTitle: '',
+      welcomeDescription: '',
+      welcomeButtonLabel: '',
       showProgressBar: true,
       allowMultipleSubmissions: true,
       oneResponsePerUser: false,
       requireTurnstile: true,
       confirmationTitle: 'Response received',
       confirmationMessage: 'Thanks for taking the time to respond.',
+    },
+    seo: {
+      title: '',
+      description: '',
+      image: {
+        storagePath: '',
+        url: '',
+        alt: '',
+      },
+      keywords: [],
+      canonicalUrl: '',
+      noIndex: false,
     },
     sections: [
       {

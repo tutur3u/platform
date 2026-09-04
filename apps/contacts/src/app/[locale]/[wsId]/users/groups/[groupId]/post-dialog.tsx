@@ -9,12 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import {
+  MAX_LONG_TEXT_LENGTH,
+  MAX_MEDIUM_TEXT_LENGTH,
+  MAX_NAME_LENGTH,
+} from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
-import { memo, useCallback } from 'react';
+import { useCallback } from 'react';
+import { PostInputField, PostTextareaField } from './post-form-field';
 import type { UserGroupPostFormInput } from './use-posts';
 
 interface PostDialogProps {
@@ -26,57 +29,6 @@ interface PostDialogProps {
   isSubmitting: boolean;
 }
 
-// Memoized input components to prevent unnecessary re-renders
-const MemoizedInput = memo(function MemoizedInput({
-  id,
-  name,
-  value,
-  placeholder,
-  onChange,
-}: {
-  id: string;
-  name: string;
-  value: string;
-  placeholder: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <Input
-      id={id}
-      name={name}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      className="col-span-3"
-    />
-  );
-});
-
-const MemoizedTextarea = memo(function MemoizedTextarea({
-  id,
-  name,
-  value,
-  placeholder,
-  onChange,
-}: {
-  id: string;
-  name: string;
-  value: string;
-  placeholder: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-}) {
-  return (
-    <Textarea
-      id={id}
-      name={name}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      className="col-span-3"
-    />
-  );
-});
-
 export function PostDialog({
   isOpen,
   post,
@@ -86,6 +38,10 @@ export function PostDialog({
   isSubmitting,
 }: PostDialogProps) {
   const t = useTranslations();
+  const isOverLimit =
+    (post?.title?.length ?? 0) > MAX_NAME_LENGTH ||
+    (post?.content?.length ?? 0) > MAX_LONG_TEXT_LENGTH ||
+    (post?.notes?.length ?? 0) > MAX_MEDIUM_TEXT_LENGTH;
 
   // Stable callback handlers that won't cause child re-renders
   const handleTitleChange = useCallback(
@@ -110,10 +66,10 @@ export function PostDialog({
   );
 
   const handleSubmit = useCallback(() => {
-    if (!isSubmitting) {
+    if (!(isSubmitting || isOverLimit)) {
       onSubmit();
     }
-  }, [isSubmitting, onSubmit]);
+  }, [isOverLimit, isSubmitting, onSubmit]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -147,34 +103,28 @@ export function PostDialog({
           </TabsList>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-6">
             <TabsContent value="content" className="mt-2 grid gap-4">
-              <div className="grid items-center gap-2">
-                <Label htmlFor="title">
-                  {t('post-email-data-table.post_title')}
-                </Label>
-                <MemoizedInput
-                  id="title"
-                  name="title"
-                  placeholder={t(
-                    'post-email-data-table.post_title_placeholder'
-                  )}
-                  value={post?.title || ''}
-                  onChange={handleTitleChange}
-                />
-              </div>
-              <div className="grid items-center gap-2">
-                <Label htmlFor="content">
-                  {t('post-email-data-table.post_content')}
-                </Label>
-                <MemoizedTextarea
-                  id="content"
-                  name="content"
-                  placeholder={t(
-                    'post-email-data-table.post_content_placeholder'
-                  )}
-                  value={post?.content || ''}
-                  onChange={handleContentChange}
-                />
-              </div>
+              <PostInputField
+                id="title"
+                label={t('post-email-data-table.post_title')}
+                limitMessage={t('ws-user-groups.shorten_field')}
+                maxLength={MAX_NAME_LENGTH}
+                name="title"
+                onChange={handleTitleChange}
+                placeholder={t('post-email-data-table.post_title_placeholder')}
+                value={post?.title || ''}
+              />
+              <PostTextareaField
+                id="content"
+                label={t('post-email-data-table.post_content')}
+                limitMessage={t('ws-user-groups.shorten_field')}
+                maxLength={MAX_LONG_TEXT_LENGTH}
+                name="content"
+                onChange={handleContentChange}
+                placeholder={t(
+                  'post-email-data-table.post_content_placeholder'
+                )}
+                value={post?.content || ''}
+              />
             </TabsContent>
             <TabsContent value="review" className="mt-2">
               <div className="rounded-lg border p-4">
@@ -187,23 +137,25 @@ export function PostDialog({
               </div>
             </TabsContent>
             <TabsContent value="notes" className="mt-2">
-              <div className="grid items-center gap-2">
-                <Label htmlFor="notes">
-                  {t('post-email-data-table.notes')}
-                </Label>
-                <MemoizedTextarea
-                  id="notes"
-                  name="notes"
-                  placeholder={t('post-email-data-table.notes_placeholder')}
-                  value={post?.notes || ''}
-                  onChange={handleNotesChange}
-                />
-              </div>
+              <PostTextareaField
+                id="notes"
+                label={t('post-email-data-table.notes')}
+                limitMessage={t('ws-user-groups.shorten_field')}
+                maxLength={MAX_MEDIUM_TEXT_LENGTH}
+                name="notes"
+                onChange={handleNotesChange}
+                placeholder={t('post-email-data-table.notes_placeholder')}
+                value={post?.notes || ''}
+              />
             </TabsContent>
           </div>
         </Tabs>
         <DialogFooter className="p-4 sm:px-6">
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isSubmitting || isOverLimit}
+          >
             {post?.id ? t('common.save') : t('common.create')}
           </Button>
         </DialogFooter>

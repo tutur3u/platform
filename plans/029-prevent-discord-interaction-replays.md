@@ -10,7 +10,11 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
+- **Blocked by:** the mandatory local database reset requires deleting a
+  retained Supabase development volume; reviewed uncommitted replay protection
+  remains in `.worktrees/fix-discord-interaction-replay` pending explicit
+  destructive-reset authorization
 - **Priority:** P1
 - **Effort:** M
 - **Risk:** LOW

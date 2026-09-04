@@ -29,7 +29,7 @@ export const POST = withSessionAuth(
     params: RouteParams | Promise<RouteParams>
   ) => {
     const { wsId, id } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -74,8 +74,8 @@ export const POST = withSessionAuth(
 
     if (requestRecord.user_id !== user.id) {
       const permissions = await getPermissions({
+        user,
         wsId: normalizedWsId,
-        request: req,
       });
 
       if (!permissions) {

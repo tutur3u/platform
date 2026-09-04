@@ -101,6 +101,8 @@ interface ComboboxProps {
   onCreate?: (value: string) => unknown | Promise<unknown>;
   /** Callback when search input changes */
   onSearchChange?: (value: string) => void;
+  /** Whether Command should filter the provided options locally */
+  shouldFilter?: boolean;
   /** Callback when the popover opens or closes */
   onOpenChange?: (open: boolean) => void;
   /** Whether there are more options to load */
@@ -148,6 +150,7 @@ export function Combobox({
   useFirstValueAsDefault = false,
   onCreate,
   onSearchChange,
+  shouldFilter = true,
   onOpenChange,
   hasMore = false,
   onLoadMore,
@@ -543,6 +546,7 @@ export function Combobox({
           sideOffset={4}
         >
           <Command
+            shouldFilter={shouldFilter}
             filter={(value, search) => {
               if (value.startsWith(actionValuePrefix)) return 1;
               if (value.startsWith(createValuePrefix)) return 1;

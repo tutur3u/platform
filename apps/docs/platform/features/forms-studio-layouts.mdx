@@ -1,0 +1,87 @@
+---
+title: 'Forms studio: build layouts'
+description: 'The stacked and three-pane build layouts in the form studio, why three-pane is opt-in, and what it does not cover yet.'
+updatedAt: '2026-08-26'
+---
+
+## TL;DR
+
+The studio's build tab has two layouts. **Stacked** is the default.
+**Three-pane** is opt-in and wide-screen only. Both can now do the same things;
+three-pane stays opt-in because nobody has verified it in a browser.
+
+## Stacked
+
+A block rail plus one column of accordion editors: click a block's header to
+expand it, edit in place, drag to reorder. This is the layout everything else
+in the studio is built around, and it is the only one at viewports below
+`1280px`.
+
+## Three-pane
+
+Four columns at `xl` and above: the block rail, an outline, the canvas, and
+properties.
+
+| Pane | Owns |
+| --- | --- |
+| Block rail | Adding a block, choosing its type |
+| Outline | Navigating and selecting; presence dots for other editors |
+| Canvas | The form as respondents see it; click a block to select it |
+| Properties | Every setting of the selected block |
+
+Selection lives in one place. The outline and the canvas both write to the
+studio's existing `activeSectionId` / `activeQuestionIdsBySection` state, and
+the properties pane reads it — so a block is never selected in two places at
+once, and the realtime "which block are they on" presence already tracks it.
+
+Two implementation choices worth keeping:
+
+- The canvas renders the **real** `QuestionBlock` from the runtime, not a
+  studio mock, so it cannot drift from the shipped product the way a parallel
+  preview implementation would. Every block is disabled — it is a canvas for
+  selecting, not answering.
+- The properties pane renders `QuestionEditor` in its `panel` variant rather
+  than a second editor. A field added to the accordion shows up here with no
+  extra work; the alternative was two editors that drift.
+
+## Why it is still opt-in
+
+Three-pane now covers what stacked covers:
+
+- **Reordering** — drag blocks within a section from the outline, or use the
+  move controls in the properties header. A `DndContext` per section means a
+  drag cannot cross a section boundary; moving a block between sections would
+  rewrite two arrays and re-key the branching rules that reference it, so that
+  stays stacked-only until it is designed properly.
+- **Duplicating and deleting a block** — in the properties pane header. They
+  are there rather than on each outline row because the outline is 240px wide
+  and a control per row would crowd out the labels. Duplicating selects the
+  copy, so the author edits what they just made rather than the original.
+- **Section fields** — selecting a section shows its title, description and
+  cover in the properties pane, rendered by the same `SectionFields` component
+  the stacked accordion uses.
+- **Form details and logic rules** — the same elements the stacked layout
+  builds, hoisted and rendered above and below the canvas.
+
+<Warning>
+  It stays opt-in anyway, for one reason: **nobody has verified it in a
+  browser.** It type-checks, passes `bun check` and builds clean, and the
+  selection and reorder logic are unit-tested — but a layout bug would not have
+  been caught by any of that. The toggle is what contains that risk.
+</Warning>
+
+A reordering drop that would lose or duplicate a question is refused outright
+rather than written: silently dropping a block is far worse than ignoring the
+drag that caused it.
+
+The preference is stored per browser under
+`tuturuuu:form-studio:build-layout`, and a viewport below `1280px` always falls
+back to stacked — three panes in 600px is three unusable columns.
+
+## Changing the default
+
+Flipping the default is a one-line change in `useStudioBuildLayout`. The
+remaining blocker is a person looking at it, not missing functionality.
+
+Until that happens, treat three-pane as a preview and keep new studio features
+working in stacked first.

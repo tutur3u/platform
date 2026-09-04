@@ -24,6 +24,7 @@ export function renderSubmittedScreen({
   submittedResponseCopyEmail,
   submittedResponseCopyRequested,
   submittedResponseCopyStatus,
+  layout = 'page',
 }: {
   form: FormDefinition;
   t: FormsTranslator;
@@ -36,11 +37,14 @@ export function renderSubmittedScreen({
   submittedResponseCopyEmail: string | null;
   submittedResponseCopyRequested: boolean;
   submittedResponseCopyStatus: 'sent' | 'rate_limited' | 'failed' | null;
+  /** Matches the runtime's: an embedded confirmation must not claim a screen. */
+  layout?: 'page' | 'inline';
 }) {
   return (
     <div
       className={cn(
-        'flex min-h-screen items-center justify-center px-4 py-10',
+        'flex items-center justify-center px-4',
+        layout === 'page' ? 'min-h-screen py-10' : 'py-8',
         FORM_FONT_VARIABLES,
         toneClasses.pageClassName,
         className

@@ -1,3 +1,4 @@
+export type { CommandLauncherTab } from './command-launcher-tabs';
 export {
   closeGlobalCommandLauncher,
   GLOBAL_COMMAND_LAUNCHER_EVENT,

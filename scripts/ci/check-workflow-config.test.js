@@ -9,6 +9,7 @@ const {
   repoRoot,
   vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
+const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ci.ts'), 'utf8');
 
 function readWorkflowYaml(workflowName) {
   const workflowPath = path.join(
@@ -92,6 +93,7 @@ test('CI orchestration changes do not rebuild application artifacts', () => {
     '.github/workflows/vercel-production.yaml',
     'scripts/ci/resolve-production-vercel-targets.ts',
     'scripts/ci/workflow-config-core.ts',
+    'tuturuuu.ci.ts',
     'tuturuuu.ts',
   ];
 
@@ -301,7 +303,7 @@ test('unrelated package changes do not deploy apps that do not consume them', ()
   );
 });
 
-test('bun.lock-only changes run all Vercel app deploys', () => {
+test('bun.lock-only changes run enabled Vercel app deploys', () => {
   const rootDir = createFixtureRoot();
 
   for (const workflowName of vercelWorkflows) {
@@ -311,7 +313,7 @@ test('bun.lock-only changes run all Vercel app deploys', () => {
         rootDir,
         workflowName,
       },
-      true
+      workflowName !== 'vercel-production-tanstack-web.yaml'
     );
   }
 });
@@ -546,12 +548,10 @@ test('mobile store deployment workflow is production-push beta delivery only', (
     workflowName
   );
   const workflow = fs.readFileSync(workflowPath, 'utf8');
-  const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
-
   assert.match(
     ciConfig,
     /["']mobile-deploy-stores\.yaml["']:\s*true/,
-    'mobile store deployment workflow must be registered in tuturuuu.ts'
+    'mobile store deployment workflow must be registered in the CI config'
   );
 
   execFileSync(
@@ -653,12 +653,10 @@ test('closed PR cancellation workflow is registered and avoids PR head code', ()
     path.join(repoRoot, '.github', 'workflows', workflowName),
     'utf8'
   );
-  const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
-
   assert.match(
     ciConfig,
     /["']cancel-pr-runs-on-close\.yaml["']:\s*true/,
-    'closed PR cancellation workflow must be registered in tuturuuu.ts'
+    'closed PR cancellation workflow must be registered in the CI config'
   );
   assert.ok(readWorkflowYaml(workflowName));
   assert.match(
@@ -851,13 +849,13 @@ test('secretless Turbo fallback caches are task-scoped and trusted-write only', 
   assert.doesNotMatch(setupAction, /TURBO_TOKEN|TURBO_TEAM|node_modules/);
 });
 
-test('TanStack migration E2E workflow keeps dual-stack and compare coverage', () => {
+test('paused TanStack migration E2E retains its restartable matrix', () => {
   const workflow = readWorkflowYaml('e2e-tests.yaml');
   const job = workflow.jobs?.['migration-e2e'];
 
   assert.ok(job, 'e2e-tests.yaml must define the migration-e2e job');
   assert.deepEqual(job.needs, ['prepare-e2e-images']);
-  assert.match(job.if, /always\(\)/u);
+  assert.equal(job.if, githubExpression('false'));
   assert.equal(job['timeout-minutes'], 60);
   assert.equal(job.strategy?.['fail-fast'], false);
 
@@ -1038,7 +1036,7 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   assert.deepEqual(e2e.needs, ['prepare-e2e-images']);
   assert.deepEqual(migration.needs, ['prepare-e2e-images']);
   assert.match(e2e.if, /always\(\)/u);
-  assert.match(migration.if, /always\(\)/u);
+  assert.equal(migration.if, githubExpression('false'));
   assert.equal(producer['continue-on-error'], true);
   assert.equal(producer.permissions?.contents, 'read');
   assert.equal(producer.permissions?.packages, 'write');
@@ -1110,7 +1108,7 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
     producer.steps.some(
       (step) =>
         step.name === 'Build and publish E2E image bundle' &&
-        step.run === 'node scripts/ci/e2e-image-bundle.js publish'
+        step.run.endsWith('publish --frontend next')
     )
   );
 });

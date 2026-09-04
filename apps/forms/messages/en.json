@@ -938,7 +938,9 @@
     "assistant_response_failed": "Mira could not respond, but your message was saved.",
     "attach_files": "Attach files",
     "attachment": "Attachment",
+    "attachment_limit_reached": "You can attach up to {count} files per message.",
     "attachment_open_failed": "Could not open attachment",
+    "attachment_too_large": "Attachments must be {size} or smaller.",
     "back": "Back",
     "cancel": "Cancel",
     "channel_badge": "Channel",
@@ -981,6 +983,7 @@
     "direct_messages": "Direct messages",
     "directory_search_placeholder": "Search people",
     "download_qr_code": "Download QR code",
+    "drop_files_here": "Drop files to attach",
     "edited": "edited",
     "empty_conversations_description": "Start a direct message, group chat, channel, or AI conversation.",
     "empty_conversations_title": "No conversations yet",
@@ -1117,10 +1120,7 @@
     "visitor_context_unavailable": "Visitor context is unavailable.",
     "visitor_email": "Email",
     "visitor_name": "Name",
-    "visitor_phone": "Phone",
-    "attachment_too_large": "Attachments must be {size} or smaller.",
-    "attachment_limit_reached": "You can attach up to {count} files per message.",
-    "drop_files_here": "Drop files to attach"
+    "visitor_phone": "Phone"
   },
   "command_launcher": {
     "aliases_slot": "Also matches: {aliases}",
@@ -1595,7 +1595,8 @@
     "write_something": "Write something",
     "years_old": "years old",
     "yellow": "Yellow",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "copy": "Copy"
   },
   "course-data-table": {
     "modules": "Modules"
@@ -2725,7 +2726,13 @@
       "short_text": "Short text",
       "single_choice": "Single choice",
       "time": "Time",
-      "youtube": "YouTube"
+      "youtube": "YouTube",
+      "email": "Email",
+      "phone": "Phone",
+      "number": "Number",
+      "url": "Link",
+      "ranking": "Ranking",
+      "nps": "NPS"
     },
     "question_type_description": {
       "date": "Pick a calendar date",
@@ -2741,7 +2748,13 @@
       "short_text": "Brief one-line response",
       "single_choice": "Select exactly one option",
       "time": "Pick a specific time of day",
-      "youtube": "Embed a YouTube video"
+      "youtube": "Embed a YouTube video",
+      "email": "An email address, validated and autofilled from the browser.",
+      "phone": "A phone number, with the dialling keypad on mobile.",
+      "number": "A number, with optional minimum, maximum and step.",
+      "url": "A web address, checked to be a real http(s) link.",
+      "ranking": "Respondents drag options into their preferred order.",
+      "nps": "The standard 0-10 \"how likely are you to recommend\" question."
     },
     "responses": {
       "anonymous": "Anonymous",
@@ -2793,7 +2806,17 @@
       "unmatched_answer_hint": "Saved answer no longer matches the current choices: {value}",
       "unmatched_answers_description": "{count} saved response(s) no longer match the current choices, so they are shown separately from the live breakdown.",
       "unmatched_answers_title": "Saved answers outside the current choices",
-      "written_response_count": "{count} response(s) ({percentage}%)"
+      "written_response_count": "{count} response(s) ({percentage}%)",
+      "nps_score": "NPS score",
+      "nps_promoter": "Promoters",
+      "nps_passive": "Passives",
+      "nps_detractor": "Detractors",
+      "nps_distribution": "Score distribution",
+      "nps_bar_title": "{score}: {count} responses",
+      "ranking_results": "Ranking results",
+      "ranking_hint": "Best first, by average position",
+      "ranking_average": "avg {average} · {first} first",
+      "ranking_unranked": "Not ranked"
     },
     "runtime": {
       "already_responded": "You have already responded to this form. You can view your answers below.",
@@ -2859,7 +2882,23 @@
       "validation_constraint_real_range": "Enter a number between {min} and {max}",
       "validation_constraint_regex": "Must match the required pattern",
       "validation_fix_errors": "Please fix the errors above before submitting.",
-      "view_image_fullscreen": "View image fullscreen"
+      "view_image_fullscreen": "View image fullscreen",
+      "welcome_start": "Start",
+      "welcome_question_count": "{count, plural, =1 {1 question} other {# questions}}",
+      "step_progress": "{current} of {total}",
+      "placeholder_email": "name@example.com",
+      "placeholder_phone": "+1 555 000 0000",
+      "placeholder_url": "https://example.com",
+      "placeholder_number": "Enter a number",
+      "nps_not_likely": "Not at all likely",
+      "nps_very_likely": "Extremely likely",
+      "ranking_move_up": "Move up",
+      "ranking_move_down": "Move down",
+      "ranking_drag_handle": "Drag to reorder",
+      "validation_constraint_step": "Must be a multiple of {step}.",
+      "validation_constraint_step_range": "Must be between {min} and {max}, in steps of {step}.",
+      "press": "Press",
+      "enter_key": "Enter ↵"
     },
     "settings": {
       "active": "Active",
@@ -2933,7 +2972,76 @@
       "turnstile_always_on": "Turnstile is always on for live forms",
       "turnstile_always_on_hint": "Every public submission must pass the verification challenge. Creators cannot disable this protection.",
       "typography_scale": "Typography scale",
-      "unlimited": "Unlimited"
+      "unlimited": "Unlimited",
+      "seo": "Search & sharing",
+      "seo_description": "Control how this form looks in search results and link previews.",
+      "seo_preview": "Search result preview",
+      "seo_preview_unpublished_url": "forms.tuturuuu.com/f/… (publish to get a link)",
+      "seo_preview_truncated": "Search engines will cut this off — shorten it to control what shows.",
+      "seo_title": "Search title",
+      "seo_title_placeholder": "Leave empty to use the form title",
+      "seo_title_hint": "Around 60 characters shows in full. Empty falls back to the cover headline, then the form title.",
+      "seo_meta_description": "Search description",
+      "seo_meta_description_placeholder": "Leave empty to use the form description",
+      "seo_meta_description_hint": "Around 160 characters shows in full. Empty falls back to the form description, then the first section's.",
+      "seo_keywords": "Keywords",
+      "seo_keywords_placeholder": "hiring, application, engineering",
+      "seo_keywords_hint": "Comma separated, up to {max}. Empty uses keywords derived from the title.",
+      "seo_canonical": "Canonical URL",
+      "seo_canonical_hint": "Point crawlers at another page when this form is embedded somewhere else. Empty uses the form's own link.",
+      "seo_image": "Social card image",
+      "seo_image_hint": "1200×630 works best. Empty uses the card generated from your form's theme and cover.",
+      "seo_no_index": "Hide from search engines",
+      "seo_no_index_hint": "Emits noindex. The link keeps working for anyone you share it with — it just will not be indexed.",
+      "embed": "Embed",
+      "embed_description": "Put this form on your own site — inline, as a popup, or behind a launcher.",
+      "embed_mode": "Embed style",
+      "embed_modes": {
+        "inline": "Inline",
+        "fullpage": "Full page",
+        "popup": "Popup",
+        "slider": "Slider",
+        "popover": "Popover",
+        "sidetab": "Side tab"
+      },
+      "embed_mode_hints": {
+        "inline": "Sits in the flow of your page and grows with the form.",
+        "fullpage": "Fills the viewport. Best on a page of its own.",
+        "popup": "Opens centered over the page, dimming everything behind it.",
+        "slider": "Slides in from the right edge, keeping the page visible.",
+        "popover": "A launcher bubble in the corner that opens a compact card.",
+        "sidetab": "A tab pinned to the edge that opens a panel on click."
+      },
+      "embed_height": "Height",
+      "embed_height_placeholder": "Leave empty to auto-size",
+      "embed_height_hint": "Auto-sizing needs the script embed. A plain iframe always needs a fixed height.",
+      "embed_launcher_text": "Launcher label",
+      "embed_launcher_placeholder": "Open form",
+      "embed_snippet": "Script embed (recommended)",
+      "embed_iframe_snippet": "Plain iframe (no scripts)",
+      "embed_requires_share_link": "Publish this form and create a share link first — an embed points at that link.",
+      "display_mode": "How questions are shown",
+      "display_modes": {
+        "sections": "All at once",
+        "one_question": "One at a time"
+      },
+      "display_mode_hints": {
+        "sections": "A whole section on one screen. Good for short forms people scan before answering.",
+        "one_question": "One question per screen. Keeps long forms from looking daunting and lifts completion."
+      },
+      "welcome_screen": "Show a welcome screen",
+      "welcome_screen_hint": "A cover screen before the first question, so people know what they are starting.",
+      "welcome_title": "Welcome title",
+      "welcome_title_placeholder": "Leave empty to use the form title",
+      "welcome_body": "Welcome message",
+      "welcome_body_placeholder": "Leave empty to use the form description",
+      "welcome_button": "Button label",
+      "welcome_button_placeholder": "Start",
+      "auto_advance": "Advance automatically",
+      "auto_advance_hint": "Move to the next question once a rating or single choice is picked. Typing, multi-select and ranking always wait for Continue.",
+      "embed_min_height": "Minimum height",
+      "embed_min_height_placeholder": "320",
+      "embed_min_height_hint": "The shortest the embed will shrink to while auto-sizing. Leave blank for the default of 320px, which keeps a single question answerable without scrolling inside the frame."
     },
     "shared": {
       "metadata_fallback_description": "Open this shared form to review the questions and submit a response.",
@@ -2941,7 +3049,10 @@
       "metadata_protected_description": "This shared form is protected. Sign in or use the provided access path to continue.",
       "open_graph_alt": "Preview image for {title}",
       "unavailable_description": "This form may have been unpublished, closed, or removed.",
-      "unavailable_title": "Form unavailable"
+      "unavailable_title": "Form unavailable",
+      "sign_in_required_title": "Sign in to continue",
+      "sign_in_required_description": "This form asks who you are, which cannot be done inside an embedded frame.",
+      "open_in_new_tab": "Open the form in a new tab"
     },
     "status": {
       "closed": "Closed",
@@ -3115,7 +3226,32 @@
       "value": "Value",
       "view_image_fullscreen": "View image fullscreen",
       "youtube_block_description": "Embed a YouTube video with optional context before the next answers.",
-      "youtube_url": "YouTube URL"
+      "youtube_url": "YouTube URL",
+      "placeholder_email": "name@example.com",
+      "placeholder_phone": "+1 555 000 0000",
+      "placeholder_url": "https://example.com",
+      "nps_default_min_label": "Not at all likely",
+      "nps_default_max_label": "Extremely likely",
+      "hint_nps": "NPS is always scored 0-10, so the scale itself cannot be changed. Only the labels at each end are yours.",
+      "validation_step": "Step",
+      "validation_step_hint": "Any number",
+      "outline": "Outline",
+      "properties": "Properties",
+      "select_a_block": "Select a block in the outline or on the canvas to edit it.",
+      "select_block": "Select this block",
+      "section_n": "Section {index}",
+      "build_layout": "Build layout",
+      "build_layout_stacked": "Stacked",
+      "build_layout_three_pane": "Three-pane",
+      "move_block_up": "Move block up",
+      "move_block_down": "Move block down",
+      "duplicate_block": "Duplicate block",
+      "delete_block": "Delete block",
+      "preview_width": "Preview width",
+      "preview_desktop": "Desktop",
+      "preview_tablet": "Tablet",
+      "preview_mobile": "Mobile",
+      "preview_restart": "Restart"
     },
     "tabs": {
       "analytics": "Analytics",
@@ -3148,6 +3284,412 @@
       "responses_cleared": "Responses cleared",
       "section_needs_question": "Section {section} must contain at least one question.",
       "share_link_copied": "Share link copied"
+    },
+    "landing": {
+      "app_name": "Tuturuuu Forms",
+      "meta": {
+        "title": "Forms that people actually finish",
+        "social_title": "Tuturuuu Forms — build, theme, embed, analyze",
+        "description": "Build beautiful forms and surveys in minutes. Conditional logic, live themes, six embed modes, realtime co-editing, and response analytics — all in one workspace."
+      },
+      "nav": {
+        "workflow": "How it works",
+        "build": "Blocks",
+        "design": "Design",
+        "embed": "Embed",
+        "insights": "Insights",
+        "get_started": "Start free",
+        "workspace": "Open workspace",
+        "sign_in": "Sign in"
+      },
+      "hero": {
+        "eyebrow": "Forms",
+        "title": "Forms that people actually finish",
+        "description": "Design a form in minutes, publish it anywhere, and watch the answers land in real time. No template lock-in, no per-response paywall, no data you cannot export.",
+        "primary": "Start free",
+        "primary_authed": "Open your workspace",
+        "secondary": "See how it works",
+        "reassurance": "Free to start · No credit card · Export everything, always"
+      },
+      "stats": {
+        "blocks": {
+          "value": "14",
+          "label": "Question & content blocks"
+        },
+        "themes": {
+          "value": "12",
+          "label": "Themes, fully editable"
+        },
+        "embeds": {
+          "value": "6",
+          "label": "Ways to embed"
+        },
+        "languages": {
+          "value": "2",
+          "label": "Interface languages"
+        }
+      },
+      "demo": {
+        "theme_label": "Try a theme",
+        "title": "Product feedback",
+        "description": "A real form, running the real renderer. Answer it — nothing is recorded.",
+        "confirmation_title": "That is the whole flow",
+        "confirmation_message": "This demo does not store anything. Your own forms collect responses, track drop-off, and export to CSV.",
+        "section_title": "Tell us about your team",
+        "section_description": "Four questions. About thirty seconds.",
+        "role_title": "What best describes your role?",
+        "role_option_1": "Founder",
+        "role_option_2": "Operations",
+        "role_option_3": "Product",
+        "role_option_4": "Something else",
+        "priority_title": "Which of these would you use first?",
+        "priority_description": "Pick as many as you like.",
+        "priority_option_1": "Customer feedback",
+        "priority_option_2": "Event registration",
+        "priority_option_3": "Job applications",
+        "priority_option_4": "Internal requests",
+        "satisfaction_title": "How happy are you with your current form tool?",
+        "satisfaction_min": "Not at all",
+        "satisfaction_max": "Very happy",
+        "notes_title": "Anything else we should know?",
+        "notes_placeholder": "Optional — write as much or as little as you like"
+      },
+      "workflow": {
+        "eyebrow": "End to end",
+        "title": "Blank page to first response, without leaving the tab",
+        "subtitle": "Building, styling, sharing and analyzing are four tabs of the same editor — not four tools you have to stitch together.",
+        "steps": {
+          "build": {
+            "title": "Build",
+            "description": "Drag blocks into sections, write questions in Markdown, and add branching that skips whatever is not relevant."
+          },
+          "design": {
+            "title": "Design",
+            "description": "Pick a theme, then tune the accent, fonts, density and cover image until it looks like it belongs to you."
+          },
+          "share": {
+            "title": "Share",
+            "description": "Publish a link or drop the form into your own site as an inline panel, popup, slider, side tab or full page."
+          },
+          "learn": {
+            "title": "Learn",
+            "description": "Watch responses arrive live, see where people give up, and export everything to CSV whenever you want."
+          }
+        }
+      },
+      "build": {
+        "eyebrow": "The builder",
+        "title": "Every block you need, and nothing you have to configure twice",
+        "subtitle": "Question types and content blocks share one editor. Set a placeholder, mark a field required, add validation, reorder by dragging.",
+        "footnote": "Sections, page breaks, dividers and rich text are blocks too — so a form can read like a document when it needs to.",
+        "blocks": {
+          "short_text": {
+            "title": "Short text",
+            "description": "One-line answers with placeholder and length rules."
+          },
+          "long_text": {
+            "title": "Long text",
+            "description": "Multi-line answers for context and detail."
+          },
+          "choice": {
+            "title": "Choice",
+            "description": "Single or multiple select, as a list or an image grid."
+          },
+          "dropdown": {
+            "title": "Dropdown",
+            "description": "Long option lists without eating the page."
+          },
+          "scale": {
+            "title": "Linear scale",
+            "description": "1–10 ranges with labelled endpoints."
+          },
+          "rating": {
+            "title": "Rating",
+            "description": "Star ratings from two to ten points."
+          },
+          "date": {
+            "title": "Date & time",
+            "description": "Calendar and clock inputs with validation."
+          },
+          "media": {
+            "title": "Image",
+            "description": "Illustrate a question, or make the options themselves images."
+          },
+          "video": {
+            "title": "Video",
+            "description": "Embed a YouTube clip inline, with a start offset."
+          },
+          "rich_text": {
+            "title": "Rich text",
+            "description": "Markdown blocks for instructions, consent and context."
+          }
+        }
+      },
+      "logic": {
+        "eyebrow": "Logic",
+        "title": "Ask only what is relevant",
+        "subtitle": "Rules route people to the right section based on what they answered — or end the form early when there is nothing left to ask.",
+        "diagram": {
+          "source_label": "When someone answers",
+          "source_question": "How big is your team?",
+          "if": "If",
+          "note": "Rules can fire on a single answer or at the end of a whole section, and can jump to any section or submit immediately.",
+          "rules": {
+            "enterprise": {
+              "answer": "More than 200 people",
+              "destination": "Procurement questions"
+            },
+            "startup": {
+              "answer": "10 to 200 people",
+              "destination": "Team setup"
+            },
+            "individual": {
+              "answer": "Just me",
+              "destination": "Submit"
+            }
+          }
+        },
+        "features": {
+          "branching": {
+            "title": "Answer branching",
+            "description": "Send people down a different path based on what they picked."
+          },
+          "section_end": {
+            "title": "Section rules",
+            "description": "Decide where to go once a whole section is finished."
+          },
+          "validation": {
+            "title": "Validation",
+            "description": "Numbers, email, URL, ranges and custom patterns, with your own error copy."
+          },
+          "scheduling": {
+            "title": "Open & close",
+            "description": "Schedule a window, cap total responses, or limit one per person."
+          }
+        }
+      },
+      "design": {
+        "eyebrow": "Design",
+        "title": "Themes you can actually edit",
+        "subtitle": "Start from a preset, then change anything. The preview is the form — what you see while editing is exactly what a respondent gets.",
+        "surface_heading": "Three surface styles",
+        "surface_description": "Paper is flat and printed. Glass floats over the background. Panel is bordered and dense. Every theme works in light and dark.",
+        "controls_heading": "Tune the details",
+        "controls_description": "Presets are a starting point, not a cage — each of these is an independent control.",
+        "surfaces": {
+          "paper": "Paper",
+          "glass": "Glass",
+          "panel": "Panel"
+        },
+        "controls": {
+          "fonts": "Nineteen headline and body faces, paired independently",
+          "density": "Airy, balanced or compact spacing",
+          "typography": "Separate display, heading and body sizes",
+          "cover": "Cover image and headline, plus per-section art",
+          "pacing": "One question at a time, or a whole section per screen"
+        }
+      },
+      "embed": {
+        "eyebrow": "Embed",
+        "title": "Six ways to put a form where people already are",
+        "subtitle": "One share code, one script tag. Change the mode with a data attribute — no rebuild, no redeploy.",
+        "snippet_heading": "One tag, any mode",
+        "snippet_description": "Drop the script once, then mark up as many forms as you like. Switch between inline, popup, slider, popover, side tab and full page by changing a single attribute.",
+        "modes": {
+          "inline": {
+            "title": "Inline",
+            "description": "The form sits in the flow of your page and grows with its content."
+          },
+          "fullpage": {
+            "title": "Full page",
+            "description": "A hosted page of its own — nothing else on screen but the form."
+          },
+          "popup": {
+            "title": "Popup",
+            "description": "Opens centered over the page, dimming everything behind it."
+          },
+          "slider": {
+            "title": "Slider",
+            "description": "Slides in from the edge, keeping the page visible alongside."
+          },
+          "popover": {
+            "title": "Popover",
+            "description": "A launcher bubble in the corner that expands into a compact card."
+          },
+          "sidetab": {
+            "title": "Side tab",
+            "description": "A persistent tab pinned to the edge that opens a panel on click."
+          }
+        }
+      },
+      "collaborate": {
+        "eyebrow": "Collaboration",
+        "title": "Edit together, without overwriting each other",
+        "subtitle": "Everyone in the workspace sees the same form as it changes. Presence, block-level editing indicators and autosave are on by default.",
+        "presence_label": "3 teammates editing right now",
+        "features": {
+          "presence": {
+            "title": "Live presence",
+            "description": "See who else has the form open and which block they are on."
+          },
+          "locks": {
+            "title": "Soft locks",
+            "description": "A block being edited is flagged before you type into it, not after."
+          },
+          "autosave": {
+            "title": "Autosave",
+            "description": "Changes save on their own, with an explicit save whenever you want one."
+          }
+        }
+      },
+      "insights": {
+        "eyebrow": "Insights",
+        "title": "Know what happened, not just how many",
+        "subtitle": "Every form tracks views, starts, completions and drop-off per question — so you can tell a quiet form from a broken one.",
+        "funnel": {
+          "label": "Response funnel",
+          "note": "Illustrative figures. Your own funnel is computed from real sessions, broken down by device, referrer and country.",
+          "steps": {
+            "views": {
+              "label": "Viewed",
+              "value": "1,000"
+            },
+            "starts": {
+              "label": "Started",
+              "value": "740"
+            },
+            "completed": {
+              "label": "Completed",
+              "value": "520"
+            }
+          }
+        },
+        "features": {
+          "live": {
+            "title": "Live responses",
+            "description": "Answers appear as they arrive, grouped by respondent."
+          },
+          "dropoff": {
+            "title": "Drop-off",
+            "description": "Find the exact question where people stop answering."
+          },
+          "export": {
+            "title": "Export",
+            "description": "Download responses as CSV, or the whole form as portable JSON."
+          },
+          "receipts": {
+            "title": "Response copies",
+            "description": "Let respondents email themselves a copy of what they submitted."
+          }
+        }
+      },
+      "trust": {
+        "eyebrow": "Trust",
+        "title": "Your responses stay yours",
+        "subtitle": "Forms and their answers are stored off the public data API and reached only through checked workspace permissions.",
+        "developer_heading": "Built to be integrated",
+        "developer_description": "Everything the studio can do is reachable from your own code, and nothing is a one-way door.",
+        "features": {
+          "private_schema": {
+            "title": "Private storage",
+            "description": "Definitions and answers live outside the public API surface."
+          },
+          "access": {
+            "title": "Access control",
+            "description": "Anonymous, signed-in, or signed-in with a verified email address."
+          },
+          "spam": {
+            "title": "Spam protection",
+            "description": "Turnstile plus rate limiting on every public submission."
+          },
+          "portable": {
+            "title": "No lock-in",
+            "description": "Export any form to JSON and import it into another workspace."
+          }
+        },
+        "developer": {
+          "sdk": {
+            "title": "Embed SDK",
+            "description": "A single script that mounts any embed mode from data attributes."
+          },
+          "share_link": {
+            "title": "Share links",
+            "description": "Rotate or revoke a public link without touching the form."
+          },
+          "portable": {
+            "title": "Portable format",
+            "description": "Versioned JSON export you can diff, review and check into git."
+          }
+        }
+      },
+      "faq": {
+        "eyebrow": "Questions",
+        "title": "Before you start",
+        "subtitle": "The things people ask most often.",
+        "items": {
+          "free": {
+            "question": "Is it free?",
+            "answer": "Yes — building forms, collecting responses and exporting your data are all free to start. There is no per-response charge and no cap that quietly hides answers you already collected."
+          },
+          "anonymous": {
+            "question": "Do respondents need an account?",
+            "answer": "No. A form can accept fully anonymous responses. You can also require a signed-in Tuturuuu account, or a signed-in account with a verified email, if you need to know who answered."
+          },
+          "embed": {
+            "question": "Can I put a form on my own site?",
+            "answer": "Yes, in six different ways: inline, full page, popup, slider, popover bubble and side tab. All of them come from one script tag and one share code, so switching between them is a single attribute change."
+          },
+          "realtime": {
+            "question": "Can my team edit a form at the same time?",
+            "answer": "Yes. Everyone with access to the workspace sees live presence, an indicator on whichever block a teammate is editing, and each other's changes as they are saved."
+          },
+          "export": {
+            "question": "Can I get my data out?",
+            "answer": "Always. Responses export to CSV, and the form itself exports to a versioned JSON file you can import into any other workspace."
+          },
+          "languages": {
+            "question": "What languages are supported?",
+            "answer": "The interface ships in English and Vietnamese, and your form content can be written in any language. Fonts cover Vietnamese diacritics properly rather than falling back mid-sentence."
+          }
+        }
+      },
+      "closing": {
+        "title": "Build your first form in the next five minutes",
+        "description": "Start with a blank page or import one you already have. Either way, you will have a shareable link before your coffee gets cold.",
+        "secondary": "Read the FAQ"
+      },
+      "footer": {
+        "tagline": "Build, theme, embed and analyze forms — part of the Tuturuuu workspace.",
+        "product": "Product",
+        "platform": "Platform",
+        "legal": "Legal",
+        "legal_line": "© {year} Tuturuuu. All rights reserved.",
+        "links": {
+          "workflow": "How it works",
+          "build": "Blocks",
+          "design": "Design",
+          "embed": "Embed",
+          "tuturuuu": "Tuturuuu",
+          "products": "All products",
+          "pricing": "Pricing",
+          "docs": "Docs",
+          "terms": "Terms",
+          "privacy": "Privacy",
+          "security": "Security",
+          "contact": "Contact"
+        }
+      }
+    },
+    "collaboration": {
+      "away": "Away",
+      "viewing": "Viewing the form",
+      "editing_block": "Editing “{block}”",
+      "editing_now": "{name} is editing this",
+      "editing_now_multiple": "{count} people are editing this",
+      "editor_count": "{count, plural, =1 {1 other editor} other {# other editors}}",
+      "remote_save_title": "{name} saved changes",
+      "remote_save_description": "You have unsaved edits, so this copy was left alone. Reload to take their version — your changes will be lost.",
+      "remote_save_reload": "Reload"
     }
   },
   "guest-lead-data-table": {
@@ -7315,8 +7857,10 @@
     "active_members": "Active",
     "admin_has_all_permissions": "As the workspace administrator, this member has full access to all permissions",
     "all": "All",
+    "assign_invitation_role": "Assign role",
     "board_guest_can_edit": "Can edit shared boards",
     "board_guest_can_view": "Can view shared boards",
+    "clear_all_roles": "Clear all",
     "clear_filters": "Clear filters",
     "creator_badge": "Creator",
     "creator_status": "Creator Status",
@@ -7336,14 +7880,30 @@
     "guest_self_join_update_error": "Failed to update guest self-join setting.",
     "guest_self_join_update_success": "Guest self-join setting updated.",
     "has-been-updated": "has been updated",
+    "invitation_role": "Invitation role",
+    "invitation_role_helper": "Applied when this person accepts the invitation.",
+    "invitation_role_updated": "Invitation role updated",
     "invitation-sent": "Invitation sent",
+    "invite_access_guest_tab": "Guest",
+    "invite_access_member_tab": "Member",
+    "invite_access_pos_tab": "POS",
+    "invite_access_title": "Access and roles",
     "invite_dialog_description": "Send an email invitation. Choose whether they join as a full member or a guest.",
+    "invite_emails_helper": "Separate multiple addresses with commas, spaces, or new lines.",
+    "invite_emails_label": "Email addresses",
     "invite_member": "Invite member",
     "invite_member_disabled": "Invite member disabled",
     "invite_membership_guest": "Guest — limited access",
+    "invite_membership_guest_description": "Limited guest access without workspace roles.",
     "invite_membership_label": "Access",
     "invite_membership_member": "Member — full workspace access",
+    "invite_membership_member_description": "Full workspace membership with optional roles.",
     "invite_membership_pos_operator": "POS operator — start payments only",
+    "invite_recipients_title": "Recipients",
+    "invite_roles_description": "Assign one or more roles now. You can change them while the invitation is pending.",
+    "invite_roles_no_match": "No roles match your search.",
+    "invite_roles_optional": "Optional",
+    "invite_roles_search": "Search workspace roles...",
     "invite_submit": "Send invitation",
     "invited": "Invited",
     "joined": "Joined",
@@ -7354,6 +7914,8 @@
     "no_members_found": "No members found",
     "no_members_match": "No members match your search",
     "no_permissions": "No permissions assigned",
+    "no_role_assigned": "No role assigned",
+    "no_roles_assigned": "No roles assigned",
     "no_roles_found": "No roles found",
     "pending_invitations": "Pending invitations",
     "pos_operator_admin_migration_note": "The current member-wide Admin default will be replaced with an explicit preserved admin role before this invitation is created. Existing members keep access; future members do not inherit Admin automatically.",
@@ -7367,8 +7929,10 @@
     "profile_display_name_placeholder": "Name shown in this workspace",
     "profile_display_name_update_error": "Failed to update workspace display name.",
     "profile_display_name_updated": "Workspace display name updated.",
+    "recipients_count": "{count, plural, =0 {No recipients} =1 {# recipient} other {# recipients}}",
     "remove_member": "Remove member",
     "role-placeholder": "Select a role",
+    "roles_selected": "{count, plural, =0 {No roles selected} =1 {# role selected} other {# roles selected}}",
     "save_profile_display_name": "Save display name",
     "search_members": "Search members",
     "total": "Total"
@@ -7867,6 +8431,7 @@
       "description_storage_counter": "{percent}% left",
       "description_storage_helper": "Room left in your description. Formatting, mentions, and embeds count too.",
       "description_storage_over_limit": "Description is too long and won't sync. Shorten it to continue.",
+      "description_storage_usage": "{used} of {limit} used",
       "description_storage_warning": "Running low on description space — {percent}% left.",
       "description_too_long_description": "Trim the description below {max} characters before saving.",
       "description_too_long_title": "Description is too long",
@@ -8042,6 +8607,12 @@
     "layout_settings": {
       "add_new_list": "Add New List",
       "list_name_exists": "A list with this name already exists on this board."
+    },
+    "manual_ordering_disabled": {
+      "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
+      "keep_sorting": "Keep current sorting",
+      "title": "Manual ordering is paused",
+      "use_manual": "Use manual order"
     },
     "messages": {
       "task_id_copied": "Copied task ID",

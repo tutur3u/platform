@@ -6,45 +6,39 @@ Import `@tuturuuu/editor/styles.css` once in the consuming app to enable the
 default compact icon toolbar and localized hover/focus tooltips. Toolbar buttons
 retain accessible labels for screen readers.
 
-The unchanged legacy preset exposes separate Heading 1, Heading 2, and Heading
-3 controls. The opt-in `full` editorial preset uses the visitor-facing H2–H4
-hierarchy instead, so a field cannot accidentally create a second page title.
+Both the unchanged legacy preset and the `full` editorial preset expose the
+first-level heading. The full preset includes Heading 1 through Heading 4 for
+complete document authoring.
 
-## Safe Editor/HTML source and Preview modes
+## Live WYSIWYG editing
 
-Consumers can opt into safe HTML and read-only preview modes while continuing
-to store structured JSON:
+The authoring surface is always a single live WYSIWYG document: headings,
+lists, quotes, links, images, collapsible sections, and other prose styling
+appear as they will to readers. There is no separate editor, preview, or HTML
+source mode.
 
 ```tsx
-import { RichTextEditor } from '@tuturuuu/editor/react';
+import { RichTextEditor } from "@tuturuuu/editor/react";
 
 <RichTextEditor
   content={content}
-  enableHTMLSource
-  enablePreview
   featurePreset="full"
   locale="en"
   onChange={setContent}
   stylePolicy={{
-    alignments: ['left', 'center', 'right'],
-    textTones: [{ label: 'Brand gold', value: 'var(--brand-gold)' }],
-    highlights: [
-      { label: 'Warm highlight', value: 'var(--brand-highlight)' },
-    ],
+    alignments: ["left", "center", "right"],
+    textTones: [{ label: "Brand gold", value: "var(--brand-gold)" }],
+    highlights: [{ label: "Warm highlight", value: "var(--brand-highlight)" }],
   }}
 />;
 ```
 
-`full` includes H2–H4, lists, quotes, dividers, and images. `compact` disables
+`full` includes H1–H4, lists, quotes, dividers, and images. `compact` disables
 headings and block content, keeping narrative fields focused on inline
-formatting and paragraphs. When `featurePreset` is omitted it defaults to
-`full` if `enableHTMLSource` is set, and to the legacy H1–H3 preset otherwise.
-Preview renders the current structured document without formatting controls or
-mutating the value. Source mode
-rejects executable markup, unsafe URLs, custom classes, and arbitrary CSS; it
-normalizes harmless unsupported markup before applying it to the canonical JSON.
-`onSourceModeDirtyChange` lets a host include unapplied source in its
-unsaved-navigation protection.
+formatting and paragraphs. When `featurePreset` is omitted, the editor uses the
+legacy H1–H3 preset for backward compatibility. The deprecated `enablePreview`,
+`enableHTMLSource`, and `onSourceModeDirtyChange` props remain accepted during
+migration but do not add another mode or surface.
 
 Use `renderRichTextToHTML(content, { featurePreset, stylePolicy })` on the
 server. The renderer escapes text and emits only approved URLs, marks,

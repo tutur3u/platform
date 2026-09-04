@@ -20,8 +20,10 @@ const SUPABASE_CLI_PLATFORMS = {
   win32: { arm64: ['windows-arm64'], x64: ['windows-x64'] },
 };
 
-function getSupabaseGoBinaryName(platform = process.platform) {
-  return platform === 'win32' ? 'supabase-go.exe' : 'supabase-go';
+function getSupabaseBinaryNames(platform = process.platform) {
+  return platform === 'win32'
+    ? ['supabase.exe', 'supabase-go.exe']
+    : ['supabase', 'supabase-go'];
 }
 
 export function getSupabaseWrapperPath(baseWorkspaceDir = workspaceDir) {
@@ -40,7 +42,7 @@ export function getSupabaseWrapperPath(baseWorkspaceDir = workspaceDir) {
   return path.join(supabasePackageDir, binaryRelativePath);
 }
 
-export function getBundledSupabaseGoPath(
+export function getBundledSupabaseBinaryPath(
   wrapperPath,
   {
     arch = os.arch(),
@@ -63,14 +65,16 @@ export function getBundledSupabaseGoPath(
       const packageJsonPath = requireFromWrapper.resolve(
         `@supabase/cli-${suffix}/package.json`
       );
-      const binaryPath = path.join(
-        path.dirname(packageJsonPath),
-        'bin',
-        getSupabaseGoBinaryName(platform)
-      );
+      for (const binaryName of getSupabaseBinaryNames(platform)) {
+        const binaryPath = path.join(
+          path.dirname(packageJsonPath),
+          'bin',
+          binaryName
+        );
 
-      if (existsSync(binaryPath)) {
-        return binaryPath;
+        if (existsSync(binaryPath)) {
+          return binaryPath;
+        }
       }
     } catch {
       // Try the next platform package candidate.
@@ -92,14 +96,22 @@ export function getSupabaseBinaryPath(
 
   const wrapperPath = getSupabaseWrapperPath(baseWorkspaceDir);
 
-  return getBundledSupabaseGoPath(wrapperPath, nativeOptions) ?? wrapperPath;
+  return (
+    getBundledSupabaseBinaryPath(wrapperPath, nativeOptions) ?? wrapperPath
+  );
 }
 
-function run(command, args, cwd) {
+export function runCommand(
+  command,
+  args,
+  cwd,
+  { env = process.env, stdio = 'inherit' } = {}
+) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
-      stdio: 'inherit',
+      env,
+      stdio,
     });
 
     child.on('error', reject);
@@ -114,7 +126,7 @@ function run(command, args, cwd) {
 
 export async function ensureSupabaseBinary(
   baseWorkspaceDir = workspaceDir,
-  { runner = run, ...nativeOptions } = {}
+  { runner = runCommand, ...nativeOptions } = {}
 ) {
   const binaryPath = getSupabaseBinaryPath(baseWorkspaceDir, nativeOptions);
 
@@ -149,7 +161,7 @@ export async function ensureSupabaseBinary(
 
 export async function main(
   argv = process.argv.slice(2),
-  { runner = run, stderr = process.stderr } = {}
+  { runner = runCommand, stderr = process.stderr } = {}
 ) {
   try {
     const binaryPath = await ensureSupabaseBinary();

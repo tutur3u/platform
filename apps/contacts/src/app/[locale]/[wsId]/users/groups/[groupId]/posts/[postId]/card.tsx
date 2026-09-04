@@ -29,6 +29,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 
 interface Props {
   recipient: GroupPostRecipientRow;
@@ -50,10 +51,35 @@ function UserCard({
   const t = useTranslations();
   const tableT = useTranslations('post-email-data-table');
 
-  const hasExistingCheck = Boolean(recipient.has_check);
-  const approvalStatus = hasExistingCheck
-    ? (recipient.approval_status as PostApprovalStatus | null | undefined)
-    : undefined;
+  const [marker, setMarker] = useState(() => ({
+    approvalStatus: recipient.approval_status as
+      | PostApprovalStatus
+      | null
+      | undefined,
+    hasCheck: Boolean(recipient.has_check),
+    isCompleted: recipient.is_completed ?? null,
+    notes: recipient.notes ?? null,
+  }));
+
+  useEffect(() => {
+    setMarker({
+      approvalStatus: recipient.approval_status as
+        | PostApprovalStatus
+        | null
+        | undefined,
+      hasCheck: Boolean(recipient.has_check),
+      isCompleted: recipient.is_completed ?? null,
+      notes: recipient.notes ?? null,
+    });
+  }, [
+    recipient.approval_status,
+    recipient.has_check,
+    recipient.is_completed,
+    recipient.notes,
+  ]);
+
+  const hasExistingCheck = marker.hasCheck;
+  const approvalStatus = hasExistingCheck ? marker.approvalStatus : undefined;
   const stageAppearance = getPostReviewStageAppearance(
     recipient.review_stage as PostReviewStage
   );
@@ -100,7 +126,7 @@ function UserCard({
       if (hasExistingCheck) {
         return updateUserGroupPostChecks(wsId, post.group_id, post.id, {
           is_completed: isCompleted,
-          notes: notes ?? recipient.notes ?? '',
+          notes: notes ?? marker.notes ?? '',
           user_id: recipient.user_id,
         });
       }
@@ -112,7 +138,14 @@ function UserCard({
         user_id: recipient.user_id,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
+      setMarker((current) => ({
+        ...current,
+        approvalStatus: current.hasCheck ? current.approvalStatus : 'PENDING',
+        hasCheck: true,
+        isCompleted: variables.isCompleted,
+        notes: variables.notes ?? current.notes,
+      }));
       toast.success(t('ws_post_details.status_save_success'));
       await queryClient.invalidateQueries({
         queryKey: ['group-post-checks', post.id],
@@ -138,6 +171,12 @@ function UserCard({
       ]);
     },
     onSuccess: async () => {
+      setMarker({
+        approvalStatus: undefined,
+        hasCheck: false,
+        isCompleted: null,
+        notes: null,
+      });
       toast.success(t('ws_post_details.reset_check_success'));
       await queryClient.invalidateQueries({
         queryKey: ['group-post-checks', post.id],
@@ -160,7 +199,7 @@ function UserCard({
 
     const notes = formData.get('notes') as string;
     handleSaveStatus({
-      isCompleted: recipient.is_completed ?? false,
+      isCompleted: marker.isCompleted ?? false,
       notes,
     });
   };
@@ -261,6 +300,12 @@ function UserCard({
               approvalStatus={approvalStatus ?? 'PENDING'}
               queueStatus={recipient.queue_status ?? undefined}
               canRemoveApproval={Boolean(recipient.can_remove_approval)}
+              onStatusChange={(status) =>
+                setMarker((current) => ({
+                  ...current,
+                  approvalStatus: status,
+                }))
+              }
             />
           </div>
         )}

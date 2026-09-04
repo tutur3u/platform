@@ -644,13 +644,11 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         const SizedBox(height: 8),
         shad.SecondaryButton(
           onPressed: () async {
-            final result = await FilePicker.pickFiles(allowMultiple: true);
-            final paths =
-                result?.files
-                    .map((file) => file.path)
-                    .whereType<String>()
-                    .toList() ??
-                const <String>[];
+            final result = await FilePicker.pickFiles();
+            final paths = result
+                .map((file) => file.path)
+                .whereType<String>()
+                .toList();
             setState(() => _state[key] = paths);
           },
           child: const Text('Choose files'),

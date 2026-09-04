@@ -1,14 +1,7 @@
 import { hashApiKey } from '@tuturuuu/auth/api-keys';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { generateSepayEndpointToken } from '@/lib/sepay';
@@ -35,45 +28,11 @@ export async function requireSepayAccess(
   request: Request,
   rawWsId: string
 ): Promise<SepayAccessContext | { error: NextResponse }> {
-  const supabase = await createClient(request);
-
-  const { user: authUser, authError } =
-    await resolveAuthenticatedSessionUser(supabase);
-  if (authError) {
-    console.error('Failed to authenticate SePay access request:', authError);
-    return {
-      error: NextResponse.json(
-        { message: 'Failed to authenticate request' },
-        { status: 401 }
-      ),
-    };
-  }
-
-  if (!authUser) {
-    return {
-      error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  let wsId: string;
-  try {
-    wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  } catch (error) {
-    console.error('Failed to normalize SePay workspace id:', error);
-    return {
-      error: NextResponse.json(
-        { message: 'Failed to resolve workspace' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  const permissions = await getPermissions({ wsId, request });
-  if (!permissions) {
-    return {
-      error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
+  const authorization = await authorizeInventoryWorkspace(request, rawWsId, {
+    appSessionTargets: ['inventory', 'finance'],
+  });
+  if (!authorization.ok) return { error: authorization.response };
+  const { permissions, wsId } = authorization.value;
 
   if (permissions.withoutPermission('manage_finance')) {
     return {

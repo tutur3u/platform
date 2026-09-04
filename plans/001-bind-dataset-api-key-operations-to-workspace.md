@@ -147,7 +147,7 @@ overlapping.
    two dataset routes.
 
 7. **Run repository gates.** Run `bun check`,
-   `bun --cwd apps/web run build`, and `git diff --check`. Expected: both Bun
+   `bun run --cwd apps/web build`, and `git diff --check`. Expected: both Bun
    commands exit 0 and the whitespace check prints nothing.
 
 ## Done criteria

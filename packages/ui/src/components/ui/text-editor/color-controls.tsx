@@ -182,7 +182,7 @@ function ColorControlPopover({
               aria-label={label}
               aria-pressed={active}
               className={cn(
-                'relative h-8 w-8 rounded-md border border-transparent transition-colors hover:bg-dynamic-surface/80',
+                'relative h-8 w-8 shrink-0 rounded-md border border-transparent transition-colors hover:bg-dynamic-surface/80',
                 active &&
                   'border-foreground/10 bg-dynamic-surface/80 text-foreground'
               )}

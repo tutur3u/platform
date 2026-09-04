@@ -1,17 +1,37 @@
-import { ClipboardList } from '@tuturuuu/icons';
+import {
+  getCurrentUserDefaultWorkspace,
+  InternalApiError,
+  listWorkspaces,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import {
   getPendingWorkspaceInvitations,
   SatelliteWorkspaceInvitationList,
 } from '@tuturuuu/satellite/workspace-invitation';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { headers } from 'next/headers';
+import { connection } from 'next/server';
 import { redirect } from '@/i18n/navigation';
 
+/**
+ * `/dashboard` is the app's entry point, not a page.
+ *
+ * It used to end at a static "Forms — build, share, and analyze" card with no
+ * link, button or navigation on it: a signed-in user who landed here had no way
+ * forward except editing the URL. It now resolves the workspace to open and
+ * sends them there, matching what every other satellite does.
+ *
+ * Pending invitations still render inline, because those are a real decision to
+ * make before picking a workspace.
+ */
 export default async function DashboardEntryPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  await connection();
+
   const { locale } = await params;
   const requestHeaders = await headers();
   const appSession = await getSatelliteAppSession('forms');
@@ -31,17 +51,37 @@ export default async function DashboardEntryPage({
     );
   }
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-root-background p-6">
-      <div className="max-w-lg border-2 border-border bg-background p-8 text-center shadow-[9px_9px_0_var(--border)]">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-blue/15 shadow-[4px_4px_0_var(--border)]">
-          <ClipboardList className="h-8 w-8" />
-        </div>
-        <h1 className="font-black text-3xl tracking-normal">Forms</h1>
-        <p className="mt-3 text-muted-foreground leading-7">
-          Build, share, and analyze workspace forms and their responses.
-        </p>
-      </div>
-    </div>
-  );
+  try {
+    const auth = withForwardedInternalApiAuth(requestHeaders);
+
+    // Prefer the user's default (or personal) workspace; otherwise fall back to
+    // the first workspace they belong to — never the root/admin workspace.
+    const defaultWorkspace = await getCurrentUserDefaultWorkspace(auth);
+    const workspace =
+      defaultWorkspace ?? (await listWorkspaces(auth))?.[0] ?? null;
+
+    if (!workspace) {
+      // No accessible workspace yet. Bounce through the central login, which is
+      // the only surface that can run onboarding — landing here with nothing to
+      // open is exactly the dead end this page used to be.
+      return redirect({ href: '/login?next=/dashboard&refresh=1', locale });
+    }
+
+    const workspaceSlug = toWorkspaceSlug(workspace.id, {
+      personal: !!workspace.personal,
+    });
+
+    // `/[wsId]` itself redirects on to `/[wsId]/forms`, so this lands on the
+    // form list rather than another intermediate screen.
+    redirect({ href: `/${workspaceSlug}`, locale });
+  } catch (error) {
+    if (
+      error instanceof InternalApiError &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      redirect({ href: '/login?next=/dashboard&refresh=1', locale });
+    }
+
+    throw error;
+  }
 }

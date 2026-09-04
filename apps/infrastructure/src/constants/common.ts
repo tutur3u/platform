@@ -28,6 +28,10 @@ const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
+const DEFAULT_CALENDAR_APP_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://calendar.tuturuuu.com'
+    : getLocalInternalAppUrl('calendar', 'http://localhost:7806');
 
 export const INFRA_APP_URL = resolveInternalAppUrl({
   appName: 'infra',
@@ -54,3 +58,12 @@ export const WEB_APP_URL = resolveInternalAppUrl({
 });
 
 export const TTR_URL = WEB_APP_URL;
+
+export const CALENDAR_APP_URL = resolveInternalAppUrl({
+  appName: 'calendar',
+  candidates: [
+    process.env.CALENDAR_APP_URL,
+    process.env.NEXT_PUBLIC_CALENDAR_APP_URL,
+  ],
+  fallback: DEFAULT_CALENDAR_APP_URL,
+});

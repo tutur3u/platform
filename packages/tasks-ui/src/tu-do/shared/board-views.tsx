@@ -6,10 +6,7 @@ import {
   useHotkeySequence,
 } from '@tanstack/react-hotkeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  type ListWorkspaceTasksOptions,
-  listWorkspaceTasks,
-} from '@tuturuuu/internal-api/tasks';
+import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import {
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
   TASK_LAST_BOARD_VIEW_CONFIG_ID,
@@ -29,7 +26,7 @@ import {
 } from '@tuturuuu/ui/hooks/use-user-workspace-config';
 import {
   getPersonalExternalStagingListId,
-  priorityCompare,
+  sortTasksByCriterion,
   type WorkspaceLabel,
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
@@ -43,10 +40,7 @@ import {
   useState,
 } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
-import type {
-  KanbanDeadlineCollapsedState,
-  KanbanDeadlineSection,
-} from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
+import type { KanbanDeadlineCollapsedState } from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { DraftsPage } from '../drafts/drafts-page';
@@ -57,18 +51,23 @@ import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
 import {
+  listBoardTaskCountsForSearch,
+  listBoardTasksForSearch,
+  taskMatchesBoardSearch,
+} from './board-task-search';
+import { KanbanPresentation } from './kanban-presentation';
+import {
   parseSpecialTaskListPins,
   type SpecialTaskListPin,
   serializeSpecialTaskListPins,
 } from './special-task-list-pins';
 import {
-  TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
-  TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
-} from './task-board-preferences';
-import {
   DEFAULT_TASK_QUICK_CREATE_TARGET_LIST,
   normalizeTaskQuickCreateTargetList,
 } from './task-quick-create-target-list';
+import { useAutoCollapseEmptyTaskLists } from './use-auto-collapse-empty-task-lists';
+import { useKanbanLayoutState } from './use-kanban-layout-state';
+import { useTaskBoardListPreferences } from './use-task-board-list-preferences';
 
 export type ViewType =
   | 'kanban'
@@ -77,7 +76,6 @@ export type ViewType =
   | 'timeline'
   | 'drafts'
   | 'recycle_bin';
-
 const HOTKEY_CREATE_TASK = 'C';
 const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
 const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
@@ -85,13 +83,6 @@ const HOTKEY_GO_TO_MY_TASKS: ['G', 'M'] = ['G', 'M'];
 const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
 const HOTKEY_GO_TO_DRAFTS: ['G', 'D'] = ['G', 'D'];
 const HOTKEY_GO_TO_RECYCLE_BIN: ['G', 'R'] = ['G', 'R'];
-const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
-  'personal-board-external-tasks-collapsed';
-const TASK_LIST_COLLAPSED_STORAGE_PREFIX = 'task-board-list-collapsed';
-const LEGACY_CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX =
-  'task-board-closed-list-collapsed';
-const DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX =
-  'task-board-deadline-section-collapsed';
 const DEFAULT_TASK_FILTERS: TaskFilters = {
   labels: [],
   assignees: [],
@@ -105,47 +96,14 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   sourceWorkspaceIds: [],
   sourceBoardIds: [],
 };
-
-function getTaskListCollapsedStorageKey(boardId: string, listId: string) {
-  return `${TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
-}
-
-function getLegacyClosedTaskListCollapsedStorageKey(
-  boardId: string,
-  listId: string
-) {
-  return `${LEGACY_CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
-}
-
-function getDeadlineSectionCollapsedStorageKey(
-  boardId: string,
-  section: KanbanDeadlineSection
-) {
-  return `${DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX}:${boardId}:${section}`;
-}
-
 function taskMatchesLocalFilters(
   task: Task,
   filters: TaskFilters,
-  currentUserId?: string
+  currentUserId?: string,
+  boardTicketPrefix?: string | null
 ) {
-  const query = filters.searchQuery?.trim().toLowerCase();
-  if (query) {
-    const searchableText = [
-      task.name,
-      task.display_number ? String(task.display_number) : null,
-      ...(task.labels ?? []).map((label) => label.name),
-      ...(task.projects ?? []).map((project) => project.name),
-      ...(task.assignees ?? []).map(
-        (assignee) => assignee.display_name ?? assignee.email ?? assignee.handle
-      ),
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-
-    if (!searchableText.includes(query)) return false;
-  }
+  if (!taskMatchesBoardSearch(task, filters.searchQuery, boardTicketPrefix))
+    return false;
 
   if (
     filters.labels.length > 0 &&
@@ -214,41 +172,8 @@ function taskMatchesLocalFilters(
   return true;
 }
 
-function getTaskTimestamp(value: string | null | undefined) {
-  if (!value) return Number.MAX_SAFE_INTEGER;
-  const time = new Date(value).getTime();
-  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
-}
-
 function sortLocalTasks(tasks: Task[], sortBy: TaskFilters['sortBy']) {
-  if (!sortBy) return tasks;
-
-  return [...tasks].sort((a, b) => {
-    switch (sortBy) {
-      case 'name-asc':
-        return a.name.localeCompare(b.name);
-      case 'name-desc':
-        return b.name.localeCompare(a.name);
-      case 'priority-high':
-        return priorityCompare(a.priority ?? null, b.priority ?? null);
-      case 'priority-low':
-        return priorityCompare(b.priority ?? null, a.priority ?? null);
-      case 'due-date-asc':
-        return getTaskTimestamp(a.end_date) - getTaskTimestamp(b.end_date);
-      case 'due-date-desc':
-        return getTaskTimestamp(b.end_date) - getTaskTimestamp(a.end_date);
-      case 'created-date-asc':
-        return getTaskTimestamp(a.created_at) - getTaskTimestamp(b.created_at);
-      case 'created-date-desc':
-        return getTaskTimestamp(b.created_at) - getTaskTimestamp(a.created_at);
-      case 'estimation-high':
-        return (b.estimation_points ?? 0) - (a.estimation_points ?? 0);
-      case 'estimation-low':
-        return (a.estimation_points ?? 0) - (b.estimation_points ?? 0);
-      default:
-        return 0;
-    }
-  });
+  return sortTasksByCriterion(tasks, sortBy);
 }
 
 interface Props {
@@ -293,16 +218,9 @@ export function BoardViews({
   const queryClient = useQueryClient();
   const effectiveWorkspaceId = board.ws_id ?? workspace.id;
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
-  const [externalTasksCollapsed, setExternalTasksCollapsed] = useState(false);
-  const [taskListsCollapsed, setTaskListsCollapsed] = useState<
-    Record<string, boolean>
-  >({});
-  const [deadlineSectionsCollapsed, setDeadlineSectionsCollapsed] =
-    useState<KanbanDeadlineCollapsedState>({});
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
-  // Local per-session optimistic overrides (e.g., timeline resize) so switching views preserves changes
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
@@ -313,6 +231,9 @@ export function BoardViews({
     null
   );
   const previousHideEmptyPreferenceRef = useRef<boolean | null>(null);
+  const manualCollapseChangeRef = useRef<
+    (listId: string, collapsed: boolean) => void
+  >(() => undefined);
   const { createTask } = useTaskDialog();
   const localTaskState = readOnly || publicView;
   const { data: quickCreateTargetListRaw } = useUserConfig(
@@ -323,22 +244,12 @@ export function BoardViews({
   const quickCreateTargetList = normalizeTaskQuickCreateTargetList(
     quickCreateTargetListRaw
   );
-  const { data: persistCollapsedTaskListsRaw } = useUserConfig(
-    TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
-    'true',
-    { enabled: !localTaskState }
-  );
-  const { data: hideEmptyTaskListsByDefaultRaw } = useUserConfig(
-    TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
-    'false',
-    { enabled: !localTaskState }
-  );
-  const persistCollapsedTaskLists = localTaskState
-    ? false
-    : persistCollapsedTaskListsRaw !== 'false';
-  const hideEmptyTaskListsByDefault = localTaskState
-    ? false
-    : hideEmptyTaskListsByDefaultRaw === 'true';
+  const {
+    persistCollapsedTaskLists,
+    hideEmptyTaskListsByDefault,
+    autoCollapseEmptyTaskLists,
+    taskBoardListPreferencesReady,
+  } = useTaskBoardListPreferences(localTaskState);
   const boardAssigneesEnabled =
     !workspace.personal ||
     board.access_type === 'guest' ||
@@ -351,12 +262,13 @@ export function BoardViews({
           ? 'board'
           : 'workspace-and-board'
         : 'workspace';
-  const { data: pinnedSpecialListsRaw } = useUserWorkspaceConfig(
-    effectiveWorkspaceId,
-    TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
-    null,
-    { enabled: !localTaskState }
-  );
+  const { data: pinnedSpecialListsRaw, isPending: pinnedSpecialListsPending } =
+    useUserWorkspaceConfig(
+      effectiveWorkspaceId,
+      TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
+      null,
+      { enabled: !localTaskState }
+    );
   const updateUserWorkspaceConfig = useUpdateUserWorkspaceConfig();
   const specialTaskListPins = useMemo(
     () => parseSpecialTaskListPins(pinnedSpecialListsRaw),
@@ -502,16 +414,17 @@ export function BoardViews({
   );
   const shouldEagerLoadTasks =
     currentView === 'list' || currentView === 'timeline' || hasServerTaskQuery;
-  const fetchBoardTasks = useCallback(async () => {
-    const result = await listWorkspaceTasks(effectiveWorkspaceId, {
-      ...taskQueryOptions,
-      boardId: board.id,
-      includeRelationshipSummary: false,
-      listStatuses: listStatusesForQuery,
-      limit: 200,
-    });
-    return result.tasks;
-  }, [board.id, effectiveWorkspaceId, listStatusesForQuery, taskQueryOptions]);
+  const fetchBoardTasks = useCallback(
+    () =>
+      listBoardTasksForSearch(effectiveWorkspaceId, {
+        ...taskQueryOptions,
+        boardId: board.id,
+        includeRelationshipSummary: false,
+        listStatuses: listStatusesForQuery,
+        limit: 200,
+      }),
+    [board.id, effectiveWorkspaceId, listStatusesForQuery, taskQueryOptions]
+  );
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
@@ -521,7 +434,7 @@ export function BoardViews({
       void queryClient.prefetchQuery({
         queryKey: ['tasks-full', board.id, taskFilterKey],
         queryFn: fetchBoardTasks,
-        staleTime: 0,
+        staleTime: 5 * 60_000,
       });
     },
     [board.id, fetchBoardTasks, localTaskState, queryClient, taskFilterKey]
@@ -567,12 +480,16 @@ export function BoardViews({
     ]
   );
 
-  const { data: fullTasks = [], isFetching: isFullTasksFetching } = useQuery({
+  const {
+    data: fullTasks = [],
+    isFetching: isFullTasksFetching,
+    isPending: isFullTasksPending,
+  } = useQuery({
     queryKey: ['tasks-full', board.id, taskFilterKey],
     enabled: !localTaskState && shouldEagerLoadTasks,
     queryFn: fetchBoardTasks,
-    refetchOnMount: 'always',
-    staleTime: 0,
+    refetchOnMount: false,
+    staleTime: 5 * 60_000,
   });
 
   const initialTaskLists = useMemo(
@@ -585,6 +502,24 @@ export function BoardViews({
     queryFn: async () => initialTaskLists,
     initialData: initialTaskLists,
     staleTime: Infinity,
+  });
+
+  const {
+    deadlineSectionsCollapsed,
+    externalTasksCollapsed,
+    handleDeadlineSectionCollapsedChange,
+    handleExternalTasksCollapsedChange,
+    handleTaskListCollapsedChange,
+    kanbanLayoutRestored,
+    setTaskListsCollapsed,
+    taskListCollapsePreferences,
+    taskListsCollapsed,
+  } = useKanbanLayoutState({
+    boardId: board.id,
+    lists: boardLists,
+    manualCollapseChangeRef,
+    persistCollapsedTaskLists,
+    personalWorkspace: workspace.personal,
   });
 
   useEffect(() => {
@@ -662,145 +597,6 @@ export function BoardViews({
     });
   }, [hideEmptyTaskListsByDefault]);
 
-  useEffect(() => {
-    if (!workspace.personal || typeof window === 'undefined') {
-      setExternalTasksCollapsed(false);
-      return;
-    }
-
-    const storedValue = persistCollapsedTaskLists
-      ? window.localStorage.getItem(
-          `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`
-        )
-      : null;
-    const storedPreference =
-      storedValue === null ? null : storedValue === 'true';
-
-    setExternalTasksCollapsed(storedPreference ?? true);
-  }, [board.id, persistCollapsedTaskLists, workspace.personal]);
-
-  const handleExternalTasksCollapsedChange = useCallback(
-    (collapsed: boolean) => {
-      setExternalTasksCollapsed(collapsed);
-
-      if (
-        !persistCollapsedTaskLists ||
-        !workspace.personal ||
-        typeof window === 'undefined'
-      )
-        return;
-
-      window.localStorage.setItem(
-        `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`,
-        String(collapsed)
-      );
-    },
-    [board.id, persistCollapsedTaskLists, workspace.personal]
-  );
-
-  useEffect(() => {
-    const visibleLists = boardLists.filter((list) => !list.deleted);
-
-    if (visibleLists.length === 0) {
-      setTaskListsCollapsed({});
-      return;
-    }
-
-    setTaskListsCollapsed((previous) => {
-      const next: Record<string, boolean> = {};
-
-      for (const list of visibleLists) {
-        const storedValue =
-          persistCollapsedTaskLists && typeof window !== 'undefined'
-            ? (window.localStorage.getItem(
-                getTaskListCollapsedStorageKey(board.id, list.id)
-              ) ??
-              (list.status === 'closed'
-                ? window.localStorage.getItem(
-                    getLegacyClosedTaskListCollapsedStorageKey(
-                      board.id,
-                      list.id
-                    )
-                  )
-                : null))
-            : null;
-
-        next[list.id] =
-          storedValue === null
-            ? (previous[list.id] ?? list.status === 'closed')
-            : storedValue === 'true';
-      }
-
-      return next;
-    });
-  }, [board.id, boardLists, persistCollapsedTaskLists]);
-
-  const handleTaskListCollapsedChange = useCallback(
-    (listId: string, collapsed: boolean) => {
-      setTaskListsCollapsed((previous) => ({
-        ...previous,
-        [listId]: collapsed,
-      }));
-
-      if (!persistCollapsedTaskLists || typeof window === 'undefined') return;
-
-      window.localStorage.setItem(
-        getTaskListCollapsedStorageKey(board.id, listId),
-        String(collapsed)
-      );
-      if (
-        boardLists.some(
-          (list) => list.id === listId && list.status === 'closed'
-        )
-      ) {
-        window.localStorage.setItem(
-          getLegacyClosedTaskListCollapsedStorageKey(board.id, listId),
-          String(collapsed)
-        );
-      }
-    },
-    [board.id, boardLists, persistCollapsedTaskLists]
-  );
-
-  useEffect(() => {
-    setDeadlineSectionsCollapsed((previous) => {
-      const next: KanbanDeadlineCollapsedState = {};
-
-      for (const section of ['overdue', 'upcoming'] as const) {
-        const storedValue =
-          !persistCollapsedTaskLists || typeof window === 'undefined'
-            ? null
-            : window.localStorage.getItem(
-                getDeadlineSectionCollapsedStorageKey(board.id, section)
-              );
-
-        next[section] =
-          storedValue === null
-            ? (previous[section] ?? true)
-            : storedValue === 'true';
-      }
-
-      return next;
-    });
-  }, [board.id, persistCollapsedTaskLists]);
-
-  const handleDeadlineSectionCollapsedChange = useCallback(
-    (section: KanbanDeadlineSection, collapsed: boolean) => {
-      setDeadlineSectionsCollapsed((previous) => ({
-        ...previous,
-        [section]: collapsed,
-      }));
-
-      if (!persistCollapsedTaskLists || typeof window === 'undefined') return;
-
-      window.localStorage.setItem(
-        getDeadlineSectionCollapsedStorageKey(board.id, section),
-        String(collapsed)
-      );
-    },
-    [board.id, persistCollapsedTaskLists]
-  );
-
   const externalStagingList = useMemo<TaskList | null>(() => {
     if (!workspace.personal) return null;
 
@@ -856,35 +652,66 @@ export function BoardViews({
       [deadlineSectionsCollapsed.overdue, deadlineSectionsCollapsed.upcoming]
     );
 
-  const { data: filteredListCounts, isFetching: isFilteredListCountsFetching } =
-    useQuery({
-      queryKey: ['task-list-counts', board.id, taskFilterKey],
-      enabled:
-        !localTaskState &&
-        Boolean(hasTaskFilters || filters.hideEmptyTaskLists),
-      queryFn: async () => {
-        const result = await listWorkspaceTasks(effectiveWorkspaceId, {
-          ...taskQueryOptions,
-          boardId: board.id,
-          includeListCounts: true,
-          includeRelationshipSummary: false,
-          limit: 0,
-          listStatuses: listStatusesForQuery,
-        });
-        return result.listCounts ?? [];
-      },
-      staleTime: 30_000,
-    });
+  const {
+    data: filteredListCounts,
+    isFetching: isFilteredListCountsFetching,
+    isPending: isFilteredListCountsPending,
+  } = useQuery({
+    queryKey: ['task-list-counts', board.id, taskFilterKey],
+    enabled:
+      !localTaskState &&
+      Boolean(
+        hasTaskFilters ||
+          filters.hideEmptyTaskLists ||
+          autoCollapseEmptyTaskLists
+      ),
+    queryFn: () =>
+      listBoardTaskCountsForSearch(effectiveWorkspaceId, {
+        ...taskQueryOptions,
+        boardId: board.id,
+        includeListCounts: true,
+        includeRelationshipSummary: false,
+        limit: 0,
+        listStatuses: listStatusesForQuery,
+      }),
+    staleTime: 30_000,
+  });
+
+  const initialKanbanLayoutReady =
+    kanbanLayoutRestored &&
+    taskBoardListPreferencesReady &&
+    (localTaskState || !pinnedSpecialListsPending) &&
+    (localTaskState ||
+      ((!shouldEagerLoadTasks || !isFullTasksPending) &&
+        ((!hasTaskFilters &&
+          !filters.hideEmptyTaskLists &&
+          !autoCollapseEmptyTaskLists) ||
+          !isFilteredListCountsPending)));
+
+  const recordManualCollapseChange = useAutoCollapseEmptyTaskLists({
+    collapsed: taskListsCollapsed,
+    enabled: autoCollapseEmptyTaskLists,
+    listCounts: localTaskState ? null : filteredListCounts,
+    lists: boardLists,
+    manualCollapsePreferences: taskListCollapsePreferences,
+    setCollapsed: setTaskListsCollapsed,
+  });
+  manualCollapseChangeRef.current = recordManualCollapseChange;
 
   const locallyFilteredTasks = useMemo(
     () =>
       sortLocalTasks(
         tasks.filter((task) =>
-          taskMatchesLocalFilters(task, filters, currentUserId)
+          taskMatchesLocalFilters(
+            task,
+            filters,
+            currentUserId,
+            board.ticket_prefix
+          )
         ),
         filters.sortBy
       ),
-    [currentUserId, filters, tasks]
+    [board.ticket_prefix, currentUserId, filters, tasks]
   );
 
   const localListCounts = useMemo(() => {
@@ -907,7 +734,6 @@ export function BoardViews({
     locallyFilteredTasks,
   ]);
 
-  // Filter lists based on selected status filter
   const statusFilteredLists = useMemo(() => {
     if (listStatusFilter === 'all') return activeLists;
 
@@ -985,7 +811,6 @@ export function BoardViews({
     tasks,
   ]);
 
-  // Keep only tasks that belong to the server-visible lists/status scope.
   const filteredTasks = useMemo(() => {
     const listIds = new Set(filteredLists.map((list) => list.id));
     return isExternalSourceScope
@@ -1007,8 +832,8 @@ export function BoardViews({
 
     tasks = tasks.filter((task) => !task.deleted_at);
 
-    return tasks;
-  }, [filteredTasks, taskOverrides]);
+    return sortLocalTasks(tasks, filters.sortBy);
+  }, [filteredTasks, filters.sortBy, taskOverrides]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({
@@ -1123,7 +948,6 @@ export function BoardViews({
       preventDefault: true,
     }
   );
-
   const renderView = () => {
     switch (currentView) {
       case 'kanban':
@@ -1137,6 +961,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            onFiltersChange={setFilters}
             deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
@@ -1267,73 +1092,48 @@ export function BoardViews({
             wsId={effectiveWorkspaceId}
           />
         );
-      default:
-        return (
-          <KanbanBoard
-            workspace={workspace}
-            workspaceTier={workspaceTier}
-            workspaceId={effectiveWorkspaceId}
-            boardId={board.id}
-            tasks={effectiveTasks}
-            lists={filteredLists}
-            isLoading={false}
-            disableSort={!!filters.sortBy}
-            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
-            listStatusFilter={listStatusFilter}
-            filters={filters}
-            isMultiSelectMode={readOnly ? false : isMultiSelectMode}
-            setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
-            onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
-            onTaskListCollapsedChange={handleTaskListCollapsedChange}
-            deadlineSectionsCollapsed={effectiveDeadlineSectionsCollapsed}
-            onDeadlineSectionCollapsedChange={
-              handleDeadlineSectionCollapsedChange
-            }
-            specialTaskListPins={specialTaskListPins}
-            onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
-            onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
-            canUseBoardAssignees={boardAssigneesEnabled}
-            assigneeMemberSource={assigneeMemberSource}
-            readOnly={readOnly}
-          />
-        );
     }
   };
-
   const showIdleBottomIsland =
     !readOnly &&
-    !!idleBottomIsland &&
+    idleBottomIsland &&
     (currentView !== 'kanban' || !kanbanBulkSelectionActive);
-
   return (
     <div className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
-      <BoardHeader
-        workspaceId={effectiveWorkspaceId}
-        board={board}
-        currentUserId={currentUserId}
+      <KanbanPresentation
+        boardId={board.id}
         currentView={currentView}
-        onViewChange={handleViewChange}
-        viewHotkeyLabels={viewHotkeyLabels}
-        filters={filters}
-        onFiltersChange={setFilters}
-        listStatusFilter={listStatusFilter}
-        onListStatusFilterChange={setListStatusFilter}
-        isPersonalWorkspace={workspace.personal}
-        isSearching={
-          !localTaskState &&
-          (isFullTasksFetching || isFilteredListCountsFetching)
+        header={
+          <BoardHeader
+            workspaceId={effectiveWorkspaceId}
+            board={board}
+            currentUserId={currentUserId}
+            currentView={currentView}
+            onViewChange={handleViewChange}
+            viewHotkeyLabels={viewHotkeyLabels}
+            filters={filters}
+            onFiltersChange={setFilters}
+            listStatusFilter={listStatusFilter}
+            onListStatusFilterChange={setListStatusFilter}
+            isPersonalWorkspace={workspace.personal}
+            isSearching={
+              !localTaskState &&
+              (isFullTasksFetching || isFilteredListCountsFetching)
+            }
+            onUpdate={handleUpdate}
+            isMultiSelectMode={readOnly ? false : isMultiSelectMode}
+            setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
+            availableViews={enabledViews ?? undefined}
+            hideActions={!canManageBoard || readOnly}
+            publicView={publicView}
+            readOnly={readOnly}
+            titlePrefix={publicHeaderPrefix}
+          />
         }
-        lists={boardLists}
-        onUpdate={handleUpdate}
-        isMultiSelectMode={readOnly ? false : isMultiSelectMode}
-        setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
-        availableViews={enabledViews ?? undefined}
-        hideActions={!canManageBoard || readOnly}
-        publicView={publicView}
-        readOnly={readOnly}
-        titlePrefix={publicHeaderPrefix}
-      />
-      <div className="h-full overflow-hidden">{renderView()}</div>
+        initialLayoutReady={initialKanbanLayoutReady}
+      >
+        {renderView()}
+      </KanbanPresentation>
       {showIdleBottomIsland ? idleBottomIsland : null}
     </div>
   );

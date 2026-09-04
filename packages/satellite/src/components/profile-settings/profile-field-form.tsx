@@ -10,6 +10,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { satelliteProfileQueryKey } from './profile-avatar-editor';
@@ -28,6 +29,7 @@ export function ProfileFieldForm({
   const t = useTranslations('settings-account');
   const commonT = useTranslations('common');
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [value, setValue] = useState(initialValue ?? '');
   useEffect(() => setValue(initialValue ?? ''), [initialValue]);
 
@@ -50,6 +52,8 @@ export function ProfileFieldForm({
       await queryClient.invalidateQueries({
         queryKey: [...satelliteProfileQueryKey],
       });
+      // User nav and app-shell metadata come from the server-rendered user.
+      router.refresh();
     },
   });
   const isDirty = value.trim() !== (initialValue ?? '').trim();

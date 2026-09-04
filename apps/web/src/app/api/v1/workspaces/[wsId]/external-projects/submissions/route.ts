@@ -13,6 +13,11 @@ import {
 import { createWorkspaceExternalProjectEntry } from '@/lib/external-projects/store';
 
 const CONTACT_SUBMISSIONS_COLLECTION_SLUG = 'contact-submissions';
+const ENTRY_SLUG_MAX_LENGTH = 80;
+const ENTRY_SUMMARY_MAX_LENGTH = 512;
+const SUBMISSION_SLUG_SUFFIX_LENGTH = 8;
+const SUBMISSION_SLUG_BASE_MAX_LENGTH =
+  ENTRY_SLUG_MAX_LENGTH - SUBMISSION_SLUG_SUFFIX_LENGTH - 1;
 
 const submissionSchema = z.object({
   appId: z.string().trim().toLowerCase().default('richfield'),
@@ -38,13 +43,37 @@ const submissionSchema = z.object({
  * mandatory; without one, submissions still flow, so turning Turnstile on is a
  * matter of setting the secret rather than redeploying every site.
  */
-async function verifySubmissionTurnstile(request: Request, token?: string) {
-  if (!process.env.TURNSTILE_SECRET_KEY) {
+function getSubmissionTurnstileSecret(appId: string) {
+  if (appId === 'richfield') {
+    return (
+      process.env.TURNSTILE_SECRET_KEY_RICHFIELD ??
+      process.env.TURNSTILE_SECRET_KEY
+    );
+  }
+
+  return process.env.TURNSTILE_SECRET_KEY;
+}
+
+async function verifySubmissionTurnstile(
+  request: Request,
+  token: string | undefined,
+  appId: string
+) {
+  const secretKey = getSubmissionTurnstileSecret(appId);
+  if (!secretKey) {
     return null;
   }
 
   try {
-    await verifyTurnstileToken(request, token);
+    // This request is relayed by the authenticated external app's server, so
+    // its forwarding headers describe the relay rather than the browser that
+    // completed the challenge. Cloudflare treats remoteip as optional; omit it
+    // here and verify the signed token itself instead of binding it to the
+    // wrong machine.
+    await verifyTurnstileToken(request, token, {
+      includeRemoteIp: false,
+      secretKey,
+    });
     return null;
   } catch (error) {
     if (isTurnstileError(error)) {
@@ -177,7 +206,11 @@ function slugifySubmission(value: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
+    .slice(0, SUBMISSION_SLUG_BASE_MAX_LENGTH);
+}
+
+function summarizeSubmissionMessage(message: string) {
+  return Array.from(message).slice(0, ENTRY_SUMMARY_MAX_LENGTH).join('');
 }
 
 const EMAIL_NOTIFICATION_STATUSES = ['pending', 'sent', 'failed'] as const;
@@ -287,7 +320,8 @@ export async function POST(
     // Turnstile is on) but before anything is written.
     const turnstileFailure = await verifySubmissionTurnstile(
       request,
-      payload.turnstileToken
+      payload.turnstileToken,
+      payload.appId
     );
 
     if (turnstileFailure) return turnstileFailure;
@@ -316,6 +350,7 @@ export async function POST(
           email: payload.email,
           emailNotificationStatus: 'pending',
           inquiryType: payload.inquiryType,
+          message: payload.message,
           name: payload.name,
           receivedAt,
           submissionStatus: 'new',
@@ -324,7 +359,7 @@ export async function POST(
         slug,
         status: 'draft',
         subtitle: payload.email,
-        summary: payload.message,
+        summary: summarizeSubmissionMessage(payload.message),
         title: `${payload.company} - ${payload.name}`,
         workspaceId: wsId,
       },

@@ -1,11 +1,6 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { SEAT_ACTIVE_STATUSES } from '@tuturuuu/payment-core/subscription-constants';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -18,19 +13,6 @@ import { NextResponse } from 'next/server';
  * authorizing) through it alone silently rejects valid callers. Prefer the app
  * session and fall back to the Supabase cookie session.
  */
-async function resolveSeatsActor(request: Request) {
-  const appSessionUser = getAppSessionUserFromRequest(request, {
-    targetApp: ['pay', 'platform'],
-  });
-
-  if (appSessionUser) return appSessionUser;
-
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  return user;
-}
-
 /**
  * GET /api/payment/seats?wsId=xxx
  * Get current seat status for a workspace
@@ -47,13 +29,12 @@ export async function GET(req: Request) {
       );
     }
 
-    const sbAdmin = await createAdminClient();
-
     // Verify user has access to the workspace
-    const user = await resolveSeatsActor(req);
-    if (!user) {
+    const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+    if (!actor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const { admin: sbAdmin, user } = actor;
 
     // Authorize with the admin client filtered by the authenticated user id:
     // the cookie client is anonymous for app-session callers.
@@ -143,13 +124,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const sbAdmin = await createAdminClient();
-
     // Verify user is authenticated and has permission
-    const user = await resolveSeatsActor(req);
-    if (!user) {
+    const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+    if (!actor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const { admin: sbAdmin, user } = actor;
 
     // Check if user is the workspace creator (has billing permission)
     const { data: workspace } = await sbAdmin

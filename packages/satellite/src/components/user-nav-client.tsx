@@ -405,7 +405,10 @@ export default function UserNavClient({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <SatelliteAccountSwitcherMenu centralUrl={centralUrl} />
+                <SatelliteAccountSwitcherMenu
+                  centralUrl={centralUrl}
+                  workspaceId={workspaceSelector?.workspace.id}
+                />
               </DropdownMenuGroup>
             </>
           )}

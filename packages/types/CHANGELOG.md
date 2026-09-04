@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/types-v0.27.0...types-v0.28.0) (2026-08-26)
+
+
+### Features
+
+* **forms:** add landing page and per-form SEO controls ([99c5fda](https://github.com/tutur3u/platform/commit/99c5fda3a7d15649a3571b9ccc72759cd815a7ec))
+* **forms:** add landing page, per-form SEO, realtime collaboration, and embeds ([#5145](https://github.com/tutur3u/platform/issues/5145)) ([6896515](https://github.com/tutur3u/platform/commit/6896515b099b28bbebc873f98733879bf108ef89))
+* **forms:** add realtime studio collaboration ([1110c36](https://github.com/tutur3u/platform/commit/1110c36ef68081e6d181b32491f44ff814bc43e0))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/types-v0.26.0...types-v0.27.0) (2026-08-06)
 
 

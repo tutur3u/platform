@@ -3,6 +3,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it } from 'vitest';
 import {
   getTaskCardHydratingOpenOptions,
+  getTaskCardTicketIdentifier,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
 
@@ -162,5 +163,41 @@ describe('getTaskCardHydratingOpenOptions', () => {
         personal_list_id: 'list-1',
       })
     ).toBe(false);
+  });
+});
+
+describe('getTaskCardTicketIdentifier', () => {
+  it('waits for local board metadata instead of flashing the generic prefix', () => {
+    expect(
+      getTaskCardTicketIdentifier({
+        boardConfig: undefined,
+        isExternalTask: false,
+        task,
+      })
+    ).toBeNull();
+  });
+
+  it('uses cached local and embedded external prefixes immediately', () => {
+    expect(
+      getTaskCardTicketIdentifier({
+        boardConfig: {
+          id: 'board-1',
+          ws_id: 'workspace-1',
+          ticket_prefix: 'VHP',
+          estimation_type: null,
+          extended_estimation: false,
+          allow_zero_estimates: false,
+        },
+        isExternalTask: false,
+        task,
+      })
+    ).toBe('VHP-7');
+    expect(
+      getTaskCardTicketIdentifier({
+        boardConfig: undefined,
+        isExternalTask: true,
+        task: { ...task, ticket_prefix: 'EXT' } as Task,
+      })
+    ).toBe('EXT-7');
   });
 });

@@ -546,6 +546,22 @@
     "reports": "Báo cáo",
     "settings": "Cài đặt"
   },
+  "notifications": {
+    "accept": "Chấp nhận",
+    "archive": "Lưu trữ",
+    "archive-all": "Lưu trữ tất cả",
+    "decline": "Từ chối",
+    "empty-archive": "Chưa có thông báo đã lưu trữ.",
+    "inbox": "Hộp thư",
+    "invited-to": "Bạn đã được mời tham gia",
+    "loading-more": "Đang tải thêm...",
+    "mark-as-read": "Đánh dấu đã đọc",
+    "mark-as-unread": "Đánh dấu chưa đọc",
+    "no-notifications": "Bạn không có thông báo nào.",
+    "notifications": "Thông báo",
+    "view-all": "Xem tất cả thông báo",
+    "workspace-invite": "Lời mời tham gia"
+  },
   "onboarding_guide": {
     "close": "Đóng hướng dẫn",
     "confirmation_note": "Gửi, xuất bản, thay đổi nhà cung cấp, thanh toán và thao tác AI có phí luôn yêu cầu xác nhận rõ ràng.",
@@ -694,22 +710,6 @@
     "switcher": "Workspace",
     "untitled": "Workspace giáo dục"
   },
-  "notifications": {
-    "accept": "Chấp nhận",
-    "archive": "Lưu trữ",
-    "archive-all": "Lưu trữ tất cả",
-    "decline": "Từ chối",
-    "empty-archive": "Chưa có thông báo đã lưu trữ.",
-    "inbox": "Hộp thư",
-    "invited-to": "Bạn đã được mời tham gia",
-    "loading-more": "Đang tải thêm...",
-    "mark-as-read": "Đánh dấu đã đọc",
-    "mark-as-unread": "Đánh dấu chưa đọc",
-    "no-notifications": "Bạn không có thông báo nào.",
-    "notifications": "Thông báo",
-    "view-all": "Xem tất cả thông báo",
-    "workspace-invite": "Lời mời tham gia"
-  },
   "workspace-invitation": {
     "accept": "Chấp nhận lời mời",
     "accept-error": "Không thể chấp nhận lời mời",
@@ -734,11 +734,33 @@
     "start_date_required": "Vui lòng chọn ngày bắt đầu"
   },
   "ws-members": {
+    "assign_invitation_role": "Gán vai trò",
+    "clear_all_roles": "Xóa tất cả",
     "guest_self_join_description": "Cho phép người dùng đã đăng nhập có email khớp hồ sơ trong không gian làm việc tham gia với vai trò khách.",
     "guest_self_join_label": "Bật tham gia khách bằng khớp email",
     "guest_self_join_update_error": "Không thể cập nhật cài đặt tham gia khách.",
     "guest_self_join_update_success": "Đã cập nhật cài đặt tham gia khách.",
-    "invite_membership_label": "Quyền truy cập"
+    "invitation_role": "Vai trò khi mời",
+    "invitation_role_helper": "Vai trò này sẽ được áp dụng khi người này chấp nhận lời mời.",
+    "invitation_role_updated": "Đã cập nhật vai trò của lời mời",
+    "invite_access_guest_tab": "Khách",
+    "invite_access_member_tab": "Thành viên",
+    "invite_access_pos_tab": "POS",
+    "invite_access_title": "Quyền truy cập và vai trò",
+    "invite_emails_helper": "Phân tách nhiều địa chỉ bằng dấu phẩy, khoảng trắng hoặc dòng mới.",
+    "invite_emails_label": "Địa chỉ email",
+    "invite_membership_guest_description": "Quyền truy cập khách hạn chế, không có vai trò không gian làm việc.",
+    "invite_membership_label": "Quyền truy cập",
+    "invite_membership_member_description": "Thành viên đầy đủ của không gian làm việc với các vai trò tùy chọn.",
+    "invite_recipients_title": "Người nhận",
+    "invite_roles_description": "Gán một hoặc nhiều vai trò ngay bây giờ. Bạn có thể thay đổi khi lời mời đang chờ.",
+    "invite_roles_no_match": "Không có vai trò nào khớp với tìm kiếm.",
+    "invite_roles_optional": "Không bắt buộc",
+    "invite_roles_search": "Tìm kiếm vai trò trong không gian làm việc...",
+    "no_role_assigned": "Chưa gán vai trò",
+    "no_roles_assigned": "Chưa gán vai trò nào",
+    "recipients_count": "{count} người nhận",
+    "roles_selected": "Đã chọn {count} vai trò"
   },
   "ws-roles": {
     "manage_git_repositories": "Quản lý kho mã Git",
@@ -758,6 +780,14 @@
     "name_update_error": "Không thể cập nhật tên không gian làm việc",
     "name_updated": "Đã cập nhật tên không gian làm việc",
     "save_changes": "Lưu thay đổi"
+  },
+  "ws-task-boards": {
+    "manual_ordering_disabled": {
+      "description": "Công việc đang được sắp xếp theo một tiêu chí nên thao tác kéo không thể thay đổi thứ tự thủ công. Hãy chuyển sang sắp xếp thủ công để sắp xếp lại.",
+      "keep_sorting": "Giữ cách sắp xếp hiện tại",
+      "title": "Sắp xếp thủ công đang tạm dừng",
+      "use_manual": "Dùng thứ tự thủ công"
+    }
   },
   "ws-task-templates": {
     "actions": {

@@ -1,5 +1,5 @@
 import '@/lib/dayjs-setup';
-import { NextIntlClientProvider } from 'next-intl';
+import { type AbstractIntlMessages, NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './client-providers';
@@ -26,10 +26,16 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({
+  children,
+  messages,
+}: {
+  children: ReactNode;
+  messages?: Record<string, unknown>;
+}) {
   return (
     <QueryProvider>
-      <NextIntlClientProvider>
+      <NextIntlClientProvider messages={messages as AbstractIntlMessages}>
         <ClientProviders>{children}</ClientProviders>
       </NextIntlClientProvider>
     </QueryProvider>

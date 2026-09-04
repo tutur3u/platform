@@ -12,13 +12,17 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
 - **Priority:** P0
 - **Effort:** M
 - **Risk:** MED
 - **Category:** Security / Correctness / Nova
 - **Depends on:** Plan 013
 - **Planned at:** commit `68a1457aed`, 2026-08-10
+
+Execution is blocked while Plan 013's reviewed authorization foundation remains
+uncommitted behind the mandatory Nova build gate. Do not duplicate or bypass
+that helper work in this broader submission plan.
 
 ## Why this matters
 
@@ -84,9 +88,9 @@ structure is exemplified by
 | Auth helper | `bun --cwd apps/nova vitest run src/lib/nova-submission-auth.test.ts` | exit 0; owner/manager/denial matrix passes |
 | Submission routes | `bun --cwd apps/nova vitest run 'src/app/api/v1/submissions/[submissionId]/route.test.ts' 'src/app/api/v1/submissions/[submissionId]/criteria/route.test.ts' 'src/app/api/v1/submissions/[submissionId]/test-cases/route.test.ts'` | exit 0; unauthorized queries/mutations are never reached |
 | Server actions | `bun --cwd apps/nova vitest run 'src/app/[locale]/(dashboard)/shared/actions.test.ts' 'src/app/[locale]/(dashboard)/challenges/[challengeId]/results/actions.test.ts'` | exit 0; hidden/target-user access is server-authorized |
-| Typecheck | `bun --cwd apps/nova run type-check` | exit 0 |
+| Typecheck | `bun run --cwd apps/nova type-check` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Nova build | `bun --cwd apps/nova run build` | exit 0; changed routes/actions compile |
+| Nova build | `bun run --cwd apps/nova build` | exit 0; changed routes/actions compile |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

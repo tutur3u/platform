@@ -12,21 +12,21 @@ const mocks = vi.hoisted(() => {
 
   return {
     AiCreditsStatusError,
-    createAdminClient: vi.fn(),
     getAiCreditsStatus: vi.fn(),
-    getAppSessionUserFromRequest: vi.fn(),
+    resolveSatelliteRequestActor: vi.fn(),
+    resolveWorkspaceIdForPrincipal: vi.fn(),
   };
 });
 
-vi.mock('@tuturuuu/auth/app-session', () => ({
-  getAppSessionUserFromRequest: mocks.getAppSessionUserFromRequest,
-}));
 vi.mock('@tuturuuu/payment-core', () => ({
   AiCreditsStatusError: mocks.AiCreditsStatusError,
   getAiCreditsStatus: mocks.getAiCreditsStatus,
 }));
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: mocks.createAdminClient,
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  resolveSatelliteRequestActor: mocks.resolveSatelliteRequestActor,
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  resolveWorkspaceIdForPrincipal: mocks.resolveWorkspaceIdForPrincipal,
 }));
 
 import { GET } from './route';
@@ -35,8 +35,11 @@ const context = { params: Promise.resolve({ wsId: 'ws-1' }) };
 
 describe('GET Pay workspace AI credits', () => {
   beforeEach(() => {
-    mocks.getAppSessionUserFromRequest.mockReturnValue({ id: 'user-1' });
-    mocks.createAdminClient.mockResolvedValue({ id: 'admin' });
+    mocks.resolveSatelliteRequestActor.mockResolvedValue({
+      admin: { id: 'admin' },
+      user: { id: 'user-1' },
+    });
+    mocks.resolveWorkspaceIdForPrincipal.mockResolvedValue('ws-1');
     mocks.getAiCreditsStatus.mockResolvedValue({
       remaining: 850,
       tier: 'FREE',
@@ -51,9 +54,9 @@ describe('GET Pay workspace AI credits', () => {
     const response = await GET(new Request('https://pay.test'), context);
 
     expect(response.status).toBe(200);
-    expect(mocks.getAppSessionUserFromRequest).toHaveBeenCalledWith(
+    expect(mocks.resolveSatelliteRequestActor).toHaveBeenCalledWith(
       expect.any(Request),
-      { targetApp: ['pay', 'platform'] }
+      ['pay', 'platform']
     );
     expect(mocks.getAiCreditsStatus).toHaveBeenCalledWith({
       accessClient: { id: 'admin' },
@@ -65,7 +68,7 @@ describe('GET Pay workspace AI credits', () => {
   });
 
   it('returns 401 without a verified app session', async () => {
-    mocks.getAppSessionUserFromRequest.mockReturnValue(null);
+    mocks.resolveSatelliteRequestActor.mockResolvedValue(null);
 
     const response = await GET(new Request('https://pay.test'), context);
 

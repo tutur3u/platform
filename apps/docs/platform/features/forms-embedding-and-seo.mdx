@@ -1,0 +1,237 @@
+---
+title: 'Forms: question types, embedding, SEO, and collaboration'
+description: 'The question types a form can ask, how to embed one in a third-party page, how to control its search and social metadata, and how the studio shares editing presence.'
+updatedAt: '2026-08-26'
+---
+
+## TL;DR
+
+`apps/forms` (`forms.tuturuuu.com`, port `7828`) owns the whole forms product.
+Three surfaces are worth knowing about before you touch it:
+
+- **Question types** — twenty block types, of which fifteen collect an answer.
+- **Embedding** — six modes driven by a dependency-free SDK at `/embed.js`,
+  rendered by the `/embed/<shareCode>` route.
+- **SEO** — per-form overrides stored in `private.forms.seo`, applied to
+  `/f/<shareCode>` metadata.
+- **Realtime collaboration** — presence and broadcast on a private
+  `form-studio-<formId>` channel, never `postgres_changes`.
+
+## Question types
+
+Registered in `FORM_QUESTION_TYPE_VALUES` (`schema.ts`) and grouped in
+`block-utils.ts`. Adding a type means adding it to the enum, to the right
+grouping, to the icon map, and to the studio's block catalog — the type system
+enforces the icon map, but not the other three.
+
+### Text inputs
+
+`short_text`, `email`, `phone`, `number` and `url` render one line and differ
+only in what the browser is told. That mapping is most of the mobile
+experience: `inputMode` picks the on-screen keyboard and `autoComplete` decides
+whether the field can be filled from saved contact details.
+
+<Note>
+  `number` uses `inputMode="decimal"`, not `"numeric"`. `numeric` hides the
+  decimal point on iOS, which silently makes non-integer answers untypeable.
+</Note>
+
+These types validate themselves. `getIntrinsicValidationMode()` maps the type
+to a rule that applies whether or not the author opened the validation panel; an
+author-chosen `validationMode` layers on top rather than replacing it, so a
+`number` with a regex still has to be a number.
+
+A `url` must be `http(s)` with a dotted host. Bare `new URL()` accepts
+`javascript:` and `mailto:`, which are not links a respondent can follow.
+
+`number` also takes a `numberStep`, measured **from the minimum** rather than
+from zero, so a "1, 3, 5…" question works. The multiple-of check compares
+against both ends of the step because floating-point modulo is inexact —
+`0.3 % 0.1` is 0.0999…, and a naive check rejects a value the author considers
+exact.
+
+### NPS
+
+Fixed at 0-10 by the metric's definition, so unlike `linear_scale` the bounds
+are **not** author-editable — only the anchor labels are. A scale labelled NPS
+that runs 1-5 is not comparable to one that does not.
+
+Scores band the standard way: 0-6 detractor, 7-8 passive, 9-10 promoter.
+Analytics reports the real score — promoters minus detractors as a percentage
+of all responses, with passives counting toward the denominator only — under
+`analytics.nps`, separate from `meanScore` because it is not an average.
+
+The runtime renders a native `<fieldset>` of radios rather than styled buttons
+with ARIA roles, so arrow-key navigation, the group label and the disabled
+cascade come from the platform.
+
+### Ranking
+
+Reorderable options whose answer is the resulting order, stored as an ordered
+array of option values.
+
+<Warning>
+  The answer is written only once the respondent moves something. Seeding it
+  with the author's order would mark an untouched ranking as answered — a
+  required question would pass with nobody having ranked anything, and every
+  indifferent response would silently agree with the author.
+</Warning>
+
+Reordering uses dnd-kit (already the studio's idiom) rather than native HTML5
+drag, which does not fire on touch at all. Move up/down buttons sit alongside
+the drag handle so the question works by keyboard and screen reader, and only
+the handle is draggable so taps on those buttons are not swallowed.
+
+Stored answers survive the author editing the options later: unknown values are
+dropped and new options appended, so an old answer still renders instead of
+collapsing to an empty list.
+
+Analytics ranks by mean position, best first, and sorts an option nobody ranked
+to the bottom — reporting its average as `0` would float it to the top as if it
+were everyone's first choice. Formatted answers are numbered
+(`1. Price, 2. Speed`) because the order is the entire answer, and a plain
+comma-separated list renders "B, A" and "A, B" identically in an export.
+
+## Embedding
+
+The studio's embed panel generates the snippet; this is what it emits and why.
+
+### Script SDK (preferred)
+
+```html
+<script src="https://forms.tuturuuu.com/embed.js" async></script>
+<div data-tuturuuu-form="<shareCode>" data-mode="inline"></div>
+```
+
+The SDK scans for `data-tuturuuu-form` elements, mounts an iframe pointed at
+`/embed/<shareCode>`, and marks the container `data-tuturuuu-form-mounted` so a
+re-run cannot double-mount it.
+
+| Attribute | Applies to | Default | Meaning |
+| --- | --- | --- | --- |
+| `data-tuturuuu-form` | all | — | The form's share code. Required. |
+| `data-mode` | all | `inline` | `inline`, `fullpage`, `popup`, `slider`, `popover`, or `sidetab`. |
+| `data-height` | inline modes | `520` | Fixed pixel height. Omit to let the embed auto-size. |
+| `data-min-height` | auto-sizing inline | `320` | Shortest the embed shrinks to while auto-sizing. Ignored when `data-height` is set. |
+| `data-title` | all | — | `title` on the generated iframe, for screen readers. |
+| `data-launcher-text` | overlay modes | localized default | Launcher button label. |
+| `data-launcher-color` | overlay modes | `#6d28d9` | Launcher button background. |
+| `data-open` | overlay modes | `false` | `true` opens the overlay on load. |
+| `data-close-on-submit` | overlay modes | `true` | `false` keeps the overlay open after submit. |
+
+An auto-sizing embed never renders shorter than `data-min-height`. The default
+of 320px is the smallest height at which a single question stays answerable
+without scrolling inside the frame — the previous floor was 120px, which
+predates one-question-at-a-time forms and left the host page showing a sliver.
+
+`inline` and `fullpage` render in place. `popup`, `slider`, `popover`, and
+`sidetab` are overlay modes: they render a launcher and only mount the form when
+it opens.
+
+### Iframe fallback
+
+Hosts that forbid third-party scripts (locked-down CMSes, most email-adjacent
+tools) can use a plain iframe. It loses auto-resize, so give it a height:
+
+```html
+<iframe src="https://forms.tuturuuu.com/embed/<shareCode>"
+  title="Form" width="100%" height="640" style="border:0"></iframe>
+```
+
+### The framing exception
+
+Framing is denied platform-wide by `createTuturuuuNextConfig`
+(`frame-ancestors 'none'` plus `X-Frame-Options: DENY`). `X-Frame-Options` has no
+"allow from any origin" value, so a later permissive header cannot override the
+deny — the header has to be **absent** instead.
+
+`createTuturuuuNextConfig` therefore accepts `framablePathPatterns`, and builds
+the anti-framing `source` as a negative lookahead over every framable path:
+
+```ts
+// apps/forms/next.config.ts
+createTuturuuuNextConfig({
+  framablePathPatterns: ['embed/[^/]+'],
+});
+```
+
+Opt in per route, never per app. Everything not listed stays denied.
+
+`apps/forms/src/proxy.ts` must also treat `/embed/` as public, or the embed
+redirects to login *inside the host's iframe*.
+
+### Host-page messages
+
+The embed posts `window.postMessage` events the SDK listens for. The contract
+lives in `apps/forms/src/features/forms/embed/protocol.ts` and is shared by the
+React page and `public/embed.js` so the two cannot drift.
+
+Every message carries `source: 'tuturuuu-forms'`; verify it before acting, since
+a host page may run other iframes.
+
+| `type` | Payload | Meaning |
+| --- | --- | --- |
+| `ready` | — | The embed mounted and can be shown. |
+| `resize` | `height` (CSS px) | Content height changed; resize the iframe. |
+| `submitted` | — | The respondent submitted; overlay modes may auto-dismiss. |
+
+## Per-form SEO
+
+`private.forms.seo` is a `jsonb` column (constrained to an object) holding
+optional overrides. Every key is optional, and an empty string or `false` means
+"fall back to the value derived from the form's content":
+
+- `title`, `description` — override the derived page and social title/description
+- `image` — `{ storagePath, url, alt }` for the social card
+- `keywords` — `text[]`, replaces the derived list
+- `canonicalUrl` — points crawlers at a different canonical
+- `noIndex` — emits `noindex,nofollow`
+
+It is a single `jsonb` column, matching the existing `settings` and `theme`
+columns on the same table, so adding a field later needs no migration.
+
+The studio's SEO panel renders a live search-result preview showing where Google
+truncates each field.
+
+## Studio collaboration
+
+The studio joins a **private** Supabase Realtime channel per form, topic
+`form-studio-<formId>`, carrying presence (who is here, which block they are on)
+and broadcasts (someone saved).
+
+It uses broadcast and presence rather than `postgres_changes` because the forms
+tables live in the Postgres `private` schema with service-role-only access. They
+are deliberately off the public Data API, so a browser client cannot subscribe to
+row changes on them at all.
+
+Access is authorized by `private.can_join_form_realtime_topic(topic, user_id)`,
+which resolves the form from the topic suffix and defers to
+`public.has_workspace_permission(ws_id, user_id, 'manage_forms')`. Presence is
+gated on the same permission the studio itself requires: analysts who can only
+read responses have no reason to appear in an editing session, and would leak
+their identity to editors if they did.
+
+<Warning>
+`apps/forms` is a registered satellite app, so the `internal-app-auth` guard
+forbids `supabase.auth.*` inside it. Resolve identity server-side with
+`getSatelliteAppSessionUser('forms')` and pass the id down as a prop, and take
+the realtime client from `@tuturuuu/supabase/next/realtime-browser`.
+</Warning>
+
+When a remote save arrives, the studio refetches immediately **only if your copy
+is clean**. If you have unsaved edits it raises a reload prompt instead —
+refetching blindly would discard your work.
+
+## Gotchas worth carrying elsewhere
+
+<Warning>
+`packages/satellite` is **not** in Tailwind's content scan set. Classes used only
+from that package emit no CSS at all, so the markup renders unstyled and
+invisible rather than failing loudly. Shared presentational code that needs
+Tailwind belongs in `packages/ui` — that is why the marketing kit lives at
+`@tuturuuu/ui/marketing`.
+</Warning>
+
+Calling `connection()` at the root of a marketing page forces the entire page
+dynamic. Scope it to the session-dependent subtree instead, so the static shell
+still prerenders.

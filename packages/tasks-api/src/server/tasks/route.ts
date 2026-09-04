@@ -16,11 +16,11 @@ import {
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import {
-  calculateTopSortKey,
   getPersonalExternalStagingBoardId,
   getPersonalExternalStagingListId,
-  getSortKeyConfig,
-  SortKeyGapExhaustedError,
+  parseTaskSortBy,
+  sortTasksByCriterion,
+  type TaskSortBy,
 } from '@tuturuuu/utils/task-helper';
 import {
   isTaskBoardCompletedStatus,
@@ -40,6 +40,7 @@ import {
   loadTaskCapacityWarnings,
   parseTaskCapacityViolation,
 } from '../capacity';
+import { resolveCreateTaskSortKey } from './create-sort-key';
 import { generateTaskEmbedding } from './generate-task-embedding';
 import {
   buildTaskRelationshipSummary,
@@ -124,11 +125,6 @@ const CreateTaskSchema = z.object({
   auto_schedule: z.boolean().nullable().optional(),
 });
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
-type TaskSortKeyRow = Pick<
-  Database['public']['Tables']['tasks']['Row'],
-  'created_at' | 'id' | 'sort_key'
->;
-
 function parseTaskIdentifierQuery(identifier: string) {
   const normalized = identifier.trim().toUpperCase();
 
@@ -188,173 +184,12 @@ type TaskSchedulingSettingsRow = {
   auto_schedule: boolean | null;
 };
 
-async function loadFirstActiveTaskSortKey(
-  sbAdmin: TypedSupabaseClient,
-  listId: string
-): Promise<{
-  error: unknown | null;
-  task: Pick<TaskSortKeyRow, 'sort_key'> | null;
-}> {
-  const { data, error } = await sbAdmin
-    .from('tasks')
-    .select('sort_key')
-    .eq('list_id', listId)
-    .is('deleted_at', null)
-    .order('sort_key', { ascending: true, nullsFirst: false })
-    .limit(1)
-    .maybeSingle();
-
-  return {
-    error,
-    task: error
-      ? null
-      : ((data as Pick<TaskSortKeyRow, 'sort_key'> | null) ?? null),
-  };
-}
-
-function sortTaskSortKeyRows(tasks: TaskSortKeyRow[]) {
-  return [...tasks].sort((a, b) => {
-    const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
-    const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
-    if (sortA !== sortB) return sortA - sortB;
-    const createdAtA = a.created_at ? Date.parse(a.created_at) : 0;
-    const createdAtB = b.created_at ? Date.parse(b.created_at) : 0;
-    return createdAtA - createdAtB;
-  });
-}
-
-async function normalizeTaskListSortKeysForCreate(
-  sbAdmin: TypedSupabaseClient,
-  listId: string
-) {
-  const { data, error } = await sbAdmin
-    .from('tasks')
-    .select('id, sort_key, created_at')
-    .eq('list_id', listId)
-    .is('deleted_at', null)
-    .order('sort_key', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: true });
-
-  if (error) {
-    return error;
-  }
-
-  const tasks = sortTaskSortKeyRows((data ?? []) as TaskSortKeyRow[]);
-  if (tasks.length === 0) {
-    return null;
-  }
-
-  const { BASE_UNIT } = getSortKeyConfig();
-  const updates = tasks.map((task, index) => ({
-    id: task.id,
-    sort_key: (index + 1) * BASE_UNIT,
-  }));
-
-  const concurrency = 5;
-  for (let index = 0; index < updates.length; index += concurrency) {
-    const chunk = updates.slice(index, index + concurrency);
-    const results = await Promise.all(
-      chunk.map((update) =>
-        sbAdmin
-          .from('tasks')
-          .update({ sort_key: update.sort_key })
-          .eq('id', update.id)
-      )
-    );
-
-    const failedResult = results.find((result) => result.error);
-    if (failedResult?.error) {
-      return failedResult.error;
-    }
-  }
-
-  return null;
-}
-
-async function resolveCreateTaskSortKey(
-  sbAdmin: TypedSupabaseClient,
-  listId: string
-): Promise<{ error: unknown | null; sortKey: number | null }> {
-  const { MIN_GAP } = getSortKeyConfig();
-  let firstTaskResult = await loadFirstActiveTaskSortKey(sbAdmin, listId);
-
-  if (firstTaskResult.error) {
-    return { error: firstTaskResult.error, sortKey: null };
-  }
-
-  const firstSortKey = firstTaskResult.task?.sort_key ?? null;
-  const shouldNormalizeBeforeInsert =
-    typeof firstSortKey === 'number' && firstSortKey <= MIN_GAP;
-
-  if (shouldNormalizeBeforeInsert) {
-    const normalizationError = await normalizeTaskListSortKeysForCreate(
-      sbAdmin,
-      listId
-    );
-    if (normalizationError) {
-      return { error: normalizationError, sortKey: null };
-    }
-
-    firstTaskResult = await loadFirstActiveTaskSortKey(sbAdmin, listId);
-    if (firstTaskResult.error) {
-      return { error: firstTaskResult.error, sortKey: null };
-    }
-  }
-
-  try {
-    return {
-      error: null,
-      sortKey: calculateTopSortKey(firstTaskResult.task?.sort_key ?? null),
-    };
-  } catch (error) {
-    if (!(error instanceof SortKeyGapExhaustedError)) {
-      throw error;
-    }
-  }
-
-  const normalizationError = await normalizeTaskListSortKeysForCreate(
-    sbAdmin,
-    listId
-  );
-  if (normalizationError) {
-    return { error: normalizationError, sortKey: null };
-  }
-
-  firstTaskResult = await loadFirstActiveTaskSortKey(sbAdmin, listId);
-  if (firstTaskResult.error) {
-    return { error: firstTaskResult.error, sortKey: null };
-  }
-
-  try {
-    return {
-      error: null,
-      sortKey: calculateTopSortKey(firstTaskResult.task?.sort_key ?? null),
-    };
-  } catch (error) {
-    if (error instanceof SortKeyGapExhaustedError) {
-      return { error, sortKey: null };
-    }
-    throw error;
-  }
-}
-
 type ExternalTaskSortBy =
   | 'created-desc'
   | 'created-asc'
   | 'due-asc'
   | 'name-asc'
   | 'source-asc';
-type TaskSortBy =
-  | 'name-asc'
-  | 'name-desc'
-  | 'priority-high'
-  | 'priority-low'
-  | 'due-date-asc'
-  | 'due-date-desc'
-  | 'created-date-desc'
-  | 'created-date-asc'
-  | 'estimation-high'
-  | 'estimation-low';
 type TaskSourceScope =
   | 'all_visible'
   | 'current_board'
@@ -501,24 +336,6 @@ function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
       return value;
     default:
       return DEFAULT_EXTERNAL_TASK_SORT_BY;
-  }
-}
-
-function parseTaskSortBy(value: string | null): TaskSortBy | undefined {
-  switch (value) {
-    case 'name-asc':
-    case 'name-desc':
-    case 'priority-high':
-    case 'priority-low':
-    case 'due-date-asc':
-    case 'due-date-desc':
-    case 'created-date-desc':
-    case 'created-date-asc':
-    case 'estimation-high':
-    case 'estimation-low':
-      return value;
-    default:
-      return undefined;
   }
 }
 
@@ -1326,6 +1143,17 @@ export async function handleTaskRouteGET(
     }
 
     const isPersonalWorkspace = workspaceRow?.personal === true;
+    const shouldMergePersonalSort = !!(
+      sortBy &&
+      isPersonalWorkspace &&
+      memberCheck.ok &&
+      !forTimeTracking &&
+      sourceScope === 'all_visible' &&
+      (boardId || listId || virtualStagingBoardId)
+    );
+    const sourceSortPage = shouldMergePersonalSort
+      ? { limit: offset + limit, offset: 0 }
+      : { limit, offset };
     const personalExternalCountBoardId = virtualStagingBoardId ?? boardId;
     let personalExternalTaskCountByListId: Map<string, number> | null = null;
 
@@ -1635,8 +1463,7 @@ export async function handleTaskRouteGET(
           dueDateFrom,
           dueDateTo,
           includeUnassigned,
-          limit,
-          offset,
+          ...sourceSortPage,
         });
 
         sourceTaskCount = rpcCount;
@@ -1839,7 +1666,7 @@ export async function handleTaskRouteGET(
           })
           .order('personal_added_at', { ascending: true });
 
-        if (listId && !virtualStagingBoardId) {
+        if (listId && !virtualStagingBoardId && !sortBy) {
           placementQuery = placementQuery.range(offset, offset + limit - 1);
         }
 
@@ -2195,10 +2022,9 @@ export async function handleTaskRouteGET(
             break;
         }
 
-        const defaultExternalResult = await defaultExternalQuery.range(
-          0,
-          offset + limit - 1
-        );
+        const defaultExternalResult = sortBy
+          ? await defaultExternalQuery
+          : await defaultExternalQuery.range(0, offset + limit - 1);
 
         if (defaultExternalResult.error) {
           logTaskRouteError(
@@ -2314,6 +2140,9 @@ export async function handleTaskRouteGET(
       );
     }
 
+    tasks = sortTasksByCriterion(tasks, sortBy);
+    if (shouldMergePersonalSort) tasks = tasks.slice(offset, offset + limit);
+
     const shouldIncludeRelationshipSummary =
       includeRelationshipSummary && !forTimeTracking;
 
@@ -2338,7 +2167,6 @@ export async function handleTaskRouteGET(
         );
       }
     }
-
     const tasksWithRelationshipSummary = tasks.map((task) => {
       const summary = relationshipSummaryByTaskId.get(task.id);
       const taskList = task.task_lists as
@@ -2353,6 +2181,7 @@ export async function handleTaskRouteGET(
         | undefined;
       return {
         ...task,
+        is_assigned_to_current_user: task.assignee_ids?.includes(user.id),
         board_id: task.board_id ?? taskList?.board_id ?? null,
         board_name: task.board_name ?? taskList?.workspace_boards?.name ?? null,
         ticket_prefix:
@@ -2609,7 +2438,11 @@ export async function handleTaskRoutePOST(
       }
     }
 
-    const sortKeyResult = await resolveCreateTaskSortKey(sbAdmin, listId);
+    const sortKeyResult = await resolveCreateTaskSortKey(sbAdmin, {
+      boardId: listRow.board_id,
+      listId,
+      userId: user.id,
+    });
     if (sortKeyResult.error || sortKeyResult.sortKey == null) {
       return NextResponse.json(
         { error: 'Failed to create task' },

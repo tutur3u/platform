@@ -1,6 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
+import type { SharedTaskResponse } from '@/app/api/v1/shared/tasks/[shareCode]/response';
 import { API_URL } from '@/constants/common';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 import SharedTaskContent from './content';
@@ -12,6 +14,7 @@ interface PageProps {
 }
 
 export default async function SharedTaskPage({ params }: PageProps) {
+  await connection();
   const { shareCode } = await params;
 
   const supabase = await createClient();
@@ -59,9 +62,9 @@ export default async function SharedTaskPage({ params }: PageProps) {
     );
   }
 
-  let data: any;
+  let data: SharedTaskResponse;
   try {
-    data = await res.json();
+    data = (await res.json()) as SharedTaskResponse;
   } catch (error) {
     console.error('Failed to parse shared task data:', error);
     return (
@@ -80,11 +83,7 @@ export default async function SharedTaskPage({ params }: PageProps) {
 
   return (
     <SharedTaskContent
-      task={data.task}
-      permission={data.permission}
-      workspace={data.workspace}
-      board={data.board}
-      list={data.list}
+      response={data}
       shareCode={shareCode}
       currentUser={{
         id: userProfile?.id || user.id,
@@ -92,11 +91,6 @@ export default async function SharedTaskPage({ params }: PageProps) {
         avatar_url: userProfile?.avatar_url ?? undefined,
         email: userEmail?.email ?? undefined,
       }}
-      boardConfig={data.boardConfig}
-      availableLists={data.availableLists}
-      workspaceLabels={data.workspaceLabels}
-      workspaceProjects={data.workspaceProjects}
-      workspaceMembers={data.workspaceMembers}
     />
   );
 }

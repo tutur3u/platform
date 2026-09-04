@@ -15,6 +15,7 @@ import type {
   LaunchableWorkspace,
 } from '@tuturuuu/utils/launchable-apps';
 import {
+  LAUNCHABLE_APP_CATEGORIES,
   LAUNCHABLE_APPS,
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
@@ -22,7 +23,12 @@ import { useTranslations } from 'next-intl';
 import { type CSSProperties, useRef, useState } from 'react';
 import { AppsLauncherCatalog } from './apps-launcher-catalog';
 import { AppsLauncherToolbar, LauncherMark } from './apps-launcher-controls';
+import {
+  useAppsLauncherKeyboard,
+  useAppsLauncherShortcut,
+} from './apps-launcher-keyboard';
 import { useAppsLauncherOpenMode } from './apps-launcher-preference';
+import { rankAppsLauncherMatches } from './apps-launcher-search';
 
 interface AppsLauncherDialogProps {
   currentWorkspace?: LaunchableWorkspace | null;
@@ -41,8 +47,36 @@ export function AppsLauncherDialog({
   const [query, setQuery] = useState('');
   const dialogContentRef = useRef<HTMLDivElement>(null);
 
+  const getAppTitle = (app: LaunchableApp) =>
+    t(`app_names.${app.slug}` as never);
+  const getAppDescription = (app: LaunchableApp) =>
+    t(`app_descriptions.${app.slug}` as never);
+  const rankedApps = rankAppsLauncherMatches(LAUNCHABLE_APPS, query, (app) => ({
+    description: getAppDescription(app),
+    title: getAppTitle(app),
+  }));
+  const navigationApps = LAUNCHABLE_APP_CATEGORIES.flatMap((category) =>
+    rankedApps.filter((app) => app.category === category)
+  );
+  const {
+    activeApp,
+    handleAppKeyDown,
+    handleSearchKeyDown,
+    resetActiveApp,
+    setActiveApp,
+  } = useAppsLauncherKeyboard({
+    contentRef: dialogContentRef,
+    navigationApps,
+    rankedApps,
+  });
+
+  useAppsLauncherShortcut(() => onOpenChange(true));
+
   function handleOpenChange(nextOpen: boolean) {
-    if (!nextOpen) setQuery('');
+    if (!nextOpen) {
+      setQuery('');
+      resetActiveApp();
+    }
     onOpenChange(nextOpen);
   }
 
@@ -93,11 +127,18 @@ export function AppsLauncherDialog({
           </div>
 
           <AppsLauncherToolbar
+            activeAppId={
+              activeApp ? `apps-launcher-app-${activeApp.slug}` : undefined
+            }
             currentLabel={t('open_current_tab')}
             mode={openMode}
             newLabel={t('open_new_tab')}
             onModeChange={setOpenMode}
-            onQueryChange={setQuery}
+            onQueryChange={(nextQuery) => {
+              setQuery(nextQuery);
+              resetActiveApp();
+            }}
+            onSearchKeyDown={handleSearchKeyDown}
             openModeLabel={t('open_apps_in')}
             openOptionsLabel={t('open_options')}
             query={query}
@@ -122,18 +163,21 @@ export function AppsLauncherDialog({
           data-slot="apps-launcher-body"
         >
           <AppsLauncherCatalog
-            apps={LAUNCHABLE_APPS}
+            activeAppSlug={activeApp?.slug}
+            apps={rankedApps}
+            appsCountLabel={t('apps_count', { count: rankedApps.length })}
             emptyDescription={t('no_apps_found_description')}
             emptyTitle={t('no_apps_found')}
-            getAppDescription={(app) =>
-              t(`app_descriptions.${app.slug}` as never)
-            }
+            getAppDescription={getAppDescription}
             getAppUrl={resolveUrl}
-            getAppTitle={(app) => t(`app_names.${app.slug}` as never)}
+            getAppTitle={getAppTitle}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
+            navigateLabel={t('navigate')}
+            onActiveAppChange={(app) => setActiveApp(app)}
+            onAppKeyDown={handleAppKeyDown}
             onOpen={() => handleOpenChange(false)}
             openMode={openMode}
-            query={query}
+            selectLabel={t('select')}
           />
         </div>
       </DialogContent>

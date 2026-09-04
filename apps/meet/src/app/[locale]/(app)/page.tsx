@@ -1,12 +1,8 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/meet/page';
-import { setRequestLocale } from 'next-intl/server';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
-import type { Locale } from '@/i18n/routing';
 
 interface TumeetPageProps {
-  params: Promise<{
-    locale: string;
-  }>;
   searchParams: Promise<{
     page?: string;
     pageSize?: string;
@@ -14,16 +10,16 @@ interface TumeetPageProps {
   }>;
 }
 
-export default async function TumeetPage({
-  params,
-  searchParams,
-}: TumeetPageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale as Locale);
-
+export default function TumeetPage({ searchParams }: TumeetPageProps) {
   return (
     <Suspense>
-      <MeetTogetherPage searchParams={searchParams} path="/plans" />
+      <RequestTimeMeetPage searchParams={searchParams} />
     </Suspense>
   );
+}
+
+async function RequestTimeMeetPage({ searchParams }: TumeetPageProps) {
+  await connection();
+
+  return <MeetTogetherPage searchParams={searchParams} path="/plans" />;
 }

@@ -3,8 +3,8 @@ import {
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
 } from '@tuturuuu/inventory-core/api-list-query';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -25,11 +25,9 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId: id, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('view_inventory')) {
     return NextResponse.json(
@@ -43,7 +41,7 @@ export async function GET(req: Request, { params }: Params) {
   const query = inventory
     .from('inventory_suppliers')
     .select('*', { count: shouldPaginate ? 'exact' : undefined })
-    .eq('ws_id', id);
+    .eq('ws_id', wsId);
 
   const { q, page, pageSize } = parsedQuery.data;
   if (q) query.ilike('name', `%${q}%`);
@@ -72,11 +70,9 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId: id });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('create_inventory')) {
     return NextResponse.json(
@@ -90,7 +86,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const { error } = await inventory.from('inventory_suppliers').insert({
     ...data,
-    ws_id: id,
+    ws_id: wsId,
   });
 
   if (error) {

@@ -13,11 +13,21 @@ const HEADER_ACTIONS = [
   'settings',
 ];
 
-function TaskBoardHeaderSkeleton({ root = false }: { root?: boolean }) {
+export function TaskBoardHeaderSkeleton({
+  className,
+  root = false,
+}: {
+  className?: string;
+  root?: boolean;
+}) {
   return (
     <div
       aria-hidden="true"
-      className={cn('border-b pt-2 pb-2', root ? 'pr-0 pl-2' : 'px-2')}
+      className={cn(
+        'border-b pt-2 pb-2',
+        root ? 'pr-0 pl-2' : 'px-2',
+        className
+      )}
       data-testid="task-board-header-skeleton"
     >
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">

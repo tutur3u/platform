@@ -18,8 +18,6 @@ export async function GET(
     );
   }
 
-  const normalizedWsId = await normalizeWorkspaceId(wsId);
-
   // Get current user
   const auth = await resolveSessionAuthContext(req, {
     allowAppSessionAuth: true,
@@ -27,6 +25,7 @@ export async function GET(
   if (!auth.ok) return auth.response;
   const { user } = auth;
   const supabase = auth.supabase;
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   const memberCheck = await verifyWorkspaceMembershipType({
     wsId: normalizedWsId,
     userId: user.id,

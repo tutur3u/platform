@@ -15,6 +15,7 @@ import {
   XIcon,
 } from '@tuturuuu/icons';
 import { listAllWorkspaceUserGroups } from '@tuturuuu/internal-api/user-groups';
+import { listWorkspaceBasicUsers } from '@tuturuuu/internal-api/users';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -138,48 +139,14 @@ export function ApprovalsView({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch user options for filter (reports only)
-  const usersQuery = useQuery({
-    queryKey: ['ws', wsId, 'approvals', 'filter-users', currentGroupId],
+  // Both report filters use the same workspace directory. A shared query key
+  // prevents duplicate requests and avoids refetching unchanged options when
+  // the selected group changes.
+  const filterUsersQuery = useQuery({
+    queryKey: ['ws', wsId, 'approvals', 'filter-users'],
     enabled: kind === 'reports',
-    queryFn: async () => {
-      const searchParams = new URLSearchParams({
-        limit: '500',
-      });
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const data = await response.json();
-      const users = Array.isArray(data) ? data : data.data || [];
-      return (users ?? []) as Array<{
-        id: string;
-        full_name: string | null;
-      }>;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch creator options for filter (reports only)
-  const creatorsQuery = useQuery({
-    queryKey: ['ws', wsId, 'approvals', 'filter-creators'],
-    enabled: kind === 'reports',
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users?limit=500`,
-        {
-          cache: 'no-store',
-        }
-      );
-      if (!response.ok) throw new Error('Failed to fetch creators');
-      const data = await response.json();
-      const users = Array.isArray(data) ? data : data.data || [];
-      return (users ?? []) as Array<{
-        id: string;
-        full_name: string | null;
-      }>;
-    },
+    queryFn: async () =>
+      (await listWorkspaceBasicUsers(wsId, { limit: 200 })).data,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -387,7 +354,7 @@ export function ApprovalsView({
                       <SelectItem value="all">
                         {t('filters.allUsers')}
                       </SelectItem>
-                      {(usersQuery.data ?? []).map((user) => (
+                      {(filterUsersQuery.data ?? []).map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.full_name || t('labels.unknown_user')}
                         </SelectItem>
@@ -422,7 +389,7 @@ export function ApprovalsView({
                       <SelectItem value="all">
                         {t('filters.allCreators')}
                       </SelectItem>
-                      {(creatorsQuery.data ?? []).map((creator) => (
+                      {(filterUsersQuery.data ?? []).map((creator) => (
                         <SelectItem key={creator.id} value={creator.id}>
                           {creator.full_name || t('labels.unknown_user')}
                         </SelectItem>

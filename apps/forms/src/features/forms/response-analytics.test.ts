@@ -3,53 +3,15 @@ import {
   buildQuestionAnalytics,
   buildResponseSummary,
 } from './response-analytics';
+import { createTestFormDefinition } from './test-support/form-fixtures';
 import type {
   FormDefinition,
   FormResponseAnswerRow,
   FormResponseRow,
 } from './types';
 
-const form: FormDefinition = {
-  id: '50000000-0000-0000-0000-000000000001',
-  wsId: '50000000-0000-0000-0000-000000000002',
-  creatorId: '50000000-0000-0000-0000-000000000003',
+const form: FormDefinition = createTestFormDefinition({
   title: 'Feedback form',
-  description: '',
-  status: 'published',
-  accessMode: 'anonymous',
-  openAt: null,
-  closeAt: null,
-  maxResponses: null,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  theme: {
-    presetId: 'editorial-moss',
-    density: 'balanced',
-    accentColor: 'dynamic-green',
-    headlineFontId: 'noto-serif',
-    bodyFontId: 'be-vietnam-pro',
-    surfaceStyle: 'paper',
-    coverHeadline: '',
-    coverImage: {
-      storagePath: '',
-      url: '',
-      alt: '',
-    },
-    sectionImages: {},
-    typography: {
-      displaySize: 'md',
-      headingSize: 'md',
-      bodySize: 'md',
-    },
-  },
-  settings: {
-    showProgressBar: true,
-    allowMultipleSubmissions: true,
-    oneResponsePerUser: false,
-    requireTurnstile: false,
-    confirmationTitle: 'Thanks',
-    confirmationMessage: 'Done',
-  },
   sections: [
     {
       id: '50000000-0000-0000-0000-000000000010',
@@ -89,7 +51,7 @@ const form: FormDefinition = {
     },
   ],
   logicRules: [],
-};
+});
 
 describe('buildQuestionAnalytics', () => {
   it('keeps unmatched stored answers out of the current choice breakdown without dropping them', () => {

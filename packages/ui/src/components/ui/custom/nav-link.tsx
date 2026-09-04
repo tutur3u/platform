@@ -12,9 +12,9 @@ import {
 import { getWorkspaceConfigIdList } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import {
@@ -58,7 +58,7 @@ function getComparablePath(
       ? new URL(target)
       : new URL(target, base);
 
-    if (isAbsoluteHttpUrl(target) && url.origin !== base) return null;
+    if (url.origin !== base) return null;
 
     return url.pathname;
   } catch {
@@ -103,6 +103,7 @@ export function NavLink({
 }: NavLinkProps) {
   const t = useTranslations();
   const pathname = usePathname();
+  const router = useRouter();
   const {
     title,
     icon,
@@ -338,6 +339,27 @@ export function NavLink({
         })()
       : href;
 
+  const prefetchedHrefRef = useRef<string | null>(null);
+  const prefetchOnIntent = () => {
+    if (
+      !effectiveHref ||
+      newTab ||
+      link.external ||
+      isDisabled ||
+      isResolvingHref ||
+      hasSubMenu ||
+      archivedItems.length > 0 ||
+      !getComparablePath(effectiveHref)
+    ) {
+      return;
+    }
+
+    if (prefetchedHrefRef.current === effectiveHref) return;
+
+    prefetchedHrefRef.current = effectiveHref;
+    router.prefetch(effectiveHref);
+  };
+
   const commonProps = {
     className: cn(
       'group/navlink flex w-full cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
@@ -388,6 +410,8 @@ export function NavLink({
         onClick();
       }
     },
+    onFocus: prefetchOnIntent,
+    onMouseEnter: prefetchOnIntent,
   };
 
   const linkElement =
@@ -425,6 +449,7 @@ export function NavLink({
     ) : effectiveHref && !isDisabled ? (
       <Link
         href={effectiveHref}
+        prefetch={false}
         {...commonProps}
         target={newTab ? '_blank' : '_self'}
       >

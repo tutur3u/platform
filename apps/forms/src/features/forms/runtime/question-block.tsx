@@ -16,6 +16,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { isTextInputQuestionType } from '../block-utils';
 import { normalizeMarkdownToText } from '../content';
 import { FormsMarkdown } from '../forms-markdown';
 import type { getFormToneClasses } from '../theme';
@@ -35,8 +36,11 @@ import {
   renderSingleChoiceField,
 } from './choice-fields';
 import { TIME_OPTIONS } from './constants';
+import { renderNpsField } from './nps-field';
+import { renderRankingField } from './ranking-field';
 import { renderScaleField } from './scale-field';
 import { renderStaticQuestionBlock } from './static-question-blocks';
+import { renderTypedTextField } from './text-input-fields';
 import { formatDateAnswer, parseDateAnswer } from './utils';
 
 export function QuestionBlock({
@@ -48,6 +52,7 @@ export function QuestionBlock({
   validationError,
   toneClasses,
   typography,
+  optionShortcuts = false,
 }: {
   question: FormDefinitionQuestion;
   value: FormAnswerValue | undefined;
@@ -57,6 +62,8 @@ export function QuestionBlock({
   validationError?: string;
   toneClasses: ReturnType<typeof getFormToneClasses>;
   typography: FormDefinition['theme']['typography'];
+  /** Whether the number/letter option shortcuts are bound for this screen. */
+  optionShortcuts?: boolean;
 }) {
   const t = useTranslations('forms');
   const settings = question.settings ?? {};
@@ -119,6 +126,17 @@ export function QuestionBlock({
     scaleMinLabel.trim() !== String(scaleMin) ||
     scaleMaxLabel.trim() !== String(scaleMax);
   const questionTypeLabel = t(`question_type.${question.type}`);
+  const constraintHint =
+    isTextInputQuestionType(question.type) || question.type === 'long_text'
+      ? getValidationConstraintHint(
+          settings,
+          t as (
+            key: string,
+            values?: Record<string, string | number>
+          ) => string,
+          question.type
+        )
+      : null;
   const optionLayout = settings.optionLayout === 'grid' ? 'grid' : 'list';
   const choiceLayoutClassName =
     optionLayout === 'grid' ? 'grid gap-3 sm:grid-cols-2' : 'space-y-2';
@@ -238,24 +256,14 @@ export function QuestionBlock({
             )}
           />
         ) : null}
-        {(question.type === 'short_text' || question.type === 'long_text') &&
-        getValidationConstraintHint(
-          settings,
-          t as (key: string, values?: Record<string, string | number>) => string
-        ) ? (
+        {constraintHint ? (
           <p
             className={cn(
               'pb-1 text-sm italic opacity-80',
               validationError ? 'text-dynamic-red' : 'text-muted-foreground'
             )}
           >
-            {getValidationConstraintHint(
-              settings,
-              t as (
-                key: string,
-                values?: Record<string, string | number>
-              ) => string
-            )}
+            {constraintHint}
           </p>
         ) : null}
       </div>
@@ -291,6 +299,36 @@ export function QuestionBlock({
         />
       ) : null}
 
+      {renderTypedTextField({
+        question,
+        value,
+        onChange,
+        disabled,
+        validationError,
+        toneClasses,
+        t,
+      })}
+
+      {renderRankingField({
+        question,
+        value,
+        onChange,
+        disabled,
+        validationError,
+        toneClasses,
+        t,
+      })}
+
+      {renderNpsField({
+        question,
+        value,
+        onChange,
+        disabled,
+        validationError,
+        toneClasses,
+        t,
+      })}
+
       {renderSingleChoiceField({
         question,
         value,
@@ -302,6 +340,7 @@ export function QuestionBlock({
         t,
         choiceLayoutClassName,
         interactionStateClassName,
+        optionShortcuts,
       })}
 
       {renderMultipleChoiceField({
@@ -315,6 +354,7 @@ export function QuestionBlock({
         t,
         choiceLayoutClassName,
         interactionStateClassName,
+        optionShortcuts,
       })}
 
       {renderDropdownField({

@@ -5,6 +5,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Calendar, Clock3 } from '@tuturuuu/icons';
 import { Collapsible, CollapsibleContent } from '@tuturuuu/ui/collapsible';
 import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -25,11 +27,17 @@ import { createClientId, type StudioForm } from './studio-utils';
 const TITLE_PLACEHOLDER_MAP: Record<string, string> = {
   short_text: 'placeholder_title_text',
   long_text: 'placeholder_title_text',
+  email: 'placeholder_title_text',
+  phone: 'placeholder_title_text',
+  number: 'placeholder_title_text',
+  url: 'placeholder_title_text',
   single_choice: 'placeholder_title_choice',
   multiple_choice: 'placeholder_title_choice',
   dropdown: 'placeholder_title_choice',
+  ranking: 'placeholder_title_choice',
   linear_scale: 'placeholder_title_scale',
   rating: 'placeholder_title_scale',
+  nps: 'placeholder_title_scale',
   date: 'placeholder_title_date',
   time: 'placeholder_title_time',
   section_break: 'placeholder_title_section_break',
@@ -52,6 +60,7 @@ export function QuestionEditor({
   onDuplicate,
   onRemove,
   toneClasses,
+  variant = 'inline',
 }: {
   wsId: string;
   questionId: string;
@@ -65,6 +74,12 @@ export function QuestionEditor({
   onDuplicate: () => void;
   onRemove: () => void;
   toneClasses: ReturnType<typeof getFormToneClasses>;
+  /**
+   * `inline` is the accordion in the block list. `panel` drops the header and
+   * drag handle for the three-pane properties column, where the outline
+   * already owns selection and ordering.
+   */
+  variant?: 'inline' | 'panel';
 }) {
   const t = useTranslations('forms');
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -204,13 +219,22 @@ export function QuestionEditor({
     `studio.${titlePlaceholderKey}` as Parameters<typeof t>[0]
   );
 
-  const hasChoices = ['single_choice', 'multiple_choice', 'dropdown'].includes(
-    questionType
-  );
+  // Ranking authors the same list of options as the choice types; only the
+  // respondent's interaction differs, so it reuses the options editor.
+  const hasChoices = [
+    'single_choice',
+    'multiple_choice',
+    'dropdown',
+    'ranking',
+  ].includes(questionType);
   const hasCardChoiceLayout = ['single_choice', 'multiple_choice'].includes(
     questionType
   );
   const hasScale = ['linear_scale', 'rating'].includes(questionType);
+  // NPS deliberately does not use the scale editor: its bounds are fixed at
+  // 0-10 by the metric's definition, and exposing them as editable would let an
+  // author produce something labelled NPS that is not comparable to one.
+  const isNps = questionType === 'nps';
   const isRating = questionType === 'rating';
   const isDateOrTime = questionType === 'date' || questionType === 'time';
   const isSectionBreak = questionType === 'section_break';
@@ -306,6 +330,138 @@ export function QuestionEditor({
     transition,
   };
 
+  const editorBody = (
+    <div className="space-y-3 px-4 py-4">
+      {renderQuestionEditorFields({
+        t,
+        wsId,
+        form,
+        sectionIndex,
+        questionIndex,
+        toneClasses,
+        typePath,
+        questionType,
+        questionTitle,
+        questionDescription,
+        questionImage,
+        settings,
+        required,
+        placeholder,
+        titlePlaceholder,
+        showsCharacterCount,
+        showsDescriptionEditor,
+        isAnswerable,
+        isDividerBlock,
+        isImageBlock,
+        isYoutubeBlock,
+        validationMode,
+        validationMin,
+        validationMax,
+        validationPattern,
+        validationMessage,
+      })}
+
+      {/* Choice-type options */}
+      {hasChoices
+        ? renderQuestionEditorChoiceOptions({
+            t,
+            wsId,
+            form,
+            sectionIndex,
+            questionIndex,
+            toneClasses,
+            bodyClassName,
+            hasChoices,
+            hasCardChoiceLayout,
+            optionLayout,
+            optionsArray,
+            watchedOptions,
+            addOption,
+          })
+        : null}
+
+      {/* Scale settings */}
+      {hasScale
+        ? renderQuestionEditorScaleSettings({
+            t,
+            form,
+            sectionIndex,
+            questionIndex,
+            toneClasses,
+            minLabel,
+            maxLabel,
+            isRating,
+            scaleMin,
+            scaleMax,
+            ratingMax,
+            optionsArray,
+            watchedOptions,
+          })
+        : null}
+
+      {/* NPS anchor labels */}
+      {isNps ? (
+        <div className="grid gap-3 rounded-[1.35rem] border border-border/60 bg-muted/20 p-3 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>{t('studio.minimum_label')}</Label>
+            <Input
+              value={minLabel ?? ''}
+              placeholder={t('studio.nps_default_min_label')}
+              className={toneClasses.fieldClassName}
+              onChange={(event) =>
+                form.setValue(
+                  `sections.${sectionIndex}.questions.${questionIndex}.settings.minLabel`,
+                  event.target.value,
+                  { shouldDirty: true }
+                )
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{t('studio.maximum_label')}</Label>
+            <Input
+              value={maxLabel ?? ''}
+              placeholder={t('studio.nps_default_max_label')}
+              className={toneClasses.fieldClassName}
+              onChange={(event) =>
+                form.setValue(
+                  `sections.${sectionIndex}.questions.${questionIndex}.settings.maxLabel`,
+                  event.target.value,
+                  { shouldDirty: true }
+                )
+              }
+            />
+          </div>
+          <p className="text-muted-foreground text-xs md:col-span-2">
+            {t('studio.hint_nps')}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Date / Time hint */}
+      {isDateOrTime ? (
+        <div className="flex items-center gap-2 rounded-[1.35rem] border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground text-sm">
+          {questionType === 'date' ? (
+            <Calendar className="h-4 w-4 shrink-0" />
+          ) : (
+            <Clock3 className="h-4 w-4 shrink-0" />
+          )}
+          {questionType === 'date'
+            ? t('studio.hint_date')
+            : t('studio.hint_time')}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  // The properties pane renders the same body without the accordion chrome:
+  // in a three-pane layout the block is already selected in the outline, so a
+  // header to expand and a drag handle to reorder would both be duplicates of
+  // controls the outline already owns.
+  if (variant === 'panel') {
+    return editorBody;
+  }
+
   return (
     <Collapsible open={open && !isDragging} onOpenChange={onOpenChange}>
       <div
@@ -342,90 +498,8 @@ export function QuestionEditor({
           deleteDialogOpen,
           setDeleteDialogOpen,
         })}
-
         <CollapsibleContent className="overflow-hidden border-border/40 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-          <div className="space-y-3 px-4 py-4">
-            {renderQuestionEditorFields({
-              t,
-              wsId,
-              form,
-              sectionIndex,
-              questionIndex,
-              toneClasses,
-              typePath,
-              questionType,
-              questionTitle,
-              questionDescription,
-              questionImage,
-              settings,
-              required,
-              placeholder,
-              titlePlaceholder,
-              showsCharacterCount,
-              showsDescriptionEditor,
-              isAnswerable,
-              isDividerBlock,
-              isImageBlock,
-              isYoutubeBlock,
-              validationMode,
-              validationMin,
-              validationMax,
-              validationPattern,
-              validationMessage,
-            })}
-
-            {/* Choice-type options */}
-            {hasChoices
-              ? renderQuestionEditorChoiceOptions({
-                  t,
-                  wsId,
-                  form,
-                  sectionIndex,
-                  questionIndex,
-                  toneClasses,
-                  bodyClassName,
-                  hasChoices,
-                  hasCardChoiceLayout,
-                  optionLayout,
-                  optionsArray,
-                  watchedOptions,
-                  addOption,
-                })
-              : null}
-
-            {/* Scale settings */}
-            {hasScale
-              ? renderQuestionEditorScaleSettings({
-                  t,
-                  form,
-                  sectionIndex,
-                  questionIndex,
-                  toneClasses,
-                  minLabel,
-                  maxLabel,
-                  isRating,
-                  scaleMin,
-                  scaleMax,
-                  ratingMax,
-                  optionsArray,
-                  watchedOptions,
-                })
-              : null}
-
-            {/* Date / Time hint */}
-            {isDateOrTime ? (
-              <div className="flex items-center gap-2 rounded-[1.35rem] border border-border/60 bg-muted/20 px-4 py-3 text-muted-foreground text-sm">
-                {questionType === 'date' ? (
-                  <Calendar className="h-4 w-4 shrink-0" />
-                ) : (
-                  <Clock3 className="h-4 w-4 shrink-0" />
-                )}
-                {questionType === 'date'
-                  ? t('studio.hint_date')
-                  : t('studio.hint_time')}
-              </div>
-            ) : null}
-          </div>
+          {editorBody}
         </CollapsibleContent>
       </div>
     </Collapsible>

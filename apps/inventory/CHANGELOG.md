@@ -1,5 +1,107 @@
 # Changelog
 
+## [0.29.2](https://github.com/tutur3u/platform/compare/inventory-v0.29.1...inventory-v0.29.2) (2026-08-29)
+
+
+### Performance Improvements
+
+* **vercel:** serve every monorepo app from one function region ([4f0bf52](https://github.com/tutur3u/platform/commit/4f0bf52450899267b4ac9cd2bdecfcf07e3ea427))
+* **vercel:** serve every monorepo app from one function region ([#5172](https://github.com/tutur3u/platform/issues/5172)) ([b09d4bd](https://github.com/tutur3u/platform/commit/b09d4bd520a7543d6b88140715d8cc0b5c461711))
+
+## [0.29.1](https://github.com/tutur3u/platform/compare/inventory-v0.29.0...inventory-v0.29.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.29.0](https://github.com/tutur3u/platform/compare/inventory-v0.28.0...inventory-v0.29.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
+## [0.28.0](https://github.com/tutur3u/platform/compare/inventory-v0.27.2...inventory-v0.28.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **inventory:** restore product export dropdown ([7049c08](https://github.com/tutur3u/platform/commit/7049c08dafe11377810056ae1430752e8be70a5e))
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
+## [0.27.2](https://github.com/tutur3u/platform/compare/inventory-v0.27.1...inventory-v0.27.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** preserve prerender locale fallback ([3a09b07](https://github.com/tutur3u/platform/commit/3a09b070abda729649f269310a70db78f9b3a1cc))
+
+## [0.27.1](https://github.com/tutur3u/platform/compare/inventory-v0.27.0...inventory-v0.27.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep locale roots prerenderable ([d0eb02c](https://github.com/tutur3u/platform/commit/d0eb02c452c4ad125907f4c67b24797782caf907))
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+
+## [0.27.0](https://github.com/tutur3u/platform/compare/inventory-v0.26.1...inventory-v0.27.0) (2026-08-09)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **chat:** add external parity reconciliation ([953b9d6](https://github.com/tutur3u/platform/commit/953b9d6315611ef86ec2c213bbbbc5e62d5f4ad4))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **finance:** reconcile inventory provider sales ([56650e0](https://github.com/tutur3u/platform/commit/56650e066c473337700998d8af607380e8ea6202))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+* **inventory:** add POS device management ([822a171](https://github.com/tutur3u/platform/commit/822a171ae280511d6453fd5547f584f9c796d077))
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **inventory:** export sales periods ([00e6a04](https://github.com/tutur3u/platform/commit/00e6a0482ad78a73687e3decedb12114df2e0b0c))
+* **inventory:** improve sales exports ([1c27668](https://github.com/tutur3u/platform/commit/1c27668770b09803e29c668556bfbdc13fecb464))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
+
+### Bug Fixes
+
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **e2e:** align workspace fixtures with creator membership ([cfb13b6](https://github.com/tutur3u/platform/commit/cfb13b66c6b4d3c9a609c2118d51a314c015346b))
+* **inventory:** authorize admin POS fallback ([9ba0fbc](https://github.com/tutur3u/platform/commit/9ba0fbc6765913a83b5ba1a5b1709a608eb7f46c))
+* **inventory:** distinguish Square POS device paths ([4654605](https://github.com/tutur3u/platform/commit/4654605a366a00134b0a9a27a1dd2124f579c35c))
+* **inventory:** make storefront removal safe ([9dd4dc6](https://github.com/tutur3u/platform/commit/9dd4dc67ff264860e8b83785db2e2e87ec91959d))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* **inventory:** reconcile provider checkout stock ([2160487](https://github.com/tutur3u/platform/commit/2160487a4cdd45acb31e44e71519ee25a1b684d0))
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **settings:** restore satellite workspace management ([be1fb5a](https://github.com/tutur3u/platform/commit/be1fb5aade1955ce0a73be29a090a3d7488aa8a6))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+
 ## [0.26.1](https://github.com/tutur3u/platform/compare/inventory-v0.26.0...inventory-v0.26.1) (2026-08-09)
 
 

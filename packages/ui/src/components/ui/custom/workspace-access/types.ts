@@ -56,6 +56,7 @@ export type WorkspaceAccessInvitePayload = {
   confirmDefaultAdminMigration?: boolean;
   emails: string[];
   memberType: WorkspaceDefaultPermissionMemberType;
+  roleIds: string[];
 };
 
 export type WorkspaceAccessAdapter = {
@@ -91,6 +92,10 @@ export type WorkspaceAccessAdapter = {
     workspaceId: string,
     status?: WorkspaceAccessMemberStatus
   ) => Promise<InternalApiEnhancedWorkspaceMember[]>;
+  listRoleOptions: (
+    workspaceId: string,
+    query?: { page?: string; pageSize?: string }
+  ) => Promise<{ count: number; data: Array<{ id: string; name: string }> }>;
   listRoles: (
     workspaceId: string,
     query?: { page?: string; pageSize?: string; q?: string }
@@ -109,6 +114,14 @@ export type WorkspaceAccessAdapter = {
     payload: {
       displayName: string | null;
       email?: null | string;
+      userId?: null | string;
+    }
+  ) => Promise<unknown>;
+  updateInvitationRole?: (
+    workspaceId: string,
+    payload: {
+      email?: null | string;
+      roleIds: string[];
       userId?: null | string;
     }
   ) => Promise<unknown>;

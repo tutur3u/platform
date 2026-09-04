@@ -1,10 +1,9 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   const { orderId } = await params;
@@ -16,12 +15,11 @@ export async function GET(
     );
   }
 
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
 
   const { data: order } = await supabase
     .from('workspace_orders')
@@ -87,7 +85,7 @@ export async function GET(
 }
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   const { orderId } = await params;
@@ -99,12 +97,11 @@ export async function POST(
     );
   }
 
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
 
   const { data: order } = await supabase
     .from('workspace_orders')

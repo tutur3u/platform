@@ -20,7 +20,7 @@ export function TimeTrackerTrigger({
     <Button
       variant={isRunning ? 'destructive' : 'outline'}
       size="sm"
-      className={cn('relative w-full gap-2')}
+      className={cn('gap-2', 'relative w-full')}
       onClick={onClick}
     >
       {isRunning && (

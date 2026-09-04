@@ -1,3 +1,24 @@
+import {
+  Bot,
+  Boxes,
+  Building2,
+  Calendar,
+  CalendarClock,
+  CheckCircle2,
+  FileText,
+  Folder,
+  GraduationCap,
+  Mail,
+  MessageSquare,
+  Package,
+  QrCode,
+  Store,
+  Users,
+  Wallet,
+  Zap,
+} from '@tuturuuu/icons/lucide-static';
+import type { ComponentType } from 'react';
+
 export interface MarketingProduct {
   /** Translation key under `marketing-nav.products.*`. */
   key: string;
@@ -5,6 +26,36 @@ export interface MarketingProduct {
   /** Static accent class — Tailwind cannot resolve interpolated names. */
   accent: string;
 }
+
+export type MarketingProductIcon = ComponentType<{ className?: string }>;
+
+/**
+ * Icon per product key.
+ *
+ * Lives beside the group data rather than in the navbar, because the mega-menu
+ * and the `/products` index both draw the same set — a second copy would drift
+ * the moment a product is added to one and not the other.
+ */
+export const MARKETING_PRODUCT_ICONS: Record<string, MarketingProductIcon> = {
+  ai: Bot,
+  calendar: Calendar,
+  chat: MessageSquare,
+  crm: Building2,
+  documents: FileText,
+  drive: Folder,
+  finance: Wallet,
+  forms: FileText,
+  hive: Boxes,
+  inventory: Package,
+  lms: GraduationCap,
+  mail: Mail,
+  meet: Users,
+  qr: QrCode,
+  storefront: Store,
+  tasks: CheckCircle2,
+  track: CalendarClock,
+  workflows: Zap,
+};
 
 export interface MarketingProductGroup {
   /** Translation key under `marketing-nav.groups.*`. */

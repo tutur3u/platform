@@ -1,12 +1,14 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import type { WorkspaceBillingSummary } from '@tuturuuu/internal-api';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
   checkManageSubscriptionPermission,
   fetchSubscription,
 } from '@tuturuuu/payment-core/billing-helper';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
+import {
+  getPermissions,
+  isPersonalWorkspace,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export async function GET(
@@ -14,16 +16,23 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const { wsId } = await params;
-    const user = getAppSessionUserFromRequest(request, {
-      targetApp: ['pay', 'platform'],
-    });
-
-    if (!user) {
+    const { wsId: rawWsId } = await params;
+    const actor = await resolveSatelliteRequestActor(request, [
+      'pay',
+      'platform',
+    ]);
+    if (!actor) {
       return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
     }
-
-    const sbAdmin = await createAdminClient();
+    const permissions = await getPermissions({
+      user: actor.user,
+      wsId: rawWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+    }
+    const { admin: sbAdmin, user } = actor;
+    const wsId = permissions.wsId;
     const canManageBilling = await checkManageSubscriptionPermission(
       sbAdmin,
       wsId,

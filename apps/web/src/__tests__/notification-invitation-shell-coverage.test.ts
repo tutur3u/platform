@@ -30,11 +30,15 @@ describe('notification and invitation shell coverage', () => {
     const popover = source(
       'packages/ui/src/components/ui/custom/notification-popover-client.tsx'
     );
+    const trigger = source(
+      'packages/ui/src/components/ui/custom/notification-popover-trigger.tsx'
+    );
 
-    expect(popover).toContain('className="group relative flex size-10');
-    expect(popover).not.toContain('hidden flex-none transition-all md:flex');
+    expect(trigger).toContain('className="group relative flex size-10');
+    expect(trigger).not.toContain('hidden flex-none transition-all md:flex');
+    expect(trigger).toContain('disabled={!isHydrated}');
     expect(popover).toContain('onClick={() => query.refetch()}');
-    expect(popover).toContain('aria-label={notificationsText}');
+    expect(trigger).toContain('aria-label={notificationsText}');
   });
 
   it('keeps pending invitation actions in the shared workspace picker', () => {

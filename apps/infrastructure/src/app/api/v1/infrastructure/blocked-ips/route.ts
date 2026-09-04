@@ -1,9 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { IPBlockStatus } from '@tuturuuu/utils/abuse-protection';
 import {
   BLOCK_DURATIONS,
@@ -11,15 +5,11 @@ import {
   unblockIP,
   WINDOW_MS,
 } from '@tuturuuu/utils/abuse-protection';
-import {
-  MAX_IP_LENGTH,
-  MAX_SEARCH_LENGTH,
-  ROOT_WORKSPACE_ID,
-} from '@tuturuuu/utils/constants';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { MAX_IP_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
 
 const UnblockSchema = z.object({
   ip_address: z.string().max(MAX_IP_LENGTH).min(1),
@@ -45,59 +35,11 @@ const BlockIPSchema = z.object({
 // 100 years in seconds for permanent blocks
 const PERMANENT_BLOCK_DURATION = 100 * 365 * 24 * 60 * 60;
 
-type AuthenticatedBlockedIpUser = {
-  email?: string | null;
-  id: string;
-};
-
-async function hasRootWorkspaceMembership(
-  supabase: TypedSupabaseClient,
-  userId: string
-) {
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('platform_user_id')
-    .eq('platform_user_id', userId)
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .single();
-
-  return Boolean(rootWorkspaceUser);
-}
-
-async function canDeleteBlockedIp(
-  supabase: TypedSupabaseClient,
-  user: AuthenticatedBlockedIpUser
-) {
-  if (isExactTuturuuuDotComEmail(user.email)) {
-    return true;
-  }
-
-  return hasRootWorkspaceMembership(supabase, user.id);
-}
-
 export async function GET(req: Request) {
   await connection();
 
-  const supabase = await createClient();
-
-  // Check if user is authenticated
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Check if user is from root workspace
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('*')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .single();
-
-  if (!rootWorkspaceUser) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const auth = await authorizeInfrastructureAdminRequest('view_infrastructure');
+  if (!auth.ok) return auth.response;
 
   // Parse query parameters
   const url = new URL(req.url);
@@ -107,7 +49,7 @@ export async function GET(req: Request) {
   const ipFilter = url.searchParams.get('ip');
 
   // Build query
-  let query = supabase
+  let query = auth.sbAdmin
     .from('blocked_ips')
     .select('*, unblocked_by_user:unblocked_by(id, display_name)', {
       count: 'exact',
@@ -148,26 +90,14 @@ export async function GET(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const supabase = await createClient();
-
-  // Check if user is authenticated
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const canDelete = await canDeleteBlockedIp(supabase, user);
-
-  if (!canDelete) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const auth = await authorizeInfrastructureAdminRequest('view_infrastructure');
+  if (!auth.ok) return auth.response;
 
   try {
     const body = await req.json();
     const { ip_address, reason } = UnblockSchema.parse(body);
 
-    const success = await unblockIP(ip_address, user.id, reason);
+    const success = await unblockIP(ip_address, auth.user.id, reason);
 
     if (!success) {
       return NextResponse.json(
@@ -194,33 +124,13 @@ export async function DELETE(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const supabase = await createClient();
-
-  // Check if user is authenticated
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Check if user is from root workspace
-  const { data: rootWorkspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select('*')
-    .eq('platform_user_id', user.id)
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .single();
-
-  if (!rootWorkspaceUser) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const auth = await authorizeInfrastructureAdminRequest('view_infrastructure');
+  if (!auth.ok) return auth.response;
 
   try {
     const body = await req.json();
     const { ip_address, reason, block_level, notes } =
       BlockIPSchema.parse(body);
-
-    const sbAdmin = await createAdminClient();
 
     // Calculate expiration based on block level (0 = permanent)
     const blockDuration =
@@ -230,7 +140,7 @@ export async function POST(req: Request) {
     const expiresAt = new Date(Date.now() + blockDuration * 1000);
 
     // Check if IP is already actively blocked
-    const { data: existingBlock } = await sbAdmin
+    const { data: existingBlock } = await auth.sbAdmin
       .from('blocked_ips')
       .select('id')
       .eq('ip_address', ip_address)
@@ -245,7 +155,7 @@ export async function POST(req: Request) {
     }
 
     // Insert block record
-    const { data: blockRecord, error } = await sbAdmin
+    const { data: blockRecord, error } = await auth.sbAdmin
       .from('blocked_ips')
       .insert({
         ip_address,
@@ -254,7 +164,7 @@ export async function POST(req: Request) {
         expires_at: expiresAt.toISOString(),
         metadata: {
           manual: true,
-          blocked_by: user.id,
+          blocked_by: auth.user.id,
           notes: notes || null,
         },
       })

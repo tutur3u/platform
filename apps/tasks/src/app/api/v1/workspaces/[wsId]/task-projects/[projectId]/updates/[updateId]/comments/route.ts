@@ -1,9 +1,8 @@
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { authorizeTaskUpdateInteraction } from '../_interaction-access';
 
 const createCommentSchema = z.object({
   content: z
@@ -23,35 +22,11 @@ export async function POST(
   }
 ) {
   try {
-    const { wsId, updateId } = await params;
-
-    // Get current user
-    const {
-      supabase,
-      user,
-      authError: userError,
-    } = await resolveAuthenticatedSessionUser();
-    if (userError || !user || !supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify user has access to workspace
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const routeParams = await params;
+    const { updateId } = routeParams;
+    const access = await authorizeTaskUpdateInteraction(request, routeParams);
+    if (!access.ok) return access.response;
+    const { supabase, user } = access;
 
     // Parse and validate request body
     const body = await request.json();
@@ -124,7 +99,7 @@ export async function POST(
 }
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   {
     params,
   }: {
@@ -132,34 +107,11 @@ export async function GET(
   }
 ) {
   try {
-    const { wsId, updateId } = await params;
-
-    // Get current user
-    const {
-      supabase,
-      user,
-      authError: userError,
-    } = await resolveAuthenticatedSessionUser();
-    if (userError || !user || !supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const routeParams = await params;
+    const { updateId } = routeParams;
+    const access = await authorizeTaskUpdateInteraction(request, routeParams);
+    if (!access.ok) return access.response;
+    const { supabase } = access;
 
     // Fetch comments
     const { data: comments, error: fetchError } = await supabase

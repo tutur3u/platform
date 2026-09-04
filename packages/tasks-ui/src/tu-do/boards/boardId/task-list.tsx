@@ -113,7 +113,7 @@ function DragPreviewSlot({
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none"
+      className="pointer-events-none rounded-lg border border-primary/35 border-dashed bg-primary/[0.04]"
       data-dnd-preview-slot="task"
       style={{ height }}
     />

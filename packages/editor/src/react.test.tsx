@@ -12,50 +12,8 @@ import { RichTextEditor } from './react.js';
 
 afterEach(cleanup);
 
-describe('RichTextEditor source and preview modes', () => {
-  it('preserves unapplied source and discards it explicitly', async () => {
-    const onChange = vi.fn();
-    const onSourceModeDirtyChange = vi.fn();
-    render(
-      <RichTextEditor
-        content={{
-          content: [
-            {
-              content: [{ text: 'Original', type: 'text' }],
-              type: 'paragraph',
-            },
-          ],
-          type: 'doc',
-        }}
-        enableHTMLSource
-        enablePreview
-        featurePreset="full"
-        onChange={onChange}
-        onSourceModeDirtyChange={onSourceModeDirtyChange}
-      />
-    );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    const source = screen.getByRole('textbox', { name: 'HTML source' });
-    fireEvent.change(source, { target: { value: '<p>Changed</p>' } });
-    await waitFor(() =>
-      expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(true)
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
-
-    expect((source as HTMLTextAreaElement).value).toBe('<p>Changed</p>');
-    expect(screen.getByRole('alert').textContent).toContain(
-      'Apply or discard your HTML changes'
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
-    expect(screen.queryByRole('textbox', { name: 'HTML source' })).toBeNull();
-    await waitFor(() =>
-      expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(false)
-    );
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
-  it('previews the live document without changing it', async () => {
+describe('RichTextEditor WYSIWYG', () => {
+  it('keeps the formatted document editable without a legacy preview switch', async () => {
     const onChange = vi.fn();
     const { container } = render(
       <RichTextEditor
@@ -75,14 +33,11 @@ describe('RichTextEditor source and preview modes', () => {
           ],
           type: 'doc',
         }}
-        enableHTMLSource
         enablePreview
         featurePreset="full"
         onChange={onChange}
       />
     );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Preview' }));
 
     await waitFor(() => {
       expect(container.querySelector('.tiptap')?.textContent).toBe(
@@ -90,62 +45,57 @@ describe('RichTextEditor source and preview modes', () => {
       );
       expect(
         container.querySelector('.tiptap')?.getAttribute('contenteditable')
-      ).toBe('false');
+      ).toBe('true');
     });
-    expect(screen.queryByRole('button', { name: 'Bold' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Bold' })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: 'Heading 1' })
+    ).toBeTruthy();
     expect(
       screen.getByRole('img', { name: 'Article detail' }).getAttribute('src')
     ).toBe('https://example.com/article-detail.png');
     expect(onChange).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Editor' }));
-    await waitFor(() =>
-      expect(
-        container.querySelector('.tiptap')?.getAttribute('contenteditable')
-      ).toBe('true')
-    );
-    expect(await screen.findByRole('button', { name: 'Bold' })).toBeTruthy();
-    expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('applies safe HTML as structured JSON and blocks unsafe source', async () => {
-    const onChange = vi.fn();
+  it('never exposes source or preview modes, even for legacy props', async () => {
+    const onSourceModeDirtyChange = vi.fn();
     render(
       <RichTextEditor
         content={null}
         enableHTMLSource
+        enablePreview
         featurePreset="full"
-        onChange={onChange}
+        onSourceModeDirtyChange={onSourceModeDirtyChange}
       />
     );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    const source = screen.getByRole('textbox', { name: 'HTML source' });
-    fireEvent.change(source, { target: { value: '<p><u>Safe</u></p>' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply HTML' }));
-    await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'doc' })
-      )
-    );
-    await waitFor(() =>
-      expect((source as HTMLTextAreaElement).value).toContain('Safe')
-    );
-
-    fireEvent.change(source, {
-      target: { value: '<script>alert(1)</script>' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply HTML' }));
-    expect(screen.getByRole('alert').textContent).toContain(
-      'contains unsafe or unsupported code'
-    );
-    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('button', { name: 'Bold' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'HTML' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+    expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(false);
   });
 
-  it('keeps read-only editors free of HTML controls', async () => {
-    render(
+  it('keeps read-only editors free of authoring controls', async () => {
+    const { container } = render(
       <RichTextEditor
-        content={null}
+        content={{
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Read-only toggle', type: 'text' }],
+                  type: 'collapsibleSummary',
+                },
+                {
+                  content: [{ text: 'Hidden details', type: 'text' }],
+                  type: 'paragraph',
+                },
+              ],
+              type: 'collapsible',
+            },
+          ],
+          type: 'doc',
+        }}
         enableHTMLSource
         featurePreset="full"
         readOnly
@@ -155,6 +105,7 @@ describe('RichTextEditor source and preview modes', () => {
       expect(screen.queryByRole('button', { name: 'HTML' })).toBeNull()
     );
     expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+    expect(container.querySelector('details[open]')).toBeNull();
   });
 
   it('updates visual editing when read-only changes', async () => {
@@ -202,69 +153,116 @@ describe('RichTextEditor source and preview modes', () => {
     });
   });
 
-  it('refreshes a clean HTML projection when controlled content changes', async () => {
-    const first = {
-      content: [
-        {
-          content: [{ text: 'First', type: 'text' }],
-          type: 'paragraph',
-        },
-      ],
-      type: 'doc',
-    };
-    const second = {
-      content: [
-        {
-          content: [{ text: 'Second', type: 'text' }],
-          type: 'paragraph',
-        },
-      ],
-      type: 'doc',
-    };
-    const { rerender } = render(
-      <RichTextEditor content={first} enableHTMLSource featurePreset="full" />
-    );
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    expect(
-      (
-        screen.getByRole('textbox', {
-          name: 'HTML source',
-        }) as HTMLTextAreaElement
-      ).value
-    ).toContain('First');
-
-    rerender(
-      <RichTextEditor content={second} enableHTMLSource featurePreset="full" />
+  it('adds collapsible sections as visible structured content', async () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RichTextEditor content={null} featurePreset="full" onChange={onChange} />
     );
 
-    await waitFor(() =>
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Toggle section' })
+    );
+    await waitFor(() => {
+      expect(container.querySelector('details[open]')).toBeTruthy();
+      expect(container.querySelector('summary')?.textContent).toBe('');
       expect(
-        (
-          screen.getByRole('textbox', {
-            name: 'HTML source',
-          }) as HTMLTextAreaElement
-        ).value
-      ).toContain('Second')
-    );
+        container
+          .querySelector('details > summary')
+          ?.getAttribute('data-placeholder')
+      ).toBe('Section title');
+      expect(container.querySelector('details > p')?.textContent).toBe('');
+      expect(
+        container.querySelector('details > p')?.getAttribute('data-placeholder')
+      ).toBe('Write the hidden details here…');
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: expect.arrayContaining([
+            expect.objectContaining({ type: 'collapsible' }),
+          ]),
+        })
+      );
+    });
+
+    const details = container.querySelector('details');
+    const disclosure = screen.getByRole('button', {
+      name: 'Expand or collapse section',
+    });
+    fireEvent.click(disclosure);
+    await waitFor(() => expect(details?.hasAttribute('open')).toBe(false));
+    fireEvent.click(disclosure);
+    await waitFor(() => expect(details?.hasAttribute('open')).toBe(true));
   });
 
-  it('exits source mode when source editing becomes unavailable', async () => {
-    const { rerender } = render(
-      <RichTextEditor content={null} enableHTMLSource featurePreset="full" />
-    );
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    expect(screen.getByRole('textbox', { name: 'HTML source' })).toBeTruthy();
-
-    rerender(
+  it('localizes the collapsible disclosure control', async () => {
+    render(
       <RichTextEditor
-        content={null}
-        enableHTMLSource={false}
+        content={{
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Tiêu đề', type: 'text' }],
+                  type: 'collapsibleSummary',
+                },
+                { type: 'paragraph' },
+              ],
+              type: 'collapsible',
+            },
+          ],
+          type: 'doc',
+        }}
         featurePreset="full"
+        locale="vi"
       />
     );
-    await waitFor(() =>
-      expect(screen.queryByRole('textbox', { name: 'HTML source' })).toBeNull()
+
+    expect(
+      await screen.findByRole('button', { name: 'Mở rộng hoặc thu gọn mục' })
+    ).toBeTruthy();
+  });
+
+  it('keeps authoring placeholders out of read-only collapsibles', async () => {
+    const { container } = render(
+      <RichTextEditor
+        content={{
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Read more', type: 'text' }],
+                  type: 'collapsibleSummary',
+                },
+                { type: 'paragraph' },
+              ],
+              type: 'collapsible',
+            },
+          ],
+          type: 'doc',
+        }}
+        featurePreset="full"
+        readOnly
+      />
     );
+
+    await screen.findByText('Read more');
+    expect(
+      container.querySelector('details > p')?.hasAttribute('data-placeholder')
+    ).toBe(false);
+  });
+
+  it('renders product actions inside the formatting toolbar', async () => {
+    render(
+      <RichTextEditor
+        content={null}
+        featurePreset="full"
+        toolbarEnd={<button type="button">Expand editor</button>}
+      />
+    );
+    const toolbar = await screen.findByRole('toolbar', { name: 'Formatting' });
+    expect(
+      toolbar.querySelector('button[aria-label="Expand editor"]') ??
+        screen.getByRole('button', { name: 'Expand editor' })
+    ).toBeTruthy();
   });
 
   it('rebuilds its schema when the feature preset changes', async () => {
@@ -277,6 +275,9 @@ describe('RichTextEditor source and preview modes', () => {
     expect(screen.queryByRole('button', { name: 'Heading 2' })).toBeNull();
 
     rerender(<RichTextEditor content={null} featurePreset="full" />);
+    expect(
+      await screen.findByRole('button', { name: 'Heading 1' })
+    ).toBeTruthy();
     expect(
       await screen.findByRole('button', { name: 'Heading 2' })
     ).toBeTruthy();

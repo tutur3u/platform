@@ -1,6 +1,6 @@
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
-import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import { supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
 import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
@@ -13,10 +13,10 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -59,15 +59,11 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function RootLayout({ children, params }: Props) {
-  const { locale } = await params;
-
-  // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes(locale as Locale)) {
-    notFound();
-  }
-
-  setRequestLocale(locale as Locale);
+export default async function RootLayout({ children }: Props) {
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
 
   return (
     <html lang={locale} suppressHydrationWarning>

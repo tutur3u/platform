@@ -25,10 +25,6 @@ import NotesContent from '@tuturuuu/tasks-ui/tu-do/notes/notes-content';
 import { TaskProjectsClient } from '@tuturuuu/tasks-ui/tu-do/projects/task-projects-client';
 import type { TaskProject } from '@tuturuuu/tasks-ui/tu-do/projects/types';
 import { BoardLayoutSettingsContent } from '@tuturuuu/tasks-ui/tu-do/shared/board-layout-settings';
-import {
-  TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
-  TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
-} from '@tuturuuu/tasks-ui/tu-do/shared/task-board-preferences';
 import MarketplaceClient from '@tuturuuu/tasks-ui/tu-do/templates/marketplace/client';
 import { TaskTemplatesHub } from '@tuturuuu/tasks-ui/tu-do/templates/task-templates-hub';
 import TaskTemplateDetailPageClient from '@tuturuuu/tasks-ui/tu-do/templates/templateId/task-template-detail-page-client';
@@ -39,23 +35,21 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import IconPicker from '@tuturuuu/ui/custom/icon-picker';
-import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { BoardSettingsNavigation } from './board-settings-navigation';
+import { TaskBoardBehaviorSettings } from './task-board-behavior-settings';
+import { TaskBoardLifecycleSettings } from './task-board-lifecycle-settings';
 import { listPublicBoardTemplates } from './template-marketplace-actions';
 
 function getBrowserInternalApiOptions() {
@@ -167,6 +161,7 @@ export function TaskBoardSettingsPanel({
           />
           <TaskBoardBehaviorSettings />
           <CapacityRulesSettings boardId={board.id} lists={lists} wsId={wsId} />
+          <TaskBoardLifecycleSettings board={board} wsId={wsId} />
         </TabsContent>
 
         <TabsContent value="layout">
@@ -207,58 +202,6 @@ export function TaskBoardSettingsPanel({
           </div>
         </TabsContent>
       </BoardSettingsNavigation>
-    </div>
-  );
-}
-
-function TaskBoardBehaviorSettings() {
-  const t = useTranslations('settings.tasks');
-  const {
-    value: persistCollapsedLists,
-    setValue: setPersistCollapsedLists,
-    isLoading: persistLoading,
-    isPending: persistPending,
-  } = useUserBooleanConfig(TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID, true);
-  const {
-    value: hideEmptyLists,
-    setValue: setHideEmptyLists,
-    isLoading: hideEmptyLoading,
-    isPending: hideEmptyPending,
-  } = useUserBooleanConfig(TASK_HIDE_EMPTY_LISTS_CONFIG_ID, false);
-
-  return (
-    <div className="space-y-4 rounded-2xl border bg-background p-4 sm:p-5">
-      <div className="space-y-1">
-        <h3 className="font-medium">{t('board_behavior')}</h3>
-        <p className="text-muted-foreground text-sm">
-          {t('board_behavior_description')}
-        </p>
-      </div>
-      <div className="grid gap-4">
-        <SettingItemTab
-          title={t('persist_collapsed_lists')}
-          description={t('persist_collapsed_lists_description')}
-        >
-          <Switch
-            aria-label={t('persist_collapsed_lists')}
-            checked={persistCollapsedLists}
-            onCheckedChange={setPersistCollapsedLists}
-            disabled={persistLoading || persistPending}
-          />
-        </SettingItemTab>
-        <Separator />
-        <SettingItemTab
-          title={t('hide_empty_task_lists')}
-          description={t('hide_empty_task_lists_description')}
-        >
-          <Switch
-            aria-label={t('hide_empty_task_lists')}
-            checked={hideEmptyLists}
-            onCheckedChange={setHideEmptyLists}
-            disabled={hideEmptyLoading || hideEmptyPending}
-          />
-        </SettingItemTab>
-      </div>
     </div>
   );
 }

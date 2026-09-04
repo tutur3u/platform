@@ -10,7 +10,11 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
+- **Blocked by:** mandatory Nova production build repeatedly fails in the
+  current execution environment with Turbopack `EPERM` while creating an
+  internal process/port; uncommitted reviewed work remains in
+  `.worktrees/fix-nova-role-management-auth`
 - **Priority:** P0
 - **Effort:** S
 - **Risk:** LOW
@@ -52,9 +56,9 @@ expected discriminated-result and negative-call patterns.
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
 | Focused route test | `bun --cwd apps/nova vitest run 'src/app/api/v1/nova/users/[userId]/route.test.ts'` | exit 0; authorization and strict-body matrix passes |
-| Nova typecheck | `bun --cwd apps/nova run type-check` | exit 0 |
+| Nova typecheck | `bun run --cwd apps/nova type-check` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Nova build | `bun --cwd apps/nova run build` | exit 0 |
+| Nova build | `bun run --cwd apps/nova build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

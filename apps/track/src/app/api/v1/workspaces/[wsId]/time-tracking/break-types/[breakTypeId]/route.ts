@@ -43,8 +43,8 @@ export async function PATCH(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request,
     });
 
     if (!permissions) {
@@ -242,8 +242,8 @@ export async function DELETE(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request,
     });
 
     if (!permissions) {

@@ -32,7 +32,7 @@ describe('createOfflineConfig', () => {
 describe('getOfflineTurbopackConfig', () => {
   const webProjectRoot = path.resolve(__dirname, '../../../../../apps/web');
 
-  it('traces esbuild-wasm runtime files', () => {
+  it('traces the worker source and esbuild-wasm runtime files', () => {
     const config = getOfflineTurbopackConfig({
       projectRoot: webProjectRoot,
     });
@@ -43,7 +43,11 @@ describe('getOfflineTurbopackConfig', () => {
       '/serwist/[path]'
     );
     expect(includes?.map((include) => path.basename(include)).sort()).toEqual([
+      'create-offline-worker.ts',
       'esbuild.wasm',
+      'index.ts',
+      'sw.ts',
+      'types.ts',
       'wasm_exec.js',
       'wasm_exec_node.js',
     ]);
@@ -79,6 +83,17 @@ describe('getOfflineTurbopackConfig', () => {
     ]);
     expect(config.outputFileTracingIncludes?.['/serwist/*']).toContain(
       './custom-worker.js'
+    );
+  });
+
+  it('traces a custom worker source', () => {
+    const config = getOfflineTurbopackConfig({
+      projectRoot: webProjectRoot,
+      workerSource: 'src/app/custom-worker.ts',
+    });
+
+    expect(config.outputFileTracingIncludes?.['/serwist/*']).toContain(
+      './src/app/custom-worker.ts'
     );
   });
 });

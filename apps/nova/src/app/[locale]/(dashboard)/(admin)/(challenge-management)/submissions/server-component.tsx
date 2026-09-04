@@ -4,6 +4,9 @@ import type {
   NovaProblem,
   NovaSubmission,
 } from '@tuturuuu/types';
+import { redirect } from 'next/navigation';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
+import { canManageNovaChallengesGlobally } from '@/lib/challenge-management-auth';
 import { SubmissionFilters } from './filters';
 import { SubmissionOverview } from './overview';
 import { SubmissionTable } from './submission-table';
@@ -21,6 +24,28 @@ type SubmissionWithDetails = NovaSubmission & {
   total_score: number;
 };
 
+const ALLOWED_PAGE_SIZES = new Set([10, 20, 50]);
+
+export function parseSubmissionPagination({
+  page,
+  pageSize,
+}: {
+  page?: string;
+  pageSize?: string;
+}) {
+  const parsedPage = Number(page);
+  const parsedPageSize = Number(pageSize);
+
+  return {
+    currentPage:
+      Number.isInteger(parsedPage) && parsedPage >= 1 ? parsedPage : 1,
+    pageSize:
+      Number.isInteger(parsedPageSize) && ALLOWED_PAGE_SIZES.has(parsedPageSize)
+        ? parsedPageSize
+        : 10,
+  };
+}
+
 export default async function SubmissionsList({
   searchParams: futureParams,
 }: {
@@ -35,12 +60,15 @@ export default async function SubmissionsList({
     userId?: string;
   }>;
 }) {
-  const sbAdmin = await createAdminClient();
+  const user = await requireNovaAppSessionUser();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  if (!(await canManageNovaChallengesGlobally(user, sbAdmin))) {
+    redirect('/challenges');
+  }
+
   const searchParams = await futureParams;
 
-  // Parse query parameters with defaults
-  const currentPage = parseInt(searchParams.page || '1', 10);
-  const pageSize = parseInt(searchParams.pageSize || '10', 10);
+  const { currentPage, pageSize } = parseSubmissionPagination(searchParams);
   const sortField = searchParams.sortField || 'created_at';
   const sortDirection = (searchParams.sortDirection || 'desc') as
     | 'asc'
@@ -89,26 +117,6 @@ export default async function SubmissionsList({
     selectedChallenge && problems
       ? problems.filter((p) => p.challenge_id === selectedChallenge)
       : problems || [];
-
-  // Fetch users for filtering
-  const { data: filterUsers = [] } = await sbAdmin
-    .from('users')
-    .select(
-      `
-      id,
-      display_name,
-      user_private_details (
-        email
-      )
-    `
-    )
-    .order('display_name');
-
-  const userOptions = (filterUsers || []).map((user) => ({
-    id: user.id,
-    display_name: user.display_name || 'Unknown User',
-    email: user.user_private_details?.email || '',
-  }));
 
   let query = sbAdmin
     .schema('private')
@@ -193,7 +201,6 @@ export default async function SubmissionsList({
           selectedUser={selectedUser}
           challenges={challenges || []}
           filteredProblems={filteredProblems || []}
-          users={userOptions}
           serverSide={true}
         />
 
@@ -269,7 +276,6 @@ export default async function SubmissionsList({
         selectedUser={selectedUser}
         challenges={challenges || []}
         filteredProblems={filteredProblems || []}
-        users={userOptions}
         serverSide={true}
       />
 

@@ -75,10 +75,10 @@ export async function resolveFormDefinitionMedia(
   supabase: SupabaseClient<Database>,
   definition: FormDefinition
 ) {
-  const coverImage = await resolveFormMedia(
-    supabase,
-    definition.theme.coverImage
-  );
+  const [coverImage, seoImage] = await Promise.all([
+    resolveFormMedia(supabase, definition.theme.coverImage),
+    resolveFormMedia(supabase, definition.seo.image),
+  ]);
   const sectionMediaEntries = await Promise.all(
     definition.sections.map(async (section) => [
       section.id,
@@ -117,6 +117,10 @@ export async function resolveFormDefinitionMedia(
       ...definition.theme,
       coverImage,
       sectionImages: resolvedSectionImages,
+    },
+    seo: {
+      ...definition.seo,
+      image: seoImage,
     },
     sections: definition.sections.map((section) => ({
       ...section,

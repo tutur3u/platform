@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Check, Compass, X } from '@tuturuuu/icons';
 import {
   getConnectedOnboardingProgress,
@@ -29,15 +29,19 @@ function browserAppSlug() {
 }
 
 const STEPS = ['discover', 'try', 'continue'] as const;
+const CONNECTED_ONBOARDING_QUERY_KEY = ['connected-onboarding'] as const;
 
 export function AppGuideOverlay() {
   const t = useTranslations('onboarding_guide');
+  const queryClient = useQueryClient();
   const [appSlug, setAppSlug] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const progress = useQuery({
-    queryKey: ['connected-onboarding'],
+    queryKey: CONNECTED_ONBOARDING_QUERY_KEY,
     queryFn: () => getConnectedOnboardingProgress(),
-    staleTime: 60_000,
+    gcTime: 60 * 60_000,
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 60_000,
   });
 
   useEffect(() => {
@@ -70,9 +74,11 @@ export function AppGuideOverlay() {
 
   const close = () => {
     setAppSlug(null);
-    void updateConnectedOnboardingProgress({ replay_app: null }).catch(
-      () => null
-    );
+    void updateConnectedOnboardingProgress({ replay_app: null })
+      .then((nextProgress) =>
+        queryClient.setQueryData(CONNECTED_ONBOARDING_QUERY_KEY, nextProgress)
+      )
+      .catch(() => null);
   };
 
   const complete = () => {
@@ -84,7 +90,11 @@ export function AppGuideOverlay() {
     void updateConnectedOnboardingProgress({
       completed_missions: [...completed],
       replay_app: null,
-    }).catch(() => null);
+    })
+      .then((nextProgress) =>
+        queryClient.setQueryData(CONNECTED_ONBOARDING_QUERY_KEY, nextProgress)
+      )
+      .catch(() => null);
   };
 
   return (

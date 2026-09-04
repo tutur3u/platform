@@ -2,7 +2,6 @@
 // ignore_for_file: directives_ordering
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -302,18 +301,12 @@ class _DrivePageState extends State<DrivePage> {
   }
 
   Future<void> _uploadFiles() async {
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty || _wsId == null) return;
+    final result = await FilePicker.pickFiles();
+    if (result.isEmpty || _wsId == null) return;
 
-    for (final file in result.files) {
+    for (final file in result) {
       try {
-        final bytes =
-            file.bytes ??
-            (file.path == null ? null : await File(file.path!).readAsBytes());
-        if (bytes == null) continue;
+        final bytes = await file.readAsBytes();
         final mimeType =
             lookupMimeType(file.name, headerBytes: bytes.take(12).toList()) ??
             'application/octet-stream';

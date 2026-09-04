@@ -31,8 +31,9 @@ export function useWorkspaceInvitations({
     queryKey: ['workspace-invitations', ...(cacheScope ? [cacheScope] : [])],
     queryFn: async () => (await listWorkspaceInvitations()).invitations,
     enabled,
+    gcTime: 30 * 60_000,
     retry: 1,
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
   });
   const invitations = query.data ?? [];
   const mutation = useMutation({

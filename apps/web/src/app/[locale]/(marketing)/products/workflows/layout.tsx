@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Workflow Automation',
-  description: 'Automate cross-team processes with Tuturuuu Workflows.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'products.workflows.seo',
   pathname: '/products/workflows',
 });
 

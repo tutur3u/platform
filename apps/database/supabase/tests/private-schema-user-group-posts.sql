@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(32);
+select plan(40);
 
 create temporary table migrated_relations(table_name text primary key)
 on commit drop;
@@ -479,6 +479,74 @@ select ok(
       and not has_function_privilege('service_role', proc_row.oid, 'execute')
   ),
   'service role can execute private post RPCs'
+);
+
+select is(
+  public.strict_text_field_char_limit('user_group_posts', 'content'),
+  65536,
+  'user group post content keeps the rich-text character allowance'
+);
+
+select is(
+  public.strict_text_field_byte_limit('user_group_posts', 'content'),
+  262144,
+  'user group post content keeps the rich-text byte allowance'
+);
+
+select is(
+  public.strict_text_field_char_limit('user_group_post_logs', 'content'),
+  65536,
+  'user group post audit content keeps the rich-text character allowance'
+);
+
+select is(
+  public.strict_text_field_byte_limit('user_group_post_logs', 'content'),
+  262144,
+  'user group post audit content keeps the rich-text byte allowance'
+);
+
+select matches(
+  (
+    select pg_get_constraintdef(constraint_row.oid)
+    from pg_constraint constraint_row
+    where constraint_row.conrelid = 'private.user_group_posts'::regclass
+      and constraint_row.conname = 'content_strict_length_check'
+  ),
+  'char_length\(content\) <= 65536',
+  'private user group posts enforce the rich-text character allowance'
+);
+
+select matches(
+  (
+    select pg_get_constraintdef(constraint_row.oid)
+    from pg_constraint constraint_row
+    where constraint_row.conrelid = 'private.user_group_posts'::regclass
+      and constraint_row.conname = 'content_strict_bytes_check'
+  ),
+  'octet_length\(content\) <= 262144',
+  'private user group posts enforce the rich-text byte allowance'
+);
+
+select matches(
+  (
+    select pg_get_constraintdef(constraint_row.oid)
+    from pg_constraint constraint_row
+    where constraint_row.conrelid = 'private.user_group_post_logs'::regclass
+      and constraint_row.conname = 'content_strict_length_check'
+  ),
+  'char_length\(content\) <= 65536',
+  'private user group post logs enforce the rich-text character allowance'
+);
+
+select matches(
+  (
+    select pg_get_constraintdef(constraint_row.oid)
+    from pg_constraint constraint_row
+    where constraint_row.conrelid = 'private.user_group_post_logs'::regclass
+      and constraint_row.conname = 'content_strict_bytes_check'
+  ),
+  'octet_length\(content\) <= 262144',
+  'private user group post logs enforce the rich-text byte allowance'
 );
 
 select * from finish();

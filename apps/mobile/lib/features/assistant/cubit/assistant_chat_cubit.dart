@@ -252,7 +252,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }) async {
     for (final file in files) {
       final id = _repository.generateUuid();
-      final picked = AssistantFilePickerResult.fromPlatformFile(file, id);
+      final picked = await AssistantFilePickerResult.fromPlatformFile(file, id);
       final pendingAttachment = AssistantAttachment(
         id: id,
         name: picked.name,

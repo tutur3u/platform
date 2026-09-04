@@ -129,9 +129,15 @@ export function useBulkAddAssignee(
         updatedAssigneesByTaskId,
       };
     },
-    onMutate: async ({ assigneeId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ assigneeId, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const current = cacheSnapshot.previousTasks || [];
 
@@ -168,6 +174,7 @@ export function useBulkAddAssignee(
           boardId,
           previousTasks: context.previousTasks,
           previousFullTasks: context.previousFullTasks,
+          previousDeadlineTasks: context.previousDeadlineTasks,
           failedTaskIds: variables.taskIds,
         });
       }
@@ -183,6 +190,7 @@ export function useBulkAddAssignee(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds: data.failedTaskIds,
       });
 
@@ -284,9 +292,15 @@ export function useBulkRemoveAssignee(
         failedTaskIds,
       };
     },
-    onMutate: async ({ assigneeId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ assigneeId, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const current = cacheSnapshot.previousTasks || [];
       const modifiedTaskIds = taskIds.filter((id) => {
@@ -320,6 +334,7 @@ export function useBulkRemoveAssignee(
           boardId,
           previousTasks: context.previousTasks,
           previousFullTasks: context.previousFullTasks,
+          previousDeadlineTasks: context.previousDeadlineTasks,
           failedTaskIds: variables.taskIds,
         });
       }
@@ -336,6 +351,7 @@ export function useBulkRemoveAssignee(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds: data.failedTaskIds,
       });
 

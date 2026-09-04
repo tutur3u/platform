@@ -46,7 +46,12 @@ export function SatelliteWorkspaceInvitationCard({
   const workspace = invitation.workspace;
   const destination = workspaceHref ?? `/${workspace.id}`;
   const workspaceName = getWorkspaceName(workspace);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   const acceptMutation = useMutation({
     mutationFn: () => acceptWorkspaceInvite(workspace.id),
@@ -77,7 +82,10 @@ export function SatelliteWorkspaceInvitationCard({
   });
 
   const busy =
-    isLeaving || acceptMutation.isPending || declineMutation.isPending;
+    !isHydrated ||
+    isLeaving ||
+    acceptMutation.isPending ||
+    declineMutation.isPending;
   const sourceLabel =
     invitation.source === 'email' ? t('email-invite') : t('direct-invite');
 

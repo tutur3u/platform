@@ -1,5 +1,6 @@
 'use client';
 
+import { FileText, Pencil, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -59,8 +60,37 @@ export function ReportBasicInfoDialog({
   const t = useTranslations();
   const [open, setOpen] = useState(false);
 
+  if (formProps.isNew) {
+    return (
+      <section className="overflow-hidden rounded-2xl border border-dynamic-blue/25 bg-linear-to-br from-dynamic-blue/10 via-background to-background shadow-sm">
+        <div className="flex items-start gap-3 border-dynamic-blue/15 border-b px-4 py-4 sm:px-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-dynamic-blue/15 text-dynamic-blue">
+            <FileText className="h-5 w-5" />
+          </div>
+          <div className="space-y-1">
+            <div className="font-semibold text-base">
+              {t('ws-reports.create_report_title')}
+            </div>
+            <p className="text-muted-foreground text-sm">
+              {t('ws-reports.new_report_description')}
+            </p>
+          </div>
+        </div>
+        <div className="p-4 sm:p-5">
+          <UserReportForm {...formProps} />
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-xl border bg-card p-3 shadow-xs">
+      <div className="flex items-center gap-2 px-1">
+        <FileText className="h-4 w-4 text-dynamic-blue" />
+        <span className="font-medium text-sm">
+          {t('ws-reports.report_details')}
+        </span>
+      </div>
       <div className="grid gap-2">
         <BasicInfoPreview
           label={t('user-report-data-table.title')}
@@ -78,22 +108,42 @@ export function ReportBasicInfoDialog({
         />
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="w-full" type="button" variant="outline">
-            {t('common.edit')}
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-2',
+          formProps.onDelete && formProps.canDelete && 'sm:grid-cols-2'
+        )}
+      >
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="w-full gap-2" type="button" variant="outline">
+              <Pencil className="h-4 w-4" />
+              {t('ws-reports.edit_report')}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{t('ws-reports.basic_info')}</DialogTitle>
+              <DialogDescription>
+                {t('ws-reports.selected_user_description')}
+              </DialogDescription>
+            </DialogHeader>
+            <UserReportForm {...formProps} onDelete={undefined} />
+          </DialogContent>
+        </Dialog>
+
+        {formProps.onDelete && formProps.canDelete ? (
+          <Button
+            className="w-full gap-2"
+            type="button"
+            variant="destructive"
+            onClick={formProps.onDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+            {t('ws-reports.delete_report')}
           </Button>
-        </DialogTrigger>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{t('ws-reports.basic_info')}</DialogTitle>
-            <DialogDescription>
-              {t('ws-reports.selected_user_description')}
-            </DialogDescription>
-          </DialogHeader>
-          <UserReportForm {...formProps} />
-        </DialogContent>
-      </Dialog>
+        ) : null}
+      </div>
     </div>
   );
 }

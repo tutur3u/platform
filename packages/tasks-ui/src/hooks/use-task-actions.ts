@@ -18,13 +18,32 @@ import { useCallback } from 'react';
 import { invalidateKanbanDeadlineTasks } from '../tu-do/boards/boardId/kanban/data/kanban-deadline-query';
 import { useBoardBroadcast } from '../tu-do/shared/board-broadcast-context';
 import {
+  applyOptimisticTaskPatch,
+  getTaskFromVisibleCaches,
+  patchTaskInVisibleCaches,
+  restoreTaskFieldsFromVisibleCacheSnapshot,
+  restoreTasksFromVisibleCacheSnapshot,
+  restoreVisibleTaskCaches,
+  settleOptimisticTaskPatch,
+  snapshotVisibleTaskCaches,
+} from '../tu-do/shared/task-cache-patches';
+import {
   dispatchTaskSoundCue,
   type TaskSoundCue,
 } from '../tu-do/shared/task-sound-effects';
 import {
   isPersonalExternalTask,
   moveExternalTaskToPersonalList,
+  shouldMoveExternalTaskToCompletion,
 } from './task-actions-personal-external';
+import { updateTaskMetadata } from './task-metadata-updates';
+import {
+  beginTaskTerminalIntent,
+  enqueueTaskTerminalMutation,
+  finishTaskTerminalIntent,
+  hasPendingTaskTerminalIntent,
+  isLatestTaskTerminalIntent,
+} from './task-terminal-mutation-queue';
 
 interface UseTaskActionsProps {
   task?: Task; // Made optional to handle loading states
@@ -135,6 +154,22 @@ export function useTaskActions({
     [isMultiSelectMode, selectedTasks]
   );
 
+  const updateTaskIds = useCallback(
+    (
+      taskIds: string[],
+      payload: Parameters<typeof updateTaskMetadata>[0]['payload']
+    ) =>
+      updateTaskMetadata({
+        queryClient,
+        boardId,
+        taskIds,
+        payload,
+        fallbackTask: task,
+        resolveWorkspaceId: resolveWorkspaceIdForTask,
+      }),
+    [boardId, queryClient, resolveWorkspaceIdForTask, task]
+  );
+
   const getExternalMoveOptions = useCallback((targetList: TaskList) => {
     const options: {
       sourceStatus?: TaskBoardStatus;
@@ -161,19 +196,12 @@ export function useTaskActions({
 
   const mergeLocallyMutatedTask = useCallback(
     (taskId: string, taskPatch: Partial<Task>) => {
-      queryClient.setQueryData<Task[]>(['tasks', boardId], (current) => {
-        if (!current) {
-          return current;
-        }
-
-        return current.map((item) =>
-          item.id === taskId
-            ? markLocallyMutatedTask({
-                ...item,
-                ...taskPatch,
-              } as Task)
-            : item
-        );
+      patchTaskInVisibleCaches({
+        boardId,
+        queryClient,
+        taskId,
+        updater: (item) =>
+          markLocallyMutatedTask({ ...item, ...taskPatch } as Task),
       });
     },
     [boardId, markLocallyMutatedTask, queryClient]
@@ -249,41 +277,91 @@ export function useTaskActions({
     if (!task || !onUpdate) return;
     setIsLoading(true);
 
-    const newClosedState = !task.closed_at;
+    const shouldMoveExternalToCompletion = shouldMoveExternalTaskToCompletion(
+      task,
+      targetCompletionList
+    );
+    const newClosedState = shouldMoveExternalToCompletion || !task.closed_at;
+    const intentId = beginTaskTerminalIntent(task.id);
 
-    // Store previous state for rollback
-    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-
-    if (
-      isPersonalExternalTask(task) &&
+    const previousCaches = snapshotVisibleTaskCaches(queryClient, boardId, [
+      task.id,
+    ]);
+    const now = new Date().toISOString();
+    const shouldMoveToCompletionList = Boolean(
       newClosedState &&
-      targetCompletionList &&
-      targetCompletionList.id !== task.list_id
-    ) {
-      try {
-        await moveExternalTaskToPersonalList({
-          boardId,
-          markLocallyMutatedTask,
-          queryClient,
-          task,
-          targetList: targetCompletionList,
-          sourceStatus:
-            targetCompletionList.status === 'closed' ? 'closed' : 'done',
-          placementPosition: 'top',
-        });
+        targetCompletionList &&
+        targetCompletionList.id !== task.list_id
+    );
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds: [task.id],
+      updater: (item) => {
+        if (shouldMoveToCompletionList && targetCompletionList) {
+          return {
+            ...item,
+            list_id: targetCompletionList.id,
+            ...(isPersonalExternalTask(item)
+              ? { personal_list_id: targetCompletionList.id }
+              : {}),
+            completed: targetCompletionList.status === 'done',
+            closed_at: now,
+            completed_at:
+              targetCompletionList.status === 'done' ? now : undefined,
+          };
+        }
 
-        toast.success('Task completed', {
-          description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
+        return {
+          ...item,
+          closed_at: newClosedState ? now : undefined,
+        };
+      },
+    });
+    let mutationFailed = false;
+
+    if (shouldMoveExternalToCompletion && targetCompletionList) {
+      try {
+        await enqueueTaskTerminalMutation(task.id, async () => {
+          await moveExternalTaskToPersonalList({
+            boardId,
+            markLocallyMutatedTask,
+            queryClient,
+            task,
+            targetList: targetCompletionList,
+            sourceStatus:
+              targetCompletionList.status === 'closed' ? 'closed' : 'done',
+            placementPosition: 'top',
+            shouldApplyCacheUpdate: () =>
+              isLatestTaskTerminalIntent(task.id, intentId),
+          });
+
+          if (!isLatestTaskTerminalIntent(task.id, intentId)) return;
+          toast.success('Task completed', {
+            description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
+          });
+          dispatchTaskActionSound('complete');
+          invalidateDeadlineTasks();
         });
-        dispatchTaskActionSound('complete');
-        invalidateDeadlineTasks();
       } catch (error) {
+        mutationFailed = true;
         console.error('Failed to complete external task:', error);
-        toast.error('Error', {
-          description: 'Failed to complete task. Please try again.',
-        });
+        if (isLatestTaskTerminalIntent(task.id, intentId)) {
+          restoreVisibleTaskCaches(queryClient, previousCaches);
+          toast.error('Error', {
+            description: 'Failed to complete task. Please try again.',
+          });
+        }
       } finally {
-        setIsLoading(false);
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [task.id],
+          mutationId,
+          clearLocalMutationAt: mutationFailed,
+        });
+        finishTaskTerminalIntent(task.id, intentId);
+        if (!hasPendingTaskTerminalIntent(task.id)) setIsLoading(false);
       }
       return;
     }
@@ -293,126 +371,107 @@ export function useTaskActions({
       targetCompletionList &&
       targetCompletionList.id !== task.list_id
     ) {
-      const now = new Date().toISOString();
-
       try {
-        // Optimistic update: move task to completion list and set closed_at
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              t.id === task.id
-                ? markLocallyMutatedTask({
-                    ...t,
-                    list_id: targetCompletionList.id,
-                    completed: targetCompletionList.status === 'done',
-                    closed_at: now,
-                    completed_at:
-                      targetCompletionList.status === 'done' ? now : null,
-                  } as Task)
-                : t
-            );
-          }
-        );
+        await enqueueTaskTerminalMutation(task.id, async () => {
+          const workspaceId = await getWorkspaceId();
+          const { task: movedTask } = await updateWorkspaceTask(
+            workspaceId,
+            task.id,
+            { list_id: targetCompletionList.id }
+          );
 
-        // moveTask handles setting archived status based on target list
-        const workspaceId = await getWorkspaceId();
-
-        const { task: movedTask } = await updateWorkspaceTask(
-          workspaceId,
-          task.id,
-          {
+          if (!isLatestTaskTerminalIntent(task.id, intentId)) return;
+          mergeLocallyMutatedTask(task.id, {
+            ...movedTask,
             list_id: targetCompletionList.id,
-          }
-        );
-        mergeLocallyMutatedTask(task.id, {
-          ...movedTask,
-          list_id: targetCompletionList.id,
-          closed_at: movedTask?.closed_at ?? now,
-          completed_at:
-            movedTask?.completed_at ??
-            (targetCompletionList.status === 'done' ? now : undefined),
+            closed_at: movedTask?.closed_at ?? now,
+            completed_at:
+              movedTask?.completed_at ??
+              (targetCompletionList.status === 'done' ? now : undefined),
+          });
+          broadcast?.('task:upsert', {
+            task: {
+              id: task.id,
+              list_id: targetCompletionList.id,
+              completed_at: movedTask?.completed_at,
+              closed_at: movedTask?.closed_at,
+            },
+          });
+          invalidateDeadlineTasks();
+          toast.success('Task completed', {
+            description: `Task marked as done and moved to ${targetCompletionList.name}`,
+          });
+          dispatchTaskActionSound('complete');
         });
-        broadcast?.('task:upsert', {
-          task: {
-            id: task.id,
-            list_id: targetCompletionList.id,
-            completed_at: movedTask?.completed_at,
-            closed_at: movedTask?.closed_at,
-          },
-        });
-        invalidateDeadlineTasks();
-
-        toast.success('Task completed', {
-          description: `Task marked as done and moved to ${targetCompletionList.name}`,
-        });
-        dispatchTaskActionSound('complete');
       } catch (error) {
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        mutationFailed = true;
+        if (isLatestTaskTerminalIntent(task.id, intentId)) {
+          restoreVisibleTaskCaches(queryClient, previousCaches);
         }
         console.error('Failed to complete task:', error);
-        toast.error('Error', {
-          description: 'Failed to complete task. Please try again.',
-        });
+        if (isLatestTaskTerminalIntent(task.id, intentId)) {
+          toast.error('Error', {
+            description: 'Failed to complete task. Please try again.',
+          });
+        }
       } finally {
-        setIsLoading(false);
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [task.id],
+          mutationId,
+          clearLocalMutationAt: mutationFailed,
+        });
+        finishTaskTerminalIntent(task.id, intentId);
+        if (!hasPendingTaskTerminalIntent(task.id)) setIsLoading(false);
       }
     } else {
-      // Optimistic update for simple toggle
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            t.id === task.id
-              ? markLocallyMutatedTask({
-                  ...t,
-                  closed_at: newClosedState ? new Date().toISOString() : null,
-                } as Task)
-              : t
-          );
-        }
-      );
-
       try {
-        const workspaceId = await getWorkspaceId();
+        await enqueueTaskTerminalMutation(task.id, async () => {
+          const workspaceId = await getWorkspaceId();
+          const { task: updatedTask } = await updateWorkspaceTask(
+            workspaceId,
+            task.id,
+            { closed_at: newClosedState ? now : null }
+          );
 
-        const { task: updatedTask } = await updateWorkspaceTask(
-          workspaceId,
-          task.id,
-          {
-            closed_at: newClosedState ? new Date().toISOString() : null,
-          }
-        );
-        mergeLocallyMutatedTask(task.id, {
-          ...updatedTask,
-          closed_at: updatedTask.closed_at,
-          completed_at: updatedTask.completed_at,
-        });
-
-        broadcast?.('task:upsert', {
-          task: {
-            id: task.id,
+          if (!isLatestTaskTerminalIntent(task.id, intentId)) return;
+          mergeLocallyMutatedTask(task.id, {
+            ...updatedTask,
             closed_at: updatedTask.closed_at,
             completed_at: updatedTask.completed_at,
-          },
+          });
+          broadcast?.('task:upsert', {
+            task: {
+              id: task.id,
+              closed_at: updatedTask.closed_at,
+              completed_at: updatedTask.completed_at,
+            },
+          });
+          dispatchTaskActionSound(newClosedState ? 'complete' : 'update');
+          invalidateDeadlineTasks();
         });
-        dispatchTaskActionSound(newClosedState ? 'complete' : 'update');
-        invalidateDeadlineTasks();
       } catch (error) {
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
+        mutationFailed = true;
+        if (isLatestTaskTerminalIntent(task.id, intentId)) {
+          restoreVisibleTaskCaches(queryClient, previousCaches);
         }
         console.error('Failed to toggle task status:', error);
-        toast.error('Error', {
-          description: 'Failed to update task. Please try again.',
-        });
+        if (isLatestTaskTerminalIntent(task.id, intentId)) {
+          toast.error('Error', {
+            description: 'Failed to update task. Please try again.',
+          });
+        }
       } finally {
-        setIsLoading(false);
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [task.id],
+          mutationId,
+          clearLocalMutationAt: mutationFailed,
+        });
+        finishTaskTerminalIntent(task.id, intentId);
+        if (!hasPendingTaskTerminalIntent(task.id)) setIsLoading(false);
       }
     }
   }, [
@@ -439,123 +498,148 @@ export function useTaskActions({
 
     const tasksToMove = getEffectiveTaskIds(task);
     const shouldBulkMove = tasksToMove.length > 1;
+    const intentId = beginTaskTerminalIntent(task.id);
 
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+    const previousCaches = snapshotVisibleTaskCaches(
+      queryClient,
+      boardId,
+      tasksToMove
+    );
+    const now = new Date().toISOString();
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds: tasksToMove,
+      updater: (item) => ({
+        ...item,
+        list_id: targetCompletionList.id,
+        ...(isPersonalExternalTask(item)
+          ? { personal_list_id: targetCompletionList.id }
+          : {}),
+        closed_at: now,
+        completed_at:
+          targetCompletionList.status === 'done' ? now : item.completed_at,
+      }),
+    });
+    let mutationFailed = false;
 
     try {
-      if (isPersonalExternalTask(task) && !shouldBulkMove) {
-        await moveExternalTaskToPersonalList({
-          boardId,
-          markLocallyMutatedTask,
-          queryClient,
-          task,
-          targetList: targetCompletionList,
-          sourceStatus:
-            targetCompletionList.status === 'closed' ? 'closed' : 'done',
-          placementPosition: 'top',
-        });
-
-        toast.success('Task completed', {
-          description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
-        });
-        dispatchTaskActionSound('complete');
-        invalidateDeadlineTasks();
-        return;
-      }
-
-      // Optimistic update: move tasks to completion list and set closed_at/completed_at
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          const now = new Date().toISOString();
-          return old.map((t) =>
-            tasksToMove.includes(t.id)
-              ? markLocallyMutatedTask({
-                  ...t,
-                  list_id: targetCompletionList.id,
-                  closed_at: now,
-                  completed_at:
-                    targetCompletionList.status === 'done'
-                      ? now
-                      : t.completed_at,
-                } as Task)
-              : t
-          );
-        }
-      );
-
-      // Move tasks one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const workspaceId = await getWorkspaceId();
-      const failedTaskIds: string[] = [];
-      const previousTaskMap = new Map(
-        previousTasks?.map((item) => [item.id, item]) ?? []
-      );
-
-      for (const taskId of tasksToMove) {
-        try {
-          const { task: movedTask } = await updateWorkspaceTask(
-            workspaceId,
-            taskId,
-            {
-              list_id: targetCompletionList.id,
-            }
-          );
-          broadcast?.('task:upsert', {
-            task: {
-              id: taskId,
-              list_id: targetCompletionList.id,
-              completed_at: movedTask?.completed_at,
-              closed_at: movedTask?.closed_at,
-            },
+      await enqueueTaskTerminalMutation(task.id, async () => {
+        if (isPersonalExternalTask(task) && !shouldBulkMove) {
+          await moveExternalTaskToPersonalList({
+            boardId,
+            markLocallyMutatedTask,
+            queryClient,
+            task,
+            targetList: targetCompletionList,
+            sourceStatus:
+              targetCompletionList.status === 'closed' ? 'closed' : 'done',
+            placementPosition: 'top',
+            shouldApplyCacheUpdate: () =>
+              isLatestTaskTerminalIntent(task.id, intentId),
           });
-          successCount++;
-        } catch (error) {
-          failedTaskIds.push(taskId);
-          rollbackTaskIds(previousTasks, [taskId]);
-          const previousTask = previousTaskMap.get(taskId);
-          if (previousTask) {
-            broadcast?.('task:upsert', { task: previousTask });
+
+          if (isLatestTaskTerminalIntent(task.id, intentId)) {
+            toast.success('Task completed', {
+              description: `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
+            });
+            dispatchTaskActionSound('complete');
+            invalidateDeadlineTasks();
           }
-          console.error(`Failed to move task ${taskId}:`, error);
+          return;
         }
-      }
-      if (successCount === 0) throw new Error('Failed to move any tasks');
-      invalidateDeadlineTasks();
 
-      if (failedTaskIds.length > 0) {
-        toast.warning('Partial completion update', {
-          description: `${successCount}/${tasksToMove.length} tasks updated`,
-        });
+        let successCount = 0;
+        const workspaceId = await getWorkspaceId();
+        const failedTaskIds: string[] = [];
+        const previousTaskMap = new Map(
+          previousTasks?.map((item) => [item.id, item]) ?? []
+        );
+
+        for (const taskId of tasksToMove) {
+          try {
+            const { task: movedTask } = await updateWorkspaceTask(
+              workspaceId,
+              taskId,
+              { list_id: targetCompletionList.id }
+            );
+            if (isLatestTaskTerminalIntent(task.id, intentId)) {
+              broadcast?.('task:upsert', {
+                task: {
+                  id: taskId,
+                  list_id: targetCompletionList.id,
+                  completed_at: movedTask?.completed_at,
+                  closed_at: movedTask?.closed_at,
+                },
+              });
+            }
+            successCount++;
+          } catch (error) {
+            failedTaskIds.push(taskId);
+            if (isLatestTaskTerminalIntent(task.id, intentId)) {
+              restoreTasksFromVisibleCacheSnapshot({
+                queryClient,
+                snapshot: previousCaches,
+                taskIds: [taskId],
+              });
+              const previousTask = previousTaskMap.get(taskId);
+              if (previousTask) {
+                broadcast?.('task:upsert', { task: previousTask });
+              }
+            }
+            console.error(`Failed to move task ${taskId}:`, error);
+          }
+        }
+        if (successCount === 0) throw new Error('Failed to move any tasks');
+
+        if (!isLatestTaskTerminalIntent(task.id, intentId)) return;
+        invalidateDeadlineTasks();
+        if (failedTaskIds.length > 0) {
+          toast.warning('Partial completion update', {
+            description: `${successCount}/${tasksToMove.length} tasks updated`,
+          });
+          dispatchTaskActionSound('complete', successCount);
+          return;
+        }
+
+        toast.success(
+          successCount > 1
+            ? `${successCount} tasks completed`
+            : 'Task completed',
+          {
+            description:
+              successCount > 1
+                ? `Tasks marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'}`
+                : `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
+          }
+        );
         dispatchTaskActionSound('complete', successCount);
-        return;
-      }
-
-      const taskCount = successCount;
-      toast.success(
-        taskCount > 1 ? `${taskCount} tasks completed` : 'Task completed',
-        {
-          description:
-            taskCount > 1
-              ? `Tasks marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'}`
-              : `Task marked as ${targetCompletionList.status === 'done' ? 'done' : 'closed'} and moved to ${targetCompletionList.name}`,
-        }
-      );
-      dispatchTaskActionSound('complete', taskCount);
+      });
     } catch (error) {
-      // Rollback on error
-      if (previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
+      mutationFailed = true;
+      if (isLatestTaskTerminalIntent(task.id, intentId)) {
+        restoreVisibleTaskCaches(queryClient, previousCaches);
       }
       console.error('Failed to move task to completion:', error);
-      toast.error('Error', {
-        description: 'Failed to complete task. Please try again.',
-      });
+      if (isLatestTaskTerminalIntent(task.id, intentId)) {
+        toast.error('Error', {
+          description: 'Failed to complete task. Please try again.',
+        });
+      }
     } finally {
-      setIsLoading(false);
-      setMenuOpen(false);
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToMove,
+        mutationId,
+        clearLocalMutationAt: mutationFailed,
+      });
+      const wasLatestIntent = isLatestTaskTerminalIntent(task.id, intentId);
+      finishTaskTerminalIntent(task.id, intentId);
+      if (!hasPendingTaskTerminalIntent(task.id)) setIsLoading(false);
+      if (wasLatestIntent) setMenuOpen(false);
     }
   }, [
     targetCompletionList,
@@ -570,7 +654,6 @@ export function useTaskActions({
     broadcast,
     getWorkspaceId,
     markLocallyMutatedTask,
-    rollbackTaskIds,
     invalidateDeadlineTasks,
   ]);
 
@@ -581,115 +664,147 @@ export function useTaskActions({
 
     const tasksToMove = getEffectiveTaskIds(task);
     const shouldBulkMove = tasksToMove.length > 1;
+    const intentId = beginTaskTerminalIntent(task.id);
 
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+    const previousCaches = snapshotVisibleTaskCaches(
+      queryClient,
+      boardId,
+      tasksToMove
+    );
+    const now = new Date().toISOString();
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds: tasksToMove,
+      updater: (item) => ({
+        ...item,
+        list_id: targetClosedList.id,
+        ...(isPersonalExternalTask(item)
+          ? { personal_list_id: targetClosedList.id }
+          : {}),
+        closed_at: now,
+        completed_at:
+          targetClosedList.status === 'done'
+            ? (item.completed_at ?? now)
+            : undefined,
+      }),
+    });
+    let mutationFailed = false;
 
     try {
-      if (isPersonalExternalTask(task) && !shouldBulkMove) {
-        await moveExternalTaskToPersonalList({
-          boardId,
-          markLocallyMutatedTask,
-          queryClient,
-          task,
-          targetList: targetClosedList,
-          sourceStatus: 'closed',
-          placementPosition: 'top',
-        });
-
-        toast.success('Success', {
-          description: 'Task marked as closed',
-        });
-        dispatchTaskActionSound('complete');
-        invalidateDeadlineTasks();
-        return;
-      }
-
-      // Optimistic update: move tasks to closed list and set closed_at
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          const now = new Date().toISOString();
-          return old.map((t) =>
-            tasksToMove.includes(t.id)
-              ? markLocallyMutatedTask({
-                  ...t,
-                  list_id: targetClosedList.id,
-                  closed_at: now,
-                } as Task)
-              : t
-          );
-        }
-      );
-
-      // Move tasks one by one to ensure triggers fire for each task
-      let successCount = 0;
-      const workspaceId = await getWorkspaceId();
-      const failedTaskIds: string[] = [];
-      const previousTaskMap = new Map(
-        previousTasks?.map((item) => [item.id, item]) ?? []
-      );
-
-      for (const taskId of tasksToMove) {
-        try {
-          const { task: movedTask } = await updateWorkspaceTask(
-            workspaceId,
-            taskId,
-            {
-              list_id: targetClosedList.id,
-            }
-          );
-          broadcast?.('task:upsert', {
-            task: {
-              id: taskId,
-              list_id: targetClosedList.id,
-              completed_at: movedTask?.completed_at,
-              closed_at: movedTask?.closed_at,
-            },
+      await enqueueTaskTerminalMutation(task.id, async () => {
+        if (isPersonalExternalTask(task) && !shouldBulkMove) {
+          await moveExternalTaskToPersonalList({
+            boardId,
+            markLocallyMutatedTask,
+            queryClient,
+            task,
+            targetList: targetClosedList,
+            sourceStatus: 'closed',
+            placementPosition: 'top',
+            shouldApplyCacheUpdate: () =>
+              isLatestTaskTerminalIntent(task.id, intentId),
           });
-          successCount++;
-        } catch (error) {
-          failedTaskIds.push(taskId);
-          rollbackTaskIds(previousTasks, [taskId]);
-          const previousTask = previousTaskMap.get(taskId);
-          if (previousTask) {
-            broadcast?.('task:upsert', { task: previousTask });
+
+          if (isLatestTaskTerminalIntent(task.id, intentId)) {
+            toast.success('Success', {
+              description: 'Task marked as closed',
+            });
+            dispatchTaskActionSound('complete');
+            invalidateDeadlineTasks();
           }
-          console.error(`Failed to move task ${taskId}:`, error);
+          return;
         }
-      }
-      if (successCount === 0) throw new Error('Failed to move any tasks');
-      invalidateDeadlineTasks();
 
-      if (failedTaskIds.length > 0) {
-        toast.warning('Partial close update', {
-          description: `${successCount}/${tasksToMove.length} tasks updated`,
+        let successCount = 0;
+        const workspaceId = await getWorkspaceId();
+        const failedTaskIds: string[] = [];
+        const previousTaskMap = new Map(
+          previousTasks?.map((item) => [item.id, item]) ?? []
+        );
+
+        for (const taskId of tasksToMove) {
+          try {
+            const { task: movedTask } = await updateWorkspaceTask(
+              workspaceId,
+              taskId,
+              {
+                list_id: targetClosedList.id,
+              }
+            );
+            if (isLatestTaskTerminalIntent(task.id, intentId)) {
+              broadcast?.('task:upsert', {
+                task: {
+                  id: taskId,
+                  list_id: targetClosedList.id,
+                  completed_at: movedTask?.completed_at,
+                  closed_at: movedTask?.closed_at,
+                },
+              });
+            }
+            successCount++;
+          } catch (error) {
+            failedTaskIds.push(taskId);
+            if (isLatestTaskTerminalIntent(task.id, intentId)) {
+              restoreTasksFromVisibleCacheSnapshot({
+                queryClient,
+                snapshot: previousCaches,
+                taskIds: [taskId],
+              });
+              const previousTask = previousTaskMap.get(taskId);
+              if (previousTask) {
+                broadcast?.('task:upsert', { task: previousTask });
+              }
+            }
+            console.error(`Failed to move task ${taskId}:`, error);
+          }
+        }
+        if (successCount === 0) throw new Error('Failed to move any tasks');
+        if (!isLatestTaskTerminalIntent(task.id, intentId)) return;
+        invalidateDeadlineTasks();
+
+        if (failedTaskIds.length > 0) {
+          toast.warning('Partial close update', {
+            description: `${successCount}/${tasksToMove.length} tasks updated`,
+          });
+          dispatchTaskActionSound('complete', successCount);
+          return;
+        }
+
+        const taskCount = successCount;
+        toast.success('Success', {
+          description:
+            taskCount > 1
+              ? `${taskCount} tasks marked as closed`
+              : 'Task marked as closed',
         });
-        dispatchTaskActionSound('complete', successCount);
-        return;
-      }
-
-      const taskCount = successCount;
-      toast.success('Success', {
-        description:
-          taskCount > 1
-            ? `${taskCount} tasks marked as closed`
-            : 'Task marked as closed',
+        dispatchTaskActionSound('complete', taskCount);
       });
-      dispatchTaskActionSound('complete', taskCount);
     } catch (error) {
-      // Rollback on error
-      if (previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
+      mutationFailed = true;
+      if (isLatestTaskTerminalIntent(task.id, intentId)) {
+        restoreVisibleTaskCaches(queryClient, previousCaches);
       }
       console.error('Failed to move task to closed:', error);
-      toast.error('Error', {
-        description: 'Failed to close task. Please try again.',
-      });
+      if (isLatestTaskTerminalIntent(task.id, intentId)) {
+        toast.error('Error', {
+          description: 'Failed to close task. Please try again.',
+        });
+      }
     } finally {
-      setIsLoading(false);
-      setMenuOpen(false);
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToMove,
+        mutationId,
+        clearLocalMutationAt: mutationFailed,
+      });
+      const wasLatestIntent = isLatestTaskTerminalIntent(task.id, intentId);
+      finishTaskTerminalIntent(task.id, intentId);
+      if (!hasPendingTaskTerminalIntent(task.id)) setIsLoading(false);
+      if (wasLatestIntent) setMenuOpen(false);
     }
   }, [
     targetClosedList,
@@ -704,7 +819,6 @@ export function useTaskActions({
     broadcast,
     getWorkspaceId,
     markLocallyMutatedTask,
-    rollbackTaskIds,
     invalidateDeadlineTasks,
   ]);
 
@@ -834,22 +948,16 @@ export function useTaskActions({
     if (!task?.assignees || task.assignees.length === 0) return;
 
     setIsLoading(true);
-
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-
-    queryClient.setQueryData<Task[] | undefined>(
-      ['tasks', boardId],
-      (old: Task[] | undefined) => {
-        if (!old) return old;
-        return old.map((t) => {
-          if (t.id === task.id) {
-            return { ...t, assignees: [] };
-          }
-          return t;
-        });
-      }
-    );
+    const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+      task.id,
+    ]);
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds: [task.id],
+      updater: (cachedTask) => ({ ...cachedTask, assignees: [] }),
+    });
+    let mutationFailed = false;
 
     try {
       const workspaceId = await getWorkspaceId();
@@ -865,12 +973,29 @@ export function useTaskActions({
       });
       dispatchTaskActionSound('update');
     } catch (error) {
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
+      mutationFailed = true;
+      restoreTaskFieldsFromVisibleCacheSnapshot({
+        queryClient,
+        boardId,
+        snapshot: cacheSnapshot,
+        taskIds: [task.id],
+        restore: (currentTask, previousTask) => ({
+          ...currentTask,
+          assignees: previousTask.assignees,
+        }),
+      });
       console.error('Failed to remove all assignees:', error);
       toast.error('Error', {
         description: 'Failed to remove assignees. Please try again.',
       });
     } finally {
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: [task.id],
+        mutationId,
+        clearLocalMutationAt: mutationFailed,
+      });
       setIsLoading(false);
       setMenuOpen(false);
     }
@@ -890,36 +1015,30 @@ export function useTaskActions({
     async (assigneeId: string) => {
       if (!task) return;
       setIsLoading(true);
-
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
-        boardId,
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        task.id,
       ]);
-
-      queryClient.setQueryData<Task[] | undefined>(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            if (t.id === task.id) {
-              return {
-                ...t,
-                assignees:
-                  t.assignees?.filter((a) => a.id !== assigneeId) || [],
-              };
-            }
-            return t;
-          });
-        }
-      );
+      const previousTask = getTaskFromVisibleCaches({
+        queryClient,
+        boardId,
+        taskId: task.id,
+        fallback: task,
+      });
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: [task.id],
+        updater: (cachedTask) => ({
+          ...cachedTask,
+          assignees:
+            cachedTask.assignees?.filter((a) => a.id !== assigneeId) || [],
+        }),
+      });
+      let mutationFailed = false;
 
       try {
         const newIds =
-          previousTasks
-            ?.find((t) => t.id === task.id)
-            ?.assignees?.map((a) => a.id)
-            .filter(Boolean) ??
+          previousTask?.assignees?.map((a) => a.id).filter(Boolean) ??
           task.assignees?.map((a) => a.id).filter(Boolean) ??
           [];
         const filteredIds = newIds.filter((id) => id !== assigneeId);
@@ -937,12 +1056,29 @@ export function useTaskActions({
         broadcast?.('task:relations-changed', { taskId: task.id });
         dispatchTaskActionSound('update');
       } catch (error) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
+        mutationFailed = true;
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: [task.id],
+          restore: (currentTask, cachedPreviousTask) => ({
+            ...currentTask,
+            assignees: cachedPreviousTask.assignees,
+          }),
+        });
         console.error('Failed to remove assignee:', error);
         toast.error('Error', {
           description: 'Failed to remove assignee. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [task.id],
+          mutationId,
+          clearLocalMutationAt: mutationFailed,
+        });
         setIsLoading(false);
         setMenuOpen(false);
       }
@@ -1197,65 +1333,38 @@ export function useTaskActions({
 
       setIsLoading(true);
 
-      // Store previous state for rollback
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
         boardId,
-      ]);
+        tasksToUpdate
+      );
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToUpdate,
+        updater: (cachedTask) => ({ ...cachedTask, end_date: newDate }),
+      });
 
       try {
-        // Optimistic update
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              tasksToUpdate.includes(t.id) ? { ...t, end_date: newDate } : t
-            );
-          }
+        const { succeededTaskIds, failedTaskIds } = await updateTaskIds(
+          tasksToUpdate,
+          { end_date: newDate }
         );
-
-        const succeededTaskIds: string[] = [];
-        const workspaceId = await getWorkspaceId();
-
-        for (const taskId of tasksToUpdate) {
-          try {
-            await updateWorkspaceTask(workspaceId, taskId, {
-              end_date: newDate,
-            });
-            succeededTaskIds.push(taskId);
-          } catch (error) {
-            console.error(
-              `Failed to update due date for task ${taskId}:`,
-              error
-            );
-          }
-        }
 
         if (succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
 
-        const failedTaskIds = tasksToUpdate.filter(
-          (taskId) => !succeededTaskIds.includes(taskId)
-        );
-
-        if (failedTaskIds.length > 0 && previousTasks) {
-          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (current: Task[] | undefined) => {
-              if (!current) return current;
-              return current.map((task) => {
-                if (!failedTaskIds.includes(task.id)) {
-                  return task;
-                }
-
-                return previousTaskMap.get(task.id) || task;
-              });
-            }
-          );
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: failedTaskIds,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            end_date: previousTask.end_date,
+          }),
+        });
 
         for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
@@ -1283,27 +1392,39 @@ export function useTaskActions({
         }
       } catch (error) {
         console.error('Failed to update due date:', error);
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: tasksToUpdate,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            end_date: previousTask.end_date,
+          }),
+        });
         toast.error('Error', {
           description: 'Failed to update due date. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: tasksToUpdate,
+          mutationId,
+        });
         setIsLoading(false);
       }
     },
     [
       task?.id,
       setIsLoading,
-      getWorkspaceId,
       getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
       broadcast,
       invalidateDeadlineTasks,
+      updateTaskIds,
     ]
   );
 
@@ -1316,65 +1437,41 @@ export function useTaskActions({
 
       setIsLoading(true);
 
-      // Store previous state for rollback
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
         boardId,
-      ]);
+        tasksToUpdate
+      );
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToUpdate,
+        updater: (cachedTask) => ({
+          ...cachedTask,
+          priority: newPriority,
+        }),
+      });
 
       try {
-        // Optimistic update
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              tasksToUpdate.includes(t.id) ? { ...t, priority: newPriority } : t
-            );
-          }
+        const { succeededTaskIds, failedTaskIds } = await updateTaskIds(
+          tasksToUpdate,
+          { priority: newPriority }
         );
-
-        const succeededTaskIds: string[] = [];
-        const workspaceId = await getWorkspaceId();
-
-        for (const taskId of tasksToUpdate) {
-          try {
-            await updateWorkspaceTask(workspaceId, taskId, {
-              priority: newPriority,
-            });
-            succeededTaskIds.push(taskId);
-          } catch (error) {
-            console.error(
-              `Failed to update priority for task ${taskId}:`,
-              error
-            );
-          }
-        }
 
         if (succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
 
-        const failedTaskIds = tasksToUpdate.filter(
-          (taskId) => !succeededTaskIds.includes(taskId)
-        );
-
-        if (failedTaskIds.length > 0 && previousTasks) {
-          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (current: Task[] | undefined) => {
-              if (!current) return current;
-              return current.map((task) => {
-                if (!failedTaskIds.includes(task.id)) {
-                  return task;
-                }
-
-                return previousTaskMap.get(task.id) || task;
-              });
-            }
-          );
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: failedTaskIds,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            priority: previousTask.priority,
+          }),
+        });
 
         for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
@@ -1399,18 +1496,28 @@ export function useTaskActions({
           });
           dispatchTaskActionSound('update', taskCount);
         }
-
-        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {
         console.error('Failed to update priority:', error);
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: tasksToUpdate,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            priority: previousTask.priority,
+          }),
+        });
         toast.error('Error', {
           description: 'Failed to update priority. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: tasksToUpdate,
+          mutationId,
+        });
         setIsLoading(false);
       }
     },
@@ -1418,13 +1525,13 @@ export function useTaskActions({
       task?.id,
       task?.priority,
       setIsLoading,
-      getWorkspaceId,
       getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
       broadcast,
       isMultiSelectMode,
+      updateTaskIds,
     ]
   );
 
@@ -1433,82 +1540,59 @@ export function useTaskActions({
       if (!task) return;
       if (points === task.estimation_points && !isMultiSelectMode) return;
 
-      // Get current tasks from cache to filter out ones that already have the target value
-      const currentTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-
-      // Filter tasks that actually need updating (don't already have the target estimation)
       const candidateTasks = getEffectiveTaskIds(task);
+      const tasksToUpdate = candidateTasks.filter((candidateTaskId) => {
+        const taskData = getTaskFromVisibleCaches({
+          queryClient,
+          boardId,
+          taskId: candidateTaskId,
+          fallback: candidateTaskId === task.id ? task : undefined,
+        });
+        return taskData?.estimation_points !== points;
+      });
 
-      const tasksToUpdate = currentTasks
-        ? candidateTasks.filter((taskId) => {
-            const taskData = currentTasks.find((t) => t.id === taskId);
-            return taskData?.estimation_points !== points;
-          })
-        : candidateTasks;
-
-      // If no tasks actually need updating, skip
       if (tasksToUpdate.length === 0) {
         return;
       }
 
       setEstimationSaving?.(true);
 
-      // Store previous state for rollback
-      const previousTasks = currentTasks;
-      const rollbackFailedTasks = (failedIds: string[]) => {
-        if (!previousTasks || failedIds.length === 0) return;
-        const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
-        queryClient.setQueryData<Task[]>(['tasks', boardId], (current) => {
-          if (!current) return current;
-          return current.map((task: Task) =>
-            failedIds.includes(task.id)
-              ? previousTaskMap.get(task.id) || task
-              : task
-          );
-        });
-      };
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        boardId,
+        tasksToUpdate
+      );
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToUpdate,
+        updater: (cachedTask) => ({
+          ...cachedTask,
+          estimation_points: points,
+        }),
+      });
 
       try {
-        // Optimistic update
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              tasksToUpdate.includes(t.id)
-                ? { ...t, estimation_points: points }
-                : t
-            );
-          }
-        );
-
-        const succeededIds: string[] = [];
-        const workspaceId = await getWorkspaceId();
-
-        for (const taskId of tasksToUpdate) {
-          try {
-            await updateWorkspaceTask(workspaceId, taskId, {
-              estimation_points: points,
-            });
-            succeededIds.push(taskId);
-          } catch (error) {
-            console.error(
-              `Failed to update estimation for task ${taskId}:`,
-              error
-            );
-          }
-        }
+        const { succeededTaskIds: succeededIds, failedTaskIds: failedIds } =
+          await updateTaskIds(tasksToUpdate, {
+            estimation_points: points,
+          });
 
         if (succeededIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
 
-        const failedIds = tasksToUpdate.filter(
-          (taskId) => !succeededIds.includes(taskId)
-        );
-
         if (failedIds.length > 0) {
-          rollbackFailedTasks(failedIds);
+          restoreTaskFieldsFromVisibleCacheSnapshot({
+            queryClient,
+            boardId,
+            snapshot: cacheSnapshot,
+            taskIds: failedIds,
+            restore: (currentTask, previousTask) => ({
+              ...currentTask,
+              estimation_points: previousTask.estimation_points,
+            }),
+          });
 
           for (const tid of succeededIds) {
             broadcast?.('task:upsert', {
@@ -1542,14 +1626,26 @@ export function useTaskActions({
         return;
       } catch (e: any) {
         console.error('Failed to update estimation', e);
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: tasksToUpdate,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            estimation_points: previousTask.estimation_points,
+          }),
+        });
         toast.error('Failed to update estimation', {
           description: e.message || 'Please try again',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: tasksToUpdate,
+          mutationId,
+        });
         setEstimationSaving?.(false);
       }
     },
@@ -1557,13 +1653,13 @@ export function useTaskActions({
       task?.id,
       task?.estimation_points,
       setEstimationSaving,
-      getWorkspaceId,
       isMultiSelectMode,
       getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
       broadcast,
+      updateTaskIds,
     ]
   );
 
@@ -1593,7 +1689,6 @@ export function useTaskActions({
       const shouldBulkUpdate = getEffectiveTaskIds(task).length > 1;
 
       if (shouldBulkUpdate && bulkUpdateCustomDueDate) {
-        // Use the centralized bulk update function from useBulkOperations
         try {
           await bulkUpdateCustomDueDate(date || null);
           invalidateDeadlineTasks();
@@ -1604,30 +1699,23 @@ export function useTaskActions({
           setIsLoading(false);
         }
       } else {
-        // Single task update via workspace API
-        const previousTasks = queryClient.getQueryData<Task[]>([
-          'tasks',
-          boardId,
+        const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+          task.id,
         ]);
+        const mutationId = applyOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [task.id],
+          updater: (cachedTask) => ({ ...cachedTask, end_date: newDate }),
+        });
 
         try {
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (old: Task[] | undefined) => {
-              if (!old) {
-                return old;
-              }
-
-              return old.map((item) =>
-                item.id === task.id ? { ...item, end_date: newDate } : item
-              );
-            }
-          );
-
-          const workspaceId = await getWorkspaceId();
-          await updateWorkspaceTask(workspaceId, task.id, {
+          const { succeededTaskIds } = await updateTaskIds([task.id], {
             end_date: newDate,
           });
+          if (succeededTaskIds.length === 0) {
+            throw new Error('Failed to update task');
+          }
 
           broadcast?.('task:upsert', {
             task: { id: task.id, end_date: newDate },
@@ -1641,19 +1729,31 @@ export function useTaskActions({
           });
           dispatchTaskActionSound('update');
         } catch (error) {
-          if (previousTasks) {
-            queryClient.setQueryData(['tasks', boardId], previousTasks);
-          }
+          restoreTaskFieldsFromVisibleCacheSnapshot({
+            queryClient,
+            boardId,
+            snapshot: cacheSnapshot,
+            taskIds: [task.id],
+            restore: (currentTask, previousTask) => ({
+              ...currentTask,
+              end_date: previousTask.end_date,
+            }),
+          });
           console.error('Failed to update due date:', error);
           toast.error('Failed to update due date. Please try again.');
         } finally {
+          settleOptimisticTaskPatch({
+            queryClient,
+            boardId,
+            taskIds: [task.id],
+            mutationId,
+          });
           setIsLoading(false);
         }
       }
     },
     [
       task?.id,
-      getWorkspaceId,
       setIsLoading,
       setCustomDateDialogOpen,
       getEffectiveTaskIds,
@@ -1663,6 +1763,7 @@ export function useTaskActions({
       boardId,
       broadcast,
       invalidateDeadlineTasks,
+      updateTaskIds,
     ]
   );
 
@@ -1670,8 +1771,6 @@ export function useTaskActions({
     async (assigneeId: string) => {
       if (!task) return;
 
-      // CRITICAL: Get current task state from cache instead of stale prop
-      // This ensures we read the most up-to-date state after optimistic updates
       const currentTask = taskId
         ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
           task)
@@ -1681,42 +1780,42 @@ export function useTaskActions({
       const shouldBulkUpdate = tasksToUpdate.length > 1;
 
       setIsLoading(true);
+      const previousTasks = tasksToUpdate
+        .map((targetTaskId) =>
+          getTaskFromVisibleCaches({
+            queryClient,
+            boardId,
+            taskId: targetTaskId,
+            fallback: targetTaskId === currentTask.id ? currentTask : undefined,
+          })
+        )
+        .filter((cachedTask): cachedTask is Task => Boolean(cachedTask));
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        boardId,
+        tasksToUpdate
+      );
 
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-      // Snapshot the previous value BEFORE optimistic update
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
-        | Task[]
-        | undefined;
-
-      // Determine action: remove if ALL selected tasks have the assignee, add otherwise
-      // Use currentTask from cache, not stale task prop
       let active = currentTask.assignees?.some((a) => a.id === assigneeId);
 
       if (shouldBulkUpdate && previousTasks) {
         const selectedTasksData = previousTasks.filter((t) =>
           tasksToUpdate.includes(t.id)
         );
-        // Only mark as active (to remove) if ALL selected tasks have the assignee
         active = selectedTasksData.every((t) =>
           t.assignees?.some((a) => a.id === assigneeId)
         );
       }
 
-      // Helper to get task from either board cache or individual cache
       const getTaskState = (taskId: string): Task | undefined => {
-        // First try board cache
         const fromBoardCache = previousTasks?.find((ct) => ct.id === taskId);
         if (fromBoardCache) return fromBoardCache;
 
-        // Fallback to individual task cache (for tasks not in board view)
         if (taskId === currentTask.id) return currentTask;
 
         return undefined;
       };
 
-      // Pre-calculate which tasks actually need to change
       const tasksNeedingAssignee = !active
         ? tasksToUpdate.filter((taskId) => {
             const t = getTaskState(taskId);
@@ -1731,10 +1830,8 @@ export function useTaskActions({
           })
         : [];
 
-      // Get assignee details for optimistic update
       let assigneeDetails = null;
       if (!active) {
-        // First try from board cache
         if (previousTasks) {
           for (const t of previousTasks) {
             const found = t.assignees?.find((a) => a.id === assigneeId);
@@ -1744,107 +1841,85 @@ export function useTaskActions({
             }
           }
         }
-        // Fallback to current task cache
         if (!assigneeDetails && currentTask.assignees) {
           assigneeDetails =
             currentTask.assignees.find((a) => a.id === assigneeId) || null;
         }
       }
 
-      // Optimistically update the cache - only update tasks that actually change
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            if (active && tasksToRemoveFrom.includes(t.id)) {
-              // Remove the assignee
-              return {
-                ...t,
-                assignees:
-                  t.assignees?.filter((a) => a.id !== assigneeId) || [],
-              };
-            } else if (!active && tasksNeedingAssignee.includes(t.id)) {
-              // Add the assignee
-              return {
-                ...t,
-                assignees: [
-                  ...(t.assignees || []),
-                  assigneeDetails || {
-                    id: assigneeId,
-                    display_name: 'User',
-                    email: '',
-                  },
-                ],
-              };
-            }
-            return t;
-          });
-        }
-      );
-
-      // CRITICAL: Also update the individual task cache if taskId is provided
-      // This ensures the chip menu's task cache stays in sync with the board cache
-      if (taskId) {
-        queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
-          if (!old) return old;
-          if (active && tasksToRemoveFrom.includes(taskId)) {
-            // Remove the assignee
+      const targetTasks = active ? tasksToRemoveFrom : tasksNeedingAssignee;
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: targetTasks,
+        updater: (cachedTask) => {
+          if (active) {
             return {
-              ...old,
+              ...cachedTask,
               assignees:
-                old.assignees?.filter((a) => a.id !== assigneeId) || [],
-            };
-          } else if (!active && tasksNeedingAssignee.includes(taskId)) {
-            // Add the assignee
-            return {
-              ...old,
-              assignees: [
-                ...(old.assignees || []),
-                assigneeDetails || {
-                  id: assigneeId,
-                  display_name: 'User',
-                  email: '',
-                },
-              ],
+                cachedTask.assignees?.filter((a) => a.id !== assigneeId) || [],
             };
           }
-          return old;
-        });
-      }
+
+          return {
+            ...cachedTask,
+            assignees: [
+              ...(cachedTask.assignees || []),
+              assigneeDetails || {
+                id: assigneeId,
+                display_name: 'User',
+                email: '',
+              },
+            ],
+          };
+        },
+      });
+      let mutationFailed = false;
 
       try {
         const succeededTaskIds: string[] = [];
-        const targetTasks = active ? tasksToRemoveFrom : tasksNeedingAssignee;
-
-        const workspaceId = await getWorkspaceId();
-
-        for (const tid of targetTasks) {
-          const current = getTaskState(tid);
-          const existingIds =
-            current?.assignees
-              ?.map((assignee) => assignee.id)
-              .filter(Boolean) ?? [];
-          const newIds = active
-            ? existingIds.filter((id) => id !== assigneeId)
-            : Array.from(new Set([...existingIds, assigneeId]));
-
-          try {
-            await updateWorkspaceTask(workspaceId, tid, {
+        const settledResults = await Promise.allSettled(
+          targetTasks.map(async (tid) => {
+            const current = getTaskState(tid);
+            const existingIds =
+              current?.assignees
+                ?.map((assignee) => assignee.id)
+                .filter(Boolean) ?? [];
+            const newIds = active
+              ? existingIds.filter((id) => id !== assigneeId)
+              : Array.from(new Set([...existingIds, assigneeId]));
+            const targetWorkspaceId = await resolveWorkspaceIdForTask(current);
+            await updateWorkspaceTask(targetWorkspaceId, tid, {
               assignee_ids: newIds,
             });
-            succeededTaskIds.push(tid);
-          } catch (error) {
-            console.error(
-              `Failed to ${active ? 'remove' : 'add'} assignee from task ${tid}:`,
-              error
-            );
+            return tid;
+          })
+        );
+        settledResults.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            succeededTaskIds.push(result.value);
+          } else {
+            console.error('Failed to update task assignee:', result.reason);
           }
-        }
+        });
 
         if (targetTasks.length > 0 && succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
+
+        const failedTaskIds = targetTasks.filter(
+          (id) => !succeededTaskIds.includes(id)
+        );
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: failedTaskIds,
+          restore: (cachedTask, previousTask) => ({
+            ...cachedTask,
+            assignees: previousTask.assignees,
+          }),
+        });
 
         for (const tid of succeededTaskIds) {
           broadcast?.('task:relations-changed', { taskId: tid });
@@ -1866,18 +1941,30 @@ export function useTaskActions({
         if (succeededTaskIds.length > 0) {
           dispatchTaskActionSound('update', succeededTaskIds.length);
         }
-
-        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (e: any) {
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        mutationFailed = true;
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: targetTasks,
+          restore: (cachedTask, previousTask) => ({
+            ...cachedTask,
+            assignees: previousTask.assignees,
+          }),
+        });
         console.error('Failed to toggle assignee:', e);
         toast.error('Error', {
           description: 'Failed to update assignee. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: targetTasks,
+          mutationId,
+          clearLocalMutationAt: mutationFailed,
+        });
         setIsLoading(false);
       }
     },
@@ -1889,7 +1976,7 @@ export function useTaskActions({
       setIsLoading,
       getEffectiveTaskIds,
       broadcast,
-      getWorkspaceId,
+      resolveWorkspaceIdForTask,
     ]
   );
 

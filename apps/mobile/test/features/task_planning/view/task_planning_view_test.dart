@@ -340,6 +340,7 @@ void main() {
               shad.ShadcnLocalizations.delegate,
             ],
             supportedLocales: AppLocalizations.supportedLocales,
+            builder: ShadcnMaterialBridge.appBuilder,
             routerConfig: router,
           ),
         ),

@@ -484,6 +484,7 @@ export default function LoginForm({
   });
 
   const [initialized, setInitialized] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [readyForAuth, setReadyForAuth] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [requiresMFA, setRequiresMFA] = useState(false);
@@ -578,11 +579,11 @@ export default function LoginForm({
       : resolvedReturnUrlFailure;
   const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
   const canRenderAuthSurface =
-    readyForAuth || (!initialized && !deferAuthSurfaceUntilSessionCheck);
+    readyForAuth ||
+    (!deferAuthSurfaceUntilSessionCheck && (!initialized || user === null));
   const authStageTransitionClassName = `space-y-6 animate-in fade-in-0 duration-200 ${
     transitionDirection > 0 ? 'slide-in-from-right-4' : 'slide-in-from-left-4'
   }`;
-
   const setRedirectingAfterAuthState = useCallback((value: boolean) => {
     redirectingAfterAuthRef.current = value;
     setRedirectingAfterAuth(value);
@@ -1051,9 +1052,6 @@ export default function LoginForm({
 
       if (!result.success) {
         toast.error(t('login.account_switch_failed'), {
-          // A dead stored session is the common failure, and the raw server
-          // wording ("Account not found") reads like the account is gone. Say
-          // what actually helps: sign into it again.
           description: formatDiagnosticDescription(
             result.requiresReauth
               ? t('login.account_switch_requires_reauth')
@@ -1453,6 +1451,7 @@ export default function LoginForm({
     </div>
   );
 
+  useEffect(() => setIsHydrated(true), []);
   useEffect(() => {
     if (!initialized || !readyForAuth || requiresMFA || user) {
       return;
@@ -1959,7 +1958,7 @@ export default function LoginForm({
   }
 
   return (
-    <div>
+    <fieldset disabled={!isHydrated} className="contents">
       <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
         <CardContent className="p-6 sm:p-8">
           <div>
@@ -2396,6 +2395,6 @@ export default function LoginForm({
           </div>
         </CardContent>
       </Card>
-    </div>
+    </fieldset>
   );
 }

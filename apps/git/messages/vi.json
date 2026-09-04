@@ -873,6 +873,7 @@
     "all_states": "Mọi trạng thái",
     "branches": "Nhánh",
     "code": "Mã nguồn",
+    "collection_failed": "Không thể tải bộ sưu tập này.",
     "commits": "Commit",
     "contributors": "Người đóng góp",
     "filter_collection": "Lọc {collection}",
@@ -885,6 +886,10 @@
     "github_unavailable": "GitHub không hoàn tất yêu cầu này",
     "github_unavailable_description": "GitHub trả về lỗi truy cập hoặc dịch vụ. Lỗi này không được xác định là giới hạn tần suất.",
     "issues": "Issue",
+    "next_page": "Trang sau",
+    "page_number": "Trang {page}",
+    "partial_results": "Trang này là một phần của bộ sưu tập lớn hơn.",
+    "previous_page": "Trang trước",
     "pull_requests": "Pull request",
     "rate_limited": "Đã đạt giới hạn tần suất của GitHub",
     "rate_limited_description": "GitHub đã xác nhận giới hạn API bị dùng hết hoặc yêu cầu bị điều tiết. Hãy thử lại sau khi giới hạn được đặt lại.",
@@ -894,6 +899,7 @@
     "repository_not_found_description": "Kho mã này chưa được đăng ký, không công khai hoặc đang tạm thời không khả dụng.",
     "result_count": "{count} kết quả",
     "retry": "Thử lại",
+    "reviews": "Đánh giá",
     "sort": "Sắp xếp mục",
     "sort_name": "Tên A-Z",
     "sort_oldest": "Cũ nhất trước",
@@ -1725,8 +1731,40 @@
     "trigger_label": "Mở thông tin phiên bản",
     "version": "Phiên bản"
   },
+  "ws-members": {
+    "assign_invitation_role": "Gán vai trò",
+    "clear_all_roles": "Xóa tất cả",
+    "invitation_role": "Vai trò khi mời",
+    "invitation_role_helper": "Vai trò này sẽ được áp dụng khi người này chấp nhận lời mời.",
+    "invitation_role_updated": "Đã cập nhật vai trò của lời mời",
+    "invite_access_guest_tab": "Khách",
+    "invite_access_member_tab": "Thành viên",
+    "invite_access_pos_tab": "POS",
+    "invite_access_title": "Quyền truy cập và vai trò",
+    "invite_emails_helper": "Phân tách nhiều địa chỉ bằng dấu phẩy, khoảng trắng hoặc dòng mới.",
+    "invite_emails_label": "Địa chỉ email",
+    "invite_membership_guest_description": "Quyền truy cập khách hạn chế, không có vai trò không gian làm việc.",
+    "invite_membership_member_description": "Thành viên đầy đủ của không gian làm việc với các vai trò tùy chọn.",
+    "invite_recipients_title": "Người nhận",
+    "invite_roles_description": "Gán một hoặc nhiều vai trò ngay bây giờ. Bạn có thể thay đổi khi lời mời đang chờ.",
+    "invite_roles_no_match": "Không có vai trò nào khớp với tìm kiếm.",
+    "invite_roles_optional": "Không bắt buộc",
+    "invite_roles_search": "Tìm kiếm vai trò trong không gian làm việc...",
+    "no_role_assigned": "Chưa gán vai trò",
+    "no_roles_assigned": "Chưa gán vai trò nào",
+    "recipients_count": "{count} người nhận",
+    "roles_selected": "Đã chọn {count} vai trò"
+  },
   "ws-roles": {
     "manage_git_repositories": "Quản lý kho mã Git",
     "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git."
+  },
+  "ws-task-boards": {
+    "manual_ordering_disabled": {
+      "description": "Công việc đang được sắp xếp theo một tiêu chí nên thao tác kéo không thể thay đổi thứ tự thủ công. Hãy chuyển sang sắp xếp thủ công để sắp xếp lại.",
+      "keep_sorting": "Giữ cách sắp xếp hiện tại",
+      "title": "Sắp xếp thủ công đang tạm dừng",
+      "use_manual": "Dùng thứ tự thủ công"
+    }
   }
 }

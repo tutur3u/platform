@@ -235,6 +235,8 @@ describe('POST submission Turnstile gate', () => {
   }
 
   beforeEach(() => {
+    delete process.env.TURNSTILE_SECRET_KEY;
+    delete process.env.TURNSTILE_SECRET_KEY_RICHFIELD;
     mocks.createAdminClient.mockResolvedValue(
       createAdmin({
         collection: { id: 'collection-1' },
@@ -286,10 +288,63 @@ describe('POST submission Turnstile gate', () => {
     expect(response.status).toBe(201);
     expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
       expect.anything(),
-      'token-abc'
+      'token-abc',
+      { includeRemoteIp: false, secretKey: 'secret-key' }
     );
     expect(mocks.createWorkspaceExternalProjectEntry).toHaveBeenCalled();
     delete process.env.TURNSTILE_SECRET_KEY;
+  });
+
+  it('keeps generated submission slugs within the database limit', async () => {
+    const { POST } = await import('./route');
+
+    const response = await POST(
+      postRequest({
+        ...body,
+        company: 'Richfield Group QA '.repeat(7),
+        name: 'Production delivery verification '.repeat(4),
+      }),
+      params
+    );
+
+    expect(response.status).toBe(201);
+    const [entry] = mocks.createWorkspaceExternalProjectEntry.mock.calls[0] as [
+      { slug: string },
+    ];
+    expect(entry.slug).toHaveLength(80);
+  });
+
+  it('stores a bounded summary without losing the full submission message', async () => {
+    const { POST } = await import('./route');
+    const message = '🌱 Long-form distribution enquiry. '.repeat(140);
+
+    const response = await POST(postRequest({ ...body, message }), params);
+
+    expect(response.status).toBe(201);
+    const [entry] = mocks.createWorkspaceExternalProjectEntry.mock.calls[0] as [
+      { profile_data: { message: string }; summary: string },
+    ];
+    expect(Array.from(entry.summary)).toHaveLength(512);
+    expect(entry.profile_data.message).toBe(message.trim());
+  });
+
+  it('uses the Richfield-specific secret without changing other apps', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'global-secret';
+    process.env.TURNSTILE_SECRET_KEY_RICHFIELD = 'richfield-secret';
+    mocks.verifyTurnstileToken.mockResolvedValue(undefined);
+    const { POST } = await import('./route');
+
+    const response = await POST(
+      postRequest({ ...body, turnstileToken: 'token-abc' }),
+      params
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
+      expect.anything(),
+      'token-abc',
+      { includeRemoteIp: false, secretKey: 'richfield-secret' }
+    );
   });
 });
 

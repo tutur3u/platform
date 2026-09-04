@@ -1,8 +1,13 @@
 import { render, screen } from '@testing-library/react';
+import { Suspense } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import ComponentPage from './components/[componentId]/page';
-import ComponentsPage from './components/page';
-import OverviewPage from './page';
+import ComponentPage, {
+  UiComponentRuntime,
+} from './components/[componentId]/page';
+import ComponentsPage, { UiComponentsRuntime } from './components/page';
+import ContributingPage, { UiContributingRuntime } from './contributing/page';
+import OverviewPage, { UiDocsOverviewRuntime } from './page';
+import SetupPage, { UiSetupRuntime } from './setup/page';
 
 const mocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
@@ -32,7 +37,6 @@ vi.mock('./docs-primitives', async (importOriginal) => {
 });
 
 vi.mock('next-intl/server', () => ({
-  setRequestLocale: vi.fn(),
   getTranslations:
     async ({ namespace }: { namespace?: string }) =>
     (key: string, values?: Record<string, string | number>) => {
@@ -53,7 +57,11 @@ vi.mock('next-intl', () => ({
 
 describe('ui docs pages', () => {
   it('renders the overview with setup and component discovery links', async () => {
-    render(await OverviewPage({ params: Promise.resolve({ locale: 'en' }) }));
+    render(
+      await UiDocsOverviewRuntime({
+        params: Promise.resolve({ locale: 'en' }),
+      })
+    );
 
     expect(
       screen.getByRole('link', { name: /overview.setupTitle/i })
@@ -64,7 +72,11 @@ describe('ui docs pages', () => {
   });
 
   it('renders all component links on the components index', async () => {
-    render(await ComponentsPage({ params: Promise.resolve({ locale: 'en' }) }));
+    render(
+      await UiComponentsRuntime({
+        params: Promise.resolve({ locale: 'en' }),
+      })
+    );
 
     expect(
       screen.getByRole('heading', { name: /components.title/i })
@@ -81,7 +93,7 @@ describe('ui docs pages', () => {
 
   it('renders component detail pages with preview, usage, API, and pager links', async () => {
     render(
-      await ComponentPage({
+      await UiComponentRuntime({
         params: Promise.resolve({ componentId: 'button', locale: 'en' }),
       })
     );
@@ -104,11 +116,40 @@ describe('ui docs pages', () => {
 
   it('throws notFound for an unknown component id', async () => {
     await expect(
-      ComponentPage({
+      UiComponentRuntime({
         params: Promise.resolve({ componentId: 'missing', locale: 'en' }),
       })
     ).rejects.toThrow('notFound');
 
     expect(mocks.notFound).toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'overview',
+      () => OverviewPage({ params: Promise.resolve({ locale: 'en' }) }),
+      UiDocsOverviewRuntime,
+    ],
+    [
+      'components',
+      () => ComponentsPage({ params: Promise.resolve({ locale: 'en' }) }),
+      UiComponentsRuntime,
+    ],
+    [
+      'component detail',
+      () =>
+        ComponentPage({
+          params: Promise.resolve({ componentId: 'button', locale: 'en' }),
+        }),
+      UiComponentRuntime,
+    ],
+    ['setup', () => SetupPage(), UiSetupRuntime],
+    ['contributing', () => ContributingPage(), UiContributingRuntime],
+  ])('keeps %s runtime data inside Suspense', (_name, renderPage, runtime) => {
+    const page = renderPage();
+
+    expect(page).not.toBeInstanceOf(Promise);
+    expect(page.type).toBe(Suspense);
+    expect(page.props.children.type).toBe(runtime);
   });
 });

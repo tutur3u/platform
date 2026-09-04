@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/a11y/noSvgWithoutTitle: <> */
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle,
   CheckSquare,
@@ -73,6 +73,7 @@ export default function TimeTrackerContent({
   workspace,
 }: TimeTrackerContentProps) {
   const t = useTranslations('time-tracker.content');
+  const queryClient = useQueryClient();
 
   const currentUserId = currentUser?.id || null;
 
@@ -94,9 +95,8 @@ export default function TimeTrackerContent({
     [t]
   );
 
-  // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
-    queryKey: ['running-time-session', wsId],
+    queryKey: ['running-time-session', wsId, currentUserId],
     queryFn: async () => {
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`,
@@ -106,9 +106,11 @@ export default function TimeTrackerContent({
       const data = await response.json();
       return data.session;
     },
-    refetchInterval: 30000, // 30 seconds
+    refetchInterval: (query) => (query.state.data ? 60_000 : 5 * 60_000),
+    refetchIntervalInBackground: false,
     initialData: initialData.runningSession,
     enabled: !!currentUser,
+    staleTime: 60_000,
   });
 
   const [currentSession, setCurrentSession] =
@@ -120,7 +122,6 @@ export default function TimeTrackerContent({
     initialData.recentSessions || []
   );
 
-  // Sync React Query data with local state
   useEffect(() => {
     if (currentUser && runningSessionFromQuery !== undefined) {
       setCurrentSession(runningSessionFromQuery);
@@ -318,14 +319,6 @@ export default function TimeTrackerContent({
             fallback: { categories: [] },
           },
           {
-            name: 'running',
-            call: () =>
-              apiCall(
-                `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`
-              ),
-            fallback: { session: null },
-          },
-          {
             name: 'recent',
             call: () =>
               apiCall(
@@ -359,8 +352,8 @@ export default function TimeTrackerContent({
         );
 
         // Process results with fallbacks for failed calls
-        const [categoriesRes, runningRes, recentRes, _statsRes, tasksRes] =
-          results.map((result, index) => {
+        const [categoriesRes, recentRes, _statsRes, tasksRes] = results.map(
+          (result, index) => {
             if (result.status === 'fulfilled') {
               return result.value;
             } else {
@@ -378,30 +371,14 @@ export default function TimeTrackerContent({
               }
               return fallback;
             }
-          });
+          }
+        );
 
         if (!isMountedRef.current) return;
 
         setCategories(categoriesRes.categories || []);
         setRecentSessions(recentRes.sessions || []);
         setTasks(tasksRes.tasks || []);
-
-        if (runningRes.session) {
-          setCurrentSession(runningRes.session);
-          setIsRunning(true);
-          const elapsed = Math.max(
-            0,
-            Math.floor(
-              (Date.now() - new Date(runningRes.session.start_time).getTime()) /
-                1000
-            )
-          );
-          setElapsedTime(elapsed);
-        } else {
-          setCurrentSession(null);
-          setIsRunning(false);
-          setElapsedTime(0);
-        }
 
         setRetryCount(0);
       } catch (error) {
@@ -465,6 +442,10 @@ export default function TimeTrackerContent({
         );
 
         setCurrentSession(response.session);
+        queryClient.setQueryData(
+          ['running-time-session', wsId, currentUserId],
+          response.session
+        );
         setIsRunning(true);
         setElapsedTime(0);
         await fetchData();
@@ -476,7 +457,7 @@ export default function TimeTrackerContent({
         toast.error(t('toast.failedToStart'));
       }
     },
-    [wsId, apiCall, currentUserId, categories, fetchData, t]
+    [wsId, apiCall, currentUserId, categories, fetchData, queryClient, t]
   );
 
   // Auto-refresh with exponential backoff and visibility check
@@ -1098,7 +1079,12 @@ export default function TimeTrackerContent({
               setIsRunning={setIsRunning}
               categories={categories}
               tasks={tasks}
-              onSessionUpdate={() => fetchData(false)}
+              onSessionUpdate={() => {
+                void queryClient.invalidateQueries({
+                  queryKey: ['running-time-session', wsId, currentUserId],
+                });
+                void fetchData(false);
+              }}
               formatTime={formatTime}
               formatDuration={formatDuration}
               apiCall={apiCall}
@@ -1175,6 +1161,10 @@ export default function TimeTrackerContent({
                     );
 
                     setCurrentSession(response.session);
+                    queryClient.setQueryData(
+                      ['running-time-session', wsId, currentUserId],
+                      response.session
+                    );
                     setIsRunning(true);
                     setElapsedTime(0);
                     await fetchData();

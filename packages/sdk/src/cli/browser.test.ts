@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { getOpenBrowserCommand } from './browser';
+import { EventEmitter } from 'node:events';
+import { describe, expect, it, vi } from 'vitest';
+import { getOpenBrowserCommand, openBrowserWithDependencies } from './browser';
+
+function createFakeChild() {
+  const child = new EventEmitter() as EventEmitter & {
+    unref: ReturnType<typeof vi.fn>;
+  };
+  child.unref = vi.fn();
+  return child;
+}
 
 describe('browser opener command selection', () => {
   it('uses open on macOS', () => {
@@ -31,5 +40,66 @@ describe('browser opener command selection', () => {
       command: 'xdg-open',
       args: ['https://tuturuuu.com'],
     });
+  });
+});
+
+describe('browser opener lifecycle', () => {
+  it('resolves true only after the child spawns', async () => {
+    const child = createFakeChild();
+    const spawnProcess = vi.fn(() => child);
+
+    const result = openBrowserWithDependencies('https://tuturuuu.com', {
+      getPlatform: () => 'linux',
+      spawnProcess,
+    });
+
+    expect(spawnProcess).toHaveBeenCalledWith(
+      'xdg-open',
+      ['https://tuturuuu.com'],
+      { detached: true, stdio: 'ignore' }
+    );
+    expect(child.unref).toHaveBeenCalledOnce();
+
+    child.emit('spawn');
+
+    await expect(result).resolves.toBe(true);
+  });
+
+  it('resolves false when the child reports an asynchronous error', async () => {
+    const child = createFakeChild();
+
+    const result = openBrowserWithDependencies('https://tuturuuu.com', {
+      getPlatform: () => 'darwin',
+      spawnProcess: () => child,
+    });
+
+    child.emit('error', new Error('open is unavailable'));
+
+    await expect(result).resolves.toBe(false);
+  });
+
+  it('resolves false when spawning throws synchronously', async () => {
+    const result = openBrowserWithDependencies('https://tuturuuu.com', {
+      getPlatform: () => 'win32',
+      spawnProcess: () => {
+        throw new Error('spawn failed');
+      },
+    });
+
+    await expect(result).resolves.toBe(false);
+  });
+
+  it('ignores an error emitted after successful settlement', async () => {
+    const child = createFakeChild();
+
+    const result = openBrowserWithDependencies('https://tuturuuu.com', {
+      getPlatform: () => 'linux',
+      spawnProcess: () => child,
+    });
+
+    child.emit('spawn');
+    await expect(result).resolves.toBe(true);
+
+    expect(() => child.emit('error', new Error('late failure'))).not.toThrow();
   });
 });

@@ -12,10 +12,6 @@ type SortKeyTask = Pick<
 type SortableTask = SortKeyTask & Pick<Task, 'created_at'>;
 
 export function getEffectiveTaskSortKey(task: SortKeyTask) {
-  if (typeof task.sort_key === 'number' && Number.isFinite(task.sort_key)) {
-    return task.sort_key;
-  }
-
   if (
     task.is_personal_external === true &&
     task.is_personal_external_default !== true &&
@@ -23,6 +19,10 @@ export function getEffectiveTaskSortKey(task: SortKeyTask) {
     Number.isFinite(task.personal_sort_key)
   ) {
     return task.personal_sort_key;
+  }
+
+  if (typeof task.sort_key === 'number' && Number.isFinite(task.sort_key)) {
+    return task.sort_key;
   }
 
   return null;

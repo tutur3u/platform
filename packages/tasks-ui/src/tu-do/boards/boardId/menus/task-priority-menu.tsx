@@ -10,15 +10,30 @@ import {
 } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
+import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskPriorityMenuProps {
+  forceOpen?: boolean;
   currentPriority: TaskPriority | null;
   isLoading: boolean;
   onPriorityChange: (priority: TaskPriority | null) => void;
@@ -77,6 +92,7 @@ const priorityIconColor: Record<TaskPriority, string> = {
 };
 
 export function TaskPriorityMenu({
+  forceOpen,
   currentPriority,
   isLoading,
   onPriorityChange,
@@ -84,6 +100,8 @@ export function TaskPriorityMenu({
   onClose,
   translations,
 }: TaskPriorityMenuProps) {
+  const commonT = useTranslations('common');
+  const [searchQuery, setSearchQuery] = useState('');
   // Use provided translations or fall back to English defaults
   const t = {
     priority: translations?.priority ?? 'Priority',
@@ -101,9 +119,26 @@ export function TaskPriorityMenu({
     normal: t.medium,
     low: t.low,
   };
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+  const filteredOptions = priorityOptions.filter((option) =>
+    `${priorityLabelTranslated[option.value]} ${option.value}`
+      .toLocaleLowerCase()
+      .includes(normalizedQuery)
+  );
+  const showNone = t.none.toLocaleLowerCase().includes(normalizedQuery);
+  const select = (action: () => void) =>
+    onMenuItemSelect(
+      { preventDefault: () => undefined } as unknown as Event,
+      action
+    );
+  const selectPriority = (priority: TaskPriority | null) =>
+    select(() => {
+      onPriorityChange(priority);
+      onClose();
+    });
 
   return (
-    <DropdownMenuSub>
+    <TaskControlledSubmenu submenuId="priority" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger className="min-w-0">
         <div className="h-4 w-4 shrink-0">
           <Flag className="h-4 w-4 text-dynamic-orange" />
@@ -119,60 +154,93 @@ export function TaskPriorityMenu({
           </span>
         </div>
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent>
-        <DropdownMenuItem
-          onSelect={(e) =>
-            onMenuItemSelect(e as unknown as Event, () => {
-              onPriorityChange(null);
-              onClose();
-            })
-          }
-          className={cn(
-            'cursor-pointer text-muted-foreground',
-            !currentPriority && 'bg-muted/50'
-          )}
-          disabled={isLoading}
-        >
-          <div className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-2">
-              <X className="h-4 w-4" />
-              {t.none}
-            </div>
-            {!currentPriority && <Check className="h-4 w-4" />}
-          </div>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        {priorityOptions.map((option) => {
-          const IconComponent = option.icon;
-          const isActive = currentPriority === option.value;
-          const iconColor = priorityIconColor[option.value];
-
-          return (
-            <DropdownMenuItem
-              key={option.value}
-              onSelect={(e) =>
-                onMenuItemSelect(e as unknown as Event, () => {
-                  onPriorityChange(option.value);
-                  onClose();
-                })
-              }
-              className={cn('cursor-pointer', isActive && option.className)}
-              disabled={isLoading}
-            >
-              <div className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <IconComponent
-                    className={cn('h-4 w-4', iconColor)}
-                    {...option.iconProps}
-                  />
-                  {priorityLabelTranslated[option.value]}
-                </div>
-                {isActive && <Check className={cn('h-4 w-4', iconColor)} />}
+      <DropdownMenuSubContent
+        className="w-56 p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            if (isLoading) return false;
+            if (digit === 0) {
+              selectPriority(null);
+              return true;
+            }
+            const option = filteredOptions[digit - 1];
+            if (!option) return false;
+            selectPriority(option.value);
+            return true;
+          })
+        }
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
+        <Command shouldFilter={false} className="rounded-none border-0">
+          <TaskCommandSearchInput
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            placeholder={`${commonT('search')}...`}
+            className="h-9"
+          />
+          <CommandList className="max-h-64">
+            {!showNone && filteredOptions.length === 0 ? (
+              <div className="px-3 py-6 text-center text-muted-foreground text-xs">
+                {commonT('no-results')}
               </div>
-            </DropdownMenuItem>
-          );
-        })}
+            ) : (
+              <CommandGroup>
+                {showNone && (
+                  <CommandItem
+                    value={`none ${t.none}`}
+                    onSelect={() => selectPriority(null)}
+                    className={cn(
+                      'cursor-pointer text-muted-foreground',
+                      !currentPriority && 'bg-muted/50'
+                    )}
+                    disabled={isLoading}
+                  >
+                    <X className="h-4 w-4" />
+                    <span className="min-w-0 flex-1 truncate">{t.none}</span>
+                    <TaskOptionShortcutHint digit={0} visible={!!forceOpen} />
+                    {!currentPriority && <Check className="h-4 w-4" />}
+                  </CommandItem>
+                )}
+                {filteredOptions.map((option, index) => {
+                  const IconComponent = option.icon;
+                  const isActive = currentPriority === option.value;
+                  const iconColor = priorityIconColor[option.value];
+
+                  return (
+                    <CommandItem
+                      key={option.value}
+                      value={`${priorityLabelTranslated[option.value]} ${option.value}`}
+                      onSelect={() => selectPriority(option.value)}
+                      className={cn(
+                        'cursor-pointer',
+                        isActive && option.className
+                      )}
+                      disabled={isLoading}
+                    >
+                      <IconComponent
+                        className={cn('h-4 w-4', iconColor)}
+                        {...option.iconProps}
+                      />
+                      <span className="min-w-0 flex-1 truncate">
+                        {priorityLabelTranslated[option.value]}
+                      </span>
+                      <TaskOptionShortcutHint
+                        digit={index + 1}
+                        visible={!!forceOpen && index < 9}
+                      />
+                      {isActive && (
+                        <Check className={cn('h-4 w-4', iconColor)} />
+                      )}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

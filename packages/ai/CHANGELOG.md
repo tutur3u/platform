@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.3](https://github.com/tutur3u/platform/compare/ai-v0.8.2...ai-v0.8.3) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.8.2](https://github.com/tutur3u/platform/compare/ai-v0.8.1...ai-v0.8.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **ai:** bound meeting transcription input ([07c1710](https://github.com/tutur3u/platform/commit/07c1710ec80441e8d230a3c8cd99c610cf73a10a))
+
 ## [0.8.1](https://github.com/tutur3u/platform/compare/ai-v0.8.0...ai-v0.8.1) (2026-08-07)
 
 

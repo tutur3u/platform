@@ -10,13 +10,18 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
 - **Priority:** P0
 - **Effort:** S
 - **Risk:** LOW
 - **Category:** Security / Shortener
-- **Depends on:** none
+- **Depends on:** G22 route-artifact ownership transfer
 - **Planned at:** commit `68a1457aed`, 2026-08-10
+
+Execution is blocked while
+`tmp/agent-coordination/20260707-141449-codex-g22-time-roles-templates.md`
+retains coordinator ownership of `route-overrides.json` and
+`route-manifest.json`, which this changed Web route must refresh.
 
 ## Why this matters
 
@@ -64,7 +69,7 @@ refreshing the matching override and generated manifest.
 | Resolution tests | `bun --cwd apps/shortener vitest run src/lib/utils.test.ts 'src/app/[slug]/server-page.test.tsx' src/app/api/verify/route.test.ts` | exit 0; both public paths fail closed |
 | Migration tracking | `bun migration:tanstack:manifest` | exit 0; only matching route bookkeeping changes |
 | Repository gate | `bun check` | exit 0 |
-| Builds | `bun --cwd apps/web run build && bun --cwd apps/shortener run build` | both exit 0 |
+| Builds | `bun run --cwd apps/web build && bun run --cwd apps/shortener build` | both exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

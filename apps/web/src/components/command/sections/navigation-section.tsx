@@ -4,6 +4,7 @@ import { ChevronRight } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { addRecentPage, getRecencyBoost } from '../utils/recent-items';
 import { searchItems } from '../utils/search-scoring';
@@ -25,6 +26,7 @@ export function NavigationSection({
   onSelect,
 }: NavigationSectionProps) {
   const router = useRouter();
+  const t = useTranslations('command_palette');
 
   // Search through navigation items with recency boost
   const results = React.useMemo(() => {
@@ -138,7 +140,7 @@ export function NavigationSection({
         const heading =
           hasQuery && category
             ? `${category} (${categoryResults.length})`
-            : 'Navigation';
+            : t('navigation');
 
         return (
           <CommandGroup key={category || 'navigation'} heading={heading}>

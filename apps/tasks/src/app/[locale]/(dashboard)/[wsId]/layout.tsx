@@ -19,6 +19,7 @@ import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { TasksCommandLauncher } from '@/components/command-center/tasks-command-launcher';
 import { SettingsDialogHost } from '@/components/settings/settings-dialog-host';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
@@ -78,6 +79,9 @@ export default async function Layout({ children, params }: LayoutProps) {
     cookieStore,
     sidebarBehavior
   );
+  const navigationLinks = await getNavigationLinks({
+    personalOrWsId: workspaceSlug,
+  });
 
   return (
     <SidebarProvider
@@ -88,11 +92,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         wsId={wsId}
         workspace={workspace}
         defaultCollapsed={defaultCollapsed}
-        links={
-          await getNavigationLinks({
-            personalOrWsId: workspaceSlug,
-          })
-        }
+        links={navigationLinks}
         actions={
           <Suspense
             key={user.id}
@@ -100,7 +100,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions />
+            <NavbarActions userId={user.id} />
           </Suspense>
         }
         notificationPopover={<NotificationPopover userId={user.id} />}
@@ -130,6 +130,12 @@ export default async function Layout({ children, params }: LayoutProps) {
                 <SettingsDialogHost
                   user={user}
                   workspace={workspace}
+                  wsId={wsId}
+                />
+                <TasksCommandLauncher
+                  isPersonalWorkspace={!!workspace.personal}
+                  navLinks={navigationLinks}
+                  workspaceSlug={workspaceSlug}
                   wsId={wsId}
                 />
                 {children}

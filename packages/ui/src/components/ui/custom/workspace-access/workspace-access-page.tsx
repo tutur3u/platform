@@ -37,8 +37,15 @@ import { WorkspaceAccessMembers } from './workspace-access-members';
 import { WorkspaceAccessPageHeader } from './workspace-access-page-header';
 import { WorkspaceAccessPeopleFilters } from './workspace-access-people-filters';
 import { WorkspaceAccessRoleEditorDialog } from './workspace-access-role-editor-dialog';
+import { listAllWorkspaceAccessRoles } from './workspace-access-role-options';
 import { WorkspaceAccessRoles } from './workspace-access-roles';
 import { WorkspaceAccessTabsToolbar } from './workspace-access-tabs-toolbar';
+
+type InvitationRoleUpdate = {
+  email?: null | string;
+  roleIds: string[];
+  userId?: null | string;
+};
 
 export function WorkspaceAccessPage({
   adapter,
@@ -57,6 +64,7 @@ export function WorkspaceAccessPage({
   const [inviteAccessPreset, setInviteAccessPreset] = useState<
     'guest' | 'member' | 'pos_operator'
   >('member');
+  const [inviteRoleIds, setInviteRoleIds] = useState<string[]>([]);
   const [confirmDefaultAdminMigration, setConfirmDefaultAdminMigration] =
     useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -92,6 +100,7 @@ export function WorkspaceAccessPage({
   const workspaceId = context.workspaceId;
   const canManageMembers = context.canManageMembers;
   const canManageRoles = context.canManageRoles;
+  const canAssignInviteRoles = canManageRoles && mode === 'workspace';
   const canInvite = canManageMembers && !disableInvite;
   const permissionUser = useMemo(
     () =>
@@ -145,6 +154,12 @@ export function WorkspaceAccessPage({
     queryKey: ['workspace-access', workspaceId, 'roles', search],
     staleTime: 30_000,
   });
+  const inviteRolesQuery = useQuery({
+    enabled: inviteDialogOpen && canAssignInviteRoles,
+    queryFn: () => listAllWorkspaceAccessRoles(adapter, workspaceId),
+    queryKey: ['workspace-access', workspaceId, 'invite-roles'],
+    staleTime: 30_000,
+  });
   const memberDefaultQuery = useQuery({
     enabled: canManageRoles,
     queryFn: () => adapter.getDefaultRole(workspaceId, 'MEMBER'),
@@ -167,6 +182,9 @@ export function WorkspaceAccessPage({
         queryKey: ['workspace-access', workspaceId, 'roles'],
       }),
       queryClient.invalidateQueries({
+        queryKey: ['workspace-access', workspaceId, 'invite-roles'],
+      }),
+      queryClient.invalidateQueries({
         queryKey: ['workspace-access', workspaceId, 'defaults'],
       }),
     ]);
@@ -179,12 +197,17 @@ export function WorkspaceAccessPage({
         confirmDefaultAdminMigration,
         emails: parseInviteEmails(inviteEmails),
         memberType: inviteAccessPreset === 'guest' ? 'GUEST' : 'MEMBER',
+        roleIds:
+          canAssignInviteRoles && inviteAccessPreset === 'member'
+            ? inviteRoleIds
+            : [],
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('common.error')),
     onSuccess: async (result) => {
       setInviteEmails('');
       setInviteAccessPreset('member');
+      setInviteRoleIds([]);
       setConfirmDefaultAdminMigration(false);
       setInviteDialogOpen(false);
       toast.success(result.message ?? t('ws-members.invitation-sent'));
@@ -245,6 +268,66 @@ export function WorkspaceAccessPage({
     onSuccess: async () => {
       toast.success(t('common.saved'));
       await invalidateAccessData();
+    },
+  });
+  const invitationRoleMutation = useMutation({
+    mutationFn: (payload: InvitationRoleUpdate) => {
+      if (!adapter.updateInvitationRole) {
+        throw new Error(t('common.error'));
+      }
+      return adapter.updateInvitationRole(workspaceId, payload);
+    },
+    onMutate: async (payload) => {
+      const queryKey = ['workspace-access', workspaceId, 'members'] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previousMembers =
+        queryClient.getQueryData<InternalApiEnhancedWorkspaceMember[]>(
+          queryKey
+        );
+      const roleById = new Map(
+        (inviteRolesQuery.data?.data ?? rolesQuery.data?.data ?? []).map(
+          (role) => [role.id, role]
+        )
+      );
+      const nextRoles = payload.roleIds.flatMap((roleId) => {
+        const role = roleById.get(roleId);
+        return role ? [{ id: role.id, name: role.name, permissions: [] }] : [];
+      });
+      const normalizedEmail = payload.email?.trim().toLowerCase() ?? null;
+
+      queryClient.setQueryData<InternalApiEnhancedWorkspaceMember[]>(
+        queryKey,
+        (members = []) =>
+          members.map((member) => {
+            const matchesUser = Boolean(
+              payload.userId && member.id === payload.userId
+            );
+            const matchesEmail = Boolean(
+              normalizedEmail &&
+                member.email?.trim().toLowerCase() === normalizedEmail
+            );
+            if (!member.pending || (!matchesUser && !matchesEmail)) {
+              return member;
+            }
+
+            return {
+              ...member,
+              roles: nextRoles,
+            };
+          })
+      );
+
+      return { previousMembers, queryKey };
+    },
+    onError: (error, _payload, context) => {
+      if (context?.previousMembers) {
+        queryClient.setQueryData(context.queryKey, context.previousMembers);
+      }
+      toast.error(error instanceof Error ? error.message : t('common.error'));
+    },
+    onSettled: invalidateAccessData,
+    onSuccess: () => {
+      toast.success(t('ws-members.invitation_role_updated'));
     },
   });
   const deleteRoleMutation = useMutation({
@@ -394,11 +477,15 @@ export function WorkspaceAccessPage({
             canEditProfiles={Boolean(adapter.updateMemberProfile)}
             canManageMembers={canManageMembers}
             canManageRoles={canManageRoles}
+            canUpdateInvitationRoles={
+              canManageRoles && Boolean(adapter.updateInvitationRole)
+            }
             defaultAdminEnabled={defaultAdminEnabled}
             isLoading={membersQuery.isPending}
             isMutating={
               removeMemberMutation.isPending ||
               roleMembershipMutation.isPending ||
+              invitationRoleMutation.isPending ||
               updateMemberProfileMutation.isPending
             }
             labels={labels}
@@ -411,7 +498,10 @@ export function WorkspaceAccessPage({
             onRemoveRole={(payload) =>
               roleMembershipMutation.mutate({ ...payload, action: 'remove' })
             }
-            roles={roles}
+            onUpdateInvitationRole={(payload) =>
+              invitationRoleMutation.mutate(payload)
+            }
+            roles={inviteRolesQuery.data?.data ?? roles}
             searchTerm={search}
             status={status}
           />
@@ -475,23 +565,32 @@ export function WorkspaceAccessPage({
 
       <WorkspaceAccessInviteDialog
         accessPreset={inviteAccessPreset}
-        canManageRoles={canManageRoles}
+        canManageRoles={canAssignInviteRoles}
         confirmDefaultAdminMigration={confirmDefaultAdminMigration}
         defaultAdminEnabled={defaultAdminEnabled}
         emails={inviteEmails}
         isSubmitting={inviteMutation.isPending}
         joinedMemberCount={joinedCount}
+        noRoleLabel={t('ws-members.no_role_assigned')}
         onAccessPresetChange={(value) => {
           setInviteAccessPreset(value);
-          if (value !== 'pos_operator') {
+          if (value === 'member') {
             setConfirmDefaultAdminMigration(false);
+          } else {
+            setInviteRoleIds([]);
+            if (value === 'guest') {
+              setConfirmDefaultAdminMigration(false);
+            }
           }
         }}
         onConfirmDefaultAdminMigrationChange={setConfirmDefaultAdminMigration}
         onEmailsChange={setInviteEmails}
         onOpenChange={setInviteDialogOpen}
+        onRoleIdsChange={setInviteRoleIds}
         onSubmit={() => inviteMutation.mutate()}
         open={inviteDialogOpen}
+        roleIds={inviteRoleIds}
+        roles={inviteRolesQuery.data?.data ?? []}
       />
 
       {profileMember ? (

@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -81,7 +81,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   // Get workspace settings to check threshold
   const { data: settings } = await supabase
@@ -133,7 +133,7 @@ async function getData(
 }
 
 async function getWorkspaceSettings(wsId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { data, error } = await supabase
     .from('workspace_settings')
     .select('guest_user_checkup_threshold')

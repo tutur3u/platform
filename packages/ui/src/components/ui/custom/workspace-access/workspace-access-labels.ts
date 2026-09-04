@@ -32,7 +32,7 @@ export function getWorkspaceAccessLabels(
     noRolesLabel:
       mode === 'cms'
         ? t('external-projects.settings.no_roles_label')
-        : t('ws-members.no_roles_found'),
+        : t('ws-members.no_roles_assigned'),
     protectedMemberLabel:
       mode === 'cms'
         ? t('external-projects.settings.protected_member_label')

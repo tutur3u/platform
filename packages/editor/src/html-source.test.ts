@@ -143,4 +143,19 @@ describe('safe HTML source projection', () => {
       '<p>Term</p><p>Definition</p><p>More</p><p>Details</p>'
     );
   });
+
+  it('preserves disclosure structure for the full editor preset', () => {
+    const source =
+      '<details><summary>More</summary><p>Hidden details</p></details>';
+    const result = inspectRichTextHTML(source, document, {
+      featurePreset: 'full',
+      stylePolicy,
+    });
+
+    expect(result).toEqual({
+      html: source,
+      normalized: false,
+      unsafe: false,
+    });
+  });
 });

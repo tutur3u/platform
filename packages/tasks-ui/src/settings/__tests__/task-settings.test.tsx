@@ -52,7 +52,7 @@ vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
     data:
       configId === 'TASK_SOUND_EFFECTS_VOLUME'
         ? mockConfigState.soundEffectsVolume
-        : configId === 'TASK_DIALOG_DEFAULT_PRESENTATION'
+        : configId.endsWith('_PRESENTATION')
           ? mockConfigState.dialogPresentation
           : defaultValue,
     isLoading: false,
@@ -108,32 +108,32 @@ describe('task sound settings controls', () => {
     expect(mockSetSoundEffectsEnabled).toHaveBeenCalledWith(false);
   });
 
-  it('renders task dialog presentation setting and persists immersive mode', async () => {
+  it('persists task creation presentation independently', async () => {
     renderWithQueryClient(<TaskSettings />);
 
-    expect(await screen.findByText('dialog_presentation')).toBeInTheDocument();
+    expect(await screen.findByText('dialog_create_task')).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole('combobox', { name: 'dialog_presentation' })
+      screen.getByRole('combobox', { name: 'dialog_create_task' })
     );
     fireEvent.click(screen.getByText('dialog_presentation_immersive'));
 
     expect(mockUpdateUserConfigMutate).toHaveBeenCalledWith({
-      configId: 'TASK_DIALOG_DEFAULT_PRESENTATION',
+      configId: 'TASK_DIALOG_CREATE_PRESENTATION',
       value: 'fullscreen',
     });
   });
 
-  it('persists focused mode as the balanced task dialog preference', async () => {
+  it('persists document viewing presentation independently', async () => {
     renderWithQueryClient(<TaskSettings />);
 
     fireEvent.click(
-      await screen.findByRole('combobox', { name: 'dialog_presentation' })
+      await screen.findByRole('combobox', { name: 'dialog_edit_document' })
     );
     fireEvent.click(screen.getByText('dialog_presentation_focused'));
 
     expect(mockUpdateUserConfigMutate).toHaveBeenCalledWith({
-      configId: 'TASK_DIALOG_DEFAULT_PRESENTATION',
+      configId: 'TASK_DOCUMENT_EDIT_PRESENTATION',
       value: 'focused',
     });
   });

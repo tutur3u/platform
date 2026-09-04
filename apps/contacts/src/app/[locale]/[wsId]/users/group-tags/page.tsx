@@ -1,12 +1,14 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
 
@@ -36,6 +38,14 @@ export default async function WorkspaceUserGroupTagsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
+        const permissions = await getContactsWorkspacePermissions(wsId);
+        if (
+          !permissions ||
+          (permissions.withoutPermission('manage_users') &&
+            permissions.withoutPermission('view_user_groups'))
+        ) {
+          notFound();
+        }
         const { data, count } = await getGroupTags(wsId, await searchParams);
         const t = await getTranslations('ws-user-group-tags');
 
@@ -80,7 +90,7 @@ async function getGroupTags(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const queryBuilder = supabase
     .from('workspace_user_group_tags')

@@ -16,6 +16,10 @@ import {
   normalizePeriodicReportCounts,
   type PeriodicReportCountsRpcRow,
 } from './report-counts';
+import {
+  buildPeriodicReportFallbackFilter,
+  isMissingReportSearchRpc,
+} from './report-search';
 import { getPeriodicReportSortColumn } from './report-sorting';
 
 const CreateReportSchema = z.object({
@@ -123,38 +127,57 @@ export async function GET(request: Request, { params }: Params) {
     const from = (parsed.data.page - 1) * parsed.data.pageSize;
     const to = from + parsed.data.pageSize - 1;
     const sortColumn = getPeriodicReportSortColumn(parsed.data.sortBy);
-    let listQuery = privateDb
-      .from('external_user_monthly_reports_workspace_view')
-      .select('*', { count: 'exact' })
-      .eq('user_ws_id', wsId)
-      .eq('cadence', parsed.data.cadence)
-      .order(sortColumn, {
-        ascending: parsed.data.sortDirection === 'asc',
-        nullsFirst: false,
-      })
-      .order('created_at', {
-        ascending: parsed.data.sortDirection === 'asc',
-      })
-      .range(from, to);
-    if (accessibleGroupIds)
-      listQuery = listQuery.in('group_id', accessibleGroupIds);
-    if (parsed.data.approvalStatus) {
-      listQuery = listQuery.eq(
-        'report_approval_status',
-        parsed.data.approvalStatus
+    const buildListQuery = (useSmartSearch: boolean) => {
+      const fallbackSource = privateDb.from(
+        'external_user_monthly_reports_workspace_view'
       );
-    }
-    if (parsed.data.deliveryStatus) {
-      listQuery = listQuery.eq('delivery_status', parsed.data.deliveryStatus);
-    }
-    if (parsed.data.q) {
-      const escaped = parsed.data.q
-        .replaceAll('%', '\\%')
-        .replaceAll('_', '\\_');
-      listQuery = listQuery.or(
-        `title.ilike.%${escaped}%,user_full_name.ilike.%${escaped}%,user_display_name.ilike.%${escaped}%`
-      );
-    }
+      const source =
+        useSmartSearch && parsed.data.q
+          ? (
+              privateDb.rpc as unknown as (
+                name: string,
+                args: {
+                  p_cadence: string;
+                  p_group_ids: string[] | null;
+                  p_search: string;
+                  p_ws_id: string;
+                }
+              ) => typeof fallbackSource
+            )('search_periodic_reports', {
+              p_cadence: parsed.data.cadence,
+              p_group_ids: accessibleGroupIds,
+              p_search: parsed.data.q,
+              p_ws_id: wsId,
+            })
+          : fallbackSource;
+
+      let query = source
+        .select('*', { count: 'exact' })
+        .order(sortColumn, {
+          ascending: parsed.data.sortDirection === 'asc',
+          nullsFirst: false,
+        })
+        .order('created_at', {
+          ascending: parsed.data.sortDirection === 'asc',
+        })
+        .range(from, to);
+      if (!useSmartSearch) {
+        query = query.eq('user_ws_id', wsId).eq('cadence', parsed.data.cadence);
+        if (accessibleGroupIds) {
+          query = query.in('group_id', accessibleGroupIds);
+        }
+      }
+      if (parsed.data.approvalStatus) {
+        query = query.eq('report_approval_status', parsed.data.approvalStatus);
+      }
+      if (parsed.data.deliveryStatus) {
+        query = query.eq('delivery_status', parsed.data.deliveryStatus);
+      }
+      if (!useSmartSearch && parsed.data.q) {
+        query = query.or(buildPeriodicReportFallbackFilter(parsed.data.q));
+      }
+      return query;
+    };
 
     const countsRpcPromise = (
       privateDb.rpc as unknown as (
@@ -171,10 +194,22 @@ export async function GET(request: Request, { params }: Params) {
       p_ws_id: wsId,
     });
 
-    const [listResult, countsRpcResult, workspaceResult] = await Promise.all([
-      listQuery,
+    const workspacePromise = sbAdmin
+      .from('workspaces')
+      .select('id, timezone')
+      .eq('id', wsId)
+      .single();
+    let listResult = await buildListQuery(Boolean(parsed.data.q));
+    if (
+      listResult.error &&
+      parsed.data.q &&
+      isMissingReportSearchRpc(listResult.error)
+    ) {
+      listResult = await buildListQuery(false);
+    }
+    const [countsRpcResult, workspaceResult] = await Promise.all([
       countsRpcPromise,
-      sbAdmin.from('workspaces').select('id, timezone').eq('id', wsId).single(),
+      workspacePromise,
     ]);
     if (listResult.error) throw listResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
@@ -254,6 +289,11 @@ export async function GET(request: Request, { params }: Params) {
     }
     const data = (listResult.data ?? []).map((row) => ({
       ...row,
+      creator_name:
+        row.creator_display_name ??
+        row.creator_full_name ??
+        row.creator_email ??
+        null,
       user_name:
         row.user_display_name ?? row.user_full_name ?? row.user_email ?? null,
     }));

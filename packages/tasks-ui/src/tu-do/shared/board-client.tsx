@@ -14,7 +14,14 @@ import type {
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   BoardBroadcastProvider,
   type BoardRefreshOptions,
@@ -24,10 +31,13 @@ import {
 import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
+import { readTaskBoardCache, writeTaskBoardCache } from './task-board-cache';
 import { TaskBoardLoadingState } from './task-board-loading-state';
+import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
-const BOARD_REVALIDATE_COOLDOWN_MS = 30_000;
+const BOARD_REVALIDATE_COOLDOWN_MS = 5 * 60_000;
+const RELATION_REVALIDATE_DELAY_MS = 5_000;
 
 interface Props {
   boardId: string;
@@ -52,6 +62,31 @@ export function BoardClient({
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const relationRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const cacheScopeId = currentUserId
+    ? `${currentUserId}:${workspace.id}`
+    : workspace.id;
+  const [cachedSnapshot, setCachedSnapshot] = useState<ReturnType<
+    typeof readTaskBoardCache
+  > | null>(null);
+
+  useEffect(() => {
+    const snapshot = readTaskBoardCache(cacheScopeId, boardId);
+    if (!snapshot) return;
+
+    setCachedSnapshot(snapshot);
+    queryClient.setQueryData(
+      ['task-board', workspace.id, boardId],
+      (current: WorkspaceTaskBoard | undefined) => current ?? snapshot.board
+    );
+    queryClient.setQueryData(
+      ['tasks', boardId],
+      (current: typeof snapshot.tasks | undefined) =>
+        current?.length ? current : snapshot.tasks
+    );
+  }, [boardId, cacheScopeId, queryClient, workspace.id]);
 
   const {
     data: board,
@@ -63,7 +98,8 @@ export function BoardClient({
       const result = await getWorkspaceTaskBoard(workspace.id, boardId);
       return result.board as WorkspaceTaskBoard;
     },
-    staleTime: 5 * 60 * 1000,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const boardWorkspaceId = board?.ws_id ?? workspace.id;
   const canManageBoard =
@@ -89,7 +125,8 @@ export function BoardClient({
       });
       return result.tasks;
     },
-    initialData: [],
+    gcTime: 7 * 24 * 60 * 60_000,
+    initialData: cachedSnapshot?.tasks ?? [],
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -99,33 +136,48 @@ export function BoardClient({
   // Progressive per-list loading
   const progressiveLoader = useProgressiveBoardLoader(
     boardWorkspaceId,
-    boardId
+    boardId,
+    cachedSnapshot?.pagination
   );
+
+  useEffect(() => {
+    if (!board?.id) return;
+    writeTaskBoardCache(cacheScopeId, boardId, {
+      board,
+      pagination: progressiveLoader.pagination,
+      tasks,
+    });
+  }, [board, boardId, cacheScopeId, progressiveLoader.pagination, tasks]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let isRevalidating = false;
-    let lastRevalidateAt = 0;
+    let inFlightRevalidation: Promise<void> | null = null;
+    let lastSuccessfulRevalidateAt = 0;
 
     const revalidateLoadedLists = () => {
       const now = Date.now();
       if (
-        isRevalidating ||
-        now - lastRevalidateAt < BOARD_REVALIDATE_COOLDOWN_MS
+        inFlightRevalidation ||
+        now - lastSuccessfulRevalidateAt < BOARD_REVALIDATE_COOLDOWN_MS
       ) {
         return;
       }
 
-      isRevalidating = true;
-      lastRevalidateAt = now;
-      progressiveLoader
+      inFlightRevalidation = progressiveLoader
         .revalidateLoadedLists()
+        .then(async () => {
+          lastSuccessfulRevalidateAt = Date.now();
+          await queryClient.invalidateQueries({
+            queryKey: ['tasks-full', boardId],
+            refetchType: 'active',
+          });
+        })
         .catch(() => {
           // best effort
         })
         .finally(() => {
-          isRevalidating = false;
+          inFlightRevalidation = null;
         });
     };
 
@@ -135,15 +187,27 @@ export function BoardClient({
         revalidateLoadedLists();
       }
     };
+    const onOnline = () => revalidateLoadedLists();
+    const onPageShow = () => revalidateLoadedLists();
 
     window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('pageshow', onPageShow);
     document.addEventListener('visibilitychange', onVisibilityChange);
+    if (cachedSnapshot) revalidateLoadedLists();
 
     return () => {
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('pageshow', onPageShow);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [progressiveLoader.revalidateLoadedLists]);
+  }, [
+    boardId,
+    cachedSnapshot,
+    progressiveLoader.revalidateLoadedLists,
+    queryClient,
+  ]);
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
@@ -195,10 +259,28 @@ export function BoardClient({
     ]
   );
 
-  const { broadcast } = useBoardRealtime(boardId, {
-    onTaskRelationsChange: () => {
-      refreshActiveBoard({ invalidateTasks: false });
+  const scheduleRelationRefresh = useCallback(() => {
+    if (relationRefreshTimerRef.current) {
+      clearTimeout(relationRefreshTimerRef.current);
+    }
+
+    relationRefreshTimerRef.current = setTimeout(() => {
+      relationRefreshTimerRef.current = null;
+      void refreshActiveBoard({ invalidateTasks: false });
+    }, RELATION_REVALIDATE_DELAY_MS);
+  }, [refreshActiveBoard]);
+
+  useEffect(
+    () => () => {
+      if (relationRefreshTimerRef.current) {
+        clearTimeout(relationRefreshTimerRef.current);
+      }
     },
+    []
+  );
+
+  const { broadcast } = useBoardRealtime(boardId, {
+    onTaskRelationsChange: scheduleRelationRefresh,
   });
 
   // Register broadcast at module level so components outside the
@@ -220,9 +302,9 @@ export function BoardClient({
   }, [boardId, lists, queryClient]);
 
   useEffect(() => {
-    if (!boardError) return;
+    if (!boardError || board?.id) return;
     router.replace(`/${workspace.id}${routePrefix}/boards`);
-  }, [boardError, routePrefix, router, workspace.id]);
+  }, [board?.id, boardError, routePrefix, router, workspace.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !board?.id) return;
@@ -276,18 +358,20 @@ export function BoardClient({
   return (
     <BoardBroadcastProvider value={broadcast}>
       <ProgressiveLoaderProvider value={progressiveLoader}>
-        <BoardViews
-          workspace={workspace}
-          workspaceTier={workspaceTier}
-          board={board}
-          tasks={tasks}
-          lists={lists}
-          workspaceLabels={workspaceLabels}
-          currentUserId={currentUserId}
-          defaultView={defaultView}
-          canManageBoard={canManageBoard}
-          idleBottomIsland={idleBottomIsland}
-        />
+        <TaskCardHotkeysProvider enabled={canManageBoard}>
+          <BoardViews
+            workspace={workspace}
+            workspaceTier={workspaceTier}
+            board={board}
+            tasks={tasks}
+            lists={lists}
+            workspaceLabels={workspaceLabels}
+            currentUserId={currentUserId}
+            defaultView={defaultView}
+            canManageBoard={canManageBoard}
+            idleBottomIsland={idleBottomIsland}
+          />
+        </TaskCardHotkeysProvider>
       </ProgressiveLoaderProvider>
     </BoardBroadcastProvider>
   );

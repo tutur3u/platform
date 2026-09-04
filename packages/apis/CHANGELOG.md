@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.11.3](https://github.com/tutur3u/platform/compare/apis-v0.11.2...apis-v0.11.3) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.11.2](https://github.com/tutur3u/platform/compare/apis-v0.11.1...apis-v0.11.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* **satellites:** restore invited member module access ([749adc5](https://github.com/tutur3u/platform/commit/749adc58cd175dc8c9f1f04fdbe21173d8b2e17a))
+
+## [0.11.1](https://github.com/tutur3u/platform/compare/apis-v0.11.0...apis-v0.11.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **meet:** authorize poll mutations ([c5b3a2e](https://github.com/tutur3u/platform/commit/c5b3a2e6bb4156865807981e7e711e5ee6d20655))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/apis-v0.10.0...apis-v0.11.0) (2026-08-04)
 
 

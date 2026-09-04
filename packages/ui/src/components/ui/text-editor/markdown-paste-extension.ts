@@ -1,6 +1,10 @@
 import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Extension } from '@tiptap/react';
+import {
+  collapseExcessBlankLines,
+  serializeClipboardText,
+} from './clipboard-serialization';
 
 // ---------------------------------------------------------------------------
 // Markdown -> HTML converter (toolbar-supported features only)
@@ -26,6 +30,25 @@ const BLOCK_START_PATTERNS = [
   /^\s*___\s*$/,
   /^\s*\|/,
 ];
+
+const VISUAL_BULLET_PATTERN = /^(\s*)[•◦▪‣●]\s+/u;
+const VISUAL_CHECKBOX_PATTERN = /^(\s*)[☐☑☒]\s+/u;
+
+function normalizePastedPlainText(text: string): string {
+  return collapseExcessBlankLines(text)
+    .split('\n')
+    .map((line) => {
+      const checkboxMatch = line.match(VISUAL_CHECKBOX_PATTERN);
+      if (checkboxMatch) {
+        const marker = line.trimStart().charAt(0);
+        const content = line.replace(VISUAL_CHECKBOX_PATTERN, '');
+        return `${checkboxMatch[1] ?? ''}- [${marker === '☐' ? ' ' : 'x'}] ${content}`;
+      }
+
+      return line.replace(VISUAL_BULLET_PATTERN, '$1- ');
+    })
+    .join('\n');
+}
 
 function isBlockStart(line: string): boolean {
   return BLOCK_START_PATTERNS.some((p) => p.test(line));
@@ -194,10 +217,7 @@ function parseListTree(
 
   while (i < lines.length) {
     const line = lines[i];
-    if (line === undefined || line.trim() === '') {
-      i++;
-      continue;
-    }
+    if (line === undefined || line.trim() === '') break;
 
     const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/);
     if (!match) break;
@@ -309,8 +329,15 @@ function renderListTree(nodes: ListNode[], ordered: boolean): string {
   const tag = ordered ? 'ol' : 'ul';
   const isTaskList = nodes.some((n) => n.checked !== null);
   const dataType = isTaskList ? ' data-type="taskList"' : '';
+  const orderedStart = ordered
+    ? Number.parseInt(nodes[0]?.marker.replace('.', '') ?? '1', 10)
+    : 1;
+  const startAttribute =
+    ordered && Number.isFinite(orderedStart) && orderedStart !== 1
+      ? ` start="${orderedStart}"`
+      : '';
 
-  let html = `<${tag}${dataType}>`;
+  let html = `<${tag}${startAttribute}${dataType}>`;
 
   for (const node of nodes) {
     if (isTaskList) {
@@ -496,7 +523,7 @@ function markdownToHtml(markdown: string): string {
       paraLines.push(lines[i]!);
       i++;
     }
-    result.push(`<p>${parseInline(paraLines.join(' '))}</p>`);
+    result.push(`<p>${paraLines.map(parseInline).join('<br>')}</p>`);
   }
 
   return result.join('\n');
@@ -532,6 +559,19 @@ function looksLikeMarkdown(text: string): boolean {
   return MARKDOWN_SIGNATURES.some((pattern) => pattern.test(text));
 }
 
+const SEMANTIC_RICH_TEXT_TAG_PATTERN =
+  /<(?:a|b|blockquote|code|details|em|h[1-6]|i|img|li|mark|ol|pre|s|strong|summary|table|tbody|td|th|thead|tr|ul)\b/i;
+
+function shouldConvertPastedText({
+  html,
+  text,
+}: {
+  html: string;
+  text: string;
+}): boolean {
+  return looksLikeMarkdown(text) && !SEMANTIC_RICH_TEXT_TAG_PATTERN.test(html);
+}
+
 // ---------------------------------------------------------------------------
 // Test-only exports (not part of the public API contract)
 // ---------------------------------------------------------------------------
@@ -539,6 +579,8 @@ function looksLikeMarkdown(text: string): boolean {
 export const __markdownPastePrivate = {
   markdownToHtml,
   looksLikeMarkdown,
+  normalizePastedPlainText,
+  shouldConvertPastedText,
 };
 
 const markdownPastePluginKey = new PluginKey('markdownPastePlugin');
@@ -556,6 +598,7 @@ export const MarkdownPaste = Extension.create({
       new Plugin({
         key: markdownPastePluginKey,
         props: {
+          clipboardTextSerializer: serializeClipboardText,
           handleDOMEvents: {
             paste: (
               view: import('@tiptap/pm/view').EditorView,
@@ -569,25 +612,30 @@ export const MarkdownPaste = Extension.create({
                 return false;
               }
 
-              const text = clipboardData.getData('text/plain');
-              if (!text || !looksLikeMarkdown(text)) {
+              const text = normalizePastedPlainText(
+                clipboardData.getData('text/plain')
+              );
+              const clipboardHtml = clipboardData.getData('text/html');
+              if (
+                !text ||
+                !shouldConvertPastedText({ html: clipboardHtml, text })
+              ) {
                 return false;
               }
 
-              // When plain text looks like markdown, convert it to editor nodes
-              // even if HTML is also present on the clipboard. Many apps wrap
-              // markdown in simple HTML tags that Tiptap would insert as plain
-              // text paragraphs; we prefer structured conversion instead.
+              // Convert Markdown from plain text when HTML is absent or only a
+              // visual wrapper. Genuine rich HTML keeps its headings, lists,
+              // inline emphasis, links, media, and paragraph boundaries.
               event.preventDefault();
 
-              const html = markdownToHtml(text);
+              const generatedHtml = markdownToHtml(text);
               const { state } = view;
               const { from, to } = state.selection;
 
               // Parse the generated HTML into a ProseMirror slice
               const browserParser = new DOMParser();
               const dom = browserParser.parseFromString(
-                `<div>${html}</div>`,
+                `<div>${generatedHtml}</div>`,
                 'text/html'
               );
               const firstChild = dom.body.firstChild;

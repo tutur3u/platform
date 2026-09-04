@@ -166,8 +166,8 @@ export function useUpsertPostMutation(
       });
       toast.success(t('common.saved'));
     },
-    onError: (error: unknown) => {
-      toast.error(error instanceof Error ? error.message : t('common.error'));
+    onError: () => {
+      toast.error(t('ws-user-groups.post_save_failed'));
     },
   });
 }

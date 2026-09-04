@@ -11,6 +11,7 @@ import {
   isTaskBoardResolvedStatus,
   isTaskBoardTerminalStatus,
 } from '@tuturuuu/utils/task-list-status';
+import { getCachedBoardTasks } from './bulk-operation-utils';
 
 function markBulkTaskLocallyMutated(task: Task): Task {
   return {
@@ -29,10 +30,9 @@ function getSelectedTaskSnapshots({
   taskIds: string[];
 }) {
   const taskIdSet = new Set(taskIds);
-  const currentTasks =
-    queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
-
-  return currentTasks.filter((task) => taskIdSet.has(task.id));
+  return Array.from(getCachedBoardTasks(queryClient, boardId).values()).filter(
+    (task) => taskIdSet.has(task.id)
+  );
 }
 
 export function getExternalTaskIdSet(tasks: Task[]) {
@@ -71,9 +71,7 @@ function getCachedTask(
   boardId: string,
   taskId: string
 ) {
-  const currentTasks =
-    queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
-  return currentTasks.find((task) => task.id === taskId) ?? null;
+  return getCachedBoardTasks(queryClient, boardId).get(taskId) ?? null;
 }
 
 function errorMessage(error: unknown) {

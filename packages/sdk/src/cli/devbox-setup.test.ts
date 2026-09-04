@@ -20,7 +20,7 @@ const doctorOk = {
   setupCommands: [],
   status: 'ok' as const,
   tools: {
-    bun: '1.3.14',
+    bun: '1.4.0',
     docker: 'Docker version 28.0.0',
     git: 'git version 2.50.0',
     node: 'v24.0.0',

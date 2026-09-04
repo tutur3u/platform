@@ -1,4 +1,3 @@
-import { formatForDisplay } from '@tanstack/react-hotkeys';
 import type { Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -17,6 +16,7 @@ import {
   Italic,
   Link,
   List,
+  ListCollapse,
   ListOrdered,
   ListTodo,
   Loader2,
@@ -32,143 +32,19 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Toggle } from '@tuturuuu/ui/toggle';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TextEditorColorControls } from './color-controls';
+import { type EditorCopyLabels, EditorCopyMenu } from './copy-menu';
 import {
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
   StorageQuotaError,
 } from './media-utils';
+import { TOOLBAR_GROUPS } from './toolbar-config';
+import { ToolbarButton, ToolbarSeparator } from './toolbar-controls';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
-
-// ---------------------------------------------------------------------------
-// Hotkey definitions – use 'Mod' for cross-platform (⌘ on Mac, Ctrl on Win)
-// These match Tiptap's built-in shortcuts where applicable.
-// ---------------------------------------------------------------------------
-const HOTKEYS = {
-  'heading-1': 'Mod+Alt+1',
-  'heading-2': 'Mod+Alt+2',
-  'heading-3': 'Mod+Alt+3',
-  bold: 'Mod+B',
-  italic: 'Mod+I',
-  strike: 'Mod+Shift+S',
-  subscript: 'Mod+,',
-  superscript: 'Mod+.',
-  'align-left': 'Mod+Shift+L',
-  'align-center': 'Mod+Shift+E',
-  'align-right': 'Mod+Shift+R',
-  'bullet-list': 'Mod+Shift+8',
-  'ordered-list': 'Mod+Shift+7',
-  'task-list': 'Mod+Shift+9',
-  table: '',
-  link: 'Mod+K',
-  image: '',
-  video: '',
-  youtube: '',
-  'convert-to-task': '',
-} as const;
-
-// Labels for each formatting option
-const LABELS: Record<string, string> = {
-  'heading-1': 'Heading 1',
-  'heading-2': 'Heading 2',
-  'heading-3': 'Heading 3',
-  bold: 'Bold',
-  italic: 'Italic',
-  strike: 'Strikethrough',
-  subscript: 'Subscript',
-  superscript: 'Superscript',
-  'align-left': 'Align Left',
-  'align-center': 'Align Center',
-  'align-right': 'Align Right',
-  'bullet-list': 'Bullet List',
-  'ordered-list': 'Ordered List',
-  'task-list': 'Task List',
-  table: 'Insert Table',
-  link: 'Link',
-  image: 'Upload Image',
-  video: 'Upload Video',
-  youtube: 'YouTube Video',
-  'convert-to-task': 'Convert to Task',
-};
-
-// Semantic groups for the fixed toolbar
-const TOOLBAR_GROUPS = [
-  ['heading-1', 'heading-2', 'heading-3'],
-  ['bold', 'italic', 'strike', 'subscript', 'superscript'],
-  ['align-left', 'align-center', 'align-right'],
-  ['bullet-list', 'ordered-list', 'task-list'],
-  ['table', 'link'],
-] as const;
-
-/** Format a hotkey combo string for display (platform-aware). */
-function hotkeyLabel(key: string): string {
-  const combo = HOTKEYS[key as keyof typeof HOTKEYS];
-  if (!combo) return '';
-  try {
-    return formatForDisplay(combo);
-  } catch {
-    return combo;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Shared sub-components
-// ---------------------------------------------------------------------------
-
-interface ToolbarButtonProps {
-  id: string;
-  icon: React.ReactNode;
-  pressed: boolean;
-  onClick: () => void;
-  disabled?: boolean;
-}
-
-/** A single toolbar toggle button wrapped with a tooltip showing name + hotkey. */
-function ToolbarButton({
-  id,
-  icon,
-  pressed,
-  onClick,
-  disabled,
-}: ToolbarButtonProps) {
-  const label = LABELS[id] ?? id;
-  const shortcut = hotkeyLabel(id);
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Toggle
-          pressed={pressed}
-          onPressedChange={() => onClick()}
-          onMouseDown={(e) => e.preventDefault()}
-          disabled={disabled}
-          className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
-          aria-label={label}
-        >
-          {icon}
-        </Toggle>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="flex items-center gap-1.5">
-        <span>{label}</span>
-        {shortcut && (
-          <kbd className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-            {shortcut}
-          </kbd>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-/** Vertical divider between toolbar groups */
-function ToolbarSeparator() {
-  return <div className="mx-0.5 h-5 w-px shrink-0 bg-dynamic-border/60" />;
-}
 
 // ---------------------------------------------------------------------------
 // Main ToolBar (BubbleMenu)
@@ -183,6 +59,7 @@ interface ToolBarProps {
   onConvertToTask?: () => void | Promise<void>;
   /** When true, the BubbleMenu is hidden because the fixed toolbar is visible */
   fixedToolbarVisible?: boolean;
+  toggleBlockLabel?: string;
 }
 
 export function ToolBar({
@@ -191,6 +68,7 @@ export function ToolBar({
   workspaceId,
   onImageUpload,
   onConvertToTask,
+  toggleBlockLabel,
 }: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
@@ -357,6 +235,12 @@ export function ToolBar({
           icon: <ListTodo className="size-4" />,
           onClick: () => editor?.chain().focus().toggleTaskListSmart().run(),
           pressed: editor?.isActive('taskList'),
+        },
+        {
+          key: 'toggle-block',
+          icon: <ListCollapse className="size-4" />,
+          onClick: () => editor?.chain().focus().toggleDetailsBlock().run(),
+          pressed: editor?.isActive('details'),
         },
         {
           key: 'table',
@@ -587,6 +471,7 @@ export function ToolBar({
           <ToolbarButton
             key={`${option.key}-${source}`}
             id={option.key}
+            label={option.key === 'toggle-block' ? toggleBlockLabel : undefined}
             icon={option.icon}
             pressed={option.pressed as boolean}
             onClick={option.onClick}
@@ -673,6 +558,7 @@ export function ToolBar({
       isUploadingVideo,
       showYoutubeInput,
       onConvertToTask,
+      toggleBlockLabel,
     ]
   );
 
@@ -956,33 +842,32 @@ export function ToolBar({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Fixed Toolbar (always-visible, rendered above the editor)
-// ---------------------------------------------------------------------------
-
 interface FixedToolbarProps {
   editor: Editor | null;
+  leadingContent?: React.ReactNode;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
   onConvertToTask?: () => void | Promise<void>;
   className?: string;
   ref?: React.Ref<HTMLDivElement>;
+  toggleBlockLabel?: string;
+  copyLabels?: EditorCopyLabels;
 }
-
 export function FixedToolbar({
   editor,
+  leadingContent,
   workspaceId,
   onImageUpload,
   onConvertToTask,
   className,
   ref,
+  toggleBlockLabel,
+  copyLabels,
 }: FixedToolbarProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-
-  // Build the formatting option map
   const formattingOptions = useMemo(() => {
     if (!editor)
       return new Map<
@@ -1082,6 +967,12 @@ export function FixedToolbar({
         icon: <ListTodo className="size-4" />,
         onClick: () => editor.chain().focus().toggleTaskListSmart().run(),
         pressed: editor.isActive('taskList'),
+      },
+      {
+        key: 'toggle-block',
+        icon: <ListCollapse className="size-4" />,
+        onClick: () => editor.chain().focus().toggleDetailsBlock().run(),
+        pressed: editor.isActive('details'),
       },
       {
         key: 'table',
@@ -1190,12 +1081,11 @@ export function FixedToolbar({
   );
 
   if (!editor) return null;
-
   return (
     <div
       ref={ref}
       className={cn(
-        'sticky top-0 z-40 flex flex-wrap items-center gap-1 rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
+        '@container scrollbar-hide sticky -top-px z-40 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain whitespace-nowrap rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
         className
       )}
     >
@@ -1213,7 +1103,12 @@ export function FixedToolbar({
         onChange={handleVideoUpload}
         className="hidden"
       />
-
+      {leadingContent ? (
+        <>
+          <div className="shrink-0">{leadingContent}</div>
+          <ToolbarSeparator />
+        </>
+      ) : null}
       {/* Grouped formatting options with separators */}
       {TOOLBAR_GROUPS.map((group, gi) => (
         <div key={gi} className="contents">
@@ -1225,6 +1120,7 @@ export function FixedToolbar({
               <ToolbarButton
                 key={key}
                 id={key}
+                label={key === 'toggle-block' ? toggleBlockLabel : undefined}
                 icon={opt.icon}
                 pressed={opt.pressed}
                 onClick={opt.onClick}
@@ -1282,6 +1178,9 @@ export function FixedToolbar({
           />
         </>
       )}
+
+      <ToolbarSeparator />
+      <EditorCopyMenu editor={editor} labels={copyLabels} />
     </div>
   );
 }

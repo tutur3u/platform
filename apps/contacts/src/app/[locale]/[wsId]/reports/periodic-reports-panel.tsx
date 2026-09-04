@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQueryClient,
@@ -22,9 +23,10 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useDeferredValue, useState } from 'react';
+import { useState } from 'react';
 import GroupReportsSelector from '../users/reports/group-reports-selector';
 import { PeriodicDeliveryConfirmation } from './periodic-delivery-confirmation';
 import {
@@ -72,7 +74,7 @@ export default function PeriodicReportsPanel({
   const [sortBy, setSortBy] = useState<PeriodicSortBy>('period');
   const [sortDirection, setSortDirection] =
     useState<PeriodicSortDirection>('desc');
-  const deferredQuery = useDeferredValue(query);
+  const [debouncedQuery] = useDebounce(query.trim(), 300);
   const [deliveryIntent, setDeliveryIntent] = useState<{
     action: PeriodicDeliveryAction;
     report: PeriodicReport;
@@ -88,7 +90,7 @@ export default function PeriodicReportsPanel({
       'periodic-reports',
       wsId,
       cadence,
-      deferredQuery,
+      debouncedQuery,
       approvalStatus,
       deliveryStatus,
       sortBy,
@@ -101,7 +103,7 @@ export default function PeriodicReportsPanel({
         deliveryStatus: deliveryStatus === 'all' ? undefined : deliveryStatus,
         page: pageParam,
         pageSize: 20,
-        query: deferredQuery || undefined,
+        query: debouncedQuery || undefined,
         sortBy,
         sortDirection,
       }),
@@ -109,6 +111,8 @@ export default function PeriodicReportsPanel({
       const loaded = lastPage.page * lastPage.pageSize;
       return loaded < lastPage.total ? lastPage.page + 1 : undefined;
     },
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
   const reports = reportsQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const counts = reportsQuery.data?.pages[0]?.counts;
@@ -207,6 +211,8 @@ export default function PeriodicReportsPanel({
           setSortDirection(nextDirection);
         }}
         query={query}
+        isSearching={reportsQuery.isFetching || query.trim() !== debouncedQuery}
+        resultCount={totalReports}
         sortBy={sortBy}
         sortDirection={sortDirection}
       />

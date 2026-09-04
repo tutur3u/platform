@@ -41,7 +41,7 @@ import {
   dispatchRequestOpenTask,
   waitForTaskOpenResult,
 } from '@tuturuuu/ui/lib/task-open-events';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Popover, PopoverContent } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -49,6 +49,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { NotificationPopoverTriggerButton } from './notification-popover-trigger';
 
 dayjs.extend(relativeTime);
 
@@ -190,24 +191,10 @@ export default function NotificationPopoverClient({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={notificationsText}
-          title={notificationsText}
-          className="group relative flex size-10 flex-none transition-all"
-        >
-          <Bell className="h-6 w-6" />
-          {unreadCount > 0 && (
-            <div className="absolute top-1 right-2 flex h-1.5 w-1.5 flex-none items-center justify-center rounded-full bg-dynamic-red p-1 text-center font-semibold text-xs transition-all group-hover:-top-2 group-hover:-right-1 group-hover:h-5 group-hover:w-auto group-hover:px-1.5 group-hover:text-background">
-              <div className="relative opacity-0 group-hover:opacity-100">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </div>
-            </div>
-          )}
-        </Button>
-      </PopoverTrigger>
+      <NotificationPopoverTriggerButton
+        notificationsText={notificationsText}
+        unreadCount={unreadCount}
+      />
       <PopoverContent
         className="w-100 overflow-hidden rounded-xl border p-0 shadow-xl"
         align="end"

@@ -1,5 +1,6 @@
 import {
   type QueryClient,
+  type QueryKey,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -31,6 +32,7 @@ type ReorderTaskMutationInput = {
   newSortKey: number;
   optimisticPreviousTasks?: Task[];
   optimisticPreviousFullTasks?: Task[];
+  optimisticPreviousFullTaskEntries?: [QueryKey, Task[] | undefined][];
 };
 
 export function mergeOptimisticReorderedTaskIntoCache(
@@ -93,9 +95,24 @@ function setReorderedTaskCache(
 ) {
   queryClient.setQueryData(['tasks', boardId], updater);
 
-  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
-    queryClient.setQueryData(['tasks-full', boardId], updater);
-  }
+  queryClient.setQueriesData<Task[]>(
+    { queryKey: ['tasks-full', boardId] },
+    updater
+  );
+}
+
+export function cancelStaleTaskBoardQueries(
+  queryClient: QueryClient,
+  boardId: string
+) {
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks', boardId] },
+    { revert: false }
+  );
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks-full', boardId] },
+    { revert: false }
+  );
 }
 
 // Reorder task within the same list or move to a different list with specific position
@@ -139,19 +156,21 @@ export function useReorderTask(boardId: string, wsId: string) {
       newSortKey,
       optimisticPreviousTasks,
       optimisticPreviousFullTasks,
+      optimisticPreviousFullTaskEntries,
     }) => {
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData<Task[]>([
         'tasks',
         boardId,
       ]);
-      const previousFullTasks = queryClient.getQueryData<Task[]>([
-        'tasks-full',
-        boardId,
-      ]);
+      const previousFullTaskEntries = queryClient.getQueriesData<Task[]>({
+        queryKey: ['tasks-full', boardId],
+      });
 
-      // Cancel any outgoing refetches without delaying the optimistic landing.
-      void queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      // Keep the drop preview visible while cancelling stale board responses.
+      // The default cancellation behavior reverts to the pre-fetch snapshot,
+      // which makes a dropped card briefly jump back to its source list.
+      cancelStaleTaskBoardQueries(queryClient, boardId);
 
       // Check if moving to a done or closed list
       const targetList = queryClient.getQueryData(['task_lists', boardId]) as
@@ -194,7 +213,16 @@ export function useReorderTask(boardId: string, wsId: string) {
 
       return {
         previousTasks: optimisticPreviousTasks ?? previousTasks,
-        previousFullTasks: optimisticPreviousFullTasks ?? previousFullTasks,
+        previousFullTaskEntries:
+          optimisticPreviousFullTaskEntries ??
+          (optimisticPreviousFullTasks
+            ? [
+                [['tasks-full', boardId], optimisticPreviousFullTasks] as [
+                  QueryKey,
+                  Task[],
+                ],
+              ]
+            : previousFullTaskEntries),
         blockedTaskIdsPromise,
       };
     },
@@ -202,11 +230,8 @@ export function useReorderTask(boardId: string, wsId: string) {
       if (context?.previousTasks) {
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
-      if (context?.previousFullTasks) {
-        queryClient.setQueryData(
-          ['tasks-full', boardId],
-          context.previousFullTasks
-        );
+      for (const [queryKey, tasks] of context?.previousFullTaskEntries ?? []) {
+        queryClient.setQueryData(queryKey, tasks);
       }
 
       console.error('Failed to reorder task:', err);

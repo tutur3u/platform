@@ -32,3 +32,12 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
   writable: true,
 });
+
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+vi.stubGlobal('ResizeObserver', ResizeObserverMock);
+Element.prototype.scrollIntoView = vi.fn();

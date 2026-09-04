@@ -1,8 +1,6 @@
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { partitionTaskProjectLinks } from '@tuturuuu/internal-api/tasks';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -15,7 +13,16 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
+
+interface RouteParams {
+  wsId: string;
+  projectId: string;
+}
+
+const TASK_PROJECTS_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 const updateProjectSchema = z
   .object({
@@ -70,101 +77,92 @@ const updateProjectSchema = z
     }
   });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; projectId: string }> }
-) {
-  try {
-    const { wsId: rawWsId, projectId } = await params;
-    const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+export const GET = withSessionAuth<RouteParams>(
+  async (
+    _request: NextRequest,
+    { supabase, user },
+    { wsId: rawWsId, projectId }
+  ) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
+      if (membership.error === 'membership_lookup_failed') {
+        console.error('Membership lookup failed:', membership.error);
+        return NextResponse.json(
+          { error: 'Membership lookup failed' },
+          { status: 500 }
+        );
+      }
 
-    if (membership.error === 'membership_lookup_failed') {
-      console.error('Membership lookup failed:', membership.error);
-      return NextResponse.json(
-        { error: 'Membership lookup failed' },
-        { status: 500 }
-      );
-    }
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+      const permissions = await getPermissions({ user, wsId });
+      if (!permissions?.containsPermission('manage_projects')) {
+        return NextResponse.json(
+          { error: "You don't have permission to perform this operation" },
+          { status: 403 }
+        );
+      }
 
-    const permissions = await getPermissions({ wsId, request });
-    if (!permissions?.containsPermission('manage_projects')) {
-      return NextResponse.json(
-        { error: "You don't have permission to perform this operation" },
-        { status: 403 }
-      );
-    }
+      const sbAdmin = await createAdminClient();
 
-    const sbAdmin = await createAdminClient();
-
-    const { data: project, error: projectError } = await sbAdmin
-      .from('task_projects')
-      .select(
-        `
+      const { data: project, error: projectError } = await sbAdmin
+        .from('task_projects')
+        .select(
+          `
         *,
         creator:users!task_projects_creator_id_fkey(id, display_name, avatar_url),
         lead:users!task_projects_lead_id_fkey(id, display_name, avatar_url)
       `
-      )
-      .eq('id', projectId)
-      .eq('ws_id', wsId)
-      .maybeSingle();
+        )
+        .eq('id', projectId)
+        .eq('ws_id', wsId)
+        .maybeSingle();
 
-    if (projectError) {
+      if (projectError) {
+        return NextResponse.json(
+          { error: projectError.message || 'Internal server error' },
+          { status: 500 }
+        );
+      }
+
+      if (!project) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(project);
+    } catch (error) {
+      console.error(
+        'Error in GET /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
+        error
+      );
       return NextResponse.json(
-        { error: projectError.message || 'Internal server error' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    return NextResponse.json(project);
-  } catch (error) {
-    console.error(
-      'Error in GET /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
-      error
-    );
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: TASK_PROJECTS_APP_SESSION_AUTH }
+);
 
 async function updateProject(
   request: NextRequest,
-  params: Promise<{ wsId: string; projectId: string }>
+  { supabase, user }: SessionAuthContext,
+  { wsId: rawWsId, projectId }: RouteParams
 ) {
   try {
-    const { wsId: rawWsId, projectId } = await params;
-    const supabase = await createClient(request);
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-    // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Verify user has access to workspace
     const membership = await verifyWorkspaceMembershipType({
@@ -184,7 +182,7 @@ async function updateProject(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const permissions = await getPermissions({ wsId, request });
+    const permissions = await getPermissions({ user, wsId });
     if (!permissions?.containsPermission('manage_projects')) {
       return NextResponse.json(
         { error: "You don't have permission to perform this operation" },
@@ -360,93 +358,85 @@ async function updateProject(
 }
 
 // Export both PUT and PATCH to handle both methods
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; projectId: string }> }
-) {
-  return updateProject(request, params);
-}
+export const PUT = withSessionAuth<RouteParams>(updateProject, {
+  allowAppSessionAuth: TASK_PROJECTS_APP_SESSION_AUTH,
+});
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; projectId: string }> }
-) {
-  return updateProject(request, params);
-}
+export const PATCH = withSessionAuth<RouteParams>(updateProject, {
+  allowAppSessionAuth: TASK_PROJECTS_APP_SESSION_AUTH,
+});
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; projectId: string }> }
-) {
-  try {
-    const { wsId: rawWsId, projectId } = await params;
-    const supabase = await createClient(request);
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+export const DELETE = withSessionAuth<RouteParams>(
+  async (
+    _request: NextRequest,
+    { supabase, user },
+    { wsId: rawWsId, projectId }
+  ) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-    // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      // Verify user has access to workspace
+      const membership = await verifyWorkspaceMembershipType({
+        wsId,
+        userId: user.id,
+        supabase,
+      });
 
-    // Verify user has access to workspace
-    const membership = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
+      if (membership.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Membership lookup failed' },
+          { status: 500 }
+        );
+      }
 
-    if (membership.error === 'membership_lookup_failed') {
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const permissions = await getPermissions({ user, wsId });
+      if (!permissions?.containsPermission('manage_projects')) {
+        return NextResponse.json(
+          { error: "You don't have permission to perform this operation" },
+          { status: 403 }
+        );
+      }
+
+      const sbAdmin = await createAdminClient();
+
+      // Delete project
+      const { data: deletedProjects, error: deleteError } = await sbAdmin
+        .from('task_projects')
+        .delete()
+        .eq('id', projectId)
+        .eq('ws_id', wsId)
+        .select('id');
+
+      if (deleteError) {
+        console.error('Error deleting project:', deleteError);
+        return NextResponse.json(
+          { error: 'Failed to delete project' },
+          { status: 500 }
+        );
+      }
+
+      if (!deletedProjects || deletedProjects.length === 0) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error(
+        'Error in DELETE /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
+        error
+      );
       return NextResponse.json(
-        { error: 'Membership lookup failed' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const permissions = await getPermissions({ wsId, request });
-    if (!permissions?.containsPermission('manage_projects')) {
-      return NextResponse.json(
-        { error: "You don't have permission to perform this operation" },
-        { status: 403 }
-      );
-    }
-
-    const sbAdmin = await createAdminClient();
-
-    // Delete project
-    const { data: deletedProjects, error: deleteError } = await sbAdmin
-      .from('task_projects')
-      .delete()
-      .eq('id', projectId)
-      .eq('ws_id', wsId)
-      .select('id');
-
-    if (deleteError) {
-      console.error('Error deleting project:', deleteError);
-      return NextResponse.json(
-        { error: 'Failed to delete project' },
-        { status: 500 }
-      );
-    }
-
-    if (!deletedProjects || deletedProjects.length === 0) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error(
-      'Error in DELETE /api/v1/workspaces/[wsId]/task-projects/[projectId]:',
-      error
-    );
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: TASK_PROJECTS_APP_SESSION_AUTH }
+);

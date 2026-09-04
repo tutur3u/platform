@@ -7,30 +7,26 @@ import {
   fetchWorkspaceOrders,
 } from '@tuturuuu/payment-core/billing-helper';
 import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const { wsId } = await params;
 
     // Authenticate user
-    const supabase = await createClient();
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user) {
+    const actor = await resolveSatelliteRequestActor(request, [
+      'pay',
+      'platform',
+    ]);
+    if (!actor) {
       return NextResponse.json({ error: 'UNAUTHORIZED' }, { status: 401 });
     }
-
-    const sbAdmin = await createAdminClient();
+    const { admin: sbAdmin, user } = actor;
 
     const hasManagePermission = await checkManageSubscriptionPermission(
       sbAdmin,

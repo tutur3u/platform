@@ -1,6 +1,7 @@
 'use client';
 
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
+import { TaskTimerSidebarItem } from '@tuturuuu/tasks-ui/tu-do/shared/task-timer-sidebar-item';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { ReactNode } from 'react';
 import { TTR_URL } from '@/constants/common';
@@ -14,7 +15,7 @@ interface StructureProps {
   links: (NavLink | null)[];
   notificationPopover: ReactNode;
   userPopover: ReactNode;
-  workspace: { tier?: string | null } | null;
+  workspace: { personal?: boolean | null; tier?: string | null } | null;
   wsId: string;
 }
 
@@ -37,6 +38,13 @@ export function Structure({
       defaultCollapsed={defaultCollapsed}
       links={links}
       notificationPopover={notificationPopover}
+      sidebarContentAfter={({ isCollapsed }) => (
+        <TaskTimerSidebarItem
+          isCollapsed={isCollapsed}
+          workspaceId={wsId}
+          workspacePath={workspace?.personal ? 'personal' : wsId}
+        />
+      )}
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}

@@ -3,11 +3,8 @@ import {
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
 } from '@tuturuuu/inventory-core/api-list-query';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -17,9 +14,7 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id, supabase);
   const shouldPaginate = shouldReturnPaginatedInventoryList(req);
 
   const parsedQuery = parseInventoryApiListQuery(req);
@@ -30,10 +25,9 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('view_inventory')) {
     return NextResponse.json(
@@ -42,7 +36,7 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const query = supabase
+  const query = (await createAdminClient())
     .from('product_categories')
     .select('*', { count: shouldPaginate ? 'exact' : undefined })
     .eq('ws_id', wsId);
@@ -72,15 +66,12 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id, supabase);
   const data = await req.json();
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('create_inventory')) {
     return NextResponse.json(
@@ -89,10 +80,12 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await supabase.from('product_categories').insert({
-    ...data,
-    ws_id: wsId,
-  });
+  const { error } = await (await createAdminClient())
+    .from('product_categories')
+    .insert({
+      ...data,
+      ws_id: wsId,
+    });
 
   if (error) {
     console.error('Error creating inventory category', error);

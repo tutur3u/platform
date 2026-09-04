@@ -1,3 +1,4 @@
+import { isTaskMutationPending } from '../../../shared/task-cache-patches';
 import type { TaskCardProps } from './task-card';
 
 function areSelectedTaskSetsEqual(
@@ -61,6 +62,9 @@ export function areTaskCardPropsEqual(
   const previousTask = prev.task;
   const nextTask = next.task;
   if (previousTask === nextTask) return true;
+  if (isTaskMutationPending(previousTask) !== isTaskMutationPending(nextTask)) {
+    return false;
+  }
 
   const keys: (keyof typeof previousTask)[] = [
     'id',

@@ -19,12 +19,9 @@ import {
   WorkspacePresenceProvider,
 } from '../providers/workspace-presence-provider';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
-import {
-  normalizeTaskDialogPresentation,
-  TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
-} from './task-dialog-presentation';
 import { TaskEditDialog } from './task-edit-dialog';
 import { buildWorkspaceTaskUrl } from './task-url';
+import { useTaskDialogPresentationPreferences } from './use-task-dialog-presentation-preferences';
 
 /**
  * Manager component that renders the centralized task dialog
@@ -167,16 +164,7 @@ export function TaskDialogManager({
   });
   const draftModeEnabled = draftModeRaw === 'true';
 
-  const { data: defaultPresentationRaw } = useQuery({
-    queryKey: ['user-config', TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID],
-    queryFn: async () =>
-      (await getUserConfig(TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID)).value ??
-      'focused',
-    staleTime: 5 * 60 * 1000,
-  });
-  const defaultPresentation = normalizeTaskDialogPresentation(
-    defaultPresentationRaw
-  );
+  const presentationPreferences = useTaskDialogPresentationPreferences();
 
   const handleClose = () => {
     triggerClose();
@@ -283,7 +271,6 @@ export function TaskDialogManager({
       }
       const taskId = customEvent.detail?.taskId;
       if (!taskId) return;
-      const requestedWsId = customEvent.detail?.wsId;
       const requestId = customEvent.detail?.requestId;
 
       const emitOpenResult = (opened: boolean) => {
@@ -292,12 +279,12 @@ export function TaskDialogManager({
       };
 
       void (async () => {
-        const opened = await openTaskById(taskId, {
-          taskWsId: requestedWsId,
-          taskWorkspacePersonal: requestedWsId
-            ? undefined
-            : isPersonalWorkspace,
-        });
+        // Event producers (notifications, sidebars, timers) only know the
+        // workspace in which the task was surfaced. That workspace is a hint,
+        // not necessarily the task's owner. Resolve through the current-user
+        // endpoint so external and cross-workspace tasks hydrate once with
+        // their canonical workspace and board context.
+        const opened = await openCanonicalTask(taskId);
         emitOpenResult(opened);
       })();
     };
@@ -313,7 +300,7 @@ export function TaskDialogManager({
         handleTaskOpenRequest as EventListener
       );
     };
-  }, [isPersonalWorkspace, openTaskById]);
+  }, [openCanonicalTask]);
 
   useEffect(() => {
     const canonicalTaskId = searchParams.get('task');
@@ -347,10 +334,7 @@ export function TaskDialogManager({
       return;
     }
 
-    void openTaskById(legacyTaskId, {
-      taskWsId: wsId,
-      taskWorkspacePersonal: isPersonalWorkspace,
-    });
+    void openCanonicalTask(legacyTaskId);
     const nextSearchParams = new URLSearchParams(searchParams.toString());
     nextSearchParams.delete('openTaskId');
 
@@ -360,7 +344,7 @@ export function TaskDialogManager({
       : window.location.pathname;
 
     window.history.replaceState(window.history.state, '', nextUrl);
-  }, [isPersonalWorkspace, openTaskById, searchParams, wsId]);
+  }, [openCanonicalTask, searchParams]);
 
   // Open subtask creation dialog for the current task
   const handleAddSubtask = useCallback(() => {
@@ -597,7 +581,7 @@ export function TaskDialogManager({
       pendingRelationship={state.pendingRelationship}
       currentUser={currentUser || undefined}
       draftModeEnabled={draftModeEnabled}
-      defaultPresentation={defaultPresentation}
+      presentationPreferences={presentationPreferences}
       draftId={state.draftId}
       onClose={handleClose}
       onUpdate={triggerUpdate}

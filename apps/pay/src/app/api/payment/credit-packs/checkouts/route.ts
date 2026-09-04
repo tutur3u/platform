@@ -1,10 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { BASE_URL } from '@/constants/common';
@@ -35,14 +31,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient(request);
-  const sbAdmin = await createAdminClient();
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase, request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(request, [
+    'pay',
+    'platform',
+  ]);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
+  const sbAdmin = supabase;
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase, request);
 
   const { data: hasPermission, error: permissionError } = await supabase.rpc(
     'has_workspace_permission',

@@ -40,6 +40,17 @@ export default async function WorkspaceWrapper<
 >({ params, children, fallback }: WorkspaceWrapperProps<TParams>) {
   const resolvedParams = await params;
   const { wsId } = resolvedParams;
+
+  // Next renders layouts and pages in parallel. The group layout owns the
+  // reserved selector and renders SelectGroupGateway; child pages must not
+  // pass that placeholder into UUID-backed queries while the layout resolves.
+  if (
+    'groupId' in resolvedParams &&
+    (resolvedParams as BaseParams & { groupId?: string }).groupId === '~'
+  ) {
+    return null;
+  }
+
   const workspace = await getContactsWorkspace(wsId);
 
   if (!workspace) {

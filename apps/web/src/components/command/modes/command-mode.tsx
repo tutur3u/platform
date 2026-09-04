@@ -1,156 +1,133 @@
 'use client';
 
-import { Plus, Sparkles } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandList,
-} from '@tuturuuu/ui/command';
+import { CommandEmpty, CommandInput, CommandList } from '@tuturuuu/ui/command';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import type { NavLink } from '@/components/navigation';
 import { CommandActionPanel } from '../action-panel';
 import { AddTaskForm } from '../add-task-form';
+import {
+  CommandCenterEmpty,
+  CommandCenterFooter,
+  CommandCenterHeader,
+} from '../command-center-chrome';
+import { CommandSearchControls } from '../command-search-controls';
 import { NavigationSection } from '../sections/navigation-section';
 import { ProductActionsSection } from '../sections/product-actions-section';
 import { QuickActionsSection } from '../sections/quick-actions-section';
 import { RecentSection } from '../sections/recent-section';
 import { TaskSection } from '../sections/task-section';
 import { WorkspaceSection } from '../sections/workspace-section';
+import type { CommandAction } from '../utils/command-actions';
 import {
-  buildCommandActions,
-  type CommandAction,
-} from '../utils/command-actions';
+  type CommandTab,
+  filterAndSortTasks,
+  parseCommandQuery,
+  type TaskPriorityFilter,
+  type TaskSort,
+  type TaskStatusFilter,
+} from '../utils/command-task-results';
 import { addRecentSearch, clearAllRecent } from '../utils/recent-items';
+import { useCommandTaskUpdate } from '../utils/use-command-task-update';
 import { useNavigationData } from '../utils/use-navigation-data';
 import { useTaskSearch } from '../utils/use-task-search';
 import { useWorkspaceSearch } from '../utils/use-workspace-search';
 
 interface CommandModeProps {
-  wsId: string | null;
   navLinks: (NavLink | null)[];
   onClose: () => void;
+  wsId: string | null;
 }
 
 export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
+  const t = useTranslations('command_palette');
+  const { modKey } = usePlatform();
   const [query, setQuery] = React.useState('');
-  const [showTaskForm, setShowTaskForm] = React.useState(false);
-  const [defaultTaskName, setDefaultTaskName] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState<CommandTab>(
+    wsId ? 'tasks' : 'all'
+  );
+  const [status, setStatus] = React.useState<TaskStatusFilter>('all');
+  const [priority, setPriority] = React.useState<TaskPriorityFilter>('all');
+  const [sort, setSort] = React.useState<TaskSort>('relevance');
+  const [taskDraft, setTaskDraft] = React.useState<string | null>(null);
   const [recentRefreshKey, setRecentRefreshKey] = React.useState(0);
   const [selectedAction, setSelectedAction] =
     React.useState<CommandAction | null>(null);
-  const { modKey } = usePlatform();
 
-  // Prepare navigation data
+  const parsed = React.useMemo(() => parseCommandQuery(query), [query]);
+  const routedTab = parsed.tab ?? activeTab;
+  const searchQuery = React.useDeferredValue(parsed.query);
   const flattenedNav = useNavigationData(navLinks);
-  const commandActions = React.useMemo(
-    () => buildCommandActions(flattenedNav),
-    [flattenedNav]
+  const showTasks = Boolean(
+    wsId && (routedTab === 'tasks' || routedTab === 'all')
   );
-
-  // Search tasks
   const { tasks, isLoading: isLoadingTasks } = useTaskSearch(
     wsId,
-    query,
-    true // enabled
+    searchQuery,
+    showTasks,
+    { priority, sort, status }
   );
-
-  // Fetch workspaces
   const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceSearch(
-    true // enabled
+    routedTab === 'all' || routedTab === 'navigate'
+  );
+  const currentWorkspace = workspaces.find(
+    (workspace) => workspace.id === wsId
+  );
+  const visibleTasks = React.useMemo(
+    () => filterAndSortTasks(tasks, { priority, sort, status }),
+    [priority, sort, status, tasks]
   );
 
-  // Get current workspace name for context
-  const currentWorkspace = React.useMemo(
-    () => workspaces.find((ws) => ws.id === wsId),
-    [workspaces, wsId]
-  );
+  const updateTask = useCommandTaskUpdate(wsId);
 
-  // Track search queries
-  const prevQueryRef = React.useRef('');
   React.useEffect(() => {
-    const trimmedQuery = query.trim();
-    if (trimmedQuery && trimmedQuery !== prevQueryRef.current) {
-      // Debounce adding to recent searches
-      const timer = setTimeout(() => {
-        addRecentSearch(trimmedQuery);
-        prevQueryRef.current = trimmedQuery;
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const timer = window.setTimeout(() => addRecentSearch(trimmed), 1000);
+    return () => window.clearTimeout(timer);
   }, [query]);
 
-  // Handle quick task creation
-  const handleCreateTask = React.useCallback(
-    (taskName: string) => {
-      if (!wsId) return;
-      setDefaultTaskName(taskName);
-      setShowTaskForm(true);
-    },
-    [wsId]
-  );
+  const openTaskForm = React.useCallback(() => {
+    if (wsId && parsed.query.trim()) setTaskDraft(parsed.query.trim());
+  }, [parsed.query, wsId]);
 
-  // Handle keyboard shortcuts at input level
-  const handleInputKeyDown = React.useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Ctrl+X to clear recent items (no confirmation)
-      if (e.key === 'x' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        clearAllRecent();
-        setRecentRefreshKey((prev) => prev + 1);
-        return;
-      }
-      // Ctrl+Enter to quickly create task from query
-      if (
-        e.key === 'Enter' &&
-        (e.ctrlKey || e.metaKey) &&
-        query.trim() &&
-        wsId
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleCreateTask(query.trim());
-        return;
-      }
-    },
-    [query, wsId, handleCreateTask]
-  );
-
-  // Reset to command mode when closing task form
-  const handleCloseTaskForm = () => {
-    setShowTaskForm(false);
-    setDefaultTaskName('');
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const usesMod = event.metaKey || event.ctrlKey;
+    if (usesMod && event.key === 'Enter' && parsed.query.trim() && wsId) {
+      event.preventDefault();
+      openTaskForm();
+      return;
+    }
+    if (usesMod && event.key.toLowerCase() === 'x') {
+      event.preventDefault();
+      clearAllRecent();
+      setRecentRefreshKey((value) => value + 1);
+      return;
+    }
+    if (usesMod && ['1', '2', '3', '4'].includes(event.key)) {
+      event.preventDefault();
+      const tab = (['tasks', 'all', 'navigate', 'actions'] as const)[
+        Number(event.key) - 1
+      ];
+      if (tab) setActiveTab(tab);
+    }
   };
 
-  const handleClosePalette = () => {
-    setSelectedAction(null);
-    onClose();
-  };
-
-  // Calculate result counts for display
-  const hasQuery = query.trim().length > 0;
-  const totalResults =
-    flattenedNav.length +
-    commandActions.length +
-    (tasks?.length || 0) +
-    (workspaces?.length || 0);
-
-  // Show task form if in task creation mode
-  if (showTaskForm && wsId) {
+  if (taskDraft && wsId) {
     return (
-      <div className="flex h-[70vh] min-h-125 flex-col">
+      <div className="flex h-[82dvh] max-h-185 min-h-120 flex-col">
         <div className="border-b px-4 py-3">
-          <h2 className="font-semibold text-lg">Create Task</h2>
+          <h2 className="font-semibold text-sm">
+            {t('create_task', { taskName: taskDraft })}
+          </h2>
         </div>
-        <div className="flex-1 overflow-auto">
+        <div className="min-h-0 flex-1 overflow-auto">
           <AddTaskForm
-            wsId={wsId}
-            setOpen={handleCloseTaskForm}
+            defaultTaskName={taskDraft}
             setIsLoading={() => {}}
-            defaultTaskName={defaultTaskName}
+            setOpen={() => setTaskDraft(null)}
+            wsId={wsId}
           />
         </div>
       </div>
@@ -161,167 +138,105 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
     return (
       <CommandActionPanel
         action={selectedAction}
-        wsId={wsId}
         onBack={() => setSelectedAction(null)}
-        onClose={handleClosePalette}
+        onClose={onClose}
+        wsId={wsId}
       />
     );
   }
 
+  const hasQuery = searchQuery.trim().length > 0;
+  const showNavigation = routedTab === 'all' || routedTab === 'navigate';
+  const showActions = routedTab === 'all' || routedTab === 'actions';
+
   return (
-    <div className="flex h-[70vh] min-h-125 flex-col">
-      {/* Header with result count */}
-      <div className="border-b px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-lg">Command Center</h2>
-            {hasQuery && (
-              <p className="text-muted-foreground text-sm">
-                {totalResults} result{totalResults !== 1 ? 's' : ''}
-              </p>
+    <div className="command-center-surface flex h-[82dvh] max-h-185 min-h-120 flex-col">
+      <CommandCenterHeader
+        modKey={modKey}
+        workspaceName={currentWorkspace?.name}
+      />
+      <CommandInput
+        autoFocus
+        className="h-14 border-none text-base"
+        onKeyDown={handleInputKeyDown}
+        onValueChange={setQuery}
+        placeholder={t('search_placeholder_power')}
+        value={query}
+      />
+      <CommandSearchControls
+        activeTab={routedTab}
+        onPriorityChange={setPriority}
+        onSortChange={setSort}
+        onStatusChange={setStatus}
+        onTabChange={setActiveTab}
+        priority={priority}
+        sort={sort}
+        status={status}
+        taskCount={visibleTasks.length}
+      />
+
+      <CommandList className="max-h-none min-h-0 flex-1 scroll-py-2 px-1 py-1">
+        <CommandEmpty>
+          <CommandCenterEmpty
+            canCreateTask={Boolean(
+              wsId && (routedTab === 'tasks' || routedTab === 'all')
             )}
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground text-xs">
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono opacity-100">
-              <span className="text-xs">{modKey}</span>K
-            </kbd>
-            <span>to toggle</span>
-            <span className="text-muted-foreground/50">•</span>
-            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono opacity-100">
-              <span className="text-xs">ESC</span>
-            </kbd>
-            <span>to close</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Command Interface */}
-      <Command className="flex-1 rounded-none border-none" shouldFilter={false}>
-        <CommandInput
-          placeholder="Search commands, tasks, or navigate..."
-          value={query}
-          onValueChange={setQuery}
-          onKeyDown={handleInputKeyDown}
-          className="border-none"
-        />
-
-        <CommandList className="max-h-none">
-          <CommandEmpty>
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <Sparkles className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium">No results found</p>
-                <p className="text-muted-foreground text-sm">
-                  {hasQuery ? (
-                    <>
-                      No matches for "
-                      <span className="font-medium">{query}</span>"
-                    </>
-                  ) : (
-                    'Try searching for tasks, pages, or actions'
-                  )}
-                </p>
-              </div>
-              {hasQuery && wsId && (
-                <Button
-                  onClick={() => handleCreateTask(query.trim())}
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create task "{query.trim().slice(0, 30)}
-                  {query.trim().length > 30 ? '...' : ''}"
-                </Button>
-              )}
-              {hasQuery && (
-                <p className="text-muted-foreground text-xs">
-                  Tip: Press{' '}
-                  <kbd className="rounded border bg-muted px-1 font-mono text-[10px]">
-                    {modKey}↵
-                  </kbd>{' '}
-                  to quickly create a task
-                </p>
-              )}
-            </div>
-          </CommandEmpty>
-
-          {/* Recent Items (shown when no query) */}
-          {!hasQuery && (
-            <RecentSection
-              key={recentRefreshKey}
-              query={query}
-              onSelect={onClose}
-              onApplySearch={setQuery}
-            />
-          )}
-
-          {/* Quick Actions (shown when no query) */}
-          <QuickActionsSection query={query} onSelect={onClose} />
-
-          {/* Product Smart Actions */}
-          <ProductActionsSection
-            navItems={flattenedNav}
-            query={query}
-            onOpenAction={setSelectedAction}
-            onSelect={onClose}
+            onCreateTask={openTaskForm}
+            query={parsed.query}
           />
+        </CommandEmpty>
 
-          {/* Workspace Results */}
-          <WorkspaceSection
-            workspaces={workspaces}
-            isLoading={isLoadingWorkspaces}
-            query={query}
+        {!hasQuery && routedTab === 'all' ? (
+          <RecentSection
+            key={recentRefreshKey}
+            onApplySearch={setQuery}
             onSelect={onClose}
+            query={searchQuery}
           />
+        ) : null}
 
-          {/* Navigation Results */}
-          <NavigationSection
-            navItems={flattenedNav}
-            query={query}
-            onSelect={onClose}
-          />
-
-          {/* Task Results */}
+        {showTasks && wsId ? (
           <TaskSection
-            tasks={tasks}
+            busyTaskId={updateTask.isPending ? updateTask.variables?.id : null}
             isLoading={isLoadingTasks}
-            workspaceName={currentWorkspace?.name}
-            query={query}
             onSelect={onClose}
+            onToggleComplete={(task) => updateTask.mutate(task)}
+            query={searchQuery}
+            tasks={visibleTasks}
+            workspaceName={currentWorkspace?.name}
+            wsId={wsId}
           />
-        </CommandList>
-      </Command>
+        ) : null}
 
-      {/* Footer with hints */}
-      <div className="border-t bg-muted/30 px-4 py-2">
-        <div className="flex items-center justify-between text-muted-foreground text-xs">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-1 rounded border bg-background px-1 font-medium font-mono">
-                ↑↓
-              </kbd>
-              <span>navigate</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-1 rounded border bg-background px-1 font-medium font-mono">
-                ↵
-              </kbd>
-              <span>select</span>
-            </div>
-            {!hasQuery && (
-              <div className="flex items-center gap-1.5">
-                <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-1 rounded border bg-background px-1 font-medium font-mono">
-                  {modKey}X
-                </kbd>
-                <span>clear recent</span>
-              </div>
-            )}
-          </div>
-          <span className="text-[10px]">Powered by Tuturuuu Search</span>
-        </div>
-      </div>
+        {showActions ? (
+          <>
+            <QuickActionsSection onSelect={onClose} query={searchQuery} />
+            <ProductActionsSection
+              navItems={flattenedNav}
+              onOpenAction={setSelectedAction}
+              onSelect={onClose}
+              query={searchQuery}
+            />
+          </>
+        ) : null}
+
+        {showNavigation ? (
+          <>
+            <WorkspaceSection
+              isLoading={isLoadingWorkspaces}
+              onSelect={onClose}
+              query={searchQuery}
+              workspaces={workspaces}
+            />
+            <NavigationSection
+              navItems={flattenedNav}
+              onSelect={onClose}
+              query={searchQuery}
+            />
+          </>
+        ) : null}
+      </CommandList>
+      <CommandCenterFooter modKey={modKey} />
     </div>
   );
 }

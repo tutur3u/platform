@@ -10,11 +10,20 @@ interface Params {
   }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
+interface WorkspaceUserRouteActor {
+  email?: string | null;
+  id: string;
+}
+
+export async function handleGetUserEmailsRequest(
+  req: Request,
+  { params }: Params,
+  actor?: WorkspaceUserRouteActor | null
+) {
   const { wsId, userId } = await params;
   const sbAdmin = await createAdminClient();
 
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getPermissions({ wsId, request: req, user: actor });
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -52,4 +61,8 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   return NextResponse.json({ data: data ?? [], count: count ?? 0 });
+}
+
+export async function GET(req: Request, context: Params) {
+  return handleGetUserEmailsRequest(req, context);
 }

@@ -1730,8 +1730,8 @@ function validateTanstackWebDockerfile(
     }),
   ];
   const requiredSnippets = [
-    'FROM oven/bun:1.3.14 AS deps',
-    'FROM oven/bun:1.3.14 AS dev',
+    'FROM oven/bun:1.4.0 AS deps',
+    'FROM oven/bun:1.4.0 AS dev',
     'FROM node:26-bookworm-slim AS builder',
     'FROM node:26-bookworm-slim AS runner',
     'COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json',
@@ -1801,7 +1801,7 @@ function validateTanstackWebServer(serverContent) {
 function validateWatcherDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'FROM oven/bun:1.3.14-alpine',
+    'FROM oven/bun:1.4.0-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-buildx docker-cli-compose git openssh-client',
     'COPY apps/web/docker/blue-green-watcher-entrypoint.js /usr/local/bin/blue-green-watcher-entrypoint.js',
     'CMD ["bun", "/usr/local/bin/blue-green-watcher-entrypoint.js"]',
@@ -1821,7 +1821,7 @@ function validateWatcherDockerfile(dockerfileContent) {
 function validateCronRunnerDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'FROM oven/bun:1.3.14-alpine',
+    'FROM oven/bun:1.4.0-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
     '--mount=type=cache,id=platform-cron-runner-bun-install,target=/root/.bun/install/cache',
     'bun add --exact cron-parser@5.6.1',
@@ -1843,7 +1843,7 @@ function validateCronRunnerDockerfile(dockerfileContent) {
 function validateDockerControlDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'FROM oven/bun:1.3.14-alpine',
+    'FROM oven/bun:1.4.0-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
     'COPY apps/web/docker/docker-control-server.js /usr/local/bin/docker-control-server.js',
     'COPY apps/web/docker/docker-control-recovery.js /usr/local/bin/docker-control-recovery.js',
@@ -2178,7 +2178,7 @@ function validateSupermemoryDockerfile(
     }),
   ];
   const requiredSnippets = [
-    'FROM oven/bun:1.3.14-alpine AS deps',
+    'FROM oven/bun:1.4.0-alpine AS deps',
     'COPY apps/supermemory/package.json ./apps/supermemory/package.json',
     ...getRetryWrappedBunInstallSnippets(
       'bun install --frozen-lockfile --production --filter @tuturuuu/supermemory --linker hoisted'

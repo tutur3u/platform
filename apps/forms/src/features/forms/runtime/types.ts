@@ -49,6 +49,11 @@ export interface FormRuntimeProps {
         responseCopySentTo?: string | null;
       }
   >;
+  /**
+   * Whether the runtime owns the viewport. `page` for the hosted form,
+   * `inline` when it is embedded in something else. See `RuntimeShell`.
+   */
+  layout?: 'page' | 'inline';
   isSubmitting?: boolean;
   readOnly?: boolean;
   className?: string;

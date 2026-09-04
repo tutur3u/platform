@@ -1,0 +1,72 @@
+---
+title: 'Contacts Module Availability'
+description: 'How Contacts modules are switched on per workspace, and what each non-404 gate state means.'
+updatedAt: '2026-08-29'
+---
+
+Several Contacts modules used to answer every non-happy path with `notFound()`.
+That hid the three situations an operator can actually act on, and it hid a
+plain bug: pages 404'd personal workspaces even though the sidebar links them
+and the underlying APIs normalize `personal` into a real workspace id.
+
+Those pages now resolve one of four states through
+`resolveWorkspaceFeatureAccess`.
+
+## Gate states
+
+| State | Cause | What the page shows |
+| --- | --- | --- |
+| Ready | Toggle on, caller may view | The module |
+| Disabled | Toggle off for this workspace | An explanation, plus an **Enable** button when the caller may flip it |
+| No access | Caller lacks the module's view permission | Which permission to ask for |
+| Unavailable | Workspace or `workspace_user_linked_users` profile unresolved | A retry |
+
+The order matters: an unresolved workspace is reported before a permission
+denial, and a permission denial before the toggle, so a member never learns a
+module's configuration from a page they cannot open.
+
+## Modules and toggles
+
+| Module | Toggle | Stored in | Shared default | Personal default | Enable permission |
+| --- | --- | --- | --- | --- | --- |
+| Tutoring | `ENABLE_TUTORING` | `workspace_configs` | On | Off | `manage_workspace_settings` |
+| Feedbacks | `ENABLE_FEEDBACKS` | `workspace_configs` | On | Off | `manage_workspace_settings` |
+| Topic announcements | `ENABLE_TOPIC_ANNOUNCEMENTS` | `workspace_secrets` | Off | Off | `manage_workspace_secrets` |
+| Approvals | — | — | On | Unavailable | — |
+
+Shared workspaces keep whatever each module defaulted to before the gate
+existed, so no workspace loses a module. Personal workspaces start opted out
+and opt in from the page itself, which is what replaces the old hard 404.
+
+<Note>
+  Approvals has no module toggle of its own: `ENABLE_POST_APPROVAL` and
+  `ENABLE_REPORT_APPROVAL` already govern approval behavior, and a third switch
+  would be ambiguous. Approvals also stays unavailable in personal workspaces by
+  product decision — it renders an explanation, not a 404.
+</Note>
+
+## Writing a toggle from Contacts
+
+Config toggles go through the Contacts-owned route
+`PUT /api/v1/workspaces/{wsId}/settings/{configId}`, which is satellite-session
+aware. Reading a toggle needs only the module's view permission; writing needs
+`manage_workspace_settings`.
+
+Topic announcements is a **workspace secret**, not a config, and the platform
+secrets endpoint authenticates through the Supabase cookie — which resolves
+anonymous on a satellite domain, so every write from Contacts 401s there.
+`PUT /api/v1/workspaces/{wsId}/settings/feature-secrets/{secretName}` exists for
+exactly that case. It is deliberately not a general secrets endpoint:
+
+- only names in `CONTACTS_FEATURE_SECRET_NAMES` are addressable;
+- only the literal values `true` and `false` are accepted;
+- `manage_workspace_secrets` is required;
+- it never reads a secret back.
+
+<Warning>
+  `workspace_secrets` has no unique index on `(ws_id, name)`, and the platform
+  endpoint inserts without checking, so a workspace can hold duplicate rows for
+  one name. The feature-secret route updates every matching row before falling
+  back to an insert, which also repairs those duplicates. Do not switch it to an
+  upsert with a conflict target until that index exists.
+</Warning>

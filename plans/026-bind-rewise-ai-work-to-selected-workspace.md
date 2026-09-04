@@ -11,7 +11,11 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
+- **Blocked by:** mandatory Rewise production build repeatedly fails in the
+  current execution environment with Turbopack `EPERM` while creating its CSS
+  worker process/internal port; reviewed uncommitted work remains in
+  `.worktrees/fix-rewise-workspace-attribution`
 - **Priority:** P0
 - **Effort:** M
 - **Risk:** HIGH
@@ -58,9 +62,9 @@ active Rewise or shared-chat owner overlaps the listed paths.
 | --- | --- | --- |
 | Rewise tests | `bun --cwd apps/rewise vitest run` | workspace propagation cases pass |
 | AI tests | `bun --cwd packages/ai vitest run src/chat/google` | membership and attribution cases pass |
-| Typechecks | `bun --cwd apps/rewise run type-check && bun --cwd packages/ai run type-check` | both exit 0 |
+| Typechecks | `bun run --cwd apps/rewise type-check && bun run --cwd packages/ai type-check` | both exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Rewise build | `bun --cwd apps/rewise run build` | exit 0 |
+| Rewise build | `bun run --cwd apps/rewise build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

@@ -6,12 +6,10 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -21,6 +19,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskBlockingMenuTranslations {
   dependencies: string;
@@ -126,7 +129,10 @@ export function TaskBlockingMenu({
     activeTab === 'blocks' ? onRemoveBlocking : onRemoveBlockedBy;
 
   return (
-    <DropdownMenuSub onOpenChange={handleSubmenuOpenChange}>
+    <TaskControlledSubmenu
+      submenuId="dependencies"
+      onOpenChange={handleSubmenuOpenChange}
+    >
       <DropdownMenuSubTrigger>
         <Ban className="h-4 w-4 text-dynamic-red" />
         {translations.dependencies}
@@ -136,7 +142,12 @@ export function TaskBlockingMenu({
           </span>
         )}
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 p-0">
+      <DropdownMenuSubContent
+        className="w-80 p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         {/* Tab Switcher */}
         <div className="flex border-b">
           <button
@@ -219,7 +230,7 @@ export function TaskBlockingMenu({
 
         {/* Search and Add */}
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
+          <TaskCommandSearchInput
             placeholder={
               activeTab === 'blocks'
                 ? translations.search_tasks_to_block
@@ -299,6 +310,6 @@ export function TaskBlockingMenu({
           </p>
         </div>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

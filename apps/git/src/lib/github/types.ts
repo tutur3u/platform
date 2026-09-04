@@ -113,6 +113,61 @@ export type GitHubContributor = GitHubActor & {
   contributions: number;
 };
 
+export type GitHubPage<T> = {
+  items: T[];
+  nextPage: number | null;
+};
+
+export type GitHubIssueComment = {
+  body: string;
+  created_at: string;
+  html_url: string;
+  id: number;
+  user: GitHubActor | null;
+};
+
+export type GitHubPullFile = {
+  additions: number;
+  changes: number;
+  deletions: number;
+  filename: string;
+  patch?: string;
+  status: string;
+};
+
+export type GitHubPullReview = {
+  body: string;
+  id: number;
+  state: string;
+  submitted_at?: string | null;
+  user: GitHubActor;
+};
+
+export type GitHubWorkflowJob = {
+  completed_at: string | null;
+  conclusion: string | null;
+  html_url: string;
+  id: number;
+  name: string;
+  started_at: string | null;
+  status: string;
+  steps?: Array<{
+    conclusion: string | null;
+    name: string;
+    number: number;
+    status: string;
+  }>;
+};
+
+export type GitHubWorkflowArtifact = {
+  archive_download_url: string;
+  expired: boolean;
+  expires_at: string | null;
+  id: number;
+  name: string;
+  size_in_bytes: number;
+};
+
 export type RepositoryOverview = {
   languages: Record<string, number>;
   readme: { content: string; path: string } | null;

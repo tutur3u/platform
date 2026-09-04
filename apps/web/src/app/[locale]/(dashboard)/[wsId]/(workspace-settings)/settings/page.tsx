@@ -15,9 +15,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
+import { readExternalProjectEmailPolicy } from '@/lib/external-projects/email-policy';
 import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
 import BasicInfo from './basic-info';
+import ExternalEmailPolicy from './external-email-policy';
 import WorkspaceLogoSettings from './logo';
 import ProfileLinkDefaultsSettings from './profile-link-defaults';
 import RemoveYourself from './remove-yourself';
@@ -74,6 +77,12 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
     !isRootWorkspace &&
     !preventWorkspaceDeletion &&
     containsPermission('manage_workspace_security');
+  const rootPermissions = await getPermissions({
+    wsId: ROOT_WORKSPACE_ID,
+  });
+  const externalProjectBinding = enableSecurity
+    ? await resolveWorkspaceExternalProjectBinding(wsId)
+    : null;
 
   return (
     <>
@@ -122,6 +131,19 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         )}
 
         {canManageWorkspace && <ProfileLinkDefaultsSettings wsId={wsId} />}
+
+        {enableSecurity && externalProjectBinding?.enabled ? (
+          <ExternalEmailPolicy
+            canUseRootCredentials={
+              rootPermissions?.containsPermission('manage_external_projects') ??
+              false
+            }
+            initialPolicy={readExternalProjectEmailPolicy(
+              externalProjectBinding.settings
+            )}
+            wsId={wsId}
+          />
+        ) : null}
 
         {id !== 'personal' && enableSecurity && <Security workspace={ws} />}
         {id !== 'personal' && (

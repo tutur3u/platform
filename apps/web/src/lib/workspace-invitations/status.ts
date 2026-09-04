@@ -22,6 +22,7 @@ export type WorkspaceInvitationWorkspace = {
 export type WorkspaceInvitationRecord = {
   createdAt: string | null;
   matchedEmail: string | null;
+  roleId: string | null;
   source: WorkspaceInviteSource;
   type: WorkspaceMemberType;
   workspace: WorkspaceInvitationWorkspace;
@@ -53,6 +54,7 @@ type WorkspaceRow = {
 
 type DirectInviteRow = {
   created_at: string | null;
+  role_id: string | null;
   type: WorkspaceMemberType;
   ws_id: string;
 };
@@ -202,7 +204,7 @@ async function fetchDirectInvites(
 ) {
   let query = admin
     .from('workspace_invites')
-    .select('ws_id, type, created_at')
+    .select('ws_id, type, created_at, role_id')
     .eq('user_id', userId);
 
   if (workspaceId) {
@@ -234,7 +236,7 @@ async function fetchEmailInvites(
 
   let query = admin
     .from('workspace_email_invites')
-    .select('ws_id, type, created_at, email')
+    .select('ws_id, type, created_at, email, role_id')
     .in('email', candidateEmails);
 
   if (workspaceId) {
@@ -251,10 +253,12 @@ async function fetchEmailInvites(
 }
 
 function chooseInviteForWorkspace({
+  candidateEmails,
   directInvites,
   emailInvites,
   workspace,
 }: {
+  candidateEmails: string[];
   directInvites: DirectInviteRow[];
   emailInvites: EmailInviteRow[];
   workspace: WorkspaceInvitationWorkspace;
@@ -266,15 +270,22 @@ function chooseInviteForWorkspace({
     return {
       createdAt: directInvite.created_at,
       matchedEmail: null,
+      roleId: directInvite.role_id,
       source: 'direct',
       type: directInvite.type,
       workspace,
     };
   }
 
-  const emailInvite = emailInvites.find(
-    (invite) => invite.ws_id === workspace.id
-  );
+  const emailInvite = candidateEmails
+    .map((candidateEmail) =>
+      emailInvites.find(
+        (invite) =>
+          invite.ws_id === workspace.id &&
+          normalizeEmail(invite.email) === candidateEmail
+      )
+    )
+    .find((invite): invite is EmailInviteRow => Boolean(invite));
   if (!emailInvite) {
     return null;
   }
@@ -282,6 +293,7 @@ function chooseInviteForWorkspace({
   return {
     createdAt: emailInvite.created_at,
     matchedEmail: normalizeEmail(emailInvite.email),
+    roleId: emailInvite.role_id,
     source: 'email',
     type: emailInvite.type,
     workspace,
@@ -292,10 +304,12 @@ export async function getWorkspaceInviteStatus(
   admin: TypedSupabaseClient,
   {
     authEmail,
+    preferPendingInvite = false,
     userId,
     workspaceId,
   }: {
     authEmail: string | null | undefined;
+    preferPendingInvite?: boolean;
     userId: string;
     workspaceId: string;
   }
@@ -318,7 +332,8 @@ export async function getWorkspaceInviteStatus(
       }),
     ]);
 
-  if (memberWorkspaceIds.has(normalizedWorkspaceId)) {
+  const isMember = memberWorkspaceIds.has(normalizedWorkspaceId);
+  if (isMember && !preferPendingInvite) {
     const workspace = await fetchWorkspace(admin, normalizedWorkspaceId);
     if (!workspace) {
       return {
@@ -339,6 +354,13 @@ export async function getWorkspaceInviteStatus(
   });
 
   if (directInvites.length === 0 && emailInvites.length === 0) {
+    if (isMember) {
+      const workspace = await fetchWorkspace(admin, normalizedWorkspaceId);
+      return workspace
+        ? { status: 'member', workspace: toWorkspaceSummary(workspace) }
+        : { status: 'none', workspace: null };
+    }
+
     return {
       status: 'none',
       workspace: null,
@@ -356,6 +378,7 @@ export async function getWorkspaceInviteStatus(
 
   const workspaceSummary = toWorkspaceSummary(workspace);
   const invitation = chooseInviteForWorkspace({
+    candidateEmails,
     directInvites,
     emailInvites,
     workspace: workspaceSummary,
@@ -429,6 +452,7 @@ export async function listPendingWorkspaceInvitations(
 
     const workspaceSummary = toWorkspaceSummary(workspace);
     const invitation = chooseInviteForWorkspace({
+      candidateEmails,
       directInvites,
       emailInvites,
       workspace: workspaceSummary,

@@ -25,6 +25,7 @@ import {
   pricingRedirectHref,
   workspaceChatRedirectHref,
   workspaceContactsPostsRedirectHref,
+  workspaceContactsUsersRedirectHref,
   workspaceDashboardRedirectHref,
   workspaceHabitsRedirectHref,
   workspaceInfrastructureAppCoordinationRedirectHref,
@@ -77,6 +78,50 @@ describe('public redirect helpers', () => {
     vi.stubEnv('INFRA_APP_URL', 'https://infra.example.com');
     expect(workspaceInfrastructureAppCoordinationRedirectHref('ws-1')).toBe(
       'https://infra.example.com/ws-1/app-coordination'
+    );
+  });
+
+  it('hands workspace-user CRM routes to Contacts with path and query parity', () => {
+    vi.stubEnv('CONTACTS_APP_URL', 'https://contacts.example.com/base/');
+
+    expect(
+      workspaceContactsUsersRedirectHref('workspace / one', {
+        searchParams: {
+          empty: '',
+          page: 2,
+          tag: ['one', 'two'],
+        },
+      })
+    ).toBe(
+      'https://contacts.example.com/workspace%20%2F%20one/users?empty=&page=2&tag=one&tag=two'
+    );
+    expect(
+      workspaceContactsUsersRedirectHref('ws-1', {
+        searchParams: '?view=calendar&empty=',
+        splat: '/groups/nhóm học viên/schedule/',
+      })
+    ).toBe(
+      'https://contacts.example.com/ws-1/users/groups/nh%C3%B3m%20h%E1%BB%8Dc%20vi%C3%AAn/schedule?view=calendar&empty='
+    );
+  });
+
+  it('selects local and production Contacts origins', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(workspaceContactsUsersRedirectHref('ws-1')).toBe(
+      'https://contacts.tuturuuu.localhost/ws-1/users'
+    );
+
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(workspaceContactsUsersRedirectHref('ws-1')).toBe(
+      'https://contacts.tuturuuu.com/ws-1/users'
+    );
+  });
+
+  it('uses the resolvable Infrastructure production origin', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+
+    expect(workspaceInfrastructureAppCoordinationRedirectHref('ws-1')).toBe(
+      'https://infrastructure.tuturuuu.com/ws-1/app-coordination'
     );
   });
 

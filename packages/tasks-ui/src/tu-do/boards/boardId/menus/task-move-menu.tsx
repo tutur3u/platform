@@ -1,13 +1,16 @@
 import { Move } from '@tuturuuu/icons';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useState } from 'react';
+import { clearTaskCommandSearchOnEscape } from '../../../shared/task-command-search-input';
 import { TaskListPickerPanel } from '../../../shared/task-edit-dialog/components/task-list-picker-panel';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskMoveMenuProps {
+  forceOpen?: boolean;
   currentListId: string;
   availableLists: TaskList[];
   isLoading: boolean;
@@ -20,6 +23,7 @@ interface TaskMoveMenuProps {
 }
 
 export function TaskMoveMenu({
+  forceOpen,
   currentListId,
   availableLists,
   isLoading,
@@ -29,6 +33,7 @@ export function TaskMoveMenu({
   translations,
 }: TaskMoveMenuProps) {
   const moveLabel = translations?.move ?? 'Move';
+  const [searchQuery, setSearchQuery] = useState('');
 
   const syntheticSelectEvent = () =>
     ({ preventDefault: () => {} }) as unknown as Event;
@@ -38,7 +43,7 @@ export function TaskMoveMenu({
   }
 
   return (
-    <DropdownMenuSub>
+    <TaskControlledSubmenu submenuId="move" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger>
         <div className="h-4 w-4">
           <Move className="h-4 w-4 text-dynamic-blue" />
@@ -47,7 +52,12 @@ export function TaskMoveMenu({
           <span>{moveLabel}</span>
         </div>
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 overflow-hidden p-0">
+      <DropdownMenuSubContent
+        className="w-80 overflow-hidden p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         <TaskListPickerPanel
           selectedListId={currentListId}
           availableLists={availableLists}
@@ -59,8 +69,11 @@ export function TaskMoveMenu({
           }}
           onRequestOpenCreateDialog={onRequestOpenCreateDialog}
           className="w-full"
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          enableNumericShortcuts={!!forceOpen}
         />
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

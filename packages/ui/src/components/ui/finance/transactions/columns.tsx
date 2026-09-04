@@ -12,6 +12,7 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
+import { useSyncExternalStore } from 'react';
 import { DataTableColumnHeader } from '../../custom/tables/data-table-column-header';
 import {
   FINANCE_HIDDEN_AMOUNT,
@@ -25,6 +26,44 @@ function getAvatarPlaceholder(name: string) {
 interface TransactionExtraData {
   currency?: string;
   isPersonalWorkspace?: boolean;
+}
+
+const subscribeToHydration = () => () => undefined;
+const getHydratedSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+function TransactionDateCell({
+  includeTime = false,
+  locale,
+  value,
+}: {
+  includeTime?: boolean;
+  locale: string;
+  value: unknown;
+}) {
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerSnapshot
+  );
+
+  if (!value) return <div className="min-w-32">-</div>;
+
+  const localDate = moment(value);
+  if (!localDate.isValid()) return <div className="min-w-32">-</div>;
+
+  const format = includeTime ? 'DD/MM/YYYY, HH:mm:ss' : 'DD/MM/YYYY';
+  const absoluteDate = isHydrated
+    ? localDate.locale(locale).format(format)
+    : moment.utc(value).locale(locale).format(format);
+
+  return (
+    <div className="min-w-32">
+      {isHydrated && !includeTime
+        ? `${localDate.locale(locale).fromNow()}, ${absoluteDate}`
+        : absoluteDate}
+    </div>
+  );
 }
 
 function TransactionAmountCell({
@@ -265,15 +304,7 @@ export const transactionColumns = ({
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-32">
-          {row.getValue('taken_at')
-            ? `${moment(row.getValue('taken_at')).locale(locale).fromNow()}, ${moment(
-                row.getValue('taken_at')
-              )
-                .locale(locale)
-                .format('DD/MM/YYYY')}`
-            : '-'}
-        </div>
+        <TransactionDateCell locale={locale} value={row.getValue('taken_at')} />
       ),
     },
     {
@@ -286,13 +317,11 @@ export const transactionColumns = ({
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-32">
-          {row.getValue('created_at')
-            ? moment(row.getValue('created_at'))
-                .locale(locale)
-                .format('DD/MM/YYYY, HH:mm:ss')
-            : '-'}
-        </div>
+        <TransactionDateCell
+          includeTime
+          locale={locale}
+          value={row.getValue('created_at')}
+        />
       ),
     },
     {

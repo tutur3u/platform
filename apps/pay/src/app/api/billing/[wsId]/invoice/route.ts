@@ -1,23 +1,31 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getSatelliteRequestWorkspaceAccess } from '@tuturuuu/satellite/workspace-access';
 import { format } from 'date-fns';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const access = await getSatelliteRequestWorkspaceAccess(
+      request,
+      ['pay', 'platform'],
+      wsId
+    );
+    if (!access) {
+      return NextResponse.json(
+        { error: 'Subscription not found' },
+        { status: 404 }
+      );
+    }
+    const { admin: supabase, wsId: normalizedWsId } = access;
 
     // Fetch subscription data
     const { data: subscription, error } = await supabase
       .from('workspace_subscriptions')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .single();
 
     if (error || !subscription) {
@@ -27,7 +35,7 @@ export async function GET(
       );
     }
 
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = supabase;
     const { data: product } = subscription.product_id
       ? await sbAdmin
           .schema('private')

@@ -1,0 +1,74 @@
+name: Tanstack Route Manifest
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# The manifest is generated from the web app's route tree, so anything that
+# adds, removes or renames a route file invalidates it. It drifted unnoticed
+# once already: `bun check` caught it locally while CI stayed green, because
+# nothing here ran the gate.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/src/app/**"
+      - "apps/web/src/legacy-api-routes/**"
+      - "apps/tanstack-web/migration/**"
+      - "scripts/tanstack-*.js"
+      - ".github/workflows/tanstack-route-manifest.yaml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/src/app/**"
+      - "apps/web/src/legacy-api-routes/**"
+      - "apps/tanstack-web/migration/**"
+      - "scripts/tanstack-*.js"
+      - ".github/workflows/tanstack-route-manifest.yaml"
+  workflow_dispatch:
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: tanstack-route-manifest.yaml
+
+  verify:
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.0
+
+      - name: Verify the route manifest matches the route tree
+        run: node --test scripts/tanstack-cutover-gates.test.js
+
+      # A passing gate on a stale manifest is possible if the generator itself
+      # changes, so regenerate and require the result to match.
+      #
+      # Compares parsed JSON rather than bytes, and writes the fresh copy to a
+      # temp path rather than over the committed one. `bun migration:tanstack:
+      # manifest` pipes through `bunx biome format`, and this job installs no
+      # dependencies — running the script here fails on `bunx: command not
+      # found`, and a byte comparison would flag formatting rather than drift.
+      - name: Regenerate and require no semantic diff
+        run: |
+          node scripts/tanstack-migration-manifest.js generate \
+            --output "${RUNNER_TEMP}/route-manifest.check.json"
+          node -e '
+            const fs = require("node:fs");
+            const read = (p) => JSON.stringify(JSON.parse(fs.readFileSync(p, "utf8")));
+            const committed = read("apps/tanstack-web/migration/route-manifest.json");
+            const regenerated = read(process.env.RUNNER_TEMP + "/route-manifest.check.json");
+            if (committed !== regenerated) {
+              console.error("::error::The route manifest is out of date. Run `bun migration:tanstack:manifest` and commit the result.");
+              process.exit(1);
+            }
+            console.log("Route manifest is up to date.");
+          '

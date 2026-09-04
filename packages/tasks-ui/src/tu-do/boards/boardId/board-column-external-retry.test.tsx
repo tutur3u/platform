@@ -129,12 +129,37 @@ function renderWithQueryClient(ui: ReactNode) {
 describe('BoardColumn external lane retry behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        disconnect() {}
+        observe() {}
+      }
+    );
     mocks.pagination = {
       [externalColumn.id]: loadedExternalState,
     };
     mocks.loadListPage.mockRejectedValue(
       new Error('external lane unavailable')
     );
+  });
+
+  it('renders task-shaped skeletons instead of a blocking spinner on first load', () => {
+    mocks.pagination = {};
+
+    renderWithQueryClient(
+      <BoardColumn
+        boardId="board-1"
+        column={regularColumn}
+        tasks={[]}
+        wsId="workspace-1"
+      />
+    );
+
+    expect(
+      screen.getByTestId('task-list-loading-skeleton')
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('task-list')).not.toBeInTheDocument();
   });
 
   it('does not immediately retry the same failed external-options signature', async () => {

@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor } from '@testing-library/react';
+import { Suspense } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import AddAccountPage from '@/app/[locale]/(auth)/add-account/page';
+import AddAccountPage, {
+  AddAccountRuntime,
+} from '@/app/[locale]/(auth)/add-account/page';
 
 const mockAddAccount = vi.fn();
 const mockPush = vi.fn();
@@ -16,6 +19,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => ({
     get: mockSearchParamsGet,
   }),
+}));
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/context/account-switcher-context', () => ({
@@ -38,7 +46,7 @@ vi.mock('@tuturuuu/icons/lucide', () => ({
 }));
 
 async function renderAddAccountPage() {
-  render(await AddAccountPage());
+  render(await AddAccountRuntime());
 }
 
 describe('AddAccountPage', () => {
@@ -58,6 +66,14 @@ describe('AddAccountPage', () => {
       if (key === 'returnUrl') return '/en/personal/tasks';
       return null;
     });
+  });
+
+  it('keeps the request-time gate inside the page Suspense boundary', () => {
+    const page = AddAccountPage();
+
+    expect(page).not.toBeInstanceOf(Promise);
+    expect(page.type).toBe(Suspense);
+    expect(page.props.children.type).toBe(AddAccountRuntime);
   });
 
   it('renders the loading state while saving the account', async () => {

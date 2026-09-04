@@ -8,6 +8,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import {
   type CalendarCategory,
@@ -16,17 +17,32 @@ import {
 import { type CategoryColor, colorMap } from './color-picker';
 
 // Common category suggestions with predefined colors
-const CATEGORY_SUGGESTIONS: CategoryColor[] = [
-  { name: 'Work', color: 'BLUE' },
-  { name: 'Personal', color: 'GREEN' },
-  { name: 'Family', color: 'PURPLE' },
-  { name: 'Health', color: 'RED' },
-  { name: 'Social', color: 'YELLOW' },
-  { name: 'Education', color: 'INDIGO' },
-  { name: 'Travel', color: 'ORANGE' },
-  { name: 'Meeting', color: 'CYAN' },
-  { name: 'Appointment', color: 'PINK' },
-  { name: 'Other', color: 'GRAY' },
+type CategorySuggestion = {
+  color: SupportedColor;
+  translationKey:
+    | 'appointment'
+    | 'education'
+    | 'family'
+    | 'health'
+    | 'meeting'
+    | 'other'
+    | 'personal'
+    | 'social'
+    | 'travel'
+    | 'work';
+};
+
+const CATEGORY_SUGGESTIONS: CategorySuggestion[] = [
+  { color: 'BLUE', translationKey: 'work' },
+  { color: 'GREEN', translationKey: 'personal' },
+  { color: 'PURPLE', translationKey: 'family' },
+  { color: 'RED', translationKey: 'health' },
+  { color: 'YELLOW', translationKey: 'social' },
+  { color: 'INDIGO', translationKey: 'education' },
+  { color: 'ORANGE', translationKey: 'travel' },
+  { color: 'CYAN', translationKey: 'meeting' },
+  { color: 'PINK', translationKey: 'appointment' },
+  { color: 'GRAY', translationKey: 'other' },
 ];
 
 type CategoryColorsSettingsProps = {
@@ -36,6 +52,7 @@ type CategoryColorsSettingsProps = {
 export function CategoryColorsSettings({
   workspace,
 }: CategoryColorsSettingsProps) {
+  const t = useTranslations('calendar_settings');
   const {
     categories,
     isLoading,
@@ -57,6 +74,8 @@ export function CategoryColorsSettings({
   const [localCategories, setLocalCategories] = useState<CalendarCategory[]>(
     []
   );
+  const getSuggestionName = (suggestion: CategorySuggestion) =>
+    t(`categories.suggestion_names.${suggestion.translationKey}`);
 
   // Sync local state with fetched categories
   useEffect(() => {
@@ -124,17 +143,18 @@ export function CategoryColorsSettings({
   };
 
   // Add a suggested category
-  const addSuggestedCategory = (suggestion: CategoryColor) => {
+  const addSuggestedCategory = (suggestion: CategorySuggestion) => {
+    const localizedName = getSuggestionName(suggestion);
     // Check if this category name or color already exists (case insensitive)
     const exists = localCategories.some(
       (cat) =>
-        cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+        cat.name.toLowerCase() === localizedName.toLowerCase() ||
         cat.color === suggestion.color
     );
 
     if (!exists) {
       createCategory({
-        name: suggestion.name,
+        name: localizedName,
         color: suggestion.color,
       });
     }
@@ -149,14 +169,15 @@ export function CategoryColorsSettings({
 
     const missingCategories = CATEGORY_SUGGESTIONS.filter(
       (suggestion) =>
-        !currentCategoryNames.has(suggestion.name.toLowerCase()) &&
-        !currentColors.has(suggestion.color)
+        !currentCategoryNames.has(
+          getSuggestionName(suggestion).toLowerCase()
+        ) && !currentColors.has(suggestion.color)
     );
 
     // Add each missing category
     missingCategories.forEach((category) => {
       createCategory({
-        name: category.name,
+        name: getSuggestionName(category),
         color: category.color,
       });
     });
@@ -182,7 +203,7 @@ export function CategoryColorsSettings({
             colorInfo.text
           )}
         >
-          {category.name} Event
+          {t('categories.event_preview', { name: category.name })}
         </div>
       </div>
     );
@@ -239,10 +260,10 @@ export function CategoryColorsSettings({
     return (
       <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
         <p className="font-medium text-destructive">
-          Failed to load categories
+          {t('categories.failed_to_load')}
         </p>
         <p className="mt-1 text-muted-foreground text-sm">
-          Please try refreshing the page.
+          {t('categories.try_refreshing')}
         </p>
       </div>
     );
@@ -254,15 +275,8 @@ export function CategoryColorsSettings({
         <div className="flex items-start gap-2">
           <InfoIcon className="mt-0.5 h-4 w-4 text-muted-foreground" />
           <div className="text-muted-foreground text-sm">
-            <p>
-              Categories help organize your events by color. The AI will
-              automatically assign colors to events based on their title and
-              these categories.
-            </p>
-            <p className="mt-1">
-              For example, if you have a "Work" category with blue color, events
-              with "work" or "meeting" in the title will be colored blue.
-            </p>
+            <p>{t('categories.info_text')}</p>
+            <p className="mt-1">{t('categories.info_example')}</p>
           </div>
         </div>
       </div>
@@ -274,7 +288,7 @@ export function CategoryColorsSettings({
         <div className="mb-4 flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="categories" className="px-4">
-              Your Categories
+              {t('categories.your_categories')}
               {localCategories.length > 0 && (
                 <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
                   {localCategories.length}
@@ -282,7 +296,7 @@ export function CategoryColorsSettings({
               )}
             </TabsTrigger>
             <TabsTrigger value="suggestions" className="px-4">
-              Suggestions
+              {t('categories.suggestions')}
             </TabsTrigger>
           </TabsList>
 
@@ -292,7 +306,7 @@ export function CategoryColorsSettings({
                 <Input
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="New category name"
+                  placeholder={t('categories.new_category_placeholder')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleAddCategory();
@@ -312,7 +326,7 @@ export function CategoryColorsSettings({
                   ) : (
                     <PlusIcon className="mr-2 h-4 w-4" />
                   )}
-                  Add
+                  {t('categories.add')}
                 </Button>
               </div>
             )}
@@ -327,7 +341,7 @@ export function CategoryColorsSettings({
                     localCategories.some(
                       (cat) =>
                         cat.name.toLowerCase() ===
-                          suggestion.name.toLowerCase() ||
+                          getSuggestionName(suggestion).toLowerCase() ||
                         cat.color === suggestion.color
                     )
                   )
@@ -336,7 +350,7 @@ export function CategoryColorsSettings({
                 {isMutating ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                Add All Missing
+                {t('categories.add_all_missing')}
               </Button>
             )}
           </div>
@@ -346,14 +360,14 @@ export function CategoryColorsSettings({
           {localCategories.length === 0 ? (
             <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-md border border-dashed">
               <p className="text-muted-foreground">
-                No categories yet. Add one to get started.
+                {t('categories.no_categories')}
               </p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveTab('suggestions')}
               >
-                Browse suggestions
+                {t('categories.browse_suggestions')}
               </Button>
             </div>
           ) : (
@@ -388,7 +402,7 @@ export function CategoryColorsSettings({
                                   name: e.target.value,
                                 })
                               }
-                              placeholder="Category name"
+                              placeholder={t('categories.category_placeholder')}
                               className="h-8 w-40"
                               autoFocus
                               onKeyDown={(e) => {
@@ -403,7 +417,7 @@ export function CategoryColorsSettings({
                               className="h-7 text-xs"
                               onClick={() => setEditingCategory(null)}
                             >
-                              Done
+                              {t('categories.done')}
                             </Button>
                           </div>
                         ) : (
@@ -420,7 +434,7 @@ export function CategoryColorsSettings({
                               className="h-7 text-muted-foreground text-xs"
                               onClick={() => setEditingCategory(category.id)}
                             >
-                              Edit
+                              {t('categories.edit')}
                             </Button>
                           </div>
                         )}
@@ -432,7 +446,7 @@ export function CategoryColorsSettings({
                       <div className="mt-3">
                         <div className="mb-2 flex items-center justify-between">
                           <div className="font-medium text-sm">
-                            Select a color:
+                            {t('categories.select_color')}
                           </div>
                           <div className="pr-2.5">
                             <Button
@@ -443,6 +457,9 @@ export function CategoryColorsSettings({
                                 setEditingCategory(null);
                               }}
                               disabled={localCategories.length <= 1}
+                              aria-label={t('categories.remove_category', {
+                                name: category.name,
+                              })}
                               className="h-7 w-7 text-muted-foreground hover:text-destructive"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -472,7 +489,11 @@ export function CategoryColorsSettings({
                                     });
                                     setEditingCategory(null);
                                   }}
-                                  aria-label={`Select ${colorInfo.name} color`}
+                                  aria-label={t('colors.select', {
+                                    color: t(
+                                      `colors.names.${colorKey.toLowerCase()}`
+                                    ),
+                                  })}
                                 />
                               );
                             }
@@ -495,7 +516,8 @@ export function CategoryColorsSettings({
               // Check if this category name or color already exists
               const exists = localCategories.some(
                 (cat) =>
-                  cat.name.toLowerCase() === suggestion.name.toLowerCase() ||
+                  cat.name.toLowerCase() ===
+                    getSuggestionName(suggestion).toLowerCase() ||
                   cat.color === suggestion.color
               );
 
@@ -517,7 +539,11 @@ export function CategoryColorsSettings({
                       <div
                         className={cn('h-4 w-4 rounded-full', colorInfo.cbg)}
                       />
-                      <div className="font-medium">{suggestion.name}</div>
+                      <div className="font-medium">
+                        {t(
+                          `categories.suggestion_names.${suggestion.translationKey}`
+                        )}
+                      </div>
                     </div>
                     <div
                       className={cn(
@@ -526,7 +552,9 @@ export function CategoryColorsSettings({
                         colorInfo.text
                       )}
                     >
-                      {suggestion.name}
+                      {t(
+                        `categories.suggestion_names.${suggestion.translationKey}`
+                      )}
                     </div>
                   </div>
                 </div>

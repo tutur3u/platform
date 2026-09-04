@@ -125,7 +125,7 @@ export async function PATCH(
       session = fallbackSession;
     }
 
-    const permissions = await getPermissions({ wsId: normalizedWsId, request });
+    const permissions = await getPermissions({ user, wsId: normalizedWsId });
     if (!permissions) {
       return NextResponse.json(
         { error: 'Permissions not found' },
@@ -250,7 +250,7 @@ export async function DELETE(
       session = fallbackSession;
     }
 
-    const permissions = await getPermissions({ wsId: normalizedWsId, request });
+    const permissions = await getPermissions({ user, wsId: normalizedWsId });
     if (!permissions) {
       return NextResponse.json(
         { error: 'Permissions not found' },

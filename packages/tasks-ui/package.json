@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/tasks-ui",
-  "version": "0.10.0",
+  "version": "0.15.1",
   "private": true,
   "main": "./src/progress/task-progress-page.tsx",
   "types": "./src/progress/task-progress-page.tsx",
@@ -11,6 +11,7 @@
     "./calendar/task-calendar-page-shell": "./src/calendar/task-calendar-page-shell.tsx",
     "./calendar/components/*": "./src/calendar/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
+    "./settings/task-card-hotkey-settings": "./src/settings/task-card-hotkey-settings.tsx",
     "./settings/task-settings": "./src/settings/task-settings.tsx",
     "./text-editor/task-mention-node-view": "./src/text-editor/task-mention-node-view.tsx",
     "./text-editor/task-rich-text-editor": "./src/text-editor/task-rich-text-editor.tsx",
@@ -29,6 +30,10 @@
     "./tu-do/shared/recent-sidebar-events": {
       "types": "./src/tu-do/shared/recent-sidebar-events.ts",
       "import": "./src/tu-do/shared/recent-sidebar-events.ts"
+    },
+    "./tu-do/shared/task-time-tracking-cache": {
+      "types": "./src/tu-do/shared/task-time-tracking-cache.ts",
+      "import": "./src/tu-do/shared/task-time-tracking-cache.ts"
     },
     "./tu-do/hooks/*": "./src/tu-do/hooks/*",
     "./tu-do/providers/*": "./src/tu-do/providers/*.tsx",
@@ -98,16 +103,16 @@
     "test:watch": "vitest",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.0",
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-hotkeys": "^0.10.0",
-    "@tanstack/react-query": "^5.101.4",
-    "@tanstack/react-table": "^9.0.0",
-    "@tiptap/pm": "3.29.2",
-    "@tiptap/react": "3.29.2",
+    "@tanstack/react-query": "^5.102.8",
+    "@tanstack/react-table": "^9.2.4",
+    "@tiptap/pm": "3.31.0",
+    "@tiptap/react": "3.31.0",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -116,33 +121,33 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "date-fns": "^4.4.0",
-    "dayjs": "^1.11.21",
-    "framer-motion": "^13.0.0",
+    "dayjs": "^1.11.23",
+    "framer-motion": "^13.1.1",
     "lodash": "4.18.1",
     "moment": "^2.30.1",
-    "motion": "^13.0.0",
-    "next": "^16.3.0",
-    "next-intl": "^4.13.5",
+    "motion": "^13.1.1",
+    "next": "^16.3.4",
+    "next-intl": "^4.14.2",
     "next-themes": "^0.4.6",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "sonner": "^2.0.7",
+    "sonner": "^2.0.8",
     "use-debounce": "^10.1.1",
-    "uuid": "^14.0.1",
+    "uuid": "^14.0.2",
     "yjs": "^13.6.32",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^7.0.0",
-    "@testing-library/react": "^16.3.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.25",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.4.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.0.5",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^30.0.1",
     "typescript": "7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   }
 }

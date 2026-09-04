@@ -12,7 +12,7 @@
       "enabled": true,
       "id": "infrastructure-docker-recovery-alerts",
       "path": "/api/cron/infrastructure/docker-recovery-alerts",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "description": "Synchronize infrastructure abuse trust cache entries.",

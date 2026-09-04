@@ -23,6 +23,7 @@ import { useMemo } from 'react';
 
 interface SatelliteAccountSwitcherMenuProps {
   centralUrl: string;
+  workspaceId?: string;
 }
 
 const accountQueryKey = (centralUrl: string) =>
@@ -34,15 +35,22 @@ function accountLabel(account: WebAccountSummary, fallback: string) {
   );
 }
 
-function webAccountSettingsUrl(centralUrl: string) {
+export function webAccountSettingsUrl(
+  centralUrl: string,
+  workspaceId?: string
+) {
   let end = centralUrl.length;
   while (end > 0 && centralUrl[end - 1] === '/') end -= 1;
 
-  return `${centralUrl.slice(0, end)}/settings/account/accounts`;
+  const baseUrl = centralUrl.slice(0, end);
+  if (!workspaceId) return `${baseUrl}/add-account`;
+
+  return `${baseUrl}/${encodeURIComponent(workspaceId)}?settingsDialog=open&settingsTab=accounts`;
 }
 
 export function SatelliteAccountSwitcherMenu({
   centralUrl,
+  workspaceId,
 }: SatelliteAccountSwitcherMenuProps) {
   const t = useTranslations('account_switcher');
   const queryClient = useQueryClient();
@@ -105,7 +113,7 @@ export function SatelliteAccountSwitcherMenu({
     return (
       <DropdownMenuItem asChild>
         <a
-          href={webAccountSettingsUrl(centralUrl)}
+          href={webAccountSettingsUrl(centralUrl, workspaceId)}
           target="_blank"
           rel="noopener noreferrer"
           className="cursor-pointer"
@@ -183,7 +191,7 @@ export function SatelliteAccountSwitcherMenu({
           </DropdownMenuSub>
           <DropdownMenuItem asChild>
             <a
-              href={webAccountSettingsUrl(centralUrl)}
+              href={webAccountSettingsUrl(centralUrl, workspaceId)}
               target="_blank"
               rel="noopener noreferrer"
               className="cursor-pointer"

@@ -2,7 +2,6 @@
 
 import { LayoutGrid, LayoutList } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
   SelectContent,
@@ -13,7 +12,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { NovaSubmissionUserSearch } from './submission-user-search';
 
 interface ChallengeOption {
   id: string;
@@ -24,12 +23,6 @@ interface ProblemOption {
   id: string;
   title: string;
   challenge_id: string;
-}
-
-interface UserOption {
-  id: string;
-  display_name: string;
-  email: string;
 }
 
 interface SubmissionFiltersProps {
@@ -46,7 +39,6 @@ interface SubmissionFiltersProps {
   handleClearFilters?: () => void;
   challenges: ChallengeOption[];
   filteredProblems: ProblemOption[];
-  users: UserOption[];
   serverSide?: boolean;
 }
 
@@ -63,39 +55,19 @@ export function SubmissionFilters({
   handleClearFilters,
   challenges,
   filteredProblems,
-  users,
   serverSide = false,
 }: SubmissionFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations('nova.submission-page.filters');
-  const [userSearch, setUserSearch] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState<UserOption[]>(users);
-
-  // Filter users based on search input
-  useEffect(() => {
-    const searchLower = userSearch.toLowerCase().trim();
-    if (searchLower === '') {
-      setFilteredUsers(users);
-    } else {
-      const filtered = users.filter((user) =>
-        user.email.toLowerCase().includes(searchLower)
-      );
-      setFilteredUsers(filtered);
-    }
-  }, [userSearch, users]);
-
-  // Fallback for translation
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const userInputRef = useRef<HTMLInputElement>(null);
-
   const onUserChange = (value: string) => {
     if (serverSide) {
       const params = new URLSearchParams(window.location.search);
       if (searchQuery) params.set('search', searchQuery);
       if (selectedChallenge) params.set('challengeId', selectedChallenge);
       if (selectedProblem) params.set('problemId', selectedProblem);
-      if (value !== 'all') params.set('userId', value);
+      if (value && value !== 'all') params.set('userId', value);
+      else params.delete('userId');
       const queryString = params.toString();
       router.push(`${pathname}${queryString ? `?${queryString}` : ''}`);
     } else if (handleUserChange) {
@@ -185,51 +157,10 @@ export function SubmissionFilters({
           </SelectContent>
         </Select>
 
-        {/* Custom user filter dropdown */}
-        <div className="relative">
-          <Input
-            placeholder="Search by email..."
-            value={userSearch}
-            onChange={(e) => {
-              setUserSearch(e.target.value);
-              setUserDropdownOpen(true);
-              if (e.target.value === '') {
-                onUserChange(''); // Clear user filter when search bar is empty
-              }
-            }}
-            className="mb-2 h-8"
-            autoComplete="off"
-            onFocus={() => setUserDropdownOpen(true)}
-            ref={userInputRef}
-          />
-          {userDropdownOpen && (
-            <div
-              className="absolute z-20 mt-1 max-h-50 w-full overflow-y-auto rounded-md border bg-background shadow-lg"
-              tabIndex={-1}
-              onBlur={() => setTimeout(() => setUserDropdownOpen(false), 150)}
-            >
-              {filteredUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className={`cursor-pointer px-4 py-2 hover:bg-accent ${selectedUser === user.id ? 'font-semibold' : ''}`}
-                  onMouseDown={() => {
-                    onUserChange(user.id);
-                    setUserDropdownOpen(false);
-                    setUserSearch(user.email);
-                    if (userInputRef.current) userInputRef.current.blur();
-                  }}
-                >
-                  {user.email}
-                </div>
-              ))}
-              {filteredUsers.length === 0 && (
-                <div className="px-4 py-2 text-muted-foreground">
-                  No users found
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <NovaSubmissionUserSearch
+          onUserChange={onUserChange}
+          selectedUserId={selectedUser}
+        />
 
         <div className="flex items-center space-x-2">
           {(selectedChallenge ||

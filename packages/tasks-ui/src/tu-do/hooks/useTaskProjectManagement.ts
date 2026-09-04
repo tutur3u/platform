@@ -6,15 +6,12 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { useBoardBroadcast } from '../shared/board-broadcast-context';
 import {
-  getActiveBoardRefresh,
-  useBoardBroadcast,
-} from '../shared/board-broadcast-context';
-import {
+  applyOptimisticTaskPatch,
   getTaskFromVisibleCaches,
-  patchTaskInVisibleCaches,
-  restoreTasksFromVisibleCacheSnapshot,
-  restoreVisibleTaskCaches,
+  restoreTaskFieldsFromVisibleCacheSnapshot,
+  settleOptimisticTaskPatch,
   snapshotVisibleTaskCaches,
 } from '../shared/task-cache-patches';
 
@@ -119,10 +116,6 @@ export function useTaskProjectManagement({
       ? Array.from(selectedTasks)
       : [currentTask.id];
 
-    // Cancel any outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-    await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
-
     // Snapshot the previous value BEFORE optimistic update
     const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
       | Task[]
@@ -195,40 +188,36 @@ export function useTaskProjectManagement({
           status: 'unknown',
         };
 
-    // Optimistically update the cache - only update tasks that actually change
-    for (const tid of active ? tasksToRemoveFrom : tasksNeedingProject) {
-      patchTaskInVisibleCaches({
-        queryClient,
-        boardId,
-        taskId: tid,
-        updater: (cachedTask) => {
-          if (active) {
-            return {
-              ...cachedTask,
-              projects:
-                cachedTask.projects?.filter(
-                  (entry) => entry.id !== projectId
-                ) || [],
-            };
-          }
-
-          if (cachedTask.projects?.some((entry) => entry.id === projectId)) {
-            return cachedTask;
-          }
-
+    const targetTaskIds = active ? tasksToRemoveFrom : tasksNeedingProject;
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds: targetTaskIds,
+      updater: (cachedTask) => {
+        if (active) {
           return {
             ...cachedTask,
-            projects: [...(cachedTask.projects || []), fallbackProject],
+            projects:
+              cachedTask.projects?.filter((entry) => entry.id !== projectId) ||
+              [],
           };
-        },
-      });
-    }
+        }
+
+        if (cachedTask.projects?.some((entry) => entry.id === projectId)) {
+          return cachedTask;
+        }
+
+        return {
+          ...cachedTask,
+          projects: [...(cachedTask.projects || []), fallbackProject],
+        };
+      },
+    });
+    let mutationFailed = false;
 
     try {
       const internalApiOptions = getInternalApiOptions();
       const succeededTaskIds: string[] = [];
-      const targetTaskIds = active ? tasksToRemoveFrom : tasksNeedingProject;
-
       const updateOperations = targetTaskIds.flatMap((taskId) => {
         const taskState = getTaskState(taskId);
         if (!taskState) {
@@ -298,20 +287,21 @@ export function useTaskProjectManagement({
         (taskId) => !succeededTaskIds.includes(taskId)
       );
 
-      restoreTasksFromVisibleCacheSnapshot({
+      restoreTaskFieldsFromVisibleCacheSnapshot({
         queryClient,
+        boardId,
         snapshot: cacheSnapshot,
         taskIds: failedTaskIds,
+        restore: (currentTask, previousTask) => ({
+          ...currentTask,
+          projects: previousTask.projects,
+        }),
       });
 
       // Broadcast relation changes for all affected tasks
       for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
-      if (succeededTaskIds.length > 0) {
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
-      }
-
       if (failedTaskIds.length > 0) {
         toast.warning(
           active ? 'Partial project removal' : 'Partial project addition',
@@ -330,11 +320,29 @@ export function useTaskProjectManagement({
 
       // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {
+      mutationFailed = true;
       // Rollback on error
-      restoreVisibleTaskCaches(queryClient, cacheSnapshot);
+      restoreTaskFieldsFromVisibleCacheSnapshot({
+        queryClient,
+        boardId,
+        snapshot: cacheSnapshot,
+        taskIds: targetTaskIds,
+        restore: (currentTask, previousTask) => ({
+          ...currentTask,
+          projects: previousTask.projects,
+        }),
+      });
       console.error('Failed to toggle project:', e);
       toast.error('Error', {
         description: 'Failed to update project. Please try again.',
+      });
+    } finally {
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: targetTaskIds,
+        mutationId,
+        clearLocalMutationAt: mutationFailed,
       });
     }
   }
@@ -358,21 +366,18 @@ export function useTaskProjectManagement({
       let cacheSnapshot:
         | ReturnType<typeof snapshotVisibleTaskCaches>
         | undefined;
+      let linkMutationId: string | undefined;
       try {
-        // Cancel any outgoing refetches
-        await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-        await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
-
         // Snapshot the previous value
         cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
           canonicalTaskId,
         ]);
 
         // Optimistically update the cache
-        patchTaskInVisibleCaches({
+        linkMutationId = applyOptimisticTaskPatch({
           queryClient,
           boardId,
-          taskId: canonicalTaskId,
+          taskIds: [canonicalTaskId],
           updater: (cachedTask) => {
             if (
               cachedTask.projects?.some(
@@ -414,18 +419,36 @@ export function useTaskProjectManagement({
         linkSucceeded = true;
       } catch (applyErr: any) {
         if (cacheSnapshot) {
-          restoreVisibleTaskCaches(queryClient, cacheSnapshot);
+          restoreTaskFieldsFromVisibleCacheSnapshot({
+            queryClient,
+            boardId,
+            snapshot: cacheSnapshot,
+            taskIds: [canonicalTaskId],
+            restore: (currentTask, previousTask) => ({
+              ...currentTask,
+              projects: previousTask.projects,
+            }),
+          });
         }
         toast.error(
           'The project was created but could not be attached to the task. Refresh and try manually.'
         );
         console.error('Failed to auto-apply new project', applyErr);
+      } finally {
+        if (linkMutationId) {
+          settleOptimisticTaskPatch({
+            queryClient,
+            boardId,
+            taskIds: [canonicalTaskId],
+            mutationId: linkMutationId,
+            clearLocalMutationAt: !linkSucceeded,
+          });
+        }
       }
 
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
         broadcast?.('task:relations-changed', { taskId: canonicalTaskId });
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
 
         // Reset form and close dialog
         setNewProjectName('');

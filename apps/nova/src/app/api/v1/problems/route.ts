@@ -2,6 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import {
+  hasActiveNovaChallengeSession,
+  isManagerCatalogAccess,
+  resolveNovaCatalogActor,
+  resolveNovaChallengeCatalogAccess,
+} from '@/lib/challenge-catalog-access';
 import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 import { createProblemSchema } from '../schemas';
 
@@ -10,6 +16,7 @@ export async function GET(request: Request) {
 
   const challengeId = searchParams.get('challengeId');
   const includeChallenge = searchParams.get('includeChallenge') === 'true';
+  const availabilityOnly = searchParams.get('availability') === 'true';
 
   const user = getNovaAppSessionUserFromRequest(request);
 
@@ -20,6 +27,71 @@ export async function GET(request: Request) {
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
+    const actor = await resolveNovaCatalogActor({ sbAdmin, user });
+    if (actor.kind === 'denied') {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    if (!challengeId && actor.kind === 'participant') {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    if (
+      !challengeId &&
+      actor.kind === 'assigned-manager' &&
+      actor.challengeIds.size === 0
+    ) {
+      return NextResponse.json([], { status: 200 });
+    }
+
+    if (challengeId) {
+      const { data: challenge, error: challengeError } = await sbAdmin
+        .schema('private')
+        .from('nova_challenges')
+        .select('id, enabled, previewable_at, whitelisted_only')
+        .eq('id', challengeId)
+        .maybeSingle();
+
+      if (challengeError) throw challengeError;
+      if (!challenge) {
+        return NextResponse.json(
+          { message: 'Challenge not found' },
+          { status: 404 }
+        );
+      }
+
+      const access = await resolveNovaChallengeCatalogAccess({
+        actor,
+        challenge,
+        sbAdmin,
+      });
+      if (access === 'denied') {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+      }
+
+      if (availabilityOnly) {
+        const { count, error: countError } = await sbAdmin
+          .schema('private')
+          .from('nova_problems')
+          .select('id', { count: 'exact', head: true })
+          .eq('challenge_id', challengeId);
+
+        if (countError) throw countError;
+        return NextResponse.json({ hasProblems: (count ?? 0) > 0 });
+      }
+
+      if (
+        !isManagerCatalogAccess(access) &&
+        !(await hasActiveNovaChallengeSession({
+          challengeId,
+          sbAdmin,
+          userId: user.id,
+        }))
+      ) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+      }
+    }
+
     // Build query with proper select statement based on params
     let selectQuery = '*';
     if (includeChallenge) {
@@ -41,9 +113,10 @@ export async function GET(request: Request) {
     // Apply challenge filter if provided
     if (challengeId) {
       query = query.eq('challenge_id', challengeId);
+    } else if (actor.kind === 'assigned-manager') {
+      query = query.in('challenge_id', [...actor.challengeIds]);
     }
 
-    console.log('Executing problems query with challengeId:', challengeId);
     const { data: problems, error } = await query;
 
     if (error) {

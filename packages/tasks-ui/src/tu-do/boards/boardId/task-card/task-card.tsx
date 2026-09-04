@@ -45,7 +45,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -100,6 +99,8 @@ import { AssigneeSelect } from '../../../shared/assignee-select';
 import { useBoardBroadcast } from '../../../shared/board-broadcast-context';
 import { CreateListDialog } from '../../../shared/create-list-dialog';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import { isTaskMutationPending } from '../../../shared/task-cache-patches';
+import type { TaskCardHotkeyAction } from '../../../shared/task-card-hotkeys';
 import {
   shouldShowTaskDueDate,
   shouldShowTaskStartDate,
@@ -108,10 +109,11 @@ import {
 import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
 import { TaskShareDialog } from '../../../shared/task-share-dialog';
+import { TaskTimerMenuItem } from '../../../shared/task-timer-menu-item';
 import { TaskViewerAvatarsComponent } from '../../../shared/user-presence-avatars';
 import { useTasksHref } from '../../../tasks-route-context';
 import {
-  getCardColorClasses as getCardColorClassesUtil,
+  getCardColorClasses as cardClasses,
   getListTextColorClass,
   getTicketBadgeColorClasses,
 } from '../../../utils/taskColorUtils';
@@ -136,6 +138,7 @@ import {
   TaskRelatedMenu,
   TaskSchedulingMenu,
 } from '../menus';
+import { TaskSubmenuContent } from '../menus/task-submenu-controller';
 import { TaskActions } from '../task-actions';
 import { TaskCustomDateDialog } from '../task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from '../task-dialogs/TaskDeleteDialog';
@@ -153,14 +156,20 @@ import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
+import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
   getTaskCardHydratingOpenOptions,
+  getTaskCardTicketIdentifier,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
-import { getTaskCardResourceContext } from './task-card-resource-context';
+import {
+  getTaskCardActionLists,
+  getTaskCardResourceContext,
+} from './task-card-resource-context';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
+import { useTaskCardHotkeyTarget } from './use-task-card-hotkey-target';
 
 export type TaskCardAssigneeMemberSource =
   | 'workspace'
@@ -214,7 +223,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
     <Card
       className={cn(
         'relative overflow-hidden rounded-lg border border-l-4 bg-background p-3 shadow-xs',
-        getCardColorClassesUtil(taskList, task.priority),
+        cardClasses(taskList, task.priority),
         task.closed_at && 'opacity-60 saturate-50'
       )}
       data-task-card-id={task.id}
@@ -314,7 +323,6 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
   );
 }
 
-// Memoized full TaskCard
 function TaskCardInner({
   task,
   boardId,
@@ -358,6 +366,9 @@ function TaskCardInner({
 
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hotkeyAction, setHotkeyAction] = useState<TaskCardHotkeyAction | null>(
+    null
+  );
   const [isCreateListDialogOpen, setIsCreateListDialogOpen] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -372,30 +383,21 @@ function TaskCardInner({
     relationshipMenusOpen.dependencies ||
     relationshipMenusOpen.related;
   const cardElementRef = useRef<HTMLDivElement | null>(null);
+  const { armContextMenuGuard, handleMenuItemSelect } = useTaskCardMenuGuard();
+  const handleHotkeyAction = useCallback((action: TaskCardHotkeyAction) => {
+    setHotkeyAction(action);
+    setMenuOpen(true);
+  }, []);
+  useTaskCardHotkeyTarget({
+    cardRef: cardElementRef,
+    onAction: handleHotkeyAction,
+  });
 
-  // Use extracted dialog state management hook
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
   const { createSubtask } = useTaskDialogContext();
 
-  // Use centralized task dialog
   const { openTask, openTaskById } = useTaskDialog();
 
-  // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
-  const handleMenuItemSelect = useCallback(
-    (e: Event, action: () => void) => {
-      if (Date.now() < menuGuardUntil) {
-        // Keep menu open by preventing default close
-        if (e && typeof (e as any).preventDefault === 'function') {
-          (e as any).preventDefault();
-        }
-        return;
-      }
-      action();
-    },
-    [menuGuardUntil]
-  );
-
-  // Use React Query hooks for shared data (cached across all task cards)
   const workspaceContextWsId = workspaceId ?? wsId;
   const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
   const pageWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
@@ -410,6 +412,7 @@ function TaskCardInner({
   } = getTaskCardResourceContext({
     boardId,
     pageWorkspaceId,
+    preferPageWorkspaceResources: isPersonalWorkspace,
     propAvailableLists,
     task,
   });
@@ -421,10 +424,8 @@ function TaskCardInner({
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
     useWorkspaceLabels(relationshipWorkspaceId);
 
-  // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
 
-  // Use extracted label management hook
   const {
     toggleTaskLabel,
     createNewLabel,
@@ -455,7 +456,6 @@ function TaskCardInner({
     dialogActions.openNewLabelDialog();
   };
 
-  // Fetch workspace projects
   const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
     {
       queryKey: [
@@ -484,11 +484,10 @@ function TaskCardInner({
         (!isSourceWorkspaceTask ||
           relationshipWorkspaceId !== effectiveWorkspaceId ||
           taskProjectIds.length > 0),
-      staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
+      staleTime: 5 * 60 * 1000,
     }
   );
 
-  // Use extracted project management hook
   const {
     toggleTaskProject,
     newProjectName,
@@ -512,7 +511,6 @@ function TaskCardInner({
   const shouldLoadBoardViewableMembers =
     shouldUseBoardAssignees && effectiveAssigneeMemberSource !== 'workspace';
 
-  // Fetch workspace members
   const normalMembersQuery = useWorkspaceMembers(effectiveWorkspaceId, {
     enabled: !!effectiveWorkspaceId && shouldLoadWorkspaceMembers,
   });
@@ -581,7 +579,6 @@ function TaskCardInner({
     isInViewport &&
     (isAnyRelationshipMenuOpen || relationshipSummary.blocked_by_count > 0);
 
-  // Use task relationships hook for managing parent/child/blocking/related tasks
   const {
     parentTask,
     childTasks,
@@ -770,7 +767,6 @@ function TaskCardInner({
   const showBlockedByCallout =
     blockedByCount > 0 && !(task.closed_at || task.completed_at);
 
-  // Fetch available task lists using React Query (same key as other components)
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task_lists', taskBoardId],
     queryFn: async () => {
@@ -792,17 +788,11 @@ function TaskCardInner({
     initialData: initialAvailableLists,
     staleTime: 60 * 1000, // 1 minute - lists change less frequently
   });
-
-  // Find the first list with 'done' or 'closed' status
-  const getTargetCompletionList = () => {
-    const doneList = availableLists.find(
-      (list) => list.status === 'done' && !list.deleted
-    );
-    const closedList = availableLists.find(
-      (list) => list.status === 'closed' && !list.deleted
-    );
-    return doneList || closedList || null;
-  };
+  const actionAvailableLists = getTaskCardActionLists({
+    task,
+    pageAvailableLists: propAvailableLists,
+    resourceAvailableLists: availableLists,
+  });
 
   const duplicateTaskMutation = useMutation({
     mutationFn: async (tasksToDuplicate: Task[]) => {
@@ -891,17 +881,18 @@ function TaskCardInner({
     },
   });
 
-  // Find specifically the closed list
-  const getTargetClosedList = () => {
-    return (
-      availableLists.find(
-        (list) => list.status === 'closed' && !list.deleted
-      ) || null
-    );
-  };
-
-  const targetCompletionList = getTargetCompletionList();
-  const targetClosedList = getTargetClosedList();
+  const targetCompletionList =
+    actionAvailableLists.find(
+      (list) => list.status === 'done' && !list.deleted
+    ) ??
+    actionAvailableLists.find(
+      (list) => list.status === 'closed' && !list.deleted
+    ) ??
+    null;
+  const targetClosedList =
+    actionAvailableLists.find(
+      (list) => list.status === 'closed' && !list.deleted
+    ) ?? null;
   const canMoveToCompletion =
     targetCompletionList && targetCompletionList.id !== task.list_id;
   const canMoveToClose =
@@ -919,8 +910,9 @@ function TaskCardInner({
     ? DESTINATION_TONE_COLORS[taskList.color]
     : DESTINATION_TONE_COLORS.GRAY;
 
-  // Check if task is optimistically added (pending realtime confirmation)
-  const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
+  const isOptimistic =
+    ('_isOptimistic' in task && task._isOptimistic === true) ||
+    isTaskMutationPending(task);
   const isPersonalExternalTask = isExternalTaskSnapshot(task);
   const isPersonalExternalOverlay = isPersonalExternalOverlayTask(task);
   const sourceBoardUrl =
@@ -949,14 +941,11 @@ function TaskCardInner({
   ].filter(
     (item): item is { href: string | undefined; label: string } => item !== null
   );
-  const taskTicketPrefix =
-    'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
-      ? task.ticket_prefix
-      : null;
-  const taskTicketIdentifier = getTicketIdentifier(
-    isPersonalExternalTask ? taskTicketPrefix : boardConfig?.ticket_prefix,
-    task.display_number
-  );
+  const taskTicketIdentifier = getTaskCardTicketIdentifier({
+    boardConfig,
+    isExternalTask: isPersonalExternalTask,
+    task,
+  });
   const externalSourceLabel =
     task.source_workspace_name ??
     task.source_board_name ??
@@ -998,7 +987,7 @@ function TaskCardInner({
   const cardVisibilityState = getTaskCardVisibilityState({
     isDragging,
     optimisticUpdateInProgress:
-      optimisticUpdateInProgress?.has(task.id) ?? false,
+      isOptimistic || (optimisticUpdateInProgress?.has(task.id) ?? false),
   });
 
   const setCardRefs = useCallback(
@@ -1086,18 +1075,14 @@ function TaskCardInner({
     taskList?.color as SupportedColor
   );
 
-  // Memoize description metadata to prevent unnecessary recalculations
-  // This is important because descriptionMeta is used in taskBadges dependency array
   const descriptionMeta = useMemo(
     () => getDescriptionMetadata(task.description),
     [task.description]
   );
 
-  // Helper function to get card color classes
   const getCardColorClasses = () =>
-    getCardColorClassesUtil(taskList, task.priority);
+    cardClasses(taskList, task.priority, !isDragging && !isSelected);
 
-  // Use the extracted task actions hook
   const {
     handleArchiveToggle,
     handleMoveToCompletion,
@@ -1115,7 +1100,7 @@ function TaskCardInner({
     workspaceId: effectiveWorkspaceId,
     targetCompletionList,
     targetClosedList,
-    availableLists,
+    availableLists: actionAvailableLists,
     onUpdate,
     setIsLoading,
     setMenuOpen,
@@ -1175,7 +1160,6 @@ function TaskCardInner({
     </Tooltip>
   ) : null;
 
-  // Memoize drag handle for performance
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
 
@@ -1775,14 +1759,12 @@ function TaskCardInner({
   const showBlockedByUnderTitle =
     showBlockedByCallout && !showBlockedByInlineWithCheckbox;
 
-  // Get all tasks from query to subscribe to cache updates
   const { data: allTasksFromQuery } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: () => [], // No-op function - we only want to read from cache
     enabled: false, // Don't fetch, just subscribe to cache
   });
 
-  // Compute collective attributes for bulk operations
   const {
     displayLabels,
     displayProjects,
@@ -1877,9 +1859,11 @@ function TaskCardInner({
     allTasksFromQuery,
   ]);
 
-  const availableLabelsForMenu = useMemo(() => {
-    return mergeTaskCardLabelOptions(workspaceLabels, displayLabels);
-  }, [workspaceLabels, displayLabels]);
+  const availableLabelsForMenu = mergeTaskCardLabelOptions(
+    workspaceLabels,
+    displayLabels,
+    { includeTaskOnlyLabels: relationshipWorkspaceId === effectiveWorkspaceId }
+  );
 
   const blockedByCluster = (
     <div className="relative overflow-hidden rounded-md border border-dynamic-red/16 bg-dynamic-red/[0.045] px-2 py-1.5">
@@ -1984,8 +1968,8 @@ function TaskCardInner({
         e.preventDefault();
         e.stopPropagation();
         // Open the context menu (actions dropdown) and guard first click briefly
+        setMenuGuardUntil(armContextMenuGuard());
         setMenuOpen(true);
-        setMenuGuardUntil(Date.now() + 300);
       }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...(sortableDisabled ? {} : attributes)}
@@ -2011,8 +1995,6 @@ function TaskCardInner({
           !isResolvedListStatus &&
           !(!!task.closed_at || !!task.completed_at) &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
-        // Hover state (no transitions)
-        !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
         // Selection state - layered list-color feedback without a harsh outer outline
         isSelected &&
           cn(TASK_CARD_SELECTED_STATE_BASE_CLASSES, selectedCardToneClassName),
@@ -2059,9 +2041,11 @@ function TaskCardInner({
                 task.priority
               )}
               ticketIdentifier={taskTicketIdentifier}
-              ticketTitle={t('ticket_id_label', {
-                id: taskTicketIdentifier,
-              })}
+              ticketTitle={
+                taskTicketIdentifier
+                  ? t('ticket_id_label', { id: taskTicketIdentifier })
+                  : ''
+              }
             />
             <div className="mb-1">
               {/* Task Name */}
@@ -2090,7 +2074,9 @@ function TaskCardInner({
                 open={menuOpen}
                 onOpenChange={(open) => {
                   setMenuOpen(open);
+                  if (open) setMenuGuardUntil(Date.now() + 300);
                   if (!open) {
+                    setHotkeyAction(null);
                     setRelationshipMenusOpen({
                       parent: false,
                       dependencies: false,
@@ -2115,7 +2101,8 @@ function TaskCardInner({
                     <MoreHorizontal className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
+                <TaskSubmenuContent
+                  requestedId={hotkeyAction}
                   align="end"
                   className="w-56"
                   sideOffset={5}
@@ -2123,24 +2110,6 @@ function TaskCardInner({
                     e.stopPropagation(); // Prevent triggering task card click
                   }}
                 >
-                  {!isDocumentList && (
-                    <DropdownMenuItem
-                      className="cursor-pointer"
-                      disabled={isLoading}
-                    >
-                      <Link
-                        href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2"
-                      >
-                        <Timer className="h-4 w-4 text-dynamic-blue" />
-                        {t('start_tracking_time')}
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  {!isDocumentList && <DropdownMenuSeparator />}
-                  {/* Quick Completion Action */}
                   {!isDocumentList && canMoveToCompletion && (
                     <DropdownMenuItem
                       onSelect={(e) =>
@@ -2159,7 +2128,6 @@ function TaskCardInner({
                     </DropdownMenuItem>
                   )}
 
-                  {/* Mark as Closed Action - Only show if closed list exists and is different from the generic completion */}
                   {canShowCloseAction && (
                     <DropdownMenuItem
                       onSelect={(e) =>
@@ -2183,8 +2151,8 @@ function TaskCardInner({
                   {((!isDocumentList && canMoveToCompletion) ||
                     canShowCloseAction) && <DropdownMenuSeparator />}
 
-                  {/* Priority Menu */}
                   <TaskPriorityMenu
+                    forceOpen={hotkeyAction === 'priority'}
                     currentPriority={task.priority ?? null}
                     isLoading={isLoading}
                     onPriorityChange={handlePriorityChange}
@@ -2200,8 +2168,8 @@ function TaskCardInner({
                     }}
                   />
 
-                  {/* Due Date Menu */}
                   <TaskDueDateMenu
+                    forceOpen={hotkeyAction === 'due_date'}
                     endDate={task.end_date}
                     isLoading={isLoading}
                     weekStartsOn={weekStartsOn}
@@ -2228,7 +2196,6 @@ function TaskCardInner({
                     }}
                   />
 
-                  {/* Scheduling Menu */}
                   {taskList?.status !== 'documents' && (
                     <TaskSchedulingMenu
                       task={task}
@@ -2269,9 +2236,9 @@ function TaskCardInner({
                     />
                   )}
 
-                  {/* Estimation Menu */}
                   {boardConfig?.estimation_type && (
                     <TaskEstimationMenu
+                      forceOpen={hotkeyAction === 'estimation'}
                       currentPoints={displayEstimation}
                       estimationType={boardConfig?.estimation_type}
                       extendedEstimation={boardConfig?.extended_estimation}
@@ -2279,11 +2246,12 @@ function TaskCardInner({
                       isLoading={estimationSaving}
                       onEstimationChange={updateEstimationPoints}
                       onMenuItemSelect={handleMenuItemSelect}
+                      onClose={() => setMenuOpen(false)}
                     />
                   )}
 
-                  {/* Labels Menu */}
                   <TaskLabelsMenu
+                    forceOpen={hotkeyAction === 'labels'}
                     taskLabels={displayLabels}
                     availableLabels={availableLabelsForMenu}
                     isLoading={labelsLoading}
@@ -2304,8 +2272,8 @@ function TaskCardInner({
                     }}
                   />
 
-                  {/* Projects Menu */}
                   <TaskProjectsMenu
+                    forceOpen={hotkeyAction === 'projects'}
                     taskProjects={displayProjects}
                     availableProjects={workspaceProjects}
                     isLoading={projectsLoading}
@@ -2328,10 +2296,8 @@ function TaskCardInner({
 
                   <DropdownMenuSeparator />
 
-                  {/* Task Relationships Section */}
                   {effectiveWorkspaceId && (
                     <>
-                      {/* Parent Task Menu */}
                       <TaskParentMenu
                         wsId={effectiveWorkspaceId}
                         taskId={task.id}
@@ -2356,7 +2322,6 @@ function TaskCardInner({
                         }}
                       />
 
-                      {/* Blocking/Blocked By Menu */}
                       <TaskBlockingMenu
                         wsId={effectiveWorkspaceId}
                         taskId={task.id}
@@ -2389,7 +2354,6 @@ function TaskCardInner({
                         }}
                       />
 
-                      {/* Related Tasks Menu */}
                       <TaskRelatedMenu
                         wsId={effectiveWorkspaceId}
                         taskId={task.id}
@@ -2418,11 +2382,11 @@ function TaskCardInner({
                     </>
                   )}
 
-                  {/* Move Menu */}
-                  {availableLists.length > 0 && effectiveWorkspaceId && (
+                  {actionAvailableLists.length > 0 && effectiveWorkspaceId && (
                     <TaskMoveMenu
+                      forceOpen={hotkeyAction === 'move'}
                       currentListId={task.list_id}
-                      availableLists={availableLists}
+                      availableLists={actionAvailableLists}
                       isLoading={isLoading}
                       onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
@@ -2479,9 +2443,9 @@ function TaskCardInner({
                     </>
                   )}
 
-                  {/* Assignee Actions */}
                   {shouldUseBoardAssignees && (
                     <TaskAssigneesMenu
+                      forceOpen={hotkeyAction === 'assignees'}
                       taskAssignees={displayAssignees}
                       availableMembers={workspaceMembers}
                       isLoading={membersLoading}
@@ -2545,7 +2509,22 @@ function TaskCardInner({
                       {t('delete_task')}
                     </DropdownMenuItem>
                   )}
-                </DropdownMenuContent>
+                  {!isDocumentList && effectiveWorkspaceId && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <TaskTimerMenuItem
+                        activationGuardUntil={menuGuardUntil}
+                        disabled={isLoading}
+                        enabled={menuOpen}
+                        onStarted={() => setMenuOpen(false)}
+                        taskDescription={task.description}
+                        taskId={task.id}
+                        taskName={task.name}
+                        workspaceId={effectiveWorkspaceId}
+                      />
+                    </>
+                  )}
+                </TaskSubmenuContent>
               </DropdownMenu>
             )}
           </div>

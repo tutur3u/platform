@@ -26,6 +26,7 @@ import {
   routing,
   supportedLocales,
 } from './i18n/routing';
+import { isContactsOwnedWorkspaceRoute } from './lib/workspace-route-ownership';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -113,49 +114,11 @@ function getPathLocale(pathname: string) {
  * would shadow the `/api/:path*` → web proxy and break every proxied API call.
  * The middleware handles `/api` in an earlier branch, so it is never affected.
  */
-// Exact routes contacts owns. These must NOT prefix-match: `users` is the users
-// index, and treating it as a prefix would mark every /users/* path owned —
-// including non-migrated ones like /users/groups, which would then 404 here
-// instead of redirecting to web.
-const CONTACTS_OWNED_EXACT_ROUTES = new Set(['', 'users']);
-
-// Route roots contacts owns, including anything nested beneath them.
-// `*` matches exactly one dynamic segment (e.g. a userId).
-// Add an entry here whenever a module is migrated, or the middleware will bounce
-// the freshly-migrated route straight back to web.
-const CONTACTS_OWNED_ROUTE_PREFIXES = [
-  'posts',
-  'reports',
-  'workforce',
-  'users/approvals',
-  'users/attendance',
-  'users/database',
-  'users/feedbacks',
-  'users/group-tags',
-  'users/groups',
-  'users/guest-leads',
-  'users/reports',
-  'users/structure',
-  'users/topic-announcements',
-  'users/tutoring',
-  'users/*/follow-up',
-];
-
 const CONTACTS_NON_WORKSPACE_SEGMENTS = new Set([
   'dashboard',
   'login',
   'verify-token',
 ]);
-
-function matchesRoutePrefix(pattern: string, segments: string[]) {
-  const patternSegments = pattern.split('/');
-  if (segments.length < patternSegments.length) return false;
-
-  return patternSegments.every(
-    (patternSegment, index) =>
-      patternSegment === '*' || patternSegment === segments[index]
-  );
-}
 
 function getNonMigratedWorkspaceRedirect(request: NextRequest) {
   const segments = stripLocale(request.nextUrl.pathname)
@@ -166,16 +129,7 @@ function getNonMigratedWorkspaceRedirect(request: NextRequest) {
   if (!wsId || CONTACTS_NON_WORKSPACE_SEGMENTS.has(wsId)) return null;
 
   const subSegments = segments.slice(1);
-  const subPath = subSegments.join('/');
-
-  if (CONTACTS_OWNED_EXACT_ROUTES.has(subPath)) return null;
-  if (
-    CONTACTS_OWNED_ROUTE_PREFIXES.some((pattern) =>
-      matchesRoutePrefix(pattern, subSegments)
-    )
-  ) {
-    return null;
-  }
+  if (isContactsOwnedWorkspaceRoute(subSegments)) return null;
 
   return NextResponse.redirect(
     new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, WEB_APP_URL)
@@ -219,6 +173,15 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   const response = NextResponse.redirect(url);
   setLocaleCookie(response, request, pathLocale);
   return response;
+}
+
+function getSharedUserProfileRedirect(request: NextRequest) {
+  const unlocalizedPath = stripLocale(request.nextUrl.pathname);
+  if (!unlocalizedPath.startsWith('/shared/user-profile/')) return null;
+
+  return NextResponse.redirect(
+    new URL(`${unlocalizedPath}${request.nextUrl.search}`, WEB_APP_URL)
+  );
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -266,6 +229,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
   if (canonicalPublicRedirect) {
     return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+  }
+
+  const sharedUserProfileRedirect = getSharedUserProfileRedirect(request);
+  if (sharedUserProfileRedirect) {
+    return clearSupabaseAuthCookies(request, sharedUserProfileRedirect);
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {

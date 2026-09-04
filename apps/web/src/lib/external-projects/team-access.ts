@@ -1,4 +1,3 @@
-import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import type {
   Database,
   TablesInsert,
@@ -6,9 +5,7 @@ import type {
   WorkspaceDefaultPermissionMemberType,
   WorkspaceDefaultPermissionsRole,
 } from '@tuturuuu/types';
-import { MAX_COLOR_LENGTH, MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import {
@@ -16,6 +13,12 @@ import {
   requireWorkspaceExternalProjectAccess,
   requireWorkspaceExternalProjectMemberBootstrapAccess,
 } from './access';
+import { attachExternalProjectInvitationRoles } from './team-invitations';
+
+export {
+  inviteExternalProjectTeamMembers,
+  updateExternalProjectTeamInvitationRoles,
+} from './team-invitations';
 
 type WorkspaceRolePermissionValue =
   Database['public']['Enums']['workspace_role_permission'];
@@ -36,14 +39,7 @@ const DEFAULT_MEMBER_TYPES: WorkspaceDefaultPermissionMemberType[] = [
   'GUEST',
 ];
 
-const TeamInviteSchema = z.object({
-  emails: z
-    .array(z.string().email().max(MAX_EMAIL_LENGTH))
-    .min(1)
-    .max(MAX_COLOR_LENGTH),
-});
-
-type ExternalProjectTeamAccess = WorkspaceExternalProjectAccess & {
+export type ExternalProjectTeamAccess = WorkspaceExternalProjectAccess & {
   canManageMembers: boolean;
   canManageRoles: boolean;
 };
@@ -150,101 +146,14 @@ export async function listExternalProjectTeamMembers({
   access: ExternalProjectTeamAccess;
   status?: string | null;
 }) {
-  return getWorkspaceMembers({
+  const members = await getWorkspaceMembers({
     sbAdmin: access.admin,
     status,
     supabase: access.admin,
     wsId: access.normalizedWorkspaceId,
   });
-}
 
-export async function inviteExternalProjectTeamMembers({
-  access,
-  request,
-}: {
-  access: ExternalProjectTeamAccess;
-  request: Request;
-}) {
-  const validation = TeamInviteSchema.safeParse(await request.json());
-
-  if (!validation.success) {
-    return NextResponse.json(
-      { message: 'Invalid request body. Expected { emails: string[] }' },
-      { status: 400 }
-    );
-  }
-
-  const uniqueEmails = [
-    ...new Set(validation.data.emails.map((email) => email.toLowerCase())),
-  ];
-  const { effectiveAvailable, status } = await getEffectiveAvailableSeats(
-    access.admin,
-    access.normalizedWorkspaceId
-  );
-
-  if (status.isSeatBased && effectiveAvailable < uniqueEmails.length) {
-    return NextResponse.json(
-      {
-        availableSeats: effectiveAvailable,
-        code: 'SEAT_LIMIT_REACHED',
-        message: `Not enough seats to invite ${uniqueEmails.length} user(s). Available: ${effectiveAvailable}, Total seats: ${status.seatCount}.`,
-        requestedCount: uniqueEmails.length,
-      },
-      { status: 403 }
-    );
-  }
-
-  const results: Array<{ email: string; error?: string; success: boolean }> =
-    [];
-
-  for (const email of uniqueEmails) {
-    const { error } = await access.admin
-      .from('workspace_email_invites')
-      .insert({
-        email,
-        invited_by: access.user.id,
-        ws_id: access.normalizedWorkspaceId,
-      });
-
-    if (error) {
-      const isDuplicate = error.message.includes('duplicate key value');
-      const isSeatLimit =
-        error.message.includes('workspace_has_available_seats') ||
-        error.message.includes('seat');
-      results.push({
-        email,
-        error: isDuplicate
-          ? 'Already invited or member'
-          : isSeatLimit
-            ? 'Seat limit reached'
-            : 'Failed to send invite',
-        success: false,
-      });
-    } else {
-      results.push({ email, success: true });
-    }
-  }
-
-  const successCount = results.filter((result) => result.success).length;
-
-  if (successCount > 0) {
-    await access.admin.from('onboarding_progress').upsert(
-      {
-        invited_emails: results
-          .filter((result) => result.success)
-          .map((result) => result.email),
-        user_id: access.user.id,
-      },
-      { onConflict: 'user_id' }
-    );
-  }
-
-  return NextResponse.json({
-    message: `${successCount} invite(s) sent successfully`,
-    results,
-    successCount,
-    totalRequested: uniqueEmails.length,
-  });
+  return attachExternalProjectInvitationRoles({ access, members });
 }
 
 export async function removeExternalProjectTeamMember({

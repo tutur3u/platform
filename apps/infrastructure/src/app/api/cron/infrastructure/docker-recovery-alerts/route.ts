@@ -14,6 +14,13 @@ import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const JOB_ID = 'infrastructure-docker-recovery-alerts';
 const PATH = '/api/cron/infrastructure/docker-recovery-alerts';
+/**
+ * Only used on the very first run, before `lastCheckedAt` exists. Every later
+ * run scans from the persisted watermark instead, so incident coverage does not
+ * depend on the cron cadence — a slower schedule only delays the alert email, it
+ * never drops an incident. That is why `vercel.json` runs this every 5 minutes
+ * rather than every minute; see the Vercel cost controls runbook.
+ */
 const DEFAULT_LOOKBACK_MS = 15 * 60_000;
 
 interface DockerRecoveryIncident {

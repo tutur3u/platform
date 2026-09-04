@@ -3,6 +3,10 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { withAiMemory } from '../../memory';
+import {
+  hasOversizedDeclaredContentLength,
+  validateTranscriptionAudioFile,
+} from './input';
 
 const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite';
 
@@ -42,12 +46,21 @@ export function createPOST() {
         return new Response('Unauthorized', { status: 401 });
       }
 
+      if (hasOversizedDeclaredContentLength(req)) {
+        return new Response('Audio file too large', { status: 413 });
+      }
+
       const formData = await req.formData();
-      const audioFile = formData.get('audio') as File;
+      const audioFile = formData.get('audio');
       const wsId = formData.get('wsId') as string | null;
 
-      if (!audioFile) {
+      if (!(audioFile instanceof File)) {
         return new Response('No audio file provided', { status: 400 });
+      }
+
+      const validation = validateTranscriptionAudioFile(audioFile);
+      if (!validation.ok) {
+        return new Response(validation.message, { status: validation.status });
       }
 
       // Convert file to buffer
@@ -73,7 +86,7 @@ export function createPOST() {
             content: [
               {
                 type: 'file',
-                mediaType: 'audio/mpeg',
+                mediaType: validation.mediaType,
                 data: audioUint8Array,
               },
             ],

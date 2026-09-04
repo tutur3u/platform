@@ -20,7 +20,10 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 
-import { isAnswerableQuestionType } from '../block-utils';
+import {
+  isAnswerableQuestionType,
+  isTextInputQuestionType,
+} from '../block-utils';
 import { FieldLabel, QuestionTypeIcon } from '../form-icons';
 import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import {
@@ -272,7 +275,7 @@ export function renderQuestionEditorFields({
           />
         </div>
       ) : null}
-      {questionType === 'short_text' || questionType === 'long_text' ? (
+      {isTextInputQuestionType(questionType) || questionType === 'long_text' ? (
         <div className="space-y-3 rounded-[1.35rem] border border-border/60 bg-muted/20 p-3 md:col-span-2">
           <Label>
             <FieldLabel icon={Shield}>{t('studio.validation_mode')}</FieldLabel>
@@ -300,7 +303,8 @@ export function renderQuestionEditorFields({
               ))}
             </SelectContent>
           </Select>
-          {validationMode === 'integer' ||
+          {questionType === 'number' ||
+          validationMode === 'integer' ||
           validationMode === 'numeric' ||
           validationMode === 'real' ? (
             <div className="grid gap-3 md:grid-cols-2">
@@ -338,6 +342,32 @@ export function renderQuestionEditorFields({
                   }}
                 />
               </div>
+            </div>
+          ) : null}
+          {questionType === 'number' ? (
+            <div className="space-y-1.5">
+              <Label>{t('studio.validation_step')}</Label>
+              <Input
+                type="number"
+                min={0}
+                step="any"
+                value={settings.numberStep ?? ''}
+                placeholder={t('studio.validation_step_hint')}
+                className={toneClasses.fieldClassName}
+                onChange={(event) => {
+                  const v = event.target.value;
+                  const parsed = Number(v);
+                  form.setValue(
+                    `sections.${sectionIndex}.questions.${questionIndex}.settings.numberStep`,
+                    // A zero or negative step would make every value invalid,
+                    // so it clears the setting rather than being stored.
+                    v === '' || Number.isNaN(parsed) || parsed <= 0
+                      ? undefined
+                      : parsed,
+                    { shouldDirty: true }
+                  );
+                }}
+              />
             </div>
           ) : null}
           {validationMode === 'regex' ? (

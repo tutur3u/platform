@@ -136,7 +136,7 @@ export default async function TimeTrackerPage({
 
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId, locale, isPersonal }) => {
+      {async ({ workspace, wsId, locale }) => {
         const user = await getSatelliteAppSessionUser('track');
         if (!user) return notFound();
         if (!workspace) return notFound();
@@ -153,7 +153,6 @@ export default async function TimeTrackerPage({
                 <StatsCardClient
                   wsId={wsId}
                   userId={user.id}
-                  isPersonal={isPersonal}
                   locale={locale}
                   workspace={workspace}
                 />
@@ -172,11 +171,7 @@ export default async function TimeTrackerPage({
 
             {/* Heatmap */}
             <Suspense fallback={<HeatmapCardSkeleton />}>
-              <HeatmapCardClient
-                wsId={wsId}
-                userId={user.id}
-                isPersonal={isPersonal}
-              />
+              <HeatmapCardClient wsId={wsId} userId={user.id} />
             </Suspense>
           </div>
         );

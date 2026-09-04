@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
+import { decodeAnalyticsLabel } from '../analytics-labels';
+import { normalizeMarkdownToText } from '../content';
 import type { FormAnalytics, FormDefinition } from '../types';
 import { runUntypedRpc } from './client';
 
@@ -50,7 +52,7 @@ function parseLabelValueList(
     return typeof label === 'string'
       ? [
           {
-            label,
+            label: decodeAnalyticsLabel(label),
             value: toNumber('value' in item ? item.value : 0),
           },
         ]
@@ -120,7 +122,7 @@ function parseFormAnalytics(value: unknown): FormAnalytics {
           return [
             {
               sectionId,
-              title,
+              title: normalizeMarkdownToText(title),
               count: toNumber('count' in entry ? entry.count : 0),
             },
           ];
@@ -141,7 +143,7 @@ function parseFormAnalytics(value: unknown): FormAnalytics {
           return [
             {
               questionId,
-              title,
+              title: normalizeMarkdownToText(title),
               count: toNumber('count' in entry ? entry.count : 0),
             },
           ];

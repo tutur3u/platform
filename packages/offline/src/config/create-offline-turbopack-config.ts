@@ -12,13 +12,25 @@ const esbuildWasmSidecars = [
   'wasm_exec.js',
   'esbuild.wasm',
 ] as const;
+const workerRuntimeSources = [
+  path.resolve(__dirname, '../worker/index.ts'),
+  path.resolve(__dirname, '../worker/create-offline-worker.ts'),
+  path.resolve(__dirname, '../worker/types.ts'),
+] as const;
 
-function getEsbuildWasmTracingIncludes(
-  projectRoot: string
+function getWorkerTracingIncludes(
+  projectRoot: string,
+  workerSource: string
 ): NonNullable<NextConfig['outputFileTracingIncludes']> {
-  const paths = esbuildWasmSidecars.map((sidecar) => {
+  const paths = [
+    path.resolve(projectRoot, workerSource),
+    ...workerRuntimeSources,
+    ...esbuildWasmSidecars.map((sidecar) =>
+      path.join(esbuildWasmPackageRoot, sidecar)
+    ),
+  ].map((absolutePath) => {
     const relative = path
-      .relative(projectRoot, path.join(esbuildWasmPackageRoot, sidecar))
+      .relative(projectRoot, absolutePath)
       .split(path.sep)
       .join('/');
     return relative.startsWith('.') ? relative : `./${relative}`;
@@ -52,6 +64,7 @@ export function getOfflineTurbopackConfig(
     outputFileTracingIncludes,
     outputFileTracingRoot,
     projectRoot = process.cwd(),
+    workerSource = 'src/app/sw.ts',
   } = config;
 
   return {
@@ -60,7 +73,7 @@ export function getOfflineTurbopackConfig(
       : {}),
     serverExternalPackages: ['esbuild-wasm', ...additionalExternalPackages],
     outputFileTracingIncludes: mergeOutputFileTracingIncludes(
-      getEsbuildWasmTracingIncludes(path.resolve(projectRoot)),
+      getWorkerTracingIncludes(path.resolve(projectRoot), workerSource),
       outputFileTracingIncludes
     ),
   };

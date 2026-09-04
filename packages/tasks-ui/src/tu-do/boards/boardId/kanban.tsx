@@ -1,14 +1,12 @@
 'use client';
 
+import type { DragEndEvent } from '@dnd-kit/core';
 import {
-  type CollisionDetection,
-  closestCenter,
   DndContext,
   DragOverlay,
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
-  pointerWithin,
   TouchSensor,
   useSensor,
   useSensors,
@@ -48,8 +46,11 @@ import { useBulkResources } from './kanban/data/use-bulk-resources';
 import { useFilteredResources } from './kanban/data/use-filtered-resources';
 import { sortKanbanColumns } from './kanban/dnd/column-reorder';
 import { DragPreview } from './kanban/dnd/drag-preview';
+import { kanbanCollisionDetection } from './kanban/dnd/kanban-collision';
+import { shouldBlockManualTaskOrdering } from './kanban/dnd/manual-task-ordering';
 import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
+import { ManualTaskOrderingDialog } from './kanban/manual-task-ordering-dialog';
 import { KanbanColumns } from './kanban/rendering/kanban-columns';
 import type {
   KanbanDeadlineCollapsedState,
@@ -59,19 +60,6 @@ import { buildKanbanDeadlineSections } from './kanban/rendering/kanban-deadline-
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
 import { useMultiSelect } from './kanban/selection/use-multi-select';
 import type { TaskFilters } from './task-filter';
-
-// Prefer pointerWithin for precise targeting; fall back to closestCenter
-// when the pointer isn't inside any droppable (e.g. between columns).
-const kanbanCollisionDetection: CollisionDetection = (args) => {
-  if (args.active.data.current?.type === 'Task') {
-    const centerCollisions = closestCenter(args);
-    if (centerCollisions.length > 0) return centerCollisions;
-  }
-
-  const pointerCollisions = pointerWithin(args);
-  if (pointerCollisions.length > 0) return pointerCollisions;
-  return closestCenter(args);
-};
 
 const DEADLINE_REFRESH_INTERVAL_MS = 60_000;
 
@@ -106,6 +94,7 @@ interface Props {
   assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   onHoveredTaskListChange?: (listId: string | null) => void;
   readOnly?: boolean;
+  onFiltersChange?: (filters: TaskFilters) => void;
 }
 
 export function KanbanBoard({
@@ -132,6 +121,7 @@ export function KanbanBoard({
   assigneeMemberSource,
   onHoveredTaskListChange,
   readOnly = false,
+  onFiltersChange,
 }: Props) {
   const tCommon = useTranslations('common');
   const tBoards = useTranslations('ws-task-boards');
@@ -144,6 +134,8 @@ export function KanbanBoard({
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkCustomDateOpen, setBulkCustomDateOpen] = useState(false);
+  const [manualOrderingDialogOpen, setManualOrderingDialogOpen] =
+    useState(false);
   const [deadlineNow, setDeadlineNow] = useState(() => Date.now());
 
   // Search state
@@ -433,6 +425,32 @@ export function KanbanBoard({
     })
   );
 
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const blockManualOrdering = shouldBlockManualTaskOrdering({
+        activeData: event.active.data.current,
+        criteriaSortingActive: disableSort,
+        overData: event.over?.data.current,
+        overId: event.over?.id,
+        preview: dragPreviewPosition
+          ? {
+              listId: dragPreviewPosition.listId,
+              taskId: dragPreviewPosition.task.id,
+            }
+          : null,
+      });
+
+      if (blockManualOrdering) {
+        await onDragEnd({ ...event, over: null });
+        setManualOrderingDialogOpen(true);
+        return;
+      }
+
+      await onDragEnd(event);
+    },
+    [disableSort, dragPreviewPosition, onDragEnd]
+  );
+
   const estimationOptions = useMemo(() => {
     if (!boardConfig?.estimation_type) return [] as number[];
     return buildEstimationIndices({
@@ -520,7 +538,7 @@ export function KanbanBoard({
           onDragStart={onDragStart}
           onDragMove={onDragMove}
           onDragOver={onDragOver}
-          onDragEnd={onDragEnd}
+          onDragEnd={handleDragEnd}
           measuring={{
             droppable: {
               strategy: MeasuringStrategy.WhileDragging,
@@ -624,6 +642,16 @@ export function KanbanBoard({
             }}
             isLoading={bulkWorking}
           />
+
+          {filters && onFiltersChange && (
+            <ManualTaskOrderingDialog
+              open={manualOrderingDialogOpen}
+              onOpenChange={setManualOrderingDialogOpen}
+              onEnableManualOrdering={() =>
+                onFiltersChange({ ...filters, sortBy: undefined })
+              }
+            />
+          )}
         </>
       )}
     </div>

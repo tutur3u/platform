@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Finance and Expense Management',
-  description:
-    'Manage invoices, budgets, and spend control with Tuturuuu Finance.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'products.finance.seo',
   pathname: '/products/finance',
 });
 

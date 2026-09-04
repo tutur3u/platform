@@ -13,7 +13,13 @@ import {
   MAX_TASK_DESCRIPTION_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { createTask } from '@tuturuuu/utils/task-helper';
+import {
+  createOptimisticTask,
+  createTask,
+  insertOptimisticTaskIntoBoardCaches,
+  reconcileOptimisticTaskInBoardCaches,
+  removeOptimisticTaskFromBoardCaches,
+} from '@tuturuuu/utils/task-helper';
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
@@ -34,15 +40,22 @@ import {
   updateTaskDescriptionCaches,
 } from '../utils';
 import {
+  getLegacyPendingTaskRelationships,
+  withTaskCreateRelations,
+} from './optimistic-task-creation';
+import {
   shouldChunkTaskDescriptionPayload,
   updateWorkspaceTask,
   updateWorkspaceTaskDescription,
 } from './task-api';
+
 import type {
   SaveSchedulingSettingsOptions,
   SchedulingSettings,
 } from './use-task-mutations';
 import { useUpdateSharedTask } from './use-update-shared-task';
+
+export { getLegacyPendingTaskRelationships } from './optimistic-task-creation';
 
 export interface UseTaskSaveProps {
   // Core identifiers
@@ -922,6 +935,61 @@ export async function handleCreateTask({
     React.SetStateAction<Array<{ id: string; name: string }>>
   >;
 }) {
+  const normalizedPendingRelationships =
+    pendingTaskRelationships ??
+    getLegacyPendingTaskRelationships(parentTaskId, pendingRelationship);
+  const optimisticAssignees =
+    selectedAssignees.length === 0 &&
+    userTaskSettings?.task_auto_assign_to_self &&
+    user &&
+    !isPersonalWorkspace
+      ? [
+          {
+            id: user.id,
+            user_id: user.id,
+            display_name: user.display_name,
+            avatar_url: user.avatar_url,
+          },
+        ]
+      : selectedAssignees;
+  const optimisticTask = createOptimisticTask(
+    withTaskCreateRelations(
+      {
+        name: name.trim(),
+        description: descriptionString || '',
+        priority,
+        start_date: startDate?.toISOString(),
+        end_date: endDate?.toISOString(),
+        estimation_points: estimationPoints ?? null,
+        list_id: selectedListId,
+      },
+      {
+        pendingTaskRelationships: normalizedPendingRelationships,
+        selectedAssignees: optimisticAssignees,
+        selectedLabels,
+        selectedProjects,
+      }
+    )
+  );
+  let persistedTask: Task | null = null;
+
+  insertOptimisticTaskIntoBoardCaches(queryClient, boardId, optimisticTask);
+
+  if (!createMultiple) {
+    setName('');
+    setDescription(null);
+    setPriority(null);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setEstimationPoints(null);
+    setSelectedLabels([]);
+    setSelectedAssignees([]);
+    setSelectedProjects([]);
+    setIsLoading(false);
+    setIsSaving(false);
+    onClose();
+  }
+
   try {
     let resolvedUserId = user?.id;
     if (!resolvedUserId) {
@@ -975,6 +1043,21 @@ export async function handleCreateTask({
         .filter((assigneeId): assigneeId is string => !!assigneeId),
       project_ids: selectedProjects.map((project) => project.id),
     });
+    persistedTask = newTask;
+    reconcileOptimisticTaskInBoardCaches(
+      queryClient,
+      boardId,
+      optimisticTask.id,
+      {
+        ...withTaskCreateRelations(newTask, {
+          pendingTaskRelationships: normalizedPendingRelationships,
+          selectedAssignees: desiredAssignees,
+          selectedLabels,
+          selectedProjects,
+        }),
+        _isOptimistic: true,
+      } as Task
+    );
 
     if (shouldDeferDescription) {
       await updateWorkspaceTaskDescription(wsId, newTask.id, {
@@ -1011,10 +1094,6 @@ export async function handleCreateTask({
       }
     }
 
-    const normalizedPendingRelationships =
-      pendingTaskRelationships ??
-      getLegacyPendingTaskRelationships(parentTaskId, pendingRelationship);
-
     const affectedRelationshipTaskIds = await persistPendingTaskRelationships(
       wsId,
       newTask.id,
@@ -1022,77 +1101,24 @@ export async function handleCreateTask({
       queryClient
     );
 
-    const nextLabels: Task['labels'] = selectedLabels.flatMap((label) =>
-      label.name && label.color && label.created_at
-        ? [
-            {
-              id: label.id,
-              name: label.name,
-              color: label.color,
-              created_at: label.created_at,
-            },
-          ]
-        : []
-    );
-
-    const finalAssignees = desiredAssignees;
-
-    const nextProjects: Task['projects'] = selectedProjects.flatMap(
-      (project) =>
-        project.name && project.status
-          ? [
-              {
-                id: project.id,
-                name: project.name,
-                status: project.status,
-              },
-            ]
-          : []
-    );
-
-    const createdTaskWithRelations: Task = {
-      ...(newTask as Task),
-      labels: nextLabels,
-      assignees: finalAssignees.map((assignee) => ({
-        id: assignee.user_id || assignee.id,
-        display_name: assignee.display_name ?? undefined,
-        avatar_url: assignee.avatar_url ?? undefined,
-      })),
-      projects: nextProjects,
-      relationship_summary: {
-        parent_task_id: normalizedPendingRelationships.parentTask?.id ?? null,
-        parent_task: normalizedPendingRelationships.parentTask
-          ? {
-              id: normalizedPendingRelationships.parentTask.id,
-              name: normalizedPendingRelationships.parentTask.name,
-              display_number:
-                normalizedPendingRelationships.parentTask.display_number ??
-                null,
-              ticket_prefix:
-                normalizedPendingRelationships.parentTask.ticket_prefix ?? null,
-            }
-          : null,
-        child_count: normalizedPendingRelationships.childTasks.length,
-        completed_child_count: normalizedPendingRelationships.childTasks.filter(
-          (childTask) => childTask.completed
-        ).length,
-        blocked_by_count: normalizedPendingRelationships.blockedByTasks.length,
-        blocking_count: normalizedPendingRelationships.blockingTasks.length,
-        related_count: normalizedPendingRelationships.relatedTasks.length,
-      },
-    };
+    const createdTaskWithRelations = withTaskCreateRelations(newTask, {
+      pendingTaskRelationships: normalizedPendingRelationships,
+      selectedAssignees: desiredAssignees,
+      selectedLabels,
+      selectedProjects,
+    });
 
     const locallyCreatedTask = {
       ...(createdTaskWithRelations as Task & { _localMutationAt?: number }),
       _localMutationAt: Date.now(),
     } as Task;
 
-    // Update cache
-    queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-      if (!old) return [locallyCreatedTask];
-      if (old.some((t) => t.id === newTask.id)) return old;
-      return [...old, locallyCreatedTask];
-    });
+    reconcileOptimisticTaskInBoardCaches(
+      queryClient,
+      boardId,
+      optimisticTask.id,
+      locallyCreatedTask
+    );
     applyPendingRelationshipSummary({
       boardId,
       newTaskId: newTask.id,
@@ -1107,9 +1133,9 @@ export async function handleCreateTask({
     // Broadcast the new task to other clients
     broadcast?.('task:upsert', { task: createdTaskWithRelations });
     const hasRelations =
-      nextLabels.length > 0 ||
-      finalAssignees.length > 0 ||
-      nextProjects.length > 0;
+      (createdTaskWithRelations.labels?.length ?? 0) > 0 ||
+      (createdTaskWithRelations.assignees?.length ?? 0) > 0 ||
+      (createdTaskWithRelations.projects?.length ?? 0) > 0;
     if (hasRelations) {
       broadcast?.('task:relations-changed', { taskId: newTask.id });
     }
@@ -1139,19 +1165,27 @@ export async function handleCreateTask({
         );
         input?.focus();
       }, 0);
-    } else {
-      setName('');
-      setDescription(null);
-      setPriority(null);
-      setStartDate(undefined);
-      setEndDate(undefined);
-      setEstimationPoints(null);
-      setSelectedLabels([]);
-      setSelectedAssignees([]);
-      setSelectedProjects([]);
-      onClose();
     }
   } catch (error: unknown) {
+    if (persistedTask) {
+      reconcileOptimisticTaskInBoardCaches(
+        queryClient,
+        boardId,
+        optimisticTask.id,
+        withTaskCreateRelations(persistedTask, {
+          pendingTaskRelationships: normalizedPendingRelationships,
+          selectedAssignees: optimisticAssignees,
+          selectedLabels,
+          selectedProjects,
+        })
+      );
+    } else {
+      removeOptimisticTaskFromBoardCaches(
+        queryClient,
+        boardId,
+        optimisticTask.id
+      );
+    }
     console.error('Error creating task:', error);
     toast({
       title: 'Error creating task',
@@ -1161,83 +1195,6 @@ export async function handleCreateTask({
   } finally {
     setIsLoading(false);
     setIsSaving(false);
-  }
-}
-
-export function getLegacyPendingTaskRelationships(
-  parentTaskId?: string,
-  pendingRelationship?: PendingRelationship
-): PendingTaskRelationships {
-  if (parentTaskId) {
-    return {
-      parentTask: {
-        id: parentTaskId,
-        name: pendingRelationship?.relatedTaskName || parentTaskId,
-      },
-      childTasks: [],
-      blockingTasks: [],
-      blockedByTasks: [],
-      relatedTasks: [],
-    };
-  }
-
-  if (!pendingRelationship?.relatedTaskId) {
-    return {
-      parentTask: null,
-      childTasks: [],
-      blockingTasks: [],
-      blockedByTasks: [],
-      relatedTasks: [],
-    };
-  }
-
-  const relatedTask: RelatedTaskInfo = {
-    id: pendingRelationship.relatedTaskId,
-    name:
-      pendingRelationship.relatedTaskName || pendingRelationship.relatedTaskId,
-  };
-
-  switch (pendingRelationship.type) {
-    case 'subtask':
-      return {
-        parentTask: relatedTask,
-        childTasks: [],
-        blockingTasks: [],
-        blockedByTasks: [],
-        relatedTasks: [],
-      };
-    case 'parent':
-      return {
-        parentTask: null,
-        childTasks: [relatedTask],
-        blockingTasks: [],
-        blockedByTasks: [],
-        relatedTasks: [],
-      };
-    case 'blocking':
-      return {
-        parentTask: null,
-        childTasks: [],
-        blockingTasks: [],
-        blockedByTasks: [relatedTask],
-        relatedTasks: [],
-      };
-    case 'blocked-by':
-      return {
-        parentTask: null,
-        childTasks: [],
-        blockingTasks: [relatedTask],
-        blockedByTasks: [],
-        relatedTasks: [],
-      };
-    case 'related':
-      return {
-        parentTask: null,
-        childTasks: [],
-        blockingTasks: [],
-        blockedByTasks: [],
-        relatedTasks: [relatedTask],
-      };
   }
 }
 
