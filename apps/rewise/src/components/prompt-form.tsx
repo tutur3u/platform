@@ -69,31 +69,24 @@ export function PromptForm({
   disabled,
 }: PromptProps) {
   const t = useTranslations();
-
   const router = useRouter();
   const { formRef, onKeyDown } = useEnterSubmit();
 
   const [isInternalLoading, setIsInternalLoading] = useState(isLoading);
 
-  useEffect(() => {
-    setIsInternalLoading(isLoading);
-  }, [isLoading]);
+  useEffect(() => setIsInternalLoading(isLoading), [isLoading]);
 
   const pdfs = files.filter((f) =>
     f.rawFile.type.startsWith('application/pdf')
   );
   const images = files.filter((f) => f.rawFile.type.startsWith('image/'));
   const others = files.filter((f) => !pdfs.includes(f) && !images.includes(f));
-
   const [showPermissionDenied, setShowPermissionDenied] = useState(false);
-
   const [element, setElement] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     setElement(document.getElementById('main-content'));
-    return () => {
-      setElement(null);
-    };
+    return () => setElement(null);
   }, []);
 
   if (!element) return null;
@@ -104,12 +97,17 @@ export function PromptForm({
         onSubmit={async (e) => {
           e.preventDefault();
           if (!input?.trim()) return;
+          const submittedInput = input;
           setInput('');
           element.scrollTo({
             top: element.scrollHeight,
             behavior: 'smooth',
           });
-          await onSubmit(input);
+          try {
+            await onSubmit(submittedInput);
+          } catch {
+            setInput(submittedInput);
+          }
         }}
         ref={formRef}
         className="w-full"
@@ -141,7 +139,7 @@ export function PromptForm({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    // disabled={isInternalLoading}
+                    type="button"
                     size="icon"
                     variant="ghost"
                     className={cn('mr-1 transition duration-300')}
@@ -159,7 +157,7 @@ export function PromptForm({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  // disabled={isInternalLoading}
+                  type="button"
                   size="icon"
                   variant="ghost"
                   className={cn('transition duration-300')}
@@ -175,6 +173,7 @@ export function PromptForm({
             <Tooltip>
               <TooltipTrigger className="hidden md:flex" asChild>
                 <Button
+                  type="button"
                   disabled={isInternalLoading}
                   size="icon"
                   variant="ghost"
@@ -209,6 +208,7 @@ export function PromptForm({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  type="button"
                   size="icon"
                   variant="ghost"
                   className={cn(
@@ -233,7 +233,7 @@ export function PromptForm({
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
-                  type="submit"
+                  type="button"
                   variant="ghost"
                   onClick={() => setShowExtraOptions((prev) => !prev)}
                   className={cn(
@@ -411,7 +411,6 @@ export function PromptForm({
             onKeyDown={onKeyDown}
             rows={1}
             value={input}
-            // value={[input, caption || ''].filter(Boolean).join(' ')}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
               disabled

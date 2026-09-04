@@ -89,7 +89,7 @@ describe('Rewise chat workspace propagation', () => {
   it.each([WORKSPACE_A, WORKSPACE_B])(
     'uses only selected workspace %s for stream, title, summary, and attachments',
     async (wsId) => {
-      render(<Chat locale="en" wsId={wsId} />);
+      render(<Chat locale="en" workspaceSlug="personal" wsId={wsId} />);
 
       expect(mocks.transportOptions.at(-1)).toEqual(
         expect.objectContaining({

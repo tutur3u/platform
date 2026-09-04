@@ -17,5 +17,13 @@ export default async function AIPage({ params, searchParams }: Props) {
 
   const { data: chats, count } = await getChats(user);
 
-  return <Chat chats={chats} count={count} locale={locale} wsId={wsId} />;
+  return (
+    <Chat
+      chats={chats}
+      count={count}
+      locale={locale}
+      workspaceSlug={workspaceSlug}
+      wsId={wsId}
+    />
+  );
 }

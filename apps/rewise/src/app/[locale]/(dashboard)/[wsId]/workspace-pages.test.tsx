@@ -35,7 +35,8 @@ vi.mock('next/navigation', () => ({
 
 import ExistingChatPage from './c/[chatId]/page';
 import ImaginePage from './imagine/page';
-import NewChatPage from './page';
+import NewChatPage from './new/page';
+import WorkspaceAssistantPage from './page';
 
 function createAdminClient() {
   return {
@@ -88,7 +89,7 @@ describe('Rewise workspace page propagation', () => {
     ['workspace-a', WORKSPACE_A],
     ['workspace-b', WORKSPACE_B],
   ])(
-    'passes canonical workspace %s through new, existing, and imagine pages',
+    'passes canonical workspace %s through assistant, new, existing, and imagine pages',
     async (workspaceSlug, canonicalWsId) => {
       mocks.requireRewiseWorkspace.mockResolvedValue({
         user: { email: 'user@example.com', id: 'user-1' },
@@ -96,6 +97,10 @@ describe('Rewise workspace page propagation', () => {
         wsId: canonicalWsId,
       });
 
+      const assistant = (await WorkspaceAssistantPage({
+        params: Promise.resolve({ wsId: workspaceSlug }),
+        searchParams: Promise.resolve({ lang: 'en' }),
+      })) as ReactElement<{ wsId: string }>;
       const newChat = (await NewChatPage({
         params: Promise.resolve({ wsId: workspaceSlug }),
         searchParams: Promise.resolve({ lang: 'en' }),
@@ -109,10 +114,11 @@ describe('Rewise workspace page propagation', () => {
         searchParams: Promise.resolve({ lang: 'en' }),
       })) as ReactElement<{ children: ReactElement<{ wsId: string }> }>;
 
+      expect(assistant.props.wsId).toBe(canonicalWsId);
       expect(newChat.props.wsId).toBe(canonicalWsId);
       expect(imagine.props.wsId).toBe(canonicalWsId);
       expect(existing.props.children.props.wsId).toBe(canonicalWsId);
-      expect(mocks.requireRewiseWorkspace).toHaveBeenCalledTimes(3);
+      expect(mocks.requireRewiseWorkspace).toHaveBeenCalledTimes(4);
       expect(mocks.requireRewiseWorkspace).toHaveBeenCalledWith(workspaceSlug);
     }
   );

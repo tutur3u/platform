@@ -1,5 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Tool } from '../data';
 import { ToolForm } from './tool-form';
 
@@ -36,6 +42,8 @@ const tool: Tool = {
 };
 
 describe('Rewise tool chat workspace propagation', () => {
+  afterEach(cleanup);
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal(
@@ -64,5 +72,59 @@ describe('Rewise tool chat workspace propagation', () => {
       expect.objectContaining({ wsId: WORKSPACE_ID })
     );
     expect(mocks.push).toHaveBeenCalledWith(`/${WORKSPACE_SLUG}/c/chat-1`);
+  });
+
+  it('does not submit when filling example content or resetting the form', () => {
+    render(
+      <ToolForm
+        tool={tool}
+        workspaceSlug={WORKSPACE_SLUG}
+        wsId={WORKSPACE_ID}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'common.example_content' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'common.reset' }));
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('restores the generate action after a failed request', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      statusText: 'Unavailable',
+    } as Response);
+    render(
+      <ToolForm
+        tool={tool}
+        workspaceSlug={WORKSPACE_SLUG}
+        wsId={WORKSPACE_ID}
+      />
+    );
+
+    const generate = screen.getByRole('button', { name: 'common.generate' });
+    fireEvent.click(generate);
+
+    await waitFor(() => expect(generate.hasAttribute('disabled')).toBe(false));
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it('recovers from a network failure without navigating', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Network unavailable'));
+    render(
+      <ToolForm
+        tool={tool}
+        workspaceSlug={WORKSPACE_SLUG}
+        wsId={WORKSPACE_ID}
+      />
+    );
+
+    const generate = screen.getByRole('button', { name: 'common.generate' });
+    fireEvent.click(generate);
+
+    await waitFor(() => expect(generate.hasAttribute('disabled')).toBe(false));
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 });

@@ -17,6 +17,15 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
+import {
+  DEFAULT_CHAT_MODEL,
+  getChatRouteProvider,
+  toChatModel,
+} from '@/lib/chat-model';
+import {
+  getRewiseChatPath,
+  getRewiseWorkspacePath,
+} from '@/lib/workspace-routes';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   inputModel?: AIModelUI;
@@ -25,36 +34,26 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   chats?: AIChat[];
   count?: number | null;
   locale: string;
+  workspaceSlug: string;
   noEmptyPage?: boolean;
   disabled?: boolean;
   wsId: string;
 }
 
-const DEFAULT_MODEL: AIModelUI = {
-  value: 'google/gemini-3-flash',
-  label: 'gemini-3-flash',
-  provider: 'google',
-};
-
-/** Extract provider from a gateway ID like "google/gemini-2.5-flash" → "google" */
-function extractProvider(modelId: string): string {
-  return modelId.includes('/') ? modelId.split('/')[0]! : 'google';
-}
-
 export default function Chat({
-  inputModel = DEFAULT_MODEL,
+  inputModel = DEFAULT_CHAT_MODEL,
   defaultChat,
   initialMessages,
   chats,
   count,
   className,
   locale,
+  workspaceSlug,
   noEmptyPage,
   disabled,
   wsId,
 }: ChatProps) {
   const t = useTranslations();
-
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -67,7 +66,6 @@ export default function Chat({
     queryFn: () => getCurrentUserProfile(),
   });
   const currentUserId = currentUser?.id;
-
   const {
     id: chatId,
     messages,
@@ -81,12 +79,11 @@ export default function Chat({
     transport: new DefaultChatTransport({
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${extractProvider(chat?.model ?? model?.value ?? 'google/gemini-3-flash')}`
+          ? `/api/ai/chat/${getChatRouteProvider()}`
           : undefined,
       credentials: 'include',
       headers: { 'Custom-Header': 'value' },
       body: {
-        // DO NOT PUT ID HERE AS IT WILL BE OVERRIDDEN BY chatId IN useChat
         model: chat?.model || model?.value,
         wsId,
       },
@@ -113,7 +110,7 @@ export default function Chat({
       model: string;
     }) => {
       const res = await fetch(
-        `/api/ai/chat/${extractProvider(modelId)}/summary`,
+        `/api/ai/chat/${getChatRouteProvider()}/summary`,
         {
           credentials: 'include',
           method: 'PATCH',
@@ -142,7 +139,7 @@ export default function Chat({
       model: string;
       message: string;
     }) => {
-      const res = await fetch(`/api/ai/chat/${extractProvider(modelId)}/new`, {
+      const res = await fetch(`/api/ai/chat/${getChatRouteProvider()}/new`, {
         credentials: 'include',
         method: 'POST',
         body: JSON.stringify({ id, model: modelId, message, wsId }),
@@ -191,8 +188,6 @@ export default function Chat({
       }
     };
 
-    // Generate the chat summary if the chat's latest summarized message id
-    // is not the same as the last message id in the chat
     const lastMessage = messages[messages.length - 1];
 
     if (
@@ -215,9 +210,6 @@ export default function Chat({
   }, [chat?.id]);
 
   useEffect(() => {
-    // if there is "input" in the query string, we will
-    // use that as the input for the chat, then remove
-    // it from the query string
     const input = searchParams.get('ai_chat.input');
     const refresh = searchParams.get('ai_chat.refresh');
 
@@ -240,10 +232,19 @@ export default function Chat({
 
     if (refresh) {
       clearChat();
-      router.replace('/');
+      router.replace(getRewiseWorkspacePath(workspaceSlug, 'new'));
       router.refresh();
     }
-  }, [chat?.id, searchParams, router, chats, count, initialScroll, clearChat]);
+  }, [
+    chat?.id,
+    searchParams,
+    router,
+    chats,
+    count,
+    initialScroll,
+    clearChat,
+    workspaceSlug,
+  ]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -270,7 +271,9 @@ export default function Chat({
         setChat({ id, title, model: model.value, is_public: false });
       }
     } catch {
-      // Error handled by mutation onError
+      setPendingPrompt(null);
+      setInput(input);
+      throw new Error('Unable to create chat');
     }
   };
 
@@ -310,9 +313,15 @@ export default function Chat({
 
   useEffect(() => {
     if (!pathname.includes('/c/') && messages.length === 1) {
-      window.history.replaceState({}, '', `/c/${chat?.id}`);
+      if (chat?.id) {
+        window.history.replaceState(
+          {},
+          '',
+          getRewiseChatPath(workspaceSlug, chat.id)
+        );
+      }
     }
-  }, [chat?.id, pathname, messages]);
+  }, [chat?.id, pathname, messages, workspaceSlug]);
 
   return (
     <div className="relative">
@@ -349,7 +358,12 @@ export default function Chat({
             {t('common.coming_soon')} ✨
           </div>
         ) : (
-          <EmptyScreen chats={chats} setInput={setInput} locale={locale} />
+          <EmptyScreen
+            chats={chats}
+            setInput={setInput}
+            locale={locale}
+            workspaceSlug={workspaceSlug}
+          />
         )}
       </div>
 
@@ -364,21 +378,7 @@ export default function Chat({
         input={input}
         inputRef={inputRef}
         setInput={setInput}
-        model={
-          chat?.model
-            ? {
-                value: chat.model.includes('/')
-                  ? chat.model
-                  : `google/${chat.model}`,
-                label: chat.model.includes('/')
-                  ? chat.model.split('/').slice(1).join('/')
-                  : chat.model,
-                provider: chat.model.includes('/')
-                  ? chat.model.split('/')[0]!
-                  : 'google',
-              }
-            : model
-        }
+        model={toChatModel(chat?.model) ?? model}
         setModel={setModel}
         messages={messages}
         collapsed={collapsed}

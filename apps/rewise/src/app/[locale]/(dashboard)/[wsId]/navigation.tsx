@@ -1,4 +1,4 @@
-import { Home, ImagePlay, WandSparkles } from '@tuturuuu/icons';
+import { Home, WandSparkles } from '@tuturuuu/icons';
 import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -24,11 +24,6 @@ export async function getNavigationLinks({
       title: t('common.tools'),
       href: `/${personalOrWsId}/tools`,
       icon: <WandSparkles className="h-4 w-4" />,
-    },
-    {
-      title: t('common.image_generator'),
-      href: `/${personalOrWsId}/imagine`,
-      icon: <ImagePlay className="h-4 w-4" />,
     },
     null,
     createWorkspaceMembersNavLink(t),
