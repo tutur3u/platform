@@ -79,7 +79,7 @@ test('root test and type-check commands exclude the paused TanStack package', ()
     fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')
   );
 
-  for (const scriptName of ['test', 'type-check']) {
+  for (const scriptName of ['test', 'tc', 'type-check']) {
     assert.match(
       packageJson.scripts[scriptName],
       /--filter='!@tuturuuu\/tanstack-web'/u

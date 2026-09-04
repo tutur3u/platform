@@ -66,6 +66,7 @@ const {
   getBlueGreenFrontendPort,
   getDeterministicBlueGreenBuildEnv,
   getBlueGreenServiceName,
+  getBlueGreenSupportBuildInputHashes,
   getBlueGreenBuildxBakeArgs,
   getBlueGreenComposeMigration,
   getBlueGreenDeploymentBuildServices,
@@ -783,6 +784,36 @@ test('blue-green support services honor explicit backend disablement', () => {
       targetColor: 'green',
     }),
     ['web-green']
+  );
+});
+
+test('paused backend hashes force a rebuild when backend is re-enabled', async () => {
+  const listedPaths = [];
+  const disabledHashes = await getBlueGreenSupportBuildInputHashes({
+    env: { DOCKER_BACKEND_ENABLED: '0' },
+    runCommand: async (_command, args) => {
+      listedPaths.push(...args.slice(args.indexOf('--') + 1));
+      return createCommandResult('');
+    },
+    targetColor: 'green',
+  });
+
+  assert.equal(disabledHashes.backend, 'disabled');
+  assert.equal(
+    listedPaths.some((filePath) => filePath === 'apps/backend/'),
+    false
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      env: { DOCKER_BACKEND_ENABLED: '1' },
+      previousSupportBuildHashes: disabledHashes,
+      supportBuildHashes: {
+        ...disabledHashes,
+        backend: 'current-backend-hash',
+      },
+      targetColor: 'green',
+    }),
+    ['web-green', 'backend']
   );
 });
 

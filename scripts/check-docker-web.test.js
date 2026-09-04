@@ -174,6 +174,15 @@ test('validateDockerSetupWorkflow keeps paused migration Docker paths explicit',
   assert.match(
     validateDockerSetupWorkflow(
       workflowContent.replace(
+        '--cache-from type=gha,scope=docker-tanstack-web-prod',
+        '--cache-from type=gha,scope=docker-tanstack-web-paused'
+      )
+    ).join('\n'),
+    /docker-tanstack-web-prod/u
+  );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
         '--cache-from type=gha,scope=docker-backend,timeout=10m',
         '--cache-from type=gha,scope=docker-backend,timeout=10m --cache-to type=gha,scope=docker-backend,mode=max'
       )

@@ -590,7 +590,7 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   );
   assert.match(
     testJob,
-    /command: bash scripts\/ci\/run-with-backoff\.sh bun turbo:local run test --concurrency=4 -- --coverage/u
+    /command: bash scripts\/ci\/run-with-backoff\.sh bun turbo:local run test --concurrency=4 --filter='!@tuturuuu\/tanstack-web' -- --coverage/u
   );
   assert.match(testJob, /family: coverage/u);
   assert.match(testJob, /github\.event_name != 'pull_request'/u);
@@ -696,7 +696,7 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
   assert.match(workflow, /scripts\/run-tanstack-e2e-docker\.test\.js/u);
   assert.match(
     verifyJob,
-    /node --test scripts\/check-docker-web\.test\.js scripts\/docker-web\.test\.js scripts\/buildkit-builder\.test\.js scripts\/run-tanstack-e2e-docker\.test\.js/u
+    /node --test --test-skip-pattern='\[Tt\]an\[Ss\]tack\|\[Rr\]ust\|\[Bb\]ackend\|\[Mm\]igration' scripts\/check-docker-web\.test\.js scripts\/docker-web\.test\.js scripts\/buildkit-builder\.test\.js/u
   );
 });
 
@@ -1135,11 +1135,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     /steps\.prepare-supabase-docker-cache\.outputs\.cache-ready == 'true'/u
   );
   assert.match(e2eJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
-  assert.match(e2eJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
-  assert.match(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
   assert.match(bundleJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
-  assert.match(bundleJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
-  assert.match(bundleJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
+  assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
   assert.match(e2eJob, /uses: docker\/setup-buildx-action@v4/u);
   assert.match(bundleJob, /uses: docker\/setup-buildx-action@v4/u);
   assert.match(
@@ -1484,10 +1484,12 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     const [, target, app] = match;
     const isPreview = target === 'preview';
     const isPlatformPreview = workflowName === 'vercel-preview-platform.yaml';
+    const isPausedTanstackWorkflow = app === 'tanstack-web';
     const jobName = getVercelRunJobName(workflowName);
     const expectedEnvironment = `vercel-${target}-${app}`;
-    const expectedRefGuard =
-      isPreview && isPlatformPreview
+    const expectedRefGuard = isPausedTanstackWorkflow
+      ? /if: \$\{\{ false \}\}/
+      : isPreview && isPlatformPreview
         ? /github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'[\s\S]*github\.event_name == 'workflow_dispatch'[\s\S]*github\.ref == 'refs\/heads\/main'/
         : isPreview
           ? /github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main'/
@@ -1542,11 +1544,13 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
       }
       assert.match(header, /\n {2}workflow_dispatch:\n/);
       assert.match(header, /\n {6}preview_ref:\n/);
-      assert.match(
-        deployJob,
-        /vars\.TRUSTED_PREVIEW_DEPLOY_ACTORS/,
-        `${workflowName} must require a trusted manual preview deploy actor`
-      );
+      if (!isPausedTanstackWorkflow) {
+        assert.match(
+          deployJob,
+          /vars\.TRUSTED_PREVIEW_DEPLOY_ACTORS/,
+          `${workflowName} must require a trusted manual preview deploy actor`
+        );
+      }
       assert.match(
         deployJob,
         isPlatformPreview

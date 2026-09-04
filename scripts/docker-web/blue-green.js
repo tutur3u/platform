@@ -147,6 +147,7 @@ const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
   'web-cron-runner',
 ]);
 const BLUE_GREEN_BUILD_HASH_VERSION = 1;
+const BLUE_GREEN_DISABLED_BUILD_HASH = 'disabled';
 const DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_ATTEMPTS = 4;
 const DEFAULT_BLUE_GREEN_BUILD_RETRY_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_BLUE_GREEN_BUILD_RETRY_MAX_DELAY_MS = 60_000;
@@ -1794,6 +1795,10 @@ function getBlueGreenSupportBuildInputSpecs(targetColor, env = {}) {
   ];
 
   return specs.filter((spec) => {
+    if (spec.serviceName === 'backend') {
+      return isBlueGreenBackendEnabled(env);
+    }
+
     if (spec.serviceName === 'supermemory') {
       return isBlueGreenSupermemoryEnabled(env);
     }
@@ -1891,6 +1896,12 @@ async function getBlueGreenSupportBuildInputHashes({
         fsImpl,
         rootDir,
       });
+    }
+
+    if (!isBlueGreenBackendEnabled(env)) {
+      // Replace any previous backend input hash while paused. When the service
+      // is re-enabled, its real input hash differs and forces a fresh image.
+      hashes.backend = BLUE_GREEN_DISABLED_BUILD_HASH;
     }
 
     return hashes;

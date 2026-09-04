@@ -230,11 +230,12 @@ generator/formatter unit test. Keep `scripts/generate-tanstack-route-tree.*`
 in this workflow's path filters so route-tree generation changes run before
 TanStack/Rust deployment handoff.
 
-The TanStack/Rust migration is currently paused. Keep `rust-backend.yml` and
-`vercel-production-tanstack-web.yaml` set to `false` in `tuturuuu.ts`; the
-shared `ci-check.yml` switchboard will leave the expensive Rust/TanStack jobs
-skipped. Re-enable them only when active maintenance resumes and the full
-workflow is again an intentional delivery gate.
+The TanStack/Rust migration is currently paused. Keep `rust-backend.yml`,
+`tanstack-route-manifest.yaml`, and
+`vercel-production-tanstack-web.yaml` set to `false` in `tuturuuu.ci.ts`; the
+shared `ci-check.yml` switchboard will leave the Rust/TanStack jobs skipped.
+Re-enable them only when active maintenance resumes and the full workflow is
+again an intentional delivery gate.
 
 The shared `e2e-tests.yaml` workflow also keeps `migration-e2e` disabled and
 publishes only the `next` image bundle. Maintained Next.js Playwright coverage

@@ -179,7 +179,7 @@
     "test:scripts": "node scripts/run-script-tests.js",
     "test:watch": "bun turbo:local run test:watch",
     "test:e2e": "node scripts/run-web-e2e-docker.js",
-    "tc": "bun turbo:local run type-check",
+    "tc": "bun turbo:local run type-check --filter='!@tuturuuu/tanstack-web'",
     "type-check": "bun turbo:local run type-check --filter='!@tuturuuu/tanstack-web'",
     "type-check:apps": "bun turbo:local run type-check -F @tuturuuu/apps",
     "type-check:web": "bun turbo:local run type-check -F @tuturuuu/web",
