@@ -11,20 +11,23 @@ describe('Rewise assistant home', () => {
 
   it('moves a guided workflow into the persistent composer', () => {
     const setInput = vi.fn();
-    render(<EmptyScreen setInput={setInput} />);
+    render(
+      <EmptyScreen assistantName="Mira" setInput={setInput} userName="Phúc" />
+    );
 
-    fireEvent.click(screen.getByRole('button', { name: /starter_plan/ }));
+    fireEvent.click(screen.getByRole('button', { name: /quick_calendar/ }));
 
-    expect(setInput).toHaveBeenCalledWith('starter_plan_prompt');
+    expect(setInput).toHaveBeenCalledWith('quick_calendar');
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Rewise' })
+      screen.getByRole('heading', { level: 1, name: 'Mira' })
     ).toBeTruthy();
-    expect(screen.getByText('assistant_heading')).toBeTruthy();
-    expect(screen.queryByText('capability_tools_title')).toBeNull();
+    expect(screen.getByText(/good_/)).toBeTruthy();
+    expect(screen.getByText('quick_calendar_desc')).toBeTruthy();
+    expect(screen.getByText('quick_tasks_desc')).toBeTruthy();
   });
 
   it('keeps recent conversations in the sidebar instead of crowding the prompt', () => {
-    render(<EmptyScreen setInput={vi.fn()} />);
+    render(<EmptyScreen assistantName="Mira" setInput={vi.fn()} />);
 
     expect(screen.queryByRole('link', { name: /Roadmap review/ })).toBeNull();
   });

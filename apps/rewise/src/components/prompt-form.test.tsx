@@ -2,7 +2,6 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { createRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_CHAT_MODEL } from '@/lib/chat-model';
 import { PromptForm } from './prompt-form';
 
 vi.mock('next-intl', () => ({
@@ -25,8 +24,7 @@ function PromptHarness({
     <>
       <div id="main-chat-content" />
       <PromptForm
-        model={DEFAULT_CHAT_MODEL}
-        chat={undefined}
+        assistantName="Mira"
         files={files}
         setFiles={setFiles}
         input={input}
@@ -35,7 +33,6 @@ function PromptHarness({
         onSubmit={onSubmit}
         isLoading={false}
         toggleChatFileUpload={vi.fn()}
-        toggleChatVisibility={vi.fn()}
       />
     </>
   );
@@ -53,12 +50,17 @@ describe('Rewise prompt form', () => {
     render(<PromptHarness onSubmit={onSubmit} />);
 
     expect(screen.queryByText('undefined/undefined')).toBeNull();
-    expect(screen.getByText(DEFAULT_CHAT_MODEL.label)).toBeTruthy();
+    expect(screen.queryByText('gemini-3-flash')).toBeNull();
 
-    const textbox = screen.getByPlaceholderText('ai_chat.prompt_placeholder');
+    const textbox = screen.getByPlaceholderText('prompt_placeholder');
     const sendButton = screen.getByRole('button', {
-      name: 'ai_chat.send_message',
+      name: 'send_message',
     });
+
+    expect(
+      screen.getByRole('button', { name: 'add_attachments' })
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'voice_input' })).toBeTruthy();
 
     expect((sendButton as HTMLButtonElement).disabled).toBe(true);
     fireEvent.change(textbox, { target: { value: '  Help me plan today  ' } });

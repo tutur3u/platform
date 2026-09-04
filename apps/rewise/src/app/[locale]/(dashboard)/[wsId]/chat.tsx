@@ -203,11 +203,15 @@ export default function Chat({
   const [initialScroll, setInitialScroll] = useState(true);
 
   const clearChat = useCallback(() => {
-    if (chat?.id) return;
     setSummary(undefined);
     setChat(undefined);
     setCollapsed(true);
-  }, [chat?.id]);
+    setInput('');
+
+    if (chat?.id) {
+      router.push(getRewiseWorkspacePath(workspaceSlug, 'new'));
+    }
+  }, [chat?.id, router, workspaceSlug]);
 
   useEffect(() => {
     const input = searchParams.get('ai_chat.input');
@@ -324,69 +328,88 @@ export default function Chat({
   }, [chat?.id, pathname, messages, workspaceSlug]);
 
   return (
-    <div className="relative flex h-[calc(100dvh-2rem)] min-h-0 flex-col overflow-hidden max-md:h-[calc(100dvh-5.25rem)]">
-      <div
-        id="main-chat-content"
-        className={cn('min-h-0 flex-1 overflow-y-auto pb-32', className)}
-      >
-        {(chat && messages.length) || pendingPrompt ? (
-          <>
-            <ChatList
-              chatId={chat?.id}
-              chatTitle={chat?.title}
-              chatIsPublic={chat?.is_public}
-              chatModel={chat?.model}
-              chatSummary={summary || chat?.summary}
-              summarizing={summarizing}
-              messages={
-                pendingPrompt
-                  ? [
-                      {
-                        id: 'pending',
-                        role: 'user',
-                        parts: [{ type: 'text', text: pendingPrompt }],
-                      },
-                    ]
-                  : messages
-              }
-              setInput={setInput}
-              locale={locale}
-              model={chat?.model ?? undefined}
-              anonymize={!chats || count === undefined}
-            />
-            <ChatScrollAnchor trackVisibility={status === 'streaming'} />
-          </>
-        ) : noEmptyPage ? (
-          <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center font-bold text-2xl lg:text-4xl xl:text-5xl">
-            {t('common.coming_soon')} ✨
+    <div
+      className={cn(
+        'relative flex h-[calc(100vh-5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100vh-2rem)]',
+        className
+      )}
+    >
+      <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col gap-3 sm:gap-4 xl:h-full">
+        <div className="relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden rounded-xl border border-border/60 bg-card/50 p-3 pb-0 shadow-sm backdrop-blur-sm sm:p-4">
+          <div
+            id="main-chat-content"
+            className="min-h-0 flex-1 overflow-y-auto pt-10 pb-32"
+          >
+            {(chat && messages.length) || pendingPrompt ? (
+              <>
+                <ChatList
+                  chatId={chat?.id}
+                  chatTitle={chat?.title}
+                  chatIsPublic={chat?.is_public}
+                  chatModel={chat?.model}
+                  chatSummary={summary || chat?.summary}
+                  summarizing={summarizing}
+                  messages={
+                    pendingPrompt
+                      ? [
+                          {
+                            id: 'pending',
+                            role: 'user',
+                            parts: [{ type: 'text', text: pendingPrompt }],
+                          },
+                        ]
+                      : messages
+                  }
+                  setInput={setInput}
+                  locale={locale}
+                  model={chat?.model ?? undefined}
+                  anonymize={!chats || count === undefined}
+                />
+                <ChatScrollAnchor trackVisibility={status === 'streaming'} />
+              </>
+            ) : noEmptyPage ? (
+              <div className="flex h-full w-full items-center justify-center font-bold text-2xl lg:text-4xl xl:text-5xl">
+                {t('common.coming_soon')}
+              </div>
+            ) : (
+              <EmptyScreen
+                assistantName="Mira"
+                setInput={setInput}
+                userName={
+                  currentUser?.display_name ||
+                  currentUser?.full_name ||
+                  currentUser?.email?.split('@')[0] ||
+                  undefined
+                }
+              />
+            )}
           </div>
-        ) : (
-          <EmptyScreen setInput={setInput} />
-        )}
-      </div>
 
-      <ChatPanel
-        id={chat?.id}
-        chat={chat}
-        chats={chats}
-        count={count}
-        status={status}
-        stop={stop}
-        sendMessage={sendMessage}
-        input={input}
-        inputRef={inputRef}
-        setInput={setInput}
-        model={toChatModel(chat?.model) ?? model}
-        messages={messages}
-        collapsed={collapsed}
-        createChat={createChat}
-        updateChat={updateChat}
-        clearChat={clearChat}
-        setCollapsed={setCollapsed}
-        disabled={disabled}
-        currentUserId={currentUserId}
-        wsId={wsId}
-      />
+          <ChatPanel
+            id={chat?.id}
+            chat={chat}
+            chats={chats}
+            count={count}
+            status={status}
+            stop={stop}
+            sendMessage={sendMessage}
+            input={input}
+            inputRef={inputRef}
+            setInput={setInput}
+            assistantName="Mira"
+            model={toChatModel(chat?.model) ?? model}
+            messages={messages}
+            collapsed={collapsed}
+            createChat={createChat}
+            updateChat={updateChat}
+            clearChat={clearChat}
+            setCollapsed={setCollapsed}
+            disabled={disabled}
+            currentUserId={currentUserId}
+            wsId={wsId}
+          />
+        </div>
+      </div>
     </div>
   );
 }

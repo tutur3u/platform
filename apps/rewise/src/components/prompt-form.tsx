@@ -1,15 +1,12 @@
 import {
   File as FileIcon,
   FileText,
-  Globe,
   ImageIcon,
-  Lock,
+  Mic,
   Paperclip,
   Send,
-  Sparkles,
   X,
 } from '@tuturuuu/icons';
-import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { useEnterSubmit } from '@tuturuuu/ui/hooks/use-enter-submit';
@@ -20,9 +17,7 @@ import type React from 'react';
 import Textarea from 'react-textarea-autosize';
 
 export interface PromptProps {
-  id?: string;
-  model?: AIModelUI;
-  chat: Partial<AIChat> | undefined;
+  assistantName: string;
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   input: string;
@@ -31,7 +26,6 @@ export interface PromptProps {
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   toggleChatFileUpload: () => void;
-  toggleChatVisibility: () => void;
   disabled?: boolean;
 }
 
@@ -42,9 +36,7 @@ function FileTypeIcon({ file }: { file: File }) {
 }
 
 export function PromptForm({
-  id,
-  model,
-  chat,
+  assistantName,
   files,
   setFiles,
   input,
@@ -53,10 +45,10 @@ export function PromptForm({
   onSubmit,
   isLoading,
   toggleChatFileUpload,
-  toggleChatVisibility,
   disabled,
 }: PromptProps) {
-  const t = useTranslations();
+  const t = useTranslations('ai_chat');
+  const commonT = useTranslations('common');
   const { formRef, onKeyDown } = useEnterSubmit();
   const canSubmit = !!input.trim() && !isLoading && !disabled;
 
@@ -83,66 +75,13 @@ export function PromptForm({
         }
       }}
       ref={formRef}
-      className="overflow-hidden rounded-xl border border-border/50 bg-background/90 shadow-lg backdrop-blur-xl transition-colors focus-within:border-primary/40"
+      className={cn(
+        'flex min-w-0 flex-col justify-center rounded-xl border border-border/50 bg-background/80 backdrop-blur-sm',
+        'transition-colors focus-within:border-dynamic-purple/30'
+      )}
     >
-      <div className="flex min-h-9 items-center gap-1.5 border-border/40 border-b px-2 py-1.5">
-        <div className="flex min-w-0 items-center gap-1.5 px-1.5 text-muted-foreground text-xs">
-          <Sparkles className="size-3.5 shrink-0 text-primary" />
-          <span className="truncate font-medium text-foreground">
-            {model?.label ?? t('ai_chat.default_chat')}
-          </span>
-          {model?.provider ? (
-            <span className="hidden truncate sm:inline">
-              · {model.provider}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="ml-auto flex shrink-0 items-center gap-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="size-8"
-                onClick={toggleChatFileUpload}
-                disabled={disabled}
-                aria-label={t('ai_chat.add_attachments')}
-              >
-                <Paperclip className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('ai_chat.add_attachments')}</TooltipContent>
-          </Tooltip>
-
-          {id ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="size-8"
-                  onClick={toggleChatVisibility}
-                  disabled={disabled}
-                  aria-label={t('ai_chat.chat_visibility')}
-                >
-                  {chat?.is_public ? (
-                    <Globe className="size-4" />
-                  ) : (
-                    <Lock className="size-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('ai_chat.chat_visibility')}</TooltipContent>
-            </Tooltip>
-          ) : null}
-        </div>
-      </div>
-
       {files.length > 0 ? (
-        <div className="flex gap-1.5 overflow-x-auto border-border/40 border-b px-3 py-2">
+        <div className="flex gap-1.5 overflow-x-auto px-2 pt-2">
           {files.map((file) => (
             <div
               key={file.url}
@@ -160,7 +99,7 @@ export function PromptForm({
                     current.filter((candidate) => candidate.url !== file.url)
                   )
                 }
-                aria-label={`${t('common.remove')} ${file.rawFile.name}`}
+                aria-label={`${commonT('remove')} ${file.rawFile.name}`}
               >
                 <X className="size-3" />
               </Button>
@@ -169,7 +108,7 @@ export function PromptForm({
         </div>
       ) : null}
 
-      <div className="flex min-w-0 items-end gap-2 p-2">
+      <div className="flex min-w-0 items-center gap-2 p-2">
         <Textarea
           ref={inputRef}
           tabIndex={0}
@@ -179,32 +118,69 @@ export function PromptForm({
           onChange={(event) => setInput(event.target.value)}
           placeholder={
             disabled
-              ? t('ai_chat.imagine_placeholder')
-              : t('ai_chat.prompt_placeholder')
+              ? t('imagine_placeholder')
+              : t('prompt_placeholder', { name: assistantName })
           }
           spellCheck={false}
-          maxRows={6}
-          className="scrollbar-none min-h-10 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm placeholder:text-muted-foreground focus:outline-none"
+          maxRows={5}
+          className="scrollbar-none min-h-10.5 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm placeholder:text-muted-foreground focus:outline-none"
           disabled={disabled}
         />
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="submit"
-              size="icon"
-              className={cn(
-                'size-9 shrink-0 transition-colors',
-                !canSubmit && 'bg-muted text-muted-foreground'
-              )}
-              disabled={!canSubmit}
-              aria-label={t('ai_chat.send_message')}
-            >
-              <Send className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('ai_chat.send_message')}</TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 shrink-0"
+                onClick={toggleChatFileUpload}
+                disabled={disabled}
+                aria-label={t('add_attachments')}
+              >
+                <Paperclip className="size-4.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('add_attachments')}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-9 shrink-0"
+                disabled
+                aria-label={t('voice_input')}
+              >
+                <Mic className="size-4.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('voice_input')}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="submit"
+                size="icon"
+                className={cn(
+                  'size-9 shrink-0 transition-all',
+                  canSubmit
+                    ? 'bg-dynamic-purple text-primary-foreground hover:bg-dynamic-purple/90'
+                    : 'bg-muted text-muted-foreground'
+                )}
+                disabled={!canSubmit}
+                aria-label={t('send_message')}
+              >
+                <Send className="size-4.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t('send_message')}</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </form>
   );

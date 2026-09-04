@@ -22,6 +22,8 @@ import type React from 'react';
 import { useState } from 'react';
 import sanitize from 'sanitize-filename';
 import { ChatPermissions } from '@/components/chat-permissions';
+import { AssistantHeader } from './assistant-header';
+import { AssistantToolbar } from './assistant-toolbar';
 import { PromptForm } from './prompt-form';
 
 interface PresenceUser {
@@ -49,6 +51,7 @@ export interface ChatPanelProps
   input: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
   setInput: (input: string) => void;
+  assistantName: string;
   model?: AIModelUI;
   createChat: (input: string) => Promise<void>;
   updateChat: (data: Partial<AIChat>) => Promise<void>;
@@ -72,9 +75,11 @@ export function ChatPanel({
   input,
   inputRef,
   setInput,
+  assistantName,
   model,
   createChat,
   updateChat,
+  clearChat,
   disabled,
   currentUserId,
   wsId,
@@ -123,12 +128,27 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-linear-to-b from-transparent via-background/75 to-background px-3 pt-10 pb-3 sm:px-5 sm:pb-4">
-        <div className="pointer-events-auto mx-auto max-w-3xl">
+      <div className="absolute top-3 right-3 left-3 z-10 sm:top-4 sm:right-4 sm:left-4">
+        <AssistantHeader
+          onNewConversation={clearChat}
+          onVisibility={
+            id
+              ? () => {
+                  setDialogType('visibility');
+                  setShowDialog(true);
+                }
+              : undefined
+          }
+        />
+      </div>
+
+      <div className="absolute right-0 bottom-0 left-0 z-10 flex min-w-0 max-w-full flex-col p-3 sm:p-4">
+        <div className="mb-2 max-h-16 min-w-0 opacity-100">
+          <AssistantToolbar model={model} />
+        </div>
+        <div className="min-w-0">
           <PromptForm
-            id={id}
-            model={model}
-            chat={chat}
+            assistantName={assistantName}
             onSubmit={async (value) => {
               if (!id) return await handleCreateChat(value);
 
@@ -145,10 +165,6 @@ export function ChatPanel({
             isLoading={status === 'streaming'}
             toggleChatFileUpload={() => {
               setDialogType('files');
-              setShowDialog((prev) => !prev);
-            }}
-            toggleChatVisibility={() => {
-              setDialogType('visibility');
               setShowDialog((prev) => !prev);
             }}
             disabled={disabled}
