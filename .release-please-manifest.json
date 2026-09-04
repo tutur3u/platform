@@ -1,5 +1,5 @@
 {
-  ".": "0.45.0",
+  ".": "0.45.1",
   "apps/ai": "0.11.3",
   "apps/apps": "0.18.2",
   "apps/calendar": "0.27.5",
@@ -22,7 +22,7 @@
   "apps/playground": "0.5.1",
   "apps/tools": "0.16.2",
   "apps/redis": "1.1.0",
-  "apps/rewise": "0.38.0",
+  "apps/rewise": "0.38.1",
   "apps/shortener": "0.18.2",
   "apps/storefront": "0.25.2",
   "apps/tanstack-web": "0.27.0",
