@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  apps: {
+    avatar: null as string | null,
+    avatarUpload: null as string | null,
+    credits: null as string | null,
+    workspace: null as string | null,
+  },
   avatarDelete: vi.fn(),
   avatarPatch: vi.fn(),
   avatarUploadPost: vi.fn(),
@@ -15,10 +21,12 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@tuturuuu/satellite/workspace-settings-route-handlers', () => ({
   createSatelliteAiCreditsRouteHandler: (app: string) => {
+    mocks.apps.credits = app;
     mocks.createAiCreditsHandler(app);
     return mocks.creditsGet;
   },
   createSatelliteWorkspaceAvatarRouteHandlers: (app: string) => {
+    mocks.apps.avatar = app;
     mocks.createAvatarHandlers(app);
     return {
       DELETE: mocks.avatarDelete,
@@ -26,10 +34,12 @@ vi.mock('@tuturuuu/satellite/workspace-settings-route-handlers', () => ({
     };
   },
   createSatelliteWorkspaceAvatarUploadRouteHandler: (app: string) => {
+    mocks.apps.avatarUpload = app;
     mocks.createAvatarUploadHandler(app);
     return mocks.avatarUploadPost;
   },
   createSatelliteWorkspaceRouteHandlers: (app: string) => {
+    mocks.apps.workspace = app;
     mocks.createWorkspaceHandlers(app);
     return {
       GET: mocks.workspaceGet,
@@ -51,10 +61,12 @@ import {
 
 describe('Infrastructure workspace settings routes', () => {
   it('owns every shared workspace-settings endpoint with Infra satellite auth', () => {
-    expect(mocks.createWorkspaceHandlers).toHaveBeenCalledWith('infra');
-    expect(mocks.createAvatarHandlers).toHaveBeenCalledWith('infra');
-    expect(mocks.createAvatarUploadHandler).toHaveBeenCalledWith('infra');
-    expect(mocks.createAiCreditsHandler).toHaveBeenCalledWith('infra');
+    expect(mocks.apps).toEqual({
+      avatar: 'infra',
+      avatarUpload: 'infra',
+      credits: 'infra',
+      workspace: 'infra',
+    });
 
     expect(getWorkspace).toBe(mocks.workspaceGet);
     expect(updateWorkspace).toBe(mocks.workspacePut);

@@ -4,14 +4,19 @@ import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => {
   const authProxy = vi.fn();
+  let centralizedAuthOptions: unknown;
 
   return {
     authProxy,
+    getCentralizedAuthOptions: () => centralizedAuthOptions,
     clearSupabaseAuthCookies: vi.fn(
       (_request: NextRequest, response: NextResponse) => response
     ),
     consumeVerifyTokenRequest: vi.fn(),
-    createCentralizedAuthProxy: vi.fn((_options: unknown) => authProxy),
+    createCentralizedAuthProxy: vi.fn((options: unknown) => {
+      centralizedAuthOptions = options;
+      return authProxy;
+    }),
     getAppSessionClaimsFromRequest: vi.fn(),
     getCurrentUserDefaultWorkspace: vi.fn(),
     getRequestHeadersWithResponseCookies: vi.fn(
@@ -137,7 +142,7 @@ describe('Meet proxy auth handoff', () => {
   });
 
   it('registers Meet auth public paths without making root public', () => {
-    const options = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+    const options = mocks.getCentralizedAuthOptions() as
       | {
           appSession: { targetApp: string };
           excludeRootPath: boolean;

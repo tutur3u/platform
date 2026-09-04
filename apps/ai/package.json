@@ -47,6 +47,6 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "postcss": "^8.5.26",
     "typescript": "7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.0"
   }
 }
