@@ -10,7 +10,6 @@
 
 ### Bug Fixes
 
-* **rewise:** bind AI work to selected workspace ([ed07bd8](https://github.com/tutur3u/platform/commit/ed07bd807fe5bb2895e82be374494217c8461444))
 * **rewise:** bind AI work to selected workspace ([#5208](https://github.com/tutur3u/platform/issues/5208)) ([5f1d8f3](https://github.com/tutur3u/platform/commit/5f1d8f3544e87e78b6555cd679c36f2878d0dab9))
 * **rewise:** enforce workspace chat ownership ([3729e1c](https://github.com/tutur3u/platform/commit/3729e1c06fdc90877848ad96d3c3832c3e6f5854))
 
