@@ -1,0 +1,362 @@
+begin;
+
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+
+select plan(29);
+
+select has_table(
+  'private',
+  'discord_interaction_claims',
+  'Discord interaction claims are stored privately'
+);
+
+select columns_are(
+  'private',
+  'discord_interaction_claims',
+  array[
+    'interaction_id',
+    'interaction_type',
+    'claim_token',
+    'claimed_at',
+    'lease_expires_at',
+    'completed_at',
+    'response_payload',
+    'expires_at'
+  ],
+  'claim rows contain only dispatch lifecycle data'
+);
+
+select has_pk(
+  'private',
+  'discord_interaction_claims',
+  'interaction ids are uniquely claimable'
+);
+
+select has_index(
+  'private',
+  'discord_interaction_claims',
+  'discord_interaction_claims_expires_at_idx',
+  'expired claims have a cleanup index'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array['select', 'insert', 'update', 'delete']) privilege
+    where has_table_privilege(
+      'anon', 'private.discord_interaction_claims', privilege
+    )
+  ),
+  'anon cannot read or mutate Discord interaction claims'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array['select', 'insert', 'update', 'delete']) privilege
+    where has_table_privilege(
+      'authenticated', 'private.discord_interaction_claims', privilege
+    )
+  ),
+  'authenticated users cannot read or mutate Discord interaction claims'
+);
+
+select ok(
+  has_table_privilege(
+    'service_role',
+    'private.discord_interaction_claims',
+    'select,insert,update,delete'
+  ),
+  'service role has the table privileges required by lifecycle RPCs'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon', 'private.claim_discord_interaction(text,smallint,integer)', 'execute'
+  ),
+  'anon cannot claim Discord interactions'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.claim_discord_interaction(text,smallint,integer)',
+    'execute'
+  ),
+  'authenticated users cannot claim Discord interactions'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.claim_discord_interaction(text,smallint,integer)',
+    'execute'
+  ),
+  'service role can atomically claim Discord interactions'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'private.complete_discord_interaction(text,smallint,uuid,jsonb)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'private.release_discord_interaction(text,smallint,uuid)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.complete_discord_interaction(text,smallint,uuid,jsonb)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.release_discord_interaction(text,smallint,uuid)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'private.renew_discord_interaction_claim(text,smallint,uuid,integer)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.renew_discord_interaction_claim(text,smallint,uuid,integer)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'private.prune_discord_interaction_claims(integer)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'private.prune_discord_interaction_claims(integer)',
+    'execute'
+  ),
+  'non-service roles cannot complete, release, or prune Discord interactions'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.complete_discord_interaction(text,smallint,uuid,jsonb)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'private.release_discord_interaction(text,smallint,uuid)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'private.renew_discord_interaction_claim(text,smallint,uuid,integer)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'private.prune_discord_interaction_claims(integer)',
+    'execute'
+  ),
+  'service role can complete, release, and prune Discord interactions'
+);
+
+select is(
+  private.claim_discord_interaction('100000000000000001', 2, 86400)->>'state',
+  'claimed',
+  'the first interaction claim succeeds'
+);
+
+create temporary table first_claim_snapshot as
+select *
+from private.discord_interaction_claims
+where interaction_id = '100000000000000001';
+
+select ok(
+  private.renew_discord_interaction_claim(
+    '100000000000000001',
+    2,
+    (select claim_token from first_claim_snapshot),
+    120
+  ),
+  'the claim owner can renew its completion lease'
+);
+
+select is(
+  private.renew_discord_interaction_claim(
+    '100000000000000001',
+    2,
+    gen_random_uuid(),
+    120
+  ),
+  false,
+  'a stale owner cannot renew another claim lease'
+);
+
+truncate first_claim_snapshot;
+insert into first_claim_snapshot
+select *
+from private.discord_interaction_claims
+where interaction_id = '100000000000000001';
+
+select ok(
+  private.claim_discord_interaction('100000000000000001', 2, 86400)->>'state'
+    = 'processing'
+  and exists (
+    select 1
+    from private.discord_interaction_claims current_claim
+    join first_claim_snapshot original_claim using (interaction_id)
+    where current_claim.interaction_type = original_claim.interaction_type
+      and current_claim.claimed_at = original_claim.claimed_at
+      and current_claim.lease_expires_at = original_claim.lease_expires_at
+      and current_claim.expires_at = original_claim.expires_at
+  ),
+  'an active duplicate loses without replacing the first lease'
+);
+
+create temporary table expired_claim_snapshot as
+select private.claim_discord_interaction(
+  '100000000000000004', 3, 86400
+) as claim;
+
+update private.discord_interaction_claims
+set
+  claimed_at = clock_timestamp() - interval '2 minutes',
+  lease_expires_at = clock_timestamp() - interval '1 minute'
+where interaction_id = '100000000000000004';
+
+select is(
+  private.renew_discord_interaction_claim(
+    '100000000000000004',
+    3,
+    ((select claim from expired_claim_snapshot)->>'claimToken')::uuid,
+    120
+  ),
+  false,
+  'an owner cannot renew an already expired lease'
+);
+
+select ok(
+  private.complete_discord_interaction(
+    '100000000000000001',
+    2,
+    (select claim_token from first_claim_snapshot),
+    '{"type": 9, "data": {"title": "Ticket"}}'::jsonb
+  ),
+  'a claimed interaction can persist its callback response'
+);
+
+select is(
+  private.claim_discord_interaction('100000000000000001', 2, 86400)->'response',
+  '{"type": 9, "data": {"title": "Ticket"}}'::jsonb,
+  'a completed duplicate replays the original callback response'
+);
+
+select is(
+  private.claim_discord_interaction('100000000000000003', 5, 86400)->>'state',
+  'claimed',
+  'a second interaction can be claimed before a failed dispatch'
+);
+
+create temporary table second_claim_snapshot as
+select *
+from private.discord_interaction_claims
+where interaction_id = '100000000000000003';
+
+select lives_ok(
+  format(
+    $$select private.release_discord_interaction('100000000000000003', 5, %L::uuid)$$,
+    (select claim_token from second_claim_snapshot)
+  ),
+  'an unfinished interaction claim can be released'
+);
+
+select is(
+  private.claim_discord_interaction('100000000000000003', 5, 86400)->>'state',
+  'claimed',
+  'a released interaction can be claimed by a retry'
+);
+
+create temporary table retried_claim_snapshot as
+select *
+from private.discord_interaction_claims
+where interaction_id = '100000000000000003';
+
+select isnt(
+  (select claim_token from retried_claim_snapshot),
+  (select claim_token from second_claim_snapshot),
+  'a retried interaction receives a fresh ownership token'
+);
+
+select is(
+  private.complete_discord_interaction(
+    '100000000000000003',
+    5,
+    (select claim_token from second_claim_snapshot),
+    '{"type": 5}'::jsonb
+  ),
+  false,
+  'a stale owner cannot complete a newer interaction claim'
+);
+
+select lives_ok(
+  format(
+    $$select private.release_discord_interaction('100000000000000003', 5, %L::uuid)$$,
+    (select claim_token from second_claim_snapshot)
+  ),
+  'a stale release is safely ignored'
+);
+
+select is(
+  (
+    select count(*)
+    from private.discord_interaction_claims
+    where interaction_id = '100000000000000003'
+  ),
+  1::bigint,
+  'a stale owner cannot release a newer interaction claim'
+);
+
+select throws_ok(
+  $$select private.prune_discord_interaction_claims(null)$$,
+  'P0001',
+  'invalid Discord interaction prune limit',
+  'an explicit null prune limit is rejected'
+);
+
+insert into private.discord_interaction_claims (
+  interaction_id,
+  interaction_type,
+  claimed_at,
+  lease_expires_at,
+  expires_at
+)
+values (
+  '100000000000000002',
+  3,
+  clock_timestamp() - interval '2 hours',
+  clock_timestamp() - interval '90 minutes',
+  clock_timestamp() - interval '1 hour'
+);
+
+select is(
+  private.prune_discord_interaction_claims(1000),
+  1::bigint,
+  'bounded cleanup prunes expired claims'
+);
+
+select is(
+  (
+    select count(*)
+    from private.discord_interaction_claims
+    where interaction_id = '100000000000000002'
+  ),
+  0::bigint,
+  'expired claim data is removed'
+);
+
+select * from finish();
+rollback;
