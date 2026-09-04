@@ -134,6 +134,105 @@ describe('API Key Validation with Permissions', () => {
     expect(result).toBeNull();
   });
 
+  it('should hash-check colliding prefix candidates until one matches', async () => {
+    const keyPrefix = 'ttr_deadbeef';
+    const matchingKey = `${keyPrefix}${'a'.repeat(56)}`;
+    const collidingKey = `${keyPrefix}${'b'.repeat(56)}`;
+    const collidingHash = await hashApiKey(collidingKey);
+    const matchingHash = await hashApiKey(matchingKey);
+
+    const or = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'collision-key',
+          ws_id: 'collision-workspace',
+          key_hash: collidingHash,
+          role_id: null,
+          expires_at: null,
+        },
+        {
+          id: 'matching-key',
+          ws_id: 'matching-workspace',
+          key_hash: matchingHash,
+          role_id: null,
+          expires_at: null,
+        },
+      ],
+      error: null,
+    });
+    const eq = vi.fn().mockReturnValue({ or });
+    const select = vi.fn().mockReturnValue({ eq });
+    const mockApiKeyQuery = {
+      select,
+    };
+    const mockDefaultPermissionsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+    };
+    mockDefaultPermissionsQuery.eq = vi.fn().mockImplementation((field) => {
+      if (field === 'enabled') {
+        return Promise.resolve({ data: [], error: null });
+      }
+      return mockDefaultPermissionsQuery;
+    });
+
+    mockSupabase.from.mockImplementation((tableName: string) => {
+      if (tableName === 'workspace_api_keys') return mockApiKeyQuery;
+      if (tableName === 'workspace_default_permissions') {
+        return mockDefaultPermissionsQuery;
+      }
+      throw new Error(`Unexpected table: ${tableName}`);
+    });
+
+    await expect(validateApiKey(matchingKey)).resolves.toEqual({
+      wsId: 'matching-workspace',
+      keyId: 'matching-key',
+      roleId: null,
+      permissions: [],
+    });
+    expect(select).toHaveBeenCalledWith(
+      'id, ws_id, key_hash, role_id, expires_at'
+    );
+    expect(eq).toHaveBeenCalledWith('key_prefix', keyPrefix);
+  });
+
+  it('should return null when no colliding prefix candidate hash matches', async () => {
+    const keyPrefix = 'ttr_deadbeef';
+    const requestedKey = `${keyPrefix}${'a'.repeat(56)}`;
+    const firstHash = await hashApiKey(`${keyPrefix}${'b'.repeat(56)}`);
+    const secondHash = await hashApiKey(`${keyPrefix}${'c'.repeat(56)}`);
+
+    const or = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 'collision-key-1',
+          ws_id: 'workspace-1',
+          key_hash: firstHash,
+          role_id: null,
+          expires_at: null,
+        },
+        {
+          id: 'collision-key-2',
+          ws_id: 'workspace-2',
+          key_hash: secondHash,
+          role_id: null,
+          expires_at: null,
+        },
+      ],
+      error: null,
+    });
+    const eq = vi.fn().mockReturnValue({ or });
+    const select = vi.fn().mockReturnValue({ eq });
+    mockSupabase.from.mockReturnValue({ select });
+
+    await expect(validateApiKey(requestedKey)).resolves.toBeNull();
+    expect(mockSupabase.from).toHaveBeenCalledOnce();
+    expect(select).toHaveBeenCalledWith(
+      'id, ws_id, key_hash, role_id, expires_at'
+    );
+    expect(eq).toHaveBeenCalledWith('key_prefix', keyPrefix);
+  });
+
   it('should merge role and default permissions', async () => {
     const { key } = generateApiKey();
     const hash = await hashApiKey(key);
