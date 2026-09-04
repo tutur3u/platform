@@ -71,8 +71,8 @@ export async function PUT(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request: req,
     });
     if (!permissions) {
       return NextResponse.json(

@@ -1,7 +1,9 @@
+import { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  cancelStaleTaskBoardQueries,
   mergeOptimisticReorderedTaskIntoCache,
   mergeServerReorderedTaskIntoCache,
 } from '../task/reorder';
@@ -19,6 +21,22 @@ function createTask(overrides: Partial<Task> = {}): Task {
 }
 
 describe('reorder task cache helpers', () => {
+  it('cancels stale board fetches without reverting the dropped destination', () => {
+    const queryClient = new QueryClient();
+    const cancelQueries = vi.spyOn(queryClient, 'cancelQueries');
+
+    cancelStaleTaskBoardQueries(queryClient, 'board-1');
+
+    expect(cancelQueries).toHaveBeenCalledWith(
+      { queryKey: ['tasks', 'board-1'] },
+      { revert: false }
+    );
+    expect(cancelQueries).toHaveBeenCalledWith(
+      { queryKey: ['tasks-full', 'board-1'] },
+      { revert: false }
+    );
+  });
+
   it('marks optimistic list moves so stale list loads cannot move the card back', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-07T01:00:00.000Z'));

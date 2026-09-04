@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'AI Workspace',
-  description:
-    'See how Tuturuuu AI accelerates automation and everyday workflows.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'products.ai.seo',
   pathname: '/products/ai',
 });
 
-export default function AILayout({ children }: { children: ReactNode }) {
+export default function AiLayout({ children }: { children: ReactNode }) {
   return children;
 }

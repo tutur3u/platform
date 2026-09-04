@@ -1,8 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export type { ProrationPreview } from '@tuturuuu/payment-core/proration';
@@ -32,12 +28,11 @@ export async function POST(
     );
   }
 
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
 
   // Get subscription from database with product details
   const { data: subscription, error: subscriptionError } = await supabase
@@ -94,7 +89,7 @@ export async function POST(
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = supabase;
   const { data: currentProduct, error: currentProductError } =
     subscription.product_id
       ? await sbAdmin

@@ -14,6 +14,7 @@ const {
   parseArgs,
 } = require('./release-please-auto-approve.js');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
+const { discoverScriptTests } = require('../run-script-tests.js');
 
 const config = JSON.parse(
   fs.readFileSync(path.join(repoRoot, 'release-please-config.json'), 'utf8')
@@ -382,15 +383,19 @@ test('the release workflow runs the auto approve step with pull-request write ac
   assert.match(workflow, /pull-requests: write/);
 });
 
-test('the auto approve script is registered with the script test runner', () => {
+test('the auto approve test is covered by script-test discovery', () => {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
   );
 
+  assert.equal(
+    packageJson.scripts['test:scripts'],
+    'node scripts/run-script-tests.js'
+  );
   assert.ok(
-    packageJson.scripts['test:scripts'].includes(
+    discoverScriptTests({ repoRoot }).includes(
       'scripts/ci/release-please-auto-approve.test.js'
     ),
-    'a test file that is not in test:scripts never runs'
+    'the release auto-approve test must remain discoverable'
   );
 });

@@ -1,6 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
 
@@ -25,12 +24,14 @@ export async function POST(
     );
   }
 
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(request, [
+    'pay',
+    'platform',
+  ]);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
 
   const {
     data: hasManageSubscriptionPermission,

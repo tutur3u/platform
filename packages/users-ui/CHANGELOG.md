@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.7.6](https://github.com/tutur3u/platform/compare/users-ui-v0.7.5...users-ui-v0.7.6) (2026-08-31)
+
+
+### Bug Fixes
+
+* **contacts:** hide superseded attendance sessions ([3fd0615](https://github.com/tutur3u/platform/commit/3fd0615f838d7bf63f32eda868d0a028200f3170))
+* **contacts:** hide superseded attendance sessions ([#5180](https://github.com/tutur3u/platform/issues/5180)) ([962690c](https://github.com/tutur3u/platform/commit/962690c8d19560f841effafa9204fd1f4dd59e02))
+
+## [0.7.5](https://github.com/tutur3u/platform/compare/users-ui-v0.7.4...users-ui-v0.7.5) (2026-08-26)
+
+
+### Bug Fixes
+
+* **contacts:** sync daily report markers ([00c0e19](https://github.com/tutur3u/platform/commit/00c0e192b4ef3b6ffad9deefa0d268b69c7273b0))
+
+## [0.7.4](https://github.com/tutur3u/platform/compare/users-ui-v0.7.3...users-ui-v0.7.4) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.7.3](https://github.com/tutur3u/platform/compare/users-ui-v0.7.2...users-ui-v0.7.3) (2026-08-20)
+
+
+### Bug Fixes
+
+* **contacts:** sync attendance with schedule updates ([113326e](https://github.com/tutur3u/platform/commit/113326e31ce50e6859df2858f9738ad3b930d2a9))
+
+## [0.7.2](https://github.com/tutur3u/platform/compare/users-ui-v0.7.1...users-ui-v0.7.2) (2026-08-11)
+
+
+### Performance Improvements
+
+* **users:** dedupe approval filter directory query ([#5121](https://github.com/tutur3u/platform/issues/5121)) ([a0bf93e](https://github.com/tutur3u/platform/commit/a0bf93e7553ced110476d0be3b04f00339fe0809))
+
 ## [0.7.1](https://github.com/tutur3u/platform/compare/users-ui-v0.7.0...users-ui-v0.7.1) (2026-08-04)
 
 

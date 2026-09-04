@@ -16,6 +16,7 @@ import {
   sanitizeFormMediaForStorage,
 } from './media';
 import {
+  parseFormSeo,
   parseFormSettings,
   parseFormTheme,
   parseQuestionSettings,
@@ -69,6 +70,7 @@ export function buildFormDefinition({
     shareCode: shareLink?.code ?? null,
     theme: parsedTheme,
     settings: parseFormSettings(form.settings),
+    seo: parseFormSeo(form.seo),
     sections: sections
       .sort((left, right) => left.position - right.position)
       .map((section) => ({

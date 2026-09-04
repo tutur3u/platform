@@ -7,6 +7,7 @@ import {
   setActiveBoardRefresh,
 } from '../board-broadcast-context';
 import { BoardClient } from '../board-client';
+import { writeTaskBoardCache } from '../task-board-cache';
 
 const useWorkspaceLabelsMock = vi.fn();
 const getWorkspaceTaskBoardMock = vi.fn();
@@ -59,6 +60,7 @@ vi.mock('../board-views', () => ({
 
 describe('BoardClient', () => {
   beforeEach(() => {
+    localStorage.clear();
     useWorkspaceLabelsMock.mockReset();
     useWorkspaceLabelsMock.mockReturnValue({ data: [] });
     getWorkspaceTaskBoardMock.mockReset();
@@ -89,6 +91,60 @@ describe('BoardClient', () => {
     setActiveBoardRefresh(null);
   });
 
+  it('hydrates a cached board immediately and revalidates it in the background', async () => {
+    const cachedPagination = {
+      'list-1': {
+        page: 0,
+        hasMore: false,
+        totalCount: 1,
+        isLoading: false,
+        isInitialLoad: false,
+      },
+    };
+    writeTaskBoardCache('user-1:workspace-uuid', 'board-1', {
+      board: {
+        id: 'board-1',
+        name: 'Cached roadmap',
+        ws_id: 'board-ws-uuid',
+        task_lists: [],
+      } as any,
+      pagination: cachedPagination,
+      tasks: [
+        {
+          id: 'task-1',
+          name: 'Cached task',
+          list_id: 'list-1',
+        } as any,
+      ],
+    });
+    getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
+        'board-ws-uuid',
+        'board-1',
+        cachedPagination
+      )
+    );
+    await waitFor(() =>
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1)
+    );
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -116,7 +172,8 @@ describe('BoardClient', () => {
     expect(useWorkspaceLabelsMock).toHaveBeenCalledWith('board-ws-uuid');
     expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
       'board-ws-uuid',
-      'board-1'
+      'board-1',
+      undefined
     );
   });
 
@@ -264,7 +321,7 @@ describe('BoardClient', () => {
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
   });
 
-  it('revalidates loaded lists for relation broadcasts without invalidating visible task caches', async () => {
+  it('debounces relation revalidation so optimistic relation state can settle', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -294,9 +351,26 @@ describe('BoardClient', () => {
         }
       | undefined;
 
-    await act(async () => {
-      realtimeOptions?.onTaskRelationsChange?.(['task-1']);
-    });
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        realtimeOptions?.onTaskRelationsChange?.(['task-1']);
+        realtimeOptions?.onTaskRelationsChange?.(['task-2']);
+      });
+
+      expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4_999);
+      });
+      expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
 
     expect(invalidateSpy).not.toHaveBeenCalledWith({
       queryKey: ['tasks', 'board-1'],
@@ -307,8 +381,8 @@ describe('BoardClient', () => {
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
   });
 
-  it('throttles focus-driven list revalidation for thirty seconds', async () => {
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(100_000);
+  it('throttles focus-driven list revalidation for five minutes', async () => {
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -337,7 +411,7 @@ describe('BoardClient', () => {
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
     });
 
-    nowSpy.mockReturnValue(101_500);
+    nowSpy.mockReturnValue(1_001_500);
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'));
@@ -345,7 +419,15 @@ describe('BoardClient', () => {
 
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
 
-    nowSpy.mockReturnValue(130_000);
+    nowSpy.mockReturnValue(1_299_999);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+
+    nowSpy.mockReturnValue(1_300_000);
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'));
@@ -354,5 +436,35 @@ describe('BoardClient', () => {
     await waitFor(() => {
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('retries a failed wake refresh as soon as connectivity returns', async () => {
+    revalidateLoadedListsMock
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(undefined);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+
+    await act(async () => window.dispatchEvent(new Event('focus')));
+    await waitFor(() =>
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1)
+    );
+
+    await act(async () => window.dispatchEvent(new Event('online')));
+    await waitFor(() =>
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(2)
+    );
   });
 });

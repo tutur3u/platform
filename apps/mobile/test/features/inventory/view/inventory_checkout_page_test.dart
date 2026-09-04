@@ -103,7 +103,10 @@ void main() {
 
     await tester.tap(find.text('Cart'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('No period'));
+    final periodSelector = find.text('No period');
+    await tester.ensureVisible(periodSelector);
+    await tester.pumpAndSettle();
+    await tester.tap(periodSelector);
     await tester.pumpAndSettle();
 
     expect(find.text('TuCon 2026'), findsOneWidget);

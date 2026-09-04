@@ -22,6 +22,28 @@ comments: quiet-window watching, merge, mandatory main-green verification,
 
 ## Required Gates
 
+0. Check whether the PR is part of a stack. A base other than `main` is not
+   proof: a PR can legitimately target `production`, a release branch, or a
+   maintenance branch with no parent PR at all, and treating those as stacked
+   blocks valid closeout work. It is a stack only when the base branch is the
+   head branch of an open pull request, or the PR body names its parent:
+
+       gh pr list --state open --json number,headRefName \
+         --jq '.[] | select(.headRefName == "<this-pr-base>") | .number'
+
+   When it is stacked, the parent must merge first — merging a child while its
+   parent is open pulls the parent's unreviewed commits into `main` through the
+   child, and merging a mid-stack or top PR merges everything below it. Merge
+   bottom-up, one PR at a time, running every gate below for each.
+
+   A native stack (`gh stack`) rebases and retargets the rest on merge and
+   accepts any merge method. A base-chained stack (`gh pr create --base`) does
+   not: merge its parents with `gh pr merge --merge`, because a squash or
+   rebase merge leaves the parent's commits outside `main`'s ancestry and the
+   retargeted child re-shows changes that already landed. Either way, confirm
+   each child's `baseRefName` actually moved before treating the stack as
+   advanced. See `/build/development-tools/stacked-pull-requests` in
+   `apps/docs`.
 1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
    `bun setup` immediately after creating it.
 2. Confirm GitHub auth and rate limits:
@@ -44,6 +66,12 @@ comments: quiet-window watching, merge, mandatory main-green verification,
 11. Verify every `production` workflow for that SHA is green.
 12. After the merge is confirmed on `main`, remove the PR worktree and delete
     its local task branch.
+
+For a user-authorized direct integration without a PR, apply the same safety
+boundary after the scoped current-main commit: wait for the exact main SHA to be
+fully green, run `bun git-sync`, verify production, then remove only that
+completed worktree and its local branch. Never clean blocked, dirty, unmerged,
+user-owned, or other-agent-owned lanes.
 
 ## Watcher Scripts
 
@@ -111,8 +139,8 @@ node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch 
 - Keep temporary watcher files under `tmp/` if custom one-off scripts are
   needed; never stage coordination notes or scratch watchers.
 - Keep the PR worktree and local task branch when the PR remains open, a required
-  gate is blocked, or post-merge verification has not established that the merge
-  is present on `main`.
+  gate is blocked, the merge is absent from `main`, main is not fully green,
+  `bun git-sync` has not completed, or production follow-through is unresolved.
 
 ## Final Report
 

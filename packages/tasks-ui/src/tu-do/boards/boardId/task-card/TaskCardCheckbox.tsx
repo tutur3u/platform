@@ -4,7 +4,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
+import { isTaskBoardTerminalStatus } from '@tuturuuu/utils/task-list-status';
 import { type MouseEvent, memo } from 'react';
 import { isOverdue } from '../../../utils/taskDateUtils';
 import {
@@ -28,14 +28,14 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
   tooltipLabel,
 }: TaskCardCheckboxProps) {
   const taskIsOverdue = isOverdue(task.end_date);
-  const isInResolvedList = isTaskBoardResolvedStatus(taskList?.status);
+  const isInTerminalList = isTaskBoardTerminalStatus(taskList?.status);
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Checkbox
           aria-label={tooltipLabel}
-          checked={!!task.closed_at}
+          checked={isInTerminalList}
           className={cn(
             'h-4 w-4 flex-none rounded-full transition-all duration-200',
             'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
@@ -43,7 +43,7 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
             getTaskCardCheckboxToneClasses(taskList?.color as SupportedColor),
             taskIsOverdue &&
               !task.closed_at &&
-              !isInResolvedList &&
+              !isInTerminalList &&
               TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES
           )}
           disabled={isLoading}

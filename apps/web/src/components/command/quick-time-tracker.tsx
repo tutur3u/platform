@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { activeTimerSessionQueryOptions } from '@tuturuuu/hooks/hooks/use-active-timer-session';
 import {
   CheckCircle,
   CheckSquare,
@@ -71,39 +72,11 @@ export function QuickTimeTracker({
     return () => observer.disconnect();
   }, []);
 
-  const { data: runningSession, isLoading: isLoadingSession } = useQuery({
-    queryKey: ['running-time-session', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions?type=running`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch running session');
-      const data = await response.json();
-      return data.session;
-    },
-    // Optimized refetch strategy:
-    // - Only refetch when visible and there's a running session
-    // - Use longer interval (10 seconds instead of 1 second)
-    // - Disable refetch when window is not focused
-    refetchInterval: (query) => {
-      // Only poll if there's a running session and component is visible
-      if (
-        query.state.data &&
-        isVisible &&
-        document.visibilityState === 'visible'
-      ) {
-        // Progressive polling: increase interval based on session duration
-        const sessionDuration = elapsedTime;
-        if (sessionDuration < 300) return 10000; // First 5 minutes: 10s
-        if (sessionDuration < 1800) return 30000; // 5-30 minutes: 30s
-        return 60000; // After 30 minutes: 60s
-      }
-      return false; // No polling
-    },
-    refetchOnWindowFocus: true,
-    staleTime: 5000, // Consider data fresh for 5 seconds
-  });
+  // The sidebar owns fallback polling for this shared query. This observer
+  // receives the same cache updates without scheduling a second interval.
+  const { data: runningSession, isLoading: isLoadingSession } = useQuery(
+    activeTimerSessionQueryOptions(wsId)
+  );
 
   // Fetch recent sessions for "Continue Last" functionality
   const { data: recentSessions } = useQuery({

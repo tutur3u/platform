@@ -5,6 +5,7 @@
  */
 import { formatDateString } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
+import type { FinanceRouteAuthContext } from '../../../../request-access';
 import { getAccessibleWallet } from '../../../wallet-access';
 
 interface Params {
@@ -21,7 +22,11 @@ interface Params {
  * - days: Number of days to project (default: 30, max: 365)
  * - startDate: Start date for projection (YYYY-MM-DD), defaults to today
  */
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId, wsId } = await params;
   const access = await getAccessibleWallet({
     req,
@@ -29,6 +34,7 @@ export async function GET(req: Request, { params }: Params) {
     walletId,
     requiredPermission: 'view_transactions',
     select: 'id',
+    authContext,
   });
 
   if (access.response) {

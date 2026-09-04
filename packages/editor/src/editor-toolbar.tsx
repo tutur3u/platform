@@ -1,5 +1,6 @@
 'use client';
 
+import { TextSelection } from '@tiptap/pm/state';
 import type { Editor } from '@tiptap/react';
 import {
   AlignCenter,
@@ -14,6 +15,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  ListTree,
   Minus,
   Palette,
   Quote,
@@ -22,6 +24,7 @@ import {
   Underline,
   Undo2,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { ImageUploadControl } from './image-upload-control.js';
 import { LinkToolbarControl } from './link-toolbar-control.js';
 import { StyleToolbarControl } from './style-toolbar-control.js';
@@ -35,6 +38,31 @@ import type {
 
 type InternalPreset = RichTextFeaturePreset | 'legacy';
 
+export function insertCollapsibleSection(editor: Editor) {
+  const { $to } = editor.state.selection;
+  const insertionPosition = $to.depth > 0 ? $to.after(1) : $to.pos;
+  const collapsible = editor.schema.nodeFromJSON({
+    content: [
+      {
+        type: 'collapsibleSummary',
+      },
+      { type: 'paragraph' },
+    ],
+    type: 'collapsible',
+  });
+
+  // Insert after the current top-level block. Putting a block node at an inline
+  // selection endpoint splits the paragraph and controlled Markdown consumers
+  // can then interpret the selected fragment as replaced content.
+  const transaction = editor.state.tr.insert(insertionPosition, collapsible);
+  transaction.setSelection(
+    TextSelection.create(transaction.doc, insertionPosition + 2)
+  );
+  editor.view.dispatch(transaction);
+  editor.view.focus();
+  return true;
+}
+
 export function EditorToolbar({
   editor,
   messages,
@@ -42,6 +70,7 @@ export function EditorToolbar({
   onImageUploadError,
   preset,
   stylePolicy,
+  toolbarEnd,
 }: {
   editor: Editor;
   messages: EditorMessages;
@@ -49,6 +78,7 @@ export function EditorToolbar({
   onImageUploadError?: (error: unknown) => void;
   preset: InternalPreset;
   stylePolicy?: RichTextStylePolicy;
+  toolbarEnd?: ReactNode;
 }) {
   const enhanced = preset !== 'legacy';
   const action = (
@@ -68,6 +98,7 @@ export function EditorToolbar({
   const headingActions: Array<[1 | 2 | 3 | 4, string, ToolbarIcon]> =
     preset === 'full'
       ? [
+          [1, messages.heading1 ?? `${messages.heading} 1`, Heading1],
           [2, messages.heading2 ?? `${messages.heading} 2`, Heading2],
           [3, messages.heading3 ?? `${messages.heading} 3`, Heading3],
           [4, messages.heading4 ?? `${messages.heading} 4`, Heading4],
@@ -148,6 +179,11 @@ export function EditorToolbar({
             editor.isActive('blockquote')
           )
         : null}
+      {preset === 'full'
+        ? action(messages.collapsible, ListTree, () => {
+            insertCollapsibleSection(editor);
+          })
+        : null}
       {preset !== 'compact'
         ? action(messages.horizontalRule, Minus, () =>
             editor.chain().focus().setHorizontalRule().run()
@@ -222,6 +258,7 @@ export function EditorToolbar({
           options={stylePolicy?.highlights ?? []}
         />
       ) : null}
+      {toolbarEnd}
       <span aria-hidden="true" className="tuturuuu-editor-toolbar-separator" />
       {action(messages.undo, Undo2, () => editor.chain().focus().undo().run())}
       {action(messages.redo, Redo2, () => editor.chain().focus().redo().run())}

@@ -6,7 +6,10 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** DONE
+- **Verified implementation:** commit `af350bc28c872ad84080a19f58228710f4b7d0ba`
+  on branch `fix/task-embedding-webhook-auth`; focused tests, Tasks typecheck,
+  `bun check`, Tasks production build, whitespace, and commit hooks passed
 - **Priority:** P0
 - **Effort:** S
 - **Risk:** LOW
@@ -54,7 +57,7 @@ dependencies were not called. Restore stubbed environment values after tests.
 | Focused route test | `bun --cwd apps/tasks vitest run 'src/app/api/v1/webhooks/tasks/embedding/route.test.ts'` | exit 0; all new authentication-order cases pass |
 | Tasks typecheck | `bun type-check:tasks` | exit 0, no TypeScript errors |
 | Repository gate | `bun check` | exit 0 |
-| Tasks build | `bun --cwd apps/tasks run build` | exit 0; Next compiles the changed route |
+| Tasks build | `bun run --cwd apps/tasks build` | exit 0; Next compiles the changed route |
 | Whitespace | `git diff --check` | exit 0, no output |
 
 ## Allowed files
@@ -118,7 +121,7 @@ or the cron route.
      'src/app/api/v1/webhooks/tasks/embedding/route.test.ts'
    bun type-check:tasks
    bun check
-   bun --cwd apps/tasks run build
+   bun run --cwd apps/tasks build
    git diff --check
    ```
 

@@ -1,8 +1,5 @@
 import type {
-  TutoringAttendanceStatus,
-  TutoringQueueItem,
   TutoringReasonType,
-  TutoringSessionRecord,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 
@@ -46,13 +43,6 @@ export const DEFAULT_FORM: TutoringFormValues = {
   sourceFeedbackId: null,
 };
 
-export const STATUS_ACTIONS: TutoringAttendanceStatus[] = [
-  'PENDING',
-  'DONE',
-  'NO_SHOW',
-  'CANCELLED',
-];
-
 export function getDisplayName(
   user: WorkspaceBasicUserRecord | null | undefined
 ) {
@@ -67,56 +57,6 @@ export function getDisplayName(
   if (email) return email;
 
   return '-';
-}
-
-export function toDetailedRows(sessions: TutoringSessionRecord[]) {
-  return sessions.map((session) => ({
-    AttendanceStatus: session.attendance_status,
-    Content: session.content,
-    Date: session.session_date,
-    DurationMinutes: session.duration_minutes,
-    Group: session.group?.name ?? '-',
-    ReasonType: session.reason_type,
-    Student: getDisplayName(session.student),
-    Teacher: getDisplayName(session.teacher),
-    Time: String(session.start_time).slice(0, 5),
-  }));
-}
-
-export function toPayrollRows(sessions: TutoringSessionRecord[]) {
-  const map = new Map<
-    string,
-    { completed_sessions: number; teacher_name: string; total_minutes: number }
-  >();
-
-  for (const session of sessions) {
-    if (session.attendance_status !== 'DONE') continue;
-    const teacherName = getDisplayName(session.teacher);
-    const teacherKey = session.teacher?.id ?? `unassigned:${session.id}`;
-    const current = map.get(teacherKey) ?? {
-      completed_sessions: 0,
-      teacher_name: teacherName,
-      total_minutes: 0,
-    };
-    current.completed_sessions += 1;
-    current.total_minutes += session.duration_minutes;
-    map.set(teacherKey, current);
-  }
-
-  return [...map.values()].sort((a, b) =>
-    a.teacher_name.localeCompare(b.teacher_name)
-  );
-}
-
-export function queueSummary(queue: TutoringQueueItem[]) {
-  const absent = queue.filter(
-    (item) =>
-      item.reason_type === 'ABSENT_RECOVERY' || item.reason_type === 'BOTH'
-  ).length;
-  const weak = queue.filter(
-    (item) => item.reason_type === 'WEAK_SUPPORT' || item.reason_type === 'BOTH'
-  ).length;
-  return { absent, weak };
 }
 
 function parseTimeToMinutes(time: string) {
@@ -249,4 +189,58 @@ export function findSessionSlotConflicts(
   }
 
   return conflicts;
+}
+
+/**
+ * Slot indexes involved in at least one overlap, so the editor can highlight
+ * the offending rows instead of only naming them in a message below the form.
+ */
+export function getConflictingSlotIndexes(form: TutoringFormValues) {
+  const indexes = new Set<number>();
+
+  for (const conflict of findSessionSlotConflicts(form)) {
+    indexes.add(conflict.firstIndex);
+    indexes.add(conflict.secondIndex);
+  }
+
+  return indexes;
+}
+
+/** Duration presets offered next to the free-form minutes input. */
+export const DURATION_PRESETS = [30, 45, 60, 90, 120] as const;
+
+export function nextWeeklySlot(
+  slots: TutoringFormValues['sessionSlots'],
+  fallbackTeacherId: string
+) {
+  const last = slots.at(-1);
+
+  if (!last?.sessionDate) {
+    return {
+      durationMinutes: last?.durationMinutes ?? 45,
+      sessionDate: '',
+      startTime: last?.startTime ?? '18:00',
+      teacherUserId: last?.teacherUserId || fallbackTeacherId,
+    };
+  }
+
+  const [year, month, day] = last.sessionDate
+    .split('-')
+    .map((part) => Number.parseInt(part, 10));
+
+  if (!(year && month && day)) {
+    return { ...last, teacherUserId: last.teacherUserId || fallbackTeacherId };
+  }
+
+  const next = new Date(year, month - 1, day);
+  next.setDate(next.getDate() + 7);
+  const nextMonth = `${next.getMonth() + 1}`.padStart(2, '0');
+  const nextDay = `${next.getDate()}`.padStart(2, '0');
+
+  return {
+    durationMinutes: last.durationMinutes,
+    sessionDate: `${next.getFullYear()}-${nextMonth}-${nextDay}`,
+    startTime: last.startTime,
+    teacherUserId: last.teacherUserId || fallbackTeacherId,
+  };
 }

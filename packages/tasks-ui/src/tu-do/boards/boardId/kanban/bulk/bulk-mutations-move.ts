@@ -8,7 +8,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
-import { getInternalApiOptions } from './bulk-operation-utils';
+import {
+  getInternalApiOptions,
+  restoreBoardTaskCaches,
+  restoreFailedBoardTasks,
+  snapshotBoardTaskCaches,
+  updateBoardTaskCaches,
+} from './bulk-operation-utils';
 import {
   getExternalTaskIdSet,
   getMovePartitions,
@@ -349,32 +355,29 @@ export function useBulkMoveToList(
     },
     onMutate: async ({ listId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
-      const previousTasksArray = Array.isArray(previousTasks)
-        ? (previousTasks as Task[])
-        : [];
-      const externalTaskIds = getExternalTaskIdSet(
-        previousTasksArray.filter((task) => taskIdSet.has(task.id))
-      );
+      const { externalTasks } = getMovePartitions({
+        boardId,
+        queryClient,
+        taskIds,
+      });
+      const externalTaskIds = getExternalTaskIdSet(externalTasks);
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) && !externalTaskIds.has(t.id)
-              ? { ...t, list_id: listId }
-              : t
-          );
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id) && !externalTaskIds.has(task.id)
+            ? { ...task, list_id: listId }
+            : task
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk move to list failed', error);
       toast.error(
@@ -386,39 +389,28 @@ export function useBulkMoveToList(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
+        failedTaskIds,
+      });
 
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
-
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            const timestamps = data.taskTimestamps.get(t.id);
-            return timestamps
-              ? {
-                  ...t,
-                  completed_at: timestamps.completed_at,
-                  closed_at: timestamps.closed_at,
-                }
-              : t;
-          });
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) => {
+          const timestamps = data.taskTimestamps.get(task.id);
+          return timestamps
+            ? {
+                ...task,
+                completed_at: timestamps.completed_at ?? undefined,
+                closed_at: timestamps.closed_at ?? undefined,
+              }
+            : task;
+        });
+      });
 
       for (const tid of data.movedTaskIds) {
         const timestamps = data.taskTimestamps.get(tid);
@@ -551,34 +543,31 @@ export function useBulkMoveToStatus(
     },
     onMutate: async ({ status, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const targetList = columns.find((c) => c.status === status);
-      if (!targetList) return { previousTasks };
+      if (!targetList) return cacheSnapshot;
 
       const taskIdSet = new Set(taskIds);
-      const previousTasksArray = Array.isArray(previousTasks)
-        ? (previousTasks as Task[])
-        : [];
-      const externalTaskIds = getExternalTaskIdSet(
-        previousTasksArray.filter((task) => taskIdSet.has(task.id))
-      );
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            taskIdSet.has(t.id) && !externalTaskIds.has(t.id)
-              ? { ...t, list_id: targetList.id }
-              : t
-          );
-        }
-      );
+      const { externalTasks } = getMovePartitions({
+        boardId,
+        queryClient,
+        taskIds,
+      });
+      const externalTaskIds = getExternalTaskIdSet(externalTasks);
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) =>
+          taskIdSet.has(task.id) && !externalTaskIds.has(task.id)
+            ? { ...task, list_id: targetList.id }
+            : task
+        );
+      });
 
-      return { previousTasks };
+      return cacheSnapshot;
     },
     onError: (error, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+      if (context) {
+        restoreBoardTaskCaches(queryClient, boardId, context);
       }
       console.error('Bulk status move failed', error);
       toast.error(
@@ -590,39 +579,28 @@ export function useBulkMoveToStatus(
         data.failures.map((failure) => failure.taskId)
       );
 
-      if (failedTaskIds.size > 0 && Array.isArray(context?.previousTasks)) {
-        const previousTaskMap = new Map(
-          (context.previousTasks as Task[]).map((task) => [task.id, task])
-        );
+      restoreFailedBoardTasks({
+        queryClient,
+        boardId,
+        previousTasks: context?.previousTasks,
+        previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
+        failedTaskIds,
+      });
 
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (!failedTaskIds.has(task.id)) return task;
-              return previousTaskMap.get(task.id) ?? task;
-            });
-          }
-        );
-      }
-
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            const timestamps = data.taskTimestamps.get(t.id);
-            return timestamps
-              ? {
-                  ...t,
-                  completed_at: timestamps.completed_at,
-                  closed_at: timestamps.closed_at,
-                }
-              : t;
-          });
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) => {
+          const timestamps = data.taskTimestamps.get(task.id);
+          return timestamps
+            ? {
+                ...task,
+                completed_at: timestamps.completed_at ?? undefined,
+                closed_at: timestamps.closed_at ?? undefined,
+              }
+            : task;
+        });
+      });
 
       for (const tid of data.movedTaskIds) {
         const timestamps = data.taskTimestamps.get(tid);

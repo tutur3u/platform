@@ -233,7 +233,7 @@ describe('subscription invoice coverage', () => {
     ).toBe(true);
   });
 
-  it('generates prepaid future month options capped by group ending dates', () => {
+  it('keeps future billing months available after a group ending date', () => {
     const groups = [
       {
         workspace_user_groups: {
@@ -247,10 +247,11 @@ describe('subscription invoice coverage', () => {
     ] satisfies UserGroup[];
 
     expect(
-      getAvailableMonths(groups, [groupId], [], 'en-US', '2026-06', 12).map(
-        (month) => month.value
-      )
-    ).toEqual(['2026-06', '2026-07', '2026-08']);
+      getAvailableMonths(groups, [groupId], [], 'en-US', '2026-06', 3, {
+        now: new Date(2026, 5, 15),
+        workspaceTimezone: 'UTC',
+      }).map((month) => month.value)
+    ).toEqual(['2026-06', '2026-07', '2026-08', '2026-09']);
   });
 
   it('skips paid months and uses scheduled sessions for future prepaid quantities', () => {

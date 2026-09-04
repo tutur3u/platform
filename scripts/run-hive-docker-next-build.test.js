@@ -67,7 +67,7 @@ test('Hive Docker Next build wrapper delegates Next to Node with Docker budgets'
   assert.equal(env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY, '3');
   assert.equal(
     env.NODE_OPTIONS,
-    '--trace-warnings --max-old-space-size=7168 --experimental-require-module'
+    '--trace-warnings --max-old-space-size=4096 --experimental-require-module'
   );
   assert.deepEqual(getHiveDockerNextBuildArgs().slice(-2), [
     'build',

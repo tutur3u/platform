@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   createTuturuuuNextConfig,
   createTuturuuuWebWorkspaceApiRewrites,
+  getTuturuuuNextOptimizePackageImports,
   isTuturuuuNextCacheComponentsEnabled,
   isTuturuuuNextReactCompilerEnabled,
   isTuturuuuTurbopackRustReactCompilerEnabled,
   resolveTuturuuuInfrastructureAppUrl,
   resolveTuturuuuWebAppUrl,
+  TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS,
   TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
   TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
   trimTrailingSlashes,
@@ -25,6 +27,9 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.experimental?.turbopackRustReactCompiler).toBe(true);
     expect(config.images?.remotePatterns).toEqual(
       TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS
+    );
+    expect(config.images?.minimumCacheTTL).toBe(
+      TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS
     );
     expect(config.poweredByHeader).toBe(false);
     expect(config.reactCompiler).toBe(true);
@@ -170,6 +175,25 @@ describe('createTuturuuuNextConfig', () => {
     ]);
   });
 
+  it('stabilizes the webpack-only E2E satellite fallback', () => {
+    const originalWebpackBuild = process.env.NEXT_WEBPACK_BUILD;
+
+    try {
+      process.env.NEXT_WEBPACK_BUILD = '1';
+      const config = createTuturuuuNextConfig();
+
+      expect(config.experimental?.devMemoryThresholdRestart).toBe(false);
+      expect(config.experimental?.optimizePackageImports).toEqual([]);
+      expect(config.experimental?.turbopackRustReactCompiler).toBe(false);
+    } finally {
+      if (originalWebpackBuild === undefined) {
+        delete process.env.NEXT_WEBPACK_BUILD;
+      } else {
+        process.env.NEXT_WEBPACK_BUILD = originalWebpackBuild;
+      }
+    }
+  });
+
   it('dedupes image remote patterns while preserving app additions', () => {
     const config = createTuturuuuNextConfig({
       images: {
@@ -198,6 +222,7 @@ describe('createTuturuuuNextConfig', () => {
       partialPrefetching: false,
       reactCompiler: false,
       transpilePackages: ['@tuturuuu/ui'],
+      images: { minimumCacheTTL: 86_400 },
       experimental: {
         cpus: 2,
         turbopackFileSystemCacheForBuild: false,
@@ -213,6 +238,7 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.partialPrefetching).toBe(false);
     expect(config.reactCompiler).toBe(true);
     expect(config.transpilePackages).toEqual(['@tuturuuu/ui']);
+    expect(config.images?.minimumCacheTTL).toBe(86_400);
     expect(config.experimental?.cpus).toBe(2);
     expect(config.experimental?.turbopackFileSystemCacheForBuild).toBe(false);
     expect(config.experimental?.turbopackRustReactCompiler).toBe(false);
@@ -259,6 +285,16 @@ describe('createTuturuuuWebWorkspaceApiRewrites', () => {
         source: '/api/workspaces/invitations',
         destination: 'https://tuturuuu.com/api/workspaces/invitations',
       },
+      {
+        source: '/api/v1/workspaces/:wsId/settings/permissions',
+        destination:
+          'https://tuturuuu.com/api/v1/workspaces/:wsId/settings/permissions',
+      },
+      {
+        source: '/api/v1/workspaces/:wsId/users/feedbacks',
+        destination:
+          'https://tuturuuu.com/api/v1/workspaces/:wsId/users/feedbacks',
+      },
     ]);
   });
 });
@@ -293,6 +329,22 @@ describe('isTuturuuuTurbopackRustReactCompilerEnabled', () => {
         NEXT_WEBPACK_BUILD: '1',
       })
     ).toBe(false);
+  });
+});
+
+describe('getTuturuuuNextOptimizePackageImports', () => {
+  it('keeps shared package optimization for Turbopack', () => {
+    expect(getTuturuuuNextOptimizePackageImports(['@tuturuuu/ui'], {})).toEqual(
+      [...TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS, '@tuturuuu/ui']
+    );
+  });
+
+  it('avoids webpack React Server Consumer Manifest barrel corruption', () => {
+    expect(
+      getTuturuuuNextOptimizePackageImports(['@tuturuuu/ui'], {
+        NEXT_WEBPACK_BUILD: '1',
+      })
+    ).toEqual(['@tuturuuu/ui']);
   });
 });
 
@@ -447,5 +499,36 @@ describe('trimTrailingSlashes', () => {
     expect(trimTrailingSlashes('https://example.com/path///')).toBe(
       'https://example.com/path'
     );
+  });
+
+  it('excludes opted-in paths from the anti-framing rule', async () => {
+    const config = createTuturuuuNextConfig({
+      framablePathPatterns: ['embed/[^/]+'],
+    });
+
+    const headers = await config.headers?.();
+    const source = headers?.[0]?.source ?? '';
+
+    expect(source).toContain('embed/[^/]+(?:/|$)');
+    // The platform default must survive an app adding its own patterns.
+    expect(source).toContain('external-projects/assets/[^/]+/webgl(?:/|$)');
+
+    // The `source` is a path-to-regexp pattern, so assert the lookahead does
+    // what it claims: opted-in paths must not match the deny rule, and
+    // everything else still must.
+    const lookahead = new RegExp(`^${source.slice('/:path('.length, -1)}$`);
+    expect(lookahead.test('embed/abc123')).toBe(false);
+    expect(lookahead.test('embed/abc123/preview')).toBe(false);
+    expect(lookahead.test('embedded-elsewhere')).toBe(true);
+    expect(lookahead.test('f/abc123')).toBe(true);
+    expect(lookahead.test('personal/forms')).toBe(true);
+  });
+
+  it('does not leak framablePathPatterns into the Next config object', () => {
+    const config = createTuturuuuNextConfig({
+      framablePathPatterns: ['embed/[^/]+'],
+    });
+
+    expect(config).not.toHaveProperty('framablePathPatterns');
   });
 });

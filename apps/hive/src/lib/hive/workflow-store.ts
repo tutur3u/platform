@@ -122,6 +122,38 @@ export function mapHiveWorkflowRun(row: HiveWorkflowRunRow) {
   };
 }
 
+export type CreateHiveWorkflowInput = {
+  actorUserId: string;
+  definition: HiveWorkflowDefinition;
+  description?: string | null;
+  enabled: boolean;
+  name: string;
+  serverId: string;
+};
+
+export async function insertHiveWorkflow(
+  sql: import('postgres').Sql | import('postgres').TransactionSql,
+  input: CreateHiveWorkflowInput
+) {
+  const [workflow] = await sql<HiveWorkflowRow[]>`
+    insert into hive_workflows (
+      server_id, name, description, enabled, definition, created_by, updated_by
+    )
+    values (
+      ${input.serverId},
+      ${input.name},
+      ${input.description ?? null},
+      ${input.enabled},
+      ${sql.json(input.definition as unknown as Json)},
+      ${input.actorUserId},
+      ${input.actorUserId}
+    )
+    returning id, server_id, name, description, enabled, version, definition,
+      created_by, updated_by, archived_at, created_at, updated_at
+  `;
+  return workflow ? mapHiveWorkflow(workflow) : null;
+}
+
 export async function listHiveWorkflows(input: {
   isAdmin: boolean;
   serverId: string;
@@ -171,33 +203,10 @@ export async function getHiveWorkflow(input: {
   return workflow ? mapHiveWorkflow(workflow) : null;
 }
 
-export async function createHiveWorkflow(input: {
-  actorUserId: string;
-  definition: HiveWorkflowDefinition;
-  description?: string | null;
-  enabled: boolean;
-  name: string;
-  serverId: string;
-}) {
+export async function createHiveWorkflow(input: CreateHiveWorkflowInput) {
   await ensureHiveWorkflowSchema();
   const sql = getHiveSql();
-  const [workflow] = await sql<HiveWorkflowRow[]>`
-    insert into hive_workflows (
-      server_id, name, description, enabled, definition, created_by, updated_by
-    )
-    values (
-      ${input.serverId},
-      ${input.name},
-      ${input.description ?? null},
-      ${input.enabled},
-      ${sql.json(input.definition as unknown as Json)},
-      ${input.actorUserId},
-      ${input.actorUserId}
-    )
-    returning id, server_id, name, description, enabled, version, definition,
-      created_by, updated_by, archived_at, created_at, updated_at
-  `;
-  return workflow ? mapHiveWorkflow(workflow) : null;
+  return insertHiveWorkflow(sql, input);
 }
 
 export async function updateHiveWorkflow(input: {

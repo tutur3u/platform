@@ -8,6 +8,8 @@ preload = ["./tests/bun-test-redirect.ts"]
 [install]
 # Explicitly set the linker to isolated
 linker = "isolated"
+# The global store currently splits peer/type identity across this monorepo.
+globalStore = false
 # Require npm releases to be at least 1 day old before Bun can install them
 minimumReleaseAge = 86400
 minimumReleaseAgeExcludes = [
@@ -64,6 +66,26 @@ minimumReleaseAgeExcludes = [
   "next-intl",
   "next-intl-swc-plugin-extractor",
   "use-intl",
+  # VoidZero maintains Vitest and publishes its first-party packages together.
+  # Keep this exact-name list aligned with every @vitest package in bun.lock.
+  "vitest",
+  "@vitest/browser",
+  "@vitest/browser-playwright",
+  "@vitest/browser-preview",
+  "@vitest/browser-webdriverio",
+  "@vitest/coverage-istanbul",
+  "@vitest/coverage-v8",
+  "@vitest/expect",
+  "@vitest/istanbul-lib-coverage",
+  "@vitest/istanbul-lib-report",
+  "@vitest/mocker",
+  "@vitest/pretty-format",
+  "@vitest/runner",
+  "@vitest/snapshot",
+  "@vitest/spy",
+  "@vitest/ui",
+  "@vitest/utils",
+  "@vitest/ws-client",
   # Lucide's first-party packages are trusted and published together.
   "@lucide/lab",
   "lucide-react",

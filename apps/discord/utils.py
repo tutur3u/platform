@@ -10,6 +10,8 @@ from supabase import Client, create_client
 
 from config import DEFAULT_SLUG_LENGTH, MAX_SLUG_LENGTH
 
+DISCORD_INTERACTION_RETENTION_SECONDS = 86400
+
 
 def is_valid_url(url: str) -> bool:
     """Validate URL format."""
@@ -53,6 +55,76 @@ def get_supabase_client() -> Client:
         raise Exception("Supabase credentials not found in environment variables")
 
     return create_client(supabase_url, supabase_key)
+
+
+def claim_discord_interaction(interaction_id: str, interaction_type: int) -> dict:
+    """Claim an interaction or retrieve its previously completed response."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+        "p_retention_seconds": DISCORD_INTERACTION_RETENTION_SECONDS,
+    }
+    response = (
+        get_supabase_client().schema("private").rpc("claim_discord_interaction", params).execute()
+    )
+    if not isinstance(response.data, dict):
+        raise RuntimeError("Invalid Discord interaction claim response")
+    return response.data
+
+
+def complete_discord_interaction(
+    interaction_id: str,
+    interaction_type: int,
+    claim_token: str,
+    response_payload: dict,
+) -> None:
+    """Persist a protocol response after dispatch has completed successfully."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+        "p_claim_token": claim_token,
+        "p_response_payload": response_payload,
+    }
+    response = (
+        get_supabase_client()
+        .schema("private")
+        .rpc("complete_discord_interaction", params)
+        .execute()
+    )
+    if response.data is not True:
+        raise RuntimeError("Discord interaction completion was not recorded")
+
+
+def renew_discord_interaction_claim(
+    interaction_id: str, interaction_type: int, claim_token: str
+) -> None:
+    """Extend an owned claim before persisting its dispatched response."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+        "p_claim_token": claim_token,
+        "p_lease_seconds": 60,
+    }
+    response = (
+        get_supabase_client()
+        .schema("private")
+        .rpc("renew_discord_interaction_claim", params)
+        .execute()
+    )
+    if response.data is not True:
+        raise RuntimeError("Discord interaction claim lease was not renewed")
+
+
+def release_discord_interaction(
+    interaction_id: str, interaction_type: int, claim_token: str
+) -> None:
+    """Release an unfinished claim so a delivery retry can dispatch it."""
+    params: dict[str, Any] = {
+        "p_interaction_id": interaction_id,
+        "p_interaction_type": interaction_type,
+        "p_claim_token": claim_token,
+    }
+    get_supabase_client().schema("private").rpc("release_discord_interaction", params).execute()
 
 
 def is_user_authorized_for_guild(discord_user_id: str, guild_id: str) -> bool:

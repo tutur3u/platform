@@ -29,10 +29,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import {
-  getActiveBoardRefresh,
-  useBoardBroadcast,
-} from './board-broadcast-context';
+import { useBoardBroadcast } from './board-broadcast-context';
 import {
   patchTaskInVisibleCaches,
   restoreVisibleTaskCaches,
@@ -292,7 +289,6 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       },
       onSuccess: () => {
         broadcast?.('task:relations-changed', { taskId });
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
       },
       // Note: Removed onSettled invalidation to prevent flicker
       // Optimistic updates handle immediate UI feedback

@@ -5,7 +5,7 @@ vi.mock('next-intl/plugin', () => ({
 }));
 
 describe('AI Studio next config rewrites', () => {
-  it('falls back to the central app for every shared settings API', async () => {
+  it('routes central static APIs before satellite dynamic routes', async () => {
     vi.stubEnv('WEB_APP_URL', 'https://web.example.com');
 
     const { default: nextConfig } = await import('../next.config');
@@ -17,6 +17,16 @@ describe('AI Studio next config rewrites', () => {
         {
           destination: 'https://web.example.com/api/workspaces/invitations',
           source: '/api/workspaces/invitations',
+        },
+        {
+          destination:
+            'https://web.example.com/api/v1/workspaces/:wsId/settings/permissions',
+          source: '/api/v1/workspaces/:wsId/settings/permissions',
+        },
+        {
+          destination:
+            'https://web.example.com/api/v1/workspaces/:wsId/users/feedbacks',
+          source: '/api/v1/workspaces/:wsId/users/feedbacks',
         },
       ],
       fallback: [

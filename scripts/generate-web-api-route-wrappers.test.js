@@ -49,12 +49,29 @@ test('wrapperContent imports one legacy route and adds GET-backed HEAD fallback'
     wrapperContent('users/me/profile/route.ts', ['GET', 'PATCH']),
     `${GENERATED_MARKER}
 
-import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
+import {
+  createLegacyGetHandler,
+  createLegacyHeadHandler,
+} from '@/legacy-api-routes/head';
 import * as legacyRoute from '@/legacy-api-routes/users/me/profile/route';
 
-export const GET = legacyRoute.GET;
-export const HEAD = createLegacyHeadHandler(legacyRoute.GET);
+export const GET = createLegacyGetHandler(legacyRoute.GET);
+export const HEAD = createLegacyHeadHandler(GET);
 export const PATCH = legacyRoute.PATCH;
+`
+  );
+});
+
+test('wrapperContent still streams explicit GET routes that provide HEAD', () => {
+  assert.equal(
+    wrapperContent('health/route.ts', ['GET', 'HEAD']),
+    `${GENERATED_MARKER}
+
+import { createLegacyGetHandler } from '@/legacy-api-routes/head';
+import * as legacyRoute from '@/legacy-api-routes/health/route';
+
+export const GET = createLegacyGetHandler(legacyRoute.GET);
+export const HEAD = legacyRoute.HEAD;
 `
   );
 });

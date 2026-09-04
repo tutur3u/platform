@@ -6,12 +6,10 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -21,6 +19,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskRelatedMenuTranslations {
   related_tasks: string;
@@ -96,7 +99,10 @@ export function TaskRelatedMenu({
   );
 
   return (
-    <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
+    <TaskControlledSubmenu
+      submenuId="related"
+      onOpenChange={handleSubContentOpenChange}
+    >
       <DropdownMenuSubTrigger>
         <Link2 className="h-4 w-4 text-dynamic-blue" />
         {translations.related_tasks}
@@ -106,7 +112,12 @@ export function TaskRelatedMenu({
           </span>
         )}
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 p-0">
+      <DropdownMenuSubContent
+        className="w-80 p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         {/* Current Related Tasks */}
         {relatedTasks.length > 0 && (
           <div className="border-b">
@@ -166,7 +177,7 @@ export function TaskRelatedMenu({
 
         {/* Search and Add */}
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
+          <TaskCommandSearchInput
             placeholder={translations.search_tasks_to_link}
             value={searchQuery}
             onValueChange={setSearchQuery}
@@ -237,6 +248,6 @@ export function TaskRelatedMenu({
           </p>
         </div>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

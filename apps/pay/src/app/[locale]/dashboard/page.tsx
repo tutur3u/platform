@@ -5,14 +5,11 @@ import {
   SatelliteWorkspaceInvitationList,
 } from '@tuturuuu/satellite/workspace-invitation';
 import { headers } from 'next/headers';
+import { getLocale } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
 
-export default async function DashboardEntryPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
+export default async function DashboardEntryPage() {
+  const locale = await getLocale();
   const requestHeaders = await headers();
   const appSession = await getSatelliteAppSession('pay');
 

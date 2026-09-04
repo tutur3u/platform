@@ -870,7 +870,7 @@ describe('withSessionAuth', () => {
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/time-tracking/sessions'
       )
-    ).toEqual({ targetApp: ['calendar', 'track'] });
+    ).toEqual({ targetApp: ['calendar', 'tasks', 'track'] });
     expect(
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/tulearn/home'

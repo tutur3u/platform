@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/email-service-v0.5.0...email-service-v0.6.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+* **email:** secure external app sending policies ([e335e2d](https://github.com/tutur3u/platform/commit/e335e2d3847735a10ee26bf18aa2e5a1dab3abc3))
+
+
+### Bug Fixes
+
+* **ci:** restore migration validation parity ([92413f2](https://github.com/tutur3u/platform/commit/92413f27761f2ad8bfa7f82218c4ebefeb7876bf))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/email-service-v0.4.0...email-service-v0.5.0) (2026-07-25)
 
 

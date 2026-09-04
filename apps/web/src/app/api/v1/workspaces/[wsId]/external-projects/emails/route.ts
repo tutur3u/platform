@@ -1,6 +1,7 @@
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -12,6 +13,10 @@ import {
   summariseBudget,
   wouldExceedBudget,
 } from '@/lib/external-projects/email-budget';
+import {
+  listDisallowedRecipientDomains,
+  readExternalProjectEmailPolicy,
+} from '@/lib/external-projects/email-policy';
 
 /**
  * Outbound mail for linked external projects.
@@ -85,6 +90,28 @@ export async function POST(
     if (access.response) return access.response;
 
     const payload = emailSchema.parse(await request.json());
+    const policy = readExternalProjectEmailPolicy(access.binding.settings);
+
+    if (!policy.enabled) {
+      return NextResponse.json(
+        { error: 'Outbound email is not enabled for this external app' },
+        { status: 403 }
+      );
+    }
+
+    const disallowedDomains = listDisallowedRecipientDomains(
+      payload.to,
+      policy
+    );
+    if (disallowedDomains.length > 0) {
+      return NextResponse.json(
+        {
+          disallowedDomains,
+          error: 'One or more recipient domains are not allowed',
+        },
+        { status: 403 }
+      );
+    }
     const text = payload.text ?? null;
     const html = payload.html ?? (text ? toHtmlBody(text) : null);
 
@@ -110,22 +137,28 @@ export async function POST(
       );
     }
 
-    const result = await sendWorkspaceEmail(wsId, {
-      content: {
-        html,
-        subject: payload.subject,
-        ...(payload.replyTo?.length ? { replyTo: payload.replyTo } : {}),
-        ...(text ? { text } : {}),
+    const result = await sendWorkspaceEmail(
+      wsId,
+      {
+        content: {
+          html,
+          subject: payload.subject,
+          ...(payload.replyTo?.length ? { replyTo: payload.replyTo } : {}),
+          ...(text ? { text } : {}),
+        },
+        metadata: {
+          entityId: payload.entityId,
+          entityType: payload.entityType ?? 'external-project-email',
+          // Tagged with the calling app so the audit trail attributes every send
+          // to the satellite that asked for it.
+          templateType: `external-project:${access.appId}`,
+        },
+        recipients: { to: payload.to },
       },
-      metadata: {
-        entityId: payload.entityId,
-        entityType: payload.entityType ?? 'external-project-email',
-        // Tagged with the calling app so the audit trail attributes every send
-        // to the satellite that asked for it.
-        templateType: `external-project:${access.appId}`,
-      },
-      recipients: { to: payload.to },
-    });
+      policy.useRootWorkspaceCredentials
+        ? { credentialWorkspaceId: ROOT_WORKSPACE_ID }
+        : undefined
+    );
 
     if (!result.success) {
       return NextResponse.json(

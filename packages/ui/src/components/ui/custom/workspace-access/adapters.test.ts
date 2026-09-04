@@ -1,8 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createStandardWorkspaceAccessAdapter,
+  mergeWorkspaceInvitationRoles,
   normalizeWorkspaceAccessRole,
 } from './adapters';
+
+const mocks = vi.hoisted(() => ({
+  inviteWorkspaceMember: vi.fn().mockResolvedValue({ message: 'success' }),
+}));
+
+vi.mock('@tuturuuu/internal-api/workspaces', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/internal-api/workspaces')
+  >()),
+  inviteWorkspaceMember: mocks.inviteWorkspaceMember,
+}));
 
 describe('workspace access adapters', () => {
   it('normalizes role permissions into the shared access role shape', () => {
@@ -36,5 +48,81 @@ describe('workspace access adapters', () => {
     expect(
       createStandardWorkspaceAccessAdapter().updateMemberProfile
     ).toBeTypeOf('function');
+  });
+
+  it('hydrates pending email and registered-user invitations with their assigned roles', () => {
+    const members = mergeWorkspaceInvitationRoles(
+      [
+        {
+          default_permissions: [],
+          email: 'pending@example.com',
+          id: null,
+          is_creator: false,
+          pending: true,
+          roles: [],
+        },
+        {
+          default_permissions: [],
+          email: null,
+          id: 'user-2',
+          is_creator: false,
+          pending: true,
+          roles: [],
+        },
+        {
+          default_permissions: [],
+          email: 'joined@example.com',
+          id: 'user-3',
+          is_creator: false,
+          pending: false,
+          roles: [{ id: 'role-owner', name: 'Owner', permissions: [] }],
+        },
+      ],
+      [
+        {
+          email: 'Pending@Example.com',
+          roles: [
+            { id: 'role-editor', name: 'Editor' },
+            { id: 'role-reviewer', name: 'Reviewer' },
+          ],
+          userId: null,
+        },
+        {
+          email: null,
+          roles: [{ id: 'role-reviewer', name: 'Reviewer' }],
+          userId: 'user-2',
+        },
+      ]
+    );
+
+    expect(members[0]?.roles).toEqual([
+      { id: 'role-editor', name: 'Editor', permissions: [] },
+      { id: 'role-reviewer', name: 'Reviewer', permissions: [] },
+    ]);
+    expect(members[1]?.roles).toEqual([
+      { id: 'role-reviewer', name: 'Reviewer', permissions: [] },
+    ]);
+    expect(members[2]?.roles).toEqual([
+      { id: 'role-owner', name: 'Owner', permissions: [] },
+    ]);
+  });
+
+  it('forwards multiple role assignments with every standard invite', async () => {
+    const adapter = createStandardWorkspaceAccessAdapter();
+
+    await adapter.inviteMembers('ws-1', {
+      accessPreset: 'member',
+      emails: ['editor@example.com'],
+      memberType: 'MEMBER',
+      roleIds: ['role-editor', 'role-reviewer'],
+    });
+
+    expect(mocks.inviteWorkspaceMember).toHaveBeenCalledWith('ws-1', {
+      accessPreset: 'member',
+      confirmDefaultAdminMigration: undefined,
+      email: 'editor@example.com',
+      memberType: 'MEMBER',
+      roleIds: ['role-editor', 'role-reviewer'],
+    });
   });
 });

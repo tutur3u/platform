@@ -132,7 +132,8 @@ describe('TasksTab layout', () => {
   });
 
   it('uses a board-like overflow shell for populated project tasks', () => {
-    renderTasksTab();
+    const setFilters = vi.fn();
+    renderTasksTab({ setFilters });
 
     expect(screen.getByTestId('task-project-tasks-tab')).toHaveClass(
       'min-h-0',
@@ -151,6 +152,16 @@ describe('TasksTab layout', () => {
     expect(captured.kanbanProps.disableSort).toBe(true);
     expect(captured.kanbanProps.listStatusFilter).toBe('active');
     expect(captured.kanbanProps.filters).toBe(filters);
+
+    captured.kanbanProps.onFiltersChange({
+      ...filters,
+      sortBy: undefined,
+    });
+
+    expect(setFilters).toHaveBeenCalledWith({
+      ...filters,
+      sortBy: undefined,
+    });
   });
 
   it('keeps list view sorting and search aligned with board views', () => {

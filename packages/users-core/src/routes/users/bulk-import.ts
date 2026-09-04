@@ -10,6 +10,11 @@ interface Params {
   }>;
 }
 
+interface WorkspaceUserRouteActor {
+  email?: string | null;
+  id: string;
+}
+
 const ImportUserSchema = z.object({
   fullName: z.string(),
   email: z.string().email(),
@@ -17,11 +22,15 @@ const ImportUserSchema = z.object({
 
 const BulkImportSchema = z.array(ImportUserSchema);
 
-export async function POST(req: Request, { params }: Params) {
+export async function handleBulkImportWorkspaceUsersRequest(
+  req: Request,
+  { params }: Params,
+  actor?: WorkspaceUserRouteActor | null
+) {
   const { wsId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getPermissions({ wsId, request: req, user: actor });
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -95,4 +104,8 @@ export async function POST(req: Request, { params }: Params) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(req: Request, context: Params) {
+  return handleBulkImportWorkspaceUsersRequest(req, context);
 }

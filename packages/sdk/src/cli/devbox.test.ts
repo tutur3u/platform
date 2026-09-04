@@ -30,7 +30,7 @@ vi.mock('./devbox-agent-capabilities', () => ({
       memory: { freeBytes: 1024, totalBytes: 2048 },
       uptimeSeconds: 120,
     },
-    runtimes: { bun: '1.3.14', node: 'v26.0.0' },
+    runtimes: { bun: '1.4.0', node: 'v26.0.0' },
     tools: { docker: 'Docker version 29.0.0', git: 'git version 2.54.0' },
   })),
 }));
@@ -42,7 +42,7 @@ const doctorOk = {
   setupCommands: [],
   status: 'ok' as const,
   tools: {
-    bun: '1.3.14',
+    bun: '1.4.0',
     docker: 'Docker version 28.0.0',
     git: 'git version 2.50.0',
     node: 'v24.0.0',
@@ -347,7 +347,7 @@ describe('devbox CLI helpers', () => {
     ).toMatchObject({
       capabilities: {
         cli: { name: 'ttr', version: '0.2.0' },
-        runtimes: { bun: '1.3.14', node: 'v26.0.0' },
+        runtimes: { bun: '1.4.0', node: 'v26.0.0' },
       },
     });
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
@@ -372,7 +372,7 @@ describe('devbox CLI helpers', () => {
           },
         }),
         getRun: vi.fn().mockResolvedValue({
-          logs: ['remote$ bun --version', '1.3.14'],
+          logs: ['remote$ bun --version', '1.4.0'],
           run: {
             command: ['bun', '--version'],
             exitCode: 0,
@@ -398,7 +398,7 @@ describe('devbox CLI helpers', () => {
       expect.stringContaining('Devbox run run-1 succeeded')
     );
     expect(write).toHaveBeenCalledWith('remote$ bun --version\n');
-    expect(write).toHaveBeenCalledWith('1.3.14\n');
+    expect(write).toHaveBeenCalledWith('1.4.0\n');
   });
 
   it('queues CLI upgrades as remote devbox runs', async () => {

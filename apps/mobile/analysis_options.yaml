@@ -4,7 +4,14 @@ analyzer:
     - build/**
     - lib/l10n/gen/*
     - vendor/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 linter:
   rules:
     public_member_api_docs: false
+    unnecessary_unawaited: false
     use_null_aware_elements: false

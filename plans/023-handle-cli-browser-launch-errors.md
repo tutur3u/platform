@@ -10,7 +10,10 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** DONE
+- **Verified implementation:** commit `863b00e1e3d04955edb2d00b3afadbc5c47a824a`
+  on branch `fix/cli-browser-launch-errors`; 12 focused tests, SDK
+  typecheck/build, all repository gates, whitespace, and hooks passed
 - **Priority:** P1
 - **Effort:** S
 - **Risk:** LOW
@@ -47,8 +50,8 @@ Load `$tuturuuu-cli`, `$tuturuuu-platform`, and
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
 | Focused tests | `bun --cwd packages/sdk vitest run src/cli/browser.test.ts src/cli/auth.test.ts` | command selection, spawn, error, and manual fallback cases pass |
-| SDK typecheck | `bun --cwd packages/sdk run type-check` | exit 0 |
-| SDK build | `bun --cwd packages/sdk run build` | exit 0 |
+| SDK typecheck | `bun run --cwd packages/sdk type-check` | exit 0 |
+| SDK build | `bun run --cwd packages/sdk build` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

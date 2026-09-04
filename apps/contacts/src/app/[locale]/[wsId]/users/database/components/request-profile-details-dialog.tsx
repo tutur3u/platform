@@ -31,6 +31,7 @@ import { PROFILE_LINK_FIELDS } from '@tuturuuu/users-core/features/user-profile-
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { buildExternalUserProfileUrl } from '@/lib/user-profile-links';
 
 function HelpTooltip({ label }: { label: string }) {
   return (
@@ -141,7 +142,7 @@ export function RequestProfileDetailsDialog({
         max_uses: maxUses ? Number.parseInt(maxUses, 10) : null,
       }),
     onSuccess: ({ code }) => {
-      setShareUrl(`${window.location.origin}/shared/user-profile/${code}`);
+      setShareUrl(buildExternalUserProfileUrl(code));
       queryClient.invalidateQueries({
         queryKey: ['workspace-user-profile-links', wsId],
       });

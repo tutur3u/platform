@@ -15,7 +15,8 @@
 - **Effort:** L
 - **Risk:** MED
 - **Category:** Tests / Developer Experience
-- **Depends on:** Plan 004; active Tasks and Inventory coordination lanes
+- **Depends on:** Plan 004 (DONE at reviewed commit `558397b971`); active Tasks
+  and Inventory coordination lanes remain the blockers
 - **Planned at:** commit `68a1457aed`, 2026-08-10
 
 ## Why this matters
@@ -193,6 +194,7 @@ make the gate green.
 
 ## Maintenance notes
 
-Plan 004 should land first so future root-level validator tests are discovered.
+Plan 004 is DONE at reviewed commit `558397b971`; incorporate that base before
+execution so future root-level validator tests are discovered.
 After this plan, any workspace with committed unit tests but no `test` task is a
 review failure; add a static manifest-coverage validator if the pattern recurs.

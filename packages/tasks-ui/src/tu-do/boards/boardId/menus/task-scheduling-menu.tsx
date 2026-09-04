@@ -22,7 +22,6 @@ import {
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -37,6 +36,10 @@ import {
   taskDurationHoursToMinutes,
   taskDurationMinutesToHours,
 } from './task-scheduling-utils';
+import {
+  TaskControlledSubmenu,
+  useOptionalTaskSubmenuController,
+} from './task-submenu-controller';
 
 interface TaskSchedulingMenuTranslations {
   schedule?: string;
@@ -166,6 +169,7 @@ export function TaskSchedulingMenu({
   translations,
 }: TaskSchedulingMenuProps) {
   const queryClient = useQueryClient();
+  const submenuController = useOptionalTaskSubmenuController();
   const t = useMemo(() => getTranslations(translations), [translations]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -267,6 +271,7 @@ export function TaskSchedulingMenu({
       toast.success(t.saved);
       onUpdate();
       setOpen(false);
+      submenuController?.setSubmenuOpen('scheduling', false);
       onClose?.();
     } catch (error) {
       queryClient.setQueryData(['tasks', boardId], previousTasks);
@@ -295,7 +300,11 @@ export function TaskSchedulingMenu({
   ];
 
   return (
-    <DropdownMenuSub open={open} onOpenChange={setOpen}>
+    <TaskControlledSubmenu
+      submenuId="scheduling"
+      forceOpen={open}
+      onOpenChange={setOpen}
+    >
       <DropdownMenuSubTrigger className="min-w-0">
         <CalendarClock className="h-4 w-4 shrink-0 text-dynamic-amber" />
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -460,6 +469,6 @@ export function TaskSchedulingMenu({
           </div>
         </div>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

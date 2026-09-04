@@ -18,7 +18,9 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { DEFAULT_MAIL_FOLDER, getMailFolderHref } from './mail-folders';
 import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
@@ -31,6 +33,8 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id } = await params;
   const requestHeaders = await headers();
   const user = await getSatelliteAppSessionUser('mail');
@@ -48,7 +52,10 @@ export default async function Layout({ children, params }: LayoutProps) {
         <SatelliteWorkspaceInvitationCard
           afterDeclineHref="/"
           invitation={invitation}
-          workspaceHref={`/${invitation.workspace.id}`}
+          workspaceHref={getMailFolderHref(
+            invitation.workspace.id,
+            DEFAULT_MAIL_FOLDER
+          )}
         />
       );
     }
@@ -82,7 +89,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions />
+            <NavbarActions userId={user.id} />
           </Suspense>
         }
         defaultCollapsed={defaultCollapsed}

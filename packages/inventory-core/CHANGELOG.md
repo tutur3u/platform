@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.0...inventory-core-v0.8.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.7.0...inventory-core-v0.8.0) (2026-08-04)
 
 

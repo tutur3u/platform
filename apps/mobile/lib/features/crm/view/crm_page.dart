@@ -559,18 +559,14 @@ class _CrmPageState extends State<CrmPage> {
     final wsId = _wsId;
     if (wsId == null) return;
 
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: const ['csv', 'tsv', 'txt'],
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
+    if (file == null) return;
 
-    final file = result.files.single;
-    final bytes =
-        file.bytes ??
-        (file.path == null ? null : await File(file.path!).readAsBytes());
-    if (bytes == null || !mounted) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
 
     final items = _parseCrmImportRows(utf8.decode(bytes));
     if (items.isEmpty) {

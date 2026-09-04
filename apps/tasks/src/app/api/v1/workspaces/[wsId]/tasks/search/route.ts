@@ -175,6 +175,34 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
+      const tasks = data ?? [];
+      const taskIds = tasks.map((task) => task.id);
+      const assignedTaskIds = new Set<string>();
+
+      if (taskIds.length > 0) {
+        const { data: assignments, error: assignmentsError } = await sbAdmin
+          .from('task_assignees')
+          .select('task_id')
+          .eq('user_id', user.id)
+          .in('task_id', taskIds);
+
+        if (assignmentsError) {
+          console.error('Error loading task search assignments', {
+            error: assignmentsError,
+            userId: user.id,
+            wsId,
+          });
+          return NextResponse.json(
+            { message: 'Error loading task search assignments' },
+            { status: 500 }
+          );
+        }
+
+        for (const assignment of assignments ?? []) {
+          assignedTaskIds.add(assignment.task_id);
+        }
+      }
+
       return NextResponse.json({
         ...(fallbackReason
           ? {
@@ -182,7 +210,11 @@ export const POST = withSessionAuth<Params>(
               reason: fallbackReason,
             }
           : {}),
-        tasks: data ?? [],
+        tasks: tasks.map((task) => ({
+          ...task,
+          completed: Boolean(task.completed_at),
+          is_assigned_to_current_user: assignedTaskIds.has(task.id),
+        })),
       });
     } catch (error) {
       console.error('Error in task search', error);

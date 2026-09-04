@@ -189,7 +189,7 @@ class WorkspaceRepository {
             .maybeSingle();
 
         if (member != null) {
-          return getWorkspaceById(defaultId);
+          return await getWorkspaceById(defaultId);
         }
       }
 
@@ -203,7 +203,7 @@ class WorkspaceRepository {
 
       final personalId = personalRow?['ws_id'] as String?;
       if (personalId != null) {
-        return getWorkspaceById(personalId);
+        return await getWorkspaceById(personalId);
       }
     } on Object catch (_) {
       // Non-critical — caller falls back to SharedPreferences

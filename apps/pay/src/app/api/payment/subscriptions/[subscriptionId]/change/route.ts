@@ -1,9 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // POST: Change subscription to a different product with immediate proration
@@ -29,12 +25,11 @@ export async function POST(
     );
   }
 
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
 
   // Get subscription from database
   const { data: subscription, error: subscriptionError } = await supabase
@@ -102,7 +97,7 @@ export async function POST(
   }
 
   // Verify the target product exists in our database
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = supabase;
   const { data: targetProduct, error: targetProductError } = await sbAdmin
     .schema('private')
     .from('workspace_subscription_products')

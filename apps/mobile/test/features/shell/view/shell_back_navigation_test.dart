@@ -31,8 +31,7 @@ import '../../../helpers/helpers.dart';
 
 class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 
-class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
-    implements WorkspaceCubit {}
+class _WsCubit extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _MockShellProfileCubit extends MockCubit<ShellProfileState>
     implements ShellProfileCubit {}
@@ -95,6 +94,7 @@ Widget _buildTestApp({
         shad.ShadcnLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: ShadcnMaterialBridge.appBuilder,
       routerConfig: router,
     ),
   );
@@ -398,14 +398,14 @@ void main() {
   group('Shell back navigation', () {
     late AppTabCubit appTabCubit;
     late _MockAuthCubit authCubit;
-    late _MockWorkspaceCubit workspaceCubit;
+    late _WsCubit workspaceCubit;
     late _MockShellProfileCubit shellProfileCubit;
 
     setUp(() {
       SharedPreferences.setMockInitialValues(<String, Object>{});
       appTabCubit = AppTabCubit(settingsRepository: SettingsRepository());
       authCubit = _MockAuthCubit();
-      workspaceCubit = _MockWorkspaceCubit();
+      workspaceCubit = _WsCubit();
       shellProfileCubit = _MockShellProfileCubit();
 
       whenListen(

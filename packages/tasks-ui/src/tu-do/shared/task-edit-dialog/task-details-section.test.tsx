@@ -23,6 +23,7 @@ function renderSection(
 ) {
   return render(
     <TaskDetailsSection
+      activity={<div data-testid="activity-panel" />}
       assigneeCount={0}
       labelCount={0}
       personal={<div data-testid="personal-panel" />}
@@ -48,6 +49,7 @@ describe('TaskDetailsSection', () => {
     expect(screen.queryByTestId('properties-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('personal-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('relationships-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('activity-panel')).not.toBeInTheDocument();
   });
 
   it('summarizes the task while collapsed', () => {
@@ -98,6 +100,13 @@ describe('TaskDetailsSection', () => {
     );
 
     expect(screen.getByTestId('personal-panel')).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('tab', { name: /tasks-history.activity/ })
+    );
+
+    expect(screen.getByTestId('activity-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('personal-panel')).not.toBeInTheDocument();
   });
 
   it('opens straight to relationships when one is being seeded', () => {
@@ -109,7 +118,11 @@ describe('TaskDetailsSection', () => {
   });
 
   it('drops tabs the dialog does not offer', () => {
-    renderSection({ personal: undefined, relationships: undefined });
+    renderSection({
+      activity: undefined,
+      personal: undefined,
+      relationships: undefined,
+    });
 
     fireEvent.click(screen.getByRole('button', { expanded: false }));
 

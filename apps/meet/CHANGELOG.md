@@ -1,5 +1,111 @@
 # Changelog
 
+## [0.24.2](https://github.com/tutur3u/platform/compare/meet-v0.24.1...meet-v0.24.2) (2026-08-29)
+
+
+### Performance Improvements
+
+* **vercel:** serve every monorepo app from one function region ([4f0bf52](https://github.com/tutur3u/platform/commit/4f0bf52450899267b4ac9cd2bdecfcf07e3ea427))
+* **vercel:** serve every monorepo app from one function region ([#5172](https://github.com/tutur3u/platform/issues/5172)) ([b09d4bd](https://github.com/tutur3u/platform/commit/b09d4bd520a7543d6b88140715d8cc0b5c461711))
+
+## [0.24.1](https://github.com/tutur3u/platform/compare/meet-v0.24.0...meet-v0.24.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.24.0](https://github.com/tutur3u/platform/compare/meet-v0.23.0...meet-v0.24.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
+## [0.23.0](https://github.com/tutur3u/platform/compare/meet-v0.22.2...meet-v0.23.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **satellites:** harden invited workspace access ([3c60571](https://github.com/tutur3u/platform/commit/3c6057172cde3e5dc57acae164c946b405ba87cd))
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
+## [0.22.2](https://github.com/tutur3u/platform/compare/meet-v0.22.1...meet-v0.22.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** preserve prerender locale fallback ([3a09b07](https://github.com/tutur3u/platform/commit/3a09b070abda729649f269310a70db78f9b3a1cc))
+
+## [0.22.1](https://github.com/tutur3u/platform/compare/meet-v0.22.0...meet-v0.22.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep locale roots prerenderable ([d0eb02c](https://github.com/tutur3u/platform/commit/d0eb02c452c4ad125907f4c67b24797782caf907))
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+* **meet:** narrow prerender suspense boundary ([e82cda6](https://github.com/tutur3u/platform/commit/e82cda698a4e8f028eaee0cd57ca46186765b36d))
+* **meet:** nest runtime work under suspense ([8da544d](https://github.com/tutur3u/platform/commit/8da544d5e98ec69adde9fa8e10225ae1ae59925b))
+* **meet:** nest runtime work under suspense ([#5119](https://github.com/tutur3u/platform/issues/5119)) ([83006f0](https://github.com/tutur3u/platform/commit/83006f034643f5dd759800e9fcaa9de50262b277))
+* **meet:** render authenticated root at request time ([0ba1e3d](https://github.com/tutur3u/platform/commit/0ba1e3d78010b18452dabcb95c06769ee3c16445))
+* **meet:** render authenticated root at request time ([#5118](https://github.com/tutur3u/platform/issues/5118)) ([ab10722](https://github.com/tutur3u/platform/commit/ab10722a8112b21bb4acb6076456abc99f66b2ad))
+* **meet:** restore prerender suspense boundary ([902c444](https://github.com/tutur3u/platform/commit/902c444e3527e07fea3297ac3b04a79b85d9c7fe))
+* **meet:** restore prerender suspense boundary ([#5117](https://github.com/tutur3u/platform/issues/5117)) ([9fb158f](https://github.com/tutur3u/platform/commit/9fb158f7a094724209679ad13b321ed14d6d6ca1))
+
+## [0.22.0](https://github.com/tutur3u/platform/compare/meet-v0.21.1...meet-v0.22.0) (2026-08-09)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add external parity reconciliation ([953b9d6](https://github.com/tutur3u/platform/commit/953b9d6315611ef86ec2c213bbbbc5e62d5f4ad4))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **meet:** add Google-Meet-style calls on Cloudflare Realtime SFU ([a32dd52](https://github.com/tutur3u/platform/commit/a32dd522cdb1a176f9e1312fe52a85e9516870f5))
+* **meet:** drop the /workspace prefix and move rooms to /r ([9e370e9](https://github.com/tutur3u/platform/commit/9e370e9fe7072b26e48ed5a1fd04e67d74eb2921))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **ui:** align landing and locale experience ([aa6e47f](https://github.com/tutur3u/platform/commit/aa6e47f17356ce74111ccf130e8b17071cc7aadf))
+* **web:** refine marketing experience ([c7f1cec](https://github.com/tutur3u/platform/commit/c7f1cec0dd667e6d5f59aaf0bab82069b79c7376))
+
+
+### Bug Fixes
+
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **meet:** attribute remote tracks to their publisher ([7f206bc](https://github.com/tutur3u/platform/commit/7f206bc5a6ca847d62a817585bd66c7498c76f88))
+* **meet:** authorise meeting edit and delete from the satellite ([00524ab](https://github.com/tutur3u/platform/commit/00524ab615a028963fc3bb2a12df098cf3ce6f8a))
+* **meet:** mount the nuqs adapter in the root layout ([3931063](https://github.com/tutur3u/platform/commit/3931063fd5d82c5bd26d66d47cf13e249b88aa85))
+* **meet:** reconnect dropped call signaling with a fresh join token ([3c6cb41](https://github.com/tutur3u/platform/commit/3c6cb4102b8ec9b9a96248e57fcd17ff763b0981))
+* **meet:** restore the notifications namespace so Plans stops erroring ([675611d](https://github.com/tutur3u/platform/commit/675611d273cf602cab366e173600497c5754c917))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+* **workspaces:** harden invitation interactions ([b7f8f6c](https://github.com/tutur3u/platform/commit/b7f8f6cf52ceec1b67d36b11513eae7806284f5d))
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
 ## [0.21.1](https://github.com/tutur3u/platform/compare/meet-v0.21.0...meet-v0.21.1) (2026-08-09)
 
 

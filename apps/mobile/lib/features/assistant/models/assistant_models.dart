@@ -850,17 +850,17 @@ class AssistantFilePickerResult extends Equatable {
     required this.mimeType,
   });
 
-  factory AssistantFilePickerResult.fromPlatformFile(
+  static Future<AssistantFilePickerResult> fromPlatformFile(
     PlatformFile file,
     String id,
-  ) {
-    final extension = file.extension?.toLowerCase() ?? '';
+  ) async {
+    final extension = file.name.split('.').last.toLowerCase();
     final mimeType = _mimeTypeFromExtension(extension);
     return AssistantFilePickerResult(
       id: id,
       file: file,
       name: file.name,
-      size: file.size,
+      size: await file.length(),
       path: file.path ?? '',
       mimeType: mimeType,
     );

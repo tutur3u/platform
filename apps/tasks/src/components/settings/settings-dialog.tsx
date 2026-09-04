@@ -29,6 +29,7 @@ import {
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
+import { TaskCardHotkeySettings } from '@tuturuuu/tasks-ui/settings/task-card-hotkey-settings';
 import { TaskSettings } from '@tuturuuu/tasks-ui/settings/task-settings';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -85,6 +86,7 @@ export function SettingsDialog({
   workspace: workspaceProp,
 }: SettingsDialogProps) {
   const t = useTranslations();
+  const keyboardShortcutsT = useTranslations('settings.keyboard_shortcuts');
   const normalizedDefaultTab = normalizeSettingsTab(defaultTab);
   const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
 
@@ -400,8 +402,9 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'keyboard_shortcuts' && (
-        <div className="h-full">
+        <div className="h-full space-y-8">
           <KeyboardShortcutsSettings />
+          <TaskCardHotkeySettings translate={keyboardShortcutsT} />
         </div>
       )}
     </SettingsDialogShell>

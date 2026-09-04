@@ -36,6 +36,53 @@ describe('useProgressiveBoardLoader', () => {
     vi.restoreAllMocks();
   });
 
+  it('hydrates cached list pagination so stale tasks render before refresh', () => {
+    const initialPagination = {
+      'list-1': {
+        page: 0,
+        hasMore: false,
+        totalCount: 1,
+        isLoading: false,
+        isInitialLoad: false,
+      },
+    };
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1', initialPagination),
+      { wrapper }
+    );
+
+    expect(result.current.pagination).toEqual(initialPagination);
+  });
+
+  it('hydrates cached pagination discovered after client hydration', async () => {
+    const cachedPagination = {
+      'list-1': {
+        page: 0,
+        hasMore: false,
+        totalCount: 1,
+        isLoading: false,
+        isInitialLoad: false,
+      },
+    };
+    const { rerender, result } = renderHook(
+      ({ initialPagination }) =>
+        useProgressiveBoardLoader('ws-1', 'board-1', initialPagination),
+      {
+        initialProps: {
+          initialPagination: {} as typeof cachedPagination,
+        },
+        wrapper,
+      }
+    );
+
+    expect(result.current.pagination).toEqual({});
+
+    rerender({ initialPagination: cachedPagination });
+
+    expect(result.current.pagination).toEqual(cachedPagination);
+  });
+
   it('upserts incoming task records instead of preserving stale cache entries', async () => {
     const cachedTask: Task = {
       id: 'task-1',

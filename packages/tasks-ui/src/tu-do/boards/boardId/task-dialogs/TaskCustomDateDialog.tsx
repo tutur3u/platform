@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { CUSTOM_DATE_DIALOG_CLASS_NAMES } from '../../../shared/custom-date-picker/custom-date-dialog-layout';
 
 // Default translations for when component is rendered outside NextIntlClientProvider
 const defaultTranslations = {
@@ -63,12 +64,14 @@ export function TaskCustomDateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className={CUSTOM_DATE_DIALOG_CLASS_NAMES.content}>
+        <DialogHeader className={CUSTOM_DATE_DIALOG_CLASS_NAMES.header}>
           <DialogTitle>{t.set_custom_due_date}</DialogTitle>
-          <DialogDescription>{t.custom_due_date_description}</DialogDescription>
+          <DialogDescription className="break-words">
+            {t.custom_due_date_description}
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className={CUSTOM_DATE_DIALOG_CLASS_NAMES.body}>
           <DateTimePicker
             date={endDate ? new Date(endDate) : undefined}
             setDate={onDateChange}
@@ -78,7 +81,7 @@ export function TaskCustomDateDialog({
             preferences={{ weekStartsOn, timezone, timeFormat }}
           />
         </div>
-        <DialogFooter>
+        <DialogFooter className={CUSTOM_DATE_DIALOG_CLASS_NAMES.footer}>
           <Button
             type="button"
             variant="outline"

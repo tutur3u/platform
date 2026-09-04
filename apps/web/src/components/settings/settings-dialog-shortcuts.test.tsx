@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, waitFor } from '@testing-library/react';
+import type { Workspace } from '@tuturuuu/types';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
@@ -62,6 +64,10 @@ vi.mock('@tuturuuu/ui/avatar', () => ({
     <div>{children}</div>
   ),
   AvatarImage: () => null,
+}));
+
+vi.mock('@tuturuuu/ui/custom/workspace-select', () => ({
+  WorkspaceSelect: () => null,
 }));
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
@@ -455,6 +461,64 @@ describe('settings dialog shortcut', () => {
 
     await waitFor(() => {
       expect(globalCommandLauncherMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('disables workspace task search for guest-only workspace access', async () => {
+    render(
+      <UserNavClient
+        locale="en"
+        renderSettingsDialog={false}
+        user={user as unknown as WorkspaceUser}
+        workspace={
+          {
+            id: 'workspace-1',
+            joined: false,
+            name: 'Guest workspace',
+          } as unknown as Workspace
+        }
+      />
+    );
+
+    await waitFor(() => {
+      expect(globalCommandLauncherMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultTab: 'all',
+          enableTasks: false,
+          labels: expect.objectContaining({
+            placeholder: 'search_placeholder_navigation',
+          }),
+        })
+      );
+    });
+  });
+
+  it('keeps task-first search for joined workspaces', async () => {
+    render(
+      <UserNavClient
+        locale="en"
+        renderSettingsDialog={false}
+        user={user as unknown as WorkspaceUser}
+        workspace={
+          {
+            id: 'workspace-1',
+            joined: true,
+            name: 'Member workspace',
+          } as unknown as Workspace
+        }
+      />
+    );
+
+    await waitFor(() => {
+      expect(globalCommandLauncherMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultTab: 'tasks',
+          enableTasks: true,
+          labels: expect.objectContaining({
+            placeholder: 'search_placeholder_tasks',
+          }),
+        })
+      );
     });
   });
 });

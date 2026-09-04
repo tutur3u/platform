@@ -1,13 +1,12 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const UpdateGroupTagSchema = z.object({
-  color: z.string().min(1),
-  group_ids: z.array(z.string()).optional(),
-  name: z.string().min(1),
-});
+import {
+  GroupTagParamsSchema,
+  loadWorkspaceGroupTag,
+  loadWorkspaceUserGroups,
+  UpdateGroupTagSchema,
+} from '../validation';
 
 interface Params {
   params: Promise<{
@@ -17,13 +16,27 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { tagId: id, wsId } = await params;
+  const parsedParams = GroupTagParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params' },
+      { status: 400 }
+    );
+  }
+  const { tagId: id, wsId } = parsedParams.data;
 
   const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+  if (permissions.withoutPermission('view_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to view user group tags' },
+      { status: 403 }
+    );
+  }
+
+  const supabase = await createAdminClient({ noCookie: true });
 
   const { data, error } = await supabase
     .from('workspace_user_group_tags')
@@ -60,12 +73,24 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { tagId: id, wsId } = await params;
+  const parsedParams = GroupTagParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params' },
+      { status: 400 }
+    );
+  }
+  const { tagId: id, wsId } = parsedParams.data;
 
   const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  if (permissions.withoutPermission('update_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update user group tags' },
+      { status: 403 }
+    );
   }
 
   let body: unknown;
@@ -86,7 +111,53 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const { group_ids: _, ...coreData } = parsed.data;
+  if (parsed.data.id && parsed.data.id !== id) {
+    return NextResponse.json(
+      { message: 'Tag ID does not match route' },
+      { status: 400 }
+    );
+  }
+
+  const { group_ids = [], id: _, ...coreData } = parsed.data;
+  const supabase = await createAdminClient({ noCookie: true });
+
+  const { data: tag, error: tagLookupError } = await loadWorkspaceGroupTag(
+    supabase,
+    wsId,
+    id
+  );
+  if (tagLookupError) {
+    console.error('Error checking workspace user group tag');
+    return NextResponse.json(
+      { message: 'Error updating workspace user group tag' },
+      { status: 500 }
+    );
+  }
+  if (!tag) {
+    return NextResponse.json(
+      { message: 'Workspace user group tag not found' },
+      { status: 404 }
+    );
+  }
+
+  const { data: groups, error: groupsError } = await loadWorkspaceUserGroups(
+    supabase,
+    wsId,
+    group_ids
+  );
+  if (groupsError) {
+    console.error('Error validating workspace user groups for tag');
+    return NextResponse.json(
+      { message: 'Error updating workspace user group tag' },
+      { status: 500 }
+    );
+  }
+  if ((groups?.length ?? 0) !== group_ids.length) {
+    return NextResponse.json(
+      { message: 'One or more user groups were not found' },
+      { status: 404 }
+    );
+  }
 
   const { data, error } = await supabase
     .from('workspace_user_group_tags')
@@ -115,12 +186,45 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { tagId: id, wsId } = await params;
+  const parsedParams = GroupTagParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params' },
+      { status: 400 }
+    );
+  }
+  const { tagId: id, wsId } = parsedParams.data;
 
   const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  if (permissions.withoutPermission('delete_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to delete user group tags' },
+      { status: 403 }
+    );
+  }
+
+  const supabase = await createAdminClient({ noCookie: true });
+
+  const { data: tag, error: tagLookupError } = await loadWorkspaceGroupTag(
+    supabase,
+    wsId,
+    id
+  );
+  if (tagLookupError) {
+    console.error('Error checking workspace user group tag');
+    return NextResponse.json(
+      { message: 'Error deleting workspace user group tag' },
+      { status: 500 }
+    );
+  }
+  if (!tag) {
+    return NextResponse.json(
+      { message: 'Workspace user group tag not found' },
+      { status: 404 }
+    );
   }
 
   const { data, error } = await supabase

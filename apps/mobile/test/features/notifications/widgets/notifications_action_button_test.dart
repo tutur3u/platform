@@ -59,6 +59,7 @@ Widget _buildRouterApp({
         shad.ShadcnLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: ShadcnMaterialBridge.appBuilder,
       routerConfig: router,
     ),
   );

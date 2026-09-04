@@ -88,7 +88,7 @@ export function createDevboxHarness() {
     pruneCaches: () =>
       planCacheEvictions(caches, {
         activeInput: {
-          bunVersion: '1.3.14',
+          bunVersion: '1.4.0',
           cacheSchemaVersion: 1,
           commandProfile: 'bun-check',
           lockfileHash: 'lock-a',

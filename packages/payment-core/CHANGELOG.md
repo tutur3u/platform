@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/payment-core-v0.4.0...payment-core-v0.5.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/payment-core-v0.3.1...payment-core-v0.4.0) (2026-07-25)
 
 

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import {
   createDefaultFormStudioInput,
   formQuestionSettingsSchema,
+  formSeoSchema,
   formSettingsSchema,
   formThemeSchema,
 } from '../schema';
@@ -38,6 +39,19 @@ export function parseFormSettings(settings: FormRow['settings']) {
   });
 
   return result.success ? result.data : createDefaultFormStudioInput().settings;
+}
+
+/**
+ * Rows written before the `seo` column existed default to `{}`, and every key
+ * inside it is optional, so an empty object parses cleanly into "derive
+ * everything from the form content".
+ */
+export function parseFormSeo(seo: FormRow['seo']) {
+  const result = formSeoSchema.safeParse(
+    seo && typeof seo === 'object' && !Array.isArray(seo) ? seo : {}
+  );
+
+  return result.success ? result.data : createDefaultFormStudioInput().seo;
 }
 
 export function parseQuestionSettings(settings: FormQuestionRow['settings']) {

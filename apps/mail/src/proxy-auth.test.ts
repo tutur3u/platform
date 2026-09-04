@@ -147,6 +147,17 @@ describe('Mail proxy auth handoff', () => {
     );
   });
 
+  it('falls back to the default locale for wildcard health-check language headers', async () => {
+    const request = new NextRequest('https://mail.tuturuuu.localhost/login', {
+      headers: { 'accept-language': '*' },
+    });
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.authProxy).toHaveBeenCalledWith(request);
+  });
+
   it.each(['/api/v1/webhooks/mail/cloudflare', '/api/v1/webhooks/mail/ses'])(
     'lets the signed provider webhook bypass session auth: %s',
     async (path) => {

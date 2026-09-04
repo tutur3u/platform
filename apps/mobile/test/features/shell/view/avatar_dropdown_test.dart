@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown_menu.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -20,6 +21,7 @@ void main() {
           shad.ShadcnLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: ShadcnMaterialBridge.appBuilder,
         home: Scaffold(
           body: AvatarDropdownTrigger(
             triggerKey: GlobalKey(),

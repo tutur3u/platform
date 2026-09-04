@@ -1,6 +1,7 @@
 ---
 title: Mind
 description: Mindboard satellite app for long-horizon planning, knowledge graphs, and AI-aided graph patches.
+updatedAt: "2026-08-10"
 ---
 
 Mind lives in `apps/mind`, runs locally on port `7816`, and is served in
@@ -75,7 +76,7 @@ return to the index instead of showing an infinite loading state.
 
 ## API Ownership
 
-Protected Mind data stays behind `apps/web` APIs:
+`apps/mind` owns its protected Mind product handlers:
 
 - `/api/v1/workspaces/:wsId/mind/boards`
 - `/api/v1/workspaces/:wsId/mind/boards/:boardId`
@@ -83,15 +84,27 @@ Protected Mind data stays behind `apps/web` APIs:
 - `/api/v1/workspaces/:wsId/mind/boards/:boardId/patches`
 - `/api/v1/workspaces/:wsId/mind/search`
 - `/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply`
-- `/api/v1/hive/servers/:serverId/mind-simulations` for importing a Mind board
-  into Hive as agents plus a saved interaction workflow
 - `/api/ai/mind`
-- `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
-  `/api/ai/chat/file-urls` for Mind chat attachments
 
-The Mind app forwards `/api/v1/*` and `/api/ai/*` to `apps/web` and consumes
-them through `@tuturuuu/internal-api`. Do not add direct client Supabase reads
-or client-local raw `fetch('/api/...')` calls for protected Mind data.
+Exact local handlers win before the fallback rewrites for `/api/v1/*` and
+`/api/ai/*`. The shared AI attachment endpoints have no Mind-local handler and
+are therefore forwarded to `apps/web`:
+
+- `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
+  `/api/ai/chat/file-urls`, which provide shared Mind chat attachments
+
+The separate `/api/v1/hive/servers/:serverId/mind-simulations` integration is
+Hive-owned in `apps/hive`, not a Mind product handler. It imports a Mind board
+as Hive agents plus a saved interaction workflow.
+
+Consume local Mind, Web fallback, and Hive integration families through their
+typed `@tuturuuu/internal-api` helpers. Browser requests for the first two stay
+same-origin so the Mind rewrite boundary remains transparent. Mind-local
+protected handlers resolve the Mind app-session actor and enforce workspace
+membership; forwarded Web exceptions require the coordinated Web-issued
+session and keep their own product permissions. Do not add direct client
+Supabase reads or client-local raw `fetch('/api/...')` calls for protected Mind
+data.
 
 Workspace routes must normalize aliases such as `personal`, verify workspace
 membership with the request-scoped auth context, and then perform private-schema
@@ -124,23 +137,23 @@ properties island that identifies the anchor node and child count.
 
 ## Hive Integration
 
-Inside `apps/web`, a Mind board can be sent to Hive from the compact top-right
-canvas controls. The import API reads the saved Mind graph, verifies workspace
+A Mind board can be sent to Hive from the compact top-right canvas controls.
+The Hive-owned import API reads the saved Mind graph, verifies workspace
 membership through the request-scoped client, requires Hive admin access, and
 creates Hive NPC agents from the highest-signal Mind nodes. Mind edges become
 Hive agent interaction pairs, and the generated Hive workflow first stamps the
 Mind source context into the world before running the agent-interaction node.
 
-Keep this integration hosted in `apps/web`: the standalone `apps/mind` surface
-should stay a shared Mind canvas and must not assume that the Hive satellite is
-available in the same host. Client code should call
-`createHiveMindSimulation()` from `@tuturuuu/internal-api/hive`; do not add
-client-local raw fetch calls or duplicate graph-to-agent conversion logic.
+Keep the mutation in `apps/hive`; the shared Mind canvas should not duplicate
+Hive server logic. Client code should call `createHiveMindSimulation()` from
+`@tuturuuu/internal-api/hive`; do not add client-local raw fetch calls or
+duplicate graph-to-agent conversion logic.
 
 ## Data Model
 
 Mind product tables live in the `private` schema. User access goes through the
-central web API; direct table access is service-role only.
+Mind-local product APIs, while only the explicit fallback families above go to
+the central Web API. Direct table access is service-role only.
 
 - `private.mind_boards`
 - `private.mind_nodes`

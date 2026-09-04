@@ -2,46 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { deriveOptionValue, findMatchingOption } from './answer-utils';
 import { getNextSectionTarget } from './branching';
+import { createTestFormDefinition } from './test-support/form-fixtures';
 import type { FormDefinition } from './types';
 
-const baseForm: FormDefinition = {
-  id: 'form-1',
-  wsId: 'ws-1',
-  creatorId: 'user-1',
+const baseForm: FormDefinition = createTestFormDefinition({
   title: 'Form',
-  description: '',
-  status: 'draft',
-  accessMode: 'anonymous',
-  openAt: null,
-  closeAt: null,
-  maxResponses: null,
-  createdAt: '2026-03-09T00:00:00.000Z',
-  updatedAt: '2026-03-09T00:00:00.000Z',
-  shareCode: null,
-  theme: {
-    presetId: 'editorial-moss',
-    density: 'balanced',
-    accentColor: 'dynamic-green',
-    headlineFontId: 'noto-serif',
-    bodyFontId: 'be-vietnam-pro',
-    surfaceStyle: 'paper',
-    coverHeadline: '',
-    coverImage: { storagePath: '', url: '', alt: '' },
-    sectionImages: {},
-    typography: {
-      displaySize: 'md',
-      headingSize: 'md',
-      bodySize: 'md',
-    },
-  },
-  settings: {
-    showProgressBar: true,
-    allowMultipleSubmissions: true,
-    oneResponsePerUser: false,
-    requireTurnstile: true,
-    confirmationTitle: 'Thanks',
-    confirmationMessage: 'Done',
-  },
   sections: [
     {
       id: 'section-1',
@@ -88,7 +53,7 @@ const baseForm: FormDefinition = {
       targetSectionId: 'section-2',
     },
   ],
-};
+});
 
 describe('form markdown option helpers', () => {
   it('derives stable option values from markdown labels', () => {

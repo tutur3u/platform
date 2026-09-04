@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { getPersonalExternalStagingListId } from '@tuturuuu/utils/task-helper';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import type { DragCacheSnapshot, TaskSortKeyRepair } from './task-drag-types';
 import { getEffectiveTaskSortKey } from './task-sort-key';
@@ -17,6 +18,56 @@ type SortKeyPlanTask = Pick<
   | 'personal_sort_key'
   | 'sort_key'
 >;
+
+export function getTaskTerminalFieldsForList(
+  task: Pick<Task, 'completed_at' | 'closed_at'>,
+  targetListStatus: TaskList['status'] | null | undefined,
+  localMutationAt = Date.now()
+) {
+  const mutationTimestamp = new Date(localMutationAt).toISOString();
+  const targetIsCompleted = targetListStatus === 'done';
+  const targetIsClosed = targetListStatus === 'closed';
+
+  return {
+    completed: targetIsCompleted,
+    completed_at: targetIsCompleted
+      ? (task.completed_at ?? mutationTimestamp)
+      : null,
+    closed_at: targetIsClosed ? (task.closed_at ?? mutationTimestamp) : null,
+  };
+}
+
+export function getPersonalPlacementDropTask({
+  isStagingTarget,
+  newSortKey,
+  targetBoardId,
+  targetList,
+  targetListId,
+  task,
+}: {
+  isStagingTarget: boolean;
+  newSortKey: number | null;
+  targetBoardId: string;
+  targetList: TaskList | undefined;
+  targetListId: string;
+  task: Task;
+}) {
+  return {
+    ...task,
+    list_id: isStagingTarget
+      ? getPersonalExternalStagingListId(targetBoardId)
+      : targetListId,
+    sort_key: isStagingTarget ? null : newSortKey,
+    personal_board_id: targetBoardId,
+    personal_list_id: isStagingTarget ? null : targetListId,
+    personal_sort_key: isStagingTarget ? null : newSortKey,
+    personal_placed_at: isStagingTarget ? null : new Date().toISOString(),
+    is_personal_external: true,
+    is_personal_external_default: isStagingTarget,
+    ...getTaskTerminalFieldsForList(task, targetList?.status),
+    _localMutationAt: Date.now(),
+  } as Task & { _localMutationAt: number };
+}
 
 function getTaskSortKeyInsertionContext({
   activeTaskId,
@@ -206,9 +257,11 @@ export function getTaskDropPreviewCacheTasks({
   const repairedSortKeysByTaskId = new Map(
     repairedTaskSortKeys.map((repair) => [repair.taskId, repair.sortKey])
   );
-  const mutationTimestamp = new Date(localMutationAt).toISOString();
-  const targetIsCompleted = targetList?.status === 'done';
-  const targetIsTerminal = targetList?.status === 'closed';
+  const terminalFields = getTaskTerminalFieldsForList(
+    activeTask,
+    targetList?.status,
+    localMutationAt
+  );
 
   return {
     previewSortKey,
@@ -222,13 +275,7 @@ export function getTaskDropPreviewCacheTasks({
             personal_sort_key: task.is_personal_external
               ? previewSortKey
               : task.personal_sort_key,
-            completed: targetIsCompleted,
-            completed_at: targetIsCompleted
-              ? (task.completed_at ?? mutationTimestamp)
-              : null,
-            closed_at: targetIsTerminal
-              ? (task.closed_at ?? mutationTimestamp)
-              : null,
+            ...terminalFields,
             _localMutationAt: localMutationAt,
           } as Task & { _localMutationAt: number })
         : repairedSortKeysByTaskId.has(task.id)
@@ -265,6 +312,22 @@ export function applyTaskDropPreviewToCache({
 }) {
   if (!boardId) return null;
 
+  const previousFullTaskEntries = queryClient.getQueriesData<Task[]>({
+    queryKey: ['tasks-full', boardId],
+  });
+
+  // A board query may already be revalidating when the user drops a card.
+  // Cancel it without reverting so its pre-drag snapshot cannot replace the
+  // destination preview while the move request is still being persisted.
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks', boardId] },
+    { revert: false }
+  );
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks-full', boardId] },
+    { revert: false }
+  );
+
   const localMutationAt = Date.now();
   const previewTasks = getTaskDropPreviewCacheTasks({
     activeTask,
@@ -274,25 +337,29 @@ export function applyTaskDropPreviewToCache({
     targetList,
     targetListId,
   });
-  const previewFullTasks = getTaskDropPreviewCacheTasks({
-    activeTask,
-    localMutationAt,
-    orderedTasks,
-    tasks: snapshot.fullTasks,
-    targetList,
-    targetListId,
-  });
 
   if (previewTasks.tasks) {
     queryClient.setQueryData(['tasks', boardId], previewTasks.tasks);
   }
 
-  if (previewFullTasks.tasks) {
-    queryClient.setQueryData(['tasks-full', boardId], previewFullTasks.tasks);
+  for (const [queryKey, fullTasks] of previousFullTaskEntries) {
+    const previewFullTasks = getTaskDropPreviewCacheTasks({
+      activeTask,
+      localMutationAt,
+      orderedTasks,
+      tasks: fullTasks,
+      targetList,
+      targetListId,
+    });
+
+    if (previewFullTasks.tasks) {
+      queryClient.setQueryData(queryKey, previewFullTasks.tasks);
+    }
   }
 
   return {
     localMutationAt,
+    previousFullTaskEntries,
     previousFullTasks: snapshot.fullTasks,
     previousTasks: snapshot.tasks,
     previewSortKey: previewTasks.previewSortKey,
@@ -337,17 +404,15 @@ export function setBoardTaskCache(
     mergeTaskIntoBoardTaskCache(old, nextTask)
   );
 
-  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
-    queryClient.setQueryData(
-      ['tasks-full', boardId],
-      (old: Task[] | undefined) => mergeTaskIntoBoardTaskCache(old, nextTask)
-    );
-  }
+  queryClient.setQueriesData<Task[]>(
+    { queryKey: ['tasks-full', boardId] },
+    (old) => mergeTaskIntoBoardTaskCache(old, nextTask)
+  );
 }
 
 export function mergePersonalPlacementMutationTask(
   task: Task,
-  nextTask: Task & { _localMutationAt: number },
+  nextTask: Task & { _localMutationAt: number; completed?: boolean },
   responseTask: Task | undefined,
   isStagingTarget: boolean
 ) {
@@ -361,6 +426,9 @@ export function mergePersonalPlacementMutationTask(
     sort_key: responseTask?.sort_key ?? nextTask.sort_key,
     personal_sort_key:
       responseTask?.personal_sort_key ?? nextTask.personal_sort_key,
+    completed: nextTask.completed,
+    completed_at: nextTask.completed_at,
+    closed_at: nextTask.closed_at,
     is_personal_external_default: isStagingTarget,
     _localMutationAt: nextTask._localMutationAt,
   } as Task & { _localMutationAt: number };

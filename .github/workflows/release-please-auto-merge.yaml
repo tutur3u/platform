@@ -12,8 +12,9 @@ name: Release Please Auto Merge
 
 on:
   schedule:
-    # Daily at 06:00 UTC. A run with nothing to merge is a clean no-op.
-    - cron: "0 6 * * *"
+    # Daily at 00:00 UTC (07:00 in Vietnam, UTC+7). A run with nothing to
+    # merge is a clean no-op.
+    - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -21,9 +22,11 @@ on:
         type: boolean
         default: false
 
-# Never let two release merges race for main and production.
+# Release Please force-pushes its generated branch whenever production moves.
+# Hold the same lock as release-please.yaml so that branch cannot change after
+# this workflow selects and validates it but before cleanup checks its ancestry.
 concurrency:
-  group: release-please-auto-merge
+  group: release-please-production
   cancel-in-progress: false
 
 permissions: {}
@@ -51,7 +54,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -164,7 +167,7 @@ jobs:
         if: steps.plan.outputs.should_merge == 'true'
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.44.x"
+          flutter-version: "3.47.x"
           channel: stable
           cache: true
           pub-cache: true
@@ -214,9 +217,9 @@ jobs:
           echo "main and production are both at ${main_sha}."
           echo "aligned_sha=${main_sha}" >> "$GITHUB_ENV"
 
-      - name: Delete merged release-please branches
-        # Release-please recreates these branches from scratch on its next run,
-        # so a merged one left on origin is only noise. This is deliberately not
+      - name: Delete merged release-please branch
+        # Release Please recreates this branch from scratch on its next run, so
+        # a merged one left on origin is only noise. This is deliberately not
         # gated on should_merge: a run whose merge landed but whose cleanup did
         # not still tidies up the next time round.
         if: inputs.dry_run != true
@@ -224,10 +227,7 @@ jobs:
         # Values reach the script through the environment rather than being
         # pasted into it, so a ref name can never be read as shell.
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
-          # Mirrors RELEASE_NOTES_SUFFIX in scripts/git-release-please.js.
-          RELEASE_NOTES_SUFFIX: "--release-notes"
         run: |
           set -euo pipefail
 
@@ -274,33 +274,6 @@ jobs:
           else
             delete_remote_branch "${branch}"
           fi
-
-          # The overflow notes branch is metadata for that same release and is
-          # never merged, so it is retired alongside the branch it describes --
-          # but only once release-please has finished tagging. Until then the
-          # merged PR still carries `autorelease: pending`, tagging reads the
-          # notes from this branch, and
-          # scripts/ci/release-please-overflow-recovery.js recreates it if it is
-          # missing. Deleting it early just makes the two fight.
-          notes="${branch}${RELEASE_NOTES_SUFFIX}"
-
-          if ! git show-ref --verify --quiet "refs/remotes/origin/${notes}"; then
-            echo "origin/${notes} is already deleted."
-            exit 0
-          fi
-
-          # Fail safe: if the label cannot be read, treat the release as pending
-          # and keep the branch.
-          pending="$(gh api "repos/${GITHUB_REPOSITORY}/issues" \
-            -X GET -f state=closed -f 'labels=autorelease: pending' -f per_page=1 \
-            --jq 'length' 2>/dev/null || echo 1)"
-
-          if [ "${pending}" != "0" ]; then
-            echo "::notice::A merged release is still awaiting tagging; keeping origin/${notes}."
-            exit 0
-          fi
-
-          delete_remote_branch "${notes}"
 
       - name: Write run summary
         if: always()

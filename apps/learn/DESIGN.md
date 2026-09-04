@@ -48,7 +48,18 @@ Use GSAP only in isolated client components. Prefer ScrollTrigger pinning, image
 
 Learn and Teach do not own local login portals. Their `/login` routes redirect to `apps/web` with a satellite `returnUrl`, and their `/verify-token` routes complete the local domain session after `apps/web` confirms the current platform account and issues a cross-app token.
 
-Protected education data, workspace writes, and administrative workflows stay in `apps/web`. Satellite apps may own UI shells, preview surfaces, and lightweight companion workflows, but protected APIs must route through the central platform.
+Learn owns learner and parent-facing v1 HTTP contracts. Teach owns teacher
+authoring, administration, and shared education v1 HTTP contracts. Local route
+handlers run before each satellite's fallback rewrites, so an `/api/v1/*` or
+`/api/ai/*` fallback only reaches Web when the satellite does not implement the
+path.
+
+Web still owns platform login, cross-app token issuance, and explicitly retained
+platform services such as profile and storage operations, Learn AI Chat, and
+central AI endpoints without a satellite handler. `packages/education-core`
+owns reusable server-only domain logic, not HTTP traffic.
+`packages/internal-api` selects the Learn or Teach origin for satellite-owned
+contracts and keeps retained Web exceptions on the platform origin.
 
 ## 8. Anti-Patterns (Banned)
 

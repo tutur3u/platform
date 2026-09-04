@@ -76,11 +76,17 @@ async function StorefrontRouteParamsContent({
 }: StorefrontRouteFromParamsProps) {
   const { listingId, storeSlug } = await params;
   return (
-    <StorefrontRouteContent
-      {...props}
-      listingId={listingId}
-      storeSlug={storeSlug}
-    />
+    <Suspense
+      fallback={
+        <StorefrontSkeleton withinSharedShell={props.withinSharedShell} />
+      }
+    >
+      <StorefrontRouteContent
+        {...props}
+        listingId={listingId}
+        storeSlug={storeSlug}
+      />
+    </Suspense>
   );
 }
 

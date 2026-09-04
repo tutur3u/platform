@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/turnstile",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -15,11 +15,11 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.0",
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.4.1",
     "typescript": "7.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^5.0.0"
   }
 }

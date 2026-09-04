@@ -1,21 +1,15 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle,
   Clock,
-  Copy,
   ExternalLink,
   History,
   MapPin,
   Play,
-  RotateCcw,
-  Sparkles,
   Tag,
   Timer,
 } from '@tuturuuu/icons';
-import type { TimeTrackingCategory } from '@tuturuuu/types';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -43,9 +37,16 @@ import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
 } from '@tuturuuu/ui/time-tracker/types';
-import { cn } from '@tuturuuu/utils/format';
+import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { useCallback, useEffect, useState } from 'react';
 import { ActiveSessionCard, StatsCards } from './components';
+import {
+  CategorySelect,
+  CompletionCelebration,
+  LinkedTaskCard,
+  QuickActions,
+  TaskSuggestionCard,
+} from './components/new-session-support';
 import {
   CreateTaskDialog,
   DeleteSessionDialog,
@@ -54,13 +55,7 @@ import {
 import { useSessions, useTimeTracker } from './hooks';
 import { HistoryTab, RecentSessionsTab } from './tabs';
 import { TimeTrackerTrigger } from './time-tracker-trigger';
-import { formatDuration, getCategoryColor } from './utils';
-
-interface TaskBoard {
-  id: string;
-  name: string;
-  task_lists: { id: string; name: string; color: string }[];
-}
+import type { NewSessionFormProps, TaskBoard } from './types';
 
 interface TimeTrackerProps {
   wsId: string;
@@ -68,10 +63,10 @@ interface TimeTrackerProps {
 }
 
 export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
+  const { modKey } = usePlatform();
   const tracker = useTimeTracker({ wsId, tasks });
   const sessions = useSessions({ wsId, onSuccess: tracker.fetchData });
 
-  // Form state
   const [sessionMode, setSessionMode] = useState<'task' | 'manual'>('task');
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [newSessionDescription, setNewSessionDescription] = useState('');
@@ -79,7 +74,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [showTaskSuggestion, setShowTaskSuggestion] = useState(false);
 
-  // Task creation state
   const [showTaskCreation, setShowTaskCreation] = useState(false);
   const [selectedBoardId, setSelectedBoardId] = useState('');
   const [selectedListId, setSelectedListId] = useState('');
@@ -87,23 +81,25 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [isCreatingTask, setIsCreatingTask] = useState(false);
 
-  // Fetch boards with useQuery
-  const { data: boardsData } = useQuery({
-    queryKey: ['workspace', wsId, 'boards-with-lists'],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch boards');
-      return response.json();
-    },
-    enabled: tracker.isOpen,
-  });
+  const [boards, setBoards] = useState<TaskBoard[]>([]);
 
-  const boards: TaskBoard[] = boardsData?.boards || [];
+  useEffect(() => {
+    if (!tracker.isOpen) return;
+    void fetch(getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards-with-lists`), {
+      cache: 'no-store',
+      credentials: 'include',
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Failed to fetch boards');
+        return response.json();
+      })
+      .then((data) => setBoards(data.boards || []))
+      .catch((error) => {
+        console.error('Error fetching boards:', error);
+        toast.error('Failed to load boards');
+      });
+  }, [tracker.isOpen, wsId]);
 
-  // Handle task selection change
   const handleTaskSelectionChange = (taskId: string) => {
     setSelectedTaskId(taskId);
     if (taskId) {
@@ -116,7 +112,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     }
   };
 
-  // Handle session mode change
   const handleSessionModeChange = (mode: 'task' | 'manual') => {
     setSessionMode(mode);
     setNewSessionTitle('');
@@ -124,9 +119,14 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     setSelectedTaskId('');
     setShowTaskSuggestion(false);
     setSelectedCategoryId('');
+    toast.success(
+      mode === 'manual'
+        ? 'Switched to manual mode - start typing freely!'
+        : 'Switched to task-based mode - select or create a task!',
+      { duration: 2000 }
+    );
   };
 
-  // Handle manual title change
   const handleManualTitleChange = (title: string) => {
     setNewSessionTitle(title);
     const matchingTask = tasks.find(
@@ -144,7 +144,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     }
   };
 
-  // Reset form
   const resetForm = useCallback(() => {
     setNewSessionTitle('');
     setNewSessionDescription('');
@@ -153,18 +152,17 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     setShowTaskSuggestion(false);
   }, []);
 
-  // Start timer
   const handleStartTimer = useCallback(async () => {
     if (sessionMode === 'task' && selectedTaskId) {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
-        await tracker.startTimerWithTask(
+        const started = await tracker.startTimerWithTask(
           selectedTaskId,
           selectedTask.name || 'Untitled Task',
           newSessionDescription,
           selectedCategoryId
         );
-        resetForm();
+        if (started) resetForm();
         return;
       }
     }
@@ -174,13 +172,13 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
       return;
     }
 
-    await tracker.startTimer({
+    const started = await tracker.startTimer({
       title: newSessionTitle,
       description: newSessionDescription,
       categoryId: selectedCategoryId,
       taskId: selectedTaskId,
     });
-    resetForm();
+    if (started) resetForm();
   }, [
     sessionMode,
     selectedTaskId,
@@ -192,10 +190,13 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     resetForm,
   ]);
 
-  // Create task
   const handleCreateTask = async () => {
-    if (!newTaskName.trim() || !selectedListId) {
-      toast.error('Please enter a task name and select a list');
+    if (!newTaskName.trim()) {
+      toast.error('Please enter a task name');
+      return;
+    }
+    if (!selectedListId) {
+      toast.error('Please select a list');
       return;
     }
 
@@ -231,12 +232,18 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
       setNewTaskDescription('');
       setSelectedBoardId('');
       setSelectedListId('');
+      setShowTaskSuggestion(false);
 
       toast.success(`Task "${newTask.name}" created successfully!`);
 
       if (sessionMode === 'task') {
-        await tracker.startTimerWithTask(newTask.id, newTask.name);
-        resetForm();
+        const started = await tracker.startTimerWithTask(
+          newTask.id,
+          newTask.name,
+          newSessionDescription,
+          selectedCategoryId
+        );
+        if (started) resetForm();
       }
     } catch (error) {
       console.error('Error creating task:', error);
@@ -246,7 +253,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     }
   };
 
-  // Handle duplicate
   const handleDuplicate = (session: SessionWithRelations) => {
     const settings = sessions.duplicateSession(session);
     setNewSessionTitle(settings.title);
@@ -256,7 +262,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     tracker.setActiveTab('current');
   };
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!tracker.isOpen) return;
@@ -265,7 +270,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
         event.preventDefault();
         if (tracker.isRunning) {
           tracker.stopTimer();
-        } else if (newSessionTitle.trim() || selectedTaskId) {
+        } else if (newSessionTitle.trim()) {
           handleStartTimer();
         }
       }
@@ -286,7 +291,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [tracker, newSessionTitle, selectedTaskId, handleStartTimer]);
+  }, [tracker, newSessionTitle, handleStartTimer]);
 
   return (
     <>
@@ -306,28 +311,33 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
               Time Tracker
             </DialogTitle>
             <DialogDescription className="space-y-1">
-              <span>Track your time across tasks and projects</span>
+              <span>
+                Track your time across tasks and projects with detailed
+                analytics
+              </span>
               <span className="mt-2 text-muted-foreground text-xs">
                 <br />-{' '}
                 <kbd className="rounded bg-muted px-1 py-0.5 text-xs">
-                  Cmd/Ctrl+Enter
+                  {modKey} + Enter
                 </kbd>{' '}
-                start/stop
+                to start/stop
                 <br />-{' '}
                 <kbd className="rounded bg-muted px-1 py-0.5 text-xs">
-                  Cmd/Ctrl+P
+                  {modKey} + P
                 </kbd>{' '}
-                pause
+                to pause
                 <br />-{' '}
                 <kbd className="rounded bg-muted px-1 py-0.5 text-xs">Esc</kbd>{' '}
-                close
+                to close
               </span>
             </DialogDescription>
           </DialogHeader>
 
           <Tabs
             value={tracker.activeTab}
-            onValueChange={(v) => tracker.setActiveTab(v as any)}
+            onValueChange={(v) =>
+              tracker.setActiveTab(v as 'current' | 'recent' | 'history')
+            }
           >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="current" className="flex items-center gap-2">
@@ -345,7 +355,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
             </TabsList>
 
             <div className="grid @5xl:grid-cols-2 grid-cols-1 gap-6">
-              {/* Current Session Tab */}
               <TabsContent value="current" className="@container space-y-4">
                 <Card className="transition-all hover:shadow-md">
                   <CardHeader className="pb-3">
@@ -366,6 +375,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                       />
                     ) : (
                       <NewSessionForm
+                        wsId={wsId}
                         sessionMode={sessionMode}
                         onSessionModeChange={handleSessionModeChange}
                         newSessionTitle={newSessionTitle}
@@ -390,22 +400,26 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                         recentSessions={tracker.recentSessions}
                         templates={tracker.templates}
                         onDuplicate={handleDuplicate}
+                        onTemplate={(template) => {
+                          void tracker.startTimer({
+                            title: template.title,
+                            description: template.description,
+                            categoryId: template.category_id,
+                            taskId: template.task_id,
+                          });
+                        }}
                       />
                     )}
                   </CardContent>
                 </Card>
 
                 {tracker.justCompleted && (
-                  <CompletionCelebration
-                    session={tracker.justCompleted}
-                    onClose={tracker.clearJustCompleted}
-                  />
+                  <CompletionCelebration session={tracker.justCompleted} />
                 )}
 
                 <StatsCards stats={tracker.timerStats} />
               </TabsContent>
 
-              {/* Recent Sessions Tab */}
               <TabsContent value="recent" className="@container space-y-4">
                 <RecentSessionsTab
                   sessions={tracker.recentSessions}
@@ -420,7 +434,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                 />
               </TabsContent>
 
-              {/* History Tab */}
               <TabsContent value="history" className="@container space-y-4">
                 <HistoryTab />
               </TabsContent>
@@ -429,7 +442,6 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Dialogs */}
       <EditSessionDialog
         session={sessions.sessionToEdit}
         onClose={() => sessions.setSessionToEdit(null)}
@@ -467,8 +479,8 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   );
 }
 
-// New Session Form (inline component to keep file manageable)
 function NewSessionForm({
+  wsId,
   sessionMode,
   onSessionModeChange,
   newSessionTitle,
@@ -489,28 +501,8 @@ function NewSessionForm({
   recentSessions,
   templates,
   onDuplicate,
-}: {
-  sessionMode: 'task' | 'manual';
-  onSessionModeChange: (mode: 'task' | 'manual') => void;
-  newSessionTitle: string;
-  setNewSessionTitle: (v: string) => void;
-  newSessionDescription: string;
-  setNewSessionDescription: (v: string) => void;
-  selectedCategoryId: string;
-  setSelectedCategoryId: (v: string) => void;
-  selectedTaskId: string;
-  onTaskSelectionChange: (taskId: string) => void;
-  showTaskSuggestion: boolean;
-  onManualTitleChange: (title: string) => void;
-  onCreateTaskFromManual: () => void;
-  onStartTimer: () => void;
-  isLoading: boolean;
-  tasks: ExtendedWorkspaceTask[];
-  categories: TimeTrackingCategory[];
-  recentSessions: SessionWithRelations[];
-  templates: { title: string; usage_count: number }[];
-  onDuplicate: (session: SessionWithRelations) => void;
-}) {
+  onTemplate,
+}: NewSessionFormProps) {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed @lg:p-6 p-4 text-center">
@@ -520,7 +512,6 @@ function NewSessionForm({
         </p>
       </div>
 
-      {/* Session Mode Toggle */}
       <Tabs
         value={sessionMode}
         onValueChange={(v) => onSessionModeChange(v as 'task' | 'manual')}
@@ -585,6 +576,11 @@ function NewSessionForm({
                           </span>
                           <ExternalLink className="h-3 w-3 text-muted-foreground" />
                         </div>
+                        {task.description && (
+                          <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
+                            {task.description}
+                          </p>
+                        )}
                         {task.board_name && task.list_name && (
                           <div className="mt-2 flex items-center gap-2">
                             <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
@@ -607,6 +603,11 @@ function NewSessionForm({
                 ))}
               </SelectContent>
             </Select>
+            {!selectedTaskId && (
+              <p className="text-muted-foreground text-xs">
+                No task selected? We'll help you create one!
+              </p>
+            )}
           </div>
 
           <Textarea
@@ -626,7 +627,7 @@ function NewSessionForm({
           <Button
             onClick={onStartTimer}
             disabled={isLoading}
-            className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80"
+            className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
             size="lg"
           >
             <Play className="mr-2 h-4 w-4" />
@@ -657,7 +658,10 @@ function NewSessionForm({
             {selectedTaskId && !showTaskSuggestion && (
               <LinkedTaskCard
                 task={tasks.find((t) => t.id === selectedTaskId)}
-                onUnlink={() => onTaskSelectionChange('')}
+                wsId={wsId}
+                onUnlink={() => {
+                  onTaskSelectionChange('');
+                }}
               />
             )}
           </div>
@@ -679,7 +683,7 @@ function NewSessionForm({
           <Button
             onClick={onStartTimer}
             disabled={!newSessionTitle.trim() || isLoading}
-            className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80"
+            className="w-full border border-border bg-muted text-foreground hover:border-accent hover:bg-muted/80 dark:bg-muted dark:text-foreground dark:hover:bg-accent"
             size="lg"
           >
             <Play className="mr-2 h-4 w-4" />
@@ -688,220 +692,14 @@ function NewSessionForm({
         </TabsContent>
       </Tabs>
 
-      {/* Quick Actions */}
       {(recentSessions.length > 0 || templates.length > 0) && (
         <QuickActions
           recentSessions={recentSessions}
           templates={templates}
           onDuplicate={onDuplicate}
+          onTemplate={onTemplate}
         />
       )}
-    </div>
-  );
-}
-
-// Helper components
-function CategorySelect({
-  categories,
-  value,
-  onChange,
-}: {
-  categories: TimeTrackingCategory[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="@lg:text-base text-sm">
-        <SelectValue placeholder="Category (optional)" />
-      </SelectTrigger>
-      <SelectContent>
-        {categories.map((category) => (
-          <SelectItem key={category.id} value={category.id}>
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'h-3 w-3 rounded-full',
-                  getCategoryColor(category.color || 'BLUE')
-                )}
-              />
-              {category.name}
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-function TaskSuggestionCard({
-  title,
-  onCreateTask,
-}: {
-  title: string;
-  onCreateTask: () => void;
-}) {
-  return (
-    <div className="rounded-lg border border-dynamic-blue/30 bg-linear-to-r from-dynamic-blue/10 to-dynamic-blue/5 p-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-2">
-          <div className="rounded-full bg-dynamic-blue/20 p-1">
-            <Sparkles className="h-3 w-3 text-dynamic-blue" />
-          </div>
-          <div className="flex-1">
-            <span className="font-medium text-dynamic-blue text-sm">
-              Convert to task?
-            </span>
-            <p className="mt-0.5 text-muted-foreground text-xs">
-              Create "{title}" as a new task for better organization.
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCreateTask}
-          className="h-8 border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue text-xs hover:bg-dynamic-blue/20"
-        >
-          Create Task
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function LinkedTaskCard({
-  task,
-  onUnlink,
-}: {
-  task?: ExtendedWorkspaceTask;
-  onUnlink: () => void;
-}) {
-  if (!task) return null;
-
-  return (
-    <div className="rounded-lg border border-dynamic-green/30 bg-linear-to-r from-dynamic-green/5 to-dynamic-green/3 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-linear-to-br from-dynamic-green/20 to-dynamic-green/10">
-          <CheckCircle className="h-5 w-5 text-dynamic-green" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold text-dynamic-green text-sm">
-              Task Linked
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onUnlink}
-              className="h-7 px-2 text-muted-foreground text-xs hover:text-foreground"
-            >
-              Unlink
-            </Button>
-          </div>
-          <p className="font-medium text-foreground text-sm">{task.name}</p>
-          {task.board_name && task.list_name && (
-            <div className="mt-2 flex items-center gap-2">
-              <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
-                <MapPin className="h-3 w-3 text-muted-foreground" />
-                <span className="font-medium text-xs">{task.board_name}</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-linear-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
-                <Tag className="h-3 w-3 text-dynamic-green" />
-                <span className="font-medium text-dynamic-green text-xs">
-                  {task.list_name}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuickActions({
-  recentSessions,
-  templates,
-  onDuplicate,
-}: {
-  recentSessions: SessionWithRelations[];
-  templates: { title: string; usage_count: number }[];
-  onDuplicate: (session: SessionWithRelations) => void;
-}) {
-  const [showMore, setShowMore] = useState(false);
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <Label className="text-muted-foreground text-xs">Quick Start:</Label>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowMore(!showMore)}
-          className="h-6 px-2 text-xs"
-        >
-          {showMore ? 'Less' : 'More'}
-        </Button>
-      </div>
-
-      <div className="space-y-2">
-        {recentSessions.length > 0 && recentSessions[0] && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onDuplicate(recentSessions[0]!)}
-            className="w-full justify-start text-xs"
-          >
-            <RotateCcw className="mr-2 h-3 w-3" />
-            Repeat: {recentSessions[0].title}
-          </Button>
-        )}
-
-        {showMore &&
-          templates.slice(0, 3).map((template) => (
-            <Button
-              key={`template-${template.title}`}
-              variant="outline"
-              size="sm"
-              className="w-full justify-start text-xs"
-            >
-              <Copy className="mr-2 h-3 w-3" />
-              {template.title}
-              <Badge variant="secondary" className="ml-auto text-xs">
-                {template.usage_count}x
-              </Badge>
-            </Button>
-          ))}
-      </div>
-    </div>
-  );
-}
-
-function CompletionCelebration({
-  session,
-  onClose,
-}: {
-  session: SessionWithRelations;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className="fade-in fixed inset-0 z-50 flex animate-in items-center justify-center bg-black/20 backdrop-blur-sm duration-300">
-      <div className="zoom-in animate-in rounded-lg border bg-background p-6 shadow-xl duration-300">
-        <div className="text-center">
-          <CheckCircle className="mx-auto mb-4 h-12 w-12 animate-pulse text-dynamic-green" />
-          <h3 className="mb-2 font-semibold text-lg">Session Completed!</h3>
-          <p className="mb-1 text-muted-foreground">{session.title}</p>
-          <p className="font-medium text-dynamic-green text-sm">
-            {formatDuration(session.duration_seconds || 0)} tracked
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,5 +1,131 @@
 # Changelog
 
+## [0.31.3](https://github.com/tutur3u/platform/compare/cms-v0.31.2...cms-v0.31.3) (2026-08-31)
+
+
+### Bug Fixes
+
+* **tasks:** restore description checklist controls ([7976f78](https://github.com/tutur3u/platform/commit/7976f78292237e8047509e4243dafa14acea1b54))
+
+## [0.31.2](https://github.com/tutur3u/platform/compare/cms-v0.31.1...cms-v0.31.2) (2026-08-29)
+
+
+### Performance Improvements
+
+* **vercel:** serve every monorepo app from one function region ([4f0bf52](https://github.com/tutur3u/platform/commit/4f0bf52450899267b4ac9cd2bdecfcf07e3ea427))
+* **vercel:** serve every monorepo app from one function region ([#5172](https://github.com/tutur3u/platform/issues/5172)) ([b09d4bd](https://github.com/tutur3u/platform/commit/b09d4bd520a7543d6b88140715d8cc0b5c461711))
+
+## [0.31.1](https://github.com/tutur3u/platform/compare/cms-v0.31.0...cms-v0.31.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.31.0](https://github.com/tutur3u/platform/compare/cms-v0.30.0...cms-v0.31.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
+## [0.30.0](https://github.com/tutur3u/platform/compare/cms-v0.29.2...cms-v0.30.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
+## [0.29.2](https://github.com/tutur3u/platform/compare/cms-v0.29.1...cms-v0.29.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** preserve prerender locale fallback ([3a09b07](https://github.com/tutur3u/platform/commit/3a09b070abda729649f269310a70db78f9b3a1cc))
+
+## [0.29.1](https://github.com/tutur3u/platform/compare/cms-v0.29.0...cms-v0.29.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep locale roots prerenderable ([d0eb02c](https://github.com/tutur3u/platform/commit/d0eb02c452c4ad125907f4c67b24797782caf907))
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+
+## [0.29.0](https://github.com/tutur3u/platform/compare/cms-v0.28.1...cms-v0.29.0) (2026-08-09)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add external parity reconciliation ([953b9d6](https://github.com/tutur3u/platform/commit/953b9d6315611ef86ec2c213bbbbc5e62d5f4ad4))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** add first bridge pairing flow ([78d0ccf](https://github.com/tutur3u/platform/commit/78d0ccffd2ed139b3fa034477808486058b2c570))
+* **chat:** add single-use bridge pairing tickets ([0496bb6](https://github.com/tutur3u/platform/commit/0496bb65530aff7b829c4be2c0df0722bd9cc172))
+* **chat:** adopt existing sync runs ([0741e33](https://github.com/tutur3u/platform/commit/0741e330f074369136cb00a148171b098fbe23f4))
+* **chat:** adopt existing sync runs ([#5106](https://github.com/tutur3u/platform/issues/5106)) ([1c1c438](https://github.com/tutur3u/platform/commit/1c1c4387ed5af517ff61ad7924f2e3b6ccd23d3e))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+* **chat:** complete external replica pairing ([#5098](https://github.com/tutur3u/platform/issues/5098)) ([05f0425](https://github.com/tutur3u/platform/commit/05f04250bd3d96e1b7a44d309c7400c47beb9b20))
+* **chat:** configure modern replica destination ([857d2a9](https://github.com/tutur3u/platform/commit/857d2a940427784fb18698546d94ed28b3058a25))
+* **cms:** add CyberShield35 media adapter ([2808101](https://github.com/tutur3u/platform/commit/2808101295627383d275d6981378fb579bcee6b7))
+* **cms:** add CyberShield35 media adapter ([#5087](https://github.com/tutur3u/platform/issues/5087)) ([57c7da2](https://github.com/tutur3u/platform/commit/57c7da27f4b097a90cc6a709dfd123059293b2f4))
+* **cms:** redesign content library controls ([220ee96](https://github.com/tutur3u/platform/commit/220ee965446a7ae95b5e4cc53788f8ea71e24872))
+* **cms:** redesign media library loading ([d382b3b](https://github.com/tutur3u/platform/commit/d382b3bd254086d344b1b066ccbaf913a303a682))
+* **cms:** redesign workspace home ([cd727b8](https://github.com/tutur3u/platform/commit/cd727b8a2f220d96527b892a39a288cc0f211a70))
+* **cms:** safeguard entry publishing workflow ([2371b08](https://github.com/tutur3u/platform/commit/2371b08c726a1ea4ecf480dfe25f1b9e12f55e35))
+* **cms:** support Richfield external project forms ([befa92f](https://github.com/tutur3u/platform/commit/befa92f30f4e4f7f2a56a043bf79a99c153845e6))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
+
+### Bug Fixes
+
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** complete connected site hardening ([9175456](https://github.com/tutur3u/platform/commit/9175456f68bcdfad20216c7b03a59105fb55f0d5))
+* **chat:** harden bridge recovery paths ([9dc22a7](https://github.com/tutur3u/platform/commit/9dc22a758a4b8e1543ba65d53395048b2a206ff6))
+* **chat:** harden connected site migration ([73cccd0](https://github.com/tutur3u/platform/commit/73cccd04e9bd85a443891f3e52b443ef755570cb))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([5b7c709](https://github.com/tutur3u/platform/commit/5b7c7092260b05c8de86c2383291433f81c9eead))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** harden external parity replay ([896923b](https://github.com/tutur3u/platform/commit/896923b3c498a09fe0974de1aa0f8d291f8b2c84))
+* **chat:** harden external parity replay ([89c5498](https://github.com/tutur3u/platform/commit/89c5498aef4ad5ebf05ef93bfb05168417a5dfe2))
+* **chat:** preserve native message behavior ([fc09530](https://github.com/tutur3u/platform/commit/fc095301f2d26ca2bc39de02ce17b1f341327de9))
+* **chat:** return persisted adopted runs ([a194a35](https://github.com/tutur3u/platform/commit/a194a35db4b79ce3441b06f0710b4ae0ba2b5568))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **cms:** allow bound project member setup ([c3d420d](https://github.com/tutur3u/platform/commit/c3d420d894805efd181ab0cdfa551befaf5a5426))
+* **cms:** enable chat for custom templates ([3f4cea1](https://github.com/tutur3u/platform/commit/3f4cea1722bd32e1f58d44a569e83d0f4e28b0d8))
+* **external-chat:** complete connected-site setup ([#5081](https://github.com/tutur3u/platform/issues/5081)) ([17a2b16](https://github.com/tutur3u/platform/commit/17a2b1689d547dc37339a922c90f22b976e97e6e))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* **platform:** improve task details and satellite saves ([441c283](https://github.com/tutur3u/platform/commit/441c283f3003718723e4cf89d7d140e1515a6eec))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **settings:** restore satellite workspace management ([be1fb5a](https://github.com/tutur3u/platform/commit/be1fb5aade1955ce0a73be29a090a3d7488aa8a6))
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+
 ## [0.28.1](https://github.com/tutur3u/platform/compare/cms-v0.28.0...cms-v0.28.1) (2026-08-09)
 
 

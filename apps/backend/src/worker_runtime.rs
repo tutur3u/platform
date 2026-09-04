@@ -162,7 +162,7 @@ impl BackendResponse {
     fn into_worker_response(self) -> Result<Response> {
         let header_operations = runtime_response_header_operations(&self);
         let mut response = if let Some(body_text) = self.body_text {
-            Response::ok(body_text)?.with_status(self.status)
+            Response::ok(String::from(body_text))?.with_status(self.status)
         } else if self.body_empty {
             Response::empty()?.with_status(self.status)
         } else {

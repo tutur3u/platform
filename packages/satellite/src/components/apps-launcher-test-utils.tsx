@@ -1,6 +1,7 @@
 import { cleanup, render } from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { NextIntlClientProvider } from 'next-intl';
+import { useState } from 'react';
 import { vi } from 'vitest';
 import { AppsLauncherDialog } from './apps-launcher';
 import { APP_OPEN_MODE_PREFERENCE_KEY } from './apps-launcher-preference';
@@ -65,6 +66,7 @@ const messages = {
     default_destination: 'Default app home',
     no_apps_found: 'No apps found',
     no_apps_found_description: 'Try a different app name or keyword.',
+    navigate: 'navigate',
     open_apps_in: 'Open apps in',
     open_current_tab: 'This tab',
     open_here: 'Open here',
@@ -72,24 +74,36 @@ const messages = {
     open_new_tab: 'New tab',
     open_options: 'Open options',
     search_apps: 'Search apps',
+    select: 'select',
     workspace_destination: '{workspace} workspace',
   },
 };
 
-export function renderAppsLauncherDialog() {
+export function renderAppsLauncherDialog({ open = true } = {}) {
   const onOpenChange = vi.fn();
 
-  render(
-    <NextIntlClientProvider locale="en" messages={messages}>
+  function AppsLauncherHarness() {
+    const [isOpen, setIsOpen] = useState(open);
+
+    return (
       <AppsLauncherDialog
         currentWorkspace={{
           id: 'personal-id',
           name: 'Personal Space',
           personal: true,
         }}
-        onOpenChange={onOpenChange}
-        open
+        onOpenChange={(nextOpen) => {
+          onOpenChange(nextOpen);
+          setIsOpen(nextOpen);
+        }}
+        open={isOpen}
       />
+    );
+  }
+
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <AppsLauncherHarness />
     </NextIntlClientProvider>
   );
 

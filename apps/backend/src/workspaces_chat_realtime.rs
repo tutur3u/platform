@@ -153,7 +153,7 @@ fn realtime_unavailable_response() -> BackendResponse {
         allow: None,
         body: serde_json::Value::Null,
         body_empty: false,
-        body_text: Some(REALTIME_UNAVAILABLE_EVENT.to_owned()),
+        body_text: Some(REALTIME_UNAVAILABLE_EVENT.into()),
         cache_control: Some(SSE_CACHE_CONTROL),
         content_type: Some(SSE_CONTENT_TYPE),
         headers: Vec::new(),

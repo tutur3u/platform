@@ -4,49 +4,11 @@ import {
   getReachableSectionIds,
   matchesRule,
 } from './branching';
+import { createTestFormDefinition } from './test-support/form-fixtures';
 import type { FormDefinition } from './types';
 
-const baseForm: FormDefinition = {
-  id: 'a0bba3b1-8861-4f5f-b174-746f75949001',
-  wsId: 'a0bba3b1-8861-4f5f-b174-746f75949002',
-  creatorId: 'a0bba3b1-8861-4f5f-b174-746f75949003',
+const baseForm: FormDefinition = createTestFormDefinition({
   title: 'Branching test',
-  description: '',
-  status: 'draft',
-  accessMode: 'anonymous',
-  openAt: null,
-  closeAt: null,
-  maxResponses: null,
-  theme: {
-    presetId: 'editorial-moss',
-    density: 'balanced',
-    accentColor: 'dynamic-green',
-    headlineFontId: 'noto-serif',
-    bodyFontId: 'be-vietnam-pro',
-    surfaceStyle: 'paper',
-    coverHeadline: '',
-    coverImage: {
-      storagePath: '',
-      url: '',
-      alt: '',
-    },
-    sectionImages: {},
-    typography: {
-      displaySize: 'md',
-      headingSize: 'md',
-      bodySize: 'md',
-    },
-  },
-  settings: {
-    showProgressBar: true,
-    allowMultipleSubmissions: true,
-    oneResponsePerUser: false,
-    requireTurnstile: true,
-    confirmationTitle: 'Thanks',
-    confirmationMessage: 'Done',
-  },
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
   sections: [
     {
       id: 'a0bba3b1-8861-4f5f-b174-746f75949010',
@@ -118,7 +80,7 @@ const baseForm: FormDefinition = {
       targetSectionId: 'a0bba3b1-8861-4f5f-b174-746f75949030',
     },
   ],
-};
+});
 
 describe('forms branching', () => {
   it('matches contains rules against array answers', () => {

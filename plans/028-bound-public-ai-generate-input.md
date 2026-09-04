@@ -10,7 +10,9 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
+- **Blocked by:** Plan 027 must be DONE; it is blocked behind the retained
+  build-blocked Plan 025 Teach object-route implementation
 - **Priority:** P1
 - **Effort:** S
 - **Risk:** MED
@@ -44,9 +46,9 @@ the request fails downstream.
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
 | Focused tests | `bun --cwd packages/ai vitest run src/generate/route.test.ts` | boundary and early-rejection cases pass |
-| AI typecheck | `bun --cwd packages/ai run type-check` | exit 0 |
+| AI typecheck | `bun run --cwd packages/ai type-check` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Web build | `bun --cwd apps/web run build` | exit 0 |
+| Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

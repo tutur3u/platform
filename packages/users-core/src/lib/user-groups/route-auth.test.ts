@@ -59,4 +59,26 @@ describe('user group route app-session auth', () => {
     });
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
+
+  it('does not trust invalid or mismatched app sessions', async () => {
+    const request = new Request(
+      'https://contacts.tuturuuu.com/api/v1/workspaces/ws-1/user-groups/group-1'
+    );
+
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      error: 'target_app_mismatch',
+      ok: false,
+    });
+    mocks.getPermissions.mockResolvedValue(null);
+
+    await expect(getUserGroupRoutePermissions('ws-1', request)).resolves.toBe(
+      null
+    );
+
+    expect(mocks.createAppSessionUser).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      request,
+      wsId: 'ws-1',
+    });
+  });
 });

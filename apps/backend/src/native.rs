@@ -156,7 +156,7 @@ impl BackendResponse {
         }
 
         let body = if let Some(body_text) = self.body_text {
-            body_text
+            body_text.into()
         } else if self.body_empty {
             String::new()
         } else {

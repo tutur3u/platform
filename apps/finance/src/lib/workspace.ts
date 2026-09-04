@@ -1,4 +1,4 @@
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { resolveSatellitePageActor } from '@tuturuuu/satellite/workspace-access';
 import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import {
   getPermissions,
@@ -35,7 +35,8 @@ function normalizeConfigValue(value: string | null | undefined) {
 }
 
 export async function getFinanceWorkspace(id: string) {
-  const user = await getSatelliteAppSessionUser('finance');
+  const actor = await resolveSatellitePageActor('finance');
+  const user = actor?.user;
 
   if (!user?.id) {
     return null;
@@ -45,7 +46,8 @@ export async function getFinanceWorkspace(id: string) {
 }
 
 export async function getFinanceWorkspacePermissions(id: string) {
-  const user = await getSatelliteAppSessionUser('finance');
+  const actor = await resolveSatellitePageActor('finance');
+  const user = actor?.user;
 
   if (!user?.id) {
     return null;
@@ -57,7 +59,8 @@ export async function getFinanceWorkspacePermissions(id: string) {
 export async function getFinanceWorkspaceContext(
   id: string
 ): Promise<FinanceWorkspaceContext | null> {
-  const user = await getSatelliteAppSessionUser('finance');
+  const actor = await resolveSatellitePageActor('finance');
+  const user = actor?.user;
 
   if (!user?.id) {
     return null;

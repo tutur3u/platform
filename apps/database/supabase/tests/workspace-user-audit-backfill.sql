@@ -1,9 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-
 set local search_path = public, extensions, audit;
-
 select plan(23);
 
 insert into public.users (id)
@@ -12,6 +10,7 @@ values
   ('00000000-0000-0000-0000-000000000702')
 on conflict (id) do nothing;
 
+set local session_replication_role = replica;
 insert into public.workspaces (id, name, personal, creator_id)
 values
   (
@@ -27,7 +26,7 @@ values
     '00000000-0000-0000-0000-000000000701'
   )
 on conflict (id) do nothing;
-
+set local session_replication_role = origin;
 insert into public.workspace_users (
   id,
   ws_id,

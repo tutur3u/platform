@@ -31,14 +31,14 @@ export function ActiveSessionCard({
 
   return (
     <div className="space-y-4 text-center">
-      <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-dynamic-red/10 to-dynamic-red/20 @lg:p-6 p-4">
-        <div className="absolute inset-0 animate-pulse bg-linear-to-r from-dynamic-red/10 to-transparent opacity-30" />
+      <div className="relative overflow-hidden rounded-lg bg-linear-to-br from-red-50 to-red-100 @lg:p-6 p-4 dark:from-red-950/20 dark:to-red-900/20">
+        <div className="absolute inset-0 animate-pulse bg-linear-to-r from-red-500/10 to-transparent opacity-30" />
         <div className="relative">
-          <div className="font-bold font-mono @lg:text-4xl text-3xl text-dynamic-red transition-all duration-300">
+          <div className="font-bold font-mono @lg:text-4xl text-3xl text-red-600 transition-all duration-300 dark:text-red-400">
             {formatTime(elapsedTime)}
           </div>
-          <div className="mt-2 flex items-center gap-2 @lg:text-sm text-dynamic-red/70 text-xs">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-red" />
+          <div className="mt-2 flex items-center gap-2 @lg:text-sm text-red-600 text-xs dark:text-red-400">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
             Started at {new Date(session.start_time).toLocaleTimeString()}
           </div>
         </div>
@@ -79,7 +79,7 @@ export function ActiveSessionCard({
               <MapPin className="h-3 w-3" />
               <span>{taskWithDetails.board_name}</span>
             </div>
-            <span>-</span>
+            <span>•</span>
             <div className="flex items-center gap-1">
               <Tag className="h-3 w-3" />
               <span>{taskWithDetails.list_name}</span>

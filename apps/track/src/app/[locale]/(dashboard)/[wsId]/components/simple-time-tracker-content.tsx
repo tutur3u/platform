@@ -44,9 +44,11 @@ export default function SimpleTimeTrackerContent({
       const data = await response.json();
       return data.session;
     },
-    refetchInterval: 30000, // 30 seconds
+    refetchInterval: (query) => (query.state.data ? 60_000 : 5 * 60_000),
+    refetchIntervalInBackground: false,
     initialData: initialData.runningSession,
     enabled: !!currentUser,
+    staleTime: 60_000,
   });
 
   // Use React Query for stats to enable real-time updates
@@ -65,7 +67,8 @@ export default function SimpleTimeTrackerContent({
         data.stats || { todayTime: 0, weekTime: 0, monthTime: 0, streak: 0 }
       );
     },
-    refetchInterval: 60000, // 1 minute (less frequent than running session)
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
     initialData: initialData.stats || {
       todayTime: 0,
       weekTime: 0,
@@ -73,7 +76,7 @@ export default function SimpleTimeTrackerContent({
       streak: 0,
     },
     enabled: !!currentUser,
-    staleTime: 30000, // 30 seconds
+    staleTime: 5 * 60_000,
   });
 
   const [currentSession, setCurrentSession] =

@@ -12,9 +12,31 @@ import {
   isTaskBoardCompletedStatus,
   isTaskBoardTerminalStatus,
 } from '@tuturuuu/utils/task-list-status';
+import {
+  compareTasksByEffectiveSortKey,
+  getEffectiveTaskSortKey,
+} from '../tu-do/boards/boardId/kanban/dnd/task-sort-key';
+import {
+  patchTaskInVisibleCaches,
+  restoreVisibleTaskCaches,
+  snapshotVisibleTaskCaches,
+} from '../tu-do/shared/task-cache-patches';
+
+const PERSONAL_SORT_KEY_STEP = 1_000_000;
+const PERSONAL_SORT_KEY_DEFAULT = 1_000_000_001;
 
 export function isPersonalExternalTask(task?: Task) {
   return isPersonalExternalOverlayTask(task);
+}
+
+export function shouldMoveExternalTaskToCompletion(
+  task: Task,
+  targetCompletionList: TaskList | null | undefined
+) {
+  return (
+    isPersonalExternalTask(task) &&
+    Boolean(targetCompletionList && targetCompletionList.id !== task.list_id)
+  );
 }
 
 function findFirstListByStatus(lists: TaskList[], status: TaskBoardStatus) {
@@ -48,19 +70,7 @@ function findFirstMatchingSourceList(
   return null;
 }
 
-function mergeTaskIntoCache(current: Task[] | undefined, nextTask: Task) {
-  const existing = current ?? [];
-  let found = false;
-  const merged = existing.map((item) => {
-    if (item.id !== nextTask.id) return item;
-    found = true;
-    return { ...item, ...nextTask } as Task;
-  });
-
-  return found ? merged : [...merged, nextTask];
-}
-
-function getPersonalPlacementOrder({
+export function getPersonalPlacementOrder({
   boardId,
   queryClient,
   taskId,
@@ -77,26 +87,28 @@ function getPersonalPlacementOrder({
     queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
   const targetListTasks = currentTasks
     .filter((item) => item.id !== taskId && item.list_id === targetListId)
-    .sort((a, b) => {
-      const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
-      const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
-      if (sortA !== sortB) return sortA - sortB;
-      if (!a.created_at || !b.created_at) return 0;
-      return (
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-    });
+    .sort(compareTasksByEffectiveSortKey);
 
-  if (position === 'top') {
-    return {
-      previous_task_id: null,
-      next_task_id: targetListTasks[0]?.id ?? null,
-    };
-  }
+  const previousTask =
+    position === 'end' ? targetListTasks[targetListTasks.length - 1] : null;
+  const nextTask = position === 'top' ? targetListTasks[0] : null;
+  const previousSortKey = previousTask
+    ? getEffectiveTaskSortKey(previousTask)
+    : null;
+  const nextSortKey = nextTask ? getEffectiveTaskSortKey(nextTask) : null;
+  const personalSortKey =
+    previousSortKey !== null
+      ? previousSortKey + PERSONAL_SORT_KEY_STEP
+      : nextSortKey !== null
+        ? nextSortKey > 1
+          ? Math.max(1, Math.floor(nextSortKey / 2))
+          : nextSortKey / 2
+        : PERSONAL_SORT_KEY_DEFAULT;
 
   return {
-    previous_task_id: targetListTasks[targetListTasks.length - 1]?.id ?? null,
-    next_task_id: null,
+    personal_sort_key: personalSortKey,
+    previous_task_id: previousTask?.id ?? null,
+    next_task_id: nextTask?.id ?? null,
   };
 }
 
@@ -113,15 +125,12 @@ function upsertLocallyMutatedTask({
 }) {
   const locallyMutatedTask = markLocallyMutatedTask(task);
 
-  queryClient.setQueryData<Task[]>(['tasks', boardId], (current) =>
-    mergeTaskIntoCache(current, locallyMutatedTask)
-  );
-
-  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
-    queryClient.setQueryData<Task[]>(['tasks-full', boardId], (current) =>
-      mergeTaskIntoCache(current, locallyMutatedTask)
-    );
-  }
+  patchTaskInVisibleCaches({
+    boardId,
+    queryClient,
+    taskId: task.id,
+    updater: (current) => ({ ...current, ...locallyMutatedTask }) as Task,
+  });
 }
 
 export async function moveExternalTaskToPersonalList({
@@ -132,6 +141,7 @@ export async function moveExternalTaskToPersonalList({
   targetList,
   sourceStatus,
   placementPosition = 'end',
+  shouldApplyCacheUpdate = () => true,
 }: {
   boardId: string;
   markLocallyMutatedTask: (task: Task) => Task;
@@ -140,14 +150,13 @@ export async function moveExternalTaskToPersonalList({
   targetList: TaskList;
   sourceStatus?: TaskBoardStatus;
   placementPosition?: 'top' | 'end';
+  shouldApplyCacheUpdate?: () => boolean;
 }) {
   const personalBoardId = task.personal_board_id ?? boardId;
   const sourceWorkspaceId = task.source_workspace_id;
   const sourceBoardId = task.source_board_id;
-  const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-  const previousFullTasks = queryClient.getQueryData<Task[]>([
-    'tasks-full',
-    boardId,
+  const previousCaches = snapshotVisibleTaskCaches(queryClient, boardId, [
+    task.id,
   ]);
   const now = new Date().toISOString();
   let sourceTargetList: TaskList | null = null;
@@ -207,6 +216,13 @@ export async function moveExternalTaskToPersonalList({
 
     const isCompletedTarget = isTaskBoardCompletedStatus(targetList.status);
     const isClosedTarget = isTaskBoardTerminalStatus(targetList.status);
+    const order = getPersonalPlacementOrder({
+      boardId,
+      queryClient,
+      taskId: task.id,
+      targetListId: targetList.id,
+      position: placementPosition,
+    });
     const optimisticTask = {
       ...task,
       list_id: targetList.id,
@@ -215,29 +231,27 @@ export async function moveExternalTaskToPersonalList({
       personal_placed_at: now,
       is_personal_external: true,
       is_personal_external_default: false,
+      personal_sort_key: order.personal_sort_key,
+      sort_key: order.personal_sort_key,
       completed_at: isCompletedTarget ? (task.completed_at ?? now) : null,
       closed_at: isClosedTarget ? (task.closed_at ?? now) : null,
     } as Task;
 
-    upsertLocallyMutatedTask({
-      boardId,
-      markLocallyMutatedTask,
-      queryClient,
-      task: optimisticTask,
-    });
+    if (shouldApplyCacheUpdate()) {
+      upsertLocallyMutatedTask({
+        boardId,
+        markLocallyMutatedTask,
+        queryClient,
+        task: optimisticTask,
+      });
+    }
 
-    const order = getPersonalPlacementOrder({
-      boardId,
-      queryClient,
-      taskId: task.id,
-      targetListId: targetList.id,
-      position: placementPosition,
-    });
     const placementResponse = await upsertCurrentUserTaskPersonalPlacement(
       task.id,
       {
         personal_board_id: personalBoardId,
         personal_list_id: targetList.id,
+        personal_sort_key: order.personal_sort_key,
         previous_task_id: order.previous_task_id,
         next_task_id: order.next_task_id,
         terminal_status: terminalStatus,
@@ -258,43 +272,45 @@ export async function moveExternalTaskToPersonalList({
     }
 
     const placedTask = placementResponse.task as Task;
-    upsertLocallyMutatedTask({
-      boardId,
-      markLocallyMutatedTask,
-      queryClient,
-      task: {
-        ...optimisticTask,
-        ...placedTask,
-        list_id: targetList.id,
-        personal_board_id: personalBoardId,
-        personal_list_id: targetList.id,
-        personal_sort_key:
-          placedTask.personal_sort_key ?? optimisticTask.personal_sort_key,
-        sort_key: placedTask.sort_key ?? optimisticTask.sort_key,
-        completed_at: isCompletedTarget
-          ? (sourceTask?.completed_at ??
-            placedTask.completed_at ??
-            optimisticTask.completed_at)
-          : null,
-        closed_at: isClosedTarget
-          ? (sourceTask?.closed_at ??
-            placedTask.closed_at ??
-            optimisticTask.closed_at)
-          : null,
-        source_list_id:
-          sourceTargetList?.id ??
-          placedTask.source_list_id ??
-          task.source_list_id,
-        source_list_name:
-          sourceTargetList?.name ??
-          placedTask.source_list_name ??
-          task.source_list_name,
-        source_list_status:
-          sourceTargetList?.status ??
-          placedTask.source_list_status ??
-          task.source_list_status,
-      } as Task,
-    });
+    if (shouldApplyCacheUpdate()) {
+      upsertLocallyMutatedTask({
+        boardId,
+        markLocallyMutatedTask,
+        queryClient,
+        task: {
+          ...optimisticTask,
+          ...placedTask,
+          list_id: targetList.id,
+          personal_board_id: personalBoardId,
+          personal_list_id: targetList.id,
+          personal_sort_key:
+            placedTask.personal_sort_key ?? optimisticTask.personal_sort_key,
+          sort_key: placedTask.sort_key ?? optimisticTask.sort_key,
+          completed_at: isCompletedTarget
+            ? (sourceTask?.completed_at ??
+              placedTask.completed_at ??
+              optimisticTask.completed_at)
+            : null,
+          closed_at: isClosedTarget
+            ? (sourceTask?.closed_at ??
+              placedTask.closed_at ??
+              optimisticTask.closed_at)
+            : null,
+          source_list_id:
+            sourceTargetList?.id ??
+            placedTask.source_list_id ??
+            task.source_list_id,
+          source_list_name:
+            sourceTargetList?.name ??
+            placedTask.source_list_name ??
+            task.source_list_name,
+          source_list_status:
+            sourceTargetList?.status ??
+            placedTask.source_list_status ??
+            task.source_list_status,
+        } as Task,
+      });
+    }
 
     return {
       placementTask: placedTask,
@@ -302,11 +318,8 @@ export async function moveExternalTaskToPersonalList({
       sourceTargetList,
     };
   } catch (error) {
-    if (previousTasks) {
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-    }
-    if (previousFullTasks) {
-      queryClient.setQueryData(['tasks-full', boardId], previousFullTasks);
+    if (shouldApplyCacheUpdate()) {
+      restoreVisibleTaskCaches(queryClient, previousCaches);
     }
     throw error;
   }

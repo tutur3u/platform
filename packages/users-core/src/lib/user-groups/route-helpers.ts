@@ -1,10 +1,17 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import {
+  normalizeWorkspaceId,
+  resolveWorkspaceIdForPrincipal,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { resolveUserGroupAppSessionUser } from './route-auth';
 
@@ -16,9 +23,22 @@ export async function resolveUserGroupRouteWorkspaceId(
     return resolveWorkspaceId(wsId);
   }
 
-  const { normalizeWorkspaceId } = await import(
-    '@tuturuuu/utils/workspace-helper'
-  );
+  const appSessionUser = request
+    ? resolveUserGroupAppSessionUser(request)
+    : null;
+
+  if (appSessionUser) {
+    const admin = await createAdminClient({ noCookie: true });
+    return resolveWorkspaceIdForPrincipal({
+      authorizationClient: admin,
+      principal: {
+        email: appSessionUser.email ?? null,
+        id: appSessionUser.id,
+      },
+      wsId,
+    });
+  }
+
   return normalizeWorkspaceId(wsId, undefined, request as NextRequest);
 }
 

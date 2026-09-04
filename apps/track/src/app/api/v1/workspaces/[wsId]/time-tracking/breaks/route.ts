@@ -31,7 +31,6 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const sbAdmin = await createAdminClient();
 
     const auth = await resolveSessionAuthContext(request, {
@@ -40,6 +39,7 @@ export async function GET(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
       userId: user.id,
@@ -160,8 +160,6 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
       allowAppSessionAuth: true,
@@ -169,6 +167,7 @@ export async function POST(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,

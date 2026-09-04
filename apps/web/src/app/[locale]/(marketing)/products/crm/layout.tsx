@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Customer Relationship Management',
-  description:
-    'Track relationships and deals inside the connected Tuturuuu CRM.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'products.crm.seo',
   pathname: '/products/crm',
 });
 
-export default function CRMLayout({ children }: { children: ReactNode }) {
+export default function CrmLayout({ children }: { children: ReactNode }) {
   return children;
 }

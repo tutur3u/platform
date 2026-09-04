@@ -12,6 +12,7 @@ import {
   type HiveRealtimeServerMessage,
   hiveRealtimeClientMessageSchema,
 } from './protocol';
+import { createRoomMaintenance, RoomRegistry } from './room-registry';
 import {
   type HiveRealtimeTokenPayload,
   verifyHiveRealtimeToken,
@@ -21,29 +22,13 @@ type HiveWebSocket = ServerWebSocket<{
   token: HiveRealtimeTokenPayload;
 }>;
 
-type RoomState = {
-  awareness: Map<string, HiveRealtimeAwareness>;
-  clients: Set<HiveWebSocket>;
-};
-
 type ServerOptions = {
   port?: number;
 };
 
-const rooms = new Map<string, RoomState>();
 const PRESENCE_TTL_MS = 30_000;
-
-function getRoom(serverId: string) {
-  const existing = rooms.get(serverId);
-  if (existing) return existing;
-
-  const created = {
-    awareness: new Map<string, HiveRealtimeAwareness>(),
-    clients: new Set<HiveWebSocket>(),
-  };
-  rooms.set(serverId, created);
-  return created;
-}
+const PRESENCE_SWEEP_INTERVAL_MS = 10_000;
+const roomRegistry = new RoomRegistry<HiveWebSocket>();
 
 function send(ws: HiveWebSocket, message: HiveRealtimeServerMessage) {
   ws.send(JSON.stringify(message));
@@ -54,7 +39,7 @@ function broadcast(
   message: HiveRealtimeServerMessage,
   except?: HiveWebSocket
 ) {
-  const room = rooms.get(serverId);
+  const room = roomRegistry.getExisting(serverId);
   if (!room) return;
 
   const payload = JSON.stringify(message);
@@ -65,25 +50,38 @@ function broadcast(
 }
 
 function presencePayload(serverId: string): HiveRealtimeServerMessage {
-  const room = getRoom(serverId);
-  const now = Date.now();
-
-  for (const [userId, awareness] of room.awareness.entries()) {
-    if (Date.parse(awareness.lastSeenAt) + PRESENCE_TTL_MS < now) {
-      room.awareness.delete(userId);
-    }
-  }
+  const room = roomRegistry.pruneAwareness(
+    serverId,
+    Date.now(),
+    PRESENCE_TTL_MS
+  );
 
   return {
-    awareness: Array.from(room.awareness.values()),
+    awareness: Array.from(room?.awareness.values() ?? []),
     serverId,
     type: 'presence',
   };
 }
 
 function publishPresence(serverId: string) {
+  if (!roomRegistry.getExisting(serverId)) return;
   broadcast(serverId, presencePayload(serverId));
 }
+
+const roomMaintenance = createRoomMaintenance({
+  clock: {
+    clearInterval: (handle: ReturnType<typeof setInterval>) =>
+      clearInterval(handle),
+    setInterval: (callback: () => void, intervalMs: number) =>
+      setInterval(callback, intervalMs),
+  },
+  intervalMs: PRESENCE_SWEEP_INTERVAL_MS,
+  sweep: () => {
+    roomRegistry.forEachExisting((_room, serverId) => {
+      publishPresence(serverId);
+    });
+  },
+});
 
 function createDefaultAwareness(token: HiveRealtimeTokenPayload) {
   return {
@@ -190,7 +188,7 @@ async function handleMessage(ws: HiveWebSocket, raw: string) {
   }
 
   if (parsed.data.type === 'awareness.update') {
-    const room = getRoom(token.serverId);
+    const room = roomRegistry.getOrCreate(token.serverId);
     const awareness = {
       ...parsed.data.awareness,
       lastSeenAt: new Date().toISOString(),
@@ -204,14 +202,14 @@ async function handleMessage(ws: HiveWebSocket, raw: string) {
   }
 
   if (parsed.data.type === 'presence.join') {
-    const room = getRoom(token.serverId);
+    const room = roomRegistry.getOrCreate(token.serverId);
     room.awareness.set(token.userId, createDefaultAwareness(token));
     publishPresence(token.serverId);
     return;
   }
 
   if (parsed.data.type === 'selection') {
-    const room = getRoom(token.serverId);
+    const room = roomRegistry.getOrCreate(token.serverId);
     const current =
       room.awareness.get(token.userId) ?? createDefaultAwareness(token);
     const awareness = {
@@ -229,65 +227,95 @@ async function handleMessage(ws: HiveWebSocket, raw: string) {
 }
 
 export function createHiveRealtimeServer(options: ServerOptions = {}) {
-  setInterval(() => {
-    for (const serverId of rooms.keys()) {
-      publishPresence(serverId);
-    }
-  }, 10_000);
+  const releaseMaintenance = roomMaintenance.acquire();
 
-  return Bun.serve<{ token: HiveRealtimeTokenPayload }>({
-    fetch(request, server) {
-      const url = new URL(request.url);
+  try {
+    const server = Bun.serve<{ token: HiveRealtimeTokenPayload }>({
+      fetch(request, server) {
+        const url = new URL(request.url);
 
-      if (url.pathname === '/health') {
-        return Response.json({ ok: true });
-      }
+        if (url.pathname === '/health') {
+          return Response.json({ ok: true });
+        }
 
-      if (url.pathname !== '/realtime') {
-        return new Response('Not found', { status: 404 });
-      }
+        if (url.pathname !== '/realtime') {
+          return new Response('Not found', { status: 404 });
+        }
 
-      const token = verifyHiveRealtimeToken(
-        url.searchParams.get('token') ?? ''
-      );
-      if (!token) {
-        return new Response('Unauthorized', { status: 401 });
-      }
-
-      const upgraded = server.upgrade(request, {
-        data: { token },
-      });
-
-      return upgraded
-        ? undefined
-        : new Response('Expected WebSocket upgrade', { status: 426 });
-    },
-    port: options.port ?? Number(process.env.PORT ?? 7815),
-    websocket: {
-      close(ws) {
-        const room = rooms.get(ws.data.token.serverId);
-        room?.clients.delete(ws);
-        room?.awareness.delete(ws.data.token.userId);
-        publishPresence(ws.data.token.serverId);
-      },
-      message(ws, message) {
-        handleMessage(ws, String(message)).catch((error) => {
-          send(ws, {
-            error: error instanceof Error ? error.message : 'unknown_error',
-            type: 'error',
-          });
-        });
-      },
-      open(ws) {
-        const room = getRoom(ws.data.token.serverId);
-        room.clients.add(ws);
-        room.awareness.set(
-          ws.data.token.userId,
-          createDefaultAwareness(ws.data.token)
+        const token = verifyHiveRealtimeToken(
+          url.searchParams.get('token') ?? ''
         );
-        void handleSyncHello(ws);
-        publishPresence(ws.data.token.serverId);
+        if (!token) {
+          return new Response('Unauthorized', { status: 401 });
+        }
+
+        const upgraded = server.upgrade(request, {
+          data: { token },
+        });
+
+        return upgraded
+          ? undefined
+          : new Response('Expected WebSocket upgrade', { status: 426 });
       },
+      port: options.port ?? Number(process.env.PORT ?? 7815),
+      websocket: {
+        close(ws) {
+          const remainingRoom = roomRegistry.removeClient(
+            ws.data.token.serverId,
+            ws,
+            ws.data.token.userId
+          );
+          if (remainingRoom) publishPresence(ws.data.token.serverId);
+        },
+        message(ws, message) {
+          handleMessage(ws, String(message)).catch((error) => {
+            send(ws, {
+              error: error instanceof Error ? error.message : 'unknown_error',
+              type: 'error',
+            });
+          });
+        },
+        open(ws) {
+          const room = roomRegistry.getOrCreate(ws.data.token.serverId);
+          room.clients.add(ws);
+          room.awareness.set(
+            ws.data.token.userId,
+            createDefaultAwareness(ws.data.token)
+          );
+          void handleSyncHello(ws);
+          publishPresence(ws.data.token.serverId);
+        },
+      },
+    });
+
+    return wrapServerStop(server, releaseMaintenance);
+  } catch (error) {
+    releaseMaintenance();
+    throw error;
+  }
+}
+
+function wrapServerStop<WebSocketData>(
+  server: Bun.Server<WebSocketData>,
+  releaseMaintenance: () => void
+): Bun.Server<WebSocketData> {
+  const stop = server.stop.bind(server);
+  let stopped = false;
+
+  return new Proxy(server, {
+    get(target, property) {
+      if (property === 'stop') {
+        return (...args: Parameters<typeof stop>) => {
+          if (!stopped) {
+            stopped = true;
+            releaseMaintenance();
+          }
+          return stop(...args);
+        };
+      }
+
+      const value = Reflect.get(target, property, target);
+      return typeof value === 'function' ? value.bind(target) : value;
     },
   });
 }

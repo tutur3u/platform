@@ -6,8 +6,8 @@ const mocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
+  rootLocale: vi.fn(async () => 'en'),
   nuqsAdapter: vi.fn(),
-  setRequestLocale: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -45,9 +45,8 @@ vi.mock('nuqs/adapters/next/app', () => ({
   },
 }));
 
-vi.mock('next-intl/server', () => ({
-  setRequestLocale: (...args: Parameters<typeof mocks.setRequestLocale>) =>
-    mocks.setRequestLocale(...args),
+vi.mock('next/root-params', () => ({
+  locale: () => mocks.rootLocale(),
 }));
 
 vi.mock('@tuturuuu/ui/custom/production-indicator', () => ({
@@ -96,7 +95,6 @@ describe('Infrastructure locale layout', () => {
 
     render(result);
 
-    expect(mocks.setRequestLocale).toHaveBeenCalledWith('en');
     expect(mocks.nuqsAdapter).toHaveBeenCalledOnce();
     expect(screen.getByTestId('nuqs-adapter')).toContainElement(
       screen.getByTestId('satellite-provider')
@@ -108,19 +106,5 @@ describe('Infrastructure locale layout', () => {
     expect(screen.getByTestId('satellite-provider')).toHaveTextContent(
       'dashboard child'
     );
-  });
-
-  it('rejects unsupported locales before mounting the provider', async () => {
-    const Layout = (await import('./layout')).default;
-
-    await expect(
-      Layout({
-        children: <div>dashboard child</div>,
-        params: Promise.resolve({ locale: 'fr' }),
-      })
-    ).rejects.toThrow('not-found');
-
-    expect(mocks.notFound).toHaveBeenCalled();
-    expect(mocks.setRequestLocale).not.toHaveBeenCalled();
   });
 });

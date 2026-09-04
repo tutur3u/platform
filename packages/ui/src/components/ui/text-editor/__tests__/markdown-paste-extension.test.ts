@@ -1,7 +1,42 @@
-import { describe, expect, it } from 'vitest';
+import { Editor } from '@tiptap/core';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  serializeClipboardPlainText,
+  serializeClipboardText,
+} from '../clipboard-serialization';
+import { getEditorExtensions } from '../extensions';
 import { __markdownPastePrivate } from '../markdown-paste-extension';
 
-const { markdownToHtml } = __markdownPastePrivate;
+const {
+  markdownToHtml,
+  looksLikeMarkdown,
+  normalizePastedPlainText,
+  shouldConvertPastedText,
+} = __markdownPastePrivate;
+
+const editors: Editor[] = [];
+
+function createEditor(content: Record<string, unknown>) {
+  const editor = new Editor({ content, extensions: getEditorExtensions() });
+  editors.push(editor);
+  return editor;
+}
+
+function copyDocument(editor: Editor) {
+  return serializeClipboardText(
+    editor.state.doc.slice(0, editor.state.doc.content.size)
+  );
+}
+
+function copyDocumentAsPlainText(editor: Editor) {
+  return serializeClipboardPlainText(
+    editor.state.doc.slice(0, editor.state.doc.content.size)
+  );
+}
+
+afterEach(() => {
+  for (const editor of editors.splice(0)) editor.destroy();
+});
 
 describe('markdownToHtml', () => {
   it('should convert headings', () => {
@@ -47,6 +82,65 @@ describe('markdownToHtml', () => {
     expect(html).toContain('<li><p>item 2</p></li>');
   });
 
+  it('normalizes copied visual bullets into structured list markers', () => {
+    const text = normalizePastedPlainText(
+      'Next steps\r\n• Draft the interview plan\r\n◦ Share it with the team'
+    );
+
+    expect(text).toBe(
+      'Next steps\n- Draft the interview plan\n- Share it with the team'
+    );
+    expect(looksLikeMarkdown(text)).toBe(true);
+    expect(markdownToHtml(text)).toContain(
+      '<ul><li><p>Draft the interview plan</p></li><li><p>Share it with the team</p></li></ul>'
+    );
+  });
+
+  it('normalizes copied visual checkboxes into task list markers', () => {
+    const text = normalizePastedPlainText('☐ Plan interviews\n☑ Invite team');
+
+    expect(text).toBe('- [ ] Plan interviews\n- [x] Invite team');
+    expect(markdownToHtml(text)).toContain('data-type="taskList"');
+  });
+
+  it('collapses pathological blank-line runs without removing section spacing', () => {
+    const text = normalizePastedPlainText(
+      'First section\r\n\r\n\r\n\r\nSecond section\n\n\n- Item'
+    );
+
+    expect(text).toBe('First section\n\nSecond section\n\n- Item');
+  });
+
+  it('does not collapse intentional blank lines inside fenced code', () => {
+    const text = normalizePastedPlainText(
+      'Before\n\n\n```ts\nfirst()\n\n\nsecond()\n```\n\n\nAfter'
+    );
+
+    expect(text).toBe('Before\n\n```ts\nfirst()\n\n\nsecond()\n```\n\nAfter');
+  });
+
+  it('keeps semantic rich HTML for long structured task descriptions', () => {
+    const text = normalizePastedPlainText(
+      'KEEPING FROM THE NEW VERSION:\n• The new About Me UI editor: I like the compactness of it more than the older version.'
+    );
+    const html = [
+      '<h1>KEEPING FROM THE NEW VERSION:</h1>',
+      '<ul><li><p><strong>The new About Me UI editor:</strong> ',
+      'I like the compactness of it more than the older version.</p></li></ul>',
+    ].join('');
+
+    expect(looksLikeMarkdown(text)).toBe(true);
+    expect(shouldConvertPastedText({ html, text })).toBe(false);
+  });
+
+  it('converts Markdown when clipboard HTML is only a visual wrapper', () => {
+    const text = '# Heading\n- Item';
+    const html = '<div># Heading<br>- Item</div>';
+
+    expect(shouldConvertPastedText({ html, text })).toBe(true);
+    expect(shouldConvertPastedText({ html: '', text })).toBe(true);
+  });
+
   it('should convert ordered lists', () => {
     const md = '1. first\n2. second';
     const html = markdownToHtml(md);
@@ -61,6 +155,16 @@ describe('markdownToHtml', () => {
     expect(html).toContain('data-type="taskItem"');
     expect(html).toContain('data-checked="false"');
     expect(html).toContain('data-checked="true"');
+  });
+
+  it('keeps adjacent regular and task lists as separate structures', () => {
+    const html = markdownToHtml(
+      '- Regular item\n\n- [ ] Pending task\n- [x] Finished task'
+    );
+
+    expect(html).toContain('<ul><li><p>Regular item</p></li></ul>');
+    expect(html).toContain('<ul data-type="taskList">');
+    expect(html).not.toContain('data-checked="null"');
   });
 
   it('should convert nested unordered lists', () => {
@@ -84,6 +188,12 @@ describe('markdownToHtml', () => {
     expect(html).toContain(
       '<ol><li><p>Sub-step</p></li><li><p>Sub-step</p></li></ol>'
     );
+  });
+
+  it('preserves a copied ordered-list start number', () => {
+    const html = markdownToHtml('3. Third\n4. Fourth');
+
+    expect(html).toContain('<ol start="3">');
   });
 
   it('should convert deeply nested lists', () => {
@@ -210,6 +320,12 @@ describe('markdownToHtml', () => {
     expect(html).toContain('<p>Hello world</p>');
   });
 
+  it('preserves intentional line breaks inside pasted paragraphs', () => {
+    const html = markdownToHtml('Line one\nLine two');
+
+    expect(html).toContain('<p>Line one<br>Line two</p>');
+  });
+
   it('should escape HTML in plain text', () => {
     const md = '<script>alert(1)</script>';
     const html = markdownToHtml(md);
@@ -262,5 +378,306 @@ describe('markdownToHtml', () => {
     const html = markdownToHtml(md);
     expect(html).toContain('&lt;div&gt;');
     expect(html).not.toContain('<div>');
+  });
+});
+
+describe('task-description clipboard serialization', () => {
+  it('removes duplicate empty blocks while retaining one section gap', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 1 },
+          content: [{ type: 'text', text: 'KEEPING FROM THE NEW VERSION:' }],
+        },
+        { type: 'paragraph' },
+        { type: 'paragraph' },
+        { type: 'paragraph' },
+        {
+          type: 'paragraph',
+          content: [{ type: 'text', text: 'Intro' }],
+        },
+        { type: 'paragraph' },
+        { type: 'paragraph' },
+        {
+          type: 'heading',
+          attrs: { level: 2 },
+          content: [{ type: 'text', text: 'Next section' }],
+        },
+      ],
+    });
+
+    expect(copyDocument(editor)).toBe(
+      '# KEEPING FROM THE NEW VERSION:\n\nIntro\n\n## Next section'
+    );
+  });
+
+  it('retains unordered, nested ordered, and task-list markers', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Parent bullet' }],
+                },
+                {
+                  type: 'orderedList',
+                  attrs: { start: 3 },
+                  content: [
+                    {
+                      type: 'listItem',
+                      content: [
+                        {
+                          type: 'paragraph',
+                          content: [{ type: 'text', text: 'Nested step' }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'taskList',
+          content: [
+            {
+              type: 'taskItem',
+              attrs: { checked: false },
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Pending' }],
+                },
+              ],
+            },
+            {
+              type: 'taskItem',
+              attrs: { checked: true },
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Finished' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(copyDocument(editor)).toBe(
+      [
+        '- Parent bullet',
+        '  3. Nested step',
+        '',
+        '- [ ] Pending',
+        '- [x] Finished',
+      ].join('\n')
+    );
+  });
+
+  it('retains headings, inline formatting, links, and hard breaks', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 2 },
+          content: [
+            { type: 'text', text: 'Bold', marks: [{ type: 'bold' }] },
+            { type: 'text', text: ' and ' },
+            { type: 'text', text: 'italic', marks: [{ type: 'italic' }] },
+          ],
+        },
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: 'Docs',
+              marks: [{ type: 'link', attrs: { href: 'https://example.com' } }],
+            },
+            { type: 'hardBreak' },
+            { type: 'text', text: 'deleted', marks: [{ type: 'strike' }] },
+          ],
+        },
+      ],
+    });
+    const slice = editor.state.doc.slice(0, editor.state.doc.content.size);
+    let fromClipboardProp = '';
+    editor.view.someProp('clipboardTextSerializer', (serializer) => {
+      fromClipboardProp = serializer(slice, editor.view);
+      return true;
+    });
+
+    expect(fromClipboardProp).toBe(
+      '## **Bold** and *italic*\n\n[Docs](https://example.com)\n~~deleted~~'
+    );
+  });
+
+  it('creates clean plain text without Markdown formatting delimiters', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 2 },
+          content: [
+            { type: 'text', text: 'Important', marks: [{ type: 'bold' }] },
+          ],
+        },
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: 'Read the docs',
+              marks: [{ type: 'link', attrs: { href: 'https://example.com' } }],
+            },
+          ],
+        },
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'First point' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(copyDocumentAsPlainText(editor)).toBe(
+      'Important\n\nRead the docs\n\n• First point'
+    );
+  });
+
+  it('uses readable checkbox markers and preserves ordered-list starts in plain text', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'taskList',
+          content: [
+            {
+              type: 'taskItem',
+              attrs: { checked: false },
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Todo' }],
+                },
+              ],
+            },
+            {
+              type: 'taskItem',
+              attrs: { checked: true },
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Done' }],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'orderedList',
+          attrs: { start: 4 },
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Continue' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(copyDocumentAsPlainText(editor)).toBe(
+      '☐ Todo\n☑ Done\n\n4. Continue'
+    );
+  });
+
+  it('round-trips the reported task shape through plain clipboard text', () => {
+    const source = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 1 },
+          content: [{ type: 'text', text: 'CHANGES FOR THE SITE' }],
+        },
+        { type: 'paragraph' },
+        { type: 'paragraph' },
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    {
+                      type: 'text',
+                      text: 'The new editor:',
+                      marks: [{ type: 'bold' }],
+                    },
+                    { type: 'text', text: ' keep the compact layout.' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    const clipboardText = copyDocument(source);
+    const destination = createEditor({ type: 'doc', content: [] });
+    destination.commands.setContent(markdownToHtml(clipboardText));
+    const content = destination.getJSON().content ?? [];
+
+    expect(clipboardText).toBe(
+      '# CHANGES FOR THE SITE\n\n- **The new editor:** keep the compact layout.'
+    );
+    expect(content.map((node) => node.type).slice(0, 2)).toEqual([
+      'heading',
+      'bulletList',
+    ]);
+    expect(content[1]).toMatchObject({
+      content: [
+        {
+          content: [
+            {
+              content: [
+                { marks: [{ type: 'bold' }], text: 'The new editor:' },
+                { text: ' keep the compact layout.' },
+              ],
+            },
+          ],
+        },
+      ],
+    });
   });
 });

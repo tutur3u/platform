@@ -16,6 +16,8 @@ import {
 } from 'recharts';
 
 import type { FormResponsesQuestionAnalytics } from '../types';
+import { AnalyticsNpsCard } from './analytics-nps-card';
+import { AnalyticsRankingCard } from './analytics-ranking-card';
 import { ChartTooltipContent } from './chart-tooltip-content';
 
 export function QuestionAnalyticsCard({
@@ -103,6 +105,15 @@ export function QuestionAnalyticsCard({
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* NPS and ranking come before the generic distribution: both were
+            already computed by `buildQuestionAnalytics` and had no renderer,
+            so the data existed and nobody could see it. */}
+        {analytics.nps ? <AnalyticsNpsCard nps={analytics.nps} t={t} /> : null}
+
+        {analytics.ranking?.length ? (
+          <AnalyticsRankingCard ranking={analytics.ranking} t={t} />
+        ) : null}
+
         {distribution.length > 0 ? (
           <>
             <div className="rounded-2xl border border-border/50 bg-background/45 p-2">

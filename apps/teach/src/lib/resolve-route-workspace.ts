@@ -1,14 +1,16 @@
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getSatelliteWorkspace } from '@tuturuuu/satellite/workspace-access';
 import { notFound } from 'next/navigation';
 
-type ResolvedWorkspace = NonNullable<Awaited<ReturnType<typeof getWorkspace>>>;
+type ResolvedWorkspace = NonNullable<
+  Awaited<ReturnType<typeof getSatelliteWorkspace>>
+>;
 
 export async function resolveRouteWorkspace(routeWsId: string): Promise<{
   routeWsId: string;
   resolvedWsId: string;
   workspace: ResolvedWorkspace;
 }> {
-  const workspace = await getWorkspace(routeWsId);
+  const workspace = await getSatelliteWorkspace('teach', routeWsId);
 
   if (!workspace) {
     notFound();

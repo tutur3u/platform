@@ -570,10 +570,8 @@ fn salsa20_8(b: &mut [u32; 16]) {
 }
 
 fn bytes_to_words_le(bytes: &[u8]) -> Vec<u32> {
-    bytes
-        .chunks_exact(4)
-        .map(|c| u32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-        .collect()
+    let (chunks, _) = bytes.as_chunks::<4>();
+    chunks.iter().copied().map(u32::from_le_bytes).collect()
 }
 
 fn words_to_bytes_le(words: &[u32], out: &mut [u8]) {

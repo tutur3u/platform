@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.3...tasks-api-v0.5.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+
+
+### Bug Fixes
+
+* **command:** resolve task search review feedback ([2a300fe](https://github.com/tutur3u/platform/commit/2a300fea33781841dfd3ae604592bec4c96afcfb))
+
+## [0.4.3](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.2...tasks-api-v0.4.3) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+* **tasks:** repair resource CRUD and sorting ([de345a4](https://github.com/tutur3u/platform/commit/de345a40e2948415eaec6f2965dfd83154d83935))
+
+## [0.4.2](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.1...tasks-api-v0.4.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* **tasks:** align create ordering and hover focus ([053546c](https://github.com/tutur3u/platform/commit/053546c5287e28bb28840167569e044aff02f3dd))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.0...tasks-api-v0.4.1) (2026-08-07)
 
 

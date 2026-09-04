@@ -1,7 +1,10 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it } from 'vitest';
-import { getTaskCardResourceContext } from './task-card-resource-context';
+import {
+  getTaskCardActionLists,
+  getTaskCardResourceContext,
+} from './task-card-resource-context';
 
 const pageList = {
   id: 'page-list',
@@ -135,5 +138,68 @@ describe('getTaskCardResourceContext', () => {
       relationshipWorkspaceId: 'personal-workspace',
       taskBoardId: 'source-board',
     });
+  });
+
+  it('uses personal workspace resources for source tasks even when overlay metadata is incomplete', () => {
+    expect(
+      getTaskCardResourceContext({
+        boardId: 'personal-board',
+        pageWorkspaceId: 'personal-workspace',
+        preferPageWorkspaceResources: true,
+        propAvailableLists: [pageList],
+        task: {
+          ...task,
+          list_id: 'personal-list',
+          source_board_id: 'source-board',
+          source_workspace_id: 'source-workspace',
+        },
+      })
+    ).toMatchObject({
+      effectiveWorkspaceId: 'source-workspace',
+      relationshipWorkspaceId: 'personal-workspace',
+      taskBoardId: 'source-board',
+    });
+  });
+});
+
+describe('getTaskCardActionLists', () => {
+  const sourceDoneList = {
+    ...pageList,
+    id: 'source-done-list',
+    board_id: 'source-board',
+    status: 'done',
+  } satisfies TaskList;
+  const personalDoneList = {
+    ...pageList,
+    id: 'personal-done-list',
+    board_id: 'personal-board',
+    status: 'done',
+  } satisfies TaskList;
+
+  it('uses personal board destinations for external overlay task actions', () => {
+    const actionLists = getTaskCardActionLists({
+      task: {
+        ...task,
+        is_personal_external: true,
+        personal_board_id: 'personal-board',
+        personal_list_id: 'personal-list',
+        source_board_id: 'source-board',
+        source_workspace_id: 'source-workspace',
+      },
+      pageAvailableLists: [personalDoneList],
+      resourceAvailableLists: [sourceDoneList],
+    });
+
+    expect(actionLists).toEqual([personalDoneList]);
+  });
+
+  it('uses resource destinations for regular tasks', () => {
+    expect(
+      getTaskCardActionLists({
+        task,
+        pageAvailableLists: [personalDoneList],
+        resourceAvailableLists: [sourceDoneList],
+      })
+    ).toEqual([sourceDoneList]);
   });
 });

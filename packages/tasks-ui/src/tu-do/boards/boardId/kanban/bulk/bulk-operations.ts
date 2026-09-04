@@ -3,6 +3,10 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useEffect } from 'react';
 import {
+  applyOptimisticTaskPatch,
+  settleOptimisticTaskPatch,
+} from '../../../../shared/task-cache-patches';
+import {
   dispatchTaskSoundCue,
   type TaskSoundCue,
 } from '../../../../shared/task-sound-effects';
@@ -220,17 +224,44 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     return list ? String(list.id) : null;
   }
 
+  async function runPendingMetadataMutation<T>(
+    taskIds: string[],
+    operation: () => Promise<T>
+  ) {
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds,
+      updater: (task) => task,
+    });
+
+    try {
+      return await operation();
+    } finally {
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds,
+        mutationId,
+      });
+    }
+  }
+
   return {
     bulkUpdatePriority: async (priority: Task['priority'] | null) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await priorityMutation.mutateAsync({ priority, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        priorityMutation.mutateAsync({ priority, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkUpdateEstimation: async (points: number | null) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await estimationMutation.mutateAsync({ points, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        estimationMutation.mutateAsync({ points, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkUpdateDueDate: async (
@@ -238,13 +269,17 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     ) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await dueDateMutation.mutateAsync({ preset, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        dueDateMutation.mutateAsync({ preset, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkUpdateCustomDueDate: async (date: Date | null) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await customDueDateMutation.mutateAsync({ date, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        customDueDateMutation.mutateAsync({ date, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkMoveToList: async (listId: string, listName: string) => {
@@ -264,55 +299,73 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     bulkAddLabel: async (labelId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await addLabelMutation.mutateAsync({ labelId, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        addLabelMutation.mutateAsync({ labelId, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkRemoveLabel: async (labelId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await removeLabelMutation.mutateAsync({ labelId, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        removeLabelMutation.mutateAsync({ labelId, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkAddProject: async (projectId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await addProjectMutation.mutateAsync({ projectId, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        addProjectMutation.mutateAsync({ projectId, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkRemoveProject: async (projectId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await removeProjectMutation.mutateAsync({ projectId, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        removeProjectMutation.mutateAsync({ projectId, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkAddAssignee: async (assigneeId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await addAssigneeMutation.mutateAsync({ assigneeId, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        addAssigneeMutation.mutateAsync({ assigneeId, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkRemoveAssignee: async (assigneeId: string) => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await removeAssigneeMutation.mutateAsync({ assigneeId, taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        removeAssigneeMutation.mutateAsync({ assigneeId, taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkClearLabels: async () => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await clearLabelsMutation.mutateAsync({ taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        clearLabelsMutation.mutateAsync({ taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkClearProjects: async () => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await clearProjectsMutation.mutateAsync({ taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        clearProjectsMutation.mutateAsync({ taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkClearAssignees: async () => {
       const taskIds = Array.from(selectedTasks);
       if (!taskIds.length) return;
-      await clearAssigneesMutation.mutateAsync({ taskIds });
+      await runPendingMetadataMutation(taskIds, () =>
+        clearAssigneesMutation.mutateAsync({ taskIds })
+      );
       dispatchBulkTaskSoundCue('update', taskIds.length);
     },
     bulkDeleteTasks: async () => {

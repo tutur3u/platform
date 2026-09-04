@@ -68,14 +68,24 @@ export function TaskItemCheckboxContent({
     });
   }, [editor, getPos, node.attrs, checkboxState]);
 
-  const handleCheckboxClick = useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleCheckboxPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (!event.isPrimary || event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
-      if (!editor.isEditable) return;
       handleCheckboxCycle();
     },
-    [editor, handleCheckboxCycle]
+    [handleCheckboxCycle]
+  );
+
+  const handleCheckboxKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      event.stopPropagation();
+      handleCheckboxCycle();
+    },
+    [handleCheckboxCycle]
   );
 
   return (
@@ -84,29 +94,29 @@ export function TaskItemCheckboxContent({
         className="task-list-checkbox-label flex shrink-0 select-none pt-2.5"
         contentEditable={false}
       >
+        {/* biome-ignore lint/a11y/useSemanticElements: a button avoids native checkbox state changes while ProseMirror owns the tri-state document update */}
         <button
           type="button"
-          aria-label={
-            isChecked
-              ? 'Checked'
-              : isIndeterminate
-                ? 'Indeterminate'
-                : 'Unchecked'
-          }
+          role="checkbox"
+          aria-label="Task item status"
+          aria-checked={isIndeterminate ? 'mixed' : isChecked}
           aria-disabled={!editor.isEditable}
-          onClick={handleCheckboxClick}
+          onPointerDown={handleCheckboxPointerDown}
+          onKeyDown={handleCheckboxKeyDown}
           className={cn(
-            'task-list-checkbox flex h-4.5 w-4.5 items-center justify-center',
-            'cursor-pointer rounded-lg border-2 bg-background',
-            'transition-all duration-150',
+            'task-list-checkbox flex size-5 items-center justify-center',
+            'cursor-pointer rounded-md border-2 bg-background',
+            'transition-[color,background-color,border-color,box-shadow,transform] duration-150 active:scale-95',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2',
+            !editor.isEditable && 'cursor-default opacity-70',
             !completedTaskColor && [
               'border-input',
               'hover:scale-105 hover:border-dynamic-gray hover:bg-dynamic-gray/10',
-              'focus:border-dynamic-gray focus:outline-none focus:ring-2 focus:ring-dynamic-gray/30 focus:ring-offset-2',
+              'focus-visible:border-dynamic-gray',
               isChecked &&
-                'border-dynamic-green bg-dynamic-green/20 hover:border-dynamic-green hover:bg-dynamic-green/10 focus:border-dynamic-green focus:ring-dynamic-green/30',
+                'border-dynamic-green bg-dynamic-green/20 hover:border-dynamic-green hover:bg-dynamic-green/10 focus-visible:border-dynamic-green focus-visible:ring-dynamic-green/30',
               isIndeterminate &&
-                'border-dynamic-orange bg-dynamic-orange/20 hover:border-dynamic-orange hover:bg-dynamic-orange/10 focus:border-dynamic-orange focus:ring-dynamic-orange/30',
+                'border-dynamic-orange bg-dynamic-orange/20 hover:border-dynamic-orange hover:bg-dynamic-orange/10 focus-visible:border-dynamic-orange focus-visible:ring-dynamic-orange/30',
             ],
             completedTaskColor === 'red' && [
               'border-dynamic-red/50',

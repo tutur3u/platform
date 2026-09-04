@@ -13,6 +13,7 @@ on:
       - ".github/workflows/mobile-deploy-stores.yaml"
       - ".github/workflows/ci-check.yml"
       - "scripts/mobile-deployment/**"
+      - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
 
 permissions:
@@ -66,10 +67,10 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.0
 
       - name: Setup Java
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c
         with:
           distribution: temurin
           java-version: 17
@@ -81,7 +82,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
-          flutter-version: "3.44.x"
+          flutter-version: "3.47.x"
           channel: stable
           cache: true
           pub-cache: true
@@ -181,7 +182,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
-          flutter-version: "3.44.x"
+          flutter-version: "3.47.x"
           channel: stable
           cache: true
           pub-cache: true

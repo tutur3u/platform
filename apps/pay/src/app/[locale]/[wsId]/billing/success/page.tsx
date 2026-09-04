@@ -1,7 +1,8 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
+import { getSatelliteWorkspace } from '@tuturuuu/satellite/workspace-access';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import ClientComponent from './client-component';
 
 export const metadata: Metadata = {
@@ -16,7 +17,9 @@ export default async function SuccessPage({
   params: Promise<{ wsId: string }>;
   searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
+  await connection();
   const { checkoutId } = await searchParams;
+  const { wsId: id } = await params;
 
   if (!checkoutId) {
     return notFound();
@@ -30,11 +33,8 @@ export default async function SuccessPage({
     return notFound();
   }
 
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        return <ClientComponent wsId={wsId} checkout={checkout} />;
-      }}
-    </WorkspaceWrapper>
-  );
+  const workspace = await getSatelliteWorkspace('pay', id);
+  if (!workspace) return notFound();
+
+  return <ClientComponent wsId={workspace.id} checkout={checkout} />;
 }

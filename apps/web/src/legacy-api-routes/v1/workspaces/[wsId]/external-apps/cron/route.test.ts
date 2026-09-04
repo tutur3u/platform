@@ -212,6 +212,22 @@ describe('external app managed cron routes', () => {
     );
   });
 
+  it('uses the resolvable Infrastructure production origin for recovery', async () => {
+    vi.stubEnv('INFRA_APP_URL', undefined);
+    vi.stubEnv('NEXT_PUBLIC_INFRA_APP_URL', undefined);
+    vi.stubEnv('NODE_ENV', 'production');
+    mocks.callManagedCronRpc.mockRejectedValue(
+      new Error('Missing Supabase key')
+    );
+
+    const response = await GET(statusRequest(), context());
+    const body = await response.json();
+
+    expect(body.adminRecoveryHref).toBe(
+      'https://infrastructure.tuturuuu.com/vi/internal/monitoring/cron?focus=cron-runner'
+    );
+  });
+
   it('returns structured diagnostics when managed-cron schema is not ready', async () => {
     mocks.callManagedCronRpc.mockRejectedValue(
       postgresError('42703', 'column "external_app_id" does not exist')

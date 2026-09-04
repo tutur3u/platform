@@ -57,7 +57,6 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
@@ -67,6 +66,7 @@ export async function POST(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -205,7 +205,6 @@ export async function GET(
   try {
     const { wsId } = await params;
     const sbAdmin = await createAdminClient();
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -214,6 +213,7 @@ export async function GET(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -236,8 +236,8 @@ export async function GET(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request,
     });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });

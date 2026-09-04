@@ -1,8 +1,11 @@
 import { Calendar, X } from '@tuturuuu/icons';
 import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
+import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -13,9 +16,21 @@ import {
   isValid,
   isYesterday,
 } from 'date-fns';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
 import { calculateDaysUntilEndOfWeek } from '../../../utils/weekDateUtils';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskDueDateMenuProps {
+  forceOpen?: boolean;
   endDate?: string | null;
   isLoading: boolean;
   weekStartsOn?: 0 | 1 | 6;
@@ -73,6 +88,7 @@ const formatCompactRelativeDate = (date: Date, now = new Date()) => {
 };
 
 export function TaskDueDateMenu({
+  forceOpen,
   endDate,
   isLoading,
   weekStartsOn = 0,
@@ -82,6 +98,8 @@ export function TaskDueDateMenu({
   onClose,
   translations,
 }: TaskDueDateMenuProps) {
+  const commonT = useTranslations('common');
+  const [searchQuery, setSearchQuery] = useState('');
   // Use provided translations or fall back to English defaults
   const t = {
     dueDate: translations?.dueDate ?? 'Due Date',
@@ -120,6 +138,35 @@ export function TaskDueDateMenu({
       color: 'text-dynamic-orange',
     },
   ];
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+  const filteredOptions = dueDateOptionsTranslated.filter((option) =>
+    `${option.label} ${option.preset.replace('_', ' ')}`
+      .toLocaleLowerCase()
+      .includes(normalizedQuery)
+  );
+  const showCustomDate = t.customDate
+    .toLocaleLowerCase()
+    .includes(normalizedQuery);
+  const showRemoveDate = Boolean(
+    endDate && t.removeDueDate.toLocaleLowerCase().includes(normalizedQuery)
+  );
+  const hasResults =
+    filteredOptions.length > 0 || showCustomDate || showRemoveDate;
+  const select = (action: () => void) =>
+    onMenuItemSelect(
+      { preventDefault: () => undefined } as unknown as Event,
+      action
+    );
+  const selectPreset = (preset: (typeof dueDateOptionsTranslated)[number]) =>
+    select(() => {
+      onDueDateChange(calculateDaysForPreset(preset.preset, weekStartsOn));
+      onClose();
+    });
+  const removeDueDate = () =>
+    select(() => {
+      onDueDateChange(null);
+      onClose();
+    });
 
   const parsedEndDate = endDate ? new Date(endDate) : null;
   const currentDateDisplay =
@@ -128,7 +175,7 @@ export function TaskDueDateMenu({
       : t.none;
 
   return (
-    <DropdownMenuSub>
+    <TaskControlledSubmenu submenuId="due_date" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger className="min-w-0">
         <div className="h-4 w-4 shrink-0">
           <Calendar className="h-4 w-4 text-dynamic-purple" />
@@ -142,60 +189,89 @@ export function TaskDueDateMenu({
           </span>
         </div>
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent>
-        {dueDateOptionsTranslated.map((option) => (
-          <DropdownMenuItem
-            key={option.preset}
-            onSelect={(e) =>
-              onMenuItemSelect(e as unknown as Event, () => {
-                onDueDateChange(
-                  calculateDaysForPreset(option.preset, weekStartsOn)
-                );
-                onClose();
-              })
+      <DropdownMenuSubContent
+        className="w-56 p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            if (isLoading) return false;
+            if (digit === 0) {
+              if (!endDate) return false;
+              removeDueDate();
+              return true;
             }
-            className="cursor-pointer"
-            disabled={isLoading}
-          >
-            <Calendar className={`h-4 w-4 ${option.color}`} />
-            {option.label}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={(e) =>
-            onMenuItemSelect(e as unknown as Event, () => {
-              onClose();
-              setTimeout(() => onCustomDateClick(), 100);
-            })
-          }
-          className="cursor-pointer"
-          disabled={isLoading}
-        >
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            {t.customDate}
-          </div>
-        </DropdownMenuItem>
-        {endDate && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={(e) =>
-                onMenuItemSelect(e as unknown as Event, () => {
-                  onDueDateChange(null);
-                  onClose();
-                })
-              }
-              className="cursor-pointer text-muted-foreground"
-              disabled={isLoading}
-            >
-              <X className="h-4 w-4" />
-              {t.removeDueDate}
-            </DropdownMenuItem>
-          </>
-        )}
+            const option = filteredOptions[digit - 1];
+            if (!option) return false;
+            selectPreset(option);
+            return true;
+          })
+        }
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
+        <Command shouldFilter={false} className="rounded-none border-0">
+          <TaskCommandSearchInput
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            placeholder={`${commonT('search')}...`}
+            className="h-9"
+          />
+          <CommandList className="max-h-64">
+            {!hasResults ? (
+              <div className="px-3 py-6 text-center text-muted-foreground text-xs">
+                {commonT('no-results')}
+              </div>
+            ) : (
+              <CommandGroup>
+                {filteredOptions.map((option, index) => (
+                  <CommandItem
+                    key={option.preset}
+                    value={`${option.label} ${option.preset}`}
+                    onSelect={() => selectPreset(option)}
+                    className="cursor-pointer"
+                    disabled={isLoading}
+                  >
+                    <Calendar className={`h-4 w-4 ${option.color}`} />
+                    {option.label}
+                    <TaskOptionShortcutHint
+                      digit={index + 1}
+                      visible={!!forceOpen && index < 9}
+                    />
+                  </CommandItem>
+                ))}
+                {showCustomDate && (
+                  <CommandItem
+                    value={`custom ${t.customDate}`}
+                    onSelect={() =>
+                      select(() => {
+                        onClose();
+                        setTimeout(() => onCustomDateClick(), 100);
+                      })
+                    }
+                    className="cursor-pointer"
+                    disabled={isLoading}
+                  >
+                    <Calendar className="h-4 w-4" />
+                    {t.customDate}
+                  </CommandItem>
+                )}
+                {showRemoveDate && (
+                  <CommandItem
+                    value={`remove ${t.removeDueDate}`}
+                    onSelect={removeDueDate}
+                    className="cursor-pointer text-muted-foreground"
+                    disabled={isLoading}
+                  >
+                    <X className="h-4 w-4" />
+                    {t.removeDueDate}
+                    <TaskOptionShortcutHint digit={0} visible={!!forceOpen} />
+                  </CommandItem>
+                )}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

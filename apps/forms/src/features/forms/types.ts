@@ -181,6 +181,33 @@ export interface FormResponsesQuestionAnalytics {
     count: number;
     percentage: number;
   }>;
+  /**
+   * Net Promoter Score, present only for `nps` questions. `score` is the
+   * standard promoters-minus-detractors percentage in the range -100..100 —
+   * not an average, which is why it cannot reuse `meanScore`.
+   */
+  nps?: {
+    score: number;
+    promoters: number;
+    passives: number;
+    detractors: number;
+    distribution: Array<{
+      score: number;
+      count: number;
+      percentage: number;
+    }>;
+  };
+  /**
+   * Ranking results ordered best-first by mean position. `averageRank` is
+   * 1-based, so lower is better.
+   */
+  ranking?: Array<{
+    label: string;
+    value: string;
+    averageRank: number;
+    firstChoiceCount: number;
+    count: number;
+  }>;
   meanScore?: number;
 }
 

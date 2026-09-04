@@ -8,6 +8,11 @@ interface Props {
   params: Promise<{ locale: string; storeSlug: string }>;
 }
 
+// Buyer defaults are resolved from the request session. Next 16.3 instant
+// validation can otherwise turn client navigation into the recovery boundary
+// even though the request-specific content is wrapped in Suspense.
+export const instant = false;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, storeSlug } = await params;
   const response = await getServerInventoryStorefront(storeSlug);

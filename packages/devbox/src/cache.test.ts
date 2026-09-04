@@ -7,7 +7,7 @@ import {
 
 describe('devbox cache planning', () => {
   const baseInput = {
-    bunVersion: '1.3.14',
+    bunVersion: '1.4.0',
     cacheSchemaVersion: 1,
     commandProfile: 'bun-check',
     lockfileHash: 'lock-a',
@@ -61,7 +61,7 @@ describe('devbox cache planning', () => {
           type: 'bun-install',
         },
         {
-          bunVersion: '1.3.14',
+          bunVersion: '1.4.0',
           cacheSchemaVersion: 1,
           commandProfile: 'bun-check',
           key: 'recent-compatible',
@@ -71,7 +71,7 @@ describe('devbox cache planning', () => {
           type: 'bun-install',
         },
         {
-          bunVersion: '1.3.14',
+          bunVersion: '1.4.0',
           cacheSchemaVersion: 1,
           commandProfile: 'bun-check',
           key: 'old-compatible',

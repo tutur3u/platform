@@ -1,9 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Secure Cloud Drive',
-  description: 'Store, organize, and securely share files with Tuturuuu Drive.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'products.drive.seo',
   pathname: '/products/drive',
 });
 

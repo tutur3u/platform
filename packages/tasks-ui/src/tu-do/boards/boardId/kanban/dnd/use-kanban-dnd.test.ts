@@ -18,9 +18,9 @@ vi.mock('@tuturuuu/utils/task-helper', () => {
   };
 });
 
+import { usesPersonalPlacement } from './task-drag-persistence';
 import {
   applyTaskDropPreviewToCache,
-  getPersonalPlacementTargetBoardId,
   getProjectedTaskDropOrderFromPreview,
   getTaskDropEndPreviewFromRects,
   getTaskDropPositionFromRects,
@@ -31,7 +31,6 @@ import {
   insertTaskAtDropPosition,
   mergePersonalPlacementMutationTask,
   mergeTaskIntoBoardTaskCache,
-  usesPersonalPlacement,
 } from './use-kanban-dnd';
 
 function createTask(overrides: Partial<Task> = {}): Task {
@@ -176,53 +175,6 @@ describe('usesPersonalPlacement', () => {
 
   it('keeps explicit external overlays on the personal-placement path', () => {
     expect(usesPersonalPlacement(createTask())).toBe(true);
-  });
-});
-
-describe('getPersonalPlacementTargetBoardId', () => {
-  it('uses the target list board id for real-list moves', () => {
-    expect(
-      getPersonalPlacementTargetBoardId({
-        boardId: 'fallback-board',
-        columns: [
-          createList({
-            board_id: 'canonical-board',
-            id: 'target-list',
-          } as Partial<TaskList>),
-        ],
-        targetListId: 'target-list',
-      })
-    ).toBe('canonical-board');
-  });
-
-  it('keeps staging board ids from virtual staging lanes', () => {
-    expect(
-      getPersonalPlacementTargetBoardId({
-        boardId: 'fallback-board',
-        columns: [
-          createList({
-            board_id: 'canonical-board',
-            id: 'target-list',
-          } as Partial<TaskList>),
-        ],
-        targetListId: 'personal-external-staging:staging-board',
-      })
-    ).toBe('staging-board');
-  });
-
-  it('falls back to the current board id when list metadata is absent', () => {
-    expect(
-      getPersonalPlacementTargetBoardId({
-        boardId: 'fallback-board',
-        columns: [
-          createList({
-            board_id: 'other-board',
-            id: 'other-list',
-          } as Partial<TaskList>),
-        ],
-        targetListId: 'target-list',
-      })
-    ).toBe('fallback-board');
   });
 });
 
@@ -592,16 +544,19 @@ describe('task drag insertion helpers', () => {
     const task1 = createTask({
       id: 'task-1',
       list_id: 'list-1',
+      personal_sort_key: 1_000_000,
       sort_key: 1_000_000,
     });
     const task2 = createTask({
       id: 'task-2',
       list_id: 'list-1',
+      personal_sort_key: 2_000_000,
       sort_key: 2_000_000,
     });
     const task3 = createTask({
       id: 'task-3',
       list_id: 'list-1',
+      personal_sort_key: 3_000_000,
       sort_key: 3_000_000,
     });
 
@@ -633,16 +588,19 @@ describe('task drag insertion helpers', () => {
     const activeTask = createTask({
       id: 'task-1',
       list_id: 'source-list',
+      personal_sort_key: 1_000_000,
       sort_key: 1_000_000,
     });
     const task2 = createTask({
       id: 'task-2',
       list_id: 'target-list',
+      personal_sort_key: 1_000_000,
       sort_key: 1_000_000,
     });
     const task3 = createTask({
       id: 'task-3',
       list_id: 'target-list',
+      personal_sort_key: 2_000_000,
       sort_key: 2_000_000,
     });
 

@@ -6,6 +6,12 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 
+import {
+  createOptimisticTask,
+  insertOptimisticTaskIntoBoardCaches,
+  reconcileOptimisticTaskInBoardCaches,
+  removeOptimisticTaskFromBoardCaches,
+} from './optimistic-task-cache';
 import { getBrowserApiOptions, toWorkspaceTaskUpdatePayload } from './shared';
 
 export function useUpdateTask(boardId: string, wsId?: string) {
@@ -165,69 +171,36 @@ export function useCreateTask(boardId: string, wsId?: string) {
       return createdTask as Task;
     },
     onMutate: async ({ listId, task }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
       const trimmedName = task.name?.trim() ?? '';
-
-      const optimisticTask: Task = {
+      const optimisticTask = createOptimisticTask({
         ...task,
-        id: `temp-${Date.now()}`,
         name: trimmedName,
         list_id: listId,
         closed_at: undefined,
         deleted_at: undefined,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        assignees: [],
-      } as Task;
+      });
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return [optimisticTask];
-          return [...old, optimisticTask];
-        }
-      );
+      insertOptimisticTaskIntoBoardCaches(queryClient, boardId, optimisticTask);
 
-      return { previousTasks, optimisticTask };
+      return { optimisticTask };
     },
     onError: (err, _, context) => {
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      } else if (context?.optimisticTask) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            const nextTasks = old.filter(
-              (task) => task.id !== context.optimisticTask.id
-            );
-            return nextTasks.length > 0 ? nextTasks : undefined;
-          }
+      if (context?.optimisticTask) {
+        removeOptimisticTaskFromBoardCaches(
+          queryClient,
+          boardId,
+          context.optimisticTask.id
         );
       }
 
       console.error('Failed to create task:', err);
     },
     onSuccess: (newTask, _, context) => {
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          const optimisticTaskId = context?.optimisticTask.id;
-
-          if (!old) return [newTask];
-
-          const nextTasks = optimisticTaskId
-            ? old.map((task) => (task.id === optimisticTaskId ? newTask : task))
-            : [...old];
-
-          if (nextTasks.some((task) => task.id === newTask.id)) {
-            return nextTasks;
-          }
-
-          return [...nextTasks, newTask];
-        }
+      reconcileOptimisticTaskInBoardCaches(
+        queryClient,
+        boardId,
+        context?.optimisticTask.id ?? newTask.id,
+        newTask
       );
     },
   });

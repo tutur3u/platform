@@ -12,6 +12,7 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
 import { requireMindUser } from '@/lib/access';
@@ -29,6 +30,7 @@ export default async function MindWorkspaceLayout({
   children,
   params,
 }: LayoutProps) {
+  await connection();
   const [{ wsId }, user, cookieStore, requestHeaders] = await Promise.all([
     params,
     requireMindUser(),
@@ -80,7 +82,7 @@ export default async function MindWorkspaceLayout({
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions />
+            <NavbarActions userId={user.id} />
           </Suspense>
         }
         defaultCollapsed={defaultCollapsed}

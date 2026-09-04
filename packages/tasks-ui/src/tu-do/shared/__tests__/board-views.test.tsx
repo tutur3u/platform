@@ -40,7 +40,6 @@ let timelineBoardProps:
       typeof import('../../boards/boardId/timeline-board')['TimelineBoard']
     >
   | undefined;
-
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -62,7 +61,6 @@ vi.mock('../../hooks/useTaskDialog', () => ({
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceTasks: listWorkspaceTasksMock,
 }));
-
 vi.mock('@tuturuuu/internal-api/users', () => ({
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID: 'TASK_BOARD_PINNED_SPECIAL_LISTS',
   TASK_LAST_BOARD_VIEW_CONFIG_ID: 'TASK_LAST_BOARD_VIEW',
@@ -74,7 +72,6 @@ vi.mock('@tuturuuu/internal-api/users', () => ({
   updateUserWorkspaceConfig: (...args: unknown[]) =>
     updateUserWorkspaceConfigMock(...args),
 }));
-
 vi.mock('../progressive-loader-context', () => ({
   useProgressiveLoader: () => ({
     loadListPage: loadListPageMock,
@@ -82,11 +79,17 @@ vi.mock('../progressive-loader-context', () => ({
     pagination: progressivePagination,
   }),
 }));
-
+vi.mock('../kanban-presentation', () => ({
+  KanbanPresentation: ({ children, header }: any) => (
+    <>
+      {header}
+      {children}
+    </>
+  ),
+}));
 vi.mock('../board-header', () => ({
   BoardHeader: (props: any) => {
     boardHeaderProps = props;
-
     return (
       <div data-testid="board-header">
         <input data-testid="board-header-input" />
@@ -94,11 +97,9 @@ vi.mock('../board-header', () => ({
     );
   },
 }));
-
 vi.mock('../recycle-bin-panel', () => ({
   RecycleBinContent: () => <div data-testid="recycle-bin-view">Recycle</div>,
 }));
-
 vi.mock('../../drafts/drafts-page', () => ({
   DraftsPage: ({
     boardId,
@@ -230,7 +231,6 @@ function renderBoardViews(overrides?: {
       },
     },
   });
-
   const result = render(
     <QueryClientProvider client={queryClient}>
       <HotkeysProvider>

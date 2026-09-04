@@ -21,6 +21,7 @@ import {
   logEmailAbuseEvent,
   updateAuditRecord,
 } from './email-audit';
+import { CredentialsError } from './errors';
 import { BlacklistChecker, EmailRateLimiter } from './protection/index';
 import { CloudflareEmailProvider } from './providers/cloudflare';
 import { SESEmailProvider } from './providers/ses';
@@ -656,7 +657,6 @@ export class EmailService {
       '@tuturuuu/supabase/next/server'
     );
     const sbAdmin = (await createAdminClient()) as SupabaseClient<Database>;
-
     const credentialWorkspaceId = options?.credentialWorkspaceId ?? wsId;
     const { data: dbCredentials, error } = await sbAdmin
       .from('workspace_email_credentials')
@@ -683,12 +683,12 @@ export class EmailService {
           source_email: 'dev@tuturuuu.com',
         };
       } else {
-        throw new Error(
-          `No email credentials found for workspace ${credentialWorkspaceId}`
+        throw new CredentialsError(
+          `No email credentials found for workspace ${credentialWorkspaceId}`,
+          credentialWorkspaceId
         );
       }
     }
-
     const workspaceRateLimits = await getWorkspaceEmailRateLimitOverrides(
       sbAdmin,
       wsId

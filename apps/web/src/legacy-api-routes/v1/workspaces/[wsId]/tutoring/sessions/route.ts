@@ -103,9 +103,10 @@ export async function GET(request: Request, { params }: Params) {
   if (parsed.data.attendanceStatus)
     query = query.eq('attendance_status', parsed.data.attendanceStatus);
 
+  const ascending = parsed.data.sortOrder === 'asc';
   const { data, error, count } = await query
-    .order('session_date', { ascending: false })
-    .order('start_time', { ascending: false })
+    .order('session_date', { ascending })
+    .order('start_time', { ascending })
     .range(from, to);
 
   if (error) {

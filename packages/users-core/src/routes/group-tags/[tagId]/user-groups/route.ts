@@ -1,14 +1,15 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import {
+  AddGroupTagGroupsSchema,
+  GroupTagParamsSchema,
+  loadWorkspaceGroupTag,
+  loadWorkspaceUserGroups,
+} from '../../validation';
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
-
-const AddGroupsSchema = z.object({
-  groupIds: z.array(z.string()).default([]),
-});
 
 interface Params {
   params: Promise<{
@@ -17,24 +18,15 @@ interface Params {
   }>;
 }
 
-async function ensureTagBelongsToWorkspace(wsId: string, tagId: string) {
-  const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
-    .from('workspace_user_group_tags')
-    .select('id')
-    .eq('ws_id', wsId)
-    .eq('id', tagId)
-    .maybeSingle();
-
-  if (error) {
-    throw error;
-  }
-
-  return Boolean(data);
-}
-
 export async function GET(req: Request, { params }: Params) {
-  const { wsId, tagId } = await params;
+  const parsedParams = GroupTagParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params' },
+      { status: 400 }
+    );
+  }
+  const { wsId, tagId } = parsedParams.data;
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q');
   const page = Math.max(
@@ -57,20 +49,28 @@ export async function GET(req: Request, { params }: Params) {
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+  if (permissions.withoutPermission('view_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to view user group tags' },
+      { status: 403 }
+    );
+  }
 
-  const sbAdmin = await createAdminClient();
-  let tagExists = false;
-  try {
-    tagExists = await ensureTagBelongsToWorkspace(wsId, tagId);
-  } catch (error) {
-    console.error('Error checking workspace user group tag', error);
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: tag, error: tagError } = await loadWorkspaceGroupTag(
+    sbAdmin,
+    wsId,
+    tagId
+  );
+  if (tagError) {
+    console.error('Error checking workspace user group tag');
     return NextResponse.json(
       { message: 'Error fetching user groups' },
       { status: 500 }
     );
   }
 
-  if (!tagExists) {
+  if (!tag) {
     return NextResponse.json(
       { message: 'Workspace user group tag not found' },
       { status: 404 }
@@ -111,30 +111,24 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId, tagId } = await params;
+  const parsedParams = GroupTagParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params' },
+      { status: 400 }
+    );
+  }
+  const { wsId, tagId } = parsedParams.data;
 
   // Check permissions
   const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-
-  const sbAdmin = await createAdminClient();
-  let tagExists = false;
-  try {
-    tagExists = await ensureTagBelongsToWorkspace(wsId, tagId);
-  } catch (error) {
-    console.error('Error checking workspace user group tag', error);
+  if (permissions.withoutPermission('update_user_groups')) {
     return NextResponse.json(
-      { message: 'Error adding new groups to tag' },
-      { status: 500 }
-    );
-  }
-
-  if (!tagExists) {
-    return NextResponse.json(
-      { message: 'Workspace user group tag not found' },
-      { status: 404 }
+      { message: 'Insufficient permissions to update user group tags' },
+      { status: 403 }
     );
   }
 
@@ -148,7 +142,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const parsed = AddGroupsSchema.safeParse(body);
+  const parsed = AddGroupTagGroupsSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { message: 'Invalid request body', errors: parsed.error.issues },
@@ -156,23 +150,40 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const groupIds = Array.from(new Set(parsed.data.groupIds));
+  const { groupIds } = parsed.data;
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: tag, error: tagLookupError } = await loadWorkspaceGroupTag(
+    sbAdmin,
+    wsId,
+    tagId
+  );
+  if (tagLookupError) {
+    console.error('Error checking workspace user group tag');
+    return NextResponse.json(
+      { message: 'Error adding new groups to tag' },
+      { status: 500 }
+    );
+  }
+  if (!tag) {
+    return NextResponse.json(
+      { message: 'Workspace user group tag not found' },
+      { status: 404 }
+    );
+  }
 
   if (groupIds.length === 0) {
     return NextResponse.json({ message: 'success' });
   }
 
-  const { data: groups, error: groupsError } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('id')
-    .eq('ws_id', wsId)
-    .in('id', groupIds);
+  const { data: groups, error: groupsError } = await loadWorkspaceUserGroups(
+    sbAdmin,
+    wsId,
+    groupIds
+  );
 
   if (groupsError) {
-    console.error(
-      'Error validating workspace user groups for tag',
-      groupsError
-    );
+    console.error('Error validating workspace user groups for tag');
     return NextResponse.json(
       { message: 'Error adding new groups to tag' },
       { status: 500 }
@@ -196,7 +207,13 @@ export async function POST(req: Request, { params }: Params) {
     );
 
   if (tagError) {
-    console.error('Error adding new groups to tag', tagError);
+    if (tagError.code === '23505') {
+      return NextResponse.json(
+        { message: 'One or more user groups are already linked to this tag' },
+        { status: 409 }
+      );
+    }
+    console.error('Error adding new groups to tag');
     return NextResponse.json(
       { message: 'Error adding new groups to tag' },
       { status: 500 }

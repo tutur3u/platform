@@ -2,8 +2,17 @@ import {
   createStoredAnswerQuestionResolver,
   restoreAnswerForQuestion,
 } from './answer-utils';
-import { isAnswerableQuestionType } from './block-utils';
+import {
+  isAnswerableQuestionType,
+  isTextInputQuestionType,
+} from './block-utils';
 import { normalizeMarkdownToText } from './content';
+import {
+  calculateNpsScore,
+  getNpsBand,
+  isValidNpsScore,
+  NPS_SCORES,
+} from './nps';
 import type {
   FormAnswerValue,
   FormDefinition,
@@ -188,6 +197,7 @@ export function buildQuestionAnalytics(
         unmatchedCounts: new Map<string, number>(),
         textCounts: new Map<string, { value: string; count: number }>(),
         numericScores: [] as number[],
+        rankPositions: new Map<string, number[]>(),
       },
     ])
   );
@@ -227,12 +237,61 @@ export function buildQuestionAnalytics(
       continue;
     }
 
+    if (analytics.question.type === 'ranking') {
+      const resolvedValues = Array.isArray(restored.value)
+        ? restored.value
+        : [];
+
+      resolvedValues.forEach((value, index) => {
+        const positions = analytics.rankPositions.get(value) ?? [];
+        positions.push(index + 1);
+        analytics.rankPositions.set(value, positions);
+      });
+
+      for (const value of restored.unresolvedValues) {
+        incrementCount(analytics.unmatchedCounts, value);
+      }
+
+      continue;
+    }
+
     if (
-      analytics.question.type === 'short_text' ||
+      isTextInputQuestionType(analytics.question.type) ||
       analytics.question.type === 'long_text'
     ) {
       if (typeof rawValue === 'string' && rawValue.trim()) {
         incrementTextCount(analytics.textCounts, rawValue.trim());
+      }
+
+      // A number question is still worth averaging, unlike the other text
+      // shapes — an email has no mean.
+      if (analytics.question.type === 'number') {
+        const numericScore = Number(rawValue);
+        if (
+          typeof rawValue === 'string' &&
+          rawValue.trim() &&
+          !Number.isNaN(numericScore)
+        ) {
+          analytics.numericScores.push(numericScore);
+        }
+      }
+
+      continue;
+    }
+
+    if (analytics.question.type === 'nps') {
+      const numericScore =
+        typeof rawValue === 'string'
+          ? Number(rawValue.trim())
+          : typeof rawValue === 'number'
+            ? rawValue
+            : Number.NaN;
+
+      if (isValidNpsScore(numericScore)) {
+        incrementCount(analytics.counts, String(numericScore));
+        analytics.numericScores.push(numericScore);
+      } else if (typeof rawValue === 'string' && rawValue.trim()) {
+        incrementCount(analytics.unmatchedCounts, rawValue.trim());
       }
 
       continue;
@@ -328,14 +387,68 @@ export function buildQuestionAnalytics(
           percentage: toPercentage(count, analytics?.totalAnswers ?? 0),
         };
       });
+    }
 
-      if ((analytics?.numericScores.length ?? 0) > 0) {
-        const totalScore =
-          analytics?.numericScores.reduce((sum, score) => sum + score, 0) ?? 0;
-        parsed.meanScore = Number(
-          (totalScore / (analytics?.numericScores.length ?? 1)).toFixed(1)
-        );
-      }
+    if ((analytics?.numericScores.length ?? 0) > 0) {
+      const totalScore =
+        analytics?.numericScores.reduce((sum, score) => sum + score, 0) ?? 0;
+      parsed.meanScore = Number(
+        (totalScore / (analytics?.numericScores.length ?? 1)).toFixed(1)
+      );
+    }
+
+    if (question.type === 'nps') {
+      const totalAnswers = analytics?.totalAnswers ?? 0;
+      const bandCounts = { promoters: 0, passives: 0, detractors: 0 };
+
+      const distribution = NPS_SCORES.map((score) => {
+        const count = analytics?.counts.get(String(score)) ?? 0;
+        const band = getNpsBand(score);
+
+        if (band === 'promoter') bandCounts.promoters += count;
+        else if (band === 'passive') bandCounts.passives += count;
+        else bandCounts.detractors += count;
+
+        return {
+          score,
+          count,
+          percentage: toPercentage(count, totalAnswers),
+        };
+      });
+
+      parsed.nps = {
+        score: calculateNpsScore(bandCounts),
+        promoters: bandCounts.promoters,
+        passives: bandCounts.passives,
+        detractors: bandCounts.detractors,
+        distribution,
+      };
+    }
+
+    if (question.type === 'ranking') {
+      parsed.ranking = question.options
+        .map((option) => {
+          const positions = analytics?.rankPositions.get(option.value) ?? [];
+          const count = positions.length;
+          const total = positions.reduce((sum, rank) => sum + rank, 0);
+
+          return {
+            label: normalizeMarkdownToText(option.label),
+            value: option.value,
+            // An option nobody ranked has no meaningful average. Reporting 0
+            // would sort it to the top as if it were everyone's first choice,
+            // so it sorts last instead.
+            averageRank:
+              count > 0 ? Number((total / count).toFixed(2)) : Number.NaN,
+            firstChoiceCount: positions.filter((rank) => rank === 1).length,
+            count,
+          };
+        })
+        .sort((left, right) => {
+          if (Number.isNaN(left.averageRank)) return 1;
+          if (Number.isNaN(right.averageRank)) return -1;
+          return left.averageRank - right.averageRank;
+        });
     }
 
     if ((analytics?.unmatchedCounts.size ?? 0) > 0) {

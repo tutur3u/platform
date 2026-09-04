@@ -1,6 +1,23 @@
 import {
-  DELETE,
-  PUT,
+  DELETE as handleConfigDELETE,
+  PUT as handleConfigPUT,
 } from '@tuturuuu/apis/finance/wallets/walletId/interest/config/route';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
-export { DELETE, PUT };
+type Params = { params: Promise<{ walletId: string; wsId: string }> };
+
+export async function PUT(request: Request, context: Params) {
+  return handleConfigPUT(
+    request,
+    context,
+    await resolveFinanceRouteAuthContext(request)
+  );
+}
+
+export async function DELETE(request: Request, context: Params) {
+  return handleConfigDELETE(
+    request,
+    context,
+    await resolveFinanceRouteAuthContext(request)
+  );
+}

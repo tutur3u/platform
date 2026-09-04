@@ -12,6 +12,7 @@ const otherWorkspaceId = '33333333-3333-4333-8333-333333333333';
 type TestState = {
   directInvites?: Array<{
     created_at: string | null;
+    role_id?: string | null;
     type: 'MEMBER' | 'GUEST';
     user_id: string;
     ws_id: string;
@@ -19,6 +20,7 @@ type TestState = {
   emailInvites?: Array<{
     created_at: string | null;
     email: string;
+    role_id?: string | null;
     type: 'MEMBER' | 'GUEST';
     ws_id: string;
   }>;
@@ -162,6 +164,7 @@ describe('workspace invitation status helpers', () => {
       directInvites: [
         {
           created_at: '2026-06-01T00:00:00.000Z',
+          role_id: 'role-editor',
           type: 'MEMBER',
           user_id: userId,
           ws_id: workspaceId,
@@ -178,6 +181,7 @@ describe('workspace invitation status helpers', () => {
     expect(result.status).toBe('pending_invite');
     if (result.status === 'pending_invite') {
       expect(result.invitation.source).toBe('direct');
+      expect(result.invitation.roleId).toBe('role-editor');
       expect(result.invitation.workspace.id).toBe(workspaceId);
     }
   });
@@ -233,6 +237,40 @@ describe('workspace invitation status helpers', () => {
     }
   });
 
+  it('prefers the authenticated email role when multiple email invites match', async () => {
+    const admin = createAdminClientMock({
+      emailInvites: [
+        {
+          created_at: '2026-06-01T00:00:00.000Z',
+          email: 'private@example.com',
+          role_id: 'role-private',
+          type: 'MEMBER',
+          ws_id: workspaceId,
+        },
+        {
+          created_at: '2026-06-02T00:00:00.000Z',
+          email: 'auth@example.com',
+          role_id: 'role-auth',
+          type: 'MEMBER',
+          ws_id: workspaceId,
+        },
+      ],
+      privateEmail: 'private@example.com',
+    });
+
+    const result = await getWorkspaceInviteStatus(admin as never, {
+      authEmail: 'auth@example.com',
+      userId,
+      workspaceId,
+    });
+
+    expect(result.status).toBe('pending_invite');
+    if (result.status === 'pending_invite') {
+      expect(result.invitation.matchedEmail).toBe('auth@example.com');
+      expect(result.invitation.roleId).toBe('role-auth');
+    }
+  });
+
   it('returns member before pending invite when membership already exists', async () => {
     const admin = createAdminClientMock({
       directInvites: [
@@ -253,6 +291,33 @@ describe('workspace invitation status helpers', () => {
     });
 
     expect(result.status).toBe('member');
+  });
+
+  it('can expose a pending role invite for an existing member decision', async () => {
+    const admin = createAdminClientMock({
+      directInvites: [
+        {
+          created_at: '2026-06-01T00:00:00.000Z',
+          role_id: 'role-editor',
+          type: 'MEMBER',
+          user_id: userId,
+          ws_id: workspaceId,
+        },
+      ],
+      members: [{ user_id: userId, ws_id: workspaceId }],
+    });
+
+    const result = await getWorkspaceInviteStatus(admin as never, {
+      authEmail: 'user@example.com',
+      preferPendingInvite: true,
+      userId,
+      workspaceId,
+    });
+
+    expect(result.status).toBe('pending_invite');
+    if (result.status === 'pending_invite') {
+      expect(result.invitation.roleId).toBe('role-editor');
+    }
   });
 
   it('resolves the personal workspace alias with the authenticated user id', async () => {

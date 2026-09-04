@@ -26,6 +26,22 @@ export function dragPreviewPositionsEqual(
   );
 }
 
+export function getDragPreviewStationaryTaskCount({
+  activeTaskId,
+  taskIndexes,
+  visibleTaskCount,
+}: {
+  activeTaskId: string;
+  taskIndexes?: Map<string, number>;
+  visibleTaskCount: number;
+}) {
+  return Math.max(
+    0,
+    (taskIndexes?.size ?? visibleTaskCount) -
+      (taskIndexes?.has(activeTaskId) ? 1 : 0)
+  );
+}
+
 function createDragPreviewPosition({
   activeTask,
   height,
@@ -65,7 +81,11 @@ function getSameListInsertionIndexFromEdges({
     if (!rect || originalIndex >= sourceInsertionIndex) continue;
 
     if (activeRect.top <= getRectCenterY(rect)) {
-      return index;
+      return getStationaryInsertionIndex({
+        fallbackIndex: index,
+        rect,
+        sourceInsertionIndex,
+      });
     }
   }
 
@@ -79,13 +99,42 @@ function getSameListInsertionIndexFromEdges({
     if (!rect || originalIndex <= sourceInsertionIndex) continue;
 
     if (activeBottom >= getRectCenterY(rect)) {
-      insertionIndex = index + 1;
+      insertionIndex =
+        getStationaryInsertionIndex({
+          fallbackIndex: index,
+          rect,
+          sourceInsertionIndex,
+        }) + 1;
     } else {
       break;
     }
   }
 
   return insertionIndex;
+}
+
+function getStationaryInsertionIndex({
+  fallbackIndex,
+  rect,
+  sourceInsertionIndex,
+}: {
+  fallbackIndex: number;
+  rect: TaskRect;
+  sourceInsertionIndex?: number;
+}) {
+  const originalIndex = rect.originalIndex;
+  if (
+    typeof originalIndex !== 'number' ||
+    !Number.isSafeInteger(originalIndex) ||
+    originalIndex === Number.MAX_SAFE_INTEGER
+  ) {
+    return fallbackIndex;
+  }
+
+  return typeof sourceInsertionIndex === 'number' &&
+    originalIndex > sourceInsertionIndex
+    ? originalIndex - 1
+    : originalIndex;
 }
 
 function getCrossListInsertionIndexFromEdges({
@@ -105,21 +154,31 @@ function getCrossListInsertionIndexFromEdges({
       const rect = stationaryRects[index];
 
       if (rect && activeRect.top <= getRectCenterY(rect)) {
-        return index;
+        return getStationaryInsertionIndex({ fallbackIndex: index, rect });
       }
     }
 
-    return stationaryRects.length;
+    const lastRect = stationaryRects[stationaryRects.length - 1];
+    return lastRect
+      ? getStationaryInsertionIndex({
+          fallbackIndex: stationaryRects.length - 1,
+          rect: lastRect,
+        }) + 1
+      : 0;
   }
 
   if (initialRect && getRectCenterY(activeRect) > getRectCenterY(initialRect)) {
-    let insertionIndex = 0;
+    const firstRect = stationaryRects[0];
+    let insertionIndex = firstRect
+      ? getStationaryInsertionIndex({ fallbackIndex: 0, rect: firstRect })
+      : 0;
 
     for (let index = 0; index < stationaryRects.length; index++) {
       const rect = stationaryRects[index];
 
       if (rect && activeBottom >= getRectCenterY(rect)) {
-        insertionIndex = index + 1;
+        insertionIndex =
+          getStationaryInsertionIndex({ fallbackIndex: index, rect }) + 1;
       } else {
         break;
       }
@@ -133,7 +192,20 @@ function getCrossListInsertionIndexFromEdges({
     (rect) => activeCenter < getRectCenterY(rect)
   );
 
-  return insertionIndex === -1 ? stationaryRects.length : insertionIndex;
+  if (insertionIndex !== -1) {
+    const rect = stationaryRects[insertionIndex];
+    return rect
+      ? getStationaryInsertionIndex({ fallbackIndex: insertionIndex, rect })
+      : insertionIndex;
+  }
+
+  const lastRect = stationaryRects[stationaryRects.length - 1];
+  return lastRect
+    ? getStationaryInsertionIndex({
+        fallbackIndex: stationaryRects.length - 1,
+        rect: lastRect,
+      }) + 1
+    : 0;
 }
 
 export function getTaskDropPreviewFromRects({
@@ -143,6 +215,7 @@ export function getTaskDropPreviewFromRects({
   height,
   listId,
   rects,
+  stationaryTaskCount,
 }: {
   activeRect?: VerticalRect | null;
   activeTask: Task;
@@ -150,17 +223,20 @@ export function getTaskDropPreviewFromRects({
   height: number;
   listId: string;
   rects: TaskRect[];
+  stationaryTaskCount?: number;
 }): DragPreviewPosition {
   const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
+  const effectiveStationaryTaskCount =
+    stationaryTaskCount ?? stationaryRects.length;
   const activeHeight = Math.max(1, Math.round(height));
 
   if (stationaryRects.length === 0 || !activeRect) {
     return createDragPreviewPosition({
       activeTask,
       height: activeHeight,
-      insertionIndex: stationaryRects.length,
+      insertionIndex: effectiveStationaryTaskCount,
       listId,
-      stationaryTaskCount: stationaryRects.length,
+      stationaryTaskCount: effectiveStationaryTaskCount,
     });
   }
 
@@ -184,7 +260,7 @@ export function getTaskDropPreviewFromRects({
     height: activeHeight,
     insertionIndex,
     listId,
-    stationaryTaskCount: stationaryRects.length,
+    stationaryTaskCount: effectiveStationaryTaskCount,
   });
 }
 
@@ -193,20 +269,22 @@ export function getTaskDropEndPreviewFromRects({
   height,
   listId,
   rects,
+  stationaryTaskCount,
 }: {
   activeTask: Task;
   height: number;
   listId: string;
   rects: TaskRect[];
+  stationaryTaskCount?: number;
 }): DragPreviewPosition {
   const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
 
   return createDragPreviewPosition({
     activeTask,
     height,
-    insertionIndex: stationaryRects.length,
+    insertionIndex: stationaryTaskCount ?? stationaryRects.length,
     listId,
-    stationaryTaskCount: stationaryRects.length,
+    stationaryTaskCount: stationaryTaskCount ?? stationaryRects.length,
   });
 }
 
@@ -217,6 +295,7 @@ export function getTaskDropPreviewFromListSurface({
   height,
   listId,
   rects,
+  stationaryTaskCount,
 }: {
   activeRect?: VerticalRect | null;
   activeTask: Task;
@@ -224,6 +303,7 @@ export function getTaskDropPreviewFromListSurface({
   height: number;
   listId: string;
   rects: TaskRect[];
+  stationaryTaskCount?: number;
 }): DragPreviewPosition {
   const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
   const firstRect = stationaryRects[0];
@@ -235,17 +315,31 @@ export function getTaskDropPreviewFromListSurface({
       height,
       listId,
       rects,
+      stationaryTaskCount,
     });
   }
 
   const isBelowLastSlot = activeRect.top > getRectCenterY(lastRect);
 
   if (isBelowLastSlot) {
-    return getTaskDropEndPreviewFromRects({
+    const sameList =
+      dragSession?.activeTaskId === activeTask.id &&
+      dragSession.sourceListId === listId;
+    const insertionIndex =
+      getStationaryInsertionIndex({
+        fallbackIndex: stationaryRects.length - 1,
+        rect: lastRect,
+        sourceInsertionIndex: sameList
+          ? dragSession.sourceInsertionIndex
+          : undefined,
+      }) + 1;
+
+    return createDragPreviewPosition({
       activeTask,
       height,
+      insertionIndex,
       listId,
-      rects,
+      stationaryTaskCount: stationaryTaskCount ?? stationaryRects.length,
     });
   }
 
@@ -256,5 +350,6 @@ export function getTaskDropPreviewFromListSurface({
     height,
     listId,
     rects,
+    stationaryTaskCount,
   });
 }

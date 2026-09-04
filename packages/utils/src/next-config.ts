@@ -15,6 +15,8 @@ export const TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS = [
 
 export const TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS = [
   '/api/workspaces/invitations',
+  '/api/v1/workspaces/:wsId/settings/permissions',
+  '/api/v1/workspaces/:wsId/users/feedbacks',
 ] as const;
 
 type NextImageConfig = NonNullable<NextConfig['images']>;
@@ -37,8 +39,33 @@ export const TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS = [
   },
 ] satisfies NextImageRemotePattern[];
 
-const TUTURUUU_ANTI_FRAMING_SOURCE =
-  '/:path((?!api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(?:/|$)).*)';
+export const TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+/**
+ * Paths every app excludes from the anti-framing headers.
+ *
+ * Framing is denied by default across the platform; anything listed here has
+ * been deliberately designed to be embedded in a third-party page.
+ */
+const TUTURUUU_DEFAULT_FRAMABLE_PATTERNS = [
+  'api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl',
+];
+
+/**
+ * Builds the anti-framing `source` as a negative lookahead over every framable
+ * path, so those paths simply never match the deny rule.
+ *
+ * A later permissive header would not reliably win: `X-Frame-Options` has no
+ * "allow from any origin" value, so the deny header has to be absent rather
+ * than overridden.
+ */
+function buildAntiFramingSource(framablePathPatterns: readonly string[]) {
+  const alternatives = framablePathPatterns
+    .map((pattern) => `${pattern}(?:/|$)`)
+    .join('|');
+
+  return `/:path((?!${alternatives}).*)`;
+}
 
 const TUTURUUU_ANTI_FRAMING_HEADERS = [
   {
@@ -93,14 +120,46 @@ export function isTuturuuuTurbopackRustReactCompilerEnabled(
   return env.NEXT_WEBPACK_BUILD !== '1';
 }
 
-export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
+export function getTuturuuuNextOptimizePackageImports(
+  appImports: readonly string[] | undefined,
+  env: Environment = process.env
+) {
+  // Next's webpack dev server can leave optimized workspace-package barrels
+  // out of the React Server Consumer Manifest after enough on-demand route
+  // compilations. E2E-owned satellites deliberately use webpack, so retain
+  // only explicit app imports there and keep the shared optimization for
+  // normal Turbopack development and production builds.
+  return env.NEXT_WEBPACK_BUILD === '1'
+    ? [...(appImports ?? [])]
+    : mergeStringArrays(TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS, appImports);
+}
+
+export interface TuturuuuNextConfigOptions extends NextConfig {
+  /**
+   * Path patterns (no leading slash, regex fragments) that this app allows to
+   * be framed by third-party sites. Excluded from the platform-wide
+   * `frame-ancestors 'none'` / `X-Frame-Options: DENY` rule.
+   *
+   * Opt in per route, never per app: everything not listed here stays denied.
+   */
+  framablePathPatterns?: readonly string[];
+}
+
+export function createTuturuuuNextConfig(
+  config: TuturuuuNextConfigOptions = {}
+): NextConfig {
   const experimentalConfig = config.experimental ?? {};
   const imageConfig = config.images ?? {};
+  const { framablePathPatterns, ...nextConfig } = config;
+  const antiFramingSource = buildAntiFramingSource([
+    ...TUTURUUU_DEFAULT_FRAMABLE_PATTERNS,
+    ...(framablePathPatterns ?? []),
+  ]);
 
   return {
     reactStrictMode: true,
     poweredByHeader: false,
-    ...config,
+    ...nextConfig,
     reactCompiler: isTuturuuuNextReactCompilerEnabled(),
     cacheComponents:
       config.cacheComponents ?? isTuturuuuNextCacheComponentsEnabled(),
@@ -111,6 +170,9 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
     ),
     images: {
       ...imageConfig,
+      minimumCacheTTL:
+        imageConfig.minimumCacheTTL ??
+        TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS,
       remotePatterns: mergeRemotePatterns(
         TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
         imageConfig.remotePatterns
@@ -128,18 +190,20 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
       turbopackRustReactCompiler:
         experimentalConfig.turbopackRustReactCompiler ??
         isTuturuuuTurbopackRustReactCompilerEnabled(),
-      optimizePackageImports: mergeStringArrays(
-        TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
+      devMemoryThresholdRestart:
+        experimentalConfig.devMemoryThresholdRestart ??
+        process.env.NEXT_WEBPACK_BUILD !== '1',
+      optimizePackageImports: getTuturuuuNextOptimizePackageImports(
         experimentalConfig.optimizePackageImports
       ),
     },
     async headers() {
       return [
         {
-          source: TUTURUUU_ANTI_FRAMING_SOURCE,
+          source: antiFramingSource,
           headers: TUTURUUU_ANTI_FRAMING_HEADERS,
         },
-        ...((await config.headers?.()) ?? []),
+        ...((await nextConfig.headers?.()) ?? []),
       ];
     },
   };

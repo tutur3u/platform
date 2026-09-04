@@ -1,7 +1,7 @@
 ---
 title: 'Platform Overview'
 description: 'How Tuturuuu products, AI systems, and personalization layers fit together.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-08-10'
 ---
 
 # Tuturuuu Platform Overview
@@ -19,7 +19,7 @@ The Tuturuuu platform combines proactive AI, unified applications, and automatio
 
 ## Explore the Platform
 
-- **Applications** – Tuturuuu ships as a catalog of standalone web apps that each run on their own host while routing `/api/*` back to the central `apps/web` platform. Browse the [Applications catalog](/platform/applications/calendar) covering [Calendar](/platform/applications/calendar), [Finance](/platform/applications/finance), [Drive](/platform/applications/drive), [Chat](/platform/applications/chat), [CMS](/platform/applications/cms), [Inventory](/platform/applications/inventory), [Storefront](/platform/applications/storefront), and the [Apps gateway](/platform/applications/apps).
+- **Applications** – Tuturuuu ships as a catalog of standalone web apps that each run on their own host, may serve product APIs locally, and can fall back to `apps/web` for unmatched or explicitly central route families. Browse the [Applications catalog](/platform/applications/calendar) covering [Calendar](/platform/applications/calendar), [Finance](/platform/applications/finance), [Drive](/platform/applications/drive), [Chat](/platform/applications/chat), [CMS](/platform/applications/cms), [Inventory](/platform/applications/inventory), [Storefront](/platform/applications/storefront), and the [Apps gateway](/platform/applications/apps).
 - **Experience Apps** – See how Tuturuuu Calendar, Tuturuuu Tasks, Tuturuuu Meet, and the Command Center Dashboard deliver daily flow. Start with the [Command Center Dashboard](/platform/features/command-center-dashboard).
 - **AI & Automation** – Learn how Mira (our Jarvis), Aurora, Nova, and Rewise power intelligent workflows in the [AI Overview](/platform/ai/structured-data).
 - **Shared Components** – Reuse building blocks from the [Component Library](/platform/components/overview).
@@ -30,10 +30,15 @@ The Tuturuuu platform combines proactive AI, unified applications, and automatio
 Beyond the experience surfaces, Tuturuuu is organized as a fleet of
 **satellite apps** under `apps/` — `calendar`, `finance`, `drive`, `chat`,
 `cms`, `inventory`, `storefront`, and more. Each runs as its own standalone host
-on its own canonical domain, but none owns its own backend: a fallback rewrite
-forwards every unmatched `/api/*` request to the central `apps/web` platform, so
-the main app remains the single source of truth for API routes, auth, and data
-access while each satellite owns only its UI and route shell.
+on its own canonical domain. Satellites may own their product APIs locally;
+unmatched or explicitly central route families can fall back to the live
+`apps/web` platform. `apps/web` remains authoritative only where a route family
+has not been hard-cut over to a satellite or another approved owner.
+
+Use the [satellite app ownership guide](/platform/architecture/satellite-apps)
+for local route, proxy, and auth boundaries. The
+[TanStack and Rust migration guide](/platform/architecture/tanstack-rust-migration)
+tracks the separate frontend and backend cutover model.
 
 The [Apps gateway](/platform/applications/apps) (`apps.tuturuuu.com`) sits in
 front of the routable apps as a launcher and redirect layer — it surfaces app

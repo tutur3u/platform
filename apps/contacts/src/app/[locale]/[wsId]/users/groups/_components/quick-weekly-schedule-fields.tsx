@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarDays, Clock, Globe, Repeat, Users } from '@tuturuuu/icons';
+import { CalendarDays, Globe, Repeat, Users } from '@tuturuuu/icons';
 import type { WorkspaceUserGroupScheduleGroup } from '@tuturuuu/internal-api';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
 import { Input } from '@tuturuuu/ui/input';
@@ -13,12 +13,13 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
-import { QuickWeeklyDayPicker } from './quick-weekly-day-picker';
+import { QuickWeeklyPatternFields } from './quick-weekly-pattern-fields';
 import {
   pickerDateFromParts,
   pickerPartsFromDate,
   type QuickWeeklyScheduleDraft,
 } from './quick-weekly-schedule-utils';
+import { ScheduleEndingFields } from './schedule-ending-fields';
 import { DEFAULT_SCHEDULE_TIMEZONE } from './session-time-utils';
 import { SessionTimezoneCombobox } from './session-timezone-combobox';
 
@@ -33,26 +34,6 @@ interface QuickWeeklyScheduleFieldsProps {
   setGroupId: (value: string) => void;
 }
 
-function updateDraftDateTime(
-  draft: QuickWeeklyScheduleDraft,
-  key: 'end' | 'start',
-  value: Date
-): QuickWeeklyScheduleDraft {
-  const parts = pickerPartsFromDate(value, draft.timezone);
-
-  return key === 'start'
-    ? {
-        ...draft,
-        startDate: parts.date,
-        startTime: parts.time,
-      }
-    : {
-        ...draft,
-        endDate: parts.date,
-        endTime: parts.time,
-      };
-}
-
 export function QuickWeeklyScheduleFields({
   canChooseGroup,
   draft,
@@ -64,9 +45,9 @@ export function QuickWeeklyScheduleFields({
   const t = useTranslations('ws-user-group-schedule');
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid min-w-0 gap-4 md:grid-cols-2">
       {canChooseGroup ? (
-        <div className="space-y-2 sm:col-span-2">
+        <div className="min-w-0 space-y-2 md:col-span-2">
           <Label className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
             {t('group')}
@@ -87,7 +68,7 @@ export function QuickWeeklyScheduleFields({
         </div>
       ) : null}
 
-      <div className="space-y-2 sm:col-span-2">
+      <div className="min-w-0 space-y-2 md:col-span-2">
         <Label className="flex items-center gap-2">
           <Globe className="h-3.5 w-3.5 text-muted-foreground" />
           {t('timezone')}
@@ -106,18 +87,14 @@ export function QuickWeeklyScheduleFields({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         <Label className="flex items-center gap-2">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-          {t('start_time')}
+          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+          {t('starts_on')}
         </Label>
         <DateTimePicker
           allowClear={false}
-          date={pickerDateFromParts(
-            draft.startDate,
-            draft.startTime,
-            draft.timezone
-          )}
+          date={pickerDateFromParts(draft.startDate, '00:00', draft.timezone)}
           preferences={{
             timeFormat: '24h',
             timezone: draft.timezone,
@@ -125,43 +102,12 @@ export function QuickWeeklyScheduleFields({
           }}
           setDate={(value) => {
             if (!value) return;
-            setDraft((current) => updateDraftDateTime(current, 'start', value));
+            const startDate = pickerPartsFromDate(value, draft.timezone).date;
+            setDraft((current) => ({ ...current, startDate }));
           }}
-          showTimeSelect
+          showTimeSelect={false}
         />
       </div>
-
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-          {t('end_time')}
-        </Label>
-        <DateTimePicker
-          allowClear={false}
-          date={pickerDateFromParts(
-            draft.endDate,
-            draft.endTime,
-            draft.timezone
-          )}
-          preferences={{
-            timeFormat: '24h',
-            timezone: draft.timezone,
-            weekStartsOn: 1,
-          }}
-          setDate={(value) => {
-            if (!value) return;
-            setDraft((current) => updateDraftDateTime(current, 'end', value));
-          }}
-          showTimeSelect
-        />
-      </div>
-
-      <QuickWeeklyDayPicker
-        daysOfWeek={draft.daysOfWeek}
-        onChange={(daysOfWeek) =>
-          setDraft((current) => ({ ...current, daysOfWeek }))
-        }
-      />
 
       <div className="space-y-2">
         <Label className="flex items-center gap-2" htmlFor="quick-interval">
@@ -170,40 +116,37 @@ export function QuickWeeklyScheduleFields({
         </Label>
         <Input
           id="quick-interval"
-          min={1}
           max={52}
+          min={1}
           type="number"
           value={draft.intervalWeeks}
           onChange={(event) =>
             setDraft((current) => ({
               ...current,
-              intervalWeeks: Number(event.target.value) || 1,
+              intervalWeeks: Math.min(
+                52,
+                Math.max(1, Number(event.target.value) || 1)
+              ),
             }))
           }
         />
       </div>
 
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2">
-          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-          {t('until_date')}
-        </Label>
-        <DateTimePicker
-          allowClear={false}
-          date={pickerDateFromParts(draft.untilDate, '00:00', draft.timezone)}
-          preferences={{
-            timeFormat: '24h',
-            timezone: draft.timezone,
-            weekStartsOn: 1,
-          }}
-          setDate={(value) => {
-            if (!value) return;
-            const parts = pickerPartsFromDate(value, draft.timezone);
-            setDraft((current) => ({ ...current, untilDate: parts.date }));
-          }}
-          showTimeSelect={false}
-        />
-      </div>
+      <QuickWeeklyPatternFields
+        patterns={draft.patterns}
+        onChange={(patterns) =>
+          setDraft((current) => ({ ...current, patterns }))
+        }
+      />
+
+      <ScheduleEndingFields
+        endMode={draft.endMode}
+        timezone={draft.timezone}
+        untilDate={draft.untilDate}
+        onChange={(ending) =>
+          setDraft((current) => ({ ...current, ...ending }))
+        }
+      />
     </div>
   );
 }

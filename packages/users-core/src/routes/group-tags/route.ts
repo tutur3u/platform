@@ -1,6 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { CreateGroupTagSchema, loadWorkspaceUserGroups } from './validation';
 
 interface Params {
   params: Promise<{
@@ -8,11 +10,20 @@ interface Params {
   }>;
 }
 
+const ParamsSchema = z.object({ wsId: z.string().min(1) });
+
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
 
 export async function GET(request: Request, { params }: Params) {
-  const { wsId: id } = await params;
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params' },
+      { status: 400 }
+    );
+  }
+  const { wsId: id } = parsedParams.data;
   const permissions = await getUserGroupRoutePermissions(id, request);
   if (!permissions) {
     return NextResponse.json({ message: 'Not found' }, { status: 404 });
@@ -81,7 +92,14 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId: id } = await params;
+  const parsedParams = ParamsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return NextResponse.json(
+      { message: 'Invalid route params' },
+      { status: 400 }
+    );
+  }
+  const { wsId: id } = parsedParams.data;
   const permissions = await getUserGroupRoutePermissions(id, req);
   if (!permissions) {
     return NextResponse.json({ message: 'Not found' }, { status: 404 });
@@ -92,15 +110,46 @@ export async function POST(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { message: 'Invalid JSON request body' },
+      { status: 400 }
+    );
+  }
+
+  const parsed = CreateGroupTagSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: 'Invalid request body', errors: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const { group_ids, ...coreData } = parsed.data;
   const supabase = await createAdminClient({ noCookie: true });
 
-  const data = (await req.json()) as {
-    name: string;
-    color: string;
-    group_ids: string[];
-  };
+  const { data: groups, error: groupsError } = await loadWorkspaceUserGroups(
+    supabase,
+    id,
+    group_ids
+  );
+  if (groupsError) {
+    console.error('Error validating workspace user groups for tag');
+    return NextResponse.json(
+      { message: 'Error creating workspace user group tag' },
+      { status: 500 }
+    );
+  }
 
-  const { group_ids, ...coreData } = data;
+  if ((groups?.length ?? 0) !== group_ids.length) {
+    return NextResponse.json(
+      { message: 'One or more user groups were not found' },
+      { status: 404 }
+    );
+  }
 
   const { data: tag, error: tagError } = await supabase
     .from('workspace_user_group_tags')
@@ -112,7 +161,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (tagError) {
-    console.log(tagError);
+    console.error('Error creating workspace user group tag');
     return NextResponse.json(
       { message: 'Error creating workspace user group tag' },
       { status: 500 }
@@ -130,7 +179,7 @@ export async function POST(req: Request, { params }: Params) {
       : { error: null };
 
   if (groupError) {
-    console.log(groupError);
+    console.error('Error creating workspace user group tag groups');
     return NextResponse.json(
       { message: 'Error creating workspace user group tag groups' },
       { status: 500 }

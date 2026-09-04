@@ -111,6 +111,31 @@ describe('verifyTurnstileToken', () => {
     expect((init.body as URLSearchParams).get('remoteip')).toBe('203.0.113.15');
   });
 
+  it('omits the remote ip for trusted server-to-server relays', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+    });
+
+    await verifyTurnstileToken(
+      {
+        headers: new Headers({
+          'x-forwarded-for': '198.51.100.20',
+        }),
+      },
+      'captcha-token',
+      {
+        devMode: false,
+        fetch: fetchMock,
+        includeRemoteIp: false,
+        secretKey: 'secret-key',
+      }
+    );
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect((init.body as URLSearchParams).has('remoteip')).toBe(false);
+  });
+
   it('throws a typed error when verification fails', async () => {
     try {
       await verifyTurnstileToken({ headers: new Headers() }, 'captcha-token', {

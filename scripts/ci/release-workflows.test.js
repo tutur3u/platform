@@ -818,6 +818,11 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
 
   assert.match(workflow, /\n {2}push:\n {4}branches:\s*\[production\]/);
   assert.match(workflow, /\n {2}workflow_dispatch:\n/);
+  assert.match(
+    workflow,
+    /^concurrency:\n {2}group: release-please-production\n {2}cancel-in-progress: false$/m,
+    'release generation must not overlap release auto-merge'
+  );
   assert.match(rejectJob, /if: github\.ref != 'refs\/heads\/production'/);
   assert.match(rejectJob, /permissions:\s*\{\}/);
   assert.match(
@@ -844,6 +849,10 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
     /GITHUB_TOKEN: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \|\| github\.token \}\}/
   );
   assert.match(releaseJob, /uses: googleapis\/release-please-action@v5/);
+  assert.match(
+    releaseJob,
+    /- name: Create or update release PR\n {8}id: release/
+  );
   assert.ok(
     releaseJob.indexOf('Recover overflow release notes') <
       releaseJob.indexOf('Create or update release PR')
@@ -855,6 +864,33 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   assert.match(releaseJob, /target-branch: production/);
   assert.match(releaseJob, /config-file: release-please-config\.json/);
   assert.match(releaseJob, /manifest-file: \.release-please-manifest\.json/);
+  const cleanupIndex = releaseJob.indexOf(
+    'Delete tagged overflow release notes'
+  );
+  assert.ok(
+    cleanupIndex > releaseJob.indexOf('Create or update release PR'),
+    'overflow notes may only be deleted after Release Please creates tags'
+  );
+  const cleanupStep = releaseJob.slice(
+    cleanupIndex,
+    releaseJob.indexOf('Approve untouched release PR')
+  );
+  assert.match(
+    cleanupStep,
+    /if: steps\.release\.outputs\.releases_created == 'true'/
+  );
+  assert.match(
+    cleanupStep,
+    /RELEASE_NOTES_BRANCH: release-please--branches--production--release-notes/
+  );
+  assert.match(
+    cleanupStep,
+    /git push origin --delete "\$\{RELEASE_NOTES_BRANCH\}"/
+  );
+  assert.match(
+    cleanupStep,
+    /git ls-remote --exit-code --heads origin "\$\{RELEASE_NOTES_BRANCH\}"/
+  );
   assert.doesNotMatch(releaseJob, /secrets\.GITHUB_TOKEN/);
 });
 
@@ -1158,7 +1194,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.doesNotMatch(e2eJob, /name: test-results-/u);
 });
 
-test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', () => {
+test('E2E workflow retains the paused migration restart contract', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
     'utf8'
@@ -1175,8 +1211,8 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
 
   assert.match(workflow, /\n {2}workflow_dispatch:\n/u);
   assert.match(migrationJob, /needs: \[prepare-e2e-images\]/u);
-  assert.match(migrationJob, /if: \$\{\{ always\(\)/u);
-  assert.match(migrationJob, /github\.ref != 'refs\/heads\/production'/u);
+  assert.match(migrationJob, /if: \$\{\{ false \}\}/u);
+  assert.doesNotMatch(migrationJob, /refs\/heads\/production/u);
   assert.match(migrationJob, /mode: tanstack-dual-stack/u);
   assert.match(
     migrationJob,

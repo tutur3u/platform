@@ -69,7 +69,7 @@ fixtures do not need a production runtime bypass.
 | Route tests | `bun --cwd apps/mail vitest run src/app/api/v1/webhooks/mail/ses/route.test.ts` | exit 0; unauthenticated envelopes never call ingestion |
 | Mail typecheck | `bun type-check:mail` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Mail build | `bun --cwd apps/mail run build` | exit 0; Next compiles the changed route |
+| Mail build | `bun run --cwd apps/mail build` | exit 0; Next compiles the changed route |
 | Whitespace | `git diff --check` | exit 0, no output |
 
 ## Scope

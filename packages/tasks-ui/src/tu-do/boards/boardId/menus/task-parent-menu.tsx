@@ -6,12 +6,10 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -20,6 +18,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskParentMenuTranslations {
   parent_task: string;
@@ -111,7 +114,10 @@ export function TaskParentMenu({
   );
 
   return (
-    <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
+    <TaskControlledSubmenu
+      submenuId="parent"
+      onOpenChange={handleSubContentOpenChange}
+    >
       <DropdownMenuSubTrigger>
         <ArrowUpCircle className="h-4 w-4 text-dynamic-purple" />
         {translations.parent_task}
@@ -121,7 +127,12 @@ export function TaskParentMenu({
           </span>
         )}
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-72 p-0">
+      <DropdownMenuSubContent
+        className="w-72 p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         {/* Current Parent Display */}
         {parentTask && (
           <div className="border-b p-2">
@@ -154,7 +165,7 @@ export function TaskParentMenu({
 
         {/* Search and Select */}
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
+          <TaskCommandSearchInput
             placeholder={translations.search_tasks}
             value={searchQuery}
             onValueChange={setSearchQuery}
@@ -223,6 +234,6 @@ export function TaskParentMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

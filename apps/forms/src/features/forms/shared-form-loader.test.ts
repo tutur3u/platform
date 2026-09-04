@@ -35,51 +35,23 @@ import {
   loadSharedFormForPage,
   loadSharedFormSnapshot,
 } from './shared-form-loader';
+import { createTestFormDefinition } from './test-support/form-fixtures';
+import type { FormDefinition } from './types';
 
 function createFormDefinition(
   accessMode: 'anonymous' | 'authenticated' = 'anonymous'
-) {
-  return {
+): FormDefinition {
+  return createTestFormDefinition({
     id: 'form-1',
     wsId: 'ws-1',
     creatorId: 'user-1',
     title: '<p>Shared form</p>',
     description: '<p>Fill this out</p>',
-    status: 'published' as const,
     accessMode,
-    openAt: null,
-    closeAt: null,
-    maxResponses: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
     shareCode: 'share-1',
-    theme: {
-      presetId: 'editorial-moss',
-      density: 'balanced' as const,
-      accentColor: 'dynamic-green' as const,
-      headlineFontId: 'noto-serif' as const,
-      bodyFontId: 'be-vietnam-pro' as const,
-      surfaceStyle: 'paper' as const,
-      coverHeadline: '',
-      coverImage: {
-        storagePath: '',
-        url: '',
-        alt: '',
-      },
-      sectionImages: {},
-      typography: {
-        displaySize: 'md' as const,
-        headingSize: 'md' as const,
-        bodySize: 'md' as const,
-      },
-    },
     settings: {
-      showProgressBar: true,
-      allowMultipleSubmissions: true,
-      oneResponsePerUser: false,
+      ...createTestFormDefinition().settings,
       requireTurnstile: true,
-      confirmationTitle: 'Thanks',
-      confirmationMessage: 'Done',
     },
     sections: [
       {
@@ -91,7 +63,7 @@ function createFormDefinition(
           {
             id: 'question-1',
             sectionId: 'section-1',
-            type: 'short_text' as const,
+            type: 'short_text',
             title: 'Question',
             description: '',
             required: false,
@@ -102,8 +74,7 @@ function createFormDefinition(
         ],
       },
     ],
-    logicRules: [],
-  };
+  });
 }
 
 function createLoadedRecord(

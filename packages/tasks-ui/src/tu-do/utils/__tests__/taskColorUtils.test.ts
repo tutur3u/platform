@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getAssigneeInitials,
   getCardColorClasses,
+  getCardHoverGlowClasses,
   getListColorClasses,
   getListTextColorClass,
   getPriorityBorderColor,
@@ -101,6 +102,53 @@ describe('taskColorUtils', () => {
       const taskList = { id: '1', name: 'Test', color: null };
       const result = getCardColorClasses(taskList as any, null);
       expect(result).toBe('border-l-dynamic-gray/30');
+    });
+
+    it('can include the matching border glow without a hover ring', () => {
+      const taskList = { id: '1', name: 'Test', color: 'CYAN' };
+      const result = getCardColorClasses(taskList as any, null, true);
+
+      expect(result).toContain('border-dynamic-cyan/70');
+      expect(result).toContain('hover:shadow-dynamic-cyan/45');
+      expect(result).not.toContain('ring');
+    });
+  });
+
+  describe('getCardHoverGlowClasses', () => {
+    it.each([
+      ['GRAY', 'gray'],
+      ['RED', 'red'],
+      ['BLUE', 'blue'],
+      ['GREEN', 'green'],
+      ['YELLOW', 'yellow'],
+      ['ORANGE', 'orange'],
+      ['PURPLE', 'purple'],
+      ['PINK', 'pink'],
+      ['INDIGO', 'indigo'],
+      ['CYAN', 'cyan'],
+    ] as const)(
+      'glows the existing %s list border without adding a ring',
+      (color, classColor) => {
+        const result = getCardHoverGlowClasses({ color } as any);
+
+        expect(result).toContain('hover:shadow-[0_0_12px_-3px]');
+        expect(result).toContain(`hover:shadow-dynamic-${classColor}/45`);
+        expect(result).not.toContain('ring');
+      }
+    );
+
+    it('uses priority color when the list has no color', () => {
+      const result = getCardHoverGlowClasses(undefined, 'high');
+
+      expect(result).toContain('hover:shadow-dynamic-orange/45');
+      expect(result).not.toContain('ring');
+    });
+
+    it('falls back to a neutral glow', () => {
+      const result = getCardHoverGlowClasses();
+
+      expect(result).toContain('hover:shadow-dynamic-gray/45');
+      expect(result).not.toContain('ring');
     });
   });
 

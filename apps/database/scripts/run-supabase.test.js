@@ -7,7 +7,7 @@ import test from 'node:test';
 
 import { getSupabaseBinaryPath } from './run-supabase.js';
 
-async function createFakeWorkspace(t, { withSupabaseGo = true } = {}) {
+async function createFakeWorkspace(t, { binaryNames = ['supabase'] } = {}) {
   const workspaceDir = await mkdtemp(
     path.join(os.tmpdir(), 'run-supabase-test-')
   );
@@ -27,26 +27,27 @@ async function createFakeWorkspace(t, { withSupabaseGo = true } = {}) {
   );
   await writeFile(wrapperPath, '#!/usr/bin/env node\n');
 
-  if (!withSupabaseGo) {
-    return { supabaseGoPath: null, wrapperPath, workspaceDir };
-  }
-
-  const supabaseGoPackageDir = path.join(
+  const supabaseCliPackageDir = path.join(
     workspaceDir,
     'node_modules',
     '@supabase',
     'cli-darwin-arm64'
   );
-  const supabaseGoPath = path.join(supabaseGoPackageDir, 'bin', 'supabase-go');
 
-  await mkdir(path.dirname(supabaseGoPath), { recursive: true });
+  await mkdir(path.join(supabaseCliPackageDir, 'bin'), { recursive: true });
   await writeFile(
-    path.join(supabaseGoPackageDir, 'package.json'),
+    path.join(supabaseCliPackageDir, 'package.json'),
     JSON.stringify({ name: '@supabase/cli-darwin-arm64' })
   );
-  await writeFile(supabaseGoPath, '#!/bin/sh\n');
 
-  return { supabaseGoPath, wrapperPath, workspaceDir };
+  const bundledBinaryPaths = [];
+  for (const binaryName of binaryNames) {
+    const binaryPath = path.join(supabaseCliPackageDir, 'bin', binaryName);
+    await writeFile(binaryPath, '#!/bin/sh\n');
+    bundledBinaryPaths.push(binaryPath);
+  }
+
+  return { bundledBinaryPaths, wrapperPath, workspaceDir };
 }
 
 test('getSupabaseBinaryPath honors explicit binary override', async (t) => {
@@ -63,8 +64,10 @@ test('getSupabaseBinaryPath honors explicit binary override', async (t) => {
   );
 });
 
-test('getSupabaseBinaryPath prefers bundled supabase-go when available', async (t) => {
-  const { supabaseGoPath, workspaceDir } = await createFakeWorkspace(t);
+test('getSupabaseBinaryPath prefers the bundled supabase binary', async (t) => {
+  const { bundledBinaryPaths, workspaceDir } = await createFakeWorkspace(t, {
+    binaryNames: ['supabase', 'supabase-go'],
+  });
 
   assert.equal(
     getSupabaseBinaryPath(workspaceDir, {
@@ -72,13 +75,28 @@ test('getSupabaseBinaryPath prefers bundled supabase-go when available', async (
       env: {},
       platform: 'darwin',
     }),
-    fs.realpathSync(supabaseGoPath)
+    fs.realpathSync(bundledBinaryPaths[0])
+  );
+});
+
+test('getSupabaseBinaryPath supports the legacy supabase-go binary', async (t) => {
+  const { bundledBinaryPaths, workspaceDir } = await createFakeWorkspace(t, {
+    binaryNames: ['supabase-go'],
+  });
+
+  assert.equal(
+    getSupabaseBinaryPath(workspaceDir, {
+      arch: 'arm64',
+      env: {},
+      platform: 'darwin',
+    }),
+    fs.realpathSync(bundledBinaryPaths[0])
   );
 });
 
 test('getSupabaseBinaryPath falls back to the package wrapper', async (t) => {
   const { workspaceDir, wrapperPath } = await createFakeWorkspace(t, {
-    withSupabaseGo: false,
+    binaryNames: [],
   });
 
   assert.equal(

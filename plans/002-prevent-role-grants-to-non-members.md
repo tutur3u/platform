@@ -137,7 +137,7 @@ and never print production identities.
    types and the one moved route. Never apply production SQL.
 
 7. **Run final gates.** Run focused pgTAP and Vitest suites, then `bun check`,
-   `bun --cwd apps/web run build`, and `git diff --check`; expect both Bun
+   `bun run --cwd apps/web build`, and `git diff --check`; expect both Bun
    commands to exit 0 and no whitespace output.
 
 ## Done criteria

@@ -1,6 +1,6 @@
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
-  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -38,7 +38,11 @@ interface BoardParams {
 
 type SessionAuthContext = Parameters<Parameters<typeof withSessionAuth>[0]>[1];
 
-async function requireBoardManagementAccess(
+const BOARD_LIFECYCLE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
+
+async function requireWorkspaceMembership(
   supabase: SessionAuthContext['supabase'],
   wsId: string,
   user: SessionAuthContext['user']
@@ -63,14 +67,6 @@ async function requireBoardManagementAccess(
     );
   }
 
-  const permissions = await getPermissions({ wsId, user });
-  if (!permissions?.containsPermission('manage_projects')) {
-    return NextResponse.json(
-      { error: "You don't have permission to perform this operation" },
-      { status: 403 }
-    );
-  }
-
   return null;
 }
 
@@ -82,7 +78,7 @@ export const DELETE = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      const accessError = await requireBoardManagementAccess(
+      const accessError = await requireWorkspaceMembership(
         supabase,
         wsId,
         user
@@ -131,7 +127,8 @@ export const DELETE = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );
 
 // PATCH handler for restoration
@@ -146,7 +143,7 @@ export const PATCH = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      const accessError = await requireBoardManagementAccess(
+      const accessError = await requireWorkspaceMembership(
         supabase,
         wsId,
         user
@@ -206,7 +203,8 @@ export const PATCH = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );
 
 // PUT handler for soft deletion (moving to trash)
@@ -217,7 +215,7 @@ export const PUT = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      const accessError = await requireBoardManagementAccess(
+      const accessError = await requireWorkspaceMembership(
         supabase,
         wsId,
         user
@@ -266,5 +264,6 @@ export const PUT = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );

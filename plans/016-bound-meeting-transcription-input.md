@@ -10,7 +10,10 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** DONE
+- **Verified implementation:** commit `5be1e5bcbfa08ad813541c5f78be3a09adfeda64`
+  on branch `fix/meeting-transcription-input-bounds`; 47 focused tests, both
+  package typechecks, i18n sorting, `bun check`, whitespace, and hooks passed
 - **Priority:** P1
 - **Effort:** S
 - **Risk:** LOW
@@ -50,7 +53,7 @@ inline cap.
 | --- | --- | --- |
 | Route tests | `bun --cwd packages/ai vitest run src/meetings/transcription/route.test.ts` | exit 0; rejection precedes buffer/provider calls |
 | Internal client tests | `bun --cwd packages/internal-api vitest run src/meetings.test.ts` | exit 0; client mirrors size/type contract |
-| Typechecks | `bun --cwd packages/ai run type-check && bun --cwd packages/internal-api run type-check` | both exit 0 |
+| Typechecks | `bun run --cwd packages/ai type-check && bun run --cwd packages/internal-api type-check` | both exit 0 |
 | Repository gate | `bun check` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

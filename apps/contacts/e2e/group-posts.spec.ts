@@ -63,6 +63,7 @@ test.describe('Contacts group posts API', () => {
     const groupId = randomUUID();
     const virtualUserId = randomUUID();
     const title = `Contacts E2E daily report ${groupId}`;
+    const content = 'Lesson completed with detailed notes. '.repeat(20);
     const { token } = createAppSessionToken(
       {
         email: TEST_USER.email,
@@ -146,7 +147,7 @@ test.describe('Contacts group posts API', () => {
         `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/posts`,
         {
           data: {
-            content: 'Lesson completed',
+            content,
             notes: 'Created by Contacts E2E',
             title,
           },
@@ -163,10 +164,17 @@ test.describe('Contacts group posts API', () => {
       );
       expect(listResponse.status()).toBe(200);
       const list = (await listResponse.json()) as {
-        data: Array<{ id: string; title: string | null }>;
+        data: Array<{
+          content: string | null;
+          id: string;
+          title: string | null;
+        }>;
       };
-      postId = list.data.find((post) => post.title === title)?.id ?? null;
+      const createdPost = list.data.find((post) => post.title === title);
+      postId = createdPost?.id ?? null;
       expect(postId).toBeTruthy();
+      expect(content.length).toBeGreaterThan(512);
+      expect(createdPost?.content).toBe(content);
 
       const updateResponse = await request.put(
         `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/posts/${postId}`,
@@ -270,6 +278,63 @@ test.describe('Contacts group posts API', () => {
       await expect
         .poll(async () => (await readChecks())[0]?.is_completed)
         .toBe(false);
+
+      const approvalResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'PUT' &&
+          response
+            .url()
+            .endsWith(`/api/v1/workspaces/${workspaceId}/users/approvals`)
+      );
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Approve' })
+        .click();
+      expect((await approvalResponse).status()).toBe(200);
+      await expect(
+        recipientCard().getByRole('button', {
+          exact: true,
+          name: 'Remove approval',
+        })
+      ).toBeVisible();
+
+      const unapprovalResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'PUT' &&
+          response
+            .url()
+            .endsWith(`/api/v1/workspaces/${workspaceId}/users/approvals`)
+      );
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Remove approval' })
+        .click();
+      expect((await unapprovalResponse).status()).toBe(200);
+      await expect(
+        recipientCard().getByRole('button', { exact: true, name: 'Approve' })
+      ).toBeVisible();
+
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Reject' })
+        .click();
+      const rejectDialog = page.getByRole('dialog');
+      await rejectDialog.getByLabel('Reason').fill('Needs another revision');
+      const rejectionResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'PUT' &&
+          response
+            .url()
+            .endsWith(`/api/v1/workspaces/${workspaceId}/users/approvals`)
+      );
+      await rejectDialog
+        .getByRole('button', { exact: true, name: 'Reject' })
+        .click();
+      expect((await rejectionResponse).status()).toBe(200);
+      await expect(rejectDialog).toBeHidden();
+      await expect(
+        recipientCard().getByRole('button', { exact: true, name: 'Approve' })
+      ).toBeVisible();
+      await expect(
+        recipientCard().getByRole('button', { exact: true, name: 'Reject' })
+      ).toHaveCount(0);
 
       const historyResponse = await request.get(
         `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/group-checks/${postId}/logs`,

@@ -10,11 +10,12 @@ import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory
 import { Button } from '@tuturuuu/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
-import type { InventoryCatalogTab } from './operator-types';
+import type { InventoryCatalogTab, InventoryFilters } from './operator-types';
 import {
   ProductCategoriesPanel,
   ProductCategoryDialog,
 } from './product-categories-panel';
+import { ProductExportDropdown } from './product-export-dropdown';
 import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
 
@@ -30,6 +31,7 @@ export function CatalogWorkspacePanel({
   categoryPagination,
   costingProfiles,
   formOptions,
+  filters,
   onTabChange,
   productPagination,
   products,
@@ -40,6 +42,7 @@ export function CatalogWorkspacePanel({
   categoryPagination: PaginationProps;
   costingProfiles: InventoryCostProfile[];
   formOptions?: InventoryProductFormOptionsResponse;
+  filters: InventoryFilters;
   onTabChange: (tab: InventoryCatalogTab) => void;
   productPagination: PaginationProps;
   products: InventoryProductSummary[];
@@ -72,19 +75,22 @@ export function CatalogWorkspacePanel({
           </TabsTrigger>
         </TabsList>
         {tab === 'products' ? (
-          <ProductCreateForm
-            options={formOptions}
-            trigger={
-              <Button
-                className="min-h-10 w-full sm:min-h-9 sm:w-auto"
-                type="button"
-              >
-                <PackageSearch className="h-4 w-4" />
-                {t('newProduct')}
-              </Button>
-            }
-            wsId={wsId}
-          />
+          <div className="grid gap-2 sm:flex sm:justify-end min-[420px]:grid-cols-2">
+            <ProductExportDropdown filters={filters} showLabel wsId={wsId} />
+            <ProductCreateForm
+              options={formOptions}
+              trigger={
+                <Button
+                  className="min-h-10 w-full sm:min-h-9 sm:w-auto"
+                  type="button"
+                >
+                  <PackageSearch className="h-4 w-4" />
+                  {t('newProduct')}
+                </Button>
+              }
+              wsId={wsId}
+            />
+          </div>
         ) : (
           <ProductCategoryDialog
             trigger={

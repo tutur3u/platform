@@ -157,7 +157,7 @@ describe('devbox agent routes', () => {
         memory: { freeBytes: 1024, totalBytes: 2048 },
         uptimeSeconds: 120,
       },
-      runtimes: { bun: '1.3.14', node: 'v26.0.0' },
+      runtimes: { bun: '1.4.0', node: 'v26.0.0' },
       tools: { docker: 'Docker version 29.0.0', git: 'git version 2.54.0' },
     };
 
@@ -246,7 +246,7 @@ describe('devbox agent routes', () => {
 
     const request = createRequest({
       completion: { exitCode: 0, status: 'succeeded' },
-      events: [{ message: '1.3.14' }],
+      events: [{ message: '1.4.0' }],
       runId: 'run-1',
     });
     const response = await events(request);
@@ -256,7 +256,7 @@ describe('devbox agent routes', () => {
       requireOnline: true,
     });
     expect(recordDevboxRunEventsMock).toHaveBeenCalledWith({
-      events: [{ message: '1.3.14' }],
+      events: [{ message: '1.4.0' }],
       runId: 'run-1',
       runnerId: 'runner-1',
     });

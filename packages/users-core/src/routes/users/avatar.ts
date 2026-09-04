@@ -8,7 +8,16 @@ interface Params {
   }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
+interface WorkspaceUserRouteActor {
+  email?: string | null;
+  id: string;
+}
+
+export async function handleGetAvatarRequest(
+  req: Request,
+  { params }: Params,
+  actor?: WorkspaceUserRouteActor | null
+) {
   const { wsId } = await params;
   const { searchParams } = new URL(req.url);
   const path = searchParams.get('path');
@@ -23,7 +32,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getPermissions({ wsId, request: req, user: actor });
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -45,11 +54,15 @@ export async function GET(req: Request, { params }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function handleCreateAvatarUploadRequest(
+  req: Request,
+  { params }: Params,
+  actor?: WorkspaceUserRouteActor | null
+) {
   const { wsId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getPermissions({ wsId, request: req, user: actor });
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -94,4 +107,12 @@ export async function POST(req: Request, { params }: Params) {
     ...data,
     publicUrl: publicUrlData.publicUrl,
   });
+}
+
+export async function GET(req: Request, context: Params) {
+  return handleGetAvatarRequest(req, context);
+}
+
+export async function POST(req: Request, context: Params) {
+  return handleCreateAvatarUploadRequest(req, context);
 }

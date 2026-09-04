@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.18.2](https://github.com/tutur3u/platform/compare/shortener-v0.18.1...shortener-v0.18.2) (2026-08-29)
+
+
+### Performance Improvements
+
+* **vercel:** serve every monorepo app from one function region ([4f0bf52](https://github.com/tutur3u/platform/commit/4f0bf52450899267b4ac9cd2bdecfcf07e3ea427))
+* **vercel:** serve every monorepo app from one function region ([#5172](https://github.com/tutur3u/platform/issues/5172)) ([b09d4bd](https://github.com/tutur3u/platform/commit/b09d4bd520a7543d6b88140715d8cc0b5c461711))
+
+## [0.18.1](https://github.com/tutur3u/platform/compare/shortener-v0.18.0...shortener-v0.18.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
+## [0.18.0](https://github.com/tutur3u/platform/compare/shortener-v0.17.0...shortener-v0.18.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
+## [0.17.0](https://github.com/tutur3u/platform/compare/shortener-v0.16.0...shortener-v0.17.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/shortener-v0.15.0...shortener-v0.16.0) (2026-08-07)
 
 

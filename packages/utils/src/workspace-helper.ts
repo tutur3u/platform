@@ -676,7 +676,7 @@ export interface PermissionsResult {
   withoutPermission(permission: PermissionId): boolean;
 }
 
-async function resolveWorkspaceIdForPermissions({
+export async function resolveWorkspaceIdForPrincipal({
   authorizationClient,
   principal,
   wsId,
@@ -773,7 +773,7 @@ async function getPermissionsImpl({
   // Handle "personal" workspace slug by looking up the user's personal workspace
   let resolvedWorkspaceId: string;
   try {
-    resolvedWorkspaceId = await resolveWorkspaceIdForPermissions({
+    resolvedWorkspaceId = await resolveWorkspaceIdForPrincipal({
       authorizationClient: sbAdmin,
       principal,
       wsId,

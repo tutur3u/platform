@@ -7,6 +7,7 @@
 import { formatDateString } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { FinanceRouteAuthContext } from '../../../../request-access';
 import { getAccessibleWallet } from '../../../wallet-access';
 
 interface Params {
@@ -27,7 +28,11 @@ const createRateSchema = z.object({
 /**
  * GET: Get rate history for wallet
  */
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId, wsId } = await params;
   const access = await getAccessibleWallet({
     req,
@@ -35,6 +40,7 @@ export async function GET(req: Request, { params }: Params) {
     walletId,
     requiredPermission: 'view_transactions',
     select: 'id',
+    authContext,
   });
 
   if (access.response) {
@@ -77,7 +83,11 @@ export async function GET(req: Request, { params }: Params) {
  *
  * The database trigger will automatically close the previous rate.
  */
-export async function POST(req: Request, { params }: Params) {
+export async function POST(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId, wsId } = await params;
   const access = await getAccessibleWallet({
     req,
@@ -85,6 +95,7 @@ export async function POST(req: Request, { params }: Params) {
     walletId,
     requiredPermission: 'update_wallets',
     select: 'id',
+    authContext,
   });
 
   if (access.response) {

@@ -95,9 +95,8 @@ async function resolveDashboardWorkspace(routeWsId: string) {
   return { currentUser, workspace };
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'dashboard.metadata' });
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('dashboard.metadata');
 
   return {
     title: t('title'),

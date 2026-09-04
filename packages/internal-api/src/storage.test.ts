@@ -159,6 +159,51 @@ describe('workspace task upload helpers', () => {
     );
   });
 
+  it('gives unnamed pasted screenshots a valid filename before requesting an upload URL', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          signedUrl: 'https://upload.example.com/signed',
+          token: 'token-1',
+          path: 'task-images/pasted-image.png',
+          fullPath: 'ws-1/task-images/pasted-image.png',
+        })
+      )
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => '',
+      });
+    const pastedScreenshot = new File(['image'], '', { type: 'image/png' });
+
+    await uploadWorkspaceTaskFile('ws-1', pastedScreenshot, undefined, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks/upload-url',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          filename: 'pasted-image.png',
+        }),
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://upload.example.com/signed',
+      expect.objectContaining({
+        body: pastedScreenshot,
+        headers: expect.objectContaining({
+          'Content-Type': 'image/png',
+        }),
+      })
+    );
+  });
+
   it('disables user-group signed upload URLs', async () => {
     const fetchMock = vi.fn();
 

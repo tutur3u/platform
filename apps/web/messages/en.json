@@ -4220,11 +4220,38 @@
     "clear_recent_title": "Clear Recent Items",
     "commands": "Commands",
     "continue": "Continue",
+    "create_from_query": "Create “{query}”",
     "create_in_product": "Create in {product}",
     "create_in_product_description": "Start a new {product} workflow from the command palette.",
     "create_task": "Create task \"{taskName}\"",
     "create_task_tip": "Tip: Press ⌘↵ to quickly create a task",
     "current_theme": "Current",
+    "description": "Search, act, and move without leaving your flow.",
+    "empty": {
+      "description": "Start typing, choose a tab, or use a power prefix.",
+      "no_matches": "No matches for “{query}”. Refine the filters or create it as a task.",
+      "title": "Nothing surfaced yet"
+    },
+    "filters": {
+      "label": "Filter",
+      "priority": {
+        "all": "Any priority",
+        "critical": "Critical",
+        "high": "High",
+        "low": "Low",
+        "normal": "Normal"
+      },
+      "priority_label": "Priority filter",
+      "status": {
+        "all": "Any status",
+        "assigned": "Assigned to me",
+        "completed": "Completed",
+        "due-soon": "Due soon",
+        "open": "Open",
+        "overdue": "Overdue"
+      },
+      "status_label": "Status filter"
+    },
     "generic_action_name_label": "Name",
     "generic_action_name_placeholder": "Name this {product} item",
     "generic_action_notes_label": "Notes",
@@ -4233,8 +4260,10 @@
     "inline_action_description": "Add the quick details here, then continue in {product} to finish the product-specific fields.",
     "keyboard_hints": {
       "clear_recent": "clear recent",
+      "create": "create task",
       "esc_to_close": "Press Esc to close",
       "navigate": "navigate",
+      "open": "open",
       "select": "select",
       "to_close": "to close",
       "to_toggle": "to toggle"
@@ -4253,6 +4282,11 @@
     "open_item_description": "Navigate to {item}.",
     "overdue": "Overdue",
     "personal": "Personal",
+    "power_hints": {
+      "actions": "actions",
+      "pages": "pages",
+      "tasks": "tasks"
+    },
     "powered_by": "Powered by Tuturuuu Search",
     "priority": {
       "critical": "Critical",
@@ -4266,8 +4300,39 @@
     "result_count": "{count} result",
     "result_count_plural": "{count} results",
     "search_placeholder": "Search commands, tasks, or navigate...",
+    "search_placeholder_navigation": "Find pages, apps, and actions — use /, @, or >",
+    "search_placeholder_power": "Find tasks, pages, and actions — use #, /, or >",
+    "search_placeholder_tasks": "Find tasks, apps, and actions — use #, @, or >",
     "searching_tasks": "Searching tasks...",
     "smart_actions": "Smart Actions",
+    "sort": {
+      "due": "Due date",
+      "label": "Sort tasks",
+      "newest": "Newest",
+      "priority": "Priority",
+      "relevance": "Best match"
+    },
+    "tabs": {
+      "actions": "Actions",
+      "all": "All",
+      "apps": "Apps",
+      "label": "Search category",
+      "navigate": "Pages",
+      "tasks": "Tasks"
+    },
+    "task_actions": {
+      "completed": "Task completed",
+      "copy_link": "Copy task link",
+      "due": "Due {date}",
+      "link_copied": "Task link copied",
+      "link_copy_failed": "Could not copy the task link",
+      "mark_complete": "Complete task",
+      "mark_open": "Reopen task",
+      "reopened": "Task reopened",
+      "update_failed": "Could not update this task"
+    },
+    "task_first": "Task first",
+    "task_results": "{count, plural, one {# task} other {# tasks}}",
     "tasks": "Tasks",
     "title": "Command Center",
     "try_searching": "Try searching for tasks, pages, or actions",
@@ -4448,6 +4513,7 @@
     "crm": "CRM",
     "crm-description": "Build and maintain valuable customer relationships.",
     "current_plan": "Current plan",
+    "current_timer_will_stop": "Your current timer will stop automatically.",
     "currently_online": "Currently online",
     "currently_related": "Currently Related",
     "custom_date": "Custom Date",
@@ -4556,6 +4622,8 @@
     "failed_to_delete": "Failed to delete",
     "failed_to_delete_tasks": "Failed to delete tasks.",
     "failed_to_restore": "Failed to restore tasks",
+    "failed_to_start_timer": "Couldn’t start the timer",
+    "failed_to_stop_timer": "Failed to stop timer",
     "failed_to_update_assignees": "Failed to update assignees: {error}",
     "faq": "Frequently Asked Questions",
     "feature_coming_soon": "Feature coming soon",
@@ -4946,11 +5014,14 @@
     "start_date": "Start date",
     "start_timer": "Start Timer",
     "start_tracking_time": "Start tracking time",
+    "starting_timer": "Starting timer…",
     "starts": "Starts",
     "starts_at": "Starts {date}",
     "status": "Status",
     "status_category": "Status Category",
     "stay-updated": "Stay in the Loop",
+    "stop_tracking_time": "Stop tracking",
+    "stopping_timer": "Stopping timer…",
     "stress": "stress",
     "styles": "Styles",
     "submit": "Submit",
@@ -4964,6 +5035,7 @@
     "suggestion-improve": "Suggestion to Improve ",
     "suggestion-placeholder": "Describe the issue and any suggestions you have to improve the situation...",
     "switch_to": "Switch to {theme}",
+    "switch_tracking_to_task": "Switch timer to this task",
     "system": "System",
     "task": "task",
     "task_duplicated_successfully": "Task duplicated successfully",
@@ -5049,11 +5121,20 @@
     "timeline_unscheduled_prompt": "Unscheduled tasks",
     "timeline_view": "Timeline",
     "timeline_zoom": "Timeline zoom",
+    "timer_is_running": "Time is already being tracked for this task.",
+    "timer_started": "Timer started",
+    "timer_started_for": "Now tracking {name}.",
+    "timer_starts_immediately": "Starts immediately without leaving the board.",
+    "timer_stopped": "Timer stopped",
+    "timer_stopped_for": "Stopped tracking {name}.",
+    "timer_switched_to": "Stopped the previous timer and started {name}.",
     "title": "Title",
     "to": "To",
     "today": "Today",
     "toggle-columns": "Toggle Columns",
     "tomorrow": "Tomorrow",
+    "tracking_task_named": "Tracking {name}",
+    "tracking_this_task": "Tracking this task",
     "ui": "UI",
     "ui-description": "Browse the Tuturuuu UI component library.",
     "unarchive": "Unarchive",
@@ -5085,6 +5166,7 @@
     "vietnamese-womens-day": "Vietnamese Women's Day",
     "view": "View",
     "view_email": "View Email",
+    "view_task": "View task",
     "view-full-documentation": "View full documentation",
     "view-options": "Columns",
     "visibility_updated": "Visibility updated successfully",
@@ -9349,6 +9431,15 @@
       "operate": "Run the business",
       "plan": "Plan & execute"
     },
+    "index": {
+      "description": "One workspace, one login, one bill. Each app below works on its own and works better beside the others.",
+      "learn_more": "Learn more",
+      "seo": {
+        "description": "Every Tuturuuu app in one place — plan and execute, create and share, run the business.",
+        "title": "Products"
+      },
+      "title": "Every app your team needs"
+    },
     "products": {
       "ai": {
         "description": "Mira and the assistants powering every surface.",
@@ -11083,6 +11174,10 @@
         "subtitle": "Each part does one job, and you only ever address one of them.",
         "title": "What is actually running"
       },
+      "seo": {
+        "description": "See how Tuturuuu AI accelerates automation and everyday workflows.",
+        "title": "AI Workspace"
+      },
       "title": "Five systems, one assistant you talk to",
       "useCases": {
         "eyebrow": "Where it fits",
@@ -11157,6 +11252,10 @@
           "title": "Time zones handled quietly"
         },
         "title": "Scheduling without the back and forth"
+      },
+      "seo": {
+        "description": "Coordinate schedules with the shared Tuturuuu calendar experience.",
+        "title": "Shared Team Calendar"
       },
       "title": "A calendar that defends your day",
       "useCases": {
@@ -11233,6 +11332,10 @@
           "title": "Personal and workspace side by side"
         }
       },
+      "seo": {
+        "description": "Channels, direct messages and files in the same workspace as your work.",
+        "title": "Team Chat and Channels"
+      },
       "title": "The conversation next to the work",
       "useCases": {
         "eyebrow": "In practice",
@@ -11307,6 +11410,10 @@
         },
         "subtitle": "Not another database to maintain. The customer record sits beside your tasks, calendar and invoices, so context arrives with the name.",
         "title": "The relationship, written down"
+      },
+      "seo": {
+        "description": "Track relationships and deals inside the connected Tuturuuu CRM.",
+        "title": "Customer Relationship Management"
       },
       "title": "Every customer, and everything you promised them",
       "useCases": {
@@ -11383,6 +11490,10 @@
           "title": "Nothing is lost by editing"
         }
       },
+      "seo": {
+        "description": "Collaborate on docs with AI-assisted workflows in Tuturuuu.",
+        "title": "Collaborative Documents"
+      },
       "title": "Write it down where the work already lives",
       "useCases": {
         "business": {
@@ -11457,6 +11568,10 @@
           "description": "Replacing a file does not erase it. Earlier versions stay available, so an overwrite is not a lost afternoon.",
           "title": "Every upload keeps the last one"
         }
+      },
+      "seo": {
+        "description": "Store, organize, and securely share files with Tuturuuu Drive.",
+        "title": "Secure Cloud Drive"
       },
       "title": "Your files, where the rest of the work is",
       "useCases": {
@@ -11533,6 +11648,10 @@
         "subtitle": "Every number lives next to the work that produced it, so you are not reconciling two versions of the truth.",
         "title": "The bookkeeping, mostly handled"
       },
+      "seo": {
+        "description": "Manage invoices, budgets, and spend control with Tuturuuu Finance.",
+        "title": "Finance and Expense Management"
+      },
       "title": "Know where the money went, without the spreadsheet",
       "useCases": {
         "business": {
@@ -11607,6 +11726,10 @@
           "title": "Looks like you sent it"
         },
         "title": "From question to answer without a detour"
+      },
+      "seo": {
+        "description": "Build a form, share a link, and read every response where it lands.",
+        "title": "Online Forms and Surveys"
       },
       "title": "Ask once, read the answers in one place",
       "useCases": {
@@ -11683,6 +11806,10 @@
           "title": "A world you build by hand"
         }
       },
+      "seo": {
+        "description": "Keep what your team knows searchable instead of scattered.",
+        "title": "Team Knowledge Hive"
+      },
       "title": "A lab for swarm agents",
       "useCases": {
         "design": {
@@ -11757,6 +11884,10 @@
           "description": "Track stock per site and every transfer between them, without a spreadsheet per warehouse.",
           "title": "Multiple locations, one picture"
         }
+      },
+      "seo": {
+        "description": "Monitor stock levels and fulfillment workflows with Tuturuuu Inventory.",
+        "title": "Inventory Management"
       },
       "title": "Stock counts that match the shelf",
       "useCases": {
@@ -11833,6 +11964,10 @@
         "subtitle": "Course material, submissions and progress in one system, on the same calendar as everything else your learners are juggling.",
         "title": "Teaching, with less admin around it"
       },
+      "seo": {
+        "description": "Deliver training and measure learning impact with Tuturuuu LMS.",
+        "title": "Learning Management System"
+      },
       "title": "Courses, assignments and where each learner stands",
       "useCases": {
         "centers": {
@@ -11907,6 +12042,10 @@
         },
         "subtitle": "Triage, drafting, scheduling and shared inboxes in one place.",
         "title": "Less inbox, more done"
+      },
+      "seo": {
+        "description": "Power outreach and shared inboxes with Tuturuuu Mail.",
+        "title": "Team Email and Shared Inboxes"
       },
       "title": "An inbox that hands work to the rest of your day",
       "useCases": {
@@ -12017,6 +12156,12 @@
         "title": "Whenever more than three people are involved"
       }
     },
+    "meet-together": {
+      "seo": {
+        "description": "Compare availability and settle on a meeting time without the back and forth.",
+        "title": "Find a Time Everyone Can Meet"
+      }
+    },
     "qr": {
       "closing": {
         "description": "Paste the link, set the colors, and download a file you can print.",
@@ -12057,6 +12202,10 @@
         },
         "subtitle": "Any value, three layouts, your colors, your logo, and a file large enough for print.",
         "title": "Enough control to print it once"
+      },
+      "seo": {
+        "description": "Generate and track QR codes tied to the work behind them.",
+        "title": "QR Codes for Your Workspace"
       },
       "title": "A code for the thing you keep repeating",
       "useCases": {
@@ -12133,6 +12282,10 @@
           "title": "Public or private"
         }
       },
+      "seo": {
+        "description": "Sell online with a storefront connected to your inventory and finance.",
+        "title": "Online Storefront"
+      },
       "title": "Your inventory, open to buyers",
       "useCases": {
         "buyers": {
@@ -12207,6 +12360,10 @@
           "description": "Switch the view without moving the work. The same tasks, arranged for planning, standups or delivery.",
           "title": "List, board or timeline"
         }
+      },
+      "seo": {
+        "description": "Keep projects on track with Tuturuuu Tasks and collaborative boards.",
+        "title": "Project and Task Management"
       },
       "title": "Work that stays where you left it",
       "useCases": {
@@ -12283,6 +12440,10 @@
         },
         "title": "A timer that stays close to the work"
       },
+      "seo": {
+        "description": "See where the hours actually went, per person and per project.",
+        "title": "Time Tracking"
+      },
       "title": "Hours you can account for",
       "useCases": {
         "eyebrow": "In practice",
@@ -12357,6 +12518,10 @@
           "description": "Versions are kept as the process evolves, so you can see what changed and go back if the new one is worse.",
           "title": "Changes you can trace"
         }
+      },
+      "seo": {
+        "description": "Automate cross-team processes with Tuturuuu Workflows.",
+        "title": "Workflow Automation"
       },
       "title": "The routine parts, handled without you",
       "useCases": {
@@ -13477,6 +13642,14 @@
       "default_list": "Default list",
       "delete_board": "Delete board",
       "delete_board_description": "Move “{name}” to trash. You can restore it from deleted boards until it is permanently removed.",
+      "dialog_create_document": "Create documents in",
+      "dialog_create_document_description": "Choose the initial layout when creating a document task.",
+      "dialog_create_task": "Create tasks in",
+      "dialog_create_task_description": "Choose the initial layout when creating a task.",
+      "dialog_edit_document": "Open documents in",
+      "dialog_edit_document_description": "Choose the initial layout when viewing or editing a document task.",
+      "dialog_edit_task": "Open tasks in",
+      "dialog_edit_task_description": "Choose the initial layout when viewing or editing a task.",
       "dialog_presentation": "Open tasks in",
       "dialog_presentation_compact": "Compact",
       "dialog_presentation_description": "Choose the default task dialog layout for task cards, links, and new task actions",
@@ -15583,6 +15756,7 @@
     "added_label": "added label",
     "assigned": "assigned",
     "created_task": "created task",
+    "destination_list": "Destination",
     "failed_to_load": "Failed to load activity",
     "field_updated": {
       "completed": "changed status",
@@ -15609,9 +15783,11 @@
     "removed_label": "removed label",
     "show_less": "Show less",
     "show_more": "Show {count} more",
+    "source_list": "Source",
     "unassigned": "unassigned",
     "unknown_change": "made an unknown change",
     "unknown_label": "Unknown Label",
+    "unknown_list": "Unknown list",
     "unknown_project": "Unknown Project",
     "unknown_user": "Unknown User",
     "unlinked_from_project": "unlinked from project",
@@ -20169,10 +20345,12 @@
     "admin_status": "Admin Status",
     "all": "All",
     "all_members": "All members",
+    "assign_invitation_role": "Assign role",
     "board_guest_can_edit": "Can edit shared boards",
     "board_guest_can_view": "Can view shared boards",
     "cancel_invitation": "Cancel invitation",
     "cannot-delete-last-owner": "You cannot delete the last owner of the workspace.",
+    "clear_all_roles": "Clear all",
     "clear_filters": "Clear filters",
     "collapse_permissions": "Collapse permissions",
     "creator_badge": "Creator",
@@ -20212,22 +20390,38 @@
     "invitation_error_already_exist": "User is already a member or invite has been sent.",
     "invitation_error_user_not_found": "User not found or not registered on the platform.",
     "invitation_revoked": "Invitation revoked",
+    "invitation_role": "Invitation role",
+    "invitation_role_helper": "Applied when this person accepts the invitation.",
+    "invitation_role_updated": "Invitation role updated",
     "invitation_sent": "Invitation sent",
     "invitation_to": "Invitation to",
     "invitation-failed": "Failed to invite member",
     "invitation-failed-description": "There was an error sending the invitation. Please try again.",
     "invitation-sent": "Invitation sent",
     "invitation-sent-description": "An invitation has been sent to {email}.",
+    "invite_access_guest_tab": "Guest",
+    "invite_access_member_tab": "Member",
+    "invite_access_pos_tab": "POS",
+    "invite_access_title": "Access and roles",
     "invite_dialog_description": "Send an email invitation. Choose whether they join as a full member or a guest.",
     "invite_dialog_title": "Invite to workspace",
     "invite_email_label": "Email",
+    "invite_emails_helper": "Separate multiple addresses with commas, spaces, or new lines.",
+    "invite_emails_label": "Email addresses",
     "invite_member": "Invite member",
     "invite_member_disabled": "Invite member disabled",
     "invite_membership_guest": "Guest — limited access",
+    "invite_membership_guest_description": "Limited guest access without workspace roles.",
     "invite_membership_label": "Access",
     "invite_membership_member": "Member — full workspace access",
+    "invite_membership_member_description": "Full workspace membership with optional roles.",
     "invite_membership_pos_operator": "POS operator — start payments only",
     "invite_no_permission": "You do not have permission to invite members.",
+    "invite_recipients_title": "Recipients",
+    "invite_roles_description": "Assign one or more roles now. You can change them while the invitation is pending.",
+    "invite_roles_no_match": "No roles match your search.",
+    "invite_roles_optional": "Optional",
+    "invite_roles_search": "Search workspace roles...",
     "invite_submit": "Send invitation",
     "invited": "Invited",
     "invited_members": "Invited",
@@ -20249,6 +20443,8 @@
     "no_members_match_filters": "No members match the selected filters",
     "no_permissions": "No permissions assigned",
     "no_permissions_found": "No permissions found",
+    "no_role_assigned": "No role assigned",
+    "no_roles_assigned": "No roles assigned",
     "no_roles_found": "No roles found",
     "only_default": "Only default",
     "only_roles": "Only roles",
@@ -20276,6 +20472,7 @@
     "profile_display_name_placeholder": "Name shown in this workspace",
     "profile_display_name_update_error": "Failed to update workspace display name.",
     "profile_display_name_updated": "Workspace display name updated.",
+    "recipients_count": "{count, plural, =0 {No recipients} =1 {# recipient} other {# recipients}}",
     "redundancy_description": "{count, plural, =1 {1 permission is} other {# permissions are}} granted by multiple sources. Consider optimizing role assignments.",
     "redundancy_detected": "Permission Redundancy Detected",
     "remove_error": "An error occurred while removing the member",
@@ -20289,6 +20486,7 @@
     "role-title": "Title",
     "role-title-placeholder": "Designer, Project Manager, etc.",
     "roles": "Roles",
+    "roles_selected": "{count, plural, =0 {No roles selected} =1 {# role selected} other {# roles selected}}",
     "save_profile_display_name": "Save display name",
     "search_members": "Search members...",
     "search_permissions": "Search permissions...",
@@ -21415,6 +21613,24 @@
     "delete_workspace_warning": "Once you delete a workspace, there is no going back. Please be certain.",
     "deleting": "Deleting Workspace",
     "description": "Manage the settings of your workspace.",
+    "email_policy": {
+      "blocked_badge": "Blocked by default",
+      "description": "Control whether the linked site may send operational email and exactly which recipient domains it may reach.",
+      "domains_description": "Exact domains only. Wildcards and subdomains are not included automatically.",
+      "domains_label": "Allowed recipient domains",
+      "domains_required": "Add at least one allowed domain before enabling email.",
+      "enable_description": "When off, every outbound email request from the linked site is rejected.",
+      "enable_label": "Allow outbound email",
+      "enabled_badge": "Explicitly allowed",
+      "save": "Save email policy",
+      "save_error": "Could not save the email policy.",
+      "saved": "Email policy saved",
+      "saving": "Saving...",
+      "shared_credentials_admin_only": "Only a platform administrator can grant or revoke shared sending credentials.",
+      "shared_credentials_description": "Use Tuturuuu's managed sender while preserving this workspace's limits, blacklist checks, and audit trail.",
+      "shared_credentials_label": "Use managed platform credentials",
+      "title": "Linked-site email security"
+    },
     "features": "Features",
     "features_description": "Manage the features of your workspace.",
     "general-description": "Manage basic workspace information and settings",
@@ -21821,6 +22037,7 @@
       "description_storage_counter": "{percent}% left",
       "description_storage_helper": "Room left in your description. Formatting, mentions, and embeds count too.",
       "description_storage_over_limit": "Description is too long and won't sync. Shorten it to continue.",
+      "description_storage_usage": "{used} of {limit} used",
       "description_storage_warning": "Running low on description space — {percent}% left.",
       "description_too_long_description": "Trim the description below {max} characters before saving.",
       "description_too_long_title": "Description is too long",
@@ -21829,6 +22046,16 @@
       "disconnected": "Disconnected",
       "due_date": "Due Date",
       "edit_task": "Edit Task",
+      "editor_copy": {
+        "copy": "Copy content",
+        "copy_as_markdown": "Copy as Markdown",
+        "copy_as_plain_text": "Copy as plain text",
+        "copy_failed": "Could not copy content",
+        "markdown_copied": "Copied as Markdown",
+        "markdown_description": "Keep headings, lists, links, and formatting syntax",
+        "plain_text_copied": "Copied as plain text",
+        "plain_text_description": "Clean text for chat, email, or documents"
+      },
       "enlarge_dialog": "Enlarge dialog",
       "estimate": "Estimate",
       "estimated_duration": "Estimated Duration",
@@ -21952,6 +22179,7 @@
       "task_restored_description": "\"{name}\" was restored due to undo operation",
       "title_too_long_description": "Trim the task title below {max} characters before saving.",
       "title_too_long_title": "Task title is too long",
+      "toggle_block": "Toggle list or heading",
       "unassigned": "unassigned",
       "unknown_change": "made a change",
       "unknown_label": "Unknown Label",
@@ -22069,6 +22297,12 @@
       "status_category": "Status Category",
       "title": "Board Layout Settings",
       "yellow": "Yellow"
+    },
+    "manual_ordering_disabled": {
+      "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
+      "keep_sorting": "Keep current sorting",
+      "title": "Manual ordering is paused",
+      "use_manual": "Use manual order"
     },
     "messages": {
       "task_id_copied": "Copied task ID",

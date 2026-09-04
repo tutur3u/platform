@@ -351,6 +351,7 @@ async function loadBoardContext({
       `
       )
       .eq('id', taskId)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (error) {

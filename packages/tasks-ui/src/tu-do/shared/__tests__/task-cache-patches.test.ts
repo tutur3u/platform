@@ -2,8 +2,13 @@ import { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { describe, expect, it } from 'vitest';
 import {
+  applyOptimisticTaskPatch,
+  getTaskFromVisibleCaches,
+  isTaskMutationPending,
   patchTaskInVisibleCaches,
+  restoreTaskFieldsFromVisibleCacheSnapshot,
   restoreTasksFromVisibleCacheSnapshot,
+  settleOptimisticTaskPatch,
   snapshotVisibleTaskCaches,
 } from '../task-cache-patches';
 
@@ -30,6 +35,29 @@ function createTask(id: string, name = id): Task {
 }
 
 describe('task-cache-patches', () => {
+  it('prefers external routing metadata from the visible board projection', () => {
+    const queryClient = createQueryClient();
+    const externalReviewTask = {
+      ...createTask('external-task'),
+      list_id: 'review-list',
+      source_workspace_id: 'source-ws',
+      ws_id: 'personal-ws',
+    } as Task;
+    queryClient.setQueryData(['tasks', 'personal-board'], [externalReviewTask]);
+    queryClient.setQueryData(['task', externalReviewTask.id], {
+      ...externalReviewTask,
+      source_workspace_id: undefined,
+    });
+
+    expect(
+      getTaskFromVisibleCaches({
+        queryClient,
+        boardId: 'personal-board',
+        taskId: externalReviewTask.id,
+      })?.source_workspace_id
+    ).toBe('source-ws');
+  });
+
   it('patches every visible cache that can render a task card or detail view', () => {
     const queryClient = createQueryClient();
     const task = createTask('task-1');
@@ -143,5 +171,102 @@ describe('task-cache-patches', () => {
     expect(fullTasks?.find((task) => task.id === 'task-2')?.projects).toEqual(
       []
     );
+  });
+
+  it('marks every visible cache pending until overlapping mutations settle', () => {
+    const queryClient = createQueryClient();
+    const task = createTask('task-1');
+    queryClient.setQueryData(['tasks', 'board-1'], [task]);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'all'], [task]);
+
+    const priorityMutation = applyOptimisticTaskPatch({
+      queryClient,
+      boardId: 'board-1',
+      taskIds: ['task-1'],
+      updater: (cachedTask) => ({ ...cachedTask, priority: 'high' }),
+    });
+    const dateMutation = applyOptimisticTaskPatch({
+      queryClient,
+      boardId: 'board-1',
+      taskIds: ['task-1'],
+      updater: (cachedTask) => ({
+        ...cachedTask,
+        end_date: '2026-02-01T23:59:59.999Z',
+      }),
+    });
+
+    const fullTask = queryClient.getQueryData<Task[]>([
+      'tasks-full',
+      'board-1',
+      'all',
+    ])?.[0];
+    expect(fullTask?.priority).toBe('high');
+    expect(fullTask?.end_date).toBe('2026-02-01T23:59:59.999Z');
+    expect(isTaskMutationPending(fullTask)).toBe(true);
+
+    settleOptimisticTaskPatch({
+      queryClient,
+      boardId: 'board-1',
+      taskIds: ['task-1'],
+      mutationId: priorityMutation,
+    });
+    expect(
+      isTaskMutationPending(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]
+      )
+    ).toBe(true);
+
+    settleOptimisticTaskPatch({
+      queryClient,
+      boardId: 'board-1',
+      taskIds: ['task-1'],
+      mutationId: dateMutation,
+    });
+    expect(
+      isTaskMutationPending(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]
+      )
+    ).toBe(false);
+  });
+
+  it('rolls back only the failed field while preserving another optimistic edit', () => {
+    const queryClient = createQueryClient();
+    const task = createTask('task-1');
+    queryClient.setQueryData(['tasks', 'board-1'], [task]);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'all'], [task]);
+    const snapshot = snapshotVisibleTaskCaches(queryClient, 'board-1', [
+      'task-1',
+    ]);
+
+    applyOptimisticTaskPatch({
+      queryClient,
+      boardId: 'board-1',
+      taskIds: ['task-1'],
+      updater: (cachedTask) => ({
+        ...cachedTask,
+        priority: 'high',
+        end_date: '2026-02-01T23:59:59.999Z',
+      }),
+    });
+
+    restoreTaskFieldsFromVisibleCacheSnapshot({
+      queryClient,
+      boardId: 'board-1',
+      snapshot,
+      taskIds: ['task-1'],
+      restore: (currentTask, previousTask) => ({
+        ...currentTask,
+        priority: previousTask.priority,
+      }),
+    });
+
+    const fullTask = queryClient.getQueryData<Task[]>([
+      'tasks-full',
+      'board-1',
+      'all',
+    ])?.[0];
+    expect(fullTask?.priority).toBeUndefined();
+    expect(fullTask?.end_date).toBe('2026-02-01T23:59:59.999Z');
+    expect(isTaskMutationPending(fullTask)).toBe(true);
   });
 });

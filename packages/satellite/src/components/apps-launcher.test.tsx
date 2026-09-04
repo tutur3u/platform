@@ -11,6 +11,38 @@ beforeEach(setupAppsLauncherTestEnvironment);
 afterEach(teardownAppsLauncherTestEnvironment);
 
 describe('AppsLauncherDialog', () => {
+  it('opens with Cmd/Ctrl+Shift+K without accepting extra modifiers', async () => {
+    const { onOpenChange } = renderDialog({ open: false });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.keyDown(document, {
+      altKey: true,
+      key: 'k',
+      metaKey: true,
+      shiftKey: true,
+    });
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(document, {
+      key: 'K',
+      metaKey: true,
+      shiftKey: true,
+    });
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(onOpenChange).toHaveBeenLastCalledWith(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    fireEvent.keyDown(document, {
+      ctrlKey: true,
+      key: 'k',
+      shiftKey: true,
+    });
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(onOpenChange).toHaveBeenLastCalledWith(true);
+  });
+
   it('renders the shared launchable app catalog in a bounded dialog', () => {
     const { onOpenChange } = renderDialog();
 
@@ -24,7 +56,7 @@ describe('AppsLauncherDialog', () => {
         'Every routable Tuturuuu app available from this launcher.'
       )
     ).toBeNull();
-    expect(screen.queryByText(/\d+ apps/)).toBeNull();
+    expect(screen.getByText(`${LAUNCHABLE_APPS.length} apps`)).toBeTruthy();
 
     const dialogContent = document.querySelector(
       '[data-slot="dialog-content"]'
@@ -158,6 +190,143 @@ describe('AppsLauncherDialog', () => {
         screen.getByRole('searchbox', { name: 'Search apps' })
       );
     });
+
+    expect(
+      screen
+        .getByRole('link', { name: 'Workspace Platform' })
+        .getAttribute('data-active')
+    ).toBe('true');
+    expect(
+      screen
+        .getByRole('searchbox', { name: 'Search apps' })
+        .getAttribute('aria-activedescendant')
+    ).toBe('apps-launcher-app-platform');
+  });
+
+  it('auto-selects the best search match and opens it with Enter', () => {
+    const { onOpenChange } = renderDialog();
+    const search = screen.getByRole('searchbox', { name: 'Search apps' });
+
+    fireEvent.change(search, { target: { value: 'tasks' } });
+
+    const tasksCard = screen.getByRole('link', { name: 'Tasks' });
+    expect(tasksCard.getAttribute('data-active')).toBe('true');
+    expect(document.activeElement).toBe(search);
+
+    fireEvent.keyDown(search, { key: 'Enter' });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('navigates the grid in every direction from search', () => {
+    renderDialog();
+    const search = screen.getByRole('searchbox', { name: 'Search apps' });
+
+    fireEvent.keyDown(search, { key: 'ArrowDown' });
+    expect(
+      screen.getByRole('link', { name: 'Drive' }).getAttribute('data-active')
+    ).toBe('true');
+    expect(document.activeElement).toBe(search);
+
+    fireEvent.keyDown(search, { key: 'ArrowUp' });
+    expect(
+      screen
+        .getByRole('link', { name: 'Workspace Platform' })
+        .getAttribute('data-active')
+    ).toBe('true');
+
+    fireEvent.keyDown(search, { key: 'ArrowRight' });
+    expect(
+      screen.getByRole('link', { name: 'Calendar' }).getAttribute('data-active')
+    ).toBe('true');
+
+    fireEvent.keyDown(search, { key: 'ArrowLeft' });
+    expect(
+      screen
+        .getByRole('link', { name: 'Workspace Platform' })
+        .getAttribute('data-active')
+    ).toBe('true');
+    expect(document.activeElement).toBe(search);
+  });
+
+  it('supports spatial arrow, Home, and End navigation between app cards', () => {
+    renderDialog();
+    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
+    calendarCard.focus();
+
+    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Git' })
+    );
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: 'ArrowUp',
+    });
+    expect(document.activeElement).toBe(calendarCard);
+
+    fireEvent.keyDown(calendarCard, { key: 'Home' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Workspace Platform' })
+    );
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'End' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Shortener' })
+    );
+  });
+
+  it('preserves the visual column across category and incomplete-row boundaries', () => {
+    renderDialog();
+    const trackCard = screen.getByRole('link', { name: 'Track' });
+    trackCard.focus();
+
+    fireEvent.keyDown(trackCard, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Inventory' })
+    );
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: 'ArrowDown',
+    });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Contacts' })
+    );
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: 'ArrowDown',
+    });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Forms' })
+    );
+  });
+
+  it('uses the responsive two-column grid for vertical movement', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 800,
+    });
+    renderDialog();
+    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
+    calendarCard.focus();
+
+    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Drive' })
+    );
+  });
+
+  it('uses a single navigation column on mobile', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 390,
+    });
+    renderDialog();
+    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
+    calendarCard.focus();
+
+    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Chat' })
+    );
   });
 
   it('keeps mobile search collapsed without auto-focus and opens both popovers', async () => {
@@ -221,6 +390,10 @@ describe('AppsLauncherDialog', () => {
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
     ).toBeTruthy();
+    expect(
+      document.querySelector('[data-slot="apps-launcher-keyboard-hints"]')
+    ).toBeTruthy();
+    expect(screen.getByText(`${LAUNCHABLE_APPS.length} apps`)).toBeTruthy();
     expect(
       Array.from(sections).map(
         (section) => section.querySelector('h3')?.textContent

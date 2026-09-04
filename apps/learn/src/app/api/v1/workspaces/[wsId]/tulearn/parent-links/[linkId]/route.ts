@@ -17,11 +17,11 @@ const updateLinkSchema = z.object({
 });
 
 export const PATCH = withSessionAuth<Params>(
-  async (request, { supabase }, { linkId, wsId }) => {
+  async (request, { supabase, user }, { linkId, wsId }) => {
     try {
       const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
       const permissions = await getPermissions({
-        request,
+        user,
         wsId: normalizedWsId,
       });
       if (!permissions?.containsPermission('manage_users')) {

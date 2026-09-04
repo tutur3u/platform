@@ -22,11 +22,11 @@ const parentLinkSchema = z.object({
 });
 
 export const GET = withSessionAuth<Params>(
-  async (request, { supabase }, { wsId }) => {
+  async (_request, { supabase, user }, { wsId }) => {
     try {
       const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
       const permissions = await getPermissions({
-        request,
+        user,
         wsId: normalizedWsId,
       });
       if (!permissions?.containsPermission('manage_users')) {
@@ -67,7 +67,7 @@ export const POST = withSessionAuth<Params>(
     try {
       const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
       const permissions = await getPermissions({
-        request,
+        user,
         wsId: normalizedWsId,
       });
       if (!permissions?.containsPermission('manage_users')) {

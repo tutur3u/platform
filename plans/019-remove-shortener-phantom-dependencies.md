@@ -10,13 +10,16 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
 - **Priority:** P2
 - **Effort:** S
 - **Risk:** LOW
 - **Category:** Dependencies / CI efficiency
-- **Depends on:** none
+- **Depends on:** Mail lockfile ownership transfer
 - **Planned at:** commit `68a1457aed`, 2026-08-10
+
+Execution is blocked while the active Mail handoff owns `bun.lock`. Dependency
+removal must use Bun and cannot be isolated from the shared lockfile contract.
 
 ## Why this matters
 
@@ -52,9 +55,9 @@ enough for general dependency cleanup.
 | Usage proof | `rg -n -e '@tuturuuu/ai' -e '@tuturuuu/satellite' -e '@tuturuuu/types' -e 'dayjs' apps/shortener --glob '!package.json' --glob '!bun.lock'` | no real import/config consumer |
 | Remove dependencies | `bun --cwd apps/shortener remove @tuturuuu/ai @tuturuuu/satellite @tuturuuu/types dayjs` | exit 0; manifest and lockfile updated by Bun |
 | Focused CI test | `node --test scripts/ci/check-workflow-config.test.js` | exit 0; Shortener regression passes |
-| Shortener typecheck | `bun --cwd apps/shortener run type-check` | exit 0 |
+| Shortener typecheck | `bun run --cwd apps/shortener type-check` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Shortener build | `bun --cwd apps/shortener run build` | exit 0 |
+| Shortener build | `bun run --cwd apps/shortener build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

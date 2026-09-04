@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/hooks/utils/time-tracker-utils';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   escapeLikePattern,
   sanitizeSearchQuery,
@@ -18,6 +19,7 @@ import utc from 'dayjs/plugin/utc';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { resolveTimeTrackingReadUser } from '@/lib/time-tracking/cross-user-read-authorization';
 import {
   getWorkspaceConfig,
   isPersonalWorkspace,
@@ -51,7 +53,7 @@ type SessionTaskValidationResult =
 
 type TimeTrackingSessionWithTaskSummary = {
   task_id?: string | null;
-  task?: { id: string; name: string | null } | null;
+  task?: { board_id?: string; id: string; name: string | null } | null;
 };
 
 type MissedEntryPermissionCheckResult =
@@ -126,7 +128,7 @@ async function attachWorkspaceTaskSummary<
   const { data: task, error } = await sbAdmin
     .from('tasks')
     .select(
-      'id, name, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
+      'id, name, list:task_lists!inner(board:workspace_boards!inner(id, ws_id))'
     )
     .eq('id', session.task_id)
     .eq('list.board.ws_id', wsId)
@@ -136,22 +138,24 @@ async function attachWorkspaceTaskSummary<
 
   return {
     ...session,
-    task: task ? { id: task.id, name: task.name } : null,
+    task: task
+      ? { board_id: task.list.board.id, id: task.id, name: task.name }
+      : null,
   };
 }
 
 async function checkMissedEntryPermission({
   wsId,
-  request,
   sbAdmin,
+  user,
 }: {
   wsId: string;
-  request: Request;
   sbAdmin: AdminClient;
+  user: SupabaseUser;
 }): Promise<MissedEntryPermissionCheckResult> {
   const permissions = await getPermissions({
+    user,
     wsId,
-    request,
   });
 
   if (!permissions) {
@@ -195,13 +199,11 @@ async function handleManualEntry({
   user,
   normalizedWsId,
   sbAdmin,
-  request,
 }: {
   requestBody: SessionRequestBody;
-  user: { id: string };
+  user: SupabaseUser;
   normalizedWsId: string;
   sbAdmin: AdminClient;
-  request: Request;
 }): Promise<NextResponse> {
   const { title, description, categoryId, taskId, startTime, endTime } =
     requestBody;
@@ -225,8 +227,8 @@ async function handleManualEntry({
 
   const permissionCheck = await checkMissedEntryPermission({
     wsId: normalizedWsId,
-    request,
     sbAdmin,
+    user,
   });
 
   if ('errorResponse' in permissionCheck && permissionCheck.errorResponse) {
@@ -458,8 +460,6 @@ export const GET = withSessionAuth<{ wsId: string }>(
         supabase,
         request
       );
-      const sbAdmin = await createAdminClient();
-
       // Verify workspace access
       const memberCheck = await verifyWorkspaceMembershipType({
         wsId: normalizedWsId,
@@ -488,6 +488,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const dateFrom = url.searchParams.get('dateFrom');
       const dateTo = url.searchParams.get('dateTo');
       const targetUserId = url.searchParams.get('userId'); // New parameter for viewing other users
+      const scope = url.searchParams.get('scope');
       const userTimezone = url.searchParams.get('timezone') || 'UTC';
 
       // Filter parameters
@@ -502,37 +503,22 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
       const cursor = url.searchParams.get('cursor');
 
-      // Determine which user's data to fetch (current user or specified user)
-      const queryUserId = targetUserId || user.id;
+      const readUser = await resolveTimeTrackingReadUser({
+        supabase,
+        targetUserId,
+        user,
+        wsId: normalizedWsId,
+      });
+      if (!readUser.ok) return readUser.response;
 
-      // If targeting another user, verify they're in the same workspace
-      if (targetUserId && targetUserId !== user.id) {
-        const targetMembership = await verifyWorkspaceMembershipType({
-          wsId: normalizedWsId,
-          userId: targetUserId,
-          supabase,
-        });
-
-        if (targetMembership.error === 'membership_lookup_failed') {
-          return NextResponse.json(
-            { error: 'Failed to verify target user access' },
-            { status: 500 }
-          );
-        }
-
-        if (!targetMembership.ok) {
-          return NextResponse.json(
-            { error: 'Target user not found in workspace' },
-            { status: 404 }
-          );
-        }
-      }
+      const queryUserId = readUser.userId;
+      const sbAdmin = await createAdminClient();
 
       if (type === 'running') {
         // Get current running session, then resolve task info through a
         // workspace-bound lookup so stale/cross-workspace task_id values do not
         // leak task metadata.
-        const { data, error } = await sbAdmin
+        let runningSessionQuery = sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
@@ -540,16 +526,24 @@ export const GET = withSessionAuth<{ wsId: string }>(
           category:time_tracking_categories(id, name, color)
         `
           )
-          .eq('ws_id', normalizedWsId)
           .eq('user_id', queryUserId)
-          .eq('is_running', true)
+          .eq('is_running', true);
+        const useGlobalUserScope = scope === 'user' && queryUserId === user.id;
+        if (!useGlobalUserScope) {
+          runningSessionQuery = runningSessionQuery.eq('ws_id', normalizedWsId);
+        }
+        const { data, error } = await runningSessionQuery
+          .order('start_time', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (error) throw error;
         const session = await attachWorkspaceTaskSummary({
           sbAdmin,
           session: data,
-          wsId: normalizedWsId,
+          wsId: useGlobalUserScope
+            ? (data?.ws_id ?? normalizedWsId)
+            : normalizedWsId,
         });
         return NextResponse.json({ session });
       }
@@ -903,7 +897,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
           user,
           normalizedWsId,
           sbAdmin,
-          request,
         });
       }
 

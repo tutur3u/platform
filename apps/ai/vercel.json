@@ -3,6 +3,7 @@
   "framework": "nextjs",
   "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/ai-studio",
   "installCommand": "cd ../.. && bun install --frozen-lockfile --minimum-release-age=0",
+  "regions": ["sin1"],
   "git": {
     "deploymentEnabled": false
   },

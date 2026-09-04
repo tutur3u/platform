@@ -1,0 +1,203 @@
+---
+title: "Vercel Cost Controls"
+description: "Where Vercel spend actually comes from on this account, and which levers move it."
+updatedAt: "2026-08-28"
+---
+
+Tuturuuu runs ~30 monorepo apps plus client projects as separate Vercel
+projects on a single Pro team. This runbook records how that spend is shaped, so
+future changes are made against measured behavior instead of intuition.
+
+## The Shape Of The Bill
+
+The important thing to internalize: **traffic volume is not the problem.**
+
+| Metric | Usage | Included | Share of allowance used |
+| --- | --- | --- | --- |
+| Edge Requests | 182.6K | 10M | 1.8% |
+| Fast Data Transfer | 5 GB | 1 TB | 0.5% |
+| Fast Origin Transfer | 4 GB | — | billed from the first byte |
+| Fluid Active CPU | 3 hours | — | billed from the first second |
+
+Edge requests and data transfer sit far inside the included allowance and cost
+nothing. Essentially the entire bill is **Fast Origin Transfer** and **Fluid
+Active CPU**, both of which are billed from zero with no free tier.
+
+The consequence is that spend tracks *how* bytes are produced, not how many
+requests arrive. Adding traffic to a cached route is close to free. Adding one
+uncached dynamic route, or one always-on cron, is not.
+
+## Why Origin Transfer Dominates
+
+Fast Origin Transfer (4 GB) is ~80% of Fast Data Transfer (5 GB). Origin
+transfer is only charged when a response travels from a function to the CDN, so
+that ratio says roughly **four out of five bytes we serve bypass the CDN and are
+generated fresh by a function.**
+
+That is expected for the authenticated dashboard surface — 343 files across the
+apps call `await connection()`, which is the correct way to opt an authed page
+into request-time rendering under `cacheComponents`. It is *not* expected for
+public surfaces. Any public, unauthenticated route served without
+`Vercel-CDN-Cache-Control` pays origin transfer on every single hit.
+
+`apps/web/next.config.ts` already demonstrates the pattern for the auth shell:
+
+```ts
+const authShellHeaders = [
+  { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+  {
+    key: 'CDN-Cache-Control',
+    value: 'public, max-age=86400, stale-while-revalidate=604800',
+  },
+  {
+    key: 'Vercel-CDN-Cache-Control',
+    value: 'public, max-age=86400, stale-while-revalidate=604800',
+  },
+];
+```
+
+`Cache-Control: max-age=0` keeps the browser honest while
+`Vercel-CDN-Cache-Control` lets the CDN serve the shared copy. Extending this to
+public marketing pages, the public form-filling surface at `/f/<shareCode>`, and
+storefront pages is the single largest available reduction in origin transfer.
+
+<Warning>
+Never add shared-CDN cache headers to a response whose body varies by user,
+workspace, or session. `Vercel-CDN-Cache-Control` caches at a shared edge, so a
+per-user body cached once is served to everyone.
+</Warning>
+
+## Region Pricing Is Not Uniform
+
+Function region changes the unit price substantially:
+
+| Region | Origin transfer / GB | Fluid CPU / hour |
+| --- | --- | --- |
+| `iad1`, `pdx1`, `cle1` | $0.06 | $0.128 |
+| `fra1`, `lhr1`, `cdg1`, `arn1`, `dub1` | $0.06 | $0.155 – $0.184 |
+| `sin1` | **$0.27** | $0.16 |
+| `hkg1`, `hnd1`, `kix1` | $0.27 | $0.176 – $0.202 |
+| `syd1` | $0.29 | $0.18 |
+
+`sin1` charges **4.5x** the `iad1` rate for origin transfer.
+
+<Note>
+Do not "fix" this by moving functions to `iad1`. Supabase runs in
+`ap-southeast-1` and `SES_DEFAULT_REGION` is `ap-southeast-1`, so `sin1` is the
+region that keeps functions next to their data. Moving compute to North America
+would add a cross-Pacific round trip to every database call. `sin1` is the
+correct region; the lever is **sending fewer bytes from it**, not relocating it.
+</Note>
+
+The reviewable question is region *count*, not region choice.
+
+Every app that deploys from this repo pins `"regions": ["sin1"]` in its
+`vercel.json`, and every other project on the team is set to `sin1` through the
+API. Previously most listed three (for example `platform` used
+`['sin1', 'iad1', 'fra1']`), which cost on two fronts:
+
+- **Provisioned memory.** Fluid bills memory per *instance*, and each region
+  keeps its own warm pool. Three regions means up to three pools held warm for
+  the same request volume — close to pure waste for a low-traffic satellite.
+- **Latency.** A request served from `iad1` or `fra1` still reaches a Singapore
+  database, so the extra regions were slower *and* billed.
+
+**Exactly four projects keep three regions: `exocorpse`, `richfield`, `kendra`,
+and `yashie`.** These are client sites with their own audiences and their own
+backends, so the `sin1` argument — which rests on *this* platform's database
+being in `ap-southeast-1` — does not apply to them. Everything else on the team
+is single-region `sin1`, including projects that were previously single-region on
+`iad1`.
+
+Moving an already-single-region project from `iad1` to `sin1` does raise its
+origin-transfer rate ($0.06 -> $0.27/GB), so it is not a saving on its own; it is
+chosen for latency and for having one predictable region across the fleet.
+Consolidation is where the money is; relocation is a consistency call.
+
+## Instance Size
+
+`functionDefaultMemoryType` is a project setting with no `vercel.json`
+equivalent, so it is set through the API and recorded here rather than in the
+repo:
+
+```bash
+# PATCH /v9/projects/<name>?teamId=<team>
+{"resourceConfig": {"functionDefaultRegions": ["sin1"],
+                    "functionDefaultMemoryType": "standard"}}
+```
+
+`performance` provisions a larger instance, so it bills more memory-hours for
+the same wall time. **Every project on the team now runs `standard`.** A URL
+shortener sitting on a performance instance was the clearest tell that the tier
+had been set by habit rather than measurement.
+
+Treat `standard` as the default and `performance` as something a project has to
+earn with a measured number — an observed out-of-memory or a profiled CPU
+ceiling — not by analogy with another app that looks busy.
+
+Instance size is independent of region count, and the two were decided
+separately: external client sites were moved to `standard` while **keeping their
+three regions**, because their audiences are not Singapore-centric the way the
+internal dashboards are.
+
+Both settings take effect on the **next deployment**, and both are reversible
+without a code change.
+
+## Always-On Crons
+
+Cron invocations run forever, whether or not anyone is looking at the result.
+Current scheduled load:
+
+| App | Jobs | Invocations / day |
+| --- | --- | --- |
+| `infrastructure` | 3 | 1,872 |
+| `inventory` | 1 | 288 |
+| `web` | 5 | 342 |
+| `calendar` | 2 | 100 |
+| `pay` | 1 | 2 |
+
+`infrastructure` is the majority of all scheduled work on the account because it
+samples at one-minute resolution.
+
+### Rules For Adding A Cron
+
+1. **Prefer a persisted watermark to a fixed lookback.** A job that scans from
+   `lastCheckedAt` is cadence-independent: slowing it delays the result but never
+   drops work. `docker-recovery-alerts` is the reference implementation, which is
+   why it safely runs every 5 minutes instead of every minute.
+2. **Justify sub-5-minute schedules.** `* * * * *` is 43,200 invocations per
+   month per job. Only `sample-resources` earns it, because the monitoring
+   dashboard renders a one-minute series and flags data stale after five minutes
+   (`RESOURCE_SAMPLE_MIN_INTERVAL_MS`). Changing that cadence means changing that
+   constant too, and accepting coarser graphs.
+3. **Ask whether it should be on-demand.** A dashboard that is viewed a few
+   minutes a week does not need a 24/7 sampler. Sampling on page view, or behind
+   a feature flag, removes the cost floor entirely.
+
+## What Is Already Optimized
+
+Verified, so nobody re-investigates these:
+
+- **Image optimization** — `minimumCacheTTL` is 7 days in
+  `createTuturuuuNextConfig`, not the 60-second default.
+- **Client polling** — shared hooks (`use-notifications`,
+  `use-active-timer-session`, `use-calendar-sync`) all set
+  `refetchIntervalInBackground: false`, so hidden tabs stop polling.
+- **Canceled Git deployments** — `vercel.json` sets `git.deploymentEnabled:
+  false`, so pushes create a deployment record that is canceled with **0 build
+  seconds**. The long list of `CANCELED` deployments in the dashboard is
+  cosmetic, not billed.
+- **Preview deployments** — the `vercel-preview-*.yaml` workflows are
+  `workflow_dispatch` only and gated on `TRUSTED_PREVIEW_DEPLOY_ACTORS`.
+- **Builds** — `vercel build` runs on GitHub Actions runners, so build compute is
+  not billed as Vercel build minutes.
+- **Web Analytics** — `@vercel/analytics` is not mounted in any app, so the
+  per-event meter stays near zero even though the dashboard toggle is on.
+
+## Checking Current Spend
+
+The dashboard breakdown lives under **Usage**, switchable between *By Project*
+and *By Product*. Read it *By Product* first: that tells you which meter is
+moving. Only then switch to *By Project* to find the owner. Reading it the other
+way around leads to optimizing a project that is merely large rather than a meter
+that is actually expensive.

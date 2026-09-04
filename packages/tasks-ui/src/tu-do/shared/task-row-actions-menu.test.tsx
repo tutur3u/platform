@@ -9,13 +9,17 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskRowActionsMenu } from './task-row-actions-menu';
 
-const { handleMoveToCloseMock, openTaskMock, useTaskActionsMock } = vi.hoisted(
-  () => ({
-    handleMoveToCloseMock: vi.fn(),
-    openTaskMock: vi.fn(),
-    useTaskActionsMock: vi.fn(),
-  })
-);
+const {
+  handleMoveToCloseMock,
+  openTaskMock,
+  taskTimerPropsMock,
+  useTaskActionsMock,
+} = vi.hoisted(() => ({
+  handleMoveToCloseMock: vi.fn(),
+  openTaskMock: vi.fn(),
+  taskTimerPropsMock: vi.fn(),
+  useTaskActionsMock: vi.fn(),
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -33,6 +37,13 @@ vi.mock('@tuturuuu/tasks-ui/hooks/use-task-actions', () => ({
 
 vi.mock('../hooks/useTaskDialog', () => ({
   useTaskDialog: () => ({ openTask: openTaskMock }),
+}));
+
+vi.mock('./task-timer-menu-item', () => ({
+  TaskTimerMenuItem: (props: Record<string, unknown>) => {
+    taskTimerPropsMock(props);
+    return <div>task-timer-item</div>;
+  },
 }));
 
 vi.mock('../boards/boardId/menus', () => ({
@@ -134,5 +145,44 @@ describe('TaskRowActionsMenu document tasks', () => {
     );
 
     expect(screen.queryByText('archive')).not.toBeInTheDocument();
+  });
+
+  it('tracks external tasks in their source workspace', () => {
+    const activeList = {
+      ...documentList,
+      id: 'active-list',
+      name: 'Active',
+      status: 'active',
+    } as TaskList;
+    const externalTask = {
+      ...task,
+      id: 'external-task',
+      list_id: activeList.id,
+      name: 'External task',
+      source_board_id: 'source-board',
+      source_workspace_id: 'source-workspace',
+    } as Task;
+
+    render(
+      <TaskRowActionsMenu
+        boardId="personal-board"
+        isPersonalWorkspace
+        lists={[activeList]}
+        onOpenChange={vi.fn()}
+        onUpdate={vi.fn()}
+        open
+        task={externalTask}
+        trigger={<button type="button">Actions</button>}
+        workspaceId="personal"
+      />
+    );
+
+    expect(screen.getByText('task-timer-item')).toBeInTheDocument();
+    expect(taskTimerPropsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        taskId: 'external-task',
+        workspaceId: 'source-workspace',
+      })
+    );
   });
 });

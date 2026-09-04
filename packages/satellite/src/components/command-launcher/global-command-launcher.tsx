@@ -1,58 +1,42 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import {
-  ArrowRight,
-  Building2,
-  Check,
-  ExternalLink,
-  Globe2,
-  Loader2,
-  PanelTop,
-  Search,
-  User,
-} from '@tuturuuu/icons';
-import { listWorkspaces } from '@tuturuuu/internal-api';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
-import { Badge } from '@tuturuuu/ui/badge';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@tuturuuu/ui/command';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import { cn } from '@tuturuuu/utils/format';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   LAUNCHABLE_APPS,
   type LaunchableApp,
-  type LaunchableAppSlug,
   type LaunchableAppWorkspacePathResolver,
   type LaunchableWorkspace,
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
-import { type IntentSearchResult, searchIntent } from '@tuturuuu/utils/search';
 import { usePathname } from 'next/navigation';
 import {
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   useCallback,
-  useDeferredValue,
   useEffect,
   useMemo,
   useState,
 } from 'react';
+import { CommandLauncherChrome } from './command-launcher-chrome';
+import { CommandLauncherResults } from './command-launcher-results';
+import {
+  COMMAND_LAUNCHER_TABS,
+  COMMAND_LAUNCHER_TABS_WITHOUT_TASKS,
+  type CommandLauncherTab,
+  parseLauncherQuery,
+} from './command-launcher-tabs';
+import {
+  type CommandLauncherHostApp,
+  isActiveLauncherInstance,
+  registerLauncherInstance,
+  unregisterLauncherInstance,
+} from './command-launcher-utils';
 import {
   GLOBAL_COMMAND_LAUNCHER_EVENT,
   type GlobalCommandLauncherEvent,
 } from './events';
+import { useCommandLauncherResults } from './use-command-launcher-results';
 
 export type CommandLauncherNavItem = {
   aliases?: readonly string[];
@@ -66,6 +50,8 @@ export type CommandLauncherNavItem = {
 };
 
 export type CommandLauncherExtraSectionContext = {
+  activeTab: CommandLauncherTab;
+  isOpen: boolean;
   onClose: () => void;
   query: string;
   setQuery: (query: string) => void;
@@ -73,6 +59,9 @@ export type CommandLauncherExtraSectionContext = {
 
 export type GlobalCommandLauncherLabels = {
   apps: string;
+  categories: string;
+  all: string;
+  actions: string;
   close: string;
   current: string;
   currentApp: string;
@@ -93,48 +82,33 @@ export type GlobalCommandLauncherLabels = {
   searchHint: string;
   select: string;
   title: string;
+  tasks: string;
   workspaces: string;
 };
-
-type CommandLauncherHostApp = LaunchableAppSlug | 'external';
 
 export type GlobalCommandLauncherProps = {
   currentApp: CommandLauncherHostApp;
   currentWorkspaceId?: string | null;
+  defaultTab?: CommandLauncherTab;
+  enableTasks?: boolean;
   extraSections?:
     | ReactNode
     | ((context: CommandLauncherExtraSectionContext) => ReactNode);
   labels?: Partial<GlobalCommandLauncherLabels>;
+  instancePriority?: number;
   navItems?: readonly CommandLauncherNavItem[];
   onNavigate?: (url: string) => void;
   workspacePathResolver?: LaunchableAppWorkspacePathResolver;
 };
 
-type LauncherWorkspace = InternalApiWorkspaceSummary & LaunchableWorkspace;
-type WorkspaceSearchItem = LauncherWorkspace & {
-  aliases: string[];
-  keywords: string[];
-  title: string;
-};
-
-type LauncherItem =
-  | {
-      app: LaunchableApp;
-      result: IntentSearchResult<LaunchableApp>;
-      type: 'app';
-    }
-  | {
-      result: IntentSearchResult<CommandLauncherNavItem>;
-      type: 'nav';
-    }
-  | {
-      result: IntentSearchResult<WorkspaceSearchItem>;
-      type: 'workspace';
-      workspace: WorkspaceSearchItem;
-    };
+export type LauncherWorkspace = InternalApiWorkspaceSummary &
+  LaunchableWorkspace;
 
 const DEFAULT_LABELS: GlobalCommandLauncherLabels = {
+  actions: 'Actions',
+  all: 'All',
   apps: 'Apps',
+  categories: 'Search category',
   close: 'close',
   current: 'Current',
   currentApp: 'Current app',
@@ -155,152 +129,60 @@ const DEFAULT_LABELS: GlobalCommandLauncherLabels = {
   searchHint: 'Type a workspace, app, page, acronym, or close spelling.',
   select: 'select',
   title: 'Command Launcher',
+  tasks: 'Tasks',
   workspaces: 'Workspaces',
 };
-
-const APP_SEARCH_ITEMS: readonly LaunchableApp[] = LAUNCHABLE_APPS.map(
-  (app) => ({
-    ...app,
-    keywords: [app.category, app.slug, app.packageName],
-    subtitle: app.productionUrl,
-  })
-);
-const REMOTE_WORKSPACE_SEARCH_LIMIT = 50;
-const VISIBLE_WORKSPACE_SEARCH_LIMIT = 20;
-
-const commandLauncherInstanceRegistry = new Map<
-  CommandLauncherHostApp,
-  symbol[]
->();
-
-function registerCommandLauncherInstance(
-  currentApp: CommandLauncherHostApp,
-  instanceId: symbol
-) {
-  const instances = commandLauncherInstanceRegistry.get(currentApp) ?? [];
-  commandLauncherInstanceRegistry.set(currentApp, [...instances, instanceId]);
-}
-
-function unregisterCommandLauncherInstance(
-  currentApp: CommandLauncherHostApp,
-  instanceId: symbol
-) {
-  const nextInstances = (
-    commandLauncherInstanceRegistry.get(currentApp) ?? []
-  ).filter((registeredId) => registeredId !== instanceId);
-
-  if (nextInstances.length === 0) {
-    commandLauncherInstanceRegistry.delete(currentApp);
-    return;
-  }
-
-  commandLauncherInstanceRegistry.set(currentApp, nextInstances);
-}
-
-function isActiveCommandLauncherInstance(
-  currentApp: CommandLauncherHostApp,
-  instanceId: symbol
-) {
-  const instances = commandLauncherInstanceRegistry.get(currentApp) ?? [];
-  return instances.at(-1) === instanceId;
-}
-
-function workspaceToSearchItem(
-  workspace: LauncherWorkspace
-): WorkspaceSearchItem {
-  const accessType = 'access_type' in workspace ? workspace.access_type : null;
-
-  return {
-    ...workspace,
-    aliases: [
-      workspace.id,
-      workspace.personal ? 'personal' : '',
-      accessType === 'guest' ? 'guest' : '',
-      workspace.guest_landing_path ?? '',
-    ].filter(Boolean),
-    keywords: [
-      workspace.personal ? 'personal' : '',
-      accessType === 'guest' ? 'guest' : '',
-      workspace.created_by_me ? 'created by me' : '',
-    ].filter(Boolean),
-    title: workspace.name || workspace.id,
-  };
-}
-
-function trimQuery(query: string) {
-  return query.trim();
-}
-
-function isWorkspaceCurrent(
-  workspace: LauncherWorkspace,
-  currentWorkspaceId?: string | null,
-  pathname?: string | null
-) {
-  if (workspace.id === currentWorkspaceId) return true;
-  if (!pathname) return false;
-
-  const firstSegment = pathname.split('/').filter(Boolean)[0];
-
-  return firstSegment === workspace.id || firstSegment === 'personal';
-}
-
-function getWorkspaceAccessType(workspace: LauncherWorkspace) {
-  return 'access_type' in workspace ? workspace.access_type : null;
-}
-
-function getMatchContext<T extends { title: string }>(
-  result: IntentSearchResult<T>,
-  labels: GlobalCommandLauncherLabels
-) {
-  if (result.reason === 'exact' || result.reason === 'prefix') return null;
-  if (result.matchedText === result.item.title) return result.reason;
-
-  return `${labels.match}: ${result.matchedText}`;
-}
-
-function mergeWorkspaces(
-  localWorkspaces: readonly LauncherWorkspace[],
-  remoteWorkspaces: readonly LauncherWorkspace[]
-) {
-  const byId = new Map<string, LauncherWorkspace>();
-
-  for (const workspace of localWorkspaces) {
-    byId.set(workspace.id, workspace);
-  }
-
-  for (const workspace of remoteWorkspaces) {
-    byId.set(workspace.id, workspace);
-  }
-
-  return [...byId.values()];
-}
 
 export function GlobalCommandLauncher({
   currentApp,
   currentWorkspaceId,
+  defaultTab = 'all',
+  enableTasks = false,
   extraSections,
+  instancePriority = 0,
   labels: labelOverrides,
   navItems = [],
   onNavigate,
   workspacePathResolver,
 }: GlobalCommandLauncherProps) {
   const labels = { ...DEFAULT_LABELS, ...labelOverrides };
+  const hostTabs = enableTasks
+    ? COMMAND_LAUNCHER_TABS
+    : extraSections
+      ? COMMAND_LAUNCHER_TABS_WITHOUT_TASKS
+      : (['all'] as const);
+  const availableTabs = hostTabs.filter(
+    (tab) => tab !== 'navigation' || navItems.length > 0
+  );
+  const resolvedDefaultTab = availableTabs.includes(defaultTab)
+    ? defaultTab
+    : 'all';
   const instanceId = useMemo(() => Symbol('GlobalCommandLauncher'), []);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const trimmedQuery = trimQuery(query);
-  const deferredWorkspaceQuery = useDeferredValue(trimmedQuery);
+  const [activeTab, setActiveTab] =
+    useState<CommandLauncherTab>(resolvedDefaultTab);
+  const parsedQuery = useMemo(() => parseLauncherQuery(query), [query]);
+  const prefixedTab =
+    parsedQuery.tab && availableTabs.includes(parsedQuery.tab)
+      ? parsedQuery.tab
+      : null;
+  const routedTab = prefixedTab ?? activeTab;
+  const trimmedQuery = parsedQuery.query.trim();
+  const showApps = routedTab === 'all' || routedTab === 'apps';
 
   const closeLauncher = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
-    registerCommandLauncherInstance(currentApp, instanceId);
+    registerLauncherInstance(currentApp, instanceId, instancePriority);
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!isActiveCommandLauncherInstance(currentApp, instanceId)) return;
+      if (!isActiveLauncherInstance(currentApp, instanceId)) return;
+      if (event.isComposing) return;
 
       if (
+        !event.repeat &&
         event.key.toLowerCase() === 'k' &&
         (event.metaKey || event.ctrlKey) &&
         !event.altKey &&
@@ -308,12 +190,12 @@ export function GlobalCommandLauncher({
       ) {
         event.preventDefault();
         event.stopPropagation();
-        setOpen(true);
+        setOpen((current) => !current);
       }
     };
 
     const onCommandLauncherEvent = (event: Event) => {
-      if (!isActiveCommandLauncherInstance(currentApp, instanceId)) return;
+      if (!isActiveLauncherInstance(currentApp, instanceId)) return;
 
       const action = (event as GlobalCommandLauncherEvent).detail?.action;
 
@@ -334,115 +216,33 @@ export function GlobalCommandLauncher({
         GLOBAL_COMMAND_LAUNCHER_EVENT,
         onCommandLauncherEvent
       );
-      unregisterCommandLauncherInstance(currentApp, instanceId);
+      unregisterLauncherInstance(currentApp, instanceId);
     };
-  }, [currentApp, instanceId]);
+  }, [currentApp, instanceId, instancePriority]);
 
   useEffect(() => {
-    if (!open) setQuery('');
-  }, [open]);
+    if (!open) {
+      setQuery('');
+      setActiveTab(resolvedDefaultTab);
+    }
+  }, [open, resolvedDefaultTab]);
 
   const {
-    data: workspaces = [],
-    error: workspaceError,
-    isLoading: isLoadingWorkspaces,
-  } = useQuery({
-    enabled: open,
-    queryFn: () => listWorkspaces(),
-    queryKey: ['global-command-launcher', 'workspaces'],
-    retry: false,
-    staleTime: 60_000,
+    appResults,
+    currentWorkspace,
+    isLoadingWorkspaces,
+    isSearchingWorkspaces,
+    navigationResults,
+    workspaceError,
+    workspaceResults,
+  } = useCommandLauncherResults({
+    currentWorkspaceId,
+    navItems,
+    open,
+    pathname,
+    query: trimmedQuery,
+    showApps,
   });
-
-  const launcherWorkspaces = workspaces as LauncherWorkspace[];
-  const { data: remoteWorkspaces = [], isFetching: isSearchingWorkspaces } =
-    useQuery({
-      enabled: open && deferredWorkspaceQuery.length > 0,
-      queryFn: () =>
-        listWorkspaces({
-          limit: REMOTE_WORKSPACE_SEARCH_LIMIT,
-          q: deferredWorkspaceQuery,
-        }),
-      queryKey: [
-        'global-command-launcher',
-        'workspaces',
-        'search',
-        deferredWorkspaceQuery,
-      ],
-      retry: false,
-      staleTime: 30_000,
-    });
-  const searchableWorkspaces = useMemo(
-    () =>
-      mergeWorkspaces(
-        launcherWorkspaces,
-        remoteWorkspaces as LauncherWorkspace[]
-      ),
-    [launcherWorkspaces, remoteWorkspaces]
-  );
-  const currentWorkspace = useMemo(
-    () =>
-      launcherWorkspaces.find((workspace) =>
-        isWorkspaceCurrent(workspace, currentWorkspaceId, pathname)
-      ) ?? null,
-    [currentWorkspaceId, launcherWorkspaces, pathname]
-  );
-
-  const appResults = useMemo(
-    () =>
-      searchIntent(APP_SEARCH_ITEMS, trimmedQuery, {
-        limit: trimmedQuery ? 8 : 12,
-      }),
-    [trimmedQuery]
-  );
-  const workspaceResults = useMemo(
-    () =>
-      searchIntent(
-        searchableWorkspaces.map(workspaceToSearchItem),
-        trimmedQuery,
-        {
-          limit: trimmedQuery ? VISIBLE_WORKSPACE_SEARCH_LIMIT : 10,
-        }
-      ),
-    [searchableWorkspaces, trimmedQuery]
-  );
-  const navigationResults = useMemo(
-    () =>
-      searchIntent(
-        navItems.map((item) => ({
-          ...item,
-          keywords: [
-            ...(item.keywords ?? []),
-            item.external ? 'external' : '',
-            item.group ?? '',
-          ].filter(Boolean),
-        })),
-        trimmedQuery,
-        {
-          limit: trimmedQuery ? 10 : 6,
-        }
-      ),
-    [navItems, trimmedQuery]
-  );
-
-  const visibleItems: LauncherItem[] = [
-    ...appResults.map((result) => ({
-      app: result.item,
-      result,
-      type: 'app' as const,
-    })),
-    ...workspaceResults.map((result) => ({
-      result,
-      type: 'workspace' as const,
-      workspace: result.item,
-    })),
-    ...navigationResults.map((result) => ({
-      result,
-      type: 'nav' as const,
-    })),
-  ];
-
-  const hasResults = visibleItems.length > 0;
 
   const navigateTo = useCallback(
     (url: string, options: { newTab?: boolean } = {}) => {
@@ -512,290 +312,64 @@ export function GlobalCommandLauncher({
   const renderedExtraSections =
     typeof extraSections === 'function'
       ? extraSections({
+          activeTab: routedTab,
+          isOpen: open,
           onClose: closeLauncher,
-          query,
+          query: parsedQuery.query,
           setQuery,
         })
       : extraSections;
 
+  const showNavigation = routedTab === 'all' || routedTab === 'navigation';
+  const showExtraSections =
+    routedTab === 'tasks' || routedTab === 'all' || routedTab === 'actions';
+  const currentAppTitle =
+    LAUNCHABLE_APPS.find((app) => app.slug === currentApp)?.title ??
+    labels.title;
+  const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (!(event.metaKey || event.ctrlKey)) return;
+    const nextTab = availableTabs[Number(event.key) - 1];
+    if (!nextTab) return;
+    event.preventDefault();
+    setActiveTab(nextTab);
+    if (parsedQuery.tab) setQuery(parsedQuery.query);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent
-        aria-label={labels.title}
-        className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[min(760px,96vw)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-lg border bg-background p-0 shadow-2xl sm:max-w-[min(760px,96vw)]"
-        showCloseButton={false}
+      <CommandLauncherChrome
+        activeTab={routedTab}
+        availableTabs={availableTabs}
+        contextLabel={currentWorkspace?.name ?? currentAppTitle}
+        labels={labels}
+        onInputKeyDown={handleInputKeyDown}
+        onQueryChange={setQuery}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          if (parsedQuery.tab) setQuery(parsedQuery.query);
+        }}
+        query={query}
       >
-        <DialogHeader className="sr-only">
-          <DialogTitle>{labels.title}</DialogTitle>
-          <DialogDescription>{labels.searchHint}</DialogDescription>
-        </DialogHeader>
-        <Command
-          className="h-full min-h-0 rounded-none border-none bg-background"
-          shouldFilter={false}
-        >
-          <div className="flex min-h-0 flex-col overflow-hidden">
-            <div className="border-b">
-              <CommandInput
-                aria-label={labels.title}
-                className="h-12"
-                onValueChange={setQuery}
-                placeholder={labels.placeholder}
-                value={query}
-              />
-            </div>
-
-            <CommandList className="max-h-none min-h-0 flex-1 overflow-y-auto p-2">
-              <CommandEmpty>
-                <EmptyState labels={labels} query={trimmedQuery} />
-              </CommandEmpty>
-
-              {appResults.length > 0 && (
-                <CommandGroup heading={labels.apps}>
-                  {appResults.map((result) => (
-                    <AppCommandItem
-                      app={result.item}
-                      isCurrent={result.item.slug === currentApp}
-                      key={result.item.slug}
-                      labels={labels}
-                      matchContext={getMatchContext(result, labels)}
-                      onSelect={() => openApp(result.item)}
-                    />
-                  ))}
-                </CommandGroup>
-              )}
-
-              {(isLoadingWorkspaces ||
-                isSearchingWorkspaces ||
-                workspaceError ||
-                workspaceResults.length > 0) && (
-                <CommandGroup heading={labels.workspaces}>
-                  {(isLoadingWorkspaces || isSearchingWorkspaces) && (
-                    <CommandItem disabled value="loading-workspaces">
-                      <Loader2 className="size-4 animate-spin" />
-                      <span>{labels.loadingWorkspaces}</span>
-                    </CommandItem>
-                  )}
-                  {workspaceError && (
-                    <CommandItem disabled value="workspace-error">
-                      <Search className="size-4" />
-                      <span>{labels.errorWorkspaces}</span>
-                    </CommandItem>
-                  )}
-                  {workspaceResults.map((result) => (
-                    <WorkspaceCommandItem
-                      isCurrent={isWorkspaceCurrent(
-                        result.item,
-                        currentWorkspaceId,
-                        pathname
-                      )}
-                      key={result.item.id}
-                      labels={labels}
-                      matchContext={getMatchContext(result, labels)}
-                      onSelect={() => openWorkspace(result.item)}
-                      workspace={result.item}
-                    />
-                  ))}
-                </CommandGroup>
-              )}
-
-              {navigationResults.length > 0 && (
-                <CommandGroup heading={labels.navigation}>
-                  {navigationResults.map((result) => (
-                    <NavigationCommandItem
-                      item={result.item}
-                      key={result.item.href}
-                      labels={labels}
-                      matchContext={getMatchContext(result, labels)}
-                      onSelect={() => openNavItem(result.item)}
-                    />
-                  ))}
-                </CommandGroup>
-              )}
-
-              {renderedExtraSections}
-
-              {!hasResults &&
-                !isLoadingWorkspaces &&
-                !isSearchingWorkspaces && (
-                  <div className="py-8">
-                    <EmptyState labels={labels} query={trimmedQuery} />
-                  </div>
-                )}
-            </CommandList>
-          </div>
-        </Command>
-      </DialogContent>
+        <CommandLauncherResults
+          appResults={appResults}
+          currentApp={currentApp}
+          currentWorkspaceId={currentWorkspaceId}
+          extraSections={showExtraSections ? renderedExtraSections : null}
+          isLoadingWorkspaces={isLoadingWorkspaces}
+          isSearchingWorkspaces={isSearchingWorkspaces}
+          labels={labels}
+          navigationResults={navigationResults}
+          onOpenApp={openApp}
+          onOpenNavigation={openNavItem}
+          onOpenWorkspace={openWorkspace}
+          pathname={pathname}
+          query={trimmedQuery}
+          showApps={showApps}
+          showNavigation={showNavigation}
+          workspaceError={workspaceError}
+          workspaceResults={workspaceResults}
+        />
+      </CommandLauncherChrome>
     </Dialog>
-  );
-}
-
-function AppCommandItem({
-  app,
-  isCurrent,
-  labels,
-  matchContext,
-  onSelect,
-}: {
-  app: LaunchableApp;
-  isCurrent: boolean;
-  labels: GlobalCommandLauncherLabels;
-  matchContext: string | null;
-  onSelect: () => void;
-}) {
-  return (
-    <CommandItem
-      className="min-h-13 rounded-md px-2"
-      onSelect={onSelect}
-      value={`app-${app.slug}-${app.title}`}
-    >
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/60">
-        <Globe2 className="size-4" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-medium">{app.title}</span>
-          {isCurrent && (
-            <Badge
-              className="h-5 rounded-md px-1.5 text-[10px]"
-              variant="secondary"
-            >
-              {labels.current}
-            </Badge>
-          )}
-        </div>
-        <div className="truncate text-muted-foreground text-xs">
-          {matchContext ?? app.productionUrl}
-        </div>
-      </div>
-      <span className="hidden text-muted-foreground text-xs sm:inline">
-        {labels.openApp}
-      </span>
-      <ArrowRight className="size-4" />
-    </CommandItem>
-  );
-}
-
-function WorkspaceCommandItem({
-  isCurrent,
-  labels,
-  matchContext,
-  onSelect,
-  workspace,
-}: {
-  isCurrent: boolean;
-  labels: GlobalCommandLauncherLabels;
-  matchContext: string | null;
-  onSelect: () => void;
-  workspace: LauncherWorkspace;
-}) {
-  const accessType = getWorkspaceAccessType(workspace);
-
-  return (
-    <CommandItem
-      className="min-h-13 rounded-md px-2"
-      onSelect={onSelect}
-      value={`workspace-${workspace.id}-${workspace.name}`}
-    >
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/60">
-        {workspace.personal ? (
-          <User className="size-4" />
-        ) : (
-          <Building2 className="size-4" />
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-medium">
-            {workspace.name || workspace.id}
-          </span>
-          {isCurrent && <StatusBadge label={labels.current} />}
-          {workspace.personal && <StatusBadge label={labels.personal} />}
-          {accessType === 'guest' && <StatusBadge label={labels.guest} />}
-        </div>
-        <div className="truncate text-muted-foreground text-xs">
-          {matchContext ?? workspace.id}
-        </div>
-      </div>
-      <span className="hidden text-muted-foreground text-xs sm:inline">
-        {labels.openWorkspace}
-      </span>
-      {isCurrent ? (
-        <Check className="size-4" />
-      ) : (
-        <ArrowRight className="size-4" />
-      )}
-    </CommandItem>
-  );
-}
-
-function NavigationCommandItem({
-  item,
-  labels,
-  matchContext,
-  onSelect,
-}: {
-  item: CommandLauncherNavItem;
-  labels: GlobalCommandLauncherLabels;
-  matchContext: string | null;
-  onSelect: () => void;
-}) {
-  return (
-    <CommandItem
-      className="min-h-13 rounded-md px-2"
-      onSelect={onSelect}
-      value={`nav-${item.href}-${item.title}`}
-    >
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/60">
-        {item.icon ?? <PanelTop className="size-4" />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-medium">{item.title}</span>
-          {item.external && (
-            <ExternalLink className="size-3 text-muted-foreground" />
-          )}
-        </div>
-        <div className="truncate text-muted-foreground text-xs">
-          {matchContext ?? item.subtitle ?? item.href}
-        </div>
-      </div>
-      <span className="hidden text-muted-foreground text-xs sm:inline">
-        {labels.open}
-      </span>
-      <ArrowRight className="size-4" />
-    </CommandItem>
-  );
-}
-
-function EmptyState({
-  labels,
-  query,
-}: {
-  labels: GlobalCommandLauncherLabels;
-  query: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-      <div className="flex size-12 items-center justify-center rounded-lg border bg-muted/60">
-        <Search className="size-5 text-muted-foreground" />
-      </div>
-      <div className="space-y-1">
-        <p className="font-medium">{labels.empty}</p>
-        <p className="text-muted-foreground text-sm">
-          {query ? `"${query}"` : labels.emptyDescription}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function StatusBadge({ label }: { label: string }) {
-  return (
-    <Badge
-      className={cn('h-5 rounded-md px-1.5 text-[10px]', 'uppercase')}
-      variant="outline"
-    >
-      {label}
-    </Badge>
   );
 }

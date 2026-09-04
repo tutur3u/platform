@@ -1,6 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { ImageResponse } from 'next/og';
+import { getNovaOgAvatarUrl } from '@/lib/og-avatar-url';
+
+const FALLBACK_AVATAR_URL = 'https://tuturuuu.com/media/logos/light.png';
 
 export async function GET(
   _: Request,
@@ -29,6 +32,8 @@ export async function GET(
 
     const userName =
       userData.display_name || generateFunName({ id: userData.id });
+    const avatarUrl =
+      getNovaOgAvatarUrl(userData.avatar_url) ?? FALLBACK_AVATAR_URL;
 
     // Fetch user's total score
     const { data: submissionsData = [], error: submissionsError } =
@@ -243,10 +248,7 @@ export async function GET(
               alt="User Avatar"
               width="320"
               height="320"
-              src={
-                userData.avatar_url ||
-                'https://tuturuuu.com/media/logos/light.png'
-              }
+              src={avatarUrl}
               style={{
                 borderRadius: '160px',
                 position: 'relative',

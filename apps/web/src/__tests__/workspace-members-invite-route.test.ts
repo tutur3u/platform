@@ -4,11 +4,12 @@ import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/s
 
 const mocks = vi.hoisted(() => {
   const canCreateInvitation = vi.fn();
+  const createEmailInvitationRpc = vi.fn();
   const disableInviteMaybeSingle = vi.fn();
   const getPermissions = vi.fn();
-  const insertInvite = vi.fn();
   const personalWorkspaceMaybeSingle = vi.fn();
   const posOperatorRpc = vi.fn();
+  const roleIn = vi.fn();
   const resolveSessionAuthContext = vi.fn();
   const serverLoggerError = vi.fn();
   const serverLoggerWarn = vi.fn();
@@ -50,16 +51,27 @@ const mocks = vi.hoisted(() => {
         };
       }
 
-      if (table === 'workspace_email_invites') {
+      if (table === 'workspace_roles') {
         return {
-          insert: insertInvite,
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              in: roleIn,
+            })),
+          })),
         };
       }
 
       throw new Error(`Unexpected admin table: ${table}`);
     }),
     schema: vi.fn((schema: string) => {
-      if (schema === 'private') return { rpc: posOperatorRpc };
+      if (schema === 'private') {
+        return {
+          rpc: (functionName: string, args: unknown) =>
+            functionName === 'create_inventory_pos_operator_invite'
+              ? posOperatorRpc(functionName, args)
+              : createEmailInvitationRpc(functionName, args),
+        };
+      }
       throw new Error(`Unexpected admin schema: ${schema}`);
     }),
   };
@@ -67,16 +79,17 @@ const mocks = vi.hoisted(() => {
   return {
     adminSupabase,
     canCreateInvitation,
+    createEmailInvitationRpc,
     disableInviteMaybeSingle,
     disableInviteNameEq,
     disableInviteSelect,
     disableInviteWsEq,
     getPermissions,
-    insertInvite,
     personalWorkspaceEq,
     personalWorkspaceMaybeSingle,
     personalWorkspaceSelect,
     posOperatorRpc,
+    roleIn,
     resolveSessionAuthContext,
     serverLoggerError,
     serverLoggerWarn,
@@ -195,7 +208,10 @@ describe('workspace members invite route', () => {
       allowed: true,
       status: undefined,
     });
-    mocks.insertInvite.mockResolvedValue({ error: null });
+    mocks.createEmailInvitationRpc.mockResolvedValue({
+      data: null,
+      error: null,
+    });
     mocks.posOperatorRpc.mockResolvedValue({
       data: {
         adminRoleId: 'admin-role',
@@ -204,6 +220,10 @@ describe('workspace members invite route', () => {
         posOperatorRoleId: 'pos-role',
         preservedMemberCount: 4,
       },
+      error: null,
+    });
+    mocks.roleIn.mockResolvedValue({
+      data: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }],
       error: null,
     });
   });
@@ -224,13 +244,16 @@ describe('workspace members invite route', () => {
       mocks.adminSupabase,
       'canonical-ws'
     );
-    expect(mocks.insertInvite).toHaveBeenCalledWith({
-      email: 'member@example.com',
-      invited_by: 'admin-user',
-      role_id: null,
-      type: 'MEMBER',
-      ws_id: 'canonical-ws',
-    });
+    expect(mocks.createEmailInvitationRpc).toHaveBeenCalledWith(
+      'create_workspace_email_invitation_with_roles',
+      {
+        p_email: 'member@example.com',
+        p_invited_by: 'admin-user',
+        p_member_type: 'MEMBER',
+        p_role_ids: [],
+        p_ws_id: 'canonical-ws',
+      }
+    );
   });
 
   it('inserts an explicit guest invite with the admin client', async () => {
@@ -240,13 +263,96 @@ describe('workspace members invite route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ message: 'success' });
-    expect(mocks.insertInvite).toHaveBeenCalledWith({
-      email: 'guest@example.com',
-      invited_by: 'admin-user',
-      role_id: null,
-      type: 'GUEST',
-      ws_id: 'canonical-ws',
+    expect(mocks.createEmailInvitationRpc).toHaveBeenCalledWith(
+      'create_workspace_email_invitation_with_roles',
+      expect.objectContaining({
+        p_email: 'guest@example.com',
+        p_member_type: 'GUEST',
+        p_role_ids: [],
+      })
+    );
+  });
+
+  it('persists validated workspace roles for the pending invite', async () => {
+    const roleIds = [
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    ];
+    mocks.roleIn.mockResolvedValue({
+      data: roleIds.map((id) => ({ id })),
+      error: null,
     });
+    const response = await postInvite({
+      body: { email: 'editor@example.com', roleIds },
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.createEmailInvitationRpc).toHaveBeenCalledWith(
+      'create_workspace_email_invitation_with_roles',
+      expect.objectContaining({ p_role_ids: roleIds })
+    );
+  });
+
+  it('rejects workspace roles for guest invitations', async () => {
+    const response = await postInvite({
+      body: {
+        email: 'guest@example.com',
+        memberType: 'GUEST',
+        roleIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
+      },
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Workspace roles can only be assigned to member invitations.',
+    });
+    expect(mocks.roleIn).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
+  });
+
+  it('requires role-management permission to preassign an invitation role', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      createPermissions({ canManageRoles: false })
+    );
+
+    const response = await postInvite({
+      body: {
+        email: 'editor@example.com',
+        roleIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
+      },
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.roleIn).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invitation role outside the target workspace', async () => {
+    mocks.roleIn.mockResolvedValue({ data: [], error: null });
+
+    const response = await postInvite({
+      body: {
+        email: 'editor@example.com',
+        roleIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
+      },
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects an explicit role for a POS operator invitation', async () => {
+    const response = await postInvite({
+      body: {
+        accessPreset: 'pos_operator',
+        email: 'staff@example.com',
+        roleIds: ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'],
+      },
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.posOperatorRpc).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('requires explicit confirmation before changing default admin access', async () => {
@@ -259,7 +365,7 @@ describe('workspace members invite route', () => {
 
     expect(response.status).toBe(403);
     expect(mocks.posOperatorRpc).not.toHaveBeenCalled();
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('preserves current admins and creates a least-privilege POS invite', async () => {
@@ -288,7 +394,7 @@ describe('workspace members invite route', () => {
         p_ws_id: 'canonical-ws',
       }
     );
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('returns a conflict without a second insert when the atomic POS invite already exists', async () => {
@@ -310,7 +416,7 @@ describe('workspace members invite route', () => {
       message:
         'User is already a member of this workspace or has a pending invite.',
     });
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('requires role-management permission for limited POS invitations', async () => {
@@ -328,7 +434,7 @@ describe('workspace members invite route', () => {
 
     expect(response.status).toBe(403);
     expect(mocks.posOperatorRpc).not.toHaveBeenCalled();
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('returns 401 for unauthenticated requests before seat checks or inserts', async () => {
@@ -345,7 +451,7 @@ describe('workspace members invite route', () => {
     });
     expect(mocks.getPermissions).not.toHaveBeenCalled();
     expect(mocks.canCreateInvitation).not.toHaveBeenCalled();
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   // Regression: satellite apps (inventory, contacts, finance, …) proxy this
@@ -360,8 +466,9 @@ describe('workspace members invite route', () => {
       expect.any(Request),
       { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
     );
-    expect(mocks.insertInvite).toHaveBeenCalledWith(
-      expect.objectContaining({ invited_by: 'admin-user' })
+    expect(mocks.createEmailInvitationRpc).toHaveBeenCalledWith(
+      'create_workspace_email_invitation_with_roles',
+      expect.objectContaining({ p_invited_by: 'admin-user' })
     );
   });
 
@@ -377,7 +484,7 @@ describe('workspace members invite route', () => {
       message: 'You do not have permission to invite workspace members.',
     });
     expect(mocks.canCreateInvitation).not.toHaveBeenCalled();
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('returns 403 when the user is a guest member', async () => {
@@ -392,7 +499,7 @@ describe('workspace members invite route', () => {
       message: 'You do not have permission to invite workspace members.',
     });
     expect(mocks.canCreateInvitation).not.toHaveBeenCalled();
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('returns 403 for personal workspaces', async () => {
@@ -408,7 +515,7 @@ describe('workspace members invite route', () => {
       message: 'Cannot invite members to a personal workspace.',
     });
     expect(mocks.canCreateInvitation).not.toHaveBeenCalled();
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('returns 403 when workspace invitations are disabled', async () => {
@@ -432,7 +539,7 @@ describe('workspace members invite route', () => {
       'DISABLE_INVITE'
     );
     expect(mocks.canCreateInvitation).not.toHaveBeenCalled();
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('returns the seat limit response when invitations would exceed seats', async () => {
@@ -450,11 +557,12 @@ describe('workspace members invite route', () => {
       message: 'Seat limit reached',
       seatStatus: { availableSeats: 0, usedSeats: 1 },
     });
-    expect(mocks.insertInvite).not.toHaveBeenCalled();
+    expect(mocks.createEmailInvitationRpc).not.toHaveBeenCalled();
   });
 
   it('returns 409 for duplicate member or pending invite inserts', async () => {
-    mocks.insertInvite.mockResolvedValue({
+    mocks.createEmailInvitationRpc.mockResolvedValue({
+      data: null,
       error: {
         code: '23505',
         message:
@@ -477,7 +585,10 @@ describe('workspace members invite route', () => {
       code: 'XX000',
       message: 'trigger failed',
     };
-    mocks.insertInvite.mockResolvedValue({ error: insertError });
+    mocks.createEmailInvitationRpc.mockResolvedValue({
+      data: null,
+      error: insertError,
+    });
 
     const response = await postInvite({
       body: { email: 'SensitiveUser@Example.com' },

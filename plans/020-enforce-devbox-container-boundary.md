@@ -10,13 +10,23 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
 - **Priority:** P0
 - **Effort:** L
 - **Risk:** HIGH
 - **Category:** Security / Remote execution
-- **Depends on:** none
+- **Depends on:** G22 route-artifact and backend migration ownership transfer
 - **Planned at:** commit `68a1457aed`, 2026-08-10
+
+Execution is blocked because the shared Web authorization helper changes the
+contract of multiple Devbox routes, including routes already implemented in
+Rust (`devbox_cache`, `devboxes_runs`, and `devboxes_run_logs`), while the plan
+currently scopes neither Rust parity nor migration metadata. G22 retains the
+generated route artifacts and active backend lanes retain those handlers.
+Before restoring TODO, refresh this plan with an exact caller-to-Rust-handler
+matrix, parity tests, first-class Web route disposition where required, and the
+transferred artifact paths. Do not execute the stale Web-only authorization
+step.
 
 ## Why this matters
 
@@ -59,7 +69,7 @@ and volume names. Never place tokens or environment values in tests/docs.
 | Devbox route tests | `bun --cwd apps/web vitest run src/legacy-api-routes/v1/devboxes/agents/routes.test.ts` | exit 0 |
 | Typechecks | `bun turbo:local run type-check --filter=tuturuuu --filter=@tuturuuu/devbox --filter=@tuturuuu/web` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Web build | `bun --cwd apps/web run build` | exit 0 |
+| Web build | `bun run --cwd apps/web build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

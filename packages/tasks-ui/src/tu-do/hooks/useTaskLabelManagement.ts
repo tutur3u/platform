@@ -9,15 +9,12 @@ import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { useBoardBroadcast } from '../shared/board-broadcast-context';
 import {
-  getActiveBoardRefresh,
-  useBoardBroadcast,
-} from '../shared/board-broadcast-context';
-import {
+  applyOptimisticTaskPatch,
   getTaskFromVisibleCaches,
-  patchTaskInVisibleCaches,
-  restoreTasksFromVisibleCacheSnapshot,
-  restoreVisibleTaskCaches,
+  restoreTaskFieldsFromVisibleCacheSnapshot,
+  settleOptimisticTaskPatch,
   snapshotVisibleTaskCaches,
 } from '../shared/task-cache-patches';
 import { getRandomNewLabelColor } from '../utils/taskConstants';
@@ -98,10 +95,6 @@ export function useTaskLabelManagement({
       ? Array.from(selectedTasks)
       : [currentTask.id];
 
-    // Cancel any outgoing refetches
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-    await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
-
     // Snapshot the previous value BEFORE optimistic update
     const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
       | Task[]
@@ -169,97 +162,89 @@ export function useTaskLabelManagement({
       created_at: new Date().toISOString(),
     };
 
-    // Optimistically update the cache - only update tasks that actually change
-    for (const tid of active ? tasksToRemoveFrom : tasksNeedingLabel) {
-      patchTaskInVisibleCaches({
-        queryClient,
-        boardId,
-        taskId: tid,
-        updater: (cachedTask) => {
-          if (active) {
-            return {
-              ...cachedTask,
-              labels: cachedTask.labels?.filter((l) => l.id !== labelId) || [],
-            };
-          }
-
-          if (cachedTask.labels?.some((l) => l.id === labelId)) {
-            return cachedTask;
-          }
-
+    const targetTaskIds = active ? tasksToRemoveFrom : tasksNeedingLabel;
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds: targetTaskIds,
+      updater: (cachedTask) => {
+        if (active) {
           return {
             ...cachedTask,
-            labels: [...(cachedTask.labels || []), fallbackLabel],
+            labels: cachedTask.labels?.filter((l) => l.id !== labelId) || [],
           };
-        },
-      });
-    }
+        }
+
+        if (cachedTask.labels?.some((l) => l.id === labelId)) {
+          return cachedTask;
+        }
+
+        return {
+          ...cachedTask,
+          labels: [...(cachedTask.labels || []), fallbackLabel],
+        };
+      },
+    });
+    let mutationFailed = false;
 
     try {
       const internalApiOptions =
         typeof window !== 'undefined'
           ? { baseUrl: window.location.origin }
           : undefined;
-      let successCount = 0;
-      const succeededTaskIds: string[] = [];
-
-      if (active) {
-        for (const tid of tasksToRemoveFrom) {
-          try {
-            await removeWorkspaceTaskLabel(
-              workspaceId,
-              tid,
-              labelId,
-              internalApiOptions
-            );
-            successCount++;
-            succeededTaskIds.push(tid);
-          } catch (error) {
-            console.error(`Failed to remove label from task ${tid}:`, error);
-          }
-        }
-      } else {
-        for (const tid of tasksNeedingLabel) {
-          try {
-            await addWorkspaceTaskLabel(
-              workspaceId,
-              tid,
-              labelId,
-              internalApiOptions
-            );
-            successCount++;
-            succeededTaskIds.push(tid);
-          } catch (error) {
-            console.error(`Failed to add label to task ${tid}:`, error);
-          }
-        }
-      }
+      const settledResults = await Promise.allSettled(
+        targetTaskIds.map((tid) =>
+          active
+            ? removeWorkspaceTaskLabel(
+                workspaceId,
+                tid,
+                labelId,
+                internalApiOptions
+              )
+            : addWorkspaceTaskLabel(
+                workspaceId,
+                tid,
+                labelId,
+                internalApiOptions
+              )
+        )
+      );
+      const succeededTaskIds = targetTaskIds.filter(
+        (_, index) => settledResults[index]?.status === 'fulfilled'
+      );
+      const successCount = succeededTaskIds.length;
+      settledResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') return;
+        console.error(
+          `Failed to ${active ? 'remove' : 'add'} label ${active ? 'from' : 'to'} task ${targetTaskIds[index]}:`,
+          result.reason
+        );
+      });
 
       // If no operations succeeded, throw to trigger rollback
-      const targetCount = active
-        ? tasksToRemoveFrom.length
-        : tasksNeedingLabel.length;
+      const targetCount = targetTaskIds.length;
       if (targetCount > 0 && successCount === 0) {
         throw new Error('Failed to update any tasks');
       }
 
-      const failedTaskIds = (
-        active ? tasksToRemoveFrom : tasksNeedingLabel
-      ).filter((tid) => !succeededTaskIds.includes(tid));
-      restoreTasksFromVisibleCacheSnapshot({
+      const failedTaskIds = targetTaskIds.filter(
+        (tid) => !succeededTaskIds.includes(tid)
+      );
+      restoreTaskFieldsFromVisibleCacheSnapshot({
         queryClient,
+        boardId,
         snapshot: cacheSnapshot,
         taskIds: failedTaskIds,
+        restore: (currentTask, previousTask) => ({
+          ...currentTask,
+          labels: previousTask.labels,
+        }),
       });
 
       // Broadcast relation changes for all affected tasks
       for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
-      if (succeededTaskIds.length > 0) {
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
-      }
-
       toast.success(active ? 'Label removed' : 'Label added', {
         description:
           successCount > 1 ? `${successCount} tasks updated` : undefined,
@@ -267,11 +252,29 @@ export function useTaskLabelManagement({
 
       // Don't auto-clear selection - let user manually clear with "Clear" button
     } catch (e: any) {
+      mutationFailed = true;
       // Rollback on error
-      restoreVisibleTaskCaches(queryClient, cacheSnapshot);
+      restoreTaskFieldsFromVisibleCacheSnapshot({
+        queryClient,
+        boardId,
+        snapshot: cacheSnapshot,
+        taskIds: targetTaskIds,
+        restore: (currentTask, previousTask) => ({
+          ...currentTask,
+          labels: previousTask.labels,
+        }),
+      });
       console.error('Failed to toggle label:', e);
       toast.error('Error', {
         description: 'Failed to update label. Please try again.',
+      });
+    } finally {
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: targetTaskIds,
+        mutationId,
+        clearLocalMutationAt: mutationFailed,
       });
     }
   }
@@ -323,21 +326,18 @@ export function useTaskLabelManagement({
       let cacheSnapshot:
         | ReturnType<typeof snapshotVisibleTaskCaches>
         | undefined;
+      let linkMutationId: string | undefined;
       try {
-        // Cancel any outgoing refetches
-        await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-        await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
-
         // Snapshot the previous value
         cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
           canonicalTaskId,
         ]);
 
         // Optimistically update the cache
-        patchTaskInVisibleCaches({
+        linkMutationId = applyOptimisticTaskPatch({
           queryClient,
           boardId,
-          taskId: canonicalTaskId,
+          taskIds: [canonicalTaskId],
           updater: (cachedTask) => {
             if (cachedTask.labels?.some((label) => label.id === newLabel.id)) {
               return cachedTask;
@@ -376,20 +376,39 @@ export function useTaskLabelManagement({
         );
         linkSucceeded = true;
       } catch (linkErr: any) {
+        linkSucceeded = false;
         // Rollback on error
         if (cacheSnapshot) {
-          restoreVisibleTaskCaches(queryClient, cacheSnapshot);
+          restoreTaskFieldsFromVisibleCacheSnapshot({
+            queryClient,
+            boardId,
+            snapshot: cacheSnapshot,
+            taskIds: [canonicalTaskId],
+            restore: (currentTask, previousTask) => ({
+              ...currentTask,
+              labels: previousTask.labels,
+            }),
+          });
         }
         toast.error(
           'The label was created but could not be attached to the task. Refresh and try manually.'
         );
         console.error('Failed to auto-apply new label', linkErr);
+      } finally {
+        if (linkMutationId) {
+          settleOptimisticTaskPatch({
+            queryClient,
+            boardId,
+            taskIds: [canonicalTaskId],
+            mutationId: linkMutationId,
+            clearLocalMutationAt: !linkSucceeded,
+          });
+        }
       }
 
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
         broadcast?.('task:relations-changed', { taskId: canonicalTaskId });
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
 
         // Reset form and close dialog
         setNewLabelName('');

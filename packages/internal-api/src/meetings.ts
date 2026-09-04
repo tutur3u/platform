@@ -4,6 +4,88 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
+export const MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES = 18 * 1024 * 1024;
+export const TRANSCRIPTION_MULTIPART_HEADROOM_BYTES = 1024 * 1024;
+export const MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES =
+  MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES + TRANSCRIPTION_MULTIPART_HEADROOM_BYTES;
+
+export const TRANSCRIPTION_AUDIO_MEDIA_TYPES = [
+  'audio/webm',
+  'audio/mp4',
+  'audio/ogg',
+  'audio/mpeg',
+] as const;
+
+export type TranscriptionAudioMediaType =
+  (typeof TRANSCRIPTION_AUDIO_MEDIA_TYPES)[number];
+export type TranscriptionAudioInputErrorCode =
+  | 'EMPTY_TRANSCRIPTION_AUDIO'
+  | 'TRANSCRIPTION_AUDIO_TOO_LARGE'
+  | 'UNSUPPORTED_TRANSCRIPTION_AUDIO_TYPE';
+
+export class TranscriptionAudioInputError extends Error {
+  constructor(
+    message: string,
+    public readonly status: 400 | 413 | 415,
+    public readonly code: TranscriptionAudioInputErrorCode
+  ) {
+    super(message);
+    this.name = 'TranscriptionAudioInputError';
+  }
+}
+
+export function getTranscriptionAudioMediaType(
+  mediaType: string
+): TranscriptionAudioMediaType | null {
+  const baseMediaType = mediaType.split(';', 1)[0]?.trim().toLowerCase();
+  return (
+    TRANSCRIPTION_AUDIO_MEDIA_TYPES.find(
+      (allowedMediaType) => allowedMediaType === baseMediaType
+    ) ?? null
+  );
+}
+
+export function validateTranscriptionAudioInput(
+  audio: Pick<Blob, 'size' | 'type'>
+): TranscriptionAudioMediaType {
+  if (audio.size <= 0) {
+    throw new TranscriptionAudioInputError(
+      'The recording is empty.',
+      400,
+      'EMPTY_TRANSCRIPTION_AUDIO'
+    );
+  }
+
+  if (audio.size > MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES) {
+    throw new TranscriptionAudioInputError(
+      'The recording exceeds the inline transcription limit.',
+      413,
+      'TRANSCRIPTION_AUDIO_TOO_LARGE'
+    );
+  }
+
+  const mediaType = getTranscriptionAudioMediaType(audio.type);
+  if (!mediaType) {
+    throw new TranscriptionAudioInputError(
+      'The recording format is not supported for inline transcription.',
+      415,
+      'UNSUPPORTED_TRANSCRIPTION_AUDIO_TYPE'
+    );
+  }
+
+  return mediaType;
+}
+
+function getTranscriptionAudioFilename(mediaType: TranscriptionAudioMediaType) {
+  const extensionByMediaType: Record<TranscriptionAudioMediaType, string> = {
+    'audio/webm': 'webm',
+    'audio/mp4': 'mp4',
+    'audio/ogg': 'ogg',
+    'audio/mpeg': 'mp3',
+  };
+  return `recording.${extensionByMediaType[mediaType]}`;
+}
+
 function meetingPath(workspaceId: string, meetingId?: string) {
   const base = `/api/v1/workspaces/${encodePathSegment(workspaceId)}/meetings`;
   return meetingId ? `${base}/${encodePathSegment(meetingId)}` : base;
@@ -155,8 +237,9 @@ export async function transcribeWorkspaceMeetingAudio<T>(
   audio: Blob,
   options?: InternalApiClientOptions
 ) {
+  const mediaType = validateTranscriptionAudioInput(audio);
   const body = new FormData();
-  body.append('audio', audio, 'recording.mp3');
+  body.append('audio', audio, getTranscriptionAudioFilename(mediaType));
   return getInternalApiClient(options).json<T>(
     '/api/ai/meetings/transcription',
     { body, cache: 'no-store', method: 'POST' }

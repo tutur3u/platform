@@ -123,6 +123,34 @@ const user = actor?.id
 `@tuturuuu/utils/workspace-user-link` helper, so there is one implementation and
 web behavior is unchanged.
 
+Workspace-user link repair must not require an optional platform display name.
+New auth users initially have only a `public.users.id`; the repair RPC derives a
+workspace profile name from display name, private full name, handle, email, and
+finally a stable generic fallback. Membership remains mandatory, and the repair
+does not create or broaden workspace access.
+
+### Personal workspace aliases in APIs
+
+API routes that accept `personal` must preserve the same authenticated actor
+while resolving that alias. Use the actor-explicit helpers from
+`@tuturuuu/satellite/workspace-access`: they verify the intended target app
+before resolving `personal`, UUID, handle, or internal workspace identifiers,
+and fall back to the request-scoped Supabase session only when no app-session
+token is present. An invalid, expired, or mismatched app-session token must not
+fall through to another identity. Passing only a cookie-backed client on a
+satellite loses the app-session identity and incorrectly reports `User not
+authenticated`.
+
+Route handlers must keep both values returned by the auth context: use the
+explicit `user` for `getPermissions({ user, wsId })`, and the returned admin
+client for workspace-scoped data operations. A `request` property is not an
+actor for a satellite app session.
+
+An admin-backed app-session client has no `auth.uid()`. Therefore a satellite
+must not call a public RPC wrapper whose authorization derives from
+`auth.uid()`. Call the private actor-aware RPC and pass the verified user ID in
+its actor argument while preserving the route response shape.
+
 ### The actorless-call trap
 
 <Warning>
@@ -167,9 +195,26 @@ export async function getContactsWorkspacePermissions(wsId: string) {
 ```
 
 `scripts/check-internal-app-auth.js` enforces both halves (no shared wrapper, no
-actorless call). The actorless rule is rolled out per app via
-`ACTORLESS_CHECK_APPS`; apps/calendar, apps/tasks, apps/track, apps/teach,
-apps/hive, apps/inventory, and apps/pay still have unaudited call sites.
+actorless workspace, permission, or alias-normalization call) across every
+registered satellite. Compatibility fallback is centralized in audited auth
+wrappers and the shared workspace-access helper; individual routes are not
+allowlisted.
+
+### One actor for the workspace shell
+
+The workspace layout is the authentication boundary. Pass its verified user ID
+into `NavbarActions` and render notifications from that same identity in
+expanded, collapsed, and mobile navigation. Do not independently re-resolve
+authentication for the notification bell: two resolvers can disagree and hide
+the bell while the rest of the layout remains authenticated.
+
+### Reserved route placeholders
+
+Selection sentinels such as Contacts group ID `~` are navigation state, not
+database identifiers. Parallel routes can begin rendering child pages before a
+parent selection gateway replaces them, so app-local workspace wrappers must
+stop those child loaders before any UUID filter runs. The parent gateway remains
+responsible for group selection and selected-group navigation.
 
 ## API proxying — and the catch-all trap
 

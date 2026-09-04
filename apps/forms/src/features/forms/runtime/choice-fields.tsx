@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { normalizeMarkdownToText } from '../content';
 import { FormsMarkdown } from '../forms-markdown';
 import type { FormAnswerValue, FormDefinitionQuestion } from '../types';
+import { OptionKeyBadge } from './option-key-badge';
 import type { FormsTranslator, FormToneClasses } from './types';
 import { hasOptionImage } from './utils';
 
@@ -29,6 +30,13 @@ type ChoiceFieldArgs = {
   t: FormsTranslator;
   choiceLayoutClassName: string;
   interactionStateClassName: string;
+  /**
+   * Whether `1`-`9` / `A`-`I` currently pick an option. False in `sections`
+   * mode and whenever more than one question shares the screen, where the key
+   * would be ambiguous — the badge must never promise a shortcut that is not
+   * bound.
+   */
+  optionShortcuts?: boolean;
 };
 
 export function renderSingleChoiceField({
@@ -42,6 +50,7 @@ export function renderSingleChoiceField({
   t,
   choiceLayoutClassName,
   interactionStateClassName,
+  optionShortcuts,
 }: ChoiceFieldArgs) {
   return question.type === 'single_choice' ? (
     <RadioGroup
@@ -52,7 +61,7 @@ export function renderSingleChoiceField({
       }}
       className={choiceLayoutClassName}
     >
-      {question.options.map((option) => (
+      {question.options.map((option, optionIndex) => (
         <label
           key={option.id}
           className={cn(
@@ -83,6 +92,12 @@ export function renderSingleChoiceField({
                   : ''
               )}
             />
+            {optionShortcuts ? (
+              <OptionKeyBadge
+                index={optionIndex}
+                selected={value === option.value}
+              />
+            ) : null}
             <div className="min-w-0 flex-1 space-y-3">
               {hasOptionImage(option) ? (
                 <div
@@ -158,10 +173,11 @@ export function renderMultipleChoiceField({
   t,
   choiceLayoutClassName,
   interactionStateClassName,
+  optionShortcuts,
 }: ChoiceFieldArgs) {
   return question.type === 'multiple_choice' ? (
     <div className={choiceLayoutClassName}>
-      {question.options.map((option) => {
+      {question.options.map((option, optionIndex) => {
         const checked = Array.isArray(value)
           ? value.includes(option.value)
           : false;
@@ -204,6 +220,9 @@ export function renderMultipleChoiceField({
                   onChange([...nextValue]);
                 }}
               />
+              {optionShortcuts ? (
+                <OptionKeyBadge index={optionIndex} selected={checked} />
+              ) : null}
               <div className="min-w-0 flex-1 space-y-3">
                 {hasOptionImage(option) ? (
                   <div

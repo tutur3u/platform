@@ -36,12 +36,14 @@ export default defineConfig({
       DOCKER_INTERNAL_SUPABASE_URL: 'http://127.0.0.1:8001',
       NEXT_PUBLIC_SUPABASE_URL:
         process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:8001',
+      NEXT_PUBLIC_WEB_APP_URL: 'http://localhost:7803',
       PORT: '7827',
       SUPABASE_SERVER_URL: 'http://127.0.0.1:8001',
       SUPABASE_URL: 'http://127.0.0.1:8001',
       TUTURUUU_APP_COORDINATION_SECRET:
         process.env.TUTURUUU_APP_COORDINATION_SECRET ??
         'local-e2e-app-coordination-secret',
+      WEB_APP_URL: 'http://localhost:7803',
     },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

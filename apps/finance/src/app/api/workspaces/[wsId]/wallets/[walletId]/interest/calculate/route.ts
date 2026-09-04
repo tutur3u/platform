@@ -1,3 +1,12 @@
-import { GET } from '@tuturuuu/apis/finance/wallets/walletId/interest/calculate/route';
+import { GET as handleCalculateGET } from '@tuturuuu/apis/finance/wallets/walletId/interest/calculate/route';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
-export { GET };
+type Params = { params: Promise<{ walletId: string; wsId: string }> };
+
+export async function GET(request: Request, context: Params) {
+  return handleCalculateGET(
+    request,
+    context,
+    await resolveFinanceRouteAuthContext(request)
+  );
+}

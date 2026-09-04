@@ -105,7 +105,10 @@ class CalendarConnectionsCubit extends Cubit<CalendarConnectionsState> {
   Future<bool> connectGoogle(String wsId) async {
     try {
       final url = await _repo.getGoogleOAuthUrl(wsId);
-      return launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      return await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
     } on ApiException {
       return false;
     }
@@ -115,7 +118,10 @@ class CalendarConnectionsCubit extends Cubit<CalendarConnectionsState> {
   Future<bool> connectMicrosoft(String wsId) async {
     try {
       final url = await _repo.getMicrosoftOAuthUrl(wsId);
-      return launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      return await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
     } on ApiException {
       return false;
     }

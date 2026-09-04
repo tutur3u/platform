@@ -1,5 +1,15 @@
 {
   "routes": {
+    "api:/api/v1/users/me/avatar/upload-url:apps/web/src/legacy-api-routes/v1/users/me/avatar/upload-url/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Current-user avatar upload URL creation remains on Next.js pending Rust parity. The future Rust handler must preserve session and scoped external app authorization with users:profile:write, the current-user target-app allowlist, the 10 requests per minute rate limit, and the app-session step-up bypass used for delegated profile editing."
+    },
+    "api:/api/v1/auth/app-token/invitation-decision:apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live external-app invitation decision route applies any optional workspace-scoped role before clearing an accepted invite, including idempotent existing-member and duplicate-insert paths, and rolls back newly created membership and seat state if role assignment fails. The Rust port is pending."
+    },
     "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -9,6 +19,10 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Idempotent Gemini Live usage settlement remains on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/crawl:apps/web/src/app/api/v1/workspaces/[wsId]/crawl/route.ts": {
+      "status": "accepted-removal",
+      "note": "Crawler execution is retired. The live compatibility tombstone returns HTTP 410 without authenticating, reading crawler data, or calling the external scraper."
     },
     "api:/api/v1/integrations/external-chat/events:apps/web/src/app/api/v1/integrations/external-chat/events/route.ts": {
       "status": "legacy-next",
@@ -45,10 +59,20 @@
       "targetOwner": "rust-backend",
       "note": "Binding-scoped parity audit, remote-run adoption, and reconciliation controls remain on the live Next.js backend pending Rust parity."
     },
+    "api:/api/v1/workspaces/:wsId/roles/options:apps/web/src/app/api/v1/workspaces/[wsId]/roles/options/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The live lightweight role-options endpoint returns only paginated role ids and names for pre-join invitation assignment, avoiding full permission and member graph transfer. The Rust port is pending."
+    },
     "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class Next.js setup route for adapter-neutral CMS site manifests and templates; Rust parity remains pending."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/members/invite:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/members/invite/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js external-project invitation route supports workspace-scoped access levels at invite time and editable pending invitation roles. Rust parity remains pending."
     },
     "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts": {
       "methods": {
@@ -106,15 +130,15 @@
         }
       }
     },
-    "api:/api/workspaces/:wsId/accept-invite:apps/web/src/legacy-api-routes/workspaces/[wsId]/accept-invite/route.ts": {
+    "api:/api/workspaces/:wsId/accept-invite:apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "The live Next.js invite acceptance flow assigns an optional least-privilege POS Operator role and rolls back membership and seat state if that assignment fails. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation acceptance flow assigns any optional, workspace-scoped role recorded on the pending invite and rolls back membership and seat state if that assignment fails. The Rust port is pending."
     },
     "api:/api/workspaces/:wsId/members/invite:apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation flow resolves current-user satellite app sessions through resolveWorkspaceRouteAccess before authorizing manage_workspace_members, so invites work from Inventory and every registered satellite, and it supports the confirmed POS Operator access migration, preserving existing member admins before disabling default Admin and attaching the limited role to the invite. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). POST resolves current-user satellite app sessions before inviting members and supports an optional workspace-scoped role or confirmed POS Operator setup. GET exposes stored roles for pending email and registered-user invitations, while PATCH lets workspace role managers change or clear that assignment before acceptance. The Rust port is pending."
     },
     "api:/api/v1/workspaces/:wsId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/route.ts": {
       "status": "legacy-next",
@@ -404,7 +428,7 @@
     "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/user/onboarding-progress by validating the browser Supabase session with Supabase Auth, reading or upserting only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, preserving the legacy allowed-field filter, empty update rejection, null missing-row response, and unsupported-method behavior."
+      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/user/onboarding-progress by accepting the same registered current-user satellite app sessions as the live Next.js route or validating the browser Supabase session with Supabase Auth, reading or upserting only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, preserving the legacy allowed-field filter, employee-test email restriction, empty update rejection, null missing-row response, and unsupported-method behavior."
     },
     "api:/api/v1/aurora/health:apps/web/src/legacy-api-routes/v1/aurora/health/route.ts": {
       "status": "migrated",

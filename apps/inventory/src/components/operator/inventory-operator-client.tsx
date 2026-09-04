@@ -429,6 +429,7 @@ export function InventoryOperatorClient({
                   data.categories.data?.pages[0]?.count ?? categories.length,
               }}
               costingProfiles={data.costingProfiles.data?.data ?? []}
+              filters={data.filters}
               formOptions={data.formOptions.data}
               onTabChange={(tab) => {
                 void data.setFilters({ status: 'all' });
@@ -451,6 +452,7 @@ export function InventoryOperatorClient({
           {!isLoading && !isError && view === 'stock' ? (
             <StockWorkspacePanel
               costingProfiles={data.costingProfiles.data?.data ?? []}
+              filters={data.filters}
               formOptions={data.formOptions.data}
               pagination={{
                 fetchNextPage: () => {

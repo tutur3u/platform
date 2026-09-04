@@ -13,6 +13,7 @@ import type {
 const PAGE_SIZE = 50;
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 const REVALIDATE_LIST_CONCURRENCY = 2;
+const EMPTY_PAGINATION: Record<string, ListPaginationState> = {};
 
 function hasFreshLocalMutation(task: Task) {
   const localTask = task as Task & { _localMutationAt?: number };
@@ -46,13 +47,14 @@ function hasLocallyProtectedMoveDifference(task: Task, incomingTask: Task) {
  */
 export function useProgressiveBoardLoader(
   wsId: string,
-  boardId: string
+  boardId: string,
+  initialPagination: Record<string, ListPaginationState> = EMPTY_PAGINATION
 ): ProgressiveLoaderValue {
   const queryClient = useQueryClient();
-  const [pagination, setPagination] = useState<
-    Record<string, ListPaginationState>
-  >({});
-  const paginationRef = useRef<Record<string, ListPaginationState>>({});
+  const [pagination, setPagination] =
+    useState<Record<string, ListPaginationState>>(initialPagination);
+  const paginationRef =
+    useRef<Record<string, ListPaginationState>>(initialPagination);
   const listOptionsRef = useRef<Record<string, ProgressiveLoadListPageOptions>>(
     {}
   );
@@ -60,6 +62,21 @@ export function useProgressiveBoardLoader(
   useEffect(() => {
     paginationRef.current = pagination;
   }, [pagination]);
+
+  useEffect(() => {
+    if (Object.keys(initialPagination).length === 0) return;
+
+    setPagination((current) => {
+      const missingEntries = Object.entries(initialPagination).filter(
+        ([listId]) => !current[listId]
+      );
+      if (missingEntries.length === 0) return current;
+
+      const hydrated = { ...current, ...Object.fromEntries(missingEntries) };
+      paginationRef.current = hydrated;
+      return hydrated;
+    });
+  }, [initialPagination]);
 
   const loadListPage = useCallback(
     async (
@@ -219,6 +236,7 @@ export function useProgressiveBoardLoader(
       const exactCount = pageResults.find(
         (result) => typeof result.count === 'number'
       )?.count;
+      const hasAuthoritativeCount = typeof exactCount === 'number';
       const loadedThrough = targetPage * PAGE_SIZE + lastPageTasks.length;
       const totalCount =
         typeof exactCount === 'number'
@@ -267,7 +285,7 @@ export function useProgressiveBoardLoader(
               continue;
             }
 
-            if (hasFreshLocalMutation(task)) {
+            if (!hasAuthoritativeCount || hasFreshLocalMutation(task)) {
               merged.push(task);
             }
           }

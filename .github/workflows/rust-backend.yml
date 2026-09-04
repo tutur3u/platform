@@ -24,6 +24,7 @@ on:
       - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
+      - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
   push:
     branches: ["main", "production"]
@@ -49,6 +50,7 @@ on:
       - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
+      - "tuturuuu.ci.ts"
       - "tuturuuu.ts"
   workflow_dispatch:
     inputs:
@@ -107,7 +109,7 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Restore toolchain-aware Cargo cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: backend
           key: native-and-worker
@@ -160,7 +162,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.0
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -331,7 +333,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.0
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -485,7 +487,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.0
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -502,7 +504,7 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Restore toolchain-aware Cargo cache
-        uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: backend
           key: native-and-worker
@@ -546,7 +548,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.0
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -592,7 +594,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.3.14
+          bun-version: 1.4.0
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7

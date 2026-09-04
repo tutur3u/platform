@@ -1,12 +1,5 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
@@ -70,21 +63,10 @@ async function getDataFromSession({
   req: Request;
   wsId: string;
 }) {
-  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ wsId, request: req });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, wsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId: normalizedWsId } = authorization.value;
 
   if (!permissions.containsPermission('view_inventory')) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });

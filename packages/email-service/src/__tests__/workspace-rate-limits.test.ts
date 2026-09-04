@@ -17,6 +17,7 @@ vi.mock('../providers/ses', () => ({
 }));
 
 import { EmailService } from '../email-service';
+import { CredentialsError } from '../errors';
 import { getWorkspaceEmailRateLimitOverrides } from '../workspace-rate-limits';
 
 describe('workspace email rate limit overrides', () => {
@@ -158,8 +159,8 @@ describe('workspace email rate limit overrides', () => {
   it('throws for missing workspace credentials outside dev mode', async () => {
     credentialRow = null;
 
-    await expect(EmailService.fromWorkspace('ws-1')).rejects.toThrow(
-      'No email credentials found for workspace ws-1'
-    );
+    const promise = EmailService.fromWorkspace('ws-1');
+    await expect(promise).rejects.toBeInstanceOf(CredentialsError);
+    await expect(promise).rejects.toMatchObject({ wsId: 'ws-1' });
   });
 });

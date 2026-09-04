@@ -22,7 +22,7 @@ class DeviceLocalAuthService implements LocalAuthService {
         return false;
       }
 
-      return _localAuthentication.authenticate(
+      return await _localAuthentication.authenticate(
         localizedReason: reason,
         persistAcrossBackgrounding: true,
       );
@@ -40,7 +40,7 @@ class DeviceLocalAuthService implements LocalAuthService {
   @override
   Future<bool> isDeviceSupported() async {
     try {
-      return _localAuthentication.isDeviceSupported();
+      return await _localAuthentication.isDeviceSupported();
     } on Object catch (error, stackTrace) {
       developer.log(
         'local authentication support check failed',

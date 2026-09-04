@@ -40,12 +40,17 @@ export async function getUserGroupMembershipsForActor(
   wsId: string,
   actorAuthUid: string
 ): Promise<string[]> {
-  const workspaceUser = await getWorkspaceUserLinkForUser(wsId, actorAuthUid);
+  // Satellite pages identify the actor with a Tuturuuu app-session JWT, not a
+  // Supabase browser cookie. Reusing the implicit cookie client here turns the
+  // lookup into an anonymous query and silently reports zero assigned groups.
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const workspaceUser = await getWorkspaceUserLinkForUser(wsId, actorAuthUid, {
+    authorizationClient: sbAdmin,
+  });
   const userId =
     workspaceUser?.virtual_user_id ?? workspaceUser?.platform_user_id;
   if (!userId) return [];
 
-  const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
     .select('group_id')
@@ -57,6 +62,18 @@ export async function getUserGroupMembershipsForActor(
       (data ?? []).map((membership) => membership.group_id).filter(Boolean)
     )
   ) as string[];
+}
+
+export async function verifyGroupAccessForActor(
+  wsId: string,
+  groupId: string,
+  actorAuthUid: string
+) {
+  const groupIds = await getUserGroupMembershipsForActor(wsId, actorAuthUid);
+  if (!groupIds.includes(groupId)) {
+    console.error(`User does not have access to group ${groupId}`);
+    notFound();
+  }
 }
 
 export async function verifyGroupAccess(wsId: string, groupId: string) {

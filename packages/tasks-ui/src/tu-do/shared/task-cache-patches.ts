@@ -18,6 +18,13 @@ type MyCompletedTasksCache = {
   }>;
 };
 
+type OptimisticallyMutatedTask = Task & {
+  _localMutationAt?: number;
+  _optimisticMutationIds?: string[];
+};
+
+let optimisticMutationSequence = 0;
+
 export type VisibleTaskCacheSnapshot = {
   boardTaskEntries: [QueryKey, Task[] | undefined][];
   taskEntries: [QueryKey, Task | undefined][];
@@ -203,6 +210,18 @@ export function getTaskFromVisibleCaches({
   taskId: string;
   fallback?: Task;
 }): Task | undefined {
+  // Board actions must prefer the board projection. Personal-board external
+  // tasks carry their source workspace metadata only on that projection; a
+  // previously opened task-detail cache can otherwise route mutations to the
+  // personal workspace instead of the task's source workspace.
+  const boardTaskEntries = queryClient.getQueriesData<Task[]>({
+    predicate: (query) => isBoardTaskQuery(query.queryKey, boardId),
+  });
+  for (const [, tasks] of boardTaskEntries) {
+    const task = tasks?.find((entry) => entry.id === taskId);
+    if (task) return task;
+  }
+
   const taskDetail = queryClient.getQueryData<Task>(['task', taskId]);
   if (taskDetail) return taskDetail;
 
@@ -212,14 +231,6 @@ export function getTaskFromVisibleCaches({
   });
   for (const [, entry] of workspaceTaskEntries) {
     if (entry?.task) return entry.task;
-  }
-
-  const boardTaskEntries = queryClient.getQueriesData<Task[]>({
-    predicate: (query) => isBoardTaskQuery(query.queryKey, boardId),
-  });
-  for (const [, tasks] of boardTaskEntries) {
-    const task = tasks?.find((entry) => entry.id === taskId);
-    if (task) return task;
   }
 
   return fallback;
@@ -292,6 +303,92 @@ export function patchTaskInVisibleCaches({
     boardId,
     taskIds: [taskId],
     updater,
+  });
+}
+
+export function isTaskMutationPending(task?: Task): boolean {
+  return Boolean(
+    (task as OptimisticallyMutatedTask | undefined)?._optimisticMutationIds
+      ?.length
+  );
+}
+
+export function applyOptimisticTaskPatch({
+  queryClient,
+  boardId,
+  taskIds,
+  updater,
+}: {
+  queryClient: QueryClient;
+  boardId: string;
+  taskIds: string[];
+  updater: (task: Task) => Task;
+}): string {
+  const mutationId = `task-mutation-${Date.now()}-${++optimisticMutationSequence}`;
+
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks', boardId] },
+    { revert: false }
+  );
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks-full', boardId] },
+    { revert: false }
+  );
+
+  patchTasksInVisibleCaches({
+    queryClient,
+    boardId,
+    taskIds,
+    updater: (task) => {
+      const current = task as OptimisticallyMutatedTask;
+      const nextTask = updater(task) as OptimisticallyMutatedTask;
+      return {
+        ...nextTask,
+        _localMutationAt: Date.now(),
+        _optimisticMutationIds: [
+          ...new Set([...(current._optimisticMutationIds ?? []), mutationId]),
+        ],
+      } as Task;
+    },
+  });
+
+  return mutationId;
+}
+
+export function settleOptimisticTaskPatch({
+  queryClient,
+  boardId,
+  taskIds,
+  mutationId,
+  clearLocalMutationAt = false,
+}: {
+  queryClient: QueryClient;
+  boardId: string;
+  taskIds: string[];
+  mutationId: string;
+  clearLocalMutationAt?: boolean;
+}) {
+  patchTasksInVisibleCaches({
+    queryClient,
+    boardId,
+    taskIds,
+    updater: (task) => {
+      const nextTask = { ...(task as OptimisticallyMutatedTask) };
+      const remainingMutationIds = (
+        nextTask._optimisticMutationIds ?? []
+      ).filter((id) => id !== mutationId);
+
+      if (remainingMutationIds.length > 0) {
+        nextTask._optimisticMutationIds = remainingMutationIds;
+      } else {
+        delete nextTask._optimisticMutationIds;
+        if (clearLocalMutationAt) {
+          delete nextTask._localMutationAt;
+        }
+      }
+
+      return nextTask;
+    },
   });
 }
 
@@ -391,4 +488,49 @@ export function restoreTasksFromVisibleCacheSnapshot({
       )
     );
   }
+}
+
+function getTasksFromSnapshot(snapshot: VisibleTaskCacheSnapshot) {
+  const previousTasks = new Map<string, Task>();
+
+  for (const [, task] of snapshot.taskEntries) {
+    if (task) previousTasks.set(task.id, task);
+  }
+  for (const [, entry] of snapshot.workspaceTaskEntries) {
+    if (entry?.task && !previousTasks.has(entry.task.id)) {
+      previousTasks.set(entry.task.id, entry.task);
+    }
+  }
+  for (const [, tasks] of snapshot.boardTaskEntries) {
+    for (const task of tasks ?? []) {
+      if (!previousTasks.has(task.id)) previousTasks.set(task.id, task);
+    }
+  }
+
+  return previousTasks;
+}
+
+export function restoreTaskFieldsFromVisibleCacheSnapshot({
+  queryClient,
+  boardId,
+  snapshot,
+  taskIds,
+  restore,
+}: {
+  queryClient: QueryClient;
+  boardId: string;
+  snapshot: VisibleTaskCacheSnapshot;
+  taskIds: string[];
+  restore: (currentTask: Task, previousTask: Task) => Task;
+}) {
+  const previousTasks = getTasksFromSnapshot(snapshot);
+  patchTasksInVisibleCaches({
+    queryClient,
+    boardId,
+    taskIds,
+    updater: (currentTask) => {
+      const previousTask = previousTasks.get(currentTask.id);
+      return previousTask ? restore(currentTask, previousTask) : currentTask;
+    },
+  });
 }

@@ -1,12 +1,11 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createCustomerSession } from '@tuturuuu/payment-core/customer-helper';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // PATCH: Reactivate subscription (cancel_at_period_end = false)
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
   const { subscriptionId } = await params;
@@ -18,12 +17,11 @@ export async function PATCH(
     );
   }
 
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
 
   const { data: subscription } = await supabase
     .from('workspace_subscriptions')
@@ -111,7 +109,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
   const { subscriptionId } = await params;
@@ -123,12 +121,11 @@ export async function DELETE(
     );
   }
 
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
+  const actor = await resolveSatelliteRequestActor(req, ['pay', 'platform']);
+  if (!actor) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { admin: supabase, user } = actor;
 
   const { data: subscription } = await supabase
     .from('workspace_subscriptions')

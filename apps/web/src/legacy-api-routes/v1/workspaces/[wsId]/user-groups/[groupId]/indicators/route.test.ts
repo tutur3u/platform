@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
   const containsPermission = vi.fn(() => true);
   const privateRpc = vi.fn();
   const serverLoggerError = vi.fn();
+  const withoutPermission = vi.fn(() => false);
 
   const adminSupabase = {
     schema: vi.fn(() => ({
@@ -22,6 +23,7 @@ const mocks = vi.hoisted(() => {
     containsPermission,
     privateRpc,
     serverLoggerError,
+    withoutPermission,
   };
 });
 
@@ -32,6 +34,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
     ...actual,
     getPermissions: vi.fn(async () => ({
       containsPermission: mocks.containsPermission,
+      withoutPermission: mocks.withoutPermission,
     })),
   };
 });
@@ -56,6 +59,7 @@ describe('user group indicators route', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.containsPermission.mockReturnValue(true);
+    mocks.withoutPermission.mockReturnValue(false);
     mocks.privateRpc.mockResolvedValue({
       data: {
         factor: 1,
@@ -110,6 +114,75 @@ describe('user group indicators route', () => {
           name: 'Quiz score',
           unit: 'points',
         },
+        p_ws_id: WORKSPACE_ID,
+      }
+    );
+  });
+
+  it('denies PATCH without score-update permission before privileged work', async () => {
+    mocks.withoutPermission.mockReturnValue(true);
+    const { PATCH } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route'
+    );
+
+    const response = await PATCH(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${WORKSPACE_ID}/user-groups/${GROUP_ID}/indicators`,
+        {
+          body: JSON.stringify([]),
+          method: 'PATCH',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          groupId: GROUP_ID,
+          wsId: WORKSPACE_ID,
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.withoutPermission).toHaveBeenCalledWith(
+      'update_user_groups_scores'
+    );
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
+  });
+
+  it('allows authorized PATCH through the live Web re-export', async () => {
+    const values = [
+      {
+        indicator_id: METRIC_ID,
+        user_id: ACTOR_AUTH_UID,
+        value: 88,
+      },
+    ];
+    const { PATCH } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route'
+    );
+
+    const response = await PATCH(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${WORKSPACE_ID}/user-groups/${GROUP_ID}/indicators`,
+        {
+          body: JSON.stringify(values),
+          method: 'PATCH',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          groupId: GROUP_ID,
+          wsId: WORKSPACE_ID,
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.privateRpc).toHaveBeenCalledWith(
+      'admin_upsert_user_indicator_values_with_audit_actor',
+      {
+        p_actor_auth_uid: ACTOR_AUTH_UID,
+        p_group_id: GROUP_ID,
+        p_values: values,
         p_ws_id: WORKSPACE_ID,
       }
     );

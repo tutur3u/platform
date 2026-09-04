@@ -274,21 +274,25 @@ function PresenceAvatar({
             >
               <Avatar
                 className={cn(
-                  'size-7 border-2 border-background sm:size-8',
+                  'size-7 border-2 border-background ring-inset sm:size-8',
                   // Mode: active-same — solid cyan ring
                   mode === 'active-same' && 'ring-2 ring-dynamic-cyan/70',
                   // Mode: active-different — dashed pink ring
                   mode === 'active-different' &&
-                    'outline-dashed outline-2 outline-dynamic-pink/60 outline-offset-0',
+                    'outline-dashed outline-2 outline-dynamic-pink/60 outline-offset-[-2px]',
                   // Mode: active-task — solid orange ring
                   mode === 'active-task' && 'ring-2 ring-dynamic-orange/70',
                   // Mode: away — dotted ring with muted color
                   mode === 'away' &&
-                    'outline-dotted outline-2 outline-muted-foreground/30 outline-offset-0'
+                    'outline-dotted outline-2 outline-muted-foreground/30 outline-offset-[-2px]'
                 )}
               >
                 {user.avatar_url ? (
-                  <AvatarImage src={user.avatar_url} alt={displayName} />
+                  <AvatarImage
+                    src={user.avatar_url}
+                    alt={displayName}
+                    className="object-cover"
+                  />
                 ) : null}
                 <AvatarFallback
                   className={cn(
@@ -371,14 +375,18 @@ function PresenceAvatar({
         <div className="flex items-center gap-2.5">
           <Avatar
             className={cn(
-              'size-9 ring-1',
+              'size-9 ring-1 ring-inset',
               mode === 'away'
                 ? 'opacity-60 ring-muted grayscale-[40%]'
                 : 'ring-border'
             )}
           >
             {user.avatar_url ? (
-              <AvatarImage src={user.avatar_url} alt={displayName} />
+              <AvatarImage
+                src={user.avatar_url}
+                alt={displayName}
+                className="object-cover"
+              />
             ) : null}
             <AvatarFallback className="font-semibold text-foreground text-xs">
               {user.display_name || user.email ? (

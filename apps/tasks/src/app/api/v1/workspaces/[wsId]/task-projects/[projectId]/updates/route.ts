@@ -89,8 +89,8 @@ export async function POST(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get current user
     const { user, authError: userError } =
@@ -194,8 +194,8 @@ export async function GET(
 ) {
   try {
     const { wsId, projectId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
     const supabase = await createClient(request);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Get current user
     const { user, authError: userError } =

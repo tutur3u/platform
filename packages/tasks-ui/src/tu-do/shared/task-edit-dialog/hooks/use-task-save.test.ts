@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   mockCreateTask,
@@ -32,7 +33,8 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
   })),
 }));
 
-vi.mock('@tuturuuu/utils/task-helper', () => ({
+vi.mock('@tuturuuu/utils/task-helper', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/utils/task-helper')>()),
   createTask: mockCreateTask,
 }));
 
@@ -45,6 +47,10 @@ import {
   handleCreateTask,
   persistPendingTaskRelationships,
 } from './use-task-save';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe('persistPendingTaskRelationships', () => {
   it('persists pending relationships in deterministic order and invalidates affected tasks', async () => {
@@ -221,6 +227,99 @@ describe('applyPendingRelationshipSummary', () => {
 });
 
 describe('handleCreateTask', () => {
+  it('renders and closes immediately while task creation is pending', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const onClose = vi.fn();
+    let resolveCreateTask!: (task: Task) => void;
+    const createTaskPromise = new Promise<Task>((resolve) => {
+      resolveCreateTask = resolve;
+    });
+
+    queryClient.setQueryData(['tasks', 'board-1'], []);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'filtered'], []);
+    mockCreateTask.mockReturnValueOnce(createTaskPromise);
+
+    const savePromise = handleCreateTask({
+      autoSchedule: false,
+      boardId: 'board-1',
+      broadcast: null,
+      calendarHours: null,
+      createMultiple: false,
+      descriptionString: null,
+      descriptionYjsState: null,
+      endDate: undefined,
+      estimationPoints: null,
+      isPersonalWorkspace: false,
+      isSplittable: false,
+      maxSplitDurationMinutes: null,
+      minSplitDurationMinutes: null,
+      name: 'Instant task',
+      onClose,
+      onUpdate: vi.fn(),
+      priority: null,
+      queryClient,
+      selectedAssignees: [],
+      selectedLabels: [],
+      selectedListId: 'list-1',
+      selectedProjects: [],
+      setDescription: vi.fn(),
+      setEndDate: vi.fn(),
+      setEstimationPoints: vi.fn(),
+      setIsLoading: vi.fn(),
+      setIsSaving: vi.fn(),
+      setName: vi.fn(),
+      setPriority: vi.fn(),
+      setSelectedAssignees: vi.fn(),
+      setSelectedLabels: vi.fn(),
+      setSelectedProjects: vi.fn(),
+      setStartDate: vi.fn(),
+      startDate: undefined,
+      toast: vi.fn(),
+      totalDuration: null,
+      user: { id: 'user-1' },
+      userTaskSettings: { task_auto_assign_to_self: false },
+      wsId: 'ws-1',
+    });
+
+    const pendingTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
+    expect(pendingTasks).toEqual([
+      expect.objectContaining({
+        _isOptimistic: true,
+        list_id: 'list-1',
+        name: 'Instant task',
+      }),
+    ]);
+    expect(
+      queryClient.getQueryData(['tasks-full', 'board-1', 'filtered'])
+    ).toEqual(pendingTasks);
+    expect(onClose).toHaveBeenCalledOnce();
+
+    resolveCreateTask({
+      assignees: [],
+      created_at: '2026-08-14T00:00:00.000Z',
+      id: 'task-new',
+      labels: [],
+      list_id: 'list-1',
+      name: 'Instant task',
+      projects: [],
+    } as unknown as Task);
+    await savePromise;
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      expect.objectContaining({
+        id: 'task-new',
+        name: 'Instant task',
+      }),
+    ]);
+    expect(
+      queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0] as Task & {
+        _isOptimistic?: boolean;
+      }
+    ).not.toHaveProperty('_isOptimistic');
+  });
+
   it('dispatches the create sound cue once after successful task creation', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },

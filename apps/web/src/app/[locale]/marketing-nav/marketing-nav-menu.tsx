@@ -1,54 +1,11 @@
 'use client';
 
-import {
-  ArrowRight,
-  Bot,
-  Boxes,
-  Building2,
-  Calendar,
-  CalendarClock,
-  CheckCircle2,
-  FileText,
-  Folder,
-  GraduationCap,
-  Mail,
-  MessageSquare,
-  Package,
-  QrCode,
-  Store,
-  Users,
-  Wallet,
-  Zap,
-} from '@tuturuuu/icons/lucide-static';
+import { ArrowRight } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { ComponentType } from 'react';
 import { useNavigation } from '../shared/navigation-config';
 import { type NavMenu, NavMenuBar } from './nav-dropdown';
-import { MARKETING_PRODUCT_GROUPS } from './products';
-
-type IconComponent = ComponentType<{ className?: string }>;
-
-const productIcons: Record<string, IconComponent> = {
-  calendar: Calendar,
-  tasks: CheckCircle2,
-  meet: Users,
-  workflows: Zap,
-  documents: FileText,
-  drive: Folder,
-  mail: Mail,
-  ai: Bot,
-  finance: Wallet,
-  crm: Building2,
-  inventory: Package,
-  lms: GraduationCap,
-  track: CalendarClock,
-  forms: FileText,
-  chat: MessageSquare,
-  qr: QrCode,
-  storefront: Store,
-  hive: Boxes,
-};
+import { MARKETING_PRODUCT_GROUPS, MARKETING_PRODUCT_ICONS } from './products';
 
 const linkClassName = cn(
   'inline-flex h-9 items-center rounded-lg px-3 font-medium text-foreground/70 text-sm transition-colors',
@@ -85,7 +42,7 @@ export function MarketingNavMenu() {
                 </div>
                 <div className="grid">
                   {group.items.map((product) => {
-                    const Icon = productIcons[product.key];
+                    const Icon = MARKETING_PRODUCT_ICONS[product.key];
                     return (
                       <a
                         className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors duration-200 hover:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -5,24 +5,29 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import type { KeyboardEventHandler } from 'react';
 import type { AppOpenMode } from './apps-launcher-catalog';
 
 export function AppsLauncherToolbar({
+  activeAppId,
   currentLabel,
   mode,
   newLabel,
   onModeChange,
   onQueryChange,
+  onSearchKeyDown,
   openModeLabel,
   openOptionsLabel,
   query,
   searchLabel,
 }: {
+  activeAppId?: string;
   currentLabel: string;
   mode: AppOpenMode;
   newLabel: string;
   onModeChange: (mode: AppOpenMode) => void;
   onQueryChange: (query: string) => void;
+  onSearchKeyDown: KeyboardEventHandler<HTMLInputElement>;
   openModeLabel: string;
   openOptionsLabel: string;
   query: string;
@@ -35,7 +40,9 @@ export function AppsLauncherToolbar({
     >
       <div className="hidden items-center gap-3 md:flex">
         <SearchField
+          activeAppId={activeAppId}
           onQueryChange={onQueryChange}
+          onSearchKeyDown={onSearchKeyDown}
           query={query}
           searchLabel={searchLabel}
         />
@@ -80,8 +87,10 @@ export function AppsLauncherToolbar({
           sideOffset={8}
         >
           <SearchField
+            activeAppId={activeAppId}
             mobile
             onQueryChange={onQueryChange}
+            onSearchKeyDown={onSearchKeyDown}
             query={query}
             searchLabel={searchLabel}
           />
@@ -129,13 +138,17 @@ export function AppsLauncherToolbar({
 }
 
 function SearchField({
+  activeAppId,
   mobile = false,
   onQueryChange,
+  onSearchKeyDown,
   query,
   searchLabel,
 }: {
+  activeAppId?: string;
   mobile?: boolean;
   onQueryChange: (query: string) => void;
+  onSearchKeyDown: KeyboardEventHandler<HTMLInputElement>;
   query: string;
   searchLabel: string;
 }) {
@@ -146,11 +159,14 @@ function SearchField({
         className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
       />
       <Input
+        aria-activedescendant={activeAppId}
+        aria-controls="apps-launcher-results"
         aria-label={searchLabel}
         className="h-9 bg-background pl-9 shadow-none"
         data-mobile={mobile || undefined}
         data-slot="apps-launcher-search"
         onChange={(event) => onQueryChange(event.target.value)}
+        onKeyDown={onSearchKeyDown}
         placeholder={searchLabel}
         type="search"
         value={query}

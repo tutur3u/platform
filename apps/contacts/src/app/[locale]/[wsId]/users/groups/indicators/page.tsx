@@ -1,13 +1,15 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getContactsWorkspacePermissions } from '@/lib/workspace';
+import {
+  getContactsWorkspacePermissions,
+  getContactsWorkspaceUserLink,
+} from '@/lib/workspace';
 import GroupIndicatorsSelector from './group-indicators-selector';
 
 export const metadata: Metadata = {
@@ -33,16 +35,16 @@ export default async function GroupIndicatorsPage({ params }: Props) {
         // Satellites resolve the actor from Tuturuuu app-session auth, never via
         // Supabase-backed user helpers (see the internal-app-auth guard).
         const actor = await getSatelliteAppSessionUser('contacts');
-        const user = actor?.id
-          ? await getWorkspaceUserLinkForUser(wsId, actor.id)
-          : null;
+        const [user, permissions] = await Promise.all([
+          getContactsWorkspaceUserLink(wsId, actor ?? undefined),
+          getContactsWorkspacePermissions(wsId, actor ?? undefined),
+        ]);
 
         if (!user) {
           console.error('Failed to fetch current workspace user');
           notFound();
         }
 
-        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
 

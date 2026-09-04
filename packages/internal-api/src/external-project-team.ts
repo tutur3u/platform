@@ -17,6 +17,11 @@ export type WorkspaceExternalProjectMembersContext = {
   workspaceId: string;
 };
 
+export type WorkspaceExternalProjectInvitationOptions =
+  InternalApiClientOptions & {
+    roleIds?: string[];
+  };
+
 function externalProjectMembersPath(workspaceId: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/members`;
 }
@@ -55,7 +60,7 @@ export async function listWorkspaceExternalProjectMembers(
 export async function inviteWorkspaceExternalProjectMembers(
   workspaceId: string,
   emails: string[],
-  options?: InternalApiClientOptions
+  options?: WorkspaceExternalProjectInvitationOptions
 ) {
   const client = getInternalApiClient(options);
   return client.json<{
@@ -64,13 +69,33 @@ export async function inviteWorkspaceExternalProjectMembers(
     successCount: number;
     totalRequested: number;
   }>(`${externalProjectMembersPath(workspaceId)}/invite`, {
-    body: JSON.stringify({ emails }),
+    body: JSON.stringify({ emails, roleIds: options?.roleIds ?? [] }),
     cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
     },
     method: 'POST',
   });
+}
+
+export async function updateWorkspaceExternalProjectInvitationRoles(
+  workspaceId: string,
+  email: string,
+  roleIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `${externalProjectMembersPath(workspaceId)}/invite`,
+    {
+      body: JSON.stringify({ email, roleIds }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
+    }
+  );
 }
 
 export async function removeWorkspaceExternalProjectMember(

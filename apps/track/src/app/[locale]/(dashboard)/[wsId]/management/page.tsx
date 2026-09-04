@@ -1,5 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -44,9 +44,7 @@ export default async function TimeTrackerManagementPage({
 
         const isRootUser = isValidTuturuuuEmail(user.email || '');
         if (!isRootUser) notFound();
-
-        const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
-        if (!isRootWorkspace) notFound();
+        const supabase = await createAdminClient({ noCookie: true });
 
         // Parse search parameters
         const period =
@@ -59,14 +57,19 @@ export default async function TimeTrackerManagementPage({
 
         // Get paginated sessions and stats
         const [groupedSessionsResult, stats] = await Promise.all([
-          getGroupedSessionsPaginated(wsId, period, {
-            page,
-            limit,
-            search,
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
-          }),
-          getTimeTrackingStats(wsId),
+          getGroupedSessionsPaginated(
+            wsId,
+            period,
+            {
+              page,
+              limit,
+              search,
+              startDate: startDate || undefined,
+              endDate: endDate || undefined,
+            },
+            supabase
+          ),
+          getTimeTrackingStats(wsId, undefined, supabase),
         ]);
 
         return (

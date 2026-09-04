@@ -106,6 +106,9 @@ export const TutoringSessionListQuerySchema = z.object({
   studentUserId: z.string().uuid().optional(),
   reasonType: TutoringReasonTypeSchema.optional(),
   attendanceStatus: TutoringAttendanceStatusSchema.optional(),
+  // A forward-looking range reads chronologically; history reads newest-first,
+  // which stays the default so existing callers are unaffected.
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

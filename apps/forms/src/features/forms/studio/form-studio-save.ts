@@ -32,6 +32,7 @@ export function useFormStudioSave({
   setSecondsUntilAutosave,
   primarySaveButtonRef,
   setShowFloatingSave,
+  onSaved,
 }: {
   t: FormStudioState['t'];
   form: FormStudioState['form'];
@@ -51,6 +52,8 @@ export function useFormStudioSave({
   setSecondsUntilAutosave: FormStudioState['setSecondsUntilAutosave'];
   primarySaveButtonRef: FormStudioState['primarySaveButtonRef'];
   setShowFloatingSave: FormStudioState['setShowFloatingSave'];
+  /** Notifies collaborators that the stored document changed. */
+  onSaved?: () => void;
 }) {
   const getSaveValidationMessage = (
     error: ReturnType<typeof findFirstValidationError>
@@ -135,9 +138,15 @@ export function useFormStudioSave({
       if (!isAutosave) {
         form.reset(normalizedPayload, { keepValues: true });
       }
+
+      // Tell other editors in this form's realtime channel that the server copy
+      // moved. Fired for autosaves too — an autosave changes the stored
+      // document just as much as an explicit save does.
+      onSaved?.();
+
       return result;
     },
-    [form, mode, pathname, router, saveMutation, workspaceSlug]
+    [form, mode, onSaved, pathname, router, saveMutation, workspaceSlug]
   );
 
   const handleSave = form.handleSubmit(

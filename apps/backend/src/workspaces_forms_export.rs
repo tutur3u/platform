@@ -513,7 +513,7 @@ fn build_export_response(definition: &FormDefinition) -> BackendResponse {
         allow: None,
         body: Value::Null,
         body_empty: false,
-        body_text: Some(body),
+        body_text: Some(body.into()),
         cache_control: None,
         content_type: Some("application/json; charset=utf-8"),
         headers: vec![(

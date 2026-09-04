@@ -14,18 +14,21 @@ export function createNavbarActions(
 ) {
   return async function NavbarActions({
     hideMetadata = false,
+    userId,
   }: {
     hideMetadata?: boolean;
+    userId?: string;
   }) {
     const t = await getTranslations();
-    const appSession = await getSatelliteAppSession();
+    const appSession = userId ? null : await getSatelliteAppSession();
+    const isAuthenticated = Boolean(userId || appSession);
 
     return (
       <div className="relative flex w-full">
         <div className="flex w-full flex-col gap-2">
           {/* Main actions row */}
           <div className="flex w-full items-center gap-1">
-            {appSession ? (
+            {isAuthenticated ? (
               <>
                 <div className="flex-1">
                   <Suspense
@@ -36,7 +39,7 @@ export function createNavbarActions(
                     <UserNav hideMetadata={hideMetadata} />
                   </Suspense>
                 </div>
-                <NotificationPopover />
+                <NotificationPopover userId={userId ?? appSession?.sub} />
               </>
             ) : (
               <>

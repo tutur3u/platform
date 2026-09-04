@@ -10,13 +10,17 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
 - **Priority:** P1
 - **Effort:** M
 - **Risk:** MED
 - **Category:** Correctness / Performance / Notifications
-- **Depends on:** none
+- **Depends on:** generated database type ownership transfer
 - **Planned at:** commit `68a1457aed`, 2026-08-10
+
+Execution is blocked while active Mail and Zalo lanes retain generated database
+type ownership. This plan's new claim boundary requires `bun sb:typegen` and
+includes `packages/types/src/supabase.ts`; do not edit through those owners.
 
 ## Why this matters
 
@@ -57,7 +61,7 @@ new additive migration with `bun sb:new`; never run production push commands.
 | Migration validation | `bun sb:up` followed by `bun sb:typegen` | local migration applies; generated types reflect RPC/table changes |
 | Tasks typecheck | `bun type-check:tasks` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Tasks build | `bun --cwd apps/tasks run build` | exit 0 |
+| Tasks build | `bun run --cwd apps/tasks build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

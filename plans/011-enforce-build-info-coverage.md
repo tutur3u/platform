@@ -10,7 +10,11 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
+- **Blocked by:** mandatory Apps/Tools production build gate cannot complete in
+  the current environment because Turbopack cannot spawn/bind its PostCSS
+  worker; reviewed uncommitted work remains in
+  `.worktrees/fix-build-info-coverage`
 - **Priority:** P1
 - **Effort:** S
 - **Risk:** LOW
@@ -56,11 +60,20 @@ owns either API directory or the chosen validator path.
 - New `apps/tools/src/app/api/build-info/route.ts`
 - New `scripts/ci/check-build-info-coverage.js`
 - New `scripts/ci/check-build-info-coverage.test.js`
+- `tuturuuu.ts` to make `VercelWorkflowTarget` a discriminated union: every
+  target has `framework: 'next' | 'tanstack-start'`; `next` targets also require
+  an explicit `buildInfoApp` identity. Mark only `tanstack-web` as
+  `tanstack-start`; set each Next target's identity to its existing handler
+  value, including the intentional `platform` deployment / `web` build-info
+  identity
 - `package.json` only if a named check command is required
 - Relevant release/deployment docs only if they enumerate provenance endpoints
 
 Do not change build metadata generation, deployment workflows, cache policy,
-or `vercelWorkflowTargets` membership.
+or `vercelWorkflowTargets` membership. The checker must inspect every registry
+entry, require the framework discriminator, and enforce the route only when the
+typed framework is `next`, using that entry's required `buildInfoApp`; it must
+not infer framework or identity from paths or maintain a separate allowlist.
 
 ## Git workflow
 
@@ -89,9 +102,12 @@ Create a small checker that loads `vercelWorkflowTargets`, validates each
 actionable missing/mismatched diagnostics. Keep filesystem and registry inputs
 injectable for tests.
 
-Do not hard-code a second target array. If a registry entry is intentionally not
-a Next app, encode that as typed metadata in `tuturuuu.ts` rather than an opaque
-checker allowlist.
+Do not hard-code a second target array. Add the required framework discriminator
+to `VercelWorkflowTarget` and every current entry. `tanstack-web` is the sole
+current `tanstack-start` target; all other current entries are `next` and must
+declare `buildInfoApp`. Preserve the existing Web handler identity as `web`
+while its deployment target remains `platform`. Reject an unknown/missing
+framework or missing Next identity rather than silently skipping it.
 
 **Verify:** fixture tests cover complete coverage, missing route, mismatched app
 identity, missing target root, and deterministic multiple-error output.
@@ -113,8 +129,8 @@ node --test scripts/ci/check-build-info-coverage.test.js
 node scripts/ci/check-build-info-coverage.js
 bun turbo:local run type-check --filter=@tuturuuu/apps --filter=@tuturuuu/tools
 bun check
-bun --cwd apps/apps run build
-bun --cwd apps/tools run build
+bun run --cwd apps/apps build
+bun run --cwd apps/tools build
 git diff --check
 ```
 
@@ -132,7 +148,8 @@ because this plan adds Next route handlers.
 
 ## STOP conditions
 
-Stop if a registered target is not a Next app, app identity differs from the
+Stop if a registered target uses a framework other than the explicitly modeled
+`next` or `tanstack-start` values, app identity differs from the
 deployment registry for an intentional reason, a route is intercepted by proxy
 behavior, or another non-terminal note claims an in-scope path. Reconcile the
 canonical data model rather than adding a silent exception.

@@ -39,6 +39,13 @@ describe('task UI Tailwind source boundary', () => {
 
     expect(taskGlobals).toContain('@import "@tuturuuu/ui/globals.css";');
     expect(taskGlobals).toContain('@source "./**/*.{ts,tsx}";');
+    expect(taskGlobals).toContain('@keyframes kanban-stream-content');
+    expect(taskGlobals).toContain(
+      '@media (prefers-reduced-motion: no-preference)'
+    );
+    expect(taskGlobals).toContain('[data-kanban-entrance="active"]');
+    expect(taskGlobals).not.toContain('filter: blur');
+    expect(taskGlobals).toContain('kanban-stream-list 640ms');
   });
 
   it.each([
@@ -57,5 +64,14 @@ describe('task UI Tailwind source boundary', () => {
     expect(readRepoFile('packages/ui/src/globals.css')).not.toContain(
       'tasks-ui'
     );
+  });
+
+  it('keeps hovered task cards on their border-colored glow without a hotkey ring', () => {
+    const taskCardSource = readRepoFile(
+      'packages/tasks-ui/src/tu-do/boards/boardId/task-card/task-card.tsx'
+    );
+
+    expect(taskCardSource).toContain('getCardColorClasses()');
+    expect(taskCardSource).not.toContain('data-[task-hotkey-target=true]:ring');
   });
 });

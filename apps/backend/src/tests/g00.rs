@@ -55,6 +55,39 @@ async fn onboarding_progress_requires_authenticated_user() {
 }
 
 #[tokio::test]
+async fn onboarding_progress_accepts_current_user_satellite_sessions() {
+    let config = backend_config_with_contact_data();
+    let token = app_session_token(&app_session_claims(
+        "tasks",
+        vec![APP_SESSION_SCOPE],
+        4_102_444_800,
+    ));
+    let outbound = RecordingOutboundClient::with_response(
+        200,
+        r#"[{"user_id":"app-session-user-1","current_step":"workspace"}]"#,
+    );
+
+    let response = handle_backend_request(
+        &config,
+        request_with_bearer("GET", ONBOARDING_PROGRESS_PATH, token),
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 200);
+    assert_eq!(response.body["user_id"], "app-session-user-1");
+    assert_eq!(response.body["current_step"], "workspace");
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0].method, OutboundMethod::Get);
+    assert_eq!(
+        calls[0].url,
+        "https://project-ref.supabase.co/rest/v1/onboarding_progress?select=*&user_id=eq.app-session-user-1&limit=1"
+    );
+}
+
+#[tokio::test]
 async fn onboarding_progress_reads_current_user_row() {
     let config = backend_config_with_contact_data();
     let outbound = RecordingOutboundClient::with_responses(vec![

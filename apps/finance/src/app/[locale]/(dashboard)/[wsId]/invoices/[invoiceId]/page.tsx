@@ -2,6 +2,7 @@ import InvoiceDetailsPage from '@tuturuuu/ui/finance/invoices/invoiceId/invoice-
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
+import { InvoiceAccessDenied } from '@/components/invoices/invoice-access-denied';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
@@ -17,8 +18,12 @@ export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
 
   const { wsId: id, invoiceId, locale } = await params;
   const context = await getFinanceWorkspaceContext(id);
-  if (!context || context.permissions.withoutPermission('view_invoices')) {
+  if (!context) {
     notFound();
+  }
+
+  if (context.permissions.withoutPermission('view_invoices')) {
+    return <InvoiceAccessDenied user={context.user} />;
   }
 
   return (

@@ -11,6 +11,10 @@ const nextConfig = createTuturuuuNextConfig({
   images: {
     unoptimized: true,
   },
+  // Keep jsdom on Node's module loader. Bundling isomorphic-dompurify into the
+  // server graph makes webpack copy jsdom's browser stylesheet into `.next`
+  // and can exhaust the dev server heap while compiling mailbox routes.
+  serverExternalPackages: ['isomorphic-dompurify'],
   async rewrites() {
     return {
       beforeFiles: [],

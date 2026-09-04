@@ -6,6 +6,10 @@ export default defineConfig({
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
       {
+        find: 'server-only',
+        replacement: resolve(__dirname, './src/test/server-only-stub.ts'),
+      },
+      {
         find: '@tuturuuu/internal-api/workspace-config-ids',
         replacement: resolve(
           __dirname,

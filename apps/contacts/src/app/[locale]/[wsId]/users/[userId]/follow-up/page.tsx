@@ -1,8 +1,5 @@
 import { AlertTriangleIcon } from '@tuturuuu/icons';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
@@ -41,8 +38,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
           notFound();
         }
         const t = await getTranslations();
-        const supabase = await createClient();
-        const sbAdmin = await createAdminClient();
+        const sbAdmin = await createAdminClient({ noCookie: true });
 
         const canCheckUserAttendance = containsPermission(
           'check_user_attendance'
@@ -50,7 +46,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
 
         // Check if user is eligible for lead generation email
         const { data: eligibility, error: eligibilityError } =
-          await supabase.rpc('check_guest_lead_eligibility', {
+          await sbAdmin.rpc('check_guest_lead_eligibility', {
             p_ws_id: wsId,
             p_user_id: userId,
           });
@@ -67,14 +63,14 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
         }
 
         // Fetch user info and their groups for context
-        const { data: user } = await supabase
+        const { data: user } = await sbAdmin
           .from('workspace_users')
           .select('id, full_name, email, ws_id, archived, archived_until, note')
           .eq('ws_id', wsId)
           .eq('id', userId)
           .maybeSingle();
 
-        const { data: userGroups } = await supabase
+        const { data: userGroups } = await sbAdmin
           .from('workspace_user_groups_users')
           .select(
             'group:workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(id, name, ws_id)'
@@ -89,7 +85,7 @@ export default async function GuestLeadFollowUpPage({ params }: Props) {
           .eq('ws_id', wsId)
           .maybeSingle();
 
-        const { data: minimumAttendance } = await supabase
+        const { data: minimumAttendance } = await sbAdmin
           .from('workspace_settings')
           .select('guest_user_checkup_threshold')
           .eq('ws_id', wsId)

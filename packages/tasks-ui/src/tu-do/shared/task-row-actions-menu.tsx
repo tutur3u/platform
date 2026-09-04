@@ -6,7 +6,6 @@ import {
   ExternalLink,
   MoreHorizontal,
   Pencil,
-  Timer,
   Trash2,
 } from '@tuturuuu/icons';
 import { useTaskActions } from '@tuturuuu/tasks-ui/hooks/use-task-actions';
@@ -44,6 +43,7 @@ import {
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import type { TaskAssigneeMemberSource } from '../providers/task-dialog-provider';
 import { useTasksHref } from '../tasks-route-context';
+import { TaskTimerMenuItem } from './task-timer-menu-item';
 
 interface TaskRowActionsMenuProps {
   task: Task;
@@ -207,16 +207,15 @@ export function TaskRowActionsMenu({
             {t('edit')}
           </DropdownMenuItem>
           {!isDocumentList && (
-            <DropdownMenuItem asChild>
-              <Link
-                href={`/${sourceWorkspaceId}/time-tracker/timer?taskSelect=${task.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Timer className="h-4 w-4 text-dynamic-blue" />
-                {t('start_tracking_time')}
-              </Link>
-            </DropdownMenuItem>
+            <TaskTimerMenuItem
+              disabled={isLoading}
+              enabled={menuOpen}
+              onStarted={() => setMenuOpen(false)}
+              taskDescription={task.description}
+              taskId={task.id}
+              taskName={task.name}
+              workspaceId={sourceWorkspaceId}
+            />
           )}
           {sourceBoardUrl && (
             <DropdownMenuItem asChild>

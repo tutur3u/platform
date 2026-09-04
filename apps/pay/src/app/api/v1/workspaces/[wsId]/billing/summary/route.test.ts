@@ -2,16 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   checkManageSubscriptionPermission: vi.fn(),
-  createAdminClient: vi.fn(),
   createPolarClient: vi.fn(),
   fetchSubscription: vi.fn(),
-  getAppSessionUserFromRequest: vi.fn(),
+  getPermissions: vi.fn(),
   isPersonalWorkspace: vi.fn(),
+  resolveSatelliteRequestActor: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/auth/app-session', () => ({
-  getAppSessionUserFromRequest: mocks.getAppSessionUserFromRequest,
-}));
 vi.mock('@tuturuuu/payment/polar/server', () => ({
   createPolarClient: mocks.createPolarClient,
 }));
@@ -19,10 +16,11 @@ vi.mock('@tuturuuu/payment-core/billing-helper', () => ({
   checkManageSubscriptionPermission: mocks.checkManageSubscriptionPermission,
   fetchSubscription: mocks.fetchSubscription,
 }));
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: mocks.createAdminClient,
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  resolveSatelliteRequestActor: mocks.resolveSatelliteRequestActor,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: mocks.getPermissions,
   isPersonalWorkspace: mocks.isPersonalWorkspace,
 }));
 
@@ -32,9 +30,12 @@ const context = { params: Promise.resolve({ wsId: 'ws-1' }) };
 
 describe('GET workspace billing summary', () => {
   beforeEach(() => {
-    mocks.createAdminClient.mockResolvedValue({ id: 'admin' });
     mocks.createPolarClient.mockReturnValue({ id: 'polar' });
-    mocks.getAppSessionUserFromRequest.mockReturnValue({ id: 'user-1' });
+    mocks.resolveSatelliteRequestActor.mockResolvedValue({
+      admin: { id: 'admin' },
+      user: { id: 'user-1' },
+    });
+    mocks.getPermissions.mockResolvedValue({ wsId: 'ws-1' });
     mocks.checkManageSubscriptionPermission.mockResolvedValue(true);
     mocks.isPersonalWorkspace.mockResolvedValue(false);
   });
@@ -44,7 +45,7 @@ describe('GET workspace billing summary', () => {
   });
 
   it('returns 401 without an authenticated user', async () => {
-    mocks.getAppSessionUserFromRequest.mockReturnValue(null);
+    mocks.resolveSatelliteRequestActor.mockResolvedValue(null);
 
     const response = await GET(new Request('https://pay.test'), context);
 

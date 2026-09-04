@@ -1,2 +1,115 @@
 @import "@tuturuuu/ui/globals.css";
 @source "./**/*.{ts,tsx}";
+
+@keyframes kanban-stream-list {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes kanban-stream-content {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-kanban-entrance="active"] [data-kanban-board-header] > * > div > * {
+    animation: kanban-stream-content 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  [data-kanban-entrance="active"]
+    [data-kanban-board-header]
+    > *
+    > div
+    > :nth-child(1) {
+    animation-delay: 90ms;
+  }
+
+  [data-kanban-entrance="active"]
+    [data-kanban-board-header]
+    > *
+    > div
+    > :nth-child(2) {
+    animation-delay: 180ms;
+  }
+
+  [data-kanban-entrance="active"]
+    [data-kanban-board-header]
+    > *
+    > div
+    > :nth-child(3) {
+    animation-delay: 270ms;
+  }
+
+  [data-kanban-entrance="active"] [data-kanban-column-id],
+  [data-kanban-entrance="active"] [data-testid^="kanban-deadline-section-"] {
+    animation: kanban-stream-list 640ms cubic-bezier(0.16, 1, 0.3, 1) 360ms both;
+  }
+
+  [data-kanban-entrance="active"] [data-kanban-column-id]:nth-child(2) {
+    animation-delay: 470ms;
+  }
+
+  [data-kanban-entrance="active"] [data-kanban-column-id]:nth-child(3) {
+    animation-delay: 580ms;
+  }
+
+  [data-kanban-entrance="active"] [data-kanban-column-id]:nth-child(4) {
+    animation-delay: 690ms;
+  }
+
+  [data-kanban-entrance="active"] [data-kanban-column-id]:nth-child(5) {
+    animation-delay: 800ms;
+  }
+
+  [data-kanban-entrance="active"] [data-kanban-column-id]:nth-child(n + 6) {
+    animation-delay: 910ms;
+  }
+
+  [data-kanban-entrance="active"] [data-task-card-id],
+  [data-kanban-entrance="active"] [data-testid^="kanban-deadline-task-card-"] {
+    animation: kanban-stream-content 560ms cubic-bezier(0.16, 1, 0.3, 1) 620ms
+      both;
+  }
+
+  [data-kanban-entrance="active"] [data-task-card-id]:nth-child(2),
+  [data-kanban-entrance="active"]
+    [data-testid^="kanban-deadline-task-card-"]:nth-child(2) {
+    animation-delay: 710ms;
+  }
+
+  [data-kanban-entrance="active"] [data-task-card-id]:nth-child(3),
+  [data-kanban-entrance="active"]
+    [data-testid^="kanban-deadline-task-card-"]:nth-child(3) {
+    animation-delay: 800ms;
+  }
+
+  [data-kanban-entrance="active"] [data-task-card-id]:nth-child(4),
+  [data-kanban-entrance="active"]
+    [data-testid^="kanban-deadline-task-card-"]:nth-child(4) {
+    animation-delay: 890ms;
+  }
+
+  [data-kanban-entrance="active"] [data-task-card-id]:nth-child(5),
+  [data-kanban-entrance="active"]
+    [data-testid^="kanban-deadline-task-card-"]:nth-child(5) {
+    animation-delay: 980ms;
+  }
+
+  [data-kanban-entrance="active"] [data-task-card-id]:nth-child(n + 6),
+  [data-kanban-entrance="active"]
+    [data-testid^="kanban-deadline-task-card-"]:nth-child(n + 6) {
+    animation-delay: 1070ms;
+  }
+}

@@ -320,13 +320,17 @@ describe('application metadata coverage', () => {
         (entry) =>
           entry.isFile() &&
           entry.name === 'layout.tsx' &&
-          readFileSync(resolve(entry.parentPath, entry.name), 'utf8').includes(
-            'createMarketingMetadata'
+          // Either sanctioned helper counts. `createLocalizedMarketingMetadata`
+          // resolves the copy from the message bundles instead of a literal,
+          // but produces the same metadata contract — matching only the exact
+          // string silently dropped every localized layout from this check.
+          /create(?:Localized)?MarketingMetadata/.test(
+            readFileSync(resolve(entry.parentPath, entry.name), 'utf8')
           )
       )
       .map((entry) => resolve(entry.parentPath, entry.name));
 
-    expect(marketingLayouts).toHaveLength(37);
+    expect(marketingLayouts).toHaveLength(45);
     for (const layoutPath of marketingLayouts) {
       expect(readFileSync(layoutPath, 'utf8')).toMatch(/pathname:\s*['`]/);
     }

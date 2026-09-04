@@ -114,7 +114,6 @@ export async function PATCH(
 ) {
   try {
     const { wsId, id } = await context.params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Parse and validate request body
     const body = await request.json();
@@ -136,6 +135,7 @@ export async function PATCH(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     // Verify workspace access and admin permissions
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -158,8 +158,8 @@ export async function PATCH(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request,
     });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
@@ -242,7 +242,7 @@ export async function PUT(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace membership
     const memberCheck = await verifyWorkspaceMembershipType({
@@ -346,43 +346,13 @@ export async function PUT(
       );
     }
 
-    // Handle removed images
-    let currentImages: string[] = existingRequest.images || [];
-    if (removedImages.length > 0) {
-      // Remove specified images from the list
-      currentImages = currentImages.filter(
-        (img) => !removedImages.includes(img)
-      );
-      // Delete removed images from storage
-      const { error: removeError, fallbackUsed } =
-        await removeRequestImagesWithFallback({
-          paths: removedImages,
-          primaryClient: storageClient,
-          fallbackClient: sbAdmin,
-        });
-
-      if (removeError) {
-        console.error('Failed to remove deleted images from storage:', {
-          requestId: id,
-          removedImages,
-          error: removeError,
-        });
-        return NextResponse.json(
-          { error: 'Failed to remove deleted images' },
-          { status: 500 }
-        );
-      }
-
-      if (fallbackUsed) {
-        console.warn('Removed request images via admin fallback cleanup:', {
-          requestId: id,
-          removedImages,
-        });
-      }
-    }
+    const currentImages: string[] = existingRequest.images || [];
+    const retainedImages = currentImages.filter(
+      (image) => !removedImages.includes(image)
+    );
 
     // Combine existing and newly uploaded image paths
-    const finalImages = [...currentImages, ...newImagePaths];
+    const finalImages = [...retainedImages, ...newImagePaths];
 
     // Update the request through an admin RPC while preserving the caller's
     // auth context for SQL trigger enforcement.
@@ -412,9 +382,7 @@ export async function PUT(
         if (cleanupError) {
           console.error('Failed to clean up newly uploaded images:', {
             requestId: id,
-            newImagePaths,
-            updateError,
-            cleanupError,
+            pathCount: newImagePaths.length,
           });
           return NextResponse.json(
             {
@@ -430,8 +398,7 @@ export async function PUT(
             'Cleaned up newly uploaded request images via admin fallback:',
             {
               requestId: id,
-              newImagePaths,
-              updateError,
+              pathCount: newImagePaths.length,
             }
           );
         }
@@ -441,6 +408,30 @@ export async function PUT(
         { error: 'Failed to update request' },
         { status: 500 }
       );
+    }
+
+    // The database row must be committed before deleting paths it used to
+    // reference. Cleanup failures are observable, but cannot roll back the
+    // successful content update and therefore must not change its response.
+    if (removedImages.length > 0) {
+      const { error: removeError, fallbackUsed } =
+        await removeRequestImagesWithFallback({
+          paths: removedImages,
+          primaryClient: storageClient,
+          fallbackClient: sbAdmin,
+        });
+
+      if (removeError) {
+        console.error('Failed to remove request images after content update:', {
+          requestId: id,
+          pathCount: removedImages.length,
+        });
+      } else if (fallbackUsed) {
+        console.warn('Removed request images via admin fallback cleanup:', {
+          requestId: id,
+          pathCount: removedImages.length,
+        });
+      }
     }
 
     return NextResponse.json({

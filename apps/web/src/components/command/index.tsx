@@ -3,6 +3,7 @@
 import { CommandDialog } from '@tuturuuu/ui/command';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import type { NavLink } from '@/components/navigation';
 import './command-palette.css';
@@ -23,6 +24,7 @@ type LegacyProps = {
 };
 
 export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
+  const t = useTranslations('command_palette');
   const { open } = props;
   const setOpenAction = React.useCallback<
     React.Dispatch<React.SetStateAction<boolean>>
@@ -46,20 +48,13 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
     return null;
   }, [wsId]);
 
-  // Keyboard shortcut: CMD/CTRL+K to toggle
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        // Check if user is typing in an input field
-        const activeElement = document.activeElement;
-        if (
-          activeElement instanceof HTMLInputElement ||
-          activeElement instanceof HTMLTextAreaElement ||
-          activeElement?.getAttribute('contenteditable') === 'true'
-        ) {
-          return;
-        }
-
+      if (
+        !e.repeat &&
+        e.key.toLowerCase() === 'k' &&
+        (e.metaKey || e.ctrlKey)
+      ) {
         e.preventDefault();
         e.stopPropagation();
         setOpenAction((currentOpen: boolean) => !currentOpen);
@@ -76,8 +71,10 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
       open={open}
       onOpenChange={setOpenAction}
       showCloseButton={false}
-      contentClassName="sm:max-w-4xl w-[min(96vw,1024px)] backdrop-blur-sm"
-      aria-label="Command Center"
+      title={t('title')}
+      description={t('description')}
+      commandProps={{ loop: true, shouldFilter: false }}
+      contentClassName="command-palette-enter w-[min(96vw,1120px)] border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl sm:max-w-5xl"
     >
       <CommandMode
         wsId={workspaceId}

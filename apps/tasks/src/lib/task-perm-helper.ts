@@ -22,18 +22,6 @@ export async function verifyTaskShareAccess(
   wsId: string,
   taskId: string
 ): Promise<TaskShareAccessResult> {
-  const normalizedWsId = await normalizeWorkspaceId(wsId);
-
-  if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { error: 'Invalid workspace or task ID' },
-        { status: 400 }
-      ),
-    };
-  }
-
   const supabase = await createClient();
 
   const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
@@ -42,6 +30,17 @@ export async function verifyTaskShareAccess(
     return {
       success: false,
       response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
+  if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Invalid workspace or task ID' },
+        { status: 400 }
+      ),
     };
   }
 

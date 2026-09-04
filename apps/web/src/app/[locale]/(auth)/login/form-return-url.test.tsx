@@ -357,7 +357,7 @@ describe('LoginForm returnUrl navigation', () => {
     });
     expect(
       screen.getByPlaceholderText('login.email_username_placeholder')
-    ).toBeInTheDocument();
+    ).toBeEnabled();
     queryClient.clear();
   });
 

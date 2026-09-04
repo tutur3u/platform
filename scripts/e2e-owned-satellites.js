@@ -9,6 +9,36 @@ const HOST_REDIS_REST_URL = 'http://127.0.0.1:8079';
 const OWNED_E2E_SATELLITES = Object.freeze([
   Object.freeze({
     appEnv: {
+      CONTACTS_APP_URL: 'url',
+      NEXT_PUBLIC_CONTACTS_APP_URL: 'url',
+    },
+    appName: 'contacts',
+    baseUrlEnv: 'CONTACTS_BASE_URL',
+    port: '7827',
+    routeName: 'contacts.tuturuuu',
+    specs: [
+      'workspace-invite-account-shapes.noauth.spec.ts',
+      'workspace-invite-cross-app-access.noauth.spec.ts',
+    ],
+  }),
+  Object.freeze({
+    appEnv: {
+      FINANCE_APP_URL: 'url',
+      NEXT_PUBLIC_FINANCE_APP_URL: 'url',
+    },
+    appName: 'finance',
+    baseUrlEnv: 'FINANCE_BASE_URL',
+    port: '7808',
+    routeName: 'finance.tuturuuu',
+    specs: [
+      'finance-subscription-advance-month.noauth.spec.ts',
+      'finance-permission-boundaries.noauth.spec.ts',
+      'workspace-invite-account-shapes.noauth.spec.ts',
+      'workspace-invite-finance-access.noauth.spec.ts',
+    ],
+  }),
+  Object.freeze({
+    appEnv: {
       FORMS_APP_URL: 'url',
       NEXT_PUBLIC_FORMS_APP_URL: 'url',
     },
@@ -16,7 +46,7 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     baseUrlEnv: 'FORMS_BASE_URL',
     port: '7828',
     routeName: 'forms.tuturuuu',
-    spec: 'forms-private.noauth.spec.ts',
+    specs: ['forms-private.noauth.spec.ts'],
   }),
   Object.freeze({
     appEnv: {
@@ -29,7 +59,18 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     baseUrlEnv: 'INFRASTRUCTURE_BASE_URL',
     port: '7823',
     routeName: 'infra.tuturuuu',
-    spec: 'ai-credits.spec.ts',
+    specs: ['ai-credits.spec.ts'],
+  }),
+  Object.freeze({
+    appEnv: {
+      MAIL_APP_URL: 'url',
+      NEXT_PUBLIC_MAIL_APP_URL: 'url',
+    },
+    appName: 'mail',
+    baseUrlEnv: 'MAIL_BASE_URL',
+    port: '7820',
+    routeName: 'mail.tuturuuu',
+    specs: ['workspace-invite-mail-access.noauth.spec.ts'],
   }),
 ]);
 
@@ -56,9 +97,10 @@ function shouldStartOwnedSatellite(
   if (isTruthy(enabled)) return true;
   if (playwrightArgs.length === 0) return true;
 
-  return (
-    playwrightArgs.some((arg) => String(arg).includes(satellite.spec)) ||
-    String(playwrightTestList).includes(satellite.spec)
+  return satellite.specs.some(
+    (spec) =>
+      playwrightArgs.some((arg) => String(arg).includes(spec)) ||
+      String(playwrightTestList).includes(spec)
   );
 }
 
@@ -71,7 +113,9 @@ function shouldDiscoverOwnedSatellitesFromTestList(
   return OWNED_E2E_SATELLITES.some((satellite) => {
     const enabled = env[getEnabledEnvName(satellite)];
     if (isTruthy(enabled) || isFalsy(enabled)) return false;
-    return !playwrightArgs.some((arg) => String(arg).includes(satellite.spec));
+    return !satellite.specs.some((spec) =>
+      playwrightArgs.some((arg) => String(arg).includes(spec))
+    );
   });
 }
 
@@ -142,6 +186,7 @@ function createOwnedSatelliteEnv(satellite, env = process.env) {
     INTERNAL_WEB_API_ORIGIN: `http://127.0.0.1:${webProxyPort}`,
     NEXT_PUBLIC_APP_URL: url,
     NEXT_PUBLIC_WEB_APP_URL: webUrl,
+    NEXT_WEBPACK_BUILD: '1',
     NODE_ENV: 'development',
     NODE_TLS_REJECT_UNAUTHORIZED: '0',
     PORT: satellite.port,
@@ -168,11 +213,19 @@ function startOwnedSatellite(satellite, options = {}) {
   const logFd = fsImpl.openSync(logPath, 'w');
   let child;
   try {
-    child = spawnImpl('bun', ['run', 'dev:app'], {
-      cwd: path.join(rootDir, 'apps', satellite.appName),
-      env: createOwnedSatelliteEnv(satellite, env),
-      stdio: ['ignore', logFd, logFd],
-    });
+    // The owned satellites are long-lived shared fixtures for a Playwright
+    // shard. Use webpack here because a Turbopack task-cache panic terminates
+    // the whole fixture and turns later authorization assertions into 502s.
+    // Production builds still use each app's normal Turbopack build command.
+    child = spawnImpl(
+      'bunx',
+      ['next', 'dev', '-p', satellite.port, '--webpack'],
+      {
+        cwd: path.join(rootDir, 'apps', satellite.appName),
+        env: createOwnedSatelliteEnv(satellite, env),
+        stdio: ['ignore', logFd, logFd],
+      }
+    );
   } finally {
     fsImpl.closeSync(logFd);
   }

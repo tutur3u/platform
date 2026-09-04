@@ -82,6 +82,11 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
 }));
 
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@/context/sidebar-context', () => ({
   SidebarProvider: ({ children }: { children: ReactNode }) => children,
 }));
