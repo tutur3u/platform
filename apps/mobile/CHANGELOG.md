@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/tutur3u/platform/compare/mobile-v0.9.1...mobile-v0.9.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* **mobile:** remove redundant bridge imports ([3319a48](https://github.com/tutur3u/platform/commit/3319a485f112e946efb3ed31b44226955815f44c))
+
 ## [0.9.1](https://github.com/tutur3u/platform/compare/mobile-v0.9.0...mobile-v0.9.1) (2026-08-25)
 
 
