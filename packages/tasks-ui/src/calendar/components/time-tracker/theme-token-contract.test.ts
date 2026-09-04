@@ -9,7 +9,7 @@ const COMPONENT_FILES = [
 ] as const;
 
 const FIXED_CHROMATIC_TOKEN =
-  /(?:bg|text|border|ring|from|via|to|fill|stroke)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}/;
+  /(?:bg|text|border|ring|from|via|to|fill|stroke|accent|caret|decoration|divide|outline|placeholder|shadow)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}/;
 
 async function readComponent(relativePath: (typeof COMPONENT_FILES)[number]) {
   return readFile(
