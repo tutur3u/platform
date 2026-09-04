@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8.4](https://github.com/tutur3u/platform/compare/ai-v0.8.3...ai-v0.8.4) (2026-09-04)
+
+
+### Bug Fixes
+
+* **ai:** type workspace resolution failures ([10b9141](https://github.com/tutur3u/platform/commit/10b9141999894f25f7c4e0ca81a9d7e75dbfb2c1))
+* **rewise:** bind AI work to selected workspace ([ed07bd8](https://github.com/tutur3u/platform/commit/ed07bd807fe5bb2895e82be374494217c8461444))
+* **rewise:** bind AI work to selected workspace ([#5208](https://github.com/tutur3u/platform/issues/5208)) ([5f1d8f3](https://github.com/tutur3u/platform/commit/5f1d8f3544e87e78b6555cd679c36f2878d0dab9))
+* **rewise:** enforce workspace chat ownership ([3729e1c](https://github.com/tutur3u/platform/commit/3729e1c06fdc90877848ad96d3c3832c3e6f5854))
+* **teach:** authorize AI object generation ([#5207](https://github.com/tutur3u/platform/issues/5207)) ([2a7f368](https://github.com/tutur3u/platform/commit/2a7f3685c55bd34f40ca8f03e875fc20abd6657d))
+
 ## [0.8.3](https://github.com/tutur3u/platform/compare/ai-v0.8.2...ai-v0.8.3) (2026-08-21)
 
 

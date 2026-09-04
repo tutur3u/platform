@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/rewise-v0.37.3...rewise-v0.38.0) (2026-09-04)
+
+
+### Features
+
+* **rewise:** build workspace assistant dashboard ([#5217](https://github.com/tutur3u/platform/issues/5217)) ([fe673b4](https://github.com/tutur3u/platform/commit/fe673b498a3890325748da47b32a8825bf576d40))
+
+
+### Bug Fixes
+
+* **rewise:** bind AI work to selected workspace ([#5208](https://github.com/tutur3u/platform/issues/5208)) ([5f1d8f3](https://github.com/tutur3u/platform/commit/5f1d8f3544e87e78b6555cd679c36f2878d0dab9))
+* **rewise:** enforce workspace chat ownership ([3729e1c](https://github.com/tutur3u/platform/commit/3729e1c06fdc90877848ad96d3c3832c3e6f5854))
+
 ## [0.37.3](https://github.com/tutur3u/platform/compare/rewise-v0.37.2...rewise-v0.37.3) (2026-08-31)
 
 

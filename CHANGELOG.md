@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.45.0](https://github.com/tutur3u/platform/compare/platform-v0.44.2...platform-v0.45.0) (2026-09-04)
+
+
+### Features
+
+* **rewise:** build workspace assistant dashboard ([#5217](https://github.com/tutur3u/platform/issues/5217)) ([fe673b4](https://github.com/tutur3u/platform/commit/fe673b498a3890325748da47b32a8825bf576d40))
+
+
+### Bug Fixes
+
+* **ai:** restore whitelist runtime access ([#5215](https://github.com/tutur3u/platform/issues/5215)) ([8a7a57d](https://github.com/tutur3u/platform/commit/8a7a57d52685c37b4706e0ffdb634b73e1d92595))
+* **rewise:** bind AI work to selected workspace ([#5208](https://github.com/tutur3u/platform/issues/5208)) ([5f1d8f3](https://github.com/tutur3u/platform/commit/5f1d8f3544e87e78b6555cd679c36f2878d0dab9))
+* **tasks-ui:** restore dynamic time tracker colors ([#5216](https://github.com/tutur3u/platform/issues/5216)) ([49d6d7d](https://github.com/tutur3u/platform/commit/49d6d7dc8ef85a103b5919996788a8e5c800b95a))
+* **teach:** authorize AI object generation ([#5207](https://github.com/tutur3u/platform/issues/5207)) ([2a7f368](https://github.com/tutur3u/platform/commit/2a7f3685c55bd34f40ca8f03e875fc20abd6657d))
+
+
+### Performance Improvements
+
+* **auth:** index API key prefixes ([#5206](https://github.com/tutur3u/platform/issues/5206)) ([2a343d9](https://github.com/tutur3u/platform/commit/2a343d929b4a1e3cca3843a1da2f56725e1570c1))
+
 ## [0.44.2](https://github.com/tutur3u/platform/compare/platform-v0.44.1...platform-v0.44.2) (2026-09-03)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.27.1](https://github.com/tutur3u/platform/compare/utils-v0.27.0...utils-v0.27.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **ai:** type workspace resolution failures ([10b9141](https://github.com/tutur3u/platform/commit/10b9141999894f25f7c4e0ca81a9d7e75dbfb2c1))
+* **rewise:** bind AI work to selected workspace ([#5208](https://github.com/tutur3u/platform/issues/5208)) ([5f1d8f3](https://github.com/tutur3u/platform/commit/5f1d8f3544e87e78b6555cd679c36f2878d0dab9))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/utils-v0.26.0...utils-v0.27.0) (2026-08-27)
 
 
