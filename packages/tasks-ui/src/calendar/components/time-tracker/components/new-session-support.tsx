@@ -240,10 +240,10 @@ export function CompletionCelebration({
     <div className="fade-in fixed inset-0 z-50 flex animate-in items-center justify-center bg-black/20 backdrop-blur-sm duration-300">
       <div className="zoom-in animate-in rounded-lg border bg-background p-6 shadow-xl duration-300">
         <div className="text-center">
-          <CheckCircle className="mx-auto mb-4 h-12 w-12 animate-pulse text-green-500" />
+          <CheckCircle className="mx-auto mb-4 h-12 w-12 animate-pulse text-dynamic-green" />
           <h3 className="mb-2 font-semibold text-lg">Session Completed!</h3>
           <p className="mb-1 text-muted-foreground">{session.title}</p>
-          <p className="font-medium text-green-600 text-sm dark:text-green-400">
+          <p className="font-medium text-dynamic-green text-sm">
             {formatDuration(session.duration_seconds || 0)} tracked
           </p>
         </div>
