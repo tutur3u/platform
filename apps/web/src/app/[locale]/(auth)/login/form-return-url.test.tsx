@@ -313,6 +313,7 @@ describe('LoginForm returnUrl navigation', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllEnvs();
   });
 
@@ -361,25 +362,18 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
-  it('renders the profile loading card while deferred internal app bootstrap is pending', () => {
+  it('fails open to social login when deferred internal app bootstrap stalls', async () => {
+    vi.useFakeTimers();
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
+    const queryClient = renderLoginForm(
+      'https://contacts.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      { deferAuthSurfaceUntilSessionCheck: true }
+    );
 
-    const queryClient = renderLoginForm('https://partner.example/launch', {
-      deferAuthSurfaceUntilSessionCheck: true,
-    });
-
-    expect(
-      screen.getByText('login.loading_account_profile_title')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /login\.loading_profile/u })
-    ).toBeDisabled();
-    expect(
-      screen.queryByRole('button', {
-        name: 'login.continue_with_email',
-      })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('login.continue_with_google')).toBeNull();
+    await act(() => vi.advanceTimersByTimeAsync(3000));
+    expect(screen.getByText('login.continue_with_google')).toBeVisible();
     queryClient.clear();
   });
 

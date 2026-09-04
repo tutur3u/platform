@@ -62,7 +62,6 @@ import {
   normalizeManagedTuturuuuReturnUrl,
 } from '@/lib/auth/managed-tuturuuu-return-url';
 import {
-  AUTH_OAUTH_PROVIDERS,
   type AuthOAuthProvider,
   getAuthOAuthProviderOptions,
 } from '@/lib/auth/oauth-providers';
@@ -79,6 +78,8 @@ import {
   shouldHonorLocalE2EAuthBypassForLogin,
   shouldRetryTurnstileClientError,
 } from './turnstile-state';
+import { useAutoOAuthLogin } from './use-auto-oauth-login';
+import { useDeferredAuthSurfaceRecovery } from './use-deferred-auth-surface-recovery';
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
@@ -510,7 +511,6 @@ export default function LoginForm({
   const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(
     null
   );
-  const autoOAuthProviderRef = useRef<AuthOAuthProvider | null>(null);
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
   const currentUserProfileQuery = useCurrentUserProfile({
@@ -1452,35 +1452,18 @@ export default function LoginForm({
   );
 
   useEffect(() => setIsHydrated(true), []);
-  useEffect(() => {
-    if (!initialized || !readyForAuth || requiresMFA || user) {
-      return;
-    }
-
-    const provider = searchParams.get('provider');
-    if (
-      !provider ||
-      !AUTH_OAUTH_PROVIDERS.includes(provider as AuthOAuthProvider)
-    ) {
-      autoOAuthProviderRef.current = null;
-      return;
-    }
-
-    const oauthProvider = provider as AuthOAuthProvider;
-    if (autoOAuthProviderRef.current === oauthProvider) {
-      return;
-    }
-
-    autoOAuthProviderRef.current = oauthProvider;
-    void handleOAuthLogin(oauthProvider);
-  }, [
-    handleOAuthLogin,
+  useDeferredAuthSurfaceRecovery(
+    deferAuthSurfaceUntilSessionCheck,
     initialized,
     readyForAuth,
-    requiresMFA,
-    searchParams,
-    user,
-  ]);
+    setRedirectingAfterAuthState,
+    setReadyForAuth
+  );
+  useAutoOAuthLogin(
+    searchParams.get('provider'),
+    initialized && readyForAuth && !requiresMFA && !user,
+    handleOAuthLogin
+  );
 
   const advanceToPasswordStage = async () => {
     const isValid = await emailForm.trigger('email');
