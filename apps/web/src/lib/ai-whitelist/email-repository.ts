@@ -1,7 +1,7 @@
 import 'server-only';
 
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { AIWhitelistEmail } from '@tuturuuu/types';
-import { getPlatformSql } from '@/lib/database/platform-sql';
 
 interface ListAIWhitelistEmailsOptions {
   page?: string;
@@ -24,48 +24,25 @@ export async function listAIWhitelistEmails({
   page,
   pageSize,
 }: ListAIWhitelistEmailsOptions = {}) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
   const limit = parsePositiveInteger(pageSize, 10);
   const offset = (parsePositiveInteger(page, 1) - 1) * limit;
   const search = normalizeEmailSearch(q);
 
-  const rows = search
-    ? await sql<AIWhitelistEmail[]>`
-        select
-          email,
-          enabled,
-          created_at::text as created_at
-        from private.ai_whitelisted_emails
-        where email ilike ${search}
-        order by created_at desc
-        limit ${limit}
-        offset ${offset}
-      `
-    : await sql<AIWhitelistEmail[]>`
-        select
-          email,
-          enabled,
-          created_at::text as created_at
-        from private.ai_whitelisted_emails
-        order by created_at desc
-        limit ${limit}
-        offset ${offset}
-      `;
+  let query = db
+    .from('ai_whitelisted_emails')
+    .select('email, enabled, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
-  const [countRow] = search
-    ? await sql<{ count: number }[]>`
-        select count(*)::int as count
-        from private.ai_whitelisted_emails
-        where email ilike ${search}
-      `
-    : await sql<{ count: number }[]>`
-        select count(*)::int as count
-        from private.ai_whitelisted_emails
-      `;
+  if (search) query = query.ilike('email', search);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
 
   return {
-    data: rows,
-    count: countRow?.count ?? 0,
+    data: data ?? [],
+    count: count ?? 0,
   };
 }
 
@@ -73,57 +50,50 @@ export async function addAIWhitelistEmail({
   email,
   enabled,
 }: Pick<AIWhitelistEmail, 'email' | 'enabled'>) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { data, error } = await db
+    .from('ai_whitelisted_emails')
+    .insert({ email, enabled })
+    .select('email, enabled, created_at')
+    .single();
 
-  const [row] = await sql<AIWhitelistEmail[]>`
-    insert into private.ai_whitelisted_emails (
-      email,
-      enabled
-    )
-    values (
-      ${email},
-      ${enabled}
-    )
-    returning
-      email,
-      enabled,
-      created_at::text as created_at
-  `;
+  if (error) throw error;
 
-  return row;
+  return data;
 }
 
 export async function updateAIWhitelistEmailEnabled(
   email: string,
   enabled: boolean
 ) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { error } = await db
+    .from('ai_whitelisted_emails')
+    .update({ enabled })
+    .eq('email', email);
 
-  await sql`
-    update private.ai_whitelisted_emails
-    set enabled = ${enabled}
-    where email = ${email}
-  `;
+  if (error) throw error;
 }
 
 export async function deleteAIWhitelistEmail(email: string) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { error } = await db
+    .from('ai_whitelisted_emails')
+    .delete()
+    .eq('email', email);
 
-  await sql`
-    delete from private.ai_whitelisted_emails
-    where email = ${email}
-  `;
+  if (error) throw error;
 }
 
 export async function isAIWhitelistEmailEnabled(email: string) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { data, error } = await db
+    .from('ai_whitelisted_emails')
+    .select('enabled')
+    .eq('email', email)
+    .maybeSingle();
 
-  const [row] = await sql<{ enabled: boolean }[]>`
-    select enabled
-    from private.ai_whitelisted_emails
-    where email = ${email}
-    limit 1
-  `;
+  if (error) throw error;
 
-  return row?.enabled ?? false;
+  return data?.enabled ?? false;
 }
