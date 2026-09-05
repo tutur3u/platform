@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.45.1](https://github.com/tutur3u/platform/compare/platform-v0.45.0...platform-v0.45.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **auth:** recover stalled app sign-in ([e3e7273](https://github.com/tutur3u/platform/commit/e3e72738c19930e120047bba9b61673a7eb9804b))
+* **rewise:** match Platform Mira experience ([6100f53](https://github.com/tutur3u/platform/commit/6100f53dac51ac89cff2dd21b783e4a866d0b69f))
+* **rewise:** polish assistant navigation chrome ([c73619d](https://github.com/tutur3u/platform/commit/c73619d16e0d3aa29747f61af141693f8c155b5f))
+* **rewise:** restore chat composer ([49a7a20](https://github.com/tutur3u/platform/commit/49a7a20038e4e34a1fcdfd738e6a1e73449a4247))
+* **rewise:** restore usable assistant composer ([f8c4ef2](https://github.com/tutur3u/platform/commit/f8c4ef22b44daab13af6f1c022c341bef0e17fd0))
+* **rewise:** space chat sidebar actions ([edd5c6b](https://github.com/tutur3u/platform/commit/edd5c6b0f4f79d34785ce10a0c3ef625d08d1916))
+
 ## [0.45.0](https://github.com/tutur3u/platform/compare/platform-v0.44.2...platform-v0.45.0) (2026-09-04)
 
 
