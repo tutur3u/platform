@@ -106,14 +106,12 @@ class MfaApprovalRepository {
   ) async {
     try {
       final deviceId = await getDeviceId();
-      final response = await _apiClient.postJson(
-        AuthEndpoints.mfaMobileApprovalApprove(approval.id),
-        {
-          'pairCode': approval.pairCode,
-          if (deviceId != null) 'deviceId': deviceId,
-          if (_platform != null) 'platform': _platform,
-        },
-      );
+      final response = await _apiClient
+          .postJson(AuthEndpoints.mfaMobileApprovalApprove(approval.id), {
+            'pairCode': approval.pairCode,
+            if (deviceId != null) 'deviceId': deviceId,
+            if (_platform != null) 'platform': _platform,
+          });
 
       if (response['error'] != null) {
         return (success: false, error: response['error'] as String);

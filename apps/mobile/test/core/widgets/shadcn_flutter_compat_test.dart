@@ -9,9 +9,7 @@ void main() {
 
     await tester.pumpWidget(
       shad.ShadcnApp(
-        theme: const shad.ThemeData(
-          colorScheme: shad.ColorSchemes.lightZinc,
-        ),
+        theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
         localizationsDelegates: const [shad.ShadcnLocalizations.delegate],
         builder: ShadcnMaterialBridge.appBuilder,
         home: Builder(

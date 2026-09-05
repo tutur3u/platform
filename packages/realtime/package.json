@@ -19,7 +19,7 @@
     "./meet": "./src/meet/index.ts",
     "./meet/token": "./src/meet/token.ts"
   },
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.1",
   "dependencies": {
     "yjs": "^13.6.32",
     "zod": "^4.5.4"

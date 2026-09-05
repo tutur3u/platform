@@ -1,3 +1,16 @@
+.tuturuuu-editor-source-heading p {
+  max-width: 46rem;
+  margin: 0.125rem 0 0;
+  color: var(--tuturuuu-editor-muted, #6b7280);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.tuturuuu-editor-source-feedback p {
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+}
+
 .tuturuuu-editor {
   overflow: hidden;
   border: 1px solid var(--tuturuuu-editor-border, #d1d5db);
@@ -356,14 +369,6 @@
   font-weight: 700;
 }
 
-.tuturuuu-editor-source-heading p {
-  max-width: 46rem;
-  margin: 0.125rem 0 0;
-  color: var(--tuturuuu-editor-muted, #6b7280);
-  font-size: 0.75rem;
-  line-height: 1.4;
-}
-
 .tuturuuu-editor-source-actions {
   display: flex;
   flex: none;
@@ -423,11 +428,6 @@
 
 .tuturuuu-editor-source-feedback {
   min-height: 1.25rem;
-}
-
-.tuturuuu-editor-source-feedback p {
-  margin: 0.375rem 0 0;
-  font-size: 0.75rem;
 }
 
 .tuturuuu-editor-source-feedback [data-error="true"] {

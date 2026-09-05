@@ -71,7 +71,7 @@ class SessionTile extends StatelessWidget {
           onEdit?.call();
           return false;
         } else {
-          return _confirmDelete(context, l10n);
+          return await _confirmDelete(context, l10n);
         }
       },
       onDismissed: (direction) {

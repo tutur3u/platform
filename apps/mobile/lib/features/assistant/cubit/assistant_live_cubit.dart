@@ -839,7 +839,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     await _recorder.dispose();
     await _cameraService.dispose();
     _socket.dispose();
-    return super.close();
+    return await super.close();
   }
 
   void _markAssistantActivity({Uint8List? chunkBytes, bool textOnly = false}) {

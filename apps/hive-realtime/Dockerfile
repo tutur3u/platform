@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM oven/bun:1.4.0-alpine AS deps
+FROM oven/bun:1.4.1-alpine AS deps
 
 WORKDIR /workspace
 
@@ -107,7 +107,7 @@ RUN --mount=type=cache,id=platform-hive-realtime-bun-install,target=/root/.bun/i
     sleep 5; \
   done
 
-FROM oven/bun:1.4.0-alpine AS runner
+FROM oven/bun:1.4.1-alpine AS runner
 
 WORKDIR /workspace
 

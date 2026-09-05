@@ -30,7 +30,7 @@ class SupabaseOAuthUrlLauncher extends OAuthUrlLauncher {
     required Map<String, String> queryParams,
     String? scopes,
   }) async {
-    return authClient.signInWithOAuth(
+    return await authClient.signInWithOAuth(
       provider,
       redirectTo: redirectTo,
       authScreenLaunchMode: _devicePlatform.isAndroid

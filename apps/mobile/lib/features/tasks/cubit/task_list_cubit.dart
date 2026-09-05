@@ -444,6 +444,6 @@ class TaskListCubit extends Cubit<TaskListState> {
     if (subscription != null) {
       await subscription.cancel();
     }
-    return super.close();
+    return await super.close();
   }
 }

@@ -28,7 +28,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.1
 
       - name: Use Node.js 24
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020

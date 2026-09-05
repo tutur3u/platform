@@ -53,20 +53,18 @@ class ChatRepository {
     String? modelId,
     String? systemPrompt,
   }) async {
-    final response = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/chat/conversations',
-      {
-        'type': type.name,
-        if (title != null) 'title': title,
-        if (description != null) 'description': description,
-        if (participantUserIds.isNotEmpty)
-          'participantUserIds': participantUserIds,
-        if (aiEnabled != null) 'aiEnabled': aiEnabled,
-        if (autoReply != null) 'autoReply': autoReply,
-        if (modelId != null) 'modelId': modelId,
-        if (systemPrompt != null) 'systemPrompt': systemPrompt,
-      },
-    );
+    final response = await _apiClient
+        .postJson('/api/v1/workspaces/$wsId/chat/conversations', {
+          'type': type.name,
+          if (title != null) 'title': title,
+          if (description != null) 'description': description,
+          if (participantUserIds.isNotEmpty)
+            'participantUserIds': participantUserIds,
+          if (aiEnabled != null) 'aiEnabled': aiEnabled,
+          if (autoReply != null) 'autoReply': autoReply,
+          if (modelId != null) 'modelId': modelId,
+          if (systemPrompt != null) 'systemPrompt': systemPrompt,
+        });
     return ChatConversation.fromJson(
       response['conversation'] as Map<String, dynamic>? ??
           const <String, dynamic>{},
@@ -80,14 +78,12 @@ class ChatRepository {
     String? description,
     bool? pinned,
   }) async {
-    final response = await _apiClient.patchJson(
-      _conversationPath(wsId, conversationId),
-      {
-        if (title != null) 'title': title,
-        if (description != null) 'description': description,
-        if (pinned != null) 'pinned': pinned,
-      },
-    );
+    final response = await _apiClient
+        .patchJson(_conversationPath(wsId, conversationId), {
+          if (title != null) 'title': title,
+          if (description != null) 'description': description,
+          if (pinned != null) 'pinned': pinned,
+        });
     return ChatConversation.fromJson(
       response['conversation'] as Map<String, dynamic>? ??
           const <String, dynamic>{},

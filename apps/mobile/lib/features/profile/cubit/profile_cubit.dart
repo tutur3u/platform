@@ -133,19 +133,21 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   /// Updates display name.
   Future<bool> updateDisplayName(String displayName) async {
-    return _updateProfileField(
+    return await _updateProfileField(
       () => _repository.updateDisplayName(displayName),
     );
   }
 
   /// Updates full name.
   Future<bool> updateFullName(String fullName) async {
-    return _updateProfileField(() => _repository.updateFullName(fullName));
+    return await _updateProfileField(
+      () => _repository.updateFullName(fullName),
+    );
   }
 
   /// Updates email.
   Future<bool> updateEmail(String email) async {
-    return _updateProfileField(() => _repository.updateEmail(email));
+    return await _updateProfileField(() => _repository.updateEmail(email));
   }
 
   Future<bool> _updateProfileField(

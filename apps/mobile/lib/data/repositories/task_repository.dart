@@ -47,13 +47,11 @@ class TaskRepository {
     String? taskId,
   }) async {
     final filename = _filenameFromPath(localFilePath);
-    final uploadResponse = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/tasks/upload-url',
-      {
-        'filename': filename,
-        if (taskId != null && taskId.trim().isNotEmpty) 'taskId': taskId,
-      },
-    );
+    final uploadResponse = await _apiClient
+        .postJson('/api/v1/workspaces/$wsId/tasks/upload-url', {
+          'filename': filename,
+          if (taskId != null && taskId.trim().isNotEmpty) 'taskId': taskId,
+        });
 
     final signedUrl = uploadResponse['signedUrl'] as String?;
     final token = uploadResponse['token'] as String?;
@@ -603,21 +601,19 @@ class TaskRepository {
     List<String>? projectIds,
     List<String>? assigneeIds,
   }) async {
-    final response = await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/tasks',
-      {
-        'name': name,
-        'listId': listId,
-        'description': description,
-        'priority': priority,
-        'start_date': startDate == null ? null : _taskStartDateIso(startDate),
-        'end_date': endDate == null ? null : _taskEndDateIso(endDate),
-        'estimation_points': estimationPoints,
-        if (labelIds != null) 'label_ids': labelIds,
-        if (projectIds != null) 'project_ids': projectIds,
-        if (assigneeIds != null) 'assignee_ids': assigneeIds,
-      },
-    );
+    final response = await _apiClient
+        .postJson('/api/v1/workspaces/$wsId/tasks', {
+          'name': name,
+          'listId': listId,
+          'description': description,
+          'priority': priority,
+          'start_date': startDate == null ? null : _taskStartDateIso(startDate),
+          'end_date': endDate == null ? null : _taskEndDateIso(endDate),
+          'estimation_points': estimationPoints,
+          if (labelIds != null) 'label_ids': labelIds,
+          if (projectIds != null) 'project_ids': projectIds,
+          if (assigneeIds != null) 'assignee_ids': assigneeIds,
+        });
 
     final task = response['task'];
     if (task is! Map<String, dynamic>) {
@@ -891,14 +887,12 @@ class TaskRepository {
     required String boardId,
     String? newBoardName,
   }) async {
-    await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/task-boards/$boardId/copy',
-      {
-        'targetWorkspaceId': wsId,
-        if (newBoardName != null && newBoardName.trim().isNotEmpty)
-          'newBoardName': newBoardName.trim(),
-      },
-    );
+    await _apiClient
+        .postJson('/api/v1/workspaces/$wsId/task-boards/$boardId/copy', {
+          'targetWorkspaceId': wsId,
+          if (newBoardName != null && newBoardName.trim().isNotEmpty)
+            'newBoardName': newBoardName.trim(),
+        });
   }
 
   Future<void> archiveTaskBoard({
@@ -954,15 +948,13 @@ class TaskRepository {
     required bool allowZeroEstimates,
     required bool countUnestimatedIssues,
   }) async {
-    final response = await _apiClient.patchJson(
-      '/api/v1/workspaces/$wsId/boards/$boardId/estimation',
-      {
-        'estimation_type': estimationType,
-        'extended_estimation': extendedEstimation,
-        'allow_zero_estimates': allowZeroEstimates,
-        'count_unestimated_issues': countUnestimatedIssues,
-      },
-    );
+    final response = await _apiClient
+        .patchJson('/api/v1/workspaces/$wsId/boards/$boardId/estimation', {
+          'estimation_type': estimationType,
+          'extended_estimation': extendedEstimation,
+          'allow_zero_estimates': allowZeroEstimates,
+          'count_unestimated_issues': countUnestimatedIssues,
+        });
 
     return TaskEstimateBoard.fromJson(response);
   }
@@ -1107,14 +1099,12 @@ class TaskRepository {
     required String targetTaskId,
     required TaskRelationshipType type,
   }) async {
-    await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/tasks/$taskId/relationships',
-      {
-        'source_task_id': sourceTaskId,
-        'target_task_id': targetTaskId,
-        'type': type.apiValue,
-      },
-    );
+    await _apiClient
+        .postJson('/api/v1/workspaces/$wsId/tasks/$taskId/relationships', {
+          'source_task_id': sourceTaskId,
+          'target_task_id': targetTaskId,
+          'type': type.apiValue,
+        });
   }
 
   Future<void> deleteTaskRelationship({
@@ -1160,20 +1150,18 @@ class TaskRepository {
     DateTime? endDate,
     bool? archived,
   }) async {
-    await _apiClient.putJson(
-      '/api/v1/workspaces/$wsId/task-projects/$projectId',
-      {
-        'name': name,
-        'description': description,
-        if (status != null) 'status': status,
-        if (priority != null) 'priority': priority,
-        'health_status': healthStatus,
-        'lead_id': leadId,
-        'start_date': startDate?.toUtc().toIso8601String(),
-        'end_date': endDate?.toUtc().toIso8601String(),
-        'archived': archived,
-      },
-    );
+    await _apiClient
+        .putJson('/api/v1/workspaces/$wsId/task-projects/$projectId', {
+          'name': name,
+          'description': description,
+          if (status != null) 'status': status,
+          if (priority != null) 'priority': priority,
+          'health_status': healthStatus,
+          'lead_id': leadId,
+          'start_date': startDate?.toUtc().toIso8601String(),
+          'end_date': endDate?.toUtc().toIso8601String(),
+          'archived': archived,
+        });
   }
 
   Future<void> deleteTaskProject({
@@ -1216,14 +1204,12 @@ class TaskRepository {
     required String status,
     String? description,
   }) async {
-    await _apiClient.putJson(
-      '/api/v1/workspaces/$wsId/task-initiatives/$initiativeId',
-      {
-        'name': name,
-        if (description != null) 'description': description,
-        'status': status,
-      },
-    );
+    await _apiClient
+        .putJson('/api/v1/workspaces/$wsId/task-initiatives/$initiativeId', {
+          'name': name,
+          if (description != null) 'description': description,
+          'status': status,
+        });
   }
 
   Future<void> deleteTaskInitiative({

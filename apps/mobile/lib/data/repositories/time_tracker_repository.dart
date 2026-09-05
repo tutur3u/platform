@@ -434,18 +434,16 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String? parentSessionId,
     bool wasResumed = false,
   }) async {
-    final data = await _api.postJson(
-      '/api/v1/workspaces/$wsId/time-tracking/sessions',
-      {
-        'title': title ?? 'Work session',
-        if (description != null) 'description': description,
-        if (categoryId != null) 'categoryId': categoryId,
-        if (taskId != null) 'taskId': taskId,
-        if (userId != null) 'userId': userId,
-        if (parentSessionId != null) 'parentSessionId': parentSessionId,
-        if (wasResumed) 'wasResumed': true,
-      },
-    );
+    final data = await _api
+        .postJson('/api/v1/workspaces/$wsId/time-tracking/sessions', {
+          'title': title ?? 'Work session',
+          if (description != null) 'description': description,
+          if (categoryId != null) 'categoryId': categoryId,
+          if (taskId != null) 'taskId': taskId,
+          if (userId != null) 'userId': userId,
+          if (parentSessionId != null) 'parentSessionId': parentSessionId,
+          if (wasResumed) 'wasResumed': true,
+        });
 
     return TimeTrackingSession.fromJson(
       data['session'] as Map<String, dynamic>,
@@ -545,16 +543,14 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String? categoryId,
     String? description,
   }) async {
-    final data = await _api.postJson(
-      '/api/v1/workspaces/$wsId/time-tracking/sessions',
-      {
-        'title': title,
-        'startTime': _toApiIso(startTime),
-        'endTime': _toApiIso(endTime),
-        if (categoryId != null) 'categoryId': categoryId,
-        if (description != null) 'description': description,
-      },
-    );
+    final data = await _api
+        .postJson('/api/v1/workspaces/$wsId/time-tracking/sessions', {
+          'title': title,
+          'startTime': _toApiIso(startTime),
+          'endTime': _toApiIso(endTime),
+          if (categoryId != null) 'categoryId': categoryId,
+          if (description != null) 'description': description,
+        });
 
     return TimeTrackingSession.fromJson(
       data['session'] as Map<String, dynamic>,
@@ -579,14 +575,12 @@ class TimeTrackerRepository implements ITimeTrackerRepository {
     String? color,
     String? description,
   }) async {
-    final data = await _api.postJson(
-      '/api/v1/workspaces/$wsId/time-tracking/categories',
-      {
-        'name': name,
-        if (color != null) 'color': color,
-        if (description != null) 'description': description,
-      },
-    );
+    final data = await _api
+        .postJson('/api/v1/workspaces/$wsId/time-tracking/categories', {
+          'name': name,
+          if (color != null) 'color': color,
+          if (description != null) 'description': description,
+        });
 
     return TimeTrackingCategory.fromJson(
       data['category'] as Map<String, dynamic>,

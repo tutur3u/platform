@@ -429,7 +429,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<Uint8List?> _readAttachmentBytes(PlatformFile file) async {
-    return file.readAsBytes();
+    return await file.readAsBytes();
   }
 
   void _setAttachmentStatus(

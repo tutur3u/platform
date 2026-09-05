@@ -841,6 +841,6 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> close() async {
     await _authSub?.cancel();
     _repo.dispose();
-    return super.close();
+    return await super.close();
   }
 }

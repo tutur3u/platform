@@ -46,16 +46,14 @@ class CmsRepository {
     required bool isEnabled,
     String? description,
   }) async {
-    final response = await _api.patchJson(
-      CmsEndpoints.collection(wsId, collectionId),
-      {
-        'title': title,
-        'slug': slug,
-        'collection_type': collectionType,
-        'description': description,
-        'is_enabled': isEnabled,
-      },
-    );
+    final response = await _api
+        .patchJson(CmsEndpoints.collection(wsId, collectionId), {
+          'title': title,
+          'slug': slug,
+          'collection_type': collectionType,
+          'description': description,
+          'is_enabled': isEnabled,
+        });
     return CmsCollection.fromJson(response);
   }
 

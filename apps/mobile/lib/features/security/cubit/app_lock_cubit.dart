@@ -131,6 +131,6 @@ class AppLockCubit extends Cubit<AppLockState> {
       return false;
     }
 
-    return unlock(reason: reason);
+    return await unlock(reason: reason);
   }
 }

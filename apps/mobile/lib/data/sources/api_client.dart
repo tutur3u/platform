@@ -99,7 +99,7 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => _client.get(
+      () async => await _client.get(
         url,
         headers: await _getHeaders(requiresAuth: requiresAuth),
       ),
@@ -119,7 +119,7 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => _client.get(
+      () async => await _client.get(
         url,
         headers: await _getHeaders(requiresAuth: requiresAuth),
       ),
@@ -163,7 +163,7 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => _client.post(
+      () async => await _client.post(
         url,
         headers: await _getHeaders(
           contentType: 'application/json',
@@ -188,7 +188,7 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => _client.patch(
+      () async => await _client.patch(
         url,
         headers: await _getHeaders(
           contentType: 'application/json',
@@ -213,7 +213,7 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => _client.delete(
+      () async => await _client.delete(
         url,
         headers: await _getHeaders(
           contentType: body == null ? null : 'application/json',
@@ -238,7 +238,7 @@ class ApiClient {
     final url = _url(path);
 
     final response = await _performRequest(
-      () async => _client.put(
+      () async => await _client.put(
         url,
         headers: await _getHeaders(
           contentType: 'application/json',
@@ -259,12 +259,12 @@ class ApiClient {
   }) async {
     final url = _url(path);
 
-    return _performStreamedRequest(() async {
+    return await _performStreamedRequest(() async {
       final request = http.Request('GET', url)
         ..headers.addAll(
           await _getHeaders(accept: accept, requiresAuth: requiresAuth),
         );
-      return request.send();
+      return await request.send();
     }, requiresAuth: requiresAuth);
   }
 
@@ -277,7 +277,7 @@ class ApiClient {
   }) async {
     final url = _url(path);
 
-    return _performStreamedRequest(() async {
+    return await _performStreamedRequest(() async {
       final request = http.Request(method, url)
         ..headers.addAll(
           await _getHeaders(
@@ -287,7 +287,7 @@ class ApiClient {
           ),
         )
         ..body = jsonEncode(body);
-      return request.send();
+      return await request.send();
     }, requiresAuth: requiresAuth);
   }
 
@@ -319,7 +319,7 @@ class ApiClient {
         );
       }
 
-      return request.send();
+      return await request.send();
     }, requiresAuth: requiresAuth);
 
     final response = await http.Response.fromStream(streamedResponse);

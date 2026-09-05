@@ -36,5 +36,5 @@
     "./route": "./src/route/index.ts",
     "./provider": "./src/provider/index.tsx"
   },
-  "packageManager": "bun@1.4.0"
+  "packageManager": "bun@1.4.1"
 }

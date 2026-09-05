@@ -37,7 +37,7 @@ jobs:
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.1
 
       - name: Gate package release visibility
         id: package_release_gate

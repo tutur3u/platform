@@ -445,17 +445,15 @@ class InventoryRepository {
     String productScope = 'all',
     List<String> productIds = const [],
   }) async {
-    final response = await _api.postJson(
-      InventoryEndpoints.salesPeriods(wsId),
-      {
-        'name': name,
-        'description': description,
-        'starts_at': _dateOnly(startsAt),
-        'ends_at': _dateOnly(endsAt),
-        'product_scope': productScope,
-        'product_ids': productScope == 'all' ? <String>[] : productIds,
-      },
-    );
+    final response = await _api
+        .postJson(InventoryEndpoints.salesPeriods(wsId), {
+          'name': name,
+          'description': description,
+          'starts_at': _dateOnly(startsAt),
+          'ends_at': _dateOnly(endsAt),
+          'product_scope': productScope,
+          'product_ids': productScope == 'all' ? <String>[] : productIds,
+        });
     final period = InventorySalesPeriod.fromJson(
       Map<String, dynamic>.from(response['data'] as Map),
     );
@@ -478,18 +476,16 @@ class InventoryRepository {
     String? status,
   }) async {
     final isContentUpdate = name != null;
-    final response = await _api.patchJson(
-      InventoryEndpoints.salesPeriod(wsId, periodId),
-      {
-        if (name != null) 'name': name,
-        if (isContentUpdate) 'description': description,
-        if (isContentUpdate) 'starts_at': _dateOnly(startsAt),
-        if (isContentUpdate) 'ends_at': _dateOnly(endsAt),
-        if (productScope != null) 'product_scope': productScope,
-        if (productIds != null) 'product_ids': productIds,
-        if (status != null) 'status': status,
-      },
-    );
+    final response = await _api
+        .patchJson(InventoryEndpoints.salesPeriod(wsId, periodId), {
+          if (name != null) 'name': name,
+          if (isContentUpdate) 'description': description,
+          if (isContentUpdate) 'starts_at': _dateOnly(startsAt),
+          if (isContentUpdate) 'ends_at': _dateOnly(endsAt),
+          if (productScope != null) 'product_scope': productScope,
+          if (productIds != null) 'product_ids': productIds,
+          if (status != null) 'status': status,
+        });
     final period = InventorySalesPeriod.fromJson(
       Map<String, dynamic>.from(response['data'] as Map),
     );

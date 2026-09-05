@@ -24,7 +24,7 @@
     "sb:up": "cd ../database && bun sb:up",
     "sb:typegen": "cd ../database && bun sb:typegen"
   },
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.1",
   "portless": {
     "name": "chat.tuturuuu",
     "script": "dev:app"
@@ -59,12 +59,12 @@
     "@types/negotiator": "^0.6.5",
     "@types/node": "^26.4.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
+    "@types/react-dom": "^19.2.7",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitejs/plugin-react": "^6.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
-    "postcss": "^8.5.26",
+    "postcss": "^8.5.28",
     "typescript": "7.0.2",
     "vitest": "^5.0.0"
   }

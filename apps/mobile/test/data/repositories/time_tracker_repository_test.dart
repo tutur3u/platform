@@ -43,7 +43,7 @@ void main() {
         final tempDir = await Directory.systemTemp.createTemp(
           'time_tracker_create_request_test',
         );
-        addTearDown(() async => tempDir.delete(recursive: true));
+        addTearDown(() async => await tempDir.delete(recursive: true));
         final imageFile = File('${tempDir.path}/proof.png');
         await imageFile.writeAsBytes(const [1, 2, 3, 4]);
 
@@ -128,7 +128,7 @@ void main() {
       final tempDir = await Directory.systemTemp.createTemp(
         'time_tracker_update_request_test',
       );
-      addTearDown(() async => tempDir.delete(recursive: true));
+      addTearDown(() async => await tempDir.delete(recursive: true));
       final imageFile = File('${tempDir.path}/new-proof.png');
       await imageFile.writeAsBytes(const [5, 6, 7]);
 

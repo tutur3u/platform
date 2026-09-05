@@ -22,7 +22,7 @@ rustls = ["dep:rustls"]
 
 [dependencies]
 axum = { version = "0.8.7", optional = true }
-base64 = "0.22.1"
+base64 = "0.23.1"
 hmac = "0.13.0"
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls-no-provider"], optional = true }
 rustls = { version = "0.23.40", default-features = false, features = ["ring"], optional = true }

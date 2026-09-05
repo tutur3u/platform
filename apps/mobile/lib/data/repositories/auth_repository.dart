@@ -90,11 +90,11 @@ class AuthRepository {
   }
 
   Future<List<StoredAuthAccount>> getStoredAccounts() async {
-    return _multiAccountStorageService.getStoredAccounts();
+    return await _multiAccountStorageService.getStoredAccounts();
   }
 
   Future<String?> getActiveStoredAccountId() async {
-    return _multiAccountStorageService.getActiveStoredAccountId();
+    return await _multiAccountStorageService.getActiveStoredAccountId();
   }
 
   Future<void> syncCurrentSessionToMultiAccountStore({
@@ -106,19 +106,19 @@ class AuthRepository {
   }
 
   Future<({bool success, String? error})> completeAddAccountFlow() async {
-    return _multiAccountStorageService.completeAddAccountFlow();
+    return await _multiAccountStorageService.completeAddAccountFlow();
   }
 
   Future<({bool success, String? error})> switchToStoredAccount(
     String accountId,
   ) async {
-    return _multiAccountStorageService.switchToStoredAccount(accountId);
+    return await _multiAccountStorageService.switchToStoredAccount(accountId);
   }
 
   Future<({bool success, bool switched, String? error})> removeStoredAccount(
     String accountId,
   ) async {
-    return _multiAccountStorageService.removeStoredAccount(accountId);
+    return await _multiAccountStorageService.removeStoredAccount(accountId);
   }
 
   Future<void> updateActiveAccountWorkspaceContext(String workspaceId) async {
@@ -128,11 +128,11 @@ class AuthRepository {
   }
 
   Future<({bool switched, String? error})> signOutCurrentAccount() async {
-    return _multiAccountStorageService.signOutCurrentAccount();
+    return await _multiAccountStorageService.signOutCurrentAccount();
   }
 
   Future<({bool success, String? error})> signOutAllAccounts() async {
-    return _multiAccountStorageService.signOutAllAccounts();
+    return await _multiAccountStorageService.signOutAllAccounts();
   }
 
   // ── OTP ─────────────────────────────────────────
@@ -373,7 +373,7 @@ class AuthRepository {
       }
     }
 
-    return _launchBrowserGoogleSignIn();
+    return await _launchBrowserGoogleSignIn();
   }
 
   Future<AuthActionResult> signInWithMicrosoft() {
@@ -592,7 +592,7 @@ class AuthRepository {
   }
 
   Future<AuthActionResult> _launchBrowserGoogleSignIn() async {
-    return _launchBrowserOAuthSignIn(
+    return await _launchBrowserOAuthSignIn(
       provider: OAuthProvider.google,
       queryParams: const {'access_type': 'offline', 'prompt': 'consent'},
       errorCode: AuthErrorCode.googleBrowserLaunchFailed,

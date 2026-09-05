@@ -124,7 +124,7 @@ Future<AvatarMenuAction?> showAvatarDropdownMenu({
   }
 
   final anchorRect = _resolveTriggerRect(context, triggerKey);
-  return showDialog<AvatarMenuAction>(
+  return await showDialog<AvatarMenuAction>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.10),
     builder: (dialogContext) => _AvatarMenuDialog(

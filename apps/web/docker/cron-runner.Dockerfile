@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM oven/bun:1.4.0-alpine
+FROM oven/bun:1.4.1-alpine
 
 WORKDIR /workspace
 

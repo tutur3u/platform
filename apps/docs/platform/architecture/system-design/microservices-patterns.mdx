@@ -319,7 +319,7 @@ jobs:
           node-version: 24
       - uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.1
       - run: bash scripts/ci/run-with-backoff.sh bun install
       # Pull env, build the Vercel artifact, and deploy the prebuilt output.
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
@@ -328,7 +328,7 @@ jobs:
 ```
 
 Matching `vercel-preview-*.yaml` workflows run for pull requests. Node engines are
-`>=22` (CI uses Node 24) and Bun is pinned to `1.4.0`.
+`>=22` (CI uses Node 24) and Bun is pinned to `1.4.1`.
 
 ### Rust backend
 

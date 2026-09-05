@@ -20,7 +20,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test"
   },
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.1",
   "portless": {
     "name": "tanstack.tuturuuu",
     "script": "dev:app"
@@ -33,7 +33,7 @@
     "@tanstack/react-router": "1.170.32",
     "@tanstack/react-start": "^1.168.49",
     "@tanstack/react-table": "^9.2.4",
-    "@tiptap/react": "3.31.0",
+    "@tiptap/react": "3.31.2",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/legal": "workspace:*",
@@ -58,21 +58,21 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.54.3",
+    "@cloudflare/vite-plugin": "^1.54.4",
     "@playwright/test": "1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.4.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
+    "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "next-intl": "^4.14.2",
-    "nitro": "^3.0.260610-beta",
+    "nitro": "^3.0.260903-beta",
     "tailwindcss": "^4.3.3",
     "typescript": "7.0.2",
     "vite": "^8.2.2",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.0",
-    "wrangler": "^4.128.0"
+    "wrangler": "^4.129.0"
   }
 }

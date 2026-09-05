@@ -356,6 +356,6 @@ class ChatCubit extends Cubit<ChatState> {
     await _realtimeSubscription?.cancel();
     _repository.dispose();
     _realtimeClient.dispose();
-    return super.close();
+    return await super.close();
   }
 }

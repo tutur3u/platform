@@ -16,7 +16,7 @@ Future<String?> showAccountSwitcherSheet(
 }) async {
   final authCubit = context.read<AuthCubit>();
 
-  return showAdaptiveSheet<String?>(
+  return await showAdaptiveSheet<String?>(
     context: context,
     maxDialogWidth: 420,
     builder: (dialogContext) {

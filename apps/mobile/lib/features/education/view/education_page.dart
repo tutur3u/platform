@@ -325,13 +325,13 @@ class _EducationPageState extends State<EducationPage> {
   Future<void> _reloadCurrentTab() async {
     switch (_tab) {
       case _EducationTab.overview:
-        return _loadOverview();
+        return await _loadOverview();
       case _EducationTab.courses:
-        return _loadCourses();
+        return await _loadCourses();
       case _EducationTab.library:
-        return _loadLibrary();
+        return await _loadLibrary();
       case _EducationTab.attempts:
-        return _loadAttempts();
+        return await _loadAttempts();
     }
   }
 
@@ -342,7 +342,7 @@ class _EducationPageState extends State<EducationPage> {
         return;
       case _EducationTab.courses:
         if (_courses.length >= _coursesCount) return;
-        return _loadCourses(append: true);
+        return await _loadCourses(append: true);
       case _EducationTab.library:
         final canLoadMore = switch (_libraryTab) {
           _EducationLibraryTab.quizzes => _quizzes.length < _quizzesCount,
@@ -351,10 +351,10 @@ class _EducationPageState extends State<EducationPage> {
             _flashcards.length < _flashcardsCount,
         };
         if (!canLoadMore) return;
-        return _loadLibrary(append: true);
+        return await _loadLibrary(append: true);
       case _EducationTab.attempts:
         if (_attempts.length >= _attemptsCount) return;
-        return _loadAttempts(append: true);
+        return await _loadAttempts(append: true);
     }
   }
 
@@ -404,15 +404,15 @@ class _EducationPageState extends State<EducationPage> {
   Future<void> _showCreateSheet() async {
     switch (_tab) {
       case _EducationTab.courses:
-        return _showCourseSheet();
+        return await _showCourseSheet();
       case _EducationTab.library:
         switch (_libraryTab) {
           case _EducationLibraryTab.quizzes:
-            return _showQuizSheet();
+            return await _showQuizSheet();
           case _EducationLibraryTab.quizSets:
-            return _showQuizSetSheet();
+            return await _showQuizSetSheet();
           case _EducationLibraryTab.flashcards:
-            return _showFlashcardSheet();
+            return await _showFlashcardSheet();
         }
       case _EducationTab.overview:
       case _EducationTab.attempts:

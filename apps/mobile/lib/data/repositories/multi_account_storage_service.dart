@@ -64,7 +64,7 @@ class MultiAccountStorageService {
   }
 
   Future<String?> _readCurrentPersistedSessionJson() async {
-    return _secureStorage.read(key: supabasePersistSessionKey);
+    return await _secureStorage.read(key: supabasePersistSessionKey);
   }
 
   String? _readDisplayName(User user) {

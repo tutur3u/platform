@@ -1717,7 +1717,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     // getRelationshipTaskOptions intentionally skips _runMutation because this
     // is a read-only fetch; keeping reads out of _runMutation avoids toggling
     // isMutating, and callers should handle any propagated errors.
-    return _taskRepository.getWorkspaceTasksForProjectLinking(wsId);
+    return await _taskRepository.getWorkspaceTasksForProjectLinking(wsId);
   }
 
   Future<List<TaskBoardSummary>> getTaskBoards() async {
@@ -1734,7 +1734,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     if (wsId == null) {
       throw StateError('Workspace not selected');
     }
-    return _taskRepository.getBoardLists(wsId, boardId);
+    return await _taskRepository.getBoardLists(wsId, boardId);
   }
 
   Future<void> deleteTaskRelationship({
@@ -2959,6 +2959,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     if (subscription != null) {
       await subscription.cancel();
     }
-    return super.close();
+    return await super.close();
   }
 }

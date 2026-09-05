@@ -9,9 +9,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const shad.ShadcnApp(
-        theme: shad.ThemeData(
-          colorScheme: shad.ColorSchemes.lightZinc,
-        ),
+        theme: shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
         home: ShadcnMaterialBridge(
           child: Scaffold(body: InkWell(child: Text('Material content'))),
         ),

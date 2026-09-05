@@ -75,7 +75,7 @@ class CacheStore {
   Future<Directory> _resolveHiveDirectory() async {
     final directoryResolver = _directoryResolver;
     if (directoryResolver != null) {
-      return directoryResolver();
+      return await directoryResolver();
     }
 
     // Temp storage is a bootstrap/test fallback only. It keeps startup alive
@@ -102,7 +102,7 @@ class CacheStore {
         'CacheStore.init path_provider missing; '
         'falling back to temp cache directory.',
       );
-      return fallbackDirectory();
+      return await fallbackDirectory();
     } on PlatformException catch (error) {
       debugPrint(
         'CacheStore.init path_provider unavailable during bootstrap: '
@@ -116,13 +116,13 @@ class CacheStore {
           'CacheStore.init retry still missing path_provider; '
           'using temp cache directory.',
         );
-        return fallbackDirectory();
+        return await fallbackDirectory();
       } on PlatformException catch (retryError) {
         debugPrint(
           'CacheStore.init retry failed: ${retryError.code} '
           '${retryError.message}; using temp cache directory.',
         );
-        return fallbackDirectory();
+        return await fallbackDirectory();
       }
     }
   }
@@ -198,7 +198,10 @@ class CacheStore {
         'CacheStore: resetting unreadable legacy cache box $boxName: $error',
       );
       await Hive.deleteBoxFromDisk(boxName);
-      return Hive.openBox<dynamic>(boxName, encryptionCipher: encryptionCipher);
+      return await Hive.openBox<dynamic>(
+        boxName,
+        encryptionCipher: encryptionCipher,
+      );
     }
   }
 

@@ -44,7 +44,7 @@ jobs:
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.1
 
       - name: Verify mobile API ownership mappings
         run: bun check:mobile-api-mappings

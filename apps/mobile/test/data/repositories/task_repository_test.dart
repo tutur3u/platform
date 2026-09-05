@@ -84,7 +84,7 @@ void main() {
         final tempDir = await Directory.systemTemp.createTemp(
           'task_description_upload_test',
         );
-        addTearDown(() async => tempDir.delete(recursive: true));
+        addTearDown(() async => await tempDir.delete(recursive: true));
 
         final imageFile = File('${tempDir.path}/inline.png');
         await imageFile.writeAsBytes(const [1, 2, 3, 4]);

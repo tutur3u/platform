@@ -279,7 +279,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   }
 
   Future<String?> acceptInvite(AppNotification notification) async {
-    return _runPending(notification.id, () async {
+    return await _runPending(notification.id, () async {
       final workspaceId = notification.workspaceId;
       if (workspaceId == null) {
         throw const FormatException('Missing workspace id');
@@ -299,7 +299,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   }
 
   Future<String?> declineInvite(AppNotification notification) async {
-    return _runPending(notification.id, () async {
+    return await _runPending(notification.id, () async {
       final workspaceId = notification.workspaceId;
       if (workspaceId == null) {
         throw const FormatException('Missing workspace id');

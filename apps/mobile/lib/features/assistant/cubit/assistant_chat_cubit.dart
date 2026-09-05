@@ -1066,6 +1066,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   Future<void> close() async {
     _queueDebounce?.cancel();
     await _streamSubscription?.cancel();
-    return super.close();
+    return await super.close();
   }
 }

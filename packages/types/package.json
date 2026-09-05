@@ -21,7 +21,7 @@
     "prepublishOnly": "bun run clean && bun run build"
   },
   "dependencies": {
-    "@tiptap/react": "3.31.0",
+    "@tiptap/react": "3.31.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^4.5.4"
@@ -69,5 +69,5 @@
       "require": "./dist/tiptap.js"
     }
   },
-  "packageManager": "bun@1.4.0"
+  "packageManager": "bun@1.4.1"
 }

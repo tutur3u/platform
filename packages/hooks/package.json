@@ -36,5 +36,5 @@
     "./types/*": "./src/types/*.ts",
     "./utils/*": "./src/utils/*.ts"
   },
-  "packageManager": "bun@1.4.0"
+  "packageManager": "bun@1.4.1"
 }

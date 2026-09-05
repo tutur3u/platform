@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.1",
   "dependencies": {
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",

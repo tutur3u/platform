@@ -51,7 +51,7 @@ class OfflineMutationQueue {
 
   Future<List<PendingMutationRecord>> listPending() async {
     await init();
-    return CacheStore.instance.listPendingMutations();
+    return await CacheStore.instance.listPendingMutations();
   }
 
   Future<void> drain() async {

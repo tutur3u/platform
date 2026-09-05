@@ -376,7 +376,7 @@ void main() {
       ).thenAnswer((invocation) async {
         final dateFrom = invocation.namedArguments[#dateFrom] as DateTime;
         if (dateFrom == DateTime(2026, 1, 15)) {
-          return refreshedHistoryPageCompleter.future;
+          return await refreshedHistoryPageCompleter.future;
         }
 
         return const TimeTrackingSessionPage(
@@ -492,7 +492,7 @@ void main() {
         ).thenAnswer((invocation) async {
           final dateFrom = invocation.namedArguments[#dateFrom] as DateTime;
           if (dateFrom == DateTime(2026, 1, 15)) {
-            return Future<TimeTrackingSessionPage>.delayed(
+            return await Future<TimeTrackingSessionPage>.delayed(
               Duration.zero,
               () => throw Exception('history refresh failed'),
             );

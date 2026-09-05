@@ -48,16 +48,14 @@ extension ChatRepositoryPanels on ChatRepository {
     String? systemPrompt,
     ChatAiThinkingMode? thinkingMode,
   }) async {
-    final response = await _apiClient.patchJson(
-      '${_conversationPath(wsId, conversationId)}/ai-settings',
-      {
-        if (creditSource != null) 'creditSource': creditSource.name,
-        if (creditWsId != null) 'creditWsId': creditWsId,
-        if (modelId != null) 'modelId': modelId,
-        if (systemPrompt != null) 'systemPrompt': systemPrompt,
-        if (thinkingMode != null) 'thinkingMode': thinkingMode.name,
-      },
-    );
+    final response = await _apiClient
+        .patchJson('${_conversationPath(wsId, conversationId)}/ai-settings', {
+          if (creditSource != null) 'creditSource': creditSource.name,
+          if (creditWsId != null) 'creditWsId': creditWsId,
+          if (modelId != null) 'modelId': modelId,
+          if (systemPrompt != null) 'systemPrompt': systemPrompt,
+          if (thinkingMode != null) 'thinkingMode': thinkingMode.name,
+        });
     return ChatAiSettings.fromJson(
       response['settings'] as Map<String, dynamic>? ??
           const <String, dynamic>{},

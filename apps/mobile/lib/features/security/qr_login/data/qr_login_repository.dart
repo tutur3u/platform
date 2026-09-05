@@ -101,14 +101,12 @@ class QrLoginRepository {
   ) async {
     try {
       final deviceId = await getDeviceId();
-      final response = await _apiClient.postJson(
-        AuthEndpoints.qrLoginApprove(payload.challengeId),
-        {
-          'secret': payload.secret,
-          if (deviceId != null) 'deviceId': deviceId,
-          if (_platform != null) 'platform': _platform,
-        },
-      );
+      final response = await _apiClient
+          .postJson(AuthEndpoints.qrLoginApprove(payload.challengeId), {
+            'secret': payload.secret,
+            if (deviceId != null) 'deviceId': deviceId,
+            if (_platform != null) 'platform': _platform,
+          });
 
       if (response['error'] != null) {
         return (success: false, error: response['error'] as String);
@@ -128,15 +126,12 @@ class QrLoginRepository {
     String? captchaToken,
   }) async {
     try {
-      final response = await _apiClient.postJson(
-        AuthEndpoints.qrLoginChallenges,
-        {
-          'locale': locale,
-          'origin': origin,
-          if (captchaToken != null) 'captchaToken': captchaToken,
-        },
-        requiresAuth: false,
-      );
+      final response = await _apiClient
+          .postJson(AuthEndpoints.qrLoginChallenges, {
+            'locale': locale,
+            'origin': origin,
+            if (captchaToken != null) 'captchaToken': captchaToken,
+          }, requiresAuth: false);
 
       final challengeJson = response['challenge'] as Map<String, dynamic>?;
       return QrLoginCreateChallengeResult(

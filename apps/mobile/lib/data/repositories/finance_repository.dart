@@ -182,7 +182,7 @@ class FinanceRepository {
       }
     }
 
-    return _refreshWorkspaceDefaultCurrency(wsId);
+    return await _refreshWorkspaceDefaultCurrency(wsId);
   }
 
   Future<void> updateWorkspaceDefaultCurrency({
@@ -312,14 +312,12 @@ class FinanceRepository {
     required DateTime checkedAt,
     String? note,
   }) async {
-    final response = await _api.postJson(
-      FinanceEndpoints.walletCheckpoints(wsId, walletId),
-      {
-        'actual_balance': actualBalance,
-        'checked_at': checkedAt.toIso8601String(),
-        'note': note,
-      },
-    );
+    final response = await _api
+        .postJson(FinanceEndpoints.walletCheckpoints(wsId, walletId), {
+          'actual_balance': actualBalance,
+          'checked_at': checkedAt.toIso8601String(),
+          'note': note,
+        });
     return WalletCheckpoint.fromJson(response);
   }
 
@@ -328,13 +326,11 @@ class FinanceRepository {
     required DateTime checkedAt,
     required List<WalletCheckpointBatchEntry> entries,
   }) async {
-    final response = await _api.postJson(
-      FinanceEndpoints.walletCheckpointSummary(wsId),
-      {
-        'checked_at': checkedAt.toIso8601String(),
-        'entries': entries.map((entry) => entry.toJson()).toList(),
-      },
-    );
+    final response = await _api
+        .postJson(FinanceEndpoints.walletCheckpointSummary(wsId), {
+          'checked_at': checkedAt.toIso8601String(),
+          'entries': entries.map((entry) => entry.toJson()).toList(),
+        });
     return WalletCheckpointBatchResponse.fromJson(response);
   }
 

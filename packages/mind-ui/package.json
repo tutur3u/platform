@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.1",
   "dependencies": {
     "@json-render/core": "^0.20.0",
     "@json-render/react": "^0.20.0",
@@ -32,7 +32,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@xyflow/react": "^12.11.6",
-    "ai": "^7.0.91",
+    "ai": "^7.0.93",
     "katex": "^0.18.5",
     "next": "^16.3.4",
     "next-intl": "^4.14.2",
@@ -47,7 +47,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.4.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.5",
+    "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^30.0.1",
     "typescript": "7.0.2",

@@ -6,6 +6,11 @@
  * never leaks onto other code rendered in the app.
  */
 
+.ui-docs-code .shiki {
+  margin: 0;
+  background-color: transparent;
+}
+
 .ui-docs-code .shiki,
 .ui-docs-code .shiki span {
   color: var(--shiki-light);
@@ -14,9 +19,4 @@
 .dark .ui-docs-code .shiki,
 .dark .ui-docs-code .shiki span {
   color: var(--shiki-dark);
-}
-
-.ui-docs-code .shiki {
-  margin: 0;
-  background-color: transparent;
 }

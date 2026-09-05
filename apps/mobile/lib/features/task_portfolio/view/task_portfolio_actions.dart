@@ -32,7 +32,7 @@ class TaskPortfolioActions {
       builder: (_) => TaskProjectSheet(
         onSubmit: (result) async {
           if (!context.mounted) return false;
-          return _runActionWithResult(
+          return await _runActionWithResult(
             () => context.read<TaskPortfolioCubit>().createProject(
               wsId: wsId,
               name: result.name,
@@ -78,7 +78,7 @@ class TaskPortfolioActions {
         workspaceUsers: workspaceUsers,
         onSubmit: (result) async {
           if (!context.mounted) return false;
-          return _runActionWithResult(
+          return await _runActionWithResult(
             () => context.read<TaskPortfolioCubit>().updateProject(
               wsId: wsId,
               projectId: project.id,
@@ -138,7 +138,7 @@ class TaskPortfolioActions {
       builder: (_) => TaskInitiativeSheet(
         onSubmit: (result) async {
           if (!context.mounted) return false;
-          return _runActionWithResult(
+          return await _runActionWithResult(
             () => context.read<TaskPortfolioCubit>().createInitiative(
               wsId: wsId,
               name: result.name,
@@ -163,7 +163,7 @@ class TaskPortfolioActions {
         initiative: initiative,
         onSubmit: (result) async {
           if (!context.mounted) return false;
-          return _runActionWithResult(
+          return await _runActionWithResult(
             () => context.read<TaskPortfolioCubit>().updateInitiative(
               wsId: wsId,
               initiativeId: initiative.id,

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM oven/bun:1.4.0 AS deps
+FROM oven/bun:1.4.1 AS deps
 
 WORKDIR /workspace
 
@@ -109,7 +109,7 @@ RUN --mount=type=cache,id=platform-tanstack-web-bun-install,target=/root/.bun/in
     sleep 5; \
   done
 
-FROM oven/bun:1.4.0 AS dev
+FROM oven/bun:1.4.1 AS dev
 
 WORKDIR /workspace
 

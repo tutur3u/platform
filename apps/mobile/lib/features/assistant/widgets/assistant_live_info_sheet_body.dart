@@ -134,7 +134,7 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
               if (onPrimaryAction != null) ...[
                 const SizedBox(height: 20),
                 FilledButton(
-                  onPressed: () async => onPrimaryAction?.call(),
+                  onPressed: () async => await onPrimaryAction?.call(),
                   child: Text(l10n.assistantLiveConnect),
                 ),
               ],

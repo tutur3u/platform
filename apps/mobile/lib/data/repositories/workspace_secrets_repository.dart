@@ -188,14 +188,12 @@ class WorkspaceSecretsRepository {
     required String targetProvider,
     bool overwrite = true,
   }) async {
-    final response = await _api.postJson(
-      WorkspaceSettingsEndpoints.migrateStorage(wsId),
-      {
-        'sourceProvider': sourceProvider,
-        'targetProvider': targetProvider,
-        'overwrite': overwrite,
-      },
-    );
+    final response = await _api
+        .postJson(WorkspaceSettingsEndpoints.migrateStorage(wsId), {
+          'sourceProvider': sourceProvider,
+          'targetProvider': targetProvider,
+          'overwrite': overwrite,
+        });
     final payload = response['data'];
 
     if (payload is Map<String, dynamic>) {

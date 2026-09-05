@@ -1164,11 +1164,11 @@ DATABASE_URL=
 }
 ```
 
-**Pinned toolchain ensures runtime consistency.** The repo pins its toolchain so every environment resolves identical versions: `packageManager` is `bun@1.4.0`, and Node `engines` require `>=22`. A container image would mirror those pins:
+**Pinned toolchain ensures runtime consistency.** The repo pins its toolchain so every environment resolves identical versions: `packageManager` is `bun@1.4.1`, and Node `engines` require `>=22`. A container image would mirror those pins:
 
 ```dockerfile
 # Illustrative Dockerfile — keep versions aligned with package.json pins
-FROM oven/bun:1.4.0 as base
+FROM oven/bun:1.4.1 as base
 
 WORKDIR /app
 
@@ -1180,7 +1180,7 @@ COPY . .
 RUN bun run build
 
 # Production image (identical across environments)
-FROM oven/bun:1.4.0-slim
+FROM oven/bun:1.4.1-slim
 WORKDIR /app
 COPY --from=base /app/.next ./.next
 COPY --from=base /app/node_modules ./node_modules
@@ -1225,7 +1225,7 @@ The table separates what is **implemented today** from patterns presented as **t
 |-----------|-------------------|-----------------------------|-----------------|
 | **Maintainability** | App + feature-folder boundaries, shared Supabase + `@tuturuuu/types/db`, shared `packages/internal-api` / `packages/apis`, modular Next.js frontend, per-app Vercel projects | Hexagonal ports/adapters, repository interfaces, technology-swap seams | Sustainable long-term evolution |
 | **Testability** | Vitest unit + colocated `*.test.ts`, Zod payload validation, Turborepo affected-package CI | Pure domain objects, in-memory test doubles, formal contract tests, event replay | High confidence in changes |
-| **Deployability** | Per-app Vercel preview/deploy workflows, separate Rust `apps/backend` track, pinned toolchain (`bun@1.4.0`, Node `>=22`), Supabase migrations + typegen | Canary/blue-green orchestration scripts, custom feature-flag service | Frequent, low-risk releases |
+| **Deployability** | Per-app Vercel preview/deploy workflows, separate Rust `apps/backend` track, pinned toolchain (`bun@1.4.1`, Node `>=22`), Supabase migrations + typegen | Canary/blue-green orchestration scripts, custom feature-flag service | Frequent, low-risk releases |
 
 <Note>
 These properties are being preserved through the `apps/web` → `apps/tanstack-web` + Rust `apps/backend` migration. See [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration).

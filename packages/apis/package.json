@@ -42,5 +42,5 @@
     "./*": "./src/*.ts",
     "./meet/actions": "./src/meet/actions/index.ts"
   },
-  "packageManager": "bun@1.4.0"
+  "packageManager": "bun@1.4.1"
 }
