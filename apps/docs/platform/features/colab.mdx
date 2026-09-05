@@ -122,7 +122,9 @@ in `tuturuuu.ci.ts` controls it. Manual dispatch on `production` retries a relea
 The validation job tests both workspaces, builds the client, bundles the Worker,
 and uploads revision-specific assets. Deployment downloads those same assets,
 records the Git SHA in the Worker version message, and checks canonical health
-and every asset hash. Deployments are serialized and never cancel an active release.
+and every asset hash. Verification retries up to 12 times, five seconds apart,
+so a successful upload is not mistaken for immediate edge propagation; persistent
+hash mismatches still fail the job. Deployments are serialized and never cancel an active release.
 
 Configure the repository Actions secret (or environment `colab-production` secret)
 `COLAB_CLOUDFLARE_API_TOKEN`: Workers Scripts edit, Workers AI read, account read,
