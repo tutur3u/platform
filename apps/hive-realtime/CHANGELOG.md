@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.9.1...hive-realtime-v0.10.0) (2026-09-05)
+
+
+### Features
+
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+
 ## [0.9.1](https://github.com/tutur3u/platform/compare/hive-realtime-v0.9.0...hive-realtime-v0.9.1) (2026-08-11)
 
 

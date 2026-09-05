@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/internal-api-v0.33.1...internal-api-v0.34.0) (2026-09-05)
+
+
+### Features
+
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+
+
+### Bug Fixes
+
+* **colab:** resolve API types from source in clean builds ([df163f8](https://github.com/tutur3u/platform/commit/df163f8c8d5b7554ef2e4f37b5598f56e0b05887))
+
 ## [0.33.1](https://github.com/tutur3u/platform/compare/internal-api-v0.33.0...internal-api-v0.33.1) (2026-09-02)
 
 

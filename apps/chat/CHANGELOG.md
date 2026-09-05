@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/chat-v0.21.2...chat-v0.22.0) (2026-09-05)
+
+
+### Features
+
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+
 ## [0.21.2](https://github.com/tutur3u/platform/compare/chat-v0.21.1...chat-v0.21.2) (2026-08-29)
 
 

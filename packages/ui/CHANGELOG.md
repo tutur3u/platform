@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/ui-v0.30.2...ui-v0.31.0) (2026-09-05)
+
+
+### Features
+
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **colab:** reuse the shared Tuturuuu structure shell ([11ca1fa](https://github.com/tutur3u/platform/commit/11ca1fa35bba8a64fdb9b56972b5c0f11c87339f))
+
 ## [0.30.2](https://github.com/tutur3u/platform/compare/ui-v0.30.1...ui-v0.30.2) (2026-08-31)
 
 
