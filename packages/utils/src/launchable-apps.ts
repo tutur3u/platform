@@ -387,6 +387,18 @@ export const LAUNCHABLE_APPS = [
     title: 'Track',
     workspacePathResolver: workspaceRootPath,
   },
+  {
+    aliases: ['Prompt engineering', 'Team workshops', 'Multiplayer learning'],
+    appRoot: 'apps/colab',
+    category: 'learning',
+    defaultPath: '/',
+    localhostOrigin: 'http://localhost:8795',
+    packageName: '@tuturuuu/colab',
+    portlessApp: 'colab',
+    productionUrl: 'https://colab.tuturuuu.com',
+    slug: 'colab',
+    title: 'Colab',
+  },
 ] as const satisfies readonly LaunchableApp[];
 
 export type LaunchableAppSlug = (typeof LAUNCHABLE_APPS)[number]['slug'];

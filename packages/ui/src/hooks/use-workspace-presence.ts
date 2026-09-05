@@ -56,24 +56,6 @@ function createPresenceSessionId(): string {
     return crypto.randomUUID();
   }
 
-  // Fallback to Node.js crypto if available
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const nodeCrypto = require('node:crypto') as
-      | { randomUUID?: () => string; randomBytes: (size: number) => Buffer }
-      | undefined;
-
-    if (nodeCrypto?.randomUUID) {
-      return nodeCrypto.randomUUID();
-    }
-
-    if (typeof nodeCrypto?.randomBytes === 'function') {
-      return nodeCrypto.randomBytes(16).toString('hex');
-    }
-  } catch {
-    // Ignore and fall through to final fallback
-  }
-
   // Final fallback using Web Crypto getRandomValues if available
   if (
     typeof crypto !== 'undefined' &&

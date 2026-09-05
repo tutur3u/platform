@@ -1,0 +1,78 @@
+name: Colab Cloudflare
+
+on:
+  push:
+    branches: [main, production]
+    paths:
+      - 'apps/colab/**'
+      - 'packages/multiplayer/**'
+      - 'packages/internal-api/**'
+      - 'bun.lock'
+      - 'package.json'
+      - 'tuturuuu.ci.ts'
+      - 'tuturuuu.ts'
+      - '.github/workflows/colab-cloudflare.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: colab-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: colab-cloudflare.yaml
+  validate:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+        working-directory: packages/multiplayer
+      - run: bun run test
+        working-directory: apps/colab
+      - run: bun run build
+        working-directory: apps/colab
+      - run: bunx --no-install wrangler deploy --dry-run
+        working-directory: apps/colab
+      - uses: actions/upload-artifact@v7
+        with:
+          name: colab-assets-${{ github.sha }}
+          path: apps/colab/dist
+          retention-days: 7
+          if-no-files-found: error
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    environment: colab-production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@v8
+        with:
+          name: colab-assets-${{ github.sha }}
+          path: apps/colab/dist
+      - name: Deploy the verified revision
+        working-directory: apps/colab
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing COLAB_CLOUDFLARE_API_TOKEN'; exit 1; }
+          bunx --no-install wrangler deploy --message "$GITHUB_SHA"
+      - name: Verify canonical health and deployed assets
+        working-directory: apps/colab
+        run: node scripts/verify-deployment.mjs

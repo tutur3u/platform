@@ -353,7 +353,8 @@
     },
     "./custom/notification-popover-client": {
       "types": "./src/components/ui/custom/notification-popover-client.tsx",
-      "import": "./src/components/ui/custom/notification-popover-client.tsx"
+      "import": "./src/components/ui/custom/notification-popover-client.tsx",
+      "default": "./src/components/ui/custom/notification-popover-client.tsx"
     },
     "./custom/sidebar-footer-actions": {
       "types": "./src/components/ui/custom/sidebar-footer-actions.tsx",

@@ -4,6 +4,7 @@ import {
 } from './portless';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
+  { name: 'colab', url: 'https://colab.tuturuuu.com' },
   {
     name: 'ai',
     url: 'https://ai.tuturuuu.com',
@@ -131,6 +132,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [
+  { name: 'colab', url: getTuturuuuPortlessAppOrigin('colab') },
   {
     name: 'ai',
     url: getTuturuuuPortlessAppOrigin('ai'),
@@ -250,6 +252,7 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const LOCALHOST_INTERNAL_APP_DOMAINS = [
+  { name: 'colab', url: 'http://localhost:8795' },
   {
     name: 'ai',
     url: 'http://localhost:7829',

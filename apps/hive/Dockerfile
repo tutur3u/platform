@@ -40,6 +40,7 @@ COPY apps/tasks/package.json ./apps/tasks/package.json
 COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
 COPY apps/pay/package.json ./apps/pay/package.json
+COPY apps/colab/package.json ./apps/colab/package.json
 COPY apps/contacts/package.json ./apps/contacts/package.json
 COPY apps/forms/package.json ./apps/forms/package.json
 COPY apps/git/package.json ./apps/git/package.json
@@ -68,6 +69,7 @@ COPY packages/legal/package.json ./packages/legal/package.json
 COPY packages/storage-core/package.json ./packages/storage-core/package.json
 COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
+COPY packages/multiplayer/package.json ./packages/multiplayer/package.json
 COPY packages/mind-core/package.json ./packages/mind-core/package.json
 COPY packages/mind-ui/package.json ./packages/mind-ui/package.json
 COPY packages/offline/package.json ./packages/offline/package.json

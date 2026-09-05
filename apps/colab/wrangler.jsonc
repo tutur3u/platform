@@ -1,0 +1,26 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-colab",
+  "account_id": "e8912e2867beecc673d171907bf09649",
+  "main": "src/server/worker.ts",
+  "compatibility_date": "2026-06-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/auth/*", "/verify-token"]
+  },
+  "routes": [{ "pattern": "colab.tuturuuu.com", "custom_domain": true }],
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "ColabRoom" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ColabRoom"] }],
+  "ai": { "binding": "AI" },
+  "vars": {
+    "APP_ORIGIN": "https://colab.tuturuuu.com",
+    "AUTH_ORIGIN": "https://tuturuuu.com"
+  },
+  "secrets": { "required": ["COLAB_SESSION_SECRET"] },
+  "observability": { "enabled": true, "head_sampling_rate": 0.05 }
+}

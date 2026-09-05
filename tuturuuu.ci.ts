@@ -8,6 +8,7 @@ export const ci = {
   'check-migration-timestamps.yml': true,
   'check-migrations.yml': true,
   'codecov.yaml': true,
+  'colab-cloudflare.yaml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
   'docker-setup-check.yaml': true,

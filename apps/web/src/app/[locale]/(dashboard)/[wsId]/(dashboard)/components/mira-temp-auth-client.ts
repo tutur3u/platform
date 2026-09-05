@@ -1,6 +1,6 @@
 'use client';
 
-import { AI_TEMP_AUTH_HEADER } from '@tuturuuu/utils/ai-temp-auth';
+import { AI_TEMP_AUTH_HEADER } from '@tuturuuu/utils/ai-temp-auth-constants';
 import type { CreditSource } from './mira-chat-constants';
 
 type MiraTempAuthBody = {

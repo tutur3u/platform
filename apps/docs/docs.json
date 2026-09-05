@@ -31,6 +31,7 @@
                 "group": "Features",
                 "pages": [
                   "platform/features/command-center-dashboard",
+                  "platform/features/colab",
                   "platform/features/cms-site-contract-v1",
                   "platform/features/external-project-studio",
                   "platform/features/forms-embedding-and-seo",

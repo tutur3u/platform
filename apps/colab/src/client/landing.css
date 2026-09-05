@@ -1,0 +1,211 @@
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 28px;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+.hero-actions .primary {
+  padding: 15px 24px;
+}
+.preview-section {
+  padding: 70px 0 90px;
+  border-top: 1px solid var(--line);
+}
+.preview-heading {
+  max-width: 670px;
+  margin-bottom: 38px;
+}
+.preview-heading h2,
+.detail-lead h2 {
+  font-size: clamp(30px, 4vw, 48px);
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+  margin: 14px 0 20px;
+}
+.preview-heading > p:last-child,
+.detail-lead > p {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.8;
+}
+.prompt-experiment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px #21352b08;
+  background: var(--surface);
+}
+.experiment-input,
+.experiment-result {
+  padding: clamp(22px, 3vw, 40px);
+  min-width: 0;
+}
+.experiment-input {
+  background: var(--soft);
+}
+.experiment-label {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  margin-bottom: 26px;
+}
+.experiment-label > span {
+  color: var(--muted);
+  font-family: monospace;
+}
+.experiment-input blockquote {
+  margin: 30px 0;
+  min-height: 135px;
+  font-size: clamp(19px, 2vw, 25px);
+  line-height: 1.55;
+  letter-spacing: -0.02em;
+}
+.trace-line {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 6px 14px;
+  margin: 0 0 22px;
+  font-size: 13px;
+}
+.trace-line > span:last-child {
+  grid-column: 2;
+  color: var(--muted);
+}
+.trace-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  background: var(--dark);
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px var(--soft);
+}
+.example-outcome {
+  border-left: 3px solid var(--line);
+  padding: 14px 18px;
+  background: var(--soft);
+  border-radius: 0 10px 10px 0;
+  min-height: 126px;
+}
+.example-outcome.refined {
+  border-color: var(--dark);
+}
+.example-outcome > span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.example-outcome p {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 10px 0 0;
+}
+.skill-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 24px;
+  font-size: 11px;
+}
+.skill-strip > span {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: monospace;
+}
+.skill-strip code {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.workshop-details {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 70px;
+  padding: 90px 0;
+  border-bottom: 1px solid var(--line);
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+.detail-grid article {
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+}
+.detail-number {
+  color: var(--muted);
+  font-family: monospace;
+  font-size: 11px;
+}
+.detail-grid h3 {
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  margin: 16px 0 10px;
+}
+.detail-grid p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 0;
+}
+.auth-recovery {
+  max-width: 1160px;
+  margin: 30px auto 0;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  border-radius: 15px;
+}
+.auth-recovery h2 {
+  font-size: 24px;
+  margin: 0 0 12px;
+}
+.auth-recovery p {
+  max-width: 750px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .preview-section {
+    padding: 45px 0;
+  }
+  .prompt-experiment,
+  .workshop-details {
+    grid-template-columns: 1fr;
+  }
+  .workshop-details {
+    gap: 35px;
+    padding: 50px 0;
+  }
+  .detail-grid {
+    gap: 25px;
+  }
+  .experiment-input blockquote {
+    min-height: 0;
+  }
+  .auth-recovery {
+    margin: 20px;
+  }
+}
+@media (max-width: 430px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

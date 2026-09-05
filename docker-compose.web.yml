@@ -123,6 +123,8 @@ services:
       - platform-web-masonry-dist:/workspace/packages/masonry/dist
       - platform-web-microsoft-node_modules:/workspace/packages/microsoft/node_modules
       - platform-web-microsoft-dist:/workspace/packages/microsoft/dist
+      - platform-web-multiplayer-node_modules:/workspace/packages/multiplayer/node_modules
+      - platform-web-multiplayer-dist:/workspace/packages/multiplayer/dist
       - platform-web-mind-core-node_modules:/workspace/packages/mind-core/node_modules
       - platform-web-mind-core-dist:/workspace/packages/mind-core/dist
       - platform-web-mind-ui-node_modules:/workspace/packages/mind-ui/node_modules
@@ -234,6 +236,8 @@ services:
       - platform-web-storage-core-dist:/workspace/packages/storage-core/dist
       - platform-web-storage-core-node_modules:/workspace/packages/storage-core/node_modules
       - platform-web-mind-core-dist:/workspace/packages/mind-core/dist
+      - platform-web-multiplayer-node_modules:/workspace/packages/multiplayer/node_modules
+      - platform-web-multiplayer-dist:/workspace/packages/multiplayer/dist
       - platform-web-mind-core-node_modules:/workspace/packages/mind-core/node_modules
       - platform-web-types-dist:/workspace/packages/types/dist
       - platform-web-types-node_modules:/workspace/packages/types/node_modules
@@ -516,6 +520,8 @@ volumes:
   platform-web-masonry-dist:
   platform-web-microsoft-node_modules:
   platform-web-microsoft-dist:
+  platform-web-multiplayer-node_modules:
+  platform-web-multiplayer-dist:
   platform-web-mind-core-node_modules:
   platform-web-mind-core-dist:
   platform-web-mind-ui-node_modules:

@@ -83,7 +83,12 @@ const nextConfig = createTuturuuuNextConfig({
   outputFileTracingIncludes: offlineConfig.outputFileTracingIncludes,
   outputFileTracingRoot: offlineConfig.outputFileTracingRoot,
   reactCompiler: true,
-  serverExternalPackages: [...(offlineConfig.serverExternalPackages ?? [])],
+  serverExternalPackages: [
+    ...(offlineConfig.serverExternalPackages ?? []),
+    // This optional adapter imports cloudflare:workers and must not enter the
+    // Node server bundle. It is loaded only when explicitly selected at runtime.
+    'chat-state-cloudflare-do',
+  ],
   experimental: {
     ...(offlineConfig.experimental ?? {}),
     // Reuse static route stages and shared shells across similar navigations.

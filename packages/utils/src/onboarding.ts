@@ -71,6 +71,7 @@ export const GOAL_RECOMMENDATIONS = {
 } as const satisfies Record<OnboardingGoal, readonly string[]>;
 
 const MISSIONS = [
+  ['colab', 'learn', 'reversible', ['prompt', 'simulate', 'review']],
   ['platform', 'focus', 'reversible', ['overview', 'apps', 'next_move']],
   ['calendar', 'focus', 'reversible', ['schedule', 'timebox', 'review']],
   [

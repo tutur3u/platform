@@ -1,7 +1,8 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { AI_TEMP_AUTH_HEADER } from './ai-temp-auth-constants';
 import { getUpstashRestRedisClient } from './upstash-rest';
 
-export const AI_TEMP_AUTH_HEADER = 'x-tuturuuu-ai-temp-auth';
+export { AI_TEMP_AUTH_HEADER } from './ai-temp-auth-constants';
 export const AI_TEMP_AUTH_TTL_SECONDS = 60;
 export const AI_CREDIT_SNAPSHOT_TTL_SECONDS = 15;
 

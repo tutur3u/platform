@@ -1,0 +1,134 @@
+---
+title: Colab team prompt workshops
+description: Run invite-only AI learning workshops on Cloudflare with isolated mock tools.
+---
+
+Colab at `colab.tuturuuu.com` is a standalone React application served by a
+Cloudflare Worker. A SQLite Durable Object owns each room. The reusable
+`@tuturuuu/multiplayer` package defines room policy and safe member-specific
+projections; the Worker owns authentication, inference, storage and WebSockets.
+
+## Running a workshop
+
+1. Sign in with a confirmed Tuturuuu account. Only an exact `@tuturuuu.com`
+   account can create a room. Choose its start/end time, participant limit and
+   number of teams. Limits are 5 minutes–8 hours, 2–100 participants including
+   admins, and 1–12 teams.
+2. In the facilitator desk, allow account emails and share the room URL. This
+   adds an account invitation; it does not send email. Alternatively, generate a
+   random temporary password and share it separately. The password appears once;
+   only its SHA-256 digest is stored. Rotation removes password-only guests.
+3. Each team writes and saves a system prompt. Version checks reject concurrent
+   overwrites. Drafts remain local until saved. A teammate can explicitly load
+   the latest saved version after a conflict.
+4. Generate a single skill or let the model split the instructions into up to
+   four focused skills. Each download contains YAML frontmatter and readable
+   Markdown instructions. Place it in `<skill-name>/SKILL.md` in a compatible
+   agent environment after reviewing it.
+5. Test the generated skills against the room scenario. The journal records the
+   prompt snapshot, scenario, actual sandbox tool inputs/results, final answer
+   and AI coaching. Coaching is advisory, not proof of agent correctness.
+6. Turn on showcase to let teams inspect one another's work. Otherwise only the
+   team's own work and teammates are sent to that team. Admins can inspect all
+   teams. Only staff admins can promote other signed-in accounts to room admin.
+7. Close to read-only, or set private mode to restrict access to admins. At the
+   scheduled end the room becomes read-only. Every mutation checks the clock;
+   the Durable Object alarm also updates connected clients. Private mode and
+   revoked memberships close affected sockets.
+
+## Sandbox boundary
+
+The eight adapters cover Google Drive, Notion, Zalo, Messenger, Microsoft Teams,
+Google Calendar, Jira and Trello. They simulate searchable records and
+create/update actions. They are educational mockups, not replicas of the full
+products. No third-party app credentials, network fetch tools or real messaging
+connectors are available to the agent. Each team's writes affect only its own
+records. Admins can reset those records to the same seeded Project Lotus dataset.
+
+Workers AI generates skills, scenarios, agent decisions and feedback using
+`@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Agent execution uses a bounded JSON tool
+protocol with an allowlist and runtime validation. Each run allows six decisions
+and a coaching call. A room allows 200 AI operations and one concurrent AI job.
+If room state changes while inference is running, the stale result is discarded.
+The system prompt, scenario, mock records and traces are sent to Workers AI;
+participants should use workshop examples rather than confidential real data.
+
+## Authentication and deployment
+
+The Worker redirects to central Tuturuuu login with a nonce-bound return URL.
+`POST /api/v1/auth/colab/verify` consumes a Colab-targeted one-time handoff and
+looks up the confirmed, non-banned user in Supabase Auth. It deliberately ignores
+`cross_app_tokens.session_data.email`, which is caller-controlled. Colab signs
+its own short-lived, HttpOnly, Secure, SameSite cookie using
+`COLAB_SESSION_SECRET`. The Worker never receives a Supabase service key.
+
+Ship the Colab domain registration in `packages/utils/src/internal-domains.ts`
+and the verifier on the live web app before accepting production account logins.
+The new verifier is tracked as Rust migration backlog; the Rust backend does not
+serve production traffic. No Supabase migration or production database push is
+required for Colab.
+
+The Cloudflare configuration is `apps/colab/wrangler.jsonc`. It creates
+`tuturuuu-colab`, binds the room Durable Object and Workers AI, serves static
+assets, and attaches the `colab.tuturuuu.com` custom domain. Use the authorized
+Tuturuuu Cloudflare account. Provision a cryptographically random
+`COLAB_SESSION_SECRET` through Wrangler's secret input; never commit it.
+
+```sh
+cd apps/colab
+bun run build
+bun run deploy:dry-run
+bunx wrangler secret put COLAB_SESSION_SECRET
+bun run deploy
+```
+
+Rotate the session secret only intentionally: it signs out all Colab sessions.
+Room state persists in Durable Object SQLite storage across Worker deployments.
+Keep the `v1` migration and class name stable. Read-only rooms are retained;
+there is no automatic data deletion policy in this release.
+
+## Verification
+
+```sh
+cd packages/multiplayer
+bun run test
+cd ../../apps/colab
+bun run test
+bun run build
+WRANGLER_LOG_PATH=/private/tmp/colab-wrangler.log bunx wrangler deploy --dry-run --outdir /private/tmp/colab-worker
+node scripts/verify-runtime.mjs
+cd ../..
+bun check
+```
+
+The finite runtime script starts a local Worker on port 8795 with a test-only
+signing secret, uses isolated in-memory Durable Objects, verifies access and
+concurrent updates, and opens headless Chromium for desktop/mobile and Vietnamese
+checks. It never creates a production session. It writes screenshots to
+`/private/tmp/colab-*.png` and closes the browser/runtime when finished. Install
+the Playwright Chromium browser if it is not already available.
+
+After deployment verify `/api/health`, static asset responses, central sign-in,
+an invited account and temporary guest, live team updates, skill generation and
+an AI run. Correlate the Worker version with its source revision and inspect
+Wrangler logs without logging passwords, cookies or prompts. A successful
+Cloudflare upload alone does not establish that central sign-in is deployed.
+
+## Automatic deployment
+
+`.github/workflows/colab-cloudflare.yaml` validates affected `main` and
+`production` revisions and deploys only `production`. The repository switchboard
+in `tuturuuu.ci.ts` controls it. Manual dispatch on `production` retries a release.
+The validation job tests both workspaces, builds the client, bundles the Worker,
+and uploads revision-specific assets. Deployment downloads those same assets,
+records the Git SHA in the Worker version message, and checks canonical health
+and every asset hash. Deployments are serialized and never cancel an active release.
+
+Configure the repository Actions secret (or environment `colab-production` secret)
+`COLAB_CLOUDFLARE_API_TOKEN`: Workers Scripts edit, Workers AI read, account read,
+and Workers Routes edit plus zone read for `tuturuuu.com`, scoped to Tuturuuu.
+The session signing secret stays in Cloudflare and is not regenerated by CI.
+
+An expired or incomplete login returns to a bilingual recovery panel instead of
+a JSON error. `/verify-token` unwraps the central portal's callback only for
+Colab's own `/auth/callback`; the callback still requires its original nonce cookie.

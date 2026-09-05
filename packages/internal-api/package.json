@@ -281,6 +281,11 @@
       "types": "./dist/workspaces.d.ts",
       "import": "./dist/workspaces.js",
       "require": "./dist/workspaces.js"
+    },
+    "./colab": {
+      "types": "./dist/colab.d.ts",
+      "import": "./dist/colab.js",
+      "require": "./dist/colab.js"
     }
   },
   "devDependencies": {
