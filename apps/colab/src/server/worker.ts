@@ -185,6 +185,9 @@ export default {
               } as Record<string, number>
             )[code] ?? 400);
       const path = new URL(request.url).pathname;
+      if (path.startsWith('/auth/') || path === '/verify-token') {
+        console.warn('Colab sign-in failed', { path, code });
+      }
       response =
         path.startsWith('/auth/') || path === '/verify-token'
           ? new Response(null, {

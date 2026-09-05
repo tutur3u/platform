@@ -131,11 +131,20 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
     new URL('/api/v1/auth/colab/verify', env.AUTH_ORIGIN),
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Tuturuuu-Colab/1.0',
+      },
       body: JSON.stringify({ targetApp: 'colab', token }),
       signal: AbortSignal.timeout(15000),
     }
   );
+  if (!response.ok) {
+    console.warn('Colab account verification rejected', {
+      status: response.status,
+      proxyReason: response.headers.get('x-proxy-block-reason'),
+    });
+  }
   requireRule(response.ok, 'invalid_login', 401);
   const data = (await response.json()) as {
     valid?: boolean;
