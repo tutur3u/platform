@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.46.0](https://github.com/tutur3u/platform/compare/platform-v0.45.1...platform-v0.46.0) (2026-09-05)
+
+
+### Features
+
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **colab:** reuse the shared Tuturuuu structure shell ([11ca1fa](https://github.com/tutur3u/platform/commit/11ca1fa35bba8a64fdb9b56972b5c0f11c87339f))
+
+
+### Bug Fixes
+
+* **ci:** invoke Wrangler through the installed Bun binary ([1c32992](https://github.com/tutur3u/platform/commit/1c32992564818715f0c67ff48bdee90303880a55))
+* **colab:** identify central auth verification requests ([7755504](https://github.com/tutur3u/platform/commit/7755504d9fe6dc19830a8eba4535b5167e6c6016))
+* **colab:** resolve API types from source in clean builds ([df163f8](https://github.com/tutur3u/platform/commit/df163f8c8d5b7554ef2e4f37b5598f56e0b05887))
+* **colab:** wait for edge propagation during deployment verification ([27a9c18](https://github.com/tutur3u/platform/commit/27a9c189224d89267738c093782585c555d6d7bf))
+
 ## [0.45.1](https://github.com/tutur3u/platform/compare/platform-v0.45.0...platform-v0.45.1) (2026-09-04)
 
 

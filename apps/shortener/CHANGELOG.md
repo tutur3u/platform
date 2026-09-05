@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/shortener-v0.18.2...shortener-v0.19.0) (2026-09-05)
+
+
+### Features
+
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+
 ## [0.18.2](https://github.com/tutur3u/platform/compare/shortener-v0.18.1...shortener-v0.18.2) (2026-08-29)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/tutur3u/platform/compare/infra-v0.22.6...infra-v0.23.0) (2026-09-05)
+
+
+### Features
+
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+
 ## [0.22.6](https://github.com/tutur3u/platform/compare/infra-v0.22.5...infra-v0.22.6) (2026-09-03)
 
 
