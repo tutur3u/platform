@@ -1,6 +1,6 @@
 ---
 name: firebase-hosting-basics
-description: Skill for working with Firebase Hosting (Classic). Use this when you want to deploy static web apps, Single Page Apps (SPAs), or simple microservices. Do NOT use for Firebase App Hosting.
+description: "Deploy static sites and SPAs with Firebase Hosting Classic; use App Hosting for its managed backend workflow."
 ---
 
 # hosting-basics

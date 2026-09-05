@@ -1,6 +1,6 @@
 ---
 name: ai-sdk
-description: 'Answer questions about the AI SDK and help build AI-powered features. Use when developers: (1) Ask about AI SDK functions like generateText, streamText, ToolLoopAgent, or tools, (2) Want to build AI agents, chatbots, or text generation features, (3) Have questions about AI providers (OpenAI, Anthropic, etc.), streaming, tool calling, or structured output.'
+description: "Implement or troubleshoot Vercel AI SDK generation, streaming, tools, and provider integrations."
 metadata:
   author: Vercel Inc.
   version: '1.0'
@@ -24,7 +24,7 @@ To find specific files:
 
 Provider packages (`@ai-sdk/openai`, `@ai-sdk/anthropic`, etc.) also include bundled docs in their respective `node_modules/@ai-sdk/<provider>/docs/` directories.
 
-**When in doubt, update to the latest version of the AI SDK.**
+Use documentation matching the installed version. Upgrade only when required by the requested change or explicitly requested.
 
 ### Otherwise
 

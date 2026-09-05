@@ -1,6 +1,6 @@
 ---
 name: shadcn
-description: Manages shadcn components and projects — adding, searching, fixing, debugging, styling, and composing UI. Provides project context, component docs, and usage examples. Applies when working with shadcn/ui, component registries, presets, --preset codes, or any project with a components.json file. Also triggers for "shadcn init", "create an app with --preset", or "switch to --preset".
+description: "Add, configure, or troubleshoot shadcn/ui components, registries, and presets."
 user-invocable: false
 allowed-tools: Bash(npx shadcn@4.11.0 *), Bash(pnpm dlx shadcn@4.11.0 *), Bash(bunx --bun shadcn@4.11.0 *)
 ---

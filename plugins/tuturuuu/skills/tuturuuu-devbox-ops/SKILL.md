@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-devbox-ops
-description: Tuturuuu remote devbox operations guidance. Use when setting up, registering, testing, upgrading, observing, revoking, or debugging `ttr box` self-hosted runners, runner tokens, boot services, local/production smoke tests, or infrastructure devbox admin pages.
+description: "Operate Tuturuuu ttr box runners, registration, credentials, and infrastructure controls."
 ---
 
 # Tuturuuu Devbox Ops

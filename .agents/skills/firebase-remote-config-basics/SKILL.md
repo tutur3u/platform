@@ -1,6 +1,6 @@
 ---
 name: firebase-remote-config-basics
-description: Comprehensive guide for Firebase Remote Config, including template management and SDK usage. Use this skill when the user needs help setting up Remote Config, managing feature flags, or updating app behavior dynamically.
+description: "Configure Firebase Remote Config templates, feature flags, and client integration."
 compatibility: This skill is best used with the Firebase CLI, but does not require it. Firebase CLI can be accessed through `npx -y firebase-tools@latest`.
 ---
 
@@ -68,11 +68,6 @@ patterns (see
 Use the following commands to manage your Remote Config template and version
 history through the terminal:
 
-### Template Management via CLI
-
-Use the following commands to manage your Remote Config template and version
-history through the terminal:
-
 - **Get current template**: Save the remote template to a local JSON file for
   auditing or modification.
 
@@ -84,12 +79,10 @@ history through the terminal:
   directly. Determine the correct signal (e.g., device.country or percent) and
   update the "conditions" array and "parameters" map accordingly.
 
-- **MANDATORY: User Review and Verification** : STOP and ask the user to verify
-  your changes before proceeding to deployment.
-
-  - Action: Inform the user: "I have prepared the changes in remote_config.json.
-    Please review the file for accuracy. Once you are satisfied, tell me to
-    'deploy' to make the changes live."
+- **Deployment authorization**: Prepare and validate the concrete template diff.
+  Deploy when the requested target and changes are already authorized; otherwise
+  ask for approval of that diff before the live mutation. Reuse existing approval
+  for in-scope corrections and report the deployed template version.
 
 - **Deployment Orchestration** : To push changes, you must ensure the
   environment is configured for deployment.

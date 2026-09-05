@@ -1,6 +1,6 @@
 ---
 name: redesign-existing-projects
-description: Upgrades existing websites and apps to premium quality. Audits current design, identifies generic AI patterns, and applies high-end design standards without breaking functionality. Works with any CSS framework or vanilla CSS.
+description: "Improve an existing interface through a focused visual and interaction redesign."
 ---
 
 # Redesign Skill
@@ -160,7 +160,7 @@ When upgrading a project, pull from these high-impact techniques to replace gene
 
 Apply changes in this order for maximum visual impact with minimum risk:
 
-1. **Font swap** — biggest instant improvement, lowest risk
+1. **Typography assessment** — preserve brand fonts unless a change improves the requested surface
 2. **Color palette cleanup** — remove clashing or oversaturated colors
 3. **Hover and active states** — makes the interface feel alive
 4. **Layout and spacing** — proper grid, max-width, consistent padding
@@ -171,7 +171,7 @@ Apply changes in this order for maximum visual impact with minimum risk:
 ## Rules
 
 - Work with the existing tech stack. Do not migrate frameworks or styling libraries.
-- Do not break existing functionality. Test after every change.
+- Preserve existing functionality. Verify affected behavior after a coherent change; repeat checks when new changes or failures justify it.
 - Before importing any new library, check the project's dependency file first.
 - If the project uses Tailwind, check the version (v3 vs v4) before modifying config.
 - If the project has no framework, use vanilla CSS.

@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-commit
-description: Tuturuuu scoped commit workflow guidance. Use when the user asks Codex to commit, commit and push, split commits by scope or domain, claim or wait for a commit window, stage work safely in a shared worktree, or report final commit hashes after validation.
+description: "Create scoped Tuturuuu commits and perform user-authorized pushes."
 ---
 
 # Tuturuuu Commit

@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-cli
-description: Core Tuturuuu SDK and CLI workflow guidance. Use when installing, verifying, publishing, debugging, or using the `ttr` or `tuturuuu` CLI, SDK user clients, browser login, copy-token login, workspace discovery, scoped help, version checks, or autonomous agent workflows. Use the focused task and finance CLI skills for task or finance commands.
+description: "Install, authenticate, troubleshoot, or publish the Tuturuuu CLI and SDK."
 ---
 
 # Tuturuuu CLI

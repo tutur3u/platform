@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-cli-tasks
-description: Tuturuuu CLI task workflow guidance. Use when listing, reading, creating, templating, splitting, moving, closing, or marking Tuturuuu tasks through `ttr tasks` or `ttr task-templates`, including task board/list/label discovery, compact output, task mutation verification, and ttr-first task capture.
+description: "Capture, organize, and verify Tuturuuu tasks and templates through ttr."
 ---
 
 # Tuturuuu CLI Tasks

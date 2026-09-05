@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-cli-finance
-description: Tuturuuu CLI finance workflow guidance. Use when listing, reading, creating, updating, deleting, debugging, or verifying finance wallets, transactions, categories, budgets, recurring transactions, analytics reads, pagination, explicit-workspace finance access, or SDK finance response normalization through `ttr finance`.
+description: "Read or mutate Tuturuuu finance records through ttr finance."
 ---
 
 # Tuturuuu CLI Finance

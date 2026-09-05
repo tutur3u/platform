@@ -1,6 +1,8 @@
 # Tuturuuu Platform Checklist
 
-Use this checklist before and after code changes in the current Tuturuuu platform checkout.
+Use relevant sections for substantial changes with multiple follow-through concerns.
+Skip unrelated sections and reuse valid evidence; this is not a prerequisite reading
+stack for every edit.
 
 ## Before Editing
 
@@ -28,7 +30,7 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - Read the task-local code and docs before proposing abstractions.
 - Check for existing helpers in `packages/internal-api`, `packages/types`, `packages/ui`, and app-local utilities.
 - Identify whether the change affects user-facing copy, route navigation, database schema, generated types, docs, or mobile localization.
-- Identify whether the task revealed a durable workflow learning that belongs in `apps/docs`, a Tuturuuu plugin skill, a reference checklist, a validation script, or a helper script.
+- Preserve a demonstrated reusable workflow lesson in its narrowest home when one exists.
 - Do not manually bump release versions for ordinary authored commits. Release
   Please owns package, changelog, and `TUTURUUU_PLATFORM_VERSION` updates.
 

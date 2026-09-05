@@ -1,7 +1,7 @@
 ---
 title: 'Agent Operating Manual'
 description: 'Field guide summarizing the AGENTS.md policies for autonomous contributors inside the Tuturuuu monorepo.'
-updatedAt: '2026-06-12'
+updatedAt: '2026-09-05'
 ---
 
 This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth. The root file is now a hard-policy index; detailed reusable implementation patterns live in the repo-local Tuturuuu Codex plugin skills under `plugins/tuturuuu/skills/*/references/`.
@@ -13,7 +13,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 - **Deterministic & reproducible** – Generated artefacts must come from scripted commands; rerunning the workflow should produce the same result.
 - **Security first** – Never surface secret values. Reference environment variables by name and keep sensitive flows audited.
 - **Document intent** – When behaviour changes, update tests and docs alongside the code so the platform stays explainable.
-- **Human-in-the-loop** – Escalate when work exceeds the documented boundaries (e.g., major refactors, new third-party services, complex data backfills).
+- **Authorized completion** – Continue the requested implementation, relevant checks, fixes, and delivery. Ask only for a missing decision, permission, or access.
 - **Focused knowledge** – Add durable gotchas to the narrowest plugin skill reference instead of expanding the root operating manual by default.
 
 ## Capability Matrix
@@ -30,7 +30,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 
 ## Mandatory Guardrails
 
-1. Do not run long-lived dev/build commands unless a human requests it (e.g., `bun dev`, `bun run build`).
+1. Finite local setup, tests, and builds needed to validate authorized work may run without repeated confirmation. Start long-lived servers only when requested or needed for explicitly requested runtime verification. Deployment authorization remains separate.
 2. **Supabase apply is user-only** – prepare migrations, but the user runs `bun sb:push` / `bun sb:linkpush`.
 3. Run formatters and checks required for files you changed, but keep auto-fixes scoped to your owned paths.
 4. Avoid committing noisy logs; add diagnostics only when they materially aid debugging.
@@ -38,11 +38,16 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 6. Do not stage, rename, delete, or format unknown dirty/untracked files; treat them as human-owned or other-agent-owned until confirmed.
 7. Do not manually bump release versions for ordinary authored work. Release Please owns package versions, changelogs, and the account-gated web badge version. Keep release-please annotations intact.
 
-## Escalate When…
+## Decision Boundaries
 
-- A migration needs >30 lines of backfill logic.
-- A refactor would touch more than three apps or five packages.
-- Introducing a new external service, adjusting auth flows, or changing env-var contracts.
+Ask when a concrete action exceeds the requested scope, needs missing access, or
+requires an unresolved product decision. File counts and SQL line counts alone do
+not require approval. Prepare the reviewable change before requesting approval for
+an external action. Preserve existing authorization for routine retries and fixes;
+never infer permission for broader production scope.
+
+Read only the focused skill and reference sections relevant to the task. Keep
+AGENTS.md constraints concise; preserve detailed app lessons in skill references.
 
 ## Canonical Workflows (Cheat Sheet)
 
@@ -50,9 +55,10 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 - **New shared package** – scaffold under `packages/`, add `package.json` + `tsconfig`, export via `src/index.ts`, add tests & README, then build/test.
 - **Next.js API route** – implement under `app/api/.../route.ts`, enforce auth, validate with Zod, add tests or docs.
 - **AI structured endpoint** – define schema in `packages/ai`, use `generateObject`/`streamObject`, guard feature flags, redact secrets, handle errors gracefully.
-- **Supabase migration** – run `bun sb:new`, author additive SQL, request user to apply and regenerate types via `bun sb:typegen`, commit regenerated files together.
+- **Supabase migration** – run `bun sb:new`, author additive SQL, apply locally and regenerate types via `bun sb:typegen`; production pushes remain user-only, commit regenerated files together.
 
-See AGENTS.md §4 for full step-by-step instructions across all workflows.
+See `plugins/tuturuuu/skills/tuturuuu-platform/references/repository-workflows.md`
+for task-specific commands and route ownership.
 
 ## Focused Skill References
 
@@ -192,8 +198,8 @@ remaining dirty-path summary.
 
 ## Testing & Quality Expectations
 
-- Add happy-path and edge-case coverage where feasible; default to Vitest via `bun run test` or filtered scope.
-- For DB changes, provide migrations, request the user apply them, then verify regenerated types.
+- Test meaningful affected behavior and required repository gates. Once checks pass, repeat or broaden only for new changes, failures, or unresolved risks. Pure documentation edits do not need application test suites.
+- For DB changes, apply migrations locally when feasible, then generate and verify types. Production pushes remain user-only.
 - Performance-sensitive changes should document rationale in-code (≤3 lines) plus PR notes.
 - For `html2canvas`-based preview exports, inline critical SVG brand marks (or use raster assets) and provide a solid export background color so downloaded images do not lose logos or pick up transparent-edge artifacts.
 

@@ -1,6 +1,6 @@
 ---
 name: xcode-project-setup
-description: Safely modifies Xcode projects (.pbxproj) to add Swift Packages and link files. Use this skill whenever an iOS project needs dependencies installed (e.g. Firebase, Alamofire).
+description: "Modify Xcode project membership and Swift Package dependencies safely."
 compatibility: Requires Swift to be installed locally and macOS environment.
 ---
 
@@ -83,14 +83,11 @@ Instead, execute the Swift configuration package bundled with this skill
 (`scripts/xcode_spm_setup`) to securely install SPM packages and link optional
 config files (like `GoogleService-Info.plist`).
 
-### **CRITICAL: Always Use Latest SDK Version**
+### Dependency Version
 
-To ensure access to the latest features and security fixes, always use the most
-recent version of the Firebase iOS SDK. Check for the latest release version at
-[https://github.com/firebase/firebase-ios-sdk/releases](https://github.com/firebase/firebase-ios-sdk/releases).
-
-- Use the most recent version number (e.g., `11.x.y`) in your commands instead
-  of hardcoded placeholders.
+Preserve the project's compatible version unless an upgrade is requested or required
+for the integration. For a new dependency, check current releases and deployment-target
+compatibility; do not silently upgrade an existing SDK as part of an unrelated edit.
 
 ### Understanding the Script's Actions
 
@@ -122,7 +119,7 @@ swift run --package-path <PATH_TO_SKILL>/scripts/xcode_spm_setup xcode_spm_setup
 Adding Alamofire to a standard Xcode project. Notice there is no `--plist` flag.
 
 ```bash
-swift run --package-path /Users/foo/.agents/skills/xcode-project-setup/scripts/xcode_spm_setup xcode_spm_setup MyApp.xcodeproj https://github.com/Alamofire/Alamofire 5.8.1 Alamofire
+swift run --package-path <PATH_TO_SKILL>/scripts/xcode_spm_setup xcode_spm_setup MyApp.xcodeproj https://github.com/Alamofire/Alamofire 5.8.1 Alamofire
 ```
 
 ### Example 2: Firebase (Requires Plist)
@@ -133,7 +130,7 @@ version from
 [the releases page](https://github.com/firebase/firebase-ios-sdk/releases).*
 
 ```bash
-swift run --package-path /Users/foo/.agents/skills/xcode-project-setup/scripts/xcode_spm_setup xcode_spm_setup MyApp.xcodeproj https://github.com/firebase/firebase-ios-sdk 11.0.0 --plist MyApp/GoogleService-Info.plist FirebaseCore FirebaseAuth FirebaseFirestore
+swift run --package-path <PATH_TO_SKILL>/scripts/xcode_spm_setup xcode_spm_setup MyApp.xcodeproj https://github.com/firebase/firebase-ios-sdk 11.0.0 --plist MyApp/GoogleService-Info.plist FirebaseCore FirebaseAuth FirebaseFirestore
 ```
 
 *Note: The script is idempotent. It will automatically skip linking files or

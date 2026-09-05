@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-database
-description: Tuturuuu Supabase and database workflow guidance. Use when Codex changes apps/database migrations, Supabase RLS, schema types, generated database types, workspace-scoped API writes, storage policies, strict text limits, reset scripts, pgTAP tests, or packages/types database aliases in the platform repo.
+description: "Change Tuturuuu migrations, RLS, protected-table access, storage policies, and generated database types."
 ---
 
 # Tuturuuu Database

@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-validation-offload
-description: Tuturuuu validation offload guidance. Use when deciding whether to run tests, `bun check`, Supabase setup, Docker-heavy workflows, Playwright suites, or other long validation commands through internal devboxes instead of consuming the local agent session.
+description: "Run heavy Tuturuuu validation on an authorized devbox when local execution is unsuitable."
 ---
 
 # Tuturuuu Validation Offload

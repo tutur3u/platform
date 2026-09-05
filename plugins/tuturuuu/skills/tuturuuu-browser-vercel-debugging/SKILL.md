@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-browser-vercel-debugging
-description: Tuturuuu browser and Vercel CLI development, production troubleshooting, verification, performance, and product-improvement guidance. Use when reproducing a deployed UI or API bug, correlating browser failures with Vercel runtime/build logs, checking satellite-domain routing and authentication, auditing responsive or i18n behavior, investigating Vercel cost or latency, or verifying a fix without modifying customer data.
+description: "Reproduce deployed Tuturuuu bugs and correlate browser evidence with Vercel logs."
 ---
 
 # Tuturuuu Browser And Vercel Debugging

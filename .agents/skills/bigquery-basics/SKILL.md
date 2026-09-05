@@ -1,12 +1,6 @@
 ---
 name: bigquery-basics
-description: >-
-  Manages datasets, tables, and jobs in BigQuery, and integrates with BigQuery
-  ML and Gemini for advanced data analytics and AI-driven insights. Use when
-  you need to interact with BigQuery, run SQL queries, manage BigQuery
-  resources, or leverage BigQuery's built-in ML capabilities. Also use when
-  performing data analysis, ingesting data into BigQuery, or developing AI
-  applications on BigQuery.
+description: "Query BigQuery data and manage datasets, jobs, and BigQuery ML workloads."
 ---
 
 # BigQuery Basics

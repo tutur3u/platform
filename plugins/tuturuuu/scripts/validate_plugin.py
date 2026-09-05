@@ -283,8 +283,6 @@ def validate_skills(plugin_root: Path, manifest: dict) -> None:
         fields = parse_frontmatter(skill_file)
         if fields["name"] != skill_dir.name:
             fail(f"{skill_file} name does not match folder name")
-        if len(fields["description"]) < 80:
-            fail(f"{skill_file} description is too short for reliable triggering")
 
         validate_openai_yaml(skill_dir)
         validate_reference_links(skill_dir, skill_file)

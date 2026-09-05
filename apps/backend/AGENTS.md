@@ -113,10 +113,8 @@ search — both over- and under-count. The ground truth is the runtime dispatche
   like `x`), call
   `handle_backend_request(&config, request("GET", concrete), &outbound).await` and
   classify: `status == 404 && body["error"] == "not found"` ⇒ FRESH, else COVER.
-  Run `cargo test --lib <probe> -- --nocapture`, read the output, then REVERT the
-  insertion (`git checkout -- src/tests.rs` after confirming the diff is only your
-  probe — never `git checkout -- src/lib.rs`, which would wipe uncommitted chunk
-  integration). Feed only the FRESH routes to a migration batch so the fleet never
+  Run `cargo test --lib <probe> -- --nocapture`, read the output, then remove only the temporary
+  probe with a targeted edit, preserving concurrent changes. Feed only the FRESH routes to a migration batch so the fleet never
   authors a duplicate handler. (Measured: of 121 filename-"unmigrated" small GETs,
   the probe found only 16 genuinely fresh.)
 
@@ -149,10 +147,8 @@ chunk once a chunk passes ~40 arms) and add the matching call in
 `handle_backend_request`. Arms inside a chunk use `return Some(response);` (the
 chunk returns `Option`), not `return response;`.
 
-The eager `.then_some(segments[i])` panic (see above) RECURS in fleet-authored
-handlers despite this doc — make it a mechanical integration step:
-`grep -rl '.then_some(segments[' src/ | xargs perl -i -pe 's/\.then_some\((segments\[\d+\])\)/.then(|| $1)/g'`
-before `cargo test --lib`.
+Check touched path guards for eager indexing before integration. Fix only the
+owned handlers; do not run a repository-wide rewrite over other agents' source.
 
 ## Verify
 

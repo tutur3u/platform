@@ -1,13 +1,6 @@
 ---
 name: streamdown
-description: >-
-  Implement, configure, and customize Streamdown — a streaming-optimized React Markdown renderer
-  with syntax highlighting, Mermaid diagrams, math rendering, and CJK support. Use when working
-  with Streamdown setup, configuration, plugins, styling, security, or integration with AI
-  streaming (e.g., Vercel AI SDK). Triggers on: (1) Installing or setting up Streamdown,
-  (2) Configuring plugins (code, mermaid, math, cjk), (3) Styling or theming Streamdown output,
-  (4) Integrating with AI chat/streaming, (5) Configuring security, link safety, or custom HTML tags,
-  (6) Using carets, static mode, or custom components, (7) Troubleshooting Tailwind, Shiki, or Vite issues.
+description: "Configure Streamdown rendering, plugins, theming, and AI streaming integration."
 ---
 
 # Streamdown

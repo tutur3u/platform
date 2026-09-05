@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-e2e-auth-debugging
-description: Tuturuuu local E2E authentication debugging guidance. Use when Playwright, native-machine E2E runs, dev-session, guest access, onboarding redirects, app-session verification, rate-limit tests, or Docker E2E parity checks fail.
+description: "Diagnose Tuturuuu local E2E authentication, dev-session, and onboarding failures."
 ---
 
 # Tuturuuu E2E Auth Debugging
@@ -21,7 +21,7 @@ whether another coordination note owns the same E2E or auth files.
 - Use `apps/web/e2e/helpers/environment.ts` and `assertSafeE2EEnvironment()` for
   tests that touch local Supabase or app coordination secrets.
 - Use unique test emails and clean/reset only test-owned local state.
-- Do not run long-running dev/build commands unless the user explicitly asks.
+- Finite builds may validate authorized changes; start long-lived servers only for requested runtime verification.
 
 ## Native E2E First
 

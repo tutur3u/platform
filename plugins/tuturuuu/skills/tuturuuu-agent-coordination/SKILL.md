@@ -1,209 +1,37 @@
 ---
 name: tuturuuu-agent-coordination
-description: Use when any harness (Codex, Claude Code, or another assistant) works in a dirty or shared Tuturuuu checkout, spans separate git worktrees or branches, encounters active or archived coordination notes, needs ownership context, has overlapping paths, is handing off work between agents or tools, must protect uncommitted work from concurrent destructive Git, must archive completed coordination notes, or must coordinate staged paths and commit windows.
+description: "Coordinate Tuturuuu shared-worktree ownership, handoffs, and Git commit windows."
 ---
 
 # Tuturuuu Agent Coordination
 
-## Core Workflow
+Protect existing work with `git status --short`, path ownership, and a separate
+worktree when needed. Inspect top-level active `tmp/agent-coordination/` notes
+before overlapping work; missing/noncanonical statuses remain active. Never take
+ownership merely because a note is old. Archives are historical context, not locks.
 
-Use this skill whenever shared-worktree safety affects the task: dirty paths are
-present, another agent may be active, the change is broad or long-running, or a
-commit/check could be polluted by files outside the current scope. Use it with
-`$tuturuuu-commit` when a commit request needs exclusive access to the Git
-index.
+Notes and commit windows are per-checkout. Separate worktrees coordinate through
+branches and the remote. Open PR work belongs in `.worktrees/` with immediate
+`SKIP_PORTLESS_SETUP=1 bun setup` in non-interactive shells.
 
-For non-trivial overlap, handoff, archived-context, or stale-note cases, read
-`references/coordination-protocol.md` before editing. The reference also covers
-separate worktrees, branch posture, cross-harness coordination, and protecting
-uncommitted work; read it when the task spans more than one checkout.
+Read the relevant section of `references/coordination-protocol.md` for overlap,
+handoffs, delegated lanes, generated-output isolation, or cleanup. Create a note
+for shared/dirty, overlapping, long-running, or tooling-rule changes. Include Agent,
+Intent, Owned paths, Observed dirty paths, Status, Needs, Verification, Risks, and
+Commit window. Use statuses `working`, `blocked`, `handoff`, or `done`; never stage notes.
 
-## Checkout Scope
+Before staging or committing, inspect existing staged paths and claim the window:
 
-- Coordination notes and the commit-window lock are **per-checkout**: they only
-  coordinate agents that share one working directory (parallel Codex / Claude
-  Code sessions, background tasks, and subagents launched in the same directory).
-- A separate `git worktree` (including Claude Code / Workflow `isolation:
-  worktree`) has its own notes, its own lock file, and its own Git index. Notes
-  and the window do **not** span worktrees. Coordinate across worktrees by branch
-  and the shared remote, not by notes.
-- This protocol is harness-agnostic. Codex, Claude Code, and other tools all
-  cooperate through `git status`, the shared notes, and the commit window — never
-  through harness-internal state another tool cannot see. Name the harness and
-  session on your note's `Agent:` line.
+```bash
+bun git-commit-window claim --owner "<agent/task>" --scope "<commit scope>"
+```
 
-## Open Pull Request Worktrees
+Use `wait` if occupied; release with `bun git-commit-window release --token <token>`
+after completion or abort. Claims last 5–10 minutes. The lock grants no file ownership.
+Stage only owned paths. Existing staged work belongs to its owner; do not change it.
 
-- Always handle an open Tuturuuu pull request in an isolated worktree under
-  `.worktrees/`, including review-comment fixes, conflict resolution, validation,
-  quiet-window monitoring, and merge preparation. Leave the shared main checkout
-  on its existing branch.
-- Run `bun setup` immediately after creating the PR worktree. If Portless cannot
-  bind port 443 in a non-interactive shell, use the repository-supported setup
-  environment to skip only that interactive Portless step while still completing
-  the rest of `bun setup`.
-- Keep the worktree and its local task branch while the PR is open. After GitHub
-  confirms the PR merge is present on `main`, remove the worktree and delete the
-  local task branch. Never remove an open or unmerged PR worktree as routine
-  cleanup.
-
-## Verified Integration And Cleanup
-
-- When the user has authorized ongoing integration, checkpoint completed,
-  verified lanes periodically instead of accumulating finished worktrees.
-- Integrate a scoped commit into current `main`, wait until every workflow for
-  that exact main SHA is green, run `bun git-sync`, and verify the production
-  follow-through before cleanup.
-- Remove only the worktree that produced the confirmed integrated commit and
-  delete only its local task branch. Keep dirty, blocked, unmerged, user-owned,
-  and other-agent-owned worktrees and branches intact.
-- Before deleting a retained Rust-heavy worktree, or while retaining an
-  unmerged one, use `bun rust-cache report` and the bounded `prune`/`auto`
-  commands for `apps/backend/target`; never substitute broad filesystem cleanup.
-
-## Coordination Posture
-
-- Run `git status --short` before choosing a write set.
-- If `tmp/agent-coordination/` exists, inspect top-level active notes before
-  editing. Treat `working`, `blocked`, and `handoff` notes as active
-  coordination signals.
-- Treat `Status:` as canonical metadata: it must be exactly `working`,
-  `blocked`, `handoff`, or `done`. Details belong in `Needs:`, `Verification:`,
-  or `Risks:`. Missing or noncanonical statuses are active until resolved.
-- Run `bun coordination:audit` when ownership is ambiguous. Its default mode is
-  read-only and exits zero while reporting legacy debt; it never grants
-  ownership. Reserve `--strict` for clean fixtures or an owner-approved clean
-  environment.
-- Treat `tmp/agent-coordination/archive/` as historical context. Search it only
-  with targeted keywords when a task mentions prior work, an active note points
-  to archived context, or you need deployment/workflow history. Archived notes
-  do not block a write set by themselves.
-- Choose the smallest practical owned path set. Prefer files and focused
-  directories over broad app or repo claims.
-- If unrelated dirty files touch shared generated inputs or outputs such as
-  route trees, migration manifests, `packages/internal-api/src/index.ts`,
-  generated DB types, message bundles, or `bun.lock`, default new implementation
-  work to an isolated worktree or read-only audit unless the write set is
-  clearly disjoint and no generator/root formatter will scan those files.
-- When using subagents, split work into disjoint lanes before spawning them.
-  Give each worker exact owned paths, explicit excluded paths, validation
-  commands, and a no-stage/no-commit boundary unless the worker explicitly owns
-  a commit. Keep a parent coordination note that records lane names, owned
-  paths, coordinator-owned generated files, and integration risks.
-- Use read-only audit lanes for discovery and implementation lanes for patches.
-  If two workers need the same file, make one read-only or wait for a recorded
-  handoff before continuing; do not run two active writers against the same
-  unresolved file.
-- Track each lane lifecycle as `pending`, `active`, `handoff`, `integrated`, or
-  `closed`. Do not overlap implementation worker write paths unless the parent
-  note records an explicit takeover or continuation.
-- For Codex subagents, choose either a typed worker/explorer role with explicit
-  lane context in the prompt or a full-history fork without a role override; the
-  harness rejects full-history forks that also set an explicit agent role.
-- Treat each lane as a contract: owner, mode, owned paths, excluded paths,
-  generated outputs, validation, handoff shape, and commit authority. Read-only
-  lanes should return evidence and risks without taking path ownership.
-- Require worker handoffs to include changed files, validation results,
-  generated files intentionally left for the coordinator, unrelated blockers,
-  parity gaps or follow-up risks, and a statement that nothing was staged or
-  committed unless that lane explicitly owned commit authority.
-- For broad migrations, checkpoint after each integrated slice: refresh status,
-  close completed subagents in the harness, mark their lanes integrated or
-  closed in the parent note, list validation and unrelated blockers, and choose
-  the next non-overlapping lane from current worktree state.
-- Create a note before editing when the worktree is dirty, active notes touch a
-  nearby area, the task is long-running, or the requested change modifies
-  coordination rules, plugin skills, docs, scripts, migrations, or broad app
-  surfaces.
-- Add `Commit window: not needed | claimed | waiting | blocked | released` to
-  your note when a commit may be needed. Do not record the lock token in the
-  note.
-- Record dirty/untracked paths you will not touch. Do not format, stage, rename,
-  delete, or "clean up" those paths.
-- Treat shared generated artifacts as coordinator-owned by default. Route trees,
-  migration manifests, route overrides, OpenAPI snapshots, docs navigation,
-  sorted translation bundles, and generated DB types should be regenerated by
-  the coordinator after worker patches are reviewed unless a worker lane
-  explicitly owns both the source input and generated output.
-- Before regenerating shared artifacts in a dirty checkout, confirm that every
-  dirty input the generator can see belongs to your lane. If not, regenerate
-  from a clean worktree or another isolated input set, then copy back only the
-  intended generated artifact. Record the base commit, scanned globs, copied
-  lane inputs, generator command, copied-back artifacts, cleanup, and proof that
-  no untracked or other-lane files leaked into the output.
-- Protect uncommitted work in a hot shared checkout. Large unstaged multi-file
-  sets can be discarded by a concurrent rebase, `reset --hard`, `checkout`, or
-  `stash` from any agent or human (`bun git-sync` is isolated and safe, but
-  manual destructive Git is not). Commit early and often in small scoped commits
-  and keep your note current rather than holding a big exposed working set.
-
-## Conflict Behavior
-
-- If an active note claims the same files, do not race it. Choose a disjoint
-  slice, write a response note, or ask the user to arbitrate.
-- Existing staged files are owned by the staging agent or coordinator until
-  explicitly reassigned. Workers may continue on disjoint unstaged files, but
-  they must not stage, unstage, amend, or commit while another staged set exists.
-  If a path is `MM`, both the staged and unstaged portions need owner review.
-- Do not edit another agent's note unless the user explicitly asks. Add your own
-  note or response note instead.
-- Stale active notes are still ownership signals. Read them, check current
-  `git status`, then avoid the overlap or ask before taking over.
-- Archived notes are memory, not locks. Use them to learn previous boundaries,
-  verification, and risks; do not treat them as permission to overwrite current
-  dirty files or active claims.
-- Coordination notes are advisory, not permission to ignore the actual worktree.
-- If a commit hook or repo-wide check fails because of another worker's dirty
-  files, release any commit window, report the blocker, and either wait for that
-  lane's handoff or integrate it intentionally. Do not format, fix, or stage
-  unrelated worker files to make your commit pass.
-
-## Commit Window
-
-- Use `bun git-commit-window claim --owner "<agent/task>" --scope "<commit scope>"`
-  immediately before staging, unstaging, committing, amending, rebasing, or
-  user-requested commit-and-push work.
-- If another active lock exists and you should wait, use
-  `bun git-commit-window wait --owner "<agent/task>" --scope "<commit scope>"`.
-  The command sleeps until the current lock is released or expires, then claims
-  the window before notifying you.
-- Commit-window claims are intentionally short: default 10 minutes, accepted
-  range 5-10 minutes. Claim only when ready to stage or commit, and release as
-  soon as the operation finishes or aborts.
-- Use `bun git-commit-window status` to inspect the current lock, and
-  `bun git-commit-window release --token <token>` when the commit operation
-  completes or aborts.
-- The commit-window lock serializes Git index and commit operations only. It
-  does not grant ownership of files, permission to stage unrelated paths, or
-  permission to edit another agent's note.
-- If files are already staged, `claim` and `wait` require `--allow-staged`.
-  Inspect the staged scope first and preserve other agents' staged work.
-- Before committing, inspect staged paths and confirm no
-  `tmp/agent-coordination/` or `tmp/agent-coordination/archive/` files are
-  staged. Coordination notes are workflow state, not deliverables.
-
-## Archiving
-
-- Treat archiving your own completed current-session note as part of finishing,
-  not optional cleanup.
-- Keep active coordination notes as direct files under `tmp/agent-coordination/`.
-- Archive completed notes under
-  `tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md` after the note
-  is marked `done` and no longer needs to be prominent for a handoff.
-- Do not archive `working`, `blocked`, or `handoff` notes.
-- Archive only your own current-session note unless the user explicitly asks for
-  coordination cleanup. Housekeeping should never move another agent's active
-  signal out of the top-level scan path.
-
-## Completion
-
-- Update your note to `done`, `handoff`, or `blocked` before the final response.
-- Include verification already run and any remaining risks in the note.
-- Worker handoffs should list changed files, generated files intentionally left
-  to the coordinator, exact validation commands/results, unrelated failures,
-  and any known parity gaps. The coordinator decides what to regenerate, stage,
-  and commit.
-- If your note is `done` and no active handoff needs top-level visibility,
-  archive it before the final response.
-- Stage explicit paths only when committing. Never stage `tmp/agent-coordination/`
-  notes.
+For requested integration, retain work until the scoped commit is on main, exact-SHA
+main CI passes, `bun git-sync` completes, and production verification passes.
+Clean up only the completed clean worktree and its task branch. Finish the note with
+verification and risks; archive your own `done` note under `archive/<YYYY>/` when no
+handoff needs visibility. Preserve blocked, unmerged, and other-owned work.

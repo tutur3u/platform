@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-review-comments
-description: Use when inspecting, re-checking, validating, fixing, resolving, or committing pending and unresolved GitHub pull request review comments for Tuturuuu resources or PR URLs.
+description: "Inspect, fix, and resolve Tuturuuu pull-request review threads."
 ---
 
 # Tuturuuu Review Comments

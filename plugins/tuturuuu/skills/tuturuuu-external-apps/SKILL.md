@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-external-apps
-description: Tuturuuu external app integration guidance. Use when building branded sibling apps that connect to Tuturuuu through app-token exchange, external-project APIs, signed storage uploads, delivery payloads, refreshable admin sessions, and sanitized operational diagnostics.
+description: "Integrate branded external apps with Tuturuuu app sessions, uploads, and content APIs."
 ---
 
 # Tuturuuu External Apps

@@ -332,6 +332,28 @@ When a session reveals durable knowledge, update the narrowest matching skill
 reference and docs page. Add to root `AGENTS.md` only when the rule is a
 cross-cutting hard mandate that agents must see before skill loading.
 
+## Skill Scope And Maintenance
+
+Descriptions should identify the capability and its actual trigger in a short sentence.
+There is no minimum description length. Avoid exhaustive keyword lists, mandatory
+self-selection, and competing style prescriptions. Keep a small entrypoint and route
+substantial conditional detail to references; a simple skill needs no extra router.
+
+Preserve user intent, existing authorization, and concrete security/ownership/release
+boundaries. Skills should not fabricate tool execution, force unrelated image generation,
+require approval after every local step, or stop a requested implementation at a plan.
+Choose checks for meaningful behavior and repository requirements, not repeated rituals.
+
+Audit canonical source files and symlink targets once. Installed plugin caches and
+runtime system skills remain installer-managed. Keep upstream licenses and metadata;
+local customizations to imported skills may need reapplying after an upstream reinstall.
+Personal skills outside this Git repository are maintained and verified separately.
+
+The September 2026 audit applied these principles from
+[Eric Provencher's article](https://x.com/pvncher/status/2095991462416490862).
+See the [repository audit inventory](https://github.com/tutur3u/platform/blob/main/docs/audits/2026-09-05-skills-agents.md) for
+per-file disposition and known managed copies.
+
 ## Validate The Plugin
 
 Run the local validator after changing the plugin manifest or its skills:

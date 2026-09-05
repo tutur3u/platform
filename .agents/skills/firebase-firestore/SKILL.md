@@ -1,12 +1,6 @@
 ---
 name: firebase-firestore
-description: >-
-  Sets up, manages, and executes queries against Cloud Firestore database
-  instances, including advanced native full-text search and relational joins
-  using pipelines. You MUST unconditionally activate this skill if you plan to
-  use Firestore in any way. Use when listing or creating Firestore databases,
-  configuring security rules, designing data models, writing client SDK
-  queries (including search/joins), or checking indexes.
+description: "Configure Firestore databases, queries, indexes, data models, and security rules."
 compatibility: This skill is best used with the Firebase CLI, but does not require it. Firebase CLI can be accessed through `npx -y firebase-tools@latest`.
 ---
 

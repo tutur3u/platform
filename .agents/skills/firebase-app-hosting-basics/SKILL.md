@@ -1,6 +1,6 @@
 ---
 name: firebase-app-hosting-basics
-description: Deploy and manage web apps with Firebase App Hosting. Use this skill when deploying Next.js/Angular apps with backends.
+description: "Deploy backend-enabled web apps with Firebase App Hosting."
 ---
 
 # App Hosting Basics

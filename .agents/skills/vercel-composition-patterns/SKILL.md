@@ -1,11 +1,6 @@
 ---
 name: vercel-composition-patterns
-description:
-  React composition patterns that scale. Use when refactoring components with
-  boolean prop proliferation, building flexible component libraries, or
-  designing reusable APIs. Triggers on tasks involving compound components,
-  render props, context providers, or component architecture. Includes React 19
-  API changes.
+description: "Refactor React component APIs and composition boundaries, including compound components and shared state."
 license: MIT
 metadata:
   author: vercel
@@ -28,7 +23,7 @@ Reference these guidelines when:
 - Designing flexible component APIs
 - Reviewing component architecture
 - Working with compound components or context providers
-- Splitting large component files automatically when they exceed 400 LOC, or when one component exceeds 200 LOC. Keep the public entrypoint stable with a thin re-export file if existing callers import from it.
+- Consider splitting cohesive responsibilities in large components; follow repository size limits and keep existing public imports stable.
 
 ## Rule Categories by Priority
 
@@ -87,4 +82,4 @@ Each rule file contains:
 
 ## Full Compiled Document
 
-For the complete guide with all rules expanded: `AGENTS.md`
+For a broad review requiring all rules: `references/compiled-rules.md`. Otherwise read only the relevant `rules/` files.

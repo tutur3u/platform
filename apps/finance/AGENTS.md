@@ -1,3 +1,7 @@
+For changes that depend on Next.js behavior, consult the relevant installed guide.
+The generated block below concerns framework API/convention changes; it does not
+require a framework documentation pass for unrelated copy, styles, or skill edits.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

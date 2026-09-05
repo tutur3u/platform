@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-satellite-app-ux
-description: Tuturuuu satellite app UX guidance. Use when building or revamping standalone apps such as Mail or CMS that use @tuturuuu/satellite auth, providers, i18n, workspace routes, navigation, and focused app shells.
+description: "Implement Tuturuuu satellite app shells, app-session auth, and workspace navigation."
 ---
 
 # Tuturuuu Satellite App UX
@@ -63,5 +63,5 @@ possible; use `--entries` or `--entries-file` for bulk updates so every detected
 locale file is updated and sorted together. Reserve manual message JSON edits
 for broad prose rewrites or value-only updates. Finish with `bun check` for
 TypeScript, JavaScript, messages, or repo config changes unless an unrelated
-pre-existing blocker prevents it. Do not run long-running dev/build commands
-unless the user explicitly asks.
+pre-existing blocker prevents it. Finite builds needed to validate the authorized change may run. Start long-lived
+servers only when requested or needed for explicitly requested runtime verification.

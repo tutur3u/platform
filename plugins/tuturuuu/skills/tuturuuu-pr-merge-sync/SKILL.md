@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-pr-merge-sync
-description: Use when a Tuturuuu pull request should be merged only after review comments are resolved, no new review or PR comments arrive for a quiet window, PR checks pass, main is fully green after merge, `bun git-sync` runs, and production branch checks pass.
+description: "Complete authorized Tuturuuu PR merges or main-to-production sync with exact-SHA CI verification."
 ---
 
 # Tuturuuu PR Merge Sync

@@ -1,13 +1,6 @@
 ---
 name: turborepo
-description: |
-  Turborepo monorepo build system guidance. Triggers on: turbo.json, task pipelines,
-  dependsOn, caching, remote cache, the "turbo" CLI, --filter, --affected, CI optimization, environment
-  variables, internal packages, monorepo structure/best practices, and boundaries.
-
-  Use when user: configures tasks/workflows/pipelines, creates packages, sets up
-  monorepo, shares code between apps, runs changed/affected packages, debugs cache,
-  or has apps/packages directories.
+description: "Configure or troubleshoot Turborepo task pipelines, caching, and workspace execution."
 metadata:
   version: 2.7.6
 ---
@@ -18,9 +11,10 @@ Build system for JavaScript/TypeScript monorepos. Turborepo caches task outputs 
 
 ## IMPORTANT: Package Tasks, Not Root Tasks
 
-**DO NOT create Root Tasks. ALWAYS create package tasks.**
+Prefer package tasks for work owned by a package. Repository-wide orchestration
+and checks may legitimately remain root tasks.
 
-When creating tasks/scripts/pipelines, you MUST:
+For package-owned task pipelines:
 
 1. Add the script to each relevant package's `package.json`
 2. Register the task in root `turbo.json`
@@ -249,7 +243,7 @@ Enforce boundaries?
 
 ### Root Scripts Bypassing Turbo
 
-Root `package.json` scripts MUST delegate to `turbo run`, not run tasks directly.
+Root scripts that orchestrate package tasks should delegate to `turbo run`; retain repository-owned root checks.
 
 ```json
 // WRONG - bypasses turbo entirely

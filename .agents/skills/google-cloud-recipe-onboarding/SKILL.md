@@ -1,6 +1,6 @@
 ---
 name: google-cloud-recipe-onboarding
-description: Guidance for a developer's first steps on Google Cloud, covering account creation, billing setup, project management, and deploying a first resource.
+description: "Set up a first Google Cloud project, billing context, and initial resource."
 ---
 
 # Onboarding to Google Cloud

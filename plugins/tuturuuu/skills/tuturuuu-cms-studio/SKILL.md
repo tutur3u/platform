@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-cms-studio
-description: Tuturuuu CMS and external-project content studio guidance. Use when changing apps/cms, external project adapters, CMS landing-page editing, content collections, media workflows, preview delivery, or branded sibling-site content management.
+description: "Maintain Tuturuuu CMS editing, external-project adapters, media, and content delivery."
 ---
 
 # Tuturuuu CMS Studio

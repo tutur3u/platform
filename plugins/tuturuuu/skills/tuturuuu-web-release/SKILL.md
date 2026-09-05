@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-web-release
-description: Apps/web release metadata and version-badge guidance for Tuturuuu platform work, including release-please-managed TUTURUUU_PLATFORM_VERSION metadata, blue/green runtime snapshot fallbacks, PLATFORM_BUILD metadata, and focused release verification.
+description: "Maintain Tuturuuu web version badges, build metadata, and release snapshot fallbacks."
 ---
 
 # Tuturuuu Web Release

@@ -1,11 +1,6 @@
 ---
 name: firebase-basics
-description: >-
-  Provides foundational setup, authentication, and project management workflows
-  for Firebase using the Firebase CLI. Use when checking Firebase CLI version
-  (must use 'npx -y firebase-tools@latest --version'), initializing a Firebase
-  environment, authenticating, setting active projects, or setting up `google-services.json`
-  or `GoogleService-Info.plist` files.
+description: "Set up Firebase CLI authentication, projects, and application configuration."
 ---
 
 # Prerequisites

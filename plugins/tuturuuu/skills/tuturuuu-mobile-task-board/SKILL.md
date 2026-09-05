@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-mobile-task-board
-description: Tuturuuu Flutter mobile task-board workflow guidance. Use when Codex changes apps/mobile task board behavior, task detail routing, task dates, overdue labels, assignees, task description view/edit mode, task list refreshes, workspace-aware navigation, mobile BLoC/Cubit code, or release-please-managed mobile release metadata.
+description: "Maintain Tuturuuu Flutter task boards, task details, dates, and workspace-aware navigation."
 ---
 
 # Tuturuuu Mobile Task Board
@@ -55,3 +55,6 @@ Prefer focused mobile tests first, then broader checks:
 - Run `git diff --check` before finishing.
 - For user-visible mobile changes, keep release-please-managed mobile version
   files untouched unless the user is explicitly handling a release branch.
+
+For other mobile shell, cache, overlay, live-mode, and native tooling work, consult
+the relevant section of `references/mobile-operating-patterns.md`.
