@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@tuturuuu/internal-api/colab": [
+        "../../packages/internal-api/src/colab.ts"
+      ]
+    },
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",

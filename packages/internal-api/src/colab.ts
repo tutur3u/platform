@@ -18,7 +18,12 @@ export async function colabRequest<T>(
   const result = await response.json();
   if (!response.ok)
     throw new Error(
-      typeof result.error === 'string' ? result.error : 'request_failed'
+      result &&
+        typeof result === 'object' &&
+        'error' in result &&
+        typeof result.error === 'string'
+        ? result.error
+        : 'request_failed'
     );
   return result as T;
 }
