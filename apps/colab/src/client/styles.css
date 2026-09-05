@@ -1,4 +1,3 @@
-@import url("./workshop.css");
 :root {
   font-family:
     Inter, "Avenir Next", Avenir, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -8,10 +7,10 @@
   font-synthesis: none;
   font-weight: 400;
   --ink: #21352b;
-  --muted: #69736b;
+  --colab-muted: #69736b;
   --line: #dde2d7;
   --surface: #fff;
-  --accent: #d3e990;
+  --colab-accent: #d3e990;
   --dark: #263e30;
   --soft: #edf1e5;
   --error: #943426;
@@ -121,7 +120,7 @@ h3 {
 p {
   font-size: 14px;
   line-height: 1.7;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 h2 {
   font-size: 28px;
@@ -153,7 +152,7 @@ footer {
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  color: var(--muted);
+  color: var(--colab-muted);
   font-size: 10px;
   letter-spacing: 0.07em;
 }
@@ -181,7 +180,7 @@ footer {
   height: 32px;
   border-radius: 10px;
   background: var(--dark);
-  color: var(--accent);
+  color: var(--colab-accent);
   font-weight: 800;
   display: grid;
   place-items: center;
@@ -192,7 +191,7 @@ footer {
   font-size: 10px;
   letter-spacing: 0.01em;
   font-weight: 500;
-  color: var(--muted);
+  color: var(--colab-muted);
   margin-left: 8px;
 }
 .topbar-actions {
@@ -223,7 +222,7 @@ footer {
   font-size: 10px;
   letter-spacing: 0.14em;
   font-weight: 650;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .eyebrow {
   display: flex;
@@ -262,7 +261,7 @@ footer {
   border: 1px solid var(--line);
   border-radius: 20px;
   padding: 8px 12px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .lab-art {
   min-height: 400px;
@@ -292,7 +291,7 @@ footer {
   right: 55px;
   font-size: 9px;
   letter-spacing: 0.16em;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .paper {
   width: 245px;
@@ -321,7 +320,7 @@ footer {
   font-family: monospace;
   font-size: 11px;
   margin-bottom: 28px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .paper strong {
   display: block;
@@ -352,7 +351,7 @@ footer {
 .paper-bottom > span:last-child {
   font-size: 9px;
   margin-left: 10px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .avatar {
   display: inline-grid;
@@ -405,7 +404,7 @@ footer {
   bottom: 9px;
   font-size: 8px;
   letter-spacing: 0.13em;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .entry-grid {
   display: grid;
@@ -520,7 +519,7 @@ footer {
   min-height: 60vh;
   display: grid;
   place-items: center;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 @keyframes arrive {
   from {

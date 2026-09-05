@@ -23,7 +23,7 @@
 .mock-caption {
   margin-left: auto;
   font-size: 9px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .mock-search {
   margin: 0;
@@ -58,7 +58,7 @@
 }
 .mock-item code {
   font-size: 9px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .mock-documents .mock-item {
   padding: 16px;
@@ -70,7 +70,7 @@
   align-items: start;
 }
 .document-mark {
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .mock-chat {
   display: flex;
@@ -125,7 +125,7 @@
 }
 .time-label {
   font-size: 10px;
-  color: var(--muted);
+  color: var(--colab-muted);
   width: 48px;
   padding-top: 12px;
 }

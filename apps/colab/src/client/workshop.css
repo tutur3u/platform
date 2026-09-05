@@ -40,7 +40,7 @@
   gap: 9px;
   align-items: flex-end;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .avatars {
   display: flex;
@@ -71,7 +71,7 @@
 }
 .mission ol {
   padding-left: 20px;
-  color: var(--muted);
+  color: var(--colab-muted);
   font-size: 12px;
   line-height: 1.7;
 }
@@ -116,7 +116,7 @@
 }
 .privacy-label {
   font-size: 10px;
-  color: var(--muted);
+  color: var(--colab-muted);
   text-align: right;
   max-width: 260px;
   line-height: 1.6;
@@ -141,7 +141,7 @@
   background: var(--soft);
   padding: 7px 10px;
   border-radius: 5px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .prompt-panel > p {
   font-size: 12px;
@@ -161,7 +161,7 @@
   justify-content: space-between;
   gap: 12px;
   font-size: 10px;
-  color: var(--muted);
+  color: var(--colab-muted);
   padding-top: 8px;
 }
 .action-row {
@@ -251,7 +251,7 @@
 .sandbox-label {
   font-size: 8px;
   letter-spacing: 0.08em;
-  color: var(--muted);
+  color: var(--colab-muted);
   text-align: right;
 }
 .mock-records {
@@ -270,7 +270,7 @@
   border: 0;
 }
 .record-icon {
-  color: var(--muted);
+  color: var(--colab-muted);
   font-size: 22px;
 }
 .mock-record h3 {
@@ -285,7 +285,7 @@
 }
 .mock-record code {
   font-size: 9px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .run {
   border-top: 1px solid var(--line);
@@ -297,7 +297,7 @@
 }
 .run > summary > span {
   float: right;
-  color: var(--muted);
+  color: var(--colab-muted);
   font-size: 10px;
 }
 .run h3 {
@@ -385,7 +385,7 @@
 .member-row small {
   display: block;
   margin-top: 6px;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .member-row label {
   margin: 0;

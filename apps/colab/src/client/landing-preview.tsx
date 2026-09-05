@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useCopy } from './i18n';
-import './landing.css';
 
 export function LandingPreview() {
   const c = useCopy();

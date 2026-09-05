@@ -28,7 +28,7 @@ html {
 }
 .preview-heading > p:last-child,
 .detail-lead > p {
-  color: var(--muted);
+  color: var(--colab-muted);
   font-size: 16px;
   line-height: 1.8;
 }
@@ -59,7 +59,7 @@ html {
   margin-bottom: 26px;
 }
 .experiment-label > span {
-  color: var(--muted);
+  color: var(--colab-muted);
   font-family: monospace;
 }
 .experiment-input blockquote {
@@ -78,7 +78,7 @@ html {
 }
 .trace-line > span:last-child {
   grid-column: 2;
-  color: var(--muted);
+  color: var(--colab-muted);
 }
 .trace-dot {
   width: 8px;
@@ -124,7 +124,7 @@ html {
   font-family: monospace;
 }
 .skill-strip code {
-  color: var(--muted);
+  color: var(--colab-muted);
   overflow-wrap: anywhere;
 }
 .workshop-details {
@@ -144,7 +144,7 @@ html {
   border-top: 1px solid var(--line);
 }
 .detail-number {
-  color: var(--muted);
+  color: var(--colab-muted);
   font-family: monospace;
   font-size: 11px;
 }
@@ -156,7 +156,7 @@ html {
 .detail-grid p {
   font-size: 14px;
   line-height: 1.8;
-  color: var(--muted);
+  color: var(--colab-muted);
   margin: 0;
 }
 .auth-recovery {
@@ -173,7 +173,7 @@ html {
 }
 .auth-recovery p {
   max-width: 750px;
-  color: var(--muted);
+  color: var(--colab-muted);
   line-height: 1.8;
   margin: 0;
 }

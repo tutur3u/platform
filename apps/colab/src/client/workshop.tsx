@@ -102,15 +102,15 @@ export function Workshop({
       setOnline(false);
     };
   }, [roomId, activeId, cache]);
-  if (query.isPending) return <main className="loading">{c.loading}</main>;
+  if (query.isPending) return <div className="loading">{c.loading}</div>;
   if (!query.data || query.isError)
     return (
-      <main className="workshop">
+      <div className="workshop">
         <button type="button" className="quiet" onClick={leave}>
           ← {c.back}
         </button>
         <Join roomId={roomId} identity={identity} joined={joined} />
-      </main>
+      </div>
     );
   const room = query.data;
   const team =
@@ -127,7 +127,7 @@ export function Workshop({
           ? c.readonly
           : c.open;
   return (
-    <main className="workshop">
+    <div className="workshop">
       <div className="room-heading">
         <div>
           <button type="button" className="quiet back" onClick={leave}>
@@ -159,7 +159,7 @@ export function Workshop({
         </div>
       </div>
       <div className="workshop-layout">
-        <aside className="mission panel">
+        <aside id="mission" className="mission panel">
           <p className="eyebrow">{c.mission}</p>
           <h2>{room.scenario.title}</h2>
           <p>{room.scenario.brief}</p>
@@ -212,6 +212,6 @@ export function Workshop({
       <p className="fine-print budget">
         {c.limitHint} ({room.aiCalls}/200)
       </p>
-    </main>
+    </div>
   );
 }

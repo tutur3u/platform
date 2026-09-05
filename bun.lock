@@ -271,14 +271,17 @@
       "name": "@tuturuuu/colab",
       "dependencies": {
         "@tanstack/react-query": "^5.102.8",
+        "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/multiplayer": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^5.20260904.1",
         "@playwright/test": "^1.62.1",
+        "@tailwindcss/vite": "^4.3.3",
         "@types/react": "^19.2.18",
         "@types/react-dom": "^19.2.7",
         "@vitejs/plugin-react": "^6.1.1",

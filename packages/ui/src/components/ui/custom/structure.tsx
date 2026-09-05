@@ -7,6 +7,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { type CSSProperties, type ReactNode, useEffect } from 'react';
 
 interface StructureProps {
+  sidebarLabels?: { open: string; close: string };
   isCollapsed: boolean;
   setIsCollapsed: (isCollapsed: boolean) => void;
   hideSizeToggle?: boolean;
@@ -33,6 +34,7 @@ interface StructureProps {
 export function Structure({
   isCollapsed,
   setIsCollapsed,
+  sidebarLabels,
   hideSizeToggle = false,
   overlayOnExpand = false,
   header,
@@ -96,6 +98,9 @@ export function Structure({
                   size="icon"
                   variant="outline"
                   className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                  aria-label={
+                    isCollapsed ? sidebarLabels?.open : sidebarLabels?.close
+                  }
                   onClick={() => setIsCollapsed(!isCollapsed)}
                 >
                   <Menu className="h-5 w-5" />
@@ -111,6 +116,7 @@ export function Structure({
           <button
             type="button"
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-lg md:hidden"
+            aria-label={sidebarLabels?.close}
             onClick={() => setIsCollapsed(true)}
           />
         )}
@@ -156,6 +162,11 @@ export function Structure({
                         size="icon"
                         variant="outline"
                         className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                        aria-label={
+                          isCollapsed
+                            ? sidebarLabels?.open
+                            : sidebarLabels?.close
+                        }
                         onClick={() => setIsCollapsed(!isCollapsed)}
                       >
                         <X className="h-5 w-5" />
@@ -208,6 +219,9 @@ export function Structure({
                   size="icon"
                   variant="outline"
                   className="absolute top-1/2 -right-4 z-10 hidden h-auto w-auto -translate-y-1/2 rounded-full border-2 bg-background p-1.5 pl-1.5 opacity-0 transition duration-500 hover:bg-accent group-hover:opacity-100 md:block"
+                  aria-label={
+                    isCollapsed ? sidebarLabels?.open : sidebarLabels?.close
+                  }
                   onClick={() => setIsCollapsed(!isCollapsed)}
                 >
                   {isCollapsed ? (

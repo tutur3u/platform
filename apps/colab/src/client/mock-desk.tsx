@@ -14,7 +14,7 @@ export function MockDesk({ team }: { team: Team }) {
   const chat = ['zalo', 'messenger', 'teams'].includes(app);
   const board = ['jira', 'trello'].includes(app);
   return (
-    <section className="panel mock-panel">
+    <section id="sandbox-desk" className="panel mock-panel">
       <div className="panel-heading">
         <div>
           <span className="section-number">03 / {c.sandboxSection}</span>

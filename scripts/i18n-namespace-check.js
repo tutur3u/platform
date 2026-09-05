@@ -10,12 +10,6 @@
  * 2. All individual translation keys (e.g. t('feedback')) used by shared
  *    packages exist under their namespace in every consuming app's en.json.
  *
- * This catches both:
- * - A shared component calling useTranslations('common') when the app lacks
- *   the 'common' namespace entirely.
- * - A shared component calling t('feedback') inside a useTranslations('common')
- *   context when the app has the 'common' namespace but lacks the 'feedback' key.
- *
  * Apps are registered in APPS (checked) or UNCHECKED_APPS (knowingly skipped);
  * a drift guard fails the run if any app ships shared UI + a message bundle but
  * is in neither list, so no app is ever silently skipped (the gap that let
@@ -54,6 +48,7 @@ const SHARED_PACKAGES = [
 
 // Apps with translation files to check
 const APPS = [
+  { name: 'apps/colab', dir: 'apps/colab' },
   { name: 'apps/web', dir: 'apps/web' },
   { name: 'apps/tasks', dir: 'apps/tasks' },
   { name: 'apps/calendar', dir: 'apps/calendar' },
@@ -94,6 +89,8 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
       'version-badge',
     ]),
   ],
+  // Colab uses framework-independent primitives with labels supplied by its own locale context.
+  ['apps/colab', new Set()],
   ['apps/storefront', new Set(['common'])],
   ['apps/shortener', new Set(['common'])],
 ]);

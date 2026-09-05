@@ -180,6 +180,19 @@ try {
   await page
     .getByRole('heading', { name: 'Small prompts. Shared breakthroughs.' })
     .waitFor();
+  assert.equal(await page.getByRole('main').count(), 1);
+  await page.getByRole('navigation', { name: 'Colab navigation' }).waitFor();
+  await page
+    .getByRole('button', { name: 'Collapse navigation', exact: true })
+    .click();
+  assert.equal(
+    await page.evaluate(() => localStorage.getItem('colab-sidebar-collapsed')),
+    'true'
+  );
+  await page
+    .getByRole('button', { name: 'Open navigation', exact: true })
+    .filter({ visible: true })
+    .click();
   await page.getByRole('button', { name: 'Add a little clarity' }).click();
   await page.getByText('Ready for your review', { exact: true }).waitFor();
   await page.goto('http://127.0.0.1:8795/auth/callback?state=expired');
@@ -191,11 +204,30 @@ try {
     path: '/private/tmp/colab-desktop.png',
     fullPage: true,
   });
-  await page.selectOption('select[aria-label="Language"]', 'vi');
+  await page
+    .locator('select[aria-label="Language"]:visible')
+    .selectOption('vi');
   await page
     .getByRole('heading', { name: 'Prompt nhỏ. Tiến bộ cùng nhau.' })
     .waitFor();
+  await page
+    .getByRole('button', { name: 'Thu gọn điều hướng', exact: true })
+    .click();
   await page.setViewportSize({ width: 390, height: 844 });
+  await page
+    .getByRole('button', { name: 'Mở điều hướng', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Mở điều hướng', exact: true })
+    .filter({ visible: true })
+    .waitFor();
+  await page.waitForFunction(
+    () => document.querySelector('aside')?.getBoundingClientRect().width <= 1
+  );
+  await page.waitForFunction(() => document.body.style.position !== 'fixed');
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: '/private/tmp/colab-mobile.png',
     fullPage: true,

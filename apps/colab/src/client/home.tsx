@@ -37,7 +37,7 @@ export function Home({
   });
   const recent = localStorage.getItem('colab-recent-room');
   return (
-    <main className="home">
+    <div className="home">
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">
@@ -261,6 +261,6 @@ export function Home({
           </article>
         ))}
       </section>
-    </main>
+    </div>
   );
 }

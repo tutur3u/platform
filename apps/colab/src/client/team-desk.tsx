@@ -25,7 +25,7 @@ export function TeamDesk({
   };
   return (
     <>
-      <section className="panel prompt-panel">
+      <section id="team-prompt" className="panel prompt-panel">
         <div className="panel-heading">
           <div>
             <span className="section-number">01 / {c.promptSection}</span>
@@ -92,7 +92,7 @@ export function TeamDesk({
           <pre className="readonly-prompt">{team.prompt || c.emptyPrompt}</pre>
         )}
       </section>
-      <section className="panel skills-panel">
+      <section id="team-skills" className="panel skills-panel">
         <div className="panel-heading">
           <div>
             <span className="section-number">02 / {c.skillsSection}</span>
@@ -155,7 +155,7 @@ export function TeamDesk({
         )}
       </section>
       <MockDesk team={team} />
-      <section className="panel journal-panel">
+      <section id="practice-journal" className="panel journal-panel">
         <div className="panel-heading">
           <div>
             <span className="section-number">04 / {c.reflectSection}</span>

@@ -1,0 +1,76 @@
+@import "@tuturuuu/ui/globals.css";
+@import "./styles.css" layer(components);
+@import "./workshop.css" layer(components);
+@import "./mock-desk.css" layer(components);
+@import "./landing.css" layer(components);
+@source "./";
+
+@layer components {
+  :root {
+    color: var(--foreground);
+    background: var(--background);
+    --ink: var(--foreground);
+    --colab-muted: var(--muted-foreground);
+    --line: var(--border);
+    --surface: var(--background);
+    --dark: var(--primary);
+    --soft: var(--muted);
+  }
+  .colab-content {
+    min-width: 0;
+  }
+  .colab-content [id] {
+    scroll-margin-top: 5rem;
+  }
+  .colab-content .workshop {
+    max-width: 1600px;
+    padding: 16px;
+  }
+  .colab-content .room-heading h1 {
+    font-size: 28px;
+    letter-spacing: -0.035em;
+  }
+  .colab-content .panel {
+    border-radius: 12px;
+  }
+  .colab-content .home {
+    max-width: 1280px;
+    padding-inline: 24px;
+  }
+  .colab-content .hero {
+    padding-top: 48px;
+  }
+  .colab-shell .topbar-actions {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .colab-shell .topbar-actions button {
+    padding: 8px;
+  }
+  .colab-content footer {
+    padding-inline: 16px;
+  }
+  @media (max-width: 1100px) {
+    .colab-content .workshop-layout {
+      grid-template-columns: 1fr;
+    }
+    .colab-content .mission {
+      position: static;
+    }
+  }
+  @media (max-width: 620px) {
+    .colab-content .home,
+    .colab-content .workshop {
+      padding-inline: 8px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .colab-shell *,
+  .colab-shell *::before,
+  .colab-shell *::after {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

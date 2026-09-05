@@ -8,6 +8,17 @@ Cloudflare Worker. A SQLite Durable Object owns each room. The reusable
 `@tuturuuu/multiplayer` package defines room policy and safe member-specific
 projections; the Worker owns authentication, inference, storage and WebSockets.
 
+## Shared application shell
+
+`apps/colab/src/client/structure.tsx` composes the same
+`@tuturuuu/ui/custom/structure` component used by satellite apps. It uses shared
+UI buttons, icons and design tokens, with persistent desktop collapse, a mobile
+navigation drawer, account controls and room-section links. The app imports the
+shared UI stylesheet through Tailwind's Vite integration. Keep Colab content CSS
+in the components layer so shared component utilities remain authoritative.
+The higher-level satellite wrapper requires Next.js routing; do not import it
+into this Cloudflare Vite application.
+
 ## Running a workshop
 
 1. Sign in with a confirmed Tuturuuu account. Only an exact `@tuturuuu.com`

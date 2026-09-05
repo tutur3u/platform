@@ -9,8 +9,9 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Home } from './home';
 import { type Locale, LocaleContext, useCopy } from './i18n';
+import { Structure } from './structure';
 import { Workshop } from './workshop';
-import './styles.css';
+import './app.css';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } },
@@ -34,14 +35,11 @@ function App() {
     if (id) localStorage.setItem('colab-recent-room', id);
   };
   return (
-    <>
-      <header className="topbar">
-        <a href="/" className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            c
-          </span>
-          colab<span className="byline">by Tuturuuu</span>
-        </a>
+    <Structure
+      roomId={roomId}
+      identity={session.data?.identity ?? null}
+      navigate={navigate}
+      actions={
         <div className="topbar-actions">
           <Language />
           {session.data?.identity ? (
@@ -61,7 +59,8 @@ function App() {
             </a>
           )}
         </div>
-      </header>
+      }
+    >
       {authRetry && (
         <section className="auth-recovery" role="alert">
           <div>
@@ -102,7 +101,7 @@ function App() {
         <span>{c.tagline}</span>
         <span>{c.sandbox}</span>
       </footer>
-    </>
+    </Structure>
   );
 }
 let changeLocale: (locale: Locale) => void;
