@@ -8,6 +8,7 @@ import {
 } from '@/lib/playground-tools';
 import type { MeteredExecutionContext } from '@/lib/public-api';
 import { recordMeteredExecutionStep } from '@/lib/public-api';
+import { type ResponseFormat, textOutput } from './text-output';
 
 type StepSummary = {
   cachedInputTokens: number;
@@ -69,6 +70,7 @@ function serializeTraceValue(value: unknown): string | null {
 export function createObservedTextAgent({
   context,
   instructions,
+  responseFormat,
   maxOutputTokens,
   maxSteps,
   modelId,
@@ -77,6 +79,7 @@ export function createObservedTextAgent({
 }: {
   context: MeteredExecutionContext;
   instructions?: string;
+  responseFormat?: ResponseFormat;
   maxOutputTokens: number;
   maxSteps: number;
   modelId: string;
@@ -96,6 +99,7 @@ export function createObservedTextAgent({
 
   const agent = new ToolLoopAgent({
     instructions,
+    output: textOutput(responseFormat),
     maxOutputTokens,
     model: google(toBareModelName(modelId)),
     onStepStart: ({ stepNumber }) => {

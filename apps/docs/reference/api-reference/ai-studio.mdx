@@ -68,6 +68,31 @@ The legacy global/workspace Studio enablement switches no longer gate model
 execution. Credit availability, model policy, credential status, budgets, rate
 limits, and abuse controls remain authoritative.
 
+## Structured output and audit attribution
+
+Chat completions preserve `response_format` values `text`, `json_object`, and
+`json_schema` through to the model. For schema output, include `json_schema.name`
+and `json_schema.schema`; schemas are bounded to 100,000 characters. Set an
+explicit `max_completion_tokens` budget for large structured results. The default
+is 2,048 tokens and the maximum is 32,768; a truncated response still incurs
+provider usage even when the calling application cannot parse it.
+
+Applications may attach `X-Tuturuuu-Operation` and `X-Tuturuuu-Entity-Id` headers
+for audit correlation. A valid operation is also shown as the run feature in
+AI Studio, so operators can distinguish analysis, classification, and drafting.
+Values are limited to 128 ASCII letters, digits, periods,
+underscores, colons, and hyphens. These labels do not change workspace, actor, or
+application attribution, which comes from the authenticated credential. Keep
+personal data, secrets, and prompt text out of these labels. The response ID and
+`x-request-id` identify the gateway run.
+
+Provider-reported tokens remain chargeable and recorded when structured output
+validation fails. Optional content-capture failures cannot overwrite settled
+usage. When a provider supplies no usage on failure, audit metadata marks it
+`unavailable`; interrupted streams without final usage are labeled
+`estimated_partial`. Such records are not proof of zero provider spend and need
+provider-billing reconciliation for a complete accounting close.
+
 ## Native extensions
 
 Tuturuuu-native response metadata reports billed workspace credits, provider

@@ -1,6 +1,7 @@
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
 import type { Json } from '@tuturuuu/types';
+import { NoObjectGeneratedError } from 'ai';
 import { z } from 'zod';
 import { createObservedTextAgent } from './observed-text-agent';
 import { playgroundToolNames } from './playground-tools';
@@ -13,6 +14,7 @@ import {
   settleMeteredExecution,
 } from './public-api';
 import type { PublicAiCredential } from './public-credential';
+import { responseFormatSchema } from './text-output';
 
 export const textRequestSchema = z.object({
   instructions: z.string().max(100_000).optional(),
@@ -20,6 +22,7 @@ export const textRequestSchema = z.object({
   max_steps: z.number().int().min(1).max(8).default(4),
   model: z.string().min(1),
   prompt: z.string().min(1).max(1_000_000),
+  response_format: responseFormatSchema.optional(),
   stream: z.boolean().default(false),
   tools: z.array(z.enum(playgroundToolNames)).max(2).default([]),
 });
@@ -38,6 +41,11 @@ export function parseTextRequest(input: unknown): TextRequest {
     );
   }
   return parsed.data;
+}
+
+function auditHeader(request: Request, name: string): string | null {
+  const value = request.headers.get(name);
+  return value && /^[a-zA-Z0-9_:.-]{1,128}$/.test(value) ? value : null;
 }
 
 function commonHeaders(requestId: string) {
@@ -62,10 +70,16 @@ export async function executeTextRequest(
 ): Promise<Response> {
   let context: Awaited<ReturnType<typeof prepareMeteredExecution>> | undefined;
 
+  let reportedUsage: {
+    inputTokens?: number;
+    outputTokens?: number;
+    reasoningTokens?: number;
+  } = {};
+  let settled = false;
   try {
     context = await prepareMeteredExecution({
       credential,
-      feature,
+      feature: auditHeader(request, 'x-tuturuuu-operation') ?? feature,
       maxUsage: {
         inputTokens:
           approximateTokenCount(input.prompt) +
@@ -74,7 +88,10 @@ export async function executeTextRequest(
       },
       metadata: {
         max_steps: input.max_steps,
+        operation: auditHeader(request, 'x-tuturuuu-operation'),
+        entity_id: auditHeader(request, 'x-tuturuuu-entity-id'),
         response_shape: responseShape,
+        response_format: input.response_format?.type ?? 'text',
         streaming: input.stream,
         tools: input.tools,
       },
@@ -86,6 +103,7 @@ export async function executeTextRequest(
     const observed = createObservedTextAgent({
       context,
       instructions: input.instructions,
+      responseFormat: input.response_format,
       maxOutputTokens: input.max_output_tokens,
       maxSteps: input.max_steps,
       modelId: input.model,
@@ -104,27 +122,32 @@ export async function executeTextRequest(
         reasoningTokens: result.usage.outputTokenDetails?.reasoningTokens ?? 0,
       };
 
-      await Promise.all([
-        settleMeteredExecution(context, {
-          metadata: {
-            finish_reason: String(result.finishReason),
-            step_count: result.steps.length,
-            tool_call_count: result.toolCalls.length,
-            tool_names: [
-              ...new Set(result.toolCalls.map((call) => call.toolName)),
-            ],
-          },
-          status: 'succeeded',
-          usage,
-        }),
-        captureAiStudioContent(context, {
-          output: { text: result.text },
-          prompt: {
-            instructions: input.instructions,
-            prompt: input.prompt,
-          } as Json,
-        }),
-      ]);
+      reportedUsage = usage;
+      await settleMeteredExecution(context, {
+        metadata: {
+          finish_reason: String(result.finishReason),
+          step_count: result.steps.length,
+          tool_call_count: result.toolCalls.length,
+          tool_names: [
+            ...new Set(result.toolCalls.map((call) => call.toolName)),
+          ],
+        },
+        status: 'succeeded',
+        usage,
+      });
+      settled = true;
+      await captureAiStudioContent(context, {
+        output: { text: result.text },
+        prompt: {
+          instructions: input.instructions,
+          prompt: input.prompt,
+        } as Json,
+      }).catch((error) => {
+        console.error('Failed to capture AI Studio content', {
+          ...describeAiStudioRuntimeError(error),
+          requestId: context?.requestId,
+        });
+      });
 
       const created = Math.floor(Date.now() / 1000);
       const body =
@@ -181,30 +204,35 @@ export async function executeTextRequest(
       abortSignal: request.signal,
       onEnd: async ({ finishReason, steps, text, toolCalls, usage }) => {
         outputText = text;
-        await Promise.all([
-          settleMeteredExecution(context!, {
-            firstTokenLatencyMs,
-            metadata: {
-              finish_reason: String(finishReason),
-              step_count: steps.length,
-              tool_call_count: toolCalls.length,
-              tool_names: [...new Set(toolCalls.map((call) => call.toolName))],
-            },
-            status: request.signal.aborted ? 'aborted' : 'succeeded',
-            usage: {
-              inputTokens: usage.inputTokens ?? 0,
-              outputTokens: usage.outputTokens ?? 0,
-              reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
-            },
-          }),
-          captureAiStudioContent(context!, {
-            output: { text },
-            prompt: {
-              instructions: input.instructions,
-              prompt: input.prompt,
-            } as Json,
-          }),
-        ]);
+        reportedUsage = {
+          inputTokens: usage.inputTokens ?? 0,
+          outputTokens: usage.outputTokens ?? 0,
+          reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
+        };
+        await settleMeteredExecution(context!, {
+          firstTokenLatencyMs,
+          metadata: {
+            finish_reason: String(finishReason),
+            step_count: steps.length,
+            tool_call_count: toolCalls.length,
+            tool_names: [...new Set(toolCalls.map((call) => call.toolName))],
+          },
+          status: request.signal.aborted ? 'aborted' : 'succeeded',
+          usage: reportedUsage,
+        });
+        settled = true;
+        await captureAiStudioContent(context!, {
+          output: { text },
+          prompt: {
+            instructions: input.instructions,
+            prompt: input.prompt,
+          } as Json,
+        }).catch((error) => {
+          console.error('Failed to capture AI Studio content', {
+            ...describeAiStudioRuntimeError(error),
+            requestId: context?.requestId,
+          });
+        });
       },
       prompt: input.prompt,
     });
@@ -248,14 +276,27 @@ export async function executeTextRequest(
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
-          await settleMeteredExecution(context!, {
-            error,
-            firstTokenLatencyMs,
-            status: request.signal.aborted ? 'aborted' : 'failed',
-            usage: {
-              outputTokens: approximateTokenCount(outputText),
-            },
-          }).catch(() => undefined);
+          if (!settled)
+            await settleMeteredExecution(context!, {
+              error,
+              firstTokenLatencyMs,
+              status: request.signal.aborted ? 'aborted' : 'failed',
+              usage: Object.keys(reportedUsage).length
+                ? reportedUsage
+                : {
+                    outputTokens: approximateTokenCount(outputText),
+                  },
+              metadata: {
+                usage_source: Object.keys(reportedUsage).length
+                  ? 'provider'
+                  : 'estimated_partial',
+              },
+            }).catch((settlementError) => {
+              console.error('Failed to settle interrupted AI Studio stream', {
+                ...describeAiStudioRuntimeError(settlementError),
+                requestId: context?.requestId,
+              });
+            });
           controller.error(error);
         }
       },
@@ -269,11 +310,29 @@ export async function executeTextRequest(
       },
     });
   } catch (error) {
-    if (context) {
+    if (context && !settled) {
+      const objectError = NoObjectGeneratedError.isInstance(error)
+        ? error
+        : null;
+      if (objectError?.usage)
+        reportedUsage = {
+          inputTokens: objectError.usage.inputTokens,
+          outputTokens: objectError.usage.outputTokens,
+          reasoningTokens:
+            objectError.usage.outputTokenDetails?.reasoningTokens,
+        };
       await settleMeteredExecution(context, {
         error,
         status: request.signal.aborted ? 'aborted' : 'failed',
-        usage: {},
+        usage: reportedUsage,
+        metadata: {
+          usage_source: Object.keys(reportedUsage).length
+            ? 'provider'
+            : 'unavailable',
+          ...(objectError
+            ? { finish_reason: String(objectError.finishReason) }
+            : {}),
+        },
       }).catch((settlementError) => {
         console.error('Failed to settle failed AI Studio execution', {
           ...describeAiStudioRuntimeError(settlementError),
