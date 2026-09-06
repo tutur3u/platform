@@ -47,6 +47,7 @@ import {
 import { Separator } from '../../separator';
 import { Switch } from '../../switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import { CalendarSyncRecovery } from './calendar-sync-recovery';
 import { CalendarSyncSettingsPanel } from './calendar-sync-settings-panel';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
@@ -104,6 +105,7 @@ export function CalendarConnectionsSettingsContent({
 
   return (
     <div className={className ? `space-y-4 ${className}` : 'space-y-4'}>
+      <CalendarSyncRecovery state={state} />
       <Tabs defaultValue="calendars" className="py-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="calendars">
@@ -401,6 +403,12 @@ export function CalendarConnectionsSettingsContent({
                         {t('reconnect_required') || 'Reconnect'}
                       </Badge>
                     )}
+                    {providerAccountStatuses[account.id]?.state ===
+                      'temporarily_unavailable' && (
+                      <Badge variant="secondary" className="text-xs">
+                        {t('sync_recovery.attention')}
+                      </Badge>
+                    )}
                     <Badge variant="outline" className="text-xs capitalize">
                       {account.provider}
                     </Badge>
@@ -433,6 +441,12 @@ export function CalendarConnectionsSettingsContent({
                           {t('reconnect') || 'Reconnect'}
                         </Button>
                       </div>
+                    )}
+                    {providerAccountStatuses[account.id]?.state ===
+                      'temporarily_unavailable' && (
+                      <p className="rounded-md border p-2 text-muted-foreground text-xs">
+                        {t('sync_recovery.provider_unavailable')}
+                      </p>
                     )}
                     {(calendarsByAccount[account.id] || []).length > 0 ? (
                       (calendarsByAccount[account.id] || []).map((cal) => {

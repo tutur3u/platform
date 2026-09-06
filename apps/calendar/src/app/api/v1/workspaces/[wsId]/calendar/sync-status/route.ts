@@ -1,5 +1,5 @@
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { classifyCalendarSyncHealth } from '@/lib/calendar/sync-health';
@@ -13,6 +13,7 @@ export async function GET(
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
+    await connection();
     const { wsId } = await params;
 
     if (!validate(wsId)) {
@@ -85,6 +86,15 @@ export async function GET(
     const accounts = accountsResult.data ?? [];
     const connections = connectionsResult.data ?? [];
     const health = classifyCalendarSyncHealth({
+      hasEnabledConnections: connections.some(
+        (connection) => connection.is_enabled
+      ),
+      hasOrphanedConnections: connections.some(
+        (connection) =>
+          connection.is_enabled &&
+          connection.auth_token_id &&
+          !accounts.some((account) => account.id === connection.auth_token_id)
+      ),
       accounts: accounts.map((account) => ({
         provider: account.provider as 'google' | 'microsoft',
         expires_at: account.expires_at,
@@ -111,7 +121,7 @@ export async function GET(
       connections,
       recentRuns: dashboardResult.data ?? [],
       cron: {
-        inbound: '*/10 * * * *',
+        inbound: '*/15 * * * *',
         scheduler: '0 * * * *',
         health: '*/30 * * * *',
       },

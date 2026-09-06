@@ -14,6 +14,7 @@ import {
   type SetStateAction,
   useState,
 } from 'react';
+import CalendarConnectionsUnified from './components/calendar-connections-unified';
 import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
 import { useCalendarSettings } from './hooks';
 
@@ -59,10 +60,15 @@ export function CalendarClientPage({
   const needsCalendarGate = !calendarGateCompleted && settingsNeedGate;
 
   const extras = (
-    <HeaderActions
-      workspaceId={workspace.id}
-      enableSmartScheduling={enableSmartScheduling}
-    />
+    <>
+      {showConnectionsManager === false && (
+        <CalendarConnectionsUnified wsId={workspace.id} variant="status" />
+      )}
+      <HeaderActions
+        workspaceId={workspace.id}
+        enableSmartScheduling={enableSmartScheduling}
+      />
+    </>
   );
 
   return (

@@ -9,6 +9,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const querySchema = z.object({
@@ -95,7 +96,7 @@ export async function GET(request: Request) {
   const calendars: unknown[] = [];
   const accountStatuses: Record<
     string,
-    { state: 'connected' | 'reconnect_required' }
+    { state: 'connected' | 'reconnect_required' | 'temporarily_unavailable' }
   > = {};
 
   for (const token of tokens ?? []) {
@@ -158,7 +159,12 @@ export async function GET(request: Request) {
         error,
       });
       byAccount[token.id] = [];
-      accountStatuses[token.id] = { state: 'reconnect_required' };
+      accountStatuses[token.id] = {
+        state:
+          classifyCalendarSyncError(error) === 'auth'
+            ? 'reconnect_required'
+            : 'temporarily_unavailable',
+      };
     }
   }
 

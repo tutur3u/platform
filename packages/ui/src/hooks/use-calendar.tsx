@@ -5,6 +5,7 @@ import {
   type WorkspaceCalendarEventCreatePayload,
   type WorkspaceCalendarEventUpdatePayload,
 } from '@tuturuuu/internal-api';
+import { syncWorkspaceCalendar } from '@tuturuuu/internal-api/calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -1412,19 +1413,12 @@ export const CalendarProvider = ({
           });
         }
 
-        const response = await fetch(
-          `/api/v1/workspaces/${ws.id}/calendar/sync`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ direction: 'inbound', source: 'manual' }),
-          }
-        );
-
-        const result = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(result?.error || 'Calendar sync failed');
-        }
+        const result = await syncWorkspaceCalendar(ws.id);
+        await queryClient.invalidateQueries({
+          queryKey: ['databaseCalendarEvents', ws.id],
+          exact: false,
+        });
+        if (!result.ok) throw new Error(result.error || 'Calendar sync failed');
 
         const inserted =
           (result?.summary?.google?.inserted ?? 0) +
@@ -1436,11 +1430,6 @@ export const CalendarProvider = ({
           (result?.summary?.google?.deleted ?? 0) +
           (result?.summary?.microsoft?.deleted ?? 0);
         const changesMade = inserted + updated + deleted > 0;
-
-        await queryClient.invalidateQueries({
-          queryKey: ['databaseCalendarEvents', ws.id],
-          exact: false,
-        });
 
         if (progressCallback) {
           progressCallback({

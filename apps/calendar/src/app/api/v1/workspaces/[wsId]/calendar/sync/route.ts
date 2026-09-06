@@ -8,8 +8,9 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
+import { syncGoogleInbound } from '@/lib/calendar/google-inbound-sync';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
+import { classifyCalendarSyncError } from '@/lib/calendar/sync-errors';
 import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
 import {
   getCalendarSyncPreferences,
@@ -29,7 +30,6 @@ type DashboardRunRow = {
   cooldown_remaining_seconds?: number | null;
 };
 type MicrosoftTokenRow = { id: string; access_token: string };
-type GoogleTokenRow = { id: string };
 type CalendarConnectionRow = {
   calendar_id: string;
   color?: string | null;
@@ -328,120 +328,6 @@ async function syncMicrosoftInbound(args: {
   return { inserted, updated, deleted, processedAccounts: tokens.length };
 }
 
-async function syncGoogleInbound(args: {
-  sbAdmin: any;
-  wsId: string;
-  rangeStart: string;
-  rangeEnd: string;
-  userIdForFallback: string;
-  settingsAvailable: boolean;
-}) {
-  const { data: tokenRows, error: tokenError } = await args.sbAdmin
-    .from('calendar_auth_tokens')
-    .select('id')
-    .eq('ws_id', args.wsId)
-    .eq('provider', 'google')
-    .eq('is_active', true);
-
-  if (tokenError) {
-    throw tokenError;
-  }
-
-  const googleTokenIds = ((tokenRows ?? []) as GoogleTokenRow[]).map(
-    (token) => token.id
-  );
-
-  if (googleTokenIds.length === 0) {
-    return {
-      inserted: 0,
-      updated: 0,
-      deleted: 0,
-      processedConnections: 0,
-    };
-  }
-
-  const { data: connections, error: connectionError } = await args.sbAdmin
-    .from('calendar_connections')
-    .select(
-      args.settingsAvailable
-        ? 'calendar_id, auth_token_id, workspace_calendar_id, access_role, sync_delete_enabled, sync_inbound_enabled'
-        : 'calendar_id, auth_token_id, workspace_calendar_id, access_role'
-    )
-    .eq('ws_id', args.wsId)
-    .eq('is_enabled', true)
-    .in('auth_token_id', googleTokenIds);
-
-  if (connectionError) {
-    throw connectionError;
-  }
-
-  const googleConnections = (
-    (connections ?? []) as CalendarConnectionRow[]
-  ).filter(
-    (connection) =>
-      connection.auth_token_id && connection.sync_inbound_enabled !== false
-  );
-
-  let inserted = 0;
-  let updated = 0;
-  let deleted = 0;
-  let failedConnections = 0;
-  let firstConnectionError: unknown;
-
-  for (const connection of googleConnections) {
-    try {
-      const result = await performIncrementalActiveSync(
-        args.wsId,
-        args.userIdForFallback,
-        connection.calendar_id,
-        new Date(args.rangeStart),
-        new Date(args.rangeEnd),
-        undefined,
-        connection.auth_token_id,
-        connection.workspace_calendar_id ?? null,
-        {
-          syncDeletes: connection.sync_delete_enabled !== false,
-        }
-      );
-
-      if (result instanceof NextResponse) {
-        const body = await result.json();
-        throw new Error(body.error || 'Google sync failed');
-      }
-
-      inserted += result.eventsInserted;
-      updated += result.eventsUpdated;
-      deleted += result.eventsDeleted;
-    } catch (error) {
-      failedConnections += 1;
-      firstConnectionError ??= error;
-      console.warn('Google calendar connection sync failed', {
-        wsId: args.wsId,
-        authTokenId: connection.auth_token_id,
-        calendarId: connection.calendar_id,
-        error,
-      });
-    }
-  }
-
-  if (
-    googleConnections.length > 0 &&
-    failedConnections === googleConnections.length
-  ) {
-    throw firstConnectionError instanceof Error
-      ? firstConnectionError
-      : new Error('Google sync failed for all connected calendars');
-  }
-
-  return {
-    inserted,
-    updated,
-    deleted,
-    processedConnections: googleConnections.length - failedConnections,
-    failedConnections,
-  };
-}
-
 async function syncTuturuuuOutbound(args: {
   sbAdmin: any;
   wsId: string;
@@ -716,10 +602,19 @@ export async function POST(
           provider: null as string | null,
         };
 
-    await (sbAdmin as any)
+    const partialFailure =
+      (googleSummary.failedConnections ?? 0) > 0 || outboundSummary.failed > 0;
+    const failureType =
+      ('failureType' in googleSummary && googleSummary.failureType) ||
+      'partial_failure';
+    const { error: completionError } = await (sbAdmin as any)
       .from('calendar_sync_dashboard')
       .update({
-        status: 'success',
+        status: partialFailure ? 'failed' : 'completed',
+        error_type: partialFailure ? failureType : null,
+        error_message: partialFailure
+          ? 'Some calendars or events could not be synchronized'
+          : null,
         end_time: new Date().toISOString(),
         inserted_events: googleSummary.inserted + microsoftSummary.inserted,
         updated_events:
@@ -732,9 +627,18 @@ export async function POST(
           microsoftSummary.processedAccounts,
       })
       .eq('id', dashboardRunId);
+    if (completionError) {
+      console.error('Failed to record calendar sync completion', {
+        wsId,
+        completionError,
+      });
+      throw new Error('Failed to record sync completion');
+    }
 
     return NextResponse.json({
-      ok: true,
+      ok: !partialFailure,
+      partialFailure,
+      code: partialFailure ? failureType : undefined,
       direction,
       summary: {
         google: googleSummary,
@@ -750,6 +654,7 @@ export async function POST(
         .update({
           status: 'failed',
           end_time: new Date().toISOString(),
+          error_type: classifyCalendarSyncError(error),
           error_message:
             error instanceof Error ? error.message : 'Internal server error',
         })
@@ -757,7 +662,8 @@ export async function POST(
     }
     return jsonError(
       error instanceof Error ? error.message : 'Internal server error',
-      500
+      500,
+      { code: classifyCalendarSyncError(error) }
     );
   }
 }

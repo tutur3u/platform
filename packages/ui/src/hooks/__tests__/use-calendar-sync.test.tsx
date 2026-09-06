@@ -154,6 +154,30 @@ describe('CalendarSyncProvider optimistic visible events', () => {
     vi.stubGlobal('fetch', vi.fn());
   });
 
+  it('reports a partial HTTP 200 sync as an error without a success callback', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json({
+          ok: false,
+          partialFailure: true,
+          error: 'One calendar failed',
+        })
+      )
+    );
+    const { result } = renderCalendarSync({
+      externalEvents: [createEvent('saved')],
+    });
+    const progress = vi.fn();
+    await act(async () => {
+      await result.current.syncToTuturuuu(progress, { skipCooldown: true });
+    });
+    expect(result.current.syncStatus.state).toBe('error');
+    expect(result.current.error?.message).toBe('One calendar failed');
+    expect(progress).not.toHaveBeenCalled();
+    expect(result.current.events[0]?.id).toBe('saved');
+  });
+
   it('keeps last successful events visible while a refetch is pending', async () => {
     const initialEvent = createEvent('event-1');
     let databaseCalls = 0;

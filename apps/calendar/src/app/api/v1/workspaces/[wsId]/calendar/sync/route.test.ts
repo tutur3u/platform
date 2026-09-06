@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  dashboardUpdateMock,
   createAdminClientMock,
   createGraphClientMock,
   fetchMicrosoftEventsMock,
@@ -8,6 +9,7 @@ const {
   resolveSessionAuthContextMock,
   verifyWorkspaceMembershipTypeMock,
 } = vi.hoisted(() => ({
+  dashboardUpdateMock: vi.fn(),
   createAdminClientMock: vi.fn(),
   createGraphClientMock: vi.fn(),
   fetchMicrosoftEventsMock: vi.fn(),
@@ -68,9 +70,11 @@ function createAwaitableQuery<T>(result: T) {
 
 function createAdminSupabaseMock({
   additionalGoogleConnections = [],
+  completionFailure = false,
   recentRuns = [],
 }: {
   additionalGoogleConnections?: Array<Record<string, unknown>>;
+  completionFailure?: boolean;
   recentRuns?: Array<Record<string, unknown>>;
 } = {}) {
   const tokenRows = [
@@ -215,11 +219,21 @@ function createAdminSupabaseMock({
               data: recentRuns,
               error: null,
             }),
-          update: () =>
-            createAwaitableQuery({
-              data: null,
-              error: null,
-            }),
+          update: (data: unknown) => {
+            dashboardUpdateMock(data);
+            const status = (data as { status?: string }).status;
+            // Mirror the deployed CHECK constraint; 'success' leaves runs stuck.
+            const error =
+              (status &&
+                !['running', 'completed', 'failed'].includes(status)) ||
+              (status === 'completed' && completionFailure)
+                ? {
+                    code: '23514',
+                    message: 'calendar_sync_dashboard_status_check',
+                  }
+                : null;
+            return createAwaitableQuery({ data: null, error });
+          },
         };
       }
 
@@ -358,6 +372,27 @@ describe('workspace calendar sync route', () => {
     expect(performIncrementalActiveSyncMock).not.toHaveBeenCalled();
   });
 
+  it('does not report success when the completion record cannot be saved', async () => {
+    createAdminClientMock.mockResolvedValue(
+      createAdminSupabaseMock({ completionFailure: true })
+    );
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction: 'inbound' }),
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({
+      error: 'Failed to record sync completion',
+    });
+    expect(dashboardUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'failed' })
+    );
+  });
+
   it('runs a manual sync for an authorized workspace member', async () => {
     const response = await POST(
       new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
@@ -371,6 +406,9 @@ describe('workspace calendar sync route', () => {
 
     expect(response.status).toBe(200);
     expect(body).toMatchObject({ direction: 'inbound', ok: true });
+    expect(dashboardUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'completed' })
+    );
     expect(verifyWorkspaceMembershipTypeMock).toHaveBeenCalledWith({
       supabase: { auth: {} },
       userId: 'manual-user-id',
@@ -426,6 +464,59 @@ describe('workspace calendar sync route', () => {
     );
   });
 
+  it.each([true, false])(
+    'prioritizes auth recovery across mixed failures (partial=%s)',
+    async (partial) => {
+      createAdminClientMock.mockResolvedValue(
+        createAdminSupabaseMock({
+          additionalGoogleConnections: [
+            {
+              auth_token_id: 'google-token-id',
+              calendar_id: 'second',
+              is_enabled: true,
+              ws_id: WS_ID,
+            },
+            {
+              auth_token_id: 'google-token-id',
+              calendar_id: 'third',
+              is_enabled: true,
+              ws_id: WS_ID,
+            },
+          ],
+        })
+      );
+      performIncrementalActiveSyncMock
+        .mockRejectedValueOnce(new Error('ETIMEDOUT'))
+        .mockRejectedValueOnce(new Error('invalid_grant'));
+      if (partial)
+        performIncrementalActiveSyncMock.mockResolvedValueOnce({
+          eventsDeleted: 0,
+          eventsInserted: 0,
+          eventsUpdated: 0,
+        });
+      else
+        performIncrementalActiveSyncMock.mockRejectedValueOnce(
+          new Error('temporary network error')
+        );
+      const response = await POST(
+        new Request(
+          `http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ direction: 'inbound' }),
+          }
+        ) as never,
+        { params: Promise.resolve({ wsId: WS_ID }) }
+      );
+      expect(response.status).toBe(partial ? 200 : 500);
+      expect(await response.json()).toMatchObject({ code: 'auth' });
+      expect(dashboardUpdateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'failed', error_type: 'auth' })
+      );
+    }
+  );
+
   it('continues syncing healthy Google calendars when one connection is stale', async () => {
     createAdminClientMock.mockResolvedValue(
       createAdminSupabaseMock({
@@ -462,6 +553,14 @@ describe('workspace calendar sync route', () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
+    expect(body).toMatchObject({
+      ok: false,
+      partialFailure: true,
+      code: 'configuration',
+    });
+    expect(dashboardUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'failed', error_type: 'configuration' })
+    );
     expect(performIncrementalActiveSyncMock).toHaveBeenCalledTimes(2);
     expect(body.summary.google).toMatchObject({
       deleted: 1,
