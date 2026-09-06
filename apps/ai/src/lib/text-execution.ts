@@ -43,6 +43,16 @@ export function parseTextRequest(input: unknown): TextRequest {
   return parsed.data;
 }
 
+function hasReportedUsage(usage: {
+  inputTokens?: number;
+  outputTokens?: number;
+  reasoningTokens?: number;
+}) {
+  return Object.values(usage).some(
+    (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0
+  );
+}
+
 function auditHeader(request: Request, name: string): string | null {
   const value = request.headers.get(name);
   return value && /^[a-zA-Z0-9_:.-]{1,128}$/.test(value) ? value : null;
@@ -76,6 +86,8 @@ export async function executeTextRequest(
     reasoningTokens?: number;
   } = {};
   let completedStepUsage = () => reportedUsage;
+  let usageSource: 'provider' | 'provider_partial' | 'unavailable' =
+    'unavailable';
   let settled = false;
   try {
     context = await prepareMeteredExecution({
@@ -139,6 +151,7 @@ export async function executeTextRequest(
       };
 
       reportedUsage = usage;
+      usageSource = 'provider';
       await settleMeteredExecution(context, {
         metadata: {
           finish_reason: String(result.finishReason),
@@ -220,6 +233,7 @@ export async function executeTextRequest(
       abortSignal: request.signal,
       onEnd: async ({ finishReason, steps, text, toolCalls, usage }) => {
         outputText = text;
+        usageSource = 'provider';
         reportedUsage = {
           inputTokens: usage.inputTokens ?? 0,
           outputTokens: usage.outputTokens ?? 0,
@@ -292,23 +306,26 @@ export async function executeTextRequest(
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
-          const partialUsage = !Object.keys(reportedUsage).length;
-          if (partialUsage) reportedUsage = completedStepUsage();
+          const partialUsage = !hasReportedUsage(reportedUsage);
+          if (partialUsage) {
+            reportedUsage = completedStepUsage();
+            usageSource = hasReportedUsage(reportedUsage)
+              ? 'provider_partial'
+              : 'unavailable';
+          }
           if (!settled)
             await settleMeteredExecution(context!, {
               error,
               firstTokenLatencyMs,
               status: request.signal.aborted ? 'aborted' : 'failed',
-              usage: Object.keys(reportedUsage).length
+              usage: hasReportedUsage(reportedUsage)
                 ? reportedUsage
                 : {
                     outputTokens: approximateTokenCount(outputText),
                   },
               metadata: {
-                usage_source: Object.keys(reportedUsage).length
-                  ? partialUsage
-                    ? 'provider_partial'
-                    : 'provider'
+                usage_source: hasReportedUsage(reportedUsage)
+                  ? usageSource
                   : 'estimated_partial',
               },
             }).catch((settlementError) => {
@@ -334,25 +351,30 @@ export async function executeTextRequest(
       const objectError = NoObjectGeneratedError.isInstance(error)
         ? error
         : null;
-      if (objectError?.usage)
-        reportedUsage = {
-          inputTokens: objectError.usage.inputTokens,
-          outputTokens: objectError.usage.outputTokens,
-          reasoningTokens:
-            objectError.usage.outputTokenDetails?.reasoningTokens,
-        };
-      if (!Object.keys(reportedUsage).length)
+      const errorUsage = objectError?.usage
+        ? {
+            inputTokens: objectError.usage.inputTokens,
+            outputTokens: objectError.usage.outputTokens,
+            reasoningTokens:
+              objectError.usage.outputTokenDetails?.reasoningTokens,
+          }
+        : {};
+      if (hasReportedUsage(errorUsage)) {
+        reportedUsage = errorUsage;
+        usageSource = 'provider';
+      }
+      if (!hasReportedUsage(reportedUsage)) {
         reportedUsage = completedStepUsage();
+        usageSource = hasReportedUsage(reportedUsage)
+          ? 'provider_partial'
+          : 'unavailable';
+      }
       await settleMeteredExecution(context, {
         error,
         status: request.signal.aborted ? 'aborted' : 'failed',
         usage: reportedUsage,
         metadata: {
-          usage_source: Object.keys(reportedUsage).length
-            ? objectError
-              ? 'provider'
-              : 'provider_partial'
-            : 'unavailable',
+          usage_source: usageSource,
           ...(objectError
             ? { finish_reason: String(objectError.finishReason) }
             : {}),

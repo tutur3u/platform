@@ -135,6 +135,45 @@ describe('AI execution usage settlement', () => {
       })
     );
   });
+  it.each([
+    undefined,
+    { inputTokens: undefined, outputTokens: undefined, outputTokenDetails: {} },
+  ])(
+    'treats missing numeric error usage as a partial completed-step total',
+    async (usage) => {
+      mocks.summaries.mockReturnValue([
+        { type: 'model', inputTokens: 20, outputTokens: 4, reasoningTokens: 0 },
+      ]);
+      mocks.generate.mockRejectedValue(
+        new NoObjectGeneratedError({
+          message: 'Invalid JSON',
+          text: '{',
+          finishReason: 'length',
+          response: {
+            id: 'provider-id',
+            modelId: 'model',
+            timestamp: new Date(),
+          },
+          usage: usage as never,
+        })
+      );
+      await executeTextRequest(
+        new Request('https://test/v1/chat/completions'),
+        input(),
+        { feature: 'chat_completions', responseShape: 'chat' }
+      );
+      expect(mocks.settle).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          usage: { inputTokens: 20, outputTokens: 4, reasoningTokens: 0 },
+          metadata: {
+            usage_source: 'provider_partial',
+            finish_reason: 'length',
+          },
+        })
+      );
+    }
+  );
   it('labels unavailable usage explicitly instead of claiming measured zero usage', async () => {
     mocks.generate.mockRejectedValue(new Error('provider unreachable'));
     await executeTextRequest(
