@@ -205,7 +205,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           ? 'internal'
           : (defaultWorkspace?.id ?? 'personal');
       const wsRedirect = NextResponse.redirect(
-        new URL(`/${target}/plans`, req.nextUrl)
+        new URL(`/${target}/meetings`, req.nextUrl)
       );
       propagateAuthCookies(authRes, wsRedirect);
       return wsRedirect;

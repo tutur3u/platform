@@ -17,6 +17,7 @@ export const ci = {
   'rust-backend.yml': false,
   'tanstack-route-manifest.yaml': false,
   'i18n-check.yaml': true,
+  'meet-cloudflare.yaml': true,
   'mobile.yaml': true,
   'release-ai-package.yaml': true,
   'release-apis-package.yaml': true,
@@ -57,7 +58,7 @@ export const ci = {
   'vercel-production-rewise.yaml': true,
   'vercel-production-shortener.yaml': true,
   'vercel-production-tasks.yaml': true,
-  'vercel-production-meet.yaml': true,
+  'vercel-production-meet.yaml': false,
   'vercel-production-learn.yaml': true,
   'vercel-production-mail.yaml': true,
   // Avoid automatic TanStack production builds while the migration is paused.

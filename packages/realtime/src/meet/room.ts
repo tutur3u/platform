@@ -23,6 +23,7 @@ import {
 } from './primitives';
 
 export const MEET_PRESENCE_TTL_MS = 30_000;
+export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
   presence: Record<string, MeetRealtimePresence>;
@@ -107,16 +108,20 @@ export function meetTrackKey(track: MeetRealtimeRoomTrack) {
   return `${track.sessionId}:${track.trackName ?? track.mid ?? track.userId}`;
 }
 
-/** Drops presence entries whose heartbeat has lapsed. */
+/** Allow throttled connected tabs a bounded grace period before expiring. */
 export function pruneMeetPresence(
   state: MeetRoomSnapshot,
-  nowMs: number
+  nowMs: number,
+  connectedUserIds?: ReadonlySet<string>
 ): MeetRoomSnapshot {
   const presence: Record<string, MeetRealtimePresence> = {};
   let changed = false;
 
   for (const [userId, entry] of Object.entries(state.presence)) {
-    if (Date.parse(entry.lastSeenAt) + MEET_PRESENCE_TTL_MS < nowMs) {
+    const ttl = connectedUserIds?.has(userId)
+      ? MEET_CONNECTED_PRESENCE_TTL_MS
+      : MEET_PRESENCE_TTL_MS;
+    if (Date.parse(entry.lastSeenAt) + ttl < nowMs) {
       changed = true;
       continue;
     }

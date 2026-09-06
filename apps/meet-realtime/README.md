@@ -5,16 +5,13 @@ carries presence, chat, stage and admission state, and relays Cloudflare
 Realtime SFU calls on a participant's behalf so the app secret never reaches a
 browser.
 
-Room rules live in `@tuturuuu/realtime/meet` (`room.ts`) as a pure reducer, so
-both transports below behave identically:
+Production uses a Cloudflare Worker and one Durable Object per meeting room.
+Presence, chat, admission and SFU signaling run entirely on Cloudflare; no
+internal machine, Docker server or Cloudflare Tunnel is required. The Bun
+transport remains only for local protocol development and synthetic tests.
 
-| transport | entry | host |
-| --- | --- | --- |
-| Cloudflare Worker + Durable Object | `src/worker.ts`, `src/room-do.ts` | `wrangler.jsonc` |
-| Bun WebSocket server | `src/index.ts`, `src/server.ts` | `Dockerfile` (blue/green, port 7816) |
-
-One Durable Object per room is the scalable path: the Bun server keeps rooms in
-a module-level `Map`, which is only correct for a single replica.
+Canonical WebSocket endpoint: `wss://meet-realtime.tuturuuu.com/realtime`.
+The frontend runs on the separate `tuturuuu-meet` Worker at `meet.tuturuuu.com`.
 
 ## Configuration
 
@@ -62,7 +59,27 @@ bun wrangler secret put CLOUDFLARE_REALTIME_APP_SECRET -c apps/meet-realtime/wra
 bun wrangler deploy -c apps/meet-realtime/wrangler.jsonc
 ```
 
-Point clients at the Worker with `NEXT_PUBLIC_MEET_REALTIME_URL`.
+Clients default to the canonical Worker endpoint. `MEET_REALTIME_URL` may
+override it for verification. Old `wss://meet.tuturuuu.com/realtime` settings
+resolve to the Cloudflare endpoint automatically.
+
+Run the protocol check directly against a Worker (a fresh synthetic room is
+created per run, without database meeting writes):
+
+```bash
+MEET_CHECK_REALTIME_URL=wss://meet-realtime.tuturuuu.com/realtime \
+  bun --env-file=apps/meet-realtime/.dev.vars apps/meet-realtime/src/integration-check.ts
+```
+
+The same variable makes `media-check.ts --call-controller` use the Worker for
+signaling while localhost serves only the test page. Without it, the harness
+starts the local Bun test transport. For normal local app development use
+`bun wrangler dev -c apps/meet-realtime/wrangler.jsonc` (port 8786).
+
+`.github/workflows/meet-cloudflare.yaml` builds and validates both Workers,
+then deploys realtime before the frontend on the production branch. Runtime
+secrets remain in Cloudflare. A successful health request alone does not verify
+SFU access: the protocol check must also create a real SFU session.
 
 ## Protocol
 

@@ -23,7 +23,12 @@
     "sb:typegen": "cd ../database && bun sb:typegen",
     "ui:add": "bunx shadcn-ui@latest add",
     "ui:diff": "bunx shadcn-ui@latest diff",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview:cloudflare": "opennextjs-cloudflare preview",
+    "deploy:cloudflare": "opennextjs-cloudflare deploy",
+    "cf:typecheck": "tsc --noEmit -p tsconfig.cloudflare.json",
+    "cf:typegen": "wrangler types --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.13",
@@ -58,6 +63,9 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@cloudflare/workers-types": "^5.20260820.1",
+    "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.4.1",
@@ -67,7 +75,8 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.28",
     "typescript": "7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "wrangler": "4.129.0"
   },
   "packageManager": "bun@1.4.1",
   "portless": {

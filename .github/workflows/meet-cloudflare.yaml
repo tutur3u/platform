@@ -1,0 +1,142 @@
+name: Meet Cloudflare
+
+on:
+  pull_request:
+    paths:
+      - 'apps/meet/**'
+      - 'apps/meet-realtime/**'
+      - 'apps/web/src/lib/meet/**'
+      - 'apps/web/src/app/api/v1/workspaces/*/meetings/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'turbo.json'
+      - 'bun.lock'
+      - 'tuturuuu.ts'
+      - 'tuturuuu.ci.ts'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/**'
+      - '.github/workflows/meet-cloudflare.yaml'
+  push:
+    branches: [main, production]
+    paths:
+      - 'apps/meet/**'
+      - 'apps/meet-realtime/**'
+      - 'apps/web/src/lib/meet/**'
+      - 'apps/web/src/app/api/v1/workspaces/*/meetings/**'
+      - 'packages/**'
+      - 'bun.lock'
+      - 'package.json'
+      - 'turbo.json'
+      - 'tuturuuu.ts'
+      - 'tuturuuu.ci.ts'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/**'
+      - '.github/workflows/meet-cloudflare.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: meet-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: meet-cloudflare.yaml
+  validate:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+        working-directory: packages/realtime
+      - run: node --experimental-strip-types --test apps/meet-realtime/src/check-endpoint.test.ts
+      - run: bun run test
+        working-directory: apps/meet
+      - name: Build the frontend for Workers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_APP_URL: https://meet.tuturuuu.com
+          NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+        with:
+          command: cd apps/meet && bun run build:cloudflare
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Check Worker binding types
+        run: bun run --cwd apps/meet cf:typecheck
+      - name: Validate both Worker bundles
+        run: |
+          bun x --no-install wrangler deploy --dry-run -c apps/meet/wrangler.jsonc
+          bun x --no-install wrangler deploy --dry-run -c apps/meet-realtime/wrangler.jsonc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: meet-worker-${{ github.sha }}
+          path: apps/meet/.open-next
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    environment: meet-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+      # The existing account deployment credential can bootstrap Meet; prefer its own credential when configured.
+      CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: meet-worker-${{ github.sha }}
+          path: apps/meet/.open-next
+      - name: Verify required production secret names
+        env:
+          MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+        run: |
+          test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
+          bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
+          bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
+      - name: Deploy signaling before the frontend
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
+          bun x --no-install wrangler deploy -c apps/meet-realtime/wrangler.jsonc --message "$GITHUB_SHA"
+      - name: Deploy the verified frontend
+        working-directory: apps/meet
+        run: bun run deploy:cloudflare -- --message "$GITHUB_SHA"
+      - name: Verify canonical routes
+        run: |
+          curl --fail --retry 5 --retry-delay 5 https://meet-realtime.tuturuuu.com/health
+          curl --fail --retry 5 --retry-delay 5 --output /dev/null https://meet.tuturuuu.com/login
+      - name: Verify authenticated realtime and SFU behavior
+        env:
+          MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+          MEET_CHECK_REALTIME_URL: wss://meet-realtime.tuturuuu.com/realtime
+        run: bun apps/meet-realtime/src/integration-check.ts

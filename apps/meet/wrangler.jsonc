@@ -1,0 +1,51 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-meet",
+  "account_id": "e8912e2867beecc673d171907bf09649",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-06",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "tuturuuu-meet"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "tuturuuu-meet-cache"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05
+  },
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "meet.tuturuuu.com",
+      "custom_domain": true
+    }
+  ],
+  "secrets": {
+    "required": [
+      "MEET_REALTIME_TOKEN_SECRET",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+      "SUPABASE_SECRET_KEY"
+    ]
+  },
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://meet.tuturuuu.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+    "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime"
+  }
+}

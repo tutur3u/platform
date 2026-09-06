@@ -313,7 +313,7 @@ test('bun.lock-only changes run enabled Vercel app deploys', () => {
         rootDir,
         workflowName,
       },
-      workflowName !== 'vercel-production-tanstack-web.yaml'
+      !/-production-(tanstack-web|meet)\.yaml$/.test(workflowName)
     );
   }
 });

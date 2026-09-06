@@ -74,6 +74,7 @@ export function reduceCallState(
       return {
         ...state,
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
+        remoteTracks: {},
         role: message.role,
         selfUserId: message.userId,
         stage: message.stage,

@@ -17,17 +17,26 @@ import {
   meetRealtimeTokenPayloadSchema,
 } from '../../../packages/realtime/src/meet';
 import { signMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
+import { validateMeetCheckEndpoint } from './check-endpoint';
 import { createMeetRealtimeServer } from './server';
 
 const ROOM_PORT = 7899;
 const PAGE_PORT = 7898;
 const WS_ID = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
-const MEETING_ID = '5e5217de-9bb3-4e20-8d99-526ad3e7e34f';
+const MEETING_ID = crypto.randomUUID();
 const PEERS: Record<string, { name: string; userId: string }> = {
   a: { name: 'Peer A', userId: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691' },
   b: { name: 'Peer B', userId: '4b320da6-6c8a-43fe-b1bf-09fbe77303f9' },
 };
 const SECRET = process.env.MEET_REALTIME_TOKEN_SECRET || 'integration-secret';
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone verification harness, never a cached Turbo task.
+const REMOTE_URL = process.env.MEET_CHECK_REALTIME_URL;
+const ROOM_URL = validateMeetCheckEndpoint(
+  REMOTE_URL || `ws://127.0.0.1:${ROOM_PORT}/realtime`
+);
+if (REMOTE_URL && !process.env.MEET_REALTIME_TOKEN_SECRET) {
+  throw new Error('Remote checks require MEET_REALTIME_TOKEN_SECRET');
+}
 
 function mintToken(peer: keyof typeof PEERS) {
   const { name, userId } = PEERS[peer] as { name: string; userId: string };
@@ -39,9 +48,9 @@ function mintToken(peer: keyof typeof PEERS) {
       limits: {},
       meetingId: MEETING_ID,
       mode: 'call',
-      role: 'host',
+      role: peer === 'a' ? 'host' : 'speaker',
       roomId: `${WS_ID}:${MEETING_ID}`,
-      scopes: getMeetRealtimeScopesForRole('host'),
+      scopes: getMeetRealtimeScopesForRole(peer === 'a' ? 'host' : 'speaker'),
       userId,
       wsId: WS_ID,
     }),
@@ -49,8 +58,12 @@ function mintToken(peer: keyof typeof PEERS) {
   );
 }
 
-const HARNESS_ENTRY = new URL('./media-check-client.ts', import.meta.url)
-  .pathname;
+const HARNESS_ENTRY = new URL(
+  process.argv.includes('--call-controller')
+    ? './call-check-client.tsx'
+    : './media-check-client.ts',
+  import.meta.url
+).pathname;
 
 async function buildClientBundle() {
   const built = await Bun.build({
@@ -79,21 +92,23 @@ const PAGE = /* html */ `<!doctype html>
   video { width: 240px; border-radius: 8px; background:#000; margin-top: 12px }
   .pass { color:#4ade80 } .fail { color:#f87171 }
 </style>
+<div id="root"></div>
 <h1 id="who"></h1>
 <div id="result">booting…</div>
 <video id="remote" autoplay playsinline muted></video>
 <script type="module" src="/bundle.js"></script>
 `;
 
-const room = createMeetRealtimeServer({ port: ROOM_PORT });
-const bundle = await buildClientBundle();
+if (!REMOTE_URL) createMeetRealtimeServer({ port: ROOM_PORT });
+// Rebuild on each reload so the harness exercises current controller edits.
+await buildClientBundle();
 
 const page = Bun.serve({
   async fetch(request) {
     const url = new URL(request.url);
 
     if (url.pathname === '/bundle.js') {
-      return new Response(bundle, {
+      return new Response(await buildClientBundle(), {
         headers: { 'Content-Type': 'text/javascript' },
       });
     }
@@ -101,7 +116,9 @@ const page = Bun.serve({
     if (url.pathname === '/token') {
       const peer = url.searchParams.get('peer') === 'b' ? 'b' : 'a';
       return Response.json({
-        roomUrl: `ws://127.0.0.1:${ROOM_PORT}/realtime`,
+        meetingId: MEETING_ID,
+        wsId: WS_ID,
+        roomUrl: ROOM_URL,
         selfUserId: PEERS[peer]?.userId,
         token: mintToken(peer),
       });
@@ -111,11 +128,12 @@ const page = Bun.serve({
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   },
+  hostname: '127.0.0.1',
   port: PAGE_PORT,
 });
 
 process.stdout.write(
-  `room server  ws://127.0.0.1:${room.port}/realtime\n` +
+  `room server  ${ROOM_URL}\n` +
     `harness      http://127.0.0.1:${page.port}/?peer=a\n` +
     `             http://127.0.0.1:${page.port}/?peer=b\n\n` +
     'Open both, then read #result in each tab.\n'

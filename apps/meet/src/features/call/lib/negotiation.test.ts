@@ -93,6 +93,39 @@ describe('remote subscription planning', () => {
     });
   });
 
+  it('keeps a reconnect replacement authoritative across subscription retries', () => {
+    const first = track(OTHER, 'audio');
+    const second = { ...first, sessionId: 'replacement-session' };
+    const entries = { first, second };
+    expect(planRemoteSubscriptions(entries, [], SELF)).toEqual([
+      {
+        location: 'remote',
+        sessionId: second.sessionId,
+        trackName: second.trackName,
+      },
+    ]);
+    expect(
+      planRemoteSubscriptions(
+        entries,
+        [`${second.sessionId}:${second.trackName}`],
+        SELF
+      )
+    ).toEqual([]);
+    expect(
+      planRemoteSubscriptions(
+        entries,
+        [`${first.sessionId}:${first.trackName}`],
+        SELF
+      )
+    ).toEqual([
+      {
+        location: 'remote',
+        sessionId: second.sessionId,
+        trackName: second.trackName,
+      },
+    ]);
+  });
+
   it('never re-pulls an existing subscription', () => {
     const plan = planRemoteSubscriptions(
       remoteTracks,

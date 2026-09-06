@@ -5,7 +5,11 @@
       "targetOwner": "rust-backend",
       "note": "CLI external-app registry administration. Preserve bearer user authentication, root workspace secrets/roles authorization, explicit scope and workspace allowlists, no-store responses, audit actor, and secret rotation. Rust parity pending."
     },
-    "api:/api/v1/auth/colab/verify:apps/web/src/app/api/v1/auth/colab/verify/route.ts": {"status":"legacy-next","targetOwner":"rust-backend","note":"Colab one-time handoff resolves confirmed, non-banned auth.users identity. Never trust caller-controlled cross-app session_data.email for hosting or invitations. Display name and HTTPS avatar are resolved from the verified user profile; display metadata never grants permissions. Rust parity pending."},
+    "api:/api/v1/auth/colab/verify:apps/web/src/app/api/v1/auth/colab/verify/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Colab one-time handoff resolves confirmed, non-banned auth.users identity. Never trust caller-controlled cross-app session_data.email for hosting or invitations. Display name and HTTPS avatar are resolved from the verified user profile; display metadata never grants permissions. Rust parity pending."
+    },
     "api:/api/v1/users/me/avatar/upload-url:apps/web/src/legacy-api-routes/v1/users/me/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -2357,6 +2361,28 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Creator-only atomic finalize and reopen operations for persisted Tuturuuu Meet alternatives. The Rust port is pending."
+    },
+    "api:/api/v1/workspaces/:wsId/meetings:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "POST restricts creation to confirmed @tuturuuu.com accounts; GET has a partial Rust port and unported flows remain on Next.js.",
+      "methods": {
+        "GET": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "Partial Rust GET port still lacks app-session, workspace alias, and membership parity; app sessions and aliases fall through to Next.js."
+        },
+        "POST": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "Company-only creation and current confirmed identity check remain on Next.js; unported Rust POST falls through."
+        }
+      }
+    },
+    "api:/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts."
     }
   }
 }

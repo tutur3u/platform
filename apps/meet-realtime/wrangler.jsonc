@@ -32,5 +32,13 @@
       "CLOUDFLARE_REALTIME_APP_ID",
       "CLOUDFLARE_REALTIME_APP_SECRET"
     ]
-  }
+  },
+  "account_id": "e8912e2867beecc673d171907bf09649",
+  "routes": [
+    {
+      "pattern": "meet-realtime.tuturuuu.com",
+      "custom_domain": true
+    }
+  ],
+  "workers_dev": true
 }

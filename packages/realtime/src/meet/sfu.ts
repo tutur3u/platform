@@ -62,7 +62,8 @@ export class CloudflareSfuClient {
       options.appSecret || process.env.CLOUDFLARE_REALTIME_APP_SECRET,
       'CLOUDFLARE_REALTIME_APP_SECRET'
     );
-    this.fetchImpl = options.fetch ?? fetch;
+    // Workers requires the global receiver when invoking native fetch.
+    this.fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
   }
 
   private async request(path: string, init: RequestInit = {}) {

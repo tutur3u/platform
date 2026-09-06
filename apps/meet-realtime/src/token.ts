@@ -4,11 +4,7 @@ import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/tok
 function getMeetRealtimeTokenSecret(
   secret = process.env.MEET_REALTIME_TOKEN_SECRET
 ) {
-  const resolvedSecret =
-    secret ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_KEY;
+  const resolvedSecret = secret;
 
   if (resolvedSecret?.trim()) {
     return resolvedSecret.trim();
@@ -16,7 +12,7 @@ function getMeetRealtimeTokenSecret(
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
-      'Meet realtime token validation requires MEET_REALTIME_TOKEN_SECRET or the platform Supabase service secret in production'
+      'Meet realtime token validation requires MEET_REALTIME_TOKEN_SECRET in production'
     );
   }
 

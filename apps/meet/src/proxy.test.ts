@@ -167,6 +167,7 @@ describe('Meet proxy auth handoff', () => {
       true
     );
     expect(options?.isPublicPath?.('/personal/plans')).toBe(false);
+    expect(options?.isPublicPath?.('/personal/meetings')).toBe(false);
   });
 
   it('consumes verify-token requests before centralized auth redirects', async () => {
@@ -189,7 +190,7 @@ describe('Meet proxy auth handoff', () => {
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
-  it('redirects authenticated root requests to default workspace plans', async () => {
+  it('redirects authenticated root requests to default workspace meetings', async () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user-id' });
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
@@ -201,7 +202,7 @@ describe('Meet proxy auth handoff', () => {
     const response = await proxy(request);
 
     expect(response.headers.get('Location')).toBe(
-      'https://meet.tuturuuu.localhost/team-workspace/plans'
+      'https://meet.tuturuuu.localhost/team-workspace/meetings'
     );
     expect(mocks.getCurrentUserDefaultWorkspace).toHaveBeenCalledWith({
       headers: request.headers,
@@ -209,7 +210,7 @@ describe('Meet proxy auth handoff', () => {
     expect(mocks.propagateAuthCookies).toHaveBeenCalled();
   });
 
-  it('redirects Supabase-authenticated root requests to default workspace plans', async () => {
+  it('redirects Supabase-authenticated root requests to default workspace meetings', async () => {
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
       id: 'team-workspace',
@@ -220,7 +221,7 @@ describe('Meet proxy auth handoff', () => {
     const response = await proxy(request);
 
     expect(response.headers.get('Location')).toBe(
-      'https://meet.tuturuuu.localhost/team-workspace/plans'
+      'https://meet.tuturuuu.localhost/team-workspace/meetings'
     );
     expect(mocks.getCurrentUserDefaultWorkspace).toHaveBeenCalledWith({
       headers: request.headers,

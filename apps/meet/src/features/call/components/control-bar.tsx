@@ -107,7 +107,7 @@ export function ControlBar({
   const t = useTranslations('meet.call');
 
   return (
-    <div className="flex items-center justify-center gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
+    <div className="flex flex-wrap items-center justify-center gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
       <ControlButton
         active={!micOn}
         icon={micOn ? Mic : MicOff}

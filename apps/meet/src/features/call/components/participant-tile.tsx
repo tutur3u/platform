@@ -3,7 +3,8 @@
 import { Hand, MicOff, MonitorUp, Pin } from '@tuturuuu/icons';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { cn } from '@tuturuuu/utils/format';
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import { attachMediaPlayback } from '../lib/media-playback';
 
 function initials(displayName: string) {
   return displayName
@@ -15,6 +16,7 @@ function initials(displayName: string) {
 
 function ParticipantTileImpl({
   className,
+  resumePlaybackLabel,
   handRaised,
   isSelf,
   isSpeaking,
@@ -22,12 +24,14 @@ function ParticipantTileImpl({
   stream,
 }: {
   className?: string;
+  resumePlaybackLabel: string;
   handRaised?: boolean;
   isSelf?: boolean;
   isSpeaking?: boolean;
   participant: MeetRealtimePresence;
   stream?: MediaStream | null;
 }) {
+  const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const showVideo = Boolean(
     stream &&
@@ -36,8 +40,8 @@ function ParticipantTileImpl({
 
   useEffect(() => {
     const element = videoRef.current;
-    if (!element || !stream) return;
-    if (element.srcObject !== stream) element.srcObject = stream;
+    if (!element) return;
+    return attachMediaPlayback(element, stream ?? null, setPlaybackBlocked);
   }, [stream]);
 
   return (
@@ -48,20 +52,35 @@ function ParticipantTileImpl({
         className
       )}
     >
-      {showVideo ? (
-        <video
-          autoPlay
-          className={cn(
-            'size-full object-cover',
-            // A self-view that is not mirrored feels broken to the user, but a
-            // shared screen must never be flipped.
-            isSelf && !participant.media.screenEnabled && '-scale-x-100'
-          )}
-          muted={isSelf}
-          playsInline
-          ref={videoRef}
-        />
-      ) : (
+      <video
+        autoPlay
+        className={cn(
+          'size-full',
+          participant.media.screenEnabled ? 'object-contain' : 'object-cover',
+          !showVideo && 'hidden',
+          // A self-view that is not mirrored feels broken to the user, but a
+          // shared screen must never be flipped.
+          isSelf && !participant.media.screenEnabled && '-scale-x-100'
+        )}
+        muted={isSelf}
+        playsInline
+        ref={videoRef}
+      />
+      {playbackBlocked && !isSelf && (
+        <button
+          type="button"
+          className="absolute inset-x-3 top-3 z-10 rounded-md bg-background px-3 py-2 text-foreground text-sm shadow"
+          onClick={() => {
+            void videoRef.current
+              ?.play()
+              .then(() => setPlaybackBlocked(false))
+              .catch(() => undefined);
+          }}
+        >
+          {resumePlaybackLabel}
+        </button>
+      )}
+      {!showVideo && (
         <div className="grid size-full place-items-center">
           <div className="grid size-16 place-items-center rounded-full bg-foreground/10 font-medium text-lg">
             {initials(participant.displayName)}
@@ -123,5 +142,6 @@ export const ParticipantTile = memo(
     previous.isSelf === next.isSelf &&
     previous.isSpeaking === next.isSpeaking &&
     previous.stream === next.stream &&
-    previous.className === next.className
+    previous.className === next.className &&
+    previous.resumePlaybackLabel === next.resumePlaybackLabel
 );

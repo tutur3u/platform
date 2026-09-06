@@ -16,7 +16,7 @@ cost and CPU stay flat as a room grows.
 | piece | where |
 | --- | --- |
 | Protocol, permissions, pure room reducer | `packages/realtime/src/meet/` |
-| Room server (Bun + Docker, port 7816) | `apps/meet-realtime/src/server.ts` |
+| Local-only protocol test server (Bun, port 7816) | `apps/meet-realtime/src/server.ts` |
 | Room server (Cloudflare Worker + Durable Object) | `apps/meet-realtime/src/worker.ts` |
 | Cloudflare SFU HTTPS client | `packages/realtime/src/meet/sfu.ts` |
 | Call client and UI | `apps/meet/src/features/call/` |
@@ -42,11 +42,11 @@ bun apps/meet-realtime/src/verify-credentials.ts
 Start the room server and the app, then open a meeting and press **Join call**:
 
 ```bash
-bun apps/meet-realtime/src/index.ts
+bun wrangler dev -c apps/meet-realtime/wrangler.jsonc
 ```
 
 Point the app at it with `NEXT_PUBLIC_MEET_REALTIME_URL`, which defaults to
-`ws://127.0.0.1:7816/realtime`.
+`ws://127.0.0.1:8786/realtime`.
 
 ## Verifying without a full environment
 
@@ -163,34 +163,67 @@ broadcasts `recording.state` so every participant sees the indicator.
 Because it reuses those endpoints, a call recording is indistinguishable from
 one started on the meeting page and feeds the same transcription pipeline.
 
-## Why the Next app stays on Vercel
+## Cloudflare hosting
 
-Only the **realtime server** runs on Cloudflare Workers. `apps/meet` itself
-stays on Vercel, deliberately.
+Meet's frontend is packaged with OpenNext and runs on the `tuturuuu-meet`
+Worker. Realtime runs on `tuturuuu-meet-realtime`, with one Durable Object per
+meeting. Browsers send audio, camera and screen media directly to Cloudflare
+Realtime SFU. Neither Worker requires an internal host, Docker or a Tunnel.
+Shared platform authentication and APIs remain at `tuturuuu.com`, with the
+existing managed Supabase database; this does not move platform API ownership.
 
-Media never traverses the Next app: the browser talks to the Cloudflare SFU
-directly, and signaling goes to the room server. Moving the Next app to Workers
-would therefore not shorten the media path by a single hop.
+| Surface | Canonical hostname |
+| --- | --- |
+| Frontend | `meet.tuturuuu.com` |
+| Signaling, presence and chat | `meet-realtime.tuturuuu.com/realtime` (WebSocket) |
+| Realtime health | `meet-realtime.tuturuuu.com/health` |
 
-It is also not currently possible. `@opennextjs/cloudflare` requires Next
-`>=16.2.11`, and the monorepo is on the `16.3.0-preview` line, which npm semver
-ranges exclude. Pinning `apps/meet` alone to 16.2.12 was tried and rejected:
-16.2's `cacheComponents` is stricter than the preview, and both Tuturuuu Meet
-routes fail to prerender with `Uncached data was accessed outside of
-<Suspense>`. Fixing that means changing `@tuturuuu/ui/legacy/meet/*`, which
-other apps share.
+`apps/meet/wrangler.jsonc` configures frontend assets, image optimization,
+self-reference and the `tuturuuu-meet-cache` R2 bucket. `apps/meet/open-next.config.ts`
+configures the incremental cache. Build with `bun run build:cloudflare` from
+`apps/meet`; use `NEXT_WEBPACK_BUILD=1` for the existing local Webpack fallback.
+The normal CI build uses Turbopack. `bun run preview:cloudflare` runs the built
+frontend in workerd for runtime verification. Run `bun run cf:typegen` after
+binding changes and `bun run cf:typecheck` to validate the generated environment
+with Worker types separately from browser types. CI runs this check after building.
 
-Revisit when the monorepo moves to a stable Next 16 line.
+The frontend requires `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and
+`MEET_REALTIME_TOKEN_SECRET`. Configure a separate app-coordination signing secret
+only if the platform uses one. Public Supabase values are also build inputs;
+private secrets belong only in Worker runtime configuration. Realtime requires
+its dedicated token secret and the two Cloudflare SFU credentials from its README.
+Direct Worker verification requires a `wss://` endpoint; `ws://` is accepted
+only for loopback development (`localhost`, `127.0.0.1`, or `[::1]`). Endpoints
+must not include credentials, a query, or a fragment. Connected participants get
+a ten-minute heartbeat grace period for throttled tabs; the Worker closes and
+removes silent connections after that bound so ghost participants cannot persist.
+All call token issuers and verifiers must share `MEET_REALTIME_TOKEN_SECRET`;
+Supabase service keys are not used for call tokens.
 
-## Deploying the Worker
+`.github/workflows/meet-cloudflare.yaml` validates both Workers and deploys
+realtime before the frontend on `production`. It uses
+`MEET_CLOUDFLARE_API_TOKEN`, or the existing account deployment credential
+`COLAB_CLOUDFLARE_API_TOKEN` while bootstrapping. Automatic Vercel Meet production
+deployment is disabled in the CI switchboard. Preserve the Vercel deployment until the canonical
+Cloudflare sign-in and call checks pass so rollback remains available.
 
-```bash
-bun wrangler deploy -c apps/meet-realtime/wrangler.jsonc
-```
+Before cutover, deploy the frontend with an explicit verification configuration
+that has no custom-domain routes. Verify public rendering and API guards there, then deploy the checked canonical
+configuration. Sign-in returns to the registered canonical hostname, so complete
+signed-in navigation, API proxying and an authenticated two-participant call
+after cutover. Do not change DNS until both Worker versions and runtime secrets
+are verified, and confirm the active versions after deployment.
 
-One Durable Object per room gives each room a single authority. The Bun server
-keeps rooms in an in-process map, which is only correct for a single replica —
-prefer the Worker when running more than one instance.
+For a direct Worker protocol check, set `MEET_CHECK_REALTIME_URL` to its
+WebSocket endpoint when running `integration-check.ts`. The same variable works
+with `media-check.ts --call-controller`; localhost then hosts only the test page,
+not signaling. The check uses a fresh synthetic room and performs no database
+meeting writes. A health response alone cannot detect broken SFU calls.
+
+Native fetch must retain its global receiver in Workers. The SFU client binds
+`globalThis.fetch` to `globalThis`; calling an unbound native fetch as an object
+method throws `Illegal invocation`, even though Bun-based checks pass.
 
 ## URL shapes
 
@@ -210,3 +243,66 @@ position — public plan pages previously occupied it, so `/<wsId>` and
 Every retired shape is permanently redirected in `proxy.ts`:
 `/workspace/*` → `/*`, `/call/<wsId>/<meetingId>` and `/join/<code>` → `/r/<code>`,
 and a bare 32-hex segment → `/plans/<planId>`, so shared plan links keep working.
+
+## Temporary host restriction and call verification
+
+Online meeting creation is limited to authenticated account emails whose exact
+case-insensitive domain is `tuturuuu.com`. The meetings POST handler rejects other
+accounts before accessing meeting data. A restrictive INSERT policy in
+`20260906083000_restrict_online_meeting_creation.sql` also protects direct
+Supabase writes and requires `creator_id = auth.uid()`. Deploy the application
+change and have an operator apply this migration; an API-only deployment does
+not close direct database access. Scheduling plans are unaffected. Existing
+workspace members may still join calls regardless of their email domain.
+
+Signed-in root navigation opens online meetings. Hosts can start an instant
+meeting, and members can enter a room code or paste a same-origin room link.
+Legacy UUID room links remain accepted.
+
+The client keeps an audio playback element mounted when cameras are off, selects
+the screen track while someone presents, and restores the camera after a share
+ends. Publishing uses stable senders with `replaceTrack` for device toggles and
+share restarts. Subscribe negotiations are serialized and retried because track
+announcements can arrive before the SFU has finished publishing. A ten-second
+heartbeat keeps presence alive. Reconnect refreshes the token, preserves the
+member's speaker role for calls, and republishes enabled media.
+
+To test the actual React call controller and participant tile against the live
+Cloudflare SFU, run the local-only harness:
+
+```sh
+bun --env-file=apps/meet-realtime/.dev.vars apps/meet-realtime/src/media-check.ts --call-controller
+```
+
+Open `http://127.0.0.1:7898/?peer=a` and `http://127.0.0.1:7898/?peer=b` in separate
+tabs. Peer A is a host and B is a speaker. The harness supplies synthetic audio,
+camera, and screen sources; it does not capture the desktop or microphone.
+Verify nonzero received audio energy, zero energy while muted, decoded video
+frames, screen-to-camera transitions, two-way chat, host mute, and reconnect.
+Stop the harness after testing. It uses scratch room identities and does not
+create application database records. This proves the media path through the
+real SFU, but does not certify production authentication, OS device permissions,
+physical devices, or restrictive corporate networks. Those require additional
+checks on the canonical deployed app.
+
+The restrictive insert policy protects authenticated direct database writes.
+Satellite app-session requests use a service-role client, so their creation gate
+is the API check against the current confirmed email fetched from Supabase Auth; service-role
+requests bypass RLS. Neither path trusts handoff or user-editable profile metadata for the
+creation domain. The policy is not an additional RLS layer on service-role inserts.
+
+If a browser blocks remote autoplay, use **Play meeting audio**. Any keyboard or
+pointer interaction also retries playback. The controller harness deliberately
+rebuilds its client bundle on each reload so ongoing controller edits are exercised
+without restarting its signaling room.
+
+Presence stays active while its Durable Object WebSocket is open, even when a
+background browser delays heartbeats beyond the normal expiry window. Close/error
+handlers remove disconnected participants. The direct Worker integration check
+includes a 40-second idle interval to verify presence and host controls survive
+browser timer throttling.
+
+The `meet-production` GitHub environment must allow only the `production` branch
+and contain `MEET_REALTIME_TOKEN_SECRET` matching the Workers and platform API.
+Deployment checks required Worker secret names before rollout, then runs the
+signed-token realtime/SFU integration check against the canonical endpoint.

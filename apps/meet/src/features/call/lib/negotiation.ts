@@ -74,18 +74,28 @@ export function planRemoteSubscriptions(
   selfUserId: string | null
 ): CloudflareSfuTrack[] {
   const subscribed = new Set(subscribedKeys);
+  const namesInBatch = new Set<string>();
 
-  return Object.values(remoteTracks)
-    .filter((track) => {
-      if (track.userId === selfUserId) return false;
-      if (!track.trackName) return false;
-      return !subscribed.has(remoteTrackKey(track));
-    })
-    .map((track) => ({
-      location: 'remote',
-      sessionId: track.sessionId,
-      trackName: track.trackName,
-    }));
+  return (
+    Object.values(remoteTracks)
+      // Reconnecting publishers append their replacement session last.
+      .reverse()
+      .filter((track) => {
+        if (track.userId === selfUserId) return false;
+        if (!track.trackName) return false;
+        if (namesInBatch.has(track.trackName)) return false;
+        // Stable names include the publisher's user ID. Keep the newest session
+        // authoritative even when subscribed, so a retry cannot restore its
+        // stale predecessor. SFU responses may identify tracks only by name.
+        namesInBatch.add(track.trackName);
+        return !subscribed.has(remoteTrackKey(track));
+      })
+      .map((track) => ({
+        location: 'remote',
+        sessionId: track.sessionId,
+        trackName: track.trackName,
+      }))
+  );
 }
 
 /** Subscriptions whose publisher has gone away. */
