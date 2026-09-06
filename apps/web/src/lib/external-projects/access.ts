@@ -37,6 +37,7 @@ import {
   getWorkspaceInviteStatus,
   type WorkspaceInvitationRecord,
 } from '@/lib/workspace-invitations/status';
+import { appTokenTargetMatchesExternalProjectBinding } from './app-binding';
 import {
   authorizeExternalAppRequest,
   readExternalAppCredentials,
@@ -706,16 +707,6 @@ export function getExternalProjectModeForScopes(
   }
 
   return 'manage';
-}
-
-function appTokenTargetMatchesExternalProjectBinding({
-  binding,
-  targetApp,
-}: {
-  binding: WorkspaceExternalProjectBinding;
-  targetApp: string;
-}) {
-  return binding.canonical_project?.adapter === targetApp;
 }
 
 async function authorizeLinkedWorkspaceMember({
