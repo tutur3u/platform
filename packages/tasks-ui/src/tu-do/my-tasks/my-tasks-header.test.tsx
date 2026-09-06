@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { act } from 'react';
+import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MyTasksHeader } from './my-tasks-header';
@@ -21,10 +22,26 @@ describe('task greeting hydration', () => {
 
   it('shows the local greeting after hydration', () => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 6, 8));
+    const container = document.createElement('div');
+    const header = (
+      <MyTasksHeader overdueCount={0} todayCount={0} upcomingCount={0} />
+    );
+    container.innerHTML = renderToString(header);
+    expect(container.querySelector('h1')?.textContent).toBe(
+      'sidebar_tabs.tasks'
+    );
+
     vi.setSystemTime(new Date(2026, 8, 6, 15));
-    render(<MyTasksHeader overdueCount={0} todayCount={0} upcomingCount={0} />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+    const onRecoverableError = vi.fn();
+    let root: Root | undefined;
+    act(() => {
+      root = hydrateRoot(container, header, { onRecoverableError });
+    });
+    expect(container.querySelector('h1')?.textContent).toBe(
       'ws-tasks.good_afternoon'
     );
+    expect(onRecoverableError).not.toHaveBeenCalled();
+    act(() => root?.unmount());
   });
 });
