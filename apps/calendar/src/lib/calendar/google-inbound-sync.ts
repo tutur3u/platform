@@ -44,6 +44,8 @@ export async function syncGoogleInbound(args: {
       updated: 0,
       deleted: 0,
       processedConnections: 0,
+      failedConnections: 0,
+      failureType: null,
     };
   }
 

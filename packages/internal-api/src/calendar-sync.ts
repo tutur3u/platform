@@ -39,6 +39,11 @@ export interface CalendarSyncStatusResponse {
 
 export interface CalendarSyncResult {
   ok: boolean;
+  error?: string;
+  summary?: {
+    google?: { inserted?: number; updated?: number; deleted?: number };
+    microsoft?: { inserted?: number; updated?: number; deleted?: number };
+  };
   alreadyRunning?: boolean;
   partialFailure?: boolean;
   code?: string;

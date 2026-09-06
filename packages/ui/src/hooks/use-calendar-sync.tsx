@@ -1,7 +1,10 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { listWorkspaceCalendars } from '@tuturuuu/internal-api/calendar';
+import {
+  listWorkspaceCalendars,
+  syncWorkspaceCalendar,
+} from '@tuturuuu/internal-api/calendar';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
@@ -634,46 +637,10 @@ export const CalendarSyncProvider = ({
       });
 
       try {
-        // Use fixed date range for consistent incremental sync (60 days past, 90 days future)
-        // This ensures sync tokens work properly instead of constantly changing ranges
-        // Reduced from 270 days to 150 days for better performance
-        const activeSyncResponse = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/sync`,
-          {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              direction: 'inbound',
-              source: 'manual',
-            }),
-          }
-        );
-
-        if (!activeSyncResponse.ok) {
-          const errorData = await activeSyncResponse.json();
-          const errorMessage =
-            errorData.error ||
-            (errorData.code === 'sync_already_running'
-              ? 'sync_in_progress'
-              : 'Failed to sync calendar');
-
-          setError(new Error(errorMessage));
-          setSyncStatus({
-            state: 'error',
-            message: errorMessage,
-            lastSyncTime: new Date(),
-          });
-
-          // Show detailed error toast
-          toast.error('Calendar sync failed', {
-            description: errorMessage,
-            duration: 5000,
-          });
-          return;
-        }
-
-        await activeSyncResponse.json();
+        const result = await syncWorkspaceCalendar(wsId);
+        // Partial imports can change events even when another calendar fails.
+        refresh();
+        if (!result.ok) throw new Error(result.error || 'Calendar sync failed');
 
         setError(null);
         setSyncStatus({
@@ -682,9 +649,6 @@ export const CalendarSyncProvider = ({
           lastSyncTime: new Date(),
           direction: 'google-to-tuturuuu',
         });
-
-        // Refresh the cache to trigger queryClient to refetch the data from database
-        refresh();
 
         if (progressCallback) {
           progressCallback({

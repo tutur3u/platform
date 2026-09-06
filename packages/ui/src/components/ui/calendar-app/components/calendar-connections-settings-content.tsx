@@ -403,6 +403,12 @@ export function CalendarConnectionsSettingsContent({
                         {t('reconnect_required') || 'Reconnect'}
                       </Badge>
                     )}
+                    {providerAccountStatuses[account.id]?.state ===
+                      'temporarily_unavailable' && (
+                      <Badge variant="secondary" className="text-xs">
+                        {t('sync_recovery.attention')}
+                      </Badge>
+                    )}
                     <Badge variant="outline" className="text-xs capitalize">
                       {account.provider}
                     </Badge>
@@ -435,6 +441,12 @@ export function CalendarConnectionsSettingsContent({
                           {t('reconnect') || 'Reconnect'}
                         </Button>
                       </div>
+                    )}
+                    {providerAccountStatuses[account.id]?.state ===
+                      'temporarily_unavailable' && (
+                      <p className="rounded-md border p-2 text-muted-foreground text-xs">
+                        {t('sync_recovery.provider_unavailable')}
+                      </p>
                     )}
                     {(calendarsByAccount[account.id] || []).length > 0 ? (
                       (calendarsByAccount[account.id] || []).map((cal) => {

@@ -538,7 +538,7 @@ export function useCalendarConnectionsManager(wsId: string) {
       ? 'bg-dynamic-blue/10 text-dynamic-blue'
       : syncHealth?.state === 'healthy'
         ? 'bg-dynamic-green/10 text-dynamic-green'
-        : syncHealth?.state === 'disconnected'
+        : syncHealth?.state === 'disconnected' || syncHealth?.state === 'paused'
           ? 'bg-muted text-muted-foreground'
           : syncHealth?.state === 'degraded'
             ? 'bg-dynamic-orange/10 text-dynamic-orange'
