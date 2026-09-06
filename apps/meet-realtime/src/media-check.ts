@@ -39,9 +39,9 @@ function mintToken(peer: keyof typeof PEERS) {
       limits: {},
       meetingId: MEETING_ID,
       mode: 'call',
-      role: 'host',
+      role: peer === 'a' ? 'host' : 'speaker',
       roomId: `${WS_ID}:${MEETING_ID}`,
-      scopes: getMeetRealtimeScopesForRole('host'),
+      scopes: getMeetRealtimeScopesForRole(peer === 'a' ? 'host' : 'speaker'),
       userId,
       wsId: WS_ID,
     }),
@@ -49,8 +49,12 @@ function mintToken(peer: keyof typeof PEERS) {
   );
 }
 
-const HARNESS_ENTRY = new URL('./media-check-client.ts', import.meta.url)
-  .pathname;
+const HARNESS_ENTRY = new URL(
+  process.argv.includes('--call-controller')
+    ? './call-check-client.tsx'
+    : './media-check-client.ts',
+  import.meta.url
+).pathname;
 
 async function buildClientBundle() {
   const built = await Bun.build({
@@ -79,6 +83,7 @@ const PAGE = /* html */ `<!doctype html>
   video { width: 240px; border-radius: 8px; background:#000; margin-top: 12px }
   .pass { color:#4ade80 } .fail { color:#f87171 }
 </style>
+<div id="root"></div>
 <h1 id="who"></h1>
 <div id="result">booting…</div>
 <video id="remote" autoplay playsinline muted></video>
@@ -86,14 +91,14 @@ const PAGE = /* html */ `<!doctype html>
 `;
 
 const room = createMeetRealtimeServer({ port: ROOM_PORT });
-const bundle = await buildClientBundle();
+await buildClientBundle();
 
 const page = Bun.serve({
   async fetch(request) {
     const url = new URL(request.url);
 
     if (url.pathname === '/bundle.js') {
-      return new Response(bundle, {
+      return new Response(await buildClientBundle(), {
         headers: { 'Content-Type': 'text/javascript' },
       });
     }
@@ -101,6 +106,8 @@ const page = Bun.serve({
     if (url.pathname === '/token') {
       const peer = url.searchParams.get('peer') === 'b' ? 'b' : 'a';
       return Response.json({
+        meetingId: MEETING_ID,
+        wsId: WS_ID,
         roomUrl: `ws://127.0.0.1:${ROOM_PORT}/realtime`,
         selfUserId: PEERS[peer]?.userId,
         token: mintToken(peer),
@@ -111,6 +118,7 @@ const page = Bun.serve({
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   },
+  hostname: '127.0.0.1',
   port: PAGE_PORT,
 });
 

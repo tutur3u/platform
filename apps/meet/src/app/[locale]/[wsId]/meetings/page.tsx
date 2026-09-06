@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
+import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
@@ -29,7 +30,7 @@ export default async function MeetingsPage({
   await connection();
 
   const { wsId: id } = await params;
-  const { wsId } = await getMeetWorkspaceContext(id);
+  const { wsId, user } = await getMeetWorkspaceContext(id);
 
   const resolvedSearchParams = await searchParams;
   const page = parseInt(resolvedSearchParams?.page || '1', 10);
@@ -69,6 +70,7 @@ export default async function MeetingsPage({
         }
       >
         <MeetingsContent
+          canCreate={canCreateOnlineMeeting(user.email)}
           wsId={wsId}
           page={page}
           pageSize={pageSize}

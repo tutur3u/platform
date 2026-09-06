@@ -3682,11 +3682,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/meetings:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/meetings:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/meetings",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -3700,11 +3700,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },

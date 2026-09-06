@@ -64,6 +64,10 @@ describe('room codes', () => {
     expect(() => encodeRoomCode('not-a-uuid')).toThrow();
   });
 
+  it('accepts UUIDs from legacy call redirects', () => {
+    expect(decodeRoomCode(MEETING.toUpperCase())).toBe(MEETING);
+  });
+
   it('builds a room URL without doubling the slash', () => {
     const code = encodeRoomCode(MEETING);
 

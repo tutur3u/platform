@@ -84,9 +84,7 @@ function createRequest(body: unknown) {
 }
 
 async function requestToken(body: unknown) {
-  const { POST } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route'
-  );
+  const { POST } = await import('./route');
 
   return POST(createRequest(body), {
     params: Promise.resolve({
@@ -114,7 +112,7 @@ describe('Meet realtime token route', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
   });
 
-  it('does not mint publish-capable tokens from non-creator requested speaker call controls', async () => {
+  it('preserves signed speaker permissions for workspace call participants', async () => {
     const response = await requestToken({ mode: 'call', role: 'speaker' });
 
     expect(response.status).toBe(200);
@@ -122,19 +120,19 @@ describe('Meet realtime token route', () => {
     const payload = verifyMeetRealtimeToken(body.token, TOKEN_SECRET);
 
     expect(body).toMatchObject({
-      mode: 'webinar',
-      role: 'viewer',
+      mode: 'call',
+      role: 'speaker',
       roomId: `${WORKSPACE_ID}:${MEETING_ID}`,
     });
     expect(payload).toMatchObject({
-      mode: 'webinar',
-      role: 'viewer',
+      mode: 'call',
+      role: 'speaker',
       roomId: `${WORKSPACE_ID}:${MEETING_ID}`,
       userId: MEMBER_ID,
       wsId: WORKSPACE_ID,
     });
-    expect(payload?.scopes).not.toContain('sfu:publish');
-    expect(payload && canMeetRealtimePublish(payload, 'audio')).toBe(false);
+    expect(payload?.scopes).toContain('sfu:publish');
+    expect(payload && canMeetRealtimePublish(payload, 'audio')).toBe(true);
     expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(
       expect.any(Request),
       {
@@ -143,7 +141,7 @@ describe('Meet realtime token route', () => {
     );
   });
 
-  it('defaults non-creators to viewer tokens even when no role is requested', async () => {
+  it('defaults non-creators to speaker tokens for calls', async () => {
     const response = await requestToken({});
 
     expect(response.status).toBe(200);
@@ -151,11 +149,11 @@ describe('Meet realtime token route', () => {
     const payload = verifyMeetRealtimeToken(body.token, TOKEN_SECRET);
 
     expect(payload).toMatchObject({
-      mode: 'webinar',
-      role: 'viewer',
+      mode: 'call',
+      role: 'speaker',
       userId: MEMBER_ID,
     });
-    expect(payload?.scopes).not.toContain('sfu:publish');
+    expect(payload?.scopes).toContain('sfu:publish');
   });
 
   it('still lets the meeting creator mint host stream-control tokens', async () => {
@@ -187,7 +185,7 @@ describe('Meet realtime token route', () => {
     process.env.NEXT_PUBLIC_MEET_REALTIME_URL =
       'wss://meet.example.com/realtime';
 
-    const response = await requestToken({ mode: 'call', role: 'viewer' });
+    const response = await requestToken({ mode: 'call', role: 'speaker' });
 
     expect(response.status).toBe(200);
     const body = await response.json();

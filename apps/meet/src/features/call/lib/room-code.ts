@@ -85,6 +85,7 @@ function normalizeCode(code: string) {
 
 /** Returns the meeting id, or null when the code is not a valid one. */
 export function decodeRoomCode(code: string): string | null {
+  if (UUID_PATTERN.test(code.trim())) return code.trim().toLowerCase();
   const normalized = normalizeCode(code);
   if (normalized.length !== 26) return null;
 

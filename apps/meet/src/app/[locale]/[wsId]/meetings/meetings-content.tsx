@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   Clock,
-  Filter,
   Play,
   Plus,
   Search,
@@ -42,7 +41,10 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { MeetingEntry } from '@/features/call/components/meeting-entry';
+import { encodeRoomCode } from '@/features/call/lib/room-code';
 
 interface Meeting {
   id: string;
@@ -62,6 +64,7 @@ interface Meeting {
 }
 
 interface MeetingsContentProps {
+  canCreate: boolean;
   wsId: string;
   page: number;
   pageSize: number;
@@ -69,12 +72,14 @@ interface MeetingsContentProps {
 }
 
 export function MeetingsContent({
+  canCreate,
   wsId,
   page,
   pageSize,
   search,
 }: MeetingsContentProps) {
   const router = useRouter();
+  const t = useTranslations('meet.call');
   const [searchTerm, setSearchTerm] = useState(search);
   const [currentPage, setCurrentPage] = useState(page);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -117,6 +122,7 @@ export function MeetingsContent({
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canCreate) return;
     setFormError(null);
     setCreating(true);
     const name = nameRef.current?.value.trim();
@@ -208,7 +214,7 @@ export function MeetingsContent({
   }, [editDialogOpen, editingMeeting]);
 
   const handleJoinMeeting = (meetingId: string) => {
-    router.push(`/${wsId}/meetings/${meetingId}`);
+    router.push(`/r/${encodeRoomCode(meetingId)}`);
   };
 
   if (error) {
@@ -225,6 +231,7 @@ export function MeetingsContent({
   return (
     <>
       <div className="space-y-6">
+        <MeetingEntry canCreate={canCreate} wsId={wsId} />
         {/* Search and Filters */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <form
@@ -244,13 +251,6 @@ export function MeetingsContent({
               Search
             </Button>
           </form>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" />
-              Filter
-            </Button>
-          </div>
         </div>
 
         {/* Meetings Grid */}
@@ -278,7 +278,7 @@ export function MeetingsContent({
                 Create your first meeting to get started with video conferencing
                 and AI-powered features.
               </p>
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button disabled={!canCreate} onClick={() => setDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create First Meeting
               </Button>
@@ -311,7 +311,7 @@ export function MeetingsContent({
                   {/* Creator Info */}
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Users className="h-3 w-3" />
-                    <span>{meeting.creator.display_name}</span>
+                    <span>{meeting.creator?.display_name ?? t('guest')}</span>
                   </div>
 
                   {/* Recording Sessions */}
@@ -391,6 +391,7 @@ export function MeetingsContent({
         <DialogTrigger asChild>
           <Button
             className="flex items-center gap-2"
+            disabled={!canCreate}
             onClick={() => setDialogOpen(true)}
           >
             <Plus className="h-4 w-4" />
@@ -425,7 +426,11 @@ export function MeetingsContent({
               <div className="text-dynamic-red text-sm">{formError}</div>
             )}
             <DialogFooter>
-              <Button type="submit" disabled={creating} className="w-full">
+              <Button
+                type="submit"
+                disabled={creating || !canCreate}
+                className="w-full"
+              >
                 {creating ? 'Creating...' : 'Create'}
               </Button>
               <DialogClose asChild>

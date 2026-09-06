@@ -1,6 +1,7 @@
 'use client';
 
 import { Circle, WifiOff } from '@tuturuuu/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -45,6 +46,9 @@ export function CallShell({
   wsId: string;
 }) {
   const t = useTranslations('meet.call');
+  const runMediaAction = (action: () => Promise<void>) => {
+    void action().catch(() => toast.error(t('media_failed')));
+  };
   const router = useRouter();
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
   const { state } = room;
@@ -88,8 +92,20 @@ export function CallShell({
         meetingName={meetingName}
         onJoin={async ({ audioEnabled, videoEnabled }) => {
           setJoined(true);
-          if (audioEnabled) await room.toggleMicrophone();
-          if (videoEnabled) await room.toggleCamera();
+          if (audioEnabled) {
+            try {
+              await room.toggleMicrophone();
+            } catch {
+              toast.error(t('media_failed'));
+            }
+          }
+          if (videoEnabled) {
+            try {
+              await room.toggleCamera();
+            } catch {
+              toast.error(t('media_failed'));
+            }
+          }
         }}
         waiting={state.admission === 'waiting'}
       />
@@ -132,7 +148,7 @@ export function CallShell({
                 participant={focused}
                 stream={
                   focused.userId === state.selfUserId
-                    ? room.localStream
+                    ? room.localPreview
                     : room.remoteStreams[focused.userId]
                 }
               />
@@ -148,7 +164,7 @@ export function CallShell({
                       participant={entry}
                       stream={
                         entry.userId === state.selfUserId
-                          ? room.localStream
+                          ? room.localPreview
                           : room.remoteStreams[entry.userId]
                       }
                     />
@@ -170,7 +186,7 @@ export function CallShell({
                   participant={entry}
                   stream={
                     entry.userId === state.selfUserId
-                      ? room.localStream
+                      ? room.localPreview
                       : room.remoteStreams[entry.userId]
                   }
                 />
@@ -203,14 +219,14 @@ export function CallShell({
         handRaised={handRaised}
         micOn={room.media.audioEnabled}
         onLeave={() => router.push(leaveHref)}
-        onToggleCamera={() => void room.toggleCamera()}
+        onToggleCamera={() => runMediaAction(room.toggleCamera)}
         onToggleHand={() => room.raiseHand(!handRaised)}
-        onToggleMic={() => void room.toggleMicrophone()}
+        onToggleMic={() => runMediaAction(room.toggleMicrophone)}
         onTogglePanel={setPanel}
         onToggleRecording={
           canManage ? () => void recording.toggle() : undefined
         }
-        onToggleScreen={() => void room.toggleScreenShare()}
+        onToggleScreen={() => runMediaAction(room.toggleScreenShare)}
         participantCount={tiles.length}
         recordingBusy={recording.isBusy}
         recordingOn={recording.isRecording}

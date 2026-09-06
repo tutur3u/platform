@@ -13,7 +13,8 @@ function getTokenSecret() {
   const secret =
     process.env.MEET_REALTIME_TOKEN_SECRET ||
     process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY;
 
   if (secret?.trim()) return secret.trim();
 
@@ -30,7 +31,9 @@ export function getMeetRealtimeUrl() {
   return (
     process.env.NEXT_PUBLIC_MEET_REALTIME_URL ||
     process.env.MEET_REALTIME_URL ||
-    'ws://127.0.0.1:7816/realtime'
+    (process.env.NODE_ENV === 'production'
+      ? 'wss://meet.tuturuuu.com/realtime'
+      : 'ws://127.0.0.1:7816/realtime')
   );
 }
 
