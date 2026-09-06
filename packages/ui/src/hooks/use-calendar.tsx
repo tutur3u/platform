@@ -1,11 +1,11 @@
 import {
   createWorkspaceCalendarEvent,
   deleteWorkspaceCalendarEvent,
-  syncWorkspaceCalendar,
   updateWorkspaceCalendarEvent,
   type WorkspaceCalendarEventCreatePayload,
   type WorkspaceCalendarEventUpdatePayload,
 } from '@tuturuuu/internal-api';
+import { syncWorkspaceCalendar } from '@tuturuuu/internal-api/calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
