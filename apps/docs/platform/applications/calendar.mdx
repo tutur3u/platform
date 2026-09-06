@@ -190,17 +190,27 @@ GitHub builds must not remove the app-owned cron schedules.
 
 ## Provider Sync
 
-Calendar provider sync is scheduled by `apps/web` cron, not Trigger.dev. The
-shared source of truth is `apps/web/cron.config.json`; `calendar-provider-sync`
-must stay at `*/15 * * * *` and `apps/web/vercel.json` must be regenerated from
-that file with `node scripts/sync-web-crons.js`.
+Calendar owns the provider-sync schedule in `apps/calendar/vercel.json`
+(`*/15 * * * *`). The cron wrapper invokes Calendar's workspace sync handler
+locally, preserving cron authentication, running locks, cooldown behavior and
+`calendar_sync_dashboard` audit rows. It must not send sync requests to the former
+Web owner through `INTERNAL_WEB_API_ORIGIN` or a protected preview URL.
 
-The cron wrapper at `/api/cron/calendar/provider-sync` must keep calling
-`/api/v1/workspaces/:wsId/calendar/sync` through `INTERNAL_WEB_API_ORIGIN` when
-available. The workspace sync route owns Google and Microsoft fan-out, running
-locks, cron cooldown behavior, and `calendar_sync_dashboard` audit rows. Do not
-add provider-specific fetch logic or Trigger.dev scheduled calendar jobs outside
-that route family.
+Both Tasks and Calendar show **Sync needs attention** beside the calendar picker
+when a sync stalls, data becomes stale, a provider needs reconnection, or status
+cannot be loaded. Open it for a persistent explanation and a **Sync now**,
+**Check again**, or provider-specific **Reconnect** action. Stored events remain
+visible during provider outages. Ordinary access-token expiry is not itself a
+reconnection failure: Google refreshes those tokens automatically.
+
+Sync health polls every 30 seconds (every 5 seconds during a run or cooldown).
+A running entry older than five minutes is stalled; a successful sync older than
+45 minutes is stale. Partial provider failures are recorded as failed runs rather
+than successful syncs. Successful runs use the database's `completed` status;
+completion writes must be checked so a constraint failure cannot leave a run
+stuck at `running`. Provider rate limits and transient outages offer retry,
+while authentication failures offer reconnection. Operators should inspect the
+Calendar cron execution and dashboard run when retries continue to fail.
 
 ## Two-Way Sync Controls
 

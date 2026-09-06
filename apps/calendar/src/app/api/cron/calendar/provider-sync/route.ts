@@ -1,22 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
-import { type NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { POST as syncWorkspaceCalendar } from '@/app/api/v1/workspaces/[wsId]/calendar/sync/route';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
-
-function resolveCalendarSyncOrigin() {
-  if (process.env.INTERNAL_WEB_API_ORIGIN) {
-    return process.env.INTERNAL_WEB_API_ORIGIN;
-  }
-
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  return (
-    process.env.NEXT_PUBLIC_URL ||
-    getLocalInternalAppUrl('platform', 'http://localhost:7803')
-  );
-}
 
 export async function GET(request: NextRequest) {
   return withCronLogDrain(
@@ -64,7 +49,6 @@ async function handleGET(request: NextRequest) {
     const workspaceIds = [
       ...new Set((tokenRows ?? []).map((row) => row.ws_id)),
     ];
-    const baseUrl = resolveCalendarSyncOrigin();
 
     const results: Array<{
       ws_id: string;
@@ -75,19 +59,19 @@ async function handleGET(request: NextRequest) {
 
     for (const wsId of workspaceIds) {
       try {
-        const response = await fetch(
-          `${baseUrl}/api/v1/workspaces/${wsId}/calendar/sync`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${cronSecret}`,
-            },
-            body: JSON.stringify({
-              direction: 'inbound',
-              source: 'cron',
-            }),
-          }
+        const response = await syncWorkspaceCalendar(
+          new NextRequest(
+            new URL(`/api/v1/workspaces/${wsId}/calendar/sync`, request.url),
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${cronSecret}`,
+              },
+              body: JSON.stringify({ direction: 'inbound', source: 'cron' }),
+            }
+          ),
+          { params: Promise.resolve({ wsId }) }
         );
 
         if (!response.ok) {
@@ -99,8 +83,11 @@ async function handleGET(request: NextRequest) {
 
         results.push({
           ws_id: wsId,
-          success: true,
+          success: body?.ok !== false,
           summary: body?.summary ?? null,
+          ...(body?.ok === false
+            ? { error: body.code || 'Calendar sync partially failed' }
+            : {}),
         });
       } catch (syncError) {
         results.push({
@@ -113,7 +100,7 @@ async function handleGET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      ok: true,
+      ok: results.every((result) => result.success),
       processed: workspaceIds.length,
       successful: results.filter((result) => result.success).length,
       failed: results.filter((result) => !result.success).length,

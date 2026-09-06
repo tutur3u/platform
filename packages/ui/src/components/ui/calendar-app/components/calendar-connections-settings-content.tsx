@@ -47,6 +47,7 @@ import {
 import { Separator } from '../../separator';
 import { Switch } from '../../switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import { CalendarSyncRecovery } from './calendar-sync-recovery';
 import { CalendarSyncSettingsPanel } from './calendar-sync-settings-panel';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
@@ -104,6 +105,7 @@ export function CalendarConnectionsSettingsContent({
 
   return (
     <div className={className ? `space-y-4 ${className}` : 'space-y-4'}>
+      <CalendarSyncRecovery state={state} />
       <Tabs defaultValue="calendars" className="py-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="calendars">

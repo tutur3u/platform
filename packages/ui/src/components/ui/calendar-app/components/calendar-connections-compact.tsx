@@ -1,7 +1,7 @@
 import {
+  AlertTriangle,
   Calendar,
   ChevronDown,
-  ExternalLink,
   Eye,
   EyeOff,
   Loader2,
@@ -10,6 +10,7 @@ import {
   Settings,
 } from '@tuturuuu/icons';
 import Image from 'next/image';
+import { useState } from 'react';
 import { Badge } from '../../badge';
 import { Button } from '../../button';
 import {
@@ -28,6 +29,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { Separator } from '../../separator';
 import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-content';
+import {
+  CalendarSyncRecovery,
+  needsCalendarSyncAttention,
+} from './calendar-sync-recovery';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
 export function CalendarConnectionsCompact({
@@ -35,6 +40,8 @@ export function CalendarConnectionsCompact({
 }: {
   state: CalendarConnectionsManagerState;
 }) {
+  const [open, setOpen] = useState(false);
+  const needsAttention = needsCalendarSyncAttention(state);
   const {
     accounts,
     calendarConnections,
@@ -52,7 +59,6 @@ export function CalendarConnectionsCompact({
     syncHealth,
     syncMutation,
     syncStatusStyles,
-    syncToTuturuuu,
     t,
     togglingIds,
     togglingTuturuuuIds,
@@ -62,9 +68,9 @@ export function CalendarConnectionsCompact({
   } = state;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {/* Quick calendar visibility toggle */}
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
             <Calendar className="h-4 w-4" />
@@ -353,6 +359,7 @@ export function CalendarConnectionsCompact({
               )}
             </div>
 
+            <CalendarSyncRecovery state={state} />
             <Separator />
 
             {/* Sync actions */}
@@ -365,40 +372,29 @@ export function CalendarConnectionsCompact({
                 )}
                 {syncHealth?.state === 'degraded'
                   ? t('degraded') || 'Degraded'
-                  : syncHealth?.state === 'healthy'
-                    ? t('healthy') || 'Healthy'
-                    : syncHealth?.state === 'disconnected'
-                      ? t('connect_accounts') || 'Connect accounts'
-                      : t('syncing_calendars') || 'Syncing calendars'}
+                  : syncHealth?.state === 'paused'
+                    ? t('sync_recovery.paused')
+                    : syncHealth?.state === 'healthy'
+                      ? t('healthy') || 'Healthy'
+                      : syncHealth?.state === 'disconnected'
+                        ? t('connect_accounts') || 'Connect accounts'
+                        : syncHealth?.state === 'syncing'
+                          ? t('syncing_calendars')
+                          : t('sync_recovery.unavailable')}
               </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => syncMutation.mutate()}
-                  disabled={manualSyncDisabled}
-                  title={t('sync_now') || 'Sync now'}
-                >
-                  <ExternalLink
-                    className={`h-3.5 w-3.5 ${
-                      manualSyncDisabled ? 'animate-pulse' : ''
-                    }`}
-                  />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => syncToTuturuuu()}
-                  disabled={manualSyncDisabled}
-                  title={t('sync_from_google')}
-                >
-                  <RefreshCw
-                    className={`h-3.5 w-3.5 ${manualSyncDisabled ? 'animate-spin' : ''}`}
-                  />
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => syncMutation.mutate()}
+                disabled={manualSyncDisabled}
+              >
+                <RefreshCw
+                  className={
+                    syncMutation.isPending ? 'size-4 animate-spin' : 'size-4'
+                  }
+                />
+                {t('sync_now')}
+              </Button>
             </div>
             {syncHealth?.lastSuccessAt && (
               <p className="text-muted-foreground text-xs">
@@ -409,6 +405,17 @@ export function CalendarConnectionsCompact({
           </div>
         </PopoverContent>
       </Popover>
+      {needsAttention && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 border-dynamic-orange/40 text-dynamic-orange"
+          onClick={() => setOpen(true)}
+        >
+          <AlertTriangle className="size-4 shrink-0" />
+          <span>{t('sync_recovery.attention')}</span>
+        </Button>
+      )}
     </div>
   );
 }

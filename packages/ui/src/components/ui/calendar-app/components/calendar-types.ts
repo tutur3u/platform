@@ -37,7 +37,7 @@ export interface CalendarAuthToken {
 }
 
 export interface CalendarSyncHealth {
-  state: 'disconnected' | 'syncing' | 'healthy' | 'degraded';
+  state: 'paused' | 'disconnected' | 'syncing' | 'healthy' | 'degraded';
   reason: string;
   lastSuccessAt: string | null;
   lastFailureAt: string | null;

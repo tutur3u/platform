@@ -3,6 +3,10 @@ import {
   getGoogleCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
   getWorkspaceCalendarSyncPreferences,
+  getWorkspaceCalendarSyncStatus,
+  listCalendarAccounts,
+  listProviderCalendars,
+  syncWorkspaceCalendar,
   updateCalendarConnection as updateCalendarConnectionRequest,
   updateWorkspaceCalendarDefaultSource,
   updateWorkspaceCalendarSyncPreferences,
@@ -16,15 +20,10 @@ import { toast } from '../../sonner';
 import {
   type AccountsResponse,
   getCalendarColor,
-  type ManualSyncResponse,
   sourceInputFromOption,
   type WorkspaceCalendarsResponse,
 } from './calendar-connections-manager-helpers';
-import type {
-  AuthResponse,
-  CalendarSyncHealth,
-  ProviderCalendar,
-} from './calendar-types';
+import type { AuthResponse } from './calendar-types';
 import { mergeProviderCalendarsByAccount } from './merge-provider-calendars';
 
 export type CalendarConnectionsUnifiedVariant = 'compact' | 'settings';
@@ -59,81 +58,46 @@ export function useCalendarConnectionsManager(wsId: string) {
   } = useCalendarSync();
 
   const syncMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/calendar/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ direction: 'inbound', source: 'manual' }),
-      });
-
-      const result = (await response.json()) as ManualSyncResponse &
-        Record<string, unknown>;
-      if (!response.ok) {
-        throw new Error(
-          typeof result.error === 'string'
-            ? result.error
-            : 'Failed to sync calendars'
-        );
-      }
-
-      return result;
+    mutationFn: () => syncWorkspaceCalendar(wsId),
+    onSuccess: (result) => {
+      if (!result.ok) toast.error(t('sync_recovery.partial_failure'));
+      else if (result.alreadyRunning) toast.info(t('syncing_calendars'));
+      else toast.success(t('sync_recovery.completed'));
     },
-    onSuccess: async (result) => {
-      await queryClient.invalidateQueries({
-        queryKey: ['calendar-sync-status', wsId],
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ['databaseCalendarEvents', wsId],
-        exact: false,
-      });
-
-      if (!result.alreadyRunning) {
-        toast.success(t('calendar_sync_started') || 'Calendar sync started');
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
+    onError: () => toast.error(t('sync_recovery.failed')),
+    onSettled: async () => {
+      await Promise.all(
+        [
+          ['calendar-sync-status', wsId],
+          ['provider-calendar-list', wsId],
+          ['databaseCalendarEvents', wsId],
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey }))
+      );
     },
   });
 
   // Fetch connected accounts
-  const { data: accountsData, isLoading: isLoadingAccounts } = useQuery({
+  const accountsQuery = useQuery({
     queryKey: ['calendar-accounts', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/calendar/auth/accounts?wsId=${wsId}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok)
-        return {
-          accounts: [],
-          grouped: { google: [], microsoft: [] },
-          total: 0,
-        };
-      return response.json() as Promise<AccountsResponse>;
-    },
+    queryFn: () => listCalendarAccounts(wsId) as Promise<AccountsResponse>,
     staleTime: 30_000,
+    retry: 1,
   });
-
-  const accounts = accountsData?.accounts || [];
+  const accounts = accountsQuery.data?.accounts || [];
+  const isLoadingAccounts = accountsQuery.isLoading;
   const hasConnectedAccounts = accounts.length > 0;
-
-  const { data: syncStatusData } = useQuery({
+  const syncStatusQuery = useQuery({
     queryKey: ['calendar-sync-status', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/calendar/sync-status`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) return null;
-      return response.json() as Promise<{
-        health: CalendarSyncHealth;
-        accountsSummary: { total: number; google: number; microsoft: number };
-        connectionsSummary: { total: number; enabled: number };
-      }>;
-    },
+    queryFn: () => getWorkspaceCalendarSyncStatus(wsId),
     staleTime: 15_000,
+    retry: 1,
+    refetchInterval: (query) =>
+      query.state.data?.health.currentlyRunning ||
+      query.state.data?.health.retryAfterSeconds
+        ? 5_000
+        : 30_000,
   });
+  const syncStatusData = syncStatusQuery.data;
 
   const { data: defaultSourceData } = useQuery({
     queryKey: ['calendar-default-source', wsId],
@@ -578,30 +542,28 @@ export function useCalendarConnectionsManager(wsId: string) {
             : 'bg-dynamic-red/10 text-dynamic-red';
 
   // Fetch Google calendars from API (must be before any conditional returns)
-  const { data: googleCalendarsData } = useQuery({
+  const providerCalendarsQuery = useQuery({
     queryKey: ['provider-calendar-list', wsId],
     enabled: hasConnectedAccounts,
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/calendar/auth/provider-calendars?wsId=${wsId}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok)
-        return { calendars: [], byAccount: {}, accountStatuses: {} };
-      return response.json() as Promise<{
-        calendars: ProviderCalendar[];
-        byAccount: Record<string, ProviderCalendar[]>;
-        accountStatuses: Record<
-          string,
-          { state: 'connected' | 'reconnect_required' }
-        >;
-      }>;
-    },
+    queryFn: () => listProviderCalendars(wsId),
     staleTime: 30_000,
+    refetchInterval: 60_000,
+    retry: 1,
   });
-
-  const calendarsByAccountFromAPI = googleCalendarsData?.byAccount || {};
-  const providerAccountStatuses = googleCalendarsData?.accountStatuses || {};
+  const calendarsByAccountFromAPI =
+    providerCalendarsQuery.data?.byAccount || {};
+  const providerAccountStatuses =
+    providerCalendarsQuery.data?.accountStatuses || {};
+  const syncStatusError =
+    accountsQuery.isError ||
+    syncStatusQuery.isError ||
+    providerCalendarsQuery.isError;
+  const retrySyncStatus = () =>
+    Promise.all([
+      accountsQuery.refetch(),
+      syncStatusQuery.refetch(),
+      providerCalendarsQuery.refetch(),
+    ]);
 
   const calendarsByAccount = mergeProviderCalendarsByAccount({
     accounts,
@@ -642,6 +604,8 @@ export function useCalendarConnectionsManager(wsId: string) {
     setShowCreateCalendarDialog,
     showCreateCalendarDialog,
     syncHealth,
+    syncStatusError,
+    retrySyncStatus,
     syncMutation,
     syncPreferencesData,
     syncPreferencesMutation,

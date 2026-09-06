@@ -1,3 +1,7 @@
+import type { ProviderCalendarsResponse } from './calendar-sync';
+
+export * from './calendar-sync';
+
 import type {
   CalendarConnection,
   TaskWithScheduling,
@@ -290,17 +294,6 @@ export interface ProviderCalendar {
   provider?: 'google' | 'microsoft';
   accountId: string;
   accountEmail?: string | null;
-}
-
-export interface ProviderCalendarsResponse {
-  accounts: Array<{
-    id: string;
-    provider?: string;
-    email?: string | null;
-    name?: string | null;
-  }>;
-  byAccount: Record<string, ProviderCalendar[]>;
-  calendars: ProviderCalendar[];
 }
 
 export interface CalendarScheduleStatusResponse {
