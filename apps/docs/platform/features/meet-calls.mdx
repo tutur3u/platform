@@ -193,6 +193,8 @@ The frontend requires `NEXT_PUBLIC_SUPABASE_URL`,
 only if the platform uses one. Public Supabase values are also build inputs;
 private secrets belong only in Worker runtime configuration. Realtime requires
 its dedicated token secret and the two Cloudflare SFU credentials from its README.
+Direct Worker verification requires a `wss://` endpoint; `ws://` is accepted
+only for loopback development (`localhost`, `127.0.0.1`, or `[::1]`).
 All call token issuers and verifiers must share `MEET_REALTIME_TOKEN_SECRET`;
 Supabase service keys are not used for call tokens.
 

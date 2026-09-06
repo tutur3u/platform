@@ -16,6 +16,7 @@ import {
   meetRealtimeTokenPayloadSchema,
 } from '../../../packages/realtime/src/meet';
 import { signMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
+import { validateMeetCheckEndpoint } from './check-endpoint';
 import { createMeetRealtimeServer } from './server';
 
 const PORT = 7899;
@@ -26,7 +27,9 @@ const GUEST_ID = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
 const SECRET = process.env.MEET_REALTIME_TOKEN_SECRET || 'integration-secret';
 // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone verification harness, never a cached Turbo task.
 const REMOTE_URL = process.env.MEET_CHECK_REALTIME_URL;
-const ROOM_URL = REMOTE_URL || `ws://127.0.0.1:${PORT}/realtime`;
+const ROOM_URL = validateMeetCheckEndpoint(
+  REMOTE_URL || `ws://127.0.0.1:${PORT}/realtime`
+);
 if (REMOTE_URL && !process.env.MEET_REALTIME_TOKEN_SECRET) {
   throw new Error('Remote checks require MEET_REALTIME_TOKEN_SECRET');
 }
