@@ -181,6 +181,13 @@ try {
   assert.equal(await page.getByRole('main').count(), 1);
   await page.getByRole('navigation', { name: 'Colab navigation' }).waitFor();
   await page
+    .getByRole('button', { name: 'Switch application', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page.getByRole('dialog', { name: 'Switch application' }).waitFor();
+  await page.keyboard.press('Escape');
+
+  await page
     .getByRole('button', { name: 'Collapse navigation', exact: true })
     .filter({ visible: true })
     .click();
@@ -280,7 +287,7 @@ try {
     .getByRole('button', { name: 'Mở điều hướng', exact: true })
     .filter({ visible: true })
     .click();
-  await page.getByRole('button', { name: 'Tổng quan', exact: true }).click();
+  await page.getByRole('link', { name: 'Tổng quan', exact: true }).click();
   await page
     .getByRole('button', { name: 'Mở điều hướng', exact: true })
     .filter({ visible: true })

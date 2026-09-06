@@ -1,40 +1,41 @@
 'use client';
 
-import { ArrowLeft } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
-import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import type { ReactNode } from 'react';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '../constants/common';
 import {
   getSidebarCookieOptions,
   useSidebar,
 } from '../context/sidebar-context';
 import { AppsLauncherDialog } from './apps-launcher';
-import type { AppBrandId } from './fixed-app-brand';
+import {
+  type AppBrandId,
+  WorkspaceSelectVisibilityToggle,
+} from './fixed-app-brand';
 import { SidebarSettingsButton } from './sidebar-settings-button';
 import { SidebarStructureContent } from './sidebar-structure-content';
+
 import {
-  SidebarStructureHeader,
-  SidebarStructureMobileHeader,
-} from './sidebar-structure-header';
-import {
-  findActiveNavigation,
   getFilteredLinks,
-  type NavigationState,
   type WorkspaceSelectRenderer,
 } from './sidebar-structure-utils';
 import { WorkspaceSelectorProvider } from './workspace-selector-context';
+
+const persistCollapsed = (collapsed: boolean) =>
+  setCookie(
+    SIDEBAR_COLLAPSED_COOKIE_NAME,
+    collapsed,
+    getSidebarCookieOptions()
+  );
 
 export interface SidebarStructureProps {
   actions: ReactNode;
@@ -91,130 +92,30 @@ export function SidebarStructure({
   const t = useTranslations();
   const pathname = usePathname();
   const { behavior, handleBehaviorChange } = useSidebar();
-  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-  const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
-  const [workspaceSelectVisible, setWorkspaceSelectVisible] = useState(false);
-  const navigationLinks = useMemo<(NavLink | null)[]>(() => links, [links]);
-  const [navState, setNavState] = useState<NavigationState>(() => {
-    const activeNavigation = findActiveNavigation({
-      currentPath: pathname,
-      navLinks: navigationLinks,
-    });
-    return (
-      activeNavigation ?? {
-        currentLinks: navigationLinks,
-        direction: 'forward',
-        history: [],
-        titleHistory: [],
-      }
-    );
+  const {
+    isCollapsed,
+    setIsCollapsed,
+    appsLauncherOpen,
+    setAppsLauncherOpen,
+    workspaceSelectVisible,
+    setWorkspaceSelectVisible,
+    navState,
+    setNavState,
+    backButton,
+    handleToggle,
+    expandSidebar,
+    closeOnMobile,
+    onMouseEnter,
+    onMouseLeave,
+  } = useSatelliteShell({
+    pathname,
+    links,
+    defaultCollapsed,
+    behavior,
+    handleBehaviorChange,
+    backLabel: t('common.back'),
+    persistCollapsed,
   });
-
-  useEffect(() => {
-    setIsCollapsed(
-      behavior === 'collapsed' || behavior === 'hover' || behavior === 'hidden'
-    );
-  }, [behavior]);
-
-  useEffect(() => {
-    if (isCollapsed) setWorkspaceSelectVisible(false);
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    setNavState((prevState) => {
-      const activeNavigation = findActiveNavigation({
-        currentPath: pathname,
-        navLinks: navigationLinks,
-      });
-      if (activeNavigation) return activeNavigation;
-
-      if (prevState.history.length > 0) {
-        return {
-          currentLinks: navigationLinks,
-          direction: 'backward',
-          history: [],
-          titleHistory: [],
-        };
-      }
-
-      return { ...prevState, currentLinks: navigationLinks };
-    });
-  }, [navigationLinks, pathname]);
-
-  const backButton: NavLink = useMemo(
-    () => ({
-      icon: <ArrowLeft className="h-4 w-4" />,
-      isBack: true,
-      onClick: () => {
-        setNavState((prevState) => {
-          const newHistory = prevState.history.slice(0, -1);
-          return {
-            currentLinks: prevState.history.at(-1) ?? navigationLinks,
-            direction: 'backward',
-            history: newHistory,
-            titleHistory: prevState.titleHistory.slice(0, -1),
-          };
-        });
-      },
-      title: t('common.back'),
-    }),
-    [navigationLinks, t]
-  );
-
-  const handleToggle = () => {
-    if (behavior === 'hidden') {
-      setIsCollapsed(true);
-      handleBehaviorChange('collapsed');
-      return;
-    }
-
-    const newCollapsed = !isCollapsed;
-    setIsCollapsed(newCollapsed);
-    if (newCollapsed) setWorkspaceSelectVisible(false);
-    setCookie(
-      SIDEBAR_COLLAPSED_COOKIE_NAME,
-      newCollapsed,
-      getSidebarCookieOptions()
-    );
-
-    if (behavior === 'expanded' && newCollapsed) {
-      handleBehaviorChange('collapsed');
-    } else if (behavior === 'collapsed' && !newCollapsed) {
-      handleBehaviorChange('expanded');
-    }
-  };
-
-  const expandSidebar = useCallback(() => {
-    setIsCollapsed(false);
-    setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, false, getSidebarCookieOptions());
-
-    if (behavior !== 'expanded') {
-      handleBehaviorChange('expanded');
-    }
-  }, [behavior, handleBehaviorChange]);
-
-  const hasOpenDialogs = useCallback(
-    () =>
-      document.querySelector('[data-state="open"][role="dialog"]') !== null ||
-      document.querySelector('[data-state="open"][role="alertdialog"]') !==
-        null,
-    []
-  );
-  const isHoverMode = behavior === 'hover';
-  const onMouseEnter = isHoverMode
-    ? () => {
-        if (!hasOpenDialogs()) setIsCollapsed(false);
-      }
-    : undefined;
-  const onMouseLeave = isHoverMode
-    ? () => {
-        if (!hasOpenDialogs()) setIsCollapsed(true);
-      }
-    : undefined;
-  const closeOnMobile = useCallback(() => {
-    if (window.innerWidth < 768) setIsCollapsed(true);
-  }, []);
-
   const filteredCurrentLinks = getFilteredLinks(navState.currentLinks);
   const currentTitle = navState.titleHistory.at(-1);
   const extraContent =
@@ -240,6 +141,15 @@ export function SidebarStructure({
       }
     : undefined;
 
+  const workspaceToggle = handleToggleWorkspaceSelect ? (
+    <WorkspaceSelectVisibilityToggle
+      hideLabel={t('command_launcher.hide_workspace_selector')}
+      showLabel={t('command_launcher.show_workspace_selector')}
+      onToggle={handleToggleWorkspaceSelect}
+      visible={showWorkspaceSelect}
+    />
+  ) : null;
+
   return (
     <>
       <AppsLauncherDialog
@@ -252,7 +162,7 @@ export function SidebarStructure({
         visible={showWorkspaceSelect}
         workspace={currentWorkspace}
       >
-        <BaseStructure
+        <SatelliteShell
           actions={actions}
           feedbackButton={
             <SidebarFooterActions
@@ -266,23 +176,6 @@ export function SidebarStructure({
           header={null}
           hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
           isCollapsed={isCollapsed}
-          mobileHeader={
-            <SidebarStructureMobileHeader
-              appHref={appHref ?? `/${wsId}`}
-              appId={appId}
-              brandHref={brandHref}
-              hideWorkspaceSelectLabel={t(
-                'command_launcher.hide_workspace_selector'
-              )}
-              launcherLabel={t('command_launcher.apps')}
-              onOpenApps={() => setAppsLauncherOpen(true)}
-              onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
-              showWorkspaceSelectLabel={t(
-                'command_launcher.show_workspace_selector'
-              )}
-              workspaceSelectVisible={showWorkspaceSelect}
-            />
-          }
           notificationPopover={notificationPopover}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
@@ -308,25 +201,28 @@ export function SidebarStructure({
               wsId={wsId}
             />
           }
-          sidebarHeader={
-            <SidebarStructureHeader
-              actions={brandActions}
-              appHref={appHref ?? `/${wsId}`}
-              appId={appId}
-              brandHref={brandHref}
-              hideWorkspaceSelectLabel={t(
-                'command_launcher.hide_workspace_selector'
-              )}
-              isCollapsed={isCollapsed}
-              launcherLabel={t('command_launcher.apps')}
-              onOpenApps={() => setAppsLauncherOpen(true)}
-              onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
-              showWorkspaceSelectLabel={t(
-                'command_launcher.show_workspace_selector'
-              )}
-              workspaceSelectVisible={showWorkspaceSelect}
-            />
+          homeLabel={t('common.home')}
+          collapsedLogo={
+            <TuturuuLogo alt="" className="h-7 w-7" height={32} width={32} />
           }
+          brand={{
+            appName: t(`command_launcher.app_names.${appId}`),
+            appHref: appHref ?? `/${wsId}`,
+            centralHref: brandHref,
+            launcherLabel: t('command_launcher.apps'),
+            onAppClick: () => setAppsLauncherOpen(true),
+            LinkComponent: Link,
+            logo: (
+              <TuturuuLogo alt="" className="size-8" height={32} width={32} />
+            ),
+            actions: (
+              <div className="flex items-center gap-1">
+                {brandActions}
+                {workspaceToggle}
+              </div>
+            ),
+          }}
+          mobileBrandActions={workspaceToggle}
           userPopover={userPopover}
           sidebarUtility={
             <SidebarSettingsButton
@@ -340,7 +236,7 @@ export function SidebarStructure({
           ) : (
             children
           )}
-        </BaseStructure>
+        </SatelliteShell>
       </WorkspaceSelectorProvider>
     </>
   );

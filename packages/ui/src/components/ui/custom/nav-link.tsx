@@ -33,6 +33,7 @@ import {
 } from '../dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import type { NavLink as NavLinkType } from './navigation';
+import { satelliteNavigationItemClass } from './satellite-navigation';
 
 function matchesPathPrefix(targetPath: string, pathPrefix: string) {
   return targetPath === pathPrefix || targetPath.startsWith(`${pathPrefix}/`);
@@ -362,16 +363,15 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'group/navlink flex w-full cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
-      isCollapsed && 'justify-center',
-      isActive && 'bg-accent text-accent-foreground',
+      satelliteNavigationItemClass({
+        isCollapsed,
+        isActive: Boolean(isActive),
+        isDisabled,
+      }),
       link.preferenceHiddenActive &&
         'bg-dynamic-amber/10 ring-1 ring-dynamic-amber/40',
       link.isBack && 'mb-2 cursor-pointer',
-      isResolvingHref && 'pointer-events-none opacity-70',
-      isDisabled
-        ? 'cursor-not-allowed opacity-50'
-        : 'hover:bg-accent hover:text-accent-foreground'
+      isResolvingHref && 'pointer-events-none opacity-70'
     ),
     onClick: (event: React.MouseEvent<HTMLElement>) => {
       if (isTierRestricted) {

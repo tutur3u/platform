@@ -466,6 +466,34 @@
     "./text-editor/text-replacements": {
       "types": "./src/components/ui/text-editor/text-replacements.ts",
       "import": "./src/components/ui/text-editor/text-replacements.ts"
+    },
+    "./custom/satellite-brand": {
+      "types": "./src/components/ui/custom/satellite-brand.tsx",
+      "import": "./src/components/ui/custom/satellite-brand.tsx"
+    },
+    "./custom/satellite-navigation": {
+      "types": "./src/components/ui/custom/satellite-navigation.tsx",
+      "import": "./src/components/ui/custom/satellite-navigation.tsx"
+    },
+    "./custom/satellite-content": {
+      "types": "./src/components/ui/custom/satellite-content.tsx",
+      "import": "./src/components/ui/custom/satellite-content.tsx"
+    },
+    "./custom/satellite-workspace-section": {
+      "types": "./src/components/ui/custom/satellite-workspace-section.tsx",
+      "import": "./src/components/ui/custom/satellite-workspace-section.tsx"
+    },
+    "./custom/satellite-shell-utils": {
+      "types": "./src/components/ui/custom/satellite-shell-utils.ts",
+      "import": "./src/components/ui/custom/satellite-shell-utils.ts"
+    },
+    "./custom/satellite-shell": {
+      "types": "./src/components/ui/custom/satellite-shell.tsx",
+      "import": "./src/components/ui/custom/satellite-shell.tsx"
+    },
+    "./custom/use-satellite-shell": {
+      "types": "./src/components/ui/custom/use-satellite-shell.tsx",
+      "import": "./src/components/ui/custom/use-satellite-shell.tsx"
     }
   },
   "packageManager": "bun@1.4.1"

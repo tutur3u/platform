@@ -158,3 +158,22 @@ runtime uses framework-independent UI primitives rather than Next-only providers
 
 The runtime verification script covers explicit themes, persistence across reloads,
 live system-theme changes, account-menu keyboard dismissal, and mobile navigation.
+
+### Shared shell and framework adapters
+
+Colab, Tasks, Calendar, and the other satellite apps share the shell in
+`@tuturuuu/ui/custom/satellite-shell`. The shared layer owns brand markup,
+sidebar layout, navigation sections, workspace-selector reveal, nested-navigation
+state, and collapse/hover behavior. It accepts React slots and callbacks without
+importing Next.js, authentication clients, or translation providers.
+
+`@tuturuuu/satellite/sidebar-structure` remains the Next.js adapter. Its public
+props are unchanged; it supplies Next links, pathname, translations, cookie
+persistence, workspace context, settings, billing, and the app launcher.
+Colab's `structure.tsx` supplies native links, local preference persistence, and
+its Cloudflare room/account controls to the same implementation. Theme support
+continues through shared CSS tokens and `next-themes`.
+
+Make shell presentation changes in the shared UI components. Keep routing,
+authorization, and workspace services in the adapters. Colab's Vite build rejects
+Next.js or next-intl runtime modules in its bundle, guarding this boundary.

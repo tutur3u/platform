@@ -1,7 +1,6 @@
 import {
   BookOpen,
   Building2,
-  ChevronDown,
   ChevronsUpDown,
   FileText,
   FlaskConical,
@@ -14,21 +13,35 @@ import {
 } from '@tuturuuu/icons';
 import type { Identity } from '@tuturuuu/multiplayer';
 import { Button } from '@tuturuuu/ui/button';
-import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
+import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
+import { getFilteredLinks } from '@tuturuuu/ui/custom/satellite-shell-utils';
+import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import logo from './assets/tuturuuu.png';
 import { useCopy } from './i18n';
+import { ShellNavigation } from './shell-navigation';
 import { ThemeToggle } from './theme-toggle';
 
-/** Shared satellite layout, with framework-independent Colab navigation. */
+const persistCollapsed = (collapsed: boolean) =>
+  localStorage.setItem('colab-sidebar-collapsed', String(collapsed));
+
+/** Vite adapter for the same shell used by Tasks, Calendar and other satellites. */
 export function Structure({
   children,
   actions,
@@ -43,19 +56,80 @@ export function Structure({
   navigate: (id: string) => void;
 }) {
   const c = useCopy();
-  const [collapsed, setCollapsed] = useState(
-    () =>
-      window.innerWidth < 768 ||
-      localStorage.getItem('colab-sidebar-collapsed') === 'true'
-  );
-  const toggle = (value: boolean) => {
-    setCollapsed(value);
-    localStorage.setItem('colab-sidebar-collapsed', String(value));
-  };
+  const [appsOpen, setAppsOpen] = useState(false);
   const recent = localStorage.getItem('colab-recent-room');
-  const closeMobile = () => {
-    if (window.innerWidth < 768) toggle(true);
-  };
+  const links = useMemo<(NavLink | null)[]>(
+    () => [
+      {
+        title: c.shellHome,
+        href: '/',
+        icon: <Home className="size-4" />,
+        onClick: () => navigate(''),
+      },
+      ...(recent && !roomId
+        ? [
+            {
+              title: c.recent,
+              icon: <Users className="size-4" />,
+              onClick: () => navigate(recent),
+            },
+          ]
+        : []),
+      null,
+      ...(roomId
+        ? [
+            {
+              title: c.mission,
+              href: '#mission',
+              icon: <BookOpen className="size-4" />,
+            },
+            {
+              title: c.promptSection,
+              href: '#team-prompt',
+              icon: <Users className="size-4" />,
+            },
+            {
+              title: c.skills,
+              href: '#team-skills',
+              icon: <FileText className="size-4" />,
+            },
+            {
+              title: c.mockDesk,
+              href: '#sandbox-desk',
+              icon: <Layers className="size-4" />,
+            },
+            {
+              title: c.runs,
+              href: '#practice-journal',
+              icon: <BookOpen className="size-4" />,
+            },
+          ]
+        : [
+            {
+              title: c.practiceGuide,
+              href: '#explore',
+              icon: <BookOpen className="size-4" />,
+            },
+          ]),
+    ],
+    [c, roomId, recent, navigate]
+  );
+  const {
+    isCollapsed: collapsed,
+    setIsCollapsed,
+    handleToggle,
+    navState,
+    setNavState,
+    backButton,
+  } = useSatelliteShell({
+    pathname: roomId ? `/?room=${roomId}` : '/',
+    links,
+    defaultCollapsed:
+      window.innerWidth < 768 ||
+      localStorage.getItem('colab-sidebar-collapsed') === 'true',
+    persistCollapsed,
+    backLabel: c.back,
+  });
   const account = (compact: boolean) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -91,77 +165,58 @@ export function Structure({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-  const links = roomId
-    ? ([
-        ['mission', c.mission, BookOpen],
-        ['team-prompt', c.promptSection, Users],
-        ['team-skills', c.skills, FileText],
-        ['sandbox-desk', c.mockDesk, Layers],
-        ['practice-journal', c.runs, BookOpen],
-      ] as const)
-    : ([['explore', c.practiceGuide, BookOpen]] as const);
-  const brand = (
-    <div className="flex w-full items-center gap-3">
-      <a
-        href="https://tuturuuu.com"
-        aria-label={c.shellPlatform}
-        className="shrink-0"
-      >
-        <img src={logo} alt="Tuturuuu" width={32} height={32} />
-      </a>
-      {!collapsed && (
-        <>
-          <span className="h-5 border-l" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="justify-start px-1 font-semibold text-base"
-                aria-label={c.appMenu}
-              >
-                Colab <ChevronDown className="size-3.5 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>{c.appMenu}</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <a href="https://tuturuuu.com">
-                  <Building2 className="size-4" />
-                  {c.shellPlatform}
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => navigate('')}>
-                <FlaskConical className="size-4" />
-                Colab
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      )}
-    </div>
-  );
   return (
     <div className="colab-shell">
-      <BaseStructure
+      <Dialog open={appsOpen} onOpenChange={setAppsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{c.appMenu}</DialogTitle>
+            <DialogDescription>{c.shellPlatform}</DialogDescription>
+          </DialogHeader>
+          <Button variant="ghost" asChild>
+            <a href="https://tuturuuu.com">
+              <Building2 className="size-4" />
+              {c.shellPlatform}
+            </a>
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              navigate('');
+              setAppsOpen(false);
+            }}
+          >
+            <FlaskConical className="size-4" />
+            Colab
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <SatelliteShell
         isCollapsed={collapsed}
-        setIsCollapsed={toggle}
+        setIsCollapsed={handleToggle}
         sidebarLabels={{ open: c.shellExpand, close: c.shellCollapse }}
-        sidebarHeader={brand}
-        sidebarHeaderHeight="3.5rem"
-        mobileHeader={
-          <>
-            <img src={logo} alt="Tuturuuu" width={24} height={24} />
-            <span>Colab</span>
-            <ThemeToggle />
-          </>
+        homeLabel={c.shellPlatform}
+        collapsedLogo={
+          <img src={logo} alt="" width={28} height={28} className="h-7 w-7" />
         }
+        brand={{
+          appName: 'Colab',
+          appHref: '/',
+          centralHref: 'https://tuturuuu.com',
+          launcherLabel: c.appMenu,
+          logo: (
+            <img src={logo} alt="" width={32} height={32} className="size-8" />
+          ),
+          onAppClick: () => setAppsOpen(true),
+        }}
+        mobileBrandActions={<ThemeToggle />}
         header={
           <div className="colab-toolbar">
             <Button
               variant="ghost"
               size="icon"
               aria-label={collapsed ? c.shellExpand : c.shellCollapse}
-              onClick={() => toggle(!collapsed)}
+              onClick={handleToggle}
             >
               {collapsed ? (
                 <PanelLeftOpen className="size-4" />
@@ -182,58 +237,18 @@ export function Structure({
           </div>
         }
         sidebarContent={
-          <nav
-            aria-label={c.shellNavigation}
-            className="flex flex-col gap-1 p-2"
-          >
-            <Button
-              variant={!roomId ? 'secondary' : 'ghost'}
-              className={`h-10 w-full ${collapsed ? 'px-2' : 'justify-start'}`}
-              aria-label={c.shellHome}
-              title={c.shellHome}
-              onClick={() => {
-                navigate('');
-                closeMobile();
-              }}
-            >
-              <Home className="size-4" />
-              {!collapsed && c.shellHome}
-            </Button>
-            {recent && !roomId && (
-              <Button
-                variant="ghost"
-                className={`h-10 w-full ${collapsed ? 'px-2' : 'justify-start'}`}
-                aria-label={c.recent}
-                title={c.recent}
-                onClick={() => {
-                  navigate(recent);
-                  closeMobile();
-                }}
-              >
-                <Users className="size-4" />
-                {!collapsed && c.shellWorkshop}
-              </Button>
-            )}
-            <div className="my-1 border-t" />
-            {links.map(([id, label, Icon]) => (
-              <Button
-                key={id}
-                variant="ghost"
-                asChild
-                className={`h-10 w-full ${collapsed ? 'px-2' : 'justify-start'}`}
-              >
-                <a
-                  href={`#${id}`}
-                  title={label}
-                  aria-label={label}
-                  onClick={closeMobile}
-                >
-                  <Icon className="size-4" />
-                  {!collapsed && label}
-                </a>
-              </Button>
-            ))}
-          </nav>
+          <SatelliteContent
+            Navigation={ShellNavigation}
+            wsId={roomId}
+            backButton={backButton}
+            filteredCurrentLinks={getFilteredLinks(navState.currentLinks)}
+            currentTitle={navState.titleHistory.at(-1)}
+            isCollapsed={collapsed}
+            navState={navState}
+            setNavState={setNavState}
+            setIsCollapsed={setIsCollapsed}
+            workspaceSelectVisible={false}
+          />
         }
         sidebarUtility={
           <Button
@@ -256,7 +271,7 @@ export function Structure({
         hideSizeToggle
       >
         <div className="colab-content">{children}</div>
-      </BaseStructure>
+      </SatelliteShell>
     </div>
   );
 }

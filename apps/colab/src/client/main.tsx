@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity } from '@tuturuuu/multiplayer';
+import { Button } from '@tuturuuu/ui/button';
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -41,23 +42,23 @@ function App() {
       identity={session.data?.identity ?? null}
       navigate={navigate}
       actions={
-        <div className="topbar-actions">
+        <div className="flex flex-wrap items-center gap-2">
           <Language />
           {session.data?.identity ? (
-            <button
+            <Button
               type="button"
-              className="quiet"
+              variant="ghost"
               onClick={async () => {
                 await colabRequest('/logout', {});
                 location.assign('/');
               }}
             >
               {c.logout}
-            </button>
+            </Button>
           ) : (
-            <a className="button quiet" href="/auth/login">
-              {c.login} <span aria-hidden="true">↗</span>
-            </a>
+            <Button variant="ghost" asChild>
+              <a href="/auth/login">{c.login}</a>
+            </Button>
           )}
         </div>
       }
@@ -72,16 +73,16 @@ function App() {
             <a className="button primary" href="/auth/login">
               {c.login}
             </a>
-            <button
+            <Button
               type="button"
-              className="quiet"
+              variant="ghost"
               onClick={() => {
                 setAuthRetry(false);
                 history.replaceState(null, '', '/');
               }}
             >
               {c.authDismiss}
-            </button>
+            </Button>
           </div>
         </section>
       )}
@@ -110,7 +111,7 @@ function Language() {
   const c = useCopy();
   return (
     <select
-      className="language"
+      className="w-20 rounded-md border bg-background p-2 text-foreground text-sm"
       aria-label={c.language}
       defaultValue={document.documentElement.lang}
       onChange={(e) => changeLocale(e.target.value as Locale)}
