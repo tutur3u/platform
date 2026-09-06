@@ -292,6 +292,17 @@ describe('Tasks proxy auth mode', () => {
     }
   );
 
+  it.each(['/personal/calendar', '/vi/workspace-1/calendar?view=week'])(
+    'keeps calendar planning local and authenticated: %s',
+    async (path) => {
+      const response = await proxy(
+        new NextRequest(`https://tasks.tuturuuu.com${path}`)
+      );
+      expect(mocks.authProxy).toHaveBeenCalled();
+      expect(response.headers.get('location')).toBeNull();
+    }
+  );
+
   it('keeps ordinary task-link navigation behind authentication', async () => {
     const response = await proxy(
       new NextRequest(

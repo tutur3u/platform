@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  CalendarDays,
   Target,
   TrendingUp,
   Trophy,
@@ -29,6 +30,12 @@ export async function getNavigationLinks({
         `/${personalOrWsId}/boards`,
         `/${personalOrWsId}/boards/*`,
       ],
+    },
+    {
+      title: t('sidebar_tabs.calendar'),
+      href: `/${personalOrWsId}/calendar`,
+      icon: createElement(CalendarDays, { className: 'h-4 w-4' }),
+      aliases: [`/${personalOrWsId}/calendar/*`],
     },
     null,
     {

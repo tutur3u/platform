@@ -4,6 +4,31 @@ description: "Shared Calendar product surface across apps/web and apps/calendar.
 updatedAt: "2026-08-10"
 ---
 
+## Tasks and Calendar planning
+
+Both satellite apps expose local planning views without changing workspace or
+requiring a cross-app login handoff:
+
+| Host | Calendar | Tasks |
+| --- | --- | --- |
+| Tasks | `/{wsId}/calendar` | `/{wsId}/tasks` (default board) |
+| Calendar | `/{wsId}` | `/{wsId}/tasks` (editable task list) |
+
+The persistent planning switcher retains locale and personal/internal workspace
+aliases, including on mobile. Calendar also serves `/tasks/boards`,
+`/tasks/boards/{boardId}`, and `/tasks/{taskId}` within the workspace. Task views
+hide the calendar-only mini-month sidebar to leave more room for task work.
+
+Tasks' embedded calendar uses the shared scheduling, connection, event, and task
+controls and enforces `manage_calendar`. Each host resolves its own app-session
+actor. Keep the task route context and dialog manager prefix aligned: Tasks uses
+an empty prefix, while Calendar and Web use `/tasks`. Tasks already owns a dialog
+provider, so its embedded calendar disables the additional dialog wrapper.
+
+When validating this integration, check both locales, personal and team workspace
+links, board/task detail return paths, and mobile navigation with the sidebar
+closed. Mutations continue through the existing protected product APIs.
+
 ## Overview
 
 `apps/calendar` and the Calendar experience inside `apps/web` are paired

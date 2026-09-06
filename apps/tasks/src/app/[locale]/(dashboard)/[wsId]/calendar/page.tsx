@@ -1,12 +1,13 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { loadSmartSchedulingTasks } from '@tuturuuu/tasks-ui/calendar/components/load-smart-scheduling-tasks';
+import { TaskCalendarPageShell } from '@tuturuuu/tasks-ui/calendar/task-calendar-page-shell';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { CalendarWorkspacePage } from '@/components/calendar-workspace-page';
+import { createElement } from 'react';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -24,7 +25,7 @@ export default async function CalendarPage({ params }: PageProps) {
   await connection();
 
   const { wsId, locale } = await params;
-  const user = await getSatelliteAppSessionUser('calendar');
+  const user = await getSatelliteAppSessionUser('tasks');
 
   if (!user?.id) redirect('/login');
 
@@ -36,11 +37,11 @@ export default async function CalendarPage({ params }: PageProps) {
 
   const { withoutPermission } = permissions;
 
-  if (withoutPermission('manage_calendar')) redirect(`/${wsId}/tasks`);
+  if (withoutPermission('manage_calendar')) notFound();
 
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const [googleToken, smartSchedulingTasks] = await Promise.all([
+  const [googleToken, smartSchedulingTasks, connections] = await Promise.all([
     fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
       wsId: workspace.id,
       userId: user.id,
@@ -49,20 +50,26 @@ export default async function CalendarPage({ params }: PageProps) {
       resolvedWsId: workspace.id,
       userId: user.id,
     }),
+    sbAdmin
+      .from('calendar_connections')
+      .select('*')
+      .eq('ws_id', workspace.id)
+      .order('created_at', { ascending: true }),
   ]);
 
   const enableSmartScheduling = true;
   const isPersonalWorkspace = !!workspace.personal;
 
-  return (
-    <CalendarWorkspacePage
-      enableSmartScheduling={enableSmartScheduling}
-      experimentalGoogleToken={googleToken}
-      isPersonalWorkspace={isPersonalWorkspace}
-      locale={locale}
-      smartSchedulingTasks={smartSchedulingTasks}
-      userId={user.id}
-      workspace={workspace}
-    />
-  );
+  return createElement(TaskCalendarPageShell, {
+    className: 'h-[calc(100dvh-5.25rem)]',
+    manageTaskDialog: false,
+    calendarConnections: connections.data ?? [],
+    enableSmartScheduling,
+    experimentalGoogleToken: googleToken,
+    isPersonalWorkspace,
+    locale,
+    smartSchedulingTasks,
+    userId: user.id,
+    workspace,
+  });
 }

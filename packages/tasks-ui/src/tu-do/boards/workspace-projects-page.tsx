@@ -37,6 +37,7 @@ interface PageConfig {
 }
 
 interface Props {
+  sessionUser?: { id: string };
   params: Promise<{
     wsId: string;
   }>;
@@ -74,16 +75,23 @@ export default async function WorkspaceProjectsPage({
   params,
   searchParams,
   config = {},
+  sessionUser,
 }: Props) {
   const { showFeatureSummary = false, showSeparator = false } = config;
 
   const { wsId: id } = await params;
   const sp = await searchParams;
-  const workspace = await getWorkspace(id);
+  const workspace = await getWorkspace(
+    id,
+    sessionUser ? { useAdmin: true, user: sessionUser } : {}
+  );
   if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({
+    wsId,
+    ...(sessionUser ? { user: sessionUser } : {}),
+  });
   if (!permissions) notFound();
   const { withoutPermission } = permissions;
 

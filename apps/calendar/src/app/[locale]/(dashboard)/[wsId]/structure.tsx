@@ -2,6 +2,7 @@
 
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { CalendarSidebarContent } from '@/components/calendar-sidebar-content';
 import { TTR_URL } from '@/constants/common';
@@ -30,6 +31,9 @@ export function Structure({
   workspace,
   wsId,
 }: StructureProps) {
+  const pathname = usePathname();
+  const isTaskView = pathname.split('/').includes('tasks');
+
   return (
     <SidebarStructure
       actions={actions}
@@ -39,7 +43,9 @@ export function Structure({
       links={links}
       notificationPopover={notificationPopover}
       sidebarContentAfter={({ isCollapsed }) =>
-        isCollapsed ? null : <CalendarSidebarContent wsId={wsId} />
+        isCollapsed || isTaskView ? null : (
+          <CalendarSidebarContent wsId={wsId} />
+        )
       }
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}

@@ -4,6 +4,7 @@ import type {
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType } from 'react';
 import type { CalendarView } from '../../../hooks/use-view-transition';
 import type { ExtendedWorkspaceTask } from '../time-tracker/types';
@@ -41,6 +42,7 @@ interface CalendarPageShellProps {
   };
   manageCalendarSyncProvider?: boolean;
   showConnectionsManager?: boolean;
+  className?: string;
 }
 
 export function CalendarPageShell({
@@ -56,9 +58,10 @@ export function CalendarPageShell({
   externalState,
   manageCalendarSyncProvider = true,
   showConnectionsManager = true,
+  className,
 }: CalendarPageShellProps) {
   const content = (
-    <div className="flex h-[calc(100vh-2rem)]">
+    <div className={cn('flex h-[calc(100dvh-2rem)] min-w-0', className)}>
       <CalendarClientPage
         experimentalGoogleToken={experimentalGoogleToken}
         workspace={workspace}

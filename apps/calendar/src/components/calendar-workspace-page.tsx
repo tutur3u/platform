@@ -46,6 +46,7 @@ export function CalendarWorkspacePage({
 
   return (
     <TaskCalendarPageShell
+      className="h-[calc(100dvh-5.25rem)]"
       calendarConnections={[]}
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={experimentalGoogleToken}

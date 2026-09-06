@@ -1168,7 +1168,7 @@
     "page:/:locale/:wsId/calendar:apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/calendar preserves the legacy authenticated calendar shell by loading the full workspace row, enforcing manage_calendar through the forwarded-auth internal permission check, and rendering the shared CalendarPageShell. Calendar connections and Google token data are empty first-load state until their protected data APIs move behind shared TanStack/Rust facades."
+      "note": "TanStack Start route /$locale/$wsId/calendar preserves the legacy authenticated calendar shell by loading the full workspace row, enforcing manage_calendar through the forwarded-auth internal permission check, and rendering the shared CalendarPageShell. Calendar connections and Google token data are empty first-load state until their protected data APIs move behind shared TanStack/Rust facades. Satellite parity: apps/tasks now embeds this calendar at /:wsId/calendar; apps/calendar exposes editable tasks at /:wsId/tasks plus task and board detail routes. Preserve reciprocal planning navigation, app-session actors, host-specific task route prefixes, and calendar permission checks in future frontend migration."
     },
     "layout:/:locale/:wsId/crawlers:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout.tsx": {
       "status": "migrated",

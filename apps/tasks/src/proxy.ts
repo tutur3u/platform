@@ -56,6 +56,7 @@ const CORS_HEADERS =
 const TASKS_OWNED_WORKSPACE_ROUTE_PREFIXES = new Set([
   'analytics',
   'boards',
+  'calendar',
   'cycles',
   'goals',
   'leaderboard',

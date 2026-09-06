@@ -11,8 +11,10 @@ import {
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { PlanningNavigation } from '@tuturuuu/tasks-ui/calendar/components/planning-navigation';
 import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
@@ -88,7 +90,13 @@ export default async function Layout({ children, params }: LayoutProps) {
             wsId={wsId}
             workspace={workspace}
             defaultCollapsed={defaultCollapsed}
-            links={await getNavigationLinks()}
+            links={
+              await getNavigationLinks({
+                workspaceSlug: toWorkspaceSlug(wsId, {
+                  personal: !!workspace.personal,
+                }),
+              })
+            }
             actions={
               <Suspense
                 key={user.id}
@@ -117,6 +125,12 @@ export default async function Layout({ children, params }: LayoutProps) {
                 tier={workspace.tier ?? null}
                 enabled={!workspace.personal}
               >
+                <PlanningNavigation
+                  calendarRoot
+                  workspaceSlug={toWorkspaceSlug(wsId, {
+                    personal: !!workspace.personal,
+                  })}
+                />
                 {children}
               </WorkspacePresenceProvider>
             </RealtimeLogProvider>
