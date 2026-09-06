@@ -50,6 +50,7 @@ export async function POST(request: Request) {
         max_steps: extensions.max_steps,
         model: body.model,
         prompt: messages.prompt,
+        response_format: body.response_format,
         stream: body.stream,
         tools: extensions.tools,
       }),

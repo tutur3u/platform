@@ -71,6 +71,30 @@ describe('AI Studio run detail API', () => {
     });
   });
 
+  it('returns only a known usage-source label, never arbitrary metadata', async () => {
+    for (const [stored, expected] of [
+      ['provider_partial', 'provider_partial'],
+      ['secret-value', null],
+    ]) {
+      mocks.runBuilder.maybeSingle.mockResolvedValue({
+        data: {
+          id: '0b9bd97c-2a2e-447e-8446-4b05495968d2',
+          usage_source: stored,
+        },
+        error: null,
+      });
+      const response = await GET(new Request('https://ai.example/run'), {
+        params: Promise.resolve({
+          runId: '0b9bd97c-2a2e-447e-8446-4b05495968d2',
+          wsId: 'workspace-1',
+        }),
+      });
+      const payload = await response.json();
+      expect(payload.usageSource).toBe(expected);
+      expect(JSON.stringify(payload)).not.toContain('secret-value');
+    }
+  });
+
   it('binds the run to the authorized workspace and returns safe step fields', async () => {
     const response = await GET(new Request('https://ai.example/run'), {
       params: Promise.resolve({

@@ -30,3 +30,40 @@ describe('AI Studio text request extensions', () => {
     ).toThrow(AiStudioError);
   });
 });
+
+describe('structured response contracts', () => {
+  it('preserves the requested JSON schema and token budget', () => {
+    const response_format = {
+      type: 'json_schema',
+      json_schema: {
+        name: 'analysis',
+        strict: true,
+        schema: {
+          type: 'object',
+          properties: { summary: { type: 'string' } },
+          required: ['summary'],
+        },
+      },
+    };
+    expect(
+      parseTextRequest({
+        model: 'google/gemini-3.5-flash-lite',
+        prompt: 'Analyze',
+        max_output_tokens: 16384,
+        response_format,
+      })
+    ).toMatchObject({ response_format, max_output_tokens: 16384 });
+  });
+  it('rejects malformed output formats before a billable call', () => {
+    expect(() =>
+      parseTextRequest({
+        model: 'model',
+        prompt: 'Analyze',
+        response_format: {
+          type: 'json_schema',
+          json_schema: { name: 'analysis', schema: [] },
+        },
+      })
+    ).toThrow(AiStudioError);
+  });
+});

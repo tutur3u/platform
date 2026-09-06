@@ -11,6 +11,12 @@ vi.mock('@ai-sdk/google', () => ({
 
 vi.mock('ai', () => ({
   isStepCount: (maxSteps: number) => ({ maxSteps }),
+  Output: {
+    text: () => ({ type: 'text' }),
+    json: () => ({ type: 'json' }),
+    object: (value: unknown) => ({ type: 'object', value }),
+  },
+  jsonSchema: (schema: unknown) => schema,
   ToolLoopAgent: class {
     constructor(settings: unknown) {
       captureAgentSettings(settings);
@@ -56,6 +62,34 @@ describe('createObservedTextAgent', () => {
     expect(captureAgentSettings).toHaveBeenCalledWith(
       expect.objectContaining({
         model: directGoogleModel,
+      })
+    );
+  });
+
+  it('forwards schema output to the model agent rather than dropping it', () => {
+    const schema = {
+      type: 'object',
+      properties: { summary: { type: 'string' } },
+    };
+    createObservedTextAgent({
+      context: {} as never,
+      maxOutputTokens: 16384,
+      maxSteps: 1,
+      modelId: 'google/gemini-3.5-flash-lite',
+      signal: new AbortController().signal,
+      toolNames: [],
+      responseFormat: {
+        type: 'json_schema',
+        json_schema: { name: 'analysis', schema },
+      },
+    });
+    expect(captureAgentSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        maxOutputTokens: 16384,
+        output: {
+          type: 'object',
+          value: { name: 'analysis', description: undefined, schema },
+        },
       })
     );
   });
