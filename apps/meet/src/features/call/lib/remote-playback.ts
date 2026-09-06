@@ -29,17 +29,9 @@ export function attachRemotePlayback(
   const release = () => {
     if (!isCurrent() || owner.track !== track) return;
     subscribed.delete(owner.subscriptionKey);
-    setMedia((current) => {
-      if (!isCurrent() || current[owner.userId]?.[owner.kind] !== track)
-        return current;
-      const next = {
-        ...current,
-        [owner.userId]: { ...current[owner.userId] },
-      };
-      delete next[owner.userId]![owner.kind];
-      if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
-      return next;
-    });
+    setMedia((current) =>
+      isCurrent() ? removeRemotePlayback(current, owner) : current
+    );
   };
   if (track.readyState === 'ended') release();
   else track.addEventListener('ended', release, { once: true });

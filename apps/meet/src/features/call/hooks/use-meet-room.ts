@@ -32,6 +32,7 @@ import {
   type RemoteMedia,
 } from '../lib/remote-streams';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
+import { SubscriptionClosures } from '../lib/subscription-closures';
 
 type SfuSessionResponse = { sessionId?: string };
 type SfuTracksResponse = {
@@ -107,6 +108,7 @@ export function useMeetRoom({
   const publishSessionRef = useRef<string | null>(null);
   const subscribeSessionRef = useRef<string | null>(null);
   const publishedRef = useRef<LocalTrackPlan[]>([]);
+  const closuresRef = useRef(new SubscriptionClosures());
   const subscribedRef = useRef<Set<string>>(new Set());
   const screenStreamRef = useRef<MediaStream | null>(null);
   /** mid -> owning participant, the only way to attribute an inbound track. */
@@ -122,20 +124,14 @@ export function useMeetRoom({
   useEffect(() => {
     let usedInitialToken = false;
 
-    /**
-     * The token minted on the server is good for the first connect. Every
-     * later attempt fetches a fresh one, because join tokens expire long
-     * before a meeting does.
-     */
+    // Reconnects fetch fresh tokens because calls can outlast token expiry.
     const resolveUrl = async () => {
       if (!usedInitialToken) {
         usedInitialToken = true;
         return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
       }
 
-      // The satellite proxies `/api/*` to web, which already owns meeting
-      // token minting. Adding a local route here would both duplicate it and
-      // break the satellite convention that only auth handoff runs locally.
+      // The satellite proxies token minting to the platform API.
       const refreshed = await createWorkspaceMeetingRealtimeToken(
         wsId,
         meetingId,
@@ -148,6 +144,8 @@ export function useMeetRoom({
       onMessage: (message) => {
         if (message.type === 'track.closed') {
           const closed = new Set(message.tracks.map(remoteTrackKey));
+          closuresRef.current.close(closed);
+          for (const key of closed) subscribedRef.current.delete(key);
           for (const [mid, owner] of trackOwnersRef.current) {
             if (!closed.has(owner.subscriptionKey)) continue;
             trackOwnersRef.current.delete(mid);
@@ -445,6 +443,9 @@ export function useMeetRoom({
         stateRef.current.selfUserId
       );
       if (!pending.length) return;
+      const isOpen = closuresRef.current.capture(
+        pending.map((track) => `${track.sessionId}:${track.trackName}`)
+      );
       const { pc, sessionId } = await ensureSubscribeSession();
       const answer = await signalingRef.current?.request<SfuTracksResponse>({
         sessionId,
@@ -460,7 +461,12 @@ export function useMeetRoom({
         const requested = pending.find(
           (entry) => entry.trackName === track.trackName
         );
-        if (track.mid && owner && requested)
+        if (
+          track.mid &&
+          owner &&
+          requested &&
+          isOpen(`${requested.sessionId}:${track.trackName}`)
+        )
           trackOwnersRef.current.set(track.mid, {
             userId: owner,
             kind,
@@ -492,7 +498,12 @@ export function useMeetRoom({
             ) && entry.trackName === track.trackName
         );
         const owner = trackOwnersRef.current.get(track.mid);
-        if (roomTrack && owner?.track?.readyState !== 'ended')
+        if (
+          roomTrack &&
+          owner &&
+          isOpen(owner.subscriptionKey) &&
+          owner.track?.readyState !== 'ended'
+        )
           subscribedRef.current.add(remoteTrackKey(roomTrack));
       }
     };
