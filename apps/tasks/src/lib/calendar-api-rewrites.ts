@@ -9,5 +9,11 @@ export function createCalendarApiRewrites(origin: string) {
     '/api/v1/workspaces/:wsId/calendar-hours/:path*',
     '/api/v1/workspaces/:wsId/calendar-settings',
     '/api/v1/workspaces/:wsId/calendars/:path*',
-  ].map((source) => ({ source, destination: `${base}${source}` }));
+  ]
+    .flatMap((source) =>
+      source.endsWith('/:path*')
+        ? [source.replace(/\/:path\*$/u, ''), source]
+        : [source]
+    )
+    .map((source) => ({ source, destination: `${base}${source}` }));
 }

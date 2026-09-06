@@ -14,6 +14,11 @@ Calendar routes explicitly accept Calendar and Tasks audiences while retaining
 workspace membership and permission checks. Do not route these APIs through Web:
 Web no longer owns the Calendar events or Tasks endpoints.
 
+Collection rewrites must have an exact path before their `/:path*` variant.
+Vercel can retain a trailing slash when the wildcard is empty, causing the owning
+app to return a 308 to the same browser URL and loop. Verify both collection and
+nested resource requests on the deployed host.
+
 Both satellite apps expose local planning views without changing workspace or
 requiring a cross-app login handoff:
 
