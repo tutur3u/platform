@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   const authContext = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   if (!authContext.ok) return authContext.response;

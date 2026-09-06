@@ -1,3 +1,5 @@
+import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import {
   createTuturuuuNextConfig,
   createTuturuuuWebWorkspaceApiRewrites,
@@ -5,8 +7,22 @@ import {
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+import { createCalendarApiRewrites } from './src/lib/calendar-api-rewrites';
+
 const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
+
+const CALENDAR_APP_URL = resolveInternalAppUrl({
+  appName: 'calendar',
+  candidates: [
+    process.env.CALENDAR_APP_URL,
+    process.env.NEXT_PUBLIC_CALENDAR_APP_URL,
+  ],
+  fallback:
+    process.env.NODE_ENV === 'production'
+      ? 'https://calendar.tuturuuu.com'
+      : getLocalInternalAppUrl('calendar', 'http://localhost:7806'),
+});
 
 const nextConfig = createTuturuuuNextConfig({
   images: {
@@ -19,7 +35,10 @@ const nextConfig = createTuturuuuNextConfig({
   },
   async rewrites() {
     return {
-      beforeFiles: createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL),
+      beforeFiles: [
+        ...createCalendarApiRewrites(CALENDAR_APP_URL),
+        ...createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL),
+      ],
       afterFiles: [],
       // Fallback rewrites only apply when no local route matches,
       // so Tasks' existing API routes (task-boards, members, auth) still work.

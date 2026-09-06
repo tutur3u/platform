@@ -112,7 +112,7 @@ describe('calendar auth accounts route', () => {
     expect(resolveSessionAuthContextMock).toHaveBeenCalledWith(
       expect.any(Request),
       {
-        allowAppSessionAuth: { targetApp: 'calendar' },
+        allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
       }
     );
     expect(tokenUpdate).toHaveBeenCalledWith({

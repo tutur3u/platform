@@ -27,7 +27,7 @@ type Params = {
 
 async function authorize(request: Request, rawWsId: string) {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   if (!auth.ok) return { error: auth.response };

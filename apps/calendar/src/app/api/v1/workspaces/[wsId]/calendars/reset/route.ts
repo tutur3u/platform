@@ -117,5 +117,5 @@ export const POST = withSessionAuth<Params>(
       );
     }
   },
-  { allowAppSessionAuth: { targetApp: 'calendar' } }
+  { allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] } }
 );

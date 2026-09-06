@@ -132,7 +132,7 @@ describe('workspace calendar event collection authorization', () => {
     }
   );
 
-  it('requires the Calendar app-session audience', async () => {
+  it('accepts only the Calendar and Tasks app-session audiences', async () => {
     mocks.resolveAuth.mockResolvedValue({
       ok: false,
       response: Response.json({ error: 'Unauthorized' }, { status: 401 }),
@@ -141,7 +141,7 @@ describe('workspace calendar event collection authorization', () => {
     await GET(request('GET'), params());
 
     expect(mocks.resolveAuth).toHaveBeenCalledWith(expect.any(Request), {
-      allowAppSessionAuth: { targetApp: 'calendar' },
+      allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
     });
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });

@@ -53,7 +53,8 @@ describe('Calendar media AI credit policy', () => {
           body: JSON.stringify(body),
           headers: { 'content-type': 'application/json' },
           method: 'POST',
-        })
+        }),
+        { params: Promise.resolve({}) }
       );
 
       expect(response.status).toBe(403);

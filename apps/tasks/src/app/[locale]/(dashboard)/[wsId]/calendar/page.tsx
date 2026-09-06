@@ -61,7 +61,7 @@ export default async function CalendarPage({ params }: PageProps) {
   const isPersonalWorkspace = !!workspace.personal;
 
   return createElement(TaskCalendarPageShell, {
-    className: 'h-[calc(100dvh-5.25rem)]',
+    className: 'h-[calc(100dvh-2rem)]',
     manageTaskDialog: false,
     calendarConnections: connections.data ?? [],
     enableSmartScheduling,

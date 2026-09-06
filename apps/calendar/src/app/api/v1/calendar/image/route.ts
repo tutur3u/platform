@@ -119,7 +119,7 @@ async function extractEventsFromImage(
 }
 
 export const POST = withSessionAuth(extractEventsFromImage, {
-  allowAppSessionAuth: { targetApp: 'calendar' },
+  allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   maxPayloadSize: 8_500_000,
   rateLimit: { maxRequests: 10, windowMs: 60_000 },
   rateLimitKind: 'read',

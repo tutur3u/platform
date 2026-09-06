@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   const { event }: { event: CalendarEvent } = body;
 
   const authContext = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   if (!authContext.ok) return authContext.response;
@@ -182,7 +182,7 @@ export async function PUT(request: Request) {
   }
 
   const authContext = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
   if (!authContext.ok) return authContext.response;
   const { supabase, user } = authContext;
@@ -327,7 +327,7 @@ export async function DELETE(request: Request) {
   }
 
   const authContext = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
   if (!authContext.ok) return authContext.response;
   const { supabase, user } = authContext;

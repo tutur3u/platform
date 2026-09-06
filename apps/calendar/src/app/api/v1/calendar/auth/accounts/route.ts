@@ -27,7 +27,7 @@ const disconnectQuerySchema = z.object({
 
 export async function GET(request: Request): Promise<NextResponse> {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   if (!auth.ok) return auth.response;
@@ -91,7 +91,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
 export async function DELETE(request: Request): Promise<NextResponse> {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   if (!auth.ok) return auth.response;

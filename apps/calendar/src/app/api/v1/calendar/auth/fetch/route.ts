@@ -21,7 +21,7 @@ const getGoogleAuthClient = (tokens: {
 
 export async function GET(request: Request) {
   const authContext = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   if (!authContext.ok) return authContext.response;

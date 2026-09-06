@@ -48,7 +48,7 @@ const updateCalendarSchema = z.object({
 });
 
 const CALENDAR_APP_SESSION_AUTH = {
-  targetApp: 'calendar',
+  targetApp: ['calendar', 'tasks'],
 } as const;
 
 async function authorizeWorkspaceRequest(

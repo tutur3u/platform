@@ -12,7 +12,7 @@ const calendarSettingsSchema = z.object({
 });
 
 const CALENDAR_SETTINGS_APP_SESSION_AUTH = {
-  targetApp: 'calendar',
+  targetApp: ['calendar', 'tasks'],
 } as const;
 
 export const GET = withSessionAuth(

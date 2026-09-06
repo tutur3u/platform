@@ -10,7 +10,6 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { PlanningNavigation } from '@tuturuuu/tasks-ui/calendar/components/planning-navigation';
 import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
 import { TaskDialogWrapper } from '@tuturuuu/tasks-ui/tu-do/shared/task-dialog-wrapper';
 import { TasksRouteProvider } from '@tuturuuu/tasks-ui/tu-do/tasks-route-context';
@@ -139,7 +138,6 @@ export default async function Layout({ children, params }: LayoutProps) {
                   workspaceSlug={workspaceSlug}
                   wsId={wsId}
                 />
-                <PlanningNavigation workspaceSlug={workspaceSlug} />
                 {children}
               </TaskDialogWrapper>
             </WorkspacePresenceProvider>

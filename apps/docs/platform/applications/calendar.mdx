@@ -6,6 +6,14 @@ updatedAt: "2026-08-10"
 
 ## Tasks and Calendar planning
 
+Calendar and Tasks keep cross-product API calls on the active browser origin so
+host-only app cookies remain available. Their `beforeFiles` rewrites forward only
+the other product's API families, before Tasks' API catch-all can intercept them.
+The source proxy refreshes the host session and forwards its signed bearer token;
+Calendar routes explicitly accept Calendar and Tasks audiences while retaining
+workspace membership and permission checks. Do not route these APIs through Web:
+Web no longer owns the Calendar events or Tasks endpoints.
+
 Both satellite apps expose local planning views without changing workspace or
 requiring a cross-app login handoff:
 
@@ -14,8 +22,8 @@ requiring a cross-app login handoff:
 | Tasks | `/{wsId}/calendar` | `/{wsId}/tasks` (default board) |
 | Calendar | `/{wsId}` | `/{wsId}/tasks` (editable task list) |
 
-The persistent planning switcher retains locale and personal/internal workspace
-aliases, including on mobile. Calendar also serves `/tasks/boards`,
+The shared sidebar retains locale and personal/internal workspace aliases,
+including on mobile. Calendar also serves `/tasks/boards`,
 `/tasks/boards/{boardId}`, and `/tasks/{taskId}` within the workspace. Task views
 hide the calendar-only mini-month sidebar to leave more room for task work.
 

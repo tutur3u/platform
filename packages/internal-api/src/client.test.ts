@@ -194,10 +194,14 @@ describe('withTaskApiBaseUrl', () => {
     });
   });
 
-  it('keeps browser calls relative when already on the tasks origin', () => {
+  it.each([
+    'tasks.tuturuuu.com',
+    'calendar.tuturuuu.com',
+    'calendar.tuturuuu.localhost',
+  ])('keeps task calls same-origin on the planning host %s', (hostname) => {
     vi.stubGlobal('location', {
-      hostname: 'tasks.tuturuuu.com',
-      origin: 'https://tasks.tuturuuu.com',
+      hostname,
+      origin: `https://${hostname}`,
     });
 
     expect(withTaskApiBaseUrl()).toEqual({});

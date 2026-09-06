@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const wsId = url.searchParams.get('wsId');
 
     const authContext = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: { targetApp: 'calendar' },
+      allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
     });
 
     if (!authContext.ok) return authContext.response;
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const authContext = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: { targetApp: 'calendar' },
+      allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
     });
 
     if (!authContext.ok) return authContext.response;

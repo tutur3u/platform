@@ -221,15 +221,15 @@ export function getConfiguredInternalApiBaseUrl() {
   );
 }
 
-function isTasksBrowserRuntime() {
+function isTasksApiProxyBrowserRuntime() {
   const runtimeLocation =
     typeof globalThis === 'object' && 'location' in globalThis
       ? (globalThis.location as { hostname?: string } | undefined)
       : undefined;
 
   const hostname = runtimeLocation?.hostname?.toLowerCase();
-  return (
-    hostname === 'tasks.tuturuuu.com' || hostname === 'tasks.tuturuuu.localhost'
+  return /^(?:tasks|calendar)\.tuturuuu\.(?:com|localhost)$/u.test(
+    hostname ?? ''
   );
 }
 
@@ -266,7 +266,7 @@ export function getConfiguredTasksApiBaseUrl() {
 export function withTaskApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isTasksBrowserRuntime()) {
+  if (options.baseUrl || isTasksApiProxyBrowserRuntime()) {
     return options;
   }
 

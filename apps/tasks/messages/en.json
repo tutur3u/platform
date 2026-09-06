@@ -1432,6 +1432,7 @@
     "calendar_disabled": "Calendar disabled",
     "calendar_enabled": "Calendar enabled",
     "calendar_reset_failed": "Failed to reset calendar data",
+    "calendar_sync_settings_unavailable": "Sync controls will be available after the latest calendar migration is applied.",
     "calendar_sync_settings_updated": "Calendar sync settings updated",
     "calendar_sync_started": "Calendar sync started",
     "calendar_toggle_failed": "Failed to toggle calendar",
@@ -1458,7 +1459,10 @@
       "your_categories": "Your Categories"
     },
     "choose_calendars_to_show": "Choose which calendars to show in this workspace.",
+    "choose_default_calendar": "Choose default calendar",
+    "choose_outbound_calendar": "Choose outbound calendar",
     "coming_soon": "Coming Soon",
+    "conflict_policy": "Conflict policy",
     "connect": "Connect",
     "connect_accounts": "Connect accounts",
     "connect_calendar": "Connect Calendar",
@@ -1479,6 +1483,7 @@
     "default_calendar_source_desc": "New events will be created in this calendar unless you choose another source.",
     "default_calendar_updated": "Default calendar updated",
     "degraded": "Degraded",
+    "deletes": "Deletes",
     "disconnect": "Disconnect",
     "e2ee": {
       "already_enabled": "E2EE is enabled for this workspace",
@@ -1529,7 +1534,12 @@
     "google_auth_failed": "Google authentication failed",
     "google_calendar": "Google Calendar",
     "healthy": "Healthy",
+    "import": "Import",
+    "import_external_changes": "Import external changes",
+    "import_external_changes_desc": "Bring Google and Outlook event changes into Tuturuuu.",
     "last_synced_at": "Last synced {time}",
+    "latest_write_wins": "Latest write wins",
+    "latest_write_wins_desc": "When both sides changed, the most recently written event wins.",
     "loading_calendars": "Loading calendars...",
     "manage_calendar_accounts": "Manage Calendar Accounts",
     "manage_calendar_accounts_desc": "Connect multiple Google and Microsoft accounts to sync calendars from all your accounts.",
@@ -1550,13 +1560,17 @@
     "no_calendars_synced": "No calendars synced yet.",
     "no_google_accounts": "No Google accounts connected yet.",
     "no_microsoft_accounts": "No Microsoft accounts connected yet.",
+    "no_outbound_calendar": "No outbound calendar",
     "outlook": "Outlook",
     "overridden_by_settings": "Overridden by your settings",
     "personal_first_day_override_desc": "You have set your personal first day of week to <bold>{firstDay}</bold>, which overrides this workspace setting. Your effective first day is <bold>{effectiveFirstDay}</bold>. Change it in Appearance & Theme settings.",
     "personal_timezone_override_desc": "You have set your personal timezone to <bold>{timezone}</bold>, which overrides this workspace setting. Your effective timezone is <bold>{effectiveTimezone}</bold>. Change it in Appearance & Theme settings.",
     "please_reconnect": "Please reconnect your Google Calendar",
     "primary": "Primary",
+    "provider_reconnect_description": "The provider session expired. Stored calendars remain available; reconnect to refresh them.",
+    "reconnect": "Reconnect",
     "reconnect_desc": "Your current connection needs additional permissions. Please disconnect and reconnect your Google Calendar.",
+    "reconnect_required": "Reconnect",
     "refresh_connection": "Your Google Calendar connection needs to be refreshed.",
     "refresh_needed": "Refresh needed",
     "removed_calendar": "Removed {name}",
@@ -1564,6 +1578,10 @@
     "reset_calendar_confirm_desc": "This will permanently delete all calendar events, disconnect all linked accounts (Google, Microsoft), and remove custom calendars. System calendars will be preserved but emptied. This action cannot be undone.",
     "reset_calendar_confirm_title": "Reset all calendar data?",
     "reset_calendar_data": "Reset Calendar Data",
+    "send": "Send",
+    "settings_tab_accounts": "Accounts",
+    "settings_tab_calendars": "Calendars",
+    "settings_tab_sync": "Sync",
     "settings_updated_error": "Failed to update workspace calendar settings",
     "settings_updated_success": "Workspace calendar settings updated successfully",
     "sync_completed": "Sync completed",
@@ -1571,6 +1589,8 @@
     "sync_in_progress": "Sync in progress",
     "sync_now": "Sync now",
     "sync_to_google": "To Google",
+    "sync_tuturuuu_events_outward": "Sync Tuturuuu events outward",
+    "sync_tuturuuu_events_outward_desc": "Mirror native Tuturuuu event creates and edits to a connected provider calendar.",
     "synced": "Synced",
     "syncing_calendars": "Syncing calendars...",
     "syncing_to_google": "Syncing to Google...",
@@ -1599,6 +1619,8 @@
     "toggle_failed": "Failed to toggle calendar visibility",
     "tomorrow": "Tomorrow",
     "tuturuuu_calendars": "Tuturuuu Calendars",
+    "two_way_sync": "Two-way sync",
+    "two_way_sync_desc": "Control how Tuturuuu imports provider changes and mirrors native events outward.",
     "unknown_account": "Unknown account",
     "unknown_error": "An unknown error occurred",
     "view": "View",
@@ -1647,12 +1669,187 @@
     "violations": "Violations",
     "visualization": "Visualization"
   },
+  "calendar_settings": {
+    "categories": {
+      "add": "Add",
+      "add_all_missing": "Add All Missing",
+      "browse_suggestions": "Browse suggestions",
+      "category_placeholder": "Category name",
+      "done": "Done",
+      "edit": "Edit",
+      "event_preview": "{name} Event",
+      "failed_to_load": "Failed to load categories",
+      "info_example": "For example, if you have a \"Work\" category with blue color, events with \"work\" or \"meeting\" in the title will be colored blue.",
+      "info_text": "Categories help organize your events by color. The AI will automatically assign colors to events based on their title and these categories.",
+      "new_category_placeholder": "New category name",
+      "no_categories": "No categories yet. Add one to get started.",
+      "remove_category": "Remove {name}",
+      "select_color": "Select a color:",
+      "suggestion_names": {
+        "appointment": "Appointment",
+        "education": "Education",
+        "family": "Family",
+        "health": "Health",
+        "meeting": "Meeting",
+        "other": "Other",
+        "personal": "Personal",
+        "social": "Social",
+        "travel": "Travel",
+        "work": "Work"
+      },
+      "suggestions": "Suggestions",
+      "try_refreshing": "Please try refreshing the page.",
+      "your_categories": "Your Categories"
+    },
+    "colors": {
+      "names": {
+        "blue": "Blue",
+        "cyan": "Cyan",
+        "gray": "Gray",
+        "green": "Green",
+        "indigo": "Indigo",
+        "orange": "Orange",
+        "pink": "Pink",
+        "purple": "Purple",
+        "red": "Red",
+        "yellow": "Yellow"
+      },
+      "select": "Select {color} color"
+    },
+    "days": {
+      "friday": {
+        "full": "Friday",
+        "narrow": "F",
+        "short": "Fri"
+      },
+      "monday": {
+        "full": "Monday",
+        "narrow": "M",
+        "short": "Mon"
+      },
+      "saturday": {
+        "full": "Saturday",
+        "narrow": "S",
+        "short": "Sat"
+      },
+      "sunday": {
+        "full": "Sunday",
+        "narrow": "S",
+        "short": "Sun"
+      },
+      "thursday": {
+        "full": "Thursday",
+        "narrow": "T",
+        "short": "Thu"
+      },
+      "tuesday": {
+        "full": "Tuesday",
+        "narrow": "T",
+        "short": "Tue"
+      },
+      "wednesday": {
+        "full": "Wednesday",
+        "narrow": "W",
+        "short": "Wed"
+      }
+    },
+    "hours": {
+      "all_days": "All days",
+      "day_count": "{count, plural, one {# day} other {# days}}",
+      "info": "Configure your available hours for different activities. These settings help the calendar optimize scheduling and provide better suggestions.",
+      "load_failed": "Failed to load hour settings",
+      "no_days": "No days",
+      "no_hours_provided": "No hours provided",
+      "overview": "Overview",
+      "total_hours": "{hours}h/week",
+      "total_hours_minutes": "{hours}h {minutes}m/week",
+      "try_again": "Try again",
+      "types": {
+        "meeting": {
+          "description": "Define when you are available for meetings. Others can see this when scheduling.",
+          "label": "Meeting Hours",
+          "short_label": "Meeting"
+        },
+        "personal": {
+          "description": "Block off personal time for breaks, exercise, or personal commitments.",
+          "label": "Personal Hours",
+          "short_label": "Personal"
+        },
+        "work": {
+          "description": "Set your regular working hours. This helps with scheduling tasks and managing workload.",
+          "label": "Work Hours",
+          "short_label": "Work"
+        }
+      },
+      "update_failed": "Failed to update settings",
+      "updated": "{type} hours updated"
+    },
+    "overview": {
+      "no_hours_set": "No hours set",
+      "summary": "{total} ({count, plural, one {# day} other {# days}})",
+      "total_hours": "{hours}h/wk",
+      "total_hours_minutes": "{hours}h {minutes}m/wk",
+      "types": {
+        "meeting": "Meeting",
+        "personal": "Personal",
+        "work": "Work"
+      }
+    },
+    "sections": {
+      "colors": {
+        "description": "Customize colors for different event categories",
+        "title": "Category Colors"
+      },
+      "hours": {
+        "description": "Configure your work, meeting, and personal hours",
+        "title": "Hours"
+      },
+      "preferences": {
+        "description": "Set workspace-level calendar preferences",
+        "title": "Timezone & First Day of Week"
+      }
+    },
+    "time_range": {
+      "add_block": "Add Time Block",
+      "add_block_tooltip": "Add a new time block",
+      "auto_corrected_end": "{message}. End time was corrected automatically.",
+      "auto_corrected_start": "{message}. Start time was corrected automatically.",
+      "cancel": "Cancel",
+      "click_to_enable": "(Click to enable)",
+      "confirm_copy_all": "Yes, copy to all days",
+      "copy_all": "Copy to all days",
+      "copy_all_description": "This will overwrite the hours for all days with the current day's settings. Are you sure you want to continue?",
+      "copy_all_title": "Copy to all days?",
+      "disabled_day": "This day is disabled. Toggle the switch above to set availability.",
+      "end": "End",
+      "end_after_start": "End time must be after start time",
+      "end_too_late": "End time cannot be after 11:59 PM",
+      "invalid": "Invalid time range",
+      "maximum_blocks": "Maximum blocks reached",
+      "minimum_duration": "Time block must be at least 30 minutes",
+      "new_block_overlaps": "New block overlaps with previous block",
+      "no_time_left": "No time left in the day for a 30-minute block",
+      "not_enough_time": "Not enough time left in the day for a 30-minute block",
+      "overlaps_next": "End time overlaps with next block",
+      "overlaps_previous": "Start time overlaps with previous block",
+      "remove_block": "Remove time block",
+      "start": "Start",
+      "start_too_early": "Start time cannot be before 12:00 AM"
+    }
+  },
   "calendar-sidebar": {
     "collapse": "Collapse sidebar",
     "due": "Due",
     "expand": "Expand sidebar",
     "habits-tab": "Habits",
+    "manage_calendars": "Manage calendars",
+    "manage_calendars_description": "Connect accounts, create calendars, and choose synchronization preferences.",
+    "month_calendar": "Month calendar",
+    "next_month": "Next month",
+    "no_calendars": "No calendars yet",
+    "no_calendars_description": "Open calendar settings to connect an account or create a calendar.",
     "no-tasks": "No tasks assigned",
+    "previous_month": "Previous month",
     "priority-critical": "Critical Priority",
     "priority-high": "High Priority",
     "priority-low": "Low Priority",
@@ -1660,8 +1857,13 @@
     "ready": "Ready",
     "schedule-tab": "Schedule",
     "search-tasks": "Search tasks...",
+    "sync_calendars": "Sync calendars",
     "tasks-tab": "Tasks",
-    "untitled-task": "Untitled task"
+    "today": "Today",
+    "tuturuuu_calendars": "Tuturuuu calendars",
+    "untitled-task": "Untitled task",
+    "visible_calendars": "Visible calendars",
+    "visible_calendars_description": "{count, plural, =0 {None selected} =1 {1 selected} other {# selected}}"
   },
   "calendar-tabs": {
     "calendar": "Calendar",
@@ -8045,7 +8247,8 @@
       "fetch_error": "Failed to fetch task estimate boards",
       "update_error": "Failed to update estimation type",
       "update_success": "Estimation type updated successfully"
-    }
+    },
+    "unnamed_board": "Untitled Board"
   },
   "task-progress": {
     "actions": {

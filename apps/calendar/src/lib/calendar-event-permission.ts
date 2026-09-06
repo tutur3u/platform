@@ -21,7 +21,7 @@ export async function authorizeCalendarEventManagement(
   rawWsId: string
 ): Promise<CalendarEventManagementAccess> {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
   if (!auth.ok) return { error: auth.response } as const;
 

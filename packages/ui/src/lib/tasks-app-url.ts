@@ -81,5 +81,13 @@ export function getTasksAppUrl(path: string) {
 }
 
 export function getTaskApiUrl(path: string) {
+  if (
+    typeof window !== 'undefined' &&
+    ['calendar.tuturuuu.com', 'calendar.tuturuuu.localhost'].includes(
+      window.location.hostname.toLowerCase()
+    )
+  ) {
+    return path.startsWith('/') ? path : `/${path}`;
+  }
   return getTasksAppUrl(path);
 }

@@ -57,7 +57,7 @@ const updateConnectionSchema = z
 
 async function resolveCalendarConnectionAuth(request: Request) {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   if (!auth.ok) {

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   console.log('🔵 [API] POST /api/v1/calendar/auth/sync-to-google called');
 
   const authContext = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'calendar' },
+    allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
   });
 
   console.log('🔵 [API] Auth check:', {

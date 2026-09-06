@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     const { wsId: id } = result.data;
     const authContext = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: { targetApp: 'calendar' },
+      allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
     });
 
     if (!authContext.ok) return authContext.response;

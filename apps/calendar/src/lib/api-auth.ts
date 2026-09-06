@@ -234,8 +234,8 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   },
   {
     pattern:
-      /^\/api\/v1\/workspaces\/[^/]+\/(?:calendar|calendar-hours|calendar-settings|encryption)(?:\/|$)/u,
-    targetApp: 'calendar',
+      /^\/api\/(?:[^/]+\/calendar(?:\/|$)|v1\/(?:mira\/calendar|calendar|workspaces\/[^/]+\/(?:calendar|calendars|calendar-hours|calendar-settings|encryption))(?:\/|$))/u,
+    targetApp: ['calendar', 'tasks'],
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/chat(?:\/|$)/u,
@@ -628,12 +628,9 @@ export function withSessionAuth<T = unknown>(
   options?: SessionAuthOptions
 ): (
   request: NextRequest,
-  routeContext?: { params?: Promise<T> | T }
+  routeContext: { params: Promise<T> }
 ) => Promise<NextResponse> {
-  return async (
-    request: NextRequest,
-    routeContext?: { params?: Promise<T> | T }
-  ) => {
+  return async (request: NextRequest, routeContext: { params: Promise<T> }) => {
     const url = new URL(request.url);
     const endpoint = url.pathname;
     const isRead =

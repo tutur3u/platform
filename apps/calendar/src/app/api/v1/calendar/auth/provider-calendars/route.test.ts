@@ -89,7 +89,7 @@ describe('calendar provider calendars route', () => {
     expect(resolveSessionAuthContextMock).toHaveBeenCalledWith(
       expect.any(Request),
       {
-        allowAppSessionAuth: { targetApp: 'calendar' },
+        allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] },
       }
     );
     expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith('personal', supabase);
