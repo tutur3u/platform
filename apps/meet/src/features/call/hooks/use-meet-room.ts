@@ -141,16 +141,8 @@ export function useMeetRoom({
 
     const signaling = new MeetSignaling({
       onMessage: (message) => {
-        if (message.type === 'presence') {
-          const present = new Set(
-            message.presence.map((entry) => entry.userId)
-          );
-          setRemoteMedia((current) =>
-            Object.fromEntries(
-              Object.entries(current).filter(([id]) => present.has(id))
-            )
-          );
-        }
+        // Presence expiry can be transient; retain subscribed tracks until
+        // removal or track end so the next heartbeat restores playback.
         if (message.type === 'participant.removed') {
           setRemoteMedia((current) => {
             const next = { ...current };
@@ -284,6 +276,24 @@ export function useMeetRoom({
         ...current,
         [owner.userId]: { ...current[owner.userId], [owner.kind]: event.track },
       }));
+      event.track.addEventListener(
+        'ended',
+        () => {
+          setRemoteMedia((current) => {
+            if (current[owner.userId]?.[owner.kind] !== event.track)
+              return current;
+            const next = {
+              ...current,
+              [owner.userId]: { ...current[owner.userId] },
+            };
+            delete next[owner.userId]![owner.kind];
+            if (!Object.keys(next[owner.userId]!).length)
+              delete next[owner.userId];
+            return next;
+          });
+        },
+        { once: true }
+      );
     });
 
     const result = await signalingRef.current?.request<SfuSessionResponse>({

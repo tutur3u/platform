@@ -44,6 +44,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MeetingEntry } from '@/features/call/components/meeting-entry';
+import { normalizeMeetingTime } from '@/features/call/lib/meeting-time';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
 
 interface Meeting {
@@ -136,7 +137,10 @@ export function MeetingsContent({
       time = new Date().toISOString();
     }
     try {
-      await createWorkspaceMeeting(wsId, { name, time });
+      await createWorkspaceMeeting(wsId, {
+        name,
+        time: normalizeMeetingTime(time),
+      });
       setDialogOpen(false);
       setCreating(false);
       setFormError(null);
@@ -165,7 +169,10 @@ export function MeetingsContent({
       time = new Date().toISOString();
     }
     try {
-      await updateWorkspaceMeeting(wsId, editingMeeting.id, { name, time });
+      await updateWorkspaceMeeting(wsId, editingMeeting.id, {
+        name,
+        time: normalizeMeetingTime(time),
+      });
       setEditDialogOpen(false);
       setEditing(false);
       setEditFormError(null);

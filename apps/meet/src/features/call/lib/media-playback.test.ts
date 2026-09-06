@@ -32,7 +32,7 @@ describe('media playback recovery', () => {
     expect(play).toHaveBeenCalledTimes(2);
   });
 
-  it('does not report stale playback rejection after stream replacement', async () => {
+  it('does not report stale playback rejection after cleanup', async () => {
     const { element, play, stream } = fixture();
     play.mockRejectedValueOnce(
       new DOMException('Requires activation', 'NotAllowedError')
@@ -41,13 +41,15 @@ describe('media playback recovery', () => {
     const cleanup = attachMediaPlayback(element, stream, onBlocked);
     cleanup();
     await Promise.resolve();
-    expect(onBlocked).not.toHaveBeenCalled();
+    expect(onBlocked.mock.calls).toEqual([[false]]);
   });
 
   it('clears a removed stream without attempting playback', () => {
     const { element, play, stream } = fixture();
     element.srcObject = stream;
-    const cleanup = attachMediaPlayback(element, null, vi.fn());
+    const onBlocked = vi.fn();
+    const cleanup = attachMediaPlayback(element, null, onBlocked);
+    expect(onBlocked).toHaveBeenCalledWith(false);
     expect(element.srcObject).toBeNull();
     expect(play).not.toHaveBeenCalled();
     cleanup();

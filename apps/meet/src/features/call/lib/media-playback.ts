@@ -5,6 +5,7 @@ export function attachMediaPlayback(
   onBlocked: (blocked: boolean) => void
 ) {
   let active = true;
+  onBlocked(false);
   if (element.srcObject !== stream) element.srcObject = stream;
   const play = () => {
     if (!stream) return;
