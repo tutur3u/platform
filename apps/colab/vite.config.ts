@@ -20,6 +20,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      '@tuturuuu/supabase/next/realtime-browser': new URL(
+        '../../packages/supabase/src/next/realtime-browser.ts',
+        import.meta.url
+      ).pathname,
       '@tuturuuu/internal-api': new URL(
         '../../packages/internal-api/src',
         import.meta.url

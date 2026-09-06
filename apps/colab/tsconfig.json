@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
     "paths": {
+      "@tuturuuu/supabase/next/realtime-browser": [
+        "../../packages/supabase/src/next/realtime-browser.ts"
+      ],
       "@tuturuuu/internal-api": ["../../packages/internal-api/src/index.ts"],
       "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"],
       "@tuturuuu/types": ["../../packages/types/src/index.ts"],
