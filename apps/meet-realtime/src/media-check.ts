@@ -91,6 +91,7 @@ const PAGE = /* html */ `<!doctype html>
 `;
 
 const room = createMeetRealtimeServer({ port: ROOM_PORT });
+// Rebuild on each reload so the harness exercises current controller edits.
 await buildClientBundle();
 
 const page = Bun.serve({

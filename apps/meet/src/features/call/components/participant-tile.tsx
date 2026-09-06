@@ -3,7 +3,8 @@
 import { Hand, MicOff, MonitorUp, Pin } from '@tuturuuu/icons';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { cn } from '@tuturuuu/utils/format';
-import { memo, useEffect, useRef } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import { attachMediaPlayback } from '../lib/media-playback';
 
 function initials(displayName: string) {
   return displayName
@@ -15,6 +16,7 @@ function initials(displayName: string) {
 
 function ParticipantTileImpl({
   className,
+  resumePlaybackLabel,
   handRaised,
   isSelf,
   isSpeaking,
@@ -22,12 +24,14 @@ function ParticipantTileImpl({
   stream,
 }: {
   className?: string;
+  resumePlaybackLabel: string;
   handRaised?: boolean;
   isSelf?: boolean;
   isSpeaking?: boolean;
   participant: MeetRealtimePresence;
   stream?: MediaStream | null;
 }) {
+  const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const showVideo = Boolean(
     stream &&
@@ -37,7 +41,7 @@ function ParticipantTileImpl({
   useEffect(() => {
     const element = videoRef.current;
     if (!element) return;
-    if (element.srcObject !== stream) element.srcObject = stream ?? null;
+    return attachMediaPlayback(element, stream ?? null, setPlaybackBlocked);
   }, [stream]);
 
   return (
@@ -62,6 +66,20 @@ function ParticipantTileImpl({
         playsInline
         ref={videoRef}
       />
+      {playbackBlocked && !isSelf && (
+        <button
+          type="button"
+          className="absolute inset-x-3 top-3 z-10 rounded-md bg-background px-3 py-2 text-foreground text-sm shadow"
+          onClick={() => {
+            void videoRef.current
+              ?.play()
+              .then(() => setPlaybackBlocked(false))
+              .catch(() => undefined);
+          }}
+        >
+          {resumePlaybackLabel}
+        </button>
+      )}
       {!showVideo && (
         <div className="grid size-full place-items-center">
           <div className="grid size-16 place-items-center rounded-full bg-foreground/10 font-medium text-lg">
@@ -124,5 +142,6 @@ export const ParticipantTile = memo(
     previous.isSelf === next.isSelf &&
     previous.isSpeaking === next.isSpeaking &&
     previous.stream === next.stream &&
-    previous.className === next.className
+    previous.className === next.className &&
+    previous.resumePlaybackLabel === next.resumePlaybackLabel
 );

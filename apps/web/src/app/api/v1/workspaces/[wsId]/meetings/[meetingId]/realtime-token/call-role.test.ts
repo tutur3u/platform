@@ -78,3 +78,19 @@ describe('call token refresh', () => {
     expect(mocks.sign).not.toHaveBeenCalled();
   });
 });
+
+describe('call token input validation', () => {
+  it.each(['{', 'null', '[]', '{"mode":"invalid"}', '{"role":"admin"}'])(
+    'rejects invalid body %s without minting',
+    async (body) => {
+      const response = await POST(
+        new Request('https://example.test', { method: 'POST', body }),
+        {
+          params: Promise.resolve({ meetingId: 'meeting', wsId: 'workspace' }),
+        }
+      );
+      expect(response.status).toBe(400);
+      expect(mocks.sign).not.toHaveBeenCalled();
+    }
+  );
+});

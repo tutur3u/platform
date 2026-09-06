@@ -3795,6 +3795,7 @@
       "reconnecting": "Đang kết nối lại…",
       "recording": "Đang ghi",
       "remove_participant": "Xóa khỏi cuộc gọi",
+      "resume_audio": "Phát âm thanh cuộc họp",
       "send": "Gửi",
       "share_screen": "Chia sẻ màn hình",
       "signaling_unreachable": "Không kết nối được máy chủ cuộc họp. Có thể máy chủ chưa chạy, hoặc NEXT_PUBLIC_MEET_REALTIME_URL chưa được đặt.",

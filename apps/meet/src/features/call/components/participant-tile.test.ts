@@ -9,10 +9,13 @@ const participant = {
   displayName: 'Peer',
   media: { audioEnabled: true, videoEnabled: false, screenEnabled: false },
 } as MeetRealtimePresence;
-describe('participant media playback', () => {
-  it('retains an unmuted playback element for audio-only participants', () => {
+describe('participant media markup', () => {
+  it('renders an unmuted video element when the remote camera is off', () => {
     const html = renderToStaticMarkup(
-      createElement(ParticipantTile, { participant })
+      createElement(ParticipantTile, {
+        participant,
+        resumePlaybackLabel: 'Play audio',
+      })
     );
     expect(html).toContain('<video');
     expect(html).not.toContain('muted=""');
@@ -21,13 +24,18 @@ describe('participant media playback', () => {
   it('mutes the local preview to prevent feedback', () => {
     expect(
       renderToStaticMarkup(
-        createElement(ParticipantTile, { participant, isSelf: true })
+        createElement(ParticipantTile, {
+          participant,
+          isSelf: true,
+          resumePlaybackLabel: 'Play audio',
+        })
       )
     ).toContain('muted=""');
   });
   it('fits shared screens without cropping them', () => {
     const html = renderToStaticMarkup(
       createElement(ParticipantTile, {
+        resumePlaybackLabel: 'Play audio',
         participant: {
           ...participant,
           media: { ...participant.media, screenEnabled: true },

@@ -3795,6 +3795,7 @@
       "reconnecting": "Reconnecting…",
       "recording": "Recording",
       "remove_participant": "Remove from call",
+      "resume_audio": "Play meeting audio",
       "send": "Send",
       "share_screen": "Share screen",
       "signaling_unreachable": "Can't reach the meeting server. It may not be running, or NEXT_PUBLIC_MEET_REALTIME_URL may be unset.",

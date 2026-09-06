@@ -3,10 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
+  identity: vi.fn(),
   normalize: vi.fn(),
   membership: vi.fn(),
   from: vi.fn(),
   insert: vi.fn(),
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: { admin: { getUserById: mocks.identity } },
+  }),
 }));
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -32,6 +38,12 @@ function request() {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.identity.mockResolvedValue({
+    data: {
+      user: { email: 'host@tuturuuu.com', email_confirmed_at: '2026-01-01' },
+    },
+    error: null,
+  });
   mocks.normalize.mockResolvedValue('workspace-id');
   mocks.membership.mockResolvedValue({ ok: true });
   mocks.from.mockReturnValue({ insert: mocks.insert });
@@ -87,6 +99,57 @@ describe('meeting creation authorization', () => {
       response: new Response(null, { status: 401 }),
     });
     expect((await POST(request(), params)).status).toBe(401);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe('meeting creation input validation', () => {
+  it.each([
+    '{',
+    'null',
+    '[]',
+    '{"name":123,"time":"bad"}',
+    '{"name":"Meeting","time":"bad"}',
+  ])('rejects invalid body %s without inserting', async (body) => {
+    mocks.auth.mockResolvedValue({
+      ok: true,
+      user: { id: 'actor', email: 'host@tuturuuu.com' },
+      supabase: { from: mocks.from },
+    });
+    const response = await POST(
+      new NextRequest('https://example.test', { method: 'POST', body }),
+      params
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe('authoritative creator identity', () => {
+  it.each([
+    { email: 'external@example.test', email_confirmed_at: '2026-01-01' },
+    { email: 'host@tuturuuu.com', email_confirmed_at: null },
+  ])('rejects a forged or unconfirmed company session claim', async (user) => {
+    mocks.auth.mockResolvedValue({
+      ok: true,
+      user: { id: 'actor', email: 'host@tuturuuu.com' },
+      supabase: { from: mocks.from },
+    });
+    mocks.identity.mockResolvedValue({ data: { user }, error: null });
+    expect((await POST(request(), params)).status).toBe(403);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+  it('fails closed when current identity cannot be verified', async () => {
+    mocks.auth.mockResolvedValue({
+      ok: true,
+      user: { id: 'actor', email: 'host@tuturuuu.com' },
+      supabase: { from: mocks.from },
+    });
+    mocks.identity.mockResolvedValue({
+      data: { user: null },
+      error: new Error('Unavailable'),
+    });
+    expect((await POST(request(), params)).status).toBe(503);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 });

@@ -142,6 +142,7 @@ export function CallShell({
           {isSpotlight && focused ? (
             <div className="flex h-full flex-col gap-3">
               <ParticipantTile
+                resumePlaybackLabel={t('resume_audio')}
                 className="min-h-0 flex-1"
                 handRaised={isHandRaised(state, focused.userId)}
                 isSelf={focused.userId === state.selfUserId}
@@ -157,6 +158,7 @@ export function CallShell({
                   .filter((entry) => entry.userId !== focused.userId)
                   .map((entry) => (
                     <ParticipantTile
+                      resumePlaybackLabel={t('resume_audio')}
                       className="aspect-video w-40 shrink-0"
                       handRaised={isHandRaised(state, entry.userId)}
                       isSelf={entry.userId === state.selfUserId}
@@ -180,6 +182,7 @@ export function CallShell({
             >
               {tiles.map((entry) => (
                 <ParticipantTile
+                  resumePlaybackLabel={t('resume_audio')}
                   handRaised={isHandRaised(state, entry.userId)}
                   isSelf={entry.userId === state.selfUserId}
                   key={entry.userId}

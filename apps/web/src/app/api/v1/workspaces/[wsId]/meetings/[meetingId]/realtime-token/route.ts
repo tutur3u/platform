@@ -64,7 +64,7 @@ async function parseRequestBody(request: Request) {
   try {
     return await request.json();
   } catch {
-    return {};
+    return null;
   }
 }
 
@@ -79,7 +79,14 @@ export async function POST(request: Request, { params }: Params) {
       return auth.response;
     }
 
-    const body = requestSchema.parse(await parseRequestBody(request));
+    const parsed = requestSchema.safeParse(await parseRequestBody(request));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
     const wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
     const membership = await verifyWorkspaceMembershipType({
       supabase: auth.supabase,

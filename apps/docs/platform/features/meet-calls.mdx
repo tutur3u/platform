@@ -251,3 +251,14 @@ create application database records. This proves the media path through the
 real SFU, but does not certify production authentication, OS device permissions,
 physical devices, or restrictive corporate networks. Those require additional
 checks on the canonical deployed app.
+
+The restrictive insert policy protects authenticated direct database writes.
+Satellite app-session requests use a service-role client, so their creation gate
+is the API check against the current confirmed email fetched from Supabase Auth; service-role
+requests bypass RLS. Neither path trusts handoff or user-editable profile metadata for the
+creation domain. The policy is not an additional RLS layer on service-role inserts.
+
+If a browser blocks remote autoplay, use **Play meeting audio**. Any keyboard or
+pointer interaction also retries playback. The controller harness deliberately
+rebuilds its client bundle on each reload so ongoing controller edits are exercised
+without restarting its signaling room.

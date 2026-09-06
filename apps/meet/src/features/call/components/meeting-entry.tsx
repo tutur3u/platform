@@ -7,7 +7,8 @@ import { Label } from '@tuturuuu/ui/label';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { decodeRoomCode, encodeRoomCode } from '../lib/room-code';
+import { parseMeetingCode } from '../lib/meeting-code-input';
+import { encodeRoomCode } from '../lib/room-code';
 
 export function MeetingEntry({
   canCreate,
@@ -49,23 +50,7 @@ export function MeetingEntry({
           onSubmit={(event) => {
             event.preventDefault();
             setError(null);
-            let input = code.trim();
-            try {
-              const url = new URL(input);
-              const segments = url.pathname.split('/').filter(Boolean);
-              if (
-                url.origin !== window.location.origin ||
-                segments.at(-2) !== 'r'
-              )
-                throw new Error('invalid_link');
-              input = segments.at(-1) ?? '';
-            } catch {
-              if (input.includes('://')) {
-                setError(t('invalid_code'));
-                return;
-              }
-            }
-            const meetingId = decodeRoomCode(input);
+            const meetingId = parseMeetingCode(code, window.location.origin);
             if (!meetingId) {
               setError(t('invalid_code'));
               return;

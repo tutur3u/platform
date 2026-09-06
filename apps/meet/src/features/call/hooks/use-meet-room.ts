@@ -22,6 +22,10 @@ import {
   planRemoteSubscriptions,
   userIdFromTrackName,
 } from '../lib/negotiation';
+import {
+  createRemoteStreamCache,
+  type RemoteMedia,
+} from '../lib/remote-streams';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
 
 type SfuSessionResponse = { sessionId?: string };
@@ -81,9 +85,7 @@ export function useMeetRoom({
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
-  const [remoteMedia, setRemoteMedia] = useState<
-    Record<string, Partial<Record<MeetRealtimeTrackKind, MediaStreamTrack>>>
-  >({});
+  const [remoteMedia, setRemoteMedia] = useState<RemoteMedia>({});
   const [connectionGeneration, setConnectionGeneration] = useState(0);
   const publishQueue = useRef(Promise.resolve());
   const subscribeQueue = useRef(Promise.resolve());
@@ -139,6 +141,23 @@ export function useMeetRoom({
 
     const signaling = new MeetSignaling({
       onMessage: (message) => {
+        if (message.type === 'presence') {
+          const present = new Set(
+            message.presence.map((entry) => entry.userId)
+          );
+          setRemoteMedia((current) =>
+            Object.fromEntries(
+              Object.entries(current).filter(([id]) => present.has(id))
+            )
+          );
+        }
+        if (message.type === 'participant.removed') {
+          setRemoteMedia((current) => {
+            const next = { ...current };
+            delete next[message.userId];
+            return next;
+          });
+        }
         if (
           message.type === 'participant.muted' &&
           message.userId === stateRef.current.selfUserId
@@ -241,6 +260,7 @@ export function useMeetRoom({
     });
     if (!result?.sessionId) throw new Error('sfu_session_failed');
 
+    if (publishPcRef.current !== pc) throw new Error('sfu_session_replaced');
     publishSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
   }, []);
@@ -271,6 +291,7 @@ export function useMeetRoom({
     });
     if (!result?.sessionId) throw new Error('sfu_session_failed');
 
+    if (subscribePcRef.current !== pc) throw new Error('sfu_session_replaced');
     subscribeSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
   }, []);
@@ -413,14 +434,18 @@ export function useMeetRoom({
       }
       if (answer?.sessionDescription) {
         await pc.setRemoteDescription(answer.sessionDescription);
+        if (subscribePcRef.current !== pc) return;
         const localAnswer = await pc.createAnswer();
+        if (subscribePcRef.current !== pc) return;
         await pc.setLocalDescription(localAnswer);
+        if (subscribePcRef.current !== pc) return;
         await signalingRef.current?.request({
           sessionDescription: { sdp: localAnswer.sdp ?? '', type: 'answer' },
           sessionId,
           type: 'sfu.renegotiate',
         });
       }
+      if (subscribePcRef.current !== pc) return;
       for (const track of answer?.tracks ?? []) {
         if (!track.mid) continue;
         const roomTrack = Object.values(stateRef.current.remoteTracks).find(
@@ -453,6 +478,12 @@ export function useMeetRoom({
     return () => {
       active = false;
       clearInterval(retry);
+      if (stateRef.current.admission !== 'admitted') {
+        subscribePcRef.current?.close();
+        subscribePcRef.current = null;
+        subscribeSessionRef.current = null;
+        subscribedRef.current.clear();
+      }
     };
   }, [ensureSubscribeSession, state.admission]);
 
@@ -524,9 +555,16 @@ export function useMeetRoom({
       return;
     }
 
-    const display = await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-    });
+    const display = await navigator.mediaDevices
+      .getDisplayMedia({
+        video: true,
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'NotAllowedError')
+          return null;
+        throw error;
+      });
+    if (!display) return;
     screenStreamRef.current = display;
     setScreenStream(display);
     // Ending the share from the browser's own bar must update the room too.
@@ -550,23 +588,10 @@ export function useMeetRoom({
     .map((entry) => entry.userId)
     .sort()
     .join(',');
+  const buildRemoteStreams = useMemo(() => createRemoteStreamCache(), []);
   const remoteStreams = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(remoteMedia).map(([userId, tracks]) => {
-          const sharing = sharingUsers.split(',').includes(userId);
-          const video = sharing ? tracks.screen : tracks.video;
-          return [
-            userId,
-            new MediaStream(
-              [tracks.audio, video].filter((track): track is MediaStreamTrack =>
-                Boolean(track)
-              )
-            ),
-          ];
-        })
-      ),
-    [remoteMedia, sharingUsers]
+    () => buildRemoteStreams(remoteMedia, sharingUsers),
+    [buildRemoteStreams, remoteMedia, sharingUsers]
   );
 
   const sendChat = useCallback((body: string) => {

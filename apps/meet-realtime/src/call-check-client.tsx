@@ -30,7 +30,12 @@ window.WebSocket = class extends NativeWebSocket {
   }
 };
 let sharedStream: MediaStream | null = null;
-const contexts: AudioContext[] = [];
+const contexts = new Set<AudioContext>();
+document.addEventListener('pointerdown', () => {
+  for (const context of contexts) {
+    if (context.state === 'suspended') void context.resume();
+  }
+});
 function camera(screen = false) {
   const canvas = document.createElement('canvas');
   canvas.width = 640;
@@ -52,9 +57,12 @@ function camera(screen = false) {
     );
   }, 100);
   const stream = canvas.captureStream(10);
-  stream
-    .getVideoTracks()[0]
-    ?.addEventListener('ended', () => clearInterval(timer));
+  const track = stream.getVideoTracks()[0]!;
+  const stop = track.stop.bind(track);
+  track.stop = () => {
+    clearInterval(timer);
+    stop();
+  };
   return stream;
 }
 navigator.mediaDevices.getUserMedia = async (constraints) => {
@@ -62,14 +70,22 @@ navigator.mediaDevices.getUserMedia = async (constraints) => {
   if (constraints?.video) tracks.push(...camera().getTracks());
   if (constraints?.audio) {
     const context = new AudioContext();
-    contexts.push(context);
+    contexts.add(context);
     await context.resume();
     const oscillator = context.createOscillator();
     oscillator.frequency.value = peer === 'a' ? 440 : 660;
     const output = context.createMediaStreamDestination();
     oscillator.connect(output);
     oscillator.start();
-    tracks.push(...output.stream.getTracks());
+    const track = output.stream.getAudioTracks()[0]!;
+    const stop = track.stop.bind(track);
+    track.stop = () => {
+      stop();
+      oscillator.stop();
+      contexts.delete(context);
+      void context.close();
+    };
+    tracks.push(track);
   }
   return new MediaStream(tracks);
 };
@@ -129,6 +145,7 @@ function CallCheck() {
       if (!stream.getAudioTracks().length) continue;
       const context = new AudioContext();
       audioContexts.push(context);
+      contexts.add(context);
       void context.resume();
       const analyser = context.createAnalyser();
       context.createMediaStreamSource(stream).connect(analyser);
@@ -145,7 +162,10 @@ function CallCheck() {
     }
     return () => {
       for (const timer of timers) clearInterval(timer);
-      for (const context of audioContexts) void context.close();
+      for (const context of audioContexts) {
+        contexts.delete(context);
+        void context.close();
+      }
     };
   }, [room.remoteStreams]);
   const run = (action: () => Promise<void>) => {
@@ -160,6 +180,25 @@ function CallCheck() {
         {';'}
         role: {room.state.role}
       </p>
+      <button
+        type="button"
+        onClick={() =>
+          run(async () => {
+            await Promise.all(
+              [...contexts]
+                .filter((context) => context.state !== 'closed')
+                .map((context) => context.resume())
+            );
+            await Promise.all(
+              [...document.querySelectorAll('section video')].map((element) =>
+                (element as HTMLVideoElement).play()
+              )
+            );
+          })
+        }
+      >
+        Start playback measurement
+      </button>
       <button type="button" onClick={() => run(room.toggleMicrophone)}>
         Toggle microphone
       </button>
@@ -224,6 +263,7 @@ function CallCheck() {
               energy: {energy[entry.userId]?.toFixed(2) ?? 'pending'}
             </p>
             <ParticipantTile
+              resumePlaybackLabel="Play meeting audio"
               participant={entry}
               stream={room.remoteStreams[entry.userId]}
             />

@@ -1,9 +1,11 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 export async function GET(
@@ -152,6 +154,29 @@ export async function POST(
       );
     }
 
+    // Handoff session metadata is not an authority for the creator domain.
+    const admin = await createAdminClient({ noCookie: true });
+    const { data: identity, error: identityError } =
+      await admin.auth.admin.getUserById(user.id);
+    if (identityError) {
+      return NextResponse.json(
+        { error: 'Failed to verify creator account' },
+        { status: 503 }
+      );
+    }
+    if (
+      !identity.user?.email_confirmed_at ||
+      !canCreateOnlineMeeting(identity.user.email)
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Only verified Tuturuuu accounts can create meetings',
+          code: 'MEET_CREATION_RESTRICTED',
+        },
+        { status: 403 }
+      );
+    }
+
     // Also guards the insert below: 'personal' is not a valid ws_id value.
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
@@ -175,15 +200,19 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-    const { name, time } = body;
-
-    if (!name || !time) {
+    const parsed = z
+      .object({
+        name: z.string().trim().min(1),
+        time: z.iso.datetime({ offset: true }),
+      })
+      .safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Name and time are required' },
+        { error: 'Invalid meeting name or time' },
         { status: 400 }
       );
     }
+    const { name, time } = parsed.data;
 
     // Create new meeting
     const { data: meeting, error } = await supabase
