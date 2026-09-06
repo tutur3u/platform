@@ -7,7 +7,12 @@ import type {
   UpdateMailOrganizationPayload,
 } from '../types';
 import { requireMailboxAccess } from './bootstrap';
-import { type AnyRecord, privateTable, toLabel } from './shared';
+import {
+  type AnyRecord,
+  mailMessageTable,
+  privateTable,
+  toLabel,
+} from './shared';
 
 function slugify(value: string) {
   return value
@@ -286,9 +291,9 @@ export async function bulkUpdateMail({
   );
   if (!access) return null;
 
-  const { data: messages, error: messageError } = await privateTable(
-    access.admin,
-    'mail_messages'
+  const { data: messages, error: messageError } = await mailMessageTable(
+    access,
+    ctx
   )
     .select('id')
     .eq('mailbox_id', mailboxId)

@@ -1,4 +1,5 @@
 import type { MailMailbox } from '@tuturuuu/internal-api';
+import { canSendAsGroup } from '@/lib/mail/groups/policy';
 import type { ComposeInitialDraft } from './mail-composer-types';
 
 export type ComposerWarning =
@@ -15,8 +16,12 @@ export function getComposerCloseAction(
 }
 
 export function getSendableMailboxes(mailboxes: MailMailbox[]) {
-  return mailboxes.filter((mailbox) =>
-    ['admin', 'owner', 'sender'].includes(mailbox.role)
+  return mailboxes.filter(
+    (mailbox) =>
+      mailbox.status === 'active' &&
+      (mailbox.groupPolicy
+        ? canSendAsGroup(mailbox.groupPolicy, mailbox.role)
+        : ['admin', 'owner', 'sender'].includes(mailbox.role))
   );
 }
 

@@ -1,3 +1,4 @@
+import { mailGroupPolicySchema, readGroupPolicy } from '../groups/policy';
 import type {
   MailMailboxSettings,
   MailRouteContext,
@@ -8,6 +9,7 @@ import { privateTable } from './shared';
 
 function toSettings(row: Record<string, any>): MailMailboxSettings {
   return {
+    groupPolicy: row.groupPolicy ?? readGroupPolicy(row.metadata),
     aiInstructions: row.aiInstructions ?? row.ai_instructions ?? '',
     autoDraftEnabled: Boolean(row.autoDraftEnabled ?? row.auto_draft_enabled),
     outboundProviderOverride:
@@ -42,7 +44,29 @@ export async function updateMailboxSettings({
   const access = await requireMailboxAccess(ctx, mailboxId, ['owner', 'admin']);
   if (!access) return null;
 
+  let groupMetadata: Record<string, unknown> | undefined;
+  if (payload.groupPolicy !== undefined) {
+    if (access.mailbox.type !== 'shared')
+      throw new Error('Groups require a shared address');
+    if (payload.groupPolicy === null && access.mailbox.groupPolicy) {
+      throw new Error(
+        'Distribution groups cannot be converted to shared archives'
+      );
+    }
+    if (payload.groupPolicy && !access.mailbox.groupPolicy) {
+      throw new Error(
+        'Distribution mode must be provisioned on a new group address'
+      );
+    }
+    groupMetadata = {
+      ...access.metadata,
+      mail_group: payload.groupPolicy
+        ? mailGroupPolicySchema.parse(payload.groupPolicy)
+        : undefined,
+    };
+  }
   const patch = {
+    ...(groupMetadata ? { metadata: groupMetadata } : {}),
     ...(payload.aiInstructions !== undefined
       ? { ai_instructions: payload.aiInstructions }
       : {}),

@@ -6,7 +6,12 @@ import { createSnippet, sanitizeMailHtml, textToHtml } from '../html';
 import type { MailMailbox, MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { getMailMessage } from './messages';
-import { type AnyRecord, normalizeAddress, privateTable } from './shared';
+import {
+  type AnyRecord,
+  mailMessageTable,
+  normalizeAddress,
+  privateTable,
+} from './shared';
 
 function getRecipientRows(messageId: string, payload: CreateMailDraftPayload) {
   const displayNames = new Map(
@@ -57,7 +62,8 @@ async function replaceRecipients(
 async function ensureThread(
   admin: AnyRecord,
   mailboxId: string,
-  payload: CreateMailDraftPayload
+  payload: CreateMailDraftPayload,
+  privateUserId?: string
 ) {
   const normalizedSubject = payload.subject
     .replace(/^(re|fw|fwd):\s*/giu, '')
@@ -68,11 +74,10 @@ async function ensureThread(
     ...(payload.references ?? []).slice().reverse(),
   ].filter((value): value is string => Boolean(value));
   if (authoritativeIds.length > 0) {
-    const { data: parent, error: parentError } = await privateTable(
-      admin,
-      'mail_messages'
-    )
-      .select('thread_id')
+    let parentQuery = privateTable(admin, 'mail_messages').select('thread_id');
+    if (privateUserId)
+      parentQuery = parentQuery.eq('created_by', privateUserId);
+    const { data: parent, error: parentError } = await parentQuery
       .eq('mailbox_id', mailboxId)
       .in('internet_message_id', authoritativeIds)
       .not('thread_id', 'is', null)
@@ -125,7 +130,12 @@ async function persistMessage(
   const sanitizedHtml = sanitizeMailHtml(bodyHtml);
   const bodyText =
     payload.bodyText?.trim() || createSnippet({ html: sanitizedHtml });
-  const thread = await ensureThread(admin, mailbox.id, payload);
+  const thread = await ensureThread(
+    admin,
+    mailbox.id,
+    payload,
+    mailbox.groupPolicy ? ctx.user.id : undefined
+  );
   const { data: message, error } = await privateTable(admin, 'mail_messages')
     .insert({
       body_html: bodyHtml,
@@ -199,9 +209,9 @@ export async function updateMailDraft({
   ]);
   if (!access) return null;
 
-  const { data: current, error: currentError } = await privateTable(
-    access.admin,
-    'mail_messages'
+  const { data: current, error: currentError } = await mailMessageTable(
+    access,
+    ctx
   )
     .select('*')
     .eq('id', draftId)
@@ -228,7 +238,7 @@ export async function updateMailDraft({
     nextPayload.bodyHtml?.trim() || textToHtml(nextPayload.bodyText ?? '');
   const sanitizedHtml = sanitizeMailHtml(bodyHtml);
 
-  const { error } = await privateTable(access.admin, 'mail_messages')
+  const { error } = await mailMessageTable(access, ctx)
     .update({
       body_html: bodyHtml,
       body_text: nextPayload.bodyText ?? createSnippet({ html: sanitizedHtml }),
@@ -290,7 +300,7 @@ export async function deleteMailDraft({
   ]);
   if (!access) return false;
 
-  const { data, error } = await privateTable(access.admin, 'mail_messages')
+  const { data, error } = await mailMessageTable(access, ctx)
     .delete()
     .eq('id', draftId)
     .eq('mailbox_id', mailboxId)

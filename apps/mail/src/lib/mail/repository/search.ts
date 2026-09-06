@@ -94,10 +94,12 @@ export async function queryMailMessageRows({
   admin,
   mailboxId,
   params,
+  privateToUser = false,
   threadScan = false,
   userId,
 }: {
   admin: AnyRecord;
+  privateToUser?: boolean;
   mailboxId: string;
   params: ListMailMessagesParams;
   threadScan?: boolean;
@@ -175,6 +177,8 @@ export async function queryMailMessageRows({
   let query = privateTable(admin, 'mail_messages')
     .select('*', { count: 'exact' })
     .eq('mailbox_id', mailboxId);
+
+  if (privateToUser) query = query.eq('created_by', userId);
 
   if (params.folder === 'drafts' || parsed.states.includes('draft')) {
     query = query.eq('status', 'draft');

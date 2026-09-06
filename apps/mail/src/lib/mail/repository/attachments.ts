@@ -9,7 +9,7 @@ import {
 } from '../storage';
 import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
-import { type AnyRecord, privateTable } from './shared';
+import { type AnyRecord, mailMessageTable, privateTable } from './shared';
 
 export const MAX_MAIL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const MAX_MAIL_ATTACHMENTS = 32;
@@ -46,9 +46,9 @@ export async function getAuthorizedAttachment({
   if (error) throw new Error(`Failed to load attachment: ${error.message}`);
   if (!attachment) return null;
 
-  const { data: message, error: messageError } = await privateTable(
-    access.admin,
-    'mail_messages'
+  const { data: message, error: messageError } = await mailMessageTable(
+    access,
+    ctx
   )
     .select('id')
     .eq('id', messageId)
@@ -64,9 +64,8 @@ export async function getAuthorizedAttachment({
       'mail_stored_objects'
     )
       .select('*')
+      // The authorized attachment is the access link; group copies share one R2 object.
       .eq('id', attachment.stored_object_id)
-      .eq('mailbox_id', mailboxId)
-      .eq('message_id', messageId)
       .is('deleted_at', null)
       .maybeSingle();
     if (objectError)
@@ -117,10 +116,7 @@ export async function uploadDraftAttachment({
   if (contentId && !/^[a-z0-9.!#$%&'*+/=?^_`{|}~@-]+$/iu.test(contentId)) {
     throw new Error('Attachment content ID is invalid');
   }
-  const { data: draft, error: draftError } = await privateTable(
-    access.admin,
-    'mail_messages'
-  )
+  const { data: draft, error: draftError } = await mailMessageTable(access, ctx)
     .select('id')
     .eq('id', draftId)
     .eq('mailbox_id', mailboxId)
@@ -198,7 +194,7 @@ export async function uploadDraftAttachment({
       .select('*')
       .single();
     if (attachmentError) throw attachmentError;
-    await privateTable(access.admin, 'mail_messages')
+    await mailMessageTable(access, ctx)
       .update({ has_attachments: true })
       .eq('id', draftId)
       .eq('mailbox_id', mailboxId);
@@ -287,7 +283,7 @@ export async function deleteDraftAttachment({
     messageId: draftId,
   });
   if (!authorized) return false;
-  const { data: draft } = await privateTable(access.admin, 'mail_messages')
+  const { data: draft } = await mailMessageTable(access, ctx)
     .select('id')
     .eq('id', draftId)
     .eq('mailbox_id', mailboxId)
@@ -309,7 +305,7 @@ export async function deleteDraftAttachment({
   const { count } = await privateTable(access.admin, 'mail_attachments')
     .select('id', { count: 'exact', head: true })
     .eq('message_id', draftId);
-  await privateTable(access.admin, 'mail_messages')
+  await mailMessageTable(access, ctx)
     .update({ has_attachments: Boolean(count) })
     .eq('id', draftId);
   return true;

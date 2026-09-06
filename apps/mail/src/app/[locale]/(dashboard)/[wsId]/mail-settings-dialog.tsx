@@ -30,7 +30,9 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { MailContentState } from './mail-content-state';
+import { MailGroupSettings } from './mail-group-settings';
 import { MailLabelSettings } from './mail-label-settings';
+import { MailMemberSettings } from './mail-member-settings';
 import { MailSignaturePreview } from './mail-signature-preview';
 
 export function MailSettingsDialog({
@@ -357,32 +359,23 @@ export function MailSettingsDialog({
                 workspaceId={workspaceId}
               />
             ) : null}
-            {tab === 'members' ? (
-              <div className="divide-y divide-dynamic overflow-hidden rounded-2xl border border-dynamic">
-                {(membersQuery.data?.members ?? []).map((member) => (
-                  <div
-                    className="flex items-center gap-3 p-4"
-                    key={member.userId}
-                  >
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-foreground/[0.05] font-semibold text-xs">
-                      {(member.fullName || member.email || '?')
-                        .charAt(0)
-                        .toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium text-sm">
-                        {member.fullName || member.email}
-                      </div>
-                      <div className="truncate text-muted-foreground text-xs">
-                        {member.email}
-                      </div>
-                    </div>
-                    <span className="rounded-full bg-foreground/[0.05] px-2 py-1 text-xs capitalize">
-                      {member.role}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            {tab === 'members' &&
+            mailbox?.groupPolicy &&
+            ['owner', 'admin'].includes(mailbox.role) ? (
+              <MailGroupSettings
+                key={`${mailbox.id}:${JSON.stringify(settingsQuery.data?.settings.groupPolicy)}`}
+                mailboxId={mailbox.id}
+                workspaceId={workspaceId}
+                policy={settingsQuery.data?.settings.groupPolicy}
+              />
+            ) : null}
+            {tab === 'members' && mailbox ? (
+              <MailMemberSettings
+                mailboxId={mailbox.id}
+                workspaceId={workspaceId}
+                members={membersQuery.data?.members ?? []}
+                canManage={['owner', 'admin'].includes(mailbox.role)}
+              />
             ) : null}
             {tab === 'delivery' && operator ? (
               <>

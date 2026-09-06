@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { readGroupPolicy } from '../groups/policy';
 import { resolveInternalMailboxName } from '../identity';
 import type {
   MailLabel,
@@ -63,6 +64,7 @@ export function toMailbox(
       : null;
 
   return {
+    groupPolicy: readGroupPolicy(row.metadata),
     address: row.address,
     aiInstructions: row.ai_instructions ?? '',
     autoDraftEnabled: Boolean(row.auto_draft_enabled),
@@ -161,4 +163,21 @@ export async function ensureSystemLabels(admin: AnyRecord, mailboxId: string) {
   if (error) {
     throw new Error(`Failed to ensure mail labels: ${error.message}`);
   }
+}
+
+/** Group drafts and sent copies belong to their author, not the membership. */
+export function mailMessageTable(
+  access: { admin: AnyRecord; mailbox: { groupPolicy?: unknown } },
+  ctx: { user: { id: string } }
+) {
+  const table = privateTable(access.admin, 'mail_messages');
+  if (!access.mailbox.groupPolicy) return table;
+  return {
+    select: (...args: any[]) =>
+      table.select(...args).eq('created_by', ctx.user.id),
+    update: (...args: any[]) =>
+      table.update(...args).eq('created_by', ctx.user.id),
+    delete: (...args: any[]) =>
+      table.delete(...args).eq('created_by', ctx.user.id),
+  };
 }

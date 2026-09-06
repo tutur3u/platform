@@ -1,3 +1,4 @@
+import { canSendAsGroup, readGroupPolicy } from '../groups/policy';
 import { resolveInternalMailboxName } from '../identity';
 import type {
   MailBootstrapResponse,
@@ -274,7 +275,7 @@ export async function requireMailboxAccess(
     );
   }
 
-  if (!member?.role || (roles && !roles.includes(member.role))) {
+  if (!member?.role) {
     return null;
   }
 
@@ -292,6 +293,29 @@ export async function requireMailboxAccess(
     throw new Error(`Failed to load mailbox: ${mailboxError.message}`);
   }
 
+  const groupPolicy = readGroupPolicy(mailbox?.metadata);
+  if (groupPolicy) {
+    const { data: personal, error } = await privateTable(
+      admin,
+      'mail_mailboxes'
+    )
+      .select('status')
+      .eq('created_by', ctx.user.id)
+      .eq('address', normalizeAddress(ctx.user.email ?? ''))
+      .eq('type', 'personal')
+      .eq('domain_id', mailbox.domain_id)
+      .maybeSingle();
+    if (error) throw error;
+    if (personal?.status !== 'active') return null;
+  }
+  if (
+    roles &&
+    !(groupPolicy && roles.includes('sender')
+      ? canSendAsGroup(groupPolicy, member.role)
+      : roles.includes(member.role))
+  )
+    return null;
+
   if (mailbox?.status !== 'active') {
     return null;
   }
@@ -304,6 +328,7 @@ export async function requireMailboxAccess(
 
   return {
     admin,
+    metadata: mailbox.metadata ?? {},
     mailbox: toMailbox(mailbox, member.role, personalDisplayName),
     role: member.role as MailMailboxRole,
   };

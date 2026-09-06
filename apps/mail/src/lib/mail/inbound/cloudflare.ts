@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
+import { deliverGroupMessage } from '../groups/delivery';
 import { createInboundMessage, resolveInboundMailbox } from './ingest';
 import type { AnyRecord, ParsedEmail } from './types';
 
@@ -388,6 +389,35 @@ export async function handleCloudflareInboundEvent(
       storedObjectId: attachmentObjects[index]?.id ?? null,
     })),
   };
+  const groupResult = await deliverGroupMessage(
+    {
+      admin,
+      mailbox: resolvedMailbox.mailbox,
+      parsed,
+      provider: 'cloudflare',
+      providerMessageId: event.deliveryId,
+      rawMessageId: rawMessage.id,
+      delivery: {
+        envelopeFrom: event.envelope.from,
+        envelopeTo: event.envelope.to,
+        ingressDomainId: ingestRoute.ingressDomain.id,
+        observedRecipient: event.envelope.observedTo ?? event.envelope.to,
+        route: resolvedMailbox.route,
+      },
+    },
+    createInboundMessage
+  );
+  if (groupResult) {
+    const { error } = await privateTable(admin, 'mail_inbound_jobs')
+      .update({
+        processed_at: new Date().toISOString(),
+        status: groupResult.status,
+        error_message: groupResult.reason ?? null,
+      })
+      .eq('id', job.id);
+    if (error) throw error;
+    return groupResult;
+  }
   const message = await createInboundMessage({
     admin,
     delivery: {

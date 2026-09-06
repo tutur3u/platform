@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { deliverGroupMessage } from '../groups/delivery';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
 import { resolveInternalMailboxName } from '../identity';
 import { normalizeAddress, parseRawEmail } from './parser';
@@ -548,7 +549,33 @@ export async function ingestSesNotification(notification: SesNotification) {
     return { imported: 0, status: 'quarantined' as const };
   }
 
+  let imported = 0;
+  let groupRejected = false;
   for (const match of matchedMailboxes) {
+    const groupResult = await deliverGroupMessage(
+      {
+        admin,
+        mailbox: match.mailbox,
+        parsed,
+        provider: 'ses',
+        providerMessageId,
+        rawMessageId: rawMessage.id,
+        delivery: {
+          envelopeFrom: notification.mail?.source ?? null,
+          envelopeTo: match.recipient,
+          ingressDomainId: match.domainId,
+          observedRecipient: match.recipient,
+          route: match.route,
+        },
+      },
+      createInboundMessage
+    );
+    if (groupResult) {
+      imported += groupResult.imported;
+      groupRejected ||= groupResult.status === 'quarantined';
+      continue;
+    }
+    imported += 1;
     const message = await createInboundMessage({
       admin,
       delivery: {
@@ -582,11 +609,14 @@ export async function ingestSesNotification(notification: SesNotification) {
   await privateTable(admin, 'mail_inbound_jobs')
     .update({
       processed_at: new Date().toISOString(),
-      status: 'imported',
+      status: groupRejected ? 'quarantined' : 'imported',
     })
     .eq('id', job.id);
 
-  return { imported: matchedMailboxes.length, status: 'imported' as const };
+  return {
+    imported,
+    status: groupRejected ? ('quarantined' as const) : ('imported' as const),
+  };
 }
 
 export function logSesInboundError(error: unknown, messageId?: string) {

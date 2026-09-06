@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { mailGroupPolicySchema } from './groups/policy';
 
 const emailAddressSchema = z.string().trim().toLowerCase().email().max(254);
 
@@ -37,6 +38,7 @@ export const sendMailPayloadSchema = mailDraftPayloadSchema
   );
 
 export const updateMailMailboxSettingsSchema = z.object({
+  groupPolicy: mailGroupPolicySchema.nullable().optional(),
   aiInstructions: z.string().max(20_000).optional(),
   autoDraftEnabled: z.boolean().optional(),
   outboundProviderOverride: z.enum(['cloudflare', 'ses']).nullable().optional(),
@@ -57,10 +59,15 @@ export const updateMailStatePayloadSchema = z.object({
   ]),
 });
 
-export const upsertMailboxMemberPayloadSchema = z.object({
-  role: z.enum(['owner', 'admin', 'sender', 'viewer']),
-  userId: z.string().uuid(),
-});
+export const upsertMailboxMemberPayloadSchema = z
+  .object({
+    role: z.enum(['owner', 'admin', 'sender', 'viewer']),
+    userId: z.string().uuid().optional(),
+    email: emailAddressSchema.optional(),
+  })
+  .refine((value) => Boolean(value.userId) !== Boolean(value.email), {
+    message: 'Provide either userId or email',
+  });
 
 export const mailBulkPayloadSchema = z
   .object({

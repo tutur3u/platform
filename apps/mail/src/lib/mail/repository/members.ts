@@ -44,8 +44,12 @@ export async function listMailboxMembers({
   ctx: MailRouteContext;
   mailboxId: string;
 }) {
-  const access = await requireMailboxAccess(ctx, mailboxId, ['admin', 'owner']);
-  if (!access) return null;
+  const access = await requireMailboxAccess(ctx, mailboxId);
+  if (
+    !access ||
+    (!access.mailbox.groupPolicy && !['admin', 'owner'].includes(access.role))
+  )
+    return null;
 
   const { data: rows, error } = await privateTable(
     access.admin,
@@ -85,22 +89,68 @@ export async function upsertMailboxMember({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId, ['admin', 'owner']);
   if (!access) return null;
-
-  const { data, error } = await privateTable(
+  // Owners are protected from removal/demotion through routine member management.
+  // This also prevents managers from elevating themselves to owner.
+  if (payload.role === 'owner') return null;
+  let userId = payload.userId;
+  if (payload.email) {
+    const { data: target, error } = await privateTable(
+      access.admin,
+      'mail_mailboxes'
+    )
+      .select('created_by')
+      .eq('address', payload.email.trim().toLowerCase())
+      .eq('type', 'personal')
+      .eq('status', 'active')
+      .eq('domain_id', access.mailbox.domainId)
+      .maybeSingle();
+    if (error) throw error;
+    userId = target?.created_by;
+  }
+  if (!userId) return null;
+  if (access.mailbox.groupPolicy) {
+    const { data: target, error } = await privateTable(
+      access.admin,
+      'mail_mailboxes'
+    )
+      .select('id')
+      .eq('created_by', userId)
+      .eq('type', 'personal')
+      .eq('status', 'active')
+      .eq('domain_id', access.mailbox.domainId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!target) return null;
+  }
+  const { data: existing, error: existingError } = await privateTable(
     access.admin,
     'mail_mailbox_members'
   )
-    .upsert(
-      {
-        created_by: ctx.user.id,
-        mailbox_id: mailboxId,
-        role: payload.role,
-        user_id: payload.userId,
-      },
-      { onConflict: 'mailbox_id,user_id' }
-    )
+    .select('role')
+    .eq('mailbox_id', mailboxId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  if (existing?.role === 'owner') return null;
+
+  const table = privateTable(access.admin, 'mail_mailbox_members');
+  const values = {
+    created_by: ctx.user.id,
+    mailbox_id: mailboxId,
+    role: payload.role,
+    user_id: userId,
+  };
+  const { data, error } = await (existing
+    ? table
+        .update({ role: payload.role })
+        .eq('mailbox_id', mailboxId)
+        .eq('user_id', userId)
+        .neq('role', 'owner')
+    : table.insert(values)
+  )
     .select('created_at, role, user_id')
-    .single();
+    .maybeSingle();
+  if (!data && !error) return null;
 
   if (error) {
     throw new Error(`Failed to upsert mailbox member: ${error.message}`);
@@ -129,14 +179,19 @@ export async function removeMailboxMember({
   const access = await requireMailboxAccess(ctx, mailboxId, ['admin', 'owner']);
   if (!access) return false;
 
-  const { error } = await privateTable(access.admin, 'mail_mailbox_members')
+  const { data, error } = await privateTable(
+    access.admin,
+    'mail_mailbox_members'
+  )
     .delete()
     .eq('mailbox_id', mailboxId)
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .neq('role', 'owner')
+    .select('user_id');
 
   if (error) {
     throw new Error(`Failed to remove mailbox member: ${error.message}`);
   }
 
-  return true;
+  return Boolean(data?.length);
 }

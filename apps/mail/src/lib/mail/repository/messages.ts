@@ -6,7 +6,13 @@ import type {
 } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { queryMailMessageRows } from './search';
-import { type AnyRecord, privateTable, toLabel, toRecipient } from './shared';
+import {
+  type AnyRecord,
+  mailMessageTable,
+  privateTable,
+  toLabel,
+  toRecipient,
+} from './shared';
 
 export async function getStatesByMessageId(
   admin: AnyRecord,
@@ -123,6 +129,7 @@ export async function listMailMessages({
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
   const { rows, total } = await queryMailMessageRows({
+    privateToUser: Boolean(access.mailbox.groupPolicy),
     admin: access.admin,
     mailboxId,
     params,
@@ -166,7 +173,7 @@ export async function getMailMessage({
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
 
-  const { data: row, error } = await privateTable(access.admin, 'mail_messages')
+  const { data: row, error } = await mailMessageTable(access, ctx)
     .select('*')
     .eq('mailbox_id', mailboxId)
     .eq('id', messageId)

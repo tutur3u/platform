@@ -56,6 +56,7 @@ export interface MailMailbox {
   id: string;
   outboundProviderOverride: MailProvider | null;
   providerLimits: MailProviderLimits;
+  groupPolicy?: MailGroupPolicy | null;
   role: MailMailboxRole;
   senderName: string;
   signatureHtml: string | null;
@@ -65,7 +66,15 @@ export interface MailMailbox {
   unreadCount: number;
 }
 
+export interface MailGroupPolicy {
+  posting: 'anyone' | 'organization' | 'members' | 'managers';
+  attachments: 'anyone' | 'organization' | 'members' | 'managers';
+  sendAs: 'members' | 'managers';
+  historyEnabled: false;
+}
+
 export interface MailMailboxSettings {
+  groupPolicy?: MailGroupPolicy | null;
   aiInstructions: string;
   autoDraftEnabled: boolean;
   outboundProviderOverride: MailProvider | null;
@@ -324,7 +333,8 @@ export interface MailMailboxMember {
 
 export interface UpsertMailMailboxMemberPayload {
   role: MailMailboxRole;
-  userId: string;
+  userId?: string;
+  email?: string;
 }
 
 export interface MailCatchAllConfiguration {

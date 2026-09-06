@@ -57,3 +57,31 @@ describe('toLabel', () => {
     });
   });
 });
+
+describe('group message privacy', () => {
+  it.each(['select', 'update', 'delete'] as const)(
+    'scopes %s to the author',
+    async (operation) => {
+      const { mailMessageTable } = await import('./shared');
+      const calls: unknown[] = [];
+      const builder = {
+        eq: (key: string, value: string) => {
+          calls.push([key, value]);
+          return builder;
+        },
+      };
+      const table = Object.fromEntries(
+        ['select', 'update', 'delete'].map((key) => [key, () => builder])
+      );
+      const admin = { schema: () => ({ from: () => table }) };
+      mailMessageTable(
+        { admin, mailbox: { groupPolicy: {} } },
+        { user: { id: 'author' } }
+      )[operation]();
+      expect(calls).toEqual([['created_by', 'author']]);
+      expect(
+        mailMessageTable({ admin, mailbox: {} }, { user: { id: 'author' } })
+      ).toBe(table);
+    }
+  );
+});

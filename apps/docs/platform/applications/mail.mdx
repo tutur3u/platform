@@ -406,3 +406,55 @@ attachments, and delivery settings remain behind the existing Mail APIs.
 The conversation pane constrains message width and keeps message details and
 attachments available without expanding them by default. Small screens show one
 pane at a time, with a back action returning to the message list.
+
+## Distribution groups
+
+A shared address can be provisioned as a distribution group by setting
+`private.mail_mailboxes.metadata.mail_group` to:
+
+```json
+{
+  "posting": "organization",
+  "attachments": "members",
+  "sendAs": "managers",
+  "historyEnabled": false
+}
+```
+
+Provision this metadata when creating a new address. Settings cannot convert an
+existing archive into a group, or a group into an archive. Owners and admins can
+change the three permission scopes in **Settings → Members**, add active internal
+members by email, change their roles, and remove non-owner members. Routine member
+management cannot create, demote, or remove an owner.
+
+Posting and attachment scopes support managers, members, the organization, or
+anyone. Send-as supports managers or all members. Owners and admins are managers;
+viewer and sender roles are ordinary members. A sender role does not override a
+managers-only send-as policy. Personal mailbox status must remain active for group
+access, sending, membership additions, and delivery. Membership does not reactivate
+suspended users.
+
+Cloudflare and SES ingress distribute accepted messages into active members'
+personal mailboxes in the group's domain. No shared inbound message or thread is
+created. Drafts and sent copies made using the group address are visible only to
+their author. Removing a member stops future delivery and access to the group
+address; copies already delivered to that member remain personal. Delivery uses
+the existing Message-ID/provider deduplication when groups overlap or delivery is
+retried. An empty group accepts a permitted message with zero personal copies.
+
+Group ingress verifies DKIM against the stored raw bytes and requires the signing
+domain to exactly match the From domain. It does not trust an incoming
+Authentication-Results header. This intentionally requires DKIM even for an
+anyone posting policy; SPF-only senders are not accepted. Failed authentication or
+posting/attachment restrictions quarantine the delivery job. Temporary DNS errors
+fail processing so the existing transport retry can recover. R2 attachment objects
+may be shared by personal copies; download authorization follows the accessible
+message and its attachment record.
+
+This supports direct internal membership and per-message delivery. It does not
+replicate Google Groups join requests, external or nested membership, digest
+subscriptions, shared archives, custom roles, Google footers, or moderator
+notification/approval workflows. Quarantine records remain available to operators
+through the existing delivery controls. Google IAM groups and their access grants
+are independent of Mail group configuration and must remain in place when still
+used for Google Cloud authorization.

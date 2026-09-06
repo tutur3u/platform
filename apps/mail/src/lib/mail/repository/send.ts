@@ -6,7 +6,7 @@ import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
 import { createMailDraft, updateMailDraft } from './drafts';
 import { getMailMessage } from './messages';
-import { privateTable } from './shared';
+import { mailMessageTable, privateTable } from './shared';
 
 export async function sendMailMessage({
   ctx,
@@ -62,10 +62,7 @@ export async function sendMailMessage({
   const outboundProvider =
     mailboxProvider.outbound_provider_override ?? domain.outbound_provider;
 
-  const { error: queueError } = await privateTable(
-    access.admin,
-    'mail_messages'
-  )
+  const { error: queueError } = await mailMessageTable(access, ctx)
     .update({ status: 'sending' })
     .eq('id', message.id);
 
@@ -122,7 +119,7 @@ export async function sendMailMessage({
   const senderDomain = access.mailbox.address.split('@')[1] ?? 'tuturuuu.com';
   const sesInternetMessageId = `<${message.id}@${senderDomain}>`;
   if (outboundProvider === 'ses') {
-    await privateTable(access.admin, 'mail_messages')
+    await mailMessageTable(access, ctx)
       .update({ internet_message_id: sesInternetMessageId })
       .eq('id', message.id)
       .eq('mailbox_id', mailboxId);
@@ -202,7 +199,7 @@ export async function sendMailMessage({
   const now = new Date().toISOString();
 
   await Promise.all([
-    privateTable(access.admin, 'mail_messages')
+    mailMessageTable(access, ctx)
       .update({
         provider: outboundProvider,
         provider_message_id: result.messageId ?? null,

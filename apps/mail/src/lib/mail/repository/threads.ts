@@ -18,7 +18,7 @@ import {
 } from './messages';
 import { bulkUpdateMail } from './organization';
 import { queryMailMessageRows } from './search';
-import { type AnyRecord, privateTable } from './shared';
+import { type AnyRecord, mailMessageTable, privateTable } from './shared';
 
 function toThread(row: AnyRecord): MailThread {
   return {
@@ -78,6 +78,7 @@ export async function listMailThreads({
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
   const { rows } = await queryMailMessageRows({
+    privateToUser: Boolean(access.mailbox.groupPolicy),
     admin: access.admin,
     mailboxId,
     params: { ...params, page: 1 },
@@ -204,7 +205,7 @@ export async function bulkUpdateMailThreads({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
-  const { data, error } = await privateTable(access.admin, 'mail_messages')
+  const { data, error } = await mailMessageTable(access, ctx)
     .select('id')
     .eq('mailbox_id', mailboxId)
     .in('thread_id', payload.threadIds)
@@ -236,10 +237,7 @@ export async function getMailThread({
   const thread = await loadThread(access.admin, mailboxId, threadId);
   if (!thread) return null;
 
-  const { data: rows, error } = await privateTable(
-    access.admin,
-    'mail_messages'
-  )
+  const { data: rows, error } = await mailMessageTable(access, ctx)
     .select('*')
     .eq('mailbox_id', mailboxId)
     .eq('thread_id', threadId)
@@ -248,6 +246,7 @@ export async function getMailThread({
   if (error)
     throw new Error(`Failed to load thread messages: ${error.message}`);
 
+  if (access.mailbox.groupPolicy && !rows?.length) return null;
   const hydratedMessages = await Promise.all(
     (rows ?? []).map((row: AnyRecord) =>
       hydrateMailMessage({ admin: access.admin, ctx, row })
@@ -281,10 +280,7 @@ export async function updateMailThreadState({
   const thread = await loadThread(access.admin, mailboxId, threadId);
   if (!thread) return null;
 
-  const { data: messages, error } = await privateTable(
-    access.admin,
-    'mail_messages'
-  )
+  const { data: messages, error } = await mailMessageTable(access, ctx)
     .select('id')
     .eq('mailbox_id', mailboxId)
     .eq('thread_id', threadId)
