@@ -26,7 +26,10 @@ import {
 import type { AuthResponse } from './calendar-types';
 import { mergeProviderCalendarsByAccount } from './merge-provider-calendars';
 
-export type CalendarConnectionsUnifiedVariant = 'compact' | 'settings';
+export type CalendarConnectionsUnifiedVariant =
+  | 'compact'
+  | 'settings'
+  | 'status';
 
 export function useCalendarConnectionsManager(wsId: string) {
   const t = useTranslations('calendar');

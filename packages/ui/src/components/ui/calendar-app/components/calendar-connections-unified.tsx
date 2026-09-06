@@ -2,6 +2,7 @@
 
 import { CalendarConnectionsCompact } from './calendar-connections-compact';
 import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-content';
+import { CalendarSyncAttentionButton } from './calendar-sync-attention-button';
 import {
   type CalendarConnectionsUnifiedVariant,
   useCalendarConnectionsManager,
@@ -20,6 +21,9 @@ export default function CalendarConnectionsUnified({
   className?: string;
 }) {
   const state = useCalendarConnectionsManager(wsId);
+
+  if (variant === 'status')
+    return <CalendarSyncAttentionButton state={state} />;
 
   if (variant === 'settings') {
     return (
