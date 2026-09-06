@@ -57,13 +57,16 @@ jobs:
       - run: bun run test
         working-directory: apps/meet
       - name: Build the frontend for Workers
-        working-directory: apps/meet
+        uses: ./.github/actions/run-with-turbo-remote-cache
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_APP_URL: https://meet.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
-        run: bun run build:cloudflare
+        with:
+          command: cd apps/meet && bun run build:cloudflare
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - name: Validate both Worker bundles
         run: |
           bun x --no-install wrangler deploy --dry-run -c apps/meet/wrangler.jsonc

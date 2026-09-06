@@ -197,8 +197,8 @@ Supabase service keys are not used for call tokens.
 `.github/workflows/meet-cloudflare.yaml` validates both Workers and deploys
 realtime before the frontend on `production`. It uses
 `MEET_CLOUDFLARE_API_TOKEN`, or the existing account deployment credential
-`COLAB_CLOUDFLARE_API_TOKEN` while bootstrapping. Vercel Meet workflows are disabled
-in the CI switchboard. Preserve the Vercel deployment until the canonical
+`COLAB_CLOUDFLARE_API_TOKEN` while bootstrapping. Automatic Vercel Meet production
+deployment is disabled in the CI switchboard. Preserve the Vercel deployment until the canonical
 Cloudflare sign-in and call checks pass so rollback remains available.
 
 Before cutover, deploy the frontend with an explicit verification configuration

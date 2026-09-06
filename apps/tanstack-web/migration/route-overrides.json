@@ -2365,12 +2365,12 @@
     "api:/api/v1/workspaces/:wsId/meetings:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "POST restricts creation to authenticated @tuturuuu.com accounts; Rust owns GET only and unported POST falls through to Next.",
+      "note": "POST restricts creation to confirmed @tuturuuu.com accounts; GET has a partial Rust port and unported flows remain on Next.js.",
       "methods": {
         "GET": {
-          "status": "migrated",
+          "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "Existing Rust GET source port; production traffic remains on Next.js until approved cutover."
+          "note": "Partial Rust GET port still lacks app-session, workspace alias, and membership parity; app sessions and aliases fall through to Next.js."
         },
         "POST": {
           "status": "legacy-next",
