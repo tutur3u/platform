@@ -9,6 +9,54 @@ export type Json =
 export type Database = {
   private: {
     Tables: {
+      external_provider_costs: {
+        Row: {
+          account_id: string;
+          actor_id: string;
+          amount_usd: number;
+          app_id: string;
+          external_run_id: string;
+          granularity: string;
+          observed_at: string;
+          occurred_at: string;
+          provider: string;
+          service: string;
+          source: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          account_id?: string;
+          actor_id: string;
+          amount_usd: number;
+          app_id: string;
+          external_run_id: string;
+          granularity?: string;
+          observed_at: string;
+          occurred_at: string;
+          provider: string;
+          service: string;
+          source?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          account_id?: string;
+          actor_id?: string;
+          amount_usd?: number;
+          app_id?: string;
+          external_run_id?: string;
+          granularity?: string;
+          observed_at?: string;
+          occurred_at?: string;
+          provider?: string;
+          service?: string;
+          source?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       ai_agent_external_message_attachments: {
         Row: {
           content_type: string | null;
@@ -15161,6 +15209,34 @@ export type Database = {
       };
     };
     Functions: {
+      record_external_provider_cost: {
+        Args: {
+          p_account_id?: string;
+          p_actor_id: string;
+          p_amount_usd: number;
+          p_app_id: string;
+          p_external_run_id: string;
+          p_granularity?: string;
+          p_observed_at: string;
+          p_occurred_at: string;
+          p_provider: string;
+          p_service: string;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
+      get_external_provider_costs: {
+        Args: { p_from: string; p_to: string; p_ws_id: string };
+        Returns: {
+          amount_usd: number;
+          app_id: string;
+          last_synced_at: string;
+          month: string;
+          provider: string;
+          runs: number;
+          service: string;
+        }[];
+      };
       abuse_trust_multiplier_for_tier: {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;

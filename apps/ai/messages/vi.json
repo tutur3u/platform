@@ -437,7 +437,22 @@
     "studio": "AI Studio",
     "usage": "Mức sử dụng",
     "usage-description": "Mức tiêu thụ tổng hợp theo thời gian, chia theo mô hình, tính năng và nguồn.",
-    "view-all": "Xem tất cả"
+    "view-all": "Xem tất cả",
+    "provider-costs": {
+      "title": "Chi phí nhà cung cấp",
+      "description": "Chi phí do nhà cung cấp báo cáo, tách biệt với tín dụng AI. Nhóm theo tháng gốc của lượt chạy (UTC) trong khoảng ngày đã chọn.",
+      "coverage": "Tổng ngày của tài khoản chuyên dùng thay thế chi phí lượt đã bao gồm để tránh tính hai lần. Chỉ gồm bản ghi đã đồng bộ; dữ liệu thiếu không phải miễn phí. Số tiền USD không gồm phí thuê bao, thuế hoặc tín dụng chưa báo cáo.",
+      "refresh": "Làm mới",
+      "error": "Chưa tải được chi phí. Vui lòng thử lại sau khi cấu hình tích hợp.",
+      "loading": "Đang tải chi phí…",
+      "empty": "Chưa có chi phí nhà cung cấp được đồng bộ trong kỳ này.",
+      "month": "Tháng (UTC)",
+      "app": "Ứng dụng",
+      "service": "Nhà cung cấp / dịch vụ",
+      "runs": "Bản ghi",
+      "amount": "Chi phí báo cáo (USD)",
+      "total": "Tổng đã đồng bộ"
+    }
   },
   "chat": {
     "first_activity": "Hoạt động đầu tiên",

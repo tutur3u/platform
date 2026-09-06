@@ -15,6 +15,7 @@ import { ObservabilityRuns } from './observability-runs';
 import { ObservabilitySummary } from './observability-summary';
 import { ObservabilityToolbar } from './observability-toolbar';
 import { ObservabilityUsageCharts } from './observability-usage-charts';
+import { ProviderCostPanel } from './provider-cost-panel';
 import { StudioErrorState } from './studio/states';
 
 type ObservabilitySection = 'credits' | 'runs' | 'usage';
@@ -118,6 +119,10 @@ export function ObservabilityPanel({
         section={section}
         totals={usageQuery.data?.totals}
       />
+
+      {section === 'usage' ? (
+        <ProviderCostPanel workspaceId={workspaceId} range={range} />
+      ) : null}
 
       {isRunSection ? (
         <ObservabilityRuns

@@ -123,3 +123,53 @@ Metadata logging is enabled by default. Prompt, output, and tool content is
 captured only when the workspace enables content capture. Use the Studio
 retention controls to review the active policy before submitting sensitive
 data.
+
+## External provider costs
+
+`POST /v1/provider-costs` imports one provider-reported USD run expense. Use a
+registered external-app session or an AI Studio key bound to that app, with
+`X-Tuturuuu-Workspace-Id` matching its workspace. Unbound keys cannot import costs.
+The existing `ai:use` app scope and registration checks apply. This endpoint does
+not execute AI, reserve credits, or debit the workspace.
+
+```json
+{
+  "provider": "apify",
+  "externalRunId": "run_123",
+  "service": "apify_facebook_posts",
+  "amountUsd": 0.126,
+  "currency": "USD",
+  "source": "provider_api",
+  "occurredAt": "2026-07-01T12:00:00Z",
+  "observedAt": "2026-09-01T12:00:00Z"
+}
+```
+
+Bodies are limited to 8 KiB. Workspace/app identity comes from authentication,
+never the body. Each workspace/app/provider/run has one record; newer observation
+timestamps can correct it and stale retries cannot overwrite it. A successful
+write returns `{ "accepted": true, "externalRunId": "run_123" }`. Retry unavailable
+writes with the same run ID. Import provider totals only once: do not add event
+charges to an Apify `usageTotalUsd` total or import the same account invoice as
+additional run usage.
+
+The AI Studio Usage page has a **Provider costs** section using the selected date
+range, original run dates, and UTC months. Only imported records are included;
+unknown costs and expired runs are not zero-cost records. The workspace read API
+is `GET /api/v1/workspaces/{wsId}/ai/provider-costs?from=...&to=...`, authorized with
+`use_ai_studio` and a joined satellite session.
+
+Apply migration `20260906100000_external_provider_costs.sql` before enabling import
+clients. During a schema-first rollout, unavailable storage returns `503` and the
+client must retain its pending records. The Supabase production migration remains
+an operator action.
+
+For an account exclusively dedicated to the sending app, import daily account
+usage with `granularity: "account_day"`, `accountId`, a stable account/day
+`externalRunId`, and `occurredAt` at midnight UTC. These daily records replace
+covered run amounts in aggregates; run records remain for audit. Run imports
+may include `accountId` to distinguish multiple accounts. Never use account-day
+imports for a shared provider account without explicit attribution. Daily totals
+must reconcile with the provider's post-discount billing-cycle total; do not
+silently allocate discounts or add current list-price surcharges. Apify's reported
+usage includes applicable date-order/pay-per-event charges, storage and transfer.
