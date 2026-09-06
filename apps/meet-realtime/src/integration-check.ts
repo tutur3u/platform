@@ -30,7 +30,7 @@ const REMOTE_URL = process.env.MEET_CHECK_REALTIME_URL;
 const ROOM_URL = validateMeetCheckEndpoint(
   REMOTE_URL || `ws://127.0.0.1:${PORT}/realtime`
 );
-if (REMOTE_URL && !process.env.MEET_REALTIME_TOKEN_SECRET) {
+if (REMOTE_URL && !process.env.MEET_REALTIME_TOKEN_SECRET?.trim()) {
   throw new Error('Remote checks require MEET_REALTIME_TOKEN_SECRET');
 }
 

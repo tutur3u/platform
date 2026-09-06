@@ -44,3 +44,16 @@ export function attachRemotePlayback(
   if (track.readyState === 'ended') release();
   else track.addEventListener('ended', release, { once: true });
 }
+
+/** A stale session closing must not clear its replacement's live playback. */
+export function removeRemotePlayback(
+  current: RemoteMedia,
+  owner: RemoteTrackOwner
+): RemoteMedia {
+  if (!owner.track || current[owner.userId]?.[owner.kind] !== owner.track)
+    return current;
+  const next = { ...current, [owner.userId]: { ...current[owner.userId] } };
+  delete next[owner.userId]![owner.kind];
+  if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
+  return next;
+}

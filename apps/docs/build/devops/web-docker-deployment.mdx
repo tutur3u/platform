@@ -852,8 +852,8 @@ Production meeting logic stays on Tuturuuu infrastructure:
 - `apps/web` and `apps/meet-realtime` must share the same
   `MEET_REALTIME_TOKEN_SECRET`. Production Compose exposes
   `MEET_REALTIME_URL` and `NEXT_PUBLIC_MEET_REALTIME_URL` to Web, defaulting
-  both to `wss://meet.tuturuuu.com/realtime` for browser join-token payloads.
-- Browsers connect to `wss://meet.tuturuuu.com/realtime?token=...`.
+  both to `wss://meet-realtime.tuturuuu.com/realtime` for browser join-token payloads.
+- Browsers connect to `wss://meet-realtime.tuturuuu.com/realtime?token=...`.
 - `apps/meet-realtime` validates the token, manages ephemeral room presence,
   chat, stage state, and reconnect resync, then calls Cloudflare Realtime SFU
   APIs with server-only `CLOUDFLARE_REALTIME_APP_ID` and

@@ -25,6 +25,7 @@ import {
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
+  removeRemotePlayback,
 } from '../lib/remote-playback';
 import {
   createRemoteStreamCache,
@@ -145,8 +146,15 @@ export function useMeetRoom({
 
     const signaling = new MeetSignaling({
       onMessage: (message) => {
-        // Presence expiry can be transient; retain subscribed tracks until
-        // removal or track end so the next heartbeat restores playback.
+        if (message.type === 'track.closed') {
+          const closed = new Set(message.tracks.map(remoteTrackKey));
+          for (const [mid, owner] of trackOwnersRef.current) {
+            if (!closed.has(owner.subscriptionKey)) continue;
+            trackOwnersRef.current.delete(mid);
+            subscribedRef.current.delete(owner.subscriptionKey);
+            setRemoteMedia((current) => removeRemotePlayback(current, owner));
+          }
+        }
         if (message.type === 'participant.removed') {
           setRemoteMedia((current) => {
             const next = { ...current };

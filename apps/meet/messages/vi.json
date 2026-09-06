@@ -4707,6 +4707,7 @@
     "try_again": "Thử lại"
   },
   "settings": {
+    "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {
       "close_settings": "Đóng cài đặt",
       "first_section": "Mục đầu tiên",
@@ -4724,7 +4725,8 @@
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "sidebar_hidden": "Ẩn"
-    }
+    },
+    "search_settings_placeholder": "Tìm cài đặt..."
   },
   "settings-account": {
     "account": "Tài khoản",

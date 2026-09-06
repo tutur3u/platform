@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { planRemoteSubscriptions } from './negotiation';
-import { attachRemotePlayback, type RemoteTrackOwner } from './remote-playback';
+import {
+  attachRemotePlayback,
+  type RemoteTrackOwner,
+  removeRemotePlayback,
+} from './remote-playback';
 import type { RemoteMedia } from './remote-streams';
 
 const roomTrack = {
@@ -95,4 +99,13 @@ describe('ended remote playback', () => {
     const replacement: RemoteMedia = { other: { audio: fakeTrack() } };
     expect(queued?.(replacement)).toBe(replacement);
   });
+});
+
+it('clears closed playback without removing a replacement track', () => {
+  const f = fixture();
+  const old = fakeTrack();
+  attachRemotePlayback(f.owner, old, f.subscribed, () => true, f.setMedia);
+  expect(removeRemotePlayback(f.media(), f.owner)).toEqual({});
+  const replacement = { other: { audio: fakeTrack() } };
+  expect(removeRemotePlayback(replacement, f.owner)).toBe(replacement);
 });
