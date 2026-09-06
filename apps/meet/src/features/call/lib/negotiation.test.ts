@@ -93,7 +93,7 @@ describe('remote subscription planning', () => {
     });
   });
 
-  it('batches duplicate names separately to preserve publisher-session identity', () => {
+  it('keeps a reconnect replacement authoritative across subscription retries', () => {
     const first = track(OTHER, 'audio');
     const second = { ...first, sessionId: 'replacement-session' };
     const entries = { first, second };
@@ -110,11 +110,18 @@ describe('remote subscription planning', () => {
         [`${second.sessionId}:${second.trackName}`],
         SELF
       )
+    ).toEqual([]);
+    expect(
+      planRemoteSubscriptions(
+        entries,
+        [`${first.sessionId}:${first.trackName}`],
+        SELF
+      )
     ).toEqual([
       {
         location: 'remote',
-        sessionId: first.sessionId,
-        trackName: first.trackName,
+        sessionId: second.sessionId,
+        trackName: second.trackName,
       },
     ]);
   });

@@ -83,15 +83,12 @@ export function planRemoteSubscriptions(
       .filter((track) => {
         if (track.userId === selfUserId) return false;
         if (!track.trackName) return false;
-        if (
-          subscribed.has(remoteTrackKey(track)) ||
-          namesInBatch.has(track.trackName)
-        )
-          return false;
-        // Responses may identify a track only by name and mid. Batch duplicate
-        // names separately so each response has exactly one publisher session.
+        if (namesInBatch.has(track.trackName)) return false;
+        // Stable names include the publisher's user ID. Keep the newest session
+        // authoritative even when subscribed, so a retry cannot restore its
+        // stale predecessor. SFU responses may identify tracks only by name.
         namesInBatch.add(track.trackName);
-        return true;
+        return !subscribed.has(remoteTrackKey(track));
       })
       .map((track) => ({
         location: 'remote',
