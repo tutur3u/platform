@@ -74,5 +74,25 @@ describe('ended remote playback', () => {
     attachRemotePlayback(f.owner, track, f.subscribed, () => false, f.setMedia);
     track.dispatchEvent(new Event('ended'));
     expect(f.subscribed.has(key)).toBe(true);
+    expect(f.owner.track).toBeUndefined();
+    expect(f.media()).toEqual({});
+  });
+
+  it('ignores queued playback updates after the connection is replaced', () => {
+    const f = fixture();
+    let current = true;
+    let queued: ((media: RemoteMedia) => RemoteMedia) | undefined;
+    attachRemotePlayback(
+      f.owner,
+      fakeTrack(),
+      f.subscribed,
+      () => current,
+      (update) => {
+        queued = update;
+      }
+    );
+    current = false;
+    const replacement: RemoteMedia = { other: { audio: fakeTrack() } };
+    expect(queued?.(replacement)).toBe(replacement);
   });
 });

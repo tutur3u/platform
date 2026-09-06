@@ -16,16 +16,22 @@ export function attachRemotePlayback(
   isCurrent: () => boolean,
   setMedia: (update: (current: RemoteMedia) => RemoteMedia) => void
 ) {
+  if (!isCurrent()) return;
   owner.track = track;
-  setMedia((current) => ({
-    ...current,
-    [owner.userId]: { ...current[owner.userId], [owner.kind]: track },
-  }));
+  setMedia((current) =>
+    isCurrent()
+      ? {
+          ...current,
+          [owner.userId]: { ...current[owner.userId], [owner.kind]: track },
+        }
+      : current
+  );
   const release = () => {
     if (!isCurrent() || owner.track !== track) return;
     subscribed.delete(owner.subscriptionKey);
     setMedia((current) => {
-      if (current[owner.userId]?.[owner.kind] !== track) return current;
+      if (!isCurrent() || current[owner.userId]?.[owner.kind] !== track)
+        return current;
       const next = {
         ...current,
         [owner.userId]: { ...current[owner.userId] },
