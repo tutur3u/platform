@@ -81,6 +81,8 @@ export type {
   WorkspaceCalendarUpdatePayload,
 } from './platform-calendar';
 export { CalendarClient } from './platform-calendar';
+export type { ExternalAppConfiguration } from './platform-external-admin';
+export { ExternalAdminClient, ExternalClient } from './platform-external-admin';
 export type {
   FinanceBudgetUpsertPayload,
   FinanceTagPayload,

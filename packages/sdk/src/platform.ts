@@ -85,6 +85,10 @@ import { refreshCliSession } from './cli/auth';
 import { type CliSession, normalizeBaseUrl } from './cli/config';
 import { CalendarClient } from './platform-calendar';
 import { DevboxesClient } from './platform-devbox';
+import { ExternalClient } from './platform-external-admin';
+
+export { ExternalClient } from './platform-external-admin';
+
 import { FinanceClient } from './platform-finance';
 import {
   createWorkspaceTaskTemplate,
@@ -379,14 +383,6 @@ export class ExternalProjectsUserClient {
       workspaceId,
       this.client.getClientOptions()
     );
-  }
-}
-
-export class ExternalClient {
-  readonly projects: ExternalProjectsUserClient;
-
-  constructor(client: TuturuuuUserClient) {
-    this.projects = new ExternalProjectsUserClient(client);
   }
 }
 

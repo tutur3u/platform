@@ -1,3 +1,5 @@
+import { externalAdminHelp } from './external-admin';
+
 interface HelpTopic {
   commands?: string[];
   description?: string;
@@ -147,34 +149,6 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr host use local --port 7803',
     ],
     usage: 'ttr config set-base-url <url>',
-  },
-  external: {
-    commands: [
-      'projects summary             show external-project workspace summary',
-      'projects studio              fetch studio/admin data',
-      'projects delivery --preview  fetch delivery payloads',
-      'projects snapshot            fetch sync snapshot',
-      'projects collections         list configured collections',
-      'projects entries --collection <id>',
-      'projects setup --manifest <path>',
-      'projects diff --manifest <path>',
-      'projects apply --manifest <path> --confirm APPLY_EXTERNAL_PROJECT_SYNC',
-    ],
-    description:
-      'External commands operate on CMS-style external projects for the selected workspace.',
-    examples: [
-      'ttr external projects summary --workspace <workspace-id> --json',
-      'ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json',
-      'ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json',
-      'ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC',
-    ],
-    options: [
-      '--workspace, --ws <id>        override the selected workspace',
-      '--json                       print machine-readable JSON',
-      '--out <path>                 write JSON output to a file',
-      '--no-update-check            skip CLI update checks',
-    ],
-    usage: 'ttr external projects <command> [options]',
   },
   finance: {
     commands: [
@@ -1060,7 +1034,7 @@ export function getGlobalHelp() {
     '  host [current|list|use]',
     '  config set-base-url <url>',
     '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
-    '  external projects <summary|studio|delivery|snapshot|collections|entries|setup|diff|apply>',
+    '  external <apps|templates|binding|projects>  configure and manage external sites',
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
     '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',
     '  workspaces [list]|use [id]',
@@ -1132,6 +1106,7 @@ function normalizeHelpGroup(group: string) {
 }
 
 export function getHelpOutput(group?: string, action?: string) {
+  if (group === 'external' && action !== 'projects') return externalAdminHelp();
   if (!group) {
     return getGlobalHelp();
   }

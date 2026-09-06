@@ -591,6 +591,48 @@ ttr external projects diff --workspace <workspace-id> --manifest external-projec
 ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC
 ```
 
+### External site registration and permissions
+
+Use a signed-in user with root Infrastructure permissions for registrations and
+root external-project administration permissions for templates/bindings. These
+commands do not grant permissions to the caller or bypass workspace access.
+
+```bash
+ttr external apps list --json
+ttr external apps get rennu --json
+ttr external apps save --file app.json --dry-run
+ttr external apps save --file app.json --confirm CONFIGURE_EXTERNAL_APP
+ttr external apps scopes rennu --scopes external-projects:read,external-projects:manage,external-projects:publish --dry-run
+ttr external apps scopes rennu --scopes external-projects:read,external-projects:manage,external-projects:publish --confirm APPROVE_EXTERNAL_APP_SCOPES
+ttr external templates list --json
+ttr external templates create --file template.json --confirm CREATE_SITE_TEMPLATE
+ttr external binding get --workspace <workspace-id>
+ttr external binding set --workspace <workspace-id> --template rennu --confirm LINK_SITE_TEMPLATE
+```
+
+`app.json` contains only `id`, `displayName`, `enabled`, `origins`,
+`allowedScopes`, and `allowedWorkspaceIds`. Both lists must be explicit;
+workspace IDs must be UUIDs. Save replaces this configuration without rotating
+the existing secret. Scope approval replaces the entire scope list; use
+`--clear-scopes --confirm APPROVE_EXTERNAL_APP_SCOPES` to revoke all scopes.
+Use `{"id":"rennu","display_name":"Ren Everheart","adapter":"custom"}`
+for a custom template. Its ID must match the registered app ID. After binding,
+run the existing `projects setup`, `diff`, and confirmed `apply` commands above.
+
+Issue the initial secret, or explicitly rotate an existing one, separately:
+
+```bash
+ttr external apps rotate-secret rennu --secret-out /private/secure/ren-app-secret --confirm ROTATE_EXTERNAL_APP_SECRET
+```
+
+The parent directory must exist. The destination must be new and is created
+with owner-only permissions (`0600`); secrets are never printed. Rotation
+invalidates the old secret immediately. Install the new value in the app's
+server-only environment, then remove the local secret file securely. A failed
+request can leave an empty output file; inspect it before choosing a new path.
+Never commit secret files or put secrets in app JSON. The SDK exposes the same
+operations through `TuturuuuUserClient.external.admin`.
+
 ### Document Operations
 
 #### List Documents
