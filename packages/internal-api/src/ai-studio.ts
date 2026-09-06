@@ -385,3 +385,28 @@ export function updateAiStudioPolicy(
     }
   );
 }
+
+export interface ExternalProviderCostRow {
+  month: string;
+  app_id: string;
+  provider: string;
+  service: string;
+  runs: number;
+  amount_usd: number;
+  last_synced_at: string;
+}
+
+export function getAiStudioProviderCosts(
+  workspaceId: string,
+  range: { from: string; to: string },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    currency: 'USD';
+    timezone: 'UTC';
+    rows: ExternalProviderCostRow[];
+  }>(workspaceAiPath(workspaceId, 'provider-costs'), {
+    cache: 'no-store',
+    query: range,
+  });
+}
