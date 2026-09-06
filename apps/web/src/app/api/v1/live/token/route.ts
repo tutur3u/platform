@@ -13,8 +13,8 @@ import { z } from 'zod';
 import {
   ASSISTANT_LIVE_MODEL,
   ASSISTANT_LIVE_TOOL_CONFIG,
-  ASSISTANT_LIVE_TOOL_DECLARATIONS,
-  ASSISTANT_SYSTEM_INSTRUCTION,
+  DASHBOARD_LIVE_SYSTEM_INSTRUCTION,
+  DASHBOARD_LIVE_TOOL_DECLARATIONS,
 } from '@/lib/live/assistant-tools';
 import {
   abortLiveBillingSession,
@@ -143,11 +143,11 @@ export async function POST(request: NextRequest) {
     const token = await createConstrainedLiveToken({
       model: ASSISTANT_LIVE_MODEL,
       responseModalities: [Modality.AUDIO],
-      systemInstruction: ASSISTANT_SYSTEM_INSTRUCTION,
+      systemInstruction: DASHBOARD_LIVE_SYSTEM_INSTRUCTION,
       thinkingLevel: ThinkingLevel.MINIMAL,
       toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
       tools: [
-        { functionDeclarations: ASSISTANT_LIVE_TOOL_DECLARATIONS },
+        { functionDeclarations: DASHBOARD_LIVE_TOOL_DECLARATIONS },
         { googleSearch: {} },
       ],
     });

@@ -2,7 +2,7 @@
 
 import { Camera, Monitor, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { memo, useEffect, useRef } from 'react';
 
 export type VideoPreviewProps = {
@@ -10,98 +10,56 @@ export type VideoPreviewProps = {
   type: 'webcam' | 'screen' | null;
   onClose?: () => void;
 };
-
 function VideoPreview({ stream, type, onClose }: VideoPreviewProps) {
+  const t = useTranslations('dashboard.voice_assistant');
   const videoRef = useRef<HTMLVideoElement>(null);
-
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-    }
+    const video = videoRef.current;
+    if (video) video.srcObject = stream;
+    const track = stream?.getVideoTracks()[0];
+    const ended = () => onCloseRef.current?.();
+    track?.addEventListener('ended', ended);
+    return () => {
+      track?.removeEventListener('ended', ended);
+      if (video) video.srcObject = null;
+    };
   }, [stream]);
-
+  if (!stream) return null;
   return (
-    <AnimatePresence>
-      {stream && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute right-4 bottom-32 z-30 md:right-6 md:bottom-36"
+    <section
+      className="mx-4 my-3 overflow-hidden rounded-xl border bg-muted/30"
+      aria-label={type === 'webcam' ? t('enable_camera') : t('share_screen')}
+    >
+      <div className="flex items-center justify-between gap-3 px-3 py-2">
+        <p className="flex items-center gap-2 text-sm">
+          {type === 'webcam' ? (
+            <Camera className="size-4 text-primary" />
+          ) : (
+            <Monitor className="size-4 text-primary" />
+          )}
+          {t('studio.sharing')}
+        </p>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          aria-label={t('stop_sharing')}
+          onClick={onClose}
         >
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 shadow-2xl backdrop-blur-xl">
-            {/* Header */}
-            <div className="flex items-center justify-between gap-2 border-white/10 border-b bg-black/20 px-3 py-2">
-              <div className="flex items-center gap-2">
-                {type === 'webcam' ? (
-                  <Camera className="h-4 w-4 text-emerald-400" />
-                ) : (
-                  <Monitor className="h-4 w-4 text-blue-400" />
-                )}
-                <span className="font-medium text-white/80 text-xs">
-                  {type === 'webcam' ? 'Camera' : 'Screen Share'}
-                </span>
-              </div>
-              {onClose && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-white/60 hover:bg-white/10 hover:text-white"
-                  onClick={onClose}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              )}
-            </div>
-
-            {/* Video container */}
-            <div className="relative">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="h-auto w-48 object-cover md:w-56"
-                style={{ transform: type === 'webcam' ? 'scaleX(-1)' : 'none' }}
-              />
-
-              {/* Live indicator */}
-              <div className="absolute top-2 left-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1 backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
-                <span className="font-medium text-[10px] text-white/90 uppercase tracking-wide">
-                  Live
-                </span>
-              </div>
-            </div>
-
-            {/* Footer with stream info */}
-            <div className="border-white/10 border-t bg-black/20 px-3 py-1.5">
-              <StreamInfo stream={stream} />
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          <X className="size-4" />
+        </Button>
+      </div>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="max-h-40 w-full object-contain"
+        style={{ transform: type === 'webcam' ? 'scaleX(-1)' : undefined }}
+      />
+    </section>
   );
 }
-
-function StreamInfo({ stream }: { stream: MediaStream }) {
-  const videoTrack = stream.getVideoTracks()[0];
-  const settings = videoTrack?.getSettings();
-
-  if (!settings) return null;
-
-  return (
-    <div className="flex items-center gap-3 text-[10px] text-white/50">
-      {settings.width && settings.height && (
-        <span>
-          {settings.width}x{settings.height}
-        </span>
-      )}
-      {settings.frameRate && <span>{Math.round(settings.frameRate)} fps</span>}
-    </div>
-  );
-}
-
 export default memo(VideoPreview);

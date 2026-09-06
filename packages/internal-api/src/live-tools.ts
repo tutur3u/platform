@@ -101,3 +101,39 @@ export async function reportLiveUsage(
     method: 'POST',
   });
 }
+
+export interface LiveSessionScope {
+  wsId: string;
+  scopeKey: string;
+}
+
+export async function readLiveSessionHandle(
+  scope: LiveSessionScope,
+  options: InternalApiClientOptions = {}
+) {
+  return getInternalApiClient(options).json<{ sessionHandle: string | null }>(
+    '/api/v1/live/session',
+    { query: { ...scope }, cache: 'no-store' }
+  );
+}
+
+export async function storeLiveSessionHandle(
+  scope: LiveSessionScope & { sessionHandle: string },
+  options: InternalApiClientOptions = {}
+) {
+  return getInternalApiClient(options).json('/api/v1/live/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(scope),
+  });
+}
+
+export async function deleteLiveSessionHandle(
+  scope: LiveSessionScope,
+  options: InternalApiClientOptions = {}
+) {
+  return getInternalApiClient(options).json('/api/v1/live/session', {
+    method: 'DELETE',
+    query: { ...scope },
+  });
+}

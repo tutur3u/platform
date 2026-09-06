@@ -324,15 +324,13 @@ export interface CalendarScheduleStatusResponse {
 export async function listWorkspaceCalendarEvents(
   wsId: string,
   query: WorkspaceCalendarEventsQuery,
-  options?: InternalApiClientOptions
+  options: InternalApiClientOptions & { signal?: AbortSignal } = {}
 ) {
-  const client = getInternalApiClient(options);
+  const { signal, ...clientOptions } = options;
+  const client = getInternalApiClient(clientOptions);
   return client.json<WorkspaceCalendarEventsResponse>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/events`,
-    {
-      query,
-      cache: 'no-store',
-    }
+    { query, cache: 'no-store', signal }
   );
 }
 
@@ -763,13 +761,15 @@ export async function updateWorkspaceCalendarEvent(
 export async function createWorkspaceCalendarEvent(
   wsId: string,
   payload: WorkspaceCalendarEventCreatePayload,
-  options?: InternalApiClientOptions
+  options: InternalApiClientOptions & { signal?: AbortSignal } = {}
 ) {
-  const client = getInternalApiClient(options);
+  const { signal, ...clientOptions } = options;
+  const client = getInternalApiClient(clientOptions);
   return client.json<CalendarEvent>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/events`,
     {
       method: 'POST',
+      signal,
       headers: {
         'Content-Type': 'application/json',
       },

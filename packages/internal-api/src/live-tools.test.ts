@@ -117,3 +117,40 @@ describe('live session metering', () => {
     );
   });
 });
+
+describe('live session handle scope', () => {
+  it('preserves workspace and conversation scope for read, store, and delete', async () => {
+    const {
+      readLiveSessionHandle,
+      storeLiveSessionHandle,
+      deleteLiveSessionHandle,
+    } = await import('./live-tools');
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ sessionHandle: 'handle' }), {
+          status: 200,
+        })
+      )
+    );
+    const scope = { wsId: 'workspace-a', scopeKey: 'assistant:web-dashboard' };
+    await readLiveSessionHandle(scope, { fetch: fetchMock });
+    await storeLiveSessionHandle(
+      { ...scope, sessionHandle: 'handle' },
+      { fetch: fetchMock }
+    );
+    await deleteLiveSessionHandle(scope, { fetch: fetchMock });
+    for (const index of [0, 2]) {
+      const url = new URL(
+        String(fetchMock.mock.calls[index]?.[0]),
+        'https://example.test'
+      );
+      expect(url.searchParams.get('wsId')).toBe(scope.wsId);
+      expect(url.searchParams.get('scopeKey')).toBe(scope.scopeKey);
+    }
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1].body)).toEqual({
+      ...scope,
+      sessionHandle: 'handle',
+    });
+    expect(fetchMock.mock.calls[2]?.[1].method).toBe('DELETE');
+  });
+});

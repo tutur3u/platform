@@ -1,0 +1,80 @@
+---
+title: "Assistant Live"
+description: "Gemini voice, screen context, workspace tools, and session recovery in the dashboard assistant."
+---
+
+The dashboard assistant's Live mode connects directly to Gemini using the Google
+Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
+`GOOGLE_GENERATIVE_AI_API_KEY` must remain server-side. The model is selected by
+`/api/v1/live/token` and passed to the client. Google documents the protocol in the
+[Live API guide](https://ai.google.dev/gemini-api/docs/live-api).
+
+## Experience
+
+Live mode displays both speakers' streamed transcripts, task visualizations,
+Google Search sources, tool activity, and temporary session notes. Typed prompts
+and voice share one session. Camera and screen sharing require an explicit media
+control action; a preview indicates what is shared. Microphone mute sends
+`audioStreamEnd`, and interruption stops queued assistant playback.
+
+Results stay inside a responsive side panel. Expanded results use a keyboard
+accessible dialog. Export downloads the available transcript and notes as text.
+These notes are not workspace documents and are lost when leaving or restarting
+Live mode. The existing five-minute credit authorization limit remains in force;
+expiration ends media capture while retaining the mounted transcript for export.
+
+## First-party tools
+
+| Capability | Execution boundary |
+| --- | --- |
+| Tasks, members, task visualizations | Existing `/api/v1/live/tools/execute` |
+| Current local time and timezone | Browser clock |
+| Calendar events | `listWorkspaceCalendarEvents` through `@tuturuuu/internal-api` |
+| Calendar event creation | `createWorkspaceCalendarEvent`, first-party Tuturuuu source |
+| Session notes | Memory in the current live interface |
+
+Calendar reads require an explicit ISO date range of at most 31 days and return
+at most 50 events to Gemini. Event creation validates timestamps and text lengths.
+Model arguments cannot select a different workspace or calendar provider. Existing
+calendar APIs enforce authentication and workspace permissions. No database
+migration or production schema change is required.
+
+The dashboard token has its own expanded tool declarations and instructions.
+Legacy assistant voice clients retain their original tool catalog.
+
+Task mutations and calendar creation wait for approval of an on-screen argument
+preview. This is a user-interaction gate; server-side authorization remains the
+security boundary. Calls are deduplicated by provider ID, cancellation includes
+queued calls, and late cancelled results are not sent back or displayed. Stopping
+a request cannot roll back a mutation already accepted by the server. Failed
+mutations are not retried automatically; verify their result before retrying.
+
+## Recovery and billing
+
+The client forwards `sessionResumption.handle` even with ephemeral authorization,
+without supplying replacements for server-constrained tools or instructions.
+`GoAway` schedules reconnection, and unexpected closure attempts recovery at most
+three times. Explicit disconnect and unmount invalidate pending connections and
+retries. Manual restart obtains fresh authorization. Paid dashboard sessions retain recovery handles in memory for the current billing
+reservation only, so a fresh authorization cannot replay cumulative usage from a
+previous reservation. Legacy unmetered consumers retain workspace/conversation
+scoping through the existing session API.
+
+Credit reservation and cumulative usage settlement remain on the live Next.js
+backend. Rust is a future migration target, not the deployed API. The token route
+is tracked in `apps/tanstack-web/migration/route-overrides.json`.
+
+## Verification
+
+From `apps/web`, run focused Vitest tests under the dashboard `assistant` directory,
+`src/__tests__/assistant-live-token-routes.test.ts`, and
+`src/__tests__/live/token-builder.test.ts`. Run internal API live-tool tests from
+`packages/internal-api`, followed by `bun check` at the root and `bun run build`
+in `apps/web`.
+
+Authenticated runtime acceptance requires a configured Gemini key, available AI
+credits, and microphone permissions. Verify spoken input/output, interruption,
+mute, camera/screen stop, task and calendar permission failures, approval/decline,
+provider cancellation, reconnect, expiration, and export at desktop and mobile
+sizes. Component or mocked protocol checks do not prove provider audio quality,
+credit settlement, or authenticated production delivery.

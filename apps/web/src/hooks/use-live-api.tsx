@@ -1,9 +1,13 @@
 'use client';
 
 import type { UsageMetadata } from '@google/genai';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  deleteLiveSessionHandle,
   type GeminiLiveUsageSnapshot,
+  readLiveSessionHandle,
   reportLiveUsage,
+  storeLiveSessionHandle,
 } from '@tuturuuu/internal-api';
 import {
   createContext,
@@ -37,6 +41,7 @@ export type ConnectionStatus =
   | 'reconnecting';
 
 export type UseLiveAPIResults = {
+  authorizationExpired?: boolean;
   client: MultimodalLiveClient;
   setConfig: (config: LiveConfig) => void;
   config: LiveConfig;
@@ -54,6 +59,7 @@ const LiveAPIContext = createContext<UseLiveAPIResults | undefined>(undefined);
 export type LiveAPIProviderProps = {
   authorizationExpiresAt?: string;
   children: ReactNode;
+  model?: string;
   url?: string; // Deprecated - no longer needed with new SDK
   apiKey: string;
   liveSessionId?: string;
@@ -70,14 +76,17 @@ export const LiveAPIProvider: FC<LiveAPIProviderProps> = ({
   scopeKey,
   onAuthorizationExpired,
   children,
+  model,
 }) => {
-  const liveAPI = useLiveAPI({ apiKey, liveSessionId, wsId, scopeKey });
+  const [authorizationExpired, setAuthorizationExpired] = useState(false);
+  const liveAPI = useLiveAPI({ apiKey, liveSessionId, wsId, scopeKey, model });
 
   useEffect(() => {
     if (!authorizationExpiresAt) return;
     const remainingMs = new Date(authorizationExpiresAt).getTime() - Date.now();
     const timeoutId = window.setTimeout(
       () => {
+        setAuthorizationExpired(true);
         void liveAPI.disconnect().finally(() => onAuthorizationExpired?.());
       },
       Math.max(0, remainingMs)
@@ -86,7 +95,7 @@ export const LiveAPIProvider: FC<LiveAPIProviderProps> = ({
   }, [authorizationExpiresAt, liveAPI.disconnect, onAuthorizationExpired]);
 
   return (
-    <LiveAPIContext.Provider value={liveAPI}>
+    <LiveAPIContext.Provider value={{ ...liveAPI, authorizationExpired }}>
       {children}
     </LiveAPIContext.Provider>
   );
@@ -105,12 +114,26 @@ export function useLiveAPI({
   liveSessionId,
   wsId,
   scopeKey,
+  model = 'gemini-3.1-flash-live-preview',
 }: {
+  model?: string;
   apiKey: string;
   liveSessionId?: string;
   wsId: string;
   scopeKey: string;
 }): UseLiveAPIResults {
+  const queryClient = useQueryClient();
+  const { mutateAsync: persistHandle } = useMutation({
+    mutationFn: (scope: Parameters<typeof storeLiveSessionHandle>[0]) =>
+      storeLiveSessionHandle(scope),
+  });
+  const { mutateAsync: deleteHandle } = useMutation({
+    mutationFn: (scope: Parameters<typeof deleteLiveSessionHandle>[0]) =>
+      deleteLiveSessionHandle(scope),
+  });
+  const lifecycleRef = useRef(0);
+  const recoveringRef = useRef(false);
+  const connectingRef = useRef<Promise<void> | null>(null);
   const client = useMemo(() => new MultimodalLiveClient({ apiKey }), [apiKey]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
   const latestUsageRef = useRef<GeminiLiveUsageSnapshot>(
@@ -128,7 +151,7 @@ export function useLiveAPI({
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>('disconnected');
   const [config, setConfig] = useState<LiveConfig>({
-    model: 'gemini-3.1-flash-live-preview',
+    model,
     // NOTE: When using ephemeral tokens, systemInstruction, tools, and toolConfig
     // are embedded in the token itself. Passing them here can cause conflicts.
     // Leave config minimal to avoid overriding token settings.
@@ -149,8 +172,10 @@ export function useLiveAPI({
 
   // register audio for streaming server -> speakers
   useEffect(() => {
+    let disposed = false;
     if (!audioStreamerRef.current) {
       audioContext({ id: 'audio-out' }).then((audioCtx: AudioContext) => {
+        if (disposed) return;
         audioStreamerRef.current = new AudioStreamer(audioCtx);
         audioStreamerRef.current
           .addWorklet<any>('vumeter-out', VolMeterWorket, (ev: any) => {
@@ -161,6 +186,10 @@ export function useLiveAPI({
           });
       });
     }
+    return () => {
+      disposed = true;
+      audioStreamerRef.current?.stop();
+    };
   }, []);
 
   // Track the latest session handle for reconnection
@@ -168,7 +197,6 @@ export function useLiveAPI({
   // Track if we're intentionally disconnecting (vs unexpected close)
   const isIntentionalDisconnectRef = useRef(false);
   // Track reconnection attempts
-  const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 3;
 
   const enqueueUsageReport = useCallback(
@@ -213,56 +241,70 @@ export function useLiveAPI({
     const stopAudioStreamer = () => audioStreamerRef.current?.stop();
 
     const onClose = async () => {
-      // Ensure any ongoing assistant audio is stopped when the socket closes
       stopAudioStreamer();
       setConnected(false);
-
-      // If this was an intentional disconnect, don't attempt reconnection
       if (isIntentionalDisconnectRef.current) {
         setConnectionStatus('disconnected');
-        isIntentionalDisconnectRef.current = false;
-        reconnectAttemptsRef.current = 0;
         return;
       }
-
-      // Check if we have a session handle and should attempt reconnection
+      if (recoveringRef.current || connectingRef.current) return;
+      const generation = lifecycleRef.current;
       const sessionHandle = latestSessionHandleRef.current;
-      if (
-        sessionHandle &&
-        reconnectAttemptsRef.current < maxReconnectAttempts
-      ) {
-        console.log(
-          `[Live API] Connection closed unexpectedly, attempting reconnection (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`
-        );
-        setConnectionStatus('reconnecting');
-        reconnectAttemptsRef.current++;
-
-        // Wait a bit before reconnecting to avoid rapid reconnection loops
-        await new Promise((resolve) =>
-          setTimeout(resolve, 1000 * reconnectAttemptsRef.current)
-        );
-
-        try {
-          await client.connect({
-            ...config,
-            sessionResumption: { handle: sessionHandle },
-          });
-          console.log('[Live API] Reconnected successfully');
-          setConnected(true);
-          setConnectionStatus('connected');
-          reconnectAttemptsRef.current = 0;
-        } catch (error) {
-          console.error('[Live API] Reconnection failed:', error);
-          if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-            console.error('[Live API] Max reconnection attempts reached');
-            setConnectionStatus('disconnected');
-            reconnectAttemptsRef.current = 0;
+      if (!sessionHandle) {
+        setConnectionStatus('disconnected');
+        return;
+      }
+      recoveringRef.current = true;
+      setConnectionStatus('reconnecting');
+      try {
+        for (let attempt = 1; attempt <= maxReconnectAttempts; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          if (
+            generation !== lifecycleRef.current ||
+            isIntentionalDisconnectRef.current
+          )
+            return;
+          try {
+            await client.connect({
+              ...config,
+              sessionResumption: { handle: sessionHandle },
+            });
+            if (generation !== lifecycleRef.current) {
+              client.disconnect();
+              return;
+            }
+            setConnected(true);
+            setConnectionStatus('connected');
+            return;
+          } catch {
+            // A bounded loop also retries failures that do not emit a close event.
           }
         }
-      } else {
         setConnectionStatus('disconnected');
-        reconnectAttemptsRef.current = 0;
+      } finally {
+        recoveringRef.current = false;
       }
+    };
+
+    let goAwayTimer: ReturnType<typeof setTimeout> | undefined;
+    const onGoAway = ({ timeLeft }: { timeLeft?: string }) => {
+      if (goAwayTimer) clearTimeout(goAwayTimer);
+      const seconds = Number.parseFloat(timeLeft ?? '1');
+      goAwayTimer = setTimeout(
+        () => {
+          if (
+            isIntentionalDisconnectRef.current ||
+            recoveringRef.current ||
+            !latestSessionHandleRef.current
+          )
+            return;
+          client.disconnect();
+          void onClose();
+        },
+        Number.isFinite(seconds)
+          ? Math.max(0, Math.min(30000, (seconds - 1) * 1000))
+          : 0
+      );
     };
 
     const onAudio = (data: ArrayBuffer) =>
@@ -291,6 +333,7 @@ export function useLiveAPI({
       resumable: boolean;
       newHandle?: string;
     }) => {
+      if (!data.resumable) latestSessionHandleRef.current = null;
       if (data.resumable && data.newHandle) {
         console.log(
           '[Live API] Session resumption update received, storing handle for potential reconnection'
@@ -298,27 +341,21 @@ export function useLiveAPI({
         // Store in ref for immediate access during reconnection
         latestSessionHandleRef.current = data.newHandle;
 
-        // Also persist to server for cross-session recovery
-        if (wsIdRef.current) {
-          try {
-            await fetch('/api/v1/live/session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sessionHandle: data.newHandle,
-                wsId: wsIdRef.current,
-                scopeKey: scopeKeyRef.current,
-              }),
-            });
-          } catch (error) {
-            console.warn('[Live API] Failed to store session handle:', error);
-          }
+        if (wsIdRef.current && !liveSessionId) {
+          void persistHandle({
+            sessionHandle: data.newHandle,
+            wsId: wsIdRef.current,
+            scopeKey: scopeKeyRef.current,
+          }).catch(() => {
+            console.warn('[Live API] Failed to store session handle');
+          });
         }
       }
     };
 
     client
       .on('close', onClose)
+      .on('goaway', onGoAway)
       .on('interrupted', stopAudioStreamer)
       .on('audio', onAudio)
       .on('usage', onUsage)
@@ -327,8 +364,10 @@ export function useLiveAPI({
       .on('sessionresumptionupdate', onSessionResumptionUpdate);
 
     return () => {
+      if (goAwayTimer) clearTimeout(goAwayTimer);
       client
         .off('close', onClose)
+        .off('goaway', onGoAway)
         .off('interrupted', stopAudioStreamer)
         .off('audio', onAudio)
         .off('usage', onUsage)
@@ -336,109 +375,87 @@ export function useLiveAPI({
         .off('turncomplete', onTurnComplete)
         .off('sessionresumptionupdate', onSessionResumptionUpdate);
     };
-  }, [client, config, enqueueUsageReport]);
+  }, [client, config, enqueueUsageReport, liveSessionId, persistHandle]);
 
-  const connect = useCallback(async () => {
-    if (!config) {
-      throw new Error('config has not been set');
-    }
-
-    // Reset intentional disconnect flag since we're connecting
-    hasStartedRef.current = true;
+  const connect = useCallback(() => {
+    if (connectingRef.current) return connectingRef.current;
+    if (client.ws) return Promise.resolve();
+    const generation = ++lifecycleRef.current;
     isIntentionalDisconnectRef.current = false;
+    hasStartedRef.current = true;
+    closingUsageRef.current = false;
     setConnectionStatus('connecting');
-
-    // First check the in-memory ref for a session handle (faster for reconnection)
-    let storedHandle = latestSessionHandleRef.current;
-
-    // If no in-memory handle, try to fetch from server storage
-    if (!storedHandle && wsIdRef.current) {
-      try {
-        const sessionQuery = new URLSearchParams({
-          wsId: wsIdRef.current,
-          scopeKey: scopeKeyRef.current,
-        });
-        const res = await fetch(`/api/v1/live/session?${sessionQuery}`);
-        const data = await res.json();
-        storedHandle = data.sessionHandle || null;
-        if (storedHandle) {
-          latestSessionHandleRef.current = storedHandle;
-          console.log(
-            '[Live API] Found stored session handle, will attempt resumption'
-          );
-          setConnectionStatus('reconnecting');
+    const pending = (async () => {
+      let handle = latestSessionHandleRef.current;
+      // Paid dashboard sessions only resume within their current billing reservation.
+      if (!handle && !liveSessionId) {
+        try {
+          const stored = await queryClient.fetchQuery({
+            queryKey: ['live-session-handle', wsId, scopeKey],
+            queryFn: () => readLiveSessionHandle({ wsId, scopeKey }),
+            staleTime: 0,
+          });
+          handle = stored.sessionHandle;
+        } catch {
+          /* Storage failure does not prevent starting a session. */
         }
-      } catch (error) {
-        console.warn('[Live API] Failed to fetch session handle:', error);
       }
-    } else if (storedHandle) {
-      console.log('[Live API] Using in-memory session handle for reconnection');
-      setConnectionStatus('reconnecting');
-    }
-
-    console.log('[Live API] Connecting with config:', {
-      model: config.model,
-      hasSystemInstruction: !!config.systemInstruction,
-      hasTools: !!config.tools,
-      toolCount: config.tools?.length,
-      hasToolConfig: !!config.toolConfig,
-      hasStoredHandle: !!storedHandle,
-    });
-
-    // Ensure any existing session is fully closed before reconnecting
-    if (client.ws) {
-      client.disconnect();
-      // Wait a bit for the session to fully close
-      await new Promise((resolve) => setTimeout(resolve, 200));
-    }
-
-    try {
-      await client.connect({
-        ...config,
-        ...(storedHandle == null
-          ? {}
-          : { sessionResumption: { handle: storedHandle } }),
-      });
-      console.log('[Live API] Connected successfully');
-      setConnected(true);
-      setConnectionStatus('connected');
-    } catch (error) {
-      console.error('[Live API] Connection failed:', error);
-      setConnectionStatus('disconnected');
-      throw error;
-    }
-  }, [client, config]);
+      if (generation !== lifecycleRef.current) return;
+      try {
+        await client.connect({
+          ...config,
+          ...(handle ? { sessionResumption: { handle } } : {}),
+        });
+        if (generation !== lifecycleRef.current) {
+          client.disconnect();
+          return;
+        }
+        setConnected(true);
+        setConnectionStatus('connected');
+      } catch (error) {
+        if (generation !== lifecycleRef.current) return;
+        setConnectionStatus('disconnected');
+        throw error;
+      }
+    })();
+    connectingRef.current = pending;
+    void pending
+      .finally(() => {
+        if (connectingRef.current === pending) connectingRef.current = null;
+      })
+      .catch(() => undefined);
+    return pending;
+  }, [client, config, liveSessionId, queryClient, scopeKey, wsId]);
 
   const disconnect = useCallback(async () => {
     // Mark this as an intentional disconnect to prevent auto-reconnection
     isIntentionalDisconnectRef.current = true;
-    // Proactively stop any ongoing assistant audio before disconnecting
-    audioStreamerRef.current?.stop();
-    if (hasStartedRef.current) {
-      await enqueueUsageReport(true);
-      hasStartedRef.current = false;
-    }
+    lifecycleRef.current++;
     client.disconnect();
     setConnected(false);
     setConnectionStatus('disconnected');
+    // Proactively stop any ongoing assistant audio before disconnecting
+    audioStreamerRef.current?.stop();
+    if (hasStartedRef.current) {
+      hasStartedRef.current = false;
+      await enqueueUsageReport(true);
+    }
     // Clear the session handle since we're intentionally disconnecting
     latestSessionHandleRef.current = null;
 
-    // Clear server-side session handle as well
-    if (wsIdRef.current) {
-      try {
-        const sessionQuery = new URLSearchParams({
-          wsId: wsIdRef.current,
-          scopeKey: scopeKeyRef.current,
-        });
-        await fetch(`/api/v1/live/session?${sessionQuery}`, {
-          method: 'DELETE',
-        });
-      } catch (error) {
-        console.warn('[Live API] Failed to delete session handle:', error);
-      }
+    try {
+      await deleteHandle({
+        wsId: wsIdRef.current,
+        scopeKey: scopeKeyRef.current,
+      });
+      queryClient.removeQueries({
+        queryKey: ['live-session-handle', wsIdRef.current, scopeKeyRef.current],
+      });
+    } catch {
+      console.warn('[Live API] Failed to delete session handle');
     }
-  }, [client, enqueueUsageReport]);
+  }, [client, deleteHandle, enqueueUsageReport, queryClient]);
+
   disconnectRef.current = disconnect;
 
   const sendToolResponse = useCallback(

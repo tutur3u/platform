@@ -98,6 +98,8 @@ vi.mock('@/lib/live/assistant-tools', () => ({
   },
   ASSISTANT_LIVE_TOOL_DECLARATIONS: [],
   ASSISTANT_SYSTEM_INSTRUCTION: 'assistant instruction',
+  DASHBOARD_LIVE_TOOL_DECLARATIONS: [],
+  DASHBOARD_LIVE_SYSTEM_INSTRUCTION: 'assistant instruction',
 }));
 
 vi.mock('@/lib/live/session-scope', () => ({

@@ -89,6 +89,7 @@ interface MultimodalLiveClientEventTypes {
   audio: (data: ArrayBuffer) => void;
   content: (data: ServerContent) => void;
   transcription: (text: string) => void;
+  inputtranscription: (text: string) => void;
   interrupted: () => void;
   setupcomplete: () => void;
   turncomplete: () => void;
@@ -113,6 +114,8 @@ export type MultimodalLiveAPIClientConnection = {
 export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEventTypes> {
   private ai: GoogleGenAI;
   private session: Session | null = null;
+  private connectionGeneration = 0;
+  private cancelPending: (() => void) | null = null;
   protected config: LiveConfig | null = null;
   public url: string = '';
   private responseModalities: Modality[] = [Modality.AUDIO];
@@ -146,6 +149,9 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
   }
 
   async connect(config: LiveConfig): Promise<boolean> {
+    this.cancelPending?.();
+    const generation = ++this.connectionGeneration;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     this.config = config;
 
     // Debug: Log the full config including tools
@@ -233,18 +239,35 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         if (!connectionSettled) rejectConnection(error);
       };
 
+      const cancel = () =>
+        failConnection(createLiveConnectionError('Live connection cancelled'));
+      this.cancelPending = cancel;
+      timeout = setTimeout(
+        () =>
+          failConnection(
+            createLiveConnectionError('Live connection timed out')
+          ),
+        15000
+      );
       const connection = this.ai.live.connect({
         model: config.model,
-        ...(isUsingEphemeralToken ? {} : { config: sdkConfig }),
+        ...(isUsingEphemeralToken
+          ? config.sessionResumption
+            ? { config: { sessionResumption: config.sessionResumption } }
+            : {}
+          : { config: sdkConfig }),
         callbacks: {
           onopen: () => {
+            if (generation !== this.connectionGeneration) return;
             this.log('client.open', 'connected to Gemini Live');
             this.emit('open');
           },
           onmessage: (message: LiveServerMessage) => {
-            this.handleMessage(message);
+            if (generation === this.connectionGeneration)
+              this.handleMessage(message);
           },
           onerror: (e: ErrorEvent) => {
+            if (generation !== this.connectionGeneration) return;
             console.error('[Live API] Error:', {
               message: e.message,
               type: e.type,
@@ -260,6 +283,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
             reason: string;
             wasClean: boolean;
           }) => {
+            if (generation !== this.connectionGeneration) return;
             console.log('[Live API] Connection closed:', {
               code: event.code,
               reason: event.reason,
@@ -269,34 +293,44 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
               'server.close',
               `disconnected: ${event.reason || 'unknown'}`
             );
-            this.emit('close', { reason: event.reason });
             this.session = null;
+            this.emit('close', { reason: event.reason });
             failConnection(createLiveConnectionError(event.reason));
           },
         },
       });
 
-      this.session = await Promise.race([connection, connectionFailure]);
+      void connection
+        .then((session) => {
+          if (generation !== this.connectionGeneration) session.close();
+        })
+        .catch(() => undefined);
+      const session = await Promise.race([connection, connectionFailure]);
+      if (this.cancelPending === cancel) this.cancelPending = null;
+      if (generation !== this.connectionGeneration) {
+        session.close();
+        throw new Error('Live connection cancelled');
+      }
+      this.session = session;
       connectionSettled = true;
       this.log('server.send', 'setupComplete');
       this.emit('setupcomplete');
 
       return true;
     } catch (error) {
+      if (generation === this.connectionGeneration) {
+        this.connectionGeneration++;
+        this.cancelPending = null;
+      }
       const err = error instanceof Error ? error : new Error(String(error));
       this.log('client.error', err.message);
-      this.emit('error', err);
       throw err;
+    } finally {
+      if (timeout) clearTimeout(timeout);
     }
   }
 
   private handleMessage(message: LiveServerMessage) {
-    // Log all incoming messages for debugging
-    console.log(
-      '[Live API] Message received:',
-      JSON.stringify(message, null, 2).slice(0, 500)
-    );
-
     if (message.usageMetadata) {
       this.log(
         'server.usageMetadata',
@@ -311,7 +345,6 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       const timeLeft = goAwayMsg.goAway.timeLeft;
       this.log('server.goaway', `Time left: ${timeLeft || 'unknown'}`);
       this.emit('goaway', { timeLeft });
-      return;
     }
 
     // Handle session resumption update (provides handle for reconnection)
@@ -325,16 +358,10 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         `Resumable: ${update.resumable}, Handle: ${update.newHandle ? 'provided' : 'none'}`
       );
       this.emit('sessionresumptionupdate', update);
-      return;
     }
 
     // Handle tool calls
     if (message.toolCall) {
-      console.log(
-        '[Live API] TOOL CALL DETECTED:',
-        JSON.stringify(message.toolCall, null, 2)
-      );
-      this.log('server.toolCall', JSON.stringify(message.toolCall));
       const toolCall: ToolCall = {
         functionCalls:
           message.toolCall.functionCalls?.map((fc) => ({
@@ -344,7 +371,6 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
           })) || [],
       };
       this.emit('toolcall', toolCall);
-      return;
     }
 
     // Handle tool call cancellation
@@ -356,7 +382,6 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       this.emit('toolcallcancellation', {
         ids: message.toolCallCancellation.ids || [],
       });
-      return;
     }
 
     // Handle server content
@@ -369,41 +394,11 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         serverContent as { groundingMetadata?: GroundingMetadata }
       ).groundingMetadata;
       if (groundingMetadata) {
-        console.log('[Live API] ========== GOOGLE SEARCH RESULTS ==========');
-        console.log(
-          '[Live API] Search queries:',
-          groundingMetadata.webSearchQueries
-        );
-        console.log(
-          '[Live API] Number of sources:',
-          groundingMetadata.groundingChunks?.length || 0
-        );
-        console.log('[Live API] Sources:');
-        groundingMetadata.groundingChunks?.forEach((chunk, i) => {
-          if (chunk.web) {
-            console.log(`  [${i}] ${chunk.web.title}`);
-            console.log(`      URL: ${chunk.web.uri}`);
-          }
-        });
-        console.log('[Live API] Grounding supports (text segments):');
-        groundingMetadata.groundingSupports?.forEach((support, i) => {
-          console.log(
-            `  [${i}] Text: "${support.segment?.text?.slice(0, 100)}${(support.segment?.text?.length || 0) > 100 ? '...' : ''}"`
-          );
-          console.log(
-            `      From sources: ${support.groundingChunkIndices?.join(', ')}`
-          );
-          console.log(
-            `      Confidence: ${support.confidenceScores?.join(', ')}`
-          );
-        });
-        console.log(
-          '[Live API] Full grounding metadata:',
-          JSON.stringify(groundingMetadata, null, 2)
-        );
-        console.log('[Live API] ============================================');
-        this.log('server.groundingMetadata', JSON.stringify(groundingMetadata));
         this.emit('groundingmetadata', groundingMetadata);
+      }
+
+      if (serverContent.inputTranscription?.text) {
+        this.emit('inputtranscription', serverContent.inputTranscription.text);
       }
 
       // Check for interruption
@@ -411,21 +406,6 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         this.log('server.interrupted', 'generation interrupted');
         this.emit('interrupted');
         return;
-      }
-
-      // Check for turn complete
-      if (serverContent.turnComplete) {
-        this.log('server.turncomplete', 'turn complete');
-        this.emit('turncomplete');
-      }
-
-      // Check for generation complete (model finished generating all output)
-      const contentWithComplete = serverContent as unknown as {
-        generationComplete?: boolean;
-      };
-      if (contentWithComplete.generationComplete) {
-        this.log('server.generationcomplete', 'generation complete');
-        this.emit('generationcomplete');
       }
 
       // Handle model turn with parts
@@ -486,7 +466,21 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       if (serverContent.outputTranscription?.text) {
         const text = serverContent.outputTranscription.text;
         this.emit('transcription', text);
-        this.log('server.transcription', text);
+      }
+
+      // Check for turn complete
+      if (serverContent.turnComplete) {
+        this.log('server.turncomplete', 'turn complete');
+        this.emit('turncomplete');
+      }
+
+      // Check for generation complete (model finished generating all output)
+      const contentWithComplete = serverContent as unknown as {
+        generationComplete?: boolean;
+      };
+      if (contentWithComplete.generationComplete) {
+        this.log('server.generationcomplete', 'generation complete');
+        this.emit('generationcomplete');
       }
     }
   }
@@ -502,6 +496,9 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
   }
 
   disconnect(_session?: Session) {
+    this.cancelPending?.();
+    this.cancelPending = null;
+    this.connectionGeneration++;
     if (this.session) {
       try {
         this.session.close();
@@ -513,6 +510,10 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       return true;
     }
     return false;
+  }
+
+  sendAudioStreamEnd() {
+    this.session?.sendRealtimeInput({ audioStreamEnd: true });
   }
 
   /**
@@ -538,12 +539,6 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       }
       if (chunk.mimeType.includes('image')) {
         hasVideo = true;
-        // Log video frame being sent (truncate data for logging)
-        console.log('[Live Client] Sending video frame:', {
-          mimeType: chunk.mimeType,
-          dataLength: chunk.data.length,
-          dataPreview: `${chunk.data.slice(0, 50)}...`,
-        });
         this.session.sendRealtimeInput({
           video: {
             data: chunk.data,
@@ -600,15 +595,13 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       };
     });
 
-    console.log(
-      '[Live Client] Sending tool response:',
-      JSON.stringify(formattedResponses, null, 2).slice(0, 2000)
-    );
-
     this.session.sendToolResponse({
       functionResponses: formattedResponses,
     });
-    this.log('client.toolResponse', JSON.stringify(toolResponse));
+    this.log(
+      'client.toolResponse',
+      `${formattedResponses.length} tool responses`
+    );
   }
 
   /**

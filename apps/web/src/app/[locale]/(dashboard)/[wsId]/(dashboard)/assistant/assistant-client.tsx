@@ -35,6 +35,7 @@ export default function AssistantClient({
     errorCode,
     expiresAt,
     liveSessionId,
+    model,
     refreshToken,
   } = useEphemeralToken({ creditSource, creditWsId, wsId });
 
@@ -109,11 +110,9 @@ export default function AssistantClient({
       <LiveAPIProvider
         key={`${scopeKey}:${token}`}
         apiKey={token}
+        model={model ?? undefined}
         authorizationExpiresAt={expiresAt ?? undefined}
         liveSessionId={liveSessionId}
-        onAuthorizationExpired={() => {
-          setSessionError(new Error('LIVE_AUTHORIZATION_EXPIRED'));
-        }}
         wsId={wsId}
         scopeKey={scopeKey}
       >

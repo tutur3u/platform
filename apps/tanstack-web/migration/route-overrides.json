@@ -14,7 +14,7 @@
     "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Live session authorization and atomic AI credit reservation remain on the live Next.js backend pending Rust parity."
+      "note": "Live session authorization, atomic AI credit reservation, and dashboard-specific Gemini tool constraints (calendar, time, session notes, approval guidance) remain on the live Next.js backend pending Rust parity. Calendar execution uses existing first-party APIs."
     },
     "api:/api/v1/live/usage:apps/web/src/app/api/v1/live/usage/route.ts": {
       "status": "legacy-next",

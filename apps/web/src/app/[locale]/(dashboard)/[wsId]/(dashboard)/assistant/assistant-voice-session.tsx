@@ -1,24 +1,22 @@
 'use client';
 
-import { executeLiveTool, InternalApiError } from '@tuturuuu/internal-api';
 import { AnimatePresence } from 'framer-motion';
-import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
-import { AuroraBlob, StatusPill } from './assistant-visuals';
+import { StatusPill } from './assistant-visuals';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
+import { LiveCalendarResult } from './components/live-calendar-result';
+import { LiveWorkspace } from './components/live-workspace';
 import VideoPreview from './components/video-panel/video-preview';
 import { VisualizationContainer } from './components/visualizations/visualization-container';
-import type { ServerContent, ToolCall } from './multimodal-live';
+import type { ServerContent } from './multimodal-live';
 import { isModelTurn } from './multimodal-live';
 import { useVisualizationStore } from './stores/visualization-store';
-import type {
-  CoreMentionVisualization,
-  GoogleSearchVisualization,
-  VisualizationToolResponse,
-} from './types/visualizations';
+import type { GoogleSearchVisualization } from './types/visualizations';
+import { useLiveJournal } from './use-live-journal';
+import { useLiveTools } from './use-live-tools';
 
 export function stopMediaStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => {
@@ -35,9 +33,8 @@ export function AssistantVoiceSession({
   onRestartSession: () => Promise<void>;
   wsId: string;
 }) {
-  const t = useTranslations('dashboard.voice_assistant');
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [textChatOpen, setTextChatOpen] = useState(false);
+  const [textChatOpen, setTextChatOpen] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [activeVideoStream, setActiveVideoStream] =
     useState<MediaStream | null>(null);
@@ -54,8 +51,7 @@ export function AssistantVoiceSession({
     connectionStatus,
     disconnect,
     volume,
-    onToolCall,
-    sendToolResponse,
+    authorizationExpired,
   } = useLiveAPIContext();
   const disconnectRef = useRef(disconnect);
   disconnectRef.current = disconnect;
@@ -81,12 +77,14 @@ export function AssistantVoiceSession({
   }, [activeVideoStream]);
 
   useEffect(() => {
-    const handleConnectionError = (error: Error) => onError(error);
+    const handleConnectionError = () => {
+      setIsSpeaking(false);
+    };
     client.on('error', handleConnectionError);
     return () => {
       client.off('error', handleConnectionError);
     };
-  }, [client, onError]);
+  }, [client]);
 
   useEffect(
     () => () => {
@@ -96,153 +94,9 @@ export function AssistantVoiceSession({
     []
   );
 
-  // Visualization store
-  const {
-    addVisualization,
-    setCenterVisualization,
-    dismissVisualization,
-    dismissCenterVisualization,
-    dismissAllVisualizations,
-  } = useVisualizationStore();
-
-  // Execute a tool call via the API
-  const executeToolCall = useCallback(
-    async (functionName: string, args: Record<string, unknown>) => {
-      try {
-        const { result } = await executeLiveTool(
-          { wsId, functionName, args },
-          { signal: AbortSignal.timeout(15_000) }
-        );
-        return result;
-      } catch (error) {
-        console.error('Tool execution error:', error);
-        return {
-          error:
-            error instanceof InternalApiError
-              ? error.message
-              : 'Failed to execute tool',
-        };
-      }
-    },
-    [wsId]
-  );
-
-  // Handle tool calls from Gemini
-  const handleToolCall = useCallback(
-    async (toolCall: ToolCall) => {
-      console.debug(
-        '[Assistant] Tool call received:',
-        toolCall.functionCalls.map((functionCall) => functionCall.name)
-      );
-
-      const functionResponses = await Promise.all(
-        toolCall.functionCalls.map(async (fc) => {
-          console.debug(`[Assistant] Executing tool: ${fc.name}`);
-
-          // Handle highlight_core_topic tool locally (no API call needed)
-          if (fc.name === 'highlight_core_topic') {
-            const args = fc.args as {
-              title: string;
-              content: string;
-              emphasis?: 'info' | 'warning' | 'success' | 'highlight';
-            };
-
-            // Set center visualization (replaces previous)
-            const visData: Omit<
-              CoreMentionVisualization,
-              'id' | 'createdAt' | 'dismissed' | 'side'
-            > = {
-              type: 'core_mention',
-              data: {
-                title: args.title,
-                content: args.content,
-                emphasis: args.emphasis || 'highlight',
-              },
-            };
-            setCenterVisualization(visData);
-            console.log('[Assistant] Set core mention visualization');
-
-            return {
-              id: fc.id,
-              name: fc.name,
-              response: {
-                success: true,
-                message: 'Core topic highlighted on screen',
-              },
-            };
-          }
-
-          // Handle dismiss_core_mention tool locally
-          if (fc.name === 'dismiss_core_mention') {
-            dismissCenterVisualization();
-            console.log('[Assistant] Dismissed core mention visualization');
-
-            return {
-              id: fc.id,
-              name: fc.name,
-              response: { success: true, message: 'Core mention dismissed' },
-            };
-          }
-
-          // Execute other tools via API
-          const result = await executeToolCall(
-            fc.name,
-            fc.args as Record<string, unknown>
-          );
-          // Handle visualization actions from backend
-          const visResult =
-            typeof result.action === 'string'
-              ? (result as unknown as VisualizationToolResponse)
-              : undefined;
-          if (visResult?.action) {
-            if (visResult.action === 'dismiss_visualization') {
-              if (visResult.visualizationId === 'all') {
-                dismissAllVisualizations();
-              } else if (visResult.visualizationId) {
-                dismissVisualization(visResult.visualizationId);
-              }
-            } else if (visResult.visualization) {
-              // Add visualization to the store
-              const visId = addVisualization(visResult.visualization);
-              console.log(`[Assistant] Added visualization: ${visId}`);
-            }
-          }
-
-          // Format response according to Google GenAI SDK requirements
-          // Must include id, name, and response object
-          // See: https://ai.google.dev/gemini-api/docs/live-tools
-          // The response should contain the data directly, not nested
-          return {
-            id: fc.id,
-            name: fc.name,
-            response: result,
-          };
-        })
-      );
-
-      // Send tool responses back to Gemini
-      sendToolResponse({ functionResponses });
-    },
-    [
-      executeToolCall,
-      sendToolResponse,
-      addVisualization,
-      setCenterVisualization,
-      dismissVisualization,
-      dismissCenterVisualization,
-      dismissAllVisualizations,
-    ]
-  );
-
-  // Register tool call handler
-  useEffect(() => {
-    console.log('[Assistant] Registering tool call handler');
-    const unsubscribe = onToolCall(handleToolCall);
-    return () => {
-      console.log('[Assistant] Unregistering tool call handler');
-      unsubscribe();
-    };
-  }, [onToolCall, handleToolCall]);
+  const { activities, notes, decide, calendarResult } = useLiveTools(wsId);
+  const { entries, sendText } = useLiveJournal();
+  const { addVisualization } = useVisualizationStore();
 
   // Handle grounding metadata for Google Search visualization
   useEffect(() => {
@@ -355,45 +209,44 @@ export function AssistantVoiceSession({
     client.on('content', handleContent);
     client.on('audio', handleAudio);
     client.on('turncomplete', handleTurnComplete);
+    client.on('interrupted', handleTurnComplete);
 
     return () => {
       client.off('transcription', handleTranscription);
       client.off('content', handleContent);
       client.off('audio', handleAudio);
       client.off('turncomplete', handleTurnComplete);
+      client.off('interrupted', handleTurnComplete);
     };
   }, [client]);
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
-      {/* Dynamic UI visualizations */}
-      <VisualizationContainer wsId={wsId} />
-
-      {/* Main content area */}
-      <main
-        aria-label={t('live_stage_label')}
-        className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center"
-      >
-        <AuroraBlob
+    <LiveWorkspace
+      connected={connected}
+      authorizationExpired={authorizationExpired}
+      speaking={isSpeaking || volume > 0.03}
+      listening={isUserSpeaking}
+      entries={entries}
+      activities={activities}
+      notes={notes}
+      decide={decide}
+      onPrompt={sendText}
+      status={
+        <StatusPill
           connected={connected}
+          connectionStatus={connectionStatus}
           isUserSpeaking={isUserSpeaking}
-          isSpeaking={isSpeaking}
-          volume={volume}
+          isSpeaking={isSpeaking || volume > 0.03}
         />
-
-        <div className="absolute bottom-[18%] sm:bottom-[20%]">
-          <StatusPill
-            connected={connected}
-            connectionStatus={connectionStatus}
-            isUserSpeaking={isUserSpeaking}
-            isSpeaking={isSpeaking}
-          />
-        </div>
-      </main>
-
-      {/* Controls */}
-      <div className="absolute inset-x-0 bottom-0 z-20">
-        <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 pb-6 md:p-6 md:pb-8">
+      }
+      results={
+        <>
+          <LiveCalendarResult result={calendarResult} />
+          <VisualizationContainer wsId={wsId} />
+        </>
+      }
+      controls={
+        <>
           <ControlTray
             onError={onError}
             onRestartSession={onRestartSession}
@@ -413,16 +266,13 @@ export function AssistantVoiceSession({
               <ChatBox
                 connected={connected}
                 disabled={!connected}
-                onSubmit={async (text: string) => {
-                  client.send({ text }, true);
-                }}
+                onSubmit={async (text: string) => sendText(text)}
               />
             )}
           </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Video preview panel */}
+        </>
+      }
+    >
       <VideoPreview
         stream={activeVideoStream}
         type={videoType}
@@ -432,9 +282,7 @@ export function AssistantVoiceSession({
           setVideoStopRequest((request) => request + 1);
         }}
       />
-
-      {/* Hidden video element for frame capture */}
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />
-    </div>
+    </LiveWorkspace>
   );
 }

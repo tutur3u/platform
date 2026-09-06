@@ -88,6 +88,8 @@ export function useEphemeralToken({
     retry: false,
     refetchOnMount: 'always',
     refetchOnWindowFocus: false,
+    // Recovery must reuse the active authorization instead of replacing the UI.
+    refetchOnReconnect: false,
   });
 
   const refreshToken = useCallback(async () => {

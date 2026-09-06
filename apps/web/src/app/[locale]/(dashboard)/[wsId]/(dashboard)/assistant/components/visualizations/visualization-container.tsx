@@ -1,9 +1,15 @@
 'use client';
 
-import { Maximize2, Minimize2, X } from '@tuturuuu/icons';
+import { Maximize2, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useVisualizationStore } from '../../stores/visualization-store';
 import type { Visualization } from '../../types/visualizations';
@@ -61,230 +67,70 @@ function VisualizationContent({
   );
 }
 
-// Fullscreen overlay component
-function FullscreenOverlay({
-  vis,
-  onClose,
-  wsId,
-}: {
-  vis: Visualization;
-  onClose: () => void;
-  wsId?: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-8 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        className="relative max-h-[90vh] w-full max-w-4xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Card className="h-full max-h-[90vh] overflow-hidden border-border/50 bg-card shadow-2xl">
-          {/* Fullscreen header with close button */}
-          <div className="absolute top-3 right-3 z-20 flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full border border-border/30 bg-background/80 shadow-md backdrop-blur-sm transition-all duration-200 hover:border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
-              onClick={onClose}
-            >
-              <Minimize2 className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Fullscreen content */}
-          <div className="scrollbar-none h-full max-h-[90vh] overflow-auto">
-            <VisualizationContent vis={vis} isFullscreen wsId={wsId} />
-          </div>
-        </Card>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-function VisualizationCard({
-  vis,
-  onDismiss,
-  onRemove,
-  onFullscreen,
-  wsId,
-}: {
-  vis: Visualization;
-  onDismiss: (id: string) => void;
-  onRemove: (id: string) => void;
-  onFullscreen: (vis: Visualization) => void;
-  wsId?: string;
-}) {
-  const slideDirection = vis.side === 'left' ? -100 : 100;
-
-  return (
-    <motion.div
-      key={vis.id}
-      layout
-      initial={{ opacity: 0, x: slideDirection, scale: 0.95 }}
-      animate={
-        vis.dismissed
-          ? { opacity: 0, x: slideDirection, scale: 0.95 }
-          : { opacity: 1, x: 0, scale: 1 }
-      }
-      exit={{ opacity: 0, x: slideDirection, scale: 0.95 }}
-      transition={{
-        type: 'spring',
-        stiffness: 400,
-        damping: 35,
-        mass: 0.8,
-      }}
-      onAnimationComplete={() => {
-        if (vis.dismissed) {
-          onRemove(vis.id);
-        }
-      }}
-      className="group relative"
-    >
-      {/* Action Buttons */}
-      <div className="absolute top-2 right-2 z-20 flex gap-1.5 opacity-0 transition-all duration-200 group-hover:opacity-100">
-        {/* Fullscreen Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-full border border-border/30 bg-background/80 shadow-md backdrop-blur-sm transition-all duration-200 hover:border-primary/50 hover:bg-primary hover:text-primary-foreground"
-          onClick={() => onFullscreen(vis)}
-        >
-          <Maximize2 className="h-3.5 w-3.5" />
-        </Button>
-        {/* Close Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-full border border-border/30 bg-background/80 shadow-md backdrop-blur-sm transition-all duration-200 hover:border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
-          onClick={() => onDismiss(vis.id)}
-        >
-          <X className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-
-      {/* Visualization Content */}
-      <div className="transition-transform duration-200 group-hover:scale-[1.005]">
-        <VisualizationContent vis={vis} wsId={wsId} />
-      </div>
-    </motion.div>
-  );
-}
-
-interface VisualizationContainerProps {
-  wsId?: string;
-}
-
-export function VisualizationContainer({ wsId }: VisualizationContainerProps) {
+export function VisualizationContainer({ wsId }: { wsId?: string }) {
+  const t = useTranslations('dashboard.voice_assistant.studio');
   const {
     visualizations,
     centerVisualization,
-    dismissVisualization,
-    dismissCenterVisualization,
     removeVisualization,
     removeCenterVisualization,
   } = useVisualizationStore();
-
-  // Fullscreen state
-  const [fullscreenVis, setFullscreenVis] = useState<Visualization | null>(
-    null
-  );
-
-  const hasVisualizations =
-    visualizations.length > 0 || centerVisualization !== null;
-  if (!hasVisualizations && !fullscreenVis) return null;
-
-  // Split visualizations based on their assigned side (permanent, no flickering)
-  const leftVisualizations = visualizations.filter((v) => v.side === 'left');
-  const rightVisualizations = visualizations.filter((v) => v.side === 'right');
-
-  const handleFullscreen = (vis: Visualization) => {
-    setFullscreenVis(vis);
-  };
-
-  const handleCloseFullscreen = () => {
-    setFullscreenVis(null);
-  };
-
+  const [expanded, setExpanded] = useState<Visualization | null>(null);
+  const visible = visualizations.filter((vis) => !vis.dismissed);
   return (
-    <>
-      {/* Left side */}
-      {leftVisualizations.length > 0 && (
-        <div className="scrollbar-none pointer-events-none absolute top-20 left-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 *:pointer-events-auto">
-          <AnimatePresence mode="popLayout">
-            {leftVisualizations.map((vis) => (
-              <VisualizationCard
-                key={vis.id}
-                vis={vis}
-                onDismiss={dismissVisualization}
-                onRemove={removeVisualization}
-                onFullscreen={handleFullscreen}
-                wsId={wsId}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Right side */}
-      {rightVisualizations.length > 0 && (
-        <div className="scrollbar-none pointer-events-none fixed top-20 right-4 z-30 flex max-h-[calc(100vh-10rem)] w-96 flex-col gap-4 overflow-y-auto overflow-x-visible pb-4 *:pointer-events-auto">
-          <AnimatePresence mode="popLayout">
-            {rightVisualizations.map((vis) => (
-              <VisualizationCard
-                key={vis.id}
-                vis={vis}
-                onDismiss={dismissVisualization}
-                onRemove={removeVisualization}
-                onFullscreen={handleFullscreen}
-                wsId={wsId}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Center: Core Mention Visualization */}
-      <AnimatePresence
-        onExitComplete={() => {
-          if (centerVisualization?.dismissed) {
-            removeCenterVisualization();
-          }
-        }}
-      >
-        {centerVisualization && !centerVisualization.dismissed && (
-          <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center p-4">
-            <div className="pointer-events-auto">
-              {centerVisualization.type === 'core_mention' && (
-                <CoreMentionCard
-                  data={centerVisualization.data}
-                  onDismiss={dismissCenterVisualization}
-                />
-              )}
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Fullscreen Overlay */}
-      <AnimatePresence>
-        {fullscreenVis && (
-          <FullscreenOverlay
-            vis={fullscreenVis}
-            onClose={handleCloseFullscreen}
-            wsId={wsId}
+    <div className="space-y-3">
+      {centerVisualization?.type === 'core_mention' &&
+        !centerVisualization.dismissed && (
+          <CoreMentionCard
+            data={centerVisualization.data}
+            onDismiss={removeCenterVisualization}
           />
         )}
-      </AnimatePresence>
-    </>
+      {!visible.length && !centerVisualization && (
+        <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm">
+          {t('results_empty')}
+        </div>
+      )}
+      {visible.map((vis) => (
+        <Card key={vis.id} className="relative overflow-hidden">
+          <div className="flex justify-end gap-1 border-b p-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label={t('expand')}
+              onClick={() => setExpanded(vis)}
+            >
+              <Maximize2 className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              aria-label={t('dismiss')}
+              onClick={() => removeVisualization(vis.id)}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+          <VisualizationContent vis={vis} wsId={wsId} />
+        </Card>
+      ))}
+      <Dialog
+        open={expanded !== null}
+        onOpenChange={(open) => {
+          if (!open) setExpanded(null);
+        }}
+      >
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{t('results')}</DialogTitle>
+          </DialogHeader>
+          {expanded && (
+            <VisualizationContent vis={expanded} isFullscreen wsId={wsId} />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

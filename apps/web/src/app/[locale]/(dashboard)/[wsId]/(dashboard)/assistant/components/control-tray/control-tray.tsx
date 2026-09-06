@@ -81,6 +81,8 @@ function MediaStreamButton({
   return (
     <Button
       aria-label={active ? activeLabel : inactiveLabel}
+      aria-pressed={active}
+      title={active ? activeLabel : inactiveLabel}
       variant="ghost"
       size="icon"
       className={cn(
@@ -121,6 +123,9 @@ function ControlTray({
     useState<MediaStream | null>(null);
   const [audioRecorder] = useState(() => new AudioRecorder());
   const [muted, setMuted] = useState(false);
+  const [mediaError, setMediaError] = useState(false);
+  const captureGeneration = useRef(0);
+  const connectedRef = useRef(false);
   const renderCanvasRef = useRef<HTMLCanvasElement>(null);
   const sessionButtonRef = useRef<HTMLButtonElement>(null);
   const lastVideoStopRequestRef = useRef(videoStopRequest);
@@ -129,8 +134,20 @@ function ControlTray({
   videoStreamsRef.current = videoStreams;
   onVideoStreamChangeRef.current = onVideoStreamChange;
 
-  const { client, connected, disconnect } = useLiveAPIContext();
+  const { client, connected, connectionStatus, disconnect } =
+    useLiveAPIContext();
+  connectedRef.current = connected;
   const canRestart = typeof onRestartSession === 'function';
+  useEffect(
+    () => () => {
+      captureGeneration.current++;
+      connectedRef.current = false;
+      videoStreamsRef.current.forEach((item) => {
+        item.stop();
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     if (!connected) sessionButtonRef.current?.focus();
@@ -138,6 +155,7 @@ function ControlTray({
 
   useEffect(() => {
     const onData = (base64: string) => {
+      if (!client.ws) return;
       client.sendRealtimeInput([
         { data: base64, mimeType: 'audio/pcm;rate=16000' },
       ]);
@@ -145,12 +163,13 @@ function ControlTray({
 
     if (connected && !muted) {
       audioRecorder.on('data', onData).on('volume', onInputVolumeChange);
-      void audioRecorder.start().catch((error) => {
-        onError(error instanceof Error ? error : new Error(String(error)));
-        void disconnect();
+      void audioRecorder.start().catch(() => {
+        setMuted(true);
+        setMediaError(true);
       });
     } else {
       audioRecorder.stop();
+      if (connected && muted) client.sendAudioStreamEnd();
     }
 
     return () => {
@@ -158,18 +177,11 @@ function ControlTray({
       audioRecorder.stop();
       onInputVolumeChange(0);
     };
-  }, [
-    audioRecorder,
-    client,
-    connected,
-    disconnect,
-    muted,
-    onError,
-    onInputVolumeChange,
-  ]);
+  }, [audioRecorder, client, connected, muted, onInputVolumeChange]);
 
   useEffect(() => {
     if (connected) return;
+    captureGeneration.current++;
     videoStreamsRef.current.forEach((stream) => {
       stream?.stop();
     });
@@ -196,7 +208,7 @@ function ControlTray({
 
     const captureFrame = () => {
       const canvas = renderCanvasRef.current;
-      if (!canvas || !connected || !isCapturing) return;
+      if (!canvas || !connected || !client.ws || !isCapturing) return;
       if (video.videoWidth === 0 || video.videoHeight === 0) {
         timeoutId = setTimeout(captureFrame, 500);
         return;
@@ -239,7 +251,16 @@ function ControlTray({
   }, [activeVideoStream, client, connected, videoRef]);
 
   const changeStreams = (next?: UseMediaStreamResult) => async () => {
+    const generation = ++captureGeneration.current;
+    setMediaError(false);
     const stream = next ? await next.start() : null;
+    if (generation !== captureGeneration.current || !connectedRef.current) {
+      stream?.getTracks().forEach((track) => {
+        track.stop();
+      });
+      next?.stop();
+      return;
+    }
     setActiveVideoStream(stream);
     onVideoStreamChange(stream, next?.type ?? null);
     videoStreams
@@ -250,7 +271,12 @@ function ControlTray({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl items-center justify-center">
+    <div className="mx-auto flex w-full max-w-2xl flex-col items-center justify-center gap-2">
+      {mediaError && (
+        <p role="alert" className="text-center text-destructive text-xs">
+          {t('studio.media_error')}
+        </p>
+      )}
       <div className="flex items-center gap-1.5 rounded-2xl border border-border/60 bg-background/70 p-1.5 shadow-foreground/5 shadow-lg backdrop-blur-xl">
         {connected && (
           <>
@@ -263,7 +289,10 @@ function ControlTray({
                 'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
                 muted && 'bg-destructive/10 text-destructive'
               )}
-              onClick={() => setMuted((value) => !value)}
+              onClick={() => {
+                setMediaError(false);
+                setMuted((value) => !value);
+              }}
             >
               {muted ? (
                 <MicOff className="size-4" />
@@ -280,7 +309,7 @@ function ControlTray({
                   activeLabel={t('stop_sharing')}
                   inactiveIcon={<MonitorUp className="size-4" />}
                   inactiveLabel={t('share_screen')}
-                  onError={onError}
+                  onError={() => setMediaError(true)}
                   start={changeStreams(screenCapture)}
                   stop={changeStreams()}
                 />
@@ -290,7 +319,7 @@ function ControlTray({
                   activeLabel={t('disable_camera')}
                   inactiveIcon={<Video className="size-4" />}
                   inactiveLabel={t('enable_camera')}
-                  onError={onError}
+                  onError={() => setMediaError(true)}
                   start={changeStreams(webcam)}
                   stop={changeStreams()}
                 />
@@ -320,7 +349,12 @@ function ControlTray({
         <Button
           ref={sessionButtonRef}
           aria-label={connected ? t('end_session') : t('new_session')}
-          disabled={!connected && !canRestart}
+          disabled={
+            !connected &&
+            (!canRestart ||
+              connectionStatus === 'connecting' ||
+              connectionStatus === 'reconnecting')
+          }
           variant={connected ? 'destructive' : 'default'}
           size="icon"
           className="size-11 rounded-xl shadow-sm"
@@ -329,7 +363,7 @@ function ControlTray({
               connected,
               disconnect,
               onRestartSession: onRestartSession ?? (() => Promise.resolve()),
-            })
+            }).catch(onError)
           }
         >
           {connected ? (
