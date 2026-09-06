@@ -16,6 +16,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  WorkspaceNotFoundError: class WorkspaceNotFoundError extends Error {},
   normalizeWorkspaceId: mocks.normalize,
   verifyWorkspaceMembershipType: mocks.membership,
 }));

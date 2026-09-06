@@ -51,9 +51,9 @@ x-web-service: &web-service
     - MARKITDOWN_ENDPOINT_SECRET
     - MARKITDOWN_ENDPOINT_URL
     - MEET_REALTIME_TOKEN_SECRET
-    - MEET_REALTIME_URL=${MEET_REALTIME_URL:-wss://meet.tuturuuu.com/realtime}
+    - MEET_REALTIME_URL=${MEET_REALTIME_URL:-wss://meet-realtime.tuturuuu.com/realtime}
     - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
-    - NEXT_PUBLIC_MEET_REALTIME_URL=${NEXT_PUBLIC_MEET_REALTIME_URL:-wss://meet.tuturuuu.com/realtime}
+    - NEXT_PUBLIC_MEET_REALTIME_URL=${NEXT_PUBLIC_MEET_REALTIME_URL:-wss://meet-realtime.tuturuuu.com/realtime}
     - NEXT_TELEMETRY_DISABLED=1
     - NODE_ENV=production
     - PORT=7803

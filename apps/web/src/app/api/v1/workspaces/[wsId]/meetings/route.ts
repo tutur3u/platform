@@ -3,6 +3,7 @@ import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
+  WorkspaceNotFoundError,
 } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -119,6 +120,12 @@ export async function GET(
       pageSize,
     });
   } catch (error) {
+    if (error instanceof WorkspaceNotFoundError) {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
     console.error('Error in meetings API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -243,6 +250,12 @@ export async function POST(
 
     return NextResponse.json({ meeting });
   } catch (error) {
+    if (error instanceof WorkspaceNotFoundError) {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      );
+    }
     console.error('Error in meetings API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

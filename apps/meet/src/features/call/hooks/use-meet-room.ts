@@ -114,6 +114,8 @@ export function useMeetRoom({
   const mediaRef = useRef(media);
   mediaRef.current = media;
 
+  const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
+
   useEffect(() => {
     let usedInitialToken = false;
 
@@ -178,6 +180,7 @@ export function useMeetRoom({
           }
           mediaRef.current = next;
           setMedia(next);
+          syncForcedMediaRef.current(next);
         }
         setState((current) => reduceCallState(current, message));
       },
@@ -219,6 +222,16 @@ export function useMeetRoom({
         track.stop();
       for (const track of screenStreamRef.current?.getTracks() ?? [])
         track.stop();
+      localStreamRef.current = null;
+      screenStreamRef.current = null;
+      setLocalStream(null);
+      setScreenStream(null);
+      mediaRef.current = {
+        audioEnabled: false,
+        screenEnabled: false,
+        videoEnabled: false,
+      };
+      setMedia(mediaRef.current);
       signalingRef.current = null;
       publishPcRef.current?.close();
       subscribePcRef.current?.close();
@@ -407,6 +420,14 @@ export function useMeetRoom({
     },
     [syncLocalTracks]
   );
+
+  syncForcedMediaRef.current = (next) => {
+    publishPresence(next);
+    void queueLocalTracks(
+      localStreamRef.current ?? new MediaStream(),
+      next
+    ).catch(() => undefined);
+  };
 
   useEffect(() => {
     if (!connectionGeneration || state.admission !== 'admitted') return;

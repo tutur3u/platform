@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
 import type { Metadata } from 'next';
@@ -31,6 +32,14 @@ export default async function MeetingsPage({
 
   const { wsId: id } = await params;
   const { wsId, user } = await getMeetWorkspaceContext(id);
+
+  const admin = await createAdminClient({ noCookie: true });
+  const { data: identity, error: identityError } =
+    await admin.auth.admin.getUserById(user.id);
+  const canCreate =
+    !identityError &&
+    Boolean(identity.user?.email_confirmed_at) &&
+    canCreateOnlineMeeting(identity.user?.email);
 
   const resolvedSearchParams = await searchParams;
   const page = parseInt(resolvedSearchParams?.page || '1', 10);
@@ -70,7 +79,7 @@ export default async function MeetingsPage({
         }
       >
         <MeetingsContent
-          canCreate={canCreateOnlineMeeting(user.email)}
+          canCreate={canCreate}
           wsId={wsId}
           page={page}
           pageSize={pageSize}

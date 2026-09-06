@@ -1,3 +1,4 @@
+export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';
 export type {
   MeetRealtimeClientMessage,
   MeetRealtimeRoomTrack,

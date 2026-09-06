@@ -20,10 +20,16 @@ import { createMeetRealtimeServer } from './server';
 
 const PORT = 7899;
 const WS_ID = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
-const MEETING_ID = '5e5217de-9bb3-4e20-8d99-526ad3e7e34f';
+const MEETING_ID = crypto.randomUUID();
 const HOST_ID = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691';
 const GUEST_ID = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
 const SECRET = process.env.MEET_REALTIME_TOKEN_SECRET || 'integration-secret';
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone verification harness, never a cached Turbo task.
+const REMOTE_URL = process.env.MEET_CHECK_REALTIME_URL;
+const ROOM_URL = REMOTE_URL || `ws://127.0.0.1:${PORT}/realtime`;
+if (REMOTE_URL && !process.env.MEET_REALTIME_TOKEN_SECRET) {
+  throw new Error('Remote checks require MEET_REALTIME_TOKEN_SECRET');
+}
 
 let failures = 0;
 
@@ -60,29 +66,29 @@ function mintToken(
 
 class TestClient {
   readonly received: MeetRealtimeServerMessage[] = [];
-  private socket!: WebSocket;
+  private socket?: WebSocket;
 
   async connect(token: string) {
     this.socket = new WebSocket(
-      `ws://127.0.0.1:${PORT}/realtime?token=${encodeURIComponent(token)}`
+      `${ROOM_URL}?token=${encodeURIComponent(token)}`
     );
-    this.socket.addEventListener('message', (event) => {
+    this.socket?.addEventListener('message', (event) => {
       this.received.push(JSON.parse(String(event.data)));
     });
     await new Promise<void>((resolve, reject) => {
-      this.socket.addEventListener('open', () => resolve());
-      this.socket.addEventListener('error', () =>
+      this.socket?.addEventListener('open', () => resolve());
+      this.socket?.addEventListener('error', () =>
         reject(new Error('ws_error'))
       );
     });
   }
 
   send(message: unknown) {
-    this.socket.send(JSON.stringify(message));
+    this.socket?.send(JSON.stringify(message));
   }
 
   close() {
-    this.socket.close();
+    this.socket?.close();
   }
 
   /** Waits for the first message of `type`, or resolves null on timeout. */
@@ -112,8 +118,8 @@ class TestClient {
   }
 }
 
-const server = createMeetRealtimeServer({ port: PORT });
-process.stdout.write(`room server listening on ${PORT}\n\n`);
+const server = REMOTE_URL ? null : createMeetRealtimeServer({ port: PORT });
+process.stdout.write(`room server ${ROOM_URL}\n\n`);
 
 const host = new TestClient();
 const guest = new TestClient();
@@ -183,7 +189,19 @@ try {
   check(
     'room server creates a real Cloudflare SFU session',
     Boolean(sessionId),
-    sessionId ? `session ${sessionId.slice(0, 8)}…` : 'no sessionId returned'
+    sessionId
+      ? `session ${sessionId.slice(0, 8)}…`
+      : host.received
+          .filter(
+            (message) =>
+              message.type === 'error' && message.requestId === 'sfu-1'
+          )
+          .map((message) =>
+            message.type === 'error'
+              ? message.error.replace(/Bearer\s+\S+/gi, 'Bearer [redacted]')
+              : ''
+          )
+          .join('; ') || 'no sessionId returned'
   );
 
   // --- host controls -----------------------------------------------------
@@ -207,7 +225,7 @@ try {
 } finally {
   host.close();
   guest.close();
-  server.stop(true);
+  server?.stop(true);
 }
 
 process.stdout.write(

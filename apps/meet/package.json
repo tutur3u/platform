@@ -23,7 +23,11 @@
     "sb:typegen": "cd ../database && bun sb:typegen",
     "ui:add": "bunx shadcn-ui@latest add",
     "ui:diff": "bunx shadcn-ui@latest diff",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview:cloudflare": "opennextjs-cloudflare preview",
+    "deploy:cloudflare": "opennextjs-cloudflare deploy",
+    "cf:typegen": "wrangler types --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.8.13",
@@ -58,6 +62,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.4.1",

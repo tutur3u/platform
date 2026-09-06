@@ -16,6 +16,7 @@ describe('remote stream identity', () => {
     const video = {} as MediaStreamTrack;
     const screen = {} as MediaStreamTrack;
     const first = build({ a: { audio, video }, b: { audio } }, '');
+    expect(build({ a: { audio, video }, b: { audio } }, 'a').a).toBe(first.a);
     const changed = build({ a: { audio, video, screen }, b: { audio } }, 'a');
     expect(changed.a).not.toBe(first.a);
     expect(changed.b).toBe(first.b);

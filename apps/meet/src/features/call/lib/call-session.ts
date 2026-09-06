@@ -1,3 +1,4 @@
+import { resolveMeetRealtimeUrl } from '@tuturuuu/realtime/meet';
 import 'server-only';
 
 import {
@@ -10,11 +11,7 @@ import { signMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
 const TOKEN_TTL_MS = 10 * 60_000;
 
 function getTokenSecret() {
-  const secret =
-    process.env.MEET_REALTIME_TOKEN_SECRET ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_KEY;
+  const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
 
   if (secret?.trim()) return secret.trim();
 
@@ -28,12 +25,9 @@ function getTokenSecret() {
 }
 
 export function getMeetRealtimeUrl() {
-  return (
-    process.env.NEXT_PUBLIC_MEET_REALTIME_URL ||
-    process.env.MEET_REALTIME_URL ||
-    (process.env.NODE_ENV === 'production'
-      ? 'wss://meet.tuturuuu.com/realtime'
-      : 'ws://127.0.0.1:7816/realtime')
+  return resolveMeetRealtimeUrl(
+    process.env.NEXT_PUBLIC_MEET_REALTIME_URL || process.env.MEET_REALTIME_URL,
+    process.env.NODE_ENV === 'development'
   );
 }
 

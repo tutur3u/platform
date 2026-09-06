@@ -18,6 +18,25 @@ function getJsonBody(init: RequestInit | undefined) {
 }
 
 describe('CloudflareSfuClient', () => {
+  it('preserves the Workers global receiver for native fetch', async () => {
+    const nativeFetch = vi.fn(function (this: unknown) {
+      if (this !== globalThis) throw new TypeError('Illegal invocation');
+      return Promise.resolve(Response.json({ sessionId: 'worker-session' }));
+    });
+    vi.stubGlobal('fetch', nativeFetch);
+    try {
+      const client = new CloudflareSfuClient({
+        appId: 'app',
+        appSecret: 'secret',
+      });
+      await expect(client.createSession()).resolves.toEqual({
+        sessionId: 'worker-session',
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('uses Cloudflare Realtime SFU Connection API paths and bearer auth', async () => {
     const fetchMock = createFetchMock();
     const client = new CloudflareSfuClient({

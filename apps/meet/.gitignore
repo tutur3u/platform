@@ -1,3 +1,5 @@
 # Sentry Auth Token
 .sentryclirc
 certificates
+.open-next/
+.wrangler/

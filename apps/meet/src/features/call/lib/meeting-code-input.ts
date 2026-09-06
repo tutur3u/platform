@@ -1,3 +1,4 @@
+import { supportedLocales } from '@/i18n/routing';
 import { decodeRoomCode } from './room-code';
 
 export function parseMeetingCode(value: string, origin: string) {
@@ -7,7 +8,12 @@ export function parseMeetingCode(value: string, origin: string) {
   try {
     const url = new URL(input, origin);
     const segments = url.pathname.split('/').filter(Boolean);
-    if (url.origin !== origin || segments.at(-2) !== 'r') return null;
+    const roomPath = segments.length === 2 && segments[0] === 'r';
+    const localizedRoomPath =
+      segments.length === 3 &&
+      supportedLocales.some((locale) => locale === segments[0]) &&
+      segments[1] === 'r';
+    if (url.origin !== origin || (!roomPath && !localizedRoomPath)) return null;
     return decodeRoomCode(segments.at(-1) ?? '');
   } catch {
     return null;
