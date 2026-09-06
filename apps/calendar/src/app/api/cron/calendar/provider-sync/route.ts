@@ -99,13 +99,17 @@ async function handleGET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      ok: results.every((result) => result.success),
-      processed: workspaceIds.length,
-      successful: results.filter((result) => result.success).length,
-      failed: results.filter((result) => !result.success).length,
-      results,
-    });
+    const allSucceeded = results.every((result) => result.success);
+    return NextResponse.json(
+      {
+        ok: allSucceeded,
+        processed: workspaceIds.length,
+        successful: results.filter((result) => result.success).length,
+        failed: results.filter((result) => !result.success).length,
+        results,
+      },
+      { status: allSucceeded ? 200 : 502 }
+    );
   } catch (error) {
     return NextResponse.json(
       {

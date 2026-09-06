@@ -78,6 +78,7 @@ describe('Calendar provider cron ownership', () => {
         { headers: { Authorization: 'Bearer test-cron-secret' } }
       )
     );
+    expect(response.status).toBe(502);
     expect(await response.json()).toMatchObject({
       ok: false,
       successful: 0,

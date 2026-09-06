@@ -74,6 +74,7 @@ export async function syncGoogleInbound(args: {
   let deleted = 0;
   let failedConnections = 0;
   let firstConnectionError: unknown;
+  let authError: unknown;
 
   for (const connection of googleConnections) {
     try {
@@ -105,6 +106,7 @@ export async function syncGoogleInbound(args: {
     } catch (error) {
       failedConnections += 1;
       firstConnectionError ??= error;
+      if (classifyCalendarSyncError(error) === 'auth') authError ??= error;
       console.warn('Google calendar connection sync failed', {
         wsId: args.wsId,
         authTokenId: connection.auth_token_id,
@@ -118,8 +120,9 @@ export async function syncGoogleInbound(args: {
     googleConnections.length > 0 &&
     failedConnections === googleConnections.length
   ) {
-    throw firstConnectionError instanceof Error
-      ? firstConnectionError
+    const prioritizedError = authError ?? firstConnectionError;
+    throw prioritizedError instanceof Error
+      ? prioritizedError
       : new Error('Google sync failed for all connected calendars');
   }
 
@@ -130,7 +133,7 @@ export async function syncGoogleInbound(args: {
     processedConnections: googleConnections.length - failedConnections,
     failedConnections,
     failureType: firstConnectionError
-      ? classifyCalendarSyncError(firstConnectionError)
+      ? classifyCalendarSyncError(authError ?? firstConnectionError)
       : null,
   };
 }

@@ -13,7 +13,9 @@ const {
 }));
 
 vi.mock('@tuturuuu/google', () => ({
-  OAuth2Client: vi.fn(() => ({ setCredentials: vi.fn() })),
+  OAuth2Client: class {
+    setCredentials = vi.fn();
+  },
   google: {
     calendar: googleCalendarMock,
   },
@@ -120,7 +122,11 @@ describe('calendar provider calendars route', () => {
     expect(supabase.from).not.toHaveBeenCalled();
   });
 
-  it('marks an expired provider account for reconnection', async () => {
+  it.each([
+    ['invalid_grant', 'reconnect_required'],
+    ['invalid_request', 'temporarily_unavailable'],
+    ['rateLimitExceeded', 'temporarily_unavailable'],
+  ])('maps provider error %s to %s', async (error, state) => {
     const tokenQuery = createTokenQuery();
     tokenQuery.data = [
       {
@@ -139,7 +145,7 @@ describe('calendar provider calendars route', () => {
       user: { id: 'user-1' },
     });
     googleCalendarMock.mockImplementation(() => {
-      throw new Error('invalid_request');
+      throw new Error(error);
     });
 
     const response = await GET(
@@ -152,7 +158,7 @@ describe('calendar provider calendars route', () => {
     expect(response.status).toBe(200);
     expect(body.byAccount).toEqual({ 'account-1': [] });
     expect(body.accountStatuses).toEqual({
-      'account-1': { state: 'reconnect_required' },
+      'account-1': { state },
     });
   });
 });

@@ -464,6 +464,59 @@ describe('workspace calendar sync route', () => {
     );
   });
 
+  it.each([true, false])(
+    'prioritizes auth recovery across mixed failures (partial=%s)',
+    async (partial) => {
+      createAdminClientMock.mockResolvedValue(
+        createAdminSupabaseMock({
+          additionalGoogleConnections: [
+            {
+              auth_token_id: 'google-token-id',
+              calendar_id: 'second',
+              is_enabled: true,
+              ws_id: WS_ID,
+            },
+            {
+              auth_token_id: 'google-token-id',
+              calendar_id: 'third',
+              is_enabled: true,
+              ws_id: WS_ID,
+            },
+          ],
+        })
+      );
+      performIncrementalActiveSyncMock
+        .mockRejectedValueOnce(new Error('ETIMEDOUT'))
+        .mockRejectedValueOnce(new Error('invalid_grant'));
+      if (partial)
+        performIncrementalActiveSyncMock.mockResolvedValueOnce({
+          eventsDeleted: 0,
+          eventsInserted: 0,
+          eventsUpdated: 0,
+        });
+      else
+        performIncrementalActiveSyncMock.mockRejectedValueOnce(
+          new Error('temporary network error')
+        );
+      const response = await POST(
+        new Request(
+          `http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ direction: 'inbound' }),
+          }
+        ) as never,
+        { params: Promise.resolve({ wsId: WS_ID }) }
+      );
+      expect(response.status).toBe(partial ? 200 : 500);
+      expect(await response.json()).toMatchObject({ code: 'auth' });
+      expect(dashboardUpdateMock).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'failed', error_type: 'auth' })
+      );
+    }
+  );
+
   it('continues syncing healthy Google calendars when one connection is stale', async () => {
     createAdminClientMock.mockResolvedValue(
       createAdminSupabaseMock({

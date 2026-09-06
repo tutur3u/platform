@@ -1,3 +1,6 @@
+mod health;
+use health::classify_calendar_sync_health;
+
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -17,10 +20,6 @@ const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const MEMBERSHIP_LOOKUP_FAILED_MESSAGE: &str = "Failed to verify workspace access";
 const NO_ACCESS_MESSAGE: &str = "You don't have access to this workspace";
 const LOAD_FAILED_MESSAGE: &str = "Failed to load sync status";
-
-// Mirrors apps/web/src/lib/calendar/sync-health.ts constants.
-const TOKEN_EXPIRY_WARNING_SECONDS: i64 = 5 * 60;
-const RUNNING_WINDOW_SECONDS: i64 = 5 * 60;
 
 #[derive(Deserialize)]
 struct AccountRow {
@@ -128,7 +127,7 @@ async fn sync_status_response(
         };
 
     let now_seconds = now_epoch_seconds();
-    let health = classify_calendar_sync_health(&accounts, &recent_runs, now_seconds);
+    let health = classify_calendar_sync_health(&accounts, &connections, &recent_runs, now_seconds);
 
     let google_count = accounts
         .iter()
@@ -198,7 +197,7 @@ async fn sync_status_response(
             "connections": connections_json,
             "recentRuns": recent_runs_json,
             "cron": {
-                "inbound": "*/10 * * * *",
+                "inbound": "*/15 * * * *",
                 "scheduler": "0 * * * *",
                 "health": "*/30 * * * *",
             },
@@ -363,133 +362,6 @@ async fn send_service_role_rest_request(
         .map_err(|_| ())
 }
 
-// Mirrors classifyCalendarSyncHealth in apps/web/src/lib/calendar/sync-health.ts.
-// Operates in epoch seconds; the original works in milliseconds but the only
-// comparisons are against 5-minute windows and relative ordering, so seconds
-// precision preserves behavior.
-fn classify_calendar_sync_health(
-    accounts: &[AccountRow],
-    recent_runs: &[DashboardRow],
-    now_seconds: i64,
-) -> SyncHealthSummary {
-    let last_success = recent_runs
-        .iter()
-        .find(|r| r.status.as_deref() == Some("success"));
-    let last_failure = recent_runs
-        .iter()
-        .find(|r| r.status.as_deref() == Some("failed"));
-    let current_run = recent_runs
-        .iter()
-        .find(|r| is_running_record(r, now_seconds));
-    let retry_after_seconds = recent_runs
-        .iter()
-        .find_map(|r| r.cooldown_remaining_seconds);
-
-    let last_success_at = last_success.and_then(|r| r.end_time.clone());
-    let last_failure_at =
-        last_failure.and_then(|r| r.end_time.clone().or_else(|| r.start_time.clone()));
-
-    if accounts.is_empty() {
-        return SyncHealthSummary {
-            state: "disconnected",
-            reason: "no_accounts".to_owned(),
-            last_success_at,
-            last_failure_at,
-            currently_running: false,
-            retry_after_seconds,
-        };
-    }
-
-    if current_run.is_some() {
-        return SyncHealthSummary {
-            state: "syncing",
-            reason: "running".to_owned(),
-            last_success_at,
-            last_failure_at,
-            currently_running: true,
-            retry_after_seconds,
-        };
-    }
-
-    if accounts
-        .iter()
-        .any(|a| is_expiring_soon(a.expires_at.as_deref(), now_seconds))
-    {
-        return SyncHealthSummary {
-            state: "degraded",
-            reason: "token_expiring".to_owned(),
-            last_success_at,
-            last_failure_at,
-            currently_running: false,
-            retry_after_seconds,
-        };
-    }
-
-    let last_success_ms = last_success
-        .and_then(|r| r.end_time.as_deref())
-        .and_then(parse_rfc3339_epoch_seconds)
-        .unwrap_or(0);
-    let last_failure_ms = last_failure
-        .and_then(|r| {
-            r.end_time
-                .as_deref()
-                .and_then(parse_rfc3339_epoch_seconds)
-                .or_else(|| {
-                    r.start_time
-                        .as_deref()
-                        .and_then(parse_rfc3339_epoch_seconds)
-                })
-        })
-        .unwrap_or(0);
-
-    if last_failure_ms != 0 && last_failure_ms >= last_success_ms {
-        let reason = last_failure
-            .and_then(|r| r.error_type.clone())
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| "last_run_failed".to_owned());
-        return SyncHealthSummary {
-            state: "degraded",
-            reason,
-            last_success_at,
-            last_failure_at,
-            currently_running: false,
-            retry_after_seconds,
-        };
-    }
-
-    SyncHealthSummary {
-        state: "healthy",
-        reason: "ok".to_owned(),
-        last_success_at,
-        last_failure_at,
-        currently_running: false,
-        retry_after_seconds,
-    }
-}
-
-fn is_running_record(record: &DashboardRow, now_seconds: i64) -> bool {
-    if record.status.as_deref() != Some("running") {
-        return false;
-    }
-    let Some(start_time) = record.start_time.as_deref() else {
-        return false;
-    };
-    let Some(started_at) = parse_rfc3339_epoch_seconds(start_time) else {
-        return false;
-    };
-    now_seconds - started_at <= RUNNING_WINDOW_SECONDS
-}
-
-fn is_expiring_soon(expires_at: Option<&str>, now_seconds: i64) -> bool {
-    let Some(expires_at) = expires_at else {
-        return false;
-    };
-    let Some(expiry) = parse_rfc3339_epoch_seconds(expires_at) else {
-        return false;
-    };
-    expiry - now_seconds <= TOKEN_EXPIRY_WARNING_SECONDS
-}
-
 fn now_epoch_seconds() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -517,83 +389,4 @@ fn is_workspace_uuid_literal(value: &str) -> bool {
 
 fn message_response(status: u16, message: &str) -> BackendResponse {
     no_store_response(json_response(status, json!({ "error": message })))
-}
-
-// Self-contained RFC3339 -> epoch-seconds parser (no chrono dependency
-// available in this crate). Mirrors the parser in
-// workspaces_user_groups_sessions_group_summaries.rs.
-fn parse_rfc3339_epoch_seconds(value: &str) -> Option<i64> {
-    let value = value.trim();
-    let bytes = value.as_bytes();
-    if value.len() < 19 {
-        return None;
-    }
-    let year: i64 = value.get(0..4)?.parse().ok()?;
-    if bytes.get(4) != Some(&b'-') {
-        return None;
-    }
-    let month: i64 = value.get(5..7)?.parse().ok()?;
-    if bytes.get(7) != Some(&b'-') {
-        return None;
-    }
-    let day: i64 = value.get(8..10)?.parse().ok()?;
-    let sep = bytes.get(10)?;
-    if *sep != b'T' && *sep != b't' && *sep != b' ' {
-        return None;
-    }
-    let hour: i64 = value.get(11..13)?.parse().ok()?;
-    if bytes.get(13) != Some(&b':') {
-        return None;
-    }
-    let minute: i64 = value.get(14..16)?.parse().ok()?;
-    if bytes.get(16) != Some(&b':') {
-        return None;
-    }
-    let second: i64 = value.get(17..19)?.parse().ok()?;
-
-    let mut rest = &value[19..];
-    if rest.starts_with('.') {
-        let frac_end = rest[1..]
-            .find(|c: char| !c.is_ascii_digit())
-            .map(|index| index + 1)
-            .unwrap_or(rest.len());
-        rest = &rest[frac_end..];
-    }
-
-    let offset_seconds = if rest.is_empty() || rest == "Z" || rest == "z" {
-        0
-    } else {
-        let sign = match rest.as_bytes().first() {
-            Some(b'+') => 1,
-            Some(b'-') => -1,
-            _ => return None,
-        };
-        let body = &rest[1..];
-        let (oh, om) = if let Some((h, m)) = body.split_once(':') {
-            (h, m)
-        } else if body.len() == 4 {
-            (&body[0..2], &body[2..4])
-        } else if body.len() == 2 {
-            (body, "0")
-        } else {
-            return None;
-        };
-        let oh: i64 = oh.parse().ok()?;
-        let om: i64 = om.parse().ok()?;
-        sign * (oh * 3600 + om * 60)
-    };
-
-    let days = days_from_civil(year, month, day);
-    let utc = days * 86_400 + hour * 3600 + minute * 60 + second - offset_seconds;
-    Some(utc)
-}
-
-fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
-    let y = if month <= 2 { year - 1 } else { year };
-    let era = if y >= 0 { y } else { y - 399 } / 400;
-    let yoe = y - era * 400;
-    let mp = if month > 2 { month - 3 } else { month + 9 };
-    let doy = (153 * mp + 2) / 5 + day - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    era * 146_097 + doe - 719_468
 }
