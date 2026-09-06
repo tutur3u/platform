@@ -5,16 +5,10 @@ import {
   staff,
   text,
 } from '@tuturuuu/multiplayer';
-import {
-  authenticate,
-  authRoute,
-  hash,
-  randomToken,
-  sessionCookie,
-  sign,
-} from './auth';
+import { authRoute, hash, randomToken, sessionCookie, sign } from './auth';
 import type { Env } from './env';
 import { platformProxy } from './platform-proxy';
+import { centralAuthCookies, resolveSession } from './session';
 
 export { ColabRoom } from './room';
 
@@ -56,7 +50,11 @@ async function bodyOf(request: Request): Promise<Record<string, unknown>> {
   );
   return body as Record<string, unknown>;
 }
-async function handle(request: Request, env: Env): Promise<Response> {
+async function handle(
+  request: Request,
+  env: Env,
+  cookies: string[]
+): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/auth/') || url.pathname === '/verify-token')
     return authRoute(request, env);
@@ -66,7 +64,18 @@ async function handle(request: Request, env: Env): Promise<Response> {
       url.pathname === '/' &&
       /^[a-f0-9-]{36}$/.test(url.searchParams.get('room') ?? '');
     if (appPage && !guestInvite && !url.searchParams.has('auth')) {
-      const identity = await authenticate(request, env);
+      let identity: Awaited<ReturnType<typeof resolveSession>>;
+      try {
+        identity = await resolveSession(request, env, cookies);
+      } catch (error) {
+        if (
+          error instanceof RoomError &&
+          error.code === 'session_unavailable' &&
+          centralAuthCookies(request)
+        )
+          return env.ASSETS.fetch(request);
+        throw error;
+      }
       if (!identity?.email) {
         const target = new URL('/auth/login', url);
         target.searchParams.set('returnTo', url.pathname + url.search);
@@ -92,17 +101,17 @@ async function handle(request: Request, env: Env): Promise<Response> {
     );
     requireRule(request.method === 'POST', 'method_not_allowed', 405);
   }
-  const identity = await authenticate(request, env);
-  if (url.pathname === '/api/session')
-    return Response.json({
-      identity,
-      canHost: identity ? staff(identity) : false,
-    });
   if (url.pathname === '/api/logout' && request.method === 'POST')
     return Response.json(
       { ok: true },
       { headers: { 'Set-Cookie': sessionCookie('', 0) } }
     );
+  const identity = await resolveSession(request, env, cookies);
+  if (url.pathname === '/api/session')
+    return Response.json({
+      identity,
+      canHost: identity ? staff(identity) : false,
+    });
   if (url.pathname === '/api/rooms' && request.method === 'POST') {
     requireRule(identity && staff(identity), 'staff_only', 403);
     await env.ROOMS.getByName(`host:${identity.id}`).limit(
@@ -184,8 +193,9 @@ async function handle(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     let response: Response;
+    const cookies: string[] = [];
     try {
-      response = await handle(request, env);
+      response = await handle(request, env, cookies);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'request_failed';
       const code = /^[a-z_]+$/.test(message) ? message : 'request_failed';
@@ -221,6 +231,7 @@ export default {
     }
     if (response.status === 101) return response;
     const headers = new Headers(response.headers);
+    for (const cookie of cookies) headers.append('Set-Cookie', cookie);
     headers.set('X-Content-Type-Options', 'nosniff');
     headers.set('Referrer-Policy', 'no-referrer');
     headers.set(

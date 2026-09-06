@@ -1,5 +1,6 @@
 import { requireRule } from '@tuturuuu/multiplayer';
 import type { Env } from './env';
+import { centralAuthCookies, renewedCentralCookies } from './session';
 
 /** Only real account support endpoints are bridged; workshop tools never use this. */
 const methods: Record<string, readonly string[]> = {
@@ -74,11 +75,8 @@ export async function platformProxy(request: Request, env: Env) {
     'User-Agent': 'Tuturuuu-Colab/1.0',
   });
   // Forward only central auth cookies, never the Colab signing cookie or arbitrary headers.
-  const cookies = (request.headers.get('cookie') ?? '')
-    .split(';')
-    .map((value) => value.trim())
-    .filter((value) => /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?=/.test(value));
-  if (cookies.length) headers.set('Cookie', cookies.join('; '));
+  const cookies = centralAuthCookies(request);
+  if (cookies.length) headers.set('Cookie', cookies);
   const response = await fetch(
     new URL(url.pathname + url.search, env.AUTH_ORIGIN),
     {
@@ -88,12 +86,14 @@ export async function platformProxy(request: Request, env: Env) {
       redirect: 'manual',
     }
   );
+  const responseHeaders = new Headers({
+    'Content-Type': response.headers.get('content-type') ?? 'application/json',
+    'Cache-Control': 'no-store',
+  });
+  for (const cookie of renewedCentralCookies(response))
+    responseHeaders.append('Set-Cookie', cookie);
   return new Response(response.body, {
     status: response.status,
-    headers: {
-      'Content-Type':
-        response.headers.get('content-type') ?? 'application/json',
-      'Cache-Control': 'no-store',
-    },
+    headers: responseHeaders,
   });
 }

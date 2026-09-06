@@ -191,7 +191,7 @@ The Worker forwards only explicitly allowlisted real account/support endpoints (
 ## Workspace entry and notifications
 
 Colab requires a Tuturuuu login when opening the app. The sidebar separates
-Workshops (`/`), Join a room (dialog), Host a workshop (`/host`, staff only),
+Workshops (`/`), Join a room (dialog), Host a workshop (dialog, staff only),
 and Practice guide (`/guide`). Direct `/?room=...` invitations retain temporary
 password entry for guests. Login preserves the selected app destination.
 
@@ -221,3 +221,15 @@ Back/Forward follows navigation and dialog history. Direct `/join` links still
 require login and open the dialog over the workspace home. Modified link clicks
 retain normal browser behavior. The finite runtime verifier checks document and
 sidebar identity, dialog dismissal, draft retention, and mobile overflow.
+
+Hosting also opens above the current page, and its draft survives closing and
+reopening the dialog. Direct `/host` links open it above the home workspace.
+
+Colab refreshes its account session before the one-hour expiry using the central
+`/api/auth/me` endpoint, which revalidates the Supabase user. Only central auth
+cookies are forwarded; rotated auth cookies are returned to the browser.
+Confirmed account email remains the permission source. Guest sessions are never
+extended by this mechanism. The visible client checks its session every minute
+and reopens its room WebSocket when renewed credentials change. Temporary
+identity-service failures retain the current workspace and can be retried;
+explicit sign-out, account revocation, and private-room access denial still apply.

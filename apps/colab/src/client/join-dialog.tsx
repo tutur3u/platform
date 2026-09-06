@@ -11,7 +11,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useState } from 'react';
 import { useCopy } from './i18n';
-import { closeJoinDialog } from './navigation';
+import { closeWorkspaceDialog } from './navigation';
 
 export function JoinRoomDialog({
   open,
@@ -27,7 +27,7 @@ export function JoinRoomDialog({
     <Dialog
       open={open}
       onOpenChange={(value) => {
-        if (!value) closeJoinDialog();
+        if (!value) closeWorkspaceDialog();
         setInvalid(false);
       }}
     >

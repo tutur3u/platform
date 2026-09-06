@@ -1,3 +1,13 @@
+export class ColabRequestError extends Error {
+  constructor(
+    message: string,
+    public status: number
+  ) {
+    super(message);
+    this.name = 'ColabRequestError';
+  }
+}
+
 /** Same-origin transport for the independently deployed Colab Worker. */
 export async function colabRequest<T>(
   path: string,
@@ -12,18 +22,20 @@ export async function colabRequest<T>(
   const response = await fetch(`/api${path}`, {
     method: body ? 'POST' : 'GET',
     credentials: 'same-origin',
+    cache: 'no-store',
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
   const result = await response.json();
   if (!response.ok)
-    throw new Error(
+    throw new ColabRequestError(
       result &&
         typeof result === 'object' &&
         'error' in result &&
         typeof result.error === 'string'
         ? result.error
-        : 'request_failed'
+        : 'request_failed',
+      response.status
     );
   return result as T;
 }

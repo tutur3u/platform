@@ -22,11 +22,16 @@ export const useWorkspaceLocation = () =>
 
 export function navigateWorkspace(href: string, replace = false) {
   const target = new URL(href, location.origin);
-  if (target.pathname === '/join') {
-    target.pathname = location.pathname === '/join' ? '/' : location.pathname;
+  if (target.pathname === '/join' || target.pathname === '/host') {
+    const dialog = target.pathname.slice(1);
+    target.pathname = ['/join', '/host'].includes(location.pathname)
+      ? '/'
+      : location.pathname;
     target.search = location.search;
     target.hash = location.hash;
-    target.searchParams.set('join', '1');
+    target.searchParams.delete('join');
+    target.searchParams.delete('host');
+    target.searchParams.set(dialog, '1');
   }
   const next = target.pathname + target.search + target.hash;
   if (next === snapshot()) return;
@@ -35,10 +40,11 @@ export function navigateWorkspace(href: string, replace = false) {
   window.dispatchEvent(new Event(navigationEvent));
 }
 
-export function closeJoinDialog() {
+export function closeWorkspaceDialog() {
   const target = new URL(location.href);
-  if (target.pathname === '/join') target.pathname = '/';
+  if (['/join', '/host'].includes(target.pathname)) target.pathname = '/';
   target.searchParams.delete('join');
+  target.searchParams.delete('host');
   navigateWorkspace(target.pathname + target.search + target.hash, true);
 }
 

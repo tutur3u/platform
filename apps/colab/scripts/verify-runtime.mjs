@@ -7,6 +7,8 @@ import { Miniflare } from 'miniflare';
 const workerDir =
   process.env.COLAB_TEST_WORKER_DIR ?? '/private/tmp/colab-worker';
 const secret = 'local-test-only-secret-not-for-production';
+let centralStatus = 200;
+let centralChecks = 0;
 const mf = new Miniflare({
   port: 8795,
   workers: [
@@ -22,6 +24,36 @@ const mf = new Miniflare({
         COLAB_SESSION_SECRET: secret,
         APP_ORIGIN: 'http://127.0.0.1:8795',
         AUTH_ORIGIN: 'https://tuturuuu.com',
+      },
+      outboundService: async (request) => {
+        if (new URL(request.url).pathname !== '/api/auth/me')
+          return new Response(null, { status: 401 });
+        centralChecks++;
+        assert.match(
+          request.headers.get('cookie') ?? '',
+          /sb-project-auth-token/
+        );
+        assert.ok(!request.headers.get('cookie').includes('colab_session'));
+        return Response.json(
+          {
+            user: {
+              id: 'host',
+              email: 'host@tuturuuu.com',
+              email_confirmed_at: '2026-01-01',
+              user_metadata: { full_name: 'host' },
+            },
+          },
+          {
+            status: centralStatus,
+            headers:
+              centralStatus === 200
+                ? {
+                    'Set-Cookie':
+                      'sb-project-auth-token=rotated; Path=/; HttpOnly; SameSite=Lax',
+                  }
+                : {},
+          }
+        );
       },
       serviceBindings: {
         ASSETS: async (request) => {
@@ -44,9 +76,9 @@ const mf = new Miniflare({
     },
   ],
 });
-const token = (id, email) => {
+const token = (id, email, expires = Date.now() + 3600000) => {
   const payload = Buffer.from(
-    JSON.stringify({ id, email, name: id, expires: Date.now() + 3600000 })
+    JSON.stringify({ id, email, name: id, expires })
   ).toString('base64');
   return `${payload}.${createHmac('sha256', secret).update(payload).digest('base64')}`;
 };
@@ -225,6 +257,31 @@ try {
       new RegExp(`colab_return=${encodeURIComponent(destination)}`)
     );
   }
+  const renewalHeaders = {
+    Cookie: `colab_session=${token('host', 'host@tuturuuu.com', Date.now() - 1)}; sb-project-auth-token=fixture`,
+  };
+  const resumed = await mf.dispatchFetch('http://127.0.0.1:8795/guide?host=1', {
+    headers: renewalHeaders,
+    redirect: 'manual',
+  });
+  assert.equal(
+    resumed.status,
+    200,
+    'expired app sessions resume without a login redirect'
+  );
+  assert.match(resumed.headers.get('set-cookie'), /colab_session=/);
+  centralStatus = 503;
+  const unavailable = await mf.dispatchFetch(
+    'http://127.0.0.1:8795/api/session',
+    { headers: renewalHeaders }
+  );
+  assert.equal(unavailable.status, 503);
+  assert.equal(
+    unavailable.headers.get('set-cookie'),
+    null,
+    'outages must not erase credentials'
+  );
+  centralStatus = 200;
   const guestDocument = await mf.dispatchFetch(
     `http://127.0.0.1:8795/?room=${room.id}`
   );
@@ -274,6 +331,7 @@ try {
       },
     });
   });
+  await page.clock.install();
   await page.goto('http://127.0.0.1:8795/');
   await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
   assert.equal(await page.locator('.colab-toolbar').count(), 0);
@@ -314,16 +372,57 @@ try {
   await joinDialog.waitFor({ state: 'hidden' });
   await assertStableShell();
   await nav('Host a workshop').click();
-  await page.locator('input[name=title]').fill('Keep this workshop draft');
+  const hostDialog = page.getByRole('dialog', {
+    name: 'Host a workshop',
+    exact: true,
+  });
+  await hostDialog
+    .locator('input[name=title]')
+    .fill('Keep this workshop draft');
+  await page.keyboard.press('Escape');
+  await hostDialog.waitFor({ state: 'hidden' });
   await nav('Join a room').click();
   await joinDialog.waitFor();
   await page.keyboard.press('Escape');
   await joinDialog.waitFor({ state: 'hidden' });
+  await nav('Host a workshop').click();
   assert.equal(
-    await page.locator('input[name=title]').inputValue(),
+    await hostDialog.locator('input[name=title]').inputValue(),
+    'Keep this workshop draft'
+  );
+  await page.context().addCookies([
+    {
+      name: 'colab_session',
+      value: token('host', 'host@tuturuuu.com', Date.now() + 60_000),
+      domain: '127.0.0.1',
+      path: '/',
+    },
+    {
+      name: 'sb-project-auth-token',
+      value: 'central-fixture',
+      domain: '127.0.0.1',
+      path: '/',
+    },
+  ]);
+  const renewResponse = page.waitForResponse((response) =>
+    response.url().endsWith('/api/session')
+  );
+  await page.clock.fastForward(61_000);
+  assert.equal((await renewResponse).status(), 200);
+  assert.ok(centralChecks > 0);
+  assert.equal(
+    await hostDialog.locator('input[name=title]').inputValue(),
     'Keep this workshop draft'
   );
   await assertStableShell();
+  const browserCookies = await page.context().cookies();
+  assert.equal(
+    browserCookies.find((cookie) => cookie.name === 'sb-project-auth-token')
+      ?.value,
+    'rotated'
+  );
+  await page.keyboard.press('Escape');
+  await hostDialog.waitFor({ state: 'hidden' });
   await nav('Practice guide').click();
   await page.getByRole('button', { name: 'Add a little clarity' }).click();
   await page.getByText('Ready for your review', { exact: true }).waitFor();
@@ -466,8 +565,47 @@ try {
   await page
     .getByRole('heading', { name: 'Chào mừng trở lại, host' })
     .waitFor();
+  await page.goto('http://127.0.0.1:8795/host');
+  const mobileHost = page.getByRole('dialog', {
+    name: 'Tổ chức buổi thực hành',
+    exact: true,
+  });
+  await mobileHost.waitFor();
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth
+    )
+  );
+  await mobileHost.evaluate(async (dialog) => {
+    await Promise.all(
+      dialog
+        .getAnimations({ subtree: true })
+        .map((animation) => animation.finished.catch(() => {}))
+    );
+  });
+  await page.screenshot({ path: '/private/tmp/colab-host-dialog-mobile.png' });
+  await page.keyboard.press('Escape');
+  await request(`${path}/action`, owner, { action: 'mode', mode: 'open' });
+  const initialSocket = page.waitForEvent('websocket');
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
+  await initialSocket;
+  await page.locator('#prompt').fill('Unsaved prompt survives session renewal');
+  await page.context().addCookies([
+    {
+      name: 'colab_session',
+      value: token('host', 'host@tuturuuu.com', Date.now() + 60_000),
+      domain: '127.0.0.1',
+      path: '/',
+    },
+  ]);
+  const refreshedSocket = page.waitForEvent('websocket');
+  await page.clock.fastForward(61_000);
+  await refreshedSocket;
+  assert.equal(
+    await page.locator('#prompt').inputValue(),
+    'Unsaved prompt survives session renewal'
+  );
   await page.setViewportSize({ width: 1440, height: 1050 });
   await page.screenshot({
     path: '/private/tmp/colab-workshop.png',

@@ -257,7 +257,8 @@
     "hostDescription": "Đặt thử thách, mời nhóm và hướng dẫn buổi thực hành.",
     "guideDescription": "Học cách viết chỉ dẫn rõ ràng, xây dựng kỹ năng và thử nghiệm trợ lý.",
     "privateLabel": "Chỉ người được mời",
-    "invalidRoom": "Nhập liên kết hoặc mã phòng hợp lệ từ người tổ chức."
+    "invalidRoom": "Nhập liên kết hoặc mã phòng hợp lệ từ người tổ chức.",
+    "sessionUnavailable": "Hiện chưa thể kiểm tra tài khoản. Thử lại để tiếp tục công việc đang làm."
   },
   "common": {
     "retry": "Thử lại"

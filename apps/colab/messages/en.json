@@ -257,7 +257,8 @@
     "hostDescription": "Set a challenge, invite your team, and guide the session.",
     "guideDescription": "Learn how to write clear instructions, build skills, and test your agent.",
     "privateLabel": "Invite-only",
-    "invalidRoom": "Enter a valid room link or room ID from your host."
+    "invalidRoom": "Enter a valid room link or room ID from your host.",
+    "sessionUnavailable": "Your account could not be checked right now. Retry to continue where you left off."
   },
   "common": {
     "retry": "Retry"

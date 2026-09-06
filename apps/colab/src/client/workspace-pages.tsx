@@ -7,7 +7,6 @@ import {
 } from '@tuturuuu/icons';
 import type { Identity } from '@tuturuuu/multiplayer';
 import { Button } from '@tuturuuu/ui/button';
-import { Home } from './home';
 import { appNames, useCopy } from './i18n';
 import { LandingPreview, WorkshopDetails } from './landing-preview';
 import { WorkspaceLink } from './navigation';
@@ -20,7 +19,6 @@ export function WorkspacePages(props: {
   const c = useCopy();
   const w = c.workspace;
   const path = location.pathname;
-  if (path === '/host') return <Home {...props} />;
   if (path === '/guide')
     return (
       <div className="home workspace-guide">

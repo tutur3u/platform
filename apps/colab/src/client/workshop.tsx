@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { colabRequest } from '@tuturuuu/internal-api/colab';
+import { ColabRequestError, colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
 import { useEffect, useState } from 'react';
 import { Admin } from './admin';
@@ -48,7 +48,8 @@ export function Workshop({
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
-    if (!activeId) return;
+    // Reconnect with renewed credentials while retaining the cached room and draft.
+    if (!activeId || !identity?.expires) return;
     let disposed = false;
     let socket: WebSocket;
     let reconnect: ReturnType<typeof setTimeout>;
@@ -77,8 +78,15 @@ export function Workshop({
         }
       };
       socket.onclose = (event) => {
+        if (disposed) return;
         setOnline(false);
-        if (event.code === 1008) {
+        if (
+          event.code === 1008 &&
+          event.reason === 'session_expired' &&
+          identity?.email
+        ) {
+          void cache.invalidateQueries({ queryKey: ['session'] });
+        } else if (event.code === 1008) {
           cache.removeQueries({ queryKey: ['room', roomId] });
           cache.invalidateQueries({ queryKey: ['session'] });
           return;
@@ -101,9 +109,12 @@ export function Workshop({
       socket.close();
       setOnline(false);
     };
-  }, [roomId, activeId, cache]);
+  }, [roomId, activeId, cache, identity?.expires, identity?.email]);
   if (query.isPending) return <div className="loading">{c.loading}</div>;
-  if (!query.data || query.isError)
+  const unavailable =
+    query.error instanceof TypeError ||
+    (query.error instanceof ColabRequestError && query.error.status >= 500);
+  if (!query.data || (query.isError && !unavailable))
     return (
       <div className="workshop">
         <button type="button" className="quiet" onClick={leave}>

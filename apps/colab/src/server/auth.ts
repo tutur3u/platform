@@ -110,7 +110,9 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
     const returnPath =
       requestedReturn.origin === env.APP_ORIGIN &&
       ['/', '/join', '/host', '/guide'].includes(requestedReturn.pathname)
-        ? requestedReturn.pathname + requestedReturn.search
+        ? requestedReturn.pathname +
+          requestedReturn.search +
+          requestedReturn.hash
         : '/';
     const returnTo = new URL('/auth/callback', env.APP_ORIGIN);
     returnTo.searchParams.set('state', nonce);
@@ -205,7 +207,7 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
       target.origin === env.APP_ORIGIN &&
       ['/', '/join', '/host', '/guide'].includes(target.pathname)
     )
-      returnPath = target.pathname + target.search;
+      returnPath = target.pathname + target.search + target.hash;
   } catch {
     /* Invalid return cookies fall back to the lobby. */
   }

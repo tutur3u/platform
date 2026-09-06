@@ -19,6 +19,7 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { HostWorkshopDialog } from './host-dialog';
 import {
   type Locale,
   LocaleContext,
@@ -44,9 +45,14 @@ function App() {
   const current = useWorkspaceLocation();
   const route = new URL(current, location.origin);
   const roomId = route.searchParams.get('room') ?? '';
-  const joinOpen = route.pathname === '/join' || route.searchParams.has('join');
+  const hostOpen = route.pathname === '/host' || route.searchParams.has('host');
+  const joinOpen =
+    !hostOpen && (route.pathname === '/join' || route.searchParams.has('join'));
   const session = useQuery({
     queryKey: ['session'],
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    retry: 2,
     queryFn: () =>
       colabRequest<{ identity: Identity | null; canHost: boolean }>('/session'),
   });
@@ -60,13 +66,22 @@ function App() {
         <section>
           <h1>Colab</h1>
           <p>
-            {session.isPending ? c.loadingAccount : c.workspace.description}
+            {session.isPending
+              ? c.loadingAccount
+              : session.isError
+                ? c.workspace.sessionUnavailable
+                : c.workspace.description}
           </p>
-          {!session.isPending && (
+          {session.isError && (
+            <Button onClick={() => void session.refetch()}>
+              {c.common.retry}
+            </Button>
+          )}
+          {!session.isPending && !session.isError && (
             <>
               <Button asChild className="w-full">
                 <a
-                  href={`/auth/login?returnTo=${encodeURIComponent(location.pathname)}`}
+                  href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.search + location.hash)}`}
                 >
                   {c.login}
                 </a>
@@ -103,6 +118,12 @@ function App() {
       }}
       onLocaleChange={(value) => changeLocale(value)}
     >
+      <HostWorkshopDialog
+        key={session.data?.identity?.id ?? 'guest'}
+        open={hostOpen}
+        canHost={session.data?.canHost ?? false}
+        navigate={navigate}
+      />
       <JoinRoomDialog open={joinOpen} navigate={navigate} />
       {authRetry && (
         <section className="auth-recovery" role="alert">

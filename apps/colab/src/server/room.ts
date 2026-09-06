@@ -8,6 +8,7 @@ import {
   mutateRoom,
   projectRoom,
   type Room,
+  RoomError,
   requireRule,
   text,
 } from '@tuturuuu/multiplayer';
@@ -266,8 +267,11 @@ export class ColabRoom extends DurableObject<Env> {
       memberOf(this.read(), ws.deserializeAttachment() as Identity);
       if (message === 'ping') ws.send('pong');
       else ws.close(1008, 'unsupported_message');
-    } catch {
-      ws.close(1008, 'session_expired');
+    } catch (error) {
+      ws.close(
+        1008,
+        error instanceof RoomError ? error.code : 'access_revoked'
+      );
     }
   }
   webSocketClose(ws: WebSocket, code: number, reason: string) {
