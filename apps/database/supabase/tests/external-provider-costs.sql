@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set search_path = public, private, extensions;
-select plan(11);
+select plan(14);
 insert into public.workspaces(id) values ('b9999999-9999-4999-8999-999999999991');
 select private.record_external_provider_cost('b9999999-9999-4999-8999-999999999991','cs35','b9999999-9999-4999-8999-999999999992','apify','run1','facebook',0.126,'2026-07-01','2026-08-01');
 select private.record_external_provider_cost('b9999999-9999-4999-8999-999999999991','cs35','b9999999-9999-4999-8999-999999999992','apify','run1','facebook',0.126,'2026-07-01','2026-08-01');
@@ -19,5 +19,9 @@ select throws_ok($$select private.record_external_provider_cost('b9999999-9999-4
 select private.record_external_provider_cost('b9999999-9999-4999-8999-999999999991','cs35','b9999999-9999-4999-8999-999999999992','apify','account-day','account_usage',0.5,'2026-07-01','2026-08-03','account1','account_day');
 select is((select sum(amount_usd) from private.get_external_provider_costs('b9999999-9999-4999-8999-999999999991','2026-07-01','2026-08-01')),0.5::numeric,'account day replaces covered run cost instead of double counting');
 select is((select count(*)::int from private.external_provider_costs where app_id='cs35'),2,'run detail remains available for audit');
+select is((select sum(amount_usd) from private.get_external_provider_costs('b9999999-9999-4999-8999-999999999991','2026-07-01T12:00:00Z','2026-07-02')),0.5::numeric,'midday range includes overlapping full account day');
+select private.record_external_provider_cost('b9999999-9999-4999-8999-999999999991','cs35','b9999999-9999-4999-8999-999999999992','apify','account-day','account_usage',0.7,'2026-07-01','2026-08-03','account2','account_day');
+select is((select count(*)::int from private.external_provider_costs where external_run_id='account-day'),2,'same external id in different accounts remains distinct');
+select is((select sum(amount_usd) from private.get_external_provider_costs('b9999999-9999-4999-8999-999999999991','2026-07-01','2026-08-01')),1.2::numeric,'distinct account daily totals aggregate without overwriting');
 select * from finish();
 rollback;

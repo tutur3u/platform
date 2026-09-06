@@ -29,12 +29,31 @@ describe('provider cost reads', () => {
   it('authorizes the satellite session and queries only its normalized workspace', async () => {
     const result = await GET(request(), context);
     expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({
+      currency: 'USD',
+      timezone: 'UTC',
+      rows: [],
+    });
+    expect(result.headers.get('Cache-Control')).toBe('no-store');
     expect(mocks.authorize).toHaveBeenCalledWith('personal', 'use_ai_studio');
     expect(mocks.rpc).toHaveBeenCalledWith(
       'get_external_provider_costs',
       expect.objectContaining({ p_ws_id: 'normalized-workspace' })
     );
   });
+  it.each(['?from=invalid&to=invalid', '?from=2026-08-01&to=2026-07-01'])(
+    'rejects invalid ranges without querying costs: %s',
+    async (query) => {
+      const result = await GET(
+        new NextRequest(
+          `https://ai.tuturuuu.com/api/v1/workspaces/personal/ai/provider-costs${query}`
+        ),
+        context
+      );
+      expect(result.status).toBe(400);
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    }
+  );
   it('does not query costs when access is refused', async () => {
     mocks.authorize.mockResolvedValue({
       ok: false,

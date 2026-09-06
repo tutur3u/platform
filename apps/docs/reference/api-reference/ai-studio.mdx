@@ -1,5 +1,6 @@
 ---
 title: AI Studio API
+updatedAt: '2026-09-06'
 description: OpenAI-compatible Tuturuuu AI endpoints, bearer authentication, streaming, and native extensions.
 ---
 
@@ -146,7 +147,7 @@ not execute AI, reserve credits, or debit the workspace.
 ```
 
 Bodies are limited to 8 KiB. Workspace/app identity comes from authentication,
-never the body. Each workspace/app/provider/run has one record; newer observation
+never the body. Each workspace/app/provider/account/run has one record; newer observation
 timestamps can correct it and stale retries cannot overwrite it. A successful
 write returns `{ "accepted": true, "externalRunId": "run_123" }`. Retry unavailable
 writes with the same run ID. Import provider totals only once: do not add event
@@ -173,3 +174,7 @@ imports for a shared provider account without explicit attribution. Daily totals
 must reconcile with the provider's post-discount billing-cycle total; do not
 silently allocate discounts or add current list-price surcharges. Apify's reported
 usage includes applicable date-order/pay-per-event charges, storage and transfer.
+
+When IDs are only unique within a provider account, supply `accountId` on every
+record. Account-day totals include the complete UTC day whenever it overlaps
+the requested range; hourly costs cannot be inferred from a daily total.

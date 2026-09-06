@@ -1,24 +1,19 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { getAiStudioProviderCosts } from '@tuturuuu/internal-api/ai-studio';
+import type { UseQueryResult } from '@tanstack/react-query';
+import type { getAiStudioProviderCosts } from '@tuturuuu/internal-api/ai-studio';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { SectionCard } from './studio/section-card';
 
 export function ProviderCostPanel({
-  workspaceId,
+  query,
   range,
 }: {
-  workspaceId: string;
+  query: UseQueryResult<Awaited<ReturnType<typeof getAiStudioProviderCosts>>>;
   range: { from: string; to: string } | null;
 }) {
   const t = useTranslations('ai-studio.provider-costs');
-  const query = useQuery({
-    queryKey: ['ai-studio-provider-costs', workspaceId, range],
-    queryFn: () => getAiStudioProviderCosts(workspaceId, range!),
-    enabled: Boolean(range),
-  });
   const money = (value: number) =>
     new Intl.NumberFormat(undefined, {
       style: 'currency',
@@ -35,7 +30,7 @@ export function ProviderCostPanel({
           <Button
             variant="outline"
             size="sm"
-            disabled={query.isFetching}
+            disabled={!range || query.isFetching}
             onClick={() => void query.refetch()}
           >
             {t('refresh')}
@@ -43,7 +38,9 @@ export function ProviderCostPanel({
         }
       >
         <p className="mb-4 text-muted-foreground text-xs">{t('coverage')}</p>
-        {query.isError ? (
+        {!range ? (
+          <p role="status">{t('select_range')}</p>
+        ) : query.isError ? (
           <p role="alert" className="text-destructive text-sm">
             {t('error')}
           </p>

@@ -4,6 +4,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   type AiStudioRunsResponse,
   getAiStudioCredits,
+  getAiStudioProviderCosts,
   getAiStudioRuns,
   getAiStudioUsage,
 } from '@tuturuuu/internal-api/ai-studio';
@@ -39,6 +40,11 @@ export function ObservabilityPanel({
     enabled: Boolean(range),
     queryFn: () => getAiStudioUsage(workspaceId, range!),
     queryKey: ['ai-studio-usage', workspaceId, range],
+  });
+  const providerCostsQuery = useQuery({
+    enabled: section === 'usage' && Boolean(range),
+    queryFn: () => getAiStudioProviderCosts(workspaceId, range!),
+    queryKey: ['ai-studio-provider-costs', workspaceId, range],
   });
   const creditsQuery = useQuery({
     enabled: section === 'credits',
@@ -76,12 +82,15 @@ export function ObservabilityPanel({
     (section === 'credits' && creditsQuery.isError) ||
     (isRunSection && runsQuery.isError && runs.length === 0);
   const isRefreshing =
+    providerCostsQuery.isFetching ||
     usageQuery.isFetching ||
     runsQuery.isFetching ||
     (section === 'credits' && creditsQuery.isFetching);
 
   const refresh = () => {
+    if (!range) return;
     if (filters.range === 'custom') {
+      if (section === 'usage') void providerCostsQuery.refetch();
       void usageQuery.refetch();
       if (isRunSection) void runsQuery.refetch();
     } else {
@@ -121,7 +130,7 @@ export function ObservabilityPanel({
       />
 
       {section === 'usage' ? (
-        <ProviderCostPanel workspaceId={workspaceId} range={range} />
+        <ProviderCostPanel query={providerCostsQuery} range={range} />
       ) : null}
 
       {isRunSection ? (

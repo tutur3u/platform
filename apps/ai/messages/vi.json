@@ -441,7 +441,8 @@
     "provider-costs": {
       "title": "Chi phí nhà cung cấp",
       "description": "Chi phí do nhà cung cấp báo cáo, tách biệt với tín dụng AI. Nhóm theo tháng gốc của lượt chạy (UTC) trong khoảng ngày đã chọn.",
-      "coverage": "Tổng ngày của tài khoản chuyên dùng thay thế chi phí lượt đã bao gồm để tránh tính hai lần. Chỉ gồm bản ghi đã đồng bộ; dữ liệu thiếu không phải miễn phí. Số tiền USD không gồm phí thuê bao, thuế hoặc tín dụng chưa báo cáo.",
+      "coverage": "Tổng ngày của tài khoản chuyên dùng thay thế chi phí lượt đã bao gồm để tránh tính hai lần. Chỉ gồm bản ghi đã đồng bộ; dữ liệu thiếu không phải miễn phí. Số tiền USD không gồm phí thuê bao, thuế hoặc tín dụng chưa báo cáo. Bản ghi ngày tính toàn bộ ngày UTC nếu giao với khoảng đã chọn.",
+      "select_range": "Chọn khoảng ngày hợp lệ để xem chi phí nhà cung cấp.",
       "refresh": "Làm mới",
       "error": "Chưa tải được chi phí. Vui lòng thử lại sau khi cấu hình tích hợp.",
       "loading": "Đang tải chi phí…",

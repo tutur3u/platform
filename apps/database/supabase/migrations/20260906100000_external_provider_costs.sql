@@ -13,7 +13,7 @@ create table if not exists private.external_provider_costs (
   granularity text not null default 'run' check (granularity in ('run', 'account_day')),
   source text not null default 'provider_api' check (source = 'provider_api'),
   updated_at timestamptz not null default now(),
-  primary key (ws_id, app_id, provider, external_run_id)
+  primary key (ws_id, app_id, provider, account_id, external_run_id)
 );
 alter table private.external_provider_costs enable row level security;
 revoke all on private.external_provider_costs from public, anon, authenticated;
@@ -31,7 +31,7 @@ create or replace function private.record_external_provider_cost(
     (ws_id, app_id, actor_id, provider, external_run_id, service, amount_usd, occurred_at, observed_at, account_id, granularity)
   values (p_ws_id, p_app_id, p_actor_id, p_provider, p_external_run_id, p_service,
     p_amount_usd, p_occurred_at, p_observed_at, p_account_id, p_granularity)
-  on conflict (ws_id, app_id, provider, external_run_id) do update
+  on conflict (ws_id, app_id, provider, account_id, external_run_id) do update
     set amount_usd = excluded.amount_usd, service = excluded.service,
         occurred_at = excluded.occurred_at, observed_at = excluded.observed_at,
         actor_id = excluded.actor_id, account_id = excluded.account_id, granularity = excluded.granularity, updated_at = now()
@@ -45,7 +45,8 @@ language sql stable security invoker set search_path = '' as $$
   select to_char(occurred_at at time zone 'UTC', 'YYYY-MM'), app_id, provider, service,
     count(*), sum(amount_usd), max(updated_at)
   from private.external_provider_costs cost
-  where ws_id = p_ws_id and occurred_at >= p_from and occurred_at < p_to
+  where ws_id = p_ws_id and occurred_at < p_to
+    and (occurred_at >= p_from or (granularity = 'account_day' and occurred_at + interval '1 day' > p_from))
     and (granularity = 'account_day' or not exists (
       select 1 from private.external_provider_costs daily
       where daily.ws_id = cost.ws_id and daily.app_id = cost.app_id and daily.provider = cost.provider
