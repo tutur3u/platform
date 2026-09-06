@@ -4,6 +4,7 @@ import {
   applyMeetRoomCommand,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
+  MEET_CONNECTED_PRESENCE_TTL_MS,
   MEET_PRESENCE_TTL_MS,
   type MeetRealtimeTokenPayload,
   meetRealtimeTokenPayloadSchema,
@@ -386,6 +387,14 @@ describe('meet room lifecycle', () => {
     const expired = Date.parse(NOW) + MEET_PRESENCE_TTL_MS * 3;
     expect(pruneMeetPresence(joined, expired, new Set([HOST_ID]))).toBe(joined);
     expect(pruneMeetPresence(joined, expired, new Set()).presence).toEqual({});
+  });
+
+  it('expires ghost presence even when the transport still reports an open socket', () => {
+    const joined = admitOrHold(createMeetRoomSnapshot(), token(), NOW).state;
+    const expired = Date.parse(NOW) + MEET_CONNECTED_PRESENCE_TTL_MS + 1;
+    expect(
+      pruneMeetPresence(joined, expired, new Set([HOST_ID])).presence
+    ).toEqual({});
   });
 
   it('tracks recording state for the whole room', () => {

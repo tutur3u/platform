@@ -7,5 +7,15 @@ export function validateMeetCheckEndpoint(value: string): string {
       'Meet checks require WSS, except for loopback WS development'
     );
   }
+  if (
+    value.includes('?') ||
+    value.includes('#') ||
+    url.username ||
+    url.password
+  ) {
+    throw new Error(
+      'Meet check endpoints must not contain credentials, query, or fragment'
+    );
+  }
   return value;
 }

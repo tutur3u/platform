@@ -311,7 +311,30 @@ export class MeetRoomDurableObject implements DurableObject {
       connectedUserIds
     );
     if (pruned !== this.snapshot) {
+      const expired = Object.keys(this.snapshot.presence).filter(
+        (userId) => !pruned.presence[userId]
+      );
       this.snapshot = pruned;
+      for (const userId of expired) {
+        const token = sockets
+          .map((socket) => this.tokenOf(socket))
+          .find((candidate) => candidate?.userId === userId);
+        const firstSocket = sockets[0];
+        const roomId =
+          token?.roomId ??
+          (firstSocket ? this.tokenOf(firstSocket)?.roomId : undefined);
+        const outcome = releaseParticipant(this.snapshot, userId, roomId ?? '');
+        this.snapshot = outcome.state;
+        this.broadcast(outcome.broadcast);
+        for (const socket of sockets) {
+          if (
+            this.tokenOf(socket)?.userId === userId &&
+            socket.readyState === WebSocket.OPEN
+          ) {
+            socket.close(4000, 'heartbeat_timeout');
+          }
+        }
+      }
       this.persist();
     }
 
