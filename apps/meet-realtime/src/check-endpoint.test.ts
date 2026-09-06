@@ -1,5 +1,6 @@
-import { expect, test } from 'bun:test';
-import { validateMeetCheckEndpoint } from './check-endpoint';
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { validateMeetCheckEndpoint } from './check-endpoint.ts';
 
 test('accepts encrypted remote checks and loopback development', () => {
   for (const url of [
@@ -8,7 +9,7 @@ test('accepts encrypted remote checks and loopback development', () => {
     'ws://localhost:7899/realtime',
     'ws://[::1]:7899/realtime',
   ])
-    expect(validateMeetCheckEndpoint(url)).toBe(url);
+    assert.equal(validateMeetCheckEndpoint(url), url);
 });
 
 test('rejects cleartext remote endpoints and non-WebSocket schemes', () => {
@@ -19,5 +20,5 @@ test('rejects cleartext remote endpoints and non-WebSocket schemes', () => {
     'https://meet-realtime.tuturuuu.com/realtime',
     'http://127.0.0.1:7899/realtime',
   ])
-    expect(() => validateMeetCheckEndpoint(url)).toThrow();
+    assert.throws(() => validateMeetCheckEndpoint(url));
 });

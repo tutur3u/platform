@@ -60,7 +60,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run test
         working-directory: packages/realtime
-      - run: bun test apps/meet-realtime/src/check-endpoint.test.ts
+      - run: node --experimental-strip-types --test apps/meet-realtime/src/check-endpoint.test.ts
       - run: bun run test
         working-directory: apps/meet
       - name: Build the frontend for Workers
