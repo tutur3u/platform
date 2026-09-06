@@ -54,7 +54,7 @@
 .mission {
   position: sticky;
   top: 24px;
-  background: #edf2e2;
+  background: var(--card);
   padding: 25px;
 }
 .mission h2 {
@@ -80,7 +80,7 @@
   padding-left: 5px;
 }
 .mission-bottom {
-  border-top: 1px solid #d5deca;
+  border-top: 1px solid var(--border);
   padding-top: 20px;
   margin-top: 30px;
 }
@@ -149,7 +149,7 @@
 }
 .prompt-editor {
   min-height: 220px;
-  background: #fafbf6;
+  background: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
   line-height: 1.9;
@@ -223,7 +223,7 @@
   margin-top: 12px;
 }
 .skill-file pre {
-  background: #f8f9f4;
+  background: var(--muted);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 18px;
@@ -263,7 +263,7 @@
   display: flex;
   gap: 14px;
   padding: 18px;
-  background: #fcfdf9;
+  background: var(--background);
   border-bottom: 1px solid var(--line);
 }
 .mock-record:last-child {
@@ -319,7 +319,7 @@
 .trace pre {
   font-family: monospace;
   font-size: 10px;
-  background: #fafbf6;
+  background: var(--muted);
   padding: 12px;
   max-height: 280px;
   overflow: auto;

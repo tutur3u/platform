@@ -38,62 +38,18 @@ export function Home({
   const recent = localStorage.getItem('colab-recent-room');
   return (
     <div className="home">
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">
-            <span className="live-dot" /> {c.eyebrow}
-          </p>
-          <h1>{c.hero}</h1>
-          <p className="intro">{c.intro}</p>
-          <div className="hero-actions">
-            <a className="button primary" href="#join">
-              {c.join} <span aria-hidden="true">↗</span>
-            </a>
-            <a className="button quiet" href="#explore">
-              {c.explore}
-            </a>
-          </div>
-          <div className="hero-pills">
-            <span>01 / {c.step1}</span>
-            <span>02 / {c.step2}</span>
-          </div>
+      <section className="lobby-heading">
+        <div>
+          <h1>{c.lobbyTitle}</h1>
+          <p>{c.lobbyDescription}</p>
         </div>
-        <div className="lab-art" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="art-tag">{c.artFlow}</div>
-          <div className="paper paper-back">
-            <span>{c.teamNotes}</span>
-            <i />
-            <i />
-            <i />
-          </div>
-          <div className="paper paper-front">
-            <span className="paper-label">SKILL.md</span>
-            <strong>{c.step1}</strong>
-            <i />
-            <i />
-            <i />
-            <div className="paper-bottom">
-              <span className="avatar">A</span>
-              <span className="avatar">M</span>
-              <span className="avatar">L</span>
-              <span>{c.together}</span>
-            </div>
-          </div>
-          <div className="floating-chip chip-one">
-            Aa <span>{c.systemPrompt}</span>
-          </div>
-          <div className="floating-chip chip-two">
-            ✓ <span>{c.sandboxReady}</span>
-          </div>
-          <div className="art-caption">{c.artCaption}</div>
-        </div>
+        <a className="button quiet" href="#explore">
+          {c.practiceGuide}
+        </a>
       </section>
-      <LandingPreview />
       <section className="entry-grid" id="join">
         <div className="entry-copy">
-          <span className="section-number">01 / {c.startTogether}</span>
+          <span className="section-number">{c.safeWorkspace}</span>
           <h2>{c.inviteOnly}</h2>
           <p>{c.inviteHelp}</p>
           <div className="mini-apps">
@@ -247,6 +203,7 @@ export function Home({
           )}
         </div>
       </section>
+      <LandingPreview />
       <WorkshopDetails />
       <section className="steps">
         {[

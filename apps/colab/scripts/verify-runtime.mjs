@@ -177,13 +177,12 @@ try {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('http://127.0.0.1:8795/');
-  await page
-    .getByRole('heading', { name: 'Small prompts. Shared breakthroughs.' })
-    .waitFor();
+  await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
   assert.equal(await page.getByRole('main').count(), 1);
   await page.getByRole('navigation', { name: 'Colab navigation' }).waitFor();
   await page
     .getByRole('button', { name: 'Collapse navigation', exact: true })
+    .filter({ visible: true })
     .click();
   assert.equal(
     await page.evaluate(() => localStorage.getItem('colab-sidebar-collapsed')),
@@ -204,14 +203,77 @@ try {
     path: '/private/tmp/colab-desktop.png',
     fullPage: true,
   });
+  // The same theme preference and provider as satellite apps, across reloads.
+  await page
+    .getByRole('button', { name: 'Appearance', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page.getByRole('menuitemradio', { name: 'Dark', exact: true }).click();
+  await page.waitForFunction(() =>
+    document.documentElement.classList.contains('dark')
+  );
+  assert.equal(
+    await page.evaluate(() => localStorage.getItem('theme')),
+    'dark'
+  );
+  await page.reload();
+  await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
+  assert.equal(
+    await page.evaluate(() =>
+      document.documentElement.classList.contains('dark')
+    ),
+    true
+  );
+  const darkSurface = await page
+    .locator('.entry-panel')
+    .evaluate((el) => getComputedStyle(el).backgroundColor);
+  await page.screenshot({
+    path: '/private/tmp/colab-dark.png',
+    fullPage: true,
+  });
+  await page
+    .getByRole('button', { name: 'Appearance', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page.getByRole('menuitemradio', { name: 'Light', exact: true }).click();
+  await page.waitForFunction(
+    () => !document.documentElement.classList.contains('dark')
+  );
+  assert.notEqual(
+    await page
+      .locator('.entry-panel')
+      .evaluate((el) => getComputedStyle(el).backgroundColor),
+    darkSurface
+  );
+  await page
+    .getByRole('button', { name: 'Appearance', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page
+    .getByRole('menuitemradio', { name: 'System', exact: true })
+    .click();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForFunction(() =>
+    document.documentElement.classList.contains('dark')
+  );
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.waitForFunction(
+    () => !document.documentElement.classList.contains('dark')
+  );
+  await page
+    .getByRole('button', { name: 'Account and preferences', exact: true })
+    .filter({ visible: true })
+    .click();
   await page
     .locator('select[aria-label="Language"]:visible')
     .selectOption('vi');
+  await page.keyboard.press('Escape');
   await page
-    .getByRole('heading', { name: 'Prompt nhỏ. Tiến bộ cùng nhau.' })
+    .getByRole('heading', { name: 'Buổi thực hành', exact: true })
     .waitFor();
   await page
     .getByRole('button', { name: 'Thu gọn điều hướng', exact: true })
+    .filter({ visible: true })
     .click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page
@@ -246,6 +308,10 @@ try {
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
   await page.setViewportSize({ width: 1440, height: 1050 });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForFunction(() =>
+    document.documentElement.classList.contains('dark')
+  );
   await page.screenshot({
     path: '/private/tmp/colab-workshop.png',
     fullPage: true,

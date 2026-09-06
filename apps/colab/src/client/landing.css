@@ -38,7 +38,7 @@ html {
   border: 1px solid var(--line);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 20px 60px #21352b08;
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--foreground) 3%, transparent);
   background: var(--surface);
 }
 .experiment-input,

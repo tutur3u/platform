@@ -18,7 +18,7 @@
   height: 27px;
   border-radius: 6px;
   background: var(--dark);
-  color: #fff;
+  color: var(--primary-foreground);
 }
 .mock-caption {
   margin-left: auto;
@@ -36,7 +36,7 @@
 }
 .mock-content {
   padding: 14px;
-  background: #fafbf7;
+  background: var(--background);
 }
 .mock-item {
   display: flex;
@@ -79,14 +79,14 @@
   padding: 24px;
 }
 .mock-chat .mock-item-body {
-  background: #fff;
-  box-shadow: 0 2px 8px #21352b08;
+  background: var(--card);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 3%, transparent);
   padding: 15px;
   border-radius: 0 13px 13px 13px;
   max-width: 85%;
 }
 .mock-calendar .mock-item-body {
-  border-left: 3px solid #869c61;
+  border-left: 3px solid var(--primary);
   background: var(--soft);
   padding: 14px;
   border-radius: 0 8px 8px 0;
@@ -105,7 +105,7 @@
   align-items: start;
 }
 .mock-board .mock-item {
-  background: white;
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 17px;

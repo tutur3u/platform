@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity } from '@tuturuuu/multiplayer';
+import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Home } from './home';
@@ -129,11 +130,19 @@ function Root() {
     setLocale(value);
   };
   return (
-    <LocaleContext value={locale}>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </LocaleContext>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+      scriptProps={{ 'data-cfasync': 'false' }}
+    >
+      <LocaleContext value={locale}>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </LocaleContext>
+    </ThemeProvider>
   );
 }
 const root = document.getElementById('root');
