@@ -40,7 +40,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
@@ -521,7 +520,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           </div>
         ) : null}
       </div>
-      <ScrollArea className="min-h-0 flex-1">
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
         {bootstrapQuery.isLoading || threadsQuery.isLoading ? (
           <MailContentState kind="loading" />
         ) : bootstrapQuery.isError || threadsQuery.isError ? (
@@ -576,7 +575,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             onAction={() => (query ? void setQuery('') : openCompose(null))}
           />
         )}
-      </ScrollArea>
+      </div>
     </section>
   );
 
