@@ -1,5 +1,5 @@
 import { NoObjectGeneratedError } from 'ai';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
@@ -33,6 +33,7 @@ beforeEach(() => {
   mocks.summaries.mockReturnValue([]);
   mocks.capture.mockResolvedValue(undefined);
 });
+afterEach(() => vi.restoreAllMocks());
 const input = () =>
   parseTextRequest({ model: 'google/gemini-3.5-flash-lite', prompt: 'Test' });
 
@@ -72,7 +73,7 @@ describe('AI execution usage settlement', () => {
     );
   });
   it('does not overwrite settled usage when optional content capture fails', async () => {
-    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     mocks.generate.mockResolvedValue({
       text: 'ok',
       finishReason: 'stop',
@@ -109,7 +110,6 @@ describe('AI execution usage settlement', () => {
         }),
       })
     );
-    log.mockRestore();
   });
   it('retains completed model-step usage if a later step fails without usage', async () => {
     mocks.summaries.mockReturnValue([
