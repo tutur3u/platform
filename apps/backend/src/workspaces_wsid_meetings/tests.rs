@@ -123,19 +123,25 @@ async fn delegates_app_sessions_aliases_and_mutations_to_next() {
     for (method, path, authorization, cookie) in [
         ("GET", "/api/v1/workspaces/personal/meetings", None, None),
         ("GET", "/api/v1/workspaces/INTERNAL/meetings", None, None),
+        ("GET", "/api/v1/workspaces/my-team/meetings", None, None),
         (
             "GET",
-            "/api/v1/workspaces/abc/meetings",
+            "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/meetings",
             Some("Bearer ttr_app_test"),
             None,
         ),
         (
             "GET",
-            "/api/v1/workspaces/abc/meetings",
+            "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/meetings",
             None,
             Some("tuturuuu_app_session=ttr_app_test"),
         ),
-        ("POST", "/api/v1/workspaces/abc/meetings", None, None),
+        (
+            "POST",
+            "/api/v1/workspaces/00000000-0000-0000-0000-000000000000/meetings",
+            None,
+            None,
+        ),
     ] {
         let request = BackendRequest {
             authorization,
@@ -155,4 +161,12 @@ async fn delegates_app_sessions_aliases_and_mutations_to_next() {
                 .is_none()
         );
     }
+}
+
+#[test]
+fn accepts_only_literal_workspace_uuids_for_the_partial_port() {
+    assert!(is_workspace_uuid("00000000-0000-0000-0000-000000000000"));
+    assert!(is_workspace_uuid("AABBCCDD-1234-5678-9ABC-DEF012345678"));
+    assert!(!is_workspace_uuid("my-team"));
+    assert!(!is_workspace_uuid("00000000-0000-0000-0000-00000000000z"));
 }

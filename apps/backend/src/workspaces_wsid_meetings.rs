@@ -73,6 +73,17 @@ fn meetings_ws_id(path: &str) -> Option<&str> {
     (!ws_id.is_empty() && !ws_id.contains('/')).then_some(ws_id)
 }
 
+fn is_workspace_uuid(value: &str) -> bool {
+    value.len() == 36
+        && value.bytes().enumerate().all(|(index, byte)| {
+            if matches!(index, 8 | 13 | 18 | 23) {
+                byte == b'-'
+            } else {
+                byte.is_ascii_hexdigit()
+            }
+        })
+}
+
 // ---------------------------------------------------------------------------
 // Public handler
 // ---------------------------------------------------------------------------
@@ -83,10 +94,7 @@ pub(crate) async fn handle_workspaces_wsid_meetings_route(
     outbound: &impl crate::outbound::OutboundHttpClient,
 ) -> Option<crate::BackendResponse> {
     let raw_ws_id = meetings_ws_id(request.path)?;
-    if contact::request_has_app_session_token(request)
-        || raw_ws_id.eq_ignore_ascii_case("personal")
-        || raw_ws_id.eq_ignore_ascii_case("internal")
-    {
+    if contact::request_has_app_session_token(request) || !is_workspace_uuid(raw_ws_id) {
         return None;
     }
 

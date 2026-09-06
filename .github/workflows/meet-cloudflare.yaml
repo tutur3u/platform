@@ -5,13 +5,9 @@ on:
     paths:
       - 'apps/meet/**'
       - 'apps/meet-realtime/**'
-      - 'packages/realtime/**'
-      - 'packages/auth/**'
-      - 'packages/satellite/**'
-      - 'packages/supabase/**'
-      - 'packages/internal-api/**'
-      - 'packages/ui/**'
-      - 'packages/utils/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'turbo.json'
       - 'bun.lock'
       - '.github/workflows/meet-cloudflare.yaml'
   push:
@@ -59,8 +55,8 @@ jobs:
       - name: Build the frontend for Workers
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_APP_URL: https://meet.tuturuuu.com
           NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
         with:

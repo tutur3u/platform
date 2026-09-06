@@ -23,6 +23,10 @@ import {
   userIdFromTrackName,
 } from '../lib/negotiation';
 import {
+  attachRemotePlayback,
+  type RemoteTrackOwner,
+} from '../lib/remote-playback';
+import {
   createRemoteStreamCache,
   type RemoteMedia,
 } from '../lib/remote-streams';
@@ -105,9 +109,7 @@ export function useMeetRoom({
   const subscribedRef = useRef<Set<string>>(new Set());
   const screenStreamRef = useRef<MediaStream | null>(null);
   /** mid -> owning participant, the only way to attribute an inbound track. */
-  const trackOwnersRef = useRef<
-    Map<string, { userId: string; kind: MeetRealtimeTrackKind }>
-  >(new Map());
+  const trackOwnersRef = useRef<Map<string, RemoteTrackOwner>>(new Map());
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -285,27 +287,14 @@ export function useMeetRoom({
       const mid = event.transceiver.mid;
       const owner = mid ? trackOwnersRef.current.get(mid) : undefined;
       if (!owner) return;
-      setRemoteMedia((current) => ({
-        ...current,
-        [owner.userId]: { ...current[owner.userId], [owner.kind]: event.track },
-      }));
-      event.track.addEventListener(
-        'ended',
-        () => {
-          setRemoteMedia((current) => {
-            if (current[owner.userId]?.[owner.kind] !== event.track)
-              return current;
-            const next = {
-              ...current,
-              [owner.userId]: { ...current[owner.userId] },
-            };
-            delete next[owner.userId]![owner.kind];
-            if (!Object.keys(next[owner.userId]!).length)
-              delete next[owner.userId];
-            return next;
-          });
-        },
-        { once: true }
+      attachRemotePlayback(
+        owner,
+        event.track,
+        subscribedRef.current,
+        () =>
+          subscribePcRef.current === pc &&
+          trackOwnersRef.current.get(mid!) === owner,
+        setRemoteMedia
       );
     });
 
@@ -460,8 +449,15 @@ export function useMeetRoom({
         const kind = track.trackName
           ?.split('-')
           .at(-1) as MeetRealtimeTrackKind;
-        if (track.mid && owner)
-          trackOwnersRef.current.set(track.mid, { userId: owner, kind });
+        const requested = pending.find(
+          (entry) => entry.trackName === track.trackName
+        );
+        if (track.mid && owner && requested)
+          trackOwnersRef.current.set(track.mid, {
+            userId: owner,
+            kind,
+            subscriptionKey: `${requested.sessionId}:${track.trackName}`,
+          });
       }
       if (answer?.sessionDescription) {
         await pc.setRemoteDescription(answer.sessionDescription);
@@ -487,7 +483,9 @@ export function useMeetRoom({
                 requested.trackName === track.trackName
             ) && entry.trackName === track.trackName
         );
-        if (roomTrack) subscribedRef.current.add(remoteTrackKey(roomTrack));
+        const owner = trackOwnersRef.current.get(track.mid);
+        if (roomTrack && owner?.track?.readyState !== 'ended')
+          subscribedRef.current.add(remoteTrackKey(roomTrack));
       }
     };
     let active = true;
