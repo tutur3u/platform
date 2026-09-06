@@ -40,6 +40,7 @@ import {
   resolveWebAbuseDecision,
 } from './abuse-risk';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
+import { withPlanningSessionAudience } from './planning-session-audience';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
 export type AuthorizedRequest = {
@@ -173,10 +174,6 @@ export async function authorize(
   }
   return { user, error: null };
 }
-
-// ---------------------------------------------------------------------------
-// withSessionAuth — rate-limited session-auth wrapper
-// ---------------------------------------------------------------------------
 
 export interface SessionAuthContext {
   user: SupabaseUser;
@@ -345,8 +342,10 @@ function verifyConfiguredAppSessionRequest(
     request,
     allowAppSessionAuth
   )) {
-    const verification = verifyAppSessionRequest(request, verificationOptions);
-
+    const verification = verifyAppSessionRequest(
+      request,
+      withPlanningSessionAudience(verificationOptions)
+    );
     if (verification.ok) {
       return verification;
     }

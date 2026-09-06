@@ -39,4 +39,11 @@ describe('task API ownership', () => {
       false
     );
   });
+  it('keeps workspace task preferences on the Tasks API owner', () => {
+    const source = '/api/v1/users/me/workspaces/:wsId/configs/:path*';
+    expect(createTaskApiRewrites('https://tasks.example.com')).toContainEqual({
+      source,
+      destination: `https://tasks.example.com${source}`,
+    });
+  });
 });
