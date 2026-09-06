@@ -14,6 +14,22 @@ describe('task API ownership', () => {
       });
     }
   );
+  it.each([
+    '/api/v1/workspaces/:wsId/tasks',
+    '/api/v1/workspaces/:wsId/labels',
+    '/api/v1/users/me/tasks',
+  ])('preserves the collection path %s before wildcard matching', (source) => {
+    const rewrites = createTaskApiRewrites('https://owner.example.com');
+    const exact = rewrites.findIndex((route) => route.source === source);
+    const nested = rewrites.findIndex(
+      (route) => route.source === `${source}/:path*`
+    );
+    expect(exact).toBeGreaterThanOrEqual(0);
+    expect(exact).toBeLessThan(nested);
+    expect(rewrites[exact]?.destination).toBe(
+      `https://owner.example.com${source}`
+    );
+  });
   it('does not redirect host-local authentication or unrelated workspace APIs', () => {
     const rewrites = createTaskApiRewrites('https://task.example.com');
     expect(rewrites.some((route) => route.source.startsWith('/api/auth'))).toBe(

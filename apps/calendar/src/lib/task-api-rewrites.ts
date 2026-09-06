@@ -34,5 +34,11 @@ export function createTaskApiRewrites(origin: string) {
     '/api/v1/shared/tasks/:path*',
     '/api/v1/mira/tasks/:path*',
     '/api/:wsId/task/:path*',
-  ].map((source) => ({ source, destination: `${base}${source}` }));
+  ]
+    .flatMap((source) =>
+      source.endsWith('/:path*')
+        ? [source.replace(/\/:path\*$/u, ''), source]
+        : [source]
+    )
+    .map((source) => ({ source, destination: `${base}${source}` }));
 }

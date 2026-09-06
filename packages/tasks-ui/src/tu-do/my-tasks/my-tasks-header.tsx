@@ -3,7 +3,11 @@
 import { Calendar, Clock, Flag } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
+
+const subscribeToHydration = () => () => {};
+const clientHydrationSnapshot = () => true;
+const serverHydrationSnapshot = () => false;
 
 interface MyTasksHeaderProps {
   overdueCount: number;
@@ -18,8 +22,16 @@ export function MyTasksHeader({
 }: MyTasksHeaderProps) {
   const t = useTranslations();
   const locale = useLocale();
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    clientHydrationSnapshot,
+    serverHydrationSnapshot
+  );
 
   const { greetingMessage, formattedDate } = useMemo(() => {
+    if (!hydrated) {
+      return { greetingMessage: t('sidebar_tabs.tasks'), formattedDate: '' };
+    }
     const now = new Date();
     const hour = now.getHours();
     let greeting: string;
@@ -36,7 +48,7 @@ export function MyTasksHeader({
         day: 'numeric',
       }),
     };
-  }, [t, locale]);
+  }, [t, locale, hydrated]);
 
   const cards = [
     {
@@ -78,7 +90,7 @@ export function MyTasksHeader({
         <h1 className="font-bold text-2xl tracking-tight md:text-3xl">
           {greetingMessage}
         </h1>
-        <p className="text-muted-foreground text-sm">{formattedDate}</p>
+        <p className="min-h-5 text-muted-foreground text-sm">{formattedDate}</p>
       </div>
 
       {/* Summary Cards */}
