@@ -18,6 +18,7 @@ on:
       - 'packages/**'
       - 'bun.lock'
       - 'package.json'
+      - 'turbo.json'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/meet-cloudflare.yaml'
   workflow_dispatch:
@@ -96,6 +97,15 @@ jobs:
         with:
           name: meet-worker-${{ github.sha }}
           path: apps/meet/.open-next
+      - name: Verify required production secret names
+        env:
+          MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+        run: |
+          test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
+          bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
+          bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
       - name: Deploy signaling before the frontend
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
@@ -107,3 +117,8 @@ jobs:
         run: |
           curl --fail --retry 5 --retry-delay 5 https://meet-realtime.tuturuuu.com/health
           curl --fail --retry 5 --retry-delay 5 --output /dev/null https://meet.tuturuuu.com/login
+      - name: Verify authenticated realtime and SFU behavior
+        env:
+          MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
+          MEET_CHECK_REALTIME_URL: wss://meet-realtime.tuturuuu.com/realtime
+        run: bun apps/meet-realtime/src/integration-check.ts

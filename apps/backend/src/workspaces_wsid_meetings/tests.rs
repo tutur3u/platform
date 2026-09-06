@@ -43,7 +43,7 @@ fn content_range_parses_empty_star_slash_total() {
 
 #[test]
 fn content_range_parses_star_star() {
-    assert_eq!(parse_content_range_count("*/*"), Some(0));
+    assert_eq!(parse_content_range_count("*/*"), None);
 }
 
 #[test]
@@ -78,34 +78,20 @@ fn parse_js_int_zero() {
     assert_eq!(parse_js_int("0"), Some(0));
 }
 
-// --- page / pageSize validation logic ---
-
 #[test]
-fn default_page_is_one() {
-    assert_eq!(DEFAULT_PAGE, 1);
-}
-
-#[test]
-fn default_page_size_is_ten() {
-    assert_eq!(DEFAULT_PAGE_SIZE, 10);
-}
-
-#[test]
-fn max_page_size_is_hundred() {
-    assert_eq!(MAX_PAGE_SIZE, 100);
-}
-
-#[test]
-fn page_size_boundary_valid() {
-    for v in [1_i64, 50, 100] {
-        assert!((1..=MAX_PAGE_SIZE).contains(&v));
+fn validates_the_pagination_used_by_the_route() {
+    assert_eq!(parse_pagination(None, None), Ok((1, 10)));
+    assert_eq!(parse_pagination(Some(""), Some("")), Ok((1, 10)));
+    assert_eq!(parse_pagination(Some("3abc"), Some("100")), Ok((3, 100)));
+    assert_eq!(parse_pagination(Some("1"), Some("1")), Ok((1, 1)));
+    for invalid in ["0", "-1", "abc"] {
+        assert_eq!(parse_pagination(Some(invalid), None), Err(INVALID_PAGE_MSG));
     }
-}
-
-#[test]
-fn page_size_boundary_invalid() {
-    for v in [0_i64, 101, -1] {
-        assert!(!(1..=MAX_PAGE_SIZE).contains(&v));
+    for invalid in ["0", "101", "-1", "abc"] {
+        assert_eq!(
+            parse_pagination(None, Some(invalid)),
+            Err(INVALID_PAGE_SIZE_MSG)
+        );
     }
 }
 

@@ -93,6 +93,32 @@ describe('remote subscription planning', () => {
     });
   });
 
+  it('batches duplicate names separately to preserve publisher-session identity', () => {
+    const first = track(OTHER, 'audio');
+    const second = { ...first, sessionId: 'replacement-session' };
+    const entries = { first, second };
+    expect(planRemoteSubscriptions(entries, [], SELF)).toEqual([
+      {
+        location: 'remote',
+        sessionId: first.sessionId,
+        trackName: first.trackName,
+      },
+    ]);
+    expect(
+      planRemoteSubscriptions(
+        entries,
+        [`${first.sessionId}:${first.trackName}`],
+        SELF
+      )
+    ).toEqual([
+      {
+        location: 'remote',
+        sessionId: second.sessionId,
+        trackName: second.trackName,
+      },
+    ]);
+  });
+
   it('never re-pulls an existing subscription', () => {
     const plan = planRemoteSubscriptions(
       remoteTracks,

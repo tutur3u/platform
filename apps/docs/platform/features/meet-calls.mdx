@@ -294,3 +294,8 @@ background browser delays heartbeats beyond the normal expiry window. Close/erro
 handlers remove disconnected participants. The direct Worker integration check
 includes a 40-second idle interval to verify presence and host controls survive
 browser timer throttling.
+
+The `meet-production` GitHub environment must allow only the `production` branch
+and contain `MEET_REALTIME_TOKEN_SECRET` matching the Workers and platform API.
+Deployment checks required Worker secret names before rollout, then runs the
+signed-token realtime/SFU integration check against the canonical endpoint.

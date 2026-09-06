@@ -140,20 +140,9 @@ async fn meetings_get_response(
     let page_size_str = query_param(request.url, "pageSize");
     let search = query_param(request.url, "search").unwrap_or_default();
 
-    let page = match page_str.as_deref() {
-        None | Some("") => DEFAULT_PAGE,
-        Some(s) => match parse_js_int(s) {
-            Some(v) if v >= 1 => v,
-            _ => return error_response(400, INVALID_PAGE_MSG),
-        },
-    };
-
-    let page_size = match page_size_str.as_deref() {
-        None | Some("") => DEFAULT_PAGE_SIZE,
-        Some(s) => match parse_js_int(s) {
-            Some(v) if (1..=MAX_PAGE_SIZE).contains(&v) => v,
-            _ => return error_response(400, INVALID_PAGE_SIZE_MSG),
-        },
+    let (page, page_size) = match parse_pagination(page_str.as_deref(), page_size_str.as_deref()) {
+        Ok(pagination) => pagination,
+        Err(message) => return error_response(400, message),
     };
 
     let offset = (page - 1) * page_size;
@@ -303,6 +292,28 @@ async fn fetch_meetings(
 // Helpers
 // ---------------------------------------------------------------------------
 
+fn parse_pagination(
+    page_str: Option<&str>,
+    page_size_str: Option<&str>,
+) -> Result<(i64, i64), &'static str> {
+    let page = match page_str {
+        None | Some("") => DEFAULT_PAGE,
+        Some(s) => match parse_js_int(s) {
+            Some(v) if v >= 1 => v,
+            _ => return Err(INVALID_PAGE_MSG),
+        },
+    };
+
+    let page_size = match page_size_str {
+        None | Some("") => DEFAULT_PAGE_SIZE,
+        Some(s) => match parse_js_int(s) {
+            Some(v) if (1..=MAX_PAGE_SIZE).contains(&v) => v,
+            _ => return Err(INVALID_PAGE_SIZE_MSG),
+        },
+    };
+    Ok((page, page_size))
+}
+
 /// Parse the total-count component of a PostgREST `Content-Range` header.
 ///
 /// Accepted forms:
@@ -315,9 +326,6 @@ async fn fetch_meetings(
 fn parse_content_range_count(header: &str) -> Option<i64> {
     let count_str = header.split('/').nth(1)?;
     let trimmed = count_str.trim();
-    if trimmed == "*" {
-        return Some(0);
-    }
     trimmed.parse().ok()
 }
 

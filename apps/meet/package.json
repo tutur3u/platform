@@ -62,6 +62,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.12",
     "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
@@ -72,7 +73,8 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.28",
     "typescript": "7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "wrangler": "4.129.0"
   },
   "packageManager": "bun@1.4.1",
   "portless": {

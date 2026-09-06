@@ -74,12 +74,21 @@ export function planRemoteSubscriptions(
   selfUserId: string | null
 ): CloudflareSfuTrack[] {
   const subscribed = new Set(subscribedKeys);
+  const namesInBatch = new Set<string>();
 
   return Object.values(remoteTracks)
     .filter((track) => {
       if (track.userId === selfUserId) return false;
       if (!track.trackName) return false;
-      return !subscribed.has(remoteTrackKey(track));
+      if (
+        subscribed.has(remoteTrackKey(track)) ||
+        namesInBatch.has(track.trackName)
+      )
+        return false;
+      // Responses may identify a track only by name and mid. Batch duplicate
+      // names separately so each response has exactly one publisher session.
+      namesInBatch.add(track.trackName);
+      return true;
     })
     .map((track) => ({
       location: 'remote',
