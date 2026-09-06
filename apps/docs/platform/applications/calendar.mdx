@@ -14,6 +14,12 @@ Calendar routes explicitly accept Calendar and Tasks audiences while retaining
 workspace membership and permission checks. Do not route these APIs through Web:
 Web no longer owns the Calendar events or Tasks endpoints.
 
+Tasks' session verifier also accepts Calendar for routes that explicitly accept
+Tasks, including labels, projects, task detail dependencies, and workspace task
+preferences. It preserves required scopes and does not widen unrelated app
+audiences. Calendar forwards `/api/v1/users/me/workspaces/:wsId/configs/*` to
+Tasks so those preferences use the verified planning actor and membership guard.
+
 Collection rewrites must have an exact path before their `/:path*` variant.
 Vercel can retain a trailing slash when the wildcard is empty, causing the owning
 app to return a 308 to the same browser URL and loop. Verify both collection and

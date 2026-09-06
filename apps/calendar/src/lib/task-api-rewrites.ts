@@ -27,6 +27,7 @@ export function createTaskApiRewrites(origin: string) {
     ),
     '/api/v1/users/me/tasks/:path*',
     '/api/v1/users/me/task-boards/:path*',
+    '/api/v1/users/me/workspaces/:wsId/configs/:path*',
     '/api/v1/users/task-settings',
     '/api/v1/task-board-status-templates/:path*',
     '/api/v1/task-projects/resolve-workspace',
