@@ -145,6 +145,9 @@ export function MailSidebarPanel({
                 }
               >
                 <Link
+                  aria-current={
+                    pathname === link.href?.split('?')[0] ? 'page' : undefined
+                  }
                   href={getFolderHref(link.href)}
                   onFocus={() => prefetchFolder(link.href)}
                   onPointerEnter={() => prefetchFolder(link.href)}
@@ -188,10 +191,10 @@ export function MailSidebarPanel({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col border-foreground/10 border-t">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-3">
         <Button
-          className="h-11 w-full justify-start rounded-xl"
+          className="h-10 w-full justify-start rounded-lg px-3 shadow-sm"
           onClick={compose}
         >
           <PenLine className="size-4" /> {t('compose')}
@@ -199,11 +202,11 @@ export function MailSidebarPanel({
       </div>
       <Accordion
         className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-2"
-        defaultValue={['folders']}
+        defaultValue={['folders', 'mailboxes']}
         type="multiple"
       >
         <AccordionItem className="border-0" value="folders">
-          <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
+          <AccordionTrigger className="px-2 py-2 font-medium text-muted-foreground text-xs">
             {t('folders')}
           </AccordionTrigger>
           <AccordionContent className="space-y-0.5 pb-2">
@@ -211,10 +214,13 @@ export function MailSidebarPanel({
               link ? (
                 <Link
                   className={cn(
-                    'flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm transition hover:bg-accent',
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     pathname === link.href?.split('?')[0] &&
-                      'bg-accent font-medium'
+                      'bg-accent font-semibold'
                   )}
+                  aria-current={
+                    pathname === link.href?.split('?')[0] ? 'page' : undefined
+                  }
                   href={getFolderHref(link.href)}
                   key={link.id}
                   onClick={closeOnMobile}
@@ -246,10 +252,12 @@ export function MailSidebarPanel({
           </AccordionContent>
         </AccordionItem>
         <AccordionItem className="border-0" value="labels">
-          <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
+          <AccordionTrigger className="px-2 py-2 font-medium text-muted-foreground text-xs">
             <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
               <span>{t('labels')}</span>
-              <span className="tabular-nums">({customLabels.length})</span>
+              {customLabels.length > 0 ? (
+                <span className="tabular-nums">{customLabels.length}</span>
+              ) : null}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-0.5 pb-2">
@@ -276,10 +284,12 @@ export function MailSidebarPanel({
           </AccordionContent>
         </AccordionItem>
         <AccordionItem className="border-0" value="mailboxes">
-          <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
+          <AccordionTrigger className="px-2 py-2 font-medium text-muted-foreground text-xs">
             <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
               <span>{t('mailboxes')}</span>
-              <span className="tabular-nums">({mailboxes.length})</span>
+              {mailboxes.length > 1 ? (
+                <span className="tabular-nums">{mailboxes.length}</span>
+              ) : null}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-1 pb-3">
@@ -335,8 +345,8 @@ function MailboxButton({
     <button
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-2.5 text-left text-sm transition hover:bg-accent',
-        active && 'border-foreground/10 bg-accent shadow-sm'
+        'flex w-full items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-2 text-left text-sm transition hover:bg-accent',
+        active && 'bg-accent/60'
       )}
       onClick={onClick}
       type="button"

@@ -49,6 +49,7 @@ import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FloatingComposer } from './floating-composer';
 import type { ComposeInitialDraft } from './mail-composer-types';
+import { MailContentState } from './mail-content-state';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
 import { MailLabelMenu } from './mail-label-menu';
@@ -57,6 +58,8 @@ import {
   normalizeMailPaneLayout,
   setCurrentMailPaneLayout,
 } from './mail-pane-layout';
+import { MailQuickFilters } from './mail-quick-filters';
+import { escapeHtml, forwardSubject, replySubject } from './mail-reply-utils';
 import { MailThreadRow } from './mail-thread-list';
 import {
   getMailThreadsQueryKey,
@@ -71,15 +74,6 @@ interface MailAppClientProps {
 }
 
 type ThreadAction = Parameters<typeof updateMailThreadState>[3]['action'];
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
 
 export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const t = useTranslations('mail');
@@ -164,6 +158,20 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     queryKey: threadQueryKey,
     staleTime: 30_000,
   });
+  const selectionScope = JSON.stringify([
+    activeMailboxId,
+    folder,
+    folderId,
+    label,
+    query,
+  ]);
+  const previousSelectionScope = useRef(selectionScope);
+  useEffect(() => {
+    if (previousSelectionScope.current === selectionScope) return;
+    previousSelectionScope.current = selectionScope;
+    setSelectedThreads(new Set());
+  }, [selectionScope]);
+
   const detailQuery = useQuery({
     enabled: Boolean(activeMailboxId && threadId),
     queryFn: () =>
@@ -210,6 +218,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         threadId ?? '',
         { action }
       ),
+    onError: () => toast.error(t('update_failed')),
     onSuccess: async (_data, action) => {
       await invalidateMailbox();
       if (action === 'archive' || action === 'trash') await setThreadId(null);
@@ -233,6 +242,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         action,
         threadIds: [...selectedThreads],
       }),
+    onError: () => toast.error(t('update_failed')),
     onSuccess: async () => {
       setSelectedThreads(new Set());
       await invalidateMailbox();
@@ -374,20 +384,24 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
   const listPanel = (
     <section className="flex h-full min-h-0 flex-col bg-background/95">
-      <div className="flex min-h-17 items-center gap-3 border-dynamic border-b px-4">
-        <div className="flex size-10 items-center justify-center rounded-2xl border border-dynamic bg-foreground/[0.035]">
+      <div className="flex min-h-16 items-center gap-3 border-dynamic border-b px-5">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
           <FolderIcon className="size-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate font-semibold">{t(folder)}</h1>
+          <h1 className="truncate font-semibold text-base tracking-tight">
+            {t(folder)}
+          </h1>
           <p className="truncate text-muted-foreground text-xs">
             {activeMailbox?.address}
           </p>
         </div>
         <Button
           aria-label={t('refresh')}
-          disabled={threadsQuery.isFetching}
-          onClick={() => threadsQuery.refetch()}
+          disabled={threadsQuery.isFetching || bootstrapQuery.isFetching}
+          onClick={() =>
+            activeMailboxId ? threadsQuery.refetch() : bootstrapQuery.refetch()
+          }
           size="icon"
           variant="ghost"
         >
@@ -400,7 +414,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         <div className="relative">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            className="h-10 rounded-xl bg-foreground/[0.025] pr-10 pl-9"
+            aria-label={t('search')}
+            className="h-9 rounded-lg border-transparent bg-muted/60 pr-10 pl-9 shadow-none focus-visible:border-border focus-visible:bg-background"
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('search')}
             value={query}
@@ -422,14 +437,32 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
                 {t('search_help_description')}
               </p>
               <code className="mt-3 block rounded-lg bg-foreground/[0.05] p-2 text-xs">
-                from:alex@example.com has:attachment after:2026-07-01
+                from:someone@example.com has:attachment
               </code>
             </PopoverContent>
           </Popover>
         </div>
+        <MailQuickFilters
+          disabled={threads.length === 0 || bulkMutation.isPending}
+          onQueryChange={(next) => void setQuery(next)}
+          onSelectAll={(selected) =>
+            setSelectedThreads(
+              new Set(selected ? threads.map((thread) => thread.id) : [])
+            )
+          }
+          query={query}
+          selection={
+            threads.length > 0 &&
+            threads.every((thread) => selectedThreads.has(thread.id))
+              ? true
+              : selectedThreads.size > 0
+                ? 'indeterminate'
+                : false
+          }
+        />
         {filterChips.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
-            {filterChips.map((chip) => (
+            {[...new Set(filterChips)].map((chip) => (
               <Badge key={chip} variant="secondary">
                 {chip}
               </Badge>
@@ -443,6 +476,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             </span>
             <Button
               aria-label={t('mark_read')}
+              disabled={bulkMutation.isPending}
               onClick={() => bulkMutation.mutate('mark_read')}
               size="icon"
               variant="ghost"
@@ -451,6 +485,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             </Button>
             <Button
               aria-label={t('archive')}
+              disabled={bulkMutation.isPending}
               onClick={() => bulkMutation.mutate('archive')}
               size="icon"
               variant="ghost"
@@ -467,6 +502,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             ) : null}
             <Button
               aria-label={t('trash')}
+              disabled={bulkMutation.isPending}
               onClick={() => bulkMutation.mutate('trash')}
               size="icon"
               variant="ghost"
@@ -487,10 +523,18 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       </div>
       <ScrollArea className="min-h-0 flex-1">
         {bootstrapQuery.isLoading || threadsQuery.isLoading ? (
-          <div className="flex h-48 items-center justify-center text-muted-foreground text-sm">
-            <Loader2 className="mr-2 size-4 animate-spin" />
-            {t('loading')}
-          </div>
+          <MailContentState kind="loading" />
+        ) : bootstrapQuery.isError || threadsQuery.isError ? (
+          <MailContentState
+            kind="error"
+            onAction={() =>
+              void (bootstrapQuery.isError
+                ? bootstrapQuery.refetch()
+                : threadsQuery.refetch())
+            }
+          />
+        ) : !activeMailboxId ? (
+          <MailContentState kind="no_mailbox" />
         ) : threads.length ? (
           <div className="divide-y divide-dynamic">
             {threads.map((thread) => (
@@ -527,16 +571,17 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             ) : null}
           </div>
         ) : (
-          <div className="flex h-72 items-center justify-center px-8 text-center text-muted-foreground text-sm">
-            {query ? t('no_search_results') : t('empty_folder_description')}
-          </div>
+          <MailContentState
+            kind={query ? 'search' : 'empty'}
+            onAction={() => (query ? void setQuery('') : openCompose(null))}
+          />
         )}
       </ScrollArea>
     </section>
   );
 
   const detailPanel = (
-    <section className="flex h-full min-h-0 bg-[radial-gradient(circle_at_45%_22%,color-mix(in_oklab,var(--foreground)_4%,transparent),transparent_34%)]">
+    <section className="flex h-full min-h-0 bg-muted/20">
       <ThreadDetail
         actionPending={stateMutation.isPending || deleteDraftMutation.isPending}
         isDraft={folder === 'drafts'}
@@ -550,6 +595,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             />
           ) : null
         }
+        error={detailQuery.isError}
+        onRetry={() => void detailQuery.refetch()}
         loading={detailQuery.isLoading}
         onArchive={() => stateMutation.mutate('archive')}
         onBack={() => setThreadId(null)}
@@ -575,7 +622,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   );
 
   return (
-    <main className="h-full min-h-0 overflow-hidden bg-root-background text-foreground">
+    <div className="h-full min-h-0 overflow-hidden bg-background text-foreground">
       <div className="h-full lg:hidden">
         {threadId ? detailPanel : listPanel}
       </div>
@@ -630,18 +677,6 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         sending={sendMutation.isPending}
         workspaceId={workspaceId}
       />
-    </main>
+    </div>
   );
-}
-
-function replySubject(subject: string) {
-  return /^re:/iu.test(subject.trim())
-    ? subject
-    : `Re: ${subject || ''}`.trim();
-}
-
-function forwardSubject(subject: string) {
-  return /^(fw|fwd):/iu.test(subject.trim())
-    ? subject
-    : `Fwd: ${subject || ''}`.trim();
 }

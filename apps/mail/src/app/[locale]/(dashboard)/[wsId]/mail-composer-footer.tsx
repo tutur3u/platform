@@ -49,8 +49,12 @@ export function MailComposerFooter({
   const t = useTranslations('mail');
 
   return (
-    <footer className="flex items-center gap-2 border-dynamic border-t px-3 py-2.5">
-      <Button disabled={!canSend || sending} onClick={onSend}>
+    <footer className="flex flex-wrap items-center gap-1.5 border-dynamic border-t bg-muted/20 px-3 py-3">
+      <Button
+        className="rounded-lg px-5"
+        disabled={!canSend || sending}
+        onClick={onSend}
+      >
         <Send className="size-4" /> {sending ? t('sending') : t('send')}
       </Button>
       <MailComposerAi
@@ -109,7 +113,7 @@ function AttachmentButton({
   onUpload: (files: FileList) => void;
 }) {
   return (
-    <label className="inline-flex cursor-pointer">
+    <label className="inline-flex cursor-pointer rounded-md focus-within:ring-2 focus-within:ring-ring">
       <input
         accept={accept}
         aria-label={label}

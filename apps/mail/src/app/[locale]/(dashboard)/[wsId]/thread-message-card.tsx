@@ -37,16 +37,16 @@ export function ThreadMessageCard({
 
   return (
     <AccordionItem
-      className="overflow-hidden rounded-2xl border border-dynamic bg-background/90 shadow-sm"
+      className="overflow-hidden rounded-xl border border-dynamic bg-background"
       value={message.id}
     >
       <AccordionTrigger className="px-4 py-3 hover:no-underline" showChevron>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="min-w-0 truncate font-semibold">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="min-w-0 flex-1 basis-40 truncate font-semibold">
               {displayName}
               {message.fromName ? (
-                <span className="ml-1.5 font-normal text-muted-foreground">
+                <span className="mt-0.5 block truncate font-normal text-muted-foreground text-xs">
                   &lt;{message.fromAddress}&gt;
                 </span>
               ) : null}
@@ -107,7 +107,7 @@ export function ThreadMessageCard({
             </dl>
           </details>
         </div>
-        <div className="min-w-0 max-w-full overflow-hidden p-4">
+        <div className="min-w-0 max-w-full overflow-hidden p-4 md:p-6">
           {message.sanitizedHtml ? (
             <MailMessagePreview
               content={message.sanitizedHtml}

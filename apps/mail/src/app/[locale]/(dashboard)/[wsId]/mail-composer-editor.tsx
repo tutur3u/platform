@@ -77,7 +77,7 @@ export function MailComposerEditor({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-0.5 border-dynamic border-b px-2 py-1.5">
+      <div className="flex shrink-0 flex-wrap items-center gap-0.5 border-dynamic border-b bg-muted/20 px-3 py-1">
         <ToolButton
           active={editor.isActive('bold')}
           label={t('bold')}
@@ -142,7 +142,7 @@ export function MailComposerEditor({
         </ToolButton>
       </div>
       <EditorContent
-        className="min-h-0 flex-1 overflow-y-auto [&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-4 [&_.ProseMirror]:py-3 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
+        className="min-h-0 flex-1 overflow-y-auto [&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
         editor={editor}
       />
     </div>

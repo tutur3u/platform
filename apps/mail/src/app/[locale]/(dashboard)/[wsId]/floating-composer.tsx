@@ -403,8 +403,9 @@ export function FloatingComposer({
           'fixed z-50 flex flex-col overflow-hidden border border-dynamic bg-background shadow-2xl',
           minimized
             ? 'right-0 bottom-0 left-0 h-14 md:right-5 md:bottom-5 md:left-auto md:w-[28rem] md:rounded-2xl'
-            : 'inset-0 h-dvh w-full md:inset-auto md:right-5 md:bottom-5 md:h-[min(78vh,48rem)] md:min-h-[28rem] md:w-[min(46rem,calc(100vw-2.5rem))] md:min-w-[28rem] md:resize md:rounded-2xl',
-          maximized && 'inset-3 h-auto w-auto resize-none md:rounded-2xl'
+            : maximized
+              ? 'inset-0 h-dvh w-full md:inset-6 md:h-auto md:w-auto md:rounded-xl'
+              : 'inset-0 h-dvh w-full md:inset-auto md:right-5 md:bottom-5 md:h-[min(78dvh,48rem)] md:min-h-[28rem] md:w-[min(46rem,calc(100vw-2.5rem))] md:min-w-[28rem] md:resize md:rounded-xl'
         )}
         onDrop={(event) => {
           event.preventDefault();

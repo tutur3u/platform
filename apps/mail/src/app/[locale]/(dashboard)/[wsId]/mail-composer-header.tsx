@@ -30,9 +30,9 @@ export function MailComposerHeader({
   const SizeIcon = maximized ? Minimize2 : Maximize2;
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-dynamic border-b px-3">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-dynamic border-b bg-muted/40 px-4">
       <button
-        className="min-w-0 flex-1 rounded-md text-left outline-none"
+        className="min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={minimized ? onToggleSize : undefined}
         type="button"
       >
@@ -43,7 +43,7 @@ export function MailComposerHeader({
           {saveLabel}
         </span>
       </button>
-      <div className="flex shrink-0 items-center rounded-lg border border-dynamic bg-foreground/[0.025] p-0.5">
+      <div className="flex shrink-0 items-center gap-0.5">
         <Button
           aria-label={sizeLabel}
           className="size-8 max-md:hidden"

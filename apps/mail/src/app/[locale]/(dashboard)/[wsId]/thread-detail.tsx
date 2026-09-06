@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  Archive,
-  ArrowLeft,
-  Loader2,
-  MailOpen,
-  Paperclip,
-  Star,
-  Trash2,
-} from '@tuturuuu/icons';
+import { Archive, ArrowLeft, Paperclip, Star, Trash2 } from '@tuturuuu/icons';
 import type {
   MailMessageDetail,
   MailThreadDetail,
@@ -29,11 +21,14 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import { MailContentState } from './mail-content-state';
 import { ThreadMessageCard } from './thread-message-card';
 
 export function ThreadDetail({
   actionPending,
   isDraft,
+  error,
+  onRetry,
   labelActions,
   loading,
   onArchive,
@@ -47,6 +42,8 @@ export function ThreadDetail({
 }: {
   actionPending: boolean;
   isDraft: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   labelActions?: ReactNode;
   loading: boolean;
   onArchive: () => void;
@@ -61,28 +58,9 @@ export function ThreadDetail({
   const t = useTranslations('mail');
   const [deleteDraftOpen, setDeleteDraftOpen] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="flex h-full flex-1 items-center justify-center text-muted-foreground text-sm">
-        <Loader2 className="mr-2 size-4 animate-spin" /> {t('loading_message')}
-      </div>
-    );
-  }
-  if (!thread) {
-    return (
-      <div className="flex h-full flex-1 items-center justify-center p-8 text-center">
-        <div className="max-w-sm space-y-3">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-dynamic bg-foreground/[0.035]">
-            <MailOpen className="size-5 text-muted-foreground" />
-          </div>
-          <h2 className="font-semibold">{t('select_message')}</h2>
-          <p className="text-muted-foreground text-sm">
-            {t('select_message_description')}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <MailContentState kind="loading" />;
+  if (error) return <MailContentState kind="error" onAction={onRetry} />;
+  if (!thread) return <MailContentState kind="reader" />;
 
   const newest = thread.messages.at(-1);
   const attachments = thread.messages.flatMap((message) =>
@@ -92,17 +70,17 @@ export function ThreadDetail({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <header className="border-dynamic border-b bg-background/80 px-4 py-3 backdrop-blur md:px-5">
-        <div className="flex items-start gap-2">
+        <div className="flex flex-wrap items-start gap-2">
           <Button
             aria-label={t('back_to_messages')}
-            className="shrink-0 lg:hidden"
+            className="shrink-0"
             onClick={onBack}
             size="icon"
             variant="ghost"
           >
             <ArrowLeft className="size-4" />
           </Button>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 basis-40">
             <h1 className="text-pretty font-semibold text-lg leading-tight md:text-xl">
               {thread.thread.subject || t('no_subject')}
             </h1>
@@ -113,13 +91,16 @@ export function ThreadDetail({
           <div className="flex items-center gap-1">
             {labelActions}
             <Button
-              aria-label={t('star')}
+              aria-label={newest?.starred ? t('unstar') : t('star')}
+              aria-pressed={Boolean(newest?.starred)}
               disabled={actionPending}
               onClick={onStar}
               size="icon"
               variant="ghost"
             >
-              <Star className="size-4" />
+              <Star
+                className={newest?.starred ? 'size-4 fill-current' : 'size-4'}
+              />
             </Button>
             <Button
               aria-label={t('archive')}
@@ -159,7 +140,8 @@ export function ThreadDetail({
         <TabsContent className="min-h-0" value="conversation">
           <ScrollArea className="h-full">
             <Accordion
-              className="space-y-3 p-4 md:p-5"
+              className="mx-auto max-w-4xl space-y-3 p-3 md:p-6"
+              key={thread.thread.id}
               defaultValue={newest ? [newest.id] : []}
               type="multiple"
             >

@@ -5,14 +5,18 @@ import type { MailThreadSummary } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: string) {
   if (!value) return '';
-  return new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    month: 'short',
-  }).format(new Date(value));
+  const date = new Date(value);
+  const today = date.toDateString() === new Date().toDateString();
+  return new Intl.DateTimeFormat(
+    locale,
+    today
+      ? { hour: 'numeric', minute: '2-digit' }
+      : { day: 'numeric', month: 'short' }
+  ).format(date);
 }
 
 export function MailThreadRow({
@@ -29,6 +33,7 @@ export function MailThreadRow({
   thread: MailThreadSummary;
 }) {
   const t = useTranslations('mail');
+  const locale = useLocale();
   const participant = thread.participants[0];
   const participantLabel =
     participant?.displayName || participant?.address || t('unknown_sender');
@@ -36,20 +41,21 @@ export function MailThreadRow({
   return (
     <div
       className={cn(
-        'group relative border-transparent border-l-2 transition hover:bg-foreground/5',
-        active && 'border-foreground bg-foreground/[0.075]',
+        'group relative border-transparent border-l-2 transition-colors hover:bg-accent/70',
+        active && 'border-primary bg-accent',
+        selected && 'bg-accent/80',
         thread.unreadCount > 0 && !active && 'bg-foreground/[0.025]'
       )}
     >
       <Checkbox
         aria-label={t('select_thread')}
         checked={selected}
-        className="absolute top-4 left-3 z-10 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 data-[state=checked]:opacity-100"
+        className="absolute top-4 left-3 z-10 opacity-100 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 data-[state=checked]:opacity-100 md:opacity-0"
         onCheckedChange={(value) => onSelect(value === true)}
       />
       <button
         aria-current={active ? 'true' : undefined}
-        className="block w-full py-3 pr-4 pl-10 text-left"
+        className="block w-full py-4 pr-4 pl-10 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         onClick={onClick}
         type="button"
       >
@@ -74,7 +80,7 @@ export function MailThreadRow({
             </span>
           ) : null}
           <span className="shrink-0 text-muted-foreground text-xs">
-            {formatDate(thread.lastMessageAt)}
+            {formatDate(thread.lastMessageAt, locale)}
           </span>
         </div>
         <div className="mb-1 flex items-center gap-2">
@@ -84,7 +90,7 @@ export function MailThreadRow({
           {thread.hasAttachments ? <Paperclip className="size-3.5" /> : null}
           {thread.starred ? <Star className="size-3.5" /> : null}
         </div>
-        <p className="line-clamp-2 text-muted-foreground text-xs leading-5">
+        <p className="line-clamp-2 text-[0.8125rem] text-muted-foreground leading-5">
           {thread.latestSnippet}
         </p>
         {thread.labels.length > 0 ? (

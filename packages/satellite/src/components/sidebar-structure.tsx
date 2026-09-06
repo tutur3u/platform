@@ -53,6 +53,7 @@ export interface SidebarStructureProps {
   sidebarExpandedWidth?: string;
   sidebarHeaderClassName?: string;
   sidebarHeaderHeight?: string;
+  showSettingsButton?: boolean;
   upgradeExternal?: boolean;
   upgradeHref?: string;
   userPopover: ReactNode;
@@ -82,6 +83,7 @@ export function SidebarStructure({
   sidebarExpandedWidth,
   sidebarHeaderClassName,
   sidebarHeaderHeight,
+  showSettingsButton = true,
   upgradeExternal = false,
   upgradeHref,
   userPopover,
@@ -225,10 +227,12 @@ export function SidebarStructure({
           mobileBrandActions={workspaceToggle}
           userPopover={userPopover}
           sidebarUtility={
-            <SidebarSettingsButton
-              isCollapsed={isCollapsed}
-              label={t('common.settings')}
-            />
+            showSettingsButton ? (
+              <SidebarSettingsButton
+                isCollapsed={isCollapsed}
+                label={t('common.settings')}
+              />
+            ) : null
           }
         >
           {childContainerClassName ? (

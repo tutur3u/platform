@@ -93,7 +93,8 @@ export function Structure({
           workspaceId={personalOrWsId}
         />
       )}
-      sidebarExpandedWidth="18rem"
+      showSettingsButton={false}
+      sidebarExpandedWidth="15rem"
       sidebarHeaderClassName="border-foreground/10 border-b"
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
