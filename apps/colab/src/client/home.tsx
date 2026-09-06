@@ -2,8 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
 import { useState } from 'react';
-import { appNames, useCopy } from './i18n';
-import { LandingPreview, WorkshopDetails } from './landing-preview';
+import { useCopy } from './i18n';
 
 function dateValue(time: number) {
   const d = new Date(time);
@@ -22,13 +21,14 @@ export function ErrorNotice({ error }: { error: unknown }) {
 export function Home({
   canHost,
   navigate,
+  mode = 'join',
 }: {
+  mode?: 'join' | 'host';
   canHost: boolean;
   identity: Identity | null;
   navigate: (id: string) => void;
 }) {
   const c = useCopy();
-  const [mode, setMode] = useState<'join' | 'host'>('join');
   const [invalid, setInvalid] = useState(false);
   const create = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -40,42 +40,12 @@ export function Home({
     <div className="home">
       <section className="lobby-heading">
         <div>
-          <h1>{c.lobbyTitle}</h1>
-          <p>{c.lobbyDescription}</p>
+          <h1>{mode === 'host' ? c.host : c.join}</h1>
+          <p>{mode === 'host' ? c.scheduleHelp : c.inviteHelp}</p>
         </div>
-        <a className="button quiet" href="#explore">
-          {c.practiceGuide}
-        </a>
       </section>
-      <section className="entry-grid" id="join">
-        <div className="entry-copy">
-          <span className="section-number">{c.safeWorkspace}</span>
-          <h2>{c.inviteOnly}</h2>
-          <p>{c.inviteHelp}</p>
-          <div className="mini-apps">
-            {Object.entries(appNames).map(([id, name]) => (
-              <span key={id}>{name}</span>
-            ))}
-          </div>
-          <p className="fine-print">{c.sandboxHelp}</p>
-        </div>
+      <section className="entry-grid entry-focused" id="join">
         <div className="panel entry-panel">
-          <div className="segmented">
-            <button
-              type="button"
-              aria-pressed={mode === 'join'}
-              onClick={() => setMode('join')}
-            >
-              {c.join}
-            </button>
-            <button
-              type="button"
-              aria-pressed={mode === 'host'}
-              onClick={() => setMode('host')}
-            >
-              {c.host}
-            </button>
-          </div>
           {mode === 'join' ? (
             <form
               onSubmit={(e) => {
@@ -196,27 +166,12 @@ export function Home({
             <div className="host-gate">
               <h3>{c.hostOnly}</h3>
               <p>{c.scheduleHelp}</p>
-              <a className="button primary" href="/auth/login">
-                {c.login} ↗
+              <a className="button primary" href="/join">
+                {c.join}
               </a>
             </div>
           )}
         </div>
-      </section>
-      <LandingPreview />
-      <WorkshopDetails />
-      <section className="steps">
-        {[
-          [c.step1, c.step1Text],
-          [c.step2, c.step2Text],
-          [c.step3, c.step3Text],
-        ].map(([title, description], i) => (
-          <article key={title}>
-            <span className="step-index">0{i + 1}</span>
-            <h3>{title}</h3>
-            <p>{description}</p>
-          </article>
-        ))}
       </section>
     </div>
   );

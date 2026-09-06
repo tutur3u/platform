@@ -11,7 +11,24 @@ const methods: Record<string, readonly string[]> = {
 
 export async function platformProxy(request: Request, env: Env) {
   const url = new URL(request.url);
-  const allowed = methods[url.pathname];
+  const invite =
+    /^\/api\/workspaces\/[a-f0-9-]{36}\/(?:accept|decline)-invite$/.test(
+      url.pathname
+    );
+  const notificationMethods =
+    url.pathname === '/api/v1/notifications'
+      ? ['GET', 'PATCH']
+      : url.pathname === '/api/v1/notifications/unread-count'
+        ? ['GET']
+        : /^\/api\/v1\/notifications\/[a-f0-9-]{36}(?:\/metadata)?$/.test(
+              url.pathname
+            )
+          ? ['PATCH']
+          : undefined;
+  const allowed =
+    methods[url.pathname] ??
+    notificationMethods ??
+    (invite ? ['POST'] : undefined);
   if (!allowed) return null;
   requireRule(allowed.includes(request.method), 'method_not_allowed', 405);
   requireRule(
@@ -23,7 +40,7 @@ export async function platformProxy(request: Request, env: Env) {
     403
   );
   let body: string | undefined;
-  if (request.method !== 'GET') {
+  if (request.method !== 'GET' && !invite) {
     requireRule(
       request.headers.get('content-type')?.includes('application/json'),
       'invalid_input',
@@ -62,12 +79,15 @@ export async function platformProxy(request: Request, env: Env) {
     .map((value) => value.trim())
     .filter((value) => /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?=/.test(value));
   if (cookies.length) headers.set('Cookie', cookies.join('; '));
-  const response = await fetch(new URL(url.pathname, env.AUTH_ORIGIN), {
-    method: request.method,
-    headers,
-    body,
-    redirect: 'manual',
-  });
+  const response = await fetch(
+    new URL(url.pathname + url.search, env.AUTH_ORIGIN),
+    {
+      method: request.method,
+      headers,
+      body,
+      redirect: 'manual',
+    }
+  );
   return new Response(response.body, {
     status: response.status,
     headers: {

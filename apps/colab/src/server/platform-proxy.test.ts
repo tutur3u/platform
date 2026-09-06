@@ -60,3 +60,44 @@ describe('first-party support bridge', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 });
+
+describe('notification bridge', () => {
+  it('preserves pagination and archive filters while limiting methods and paths', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(Response.json({ notifications: [] }));
+    vi.stubGlobal('fetch', fetcher);
+    await platformProxy(
+      new Request(
+        `${env.APP_ORIGIN}/api/v1/notifications?readOnly=true&offset=15&limit=15`
+      ),
+      env
+    );
+    expect(String(fetcher.mock.calls[0]![0])).toBe(
+      'https://tuturuuu.com/api/v1/notifications?readOnly=true&offset=15&limit=15'
+    );
+    await expect(
+      platformProxy(request('/api/v1/notifications/unread-count'), env)
+    ).rejects.toThrow('method_not_allowed');
+    expect(
+      await platformProxy(request('/api/v1/notifications/arbitrary'), env)
+    ).toBeNull();
+  });
+  it('forwards bodyless invitation actions only from the first-party origin', async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json({ success: true }));
+    vi.stubGlobal('fetch', fetcher);
+    const path =
+      '/api/workspaces/00000000-0000-4000-8000-000000000001/accept-invite';
+    await platformProxy(
+      new Request(`${env.APP_ORIGIN}${path}`, {
+        method: 'POST',
+        headers: { Origin: env.APP_ORIGIN },
+      }),
+      env
+    );
+    expect(fetcher.mock.calls[0]![1].body).toBeUndefined();
+    await expect(
+      platformProxy(request(path, 'https://attacker.example'), env)
+    ).rejects.toThrow('invalid_origin');
+  });
+});

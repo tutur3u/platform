@@ -87,7 +87,20 @@
   "newScenario": "Generate shared scenario",
   "newer": "A teammate saved a newer version. Copy your work before loading theirs.",
   "noAccess": "This room needs an invitation.",
-  "notifications": "Tuturuuu notifications",
+  "notifications": {
+    "accept": "Accept",
+    "archive": "Archive",
+    "archive-all": "Archive all",
+    "decline": "Decline",
+    "empty-archive": "No archived notifications yet.",
+    "inbox": "Inbox",
+    "loading-more": "Loading more...",
+    "mark-as-read": "Mark as read",
+    "mark-as-unread": "Mark as unread",
+    "no-notifications": "You have no notifications yet.",
+    "notifications": "Notifications",
+    "view-all": "View All Notifications"
+  },
   "offline": "Reconnecting…",
   "online": "online",
   "open": "Live workshop",
@@ -141,7 +154,7 @@
   "settings": "Settings",
   "shellCollapse": "Collapse navigation",
   "shellExpand": "Open navigation",
-  "shellHome": "Overview",
+  "shellHome": "Workshops",
   "shellNavigation": "Colab navigation",
   "shellPlatform": "Tuturuuu platform",
   "shellWorkshop": "Workshop",
@@ -231,5 +244,25 @@
     "onboarding_guide.restart_journey": "Restart full journey",
     "settings.back_to_app": "Back to app"
   },
-  "preferencesTitle": "Preferences"
+  "preferencesTitle": "Preferences",
+  "workspace": {
+    "eyebrow": "Your team’s prompt lab",
+    "welcome": "Welcome back",
+    "description": "Build skills, test ideas, and learn together in a private workshop.",
+    "sessions": "Your workshops",
+    "recentDescription": "Pick up where you left off. Room access and timing are checked when you enter.",
+    "emptyTitle": "Your next workshop starts here",
+    "emptyDescription": "Have an invitation? Join with a room link or ID from your host.",
+    "next": "Explore Colab",
+    "hostDescription": "Set a challenge, invite your team, and guide the session.",
+    "guideDescription": "Learn how to write clear instructions, build skills, and test your agent.",
+    "privateLabel": "Invite-only"
+  },
+  "common": {
+    "retry": "Retry"
+  },
+  "workspace-invitation": {
+    "accept-success": "Workspace invitation accepted",
+    "decline-success": "Workspace invitation rejected"
+  }
 }

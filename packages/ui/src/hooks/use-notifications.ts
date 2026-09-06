@@ -11,7 +11,6 @@ import {
   type SupabaseClient,
 } from '@tuturuuu/supabase/next/realtime-browser';
 import { useEffect } from 'react';
-
 export type NotificationType =
   | 'task_assigned'
   | 'task_updated'
@@ -44,13 +43,11 @@ export type NotificationType =
   | 'time_tracking_request_approved'
   | 'time_tracking_request_rejected'
   | 'time_tracking_request_needs_info';
-
 export interface NotificationActor {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
 }
-
 export interface Notification {
   id: string;
   ws_id: string | null; // Can be null for user-scoped notifications
@@ -66,14 +63,12 @@ export interface Notification {
   created_by: string | null;
   actor: NotificationActor | null;
 }
-
 interface NotificationsPage {
   notifications: Notification[];
   count: number;
   limit: number;
   offset: number;
 }
-
 interface UseNotificationsOptions {
   cacheScope?: string;
   wsId?: string;
@@ -83,22 +78,18 @@ interface UseNotificationsOptions {
   readOnly?: boolean;
   type?: NotificationType;
 }
-
 interface NotificationSubscriptionEntry {
   channel: RealtimeChannel;
   queryClientRefs: Map<QueryClient, number>;
   subscriberCount: number;
   supabase: SupabaseClient;
 }
-
 export const UNREAD_COUNT_STALE_TIME_MS = 5 * 60 * 1000;
 export const UNREAD_COUNT_FALLBACK_INTERVAL_MS = 15 * 60 * 1000;
-
 const notificationSubscriptionRegistry = new Map<
   string,
   NotificationSubscriptionEntry
 >();
-
 function invalidateNotificationQueries(
   queryClientRefs: Map<QueryClient, number>
 ) {
@@ -109,7 +100,6 @@ function invalidateNotificationQueries(
     });
   }
 }
-
 function addNotificationQueryClientRef(
   entry: NotificationSubscriptionEntry,
   queryClient: QueryClient
@@ -120,22 +110,18 @@ function addNotificationQueryClientRef(
     (entry.queryClientRefs.get(queryClient) ?? 0) + 1
   );
 }
-
 function releaseNotificationQueryClientRef(
   entry: NotificationSubscriptionEntry,
   queryClient: QueryClient
 ) {
   entry.subscriberCount -= 1;
-
   const currentRefCount = entry.queryClientRefs.get(queryClient) ?? 0;
-
   if (currentRefCount <= 1) {
     entry.queryClientRefs.delete(queryClient);
   } else {
     entry.queryClientRefs.set(queryClient, currentRefCount - 1);
   }
 }
-
 function createNotificationSubscriptionEntry(
   userId: string,
   queryClient: QueryClient
@@ -144,7 +130,6 @@ function createNotificationSubscriptionEntry(
   const supabase = createRealtimeClient();
   const invalidateQueries = () =>
     invalidateNotificationQueries(queryClientRefs);
-
   const channel = supabase
     .channel(`notifications-${userId}`)
     .on(
@@ -178,7 +163,6 @@ function createNotificationSubscriptionEntry(
       invalidateQueries
     )
     .subscribe();
-
   return {
     channel,
     queryClientRefs,
@@ -186,22 +170,18 @@ function createNotificationSubscriptionEntry(
     supabase,
   } satisfies NotificationSubscriptionEntry;
 }
-
 export function dedupeNotifications(
   notifications: Notification[]
 ): Notification[] {
   const seen = new Set<string>();
-
   return notifications.filter((notification) => {
     if (seen.has(notification.id)) {
       return false;
     }
-
     seen.add(notification.id);
     return true;
   });
 }
-
 /**
  * Hook to fetch notifications with pagination
  * @param wsId - If provided, filters to specific workspace. If omitted, fetches all notifications across all workspaces.
@@ -268,6 +248,7 @@ export function useInfiniteNotifications({
   readOnly = false,
   pageSize = 20,
   enabled = true,
+  refetchInterval,
 }: {
   cacheScope?: string;
   wsId?: string;
@@ -275,6 +256,7 @@ export function useInfiniteNotifications({
   readOnly?: boolean;
   pageSize?: number;
   enabled?: boolean;
+  refetchInterval?: number;
 }) {
   return useInfiniteQuery({
     queryKey: [
@@ -306,6 +288,8 @@ export function useInfiniteNotifications({
     },
     initialPageParam: 0,
     enabled,
+    refetchInterval,
+    refetchIntervalInBackground: false,
     getNextPageParam: (lastPage) => {
       const nextOffset = lastPage.offset + lastPage.limit;
       return nextOffset < lastPage.count ? nextOffset : undefined;
@@ -321,7 +305,7 @@ export function useInfiniteNotifications({
  */
 export function useUnreadCount(
   wsId?: string,
-  options?: { cacheScope?: string; enabled?: boolean }
+  options?: { cacheScope?: string; enabled?: boolean; refetchInterval?: number }
 ) {
   return useQuery({
     queryKey: [
@@ -340,14 +324,15 @@ export function useUnreadCount(
         throw new Error('Failed to fetch unread count');
       }
 
-      const data = await response.json();
-      return data.count as number;
+      const data = (await response.json()) as { count: number };
+      return data.count;
     },
     enabled: options?.enabled ?? true,
     staleTime: UNREAD_COUNT_STALE_TIME_MS,
     // Realtime invalidation is the primary update path. Keep a low-frequency
     // refresh as a safety net for disconnected or suspended browser sessions.
-    refetchInterval: UNREAD_COUNT_FALLBACK_INTERVAL_MS,
+    refetchInterval:
+      options?.refetchInterval ?? UNREAD_COUNT_FALLBACK_INTERVAL_MS,
     refetchIntervalInBackground: false,
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,

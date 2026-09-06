@@ -1,15 +1,12 @@
 import {
-  Bell,
   BookOpen,
   Building2,
   FileText,
   FlaskConical,
   Home,
   Layers,
-  PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  ShieldCheck,
   Users,
 } from '@tuturuuu/icons';
 import type { Identity } from '@tuturuuu/multiplayer';
@@ -34,6 +31,7 @@ import { type ReactNode, useMemo, useState } from 'react';
 import { AccountMenu } from './account-menu';
 import logo from './assets/tuturuuu.png';
 import { type Locale, useCopy, useShellCopy } from './i18n';
+import { ColabNotifications } from './notifications';
 import { ColabSettings } from './settings';
 import { ShellNavigation } from './shell-navigation';
 import { ThemeToggle } from './theme-toggle';
@@ -69,22 +67,29 @@ export function Structure({
     enabled: true,
     onOpen: () => setSettingsOpen(true),
   });
-  const recent = localStorage.getItem('colab-recent-room');
   const links = useMemo<(NavLink | null)[]>(
     () => [
       {
         title: c.shellHome,
         href: '/',
         icon: <Home className="size-4" />,
-        onClick: () => navigate(''),
       },
-      ...(recent && !roomId
+      ...(!roomId
         ? [
             {
-              title: c.recent,
+              title: c.join,
+              href: '/join',
               icon: <Users className="size-4" />,
-              onClick: () => navigate(recent),
             },
+            ...(identity?.email?.endsWith('@tuturuuu.com')
+              ? [
+                  {
+                    title: c.host,
+                    href: '/host',
+                    icon: <FlaskConical className="size-4" />,
+                  },
+                ]
+              : []),
           ]
         : []),
       null,
@@ -119,12 +124,12 @@ export function Structure({
         : [
             {
               title: c.practiceGuide,
-              href: '#explore',
+              href: '/guide',
               icon: <BookOpen className="size-4" />,
             },
           ]),
     ],
-    [c, roomId, recent, navigate]
+    [c, roomId, identity?.email]
   );
   const {
     isCollapsed: collapsed,
@@ -136,7 +141,7 @@ export function Structure({
     onMouseEnter,
     onMouseLeave,
   } = useSatelliteShell({
-    pathname: roomId ? `/?room=${roomId}` : '/',
+    pathname: roomId ? `/?room=${roomId}` : location.pathname,
     links,
     defaultCollapsed:
       window.innerWidth < 768 ||
@@ -157,20 +162,21 @@ export function Structure({
     />
   );
   const notifications = identity?.email ? (
-    <Button variant="ghost" size="icon" asChild>
-      <a
-        href="https://tuturuuu.com/personal/notifications"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={c.notifications}
-        title={c.notifications}
-      >
-        <Bell className="size-4" />
-      </a>
-    </Button>
+    <ColabNotifications userId={identity.id} />
   ) : undefined;
   return (
     <div className="colab-shell">
+      {sidebar.behavior === 'hidden' && (
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed bottom-4 left-4 z-50"
+          aria-label={c.shellExpand}
+          onClick={() => sidebar.handleBehaviorChange('expanded')}
+        >
+          <PanelLeftOpen className="size-4" />
+        </Button>
+      )}
       <ReportProblemDialogContent
         open={feedbackOpen}
         onOpenChange={setFeedbackOpen}
@@ -229,32 +235,6 @@ export function Structure({
           onAppClick: () => setAppsOpen(true),
         }}
         mobileBrandActions={<ThemeToggle />}
-        header={
-          <div className="colab-toolbar">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={collapsed ? c.shellExpand : c.shellCollapse}
-              onClick={handleToggle}
-            >
-              {collapsed ? (
-                <PanelLeftOpen className="size-4" />
-              ) : (
-                <PanelLeftClose className="size-4" />
-              )}
-            </Button>
-            <span className="h-4 border-l" />
-            <FlaskConical className="size-4 text-muted-foreground" />
-            <span className="font-medium text-sm">
-              {roomId ? c.shellWorkshop : c.lobbyTitle}
-            </span>
-            <span className="ml-auto flex items-center gap-2 text-muted-foreground text-xs">
-              <ShieldCheck className="size-3.5" />
-              {c.safeWorkspace}
-            </span>
-            <ThemeToggle />
-          </div>
-        }
         sidebarContent={
           <SatelliteContent
             Navigation={ShellNavigation}

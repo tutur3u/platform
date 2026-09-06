@@ -19,7 +19,6 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Home } from './home';
 import {
   type Locale,
   LocaleContext,
@@ -28,7 +27,9 @@ import {
 } from './i18n';
 import { Structure } from './structure';
 import { Workshop } from './workshop';
+import { WorkspacePages } from './workspace-pages';
 import './app.css';
+import './workspace.css';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: true } },
@@ -51,6 +52,34 @@ function App() {
     history.replaceState(null, '', id ? `/?room=${id}` : '/');
     if (id) localStorage.setItem('colab-recent-room', id);
   };
+  if (!roomId && (!session.data?.identity?.email || session.isPending)) {
+    return (
+      <div className="workspace-login">
+        <section>
+          <h1>Colab</h1>
+          <p>
+            {session.isPending ? c.loadingAccount : c.workspace.description}
+          </p>
+          {!session.isPending && (
+            <>
+              <Button asChild className="w-full">
+                <a
+                  href={`/auth/login?returnTo=${encodeURIComponent(location.pathname)}`}
+                >
+                  {c.login}
+                </a>
+              </Button>
+              {authRetry && (
+                <p role="alert" className="mt-4">
+                  {c.authRetryText}
+                </p>
+              )}
+            </>
+          )}
+        </section>
+      </div>
+    );
+  }
   return (
     <Structure
       roomId={roomId}
@@ -102,16 +131,12 @@ function App() {
           leave={() => navigate('')}
         />
       ) : (
-        <Home
+        <WorkspacePages
           canHost={session.data?.canHost ?? false}
           identity={session.data?.identity ?? null}
           navigate={navigate}
         />
       )}
-      <footer>
-        <span>{c.tagline}</span>
-        <span>{c.sandbox}</span>
-      </footer>
     </Structure>
   );
 }

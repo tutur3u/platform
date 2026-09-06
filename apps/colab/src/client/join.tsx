@@ -79,7 +79,10 @@ export function Join({
         </button>
         <ErrorNotice error={join.error} />
       </form>
-      <a className="button quiet wide" href="/auth/login">
+      <a
+        className="button quiet wide"
+        href={`/auth/login?returnTo=${encodeURIComponent(`/?room=${roomId}`)}`}
+      >
         {c.login} ↗
       </a>
     </section>

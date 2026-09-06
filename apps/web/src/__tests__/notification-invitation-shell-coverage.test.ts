@@ -28,7 +28,7 @@ describe('notification and invitation shell coverage', () => {
 
   it('keeps the shared bell visible on narrow viewports and exposes retry', () => {
     const popover = source(
-      'packages/ui/src/components/ui/custom/notification-popover-client.tsx'
+      'packages/ui/src/components/ui/custom/notification-list.tsx'
     );
     const trigger = source(
       'packages/ui/src/components/ui/custom/notification-popover-trigger.tsx'

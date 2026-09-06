@@ -10,7 +10,8 @@ const subscribe = (notify: () => void) => {
   window.addEventListener('hashchange', notify);
   return () => window.removeEventListener('hashchange', notify);
 };
-const currentLocation = () => `${location.search}${location.hash}`;
+const currentLocation = () =>
+  `${location.pathname}${location.search}${location.hash}`;
 
 /** Native navigation adapter; Next satellites supply their prefetch/permissions-aware NavLink. */
 export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
@@ -29,10 +30,12 @@ export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
       renderLink={(link) => {
         const active =
           link.href === '/'
-            ? !current.includes('room=')
-            : link.href?.startsWith('#') &&
-              (current.endsWith(link.href) ||
-                (!current.includes('#') && link.href === '#mission'));
+            ? location.pathname === '/' && !current.includes('room=')
+            : link.href?.startsWith('/')
+              ? location.pathname === link.href
+              : link.href?.startsWith('#') &&
+                (current.endsWith(link.href) ||
+                  (!current.includes('#') && link.href === '#mission'));
         const content = (
           <span className="flex min-w-0 items-center gap-2">
             {link.icon}

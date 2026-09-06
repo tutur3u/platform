@@ -60,7 +60,24 @@ async function handle(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/auth/') || url.pathname === '/verify-token')
     return authRoute(request, env);
-  if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+  if (!url.pathname.startsWith('/api/')) {
+    const appPage = ['/', '/join', '/host', '/guide'].includes(url.pathname);
+    const guestInvite =
+      url.pathname === '/' &&
+      /^[a-f0-9-]{36}$/.test(url.searchParams.get('room') ?? '');
+    if (appPage && !guestInvite && !url.searchParams.has('auth')) {
+      const identity = await authenticate(request, env);
+      if (!identity?.email) {
+        const target = new URL('/auth/login', url);
+        target.searchParams.set('returnTo', url.pathname + url.search);
+        return new Response(null, {
+          status: 302,
+          headers: { Location: target.toString(), 'Cache-Control': 'no-store' },
+        });
+      }
+    }
+    return env.ASSETS.fetch(request);
+  }
   const platformResponse = await platformProxy(request, env);
   if (platformResponse) return platformResponse;
   if (url.pathname === '/api/health')

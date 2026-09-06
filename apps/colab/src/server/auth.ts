@@ -109,7 +109,7 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
     );
     const returnPath =
       requestedReturn.origin === env.APP_ORIGIN &&
-      requestedReturn.pathname === '/'
+      ['/', '/join', '/host', '/guide'].includes(requestedReturn.pathname)
         ? requestedReturn.pathname + requestedReturn.search
         : '/';
     const returnTo = new URL('/auth/callback', env.APP_ORIGIN);
@@ -201,7 +201,10 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
       decodeURIComponent(cookie(request, 'colab_return') ?? '/'),
       env.APP_ORIGIN
     );
-    if (target.origin === env.APP_ORIGIN && target.pathname === '/')
+    if (
+      target.origin === env.APP_ORIGIN &&
+      ['/', '/join', '/host', '/guide'].includes(target.pathname)
+    )
       returnPath = target.pathname + target.search;
   } catch {
     /* Invalid return cookies fall back to the lobby. */

@@ -187,3 +187,29 @@ The menu preserves the Next satellite ordering: Dashboard; Sidebar (expanded, co
 Central account changes automatically complete the Colab handoff while preserving the room URL. The verifier resolves display name and avatar from the verified user's profile; confirmed auth email remains the permission authority. Central and Colab sessions expire independently, and signed-out users can continue through the central login portal. Guests can still join with a room password.
 
 The Worker forwards only explicitly allowlisted real account/support endpoints (reports, onboarding progress, and the sidebar preference) to `AUTH_ORIGIN`, with central Supabase auth cookies and same-origin mutation checks. This bridge is separate from the simulated workshop tools, which cannot call real services. Account switching uses the existing central account API with credentialed CORS. Regression checks cover the allowlist, cookie filtering, rejected origins/methods and body limits.
+
+## Workspace entry and notifications
+
+Colab requires a Tuturuuu login when opening the app. The sidebar separates
+Workshops (`/`), Join a room (`/join`), Host a workshop (`/host`, staff only),
+and Practice guide (`/guide`). Direct `/?room=...` invitations retain temporary
+password entry for guests. Login preserves the selected app destination.
+
+The desktop shell has no page navbar. Appearance remains in the account menu,
+and the shared shell retains mobile navigation and the sidebar edge toggle.
+The home screen offers the most recent room on this device without implying
+that the room is still open or that its access has been verified.
+
+The sidebar notification bell uses the same inbox, archive, pagination, read
+actions, and invitation controls as Next.js satellites. Colab supplies native
+central-site links and polls the unread count and open notification list every 30 seconds while visible;
+Next.js satellites retain their Supabase realtime subscription. Only exact
+notification and workspace-invitation endpoints are proxied to the central app,
+with central authentication cookies, same-origin mutation checks, and preserved
+query filters. These account endpoints are never exposed to simulated AI tools.
+
+Validate with `bun run build`, `bun run test`, and the finite
+`scripts/verify-runtime.mjs` under Node after a Wrangler dry run. The runtime
+verifier covers default-login redirects, guest invitation documents, separate
+sidebar destinations, notification read/archive actions with mock data, and
+English/Vietnamese desktop/mobile layouts. No production notification is changed.

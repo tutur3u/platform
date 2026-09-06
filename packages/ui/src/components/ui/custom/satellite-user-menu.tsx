@@ -60,7 +60,7 @@ export function SatelliteUserMenu({
               {name ? getInitials(name) : <User className="h-5 w-5" />}
             </AvatarFallback>
             {online && (
-              <div className="absolute right-0 bottom-0 z-20 h-3 w-3 rounded-full border-2 border-background bg-dynamic-green" />
+              <div className="pointer-events-none absolute right-0 bottom-0 z-20 size-2.5 rounded-full bg-dynamic-green ring-2 ring-background" />
             )}
           </Avatar>
           {!hideMetadata && (

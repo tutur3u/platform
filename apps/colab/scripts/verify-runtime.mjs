@@ -201,122 +201,143 @@ try {
       },
     })
   );
+  const rootResponse = await mf.dispatchFetch('http://127.0.0.1:8795/', {
+    redirect: 'manual',
+  });
+  assert.equal(rootResponse.status, 302);
+  assert.match(rootResponse.headers.get('location'), /\/auth\/login/);
+  for (const destination of ['/join', '/host', '/guide']) {
+    const response = await mf.dispatchFetch(
+      `http://127.0.0.1:8795${destination}`,
+      { redirect: 'manual' }
+    );
+    assert.equal(response.status, 302);
+    assert.equal(
+      new URL(response.headers.get('location')).searchParams.get('returnTo'),
+      destination
+    );
+    const login = await mf.dispatchFetch(
+      `http://127.0.0.1:8795/auth/login?returnTo=${encodeURIComponent(destination)}`,
+      { redirect: 'manual' }
+    );
+    assert.match(
+      login.headers.get('set-cookie'),
+      new RegExp(`colab_return=${encodeURIComponent(destination)}`)
+    );
+  }
+  const guestDocument = await mf.dispatchFetch(
+    `http://127.0.0.1:8795/?room=${room.id}`
+  );
+  assert.equal(guestDocument.status, 200);
+  await page
+    .context()
+    .addCookies([
+      { name: 'colab_session', value: owner, domain: '127.0.0.1', path: '/' },
+    ]);
+  let notificationRead = false;
+  await page.route('**/api/v1/notifications**', async (route) => {
+    const url = new URL(route.request().url());
+    if (route.request().method() === 'PATCH') {
+      notificationRead = JSON.parse(route.request().postData()).read ?? true;
+      return route.fulfill({ json: { success: true } });
+    }
+    if (url.pathname.endsWith('unread-count'))
+      return route.fulfill({ json: { count: notificationRead ? 0 : 1 } });
+    const show =
+      url.searchParams.get('readOnly') === 'true'
+        ? notificationRead
+        : !notificationRead;
+    return route.fulfill({
+      json: {
+        notifications: show
+          ? [
+              {
+                id: '00000000-0000-4000-8000-000000000001',
+                user_id: 'owner',
+                ws_id: null,
+                type: 'system_announcement',
+                title: 'Workshop notification fixture',
+                description: 'A controlled notification for this test.',
+                data: {},
+                entity_type: null,
+                entity_id: null,
+                read_at: notificationRead ? new Date().toISOString() : null,
+                created_at: new Date().toISOString(),
+                created_by: null,
+                actor: null,
+              },
+            ]
+          : [],
+        count: show ? 1 : 0,
+        limit: 15,
+        offset: 0,
+      },
+    });
+  });
   await page.goto('http://127.0.0.1:8795/');
-  await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
-  assert.equal(await page.getByRole('main').count(), 1);
+  await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
+  assert.equal(await page.locator('.colab-toolbar').count(), 0);
   assert.match(
     await page.evaluate(() => getComputedStyle(document.body).fontFamily),
     /Noto Sans/
   );
-  await page.getByRole('navigation', { name: 'Colab navigation' }).waitFor();
   await page
-    .getByRole('button', { name: 'Switch application', exact: true })
-    .filter({ visible: true })
+    .getByRole('navigation')
+    .getByRole('link', { name: 'Join a room', exact: true })
     .click();
-  await page.getByRole('dialog', { name: 'Switch application' }).waitFor();
-  await page.keyboard.press('Escape');
-
+  await page.getByRole('textbox', { name: 'Room link or ID' }).waitFor();
   await page
-    .getByRole('button', { name: 'Collapse navigation', exact: true })
-    .filter({ visible: true })
-    .first()
+    .getByRole('navigation')
+    .getByRole('link', { name: 'Host a workshop', exact: true })
     .click();
-  assert.equal(
-    await page.evaluate(() => localStorage.getItem('colab-sidebar-collapsed')),
-    'true'
-  );
+  await page.locator('input[name=title]').waitFor();
   await page
-    .getByRole('button', { name: 'Open navigation', exact: true })
-    .filter({ visible: true })
-    .first()
+    .getByRole('navigation')
+    .getByRole('link', { name: 'Practice guide', exact: true })
     .click();
   await page.getByRole('button', { name: 'Add a little clarity' }).click();
   await page.getByText('Ready for your review', { exact: true }).waitFor();
-  await page.goto('http://127.0.0.1:8795/auth/callback?state=expired');
   await page
-    .getByRole('heading', { name: 'Let’s reconnect your account.' })
+    .getByRole('navigation')
+    .getByRole('link', { name: 'Workshops', exact: true })
+    .click();
+  await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
+  await page
+    .getByRole('button', { name: 'Notifications', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page
+    .getByText('Workshop notification fixture', { exact: true })
     .waitFor();
-  await page.getByRole('button', { name: 'Continue exploring' }).click();
-  await page.screenshot({
-    path: '/private/tmp/colab-desktop.png',
-    fullPage: true,
-  });
-  // The same theme preference and provider as satellite apps, across reloads.
+  await page.getByRole('button', { name: 'Mark as read', exact: true }).click();
+  await page.getByRole('button', { name: 'Archive', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Appearance', exact: true })
-    .filter({ visible: true })
-    .click();
-  await page.getByRole('menuitemradio', { name: 'Dark', exact: true }).click();
-  await page.waitForFunction(() =>
-    document.documentElement.classList.contains('dark')
-  );
+    .getByText('Workshop notification fixture', { exact: true })
+    .waitFor();
+  assert.equal(notificationRead, true);
+  await page.keyboard.press('Escape');
+  const openAccount = async () => {
+    const trigger = page
+      .getByRole('button', { name: 'Account and preferences', exact: true })
+      .filter({ visible: true });
+    if ((await trigger.getAttribute('data-state')) !== 'open')
+      await trigger.click();
+  };
+  await openAccount();
   assert.equal(
-    await page.evaluate(() => localStorage.getItem('theme')),
-    'dark'
-  );
-  await page.reload();
-  await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
-  assert.equal(
-    await page.evaluate(() =>
-      document.documentElement.classList.contains('dark')
-    ),
-    true
-  );
-  const darkSurface = await page
-    .locator('.entry-panel')
-    .evaluate((el) => getComputedStyle(el).backgroundColor);
-  await page.screenshot({
-    path: '/private/tmp/colab-dark.png',
-    fullPage: true,
-  });
-  await page
-    .getByRole('button', { name: 'Appearance', exact: true })
-    .filter({ visible: true })
-    .click();
-  await page.getByRole('menuitemradio', { name: 'Light', exact: true }).click();
-  await page.waitForFunction(
-    () => !document.documentElement.classList.contains('dark')
-  );
-  assert.notEqual(
     await page
-      .locator('.entry-panel')
-      .evaluate((el) => getComputedStyle(el).backgroundColor),
-    darkSurface
+      .getByRole('menuitem', { name: 'Reconnect account', exact: true })
+      .count(),
+    0
   );
-  await page
-    .getByRole('button', { name: 'Appearance', exact: true })
-    .filter({ visible: true })
-    .click();
-  await page
-    .getByRole('menuitemradio', { name: 'System', exact: true })
-    .click();
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.waitForFunction(() =>
-    document.documentElement.classList.contains('dark')
-  );
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.waitForFunction(
-    () => !document.documentElement.classList.contains('dark')
-  );
-  await page
-    .getByRole('button', { name: 'Account and preferences', exact: true })
-    .filter({ visible: true })
-    .click();
-  await page
-    .getByRole('menuitem', { name: 'Continue with Tuturuuu', exact: true })
-    .waitFor();
   await page
     .getByRole('menuitem', { name: 'Leave a Feedback', exact: true })
     .click();
-  const reportDialog = page.getByRole('dialog');
-  await reportDialog
-    .getByRole('heading', { name: 'Leave a Feedback', exact: true })
-    .waitFor();
-  assert.equal(await reportDialog.locator('input[type=file]').count(), 1);
-  await reportDialog
-    .getByRole('button', { name: 'Cancel', exact: true })
-    .click();
-  await page.keyboard.press('Escape');
+  assert.equal(
+    await page.getByRole('dialog').locator('input[type=file]').count(),
+    1
+  );
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.keyboard.press('Control+,');
   await page
     .getByRole('dialog')
@@ -324,94 +345,66 @@ try {
     .first()
     .waitFor();
   await page.keyboard.press('Escape');
-  await page
-    .getByRole('button', { name: 'Account and preferences', exact: true })
-    .filter({ visible: true })
-    .click();
-  assert.equal(
-    await page
-      .getByRole('menuitem', { name: 'My profile', exact: true })
-      .count(),
-    0
+  await openAccount();
+  await page.getByRole('menuitem', { name: 'Theme', exact: true }).hover();
+  await page.getByRole('menuitem', { name: 'Dark', exact: true }).click();
+  await page.waitForFunction(() =>
+    document.documentElement.classList.contains('dark')
   );
+  await page.screenshot({
+    path: '/private/tmp/colab-workspace-dark.png',
+    fullPage: true,
+  });
+  await page.reload();
+  await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
   assert.equal(
-    await page
-      .getByRole('menuitem', { name: 'Reconnect account', exact: true })
-      .count(),
-    0
+    await page.evaluate(() =>
+      document.documentElement.classList.contains('dark')
+    ),
+    true
   );
+  await openAccount();
+  await page.getByRole('menuitem', { name: 'Theme', exact: true }).hover();
+  await page.getByRole('menuitem', { name: 'Light', exact: true }).click();
+  await page.waitForFunction(
+    () => !document.documentElement.classList.contains('dark')
+  );
+  await page.screenshot({
+    path: '/private/tmp/colab-workspace-light.png',
+    fullPage: true,
+  });
+  await openAccount();
   await page.getByRole('menuitem', { name: 'Language', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Tiếng Việt', exact: true }).click();
   await page
-    .getByRole('heading', { name: 'Buổi thực hành', exact: true })
+    .getByRole('heading', { name: 'Chào mừng trở lại, host' })
     .waitFor();
-  await page
-    .getByRole('button', { name: 'Thu gọn điều hướng', exact: true })
-    .filter({ visible: true })
-    .first()
-    .click();
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.reload();
   await page
-    .getByRole('button', { name: 'Mở điều hướng', exact: true })
-    .filter({ visible: true })
-    .first()
-    .click();
-  await page.getByRole('link', { name: 'Tổng quan', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Mở điều hướng', exact: true })
-    .filter({ visible: true })
-    .first()
+    .getByRole('heading', { name: 'Chào mừng trở lại, host' })
     .waitFor();
+  const closeNav = page
+    .locator('aside')
+    .getByRole('button', { name: 'Thu gọn điều hướng', exact: true })
+    .filter({ visible: true });
+  if (await closeNav.count()) await closeNav.first().click();
   await page.waitForFunction(
     () => document.querySelector('aside')?.getBoundingClientRect().width <= 1
   );
-  await page.waitForFunction(() => document.body.style.position !== 'fixed');
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({
-    path: '/private/tmp/colab-mobile.png',
-    fullPage: true,
-  });
   assert.ok(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth
     ),
     'mobile horizontal overflow'
   );
-  await page
-    .context()
-    .addCookies([
-      { name: 'colab_session', value: owner, domain: '127.0.0.1', path: '/' },
-    ]);
+  await page.screenshot({
+    path: '/private/tmp/colab-workspace-mobile.png',
+    fullPage: true,
+  });
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
-  const openMobileNavigation = page
-    .getByRole('button', { name: 'Mở điều hướng', exact: true })
-    .filter({ visible: true });
-  if (await openMobileNavigation.count())
-    await openMobileNavigation.first().click();
-  await page
-    .locator('aside')
-    .getByRole('button', { name: 'Tài khoản và tùy chọn', exact: true })
-    .filter({ visible: true })
-    .click();
-  await page
-    .getByRole('menuitem', { name: 'Bảng điều khiển', exact: true })
-    .waitFor();
-  await page
-    .getByRole('menuitem', { name: 'Chuyển tài khoản', exact: true })
-    .hover();
-  await page
-    .getByRole('menuitem', { name: 'Other other@example.com' })
-    .waitFor();
-  await page
-    .getByRole('menuitem', { name: 'Xóa tài khoản', exact: true })
-    .waitFor();
-  await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1440, height: 1050 });
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.waitForFunction(() =>
-    document.documentElement.classList.contains('dark')
-  );
   await page.screenshot({
     path: '/private/tmp/colab-workshop.png',
     fullPage: true,

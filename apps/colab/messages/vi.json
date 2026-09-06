@@ -87,7 +87,20 @@
   "newScenario": "Tạo tình huống chung",
   "newer": "Đồng đội đã lưu phiên bản mới. Sao chép bài của bạn trước khi tải bản của họ.",
   "noAccess": "Bạn cần được mời vào phòng này.",
-  "notifications": "Thông báo Tuturuuu",
+  "notifications": {
+    "accept": "Chấp nhận",
+    "archive": "Lưu trữ",
+    "archive-all": "Lưu trữ tất cả",
+    "decline": "Từ chối",
+    "empty-archive": "Chưa có thông báo đã lưu trữ.",
+    "inbox": "Hộp thư",
+    "loading-more": "Đang tải thêm...",
+    "mark-as-read": "Đánh dấu đã đọc",
+    "mark-as-unread": "Đánh dấu chưa đọc",
+    "no-notifications": "Bạn không có thông báo nào.",
+    "notifications": "Thông báo",
+    "view-all": "Xem tất cả thông báo"
+  },
   "offline": "Đang kết nối lại…",
   "online": "trực tuyến",
   "open": "Đang thực hành",
@@ -141,7 +154,7 @@
   "settings": "Cài đặt",
   "shellCollapse": "Thu gọn điều hướng",
   "shellExpand": "Mở điều hướng",
-  "shellHome": "Tổng quan",
+  "shellHome": "Buổi thực hành",
   "shellNavigation": "Điều hướng Colab",
   "shellPlatform": "Nền tảng Tuturuuu",
   "shellWorkshop": "Buổi thực hành",
@@ -231,5 +244,25 @@
     "onboarding_guide.restart_journey": "Bắt đầu lại toàn bộ hành trình",
     "settings.back_to_app": "Quay lại ứng dụng"
   },
-  "preferencesTitle": "Tùy chọn"
+  "preferencesTitle": "Tùy chọn",
+  "workspace": {
+    "eyebrow": "Phòng thực hành AI của nhóm",
+    "welcome": "Chào mừng trở lại",
+    "description": "Cùng xây dựng kỹ năng, thử ý tưởng và học hỏi trong buổi thực hành riêng.",
+    "sessions": "Buổi thực hành của bạn",
+    "recentDescription": "Tiếp tục buổi gần nhất. Quyền truy cập và thời gian sẽ được kiểm tra khi vào phòng.",
+    "emptyTitle": "Buổi thực hành tiếp theo bắt đầu tại đây",
+    "emptyDescription": "Đã có lời mời? Tham gia bằng liên kết hoặc mã phòng từ người tổ chức.",
+    "next": "Khám phá Colab",
+    "hostDescription": "Đặt thử thách, mời nhóm và hướng dẫn buổi thực hành.",
+    "guideDescription": "Học cách viết chỉ dẫn rõ ràng, xây dựng kỹ năng và thử nghiệm trợ lý.",
+    "privateLabel": "Chỉ người được mời"
+  },
+  "common": {
+    "retry": "Thử lại"
+  },
+  "workspace-invitation": {
+    "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
+    "decline-success": "Đã từ chối lời mời vào không gian làm việc"
+  }
 }
