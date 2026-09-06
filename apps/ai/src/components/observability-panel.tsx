@@ -88,6 +88,7 @@ export function ObservabilityPanel({
     (section === 'credits' && creditsQuery.isFetching);
 
   const refresh = () => {
+    if (section === 'credits') void creditsQuery.refetch();
     if (!range) return;
     if (filters.range === 'custom') {
       if (section === 'usage') void providerCostsQuery.refetch();
@@ -96,7 +97,6 @@ export function ObservabilityPanel({
     } else {
       controls.reanchorRange();
     }
-    if (section === 'credits') void creditsQuery.refetch();
   };
 
   return (
