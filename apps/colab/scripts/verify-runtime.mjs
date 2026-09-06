@@ -26,6 +26,17 @@ const mf = new Miniflare({
         AUTH_ORIGIN: 'https://tuturuuu.com',
       },
       outboundService: async (request) => {
+        if (new URL(request.url).pathname === '/api/v1/users/me/profile') {
+          assert.match(
+            request.headers.get('cookie') ?? '',
+            /auth-token=rotated/
+          );
+          return Response.json({
+            id: 'host',
+            display_name: 'host',
+            avatar_url: null,
+          });
+        }
         if (new URL(request.url).pathname !== '/api/auth/me')
           return new Response(null, { status: 401 });
         centralChecks++;

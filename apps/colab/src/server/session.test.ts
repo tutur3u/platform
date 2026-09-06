@@ -12,6 +12,7 @@ const account = {
   id: 'user',
   email: 'real@example.com',
   name: 'Profile name',
+  profileHydrated: true,
   expires: Date.now() + 60_000,
 };
 const request = async (identity = account, central = true) =>
@@ -73,6 +74,58 @@ it('recovers expired sessions, but never trusts an expired Colab identity withou
   expect(await resolveSession(await request(expired), env, [])).toMatchObject({
     id: account.id,
     email: account.email,
+  });
+});
+it('restores the central profile after cookie expiry and uses rotated credentials for the profile read', async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      Response.json(
+        { user },
+        {
+          headers: {
+            'Set-Cookie': 'sb-project-auth-token.0=rotated; Path=/; Secure',
+          },
+        }
+      )
+    )
+    .mockResolvedValueOnce(
+      Response.json({
+        id: user.id,
+        display_name: 'Tuturuuu profile name',
+        avatar_url: 'https://example.com/avatar.png',
+      })
+    );
+  vi.stubGlobal('fetch', fetcher);
+  const result = await resolveSession(
+    await request({ ...account, expires: Date.now() - 1 }),
+    env,
+    []
+  );
+  expect(result).toMatchObject({
+    name: 'Tuturuuu profile name',
+    avatarUrl: 'https://example.com/avatar.png',
+    profileHydrated: true,
+  });
+  expect(String(fetcher.mock.calls[1]![0])).toBe(
+    'https://tuturuuu.com/api/v1/users/me/profile'
+  );
+  expect(fetcher.mock.calls[1]![1].headers.Cookie).toBe(
+    'sb-project-auth-token.0=rotated'
+  );
+});
+it('keeps a verified session usable when profile enrichment is unavailable', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ user }))
+      .mockRejectedValueOnce(new Error('profile unavailable'))
+  );
+  expect(await resolveSession(await request(), env, [])).toMatchObject({
+    id: account.id,
+    name: account.name,
+    profileHydrated: false,
   });
 });
 it('does not refresh healthy account sessions or extend guest credentials', async () => {

@@ -4,6 +4,47 @@ import type { Env } from './env';
 
 const centralCookie = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?=/;
 const renewalWindow = 5 * 60_000;
+type AccountSession = Identity & { profileHydrated?: boolean };
+
+async function readProfile(env: Env, central: string, rotated: string[]) {
+  const values = new Map(
+    central.split('; ').map((value) => {
+      const split = value.indexOf('=');
+      return [value.slice(0, split), value.slice(split + 1)];
+    })
+  );
+  for (const cookie of rotated) {
+    const pair = cookie.split(';')[0]!;
+    const split = pair.indexOf('=');
+    if (/Max-Age=0(?:;|$)/i.test(cookie)) values.delete(pair.slice(0, split));
+    else values.set(pair.slice(0, split), pair.slice(split + 1));
+  }
+  try {
+    const response = await fetch(
+      new URL('/api/v1/users/me/profile', env.AUTH_ORIGIN),
+      {
+        headers: {
+          Cookie: [...values]
+            .map(([key, value]) => `${key}=${value}`)
+            .join('; '),
+          Origin: env.APP_ORIGIN,
+        },
+        cache: 'no-store',
+        redirect: 'manual',
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    if (!response.ok) return null;
+    const profile = (await response.json()) as {
+      id?: string;
+      display_name?: string;
+      avatar_url?: string;
+    };
+    return { profile, cookies: renewedCentralCookies(response) };
+  } catch {
+    return null;
+  }
+}
 
 export function centralAuthCookies(request: Request) {
   return (request.headers.get('cookie') ?? '')
@@ -25,10 +66,11 @@ export async function resolveSession(
   env: Env,
   cookies: string[]
 ) {
-  const current = await authenticate(request, env);
+  const current = (await authenticate(request, env)) as AccountSession | null;
   if (
     current &&
-    (!current.email || current.expires > Date.now() + renewalWindow)
+    (!current.email ||
+      (current.profileHydrated && current.expires > Date.now() + renewalWindow))
   )
     return current;
   const central = centralAuthCookies(request);
@@ -78,15 +120,25 @@ export async function resolveSession(
     return null;
   }
   const sameAccount = current?.id === user.id;
-  const name = sameAccount
-    ? current.name
-    : user.user_metadata?.display_name ||
-      user.user_metadata?.full_name ||
-      user.email.split('@')[0];
-  const avatar = sameAccount
-    ? current.avatarUrl
-    : user.user_metadata?.avatar_url;
-  const identity: Identity = {
+  const refreshed = await readProfile(
+    env,
+    central,
+    renewedCentralCookies(response)
+  );
+  const profile = refreshed?.profile.id === user.id ? refreshed.profile : null;
+  const name =
+    profile?.display_name ||
+    (sameAccount
+      ? current.name
+      : user.user_metadata?.display_name ||
+        user.user_metadata?.full_name ||
+        user.email.split('@')[0]);
+  const avatar = profile
+    ? profile.avatar_url
+    : sameAccount
+      ? current.avatarUrl
+      : user.user_metadata?.avatar_url;
+  const identity: AccountSession = {
     id: user.id,
     email: user.email,
     name: typeof name === 'string' ? name.slice(0, 120) : 'Member',
@@ -97,9 +149,11 @@ export async function resolveSession(
         ? avatar
         : undefined,
     expires: Date.now() + 3600_000,
+    profileHydrated: Boolean(profile),
   };
   cookies.push(
     ...renewedCentralCookies(response),
+    ...(refreshed?.cookies ?? []),
     sessionCookie(await sign(identity, env.COLAB_SESSION_SECRET), 3600)
   );
   return identity;
