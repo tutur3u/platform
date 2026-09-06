@@ -290,6 +290,11 @@ account access restrictions. Google groups can also authorize access to Google
 Cloud resources; migrating their email does not authorize deleting those groups
 or changing their IAM membership.
 
+For the Tuturuuu migration, suspended accounts stay suspended while incoming
+mail for their addresses follows the domain catch-all to `phucvo@tuturuuu.com`.
+An existing inactive mailbox must not be recreated by automatic provisioning.
+This delivery policy does not grant the suspended user mailbox access.
+
 Google Admin's available organization export may include all services rather
 than Gmail alone. Review the actual scope before starting it, obtain approval
 for non-mail data, and use only the mail portion for this migration. A scheduled

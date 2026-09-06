@@ -155,4 +155,37 @@ describe('resolveInboundMailbox', () => {
       route: 'catch_all',
     });
   });
+
+  it.each(['disabled', 'quarantined', 'archived'])(
+    'routes a %s address to catch-all without recreating its mailbox',
+    async (status) => {
+      const result = await resolveInboundMailbox({
+        admin: adminWithRows({
+          mail_domains: [
+            {
+              id: 'ingress',
+              catch_all_enabled: true,
+              catch_all_mailbox_id: 'fallback',
+            },
+          ],
+          mail_mailboxes: [
+            {
+              id: 'reserved',
+              address: 'former@example.com',
+              domain_id: 'canonical',
+              status,
+            },
+            { id: 'fallback', domain_id: 'canonical', status: 'active' },
+          ],
+        }),
+        canonicalDomainId: 'canonical',
+        canonicalRecipient: 'former@example.com',
+        ingressDomainId: 'ingress',
+      });
+      expect(result).toMatchObject({
+        mailbox: { id: 'fallback' },
+        route: 'catch_all',
+      });
+    }
+  );
 });

@@ -57,7 +57,7 @@ export async function ensureMailboxForRecipient(
     .maybeSingle();
 
   if (existingError) throw existingError;
-  if (existing?.status === 'active') return existing;
+  if (existing) return existing.status === 'active' ? existing : null;
 
   const { data: user } = await admin
     .from('users')
