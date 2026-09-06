@@ -34,7 +34,7 @@ import {
   writeCliConfig,
 } from './config';
 import { runDevboxCommand } from './devbox';
-import { runExternalProjectsCommand } from './external-projects';
+import { runExternalCommand } from './external-admin';
 import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
 import {
@@ -1471,15 +1471,11 @@ export async function runCli(argv = process.argv.slice(2)) {
   const workspaceId = getWorkspaceId(config, flags);
 
   if (group === 'external') {
-    if (action !== 'projects') {
-      throw new Error('Unknown command. Use `ttr external projects --help`.');
-    }
-
-    await runExternalProjectsCommand({
+    await runExternalCommand({
       client,
       flags,
       json,
-      positionals: positionals.slice(2),
+      positionals: positionals.slice(1),
       workspaceId,
     });
     return;

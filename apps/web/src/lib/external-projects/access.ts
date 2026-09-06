@@ -44,6 +44,16 @@ import {
 } from './app-credentials';
 import { setWorkspaceCmsSiteTemplate } from './binding-settings';
 import {
+  hasRootExternalProjectsAdminPermission,
+  verifyCmsOrCliSession,
+} from './root-access';
+
+export {
+  hasRootExternalProjectsAdminPermission,
+  requireRootExternalProjectsAdmin,
+} from './root-access';
+
+import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_DISPLAY_NAMES,
@@ -56,17 +66,6 @@ export function getDefaultCanonicalExternalProjectId(
   adapter: ExternalProjectAdapterKind
 ) {
   return `${adapter}-main`;
-}
-
-export function hasRootExternalProjectsAdminPermission(
-  permissions: PermissionsResult | null
-) {
-  if (!permissions) return false;
-
-  return (
-    permissions.containsPermission('manage_external_projects') ||
-    permissions.containsPermission('manage_workspace_roles')
-  );
 }
 
 /**
@@ -513,41 +512,6 @@ export async function ensureWorkspaceExternalProjectStudio({
     binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),
     createdBinding: true,
     createdCanonicalProject,
-  };
-}
-
-export async function requireRootExternalProjectsAdmin(request: Request) {
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const permissions = await getPermissions({
-    wsId: ROOT_WORKSPACE_ID,
-    request,
-  });
-
-  if (!hasRootExternalProjectsAdminPermission(permissions)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
-  }
-
-  return {
-    ok: true as const,
-    admin: (await createAdminClient()) as TypedSupabaseClient,
-    permissions,
-    supabase,
-    user,
   };
 }
 
@@ -1010,7 +974,7 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
   let verification: ReturnType<typeof verifyAppSessionRequest>;
 
   try {
-    verification = verifyAppSessionRequest(request, { targetApp: 'cms' });
+    verification = verifyCmsOrCliSession(request);
   } catch {
     return {
       ok: false as const,
@@ -1221,7 +1185,7 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
   let verification: ReturnType<typeof verifyAppSessionRequest>;
 
   try {
-    verification = verifyAppSessionRequest(request, { targetApp: 'cms' });
+    verification = verifyCmsOrCliSession(request);
   } catch {
     return {
       ok: false as const,

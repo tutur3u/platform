@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
 const FORBIDDEN_MAIL_TAGS = [
   'base',
@@ -44,9 +44,48 @@ export function stripHtml(value: string) {
 }
 
 export function sanitizeMailHtml(value: string) {
-  return DOMPurify.sanitize(value, {
-    FORBID_TAGS: FORBIDDEN_MAIL_TAGS,
-    USE_PROFILES: { html: true },
+  return sanitizeHtml(value, {
+    allowedTags: [
+      ...sanitizeHtml.defaults.allowedTags,
+      'img',
+      'font',
+      'center',
+    ].filter((tag) => !FORBIDDEN_MAIL_TAGS.includes(tag)),
+    allowedAttributes: {
+      '*': ['class', 'style', 'title', 'dir', 'lang', 'align'],
+      a: ['href', 'name', 'target', 'rel'],
+      img: ['src', 'alt', 'width', 'height'],
+      font: ['color', 'face', 'size'],
+      table: ['width', 'height', 'cellpadding', 'cellspacing', 'border'],
+      td: ['colspan', 'rowspan', 'width', 'height', 'valign'],
+      th: ['colspan', 'rowspan', 'width', 'height', 'valign'],
+    },
+    allowedSchemes: ['https', 'http', 'mailto', 'tel'],
+    allowedSchemesByTag: { img: ['https', 'http', 'cid'] },
+    allowProtocolRelative: false,
+    // Keep email typography and layout, but never permit CSS resource URLs or
+    // expressions in messages or signatures.
+    allowedStyles: {
+      '*': {
+        color: [/^#[\da-f]{3,8}$/i, /^[a-z]+$/i, /^rgba?\([\d\s.,%]+\)$/i],
+        'background-color': [
+          /^#[\da-f]{3,8}$/i,
+          /^[a-z]+$/i,
+          /^rgba?\([\d\s.,%]+\)$/i,
+        ],
+        'font-family': [/^[\w\s,"'-]+$/],
+        'font-size': [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/],
+        'font-weight': [/^(?:normal|bold|[1-9]00)$/],
+        'font-style': [/^(?:normal|italic|oblique)$/],
+        'text-align': [/^(?:left|right|center|justify|start|end)$/],
+        'text-decoration': [/^(?:none|underline|line-through)$/],
+        'white-space': [/^(?:normal|pre|pre-wrap|pre-line)$/],
+        'line-height': [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)?$/],
+        width: [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/],
+        'max-width': [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/],
+        height: [/^\d+(?:\.\d+)?(?:px|pt|em|rem|%)$/],
+      },
+    },
   });
 }
 

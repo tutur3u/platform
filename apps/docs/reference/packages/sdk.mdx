@@ -861,6 +861,43 @@ ttr external projects apply --workspace <workspace-id> --manifest external-proje
 
 ### Public Folder Asset Sync
 
+### Register and configure an external site from the CLI
+
+Root operators can manage registered apps, approve scopes, create templates,
+and bind workspaces without opening Infrastructure or CMS. Existing root and
+workspace permission checks remain mandatory; the CLI does not grant access.
+
+```bash
+ttr external apps list --json
+ttr external apps save --file app.json --dry-run
+ttr external apps save --file app.json --confirm CONFIGURE_EXTERNAL_APP
+ttr external apps scopes rennu --scopes external-projects:read,external-projects:manage,external-projects:publish --dry-run
+ttr external apps scopes rennu --scopes external-projects:read,external-projects:manage,external-projects:publish --confirm APPROVE_EXTERNAL_APP_SCOPES
+ttr external templates create --file template.json --confirm CREATE_SITE_TEMPLATE
+ttr external binding set --workspace <workspace-id> --template rennu --confirm LINK_SITE_TEMPLATE
+ttr external binding get --workspace <workspace-id> --json
+```
+
+App JSON requires `id`, `displayName`, `enabled`, `origins`, `allowedScopes`,
+and `allowedWorkspaceIds` (explicit UUID allowlist). Do not include secrets or
+audit fields. Save updates these fields without rotating credentials. Scope
+changes replace the whole approved list; `--clear-scopes` revokes all scopes.
+Custom template JSON can be
+`{"id":"rennu","display_name":"Ren Everheart","adapter":"custom"}`;
+the template ID must match the registered app ID. Run `projects setup`, `diff`,
+and confirmed `apply` after binding to configure and populate the workspace.
+
+```bash
+ttr external apps rotate-secret rennu --secret-out /private/secure/ren-app-secret --confirm ROTATE_EXTERNAL_APP_SECRET
+```
+
+This explicitly issues or rotates the secret and immediately invalidates the
+previous value. The destination must not exist; its parent must exist. The CLI
+writes an owner-only (`0600`) file, never the secret to stdout. Transfer it to
+the app's server environment and securely remove the local file; never commit
+it. A failed request may leave an empty file, which is not overwritten on retry.
+The SDK equivalent lives at `TuturuuuUserClient.external.admin`.
+
 External apps can keep seed media in their local `public/` folder and still publish it through Tuturuuu Drive. Mark each manifest asset with `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl`.
 
 ```typescript

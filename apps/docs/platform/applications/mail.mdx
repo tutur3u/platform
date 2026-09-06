@@ -266,6 +266,55 @@ the rollback.
 
 ## Operations
 
+### Mail settings and account settings
+
+Mailbox settings use the `mailSettings=open` query parameter. The shared
+satellite account settings use `settingsDialog=open` and `settingsTab`; keep
+these separate so the guidance dialog cannot cover the mailbox delivery,
+membership, and sender controls. Closing either dialog must preserve the
+other dialog's query state.
+
+Mail sanitizes message HTML and signatures with `sanitize-html` in both the
+server ingestion/draft path and browser previews. Its allowlist retains email
+tables, typography, and `cid:` image references while excluding active content
+and CSS resource URLs. Avoid reintroducing an externalized jsdom-based sanitizer:
+an incompatible CommonJS/ESM dependency can fail module initialization and make
+even the mailbox bootstrap route return HTTP 500. Validate sanitizer security
+fixtures and a real Mail build when changing this dependency boundary.
+
+### Full Google mail migration
+
+Inventory active and suspended accounts, aliases, group membership, delegated
+mailbox access, and existing routing before importing data. Preserve suspended
+account access restrictions. Google groups can also authorize access to Google
+Cloud resources; migrating their email does not authorize deleting those groups
+or changing their IAM membership.
+
+Google Admin's available organization export may include all services rather
+than Gmail alone. Review the actual scope before starting it, obtain approval
+for non-mail data, and use only the mail portion for this migration. A scheduled
+or in-progress export is not an imported archive. Keep the source service until
+the completed export has been downloaded, reconciled, and imported with original
+dates, folders/labels, read state, attachments, and mailbox ownership intact.
+The live Cloudflare webhook imports new inbound deliveries; it is not a
+historical Gmail importer and must not be used to silently flatten sent mail,
+drafts, or labels into the inbox.
+
+Onboard Cloudflare **Email Sending** separately from **Email Routing**. Sending
+uses its bounce subdomain and DKIM records and can be prepared while the apex
+MX remains on Google. Verify the existing DMARC policy and reporting addresses
+after onboarding. Check the account's actual daily quota and the outbound
+message-size limit before switching the application provider; domain activation
+alone does not prove application sends or recipient delivery.
+
+For `tuturuuu.com`, the requested catch-all destination is
+`phucvo@tuturuuu.com`. Configure the logical Mail destination first, route the
+Cloudflare catch-all to the ingestion Worker, and retain explicit recipient
+routes. Prove delivery to a new random local part, the preserved original
+recipient, attachment storage, and duplicate handling before enabling the Google
+catch-all bridge or changing the apex MX. Never use SMTP forwarding back to the
+same domain as a substitute for internal mailbox ingestion.
+
 ### Smart labels and AI-assisted drafting
 
 Apply the `mail_smart_labels` migration before deploying the matching settings

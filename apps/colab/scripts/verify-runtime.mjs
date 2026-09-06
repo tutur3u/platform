@@ -178,9 +178,36 @@ try {
   });
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  await page.route('https://tuturuuu.com/api/v1/auth/accounts', (route) =>
+    route.fulfill({
+      headers: {
+        'Access-Control-Allow-Origin': 'http://127.0.0.1:8795',
+        'Access-Control-Allow-Credentials': 'true',
+      },
+      json: {
+        accounts: [
+          {
+            id: 'owner',
+            email: 'owner@tuturuuu.com',
+            metadata: { displayName: 'Owner' },
+          },
+          {
+            id: 'other',
+            email: 'other@example.com',
+            metadata: { displayName: 'Other' },
+          },
+        ],
+        activeAccountId: 'owner',
+      },
+    })
+  );
   await page.goto('http://127.0.0.1:8795/');
   await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
   assert.equal(await page.getByRole('main').count(), 1);
+  assert.match(
+    await page.evaluate(() => getComputedStyle(document.body).fontFamily),
+    /Noto Sans/
+  );
   await page.getByRole('navigation', { name: 'Colab navigation' }).waitFor();
   await page
     .getByRole('button', { name: 'Switch application', exact: true })
@@ -192,6 +219,7 @@ try {
   await page
     .getByRole('button', { name: 'Collapse navigation', exact: true })
     .filter({ visible: true })
+    .first()
     .click();
   assert.equal(
     await page.evaluate(() => localStorage.getItem('colab-sidebar-collapsed')),
@@ -200,6 +228,7 @@ try {
   await page
     .getByRole('button', { name: 'Open navigation', exact: true })
     .filter({ visible: true })
+    .first()
     .click();
   await page.getByRole('button', { name: 'Add a little clarity' }).click();
   await page.getByText('Ready for your review', { exact: true }).waitFor();
@@ -276,37 +305,62 @@ try {
   await page
     .getByRole('menuitem', { name: 'Continue with Tuturuuu', exact: true })
     .waitFor();
+  await page
+    .getByRole('menuitem', { name: 'Leave a Feedback', exact: true })
+    .click();
+  const reportDialog = page.getByRole('dialog');
+  await reportDialog
+    .getByRole('heading', { name: 'Leave a Feedback', exact: true })
+    .waitFor();
+  assert.equal(await reportDialog.locator('input[type=file]').count(), 1);
+  await reportDialog
+    .getByRole('button', { name: 'Cancel', exact: true })
+    .click();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Control+,');
+  await page
+    .getByRole('dialog')
+    .getByText('Preferences', { exact: true })
+    .first()
+    .waitFor();
+  await page.keyboard.press('Escape');
+  await page
+    .getByRole('button', { name: 'Account and preferences', exact: true })
+    .filter({ visible: true })
+    .click();
   assert.equal(
     await page
       .getByRole('menuitem', { name: 'My profile', exact: true })
       .count(),
     0
   );
-  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
-  await page
-    .getByRole('dialog')
-    .getByRole('heading', { name: 'Settings', exact: true })
-    .waitFor();
-  await page
-    .locator('select[aria-label="Language"]:visible')
-    .selectOption('vi');
-  await page.keyboard.press('Escape');
+  assert.equal(
+    await page
+      .getByRole('menuitem', { name: 'Reconnect account', exact: true })
+      .count(),
+    0
+  );
+  await page.getByRole('menuitem', { name: 'Language', exact: true }).hover();
+  await page.getByRole('menuitem', { name: 'Tiếng Việt', exact: true }).click();
   await page
     .getByRole('heading', { name: 'Buổi thực hành', exact: true })
     .waitFor();
   await page
     .getByRole('button', { name: 'Thu gọn điều hướng', exact: true })
     .filter({ visible: true })
+    .first()
     .click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page
     .getByRole('button', { name: 'Mở điều hướng', exact: true })
     .filter({ visible: true })
+    .first()
     .click();
   await page.getByRole('link', { name: 'Tổng quan', exact: true }).click();
   await page
     .getByRole('button', { name: 'Mở điều hướng', exact: true })
     .filter({ visible: true })
+    .first()
     .waitFor();
   await page.waitForFunction(
     () => document.querySelector('aside')?.getBoundingClientRect().width <= 1
@@ -330,17 +384,27 @@ try {
     ]);
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
-  await page
+  const openMobileNavigation = page
     .getByRole('button', { name: 'Mở điều hướng', exact: true })
-    .filter({ visible: true })
-    .click();
+    .filter({ visible: true });
+  if (await openMobileNavigation.count())
+    await openMobileNavigation.first().click();
   await page
     .locator('aside')
     .getByRole('button', { name: 'Tài khoản và tùy chọn', exact: true })
     .filter({ visible: true })
     .click();
   await page
-    .getByRole('menuitem', { name: 'Hồ sơ của tôi', exact: true })
+    .getByRole('menuitem', { name: 'Bảng điều khiển', exact: true })
+    .waitFor();
+  await page
+    .getByRole('menuitem', { name: 'Chuyển tài khoản', exact: true })
+    .hover();
+  await page
+    .getByRole('menuitem', { name: 'Other other@example.com' })
+    .waitFor();
+  await page
+    .getByRole('menuitem', { name: 'Xóa tài khoản', exact: true })
     .waitFor();
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1440, height: 1050 });

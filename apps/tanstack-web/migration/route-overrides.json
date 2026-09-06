@@ -1,10 +1,11 @@
 {
   "routes": {
-    "api:/api/v1/auth/colab/verify:apps/web/src/app/api/v1/auth/colab/verify/route.ts": {
+    "api:/api/v1/admin/external-apps:apps/web/src/app/api/v1/admin/external-apps/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Colab one-time handoff resolves confirmed, non-banned auth.users identity. Never trust caller-controlled cross-app session_data.email for hosting or invitations. Display name and HTTPS avatar are resolved from the verified user profile; display metadata never grants permissions. Rust parity pending."
+      "note": "CLI external-app registry administration. Preserve bearer user authentication, root workspace secrets/roles authorization, explicit scope and workspace allowlists, no-store responses, audit actor, and secret rotation. Rust parity pending."
     },
+    "api:/api/v1/auth/colab/verify:apps/web/src/app/api/v1/auth/colab/verify/route.ts": {"status":"legacy-next","targetOwner":"rust-backend","note":"Colab one-time handoff resolves confirmed, non-banned auth.users identity. Never trust caller-controlled cross-app session_data.email for hosting or invitations. Display name and HTTPS avatar are resolved from the verified user profile; display metadata never grants permissions. Rust parity pending."},
     "api:/api/v1/users/me/avatar/upload-url:apps/web/src/legacy-api-routes/v1/users/me/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

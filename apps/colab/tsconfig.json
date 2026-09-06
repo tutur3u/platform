@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
     "paths": {
-      "@tuturuuu/internal-api/colab": [
-        "../../packages/internal-api/src/colab.ts"
-      ],
+      "@tuturuuu/internal-api": ["../../packages/internal-api/src/index.ts"],
+      "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"],
       "@tuturuuu/types": ["../../packages/types/src/index.ts"],
       "@tuturuuu/types/*": ["../../packages/types/src/*"]
     },

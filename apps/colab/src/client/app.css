@@ -1,4 +1,5 @@
 @import "@tuturuuu/ui/globals.css";
+@import "./fonts.css";
 @import "./styles.css" layer(components);
 @import "./workshop.css" layer(components);
 @import "./mock-desk.css" layer(components);

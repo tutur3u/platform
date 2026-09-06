@@ -1,9 +1,8 @@
 'use client';
 
-import { Check, Hexagon } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
-import { DropdownMenuItem } from '../dropdown-menu';
 import { persistLocalePreference } from './locale-preference';
+import { SatelliteLanguageItem } from './satellite-language-item';
 
 interface Props {
   label: string;
@@ -32,17 +31,10 @@ export function LanguageDropdownItem({
   };
 
   return (
-    <DropdownMenuItem
-      className="cursor-pointer"
-      onClick={useLocale}
-      disabled={selected}
-    >
-      {selected ? (
-        <Check className="h-4 w-4 text-dynamic-indigo" />
-      ) : (
-        <Hexagon className="h-4 w-4 text-dynamic-indigo" />
-      )}
-      {label}
-    </DropdownMenuItem>
+    <SatelliteLanguageItem
+      label={label}
+      selected={selected}
+      onSelect={useLocale}
+    />
   );
 }

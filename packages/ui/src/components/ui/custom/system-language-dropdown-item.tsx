@@ -1,10 +1,9 @@
 'use client';
 
-import { Check, Monitor } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { DropdownMenuItem } from '../dropdown-menu';
 import { clearLocalePreference } from './locale-preference';
+import { SatelliteLanguageItem } from './satellite-language-item';
 
 interface Props {
   selected?: boolean;
@@ -27,17 +26,11 @@ export function SystemLanguageDropdownItem({ selected, onResetLocale }: Props) {
   };
 
   return (
-    <DropdownMenuItem
-      className="cursor-pointer"
-      onClick={useDefaultLocale}
-      disabled={selected}
-    >
-      {selected ? (
-        <Check className="h-4 w-4" />
-      ) : (
-        <Monitor className="h-4 w-4" />
-      )}
-      {t('system')}
-    </DropdownMenuItem>
+    <SatelliteLanguageItem
+      label={t('system')}
+      selected={selected}
+      system
+      onSelect={useDefaultLocale}
+    />
   );
 }
