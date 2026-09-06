@@ -873,7 +873,6 @@
         "ai": "^7.0.93",
         "cookies-next": "^6.1.1",
         "dayjs": "1.11.23",
-        "isomorphic-dompurify": "^4.1.0",
         "negotiator": "^1.1.0",
         "next": "^16.3.4",
         "next-intl": "^4.14.2",
@@ -882,6 +881,7 @@
         "postal-mime": "3.0.0",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
+        "sanitize-html": "^2.17.7",
         "zod": "^4.5.4",
       },
       "devDependencies": {
@@ -894,6 +894,7 @@
         "@types/node": "^26.4.1",
         "@types/react": "^19.2.18",
         "@types/react-dom": "^19.2.7",
+        "@types/sanitize-html": "^2.16.1",
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "@vitejs/plugin-react": "^6.1.1",
         "babel-plugin-react-compiler": "^1.0.0",

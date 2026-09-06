@@ -62,12 +62,3 @@ test('every app rendering the shared notification bell ships its message contrac
 
   assert.ok(checkedApps.length >= 10, 'expected the registered satellite apps');
 });
-
-test('Mail keeps the jsdom-backed sanitizer outside its server bundle', () => {
-  const config = fs.readFileSync(
-    path.join(appsDir, 'mail', 'next.config.ts'),
-    'utf8'
-  );
-
-  assert.match(config, /serverExternalPackages:\s*\['isomorphic-dompurify'\]/u);
-});

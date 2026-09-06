@@ -9,16 +9,7 @@ import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
-
-type ServerDOMPurify = {
-  sanitize(dirty: string, config?: unknown): string;
-};
-
-const ISOMORPHIC_DOMPURIFY_MODULE = 'isomorphic-dompurify';
-
-async function loadServerDOMPurify(): Promise<ServerDOMPurify> {
-  return (await import(ISOMORPHIC_DOMPURIFY_MODULE)).default as ServerDOMPurify;
-}
+import { sanitizeMailHtml } from '@/lib/mail/html';
 
 function getDisallowedRecipients(
   recipients: string[],
@@ -221,8 +212,7 @@ export async function POST(
       );
     }
 
-    const DOMPurify = await loadServerDOMPurify();
-    const payload = DOMPurify.sanitize(data.mail.content);
+    const payload = sanitizeMailHtml(data.mail.content);
 
     // Store the sent email in the internal_emails table for backwards compatibility
     const { error } = await sbAdmin
