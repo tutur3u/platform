@@ -6,6 +6,7 @@ import { Admin } from './admin';
 import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
 import { Join } from './join';
+import { newestRoomView } from './room-cache';
 import { TeamDesk } from './team-desk';
 
 export function Workshop({
@@ -27,6 +28,7 @@ export function Workshop({
     queryKey: key,
     queryFn: () => colabRequest<RoomView>(`/rooms/${roomId}`),
     refetchInterval: online ? false : 15000,
+    structuralSharing: newestRoomView,
   });
   const joined = (room: RoomView) => cache.setQueryData(key, room);
   const mutate = useMutation({
@@ -124,8 +126,11 @@ export function Workshop({
       </div>
     );
   const room = query.data;
+  const ownTeam = room.teams.find((t) => t.id === room.self.teamId);
+  if (selected && !room.teams.some((t) => t.id === selected)) setSelected('');
   const team =
     room.teams.find((t) => t.id === (selected || room.self.teamId)) ??
+    ownTeam ??
     room.teams[0];
   const writable =
     room.mode === 'open' && now >= room.startsAt && now < room.endsAt;
@@ -200,17 +205,29 @@ export function Workshop({
                 ))}
               </select>
             </label>
-            <span className="privacy-label">
+            <span className="privacy-label" role="status">
               {room.showcase ? c.showcaseOn : c.showcaseOff}
             </span>
           </div>
           {!writable && <p className="notice">{c.readOnlyHelp}</p>}
           <ErrorNotice error={mutate.error} />
-          {team && (
+          {ownTeam && (
+            <div className="own-team-desk" hidden={team?.id !== ownTeam.id}>
+              <TeamDesk
+                key={ownTeam.id}
+                team={ownTeam}
+                active={team?.id === ownTeam.id}
+                writable={writable}
+                busy={mutate.isPending}
+                action={action}
+              />
+            </div>
+          )}
+          {team && team.id !== ownTeam?.id && (
             <TeamDesk
               key={team.id}
               team={team}
-              writable={writable && team.id === room.self.teamId}
+              writable={false}
               busy={mutate.isPending}
               action={action}
             />

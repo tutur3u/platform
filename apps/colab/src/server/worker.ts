@@ -206,6 +206,7 @@ export default {
               {
                 not_invited: 403,
                 private_room: 403,
+                admin_only: 403,
                 room_missing: 404,
                 rate_limited: 429,
                 ai_busy: 409,

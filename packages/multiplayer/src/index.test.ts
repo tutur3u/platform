@@ -106,12 +106,15 @@ describe('server-authoritative room policy', () => {
     );
     expect(projectRoom(r, alice, [], r.endsAt).mode).toBe('readonly');
   });
-  it('filters other teams, emails and invitations until showcase', () => {
+  it('shares teams by default and filters them immediately when an admin disables showcase', () => {
     const r = room();
     joinRoom(r, alice, 'team-1', false, now);
     joinRoom(r, bob, 'team-2', false, now);
     r.teams[1]!.prompt = 'Secret team draft';
     r.passwordHash = 'secret';
+    expect(r.showcase).toBe(true);
+    expect(projectRoom(r, alice, [], now).teams).toHaveLength(2);
+    mutateRoom(r, owner, { action: 'showcase', enabled: false }, now);
     const view = projectRoom(r, alice, ['owner', 'alice', 'bob'], now);
     expect(view.teams).toHaveLength(1);
     expect(view.members.some((m) => m.id === 'bob')).toBe(false);

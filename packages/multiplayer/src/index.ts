@@ -354,7 +354,7 @@ export function createRoom(
     endsAt,
     maxUsers: number(body.maxUsers, 2, 100),
     mode: 'open',
-    showcase: false,
+    showcase: true,
     members: [
       {
         id: identity.id,

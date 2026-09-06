@@ -170,7 +170,7 @@ export class ColabRoom extends DurableObject<Env> {
     );
     room.aiCalls++;
     this.save(room);
-    const revision = room.revision;
+    const snapshot = room;
     try {
       const skills =
         body.action === 'compile'
@@ -185,15 +185,24 @@ export class ColabRoom extends DurableObject<Env> {
           ? await runAgent(this.env, team, room.scenario)
           : undefined;
       room = this.read();
-      memberOf(room, identity);
+      const actor = memberOf(room, identity);
+      requireRule(actor.teamId === member.teamId, 'room_changed', 409);
+      if (body.action === 'scenario')
+        requireRule(actor.admin, 'admin_only', 403);
       editable(room);
+      const current = room.teams.find((t) => t.id === member.teamId);
+      requireRule(current, 'invalid_team');
       requireRule(
-        room.revision === revision && Date.now() < job,
+        Date.now() < job &&
+          (body.action === 'scenario' || current.revision === team.revision) &&
+          (body.action === 'compile' ||
+            JSON.stringify(room.scenario) ===
+              JSON.stringify(snapshot.scenario)) &&
+          (body.action !== 'run' ||
+            JSON.stringify(current.records) === JSON.stringify(team.records)),
         'room_changed',
         409
       );
-      const current = room.teams.find((t) => t.id === member.teamId);
-      requireRule(current, 'invalid_team');
       if (skills) current.skills = skills;
       if (scenario) {
         room.scenario = scenario;

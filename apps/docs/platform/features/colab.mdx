@@ -39,9 +39,12 @@ into this Cloudflare Vite application.
 5. Test the generated skills against the room scenario. The journal records the
    prompt snapshot, scenario, actual sandbox tool inputs/results, final answer
    and AI coaching. Coaching is advisory, not proof of agent correctness.
-6. Turn on showcase to let teams inspect one another's work. Otherwise only the
-   team's own work and teammates are sent to that team. Admins can inspect all
-   teams. Only staff admins can promote other signed-in accounts to room admin.
+6. New rooms share team work live by default. Saved prompts, generated skills,
+   sandbox records, and run journals update for viewers without reloading. Unsaved
+   editor drafts stay local. Room admins can turn showcase off or on immediately;
+   disabling it removes other teams from participant views and server payloads.
+   Existing rooms retain their saved setting. Admins can always inspect all teams.
+   Only staff admins can promote other signed-in accounts to room admin.
 7. Close to read-only, or set private mode to restrict access to admins. At the
    scheduled end the room becomes read-only. Every mutation checks the clock;
    the Durable Object alarm also updates connected clients. Private mode and

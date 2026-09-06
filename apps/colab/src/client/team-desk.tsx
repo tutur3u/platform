@@ -8,11 +8,13 @@ export function TeamDesk({
   writable,
   busy,
   action,
+  active = true,
 }: {
   team: Team;
   writable: boolean;
   busy: boolean;
   action: (body: Record<string, unknown>, route?: string) => Promise<void>;
+  active?: boolean;
 }) {
   const c = useCopy();
   const [draft, setDraft] = useState(team.prompt);
@@ -25,7 +27,10 @@ export function TeamDesk({
   };
   return (
     <>
-      <section id="team-prompt" className="panel prompt-panel">
+      <section
+        id={active ? 'team-prompt' : undefined}
+        className="panel prompt-panel"
+      >
         <div className="panel-heading">
           <div>
             <span className="section-number">01 / {c.promptSection}</span>
@@ -92,7 +97,10 @@ export function TeamDesk({
           <pre className="readonly-prompt">{team.prompt || c.emptyPrompt}</pre>
         )}
       </section>
-      <section id="team-skills" className="panel skills-panel">
+      <section
+        id={active ? 'team-skills' : undefined}
+        className="panel skills-panel"
+      >
         <div className="panel-heading">
           <div>
             <span className="section-number">02 / {c.skillsSection}</span>
@@ -154,8 +162,11 @@ export function TeamDesk({
           <p className="empty">{c.skillsEmpty}</p>
         )}
       </section>
-      <MockDesk team={team} />
-      <section id="practice-journal" className="panel journal-panel">
+      <MockDesk team={team} active={active} />
+      <section
+        id={active ? 'practice-journal' : undefined}
+        className="panel journal-panel"
+      >
         <div className="panel-heading">
           <div>
             <span className="section-number">04 / {c.reflectSection}</span>

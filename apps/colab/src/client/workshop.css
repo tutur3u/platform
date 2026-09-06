@@ -121,7 +121,8 @@
   max-width: 260px;
   line-height: 1.6;
 }
-.team-area > .panel {
+.team-area > .panel,
+.own-team-desk > .panel {
   margin-bottom: 20px;
 }
 .panel-heading {

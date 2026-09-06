@@ -3,6 +3,7 @@ import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { Miniflare } from 'miniflare';
+import { verifyShowcase } from './verify-showcase.mjs';
 
 const workerDir =
   process.env.COLAB_TEST_WORKER_DIR ?? '/private/tmp/colab-worker';
@@ -67,6 +68,7 @@ const mf = new Miniflare({
         );
       },
       serviceBindings: {
+        AI: 'mock-ai',
         ASSETS: async (request) => {
           const pathname = new URL(request.url).pathname;
           const asset =
@@ -84,6 +86,12 @@ const mf = new Miniflare({
           });
         },
       },
+    },
+    {
+      name: 'mock-ai',
+      modules: true,
+      scriptPath: './scripts/mock-ai-worker.mjs',
+      compatibilityDate: '2026-06-20',
     },
   ],
 });
@@ -139,7 +147,12 @@ try {
   ])
     assert.equal((await request(`${path}/join`, who, { teamId })).status, 200);
   const aliceView = await (await request(path, alice)).json();
-  assert.equal(aliceView.teams.length, 1);
+  assert.equal(aliceView.teams.length, 2);
+  await request(`${path}/action`, owner, {
+    action: 'showcase',
+    enabled: false,
+  });
+  assert.equal((await (await request(path, alice)).json()).teams.length, 1);
   assert.equal(aliceView.invites, undefined);
   const wsResponse = await mf.dispatchFetch(
     `http://127.0.0.1:8795/api${path}/live`,
@@ -623,6 +636,7 @@ try {
     fullPage: true,
   });
   assert.deepEqual(errors, []);
+  await verifyShowcase({ browser, request, owner, alice, bob });
   console.log(
     'PASS: runtime auth, CSRF, invitations, team isolation, showcase broadcast, concurrent edits, guest rotation, read-only, private revocation, desktop/mobile and Vietnamese UI.'
   );

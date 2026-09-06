@@ -2,7 +2,13 @@ import type { MockApp, Team } from '@tuturuuu/multiplayer';
 import { useState } from 'react';
 import { appNames, useCopy } from './i18n';
 
-export function MockDesk({ team }: { team: Team }) {
+export function MockDesk({
+  team,
+  active = true,
+}: {
+  team: Team;
+  active?: boolean;
+}) {
   const c = useCopy();
   const [app, setApp] = useState<MockApp>('drive');
   const [query, setQuery] = useState('');
@@ -14,7 +20,10 @@ export function MockDesk({ team }: { team: Team }) {
   const chat = ['zalo', 'messenger', 'teams'].includes(app);
   const board = ['jira', 'trello'].includes(app);
   return (
-    <section id="sandbox-desk" className="panel mock-panel">
+    <section
+      id={active ? 'sandbox-desk' : undefined}
+      className="panel mock-panel"
+    >
       <div className="panel-heading">
         <div>
           <span className="section-number">03 / {c.sandboxSection}</span>
