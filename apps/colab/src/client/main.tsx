@@ -41,27 +41,13 @@ function App() {
       roomId={roomId}
       identity={session.data?.identity ?? null}
       navigate={navigate}
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <Language />
-          {session.data?.identity ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={async () => {
-                await colabRequest('/logout', {});
-                location.assign('/');
-              }}
-            >
-              {c.logout}
-            </Button>
-          ) : (
-            <Button variant="ghost" asChild>
-              <a href="/auth/login">{c.login}</a>
-            </Button>
-          )}
-        </div>
-      }
+      loading={session.isPending}
+      onLogout={async () => {
+        await colabRequest('/logout', {});
+        location.assign('/');
+      }}
+      onLocaleChange={(value) => changeLocale(value)}
+      actions={<Language />}
     >
       {authRetry && (
         <section className="auth-recovery" role="alert">

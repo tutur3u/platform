@@ -103,18 +103,29 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
   }
   if (url.pathname === '/auth/login') {
     const nonce = randomToken();
+    const requestedReturn = new URL(
+      url.searchParams.get('returnTo') ?? '/',
+      env.APP_ORIGIN
+    );
+    const returnPath =
+      requestedReturn.origin === env.APP_ORIGIN &&
+      requestedReturn.pathname === '/'
+        ? requestedReturn.pathname + requestedReturn.search
+        : '/';
     const returnTo = new URL('/auth/callback', env.APP_ORIGIN);
     returnTo.searchParams.set('state', nonce);
     const login = new URL('/login', env.AUTH_ORIGIN);
     login.searchParams.set('returnUrl', returnTo.toString());
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: login.toString(),
-        'Set-Cookie': `colab_login=${nonce}; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
-        'Cache-Control': 'no-store',
-      },
+    const loginHeaders = new Headers({
+      Location: login.toString(),
+      'Set-Cookie': `colab_login=${nonce}; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+      'Cache-Control': 'no-store',
     });
+    loginHeaders.append(
+      'Set-Cookie',
+      `colab_return=${encodeURIComponent(returnPath)}; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
+    );
+    return new Response(null, { status: 302, headers: loginHeaders });
   }
   requireRule(url.pathname === '/auth/callback', 'not_found', 404);
   const token = url.searchParams.get('token');
@@ -151,6 +162,8 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
     userId?: string;
     email?: string;
     expiresAt?: string;
+    displayName?: string;
+    avatarUrl?: string;
   };
   requireRule(
     data.valid && typeof data.userId === 'string',
@@ -170,11 +183,31 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
   const identity: Identity = {
     id: data.userId,
     email,
-    name: email?.split('@')[0] ?? 'Member',
+    name:
+      typeof data.displayName === 'string' && data.displayName.trim()
+        ? data.displayName.trim().slice(0, 120)
+        : (email?.split('@')[0] ?? 'Member'),
+    avatarUrl:
+      typeof data.avatarUrl === 'string' &&
+      /^https:\/\//i.test(data.avatarUrl) &&
+      data.avatarUrl.length <= 1024
+        ? data.avatarUrl
+        : undefined,
     expires,
   };
+  let returnPath = '/';
+  try {
+    const target = new URL(
+      decodeURIComponent(cookie(request, 'colab_return') ?? '/'),
+      env.APP_ORIGIN
+    );
+    if (target.origin === env.APP_ORIGIN && target.pathname === '/')
+      returnPath = target.pathname + target.search;
+  } catch {
+    /* Invalid return cookies fall back to the lobby. */
+  }
   const headers = new Headers({
-    Location: '/',
+    Location: returnPath,
     'Cache-Control': 'no-store',
     'Referrer-Policy': 'no-referrer',
   });
@@ -188,6 +221,10 @@ export async function authRoute(request: Request, env: Env): Promise<Response> {
   headers.append(
     'Set-Cookie',
     'colab_login=; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0'
+  );
+  headers.append(
+    'Set-Cookie',
+    'colab_return=; Path=/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0'
   );
   return new Response(null, { status: 303, headers });
 }

@@ -1,9 +1,16 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), getUserById: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  getUserById: vi.fn(),
+  profile: vi.fn(),
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     rpc: mocks.rpc,
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: mocks.profile }) }),
+    }),
     auth: { admin: { getUserById: mocks.getUserById } },
   }),
 }));
@@ -17,6 +24,12 @@ const request = (token = 'a'.repeat(64)) =>
   });
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.profile.mockResolvedValue({
+    data: {
+      display_name: 'Võ Hoàng Phúc',
+      avatar_url: 'https://example.com/avatar.png',
+    },
+  });
   mocks.rpc.mockResolvedValue({
     data: [
       { user_id: 'user', session_data: { email: 'spoofed@tuturuuu.com' } },
@@ -40,6 +53,8 @@ it('uses verified auth email instead of caller-controlled session metadata', asy
   expect(await response.json()).toMatchObject({
     userId: 'user',
     email: 'real@example.com',
+    displayName: 'Võ Hoàng Phúc',
+    avatarUrl: 'https://example.com/avatar.png',
     valid: true,
   });
   expect(mocks.rpc).toHaveBeenCalledWith(
@@ -58,4 +73,16 @@ it('rejects malformed, expired/replayed and unverified handoffs', async () => {
     error: null,
   });
   expect((await POST(request())).status).toBe(403);
+});
+
+it('does not expose unsafe avatar URLs and tolerates a missing public profile', async () => {
+  mocks.profile.mockResolvedValueOnce({
+    data: { avatar_url: 'javascript:alert(1)' },
+  });
+  expect(await (await POST(request())).json()).not.toHaveProperty('avatarUrl');
+  mocks.profile.mockResolvedValueOnce({
+    data: null,
+    error: { message: 'missing' },
+  });
+  expect((await POST(request())).status).toBe(200);
 });

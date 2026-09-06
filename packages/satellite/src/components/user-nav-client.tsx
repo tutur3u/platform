@@ -11,30 +11,22 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   SquareMousePointer,
-  User,
 } from '@tuturuuu/icons';
 import { logoutCurrentWebAccountWithInternalApi } from '@tuturuuu/internal-api/auth';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { AnimatedSlotText } from '@tuturuuu/ui/custom/animated-slot-text';
+import { SatelliteUserMenu } from '@tuturuuu/ui/custom/satellite-user-menu';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
-import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import {
@@ -218,207 +210,153 @@ export default function UserNavClient({
         </Dialog>
       )}
 
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className={cn(
-              'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
-              hideMetadata
-                ? 'items-center justify-center'
-                : 'items-center justify-start hover:bg-foreground/5'
-            )}
-          >
-            <Avatar className="relative h-8 w-8 cursor-pointer overflow-visible font-semibold">
-              <AvatarImage
-                src={user?.avatar_url ?? undefined}
-                className="aspect-square overflow-clip rounded-lg object-cover"
-              />
-              <AvatarFallback className="rounded-lg font-semibold">
-                {user?.display_name ? (
-                  getInitials(user.display_name)
-                ) : (
-                  <User className="h-5 w-5" />
-                )}
-              </AvatarFallback>
-              {/* Online indicator */}
-              <div
-                className={cn(
-                  'absolute right-0 bottom-0 z-20 h-3 w-3 rounded-full border-2 border-background',
-                  'bg-dynamic-green'
-                )}
-              />
-            </Avatar>
-            {hideMetadata || (
-              <div className="flex w-full flex-col items-start justify-center">
-                <div className="line-clamp-1 break-all font-semibold text-sm">
-                  {user?.display_name || user?.handle || t('common.unnamed')}
-                </div>
-                <AnimatedSlotText
-                  className="text-xs opacity-70"
-                  text={secondaryLabel}
-                />
-              </div>
-            )}
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="w-56"
-          side="right"
-          align="end"
-          forceMount
-        >
-          <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col">
-              <span className="line-clamp-1 break-all font-medium text-sm">
-                {user?.display_name || user?.handle || t('common.unnamed')}
-              </span>
-              <p className="line-clamp-1 break-all text-xs opacity-70">
-                {user?.email}
-              </p>
+      <SatelliteUserMenu
+        name={user?.display_name || user?.handle || t('common.unnamed')}
+        email={user?.email}
+        avatarUrl={user?.avatar_url}
+        secondaryLabel={secondaryLabel}
+        hideMetadata={hideMetadata}
+        online={Boolean(user)}
+      >
+        {workspaceSelector?.renderWorkspaceSelect ? (
+          <>
+            <div className="w-full p-1 [&_[data-slot=popover-trigger]]:h-9">
+              {workspaceSelector.renderWorkspaceSelect({
+                isCollapsed: false,
+                standalone: true,
+              })}
             </div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {workspaceSelector?.renderWorkspaceSelect ? (
-            <>
-              <div className="w-full p-1 [&_[data-slot=popover-trigger]]:h-9">
-                {workspaceSelector.renderWorkspaceSelect({
-                  isCollapsed: false,
-                  standalone: true,
-                })}
-              </div>
-              <DropdownMenuSeparator />
-            </>
-          ) : null}
-          <DropdownMenuGroup>
-            <DropdownMenuItem asChild>
-              <a
-                href={centralUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cursor-pointer"
-              >
-                <ExternalLink className="h-4 w-4 text-dynamic-green" />
-                <span>{t('common.dashboard')}</span>
-              </a>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            {sidebar && (
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="hidden md:flex">
-                  <PanelLeft className="h-4 w-4 text-dynamic-purple" />
-                  <span>{t('common.sidebar')}</span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuPortal>
-                  <DropdownMenuSubContent sideOffset={4}>
-                    <DropdownMenuItem
-                      onClick={() => sidebar.handleBehaviorChange('expanded')}
-                      disabled={sidebar.behavior === 'expanded'}
-                    >
-                      <PanelLeftOpen className="h-4 w-4 text-dynamic-purple" />
-                      <span>{t('common.expanded')}</span>
-                      {sidebar.behavior === 'expanded' && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => sidebar.handleBehaviorChange('collapsed')}
-                      disabled={sidebar.behavior === 'collapsed'}
-                    >
-                      <PanelLeftClose className="h-4 w-4 text-dynamic-purple" />
-                      <span>{t('common.collapsed')}</span>
-                      {sidebar.behavior === 'collapsed' && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => sidebar.handleBehaviorChange('hover')}
-                      disabled={sidebar.behavior === 'hover'}
-                    >
-                      <SquareMousePointer className="h-4 w-4 text-dynamic-purple" />
-                      <span>{t('common.expand_on_hover')}</span>
-                      {sidebar.behavior === 'hover' && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => sidebar.handleBehaviorChange('hidden')}
-                      disabled={sidebar.behavior === 'hidden'}
-                    >
-                      <PanelLeft className="h-4 w-4 text-dynamic-purple" />
-                      <span>{t('common.hidden')}</span>
-                      {sidebar.behavior === 'hidden' && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuPortal>
-              </DropdownMenuSub>
-            )}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Globe className="h-4 w-4 text-dynamic-indigo" />
-                <span>{t('common.language')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent sideOffset={4}>
-                  <LanguageWrapper
-                    locale="en"
-                    label="English"
-                    currentLocale={locale}
-                  />
-                  <LanguageWrapper
-                    locale="vi"
-                    label="Tiếng Việt"
-                    currentLocale={locale}
-                  />
-                  <DropdownMenuSeparator />
-                  <SystemLanguageWrapper currentLocale={locale} />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <Palette className="h-4 w-4 text-dynamic-cyan" />
-                <span>{t('common.theme')}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent sideOffset={4}>
-                  <ThemeDropdownItems />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-            <DropdownMenuItem
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <a
+              href={centralUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                setReportOpen(true);
-              }}
             >
-              <AlertTriangle className="h-4 w-4 text-dynamic-yellow" />
-              <span>{t('common.report-problem')}</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          {user && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <SatelliteAccountSwitcherMenu
-                  centralUrl={centralUrl}
-                  workspaceId={workspaceSelector?.workspace.id}
-                />
-              </DropdownMenuGroup>
-            </>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-            <LogOut className="h-4 w-4 text-dynamic-red" />
-            <span>{t('common.logout')}</span>
+              <ExternalLink className="h-4 w-4 text-dynamic-green" />
+              <span>{t('common.dashboard')}</span>
+            </a>
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          {sidebar && (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="hidden md:flex">
+                <PanelLeft className="h-4 w-4 text-dynamic-purple" />
+                <span>{t('common.sidebar')}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent sideOffset={4}>
+                  <DropdownMenuItem
+                    onClick={() => sidebar.handleBehaviorChange('expanded')}
+                    disabled={sidebar.behavior === 'expanded'}
+                  >
+                    <PanelLeftOpen className="h-4 w-4 text-dynamic-purple" />
+                    <span>{t('common.expanded')}</span>
+                    {sidebar.behavior === 'expanded' && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => sidebar.handleBehaviorChange('collapsed')}
+                    disabled={sidebar.behavior === 'collapsed'}
+                  >
+                    <PanelLeftClose className="h-4 w-4 text-dynamic-purple" />
+                    <span>{t('common.collapsed')}</span>
+                    {sidebar.behavior === 'collapsed' && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => sidebar.handleBehaviorChange('hover')}
+                    disabled={sidebar.behavior === 'hover'}
+                  >
+                    <SquareMousePointer className="h-4 w-4 text-dynamic-purple" />
+                    <span>{t('common.expand_on_hover')}</span>
+                    {sidebar.behavior === 'hover' && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => sidebar.handleBehaviorChange('hidden')}
+                    disabled={sidebar.behavior === 'hidden'}
+                  >
+                    <PanelLeft className="h-4 w-4 text-dynamic-purple" />
+                    <span>{t('common.hidden')}</span>
+                    {sidebar.behavior === 'hidden' && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          )}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Globe className="h-4 w-4 text-dynamic-indigo" />
+              <span>{t('common.language')}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent sideOffset={4}>
+                <LanguageWrapper
+                  locale="en"
+                  label="English"
+                  currentLocale={locale}
+                />
+                <LanguageWrapper
+                  locale="vi"
+                  label="Tiếng Việt"
+                  currentLocale={locale}
+                />
+                <DropdownMenuSeparator />
+                <SystemLanguageWrapper currentLocale={locale} />
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Palette className="h-4 w-4 text-dynamic-cyan" />
+              <span>{t('common.theme')}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent sideOffset={4}>
+                <ThemeDropdownItems />
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              setReportOpen(true);
+            }}
+          >
+            <AlertTriangle className="h-4 w-4 text-dynamic-yellow" />
+            <span>{t('common.report-problem')}</span>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        {user && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <SatelliteAccountSwitcherMenu
+                centralUrl={centralUrl}
+                workspaceId={workspaceSelector?.workspace.id}
+              />
+            </DropdownMenuGroup>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+          <LogOut className="h-4 w-4 text-dynamic-red" />
+          <span>{t('common.logout')}</span>
+        </DropdownMenuItem>
+      </SatelliteUserMenu>
     </>
   );
 }

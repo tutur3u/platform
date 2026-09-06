@@ -494,6 +494,14 @@
     "./custom/use-satellite-shell": {
       "types": "./src/components/ui/custom/use-satellite-shell.tsx",
       "import": "./src/components/ui/custom/use-satellite-shell.tsx"
+    },
+    "./custom/satellite-user-menu": {
+      "types": "./src/components/ui/custom/satellite-user-menu.tsx",
+      "default": "./src/components/ui/custom/satellite-user-menu.tsx"
+    },
+    "./custom/satellite-footer-actions": {
+      "types": "./src/components/ui/custom/satellite-footer-actions.tsx",
+      "default": "./src/components/ui/custom/satellite-footer-actions.tsx"
     }
   },
   "packageManager": "bun@1.4.1"

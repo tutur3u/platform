@@ -49,9 +49,27 @@ export async function POST(request: Request) {
       { status: 403, headers }
     );
   }
+  const { data: profile } = await admin
+    .from('users')
+    .select('display_name, avatar_url')
+    .eq('id', user.id)
+    .maybeSingle();
+  const displayName =
+    profile?.display_name ||
+    user.user_metadata?.display_name ||
+    user.user_metadata?.full_name;
+  const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url;
   return NextResponse.json(
     {
       valid: true,
+      displayName:
+        typeof displayName === 'string' ? displayName.slice(0, 120) : undefined,
+      avatarUrl:
+        typeof avatarUrl === 'string' &&
+        /^https:\/\//i.test(avatarUrl) &&
+        avatarUrl.length <= 1024
+          ? avatarUrl
+          : undefined,
       userId: user.id,
       email: user.email,
       expiresAt: new Date(Date.now() + 3600_000).toISOString(),

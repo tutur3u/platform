@@ -1,13 +1,14 @@
 import {
+  Bell,
   BookOpen,
   Building2,
-  ChevronsUpDown,
   FileText,
   FlaskConical,
   Home,
   Layers,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
   ShieldCheck,
   Users,
 } from '@tuturuuu/icons';
@@ -15,6 +16,7 @@ import type { Identity } from '@tuturuuu/multiplayer';
 import { Button } from '@tuturuuu/ui/button';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
+import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { getFilteredLinks } from '@tuturuuu/ui/custom/satellite-shell-utils';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
@@ -25,16 +27,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { type ReactNode, useMemo, useState } from 'react';
+import { AccountMenu } from './account-menu';
 import logo from './assets/tuturuuu.png';
-import { useCopy } from './i18n';
+import { type Locale, useCopy } from './i18n';
 import { ShellNavigation } from './shell-navigation';
 import { ThemeToggle } from './theme-toggle';
 
@@ -45,18 +41,26 @@ const persistCollapsed = (collapsed: boolean) =>
 export function Structure({
   children,
   actions,
+  loading,
+  onLogout,
+  onLocaleChange,
   identity,
   roomId,
   navigate,
 }: {
   children: ReactNode;
   actions: ReactNode;
+  loading: boolean;
+  onLogout: () => void;
+  onLocaleChange: (locale: Locale) => void;
   identity: Identity | null;
   roomId: string;
   navigate: (id: string) => void;
 }) {
   const c = useCopy();
   const [appsOpen, setAppsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const recent = localStorage.getItem('colab-recent-room');
   const links = useMemo<(NavLink | null)[]>(
     () => [
@@ -131,42 +135,90 @@ export function Structure({
     backLabel: c.back,
   });
   const account = (compact: boolean) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          aria-label={c.accountMenu}
-          className={`h-auto min-h-11 ${compact ? 'px-2' : 'w-full justify-start gap-3 px-2'}`}
-        >
-          <span className="relative grid size-8 shrink-0 place-items-center rounded-lg border bg-muted font-semibold text-sm">
-            {identity?.name.slice(0, 1).toUpperCase() ?? (
-              <Users className="size-4" />
-            )}
-          </span>
-          {!compact && (
-            <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate font-medium text-sm">
-                {identity?.name ?? c.login}
-              </span>
-              <span className="block truncate font-normal text-muted-foreground text-xs">
-                {identity?.email ?? c.yourWorkspace}
-              </span>
-            </span>
-          )}
-          {!compact && (
-            <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-64">
-        <DropdownMenuLabel>{c.accountMenu}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <div className="p-2">{actions}</div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <AccountMenu
+      identity={identity}
+      loading={loading}
+      compact={compact}
+      collapsed={collapsed}
+      onCollapse={handleToggle}
+      onSettings={() => setSettingsOpen(true)}
+      onLogout={onLogout}
+      onLocaleChange={onLocaleChange}
+    />
   );
+  const notifications = identity?.email ? (
+    <Button variant="ghost" size="icon" asChild>
+      <a
+        href="https://tuturuuu.com/personal/notifications"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={c.notifications}
+        title={c.notifications}
+      >
+        <Bell className="size-4" />
+      </a>
+    </Button>
+  ) : undefined;
   return (
     <div className="colab-shell">
+      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{c.feedbackAction}</DialogTitle>
+            <DialogDescription>{c.feedbackHelp}</DialogDescription>
+          </DialogHeader>
+          <Button asChild>
+            <a
+              href="https://github.com/tutur3u/platform/issues/new/choose"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {c.reportIssue}
+            </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <a
+              href="https://discord.gg/kNDxVnnUZ4"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Discord
+            </a>
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{c.settings}</DialogTitle>
+            <DialogDescription>{c.preferencesHelp}</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between">
+            <span>{c.language}</span>
+            {actions}
+          </div>
+          <div className="flex items-center justify-between">
+            <span>{c.appearance}</span>
+            <ThemeToggle />
+          </div>
+          <Button variant="outline" onClick={handleToggle}>
+            {collapsed ? c.shellExpand : c.shellCollapse}
+          </Button>
+          {identity?.email && (
+            <Button variant="outline" asChild>
+              <a
+                href="https://tuturuuu.com/personal?settingsDialog=open&settingsTab=profile"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {c.manageProfile}
+              </a>
+            </Button>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={appsOpen} onOpenChange={setAppsOpen}>
         <DialogContent>
           <DialogHeader>
@@ -253,20 +305,31 @@ export function Structure({
         sidebarUtility={
           <Button
             variant="ghost"
-            asChild
-            className={`h-10 w-full ${collapsed ? 'px-2' : 'justify-start'}`}
+            aria-label={c.settings}
+            className={`h-9 rounded-lg ${collapsed ? 'w-9 px-0' : 'w-full justify-start px-3'}`}
+            onClick={() => setSettingsOpen(true)}
           >
-            <a
-              href="https://tuturuuu.com"
-              aria-label={c.shellPlatform}
-              title={c.shellPlatform}
-            >
-              <Building2 className="size-4" />
-              {!collapsed && c.shellPlatform}
-            </a>
+            <Settings className="size-4 shrink-0" />
+            {!collapsed && c.settings}
           </Button>
         }
-        actions={account(false)}
+        feedbackButton={
+          <SatelliteFooterActions
+            wsId=""
+            isCollapsed={collapsed}
+            showUpgrade={false}
+            labels={{ upgrade: '', feedback: c.feedbackAction }}
+            discordHref="https://discord.gg/kNDxVnnUZ4"
+            onFeedback={() => setFeedbackOpen(true)}
+          />
+        }
+        notificationPopover={notifications}
+        actions={
+          <div className="flex w-full min-w-0 items-center gap-1">
+            <div className="min-w-0 flex-1">{account(false)}</div>
+            {notifications}
+          </div>
+        }
         userPopover={account(true)}
         hideSizeToggle
       >

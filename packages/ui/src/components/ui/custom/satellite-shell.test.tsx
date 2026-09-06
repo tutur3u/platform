@@ -7,9 +7,12 @@ import {
   screen,
 } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DropdownMenuItem } from '../dropdown-menu';
 import type { NavLink } from './navigation';
+import { SatelliteFooterActions } from './satellite-footer-actions';
 import { SidebarNavigation } from './satellite-navigation';
 import { SatelliteShell } from './satellite-shell';
+import { SatelliteUserMenu } from './satellite-user-menu';
 import { useSatelliteShell } from './use-satellite-shell';
 
 afterEach(cleanup);
@@ -120,5 +123,47 @@ describe('framework-independent satellite shell', () => {
     unmount();
     act(() => result.current.onMouseLeave?.());
     expect(result.current.isCollapsed).toBe(true);
+  });
+});
+
+describe('shared account chrome', () => {
+  it('exposes the signed-in identity and adapter actions in the profile menu', () => {
+    render(
+      <SatelliteUserMenu
+        name="Ngọc Nguyễn"
+        email="ngoc@example.com"
+        label="Account"
+        online
+      >
+        <DropdownMenuItem asChild>
+          <a href="/profile">My profile</a>
+        </DropdownMenuItem>
+      </SatelliteUserMenu>
+    );
+    const trigger = screen.getByRole('button', { name: 'Account' });
+    expect(trigger.textContent).toContain('Ngọc Nguyễn');
+    expect(trigger.textContent).toContain('ngoc@example.com');
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+    expect(
+      screen.getByRole('menuitem', { name: 'My profile' }).getAttribute('href')
+    ).toBe('/profile');
+  });
+  it('keeps collapsed feedback and community actions accessible', () => {
+    const feedback = vi.fn();
+    render(
+      <SatelliteFooterActions
+        wsId=""
+        isCollapsed
+        showUpgrade={false}
+        labels={{ upgrade: 'Upgrade', feedback: 'Feedback' }}
+        discordHref="https://discord.gg/example"
+        onFeedback={feedback}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Feedback' }));
+    expect(feedback).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole('link', { name: 'Discord' }).getAttribute('href')
+    ).toBe('https://discord.gg/example');
   });
 });

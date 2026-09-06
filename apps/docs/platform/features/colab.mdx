@@ -177,3 +177,9 @@ continues through shared CSS tokens and `next-themes`.
 Make shell presentation changes in the shared UI components. Keep routing,
 authorization, and workspace services in the adapters. Colab's Vite build rejects
 Next.js or next-intl runtime modules in its bundle, guarding this boundary.
+
+### Account profile and footer
+
+Colab and Next satellite apps share `SatelliteUserMenu` and `SatelliteFooterActions` from `@tuturuuu/ui`. The Colab adapter supplies its session, language, theme and local settings controls. Profile editing, account management and notifications link to the central Tuturuuu portal; feedback opens a choice of GitHub or Discord.
+
+The Colab token verifier resolves display name and avatar from the verified user's profile. Display metadata never determines host or invitation permissions; confirmed auth email remains the authority. Existing sessions can use **Reconnect account** to load updated metadata. A central Tuturuuu session and a Colab session expire independently; reconnect uses the central portal and preserves the current room URL. Guest sessions remain available without a Tuturuuu account.

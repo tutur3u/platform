@@ -18,6 +18,8 @@ describe('sandbox and sessions', () => {
         valid: true,
         userId: alice.id,
         email: alice.email,
+        displayName: 'Ngọc Nguyễn',
+        avatarUrl: 'https://example.com/avatar.png',
         expiresAt: new Date(Date.now() + 3600_000).toISOString(),
       })
     );
@@ -30,7 +32,11 @@ describe('sandbox and sessions', () => {
     const response = await authRoute(
       new Request(
         'https://colab.tuturuuu.com/auth/callback?state=nonce&token=handoff',
-        { headers: { Cookie: 'colab_login=nonce' } }
+        {
+          headers: {
+            Cookie: 'colab_login=nonce; colab_return=%2F%3Froom%3Droom-id',
+          },
+        }
       ),
       env
     );
@@ -42,7 +48,15 @@ describe('sandbox and sessions', () => {
         }),
       })
     );
-    expect(response.headers.get('Location')).toBe('/');
+    expect(response.headers.get('Location')).toBe('/?room=room-id');
+    const sessionToken = response.headers
+      .get('Set-Cookie')
+      ?.match(/colab_session=([^;]+)/)?.[1];
+    expect(await verify(sessionToken, env.COLAB_SESSION_SECRET)).toMatchObject({
+      name: 'Ngọc Nguyễn',
+      avatarUrl: 'https://example.com/avatar.png',
+      email: alice.email,
+    });
     expect(response.headers.get('Set-Cookie')).toContain('colab_session=');
   });
   it('unwraps the first-party token handoff without allowing external redirects', async () => {

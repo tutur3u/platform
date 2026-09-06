@@ -4,6 +4,7 @@ export type Identity = {
   email: string | null;
   name: string;
   expires: number;
+  avatarUrl?: string;
   guestVersion?: number;
 };
 export type Member = {

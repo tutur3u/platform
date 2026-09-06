@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { Miniflare } from 'miniflare';
 
+const workerDir =
+  process.env.COLAB_TEST_WORKER_DIR ?? '/private/tmp/colab-worker';
 const secret = 'local-test-only-secret-not-for-production';
 const mf = new Miniflare({
   port: 8795,
@@ -11,8 +13,8 @@ const mf = new Miniflare({
     {
       name: 'colab',
       modules: true,
-      scriptPath: '/private/tmp/colab-worker/worker.js',
-      modulesRoot: '/private/tmp/colab-worker',
+      scriptPath: `${workerDir}/worker.js`,
+      modulesRoot: workerDir,
       compatibilityDate: '2026-06-20',
       compatibilityFlags: ['nodejs_compat'],
       durableObjects: { ROOMS: { className: 'ColabRoom', useSQLite: true } },
@@ -272,6 +274,20 @@ try {
     .filter({ visible: true })
     .click();
   await page
+    .getByRole('menuitem', { name: 'Continue with Tuturuuu', exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByRole('menuitem', { name: 'My profile', exact: true })
+      .count(),
+    0
+  );
+  await page.getByRole('menuitem', { name: 'Settings', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('heading', { name: 'Settings', exact: true })
+    .waitFor();
+  await page
     .locator('select[aria-label="Language"]:visible')
     .selectOption('vi');
   await page.keyboard.press('Escape');
@@ -314,6 +330,19 @@ try {
     ]);
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
+  await page
+    .getByRole('button', { name: 'Mở điều hướng', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page
+    .locator('aside')
+    .getByRole('button', { name: 'Tài khoản và tùy chọn', exact: true })
+    .filter({ visible: true })
+    .click();
+  await page
+    .getByRole('menuitem', { name: 'Hồ sơ của tôi', exact: true })
+    .waitFor();
+  await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1440, height: 1050 });
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.waitForFunction(() =>
