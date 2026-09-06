@@ -9,6 +9,10 @@ on:
       - 'package.json'
       - 'turbo.json'
       - 'bun.lock'
+      - 'tuturuuu.ts'
+      - 'tuturuuu.ci.ts'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/**'
       - '.github/workflows/meet-cloudflare.yaml'
   push:
     branches: [main, production]
@@ -19,7 +23,10 @@ on:
       - 'bun.lock'
       - 'package.json'
       - 'turbo.json'
+      - 'tuturuuu.ts'
       - 'tuturuuu.ci.ts'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/**'
       - '.github/workflows/meet-cloudflare.yaml'
   workflow_dispatch:
 
@@ -64,6 +71,8 @@ jobs:
           command: cd apps/meet && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Check Worker binding types
+        run: bun run --cwd apps/meet cf:typecheck
       - name: Validate both Worker bundles
         run: |
           bun x --no-install wrangler deploy --dry-run -c apps/meet/wrangler.jsonc

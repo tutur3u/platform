@@ -28,6 +28,15 @@ function fakeTrack() {
 }
 
 describe('ended remote playback', () => {
+  it('immediately releases a track that ended before attachment', () => {
+    const f = fixture();
+    const track = fakeTrack();
+    Object.defineProperty(track, 'readyState', { value: 'ended' });
+    attachRemotePlayback(f.owner, track, f.subscribed, () => true, f.setMedia);
+    expect(f.media()).toEqual({});
+    expect(f.subscribed.has(key)).toBe(false);
+  });
+
   it('makes an advertised track eligible for the next subscription retry', () => {
     const f = fixture();
     const track = fakeTrack();

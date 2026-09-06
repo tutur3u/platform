@@ -183,7 +183,9 @@ self-reference and the `tuturuuu-meet-cache` R2 bucket. `apps/meet/open-next.con
 configures the incremental cache. Build with `bun run build:cloudflare` from
 `apps/meet`; use `NEXT_WEBPACK_BUILD=1` for the existing local Webpack fallback.
 The normal CI build uses Turbopack. `bun run preview:cloudflare` runs the built
-frontend in workerd for runtime verification.
+frontend in workerd for runtime verification. Run `bun run cf:typegen` after
+binding changes and `bun run cf:typecheck` to validate the generated environment
+with Worker types separately from browser types. CI runs this check after building.
 
 The frontend requires `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and

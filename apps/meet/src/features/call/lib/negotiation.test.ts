@@ -100,21 +100,21 @@ describe('remote subscription planning', () => {
     expect(planRemoteSubscriptions(entries, [], SELF)).toEqual([
       {
         location: 'remote',
-        sessionId: first.sessionId,
-        trackName: first.trackName,
+        sessionId: second.sessionId,
+        trackName: second.trackName,
       },
     ]);
     expect(
       planRemoteSubscriptions(
         entries,
-        [`${first.sessionId}:${first.trackName}`],
+        [`${second.sessionId}:${second.trackName}`],
         SELF
       )
     ).toEqual([
       {
         location: 'remote',
-        sessionId: second.sessionId,
-        trackName: second.trackName,
+        sessionId: first.sessionId,
+        trackName: first.trackName,
       },
     ]);
   });

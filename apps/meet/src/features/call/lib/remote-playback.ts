@@ -21,22 +21,20 @@ export function attachRemotePlayback(
     ...current,
     [owner.userId]: { ...current[owner.userId], [owner.kind]: track },
   }));
-  track.addEventListener(
-    'ended',
-    () => {
-      if (!isCurrent() || owner.track !== track) return;
-      subscribed.delete(owner.subscriptionKey);
-      setMedia((current) => {
-        if (current[owner.userId]?.[owner.kind] !== track) return current;
-        const next = {
-          ...current,
-          [owner.userId]: { ...current[owner.userId] },
-        };
-        delete next[owner.userId]![owner.kind];
-        if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
-        return next;
-      });
-    },
-    { once: true }
-  );
+  const release = () => {
+    if (!isCurrent() || owner.track !== track) return;
+    subscribed.delete(owner.subscriptionKey);
+    setMedia((current) => {
+      if (current[owner.userId]?.[owner.kind] !== track) return current;
+      const next = {
+        ...current,
+        [owner.userId]: { ...current[owner.userId] },
+      };
+      delete next[owner.userId]![owner.kind];
+      if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
+      return next;
+    });
+  };
+  if (track.readyState === 'ended') release();
+  else track.addEventListener('ended', release, { once: true });
 }
