@@ -20,8 +20,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@tuturuuu/internal-api/colab': new URL(
-        '../../packages/internal-api/src/colab.ts',
+      '@tuturuuu/internal-api': new URL(
+        '../../packages/internal-api/src',
         import.meta.url
       ).pathname,
     },
