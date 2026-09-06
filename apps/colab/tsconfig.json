@@ -3,7 +3,9 @@
     "paths": {
       "@tuturuuu/internal-api/colab": [
         "../../packages/internal-api/src/colab.ts"
-      ]
+      ],
+      "@tuturuuu/types": ["../../packages/types/src/index.ts"],
+      "@tuturuuu/types/*": ["../../packages/types/src/*"]
     },
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
