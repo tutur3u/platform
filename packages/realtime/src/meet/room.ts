@@ -107,16 +107,20 @@ export function meetTrackKey(track: MeetRealtimeRoomTrack) {
   return `${track.sessionId}:${track.trackName ?? track.mid ?? track.userId}`;
 }
 
-/** Drops presence entries whose heartbeat has lapsed. */
+/** Drops lapsed presence unless the transport confirms an open connection. */
 export function pruneMeetPresence(
   state: MeetRoomSnapshot,
-  nowMs: number
+  nowMs: number,
+  connectedUserIds?: ReadonlySet<string>
 ): MeetRoomSnapshot {
   const presence: Record<string, MeetRealtimePresence> = {};
   let changed = false;
 
   for (const [userId, entry] of Object.entries(state.presence)) {
-    if (Date.parse(entry.lastSeenAt) + MEET_PRESENCE_TTL_MS < nowMs) {
+    if (
+      !connectedUserIds?.has(userId) &&
+      Date.parse(entry.lastSeenAt) + MEET_PRESENCE_TTL_MS < nowMs
+    ) {
       changed = true;
       continue;
     }

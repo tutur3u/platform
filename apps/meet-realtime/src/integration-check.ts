@@ -177,6 +177,21 @@ try {
   );
   check('guest can raise their own hand', Boolean(stage));
 
+  if (REMOTE_URL) {
+    // Background browser tabs can delay timers beyond the heartbeat TTL.
+    const start = host.received.length;
+    await Bun.sleep(40_000);
+    const latest = host.received
+      .slice(start)
+      .filter((message) => message.type === 'presence')
+      .at(-1);
+    check(
+      'connected participants survive delayed browser heartbeats',
+      latest?.presence.some((entry) => entry.userId === HOST_ID) === true &&
+        latest.presence.some((entry) => entry.userId === GUEST_ID)
+    );
+  }
+
   // --- Cloudflare SFU ----------------------------------------------------
   host.send({ requestId: 'sfu-1', type: 'sfu.session.create' });
   const sfu = await host.waitFor(

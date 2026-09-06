@@ -381,6 +381,13 @@ describe('meet room lifecycle', () => {
     ).toEqual({});
   });
 
+  it('retains open sockets despite throttled heartbeats and expires them after disconnect', () => {
+    const joined = admitOrHold(createMeetRoomSnapshot(), token(), NOW).state;
+    const expired = Date.parse(NOW) + MEET_PRESENCE_TTL_MS * 3;
+    expect(pruneMeetPresence(joined, expired, new Set([HOST_ID]))).toBe(joined);
+    expect(pruneMeetPresence(joined, expired, new Set()).presence).toEqual({});
+  });
+
   it('tracks recording state for the whole room', () => {
     const joined = admitOrHold(createMeetRoomSnapshot(), token(), NOW).state;
     const result = run(

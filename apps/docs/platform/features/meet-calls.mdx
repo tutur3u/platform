@@ -288,3 +288,9 @@ If a browser blocks remote autoplay, use **Play meeting audio**. Any keyboard or
 pointer interaction also retries playback. The controller harness deliberately
 rebuilds its client bundle on each reload so ongoing controller edits are exercised
 without restarting its signaling room.
+
+Presence stays active while its Durable Object WebSocket is open, even when a
+background browser delays heartbeats beyond the normal expiry window. Close/error
+handlers remove disconnected participants. The direct Worker integration check
+includes a 40-second idle interval to verify presence and host controls survive
+browser timer throttling.

@@ -298,13 +298,23 @@ export class MeetRoomDurableObject implements DurableObject {
   async alarm() {
     await this.load();
 
-    const pruned = pruneMeetPresence(this.snapshot, Date.now());
+    const sockets = this.sockets();
+    const connectedUserIds = new Set(
+      sockets
+        .filter((socket) => socket.readyState === WebSocket.OPEN)
+        .map((socket) => this.tokenOf(socket)?.userId)
+        .filter((userId): userId is string => Boolean(userId))
+    );
+    const pruned = pruneMeetPresence(
+      this.snapshot,
+      Date.now(),
+      connectedUserIds
+    );
     if (pruned !== this.snapshot) {
       this.snapshot = pruned;
       this.persist();
     }
 
-    const sockets = this.sockets();
     if (sockets.length === 0) return;
 
     const roomId = this.tokenOf(sockets[0] as WebSocket)?.roomId;
