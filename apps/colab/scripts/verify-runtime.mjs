@@ -281,27 +281,65 @@ try {
     await page.evaluate(() => getComputedStyle(document.body).fontFamily),
     /Noto Sans/
   );
-  await page
-    .getByRole('navigation')
-    .getByRole('link', { name: 'Join a room', exact: true })
+  await page.evaluate(() => {
+    window.__colabSidebar = document.querySelector('aside');
+    window.__colabDocumentStart = performance.timeOrigin;
+  });
+  const nav = (name) =>
+    page.getByRole('navigation').getByRole('link', { name, exact: true });
+  const assertStableShell = async () => {
+    assert.equal(
+      await page.evaluate(
+        () =>
+          window.__colabSidebar === document.querySelector('aside') &&
+          window.__colabDocumentStart === performance.timeOrigin
+      ),
+      true,
+      'navigation must preserve the document and sidebar'
+    );
+  };
+  await nav('Join a room').click();
+  const joinDialog = page.getByRole('dialog', {
+    name: 'Join a room',
+    exact: true,
+  });
+  await joinDialog
+    .getByRole('textbox', { name: 'Room link or ID' })
+    .fill('invalid');
+  await joinDialog
+    .getByRole('button', { name: 'Join a room', exact: true })
     .click();
-  await page.getByRole('textbox', { name: 'Room link or ID' }).waitFor();
-  await page
-    .getByRole('navigation')
-    .getByRole('link', { name: 'Host a workshop', exact: true })
-    .click();
-  await page.locator('input[name=title]').waitFor();
-  await page
-    .getByRole('navigation')
-    .getByRole('link', { name: 'Practice guide', exact: true })
-    .click();
+  await joinDialog.getByRole('alert').waitFor();
+  await page.keyboard.press('Escape');
+  await joinDialog.waitFor({ state: 'hidden' });
+  await assertStableShell();
+  await nav('Host a workshop').click();
+  await page.locator('input[name=title]').fill('Keep this workshop draft');
+  await nav('Join a room').click();
+  await joinDialog.waitFor();
+  await page.keyboard.press('Escape');
+  await joinDialog.waitFor({ state: 'hidden' });
+  assert.equal(
+    await page.locator('input[name=title]').inputValue(),
+    'Keep this workshop draft'
+  );
+  await assertStableShell();
+  await nav('Practice guide').click();
   await page.getByRole('button', { name: 'Add a little clarity' }).click();
   await page.getByText('Ready for your review', { exact: true }).waitFor();
-  await page
-    .getByRole('navigation')
-    .getByRole('link', { name: 'Workshops', exact: true })
-    .click();
+  await nav('Join a room').click();
+  await joinDialog.waitFor();
+  await page.goBack();
+  await joinDialog.waitFor({ state: 'hidden' });
+  await page.getByText('Ready for your review', { exact: true }).waitFor();
+  await page.goForward();
+  await joinDialog.waitFor();
+  await page.keyboard.press('Escape');
+  await joinDialog.waitFor({ state: 'hidden' });
+  await assertStableShell();
+  await nav('Workshops').click();
   await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
+  await assertStableShell();
   await page
     .getByRole('button', { name: 'Notifications', exact: true })
     .filter({ visible: true })
@@ -402,6 +440,32 @@ try {
     path: '/private/tmp/colab-workspace-mobile.png',
     fullPage: true,
   });
+  await page.goto('http://127.0.0.1:8795/join');
+  await page
+    .getByRole('dialog', { name: 'Tham gia phòng', exact: true })
+    .waitFor();
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth
+    )
+  );
+  await page
+    .getByRole('dialog', { name: 'Tham gia phòng', exact: true })
+    .evaluate(async (dialog) => {
+      await Promise.all(
+        dialog
+          .getAnimations({ subtree: true })
+          .map((animation) => animation.finished.catch(() => {}))
+      );
+    });
+  await page.screenshot({
+    path: '/private/tmp/colab-join-dialog-mobile.png',
+    fullPage: false,
+  });
+  await page.keyboard.press('Escape');
+  await page
+    .getByRole('heading', { name: 'Chào mừng trở lại, host' })
+    .waitFor();
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
   await page.setViewportSize({ width: 1440, height: 1050 });

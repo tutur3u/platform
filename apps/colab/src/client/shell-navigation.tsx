@@ -3,17 +3,11 @@ import {
   SidebarNavigation,
   satelliteNavigationItemClass,
 } from '@tuturuuu/ui/custom/satellite-navigation';
-import { useSyncExternalStore } from 'react';
 import { useCopy } from './i18n';
 
-const subscribe = (notify: () => void) => {
-  window.addEventListener('hashchange', notify);
-  return () => window.removeEventListener('hashchange', notify);
-};
-const currentLocation = () =>
-  `${location.pathname}${location.search}${location.hash}`;
+import { handleWorkspaceLink, useWorkspaceLocation } from './navigation';
 
-/** Native navigation adapter; Next satellites supply their prefetch/permissions-aware NavLink. */
+/** Client navigation keeps the shared shell mounted between workspace pages. */
 export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
   links,
   isCollapsed,
@@ -21,7 +15,7 @@ export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
   onSubMenuClick,
 }) => {
   const c = useCopy();
-  const current = useSyncExternalStore(subscribe, currentLocation, () => '');
+  const current = useWorkspaceLocation();
   return (
     <SidebarNavigation
       label={c.shellNavigation}
@@ -57,6 +51,7 @@ export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
             className={className}
             onClick={(event) => {
               if (link.onClick || link.children) event.preventDefault();
+              handleWorkspaceLink(event, link.href ?? '/');
               activate();
             }}
           >

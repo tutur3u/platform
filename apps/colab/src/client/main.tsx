@@ -25,6 +25,8 @@ import {
   LocalePreferenceContext,
   useCopy,
 } from './i18n';
+import { JoinRoomDialog } from './join-dialog';
+import { navigateWorkspace, useWorkspaceLocation } from './navigation';
 import { Structure } from './structure';
 import { Workshop } from './workshop';
 import { WorkspacePages } from './workspace-pages';
@@ -39,17 +41,17 @@ function App() {
   const [authRetry, setAuthRetry] = useState(
     new URLSearchParams(location.search).has('auth')
   );
-  const [roomId, setRoomId] = useState(
-    new URLSearchParams(location.search).get('room') ?? ''
-  );
+  const current = useWorkspaceLocation();
+  const route = new URL(current, location.origin);
+  const roomId = route.searchParams.get('room') ?? '';
+  const joinOpen = route.pathname === '/join' || route.searchParams.has('join');
   const session = useQuery({
     queryKey: ['session'],
     queryFn: () =>
       colabRequest<{ identity: Identity | null; canHost: boolean }>('/session'),
   });
   const navigate = (id: string) => {
-    setRoomId(id);
-    history.replaceState(null, '', id ? `/?room=${id}` : '/');
+    navigateWorkspace(id ? `/?room=${id}` : '/');
     if (id) localStorage.setItem('colab-recent-room', id);
   };
   if (!roomId && (!session.data?.identity?.email || session.isPending)) {
@@ -101,6 +103,7 @@ function App() {
       }}
       onLocaleChange={(value) => changeLocale(value)}
     >
+      <JoinRoomDialog open={joinOpen} navigate={navigate} />
       {authRetry && (
         <section className="auth-recovery" role="alert">
           <div>
@@ -116,7 +119,7 @@ function App() {
               variant="ghost"
               onClick={() => {
                 setAuthRetry(false);
-                history.replaceState(null, '', '/');
+                navigateWorkspace('/', true);
               }}
             >
               {c.authDismiss}

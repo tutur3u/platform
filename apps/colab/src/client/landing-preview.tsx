@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useCopy } from './i18n';
+import { WorkspaceLink } from './navigation';
 
 export function LandingPreview() {
   const c = useCopy();
@@ -79,9 +80,9 @@ export function WorkshopDetails() {
         <p className="eyebrow">{c.facilitatorEyebrow}</p>
         <h2>{c.facilitatorTitle}</h2>
         <p>{c.facilitatorIntro}</p>
-        <a href="#join" className="button primary">
+        <WorkspaceLink href="/join" className="button primary">
           {c.startTogether} <span aria-hidden="true">↗</span>
-        </a>
+        </WorkspaceLink>
       </div>
       <div className="detail-grid">
         {[

@@ -191,7 +191,7 @@ The Worker forwards only explicitly allowlisted real account/support endpoints (
 ## Workspace entry and notifications
 
 Colab requires a Tuturuuu login when opening the app. The sidebar separates
-Workshops (`/`), Join a room (`/join`), Host a workshop (`/host`, staff only),
+Workshops (`/`), Join a room (dialog), Host a workshop (`/host`, staff only),
 and Practice guide (`/guide`). Direct `/?room=...` invitations retain temporary
 password entry for guests. Login preserves the selected app destination.
 
@@ -213,3 +213,11 @@ Validate with `bun run build`, `bun run test`, and the finite
 verifier covers default-login redirects, guest invitation documents, separate
 sidebar destinations, notification read/archive actions with mock data, and
 English/Vietnamese desktop/mobile layouts. No production notification is changed.
+
+Workspace navigation uses client-side history and keeps the shell, account controls,
+and notification queries mounted. Join a room opens a shared dialog above the
+current page; dismissing it preserves host drafts and guide interactions. Browser
+Back/Forward follows navigation and dialog history. Direct `/join` links still
+require login and open the dialog over the workspace home. Modified link clicks
+retain normal browser behavior. The finite runtime verifier checks document and
+sidebar identity, dialog dismissal, draft retention, and mobile overflow.

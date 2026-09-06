@@ -256,7 +256,8 @@
     "next": "Explore Colab",
     "hostDescription": "Set a challenge, invite your team, and guide the session.",
     "guideDescription": "Learn how to write clear instructions, build skills, and test your agent.",
-    "privateLabel": "Invite-only"
+    "privateLabel": "Invite-only",
+    "invalidRoom": "Enter a valid room link or room ID from your host."
   },
   "common": {
     "retry": "Retry"

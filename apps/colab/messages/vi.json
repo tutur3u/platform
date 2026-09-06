@@ -256,7 +256,8 @@
     "next": "Khám phá Colab",
     "hostDescription": "Đặt thử thách, mời nhóm và hướng dẫn buổi thực hành.",
     "guideDescription": "Học cách viết chỉ dẫn rõ ràng, xây dựng kỹ năng và thử nghiệm trợ lý.",
-    "privateLabel": "Chỉ người được mời"
+    "privateLabel": "Chỉ người được mời",
+    "invalidRoom": "Nhập liên kết hoặc mã phòng hợp lệ từ người tổ chức."
   },
   "common": {
     "retry": "Thử lại"

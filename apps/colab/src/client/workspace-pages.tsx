@@ -10,6 +10,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Home } from './home';
 import { appNames, useCopy } from './i18n';
 import { LandingPreview, WorkshopDetails } from './landing-preview';
+import { WorkspaceLink } from './navigation';
 
 export function WorkspacePages(props: {
   canHost: boolean;
@@ -19,8 +20,7 @@ export function WorkspacePages(props: {
   const c = useCopy();
   const w = c.workspace;
   const path = location.pathname;
-  if (path === '/join' || path === '/host')
-    return <Home {...props} mode={path === '/host' ? 'host' : 'join'} />;
+  if (path === '/host') return <Home {...props} />;
   if (path === '/guide')
     return (
       <div className="home workspace-guide">
@@ -48,10 +48,10 @@ export function WorkspacePages(props: {
         </div>
         {recent && (
           <Button asChild>
-            <a href="/join">
+            <WorkspaceLink href="/join">
               <Users className="size-4" />
               {c.join}
-            </a>
+            </WorkspaceLink>
           </Button>
         )}
       </section>
@@ -84,33 +84,33 @@ export function WorkspacePages(props: {
             <h3>{w.emptyTitle}</h3>
             <p>{w.emptyDescription}</p>
             <Button variant="outline" asChild>
-              <a href="/join">
+              <WorkspaceLink href="/join">
                 {c.join}
                 <ArrowRight className="size-4" />
-              </a>
+              </WorkspaceLink>
             </Button>
           </div>
         )}
       </section>
       <section className="workspace-next" aria-label={w.next}>
         {props.canHost && (
-          <a className="workspace-action" href="/host">
+          <WorkspaceLink className="workspace-action" href="/host">
             <FlaskConical className="size-5" />
             <div>
               <h2>{c.host}</h2>
               <p>{w.hostDescription}</p>
             </div>
             <ArrowRight className="size-4" />
-          </a>
+          </WorkspaceLink>
         )}
-        <a className="workspace-action" href="/guide">
+        <WorkspaceLink className="workspace-action" href="/guide">
           <BookOpen className="size-5" />
           <div>
             <h2>{c.practiceGuide}</h2>
             <p>{w.guideDescription}</p>
           </div>
           <ArrowRight className="size-4" />
-        </a>
+        </WorkspaceLink>
       </section>
       <section className="workspace-sandbox">
         <div>
