@@ -1,7 +1,7 @@
 import { act } from 'react';
 import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MyTasksHeader } from './my-tasks-header';
 
 vi.mock('next-intl', () => ({
@@ -10,7 +10,11 @@ vi.mock('next-intl', () => ({
 }));
 
 describe('task greeting hydration', () => {
-  afterEach(() => vi.useRealTimers());
+  beforeEach(() => vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true));
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it('keeps server markup independent of server timezone', () => {
     const html = renderToString(
