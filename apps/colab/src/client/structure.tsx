@@ -19,6 +19,7 @@ import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
 import { SatelliteFooterActions } from '@tuturuuu/ui/custom/satellite-footer-actions';
 import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { getFilteredLinks } from '@tuturuuu/ui/custom/satellite-shell-utils';
+import { useSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
 import {
   Dialog,
@@ -27,10 +28,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
+import { ReportProblemDialogContent } from '@tuturuuu/ui/report-problem-dialog-content';
 import { type ReactNode, useMemo, useState } from 'react';
 import { AccountMenu } from './account-menu';
 import logo from './assets/tuturuuu.png';
-import { type Locale, useCopy } from './i18n';
+import { type Locale, useCopy, useShellCopy } from './i18n';
+import { ColabSettings } from './settings';
 import { ShellNavigation } from './shell-navigation';
 import { ThemeToggle } from './theme-toggle';
 
@@ -40,7 +44,6 @@ const persistCollapsed = (collapsed: boolean) =>
 /** Vite adapter for the same shell used by Tasks, Calendar and other satellites. */
 export function Structure({
   children,
-  actions,
   loading,
   onLogout,
   onLocaleChange,
@@ -49,18 +52,23 @@ export function Structure({
   navigate,
 }: {
   children: ReactNode;
-  actions: ReactNode;
   loading: boolean;
   onLogout: () => void;
-  onLocaleChange: (locale: Locale) => void;
+  onLocaleChange: (locale: Locale | undefined) => void;
   identity: Identity | null;
   roomId: string;
   navigate: (id: string) => void;
 }) {
   const c = useCopy();
+  const t = useShellCopy();
+  const sidebar = useSidebar();
   const [appsOpen, setAppsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  useSettingsDialogShortcut({
+    enabled: true,
+    onOpen: () => setSettingsOpen(true),
+  });
   const recent = localStorage.getItem('colab-recent-room');
   const links = useMemo<(NavLink | null)[]>(
     () => [
@@ -125,6 +133,8 @@ export function Structure({
     navState,
     setNavState,
     backButton,
+    onMouseEnter,
+    onMouseLeave,
   } = useSatelliteShell({
     pathname: roomId ? `/?room=${roomId}` : '/',
     links,
@@ -132,6 +142,8 @@ export function Structure({
       window.innerWidth < 768 ||
       localStorage.getItem('colab-sidebar-collapsed') === 'true',
     persistCollapsed,
+    behavior: sidebar.behavior,
+    handleBehaviorChange: sidebar.handleBehaviorChange,
     backLabel: c.back,
   });
   const account = (compact: boolean) => (
@@ -139,9 +151,7 @@ export function Structure({
       identity={identity}
       loading={loading}
       compact={compact}
-      collapsed={collapsed}
-      onCollapse={handleToggle}
-      onSettings={() => setSettingsOpen(true)}
+      onReport={() => setFeedbackOpen(true)}
       onLogout={onLogout}
       onLocaleChange={onLocaleChange}
     />
@@ -161,62 +171,19 @@ export function Structure({
   ) : undefined;
   return (
     <div className="colab-shell">
-      <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{c.feedbackAction}</DialogTitle>
-            <DialogDescription>{c.feedbackHelp}</DialogDescription>
-          </DialogHeader>
-          <Button asChild>
-            <a
-              href="https://github.com/tutur3u/platform/issues/new/choose"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {c.reportIssue}
-            </a>
-          </Button>
-          <Button variant="outline" asChild>
-            <a
-              href="https://discord.gg/kNDxVnnUZ4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Discord
-            </a>
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <ReportProblemDialogContent
+        open={feedbackOpen}
+        onOpenChange={setFeedbackOpen}
+        showTrigger={false}
+        t={(key, values) => t(`common.${key}`, values)}
+      />
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{c.settings}</DialogTitle>
-            <DialogDescription>{c.preferencesHelp}</DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-between">
-            <span>{c.language}</span>
-            {actions}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>{c.appearance}</span>
-            <ThemeToggle />
-          </div>
-          <Button variant="outline" onClick={handleToggle}>
-            {collapsed ? c.shellExpand : c.shellCollapse}
-          </Button>
-          {identity?.email && (
-            <Button variant="outline" asChild>
-              <a
-                href="https://tuturuuu.com/personal?settingsDialog=open&settingsTab=profile"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {c.manageProfile}
-              </a>
-            </Button>
-          )}
-        </DialogContent>
+        <ColabSettings
+          onLocaleChange={onLocaleChange}
+          onClose={() => setSettingsOpen(false)}
+          onReport={() => setFeedbackOpen(true)}
+        />
       </Dialog>
 
       <Dialog open={appsOpen} onOpenChange={setAppsOpen}>
@@ -331,7 +298,10 @@ export function Structure({
           </div>
         }
         userPopover={account(true)}
-        hideSizeToggle
+        overlayOnExpand={sidebar.behavior === 'hover'}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        sidebarHidden={sidebar.behavior === 'hidden'}
       >
         <div className="colab-content">{children}</div>
       </SatelliteShell>

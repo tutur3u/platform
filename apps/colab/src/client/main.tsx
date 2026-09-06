@@ -3,14 +3,29 @@ import {
   QueryClientProvider,
   useQuery,
 } from '@tanstack/react-query';
+import { logoutCurrentWebAccountWithInternalApi } from '@tuturuuu/internal-api/auth';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity } from '@tuturuuu/multiplayer';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  clearLocalePreference,
+  persistLocalePreference,
+} from '@tuturuuu/ui/custom/locale-preference';
+import {
+  type SidebarBehavior,
+  SidebarProvider,
+} from '@tuturuuu/ui/custom/sidebar-context';
+import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Home } from './home';
-import { type Locale, LocaleContext, useCopy } from './i18n';
+import {
+  type Locale,
+  LocaleContext,
+  LocalePreferenceContext,
+  useCopy,
+} from './i18n';
 import { Structure } from './structure';
 import { Workshop } from './workshop';
 import './app.css';
@@ -43,11 +58,19 @@ function App() {
       navigate={navigate}
       loading={session.isPending}
       onLogout={async () => {
+        if (session.data?.identity?.email) {
+          await logoutCurrentWebAccountWithInternalApi({
+            baseUrl: 'https://tuturuuu.com',
+          }).catch(() => null);
+        }
         await colabRequest('/logout', {});
-        location.assign('/');
+        location.assign(
+          session.data?.identity?.email
+            ? 'https://tuturuuu.com/logout?from=Colab'
+            : '/'
+        );
       }}
       onLocaleChange={(value) => changeLocale(value)}
-      actions={<Language />}
     >
       {authRetry && (
         <section className="auth-recovery" role="alert">
@@ -92,29 +115,37 @@ function App() {
     </Structure>
   );
 }
-let changeLocale: (locale: Locale) => void;
-function Language() {
-  const c = useCopy();
-  return (
-    <select
-      className="w-20 rounded-md border bg-background p-2 text-foreground text-sm"
-      aria-label={c.language}
-      defaultValue={document.documentElement.lang}
-      onChange={(e) => changeLocale(e.target.value as Locale)}
-    >
-      <option value="en">EN</option>
-      <option value="vi">VI</option>
-    </select>
-  );
+let changeLocale: (locale: Locale | undefined) => void;
+function initialSidebarBehavior(): SidebarBehavior {
+  const stored = document.cookie
+    .split('; ')
+    .find((value) => value.startsWith('sidebar-behavior='))
+    ?.split('=')[1];
+  return stored === 'collapsed' || stored === 'hover' || stored === 'hidden'
+    ? stored
+    : 'expanded';
 }
 function Root() {
-  const [locale, setLocale] = useState<Locale>(
-    localStorage.getItem('colab-locale') === 'vi' ? 'vi' : 'en'
-  );
+  const [preference, setPreference] = useState<Locale | undefined>(() => {
+    const saved =
+      document.cookie
+        .split('; ')
+        .find((value) => value.startsWith('NEXT_LOCALE='))
+        ?.split('=')[1] ?? localStorage.getItem('colab-locale');
+    return saved === 'en' || saved === 'vi' ? saved : undefined;
+  });
+  const locale =
+    preference ?? (navigator.language.startsWith('vi') ? 'vi' : 'en');
   document.documentElement.lang = locale;
   changeLocale = (value) => {
-    localStorage.setItem('colab-locale', value);
-    setLocale(value);
+    if (value) {
+      localStorage.setItem('colab-locale', value);
+      persistLocalePreference(value);
+    } else {
+      localStorage.removeItem('colab-locale');
+      clearLocalePreference();
+    }
+    setPreference(value);
   };
   return (
     <ThemeProvider
@@ -125,9 +156,14 @@ function Root() {
       scriptProps={{ 'data-cfasync': 'false' }}
     >
       <LocaleContext value={locale}>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
+        <LocalePreferenceContext value={preference}>
+          <QueryClientProvider client={queryClient}>
+            <SidebarProvider initialBehavior={initialSidebarBehavior()}>
+              <App />
+              <Toaster />
+            </SidebarProvider>
+          </QueryClientProvider>
+        </LocalePreferenceContext>
       </LocaleContext>
     </ThemeProvider>
   );

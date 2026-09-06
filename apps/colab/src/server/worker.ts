@@ -14,6 +14,7 @@ import {
   sign,
 } from './auth';
 import type { Env } from './env';
+import { platformProxy } from './platform-proxy';
 
 export { ColabRoom } from './room';
 
@@ -60,6 +61,8 @@ async function handle(request: Request, env: Env): Promise<Response> {
   if (url.pathname.startsWith('/auth/') || url.pathname === '/verify-token')
     return authRoute(request, env);
   if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
+  const platformResponse = await platformProxy(request, env);
+  if (platformResponse) return platformResponse;
   if (url.pathname === '/api/health')
     return Response.json({ app: 'colab', status: 'ok', sandbox: true });
   if (request.method !== 'GET') {
@@ -205,7 +208,7 @@ export default {
     headers.set('Referrer-Policy', 'no-referrer');
     headers.set(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co https://*.googleusercontent.com https://avatars.githubusercontent.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://avatars.githubusercontent.com; connect-src 'self' https://tuturuuu.com https://*.supabase.co; media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
     );
     if (
       new URL(request.url).pathname.startsWith('/api/') ||

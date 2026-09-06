@@ -502,7 +502,14 @@
     "./custom/satellite-footer-actions": {
       "types": "./src/components/ui/custom/satellite-footer-actions.tsx",
       "default": "./src/components/ui/custom/satellite-footer-actions.tsx"
-    }
+    },
+    "./custom/satellite-user-menu-items": "./src/components/ui/custom/satellite-user-menu-items.tsx",
+    "./custom/satellite-account-switcher-menu": "./src/components/ui/custom/satellite-account-switcher-menu.tsx",
+    "./custom/satellite-theme-dropdown-items": "./src/components/ui/custom/satellite-theme-dropdown-items.tsx",
+    "./custom/satellite-language-item": "./src/components/ui/custom/satellite-language-item.tsx",
+    "./report-problem-dialog-content": "./src/components/ui/report-problem-dialog-content.tsx",
+    "./custom/satellite-settings-dialog-shell": "./src/components/ui/custom/satellite-settings-dialog-shell.tsx",
+    "./custom/satellite-onboarding-settings-panel": "./src/components/ui/custom/satellite-onboarding-settings-panel.tsx"
   },
   "packageManager": "bun@1.4.1"
 }

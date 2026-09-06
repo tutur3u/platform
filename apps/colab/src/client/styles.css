@@ -1,7 +1,5 @@
 :root {
-  font-family:
-    Inter, "Avenir Next", Avenir, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: "Noto Sans", Arial, Helvetica, sans-serif;
   color: var(--foreground);
   background: var(--background);
   font-synthesis: none;

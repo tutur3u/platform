@@ -1,54 +1,44 @@
-import {
-  ExternalLink,
-  Globe,
-  LogIn,
-  LogOut,
-  Palette,
-  PanelLeft,
-  Settings,
-  UserRound,
-  Users,
-} from '@tuturuuu/icons';
+import { LogIn } from '@tuturuuu/icons';
 import type { Identity } from '@tuturuuu/multiplayer';
+import { SatelliteAccountSwitcherMenu } from '@tuturuuu/ui/custom/satellite-account-switcher-menu';
+import { SatelliteLanguageItem } from '@tuturuuu/ui/custom/satellite-language-item';
+import { SatelliteThemeDropdownItems } from '@tuturuuu/ui/custom/satellite-theme-dropdown-items';
 import { SatelliteUserMenu } from '@tuturuuu/ui/custom/satellite-user-menu';
+import { SatelliteUserMenuItems } from '@tuturuuu/ui/custom/satellite-user-menu-items';
+import { useSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import {
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { useTheme } from 'next-themes';
 import { useContext } from 'react';
-import { type Locale, LocaleContext, useCopy } from './i18n';
+import {
+  type Locale,
+  LocalePreferenceContext,
+  useCopy,
+  useShellCopy,
+} from './i18n';
 
 export function AccountMenu({
   identity,
   loading,
   compact,
-  collapsed,
-  onCollapse,
-  onSettings,
+  onReport,
   onLogout,
   onLocaleChange,
 }: {
   identity: Identity | null;
   loading: boolean;
   compact: boolean;
-  collapsed: boolean;
-  onCollapse: () => void;
-  onSettings: () => void;
+  onReport: () => void;
   onLogout: () => void;
-  onLocaleChange: (locale: Locale) => void;
+  onLocaleChange: (locale: Locale | undefined) => void;
 }) {
   const c = useCopy();
-  const locale = useContext(LocaleContext);
-  const { theme, setTheme } = useTheme();
+  const t = useShellCopy();
+  const sidebar = useSidebar();
+  const preference = useContext(LocalePreferenceContext);
   const signedIn = Boolean(identity?.email);
+  const loginUrl = `/auth/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`;
   return (
     <SatelliteUserMenu
       name={loading ? c.loadingAccount : (identity?.name ?? c.login)}
@@ -64,125 +54,57 @@ export function AccountMenu({
     >
       {!signedIn && (
         <>
-          <p className="px-2 py-1 text-muted-foreground text-xs">
-            {c.connectAccountHelp}
-          </p>
           <DropdownMenuItem asChild>
-            <a
-              href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`}
-            >
-              <LogIn className="size-4" />
+            <a href={loginUrl}>
+              <LogIn className="h-4 w-4" />
               {c.login}
             </a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
         </>
       )}
-      <DropdownMenuGroup>
-        {signedIn && (
-          <DropdownMenuItem asChild>
-            <a
-              href="https://tuturuuu.com/personal?settingsDialog=open&settingsTab=profile"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <UserRound className="size-4 text-dynamic-green" />
-              {c.manageProfile}
-            </a>
-          </DropdownMenuItem>
-        )}
-        <DropdownMenuItem onSelect={onSettings}>
-          <Settings className="size-4" />
-          {c.settings}
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a
-            href="https://tuturuuu.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <ExternalLink className="size-4 text-dynamic-green" />
-            {c.shellPlatform}
-          </a>
-        </DropdownMenuItem>
-      </DropdownMenuGroup>
-      <DropdownMenuSeparator />
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <Globe className="size-4 text-dynamic-indigo" />
-          {c.language}
-        </DropdownMenuSubTrigger>
-        <DropdownMenuPortal>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup
-              value={locale}
-              onValueChange={(value) => onLocaleChange(value as Locale)}
-            >
-              <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="vi">
-                Tiếng Việt
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuPortal>
-      </DropdownMenuSub>
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger>
-          <Palette className="size-4 text-dynamic-cyan" />
-          {c.appearance}
-        </DropdownMenuSubTrigger>
-        <DropdownMenuPortal>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
-              <DropdownMenuRadioItem value="light">
-                {c.themeLight}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark">
-                {c.themeDark}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">
-                {c.themeSystem}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuPortal>
-      </DropdownMenuSub>
-      <DropdownMenuItem onSelect={onCollapse}>
-        <PanelLeft className="size-4 text-dynamic-purple" />
-        {collapsed ? c.shellExpand : c.shellCollapse}
-      </DropdownMenuItem>
-      {signedIn && (
-        <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <a
-              href="https://tuturuuu.com/add-account"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Users className="size-4" />
-              {c.manageAccounts}
-            </a>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <a
-              href={`/auth/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`}
-            >
-              <UserRound className="size-4" />
-              {c.refreshAccount}
-            </a>
-          </DropdownMenuItem>
-        </>
-      )}
-      {identity && (
-        <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={onLogout}>
-            <LogOut className="size-4 text-dynamic-red" />
-            {c.logout}
-          </DropdownMenuItem>
-        </>
-      )}
+      <SatelliteUserMenuItems
+        centralUrl="https://tuturuuu.com"
+        t={t}
+        sidebar={sidebar}
+        signedIn={signedIn}
+        languageItems={
+          <>
+            <SatelliteLanguageItem
+              label="English"
+              selected={preference === 'en'}
+              onSelect={() => onLocaleChange('en')}
+            />
+            <SatelliteLanguageItem
+              label="Tiếng Việt"
+              selected={preference === 'vi'}
+              onSelect={() => onLocaleChange('vi')}
+            />
+            <DropdownMenuSeparator />
+            <SatelliteLanguageItem
+              label={t('common.system')}
+              selected={!preference}
+              system
+              onSelect={() => onLocaleChange(undefined)}
+            />
+          </>
+        }
+        themeItems={
+          <SatelliteThemeDropdownItems t={(key) => t(`common.${key}`)} />
+        }
+        accountItems={
+          signedIn ? (
+            <SatelliteAccountSwitcherMenu
+              centralUrl="https://tuturuuu.com"
+              currentRoute={location.pathname + location.search}
+              t={(key) => t(`account_switcher.${key}`)}
+              onAccountChanged={() => location.assign(loginUrl)}
+            />
+          ) : null
+        }
+        onReport={onReport}
+        onLogout={onLogout}
+      />
     </SatelliteUserMenu>
   );
 }
