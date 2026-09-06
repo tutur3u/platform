@@ -75,6 +75,7 @@ export async function executeTextRequest(
     outputTokens?: number;
     reasoningTokens?: number;
   } = {};
+  let completedStepUsage = () => reportedUsage;
   let settled = false;
   try {
     context = await prepareMeteredExecution({
@@ -110,6 +111,21 @@ export async function executeTextRequest(
       signal: request.signal,
       toolNames: input.tools,
     });
+
+    completedStepUsage = () => {
+      const steps = observed
+        .summaries()
+        .filter((step) => step.type === 'model');
+      if (!steps.length) return {};
+      return steps.reduce(
+        (sum, step) => ({
+          inputTokens: sum.inputTokens + step.inputTokens,
+          outputTokens: sum.outputTokens + step.outputTokens,
+          reasoningTokens: sum.reasoningTokens + step.reasoningTokens,
+        }),
+        { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 }
+      );
+    };
 
     if (!input.stream) {
       const result = await observed.agent.generate({
@@ -276,6 +292,8 @@ export async function executeTextRequest(
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {
+          const partialUsage = !Object.keys(reportedUsage).length;
+          if (partialUsage) reportedUsage = completedStepUsage();
           if (!settled)
             await settleMeteredExecution(context!, {
               error,
@@ -288,7 +306,9 @@ export async function executeTextRequest(
                   },
               metadata: {
                 usage_source: Object.keys(reportedUsage).length
-                  ? 'provider'
+                  ? partialUsage
+                    ? 'provider_partial'
+                    : 'provider'
                   : 'estimated_partial',
               },
             }).catch((settlementError) => {
@@ -321,13 +341,17 @@ export async function executeTextRequest(
           reasoningTokens:
             objectError.usage.outputTokenDetails?.reasoningTokens,
         };
+      if (!Object.keys(reportedUsage).length)
+        reportedUsage = completedStepUsage();
       await settleMeteredExecution(context, {
         error,
         status: request.signal.aborted ? 'aborted' : 'failed',
         usage: reportedUsage,
         metadata: {
           usage_source: Object.keys(reportedUsage).length
-            ? 'provider'
+            ? objectError
+              ? 'provider'
+              : 'provider_partial'
             : 'unavailable',
           ...(objectError
             ? { finish_reason: String(objectError.finishReason) }
