@@ -86,13 +86,16 @@ application attribution, which comes from the authenticated credential. Keep
 personal data, secrets, and prompt text out of these labels. The response ID and
 `x-request-id` identify the gateway run.
 
-Provider-reported tokens remain chargeable and recorded when structured output
-validation fails. Optional content-capture failures cannot overwrite settled
+Provider-reported tokens remain recorded when structured output validation fails.
+Monetary values use the configured model pricing, rather than provider invoices.
+The original output-token total includes reasoning tokens; pricing counts each
+reasoning token once, while retaining the breakdown for audit. Optional content-capture failures cannot overwrite settled
 usage. When a provider supplies no usage on failure, audit metadata marks it
 `unavailable`; known completed steps without a final total are marked
 `provider_partial`. Interrupted streams without final usage are labeled
 `estimated_partial`. Such records are not proof of zero provider spend and need
-provider-billing reconciliation for a complete accounting close.
+provider-billing reconciliation for a complete accounting close. AI Studio run
+details show a warning for these incomplete records.
 
 ## Native extensions
 

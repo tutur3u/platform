@@ -259,7 +259,12 @@ export async function settleMeteredExecution(
     imageCount: usage.imageUnits,
     inputTokens: usage.inputTokens,
     modelId: context.modelId,
-    outputTokens: usage.outputTokens,
+    // AI SDK outputTokens already includes reasoning; the cost RPC adds its
+    // reasoning argument separately. Keep the audit total inclusive below.
+    outputTokens:
+      usage.outputTokens === undefined
+        ? undefined
+        : Math.max(0, usage.outputTokens - (usage.reasoningTokens ?? 0)),
     reasoningTokens: usage.reasoningTokens,
     workspaceId: context.credential.workspaceId,
   }).catch(() => ({ billedCredits: 0, providerCostUsd: 0 }));

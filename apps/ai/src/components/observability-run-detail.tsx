@@ -3,6 +3,7 @@
 import { AlertCircle, ChevronDownIcon, Cpu, Terminal } from '@tuturuuu/icons';
 import type {
   AiStudioRun,
+  AiStudioRunDetailResponse,
   AiStudioRunStep,
 } from '@tuturuuu/internal-api/ai-studio';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -28,6 +29,7 @@ export function ObservabilityRunDetail({
   sourceLabel,
   statusLabel,
   steps,
+  usageSource,
 }: {
   isError: boolean;
   isLoading: boolean;
@@ -36,11 +38,21 @@ export function ObservabilityRunDetail({
   sourceLabel: string;
   statusLabel: string;
   steps: AiStudioRunStep[];
+  usageSource?: AiStudioRunDetailResponse['usageSource'];
 }) {
   const t = useTranslations('ai-studio.observability');
 
   return (
     <div className="space-y-4 p-4 sm:p-5">
+      {usageSource && usageSource !== 'provider' ? (
+        <div
+          role="status"
+          className="flex items-start gap-2 rounded-lg border bg-muted p-3 text-sm"
+        >
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <p>{t('usage_incomplete')}</p>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">

@@ -239,6 +239,7 @@ function RunRow({
               sourceLabel={sourceLabel}
               statusLabel={statusLabel}
               steps={detailQuery.data?.steps ?? []}
+              usageSource={detailQuery.data?.usageSource}
             />
           </td>
         </tr>

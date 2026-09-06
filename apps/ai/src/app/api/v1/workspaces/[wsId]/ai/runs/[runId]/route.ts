@@ -17,7 +17,7 @@ export async function GET(
   const { data: run, error: runError } = await auth.sbAdmin
     .schema('private')
     .from('ai_studio_runs')
-    .select('id')
+    .select('id, usage_source:metadata->>usage_source')
     .eq('id', runId)
     .eq('ws_id', auth.workspace.id)
     .maybeSingle();
@@ -49,6 +49,14 @@ export async function GET(
   return Response.json(
     {
       runId,
+      usageSource: [
+        'provider',
+        'provider_partial',
+        'estimated_partial',
+        'unavailable',
+      ].includes(run.usage_source ?? '')
+        ? run.usage_source
+        : null,
       steps: (steps ?? []).map((step) => ({
         billedCredits: Number(step.billed_credits),
         completedAt: step.completed_at,

@@ -56,6 +56,37 @@ describe('AI Studio billing policy', () => {
     });
   });
 
+  it('prices reasoning once while retaining the inclusive provider output total', async () => {
+    await settleMeteredExecution(
+      {
+        credential: {
+          actorId: 'actor',
+          apiKey: { id: 'key' },
+          kind: 'api-key',
+          workspaceId: 'workspace',
+        } as never,
+        modelId: 'model',
+        requestId: 'request',
+        runId: 'run',
+        startedAt: Date.now(),
+      },
+      {
+        status: 'succeeded',
+        usage: { inputTokens: 100, outputTokens: 80, reasoningTokens: 30 },
+      }
+    );
+    expect(mocks.calculateAiStudioUsageCost).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inputTokens: 100,
+        outputTokens: 50,
+        reasoningTokens: 30,
+      })
+    );
+    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({ outputTokens: 80, reasoningTokens: 30 })
+    );
+  });
+
   it('reserves workspace credits for ordinary AI API keys', async () => {
     mocks.authenticatePublicAiRequest.mockResolvedValue({
       actorId: 'actor',

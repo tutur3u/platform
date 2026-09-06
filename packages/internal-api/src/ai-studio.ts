@@ -177,6 +177,12 @@ export interface AiStudioRunStep {
 
 export interface AiStudioRunDetailResponse {
   runId: string;
+  usageSource?:
+    | 'provider'
+    | 'provider_partial'
+    | 'estimated_partial'
+    | 'unavailable'
+    | null;
   steps: AiStudioRunStep[];
 }
 
