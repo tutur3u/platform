@@ -260,3 +260,145 @@
     }
   }
 }
+
+@layer components {
+  .colab-content .studio-panel {
+    gap: 16px;
+    padding: 20px;
+    box-shadow: none;
+  }
+  .colab-content .studio-panel > p,
+  .colab-content .studio-panel .panel-heading {
+    margin: 0;
+  }
+  .colab-content .studio-panel .panel-heading h2 {
+    margin-top: 4px;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+  .colab-content .studio-panel .section-number {
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--muted-foreground);
+  }
+  .colab-content .studio-checkbox {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+    cursor: pointer;
+  }
+  .studio-checkbox [data-slot="checkbox"] {
+    flex-shrink: 0;
+  }
+  .admin-panel [data-slot="accordion-content"][data-state="closed"] {
+    display: none;
+  }
+  .admin-section {
+    display: grid;
+    gap: 20px;
+    padding: 4px 0 8px;
+    min-width: 0;
+  }
+  .admin-section > [data-slot="label"]:not(.studio-checkbox),
+  .admin-section form > [data-slot="label"],
+  .member-row > [data-slot="label"]:not(.studio-checkbox) {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+  }
+  .admin-section > [data-slot="label"]:not(.studio-checkbox) {
+    max-width: 360px;
+  }
+  .admin-section form {
+    display: grid;
+    gap: 12px;
+    max-width: 640px;
+  }
+  .colab-content .admin-section > button,
+  .colab-content .admin-section form > button {
+    justify-self: start;
+  }
+  .admin-section .studio-checkbox {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .colab-content .admin-panel {
+    margin-top: 0;
+  }
+  .colab-content .admin-panel > p {
+    margin: 0;
+  }
+  .colab-content .compile-row {
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--muted);
+  }
+  .colab-content .team-toolbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .colab-content .team-toolbar > label {
+    display: grid;
+    gap: 6px;
+    min-width: 180px;
+    max-width: 320px;
+    font-weight: 500;
+    font-size: 12px;
+  }
+  .colab-content .room-heading {
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .colab-content .room-heading h1 {
+    margin: 8px 0 12px;
+  }
+  .colab-content .room-meta,
+  .colab-content .presence,
+  .colab-content .editor-meta {
+    font-size: 12px;
+  }
+  .colab-content .member-row {
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-block: 16px;
+    font-size: 14px;
+  }
+  .colab-content .member-row > div {
+    min-width: 180px;
+    overflow-wrap: anywhere;
+  }
+  .colab-content .member-row > [data-slot="label"] {
+    min-width: 150px;
+  }
+  .colab-content .invite-list {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+  }
+  .colab-content .invite-list li {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  @media (max-width: 620px) {
+    .colab-content .studio-panel {
+      padding: 16px;
+    }
+    .colab-content .presence {
+      padding-top: 8px;
+    }
+    .colab-content .team-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}

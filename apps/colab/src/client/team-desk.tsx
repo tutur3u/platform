@@ -1,8 +1,15 @@
 import type { Team } from '@tuturuuu/multiplayer';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useState } from 'react';
 import { useCopy } from './i18n';
@@ -37,7 +44,7 @@ export function TeamDesk({
       <Card
         id={active ? 'team-prompt' : undefined}
         hidden={section !== 'team-prompt'}
-        className="panel prompt-panel"
+        className="studio-panel prompt-panel shadow-none"
       >
         <div className="panel-heading">
           <div>
@@ -56,9 +63,9 @@ export function TeamDesk({
         </Badge>
         {writable ? (
           <>
-            <label className="sr-only" htmlFor="prompt">
+            <Label className="sr-only" htmlFor="prompt">
               {c.promptLabel}
-            </label>
+            </Label>
             <Textarea
               id="prompt"
               className="prompt-editor min-h-64"
@@ -117,7 +124,7 @@ export function TeamDesk({
       <Card
         id={active ? 'team-skills' : undefined}
         hidden={section !== 'team-skills'}
-        className="panel skills-panel"
+        className="studio-panel skills-panel shadow-none"
       >
         <div className="panel-heading">
           <div>
@@ -128,13 +135,13 @@ export function TeamDesk({
         </div>
         {writable && (
           <div className="compile-row">
-            <label className="checkbox">
+            <Label className="studio-checkbox">
               <Checkbox
                 checked={multiple}
                 onCheckedChange={(checked) => setMultiple(checked === true)}
               />
               {c.multiple}
-            </label>
+            </Label>
             <Button
               type="button"
               size="sm"
@@ -147,34 +154,38 @@ export function TeamDesk({
         )}
         {changed && writable && <p className="fine-print">{c.saveBefore}</p>}
         {team.skills.length ? (
-          team.skills.map((skill) => (
-            <details className="skill-file" key={skill.name}>
-              <summary>
-                <span className="file-icon">↳</span>
-                <strong>{skill.name}/SKILL.md</strong>
-                <span>↓</span>
-              </summary>
-              <p>{skill.description}</p>
-              <pre>{skill.markdown}</pre>
-              <Button
-                type="button"
-                onClick={() => {
-                  const url = URL.createObjectURL(
-                    new Blob([skill.markdown], {
-                      type: 'text/markdown;charset=utf-8',
-                    })
-                  );
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `${skill.name}-SKILL.md`;
-                  a.click();
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
-                }}
-              >
-                {c.download}
-              </Button>
-            </details>
-          ))
+          <Accordion type="multiple">
+            {team.skills.map((skill) => (
+              <AccordionItem value={skill.name} key={skill.name}>
+                <AccordionTrigger className="text-sm">
+                  <strong>{skill.name}/SKILL.md</strong>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-3">
+                  <p>{skill.description}</p>
+                  <pre className="max-h-96 overflow-auto rounded-lg border bg-muted p-4 font-mono text-xs">
+                    {skill.markdown}
+                  </pre>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const url = URL.createObjectURL(
+                        new Blob([skill.markdown], {
+                          type: 'text/markdown;charset=utf-8',
+                        })
+                      );
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${skill.name}-SKILL.md`;
+                      a.click();
+                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    }}
+                  >
+                    {c.download}
+                  </Button>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         ) : (
           <p className="empty">{c.skillsEmpty}</p>
         )}
@@ -185,7 +196,7 @@ export function TeamDesk({
       <Card
         id={active ? 'practice-journal' : undefined}
         hidden={section !== 'practice-journal'}
-        className="panel journal-panel"
+        className="studio-panel journal-panel shadow-none"
       >
         <div className="panel-heading">
           <div>

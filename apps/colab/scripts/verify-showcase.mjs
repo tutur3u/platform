@@ -46,8 +46,16 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       pages.push(page);
     }
     const [host, viewer, writer] = pages;
+    await expect(host.getByRole('tab')).toHaveCount(0);
+    await expect(
+      viewer.getByRole('link', { name: 'Host controls', exact: true })
+    ).toHaveCount(0);
+    await host.screenshot({
+      path: '/private/tmp/colab-sidebar-brief.png',
+      fullPage: true,
+    });
     for (const page of [viewer, writer])
-      await page.getByRole('tab', { name: 'Prompt', exact: true }).click();
+      await page.getByRole('link', { name: 'Prompt', exact: true }).click();
     const teamSelect = (page) =>
       page.getByRole('combobox', { name: 'Team work' });
     const chooseTeam = async (page) => {
@@ -80,14 +88,28 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       'Read the launch brief'
     );
     await viewer
-      .getByRole('tab', { name: 'Activity log', exact: true })
+      .getByRole('link', { name: 'Activity log', exact: true })
       .click();
     await expect(
       viewer.getByText('Saved a team prompt', { exact: true })
     ).toBeVisible();
-    await viewer.getByRole('tab', { name: 'Prompt', exact: true }).click();
-    await host.getByRole('tab', { name: 'Host controls', exact: true }).click();
+    await viewer.getByRole('link', { name: 'Prompt', exact: true }).click();
+    await host
+      .getByRole('link', { name: 'Host controls', exact: true })
+      .click();
     const toggle = host.getByRole('checkbox', { name: 'Share team work live' });
+    await expect(toggle.locator('..')).toHaveCSS('display', 'flex');
+    await expect(toggle.locator('..')).toHaveCSS('flex-direction', 'row');
+    await host.screenshot({
+      path: '/private/tmp/colab-sidebar-controls.png',
+      fullPage: true,
+    });
+    await host.emulateMedia({ colorScheme: 'dark' });
+    await host.screenshot({
+      path: '/private/tmp/colab-sidebar-controls-dark.png',
+      fullPage: true,
+    });
+    await host.emulateMedia({ colorScheme: 'light' });
     const beforeCompile = await (await request(path, owner)).json();
     const compiling = request(`${path}/ai`, bob, {
       action: 'compile',
@@ -114,19 +136,19 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       });
       assert.equal(response.status, 200, await response.clone().text());
     }
-    await viewer.getByRole('tab', { name: 'Skills', exact: true }).click();
+    await viewer.getByRole('link', { name: 'Skills', exact: true }).click();
     await expect(
       viewer.getByText('demo-skill/SKILL.md', { exact: true })
     ).toBeVisible();
-    await viewer.getByRole('tab', { name: 'Results', exact: true }).click();
+    await viewer.getByRole('link', { name: 'Results', exact: true }).click();
     await expect(
       viewer.getByText('Live demo agent result', { exact: true })
     ).toBeVisible();
-    await viewer.getByRole('tab', { name: 'Sandbox', exact: true }).click();
+    await viewer.getByRole('link', { name: 'Sandbox', exact: true }).click();
     await expect(
       viewer.getByText('Live demo document', { exact: true })
     ).toBeVisible();
-    await viewer.getByRole('tab', { name: 'Prompt', exact: true }).click();
+    await viewer.getByRole('link', { name: 'Prompt', exact: true }).click();
     await toggle.click();
     await expect(toggle).not.toBeChecked();
     await expect(teamSelect(viewer)).toContainText('Team 1');
@@ -141,7 +163,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       viewer.getByText('Live demo document', { exact: true })
     ).toHaveCount(0);
     await teamCount(writer, 1);
-    await writer.getByRole('tab', { name: 'Results', exact: true }).click();
+    await writer.getByRole('link', { name: 'Results', exact: true }).click();
     await expect(
       writer.getByText('Live demo agent result', { exact: true })
     ).toBeVisible();
@@ -194,7 +216,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       200
     );
     await viewer
-      .getByRole('tab', { name: 'Host controls', exact: true })
+      .getByRole('link', { name: 'Host controls', exact: true })
       .click();
     await viewer
       .getByRole('checkbox', { name: 'Share team work live' })

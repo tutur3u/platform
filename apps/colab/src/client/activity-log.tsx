@@ -1,5 +1,6 @@
 import type { RoomView } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { useState } from 'react';
 import { useCopy } from './i18n';
@@ -17,7 +18,7 @@ export function ActivityLog({ room }: { room: RoomView }) {
         .includes(search.toLowerCase())
     );
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4">
+    <Card className="gap-4 p-5 shadow-none">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold text-base">{c.audit}</h2>
         <Input
@@ -66,6 +67,6 @@ export function ActivityLog({ room }: { room: RoomView }) {
           {c.auditEmpty}
         </p>
       )}
-    </section>
+    </Card>
   );
 }

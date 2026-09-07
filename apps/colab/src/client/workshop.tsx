@@ -1,17 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ColabRequestError, colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useEffect, useState } from 'react';
 import { ActivityLog } from './activity-log';
 import { Admin } from './admin';
 import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
 import { Join } from './join';
-import { navigateWorkspace, useWorkspaceLocation } from './navigation';
+import { MissionBrief } from './mission-brief';
+import { useWorkspaceLocation } from './navigation';
 import { newestRoomView } from './room-cache';
 import { SelectField } from './select-field';
 import { TeamDesk } from './team-desk';
@@ -168,9 +169,6 @@ export function Workshop({
     <div className="workshop">
       <div className="room-heading">
         <div>
-          <Button type="button" variant="ghost" size="sm" onClick={leave}>
-            ← {c.back}
-          </Button>
           <h1>{room.title}</h1>
           <p className="room-meta">
             <Badge variant="outline">{phase}</Badge>
@@ -199,49 +197,11 @@ export function Workshop({
           </span>
         </div>
       </div>
-      <Tabs
-        value={section}
-        onValueChange={(value) =>
-          navigateWorkspace(`${location.pathname}${location.search}#${value}`)
-        }
-        className="mb-4"
-      >
-        <TabsList className="h-auto max-w-full flex-wrap justify-start">
-          {[
-            ['mission', c.studio.overview],
-            ['team-prompt', c.studio.editor],
-            ['team-skills', c.studio.skills],
-            ['sandbox-desk', c.studio.sandbox],
-            ['practice-journal', c.studio.results],
-            ['activity', c.studio.audit],
-            ...(room.self.admin ? [['controls', c.studio.controls]] : []),
-          ].map(([id, title]) => (
-            <TabsTrigger key={id} value={id ?? ''}>
-              {title}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <ErrorNotice error={mutate.error} />
       <div className="workshop-layout">
-        <aside
-          hidden={section !== 'mission'}
-          id="mission"
-          className="mission panel"
-        >
-          <p className="eyebrow">{c.mission}</p>
-          <h2>{room.scenario.title}</h2>
-          <p>{room.scenario.brief}</p>
-          <h3>{c.criteria}</h3>
-          <ol>
-            {room.scenario.criteria.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ol>
-          <div className="mission-bottom">
-            <span className="section-number">{c.sandbox}</span>
-            <p className="fine-print">{c.sandboxHelp}</p>
-          </div>
-        </aside>
+        <div hidden={section !== 'mission'}>
+          <MissionBrief room={room} />
+        </div>
         <section
           className="team-area"
           hidden={['mission', 'activity', 'controls'].includes(section)}
@@ -261,12 +221,19 @@ export function Workshop({
                 ))}
               </SelectField>
             </label>
-            <span className="privacy-label" role="status">
+            <Badge
+              variant="outline"
+              className="max-w-full whitespace-normal text-xs"
+              role="status"
+            >
               {room.showcase ? c.showcaseOn : c.showcaseOff}
-            </span>
+            </Badge>
           </div>
-          {!writable && <p className="notice">{c.readOnlyHelp}</p>}
-          <ErrorNotice error={mutate.error} />
+          {!writable && (
+            <Alert className="mb-4">
+              <AlertDescription>{c.readOnlyHelp}</AlertDescription>
+            </Alert>
+          )}
           {ownTeam && (
             <div className="own-team-desk" hidden={team?.id !== ownTeam.id}>
               <TeamDesk

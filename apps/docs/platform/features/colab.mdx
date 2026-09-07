@@ -242,8 +242,12 @@ explicit sign-out, account revocation, and private-room access denial still appl
 Workshops is the default signed-in screen and is also available at `/workshops`.
 Current/upcoming and past sessions have separate searchable tabs. Join and host
 remain dialogs. Within a room, Brief, Prompt, Skills, Sandbox, Results, Activity
-log and Host controls keep the interface focused. Editor components stay mounted
-when tabs or selected teams change, preserving local unsaved work.
+log and Host controls are sidebar destinations, without a duplicate tab bar.
+Host controls appear only for room admins and update with realtime role changes.
+Expandable host settings preserve form state while closed. Editor components stay
+mounted when sidebar destinations or selected teams change, preserving local
+unsaved work. Shared UI labels, checkboxes, cards and selectors use consistent
+spacing; sandbox apps are selected from a compact dropdown.
 
 The directory uses per-account Durable Object identifiers in the existing ROOMS
 binding. Creation, successful joining and authorized visits register a room.

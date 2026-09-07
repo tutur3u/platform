@@ -96,7 +96,7 @@
     min-height: 120px;
     line-height: 1.75;
   }
-  label {
+  label:not([data-slot]) {
     display: flex;
     flex-direction: column;
     gap: 8px;

@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
   Building2,
@@ -10,7 +11,7 @@ import {
   Settings,
   Users,
 } from '@tuturuuu/icons';
-import type { Identity } from '@tuturuuu/multiplayer';
+import type { Identity, RoomView } from '@tuturuuu/multiplayer';
 import { Button } from '@tuturuuu/ui/button';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
@@ -59,6 +60,11 @@ export function Structure({
   navigate: (id: string) => void;
 }) {
   const c = useCopy();
+  // Subscribe to the room cache so admin navigation follows realtime role changes.
+  const { data: room } = useQuery<RoomView>({
+    queryKey: ['room', roomId],
+    enabled: false,
+  });
   const t = useShellCopy();
   const sidebar = useSidebar();
   const [appsOpen, setAppsOpen] = useState(false);
@@ -97,27 +103,27 @@ export function Structure({
       ...(roomId
         ? [
             {
-              title: c.mission,
+              title: c.studio.overview,
               href: '#mission',
               icon: <BookOpen className="size-4" />,
             },
             {
-              title: c.promptSection,
+              title: c.studio.editor,
               href: '#team-prompt',
               icon: <Users className="size-4" />,
             },
             {
-              title: c.skills,
+              title: c.studio.skills,
               href: '#team-skills',
               icon: <FileText className="size-4" />,
             },
             {
-              title: c.mockDesk,
+              title: c.studio.sandbox,
               href: '#sandbox-desk',
               icon: <Layers className="size-4" />,
             },
             {
-              title: c.runs,
+              title: c.studio.results,
               href: '#practice-journal',
               icon: <BookOpen className="size-4" />,
             },
@@ -126,6 +132,15 @@ export function Structure({
               href: '#activity',
               icon: <History className="size-4" />,
             },
+            ...(room?.self.admin
+              ? [
+                  {
+                    title: c.studio.controls,
+                    href: '#controls',
+                    icon: <Settings className="size-4" />,
+                  },
+                ]
+              : []),
           ]
         : [
             {
@@ -135,7 +150,7 @@ export function Structure({
             },
           ]),
     ],
-    [c, roomId, identity?.email]
+    [c, roomId, identity?.email, room?.self.admin]
   );
   const {
     isCollapsed: collapsed,

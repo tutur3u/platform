@@ -1,10 +1,11 @@
 import type { MockApp, Team } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { useState } from 'react';
 import { appNames, useCopy } from './i18n';
+import { SelectField } from './select-field';
 
 export function MockDesk({
   team,
@@ -24,7 +25,10 @@ export function MockDesk({
   const chat = ['zalo', 'messenger', 'teams'].includes(app);
   const board = ['jira', 'trello'].includes(app);
   return (
-    <Card id={active ? 'sandbox-desk' : undefined} className="panel mock-panel">
+    <Card
+      id={active ? 'sandbox-desk' : undefined}
+      className="studio-panel mock-panel shadow-none"
+    >
       <div className="panel-heading">
         <div>
           <span className="section-number">03 / {c.sandboxSection}</span>
@@ -32,28 +36,22 @@ export function MockDesk({
         </div>
         <Badge variant="secondary">{c.simulated}</Badge>
       </div>
-      <nav className="app-tabs" aria-label={c.mockDesk}>
-        {Object.entries(appNames).map(([id, name]) => (
-          <Button
-            type="button"
-            aria-pressed={id === app}
-            key={id}
-            onClick={() => {
-              setApp(id as MockApp);
-              setQuery('');
-            }}
-          >
-            {name}
-          </Button>
-        ))}
-      </nav>
-      <div className="mock-window">
-        <div className="mock-titlebar">
-          <span className="mock-monogram">{appNames[app].slice(0, 1)}</span>
-          <strong>{appNames[app]}</strong>
-          <span className="mock-caption">{c.simulated}</span>
-        </div>
-        <label className="mock-search">
+      <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
+        <SelectField
+          label={c.mockDesk}
+          value={app}
+          onValueChange={(value) => {
+            setApp(value as MockApp);
+            setQuery('');
+          }}
+        >
+          {Object.entries(appNames).map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
+        </SelectField>
+        <Label className="min-w-0">
           <span className="sr-only">{c.searchRecords}</span>
           <Input
             type="search"
@@ -61,7 +59,14 @@ export function MockDesk({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={c.searchRecords}
           />
-        </label>
+        </Label>
+      </div>
+      <div className="mock-window">
+        <div className="mock-titlebar">
+          <span className="mock-monogram">{appNames[app].slice(0, 1)}</span>
+          <strong>{appNames[app]}</strong>
+          <span className="mock-caption">{c.simulated}</span>
+        </div>
         <div
           className={`mock-content ${chat ? 'mock-chat' : board ? 'mock-board' : app === 'calendar' ? 'mock-calendar' : 'mock-documents'}`}
         >

@@ -615,7 +615,10 @@ try {
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
   await initialSocket;
-  await page.getByRole('tab', { name: /^(Prompt|Câu lệnh)$/ }).click();
+  await page
+    .getByRole('button', { name: /^(Open navigation|Mở điều hướng)$/ })
+    .click();
+  await page.getByRole('link', { name: /^(Prompt|Câu lệnh)$/ }).click();
   await page.locator('#prompt').fill('Unsaved prompt survives session renewal');
   await page.context().addCookies([
     {
