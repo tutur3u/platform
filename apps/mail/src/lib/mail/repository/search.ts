@@ -51,7 +51,9 @@ async function recipientMessageIds({
       privateTable(admin, 'mail_recipients')
         .select('message_id')
         .eq('kind', kind)
-        .ilike('address', `%${escapeMailLike(value)}%`),
+        .ilike('address', `%${escapeMailLike(value)}%`)
+        .order('message_id')
+        .order('id'),
     'Failed to search mail recipients'
   );
   return rows.map((row) => row.message_id as string);
@@ -89,7 +91,9 @@ async function labelMessageIds({
     () =>
       privateTable(admin, 'mail_message_labels')
         .select('message_id')
-        .in('label_id', labelIds),
+        .in('label_id', labelIds)
+        .order('message_id')
+        .order('label_id'),
     'Failed to search message labels'
   );
   return rows.map((row) => row.message_id as string);
@@ -106,7 +110,8 @@ async function folderMessageIds({
     () =>
       privateTable(admin, 'mail_message_folders')
         .select('message_id')
-        .eq('folder_id', folderId),
+        .eq('folder_id', folderId)
+        .order('message_id'),
     'Failed to search mail folder'
   );
   return rows.map((row) => row.message_id as string);
@@ -141,7 +146,8 @@ export async function queryMailMessageRows({
       privateTable(admin, 'mail_message_user_state')
         .select('message_id, read_at, starred_at, archived_at, trashed_at')
         .eq('mailbox_id', mailboxId)
-        .eq('user_id', userId),
+        .eq('user_id', userId)
+        .order('message_id'),
     'Failed to search mail state'
   );
   const readIds = idsWithTimestamp(states, 'read_at');
@@ -248,7 +254,9 @@ export async function queryMailMessageRows({
         type: 'websearch',
       });
     }
-    return query.order('created_at', { ascending: false });
+    return query
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
   };
 
   const start = threadScan ? 0 : (page - 1) * pageSize;

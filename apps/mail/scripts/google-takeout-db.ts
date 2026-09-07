@@ -123,6 +123,7 @@ export async function loadExistingMessageKeys(
     table(admin, 'mail_messages')
       .select('provider_message_id,internet_message_id')
       .eq('mailbox_id', mailboxId)
+      .order('id')
       .range(start, end)
   );
   return {

@@ -44,7 +44,10 @@ function isMboxSeparator(line: Buffer) {
 }
 
 function restoreMboxrdLine(line: Buffer) {
-  return line.subarray(0, 6).toString('ascii') === '>From '
+  let markerLength = 0;
+  while (line[markerLength] === 62) markerLength += 1;
+  return markerLength > 0 &&
+    line.subarray(markerLength, markerLength + 5).toString('ascii') === 'From '
     ? line.subarray(1)
     : line;
 }

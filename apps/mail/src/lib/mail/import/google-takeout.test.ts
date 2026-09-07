@@ -19,6 +19,7 @@ describe('Google Takeout mail import', () => {
         'From sender@example.com Sat Sep  5 11:11:11 +0000 2026\n',
         'Message-ID: <one@example.com>\n\n',
         '>From preserved body line\n',
+        '>>From already quoted body line\n',
         'From sender@example.com Sun Sep  6 12:12:12 2026\n',
         'Message-ID: <two@example.com>\n\nSecond\n',
       ].join('')
@@ -31,6 +32,7 @@ describe('Google Takeout mail import', () => {
 
     expect(messages).toHaveLength(2);
     expect(messages[0]).toContain('\nFrom preserved body line\n');
+    expect(messages[0]).toContain('\n>From already quoted body line\n');
     expect(messages[1]).toContain('<two@example.com>');
   });
 
