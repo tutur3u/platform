@@ -44,3 +44,22 @@ it('does not retain a video element when effect playback fails', async () => {
   effects.dispose();
   expect(source.stop).toHaveBeenCalledOnce();
 });
+
+it('stops newly acquired camera media if a preselected effect cannot start', async () => {
+  vi.stubGlobal('document', {
+    createElement: () => ({
+      play: () => Promise.reject(new Error('blocked')),
+      srcObject: null,
+    }),
+  });
+  vi.stubGlobal('MediaStream', class {});
+  const source = {
+    readyState: 'live',
+    stop: vi.fn(),
+  } as unknown as MediaStreamTrack;
+  const effects = new CameraEffects();
+  await effects.setLook({ filter: 'warm', softness: 0 });
+  await expect(effects.setSource(source)).rejects.toThrow('blocked');
+  expect(source.stop).toHaveBeenCalledOnce();
+  expect(await effects.setLook({ filter: 'none', softness: 0 })).toBeNull();
+});

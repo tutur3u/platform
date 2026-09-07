@@ -79,7 +79,14 @@ export function createLocalMediaControls({
         return;
       }
       const source = video.getVideoTracks()[0];
-      const processed = source ? await effects.setSource(source) : null;
+      let processed: MediaStreamTrack | null;
+      try {
+        processed = source ? await effects.setSource(source) : null;
+      } catch (error) {
+        effects.dispose();
+        for (const track of video.getTracks()) track.stop();
+        throw error;
+      }
       if (!activeRef.current) {
         effects.dispose();
         return;

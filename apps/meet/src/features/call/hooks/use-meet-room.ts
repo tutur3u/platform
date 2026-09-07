@@ -559,6 +559,16 @@ export function useMeetRoom({
           ] as const)
             if (previous[key] !== next[key] && restored[key] === next[key])
               restored[key] = previous[key];
+          restored.screenEnabled &&=
+            screenStreamRef.current
+              ?.getVideoTracks()
+              .some((track) => track.readyState === 'live') ?? false;
+          if (!restored.screenEnabled) {
+            for (const track of screenStreamRef.current?.getTracks() ?? [])
+              track.stop();
+            screenStreamRef.current = null;
+            setScreenStream(null);
+          }
           mediaRef.current = restored;
           setMedia(restored);
           for (const track of localStreamRef.current?.getAudioTracks() ?? [])

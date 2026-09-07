@@ -53,7 +53,12 @@ export class CameraEffects {
   async setSource(source: MediaStreamTrack) {
     this.dispose();
     this.source = source;
-    return this.setLook(this.look);
+    try {
+      return await this.setLook(this.look);
+    } catch (error) {
+      if (this.source === source) this.dispose();
+      throw error;
+    }
   }
   async setLook(look: CameraLook): Promise<MediaStreamTrack | null> {
     this.look = look;
