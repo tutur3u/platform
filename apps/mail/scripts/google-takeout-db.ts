@@ -80,7 +80,7 @@ export function sanitizePostgrestPayload<T>(value: T): T {
     return value.map(sanitizePostgrestPayload) as T;
   }
   if (value && typeof value === 'object') {
-    const sanitized: Record<string, unknown> = {};
+    const sanitized = Object.create(null) as Record<string, unknown>;
     for (const [key, entry] of Object.entries(value)) {
       const baseKey = sanitizePostgrestPayload(key);
       let safeKey = baseKey;

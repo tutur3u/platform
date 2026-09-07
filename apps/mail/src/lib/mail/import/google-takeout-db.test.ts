@@ -37,6 +37,22 @@ describe('Google Takeout database helpers', () => {
     });
   });
 
+  it('preserves an own __proto__ key without mutating the accumulator', () => {
+    const payload = Object.create(null) as Record<string, string>;
+    Object.defineProperty(payload, '__proto__', {
+      configurable: true,
+      enumerable: true,
+      value: 'legacy header value',
+    });
+
+    const sanitized = sanitizePostgrestPayload(payload);
+
+    expect(Object.getPrototypeOf(sanitized)).toBeNull();
+    expect(Object.getOwnPropertyDescriptor(sanitized, '__proto__')?.value).toBe(
+      'legacy header value'
+    );
+  });
+
   it('reuses an existing label with the same display name', async () => {
     const existing = [{ id: 'existing-id', name: 'Résumé', slug: 'resume' }];
     let upserted: AnyRecord[] = [];
