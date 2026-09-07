@@ -8,12 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { MeetingLocalTime } from '@/features/call/components/meeting-local-time';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
@@ -80,11 +80,11 @@ export default async function MeetingDetailPage({
             <div className="mt-2 flex items-center gap-4 text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                {format(new Date(meeting.time), 'PPP')}
+                <MeetingLocalTime value={meeting.time} pattern="PPP" />
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                {format(new Date(meeting.time), 'p')}
+                <MeetingLocalTime value={meeting.time} pattern="p" />
               </div>
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -110,7 +110,7 @@ export default async function MeetingDetailPage({
             <div>
               <h4 className="font-medium">Scheduled Time</h4>
               <p className="text-muted-foreground">
-                {format(new Date(meeting.time), 'PPP p')}
+                <MeetingLocalTime value={meeting.time} pattern="PPP p" />
               </p>
             </div>
             <div>
@@ -122,7 +122,7 @@ export default async function MeetingDetailPage({
             <div>
               <h4 className="font-medium">Created</h4>
               <p className="text-muted-foreground">
-                {format(new Date(meeting.created_at), 'PPP p')}
+                <MeetingLocalTime value={meeting.created_at} pattern="PPP p" />
               </p>
             </div>
           </CardContent>
