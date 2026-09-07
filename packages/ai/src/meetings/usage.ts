@@ -23,21 +23,28 @@ export function measureMeetUsage(
     return { costUsd: null, usage: { model: MEET_AI_MODEL, available: false } };
   }
   const inputTokens = value.promptTokenCount;
-  const details = Array.isArray(value.promptTokensDetails)
-    ? value.promptTokensDetails
-    : undefined;
+  const rawDetails = value.promptTokensDetails;
+  const details =
+    Array.isArray(rawDetails) &&
+    rawDetails.length > 0 &&
+    rawDetails.every(
+      (entry) =>
+        entry &&
+        (entry.modality === 'AUDIO' || entry.modality === 'TEXT') &&
+        valid(entry.tokenCount)
+    ) &&
+    rawDetails.reduce((sum, entry) => sum + entry.tokenCount, 0) === inputTokens
+      ? rawDetails
+      : undefined;
   const audioTokens = details
     ?.filter((entry) => entry.modality === 'AUDIO')
-    .reduce(
-      (sum, entry) => sum + (valid(entry.tokenCount) ? entry.tokenCount : 0),
-      0
-    );
+    .reduce((sum, entry) => sum + entry.tokenCount, 0);
   const outputTokens =
     value.candidatesTokenCount +
     (valid(value.thoughtsTokenCount) ? value.thoughtsTokenCount : 0);
   // Missing modality accounting must not silently bill audio at the text rate.
   const costUsd =
-    details || kind === 'text'
+    details?.some((entry) => entry.modality === 'AUDIO') || kind === 'text'
       ? (Math.max(0, inputTokens - (audioTokens ?? 0)) * MEET_AI_PRICING.text +
           (audioTokens ?? 0) * MEET_AI_PRICING.audio +
           outputTokens * MEET_AI_PRICING.output) /

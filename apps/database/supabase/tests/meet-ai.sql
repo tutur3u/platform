@@ -15,11 +15,13 @@ insert into public.workspaces(id, name, personal, creator_id) values ('00000000-
 insert into public.workspace_members(ws_id, user_id, type) values ('00000000-0000-4000-8000-000000009711', '00000000-0000-4000-8000-000000009701', 'MEMBER') on conflict do nothing;
 insert into public.workspace_meetings(id, ws_id, creator_id, name, time) values ('00000000-0000-4000-8000-000000009721', '00000000-0000-4000-8000-000000009711', '00000000-0000-4000-8000-000000009701', 'AI test', now());
 insert into public.meet_ai_sessions(id, meeting_id, user_id) values ('00000000-0000-4000-8000-000000009731', '00000000-0000-4000-8000-000000009721', '00000000-0000-4000-8000-000000009701');
+set local role service_role;
 select lives_ok($$select public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10)$$, 'server reserves first chunk');
 select ok(public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10) is null, 'duplicate reservation does not authorize another provider call');
 select throws_ok($$select public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009742', '00000000-0000-4000-8000-000000009731', 100, 1000, 10)$$, 'P0001', 'Too many chunks', 'bulk billing abuse is bounded by elapsed call time');
 update public.meet_ai_sessions set ended_at = now() where id = '00000000-0000-4000-8000-000000009731';
 select throws_ok($$select public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009742', '00000000-0000-4000-8000-000000009731', 1, 10, 10)$$, 'P0001', 'Session ended', 'closed session rejects new provider calls');
+reset role;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000009701","role":"authenticated"}', true);
 select is((select count(*) from public.meet_ai_chunks), 1::bigint, 'workspace member can read transcripts');

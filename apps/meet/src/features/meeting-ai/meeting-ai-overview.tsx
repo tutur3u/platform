@@ -10,6 +10,6 @@ export function MeetingAiOverview({
   wsId: string;
   meetingId: string;
 }) {
-  const ai = useMeetingAi(wsId, meetingId);
+  const ai = useMeetingAi(wsId, meetingId, [], false);
   return <MeetingAiPanel ai={ai} />;
 }

@@ -30,6 +30,25 @@ describe('Meet Gemini usage', () => {
     ).toBeNull();
   });
   it.each([
+    [],
+    [null],
+    [{ modality: 'AUDIO', tokenCount: 1100 }],
+    [{ modality: 'AUDIO', tokenCount: 900 }],
+    [{ modality: 'AUDIO', tokenCount: -1 }],
+    [{ modality: 'TEXT', tokenCount: 1000 }],
+  ])(
+    'leaves incomplete or malformed audio accounting unpriced: %j',
+    (details) => {
+      expect(
+        measureMeetUsage({
+          promptTokenCount: 1000,
+          candidatesTokenCount: 100,
+          promptTokensDetails: details,
+        }).costUsd
+      ).toBeNull();
+    }
+  );
+  it.each([
     null,
     {},
     { promptTokenCount: -1, candidatesTokenCount: 3 },

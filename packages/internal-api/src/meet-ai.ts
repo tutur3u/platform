@@ -1,4 +1,8 @@
-import { encodePathSegment, getInternalApiClient } from './client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from './client';
 
 export type MeetAiNotes = {
   incomplete: boolean;
@@ -42,10 +46,17 @@ export type MeetAiState = {
 const path = (wsId: string, meetingId: string) =>
   `/api/meet-ai/${encodePathSegment(wsId)}/${encodePathSegment(meetingId)}`;
 
-export function getMeetAiState(wsId: string, meetingId: string) {
-  return getInternalApiClient().json<MeetAiState>(path(wsId, meetingId), {
-    cache: 'no-store',
-  });
+export function getMeetAiState(
+  wsId: string,
+  meetingId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<MeetAiState>(
+    path(wsId, meetingId),
+    {
+      cache: 'no-store',
+    }
+  );
 }
 export function updateMeetAiSession(
   wsId: string,
@@ -55,9 +66,10 @@ export function updateMeetAiSession(
     sessionId?: string;
     expectedChunks?: number;
     captureIncomplete?: boolean;
-  }
+  },
+  options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient().json<{ sessionId: string }>(
+  return getInternalApiClient(options).json<{ sessionId: string }>(
     path(wsId, meetingId),
     {
       method: 'POST',
@@ -69,9 +81,10 @@ export function updateMeetAiSession(
 export function uploadMeetAiChunk(
   wsId: string,
   meetingId: string,
-  data: FormData
+  data: FormData,
+  options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient().json<MeetAiChunk>(
+  return getInternalApiClient(options).json<MeetAiChunk>(
     `${path(wsId, meetingId)}/chunks`,
     { method: 'POST', body: data }
   );

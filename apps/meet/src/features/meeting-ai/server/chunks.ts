@@ -54,7 +54,8 @@ export async function transcribeMeetChunk(
     .eq('meeting_id', meetingId)
     .eq('user_id', user.id)
     .maybeSingle();
-  if (error || !session) throw new MeetAiError(404, 'Session not found');
+  if (error) throw new MeetAiError(500, 'Session lookup failed');
+  if (!session) throw new MeetAiError(404, 'Session not found');
   const existing = await db
     .from('meet_ai_chunks')
     .select('*')
@@ -76,7 +77,11 @@ export async function transcribeMeetChunk(
     p_start_seconds: startSeconds,
     p_duration_seconds: (bytes.length - 44) / 32000,
   });
-  if (inserted.error) throw new MeetAiError(409, 'Chunk cannot be submitted');
+  if (inserted.error)
+    throw new MeetAiError(
+      ['P0001', '23505'].includes(inserted.error.code) ? 409 : 500,
+      'Chunk cannot be submitted'
+    );
   if (!inserted.data?.id) {
     const duplicate = await db
       .from('meet_ai_chunks')
@@ -88,18 +93,37 @@ export async function transcribeMeetChunk(
     return duplicate.data;
   }
   try {
+    const current = await db
+      .from('meet_ai_sessions')
+      .select('ended_at')
+      .eq('id', sessionId)
+      .maybeSingle();
+    if (
+      current.error ||
+      !current.data ||
+      current.data.ended_at ||
+      Date.now() - Date.parse(inserted.data.created_at) > 30_000
+    )
+      throw new MeetAiError(
+        409,
+        'Transcription has ended or reservation expired'
+      );
     const result = await generateMeetArtifact({ audio: bytes });
-    const saved = await db
-      .from('meet_ai_chunks')
-      .update({
-        status: 'completed',
-        transcript: result.text,
-        usage: result.usage,
-        cost_usd: result.costUsd,
-      })
-      .eq('id', id)
-      .select('*')
-      .single();
+    const save = () =>
+      db
+        .from('meet_ai_chunks')
+        .update({
+          status: 'completed',
+          transcript: result.text,
+          usage: result.usage,
+          cost_usd: result.costUsd,
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
+    // Retry persistence, never the billable provider request.
+    let saved = await save();
+    if (saved.error) saved = await save();
     if (saved.error) throw new MeetAiError(500, 'Could not save transcript');
     return saved.data;
   } catch (error) {

@@ -259,9 +259,14 @@ export function CallShell({
         micOn={room.media.audioEnabled}
         onLeave={() => {
           void (async () => {
-            if (ai.ownsSession) await ai.finish();
-            router.push(leaveHref);
-          })().catch(() => toast.error(aiT('failed')));
+            try {
+              await ai.finish();
+            } catch {
+              toast.error(aiT('failed'));
+            } finally {
+              router.push(leaveHref);
+            }
+          })();
         }}
         onToggleCamera={() => runMediaAction(room.toggleCamera)}
         onToggleHand={() => room.raiseHand(!handRaised)}

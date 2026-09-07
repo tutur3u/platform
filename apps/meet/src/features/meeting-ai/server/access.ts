@@ -38,7 +38,20 @@ export async function meetAiAccess(
   // The satellite principal has already been verified against the signed app
   // session. Every admin lookup below is scoped to that explicit principal.
   const db = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(rawWsId, db);
+  let wsId: string;
+  try {
+    wsId = await normalizeWorkspaceId(rawWsId, db);
+  } catch (error) {
+    const name = error instanceof Error ? error.name : '';
+    throw new MeetAiError(
+      name === 'WorkspaceAuthError'
+        ? 403
+        : name === 'WorkspaceNotFoundError'
+          ? 404
+          : 500,
+      'Workspace resolution failed'
+    );
+  }
   const membership = await verifyWorkspaceMembershipType({
     supabase: db,
     userId: user.id,

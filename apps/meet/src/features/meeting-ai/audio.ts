@@ -34,8 +34,10 @@ export class MeetAudioCapture {
   private node: AudioWorkletNode | null = null;
   private sources = new Map<string, MediaStreamAudioSourceNode>();
   private elapsed = 0;
+  private mixer: GainNode | null = null;
   constructor(private onChunk: (audio: Blob, startSeconds: number) => void) {}
   async start() {
+    this.elapsed = 0;
     this.context = new AudioContext({ sampleRate: 16000 });
     if (this.context.sampleRate !== 16000)
       throw new Error('Unsupported audio sample rate');
@@ -44,6 +46,8 @@ export class MeetAudioCapture {
       channelCount: 1,
       channelCountMode: 'explicit',
     });
+    this.mixer = this.context.createGain();
+    this.mixer.connect(this.node);
     // A silent output keeps the graph processing without replaying call audio.
     const silent = this.context.createGain();
     silent.gain.value = 0;
@@ -77,21 +81,23 @@ export class MeetAudioCapture {
         const source = this.context.createMediaStreamSource(
           new MediaStream([track])
         );
-        source.connect(this.node);
+        source.connect(this.mixer!);
         this.sources.set(track.id, source);
       }
+    if (this.mixer) this.mixer.gain.value = 1 / Math.max(1, this.sources.size);
   }
   async stop() {
+    let flushed = true;
     if (this.node) {
       const node = this.node;
-      await new Promise<void>((resolve) => {
-        const timeout = setTimeout(resolve, 1000);
+      flushed = await new Promise<boolean>((resolve) => {
+        const timeout = setTimeout(() => resolve(false), 1000);
         node.port.addEventListener(
           'message',
           ({ data }) => {
             if (data.flushed) {
               clearTimeout(timeout);
-              resolve();
+              resolve(true);
             }
           },
           { once: false }
@@ -100,10 +106,13 @@ export class MeetAudioCapture {
       });
     }
     this.dispose();
+    return flushed;
   }
   dispose() {
     for (const source of this.sources.values()) source.disconnect();
     this.sources.clear();
+    this.mixer?.disconnect();
+    this.mixer = null;
     this.node?.disconnect();
     this.node = null;
     if (this.context && this.context.state !== 'closed')

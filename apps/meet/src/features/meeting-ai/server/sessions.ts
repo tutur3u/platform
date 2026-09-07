@@ -3,6 +3,7 @@ import {
   generateMeetArtifact,
   meetNotesSchema,
 } from '@tuturuuu/ai/meetings/gemini';
+import { MEET_AI_MODEL } from '@tuturuuu/ai/meetings/usage';
 import type { MeetAiState } from '@tuturuuu/internal-api';
 import type { Json } from '@tuturuuu/types';
 import { z } from 'zod';
@@ -91,7 +92,7 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       (sum, session) => sum + (session.notes_cost_usd ?? 0),
       0
     ),
-    model: 'gemini-3.1-flash-lite',
+    model: MEET_AI_MODEL,
     estimatedCostUsd,
     unpricedRequests,
     inputTokens,
@@ -133,7 +134,8 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     .eq('meeting_id', meetingId)
     .eq('user_id', user.id)
     .maybeSingle();
-  if (error || !session) throw new MeetAiError(404, 'Session not found');
+  if (error) throw new MeetAiError(500, 'Session lookup failed');
+  if (!session) throw new MeetAiError(404, 'Session not found');
   if (session.notes_status === 'completed') return { sessionId };
   if (
     session.notes_status === 'processing' &&
@@ -200,6 +202,7 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     .maybeSingle();
   if (claimed.error || !claimed.data)
     throw new MeetAiError(409, 'Notes are already processing');
+  let providerStarted = false;
   try {
     const incomplete =
       parsed.data.captureIncomplete ||
@@ -218,6 +221,7 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         .join('\n');
     if (transcript.length > 500_000)
       throw new MeetAiError(413, 'Transcript exceeds notes limit');
+    providerStarted = !!transcript.trim();
     const result = transcript.trim()
       ? await generateMeetArtifact({ transcript })
       : null;
@@ -249,7 +253,8 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       .from('meet_ai_sessions')
       .update({
         notes_status: 'failed',
-        notes_unpriced_attempts: session.notes_unpriced_attempts + 1,
+        notes_unpriced_attempts:
+          session.notes_unpriced_attempts + (providerStarted ? 1 : 0),
       })
       .eq('id', sessionId)
       .eq('notes_started_at', attemptStartedAt);
