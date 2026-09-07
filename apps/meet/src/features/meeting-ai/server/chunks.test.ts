@@ -3,6 +3,10 @@ import { encodeMeetWav } from '../audio';
 
 const mocks = vi.hoisted(() => ({ access: vi.fn(), generate: vi.fn() }));
 vi.mock('server-only', () => ({}));
+// Authorization is covered separately; avoid loading built auth packages here.
+vi.mock('@tuturuuu/satellite/auth', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('@tuturuuu/ai/meetings/gemini', () => ({
   generateMeetArtifact: mocks.generate,
 }));
