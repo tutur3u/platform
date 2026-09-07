@@ -918,6 +918,23 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'mail' });
   });
 
+  it('accepts a Meet session for the shared user-config API', async () => {
+    const { token } = createAppSessionToken({
+      email: 'meet@example.com',
+      targetApp: 'meet',
+      userId: 'meet-user-1',
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/users/me/configs/SHOW_VERSION_BADGE',
+      { headers: { authorization: `Bearer ${token}` } }
+    ) as unknown as NextRequest;
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.user.id).toBe('meet-user-1');
+  });
+
   it.each([
     'ai',
     'chat',
@@ -947,7 +964,7 @@ describe('withSessionAuth', () => {
       ) as unknown as NextRequest;
 
       const result = await resolveSessionAuthContext(request, {
-        allowAppSessionAuth: true,
+        allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
       });
 
       expect(result.ok).toBe(true);
@@ -987,7 +1004,7 @@ describe('withSessionAuth', () => {
       ) as unknown as NextRequest;
 
       const result = await resolveSessionAuthContext(request, {
-        allowAppSessionAuth: true,
+        allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
       });
 
       expect(result.ok).toBe(true);
