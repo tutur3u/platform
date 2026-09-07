@@ -27,10 +27,10 @@ export function EventModalHeader({
       <DialogTitle className="flex flex-wrap items-center gap-2 font-semibold text-xl">
         <span>{isEditing ? 'Edit Event' : 'Create Event'}</span>
         {providerDisplay && (
-          <div className="ml-3 flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1 text-sm">
+          <span className="ml-3 flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1 text-sm">
             <CalendarEventProviderIcon className="h-4.5 w-4.5" event={event} />
             <span className="font-medium text-xs">{providerDisplay.label}</span>
-          </div>
+          </span>
         )}
         {meetingUrl && (
           <Button asChild className="ml-auto" size="sm" variant="outline">

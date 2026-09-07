@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -48,7 +49,7 @@ export default async function MeetingDetailPage({
   await connection();
 
   const { wsId: id, meetingId } = await params;
-  const { workspaceSlug, wsId } = await getMeetWorkspaceContext(id);
+  const { user, workspaceSlug, wsId } = await getMeetWorkspaceContext(id);
   const t = await getTranslations('meet.call');
   const supabase = await createAdminClient({ noCookie: true });
 
@@ -71,13 +72,18 @@ export default async function MeetingDetailPage({
     notFound();
   }
 
-  const { data: calendarEvent } = await supabase
-    .from('workspace_calendar_events')
-    .select('id, start_at')
-    .eq('ws_id', wsId)
-    .eq('scheduling_metadata->>type', 'tuturuuu_meeting')
-    .eq('scheduling_metadata->>meeting_id', meetingId)
-    .maybeSingle();
+  const permissions = await getPermissions({ user, wsId });
+  const calendarEvent = permissions?.withoutPermission('manage_calendar')
+    ? null
+    : (
+        await supabase
+          .from('workspace_calendar_events')
+          .select('id, start_at')
+          .eq('ws_id', wsId)
+          .eq('scheduling_metadata->>type', 'tuturuuu_meeting')
+          .eq('scheduling_metadata->>meeting_id', meetingId)
+          .maybeSingle()
+      ).data;
 
   return (
     <div className="container mx-auto max-w-4xl p-6">

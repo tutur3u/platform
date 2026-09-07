@@ -451,8 +451,6 @@ export const CalendarProvider = ({
     'manual'
   );
 
-  useOpenInitialCalendarEvent({ events, initialEventId, setActiveEventId });
-
   // Callback for when a task is scheduled (allows components to refresh)
   const [onTaskScheduled, setOnTaskScheduled] = useState<
     (() => void) | undefined
@@ -1265,6 +1263,12 @@ export const CalendarProvider = ({
     },
     [ws?.id, eventAdapter, events]
   );
+
+  useOpenInitialCalendarEvent({
+    events,
+    initialEventId,
+    onOpen: openEventEditor,
+  });
 
   const openModal = useCallback(
     (

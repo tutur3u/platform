@@ -1,15 +1,14 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 
 export function useOpenInitialCalendarEvent({
   events,
   initialEventId,
-  setActiveEventId,
+  onOpen,
 }: {
   events: CalendarEvent[];
   initialEventId?: string;
-  setActiveEventId: Dispatch<SetStateAction<string | null>>;
+  onOpen: (eventId: string) => void;
 }) {
   const openedEventIdRef = useRef<string | null>(null);
 
@@ -22,7 +21,7 @@ export function useOpenInitialCalendarEvent({
       return;
     }
 
-    setActiveEventId(initialEventId);
+    onOpen(initialEventId);
     openedEventIdRef.current = initialEventId;
-  }, [events, initialEventId, setActiveEventId]);
+  }, [events, initialEventId, onOpen]);
 }

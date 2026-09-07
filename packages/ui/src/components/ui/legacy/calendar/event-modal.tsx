@@ -78,6 +78,7 @@ import {
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
+import { getCalendarMeetingMetadata } from './calendar-meeting-link';
 import {
   COLOR_OPTIONS,
   DateError,
@@ -322,6 +323,7 @@ export function EventModal() {
           external_event_id: activeEvent.external_event_id,
           google_event_id: activeEvent.google_event_id,
           google_calendar_id: activeEvent.google_calendar_id,
+          scheduling_metadata: getCalendarMeetingMetadata(activeEvent),
         };
 
         setEvent(cleanEventData);
