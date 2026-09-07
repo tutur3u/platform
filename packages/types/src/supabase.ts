@@ -41630,6 +41630,22 @@ export type Database = {
         };
         Returns: string;
       };
+      create_scheduled_workspace_meeting: {
+        Args: {
+          p_creator_id: string;
+          p_encrypted_description: string;
+          p_encrypted_location: string;
+          p_encrypted_title: string;
+          p_end_at: string;
+          p_is_encrypted: boolean;
+          p_meeting_id: string;
+          p_meeting_url: string;
+          p_name: string;
+          p_start_at: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       create_system_announcement: {
         Args: {
           p_action_url?: string;

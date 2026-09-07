@@ -19,9 +19,13 @@ interface PageProps {
     locale: string;
   }>;
   searchParams: Promise<{
-    date?: string;
-    eventId?: string;
+    date?: string | string[];
+    eventId?: string | string[];
   }>;
+}
+
+function firstQueryValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
 }
 
 export default async function CalendarPage({
@@ -32,11 +36,8 @@ export default async function CalendarPage({
 
   const { wsId, locale } = await params;
   const deepLink = await searchParams;
-  const deepLinkDate = deepLink.date ? new Date(deepLink.date) : null;
-  const initialDate =
-    deepLinkDate && !Number.isNaN(deepLinkDate.getTime())
-      ? deepLinkDate.toISOString()
-      : undefined;
+  const eventId = firstQueryValue(deepLink.eventId);
+  const requestedDate = firstQueryValue(deepLink.date);
   const user = await getSatelliteAppSessionUser('calendar');
 
   if (!user?.id) redirect('/login');
@@ -52,6 +53,27 @@ export default async function CalendarPage({
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}/tasks`);
 
   const sbAdmin = await createAdminClient({ noCookie: true });
+
+  const requestedDateValue = requestedDate ? new Date(requestedDate) : null;
+  let initialDate =
+    requestedDateValue && !Number.isNaN(requestedDateValue.getTime())
+      ? requestedDateValue.toISOString()
+      : undefined;
+  if (!initialDate && eventId) {
+    const { data: linkedEvent, error: linkedEventError } = await sbAdmin
+      .from('workspace_calendar_events')
+      .select('start_at')
+      .eq('id', eventId)
+      .eq('ws_id', workspace.id)
+      .maybeSingle();
+    if (linkedEventError) throw linkedEventError;
+    initialDate = linkedEvent?.start_at;
+  }
+  const parsedDate = initialDate ? new Date(initialDate) : null;
+  const normalizedInitialDate =
+    parsedDate && !Number.isNaN(parsedDate.getTime())
+      ? parsedDate.toISOString()
+      : undefined;
 
   const [googleToken, smartSchedulingTasks] = await Promise.all([
     fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
@@ -71,8 +93,8 @@ export default async function CalendarPage({
     <CalendarWorkspacePage
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={googleToken}
-      initialDate={initialDate}
-      initialEventId={deepLink.eventId}
+      initialDate={normalizedInitialDate}
+      initialEventId={eventId}
       isPersonalWorkspace={isPersonalWorkspace}
       locale={locale}
       smartSchedulingTasks={smartSchedulingTasks}
