@@ -1172,8 +1172,8 @@ export function TaskEditDialog({
     onUpdate,
   });
 
-  // Form reset
   useTaskFormReset({
+    boardId,
     isOpen,
     isCreateMode,
     task,

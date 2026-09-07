@@ -8,7 +8,12 @@ import type React from 'react';
 import { useEffect, useRef } from 'react';
 import type { TaskFilters } from '../../types';
 import type { WorkspaceTaskLabel } from '../types';
-import { getDescriptionContent } from '../utils';
+import {
+  getDescriptionContent,
+  getDraftStorageKey,
+  hasDraftContent,
+  loadDraft,
+} from '../utils';
 
 // Module-level singleton to avoid repeated instantiation
 const supabase = createClient();
@@ -26,6 +31,7 @@ export interface WorkspaceProject {
 }
 
 export interface UseTaskFormResetProps {
+  boardId?: string;
   isOpen: boolean;
   isCreateMode: boolean;
   task?: Task;
@@ -53,6 +59,7 @@ export interface UseTaskFormResetProps {
 }
 
 export function useTaskFormReset({
+  boardId,
   isOpen,
   isCreateMode,
   task,
@@ -82,6 +89,17 @@ export function useTaskFormReset({
       previousTaskHydrationVersionRef.current !== taskHydrationVersion;
     const justOpened = isOpen && !previousIsOpenRef.current;
     previousIsOpenRef.current = isOpen;
+    // useTaskFormState restores this draft in the same effect flush. Preserve
+    // its values instead of replacing them with the empty creation placeholder.
+    if (
+      isOpen &&
+      isCreateMode &&
+      boardId &&
+      hasDraftContent(loadDraft(getDraftStorageKey(boardId)) ?? {})
+    ) {
+      previousTaskIdRef.current = task?.id ?? null;
+      return;
+    }
 
     // Helper to check if filters have any active values
     const hasActiveFilters =
@@ -133,6 +151,7 @@ export function useTaskFormReset({
       if (task?.id) previousTaskIdRef.current = task.id;
     }
   }, [
+    boardId,
     isCreateMode,
     isOpen,
     task,
@@ -161,6 +180,13 @@ export function useTaskFormReset({
   useEffect(() => {
     isMountedRef.current = true;
 
+    if (
+      isOpen &&
+      isCreateMode &&
+      boardId &&
+      hasDraftContent(loadDraft(getDraftStorageKey(boardId)) ?? {})
+    )
+      return;
     if (isOpen && isCreateMode && filters) {
       // Apply labels from filters
       if (filters.labels && filters.labels.length > 0) {
@@ -220,6 +246,7 @@ export function useTaskFormReset({
       isMountedRef.current = false;
     };
   }, [
+    boardId,
     isOpen,
     isCreateMode,
     filters,
