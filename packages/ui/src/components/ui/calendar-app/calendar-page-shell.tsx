@@ -27,6 +27,7 @@ interface CalendarPageShellProps {
   calendarConnections: CalendarConnection[] | null;
   enableSmartScheduling: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
+  initialEventId?: string;
   HeaderActions: CalendarHeaderActionsComponent;
   locale: string;
   smartSchedulingTasks?: ExtendedWorkspaceTask[];
@@ -49,6 +50,7 @@ export function CalendarPageShell({
   calendarConnections,
   enableSmartScheduling,
   experimentalGoogleToken,
+  initialEventId,
   HeaderActions,
   locale,
   smartSchedulingTasks = [],
@@ -64,6 +66,7 @@ export function CalendarPageShell({
     <div className={cn('flex h-[calc(100dvh-2rem)] min-w-0', className)}>
       <CalendarClientPage
         experimentalGoogleToken={experimentalGoogleToken}
+        initialEventId={initialEventId}
         workspace={workspace}
         enableSmartScheduling={enableSmartScheduling}
         externalState={externalState}

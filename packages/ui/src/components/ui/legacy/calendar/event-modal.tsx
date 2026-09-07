@@ -34,13 +34,7 @@ import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -95,10 +89,7 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
-import {
-  CalendarEventProviderIcon,
-  getCalendarEventProviderDisplay,
-} from './event-provider-display';
+import { EventModalHeader } from './event-modal-header';
 import { saveCalendarEventDrafts } from './save-calendar-event-drafts';
 import { useCalendarSettings } from './settings/settings-context';
 import { useEventDraftSession } from './use-event-draft-session';
@@ -940,32 +931,10 @@ export function EventModal() {
     }
   };
 
-  const providerDisplay = getCalendarEventProviderDisplay(event);
-
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 pt-6 pb-4">
-          <DialogTitle className="flex items-center gap-2 font-semibold text-xl">
-            <span>{isEditing ? 'Edit Event' : 'Create Event'}</span>
-            {providerDisplay && (
-              <div className="ml-3 flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-1 text-sm">
-                <CalendarEventProviderIcon
-                  event={event}
-                  className="h-4.5 w-4.5"
-                />
-                <span className="font-medium text-xs">
-                  {providerDisplay.label}
-                </span>
-              </div>
-            )}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? 'Make changes to your existing event'
-              : 'Add a new event to your calendar'}
-          </DialogDescription>
-        </DialogHeader>
+        <EventModalHeader event={event} isEditing={isEditing} />
 
         <Tabs
           value={activeTab}

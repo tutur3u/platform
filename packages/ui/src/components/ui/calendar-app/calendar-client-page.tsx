@@ -29,6 +29,7 @@ export type CalendarHeaderActionsComponent =
 interface CalendarClientPageProps {
   HeaderActions: CalendarHeaderActionsComponent;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
+  initialEventId?: string;
   workspace: Workspace;
   enableSmartScheduling: boolean;
   externalState?: {
@@ -43,6 +44,7 @@ interface CalendarClientPageProps {
 
 export function CalendarClientPage({
   experimentalGoogleToken,
+  initialEventId,
   workspace,
   enableSmartScheduling,
   externalState,
@@ -90,6 +92,7 @@ export function CalendarClientPage({
             ? experimentalGoogleToken
             : null
         }
+        initialEventId={initialEventId}
         extras={extras}
         externalState={externalState}
         initialSettings={initialSettings}

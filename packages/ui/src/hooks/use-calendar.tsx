@@ -28,21 +28,10 @@ import {
   useState,
 } from 'react';
 import { getTaskApiUrl } from '../lib/tasks-app-url';
+import { roundToNearest15Minutes } from './calendar-date-utils';
 import { createCalendarEventLookup } from './calendar-event-lookup';
 import { useCalendarSync } from './use-calendar-sync';
-
-// Utility function to round time to nearest 15-minute interval
-const roundToNearest15Minutes = (date: Date): Date => {
-  const minutes = date.getMinutes();
-  const remainder = minutes % 15;
-  const roundedMinutes =
-    remainder < 8 ? minutes - remainder : minutes + (15 - remainder);
-  const roundedDate = new Date(date);
-  roundedDate.setMinutes(roundedMinutes);
-  roundedDate.setSeconds(0);
-  roundedDate.setMilliseconds(0);
-  return roundedDate;
-};
+import { useOpenInitialCalendarEvent } from './use-open-initial-calendar-event';
 
 type TaskDragData = {
   name?: string;
@@ -425,6 +414,7 @@ export const CalendarProvider = ({
   useQueryClient,
   children,
   experimentalGoogleToken: _experimentalGoogleToken,
+  initialEventId,
   eventAdapter,
   readOnly = false,
 }: {
@@ -433,6 +423,7 @@ export const CalendarProvider = ({
   useQueryClient: any;
   children: ReactNode;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
+  initialEventId?: string;
   eventAdapter?: CalendarEventAdapter;
   readOnly?: boolean;
 }) => {
@@ -459,6 +450,8 @@ export const CalendarProvider = ({
   const [defaultNewEventTab, setDefaultNewEventTab] = useState<'manual' | 'ai'>(
     'manual'
   );
+
+  useOpenInitialCalendarEvent({ events, initialEventId, setActiveEventId });
 
   // Callback for when a task is scheduled (allows components to refresh)
   const [onTaskScheduled, setOnTaskScheduled] = useState<

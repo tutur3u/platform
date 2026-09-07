@@ -1,4 +1,11 @@
-import { ArrowLeft, Calendar, Clock, Users, Video } from '@tuturuuu/icons';
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  ExternalLink,
+  Users,
+  Video,
+} from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -13,7 +20,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { CALENDAR_URL } from '@/constants/common';
 import { MeetingLocalTime } from '@/features/call/components/meeting-local-time';
+import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
 import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
 import { getMeetWorkspaceContext } from '../../workspace-context';
@@ -61,6 +70,14 @@ export default async function MeetingDetailPage({
   if (error || !meeting) {
     notFound();
   }
+
+  const { data: calendarEvent } = await supabase
+    .from('workspace_calendar_events')
+    .select('id, start_at')
+    .eq('ws_id', wsId)
+    .eq('scheduling_metadata->>type', 'tuturuuu_meeting')
+    .eq('scheduling_metadata->>meeting_id', meetingId)
+    .maybeSingle();
 
   return (
     <div className="container mx-auto max-w-4xl p-6">
@@ -154,6 +171,23 @@ export default async function MeetingDetailPage({
             {t('join_call')}
           </Link>
         </Button>
+        {calendarEvent && (
+          <Button asChild size="lg" variant="outline">
+            <a
+              href={buildCalendarEventUrl(
+                CALENDAR_URL,
+                workspaceSlug,
+                calendarEvent
+              )}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              {t('open_in_calendar')}
+              <ExternalLink className="ml-2 h-3.5 w-3.5" />
+            </a>
+          </Button>
+        )}
         <MeetingActions wsId={wsId} meetingId={meetingId} />
       </div>
     </div>

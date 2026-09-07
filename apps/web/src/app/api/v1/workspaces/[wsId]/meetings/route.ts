@@ -8,6 +8,40 @@ import {
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
+import { getMeetAppOrigin } from '@/lib/meet-app-url';
+import {
+  encryptEventForStorage,
+  getWorkspaceKey,
+} from '@/lib/workspace-encryption';
+
+const ScheduleSchema = z.object({
+  endTime: z.iso.datetime({ offset: true }),
+});
+
+const CreateMeetingSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  time: z.iso.datetime({ offset: true }),
+  schedule: ScheduleSchema.optional(),
+});
+
+function buildMeetingDetailUrl(workspaceId: string, meetingId: string) {
+  return `${getMeetAppOrigin()}/${encodeURIComponent(workspaceId)}/meetings/${encodeURIComponent(meetingId)}`;
+}
+
+function buildCalendarEventUrl(
+  workspaceId: string,
+  eventId: string,
+  startAt: string
+) {
+  const url = new URL(
+    `/${encodeURIComponent(workspaceId)}`,
+    getCalendarAppOrigin()
+  );
+  url.searchParams.set('date', startAt);
+  url.searchParams.set('eventId', eventId);
+  return url.toString();
+}
 
 export async function GET(
   request: NextRequest,
@@ -113,8 +147,71 @@ export async function GET(
       );
     }
 
+    let meetingsWithCalendar = meetings || [];
+    if (meetingsWithCalendar.length > 0) {
+      const { data: hasCalendarPermission } = await supabase.rpc(
+        'has_workspace_permission',
+        {
+          p_ws_id: wsId,
+          p_user_id: user.id,
+          p_permission: 'manage_calendar',
+        }
+      );
+
+      if (hasCalendarPermission) {
+        const meetingIds = meetingsWithCalendar.map((meeting) => meeting.id);
+        const admin = await createAdminClient({ noCookie: true });
+        const { data: calendarEvents, error: calendarError } = await admin
+          .from('workspace_calendar_events')
+          .select('id, start_at, end_at, scheduling_metadata')
+          .eq('ws_id', wsId)
+          .in('scheduling_metadata->>meeting_id', meetingIds);
+
+        if (calendarError) {
+          console.warn('Failed to load meeting Calendar links', {
+            wsId,
+            error: calendarError,
+          });
+        } else {
+          const calendarByMeetingId = new Map(
+            (calendarEvents ?? []).flatMap((event) => {
+              const metadata = event.scheduling_metadata;
+              if (
+                !metadata ||
+                typeof metadata !== 'object' ||
+                Array.isArray(metadata) ||
+                metadata.type !== 'tuturuuu_meeting' ||
+                typeof metadata.meeting_id !== 'string'
+              ) {
+                return [];
+              }
+              return [
+                [
+                  metadata.meeting_id,
+                  {
+                    id: event.id,
+                    start_at: event.start_at,
+                    end_at: event.end_at,
+                    url: buildCalendarEventUrl(
+                      rawWsId,
+                      event.id,
+                      event.start_at
+                    ),
+                  },
+                ] as const,
+              ];
+            })
+          );
+          meetingsWithCalendar = meetingsWithCalendar.map((meeting) => ({
+            ...meeting,
+            calendar_event: calendarByMeetingId.get(meeting.id) ?? null,
+          }));
+        }
+      }
+    }
+
     return NextResponse.json({
-      meetings: meetings || [],
+      meetings: meetingsWithCalendar,
       totalCount: count || 0,
       page,
       pageSize,
@@ -207,19 +304,53 @@ export async function POST(
       );
     }
 
-    const parsed = z
-      .object({
-        name: z.string().trim().min(1),
-        time: z.iso.datetime({ offset: true }),
-      })
-      .safeParse(await request.json().catch(() => null));
+    const parsed = CreateMeetingSchema.safeParse(
+      await request.json().catch(() => null)
+    );
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid meeting name or time' },
         { status: 400 }
       );
     }
-    const { name, time } = parsed.data;
+    const { name, time, schedule } = parsed.data;
+
+    if (schedule && new Date(schedule.endTime) <= new Date(time)) {
+      return NextResponse.json(
+        { error: 'Meeting end time must be after its start time' },
+        { status: 400 }
+      );
+    }
+
+    if (schedule) {
+      const { data: hasCalendarPermission, error: permissionError } =
+        await supabase.rpc('has_workspace_permission', {
+          p_ws_id: wsId,
+          p_user_id: user.id,
+          p_permission: 'manage_calendar',
+        });
+
+      if (permissionError) {
+        console.error('Failed to verify calendar permission', {
+          wsId,
+          error: permissionError,
+        });
+        return NextResponse.json(
+          { error: 'Failed to verify calendar permission' },
+          { status: 500 }
+        );
+      }
+
+      if (!hasCalendarPermission) {
+        return NextResponse.json(
+          {
+            error: 'You do not have permission to schedule calendar events',
+            code: 'CALENDAR_PERMISSION_REQUIRED',
+          },
+          { status: 403 }
+        );
+      }
+    }
 
     // Create new meeting
     const { data: meeting, error } = await supabase
@@ -240,7 +371,7 @@ export async function POST(
       )
       .single();
 
-    if (error) {
+    if (error || !meeting) {
       console.error('Error creating meeting:', error);
       return NextResponse.json(
         { error: 'Failed to create meeting' },
@@ -248,7 +379,69 @@ export async function POST(
       );
     }
 
-    return NextResponse.json({ meeting });
+    if (!schedule) {
+      return NextResponse.json({ meeting });
+    }
+
+    const meetingUrl = buildMeetingDetailUrl(rawWsId, meeting.id);
+    const workspaceKey = await getWorkspaceKey(wsId);
+    const encryptedFields = await encryptEventForStorage(
+      wsId,
+      {
+        title: name,
+        description: meetingUrl,
+        location: meetingUrl,
+      },
+      workspaceKey
+    );
+    const { data: calendarEvent, error: calendarError } = await admin
+      .from('workspace_calendar_events')
+      .insert({
+        ws_id: wsId,
+        title: encryptedFields.title,
+        description: encryptedFields.description,
+        location: encryptedFields.location,
+        start_at: time,
+        end_at: schedule.endTime,
+        color: 'BLUE',
+        is_encrypted: encryptedFields.is_encrypted,
+        provider: 'tuturuuu',
+        scheduling_source: 'manual',
+        scheduling_metadata: {
+          type: 'tuturuuu_meeting',
+          meeting_id: meeting.id,
+          meeting_url: meetingUrl,
+        },
+        sync_status: 'local_only',
+      })
+      .select('id, start_at, end_at')
+      .single();
+
+    if (calendarError || !calendarEvent) {
+      const { error: rollbackError } = await supabase
+        .from('workspace_meetings')
+        .delete()
+        .eq('id', meeting.id)
+        .eq('ws_id', wsId);
+      console.error('Failed to schedule meeting on Calendar', {
+        wsId,
+        meetingId: meeting.id,
+        error: calendarError,
+        rollbackError,
+      });
+      return NextResponse.json(
+        { error: 'Failed to schedule meeting on Calendar' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      meeting,
+      calendarEvent: {
+        ...calendarEvent,
+        url: buildCalendarEventUrl(rawWsId, calendarEvent.id, time),
+      },
+    });
   } catch (error) {
     if (error instanceof WorkspaceNotFoundError) {
       return NextResponse.json(
