@@ -277,7 +277,9 @@ types only after the local schema reflects the migration.
 ## Installation and caching
 
 Calendar and Tasks serve their own `/serwist/sw.js` workers and installable
-app manifests. The **Install app** control uses the browser prompt when
+app manifests. Client instrumentation captures the install event before hydration;
+these hosts explicitly transpile `@tuturuuu/ui` for that bootstrap entry point.
+The **Install app** control uses the browser prompt when
 available and gives Home Screen instructions otherwise. `/offline.html` is a
 public, bilingual fallback that bypasses authentication middleware.
 

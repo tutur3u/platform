@@ -27,6 +27,7 @@ const TASKS_APP_URL = resolveInternalAppUrl({
 
 const nextConfig = createTuturuuuNextConfig({
   ...getOfflineTurbopackConfig(),
+  transpilePackages: ['@tuturuuu/ui'],
   images: {
     remotePatterns: [
       {
