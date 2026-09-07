@@ -30,7 +30,7 @@ export async function generateMeetArtifact(
     Effect.tryPromise({
       try: async () => {
         const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-        if (!apiKey) throw new Error('Meet AI is not configured');
+        if (!apiKey) throw new MeetAiGenerationError(500);
         const model = createGoogleGenerativeAI({ apiKey })(MEET_AI_MODEL);
         const common = {
           model,
@@ -84,11 +84,12 @@ export async function generateMeetArtifact(
         return new TuturuuuEffectError({
           code: 'MEET_AI_GENERATION_FAILED',
           message: 'Meet AI generation failed',
-          status: 502,
+          status: error instanceof MeetAiGenerationError ? error.status : 502,
         });
       },
     })
   );
-  if (!outcome.ok) throw new MeetAiGenerationError();
+  if (!outcome.ok)
+    throw new MeetAiGenerationError(outcome.error.status === 500 ? 500 : 502);
   return outcome.data;
 }

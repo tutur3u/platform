@@ -6,7 +6,7 @@ describe('Meet provider diagnostics', () => {
   it.each([
     [400, 'API key not valid', 'invalid_api_key'],
     [403, 'API has not been used or is disabled', 'api_disabled'],
-    [400, 'User location is not supported', 'unsupported_location'],
+    [412, 'User location is not supported', 'unsupported_location'],
     [429, 'Quota exhausted', 'quota_exceeded'],
     [403, 'Permission denied', 'access_denied'],
     [404, 'Missing model', 'model_not_found'],

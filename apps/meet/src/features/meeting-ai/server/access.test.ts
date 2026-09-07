@@ -33,6 +33,15 @@ const request = (origin = 'https://meet.tuturuuu.com') =>
   );
 describe('Meet AI satellite authorization', () => {
   beforeEach(() => vi.resetAllMocks());
+  it('returns a configuration status separately from upstream failures', async () => {
+    const response = await meetAiResponse(async () => {
+      throw new MeetAiGenerationError(500);
+    });
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'Meeting AI is not configured',
+    });
+  });
   it('returns a safe upstream status for provider failures', async () => {
     const response = await meetAiResponse(async () => {
       throw new MeetAiGenerationError();

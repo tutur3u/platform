@@ -95,11 +95,9 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
       },
       {
         status:
-          error instanceof MeetAiError
+          error instanceof MeetAiError || error instanceof MeetAiGenerationError
             ? error.status
-            : error instanceof MeetAiGenerationError
-              ? 502
-              : 500,
+            : 500,
         headers: { 'Cache-Control': 'no-store' },
       }
     );

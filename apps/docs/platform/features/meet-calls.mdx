@@ -407,3 +407,15 @@ credentials, audio, or transcripts. Use those categories to distinguish invalid
 keys, disabled APIs, quota, access, location, timeout, and runtime failures.
 An accepted chunk is not automatically resubmitted to the provider; preserve its
 unknown-cost record when investigating a failed attempt.
+
+Google's request logs identified the production synthetic failure as
+`412 FAILED_PRECONDITION: User location is not supported for the API use`.
+The Meet frontend Worker therefore uses `placement.region: aws:ap-southeast-1`
+to run near Singapore, which Google lists as a supported Gemini API region.
+Signaling and media remain on the separate globally distributed realtime Worker
+and Cloudflare SFU. This is a Cloudflare placement hint, not an AWS deployment or
+a strict geographic guarantee; verify the provider path after each release.
+See [Cloudflare placement](https://developers.cloudflare.com/workers/configuration/placement/)
+and [Gemini supported regions](https://ai.google.dev/gemini-api/docs/available-regions).
+Missing keys are classified as `missing_configuration` and return a safe 500;
+provider failures return a safe 502 with fixed-category diagnostics.
