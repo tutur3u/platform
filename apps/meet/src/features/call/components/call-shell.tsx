@@ -12,6 +12,7 @@ import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
 import { useCallRecording } from '../hooks/use-call-recording';
 import { useMeetRoom } from '../hooks/use-meet-room';
 import {
+  countUnreadChatMessages,
   isHandRaised,
   selectFocusedUserId,
   selectOthers,
@@ -93,7 +94,8 @@ export function CallShell({
 
   const [joined, setJoined] = useState(false);
   const [panel, setPanel] = useState<CallPanel>(null);
-  const [readChatCount, setReadChatCount] = useState(0);
+  const [lastReadChatId, setLastReadChatId] = useState<string | null>(null);
+  const newestChatId = state.chat.at(-1)?.id ?? null;
 
   const self = selectSelf(state);
   const others = useMemo(() => selectOthers(state), [state]);
@@ -109,8 +111,8 @@ export function CallShell({
     : false;
 
   useEffect(() => {
-    if (panel === 'chat') setReadChatCount(state.chat.length);
-  }, [panel, state.chat.length]);
+    if (panel === 'chat') setLastReadChatId(newestChatId);
+  }, [panel, newestChatId]);
 
   useEffect(() => {
     if (state.admission === 'denied') router.push(leaveHref);
@@ -303,7 +305,7 @@ export function CallShell({
         recordingBusy={recording.isBusy}
         recordingOn={recording.isRecording}
         screenOn={room.media.screenEnabled}
-        unreadChat={Math.max(0, state.chat.length - readChatCount)}
+        unreadChat={countUnreadChatMessages(state.chat, lastReadChatId)}
         waitingCount={canManage ? state.waiting.length : 0}
       />
     </div>

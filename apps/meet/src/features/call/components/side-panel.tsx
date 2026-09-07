@@ -96,10 +96,12 @@ function ChatPanel({
   const t = useTranslations('meet.call');
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const newestMessageId = chat.at(-1)?.id;
 
   useEffect(() => {
-    if (chat.length) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chat.length]);
+    if (newestMessageId)
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [newestMessageId]);
 
   return (
     <>

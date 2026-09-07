@@ -3814,7 +3814,6 @@
     },
     "call": {
       "admit": "Admit",
-      "asking_to_join": "Asking to join…",
       "camera_blocked": "Camera unavailable. Check browser permissions.",
       "camera_is_off": "Camera is off",
       "camera_not_found": "No camera was found. Connect a camera and try again.",
@@ -3839,7 +3838,6 @@
       "joining_as": "Joining as",
       "leave": "Leave call",
       "lobby_hint": "Check your camera and microphone before joining.",
-      "lobby_waiting_hint": "Waiting for the host to let you in.",
       "lower_hand": "Lower hand",
       "media_device_busy": "The device could not start. Check whether another app is using it, then try again.",
       "media_error_code": "Diagnostic code: {code}",

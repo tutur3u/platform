@@ -444,7 +444,9 @@ request timeout; `RTC_*` identifies a browser peer-connection failure. The code
 contains no raw provider message, SDP, credential, or meeting content. A successful
 retry clears the previous warning for that device. Reproduce on the affected device
 before changing transport settings; synthetic sources in another browser do not
-establish physical-device compatibility.
+establish physical-device compatibility. Browser audio probes should attach the
+received stream to a playing media element before measuring decoded audio energy;
+packet counts or an unattached analyser alone do not establish working playback.
 
 ### Participant names and admission
 

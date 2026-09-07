@@ -170,7 +170,9 @@ export function Lobby({
             aria-live="polite"
             className="mt-5 flex gap-3 rounded-xl border bg-muted/30 p-4"
           >
-            {waiting ? (
+            {isJoining ? (
+              <Loader2 className="mt-0.5 size-5 shrink-0 animate-spin text-primary" />
+            ) : waiting ? (
               <Clock3 className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
             ) : (
               <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
