@@ -104,14 +104,18 @@ export function CallShell({
             try {
               await room.toggleMicrophone();
             } catch (error) {
-              toast.error(t(getMediaErrorKey(error, 'microphone')));
+              toast.error(t(getMediaErrorKey(error, 'microphone')), {
+                id: 'meet-media-microphone',
+              });
             }
           }
           if (videoEnabled) {
             try {
               await room.toggleCamera();
             } catch (error) {
-              toast.error(t(getMediaErrorKey(error, 'camera')));
+              toast.error(t(getMediaErrorKey(error, 'camera')), {
+                id: 'meet-media-camera',
+              });
             }
           }
         }}
