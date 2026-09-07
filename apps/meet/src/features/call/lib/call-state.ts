@@ -216,3 +216,13 @@ export function describeMedia(media: MeetMediaState) {
     isSharing: media.screenEnabled,
   };
 }
+
+/** Count unread arrivals even after the bounded chat history starts evicting. */
+export function countUnreadChatMessages(
+  chat: CallChatMessage[],
+  lastReadId: string | null
+) {
+  if (!lastReadId) return chat.length;
+  const index = chat.findIndex((message) => message.id === lastReadId);
+  return index < 0 ? chat.length : chat.length - index - 1;
+}

@@ -43,3 +43,21 @@ it('reloads relationships across editing sessions while preserving changes durin
   expect(result.current.pendingParent).toBeNull();
   expect(result.current.pendingChildren).toEqual([]);
 });
+
+it('does not inherit a board recovery relationship when opening a saved draft', () => {
+  saveDraft(getDraftStorageKey('board-1'), {
+    pendingTaskRelationships: getSeededPendingTaskRelationships({
+      parentTaskId: 'other-local-parent',
+    }),
+  });
+  const { result } = renderHook(() =>
+    usePendingTaskRelationships({
+      boardId: 'board-1',
+      wsId: 'ws-1',
+      draftId: 'saved-draft',
+      isCreateMode: true,
+      isOpen: true,
+    })
+  );
+  expect(result.current.pendingParent).toBeNull();
+});

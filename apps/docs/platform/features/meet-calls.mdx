@@ -474,7 +474,23 @@ request timeout; `RTC_*` identifies a browser peer-connection failure. The code
 contains no raw provider message, SDP, credential, or meeting content. A successful
 retry clears the previous warning for that device. Reproduce on the affected device
 before changing transport settings; synthetic sources in another browser do not
-establish physical-device compatibility.
+establish physical-device compatibility. Browser audio probes should attach the
+received stream to a playing media element before measuring decoded audio energy;
+packet counts or an unattached analyser alone do not establish working playback.
+
+### Participant names and admission
+
+Meet reuses the participant's saved profile display name. If it is missing,
+the invite page suggests an available account name and asks the participant to
+confirm or edit it before opening the realtime session. It saves the name through
+the current-user profile API, and refreshes the same invite. Later joins reuse the
+saved display name. A failed save leaves the form open for retry; a temporary
+profile lookup failure does not invite the user to overwrite an existing name.
+
+The lobby separates connection progress from waiting for host admission. Guests
+can leave while waiting, and their preview is not published until they join.
+Host admission actions are labeled, and a muted participant has one mute status
+indicator rather than an additional redundant mute action.
 
 ### Cloudflare browser integrations
 

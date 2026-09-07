@@ -2,6 +2,7 @@ import type { MeetRealtimeServerMessage } from '@tuturuuu/realtime/meet';
 import { describe, expect, it } from 'vitest';
 import {
   type CallState,
+  countUnreadChatMessages,
   INITIAL_CALL_STATE,
   isHandRaised,
   reduceCallState,
@@ -323,4 +324,19 @@ describe('call state chat and recording', () => {
 
     expect(state.error).toBe('permission_denied');
   });
+});
+
+it('counts unread messages after the history reaches its retention limit', () => {
+  const chat = Array.from({ length: 500 }, (_, index) => ({
+    id: String(index),
+    userId: 'guest',
+    displayName: 'Guest',
+    body: 'Hello',
+    createdAt: '2026-09-07T00:00:00Z',
+  }));
+  expect(countUnreadChatMessages(chat, '499')).toBe(0);
+  const advanced = [...chat.slice(1), { ...chat[0]!, id: '500' }];
+  expect(countUnreadChatMessages(advanced, '499')).toBe(1);
+  expect(countUnreadChatMessages(advanced, '500')).toBe(0);
+  expect(countUnreadChatMessages(advanced, '0')).toBe(500);
 });

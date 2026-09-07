@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Hand, MicOff, Send, UserMinus, X } from '@tuturuuu/icons';
+import { Hand, MicOff, Send, UserMinus, X } from '@tuturuuu/icons';
 import type {
   MeetRealtimePresence,
   MeetRealtimeWaitingParticipant,
@@ -43,7 +43,7 @@ export function SidePanel({
   const t = useTranslations('meet.call');
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-l bg-background md:w-80">
+    <aside className="flex min-h-0 w-full shrink-0 flex-col border-l bg-background md:w-80">
       <header className="flex items-center justify-between border-b px-4 py-3">
         <h2 className="font-medium text-sm">
           {panel === 'chat'
@@ -96,16 +96,22 @@ function ChatPanel({
   const t = useTranslations('meet.call');
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const newestMessageId = chat.at(-1)?.id;
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+    if (newestMessageId)
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [newestMessageId]);
 
   return (
     <>
-      <ScrollArea className="flex-1 px-4 py-3">
+      <ScrollArea className="min-h-0 flex-1 px-4 py-3">
         {chat.length ? (
-          <ol className="space-y-3">
+          <ol
+            aria-live="polite"
+            aria-relevant="additions"
+            className="space-y-3"
+          >
             {chat.map((message) => (
               <li key={message.id}>
                 <div className="flex items-baseline gap-2">
@@ -139,7 +145,9 @@ function ChatPanel({
         className="flex gap-2 border-t p-3"
         onSubmit={(event) => {
           event.preventDefault();
-          onSendChat(draft);
+          const body = draft.trim();
+          if (!body) return;
+          onSendChat(body);
           setDraft('');
         }}
       >
@@ -184,7 +192,7 @@ function ParticipantsPanel({
   const t = useTranslations('meet.call');
 
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="min-h-0 flex-1">
       {canManage && waiting.length ? (
         <section className="border-b p-3">
           <h3 className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wide">
@@ -200,23 +208,23 @@ function ParticipantsPanel({
                   {entry.displayName}
                 </span>
                 <Button
-                  aria-label={t('admit')}
-                  className="size-7"
+                  aria-label={`${t('admit')}: ${entry.displayName}`}
+                  className="h-8"
                   onClick={() => onDecideAdmission(entry.userId, true)}
-                  size="icon"
+                  size="sm"
                   type="button"
                 >
-                  <Check className="size-3.5" />
+                  {t('admit')}
                 </Button>
                 <Button
-                  aria-label={t('deny')}
-                  className="size-7"
+                  aria-label={`${t('deny')}: ${entry.displayName}`}
+                  className="h-8"
                   onClick={() => onDecideAdmission(entry.userId, false)}
-                  size="icon"
+                  size="sm"
                   type="button"
                   variant="outline"
                 >
-                  <X className="size-3.5" />
+                  {t('deny')}
                 </Button>
               </li>
             ))}
@@ -244,20 +252,28 @@ function ParticipantsPanel({
                 <Hand className="size-3.5 shrink-0 text-dynamic-orange" />
               ) : null}
               {participant.media.audioEnabled ? null : (
-                <MicOff className="size-3.5 shrink-0 text-muted-foreground" />
+                <span
+                  title={t('microphone_muted')}
+                  className="grid size-7 shrink-0 place-items-center text-muted-foreground"
+                >
+                  <MicOff aria-hidden="true" className="size-3.5" />
+                  <span className="sr-only">{t('microphone_muted')}</span>
+                </span>
               )}
               {canManage && !isSelf ? (
-                <span className="flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                  <Button
-                    aria-label={t('mute_participant')}
-                    className="size-7"
-                    onClick={() => onMute(participant.userId)}
-                    size="icon"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <MicOff className="size-3.5" />
-                  </Button>
+                <span className="flex gap-1">
+                  {participant.media.audioEnabled ? (
+                    <Button
+                      aria-label={t('mute_participant')}
+                      className="size-7"
+                      onClick={() => onMute(participant.userId)}
+                      size="icon"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <MicOff className="size-3.5" />
+                    </Button>
+                  ) : null}
                   <Button
                     aria-label={t('remove_participant')}
                     className="size-7 text-dynamic-red"

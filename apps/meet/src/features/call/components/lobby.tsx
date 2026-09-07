@@ -1,16 +1,16 @@
 'use client';
 
 import {
+  Clock3,
   Loader2,
   Mic,
   MicOff,
+  ShieldCheck,
   TriangleAlert,
   Video,
   VideoOff,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -26,6 +26,7 @@ export function Lobby({
   meetingName,
   transcriptionNotice,
   onJoin,
+  onLeave,
   waiting,
 }: {
   defaultDisplayName: string;
@@ -39,10 +40,11 @@ export function Lobby({
     displayName: string;
     videoEnabled: boolean;
   }) => void;
+  onLeave: () => void;
   waiting: boolean;
 }) {
   const t = useTranslations('meet.call');
-  const [displayName, setDisplayName] = useState(defaultDisplayName);
+  const displayName = defaultDisplayName;
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -95,8 +97,8 @@ export function Lobby({
   }, [stream]);
 
   return (
-    <div className="grid min-h-dvh place-items-center bg-background p-4">
-      <div className="grid w-full max-w-4xl gap-8 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:items-center">
+    <div className="grid min-h-dvh place-items-center bg-background px-4 py-8">
+      <div className="grid w-full max-w-5xl gap-8 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:items-center">
         <div className="relative aspect-video overflow-hidden rounded-2xl bg-foreground/5 ring-1 ring-border">
           {stream ? (
             <video
@@ -163,9 +165,31 @@ export function Lobby({
               {transcriptionNotice}
             </p>
           ) : null}
-          <p className="mt-2 text-muted-foreground text-sm">
-            {waiting ? t('lobby_waiting_hint') : t('lobby_hint')}
-          </p>
+          <div
+            role="status"
+            aria-live="polite"
+            className="mt-5 flex gap-3 rounded-xl border bg-muted/30 p-4"
+          >
+            {isJoining ? (
+              <Loader2 className="mt-0.5 size-5 shrink-0 animate-spin text-primary" />
+            ) : waiting ? (
+              <Clock3 className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+            ) : (
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
+            )}
+            <div className="space-y-1">
+              <p className="font-medium text-sm">
+                {isJoining
+                  ? t('connecting')
+                  : waiting
+                    ? t('request_sent')
+                    : t('ready_to_join')}
+              </p>
+              <p className="text-muted-foreground text-sm">
+                {waiting ? t('waiting_explanation') : t('lobby_hint')}
+              </p>
+            </div>
+          </div>
 
           {connectionError ? (
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
@@ -174,14 +198,12 @@ export function Lobby({
             </p>
           ) : null}
 
-          <div className="mt-5 space-y-2">
-            <Label htmlFor="display-name">{t('your_name')}</Label>
-            <Input
-              id="display-name"
-              maxLength={120}
-              onChange={(event) => setDisplayName(event.target.value)}
-              value={displayName}
-            />
+          <div className="mt-5 space-y-1">
+            <p className="text-muted-foreground text-xs">{t('joining_as')}</p>
+            <p className="break-words font-medium text-sm">{displayName}</p>
+            <p className="text-muted-foreground text-xs">
+              {t('preview_private')}
+            </p>
           </div>
 
           <Button
@@ -198,10 +220,22 @@ export function Lobby({
             size="lg"
             type="button"
           >
-            {isJoining || waiting ? (
+            {isJoining && !waiting ? (
               <Loader2 className="mr-2 size-4 animate-spin" />
             ) : null}
-            {waiting ? t('asking_to_join') : t('join_now')}
+            {waiting
+              ? t('waiting_for_host')
+              : isJoining
+                ? t('connecting')
+                : t('join_now')}
+          </Button>
+          <Button
+            className="mt-2 w-full"
+            onClick={onLeave}
+            type="button"
+            variant="ghost"
+          >
+            {t('leave')}
           </Button>
         </div>
       </div>
