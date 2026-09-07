@@ -625,39 +625,41 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       <div className="h-full min-w-0 max-w-full lg:hidden">
         {threadId ? detailPanel : listPanel}
       </div>
-      <ResizablePanelGroup
-        className="hidden lg:flex"
-        direction="horizontal"
-        key={layout.join('-')}
-        onLayout={(sizes) => {
-          if (!layoutReadyRef.current) return;
-          // `layout` controls this group's key so the persisted layout can be
-          // applied after hydration. Updating it from the group's own layout
-          // notification remounts the group and creates an infinite loop.
-          const next = setCurrentMailPaneLayout(sizes);
-          window.localStorage.setItem(
-            'tuturuuu-mail-pane-layout',
-            JSON.stringify(next)
-          );
-        }}
-      >
-        <ResizablePanel
-          defaultSize={layout[0]}
-          id="mail-thread-list"
-          maxSize={48}
-          minSize={28}
+      <div className="hidden h-full min-w-0 lg:block">
+        <ResizablePanelGroup
+          className="min-w-0"
+          direction="horizontal"
+          key={layout.join('-')}
+          onLayout={(sizes) => {
+            if (!layoutReadyRef.current) return;
+            // `layout` controls this group's key so the persisted layout can be
+            // applied after hydration. Updating it from the group's own layout
+            // notification remounts the group and creates an infinite loop.
+            const next = setCurrentMailPaneLayout(sizes);
+            window.localStorage.setItem(
+              'tuturuuu-mail-pane-layout',
+              JSON.stringify(next)
+            );
+          }}
         >
-          {listPanel}
-        </ResizablePanel>
-        <ResizableHandle aria-label={t('resize_message_list')} withHandle />
-        <ResizablePanel
-          defaultSize={layout[1]}
-          id="mail-thread-detail"
-          minSize={45}
-        >
-          {detailPanel}
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          <ResizablePanel
+            defaultSize={layout[0]}
+            id="mail-thread-list"
+            maxSize={48}
+            minSize={28}
+          >
+            {listPanel}
+          </ResizablePanel>
+          <ResizableHandle aria-label={t('resize_message_list')} withHandle />
+          <ResizablePanel
+            defaultSize={layout[1]}
+            id="mail-thread-detail"
+            minSize={45}
+          >
+            {detailPanel}
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
       <FloatingComposer
         initialDraft={composeDraft}
         mailboxes={mailboxes}
