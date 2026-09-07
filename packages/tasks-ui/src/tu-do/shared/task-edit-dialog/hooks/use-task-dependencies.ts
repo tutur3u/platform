@@ -20,56 +20,18 @@ import {
   useBoardBroadcast,
 } from '../../board-broadcast-context';
 import type { PendingTaskRelationships } from '../types/pending-relationship';
-import { getDraftStorageKey, loadDraft } from '../utils';
+import type {
+  UseTaskDependenciesProps,
+  UseTaskDependenciesReturn,
+} from '../types/task-dependencies';
+
+export type {
+  UseTaskDependenciesProps,
+  UseTaskDependenciesReturn,
+} from '../types/task-dependencies';
+
 import { dedupeById as dedupeTasksById } from './task-create-relationships';
-
-export interface UseTaskDependenciesProps {
-  taskId?: string;
-  boardId: string;
-  wsId: string;
-  listId?: string;
-  isCreateMode: boolean;
-  initialPendingRelationships?: PendingTaskRelationships;
-  onUpdate?: () => void;
-}
-
-export interface UseTaskDependenciesReturn {
-  // Data
-  relationships: TaskRelationshipsResponse | null | undefined;
-  isLoading: boolean;
-
-  // Parent task
-  parentTask: RelatedTaskInfo | null;
-  setParentTask: (task: RelatedTaskInfo | null) => Promise<void>;
-  createParentTask: (name: string) => Promise<void>;
-
-  // Child tasks
-  childTasks: RelatedTaskInfo[];
-  addChildTask: (task: RelatedTaskInfo) => Promise<void>;
-  removeChildTask: (taskId: string) => Promise<void>;
-
-  // Blocking relationships
-  blocking: RelatedTaskInfo[];
-  addBlockingTask: (task: RelatedTaskInfo) => Promise<void>;
-  removeBlockingTask: (taskId: string) => Promise<void>;
-  createBlockingTask: (name: string) => Promise<void>;
-
-  // Blocked by relationships
-  blockedBy: RelatedTaskInfo[];
-  addBlockedByTask: (task: RelatedTaskInfo) => Promise<void>;
-  removeBlockedByTask: (taskId: string) => Promise<void>;
-  createBlockedByTask: (name: string) => Promise<void>;
-
-  // Related tasks
-  relatedTasks: RelatedTaskInfo[];
-  addRelatedTask: (task: RelatedTaskInfo) => Promise<void>;
-  removeRelatedTask: (taskId: string) => Promise<void>;
-  createRelatedTask: (name: string) => Promise<void>;
-
-  // Loading states
-  savingRelationship: string | null;
-  pendingRelationships: PendingTaskRelationships;
-}
+import { usePendingTaskRelationships } from './use-pending-task-relationships';
 
 /**
  * Custom hook for managing task dependencies/relationships
@@ -81,17 +43,10 @@ export function useTaskDependencies({
   wsId,
   listId,
   isCreateMode,
+  isOpen = true,
   initialPendingRelationships: seededRelationships,
   onUpdate,
 }: UseTaskDependenciesProps): UseTaskDependenciesReturn {
-  const [initialPendingRelationships] = useState<
-    PendingTaskRelationships | undefined
-  >(() =>
-    isCreateMode
-      ? (loadDraft(getDraftStorageKey(boardId))?.pendingTaskRelationships ??
-        seededRelationships)
-      : seededRelationships
-  );
   const queryClient = useQueryClient();
   const tc = useTranslations('common');
   const contextBroadcast = useBoardBroadcast();
@@ -101,22 +56,26 @@ export function useTaskDependencies({
     null
   );
 
-  // Pending relationships for create mode (not yet saved to DB)
-  const [pendingParent, setPendingParent] = useState<RelatedTaskInfo | null>(
-    initialPendingRelationships?.parentTask ?? null
-  );
-  const [pendingChildren, setPendingChildren] = useState<RelatedTaskInfo[]>(
-    () => dedupeTasksById(initialPendingRelationships?.childTasks ?? [])
-  );
-  const [pendingBlocking, setPendingBlocking] = useState<RelatedTaskInfo[]>(
-    () => dedupeTasksById(initialPendingRelationships?.blockingTasks ?? [])
-  );
-  const [pendingBlockedBy, setPendingBlockedBy] = useState<RelatedTaskInfo[]>(
-    () => dedupeTasksById(initialPendingRelationships?.blockedByTasks ?? [])
-  );
-  const [pendingRelated, setPendingRelated] = useState<RelatedTaskInfo[]>(() =>
-    dedupeTasksById(initialPendingRelationships?.relatedTasks ?? [])
-  );
+  const {
+    initialPendingRelationships,
+    pendingParent,
+    setPendingParent,
+    pendingChildren,
+    setPendingChildren,
+    pendingBlocking,
+    setPendingBlocking,
+    pendingBlockedBy,
+    setPendingBlockedBy,
+    pendingRelated,
+    setPendingRelated,
+  } = usePendingTaskRelationships({
+    taskId,
+    boardId,
+    wsId,
+    isCreateMode,
+    isOpen,
+    seededRelationships,
+  });
 
   // Fetch relationships from server
   const { data: relationships, isLoading } = useQuery({
@@ -243,6 +202,7 @@ export function useTaskDependencies({
       createRelationship,
       invalidateCaches,
       getRelationshipErrorMessage,
+      setPendingParent,
     ]
   );
 
@@ -339,6 +299,7 @@ export function useTaskDependencies({
       createRelationship,
       invalidateCaches,
       getRelationshipErrorMessage,
+      setPendingChildren,
     ]
   );
 
@@ -368,7 +329,13 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, deleteRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      deleteRelationship,
+      invalidateCaches,
+      setPendingChildren,
+    ]
   );
 
   // =========================================================================
@@ -412,6 +379,7 @@ export function useTaskDependencies({
       createRelationship,
       invalidateCaches,
       getRelationshipErrorMessage,
+      setPendingBlocking,
     ]
   );
 
@@ -445,7 +413,13 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, deleteRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      deleteRelationship,
+      invalidateCaches,
+      setPendingBlocking,
+    ]
   );
 
   /**
@@ -523,6 +497,7 @@ export function useTaskDependencies({
       createRelationship,
       invalidateCaches,
       getRelationshipErrorMessage,
+      setPendingBlockedBy,
     ]
   );
 
@@ -554,7 +529,13 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, deleteRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      deleteRelationship,
+      invalidateCaches,
+      setPendingBlockedBy,
+    ]
   );
 
   /**
@@ -632,6 +613,7 @@ export function useTaskDependencies({
       createRelationship,
       invalidateCaches,
       getRelationshipErrorMessage,
+      setPendingRelated,
     ]
   );
 
@@ -673,7 +655,13 @@ export function useTaskDependencies({
         setSavingRelationship(null);
       }
     },
-    [isCreateMode, taskId, deleteRelationship, invalidateCaches]
+    [
+      isCreateMode,
+      taskId,
+      deleteRelationship,
+      invalidateCaches,
+      setPendingRelated,
+    ]
   );
 
   /**

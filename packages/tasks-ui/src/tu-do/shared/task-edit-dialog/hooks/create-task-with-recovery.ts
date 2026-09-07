@@ -274,6 +274,19 @@ export async function handleCreateTask({
       });
       Object.assign(newTask, taskData, { list_id: selectedListId });
     }
+    // These associations are confirmed by the create/update request. Dependency
+    // edges are saved separately, so do not promote their pending summary here.
+    const confirmedRelations = withTaskCreateRelations(newTask, {
+      pendingTaskRelationships: normalizedPendingRelationships,
+      selectedAssignees: desiredAssignees,
+      selectedLabels,
+      selectedProjects,
+    });
+    Object.assign(newTask, {
+      assignees: confirmedRelations.assignees,
+      labels: confirmedRelations.labels,
+      projects: confirmedRelations.projects,
+    });
     persistedTask = newTask;
     // Keep the confirmed row identity across a reload during follow-up writes.
     saveDraft(draftKey, {

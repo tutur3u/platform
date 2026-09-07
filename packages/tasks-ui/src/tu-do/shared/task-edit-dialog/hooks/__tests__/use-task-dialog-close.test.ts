@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { beginTaskDraftSave } from '../task-draft-save-session';
 import { useTaskDialogClose } from '../use-task-dialog-close';
 
@@ -15,6 +15,11 @@ function createDeferred<T>() {
 }
 
 describe('useTaskDialogClose', () => {
+  let finishSave: (() => void) | undefined;
+  afterEach(() => {
+    finishSave?.();
+    finishSave = undefined;
+  });
   beforeEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
@@ -23,7 +28,7 @@ describe('useTaskDialogClose', () => {
   it('blocks normal, forced, and back navigation while creation is saving', async () => {
     const onClose = vi.fn();
     const onNavigateToTask = vi.fn();
-    const finishSave = beginTaskDraftSave('draft-key');
+    finishSave = beginTaskDraftSave('draft-key');
     const { result } = renderHook(() =>
       useTaskDialogClose({
         isCreateMode: true,

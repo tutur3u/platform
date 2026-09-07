@@ -116,7 +116,23 @@ function createOptions(
 
 describe('handleCreateTask', () => {
   it('retains a confirmed task and draft when scheduling fails, then retries that row', async () => {
-    const options = createOptions({ totalDuration: 2 });
+    const selectedProjects = [
+      { id: 'project-1', name: 'Project', status: 'active' },
+    ];
+    const options = createOptions({
+      totalDuration: 2,
+      selectedAssignees: [{ id: 'user-2', display_name: 'Colleague' }],
+      selectedLabels: [
+        {
+          id: 'label-1',
+          name: 'Planning',
+          color: 'blue',
+          created_at: '2026-01-01',
+        },
+      ],
+      selectedProjects,
+    });
+    options.queryClient.setQueryData(['tasks', 'board-1'], []);
     localStorage.setItem(
       'tu-do:task-draft:board-1',
       JSON.stringify({ name: options.name, totalDuration: 2 })
@@ -136,6 +152,16 @@ describe('handleCreateTask', () => {
       JSON.parse(localStorage.getItem('tu-do:task-draft:board-1')!)
         .persistedTask.id
     ).toBe('saved-row');
+    expect(
+      options.queryClient.getQueryData<Task[]>(['tasks', 'board-1'])
+    ).toEqual([
+      expect.objectContaining({
+        id: 'saved-row',
+        assignees: [expect.objectContaining({ id: 'user-2' })],
+        labels: [expect.objectContaining({ id: 'label-1' })],
+        projects: [expect.objectContaining({ id: 'project-1' })],
+      }),
+    ]);
     mockUpdateTask.mockResolvedValue({});
     mockUpdateDescription.mockResolvedValue({});
     await handleCreateTask(options);
@@ -157,47 +183,12 @@ describe('handleCreateTask', () => {
     queryClient.setQueryData(['tasks-full', 'board-1', 'filtered'], []);
     mockCreateTask.mockReturnValueOnce(createTaskPromise);
 
-    const savePromise = handleCreateTask({
-      autoSchedule: false,
-      boardId: 'board-1',
-      broadcast: null,
-      calendarHours: null,
-      createMultiple: false,
-      descriptionString: null,
-      descriptionYjsState: null,
-      endDate: undefined,
-      estimationPoints: null,
-      isPersonalWorkspace: false,
-      isSplittable: false,
-      maxSplitDurationMinutes: null,
-      minSplitDurationMinutes: null,
-      name: 'Instant task',
-      onClose,
-      onUpdate: vi.fn(),
-      priority: null,
-      queryClient,
-      selectedAssignees: [],
-      selectedLabels: [],
-      selectedListId: 'list-1',
-      selectedProjects: [],
-      setDescription: vi.fn(),
-      setEndDate: vi.fn(),
-      setEstimationPoints: vi.fn(),
-      setIsLoading: vi.fn(),
-      setIsSaving: vi.fn(),
-      setName: vi.fn(),
-      setPriority: vi.fn(),
-      setSelectedAssignees: vi.fn(),
-      setSelectedLabels: vi.fn(),
-      setSelectedProjects: vi.fn(),
-      setStartDate: vi.fn(),
-      startDate: undefined,
-      toast: vi.fn(),
-      totalDuration: null,
-      user: { id: 'user-1' },
-      userTaskSettings: { task_auto_assign_to_self: false },
-      wsId: 'ws-1',
-    });
+    const savePromise = handleCreateTask(
+      createOptions({
+        onClose,
+        queryClient,
+      })
+    );
 
     const pendingTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
     expect(pendingTasks).toEqual([
@@ -254,47 +245,15 @@ describe('handleCreateTask', () => {
     queryClient.setQueryData(['tasks-full', 'board-1', 'filtered'], []);
     mockCreateTask.mockReturnValueOnce(createTaskPromise);
 
-    const savePromise = handleCreateTask({
-      autoSchedule: false,
-      boardId: 'board-1',
-      broadcast: null,
-      calendarHours: null,
-      createMultiple: false,
-      descriptionString: null,
-      descriptionYjsState: null,
-      endDate: undefined,
-      estimationPoints: null,
-      isPersonalWorkspace: false,
-      isSplittable: false,
-      maxSplitDurationMinutes: null,
-      minSplitDurationMinutes: null,
-      name: 'Instant task',
-      onClose,
-      onUpdate: vi.fn(),
-      priority: null,
-      queryClient,
-      selectedAssignees: [],
-      selectedLabels: [],
-      selectedListId: 'list-1',
-      selectedProjects: [],
-      setDescription,
-      setEndDate: vi.fn(),
-      setEstimationPoints: vi.fn(),
-      setIsLoading: vi.fn(),
-      setIsSaving: vi.fn(),
-      setName,
-      setPriority: vi.fn(),
-      setSelectedAssignees: vi.fn(),
-      setSelectedLabels: vi.fn(),
-      setSelectedProjects: vi.fn(),
-      setStartDate: vi.fn(),
-      startDate: undefined,
-      toast,
-      totalDuration: null,
-      user: { id: 'user-1' },
-      userTaskSettings: { task_auto_assign_to_self: false },
-      wsId: 'ws-1',
-    });
+    const savePromise = handleCreateTask(
+      createOptions({
+        onClose,
+        queryClient,
+        setDescription,
+        setName,
+        toast,
+      })
+    );
 
     const pendingTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
     expect(pendingTasks).toEqual([
@@ -323,7 +282,7 @@ describe('handleCreateTask', () => {
     );
   });
 
-  it('resumes a confirmed task after a description failure without creating a duplicate', async () => {
+  it('resumes a persisted confirmed task without creating a duplicate', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -349,47 +308,15 @@ describe('handleCreateTask', () => {
     queryClient.setQueryData(['tasks', 'board-1'], []);
     queryClient.setQueryData(['tasks-full', 'board-1', 'filtered'], []);
 
-    const savePromise = handleCreateTask({
-      autoSchedule: false,
-      boardId: 'board-1',
-      broadcast: null,
-      calendarHours: null,
-      createMultiple: false,
-      descriptionString: null,
-      descriptionYjsState: null,
-      endDate: undefined,
-      estimationPoints: null,
-      isPersonalWorkspace: false,
-      isSplittable: false,
-      maxSplitDurationMinutes: null,
-      minSplitDurationMinutes: null,
-      name: 'Instant task',
-      onClose,
-      onUpdate: vi.fn(),
-      priority: null,
-      queryClient,
-      selectedAssignees: [],
-      selectedLabels: [],
-      selectedListId: 'list-1',
-      selectedProjects: [],
-      setDescription,
-      setEndDate: vi.fn(),
-      setEstimationPoints: vi.fn(),
-      setIsLoading: vi.fn(),
-      setIsSaving: vi.fn(),
-      setName,
-      setPriority: vi.fn(),
-      setSelectedAssignees: vi.fn(),
-      setSelectedLabels: vi.fn(),
-      setSelectedProjects: vi.fn(),
-      setStartDate: vi.fn(),
-      startDate: undefined,
-      toast,
-      totalDuration: null,
-      user: { id: 'user-1' },
-      userTaskSettings: { task_auto_assign_to_self: false },
-      wsId: 'ws-1',
-    });
+    const savePromise = handleCreateTask(
+      createOptions({
+        onClose,
+        queryClient,
+        setDescription,
+        setName,
+        toast,
+      })
+    );
 
     const pendingTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
     expect(pendingTasks).toEqual([
@@ -445,47 +372,13 @@ describe('handleCreateTask', () => {
       created_at: '2026-01-01T00:00:00Z',
     });
 
-    await handleCreateTask({
-      autoSchedule: false,
-      boardId: 'board-1',
-      broadcast: null,
-      calendarHours: null,
-      createMultiple: false,
-      descriptionString: null,
-      descriptionYjsState: null,
-      endDate: undefined,
-      estimationPoints: null,
-      isPersonalWorkspace: false,
-      isSplittable: false,
-      maxSplitDurationMinutes: null,
-      minSplitDurationMinutes: null,
-      name: 'New task',
-      onClose: vi.fn(),
-      onUpdate: vi.fn(),
-      priority: null,
-      queryClient,
-      selectedAssignees: [],
-      selectedLabels: [],
-      selectedListId: 'list-1',
-      selectedProjects: [],
-      setDescription: vi.fn(),
-      setEndDate: vi.fn(),
-      setEstimationPoints: vi.fn(),
-      setIsLoading: vi.fn(),
-      setIsSaving: vi.fn(),
-      setName: vi.fn(),
-      setPriority: vi.fn(),
-      setSelectedAssignees: vi.fn(),
-      setSelectedLabels: vi.fn(),
-      setSelectedProjects: vi.fn(),
-      setStartDate: vi.fn(),
-      startDate: undefined,
-      toast,
-      totalDuration: null,
-      user: { id: 'user-1' },
-      userTaskSettings: { task_auto_assign_to_self: false },
-      wsId: 'ws-1',
-    });
+    await handleCreateTask(
+      createOptions({
+        name: 'New task',
+        queryClient,
+        toast,
+      })
+    );
 
     expect(mockCreateTask).toHaveBeenCalledWith(
       'ws-1',
