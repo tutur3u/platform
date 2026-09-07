@@ -454,7 +454,10 @@ export function useMeetRoom({
       );
       if (!pending.length) return;
       pendingSubscriptionsRef.current = new Set(
-        pending.map((track) => `${track.sessionId}:${track.trackName}`)
+        pending.map(
+          (track) =>
+            `${encodeURIComponent(track.sessionId ?? '')}:${encodeURIComponent(track.trackName ?? '')}`
+        )
       );
       try {
         const { pc, sessionId } = await ensureSubscribeSession();
@@ -482,7 +485,7 @@ export function useMeetRoom({
             trackOwnersRef.current.set(track.mid, {
               userId: owner,
               kind,
-              subscriptionKey: `${requested.sessionId}:${track.trackName}`,
+              subscriptionKey: `${encodeURIComponent(requested.sessionId ?? '')}:${encodeURIComponent(track.trackName ?? '')}`,
             });
         }
         if (answer?.sessionDescription) {

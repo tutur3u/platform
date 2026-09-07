@@ -42,11 +42,13 @@ export function applySfuCommand(
       sessionId: message.sessionId,
       userId: token.userId,
     }));
-    const { tracks, broadcast } = replaceRoomPublications(
+    const { tracks, broadcast, retired, error } = replaceRoomPublications(
       state.tracks,
-      published
+      published,
+      state.retiredTracks
     );
-    const next = { ...state, tracks };
+    if (error) return denied(state, error, message.requestId);
+    const next = { ...state, tracks, retiredTracks: retired };
 
     return outcome(next, {
       broadcast: [

@@ -397,6 +397,13 @@ describe('meet room SFU relay', () => {
       },
       { type: 'track.published', sessionId: 'new' },
     ]);
+    const late = publish(recovered.state, 'old', 'host-audio');
+    expect(late.reply[0]).toMatchObject({
+      type: 'error',
+      error: 'stale_publication',
+    });
+    expect(late.sfu).toBeNull();
+    expect(late.state).toEqual(recovered.state);
     const repeated = publish(recovered.state, 'new', 'host-audio');
     expect(repeated.broadcast.map((message) => message.type)).toEqual([
       'track.published',

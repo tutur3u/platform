@@ -30,6 +30,7 @@ export function getMediaErrorDiagnostic(error: unknown): string {
     sfu_connection_failed: 'SFU_CONNECTION_FAILED',
     sfu_connection_timeout: 'SFU_CONNECTION_TIMEOUT',
     sfu_session_failed: 'SFU_SESSION_FAILED',
+    publisher_rejoin_required: 'PUBLISHER_REJOIN_REQUIRED',
     sfu_track_close_failed: 'SFU_TRACK_CLOSE_FAILED',
     sfu_track_publish_failed: 'SFU_TRACK_PUBLISH_FAILED',
     sfu_session_replaced: 'SFU_SESSION_REPLACED',

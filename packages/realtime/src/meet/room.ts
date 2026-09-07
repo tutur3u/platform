@@ -40,6 +40,7 @@ export interface MeetRoomSnapshot {
   settings?: MeetRoomSettings;
   ended?: boolean;
   lastReactionAt?: Record<string, number>;
+  retiredTracks?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
   recording: {
     sessionId: string | null;
@@ -259,6 +260,11 @@ export function releaseParticipant(
   );
   const next: MeetRoomSnapshot = {
     ...state,
+    retiredTracks: Object.fromEntries(
+      Object.entries(state.retiredTracks ?? {}).filter(
+        ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
+      )
+    ),
     presence,
     stage: {
       ...state.stage,
