@@ -56,12 +56,13 @@ export default async function CalendarPage({
 
   let initialDate = requestedDate;
   if (!initialDate && eventId) {
-    const { data: linkedEvent } = await sbAdmin
+    const { data: linkedEvent, error: linkedEventError } = await sbAdmin
       .from('workspace_calendar_events')
       .select('start_at')
       .eq('id', eventId)
       .eq('ws_id', workspace.id)
       .maybeSingle();
+    if (linkedEventError) throw linkedEventError;
     initialDate = linkedEvent?.start_at;
   }
   const parsedDate = initialDate ? new Date(initialDate) : null;

@@ -429,19 +429,16 @@ export const CalendarProvider = ({
 }) => {
   const queryClient = useQueryClient();
 
-  // Add debounce timer reference for update events
   const updateDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingUpdatesRef = useRef<Map<string, PendingEventUpdate>>(
     new Map<string, PendingEventUpdate>()
   );
 
-  // Queue for processing updates in order
   const updateQueueRef = useRef<PendingEventUpdate[]>([]);
   const isProcessingQueueRef = useRef<boolean>(false);
 
   const { events, refresh, patchVisibleEvents } = useCalendarSync();
 
-  // Modal state
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const [previewEventId, setPreviewEventId] = useState<string | null>(null);
   const [isModalHidden, setModalHidden] = useState(false);
@@ -451,7 +448,6 @@ export const CalendarProvider = ({
     'manual'
   );
 
-  // Callback for when a task is scheduled (allows components to refresh)
   const [onTaskScheduled, setOnTaskScheduled] = useState<
     (() => void) | undefined
   >(undefined);

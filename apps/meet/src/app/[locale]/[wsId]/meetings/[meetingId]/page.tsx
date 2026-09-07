@@ -28,6 +28,7 @@ import { encodeRoomCode } from '@/features/call/lib/room-code';
 import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
+import { loadMeetingCalendarEvent } from './meeting-calendar-event';
 import { RecordingSessionsOverview } from './recording-sessions-overview';
 
 export const metadata: Metadata = {
@@ -73,17 +74,12 @@ export default async function MeetingDetailPage({
   }
 
   const permissions = await getPermissions({ user, wsId });
-  const calendarEvent = permissions?.withoutPermission('manage_calendar')
-    ? null
-    : (
-        await supabase
-          .from('workspace_calendar_events')
-          .select('id, start_at')
-          .eq('ws_id', wsId)
-          .eq('scheduling_metadata->>type', 'tuturuuu_meeting')
-          .eq('scheduling_metadata->>meeting_id', meetingId)
-          .maybeSingle()
-      ).data;
+  const calendarEvent = await loadMeetingCalendarEvent({
+    supabase,
+    permissions,
+    wsId,
+    meetingId,
+  });
 
   return (
     <div className="container mx-auto max-w-4xl p-6">
