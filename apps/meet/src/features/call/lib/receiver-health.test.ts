@@ -1,10 +1,15 @@
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { describe, expect, it } from 'vitest';
 import { createReceiverHealthCheck } from './receiver-health';
+import { receiverPacketState } from './receiver-packet-state';
 import type { RemoteTrackOwner } from './remote-playback';
 
 function fixture() {
-  const track = { id: 'video', muted: true };
+  const track = Object.assign(new EventTarget(), {
+    id: 'video',
+    muted: true,
+    readyState: 'live',
+  });
   const pc = {
     getTransceivers: () => [{ mid: '0', receiver: { track } }],
   } as unknown as RTCPeerConnection;
@@ -17,7 +22,7 @@ function fixture() {
     },
   } as unknown as Record<string, MeetRealtimePresence>;
   const check = createReceiverHealthCheck();
-  const sample = (time: number, bytes = 0, report = true) =>
+  const sample = (time: number, bytes: unknown = 0, report = true) =>
     check(
       pc,
       new Map(
@@ -66,4 +71,37 @@ describe('receiving health', () => {
     f.owners.get('0')!.subscriptionKey = 'new:video';
     expect(f.sample(30_000)).toBe(false);
   });
+});
+
+it('ignores unavailable, non-finite, and negative byte counters without retaining stale observations', () => {
+  for (const value of [null, '0', Number.NaN, Infinity, -1]) {
+    const f = fixture();
+    f.sample(0);
+    expect(f.sample(30_000, value)).toBe(false);
+    expect(f.sample(40_000, 0)).toBe(false);
+  }
+});
+it('does not recover intentionally ended shared audio', () => {
+  const f = fixture();
+  f.owners.get('0')!.kind = 'screen_audio';
+  f.sample(0);
+  f.track.readyState = 'ended';
+  expect(f.sample(30_000)).toBe(false);
+});
+
+it('reports zero-packet receivers as waiting even when the track is unmuted', () => {
+  const f = fixture();
+  f.track.muted = false;
+  f.sample(0);
+  expect(receiverPacketState(f.track as unknown as MediaStreamTrack)).toBe(
+    false
+  );
+  f.sample(1000, 100);
+  expect(receiverPacketState(f.track as unknown as MediaStreamTrack)).toBe(
+    true
+  );
+  f.sample(2000, null);
+  expect(
+    receiverPacketState(f.track as unknown as MediaStreamTrack)
+  ).toBeUndefined();
 });

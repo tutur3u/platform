@@ -151,8 +151,8 @@ function ParticipantTileImpl({
         </span>
         {!isSelf && (
           <MediaReceivingStatus
-            audio={readiness.audio}
-            video={readiness.video}
+            audio={readiness.receivingAudio}
+            video={readiness.receivingVideo}
             expectAudio={kind === 'camera' && participant.media.audioEnabled}
             expectVideo={
               kind === 'camera'

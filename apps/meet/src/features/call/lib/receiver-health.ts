@@ -1,4 +1,5 @@
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
+import { setReceiverPacketState } from './receiver-packet-state';
 import type { RemoteTrackOwner } from './remote-playback';
 
 /** A live receiver is not proof of incoming RTP. Give a new publication time to start. */
@@ -18,6 +19,11 @@ export function createReceiverHealthCheck() {
       if (mid === null) continue;
       const owner = owners.get(mid);
       if (!owner) continue;
+      const track = transceiver.receiver.track;
+      if (track.readyState !== 'live') {
+        setReceiverPacketState(track, false);
+        continue;
+      }
       const media = participants[owner.userId]?.media;
       const expected =
         media &&
@@ -29,20 +35,27 @@ export function createReceiverHealthCheck() {
       if (!expected) continue;
       const key = `${mid}:${owner.subscriptionKey}`;
       active.add(key);
-      const track = transceiver.receiver.track;
       const inbound = [...stats.values()].filter(
         (stat) =>
           stat.type === 'inbound-rtp' &&
           (stat.mid === mid || stat.trackIdentifier === track.id)
       );
       // Unsupported stats cannot establish a failed stream.
-      if (!inbound.length) continue;
-      const bytes = inbound.reduce(
-        (sum, stat) =>
-          sum +
-          (typeof stat.bytesReceived === 'number' ? stat.bytesReceived : 0),
-        0
-      );
+      if (
+        !inbound.length ||
+        inbound.some(
+          (stat) =>
+            typeof stat.bytesReceived !== 'number' ||
+            !Number.isFinite(stat.bytesReceived) ||
+            stat.bytesReceived < 0
+        )
+      ) {
+        observations.delete(key);
+        setReceiverPacketState(track, undefined);
+        continue;
+      }
+      const bytes = inbound.reduce((sum, stat) => sum + stat.bytesReceived, 0);
+      setReceiverPacketState(track, bytes > 0 && !track.muted);
       const previous = observations.get(key);
       if (!previous || previous.bytes !== bytes)
         observations.set(key, { bytes, since: now });

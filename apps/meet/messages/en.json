@@ -3898,6 +3898,7 @@
       "leave_only": "Leave only",
       "lobby_hint": "Check your camera and microphone before joining.",
       "lower_hand": "Lower hand",
+      "media_connected": "Media connected — packet statistics unavailable",
       "media_connecting": "Connecting {device}…",
       "media_device_busy": "The device could not start. Check whether another app is using it, then try again.",
       "media_error_code": "Diagnostic code: {code}",

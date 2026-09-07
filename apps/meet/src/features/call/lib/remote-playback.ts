@@ -109,5 +109,13 @@ export function listenRemotePlayback(
       () => isCurrentConnection() && owners.get(mid) === owner,
       setMedia
     );
+    if (
+      pc.signalingState === 'stable' &&
+      isCurrentConnection() &&
+      owners.get(mid) === owner &&
+      owner.track === event.track &&
+      event.track.readyState === 'live'
+    )
+      subscribed.add(owner.subscriptionKey);
   });
 }

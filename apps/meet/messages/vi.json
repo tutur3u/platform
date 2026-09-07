@@ -3898,6 +3898,7 @@
       "leave_only": "Chỉ rời cuộc họp",
       "lobby_hint": "Kiểm tra camera và micro trước khi tham gia.",
       "lower_hand": "Hạ tay",
+      "media_connected": "Đã kết nối phương tiện — chưa có số liệu gói tin",
       "media_connecting": "Đang kết nối {device}…",
       "media_device_busy": "Không thể khởi động thiết bị. Hãy kiểm tra xem ứng dụng khác có đang sử dụng thiết bị không rồi thử lại.",
       "media_error_code": "Mã chẩn đoán: {code}",

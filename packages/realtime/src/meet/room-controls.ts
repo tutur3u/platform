@@ -80,6 +80,13 @@ export function applyRoomControl(
     );
   if (message.type === 'room.title.update')
     return outcome(state, {
+      reply: [
+        {
+          type: 'room.title.changed',
+          title: message.title,
+          requestId: message.requestId,
+        },
+      ],
       broadcast: [{ type: 'room.title.changed', title: message.title }],
     });
   if (message.type === 'room.settings.update') {

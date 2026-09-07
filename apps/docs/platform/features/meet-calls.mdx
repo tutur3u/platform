@@ -584,3 +584,10 @@ stalled. Automatic rebuilds are limited to one per minute. Missing statistics,
 normal silence/DTX, and a static screen with an unmuted track do not trigger this
 recovery. This is a recovery mechanism, not evidence that an affected physical
 network or device is fixed; verify each audio/video direction on those devices.
+
+
+Packet counters that are unavailable or invalid remain unknown rather than being
+counted as zero. The tile indicator distinguishes unknown packet statistics from
+confirmed receiving and waiting states. Ended tracks are excluded from stall
+recovery. Persisted title announcements are acknowledged by the room and retained
+across signaling reconnects until delivery; intentional leave clears that outbox.

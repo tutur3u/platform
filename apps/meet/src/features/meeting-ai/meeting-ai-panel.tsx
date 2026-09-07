@@ -174,6 +174,10 @@ export function MeetingAiPanel({
                 </p>
               )}
               <Accordion
+                key={data.sessions
+                  .filter((session) => session.notes)
+                  .map((session) => session.id)
+                  .join(':')}
                 type="multiple"
                 defaultValue={data.sessions
                   .filter((session) => session.notes)

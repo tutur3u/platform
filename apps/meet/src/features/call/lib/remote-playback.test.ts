@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { planRemoteSubscriptions } from './negotiation';
 import {
   attachRemotePlayback,
+  listenRemotePlayback,
   type RemoteTrackOwner,
   reconcileRemotePlayback,
   releaseClosedSubscriptions,
@@ -240,4 +241,22 @@ describe('negotiated receiver reconciliation', () => {
     expect(updates).toBe(0);
     expect(f.subscribed.has(key)).toBe(true);
   });
+});
+
+it('records a late live track event as subscribed without another negotiation', () => {
+  const f = fixture();
+  f.subscribed.clear();
+  const pc = Object.assign(new EventTarget(), {
+    signalingState: 'stable',
+  }) as unknown as RTCPeerConnection;
+  const owners = new Map([['0', f.owner]]);
+  listenRemotePlayback(pc, owners, f.subscribed, () => true, f.setMedia);
+  const track = fakeTrack();
+  Object.defineProperty(track, 'readyState', { value: 'live' });
+  pc.dispatchEvent(
+    Object.assign(new Event('track'), { track, transceiver: { mid: '0' } })
+  );
+  expect(f.subscribed.has(key)).toBe(true);
+  track.dispatchEvent(new Event('ended'));
+  expect(f.subscribed.has(key)).toBe(false);
 });
