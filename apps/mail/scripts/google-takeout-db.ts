@@ -45,6 +45,7 @@ export type PreparedImportMessage = {
   mailboxId: string;
   messageId: string;
   providerMessageId: string;
+  raw: Uint8Array;
   rawMessageId: string;
   rawSha256: string;
   status: 'draft' | 'quarantined' | 'received' | 'sent';
@@ -68,6 +69,10 @@ function table(admin: AnyRecord, name: string) {
   return admin.schema('private').from(name);
 }
 
+export function escapeLikePattern(value: string) {
+  return value.replaceAll(/([\\%_])/gu, '\\$1');
+}
+
 export async function createImportAdmin() {
   return createAdminClient({ noCookie: true }) as AnyRecord;
 }
@@ -84,7 +89,7 @@ export async function loadImportMailbox(admin: AnyRecord, address: string) {
     const { data: user, error: userError } = await admin
       .from('user_private_details')
       .select('user_id')
-      .eq('email', address)
+      .ilike('email', escapeLikePattern(address))
       .maybeSingle();
     if (userError) throw userError;
     stateUserId = user?.user_id ?? null;
@@ -163,24 +168,48 @@ export async function ensureImportLabels({
     name,
     slug,
   }));
-  const custom = [...customLabels].map(([slug, name]) => ({
-    kind: 'custom',
-    mailbox_id: mailboxId,
-    name,
-    slug,
-  }));
+  const { data: existing, error: existingError } = await table(
+    admin,
+    'mail_labels'
+  )
+    .select('id,name,slug')
+    .eq('mailbox_id', mailboxId);
+  if (existingError) throw existingError;
+  const existingByName = new Map(
+    (existing ?? []).map((row: AnyRecord) => [String(row.name), row])
+  );
+  const custom = [...customLabels].flatMap(([slug, name]) =>
+    existingByName.has(name)
+      ? []
+      : [
+          {
+            kind: 'custom',
+            mailbox_id: mailboxId,
+            name,
+            slug,
+          },
+        ]
+  );
   const { error } = await table(admin, 'mail_labels').upsert(
     [...system, ...custom],
     { onConflict: 'mailbox_id,slug' }
   );
   if (error) throw error;
   const { data, error: loadError } = await table(admin, 'mail_labels')
-    .select('id,slug')
+    .select('id,name,slug')
     .eq('mailbox_id', mailboxId);
   if (loadError) throw loadError;
-  return new Map(
+  const labelIds = new Map(
     (data ?? []).map((row: AnyRecord) => [String(row.slug), String(row.id)])
   );
+  const importedByName = new Map(
+    (data ?? []).map((row: AnyRecord) => [String(row.name), String(row.id)])
+  );
+  for (const [generatedSlug, name] of customLabels) {
+    const id = importedByName.get(name);
+    if (id) labelIds.set(generatedSlug, id);
+  }
+  return labelIds;
 }
 
 function validMailbox(address: { address?: string; name?: string }) {
@@ -194,6 +223,7 @@ function recipientRows(message: PreparedImportMessage) {
   const rows: AnyRecord[] = [];
   const add = (kind: string, addresses: Address[]) => {
     for (const [index, address] of flattenAddresses(addresses).entries()) {
+      if (!address) continue;
       const normalized = validMailbox(address);
       if (!normalized) continue;
       rows.push({
