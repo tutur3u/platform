@@ -1,3 +1,7 @@
+import { meetTrackKey, replaceRoomPublications } from './room-tracks';
+
+export { meetTrackKey } from './room-tracks';
+
 import type {
   MeetRealtimeClientMessage,
   MeetRealtimeRoomTrack,
@@ -26,6 +30,7 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  retiredTracks?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
   recording: {
     sessionId: string | null;
@@ -102,10 +107,6 @@ export function createMeetPresence(
     role: token.role,
     userId: token.userId,
   };
-}
-
-export function meetTrackKey(track: MeetRealtimeRoomTrack) {
-  return `${track.sessionId}:${track.trackName ?? track.mid ?? track.userId}`;
 }
 
 /** Allow throttled connected tabs a bounded grace period before expiring. */
@@ -256,6 +257,11 @@ export function releaseParticipant(
   );
   const next: MeetRoomSnapshot = {
     ...state,
+    retiredTracks: Object.fromEntries(
+      Object.entries(state.retiredTracks ?? {}).filter(
+        ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
+      )
+    ),
     presence,
     stage: {
       ...state.stage,
@@ -608,14 +614,17 @@ function applySfuCommand(
       sessionId: message.sessionId,
       userId: token.userId,
     }));
-    const tracks = { ...state.tracks };
-    for (const track of published) {
-      tracks[meetTrackKey(track)] = track;
-    }
-    const next = { ...state, tracks };
+    const { tracks, broadcast, retired, error } = replaceRoomPublications(
+      state.tracks,
+      published,
+      state.retiredTracks
+    );
+    if (error) return denied(state, error, message.requestId);
+    const next = { ...state, tracks, retiredTracks: retired };
 
     return outcome(next, {
       broadcast: [
+        ...broadcast,
         {
           requestId: message.requestId,
           sessionId: message.sessionId,

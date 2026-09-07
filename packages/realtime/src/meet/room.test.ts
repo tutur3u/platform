@@ -362,6 +362,50 @@ describe('meet room SFU relay', () => {
     expect(result.broadcast[0]).toMatchObject({ type: 'track.published' });
   });
 
+  it('retires old sessions before announcing a recovered publication', () => {
+    const publish = (
+      state: typeof joined,
+      sessionId: string,
+      trackName: string
+    ) =>
+      run(
+        state,
+        {
+          type: 'sfu.tracks.publish',
+          sessionDescription,
+          sessionId,
+          tracks: [{ kind: 'audio', mid: '0', trackName }],
+        },
+        token()
+      );
+    const first = publish(joined, 'old', 'host-audio');
+    const other = publish(first.state, 'other', 'host-video');
+    const recovered = publish(other.state, 'new', 'host-audio');
+    expect(Object.keys(recovered.state.tracks)).toEqual([
+      'other:host-video',
+      'new:host-audio',
+    ]);
+    expect(recovered.broadcast).toMatchObject([
+      {
+        type: 'track.closed',
+        sessionId: 'old',
+        tracks: [{ sessionId: 'old', trackName: 'host-audio' }],
+      },
+      { type: 'track.published', sessionId: 'new' },
+    ]);
+    const late = publish(recovered.state, 'old', 'host-audio');
+    expect(late.reply[0]).toMatchObject({
+      type: 'error',
+      error: 'stale_publication',
+    });
+    expect(late.sfu).toBeNull();
+    expect(late.state).toEqual(recovered.state);
+    const repeated = publish(recovered.state, 'new', 'host-audio');
+    expect(repeated.broadcast.map((message) => message.type)).toEqual([
+      'track.published',
+    ]);
+  });
+
   it('drops closed tracks from the room registry', () => {
     const published = run(
       joined,

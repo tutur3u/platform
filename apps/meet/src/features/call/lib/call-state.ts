@@ -57,7 +57,7 @@ export const INITIAL_CALL_STATE: CallState = {
 const MAX_CHAT_MESSAGES = 500;
 
 export function remoteTrackKey(track: MeetRealtimeRoomTrack) {
-  return `${track.sessionId}:${track.trackName ?? track.mid ?? track.userId}`;
+  return `${encodeURIComponent(track.sessionId)}:${encodeURIComponent(track.trackName ?? track.mid ?? track.userId)}`;
 }
 
 /**
@@ -121,6 +121,16 @@ export function reduceCallState(
         // Our own tracks come back on the broadcast; subscribing to them would
         // loop our audio straight back to us.
         if (track.userId === state.selfUserId) continue;
+        // Older room snapshots can still contain an expired publisher session.
+        for (const [key, previous] of Object.entries(remoteTracks)) {
+          if (
+            track.trackName &&
+            previous.userId === track.userId &&
+            previous.trackName === track.trackName &&
+            previous.sessionId !== track.sessionId
+          )
+            delete remoteTracks[key];
+        }
         remoteTracks[remoteTrackKey(track)] = track;
       }
       return { ...state, remoteTracks };

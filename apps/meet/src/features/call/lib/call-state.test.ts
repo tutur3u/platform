@@ -340,3 +340,48 @@ it('counts unread messages after the history reaches its retention limit', () =>
   expect(countUnreadChatMessages(advanced, '500')).toBe(0);
   expect(countUnreadChatMessages(advanced, '0')).toBe(500);
 });
+
+describe('recovered publisher snapshots', () => {
+  it('keeps the latest session for a named track while preserving other media', () => {
+    const tracks = [
+      {
+        userId: OTHER,
+        sessionId: 'old',
+        trackName: 'other-audio',
+        kind: 'audio',
+      },
+      {
+        userId: OTHER,
+        sessionId: 'old',
+        trackName: 'other-video',
+        kind: 'video',
+      },
+      {
+        userId: THIRD,
+        sessionId: 'third',
+        trackName: 'other-audio',
+        kind: 'audio',
+      },
+      {
+        userId: OTHER,
+        sessionId: 'new',
+        trackName: 'other-audio',
+        kind: 'audio',
+      },
+    ];
+    const state = reduceAll([
+      READY,
+      {
+        type: 'track.published',
+        sessionId: 'new',
+        userId: OTHER,
+        tracks,
+      },
+    ]);
+    expect(Object.keys(state.remoteTracks)).toEqual([
+      'old:other-video',
+      'third:other-audio',
+      'new:other-audio',
+    ]);
+  });
+});
