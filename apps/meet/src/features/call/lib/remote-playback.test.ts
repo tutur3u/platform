@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { planRemoteSubscriptions } from './negotiation';
-import { attachRemotePlayback, type RemoteTrackOwner } from './remote-playback';
+import {
+  attachRemotePlayback,
+  type RemoteTrackOwner,
+  releaseClosedSubscriptions,
+  removeRemotePlayback,
+} from './remote-playback';
 import type { RemoteMedia } from './remote-streams';
 
 const roomTrack = {
@@ -95,4 +100,61 @@ describe('ended remote playback', () => {
     const replacement: RemoteMedia = { other: { audio: fakeTrack() } };
     expect(queued?.(replacement)).toBe(replacement);
   });
+});
+
+it('clears closed playback without removing a replacement track', () => {
+  const f = fixture();
+  const old = fakeTrack();
+  attachRemotePlayback(f.owner, old, f.subscribed, () => true, f.setMedia);
+  expect(removeRemotePlayback(f.media(), f.owner)).toEqual({});
+  const replacement = { other: { audio: fakeTrack() } };
+  expect(removeRemotePlayback(replacement, f.owner)).toBe(replacement);
+});
+
+it('preserves other participants on departure and restarts only overlapping offers', () => {
+  const left = {
+    userId: 'left',
+    kind: 'audio' as const,
+    subscriptionKey: 'left:audio',
+    track: fakeTrack(),
+  };
+  const staying = {
+    userId: 'staying',
+    kind: 'audio' as const,
+    subscriptionKey: 'staying:audio',
+    track: fakeTrack(),
+  };
+  let media: RemoteMedia = {
+    left: { audio: left.track },
+    staying: { audio: staying.track },
+  };
+  const owners = new Map([
+    ['0', left],
+    ['1', staying],
+  ]);
+  const subscribed = new Set(['left:audio', 'staying:audio']);
+  const update = (fn: (current: RemoteMedia) => RemoteMedia) => {
+    media = fn(media);
+  };
+  expect(
+    releaseClosedSubscriptions(
+      new Set(['left:audio']),
+      owners,
+      subscribed,
+      new Set(['staying:audio']),
+      update
+    )
+  ).toBe(false);
+  expect(media).toEqual({ staying: { audio: staying.track } });
+  expect([...owners.keys()]).toEqual(['1']);
+  expect([...subscribed]).toEqual(['staying:audio']);
+  expect(
+    releaseClosedSubscriptions(
+      new Set(['pending:audio']),
+      owners,
+      subscribed,
+      new Set(['pending:audio']),
+      update
+    )
+  ).toBe(true);
 });

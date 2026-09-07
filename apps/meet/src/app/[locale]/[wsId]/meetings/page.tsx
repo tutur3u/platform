@@ -37,6 +37,7 @@ export default async function MeetingsPage({
   const { data: identity, error: identityError } =
     await admin.auth.admin.getUserById(user.id);
   const canCreate =
+    canCreateOnlineMeeting(user.email) &&
     !identityError &&
     Boolean(identity.user?.email_confirmed_at) &&
     canCreateOnlineMeeting(identity.user?.email);

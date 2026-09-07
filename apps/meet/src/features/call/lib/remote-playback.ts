@@ -29,18 +29,40 @@ export function attachRemotePlayback(
   const release = () => {
     if (!isCurrent() || owner.track !== track) return;
     subscribed.delete(owner.subscriptionKey);
-    setMedia((current) => {
-      if (!isCurrent() || current[owner.userId]?.[owner.kind] !== track)
-        return current;
-      const next = {
-        ...current,
-        [owner.userId]: { ...current[owner.userId] },
-      };
-      delete next[owner.userId]![owner.kind];
-      if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
-      return next;
-    });
+    setMedia((current) =>
+      isCurrent() ? removeRemotePlayback(current, owner) : current
+    );
   };
   if (track.readyState === 'ended') release();
   else track.addEventListener('ended', release, { once: true });
+}
+
+/** A stale session closing must not clear its replacement's live playback. */
+export function removeRemotePlayback(
+  current: RemoteMedia,
+  owner: RemoteTrackOwner
+): RemoteMedia {
+  if (!owner.track || current[owner.userId]?.[owner.kind] !== owner.track)
+    return current;
+  const next = { ...current, [owner.userId]: { ...current[owner.userId] } };
+  delete next[owner.userId]![owner.kind];
+  if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
+  return next;
+}
+
+/** Only an overlapping in-flight offer needs a fresh subscriber connection. */
+export function releaseClosedSubscriptions(
+  closed: Set<string>,
+  owners: Map<string, RemoteTrackOwner>,
+  subscribed: Set<string>,
+  pending: Set<string>,
+  setMedia: (update: (current: RemoteMedia) => RemoteMedia) => void
+): boolean {
+  for (const key of closed) subscribed.delete(key);
+  for (const [mid, owner] of owners) {
+    if (!closed.has(owner.subscriptionKey)) continue;
+    owners.delete(mid);
+    setMedia((current) => removeRemotePlayback(current, owner));
+  }
+  return [...closed].some((key) => pending.has(key));
 }
