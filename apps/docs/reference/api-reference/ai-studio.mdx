@@ -207,3 +207,25 @@ usage includes applicable date-order/pay-per-event charges, storage and transfer
 When IDs are only unique within a provider account, supply `accountId` on every
 record. Account-day totals include the complete UTC day whenever it overlaps
 the requested range; hourly costs cannot be inferred from a daily total.
+
+## External app usage reports
+
+`GET /v1/usage` accepts an app-bound machine key or external-app session credential
+and `X-Tuturuuu-Workspace-Id`. It returns only AI metering attributed to the
+authenticated app in the matched workspace. Unbound keys and workspace mismatches
+receive `403`.
+
+The response includes `currency: "USD"`, `source: "tuturuuu_ai_metering"`,
+`workspaceId`, `appId`, `from`, `to`, and daily `rows`: `day`, `model`, `feature`,
+`executionMode`, `amountUsd`, `requests`, `failed`, `inputTokens`, `outputTokens`,
+`billedCredits`, and `unmeteredCredits`. All retained app-attributed history is
+paginated in adjacent windows of at most 365 days. Reads neither debit credits
+nor create metering events. Reporting failures return `503`, not a partial total.
+
+Combine `amountUsd` with provider-reported expenses without adding credit
+valuations again: credits are a separate accounting dimension of the same calls.
+These are recorded consumption costs, not proof of a paid invoice. Unconnected
+provider bills must remain explicit coverage gaps. Cache reports privately and
+keep machine credentials on the server.
+
+Validate with `bun run --cwd apps/ai test src/app/v1/usage/route.test.ts`.
