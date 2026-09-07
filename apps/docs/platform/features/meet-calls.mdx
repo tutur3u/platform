@@ -434,6 +434,20 @@ and [Gemini supported regions](https://ai.google.dev/gemini-api/docs/available-r
 Missing keys are classified as `missing_configuration` and return a safe 500;
 provider failures return a safe 502 with fixed-category diagnostics.
 
+### Media connection readiness
+
+`SFU_HTTP_425` means the SFU rejected an operation before the session was ready.
+After the first offer/answer exchange, subsequent publish and subscribe operations
+wait for the browser peer connection to reach `connected` (up to 12 seconds).
+`SFU_CONNECTION_TIMEOUT` and `SFU_CONNECTION_FAILED` distinguish a stalled or
+failed transport from device permissions. Rejoining creates fresh peer connections.
+
+Receiving a successful SDP response alone does not prove playback: the client
+reconciles negotiated receiver tracks with participant ownership and only marks
+live, attached tracks subscribed. This also handles receiver reuse without another
+browser `track` event. Production verification should include late guest admission,
+rapid microphone/camera activation, and media flowing in both directions.
+
 ### Diagnosing media on another device
 
 A working local camera preview proves capture succeeded, but does not prove other

@@ -22,9 +22,11 @@ import {
   planRemoteSubscriptions,
   userIdFromTrackName,
 } from '../lib/negotiation';
+import { preparePeerSession } from '../lib/peer-connection';
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
+  reconcileRemotePlayback,
   releaseClosedSubscriptions,
 } from '../lib/remote-playback';
 import {
@@ -119,6 +121,14 @@ export function useMeetRoom({
 
   const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
 
+  const resetPublisher = useCallback(() => {
+    publishPcRef.current?.close();
+    publishPcRef.current = null;
+    publishSessionRef.current = null;
+    sendersRef.current.clear();
+    publishedRef.current = [];
+  }, []);
+
   const resetSubscriber = useCallback(() => {
     subscribePcRef.current?.close();
     subscribePcRef.current = null;
@@ -200,12 +210,8 @@ export function useMeetRoom({
         // subscription ledger so every remote track is pulled again onto the
         // fresh session.
         resetSubscriber();
-        sendersRef.current.clear();
+        resetPublisher();
         setConnectionGeneration((value) => value + 1);
-        publishSessionRef.current = null;
-        publishPcRef.current?.close();
-        publishPcRef.current = null;
-        publishedRef.current = [];
 
         signalingRef.current?.send({
           media: mediaRef.current,
@@ -239,16 +245,13 @@ export function useMeetRoom({
       };
       setMedia(mediaRef.current);
       signalingRef.current = null;
-      publishPcRef.current?.close();
+      resetPublisher();
       subscribePcRef.current?.close();
-      publishPcRef.current = null;
       subscribePcRef.current = null;
-      publishSessionRef.current = null;
       subscribeSessionRef.current = null;
-      publishedRef.current = [];
       subscribedRef.current = new Set();
     };
-  }, [meetingId, realtimeUrl, resetSubscriber, token]);
+  }, [meetingId, realtimeUrl, resetPublisher, resetSubscriber, token]);
 
   /** Announces our media state so other clients can render mute badges. */
   const publishPresence = useCallback((next: MeetMediaState) => {
@@ -340,6 +343,12 @@ export function useMeetRoom({
 
       if (publish.length) {
         const { pc, sessionId } = await ensurePublishSession();
+        await preparePeerSession(
+          pc,
+          () => publishPcRef.current === pc,
+          resetPublisher
+        );
+        if (publishPcRef.current !== pc) return;
         const added: Array<{
           plan: LocalTrackPlan;
           transceiver: RTCRtpTransceiver;
@@ -400,7 +409,7 @@ export function useMeetRoom({
         }
       }
     },
-    [ensurePublishSession]
+    [ensurePublishSession, resetPublisher]
   );
 
   const queueLocalTracks = useCallback(
@@ -446,6 +455,12 @@ export function useMeetRoom({
       );
       try {
         const { pc, sessionId } = await ensureSubscribeSession();
+        await preparePeerSession(
+          pc,
+          () => subscribePcRef.current === pc,
+          resetSubscriber
+        );
+        if (subscribePcRef.current !== pc) return;
         const answer = await signalingRef.current?.request<SfuTracksResponse>({
           sessionId,
           tracks: pending,
@@ -481,20 +496,13 @@ export function useMeetRoom({
           });
         }
         if (subscribePcRef.current !== pc) return;
-        for (const track of answer?.tracks ?? []) {
-          if (!track.mid) continue;
-          const roomTrack = Object.values(stateRef.current.remoteTracks).find(
-            (entry) =>
-              pending.some(
-                (requested) =>
-                  requested.sessionId === entry.sessionId &&
-                  requested.trackName === track.trackName
-              ) && entry.trackName === track.trackName
-          );
-          const owner = trackOwnersRef.current.get(track.mid);
-          if (roomTrack && owner && owner.track?.readyState !== 'ended')
-            subscribedRef.current.add(remoteTrackKey(roomTrack));
-        }
+        reconcileRemotePlayback(
+          pc,
+          trackOwnersRef.current,
+          subscribedRef.current,
+          () => subscribePcRef.current === pc,
+          setRemoteMedia
+        );
       } finally {
         pendingSubscriptionsRef.current.clear();
       }
@@ -525,7 +533,7 @@ export function useMeetRoom({
         subscribedRef.current.clear();
       }
     };
-  }, [ensureSubscribeSession, state.admission]);
+  }, [ensureSubscribeSession, resetSubscriber, state.admission]);
 
   const applyMedia = useCallback(
     async (next: MeetMediaState, stream: MediaStream | null) => {
