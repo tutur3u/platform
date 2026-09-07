@@ -9,54 +9,6 @@ export type Json =
 export type Database = {
   private: {
     Tables: {
-      external_provider_costs: {
-        Row: {
-          account_id: string;
-          actor_id: string;
-          amount_usd: number;
-          app_id: string;
-          external_run_id: string;
-          granularity: string;
-          observed_at: string;
-          occurred_at: string;
-          provider: string;
-          service: string;
-          source: string;
-          updated_at: string;
-          ws_id: string;
-        };
-        Insert: {
-          account_id?: string;
-          actor_id: string;
-          amount_usd: number;
-          app_id: string;
-          external_run_id: string;
-          granularity?: string;
-          observed_at: string;
-          occurred_at: string;
-          provider: string;
-          service: string;
-          source?: string;
-          updated_at?: string;
-          ws_id: string;
-        };
-        Update: {
-          account_id?: string;
-          actor_id?: string;
-          amount_usd?: number;
-          app_id?: string;
-          external_run_id?: string;
-          granularity?: string;
-          observed_at?: string;
-          occurred_at?: string;
-          provider?: string;
-          service?: string;
-          source?: string;
-          updated_at?: string;
-          ws_id?: string;
-        };
-        Relationships: [];
-      };
       ai_agent_external_message_attachments: {
         Row: {
           content_type: string | null;
@@ -3501,6 +3453,39 @@ export type Database = {
           },
         ];
       };
+      discord_interaction_claims: {
+        Row: {
+          claim_token: string;
+          claimed_at: string;
+          completed_at: string | null;
+          expires_at: string;
+          interaction_id: string;
+          interaction_type: number;
+          lease_expires_at: string;
+          response_payload: Json | null;
+        };
+        Insert: {
+          claim_token?: string;
+          claimed_at?: string;
+          completed_at?: string | null;
+          expires_at: string;
+          interaction_id: string;
+          interaction_type: number;
+          lease_expires_at: string;
+          response_payload?: Json | null;
+        };
+        Update: {
+          claim_token?: string;
+          claimed_at?: string;
+          completed_at?: string | null;
+          expires_at?: string;
+          interaction_id?: string;
+          interaction_type?: number;
+          lease_expires_at?: string;
+          response_payload?: Json | null;
+        };
+        Relationships: [];
+      };
       email_bounce_complaints: {
         Row: {
           bounce_subtype: string | null;
@@ -4031,6 +4016,54 @@ export type Database = {
             referencedColumns: ['id', 'ws_id'];
           },
         ];
+      };
+      external_provider_costs: {
+        Row: {
+          account_id: string;
+          actor_id: string;
+          amount_usd: number;
+          app_id: string;
+          external_run_id: string;
+          granularity: string;
+          observed_at: string;
+          occurred_at: string;
+          provider: string;
+          service: string;
+          source: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          account_id?: string;
+          actor_id: string;
+          amount_usd: number;
+          app_id: string;
+          external_run_id: string;
+          granularity?: string;
+          observed_at: string;
+          occurred_at: string;
+          provider: string;
+          service: string;
+          source?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          account_id?: string;
+          actor_id?: string;
+          amount_usd?: number;
+          app_id?: string;
+          external_run_id?: string;
+          granularity?: string;
+          observed_at?: string;
+          occurred_at?: string;
+          provider?: string;
+          service?: string;
+          source?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
       };
       external_user_monthly_report_logs: {
         Row: {
@@ -15209,34 +15242,6 @@ export type Database = {
       };
     };
     Functions: {
-      record_external_provider_cost: {
-        Args: {
-          p_account_id?: string;
-          p_actor_id: string;
-          p_amount_usd: number;
-          p_app_id: string;
-          p_external_run_id: string;
-          p_granularity?: string;
-          p_observed_at: string;
-          p_occurred_at: string;
-          p_provider: string;
-          p_service: string;
-          p_ws_id: string;
-        };
-        Returns: undefined;
-      };
-      get_external_provider_costs: {
-        Args: { p_from: string; p_to: string; p_ws_id: string };
-        Returns: {
-          amount_usd: number;
-          app_id: string;
-          last_synced_at: string;
-          month: string;
-          provider: string;
-          runs: number;
-          service: string;
-        }[];
-      };
       abuse_trust_multiplier_for_tier: {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
@@ -15992,6 +15997,14 @@ export type Database = {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
       };
+      claim_discord_interaction: {
+        Args: {
+          p_interaction_id: string;
+          p_interaction_type: number;
+          p_retention_seconds?: number;
+        };
+        Returns: Json;
+      };
       claim_next_devbox_run: {
         Args: { p_runner_id: string };
         Returns: {
@@ -16118,6 +16131,15 @@ export type Database = {
           lease_id: string;
           status: string;
         }[];
+      };
+      complete_discord_interaction: {
+        Args: {
+          p_claim_token: string;
+          p_interaction_id: string;
+          p_interaction_type: number;
+          p_response_payload: Json;
+        };
+        Returns: boolean;
       };
       complete_inventory_checkout_session_cash_payment: {
         Args: {
@@ -16835,6 +16857,18 @@ export type Database = {
           updated_at: string;
           wallet_id: string;
           ws_id: string;
+        }[];
+      };
+      get_external_provider_costs: {
+        Args: { p_from: string; p_to: string; p_ws_id: string };
+        Returns: {
+          amount_usd: number;
+          app_id: string;
+          last_synced_at: string;
+          month: string;
+          provider: string;
+          runs: number;
+          service: string;
         }[];
       };
       get_finance_overview_metrics: {
@@ -18094,6 +18128,10 @@ export type Database = {
         Args: { p_actor_id: string; p_ws_id: string };
         Returns: Json;
       };
+      prune_discord_interaction_claims: {
+        Args: { p_limit?: number };
+        Returns: number;
+      };
       raise_rate_limit_exceeded: {
         Args: { p_retry_after: number };
         Returns: undefined;
@@ -18138,6 +18176,22 @@ export type Database = {
         };
         Returns: string;
       };
+      record_external_provider_cost: {
+        Args: {
+          p_account_id?: string;
+          p_actor_id: string;
+          p_amount_usd: number;
+          p_app_id: string;
+          p_external_run_id: string;
+          p_granularity?: string;
+          p_observed_at: string;
+          p_occurred_at: string;
+          p_provider: string;
+          p_service: string;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
       record_rate_limit_attempt: {
         Args: {
           p_db_role: string;
@@ -18149,6 +18203,14 @@ export type Database = {
         Returns: undefined;
       };
       refresh_posts_dashboard_view: { Args: never; Returns: undefined };
+      release_discord_interaction: {
+        Args: {
+          p_claim_token: string;
+          p_interaction_id: string;
+          p_interaction_type: number;
+        };
+        Returns: undefined;
+      };
       release_inventory_checkout_session: {
         Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: undefined;
@@ -18164,6 +18226,15 @@ export type Database = {
           removed_promotion_id: string;
           status: string;
         }[];
+      };
+      renew_discord_interaction_claim: {
+        Args: {
+          p_claim_token: string;
+          p_interaction_id: string;
+          p_interaction_type: number;
+          p_lease_seconds?: number;
+        };
+        Returns: boolean;
       };
       replace_meet_availability: {
         Args: {
@@ -23332,6 +23403,117 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_ai_chunks: {
+        Row: {
+          cost_usd: number | null;
+          created_at: string;
+          duration_seconds: number;
+          id: string;
+          sequence: number;
+          session_id: string;
+          start_seconds: number;
+          status: string;
+          transcript: string | null;
+          usage: Json | null;
+        };
+        Insert: {
+          cost_usd?: number | null;
+          created_at?: string;
+          duration_seconds: number;
+          id: string;
+          sequence: number;
+          session_id: string;
+          start_seconds: number;
+          status?: string;
+          transcript?: string | null;
+          usage?: Json | null;
+        };
+        Update: {
+          cost_usd?: number | null;
+          created_at?: string;
+          duration_seconds?: number;
+          id?: string;
+          sequence?: number;
+          session_id?: string;
+          start_seconds?: number;
+          status?: string;
+          transcript?: string | null;
+          usage?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_chunks_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_ai_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_ai_sessions: {
+        Row: {
+          created_at: string;
+          ended_at: string | null;
+          id: string;
+          meeting_id: string;
+          notes: Json | null;
+          notes_cost_usd: number | null;
+          notes_started_at: string | null;
+          notes_status: string;
+          notes_unpriced_attempts: number;
+          notes_usage: Json | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          ended_at?: string | null;
+          id?: string;
+          meeting_id: string;
+          notes?: Json | null;
+          notes_cost_usd?: number | null;
+          notes_started_at?: string | null;
+          notes_status?: string;
+          notes_unpriced_attempts?: number;
+          notes_usage?: Json | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          ended_at?: string | null;
+          id?: string;
+          meeting_id?: string;
+          notes?: Json | null;
+          notes_cost_usd?: number | null;
+          notes_started_at?: string | null;
+          notes_status?: string;
+          notes_unpriced_attempts?: number;
+          notes_usage?: Json | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_sessions_meeting_id_fkey';
+            columns: ['meeting_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_meetings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -44273,6 +44455,33 @@ export type Database = {
           success: boolean;
         }[];
       };
+      reserve_meet_ai_chunk: {
+        Args: {
+          p_duration_seconds: number;
+          p_id: string;
+          p_sequence: number;
+          p_session_id: string;
+          p_start_seconds: number;
+        };
+        Returns: {
+          cost_usd: number | null;
+          created_at: string;
+          duration_seconds: number;
+          id: string;
+          sequence: number;
+          session_id: string;
+          start_seconds: number;
+          status: string;
+          transcript: string | null;
+          usage: Json | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_chunks';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       reserve_metered_embedding_credits: {
         Args: {
           p_expires_in_seconds?: number;
@@ -44415,6 +44624,21 @@ export type Database = {
       set_workspace_external_project_binding: {
         Args: { p_destination_ws_id: string; p_next_canonical_id?: string };
         Returns: Json;
+      };
+      settle_metered_ai_credit_reservation: {
+        Args: {
+          p_input_tokens: number;
+          p_metadata?: Json;
+          p_output_tokens: number;
+          p_reasoning_tokens?: number;
+          p_reservation_id: string;
+        };
+        Returns: {
+          credits_deducted: number;
+          error_code: string;
+          remaining_credits: number;
+          success: boolean;
+        }[];
       };
       should_send_notification: {
         Args: {
@@ -46998,6 +47222,7 @@ export type Database = {
           public: boolean | null;
           type: Database['storage']['Enums']['buckettype'];
           updated_at: string | null;
+          versioning_status: string;
         };
         Insert: {
           allowed_mime_types?: string[] | null;
@@ -47011,6 +47236,7 @@ export type Database = {
           public?: boolean | null;
           type?: Database['storage']['Enums']['buckettype'];
           updated_at?: string | null;
+          versioning_status?: string;
         };
         Update: {
           allowed_mime_types?: string[] | null;
@@ -47024,6 +47250,7 @@ export type Database = {
           public?: boolean | null;
           type?: Database['storage']['Enums']['buckettype'];
           updated_at?: string | null;
+          versioning_status?: string;
         };
         Relationships: [];
       };
@@ -47196,9 +47423,12 @@ export type Database = {
       };
       objects: {
         Row: {
+          archived_at: string | null;
           bucket_id: string | null;
           created_at: string | null;
           id: string;
+          is_delete_marker: boolean;
+          is_versioned: boolean;
           last_accessed_at: string | null;
           metadata: Json | null;
           name: string | null;
@@ -47210,9 +47440,12 @@ export type Database = {
           version: string | null;
         };
         Insert: {
+          archived_at?: string | null;
           bucket_id?: string | null;
           created_at?: string | null;
           id?: string;
+          is_delete_marker?: boolean;
+          is_versioned?: boolean;
           last_accessed_at?: string | null;
           metadata?: Json | null;
           name?: string | null;
@@ -47224,9 +47457,12 @@ export type Database = {
           version?: string | null;
         };
         Update: {
+          archived_at?: string | null;
           bucket_id?: string | null;
           created_at?: string | null;
           id?: string;
+          is_delete_marker?: boolean;
+          is_versioned?: boolean;
           last_accessed_at?: string | null;
           metadata?: Json | null;
           name?: string | null;
