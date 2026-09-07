@@ -116,17 +116,35 @@ export async function GET(request: Request, { params }: Params) {
   try {
     // Query events that overlap with the requested date range
     // Event overlaps if: event_start < end_at AND event_end > start_at
-    const query = sbAdmin
-      .from('workspace_calendar_events')
-      .select('*')
-      .eq('ws_id', wsId)
-      .lt('start_at', new Date(end_at).toISOString()) // Event starts before range ends
-      .gt('end_at', new Date(start_at).toISOString()) // Event ends after range starts
-      .order('start_at', { ascending: true });
+    const query = () =>
+      sbAdmin
+        .from('workspace_calendar_events')
+        .select('*')
+        .eq('ws_id', wsId)
+        .lt('start_at', new Date(end_at).toISOString()) // Event starts before range ends
+        .gt('end_at', new Date(start_at).toISOString()) // Event ends after range starts
+        .order('start_at', { ascending: true })
+        .order('id', { ascending: true });
 
-    const { data: events, error } = await query;
-
-    if (error) throw error;
+    // Year views can exceed PostgREST's 1,000-row response limit.
+    const events: NonNullable<Awaited<ReturnType<typeof query>>['data']> = [];
+    const pageSize = 1000;
+    let cursor: (typeof events)[number] | undefined;
+    for (;;) {
+      let page = query();
+      if (cursor) {
+        const start = JSON.stringify(cursor.start_at);
+        const id = JSON.stringify(cursor.id);
+        page = page.or(
+          `start_at.gt.${start},and(start_at.eq.${start},id.gt.${id})`
+        );
+      }
+      const { data, error } = await page.limit(pageSize);
+      if (error) throw error;
+      events.push(...(data ?? []));
+      if (!data || data.length < pageSize) break;
+      cursor = data.at(-1);
+    }
 
     // Decrypt encrypted events
     const decryptedEvents = deduplicateCalendarEvents(

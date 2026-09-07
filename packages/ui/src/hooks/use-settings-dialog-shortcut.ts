@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  isEditableShortcutTarget,
+  isShortcutEventIgnored,
+} from '@tuturuuu/utils/keyboard-shortcuts';
+
 import { useEffect } from 'react';
 
 interface UseSettingsDialogShortcutOptions {
@@ -7,21 +12,13 @@ interface UseSettingsDialogShortcutOptions {
   onOpen: () => void;
 }
 
-function isEditableShortcutTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-
-  const tagName = target.tagName.toLowerCase();
-
-  return (
-    target.isContentEditable ||
-    tagName === 'input' ||
-    tagName === 'textarea' ||
-    tagName === 'select'
-  );
-}
-
 function isSettingsDialogShortcut(event: KeyboardEvent) {
-  return (event.metaKey || event.ctrlKey) && !event.altKey && event.key === ',';
+  return (
+    (event.metaKey || event.ctrlKey) &&
+    !event.altKey &&
+    !event.shiftKey &&
+    event.key === ','
+  );
 }
 
 /**
@@ -38,7 +35,8 @@ export function useSettingsDialogShortcut({
     if (!enabled) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || !isSettingsDialogShortcut(event)) return;
+      if (isShortcutEventIgnored(event) || !isSettingsDialogShortcut(event))
+        return;
       if (isEditableShortcutTarget(event.target)) return;
 
       event.preventDefault();

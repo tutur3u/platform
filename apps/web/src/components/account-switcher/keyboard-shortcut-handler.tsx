@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  isEditableShortcutTarget,
+  isShortcutEventIgnored,
+} from '@tuturuuu/utils/keyboard-shortcuts';
 import dynamic from 'next/dynamic';
 import { type JSX, useEffect, useState } from 'react';
 
@@ -16,16 +20,12 @@ export function AccountSwitcherKeyboardShortcut(): JSX.Element | null {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in input fields or editable content
-      const target = e.target as HTMLElement;
       if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT' ||
-        target.isContentEditable
-      ) {
+        isShortcutEventIgnored(e) ||
+        isEditableShortcutTarget(e.target) ||
+        e.altKey
+      )
         return;
-      }
 
       // Cmd/Ctrl + Shift + A (case-insensitive)
       if (

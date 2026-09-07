@@ -2,6 +2,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { readSyncFailures } from '@/lib/calendar/sync-diagnostics';
 import { classifyCalendarSyncHealth } from '@/lib/calendar/sync-health';
 
 interface RouteParams {
@@ -59,13 +60,15 @@ export async function GET(
           .order('created_at', { ascending: true }),
         supabase
           .from('calendar_connections')
-          .select('id, auth_token_id, calendar_id, calendar_name, is_enabled')
+          .select(
+            'id, auth_token_id, calendar_id, calendar_name, is_enabled, sync_inbound_enabled'
+          )
           .eq('ws_id', wsId)
           .order('created_at', { ascending: true }),
         supabase
           .from('calendar_sync_dashboard')
           .select(
-            'status, start_time, end_time, error_message, error_type, cooldown_remaining_seconds'
+            'status, start_time, end_time, error_message, error_type, error_stack_trace, cooldown_remaining_seconds'
           )
           .eq('ws_id', wsId)
           .order('start_time', { ascending: false })
@@ -87,11 +90,13 @@ export async function GET(
     const connections = connectionsResult.data ?? [];
     const health = classifyCalendarSyncHealth({
       hasEnabledConnections: connections.some(
-        (connection) => connection.is_enabled
+        (connection) =>
+          connection.is_enabled && connection.sync_inbound_enabled !== false
       ),
       hasOrphanedConnections: connections.some(
         (connection) =>
           connection.is_enabled &&
+          connection.sync_inbound_enabled !== false &&
           connection.auth_token_id &&
           !accounts.some((account) => account.id === connection.auth_token_id)
       ),
@@ -104,6 +109,16 @@ export async function GET(
 
     return NextResponse.json({
       health,
+      failedCalendars: readSyncFailures(
+        dashboardResult.data?.[0]?.error_stack_trace
+      ).filter((failure) =>
+        connections.some(
+          (connection) =>
+            connection.id === failure.connectionId &&
+            connection.is_enabled &&
+            connection.sync_inbound_enabled !== false
+        )
+      ),
       accountsSummary: {
         total: accounts.length,
         google: accounts.filter((account) => account.provider === 'google')
@@ -119,7 +134,9 @@ export async function GET(
       },
       accounts,
       connections,
-      recentRuns: dashboardResult.data ?? [],
+      recentRuns: (dashboardResult.data ?? []).map(
+        ({ error_stack_trace: _, ...run }) => run
+      ),
       cron: {
         inbound: '*/15 * * * *',
         scheduler: '0 * * * *',

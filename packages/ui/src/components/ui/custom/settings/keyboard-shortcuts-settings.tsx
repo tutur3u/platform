@@ -56,6 +56,8 @@ export function KeyboardShortcutsSettings() {
   const { modKey, modKeyAlt } = usePlatform();
 
   const globalRows: ShortcutRow[] = [
+    { label: t('open_commands'), keys: [[modKey, 'K']] },
+    { label: t('open_apps'), keys: [[modKey, 'Shift', 'K']] },
     {
       label: t('open_settings'),
       keys: [[modKey, ',']],
@@ -100,6 +102,20 @@ export function KeyboardShortcutsSettings() {
   return (
     <div className="space-y-6">
       <ShortcutGroup rows={globalRows} title={t('global')} />
+      <ShortcutGroup
+        title={t('calendar_views')}
+        rows={[
+          { label: t('calendar_day'), keys: [['D']] },
+          { label: t('calendar_four_days'), keys: [['4']] },
+          { label: t('calendar_week'), keys: [['W']] },
+          { label: t('calendar_month'), keys: [['M']] },
+          { label: t('calendar_year'), keys: [['Y']] },
+          { label: t('calendar_agenda'), keys: [['A']] },
+        ]}
+      />
+      <p className="text-muted-foreground text-sm">
+        {t('page_shortcuts_hint')}
+      </p>
       <ShortcutGroup rows={dialogRows} title={t('settings_dialog')} />
     </div>
   );

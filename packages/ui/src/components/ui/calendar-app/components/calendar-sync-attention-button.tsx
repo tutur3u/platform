@@ -1,4 +1,5 @@
 import { AlertTriangle } from '@tuturuuu/icons';
+import { useState } from 'react';
 import { Button } from '../../button';
 import {
   Dialog,
@@ -18,9 +19,10 @@ export function CalendarSyncAttentionButton({
 }: {
   state: CalendarConnectionsManagerState;
 }) {
-  if (!needsCalendarSyncAttention(state)) return null;
+  const [open, setOpen] = useState(false);
+  if (!open && !needsCalendarSyncAttention(state)) return null;
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="outline"

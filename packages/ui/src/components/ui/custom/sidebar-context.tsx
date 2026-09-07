@@ -1,6 +1,10 @@
 'use client';
 
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import {
+  isEditableShortcutTarget,
+  isShortcutEventIgnored,
+} from '@tuturuuu/utils/keyboard-shortcuts';
 import { getTuturuuuBrowserSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import { setCookie } from 'cookies-next';
 import {
@@ -77,19 +81,6 @@ type SidebarRemoteBehaviorBridgeComponent = ComponentType<{
   behaviorUpdatedAt: number | null;
   userChangeVersion: number;
 }>;
-
-function isEditableShortcutTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-
-  if (target.isContentEditable) return true;
-
-  const tagName = target.tagName.toLowerCase();
-  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
-    return true;
-  }
-
-  return Boolean(target.closest('[contenteditable="true"], [role="textbox"]'));
-}
 
 function useSidebarRemoteBehaviorBridge() {
   const [RemoteBehaviorBridge, setRemoteBehaviorBridge] =
@@ -196,7 +187,7 @@ export const SidebarProvider = ({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
-        event.defaultPrevented ||
+        isShortcutEventIgnored(event) ||
         event.key.toLowerCase() !== 'b' ||
         !(event.metaKey || event.ctrlKey) ||
         event.shiftKey ||

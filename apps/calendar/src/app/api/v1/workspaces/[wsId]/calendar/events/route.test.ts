@@ -66,11 +66,32 @@ function request(method: string, body?: unknown) {
 }
 
 function getQueryResult(data: unknown[] = []) {
+  let cursor: { start: string; id: string } | undefined;
   const query: any = {
     eq: vi.fn(() => query),
     gt: vi.fn(() => query),
     lt: vi.fn(() => query),
-    order: vi.fn(async () => ({ data, error: null })),
+    order: vi.fn(() => query),
+    or: vi.fn((filter: string) => {
+      const match = filter.match(
+        /^start_at\.gt\.("[^"]+"),and\(start_at\.eq\.("[^"]+"),id\.gt\.("[^"]+")\)$/
+      );
+      if (!match || match[1] !== match[2]) throw new Error('Invalid cursor');
+      cursor = { start: JSON.parse(match[1]!), id: JSON.parse(match[3]!) };
+      return query;
+    }),
+    limit: vi.fn(async (count: number) => {
+      const remaining = cursor
+        ? data.filter((row) => {
+            const event = row as { start_at: string; id: string };
+            return (
+              event.start_at > cursor!.start ||
+              (event.start_at === cursor!.start && event.id > cursor!.id)
+            );
+          })
+        : data;
+      return { data: remaining.slice(0, count), error: null };
+    }),
     select: vi.fn(() => query),
   };
   return query;
@@ -234,6 +255,23 @@ describe('workspace calendar event collection authorization', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ count: 1, data: events });
+  });
+
+  it('loads events beyond the database row cap for a full year', async () => {
+    const events = Array.from({ length: 1003 }, (_, index) => ({
+      id: `event-${String(index).padStart(4, '0')}`,
+      title: `Event ${index}`,
+      start_at: '2026-08-10T09:00:00.000Z',
+    }));
+    const query = getQueryResult(events);
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn(() => query) });
+    const response = await GET(request('GET'), params());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ count: 1003, data: events });
+    expect(query.limit.mock.calls).toEqual([[1000], [1000]]);
+    expect(query.or).toHaveBeenCalledWith(
+      'start_at.gt."2026-08-10T09:00:00.000Z",and(start_at.eq."2026-08-10T09:00:00.000Z",id.gt."event-0999")'
+    );
   });
 
   it('preserves authorized POST response and writes only after authorization', async () => {

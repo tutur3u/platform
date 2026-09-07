@@ -43,6 +43,7 @@ pub(super) fn classify_calendar_sync_health(
     };
     let orphaned = connections.iter().any(|connection| {
         connection.is_enabled == Some(true)
+            && connection.sync_inbound_enabled != Some(false)
             && connection.auth_token_id.as_ref().is_some_and(|id| {
                 !id.is_null()
                     && !accounts
@@ -56,10 +57,9 @@ pub(super) fn classify_calendar_sync_health(
         ("disconnected", "no_accounts")
     } else if currently_running {
         ("syncing", "running")
-    } else if !connections
-        .iter()
-        .any(|connection| connection.is_enabled == Some(true))
-    {
+    } else if !connections.iter().any(|connection| {
+        connection.is_enabled == Some(true) && connection.sync_inbound_enabled != Some(false)
+    }) {
         ("paused", "no_enabled_calendars")
     } else if latest.is_some_and(|run| run.status.as_deref() == Some("running")) {
         ("degraded", "sync_stalled")

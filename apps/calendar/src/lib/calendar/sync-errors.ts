@@ -3,6 +3,8 @@ export type CalendarSyncErrorType =
   | 'api_limit'
   | 'configuration'
   | 'network'
+  | 'not_found'
+  | 'access_denied'
   | 'unknown';
 
 export class CalendarProviderSyncError extends Error {
@@ -39,6 +41,9 @@ export function classifyCalendarSyncError(
     )
   )
     return 'auth';
+  if (status === 404 || /\bnot ?found\b/.test(message)) return 'not_found';
+  if (status === 403 || /forbidden|access denied/.test(message))
+    return 'access_denied';
   if (
     /invalid_request|invalid_client|not configured|unauthorized_client/.test(
       message

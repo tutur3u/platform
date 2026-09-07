@@ -10,11 +10,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
 import { CalendarLoadingSkeleton } from './calendar-loading-skeleton';
+import { calendarPeriodDates } from './calendar-period';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { EventModal } from './event-modal';
 import { EventPreviewPopover } from './event-preview-popover';
 import { MonthCalendar } from './month-calendar';
 import { useCalendarSettings } from './settings/settings-context';
+import { useCalendarViewShortcuts } from './use-calendar-view-shortcuts';
 import { WeekdayBar } from './weekday-bar';
 import { YearCalendar } from './year-calendar';
 
@@ -255,11 +257,11 @@ export const CalendarContent = ({
     );
     const newDate = new Date(date);
     newDate.setDate(1);
-    setView('month');
-    setDate(newDate);
+    handleSetView('month');
+    handleSetDate(newDate);
     const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, locale, setDates]);
+  }, [date, locale, setDates, handleSetView, handleSetDate]);
 
   const enableYearView = useCallback(() => {
     const newDate = new Date(date);
@@ -269,7 +271,7 @@ export const CalendarContent = ({
 
     transition('year', () => {
       handleSetView('year');
-      setDates([newDate]);
+      setDates(calendarPeriodDates(newDate, 'year'));
     });
   }, [date, transition, handleSetView, setDates]);
 
@@ -279,7 +281,7 @@ export const CalendarContent = ({
 
     transition('agenda', () => {
       handleSetView('agenda');
-      setDates([newDate]);
+      setDates(calendarPeriodDates(newDate, 'agenda'));
     });
   }, [date, transition, handleSetView, setDates]);
 
@@ -342,19 +344,9 @@ export const CalendarContent = ({
       const isMobile =
         typeof window !== 'undefined' && window.innerWidth <= 768;
 
-      // Handle saved view with special case for month
+      // Restore the saved view, adapting wide time grids for mobile.
       if (savedView) {
-        if (savedView === 'month') {
-          // Month view exception: show day on mobile, week on larger screens
-          if (isMobile) {
-            enableDayView();
-          } else {
-            enableWeekView();
-          }
-        } else if (
-          (savedView === 'week' || savedView === '4-days') &&
-          isMobile
-        ) {
+        if ((savedView === 'week' || savedView === '4-days') && isMobile) {
           // Week and 4-day views are disabled on mobile
           enableDayView();
         } else {
@@ -362,6 +354,7 @@ export const CalendarContent = ({
           if (savedView === 'day') enableDayView();
           else if (savedView === '4-days') enable4DayView();
           else if (savedView === 'week') enableWeekView();
+          else if (savedView === 'month') enableMonthView();
           else if (savedView === 'year') enableYearView();
           else if (savedView === 'agenda') enableAgendaView();
           else enableWeekView();
@@ -493,16 +486,8 @@ export const CalendarContent = ({
       );
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
-    } else if (view === 'year') {
-      const newDate = new Date(date);
-      newDate.setMonth(0);
-      newDate.setDate(1);
-      newDate.setHours(0, 0, 0, 0);
-      setDates([newDate]);
-    } else if (view === 'agenda') {
-      const newDate = new Date(date);
-      newDate.setHours(0, 0, 0, 0);
-      setDates([newDate]);
+    } else if (view === 'year' || view === 'agenda') {
+      setDates(calendarPeriodDates(date, view));
     }
   }, [
     date,
@@ -531,49 +516,16 @@ export const CalendarContent = ({
     return () => window.removeEventListener('resize', handleResize);
   }, [enableDayView, enableWeekView, view]);
 
-  // Keyboard shortcut to change view
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-        // Ignore if typing in a form field
-      }
-
-      switch (e.key.toLowerCase()) {
-        case 'd':
-          enableDayView();
-          break;
-        case '4':
-          enable4DayView();
-          break;
-        case 'w':
-          enableWeekView();
-          break;
-        case 'm':
-          enableMonthView();
-          break;
-        case 'y':
-          enableYearView();
-          break;
-        case 'a':
-          enableAgendaView();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    enableDayView,
-    enable4DayView,
-    enableWeekView,
-    enableMonthView,
-    enableYearView,
-    enableAgendaView,
-  ]);
+  useCalendarViewShortcuts({
+    enabled: !disabled,
+    availableViews,
+    day: enableDayView,
+    '4-days': enable4DayView,
+    week: enableWeekView,
+    month: enableMonthView,
+    year: enableYearView,
+    agenda: enableAgendaView,
+  });
 
   if (!initialized || !view || !dates.length) return null;
 
@@ -581,7 +533,7 @@ export const CalendarContent = ({
     <div
       className={cn(
         'grid h-full min-h-0 w-full',
-        view === 'month' || view === 'year'
+        view === 'month' || view === 'year' || view === 'agenda'
           ? 'grid-rows-[auto_1fr]'
           : 'grid-rows-[auto_auto_1fr]'
       )}
@@ -638,10 +590,16 @@ export const CalendarContent = ({
           <CalendarLoadingSkeleton dates={dates} view={view} />
         ) : view === 'month' && dates?.[0] ? (
           <MonthCalendar
+            readOnly={disabled}
             date={dates[0]}
             workspace={workspace}
             visibleDates={dates}
             viewedMonth={date}
+            onDayClick={(day) => {
+              handleSetDate(day);
+              handleSetView('day');
+              setDates([day]);
+            }}
             locale={locale}
           />
         ) : view === 'year' ? (
@@ -655,15 +613,21 @@ export const CalendarContent = ({
             )}
             onDayClick={(d) => {
               handleSetDate(d);
-              enableDayView();
+              handleSetView('day');
+              setDates([d]);
             }}
             onMonthClick={(d) => {
               handleSetDate(d);
-              enableMonthView();
+              handleSetView('month');
             }}
           />
         ) : view === 'agenda' && dates?.[0] ? (
-          <AgendaView startDate={dates[0]} workspace={workspace} />
+          <AgendaView
+            readOnly={disabled}
+            startDate={dates[0]}
+            workspace={workspace}
+            locale={locale}
+          />
         ) : (
           <CalendarViewWithTrail dates={dates} overlay={overlay} />
         )}

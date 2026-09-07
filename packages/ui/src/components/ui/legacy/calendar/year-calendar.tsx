@@ -7,11 +7,11 @@ import { cn } from '@tuturuuu/utils/format';
 import {
   eachDayOfInterval,
   endOfMonth,
-  format,
   getDay,
   isToday,
   startOfMonth,
 } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import {
   formatLunarDay,
@@ -57,9 +57,12 @@ function getEventDotColor(color: string): string {
 
 function getWeekdayLabels(
   firstDayOfWeek: number,
-  showWeekends: boolean
+  showWeekends: boolean,
+  locale: string
 ): string[] {
-  const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const days = Array.from({ length: 7 }, (_, day) =>
+    new Date(2026, 0, 4 + day).toLocaleDateString(locale, { weekday: 'narrow' })
+  );
 
   const reordered: { label: string; dayIndex: number }[] = [];
   for (let i = 0; i < 7; i++) {
@@ -93,14 +96,15 @@ function MiniMonth({
   onDayClick?: (date: Date) => void;
   onMonthClick?: (date: Date) => void;
 }) {
+  const t = useTranslations('calendar');
   const { getCurrentEvents } = useCalendar();
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
   const weekdayLabels = useMemo(
-    () => getWeekdayLabels(firstDayOfWeek, showWeekends),
-    [firstDayOfWeek, showWeekends]
+    () => getWeekdayLabels(firstDayOfWeek, showWeekends, locale),
+    [firstDayOfWeek, showWeekends, locale]
   );
 
   const numCols = showWeekends ? 7 : 5;
@@ -157,17 +161,25 @@ function MiniMonth({
   }, [days, getCurrentEvents]);
 
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-background/50 p-3">
+    <section
+      className={cn(
+        'flex flex-col gap-2 rounded-xl border p-4 transition-colors hover:bg-muted/20',
+        isCurrentMonth ? 'border-primary/35 bg-primary/5' : 'bg-background'
+      )}
+    >
       <button
         type="button"
         onClick={() => onMonthClick?.(monthDate)}
         className={cn(
           'rounded-md px-1 py-1 text-left font-semibold text-sm transition-colors',
-          'hover:bg-foreground/5',
+          'hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
           isCurrentMonth && 'text-primary'
         )}
       >
-        {format(monthDate, 'MMMM')}
+        <span>{monthDate.toLocaleDateString(locale, { month: 'long' })}</span>
+        <span className="ml-2 font-normal text-muted-foreground text-xs">
+          {t('views.busy_days', { count: dayEventData.size })}
+        </span>
       </button>
 
       <div
@@ -199,7 +211,7 @@ function MiniMonth({
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -216,8 +228,9 @@ function DayCell({
   onDayClick?: (date: Date) => void;
   dayEventData?: { count: number; dots: string[] };
 }) {
+  const t = useTranslations('calendar');
   if (!day) {
-    return <div className={cn('h-6', showLunar && 'h-9')} />;
+    return <div className={cn('h-9', showLunar && 'h-11')} />;
   }
 
   const today = isToday(day);
@@ -233,10 +246,13 @@ function DayCell({
     <button
       type="button"
       onClick={() => onDayClick?.(day)}
+      aria-label={`${day.toLocaleDateString(locale, { dateStyle: 'full' })}, ${t('agenda_event_count', { count: dayEventData?.count ?? 0 })}`}
+      aria-current={today ? 'date' : undefined}
       className={cn(
         'group relative flex flex-col items-center justify-start rounded-md transition-colors',
-        showLunar ? 'h-9 py-0.5' : 'h-6',
-        'hover:bg-foreground/5',
+        showLunar ? 'h-11 py-1' : 'h-9 py-1',
+        'hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring',
+        hasEvents && 'bg-primary/5',
         today && 'font-bold'
       )}
     >
@@ -294,8 +310,7 @@ function DayCell({
             )}
             {hasEvents && dayEventData && (
               <div className="text-muted-foreground">
-                {dayEventData.count} event
-                {dayEventData.count !== 1 ? 's' : ''}
+                {t('agenda_event_count', { count: dayEventData.count })}
               </div>
             )}
           </div>
@@ -325,8 +340,11 @@ export function YearCalendar({
   }, [year]);
 
   return (
-    <div className="h-full overflow-auto p-4">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    <div
+      className="h-full overflow-auto bg-muted/10 p-4 sm:p-6"
+      data-calendar-view="year"
+    >
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {months.map((monthDate) => (
           <MiniMonth
             key={monthDate.getMonth()}

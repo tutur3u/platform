@@ -47,6 +47,7 @@ use crate::{
     path_segments, supabase_auth,
 };
 
+const EVENT_PAGE_SIZE: usize = 1000;
 const MEMBER_TYPE: &str = "MEMBER";
 const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const MEMBERSHIP_LOOKUP_FAILED_MESSAGE: &str = "Failed to verify workspace membership";
@@ -175,39 +176,62 @@ async fn fetch_calendar_events(
     start_at: &str,
     end_at: &str,
 ) -> Result<Vec<Value>, ()> {
-    let url = contact_data
-        .rest_url(
-            "workspace_calendar_events",
-            &[
-                ("select", "*".to_owned()),
-                ("ws_id", format!("eq.{ws_id}")),
-                // Event starts before range ends.
-                ("start_at", format!("lt.{end_at}")),
-                // Event ends after range starts.
-                ("end_at", format!("gt.{start_at}")),
-                ("order", "start_at".to_owned()),
-            ],
-        )
-        .ok_or(())?;
+    let mut events = Vec::new();
+    let mut cursor: Option<(String, String)> = None;
+    loop {
+        let mut filters = vec![
+            ("select", "*".to_owned()),
+            ("ws_id", format!("eq.{ws_id}")),
+            // Event starts before range ends.
+            ("start_at", format!("lt.{end_at}")),
+            // Event ends after range starts.
+            ("end_at", format!("gt.{start_at}")),
+            ("order", "start_at.asc,id.asc".to_owned()),
+            ("limit", EVENT_PAGE_SIZE.to_string()),
+        ];
+        if let Some((start, id)) = &cursor {
+            filters.push((
+                "or",
+                format!("(start_at.gt.{start},and(start_at.eq.{start},id.gt.{id}))"),
+            ));
+        }
+        let url = contact_data
+            .rest_url("workspace_calendar_events", &filters)
+            .ok_or(())?;
 
-    let service_role_key = contact_data.service_role_key().ok_or(())?;
-    let bearer = format!("Bearer {service_role_key}");
+        let service_role_key = contact_data.service_role_key().ok_or(())?;
+        let bearer = format!("Bearer {service_role_key}");
 
-    let response = outbound
-        .send(
-            OutboundRequest::new(OutboundMethod::Get, &url)
-                .with_header("Accept", APPLICATION_JSON)
-                .with_header("Authorization", &bearer)
-                .with_header("apikey", service_role_key),
-        )
-        .await
-        .map_err(|_| ())?;
+        let response = outbound
+            .send(
+                OutboundRequest::new(OutboundMethod::Get, &url)
+                    .with_header("Accept", APPLICATION_JSON)
+                    .with_header("Authorization", &bearer)
+                    .with_header("apikey", service_role_key),
+            )
+            .await
+            .map_err(|_| ())?;
 
-    if !(200..300).contains(&response.status) {
-        return Err(());
+        if !(200..300).contains(&response.status) {
+            return Err(());
+        }
+
+        let page = response.json::<Vec<Value>>().map_err(|_| ())?;
+        let finished = page.len() < EVENT_PAGE_SIZE;
+        if !finished {
+            let last = page.last().ok_or(())?;
+            cursor = Some((
+                serde_json::to_string(last.get("start_at").and_then(Value::as_str).ok_or(())?)
+                    .map_err(|_| ())?,
+                serde_json::to_string(last.get("id").and_then(Value::as_str).ok_or(())?)
+                    .map_err(|_| ())?,
+            ));
+        }
+        events.extend(page);
+        if finished {
+            return Ok(events);
+        }
     }
-
-    response.json::<Vec<Value>>().map_err(|_| ())
 }
 
 async fn send_caller_get(
@@ -263,112 +287,4 @@ fn error_response(status: u16, message: &str) -> BackendResponse {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ws_id_matches_exact_mount_path() {
-        assert_eq!(
-            calendar_events_ws_id("/api/v1/workspaces/ws-123/calendar/events"),
-            Some("ws-123")
-        );
-    }
-
-    #[test]
-    fn ws_id_ignores_unrelated_paths() {
-        // Missing `v1` prefix.
-        assert_eq!(
-            calendar_events_ws_id("/api/workspaces/ws-123/calendar/events"),
-            None
-        );
-        // Trailing segment (e.g. a specific event ID).
-        assert_eq!(
-            calendar_events_ws_id("/api/v1/workspaces/ws-123/calendar/events/evt-1"),
-            None
-        );
-        // Sibling resource.
-        assert_eq!(
-            calendar_events_ws_id("/api/v1/workspaces/ws-123/calendar/categories"),
-            None
-        );
-        // Short path must not panic.
-        assert_eq!(calendar_events_ws_id("/api/v1/workspaces"), None);
-    }
-
-    #[test]
-    fn ws_id_rejects_empty_workspace_segment() {
-        assert_eq!(
-            calendar_events_ws_id("/api/v1/workspaces//calendar/events"),
-            None
-        );
-    }
-
-    #[test]
-    fn parse_date_range_params_accepts_both_params() {
-        let result = parse_date_range_params(Some(
-            "https://example.com/api/v1/workspaces/ws-1/calendar/events\
-             ?start_at=2024-01-01T00:00:00Z&end_at=2024-01-31T23:59:59Z",
-        ));
-        assert_eq!(
-            result,
-            Some((
-                "2024-01-01T00:00:00Z".to_owned(),
-                "2024-01-31T23:59:59Z".to_owned()
-            ))
-        );
-    }
-
-    #[test]
-    fn parse_date_range_params_rejects_missing_start_at() {
-        let result = parse_date_range_params(Some(
-            "https://example.com/api/path?end_at=2024-01-31T23:59:59Z",
-        ));
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn parse_date_range_params_rejects_missing_end_at() {
-        let result = parse_date_range_params(Some(
-            "https://example.com/api/path?start_at=2024-01-01T00:00:00Z",
-        ));
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn parse_date_range_params_rejects_empty_values() {
-        let result = parse_date_range_params(Some(
-            "https://example.com/api/path?start_at=&end_at=2024-01-31T23:59:59Z",
-        ));
-        assert!(result.is_none());
-    }
-
-    #[test]
-    fn parse_date_range_params_returns_none_for_missing_url() {
-        assert!(parse_date_range_params(None).is_none());
-    }
-
-    #[test]
-    fn error_response_uses_legacy_error_key() {
-        let resp = error_response(400, DATES_REQUIRED_MESSAGE);
-        assert_eq!(resp.status, 400);
-        assert_eq!(
-            resp.body,
-            json!({ "error": "Start and end dates are required" })
-        );
-
-        let resp = error_response(401, UNAUTHORIZED_MESSAGE);
-        assert_eq!(resp.status, 401);
-        assert_eq!(resp.body, json!({ "error": "Unauthorized" }));
-
-        let resp = error_response(403, ACCESS_DENIED_MESSAGE);
-        assert_eq!(resp.status, 403);
-        assert_eq!(resp.body, json!({ "error": "Workspace access denied" }));
-
-        let resp = error_response(500, MEMBERSHIP_LOOKUP_FAILED_MESSAGE);
-        assert_eq!(resp.status, 500);
-        assert_eq!(
-            resp.body,
-            json!({ "error": "Failed to verify workspace membership" })
-        );
-    }
-}
+mod tests;
