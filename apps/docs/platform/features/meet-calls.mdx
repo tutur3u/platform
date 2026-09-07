@@ -153,6 +153,15 @@ none are planned, so a code always resolves against a real Tuturuuu user and a
 workspace membership. The lobby (`admission: 'lobby'`) stays in the protocol for
 future use, but today every workspace member joins with `admission: 'open'`.
 
+## Missing microphone or camera
+
+If enabling a device reports that none was found, the browser returned
+`NotFoundError` before media reached Cloudflare. Connect an input device or use a
+browser that can see it. Permission denial and a device that cannot start are
+reported separately; check browser/system privacy settings for denied access,
+and other apps using the device for startup failures. Repeated activation uses
+one notification per device rather than stacking identical warnings.
+
 ## Recording
 
 A host can record from inside the call. The control creates a row in
