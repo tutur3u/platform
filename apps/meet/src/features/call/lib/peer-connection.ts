@@ -1,3 +1,8 @@
+export const PEER_CONFIG: RTCConfiguration = {
+  bundlePolicy: 'max-bundle',
+  iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
+};
+
 /** Cloudflare rejects subsequent session operations until ICE/DTLS connects. */
 export function waitForPeerConnection(
   pc: RTCPeerConnection,

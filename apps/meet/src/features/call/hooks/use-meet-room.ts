@@ -3,7 +3,6 @@
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 
 import type {
-  CloudflareSfuSessionDescription,
   CloudflareSfuTrack,
   MeetMediaState,
   MeetRealtimeTrackKind,
@@ -22,7 +21,9 @@ import {
   planRemoteSubscriptions,
   userIdFromTrackName,
 } from '../lib/negotiation';
-import { preparePeerSession } from '../lib/peer-connection';
+import { PEER_CONFIG, preparePeerSession } from '../lib/peer-connection';
+import { watchPeerRecovery } from '../lib/peer-recovery';
+import { syncPublishedSenders } from '../lib/published-senders';
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
@@ -33,14 +34,11 @@ import {
   createRemoteStreamCache,
   type RemoteMedia,
 } from '../lib/remote-streams';
+import type {
+  SfuSessionResponse,
+  SfuTracksResponse,
+} from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
-
-type SfuSessionResponse = { sessionId?: string };
-type SfuTracksResponse = {
-  requiresImmediateRenegotiation?: boolean;
-  sessionDescription?: CloudflareSfuSessionDescription;
-  tracks?: Array<{ mid?: string; trackName?: string }>;
-};
 
 export interface UseMeetRoomOptions {
   meetingId: string;
@@ -67,19 +65,7 @@ export interface MeetRoomController {
   toggleScreenShare: () => Promise<void>;
 }
 
-const PEER_CONFIG: RTCConfiguration = {
-  bundlePolicy: 'max-bundle',
-  iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
-};
-
-/**
- * Drives one participant's side of a call: the signaling socket, the single
- * publishing peer connection and the single subscribing peer connection.
- *
- * Cloudflare Realtime is not mesh — every participant keeps exactly two peer
- * connections to the SFU regardless of room size, which is what keeps a large
- * room affordable.
- */
+/** One signaling socket and separate publishing/subscribing SFU connections. */
 export function useMeetRoom({
   meetingId,
   realtimeUrl,
@@ -121,12 +107,13 @@ export function useMeetRoom({
 
   const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
 
-  const resetPublisher = useCallback(() => {
+  const resetPublisher = useCallback((recover = false) => {
     publishPcRef.current?.close();
     publishPcRef.current = null;
     publishSessionRef.current = null;
     sendersRef.current.clear();
     publishedRef.current = [];
+    if (recover) setConnectionGeneration((value) => value + 1);
   }, []);
 
   const resetSubscriber = useCallback(() => {
@@ -206,9 +193,7 @@ export function useMeetRoom({
         setState((current) => reduceCallState(current, message));
       },
       onReconnected: () => {
-        // The room forgot us while we were gone: re-announce, and clear the
-        // subscription ledger so every remote track is pulled again onto the
-        // fresh session.
+        // Re-announce and resubscribe on fresh media sessions.
         resetSubscriber();
         resetPublisher();
         setConnectionGeneration((value) => value + 1);
@@ -268,6 +253,11 @@ export function useMeetRoom({
 
     const pc = new RTCPeerConnection(PEER_CONFIG);
     publishPcRef.current = pc;
+    watchPeerRecovery(
+      pc,
+      () => publishPcRef.current === pc,
+      () => resetPublisher(true)
+    );
 
     const result = await signalingRef.current?.request<SfuSessionResponse>({
       type: 'sfu.session.create',
@@ -277,7 +267,7 @@ export function useMeetRoom({
     if (publishPcRef.current !== pc) throw new Error('sfu_session_replaced');
     publishSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
-  }, []);
+  }, [resetPublisher]);
 
   const ensureSubscribeSession = useCallback(async () => {
     if (subscribeSessionRef.current && subscribePcRef.current) {
@@ -289,6 +279,7 @@ export function useMeetRoom({
 
     const pc = new RTCPeerConnection(PEER_CONFIG);
     subscribePcRef.current = pc;
+    watchPeerRecovery(pc, () => subscribePcRef.current === pc, resetSubscriber);
 
     pc.addEventListener('track', (event) => {
       const mid = event.transceiver.mid;
@@ -313,7 +304,7 @@ export function useMeetRoom({
     if (subscribePcRef.current !== pc) throw new Error('sfu_session_replaced');
     subscribeSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
-  }, []);
+  }, [resetSubscriber]);
 
   /** Pushes newly enabled local tracks to the SFU. */
   const syncLocalTracks = useCallback(
@@ -322,31 +313,39 @@ export function useMeetRoom({
       if (!selfUserId) return;
 
       const desired = planLocalTracks(selfUserId, next);
+      publishedRef.current = await syncPublishedSenders({
+        published: publishedRef.current,
+        desired,
+        senders: sendersRef.current,
+        pc: publishPcRef.current,
+        sessionId: publishSessionRef.current,
+        stream,
+        screenStream: screenStreamRef.current,
+        closeScreen: async (sessionId, track) => {
+          const result = await signalingRef.current?.request<SfuTracksResponse>(
+            {
+              type: 'sfu.tracks.close',
+              force: true,
+              sessionId,
+              tracks: [track],
+            }
+          );
+          if (
+            !result ||
+            result.errorCode ||
+            result.tracks?.some((entry) => entry.errorCode)
+          )
+            throw new Error('sfu_track_close_failed');
+        },
+      });
       const { publish } = diffLocalTracks(publishedRef.current, desired);
-
-      // Keep stable SFU track names across mute/unmute and share restarts.
-      // Replacing the sender source avoids duplicate transceivers/subscriptions.
-      for (const plan of publishedRef.current) {
-        const enabled = desired.some(
-          (entry) => entry.trackName === plan.trackName
-        );
-        const source =
-          plan.kind === 'screen'
-            ? screenStreamRef.current?.getVideoTracks()[0]
-            : plan.kind === 'audio'
-              ? stream.getAudioTracks()[0]
-              : stream.getVideoTracks()[0];
-        await sendersRef.current
-          .get(plan.trackName)
-          ?.replaceTrack(enabled ? (source ?? null) : null);
-      }
 
       if (publish.length) {
         const { pc, sessionId } = await ensurePublishSession();
         await preparePeerSession(
           pc,
           () => publishPcRef.current === pc,
-          resetPublisher
+          () => resetPublisher(true)
         );
         if (publishPcRef.current !== pc) return;
         const added: Array<{
@@ -439,8 +438,7 @@ export function useMeetRoom({
     ).catch(() => undefined);
   }, [connectionGeneration, queueLocalTracks, state.admission]);
 
-  // Serialize SDP exchanges: a track broadcast must never cancel an in-flight
-  // offer/answer and leave the subscriber in have-remote-offer.
+  // Serialize SDP exchanges across track broadcasts.
   useEffect(() => {
     if (state.admission !== 'admitted') return;
     const pull = async () => {

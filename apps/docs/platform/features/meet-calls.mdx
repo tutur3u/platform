@@ -448,6 +448,22 @@ live, attached tracks subscribed. This also handles receiver reuse without anoth
 browser `track` event. Production verification should include late guest admission,
 rapid microphone/camera activation, and media flowing in both directions.
 
+### Muted tracks and media reconnection
+
+Cloudflare expires tracks after 30 seconds without media packets. Keep muted
+microphone/camera tracks attached with `enabled = false`, which sends silence or
+black frames, so unmuting resumes the existing subscription. Detaching a sender
+with `replaceTrack(null)` silently invalidates that track after the timeout.
+Stopped screen shares are explicitly closed at the SFU with `force: true`,
+removed from the publication ledger, and published afresh when sharing resumes.
+
+Media connectivity is independent of the signaling WebSocket. Meet rebuilds a
+failed peer after one second, a disconnected peer after ten seconds, or an
+unfinished connection handshake after twenty seconds. Brief disconnections that
+recover within the grace period retain the existing connection. Publisher
+recovery republishes enabled sources; subscriber recovery clears its ledger and
+pulls the current room tracks again.
+
 ### Diagnosing media on another device
 
 A working local camera preview proves capture succeeded, but does not prove other

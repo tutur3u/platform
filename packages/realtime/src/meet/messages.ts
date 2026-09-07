@@ -104,6 +104,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     requestId,
     sessionId: z.string().trim().min(1),
     tracks: z.array(cloudflareSfuTrackSchema).min(1),
+    force: z.boolean().optional(),
     type: z.literal('sfu.tracks.close'),
   }),
   z.object({
