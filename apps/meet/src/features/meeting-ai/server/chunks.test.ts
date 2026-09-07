@@ -94,12 +94,10 @@ describe('Meet chunk idempotency', () => {
         query({ data: null, error: { message: 'temporary failure' } })
       )
       .mockReturnValueOnce(query({ data: saved, error: null }));
-    const rpc = vi
-      .fn()
-      .mockResolvedValue({
-        data: { id, created_at: new Date().toISOString() },
-        error: null,
-      });
+    const rpc = vi.fn().mockResolvedValue({
+      data: { id, created_at: new Date().toISOString() },
+      error: null,
+    });
     mocks.access.mockResolvedValue({
       db: { from, rpc },
       meetingId: id,
