@@ -1,3 +1,4 @@
+import { getOfflineTurbopackConfig } from '@tuturuuu/offline/config';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import {
@@ -25,6 +26,8 @@ const TASKS_APP_URL = resolveInternalAppUrl({
 });
 
 const nextConfig = createTuturuuuNextConfig({
+  ...getOfflineTurbopackConfig(),
+  transpilePackages: ['@tuturuuu/ui'],
   images: {
     remotePatterns: [
       {

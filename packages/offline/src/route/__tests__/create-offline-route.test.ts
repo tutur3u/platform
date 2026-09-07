@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../precache/create-precache-manifest', () => ({
+vi.mock('../../precache/create-precache-manifest.js', () => ({
   createPrecacheManifest: vi.fn(async () => []),
 }));
 
@@ -34,6 +34,25 @@ describe('createOfflineRoute', () => {
 
     expect(result.GET).toBeTypeOf('function');
     expect(result.generateStaticParams).toBeTypeOf('function');
+  });
+
+  it('can install only the public fallback and icons without precaching app bundles', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const { createOfflineRoute } = await import('../create-offline-route.js');
+    const { createPrecacheManifest } = await import(
+      '../../precache/create-precache-manifest.js'
+    );
+    await createOfflineRoute({
+      precacheStaticAssets: false,
+      publicPrecachePatterns: ['public/android-chrome-*.png'],
+      offlineFallbackUrl: '/offline.html',
+    }).generateStaticParams();
+    expect(createPrecacheManifest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        globPatterns: ['public/android-chrome-*.png'],
+        additionalEntries: [expect.objectContaining({ url: '/offline.html' })],
+      })
+    );
   });
 
   it('returns 204 in development when registration is disabled', async () => {

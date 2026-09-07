@@ -13,10 +13,7 @@ import type {
 } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import {
-  createAllDayEvent,
-  isAllDayEvent,
-} from '@tuturuuu/utils/calendar-utils';
+import { createAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -31,6 +28,7 @@ import {
   useState,
 } from 'react';
 import { getTaskApiUrl } from '../lib/tasks-app-url';
+import { createCalendarEventLookup } from './calendar-event-lookup';
 import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
@@ -517,44 +515,8 @@ export const CalendarProvider = ({
     [events]
   );
 
-  const getCurrentEvents = useCallback(
-    (date?: Date) => {
-      const targetDate = date || new Date();
-      const targetDay = new Date(
-        targetDate.getFullYear(),
-        targetDate.getMonth(),
-        targetDate.getDate()
-      );
-
-      return events.filter((e: CalendarEvent) => {
-        const eventStart = new Date(e.start_at);
-        const eventEnd = new Date(e.end_at);
-
-        // Normalize dates to compare just the date part (ignoring time)
-        const eventStartDay = new Date(
-          eventStart.getFullYear(),
-          eventStart.getMonth(),
-          eventStart.getDate()
-        );
-
-        const eventEndDay = new Date(
-          eventEnd.getFullYear(),
-          eventEnd.getMonth(),
-          eventEnd.getDate()
-        );
-
-        // Use only time-based logic for all-day detection
-        const isAllDay = isAllDayEvent(e);
-
-        // For all-day events, treat end date as exclusive (consistent with week view)
-        // For timed events, treat end date as inclusive
-        if (isAllDay) {
-          return eventStartDay <= targetDay && eventEndDay > targetDay;
-        } else {
-          return eventStartDay <= targetDay && eventEndDay >= targetDay;
-        }
-      });
-    },
+  const getCurrentEvents = useMemo(
+    () => createCalendarEventLookup(events),
     [events]
   );
 

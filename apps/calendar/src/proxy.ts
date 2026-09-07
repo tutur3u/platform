@@ -284,7 +284,7 @@ export const config = {
      * - webp
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|offline\\.(?:html|css|js)$|serwist/sw\\.js(?:\\.map)?$|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
 };
 

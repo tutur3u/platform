@@ -6,6 +6,7 @@ import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { PwaStatus } from '@tuturuuu/ui/pwa-status';
 import '@tuturuuu/tasks-ui/globals.css';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
 import { TaskSoundEffectsInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/task-sound-effects';
@@ -17,6 +18,7 @@ import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
+import { getTranslations } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -47,6 +49,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,
+      manifest: `${siteConfig.url}/site.webmanifest`,
+      icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
     },
     params,
   });
@@ -65,6 +69,7 @@ export default async function RootLayout({ children }: Props) {
     await getRootLocale()
   );
 
+  const pwa = await getTranslations({ locale, namespace: 'pwa' });
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
@@ -73,7 +78,7 @@ export default async function RootLayout({ children }: Props) {
           font.className
         )}
       >
-        <OfflineProvider register={false}>
+        <OfflineProvider options={{ scope: '/' }}>
           <VercelAnalytics />
           <VercelInsights />
           <NuqsAdapter>
@@ -82,6 +87,14 @@ export default async function RootLayout({ children }: Props) {
                 <FadeSettingInitializer />
                 <TaskSoundEffectsInitializer />
                 {children}
+                <PwaStatus
+                  labels={{
+                    offline_status: pwa('offline_status'),
+                    install: pwa('install'),
+                    install_help: pwa('install_help'),
+                    cache_help: pwa('cache_help'),
+                  }}
+                />
               </Providers>
             </Suspense>
           </NuqsAdapter>

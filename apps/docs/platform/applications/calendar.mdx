@@ -277,3 +277,30 @@ After adding or changing two-way sync columns, prepare migrations in
 `apps/database`; do not run production Supabase push commands from agent
 sessions. Apply locally with `bun sb:up` when feasible, then regenerate database
 types only after the local schema reflects the migration.
+
+## Installation and caching
+
+Calendar and Tasks serve their own `/serwist/sw.js` workers and installable
+app manifests. Client instrumentation captures the install event before hydration;
+these hosts explicitly transpile `@tuturuuu/ui` for that bootstrap entry point.
+The **Install app** control uses the browser prompt when
+available and gives Home Screen instructions otherwise. `/offline.html` is a
+public, bilingual fallback that bypasses authentication middleware.
+
+These productivity hosts use `cacheNavigations: false` and
+`staticAssetsOnly: true`: private HTML, APIs, and private images are never
+persisted by the worker. Installation precaches only the fallback, icons, and
+manifest. Hashed Next assets cache on demand, with at most 160 runtime entries.
+This avoids downloading the entire application at installation.
+
+Loaded data remains available in an open app through memory caches. Calendar
+snapshots are keyed by workspace and date range and limited to 12 ranges; event
+lookups pre-index date intervals and memoize at most 400 day results. Private
+snapshots are not persisted across app restarts. Reopening a workspace, syncing,
+and saving changes require connectivity; this release does not add a durable
+offline write queue. The offline indicator communicates that limitation.
+
+Verify worker registration, install manifest, cached asset reuse, offline
+fallback, and the absence of API/private-page entries in Cache Storage on both
+Calendar and Tasks. Re-run both app builds when changing the worker routes or
+tracing configuration.

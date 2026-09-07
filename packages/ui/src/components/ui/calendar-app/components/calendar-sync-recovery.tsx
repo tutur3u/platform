@@ -142,8 +142,9 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
         )}
         {syncHealth?.lastSuccessAt && (
           <p className="text-xs">
-            {t('last_synced_at')}:{' '}
-            {new Date(syncHealth.lastSuccessAt).toLocaleString()}
+            {t('last_synced_at', {
+              time: new Date(syncHealth.lastSuccessAt).toLocaleString(),
+            })}
           </p>
         )}
         {reconnectAccounts.map((account) => (

@@ -15,11 +15,14 @@ function normalizeDistDir(distDir: string) {
 
 function generateGlobPatterns(
   distDir: string,
-  publicPrecachePatterns: OfflineRouteConfig['publicPrecachePatterns']
+  publicPrecachePatterns: OfflineRouteConfig['publicPrecachePatterns'],
+  precacheStaticAssets: boolean
 ) {
-  const patterns = [
-    `${distDir}/static/**/*.{js,css,html,ico,apng,png,avif,jpg,jpeg,jfif,pjpeg,pjp,gif,svg,webp,json,webmanifest}`,
-  ];
+  const patterns = precacheStaticAssets
+    ? [
+        `${distDir}/static/**/*.{js,css,html,ico,apng,png,avif,jpg,jpeg,jfif,pjpeg,pjp,gif,svg,webp,json,webmanifest}`,
+      ]
+    : [];
 
   if (publicPrecachePatterns !== false) {
     patterns.push(
@@ -51,6 +54,7 @@ export function createOfflineRoute(
     nextConfig = {},
     offlineFallbackUrl = '/~offline',
     publicPrecachePatterns,
+    precacheStaticAssets = true,
     revision = getGitRevision(),
     swSrc = 'src/app/sw.ts',
   } = config;
@@ -91,7 +95,11 @@ export function createOfflineRoute(
               swSrcPath
             ),
           ],
-          globPatterns: generateGlobPatterns(distDir, publicPrecachePatterns),
+          globPatterns: generateGlobPatterns(
+            distDir,
+            publicPrecachePatterns,
+            precacheStaticAssets
+          ),
         });
     const esbuild = await import('esbuild-wasm');
     const result = await esbuild.build({

@@ -1,6 +1,6 @@
 {
-  "name": "Tuturuuu",
-  "short_name": "Tuturuuu",
+  "name": "Tuturuuu Tasks",
+  "short_name": "Tasks",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -15,5 +15,10 @@
   ],
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
-  "display": "standalone"
+  "display": "standalone",
+  "id": "/",
+  "start_url": "/personal",
+  "scope": "/",
+  "categories": ["productivity"],
+  "prefer_related_applications": false
 }
