@@ -25,6 +25,18 @@ describe('Google Takeout database helpers', () => {
     });
   });
 
+  it('preserves values whose object keys collide after sanitizing', () => {
+    expect(
+      sanitizePostgrestPayload({
+        'legacy\uD800header': 'first',
+        'legacy\uDC00header': 'second',
+      })
+    ).toEqual({
+      'legacy�header': 'first',
+      'legacy�header [import duplicate 2]': 'second',
+    });
+  });
+
   it('reuses an existing label with the same display name', async () => {
     const existing = [{ id: 'existing-id', name: 'Résumé', slug: 'resume' }];
     let upserted: AnyRecord[] = [];
@@ -83,5 +95,47 @@ describe('Google Takeout database helpers', () => {
       expect.objectContaining({ name: `Legacy \uD800 label` })
     );
     expect(ids.get('legacy-generated')).toBe('safe-id');
+  });
+
+  it('groups custom labels whose names collide after sanitizing', async () => {
+    let upserted: AnyRecord[] = [];
+    const persisted = [
+      { id: 'grouped-id', name: 'Legacy � label', slug: 'legacy-high' },
+    ];
+    let selectCount = 0;
+    const admin = {
+      schema: () => ({
+        from: () => ({
+          select: () => ({
+            eq: async () => {
+              selectCount += 1;
+              return {
+                data: selectCount === 1 ? [] : persisted,
+                error: null,
+              };
+            },
+          }),
+          upsert: async (rows: AnyRecord[]) => {
+            upserted = rows;
+            return { error: null };
+          },
+        }),
+      }),
+    } as AnyRecord;
+
+    const ids = await ensureImportLabels({
+      admin,
+      customLabels: new Map([
+        ['legacy-high', `Legacy \uD800 label`],
+        ['legacy-low', `Legacy \uDC00 label`],
+      ]),
+      mailboxId: 'mailbox-id',
+    });
+
+    expect(
+      upserted.filter((row) => row.name === 'Legacy � label')
+    ).toHaveLength(1);
+    expect(ids.get('legacy-high')).toBe('grouped-id');
+    expect(ids.get('legacy-low')).toBe('grouped-id');
   });
 });

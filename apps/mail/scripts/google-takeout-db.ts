@@ -80,12 +80,18 @@ export function sanitizePostgrestPayload<T>(value: T): T {
     return value.map(sanitizePostgrestPayload) as T;
   }
   if (value && typeof value === 'object') {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [
-        sanitizePostgrestPayload(key),
-        sanitizePostgrestPayload(entry),
-      ])
-    ) as T;
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value)) {
+      const baseKey = sanitizePostgrestPayload(key);
+      let safeKey = baseKey;
+      let duplicate = 2;
+      while (Object.hasOwn(sanitized, safeKey)) {
+        safeKey = `${baseKey} [import duplicate ${duplicate}]`;
+        duplicate += 1;
+      }
+      sanitized[safeKey] = sanitizePostgrestPayload(entry);
+    }
+    return sanitized as T;
   }
   return value;
 }
@@ -208,18 +214,18 @@ export async function ensureImportLabels({
   const existingByName = new Map(
     (existing ?? []).map((row: AnyRecord) => [String(row.name), row])
   );
-  const custom = safeCustomLabels.flatMap(({ name, slug }) =>
-    existingByName.has(name)
-      ? []
-      : [
-          {
-            kind: 'custom',
-            mailbox_id: mailboxId,
-            name,
-            slug,
-          },
-        ]
-  );
+  const newCustomByName = new Map<string, AnyRecord>();
+  for (const { name, slug } of safeCustomLabels) {
+    if (!existingByName.has(name) && !newCustomByName.has(name)) {
+      newCustomByName.set(name, {
+        kind: 'custom',
+        mailbox_id: mailboxId,
+        name,
+        slug,
+      });
+    }
+  }
+  const custom = [...newCustomByName.values()];
   const { error } = await table(admin, 'mail_labels').upsert(
     [...system, ...custom],
     { onConflict: 'mailbox_id,slug' }
