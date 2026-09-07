@@ -433,3 +433,15 @@ See [Cloudflare placement](https://developers.cloudflare.com/workers/configurati
 and [Gemini supported regions](https://ai.google.dev/gemini-api/docs/available-regions).
 Missing keys are classified as `missing_configuration` and return a safe 500;
 provider failures return a safe 502 with fixed-category diagnostics.
+
+### Diagnosing media on another device
+
+A working local camera preview proves capture succeeded, but does not prove other
+participants can receive it. If enabling a device shows a transmission warning,
+record its diagnostic code and the action that triggered it. `SFU_HTTP_*` identifies
+an upstream SFU rejection; `SIGNALING_*` identifies the signaling connection or
+request timeout; `RTC_*` identifies a browser peer-connection failure. The code
+contains no raw provider message, SDP, credential, or meeting content. A successful
+retry clears the previous warning for that device. Reproduce on the affected device
+before changing transport settings; synthetic sources in another browser do not
+establish physical-device compatibility.
