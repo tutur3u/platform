@@ -179,6 +179,11 @@ export async function ensureImportLabels({
   customLabels: Map<string, string>;
   mailboxId: string;
 }) {
+  const safeCustomLabels = [...customLabels].map(([generatedSlug, name]) => ({
+    generatedSlug,
+    name: sanitizePostgrestPayload(name),
+    slug: sanitizePostgrestPayload(generatedSlug),
+  }));
   const system = [
     ['Inbox', 'inbox'],
     ['Sent', 'sent'],
@@ -203,7 +208,7 @@ export async function ensureImportLabels({
   const existingByName = new Map(
     (existing ?? []).map((row: AnyRecord) => [String(row.name), row])
   );
-  const custom = [...customLabels].flatMap(([slug, name]) =>
+  const custom = safeCustomLabels.flatMap(({ name, slug }) =>
     existingByName.has(name)
       ? []
       : [
@@ -230,7 +235,7 @@ export async function ensureImportLabels({
   const importedByName = new Map(
     (data ?? []).map((row: AnyRecord) => [String(row.name), String(row.id)])
   );
-  for (const [generatedSlug, name] of customLabels) {
+  for (const { generatedSlug, name } of safeCustomLabels) {
     const id = importedByName.get(name);
     if (id) labelIds.set(generatedSlug, id);
   }

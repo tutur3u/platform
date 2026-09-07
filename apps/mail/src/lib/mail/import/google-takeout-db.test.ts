@@ -53,4 +53,35 @@ describe('Google Takeout database helpers', () => {
     );
     expect(ids.get('resume-generated-hash')).toBe('existing-id');
   });
+
+  it('sanitizes malformed custom label names before persistence', async () => {
+    let upserted: AnyRecord[] = [];
+    const admin = {
+      schema: () => ({
+        from: () => ({
+          select: () => ({
+            eq: async () => ({
+              data: [{ id: 'safe-id', name: 'Legacy � label', slug: 'legacy' }],
+              error: null,
+            }),
+          }),
+          upsert: async (rows: AnyRecord[]) => {
+            upserted = rows;
+            return { error: null };
+          },
+        }),
+      }),
+    } as AnyRecord;
+
+    const ids = await ensureImportLabels({
+      admin,
+      customLabels: new Map([['legacy-generated', `Legacy \uD800 label`]]),
+      mailboxId: 'mailbox-id',
+    });
+
+    expect(upserted).not.toContainEqual(
+      expect.objectContaining({ name: `Legacy \uD800 label` })
+    );
+    expect(ids.get('legacy-generated')).toBe('safe-id');
+  });
 });
