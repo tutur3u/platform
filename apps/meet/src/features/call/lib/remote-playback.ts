@@ -66,3 +66,26 @@ export function releaseClosedSubscriptions(
   }
   return [...closed].some((key) => pending.has(key));
 }
+
+/** Renegotiation can reuse a receiver without dispatching another track event. */
+export function reconcileRemotePlayback(
+  pc: RTCPeerConnection,
+  owners: Map<string, RemoteTrackOwner>,
+  subscribed: Set<string>,
+  isCurrentConnection: () => boolean,
+  setMedia: (update: (current: RemoteMedia) => RemoteMedia) => void
+) {
+  if (!isCurrentConnection()) return;
+  for (const transceiver of pc.getTransceivers()) {
+    const mid = transceiver.mid;
+    const owner = mid === null ? undefined : owners.get(mid);
+    if (!owner || mid === null) continue;
+    const track = transceiver.receiver.track;
+    if (track.readyState !== 'live') continue;
+    const isCurrent = () => isCurrentConnection() && owners.get(mid) === owner;
+    if (owner.track !== track)
+      attachRemotePlayback(owner, track, subscribed, isCurrent, setMedia);
+    if (isCurrent() && owner.track?.readyState === 'live')
+      subscribed.add(owner.subscriptionKey);
+  }
+}

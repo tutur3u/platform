@@ -3,6 +3,7 @@ import { planRemoteSubscriptions } from './negotiation';
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
+  reconcileRemotePlayback,
   releaseClosedSubscriptions,
   removeRemotePlayback,
 } from './remote-playback';
@@ -157,4 +158,86 @@ it('preserves other participants on departure and restarts only overlapping offe
       update
     )
   ).toBe(true);
+});
+
+describe('negotiated receiver reconciliation', () => {
+  function receiverFixture(readyState: 'live' | 'ended' = 'live') {
+    const f = fixture();
+    f.subscribed.clear();
+    const track = fakeTrack();
+    Object.defineProperty(track, 'readyState', { value: readyState });
+    const owners = new Map([['0', f.owner]]);
+    const pc = {
+      getTransceivers: () => [{ mid: '0', receiver: { track } }],
+    } as unknown as RTCPeerConnection;
+    return { ...f, track, owners, pc };
+  }
+
+  it('attaches a reused live receiver even without a new track event', () => {
+    const f = receiverFixture();
+    reconcileRemotePlayback(
+      f.pc,
+      f.owners,
+      f.subscribed,
+      () => true,
+      f.setMedia
+    );
+    expect(f.media().other?.audio).toBe(f.track);
+    expect(f.subscribed.has(key)).toBe(true);
+    f.track.dispatchEvent(new Event('ended'));
+    expect(f.media()).toEqual({});
+    expect(f.subscribed.has(key)).toBe(false);
+  });
+
+  it('keeps an ended or unattached receiver eligible for retry', () => {
+    const f = receiverFixture('ended');
+    reconcileRemotePlayback(
+      f.pc,
+      f.owners,
+      f.subscribed,
+      () => true,
+      f.setMedia
+    );
+    expect(f.owner.track).toBeUndefined();
+    expect(f.subscribed.has(key)).toBe(false);
+    expect(
+      planRemoteSubscriptions({ [key]: roomTrack }, f.subscribed, 'self')
+    ).toHaveLength(1);
+  });
+
+  it('ignores an obsolete connection', () => {
+    const f = receiverFixture();
+    reconcileRemotePlayback(
+      f.pc,
+      f.owners,
+      f.subscribed,
+      () => false,
+      f.setMedia
+    );
+    expect(f.media()).toEqual({});
+    expect(f.subscribed.size).toBe(0);
+  });
+
+  it('does not reattach an already attached receiver', () => {
+    const f = receiverFixture();
+    attachRemotePlayback(
+      f.owner,
+      f.track,
+      f.subscribed,
+      () => true,
+      f.setMedia
+    );
+    let updates = 0;
+    reconcileRemotePlayback(
+      f.pc,
+      f.owners,
+      f.subscribed,
+      () => true,
+      () => {
+        updates++;
+      }
+    );
+    expect(updates).toBe(0);
+    expect(f.subscribed.has(key)).toBe(true);
+  });
 });

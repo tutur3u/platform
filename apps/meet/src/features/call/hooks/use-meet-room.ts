@@ -22,9 +22,11 @@ import {
   planRemoteSubscriptions,
   userIdFromTrackName,
 } from '../lib/negotiation';
+import { waitForPeerConnection } from '../lib/peer-connection';
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
+  reconcileRemotePlayback,
   releaseClosedSubscriptions,
 } from '../lib/remote-playback';
 import {
@@ -340,6 +342,8 @@ export function useMeetRoom({
 
       if (publish.length) {
         const { pc, sessionId } = await ensurePublishSession();
+        if (pc.remoteDescription) await waitForPeerConnection(pc);
+        if (publishPcRef.current !== pc) return;
         const added: Array<{
           plan: LocalTrackPlan;
           transceiver: RTCRtpTransceiver;
@@ -446,6 +450,8 @@ export function useMeetRoom({
       );
       try {
         const { pc, sessionId } = await ensureSubscribeSession();
+        if (pc.remoteDescription) await waitForPeerConnection(pc);
+        if (subscribePcRef.current !== pc) return;
         const answer = await signalingRef.current?.request<SfuTracksResponse>({
           sessionId,
           tracks: pending,
@@ -481,20 +487,13 @@ export function useMeetRoom({
           });
         }
         if (subscribePcRef.current !== pc) return;
-        for (const track of answer?.tracks ?? []) {
-          if (!track.mid) continue;
-          const roomTrack = Object.values(stateRef.current.remoteTracks).find(
-            (entry) =>
-              pending.some(
-                (requested) =>
-                  requested.sessionId === entry.sessionId &&
-                  requested.trackName === track.trackName
-              ) && entry.trackName === track.trackName
-          );
-          const owner = trackOwnersRef.current.get(track.mid);
-          if (roomTrack && owner && owner.track?.readyState !== 'ended')
-            subscribedRef.current.add(remoteTrackKey(roomTrack));
-        }
+        reconcileRemotePlayback(
+          pc,
+          trackOwnersRef.current,
+          subscribedRef.current,
+          () => subscribePcRef.current === pc,
+          setRemoteMedia
+        );
       } finally {
         pendingSubscriptionsRef.current.clear();
       }
