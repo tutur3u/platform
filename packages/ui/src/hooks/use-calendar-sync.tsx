@@ -23,6 +23,11 @@ import {
   useState,
 } from 'react';
 import { toast } from '../components/ui/sonner';
+import {
+  type CacheUpdate,
+  type CalendarCache,
+  updateCalendarRangeCache,
+} from './calendar-range-cache';
 
 // Type for calendar connection
 type CalendarConnection = {
@@ -167,24 +172,6 @@ const CalendarSyncContext = createContext<{
   isSyncing: false,
 });
 
-// Add a type for the cache
-type CalendarCache = {
-  [key: string]: {
-    dbEvents: WorkspaceCalendarEvent[];
-    googleEvents: WorkspaceCalendarEvent[];
-    dbLastUpdated: number;
-    googleLastUpdated: number;
-  };
-};
-
-// Helper type for cache updates
-type CacheUpdate = {
-  dbEvents?: WorkspaceCalendarEvent[];
-  googleEvents?: WorkspaceCalendarEvent[];
-  dbLastUpdated?: number;
-  googleLastUpdated?: number;
-};
-
 export const CalendarSyncProvider = ({
   children,
   wsId,
@@ -283,8 +270,8 @@ export const CalendarSyncProvider = ({
   }, []);
 
   const activeCacheKey = useMemo(
-    () => getCacheKey(dates),
-    [dates, getCacheKey]
+    () => (dates.length ? `${wsId}:${getCacheKey(dates)}` : ''),
+    [dates, getCacheKey, wsId]
   );
   const activeCachedDatabaseEvents = activeCacheKey
     ? calendarCache[activeCacheKey]?.dbEvents
@@ -332,36 +319,10 @@ export const CalendarSyncProvider = ({
     return isStale;
   };
 
-  // Helper to update cache safely
   const updateCache = useCallback((cacheKey: string, update: CacheUpdate) => {
-    setCalendarCache((prev) => {
-      const existing = prev[cacheKey] || {
-        dbEvents: [],
-        googleEvents: [],
-        dbLastUpdated: 0,
-        googleLastUpdated: 0,
-      };
-
-      return {
-        ...prev,
-        [cacheKey]: {
-          dbEvents:
-            update.dbEvents !== undefined ? update.dbEvents : existing.dbEvents,
-          googleEvents:
-            update.googleEvents !== undefined
-              ? update.googleEvents
-              : existing.googleEvents,
-          dbLastUpdated:
-            update.dbLastUpdated !== undefined
-              ? update.dbLastUpdated
-              : existing.dbLastUpdated,
-          googleLastUpdated:
-            update.googleLastUpdated !== undefined
-              ? update.googleLastUpdated
-              : existing.googleLastUpdated,
-        },
-      };
-    });
+    setCalendarCache((prev) =>
+      updateCalendarRangeCache(prev, cacheKey, update)
+    );
   }, []);
 
   const isVisibleInCurrentRange = useCallback(

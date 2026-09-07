@@ -1,0 +1,43 @@
+:root {
+  color-scheme: light dark;
+  --background: Canvas;
+  --foreground: CanvasText;
+  --border: GrayText;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: 16px / 1.6 system-ui;
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+}
+main {
+  max-width: 32rem;
+  padding: 2rem;
+}
+img {
+  width: 56px;
+  height: 56px;
+}
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+p {
+  opacity: 0.8;
+}
+button {
+  font: inherit;
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--foreground);
+  color: var(--background);
+  cursor: pointer;
+}
+button:focus-visible {
+  outline: 3px solid Highlight;
+  outline-offset: 3px;
+}

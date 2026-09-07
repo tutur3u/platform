@@ -26,6 +26,13 @@ export interface PrecacheEntry {
 }
 
 export interface ServiceWorkerConfig {
+  /** Keep authenticated HTML out of disk caches. Defaults to true for legacy hosts. */
+  cacheNavigations?: boolean;
+  /** Cache only hashed Next assets and public app icons, never API/private images. */
+  staticAssetsOnly?: boolean;
+  /** Maximum number of on-demand assets retained on this origin. */
+  maxRuntimeCacheEntries?: number;
+
   /**
    * URL of the offline fallback page
    * @default '/~offline'

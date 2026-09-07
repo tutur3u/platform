@@ -6,6 +6,9 @@ type ServiceWorkerEsbuildOptions = Pick<
 >;
 
 export interface OfflineRouteConfig {
+  /** Set false for a small install; hashed assets are cached only when visited. */
+  precacheStaticAssets?: boolean;
+
   /**
    * Path to the service worker source file (relative to app root)
    * @default 'src/app/sw.ts'

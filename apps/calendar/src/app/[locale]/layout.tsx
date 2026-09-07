@@ -2,6 +2,7 @@ import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { PwaStatus } from '@tuturuuu/ui/pwa-status';
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
@@ -45,6 +46,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,
+      manifest: `${siteConfig.url}/site.webmanifest`,
+      icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
     },
     params,
   });
@@ -71,7 +74,7 @@ export default async function RootLayout({ children }: Props) {
           font.className
         )}
       >
-        <OfflineProvider register={false}>
+        <OfflineProvider options={{ scope: '/' }}>
           <VercelAnalytics />
           <VercelInsights />
           <NuqsAdapter>
@@ -79,6 +82,7 @@ export default async function RootLayout({ children }: Props) {
               <Providers appName={siteConfig.name}>
                 <FadeSettingInitializer />
                 {children}
+                <PwaStatus />
               </Providers>
             </Suspense>
           </NuqsAdapter>
