@@ -3952,6 +3952,25 @@
       "you": "You",
       "your_name": "Your name"
     },
+    "meetings": {
+      "cancel": "Cancel",
+      "code_placeholder": "Paste a meeting link or code",
+      "create": "Create meeting",
+      "create_description": "Name the meeting and optionally schedule it for later.",
+      "create_failed": "Could not create the meeting. Please try again.",
+      "create_title": "Create a meeting",
+      "creating": "Creating…",
+      "invalid_code": "Enter a valid Tuturuuu Meet code or link.",
+      "join": "Join meeting",
+      "join_description": "Use a Tuturuuu Meet link or meeting code.",
+      "join_title": "Join a meeting",
+      "meeting_code": "Meeting link or code",
+      "name": "Name",
+      "name_placeholder": "Weekly sync",
+      "name_required": "Enter a meeting name.",
+      "time": "Date and time",
+      "time_hint": "Leave blank to create it for now."
+    },
     "transcription": {
       "empty": "This recording contains no audio to transcribe. The saved recording remains available.",
       "too_large": "This recording is too large for inline transcription. The saved recording remains available.",
