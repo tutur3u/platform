@@ -305,6 +305,34 @@ The live Cloudflare webhook imports new inbound deliveries; it is not a
 historical Gmail importer and must not be used to silently flatten sent mail,
 drafts, or labels into the inbox.
 
+Use the resumable Google Takeout importer after extracting only each account's
+`Takeout/Mail` directory into one directory per email address. Run it without
+`--apply` first and reconcile its report with an independent MBOX inventory:
+
+```bash
+bun --env-file=/path/to/mail-production.env \
+  apps/mail/scripts/import-google-takeout.ts \
+  --root=/path/to/mail-data \
+  --report=/path/to/import-dry-run-report.json
+```
+
+The production operator can then repeat the command with `--apply`. The
+importer writes raw MIME and attachments to the configured Mail R2 bucket,
+uses deterministic IDs, and skips existing provider or Internet Message-ID
+records so an interrupted run can resume safely. It processes Deleted MBOX
+files first so duplicates retain their trash state. It preserves Gmail thread
+IDs, original timestamps, sent/draft/spam/trash/read/star/archive state, system
+labels, and custom labels. State rows may be recorded for a suspended user's
+existing profile, but the importer does not activate a mailbox or create a
+mailbox membership.
+
+After the apply run, compare its report with counts from
+`private.mail_messages`, `private.mail_raw_messages`,
+`private.mail_attachments`, and `private.mail_stored_objects`. Re-run the
+importer with the same arguments to verify that every message is reported as
+already present. Keep the source export until database counts, R2 objects, and
+an authenticated Mail reader sample all agree.
+
 Onboard Cloudflare **Email Sending** separately from **Email Routing**. Sending
 uses its bounce subdomain and DKIM records and can be prepared while the apex
 MX remains on Google. Verify the existing DMARC policy and reporting addresses

@@ -7,6 +7,30 @@ type SearchResult = {
   total: number;
 };
 
+const DATABASE_PAGE_SIZE = 1000;
+const MAX_INLINE_FILTER_IDS = 250;
+const MESSAGE_LIST_COLUMNS =
+  'body_text,created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
+const THREAD_SCAN_COLUMNS =
+  'created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
+
+export async function loadAllRows(
+  createQuery: () => AnyRecord,
+  errorMessage: string
+) {
+  const rows: AnyRecord[] = [];
+  for (let start = 0; ; start += DATABASE_PAGE_SIZE) {
+    const { data, error } = await createQuery().range(
+      start,
+      start + DATABASE_PAGE_SIZE - 1
+    );
+    if (error) throw new Error(`${errorMessage}: ${error.message}`);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < DATABASE_PAGE_SIZE) return rows;
+  }
+}
+
 function intersectIds(current: Set<string> | null, next: Iterable<string>) {
   const nextSet = new Set(next);
   if (current == null) return nextSet;
@@ -22,14 +46,15 @@ async function recipientMessageIds({
   kind: 'bcc' | 'cc' | 'to';
   value: string;
 }) {
-  const { data, error } = await privateTable(admin, 'mail_recipients')
-    .select('message_id')
-    .eq('kind', kind)
-    .ilike('address', `%${escapeMailLike(value)}%`)
-    .limit(5000);
-  if (error)
-    throw new Error(`Failed to search mail recipients: ${error.message}`);
-  return (data ?? []).map((row: AnyRecord) => row.message_id as string);
+  const rows = await loadAllRows(
+    () =>
+      privateTable(admin, 'mail_recipients')
+        .select('message_id')
+        .eq('kind', kind)
+        .ilike('address', `%${escapeMailLike(value)}%`),
+    'Failed to search mail recipients'
+  );
+  return rows.map((row) => row.message_id as string);
 }
 
 async function labelMessageIds({
@@ -60,13 +85,14 @@ async function labelMessageIds({
     .map((row: AnyRecord) => row.id as string);
   if (labelIds.length === 0) return [];
 
-  const { data, error } = await privateTable(admin, 'mail_message_labels')
-    .select('message_id')
-    .in('label_id', labelIds)
-    .limit(5000);
-  if (error)
-    throw new Error(`Failed to search message labels: ${error.message}`);
-  return (data ?? []).map((row: AnyRecord) => row.message_id as string);
+  const rows = await loadAllRows(
+    () =>
+      privateTable(admin, 'mail_message_labels')
+        .select('message_id')
+        .in('label_id', labelIds),
+    'Failed to search message labels'
+  );
+  return rows.map((row) => row.message_id as string);
 }
 
 async function folderMessageIds({
@@ -76,12 +102,14 @@ async function folderMessageIds({
   admin: AnyRecord;
   folderId: string;
 }) {
-  const { data, error } = await privateTable(admin, 'mail_message_folders')
-    .select('message_id')
-    .eq('folder_id', folderId)
-    .limit(5000);
-  if (error) throw new Error(`Failed to search mail folder: ${error.message}`);
-  return (data ?? []).map((row: AnyRecord) => row.message_id as string);
+  const rows = await loadAllRows(
+    () =>
+      privateTable(admin, 'mail_message_folders')
+        .select('message_id')
+        .eq('folder_id', folderId),
+    'Failed to search mail folder'
+  );
+  return rows.map((row) => row.message_id as string);
 }
 
 function idsWithTimestamp(rows: AnyRecord[], column: string) {
@@ -106,22 +134,16 @@ export async function queryMailMessageRows({
   userId: string;
 }): Promise<SearchResult> {
   const page = Math.max(1, params.page ?? 1);
-  const pageSize = threadScan
-    ? 5000
-    : Math.min(Math.max(1, params.pageSize ?? 40), 100);
+  const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
   const parsed = parseMailSearch(params.query);
-  const { data: stateRows, error: stateError } = await privateTable(
-    admin,
-    'mail_message_user_state'
-  )
-    .select('message_id, read_at, starred_at, archived_at, trashed_at')
-    .eq('mailbox_id', mailboxId)
-    .eq('user_id', userId)
-    .limit(5000);
-  if (stateError)
-    throw new Error(`Failed to search mail state: ${stateError.message}`);
-
-  const states = stateRows ?? [];
+  const states = await loadAllRows(
+    () =>
+      privateTable(admin, 'mail_message_user_state')
+        .select('message_id, read_at, starred_at, archived_at, trashed_at')
+        .eq('mailbox_id', mailboxId)
+        .eq('user_id', userId),
+    'Failed to search mail state'
+  );
   const readIds = idsWithTimestamp(states, 'read_at');
   const starredIds = idsWithTimestamp(states, 'starred_at');
   const archivedIds = idsWithTimestamp(states, 'archived_at');
@@ -174,55 +196,85 @@ export async function queryMailMessageRows({
   }
   if (includedIds?.size === 0) return { rows: [], total: 0 };
 
-  let query = privateTable(admin, 'mail_messages')
-    .select('*', { count: 'exact' })
-    .eq('mailbox_id', mailboxId);
+  const needsLocalFiltering =
+    threadScan ||
+    (includedIds?.size ?? 0) > MAX_INLINE_FILTER_IDS ||
+    excludedIds.size > MAX_INLINE_FILTER_IDS;
+  const buildQuery = ({ count = false }: { count?: boolean } = {}) => {
+    const source = privateTable(admin, 'mail_messages');
+    let query = (
+      count
+        ? source.select(MESSAGE_LIST_COLUMNS, { count: 'exact' })
+        : source.select(threadScan ? THREAD_SCAN_COLUMNS : MESSAGE_LIST_COLUMNS)
+    ).eq('mailbox_id', mailboxId);
 
-  if (privateToUser) query = query.eq('created_by', userId);
+    if (privateToUser) query = query.eq('created_by', userId);
+    if (params.folder === 'drafts' || parsed.states.includes('draft')) {
+      query = query.eq('status', 'draft');
+    } else if (params.folder === 'sent' || parsed.states.includes('sent')) {
+      query = query.eq('direction', 'outbound').neq('status', 'draft');
+    } else if (params.folder === 'spam') {
+      query = query.eq('status', 'quarantined');
+    } else if (params.folder === 'trash' && !needsLocalFiltering) {
+      query = trashedIds.length
+        ? query.or(`status.eq.quarantined,id.in.(${trashedIds.join(',')})`)
+        : query.eq('status', 'quarantined');
+    } else if (params.folder === 'inbox' || !params.folder) {
+      query = query
+        .eq('direction', 'inbound')
+        .neq('status', 'draft')
+        .neq('status', 'quarantined');
+    }
 
-  if (params.folder === 'drafts' || parsed.states.includes('draft')) {
-    query = query.eq('status', 'draft');
-  } else if (params.folder === 'sent' || parsed.states.includes('sent')) {
-    query = query.eq('direction', 'outbound').neq('status', 'draft');
-  } else if (params.folder === 'spam') {
-    query = query.eq('status', 'quarantined');
-  } else if (params.folder === 'trash') {
-    query = trashedIds.length
-      ? query.or(`status.eq.quarantined,id.in.(${trashedIds.join(',')})`)
-      : query.eq('status', 'quarantined');
-  } else if (params.folder === 'inbox' || !params.folder) {
-    query = query
-      .eq('direction', 'inbound')
-      .neq('status', 'draft')
-      .neq('status', 'quarantined');
-  }
-
-  if (includedIds) query = query.in('id', [...includedIds]);
-  if (excludedIds.size > 0) {
-    query = query.not('id', 'in', `(${[...excludedIds].join(',')})`);
-  }
-  if (parsed.hasAttachment) query = query.eq('has_attachments', true);
-  if (parsed.after)
-    query = query.gte('created_at', `${parsed.after}T00:00:00.000Z`);
-  if (parsed.before)
-    query = query.lt('created_at', `${parsed.before}T00:00:00.000Z`);
-  for (const from of parsed.from) {
-    query = query.ilike('from_address', `%${escapeMailLike(from)}%`);
-  }
-  for (const subject of parsed.subject) {
-    query = query.ilike('subject', `%${escapeMailLike(subject)}%`);
-  }
-  if (parsed.freeText.length > 0) {
-    query = query.textSearch('search_document', parsed.freeText.join(' '), {
-      config: 'simple',
-      type: 'websearch',
-    });
-  }
+    if (!needsLocalFiltering && includedIds)
+      query = query.in('id', [...includedIds]);
+    if (!needsLocalFiltering && excludedIds.size > 0) {
+      query = query.not('id', 'in', `(${[...excludedIds].join(',')})`);
+    }
+    if (parsed.hasAttachment) query = query.eq('has_attachments', true);
+    if (parsed.after)
+      query = query.gte('created_at', `${parsed.after}T00:00:00.000Z`);
+    if (parsed.before)
+      query = query.lt('created_at', `${parsed.before}T00:00:00.000Z`);
+    for (const from of parsed.from) {
+      query = query.ilike('from_address', `%${escapeMailLike(from)}%`);
+    }
+    for (const subject of parsed.subject) {
+      query = query.ilike('subject', `%${escapeMailLike(subject)}%`);
+    }
+    if (parsed.freeText.length > 0) {
+      query = query.textSearch('search_document', parsed.freeText.join(' '), {
+        config: 'simple',
+        type: 'websearch',
+      });
+    }
+    return query.order('created_at', { ascending: false });
+  };
 
   const start = threadScan ? 0 : (page - 1) * pageSize;
-  const { data, error, count } = await query
-    .order('created_at', { ascending: false })
-    .range(start, start + pageSize - 1);
+  if (needsLocalFiltering) {
+    const trashedIdSet = new Set(trashedIds);
+    const rows = (
+      await loadAllRows(buildQuery, 'Failed to list mail messages')
+    ).filter((row) => {
+      const id = row.id as string;
+      if (includedIds && !includedIds.has(id)) return false;
+      if (excludedIds.has(id)) return false;
+      if (params.folder === 'trash') {
+        return row.status === 'quarantined' || trashedIdSet.has(id);
+      }
+      return true;
+    });
+    return {
+      rows: threadScan ? rows : rows.slice(start, start + pageSize),
+      total: rows.length,
+    };
+  }
+
+  const { data, error, count } = await buildQuery({ count: true }).range(
+    start,
+    start + pageSize - 1
+  );
   if (error) throw new Error(`Failed to list mail messages: ${error.message}`);
 
   return { rows: data ?? [], total: count ?? 0 };
