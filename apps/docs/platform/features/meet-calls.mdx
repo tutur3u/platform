@@ -466,6 +466,13 @@ pulls the current room tracks again.
 
 ### Diagnosing media on another device
 
+Open **Connection** in the call header to inspect outgoing and incoming media
+transport states and packet counts. **Reconnect media** rebuilds both media
+connections without leaving the room. **Copy diagnostics** includes only
+transport states, aggregate media counters, and receiver track states; it omits
+SDP, IP addresses, track identifiers, participant names, and authentication data.
+
+
 A working local camera preview proves capture succeeded, but does not prove other
 participants can receive it. If enabling a device shows a transmission warning,
 record its diagnostic code and the action that triggered it. `SFU_HTTP_*` identifies

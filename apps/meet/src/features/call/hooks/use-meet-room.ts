@@ -14,6 +14,17 @@ import {
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
+import { readPeerDiagnostics } from '../lib/media-diagnostics';
+import type {
+  MeetRoomController,
+  UseMeetRoomOptions,
+} from '../lib/room-controller';
+
+export type {
+  MeetRoomController,
+  UseMeetRoomOptions,
+} from '../lib/room-controller';
+
 import {
   diffLocalTracks,
   type LocalTrackPlan,
@@ -42,31 +53,6 @@ import type {
   SfuTracksResponse,
 } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
-
-export interface UseMeetRoomOptions {
-  meetingId: string;
-  realtimeUrl: string;
-  token: string;
-  wsId: string;
-}
-
-export interface MeetRoomController {
-  connectionStatus: MeetSignalingStatus;
-  decideAdmission: (userId: string, admit: boolean) => void;
-  localStream: MediaStream | null;
-  localPreview: MediaStream | null;
-  media: MeetMediaState;
-  muteParticipant: (userId: string, kinds: MeetRealtimeTrackKind[]) => void;
-  raiseHand: (raised: boolean) => void;
-  removeParticipant: (userId: string) => void;
-  remoteStreams: Record<string, MediaStream>;
-  sendChat: (body: string) => void;
-  setRecordingState: (state: 'recording' | 'idle', sessionId?: string) => void;
-  state: CallState;
-  toggleCamera: () => Promise<void>;
-  toggleMicrophone: () => Promise<void>;
-  toggleScreenShare: () => Promise<void>;
-}
 
 /** One signaling socket and separate publishing/subscribing SFU connections. */
 export function useMeetRoom({
@@ -671,6 +657,16 @@ export function useMeetRoom({
   );
 
   return {
+    getMediaDiagnostics: async () => ({
+      signaling: connectionStatus,
+      attachedParticipants: Object.keys(remoteMedia).length,
+      publisher: await readPeerDiagnostics(publishPcRef.current),
+      subscriber: await readPeerDiagnostics(subscribePcRef.current),
+    }),
+    reconnectMedia: () => {
+      resetSubscriber();
+      resetPublisher(true);
+    },
     connectionStatus,
     decideAdmission,
     localStream,
