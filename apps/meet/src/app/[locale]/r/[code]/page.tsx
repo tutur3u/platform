@@ -43,22 +43,22 @@ export default async function RoomPage({ params }: RoomPageProps) {
     }
     throw error;
   });
-  const { user, meeting, isHost, canReadWorkspace } = access;
+  const {
+    user,
+    meeting,
+    isHost,
+    canReadWorkspace,
+    displayName,
+    admission,
+    workspaceSlug,
+  } = access;
   const wsId = meeting.ws_id;
   const t = await getTranslations('meet.call');
-
-  const profile = user as {
-    display_name?: string | null;
-    email?: string | null;
-    full_name?: string | null;
-  };
-  const displayName: string =
-    profile.display_name || profile.full_name || profile.email || t('guest');
 
   const session = await getMeetCallSession({
     displayName,
     isHost,
-    admission: canReadWorkspace ? 'open' : 'lobby',
+    admission,
     meetingId: meeting.id,
     userId: user.id,
     wsId,
@@ -67,7 +67,9 @@ export default async function RoomPage({ params }: RoomPageProps) {
   return (
     <CallShell
       defaultDisplayName={session.displayName}
-      leaveHref={canReadWorkspace ? `/${wsId}/meetings/${meeting.id}` : '/'}
+      leaveHref={
+        admission === 'open' ? `/${workspaceSlug}/meetings/${meeting.id}` : '/'
+      }
       canReadWorkspace={canReadWorkspace}
       meetingId={meeting.id}
       meetingName={meeting.name ?? t('untitled_meeting')}

@@ -35,6 +35,9 @@ beforeEach(() => {
     meeting: { id, ws_id: id },
     isHost: false,
     canReadWorkspace: false,
+    admission: 'lobby',
+    displayName: 'Guest Display Name',
+    workspaceSlug: 'workspace',
   });
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -47,6 +50,7 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
   expect(verifyMeetRealtimeToken(token, secret)).toMatchObject({
     admission: 'lobby',
     role: 'speaker',
+    displayName: 'Guest Display Name',
     meetingId: id,
     wsId: id,
     userId: id,
@@ -60,6 +64,9 @@ it('keeps the host out of the lobby', async () => {
     meeting: { id, ws_id: id },
     isHost: true,
     canReadWorkspace: true,
+    admission: 'open',
+    displayName: 'Host Display Name',
+    workspaceSlug: 'personal',
   });
   const { token } = await (await POST(request(), context)).json();
   expect(verifyMeetRealtimeToken(token, secret)).toMatchObject({

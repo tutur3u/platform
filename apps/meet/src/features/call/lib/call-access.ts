@@ -1,6 +1,7 @@
 import 'server-only';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
@@ -23,7 +24,7 @@ export async function getMeetCallAccess(meetingId: string) {
   const db = await createAdminClient({ noCookie: true });
   const { data: meeting, error } = await db
     .from('workspace_meetings')
-    .select('id, name, creator_id, ws_id')
+    .select('id, name, creator_id, ws_id, workspaces(personal)')
     .eq('id', meetingId)
     .maybeSingle();
   if (error) throw new MeetCallAccessError(500, 'Meeting lookup failed');
@@ -33,13 +34,14 @@ export async function getMeetCallAccess(meetingId: string) {
     supabase: db,
     userId: user.id,
     wsId: meeting.ws_id,
+    requiredType: 'ANY',
   });
   if (membership.error === 'membership_lookup_failed')
     throw new MeetCallAccessError(500, 'Membership lookup failed');
   const isHost = meeting.creator_id === user.id;
+  if (isHost && (!membership.ok || membership.membershipType !== 'MEMBER'))
+    throw new MeetCallAccessError(403, 'Workspace access denied');
   if (!membership.ok) {
-    // A removed creator must not regain host access through the guest path.
-    if (isHost) throw new MeetCallAccessError(403, 'Workspace access denied');
     const { data: identity, error: identityError } =
       await db.auth.admin.getUserById(meeting.creator_id);
     if (identityError)
@@ -50,5 +52,21 @@ export async function getMeetCallAccess(meetingId: string) {
     )
       throw new MeetCallAccessError(403, 'Guest access is unavailable');
   }
-  return { user, meeting, isHost, canReadWorkspace: membership.ok };
+  const profile = user as {
+    display_name?: string | null;
+    full_name?: string | null;
+    email?: string | null;
+  };
+  return {
+    user,
+    meeting,
+    isHost,
+    displayName:
+      profile.display_name || profile.full_name || profile.email || 'Guest',
+    admission: membership.ok ? ('open' as const) : ('lobby' as const),
+    canReadWorkspace: membership.ok && membership.membershipType === 'MEMBER',
+    workspaceSlug: toWorkspaceSlug(meeting.ws_id, {
+      personal: !!meeting.workspaces?.personal,
+    }),
+  };
 }

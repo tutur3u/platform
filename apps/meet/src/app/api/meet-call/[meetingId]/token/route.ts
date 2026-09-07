@@ -13,13 +13,13 @@ export async function POST(
     return Response.json({ error: 'Invalid origin' }, { status: 403, headers });
   try {
     const { meetingId } = await params;
-    const { user, meeting, isHost, canReadWorkspace } =
+    const { user, meeting, isHost, admission, displayName } =
       await getMeetCallAccess(meetingId);
     return Response.json(
       await getMeetCallSession({
-        displayName: user.email?.split('@')[0] || 'Guest',
+        displayName,
         isHost,
-        admission: canReadWorkspace ? 'open' : 'lobby',
+        admission,
         meetingId: meeting.id,
         userId: user.id,
         wsId: meeting.ws_id,

@@ -44,6 +44,9 @@ beforeEach(() => {
     meeting: { id, ws_id: id, name: 'Invited call' },
     isHost: false,
     canReadWorkspace: false,
+    admission: 'lobby',
+    displayName: 'Guest Display Name',
+    workspaceSlug: 'workspace',
   });
   mocks.session.mockResolvedValue({
     displayName: 'Guest',
@@ -63,8 +66,28 @@ it('renders the invited call for a non-member after sign-in', async () => {
     leaveHref: '/',
   });
   expect(mocks.session).toHaveBeenCalledWith(
-    expect.objectContaining({ admission: 'lobby', isHost: false })
+    expect.objectContaining({
+      admission: 'lobby',
+      isHost: false,
+      displayName: 'Guest Display Name',
+    })
   );
+});
+
+it('leaves a personal workspace call through its canonical URL', async () => {
+  mocks.access.mockResolvedValue({
+    user: { id },
+    meeting: { id, ws_id: id },
+    isHost: true,
+    canReadWorkspace: true,
+    admission: 'open',
+    displayName: 'Host',
+    workspaceSlug: 'personal',
+  });
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'en' }),
+  });
+  expect(result.props.leaveHref).toBe(`/personal/meetings/${id}`);
 });
 
 it.each(['en', 'vi'])(
