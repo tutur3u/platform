@@ -6,8 +6,12 @@ const {
   mockCreateTask,
   mockCreateWorkspaceTaskRelationship,
   mockDispatchTaskSoundCue,
+  mockUpdateTask,
+  mockUpdateDescription,
 } = vi.hoisted(() => ({
   mockCreateTask: vi.fn(),
+  mockUpdateTask: vi.fn(),
+  mockUpdateDescription: vi.fn(),
   mockCreateWorkspaceTaskRelationship: vi.fn(),
   mockDispatchTaskSoundCue: vi.fn(),
 }));
@@ -38,6 +42,12 @@ vi.mock('@tuturuuu/utils/task-helper', async (importOriginal) => ({
   createTask: mockCreateTask,
 }));
 
+vi.mock('./task-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./task-api')>()),
+  updateWorkspaceTask: mockUpdateTask,
+  updateWorkspaceTaskDescription: mockUpdateDescription,
+}));
+
 vi.mock('../../task-sound-effects', () => ({
   dispatchTaskSoundCue: mockDispatchTaskSoundCue,
 }));
@@ -50,6 +60,7 @@ import {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
 });
 
 describe('persistPendingTaskRelationships', () => {
@@ -227,7 +238,7 @@ describe('applyPendingRelationshipSummary', () => {
 });
 
 describe('handleCreateTask', () => {
-  it('renders and closes immediately while task creation is pending', async () => {
+  it('keeps the form open until task creation is confirmed', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -294,7 +305,7 @@ describe('handleCreateTask', () => {
     expect(
       queryClient.getQueryData(['tasks-full', 'board-1', 'filtered'])
     ).toEqual(pendingTasks);
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
 
     resolveCreateTask({
       assignees: [],
@@ -306,6 +317,7 @@ describe('handleCreateTask', () => {
       projects: [],
     } as unknown as Task);
     await savePromise;
+    expect(onClose).toHaveBeenCalledOnce();
 
     expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
       expect.objectContaining({
@@ -318,6 +330,192 @@ describe('handleCreateTask', () => {
         _isOptimistic?: boolean;
       }
     ).not.toHaveProperty('_isOptimistic');
+  });
+
+  it('preserves the form and removes only the failed optimistic task when creation rejects', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const onClose = vi.fn();
+    let rejectCreateTask!: (error: Error) => void;
+    const setName = vi.fn();
+    const setDescription = vi.fn();
+    const toast = vi.fn();
+    const createTaskPromise = new Promise<Task>((_, reject) => {
+      rejectCreateTask = reject;
+    });
+
+    queryClient.setQueryData(['tasks', 'board-1'], []);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'filtered'], []);
+    mockCreateTask.mockReturnValueOnce(createTaskPromise);
+
+    const savePromise = handleCreateTask({
+      autoSchedule: false,
+      boardId: 'board-1',
+      broadcast: null,
+      calendarHours: null,
+      createMultiple: false,
+      descriptionString: null,
+      descriptionYjsState: null,
+      endDate: undefined,
+      estimationPoints: null,
+      isPersonalWorkspace: false,
+      isSplittable: false,
+      maxSplitDurationMinutes: null,
+      minSplitDurationMinutes: null,
+      name: 'Instant task',
+      onClose,
+      onUpdate: vi.fn(),
+      priority: null,
+      queryClient,
+      selectedAssignees: [],
+      selectedLabels: [],
+      selectedListId: 'list-1',
+      selectedProjects: [],
+      setDescription,
+      setEndDate: vi.fn(),
+      setEstimationPoints: vi.fn(),
+      setIsLoading: vi.fn(),
+      setIsSaving: vi.fn(),
+      setName,
+      setPriority: vi.fn(),
+      setSelectedAssignees: vi.fn(),
+      setSelectedLabels: vi.fn(),
+      setSelectedProjects: vi.fn(),
+      setStartDate: vi.fn(),
+      startDate: undefined,
+      toast,
+      totalDuration: null,
+      user: { id: 'user-1' },
+      userTaskSettings: { task_auto_assign_to_self: false },
+      wsId: 'ws-1',
+    });
+
+    const pendingTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
+    expect(pendingTasks).toEqual([
+      expect.objectContaining({
+        _isOptimistic: true,
+        list_id: 'list-1',
+        name: 'Instant task',
+      }),
+    ]);
+    expect(
+      queryClient.getQueryData(['tasks-full', 'board-1', 'filtered'])
+    ).toEqual(pendingTasks);
+    expect(onClose).not.toHaveBeenCalled();
+
+    rejectCreateTask(new Error('Network request failed'));
+    await savePromise;
+    expect(onClose).not.toHaveBeenCalled();
+    expect(setName).not.toHaveBeenCalled();
+    expect(setDescription).not.toHaveBeenCalled();
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([]);
+    expect(
+      queryClient.getQueryData(['tasks-full', 'board-1', 'filtered'])
+    ).toEqual([]);
+    expect(toast).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'destructive' })
+    );
+  });
+
+  it('resumes a confirmed task after a description failure without creating a duplicate', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const onClose = vi.fn();
+    const setName = vi.fn();
+    const setDescription = vi.fn();
+    const toast = vi.fn();
+    const savedTask = {
+      id: 'saved-row',
+      name: 'Instant task',
+      list_id: 'list-1',
+    } as Task;
+    localStorage.setItem(
+      'tu-do:task-draft:board-1',
+      JSON.stringify({
+        name: 'Instant task',
+        persistedTask: savedTask,
+        persistedWorkspaceId: 'ws-1',
+      })
+    );
+    mockUpdateTask.mockResolvedValue({ task: savedTask });
+    mockUpdateDescription.mockResolvedValue({ task: savedTask });
+    queryClient.setQueryData(['tasks', 'board-1'], []);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'filtered'], []);
+
+    const savePromise = handleCreateTask({
+      autoSchedule: false,
+      boardId: 'board-1',
+      broadcast: null,
+      calendarHours: null,
+      createMultiple: false,
+      descriptionString: null,
+      descriptionYjsState: null,
+      endDate: undefined,
+      estimationPoints: null,
+      isPersonalWorkspace: false,
+      isSplittable: false,
+      maxSplitDurationMinutes: null,
+      minSplitDurationMinutes: null,
+      name: 'Instant task',
+      onClose,
+      onUpdate: vi.fn(),
+      priority: null,
+      queryClient,
+      selectedAssignees: [],
+      selectedLabels: [],
+      selectedListId: 'list-1',
+      selectedProjects: [],
+      setDescription,
+      setEndDate: vi.fn(),
+      setEstimationPoints: vi.fn(),
+      setIsLoading: vi.fn(),
+      setIsSaving: vi.fn(),
+      setName,
+      setPriority: vi.fn(),
+      setSelectedAssignees: vi.fn(),
+      setSelectedLabels: vi.fn(),
+      setSelectedProjects: vi.fn(),
+      setStartDate: vi.fn(),
+      startDate: undefined,
+      toast,
+      totalDuration: null,
+      user: { id: 'user-1' },
+      userTaskSettings: { task_auto_assign_to_self: false },
+      wsId: 'ws-1',
+    });
+
+    const pendingTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
+    expect(pendingTasks).toEqual([
+      expect.objectContaining({
+        _isOptimistic: true,
+        list_id: 'list-1',
+        name: 'Instant task',
+      }),
+    ]);
+    expect(
+      queryClient.getQueryData(['tasks-full', 'board-1', 'filtered'])
+    ).toEqual(pendingTasks);
+    expect(onClose).not.toHaveBeenCalled();
+
+    await savePromise;
+    expect(mockCreateTask).not.toHaveBeenCalled();
+    expect(mockUpdateTask).toHaveBeenCalledWith(
+      'ws-1',
+      'saved-row',
+      expect.objectContaining({ name: 'Instant task' })
+    );
+    expect(mockUpdateDescription).toHaveBeenCalledWith(
+      'ws-1',
+      'saved-row',
+      expect.any(Object)
+    );
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(localStorage.getItem('tu-do:task-draft:board-1')).toBeNull();
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+      expect.objectContaining({ id: 'saved-row' }),
+    ]);
   });
 
   it('dispatches the create sound cue once after successful task creation', async () => {

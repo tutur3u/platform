@@ -4806,6 +4806,10 @@
     "create": "Create board",
     "create_description": "Create a task board",
     "description": "Task boards are used to manage tasks that are related to a specific project or goal.",
+    "dialog": {
+      "create_recovery": "Saving did not finish. Your draft is preserved. Review it and try again. {error}",
+      "create_unconfirmed": "The server did not confirm that the task was saved."
+    },
     "errors": {
       "name_exists": "A task board with this name already exists in this workspace."
     },

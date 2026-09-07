@@ -73,7 +73,14 @@ import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import ts from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
@@ -93,6 +100,7 @@ import {
   getCalendarEventProviderDisplay,
 } from './event-provider-display';
 import { useCalendarSettings } from './settings/settings-context';
+import { useEventDraftSession } from './use-event-draft-session';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
@@ -171,7 +179,6 @@ export function EventModal() {
 
   const tz = settings?.timezone?.timezone;
 
-  // State for manual event creation/editing
   const [event, setEvent] = useState<Partial<CalendarEvent>>({
     title: '',
     description: '',
@@ -196,6 +203,7 @@ export function EventModal() {
   );
   const selectedSourceOption =
     sourceOptions.find((option) => option.id === selectedSourceId) ??
+    findEventSourceOption(sourceOptions, event) ??
     sourceData?.defaultSource ??
     sourceOptions[0];
 
@@ -213,7 +221,6 @@ export function EventModal() {
   // Determine if we're editing an existing event
   const isEditing = !!(activeEvent?.id && activeEvent.id !== 'new');
 
-  // Shared state
   const [activeTab, setActiveTab] = useState<'manual' | 'ai' | 'preview'>(
     isEditing ? 'manual' : defaultNewEventTab // Default tab for new events
   );
@@ -243,13 +250,11 @@ export function EventModal() {
     },
   });
 
-  // AI generation
   const { object, submit, error, isLoading } = useObject({
     api: '/api/v1/calendar/events/generate',
     schema: calendarEventsSchema,
   });
 
-  // Function to check for overlapping events
   const checkForOverlaps = useCallback(
     (eventToCheck: Partial<CalendarEvent>) => {
       if (!eventToCheck.start_at || !eventToCheck.end_at) return;
@@ -284,104 +289,95 @@ export function EventModal() {
     [activeEvent, getEvents]
   );
 
-  // Handle AI-generated events
+  const receiveGeneratedEvents = useEffectEvent(() => {
+    const processedEvents = (object?.events || []) as Partial<CalendarEvent>[];
+    setGeneratedEvents(processedEvents);
+    setCurrentEventIndex(0);
+    const firstEvent = processedEvents[0];
+    if (
+      firstEvent?.start_at &&
+      firstEvent.end_at &&
+      aiForm.getValues().smart_scheduling
+    ) {
+      checkForOverlaps(firstEvent);
+    }
+    setActiveTab('preview');
+  });
   useEffect(() => {
-    if (object?.events && !isLoading) {
-      // Process the generated events
-      const processedEvents = (object.events || []) as Partial<CalendarEvent>[];
+    if (object?.events && !isLoading) receiveGeneratedEvents();
+  }, [object, isLoading]);
 
-      setGeneratedEvents(processedEvents);
-      setCurrentEventIndex(0);
+  // Initialize once per dialog session; live calendar refreshes must not erase edits.
+  useEventDraftSession({
+    isOpen: isModalOpen,
+    eventId: activeEvent?.id,
+    workspaceId: activeEvent?.ws_id,
+    initialize: () => {
+      if (activeEvent) {
+        const cleanEventData: Partial<CalendarEvent> = {
+          id: activeEvent.id,
+          title: activeEvent.title || '',
+          description: activeEvent.description || '',
+          start_at: activeEvent.start_at,
+          end_at: activeEvent.end_at,
+          color: activeEvent.color || 'BLUE',
+          location: activeEvent.location || '',
+          locked: activeEvent.locked || false,
+          ws_id: activeEvent.ws_id,
+          provider: activeEvent.provider,
+          source_calendar_id: activeEvent.source_calendar_id,
+          external_calendar_id: activeEvent.external_calendar_id,
+          external_event_id: activeEvent.external_event_id,
+          google_event_id: activeEvent.google_event_id,
+          google_calendar_id: activeEvent.google_calendar_id,
+        };
 
-      // Find overlapping events for the first event
-      if (processedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
-        const firstEvent = processedEvents[0];
-        if (firstEvent?.start_at && firstEvent.end_at) {
-          checkForOverlaps(firstEvent as Partial<CalendarEvent>);
+        setEvent(cleanEventData);
+        const sourceOption = findEventSourceOption(
+          sourceOptions,
+          cleanEventData
+        );
+        setSelectedSourceId(
+          sourceOption?.id ?? sourceData?.defaultSource?.id ?? null
+        );
+
+        // Only check for all-day if this is an existing event (not a new one)
+        if (activeEvent.id !== 'new') {
+          setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent));
+        } else {
+          setIsAllDay(false);
         }
-      }
 
-      setActiveTab('preview');
-    }
-  }, [object, isLoading, aiForm, checkForOverlaps]);
+        // Check for overlapping events
+        checkForOverlaps(cleanEventData);
 
-  // Reset form when modal opens/closes or active event changes
-  useEffect(() => {
-    if (activeEvent) {
-      // Clean the event data to only include valid CalendarEvent fields
-      const cleanEventData: Partial<CalendarEvent> = {
-        id: activeEvent.id,
-        title: activeEvent.title || '',
-        description: activeEvent.description || '',
-        start_at: activeEvent.start_at,
-        end_at: activeEvent.end_at,
-        color: activeEvent.color || 'BLUE',
-        location: activeEvent.location || '',
-        locked: activeEvent.locked || false,
-        ws_id: activeEvent.ws_id,
-        provider: activeEvent.provider,
-        source_calendar_id: activeEvent.source_calendar_id,
-        external_calendar_id: activeEvent.external_calendar_id,
-        external_event_id: activeEvent.external_event_id,
-        google_event_id: activeEvent.google_event_id,
-        google_calendar_id: activeEvent.google_calendar_id,
-      };
-
-      setEvent(cleanEventData);
-      const sourceOption = findEventSourceOption(sourceOptions, cleanEventData);
-      setSelectedSourceId(
-        sourceOption?.id ?? sourceData?.defaultSource?.id ?? null
-      );
-
-      // Only check for all-day if this is an existing event (not a new one)
-      if (activeEvent.id !== 'new') {
-        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent));
+        setActiveTab(isEditing ? 'manual' : defaultNewEventTab);
       } else {
-        // For new events, always start with isAllDay as false
+        const now = new Date();
+        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+
+        const newEvent = {
+          title: '',
+          description: '',
+          start_at: now.toISOString(),
+          end_at: oneHourLater.toISOString(),
+          color: 'BLUE' as SupportedColor,
+          location: '',
+          locked: false,
+          ws_id: '',
+        };
+
+        setEvent(newEvent);
+        setSelectedSourceId(sourceData?.defaultSource?.id ?? null);
         setIsAllDay(false);
+
+        aiForm.reset();
+        setGeneratedEvents([]);
       }
 
-      // Check for overlapping events
-      checkForOverlaps(cleanEventData);
-
-      // Set active tab to manual when editing an existing event
-      setActiveTab(isEditing ? 'manual' : defaultNewEventTab);
-    } else {
-      // Set default values for new event
-      const now = new Date();
-      const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-
-      const newEvent = {
-        title: '',
-        description: '',
-        start_at: now.toISOString(),
-        end_at: oneHourLater.toISOString(),
-        color: 'BLUE' as SupportedColor,
-        location: '',
-        locked: false,
-        ws_id: '',
-      };
-
-      setEvent(newEvent);
-      setSelectedSourceId(sourceData?.defaultSource?.id ?? null);
-      setIsAllDay(false);
-
-      // Reset AI form
-      aiForm.reset();
-      setGeneratedEvents([]);
-    }
-
-    // Clear any error messages
-    setDateError(null);
-  }, [
-    activeEvent,
-    checkForOverlaps,
-    aiForm,
-    defaultNewEventTab,
-    isEditing,
-    sourceData?.defaultSource?.id,
-    sourceOptions,
-  ]);
+      setDateError(null);
+    },
+  });
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -961,7 +957,10 @@ export function EventModal() {
   const providerDisplay = getCalendarEventProviderDisplay(event);
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
+    <Dialog
+      open={isModalOpen}
+      onOpenChange={(open) => !open && !isSaving && closeModal()}
+    >
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
         <DialogHeader className="border-b px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center gap-2 font-semibold text-xl">

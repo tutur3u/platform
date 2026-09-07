@@ -2114,14 +2114,14 @@ export function TaskEditDialog({
       setShowSyncWarning,
     });
 
-  // Attempt close — intercepts in create mode with unsaved changes
   const handleAttemptClose = useCallback(async () => {
+    if (isSaving) return false;
     if (isCreateMode && hasUnsavedChanges && formState.name.trim()) {
       setShowUnsavedWarning(true);
       return false;
     }
     return handleClose();
-  }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose]);
+  }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose, isSaving]);
 
   const handleConfirmCloseWithOverflow = useCallback(async () => {
     closeBlockedByOverflowRef.current = false;

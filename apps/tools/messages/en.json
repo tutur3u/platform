@@ -480,6 +480,10 @@
     "save_changes": "Save changes"
   },
   "ws-task-boards": {
+    "dialog": {
+      "create_recovery": "Saving did not finish. Your draft is preserved. Review it and try again. {error}",
+      "create_unconfirmed": "The server did not confirm that the task was saved."
+    },
     "manual_ordering_disabled": {
       "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
       "keep_sorting": "Keep current sorting",

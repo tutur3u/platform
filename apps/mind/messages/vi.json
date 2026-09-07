@@ -803,6 +803,10 @@
     "save_changes": "Lưu thay đổi"
   },
   "ws-task-boards": {
+    "dialog": {
+      "create_recovery": "Chưa thể hoàn tất lưu. Bản nháp của bạn vẫn được giữ lại. Hãy kiểm tra và thử lại. {error}",
+      "create_unconfirmed": "Máy chủ chưa xác nhận tác vụ đã được lưu."
+    },
     "manual_ordering_disabled": {
       "description": "Công việc đang được sắp xếp theo một tiêu chí nên thao tác kéo không thể thay đổi thứ tự thủ công. Hãy chuyển sang sắp xếp thủ công để sắp xếp lại.",
       "keep_sorting": "Giữ cách sắp xếp hiện tại",

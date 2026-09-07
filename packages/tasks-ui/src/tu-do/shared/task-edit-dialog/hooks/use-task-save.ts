@@ -2,29 +2,17 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
-import { updateCurrentUserTaskSchedulingSettings } from '@tuturuuu/internal-api';
 import type { WorkspaceTaskUpdatePayload } from '@tuturuuu/internal-api/tasks';
-import { createWorkspaceTaskRelationship } from '@tuturuuu/internal-api/tasks';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
-import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
+import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   MAX_TASK_DESCRIPTION_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import {
-  createOptimisticTask,
-  createTask,
-  insertOptimisticTaskIntoBoardCaches,
-  reconcileOptimisticTaskInBoardCaches,
-  removeOptimisticTaskFromBoardCaches,
-} from '@tuturuuu/utils/task-helper';
 import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useCallback, useRef } from 'react';
-import type { BoardBroadcastFn } from '../../board-broadcast-context';
 import {
   getActiveBroadcast,
   useBoardBroadcast,
@@ -36,15 +24,22 @@ import type {
 } from '../types/pending-relationship';
 import {
   clearDraft,
+  getDraftStorageKey,
+  loadDraft,
+  saveDraft,
   serializeTaskDescriptionContent,
   updateTaskDescriptionCaches,
 } from '../utils';
+import { handleCreateTask } from './create-task-with-recovery';
+
+export { handleCreateTask } from './create-task-with-recovery';
+export {
+  applyPendingRelationshipSummary,
+  dedupeById,
+  persistPendingTaskRelationships,
+} from './task-create-relationships';
+
 import {
-  getLegacyPendingTaskRelationships,
-  withTaskCreateRelations,
-} from './optimistic-task-creation';
-import {
-  shouldChunkTaskDescriptionPayload,
   updateWorkspaceTask,
   updateWorkspaceTaskDescription,
 } from './task-api';
@@ -175,144 +170,6 @@ export interface UseTaskSaveReturn {
   handleSaveRef: React.MutableRefObject<() => void>;
 }
 
-const supabase = createClient();
-const internalApiBaseUrl =
-  typeof window !== 'undefined' ? window.location.origin : undefined;
-
-export function dedupeById(tasks: RelatedTaskInfo[]): RelatedTaskInfo[] {
-  const seen = new Set<string>();
-  return tasks.filter((task) => {
-    if (!task.id || seen.has(task.id)) {
-      return false;
-    }
-    seen.add(task.id);
-    return true;
-  });
-}
-
-export function applyPendingRelationshipSummary({
-  boardId,
-  newTaskId,
-  queryClient,
-  pendingTaskRelationships,
-}: {
-  boardId: string;
-  newTaskId: string;
-  queryClient: QueryClient;
-  pendingTaskRelationships: PendingTaskRelationships;
-}) {
-  queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) => {
-    if (!old) return old;
-
-    const parentTaskId = pendingTaskRelationships.parentTask?.id ?? null;
-    const newTaskSummary = old.find((task) => task.id === newTaskId);
-    const childTasks = dedupeById(pendingTaskRelationships.childTasks);
-    const blockingTasks = dedupeById(pendingTaskRelationships.blockingTasks);
-    const blockedByTasks = dedupeById(pendingTaskRelationships.blockedByTasks);
-    const relatedTasks = dedupeById(pendingTaskRelationships.relatedTasks);
-
-    return old.map((task) => {
-      const relationshipSummary = task.relationship_summary ?? {
-        parent_task_id: null,
-        parent_task: null,
-        child_count: 0,
-        completed_child_count: 0,
-        blocked_by_count: 0,
-        blocking_count: 0,
-        related_count: 0,
-      };
-
-      if (task.id === newTaskId) {
-        return {
-          ...task,
-          relationship_summary: {
-            parent_task_id: parentTaskId,
-            parent_task: pendingTaskRelationships.parentTask
-              ? {
-                  id: pendingTaskRelationships.parentTask.id,
-                  name: pendingTaskRelationships.parentTask.name,
-                  display_number:
-                    pendingTaskRelationships.parentTask.display_number ?? null,
-                  ticket_prefix:
-                    pendingTaskRelationships.parentTask.ticket_prefix ?? null,
-                }
-              : null,
-            child_count: childTasks.length,
-            completed_child_count: childTasks.filter(
-              (childTask) => childTask.completed
-            ).length,
-            blocked_by_count: blockedByTasks.length,
-            blocking_count: blockingTasks.length,
-            related_count: relatedTasks.length,
-          },
-        };
-      }
-
-      if (parentTaskId && task.id === parentTaskId) {
-        return {
-          ...task,
-          relationship_summary: {
-            ...relationshipSummary,
-            child_count: relationshipSummary.child_count + 1,
-            completed_child_count:
-              relationshipSummary.completed_child_count ?? 0,
-          },
-        };
-      }
-
-      if (childTasks.some((childTask) => childTask.id === task.id)) {
-        return {
-          ...task,
-          relationship_summary: {
-            ...relationshipSummary,
-            parent_task_id: newTaskId,
-            parent_task: {
-              id: newTaskId,
-              name: newTaskSummary?.name ?? '',
-              display_number: newTaskSummary?.display_number ?? null,
-              ticket_prefix: null,
-            },
-          },
-        };
-      }
-
-      if (blockingTasks.some((blockingTask) => blockingTask.id === task.id)) {
-        return {
-          ...task,
-          relationship_summary: {
-            ...relationshipSummary,
-            blocked_by_count: relationshipSummary.blocked_by_count + 1,
-          },
-        };
-      }
-
-      if (
-        blockedByTasks.some((blockedByTask) => blockedByTask.id === task.id)
-      ) {
-        return {
-          ...task,
-          relationship_summary: {
-            ...relationshipSummary,
-            blocking_count: relationshipSummary.blocking_count + 1,
-          },
-        };
-      }
-
-      if (relatedTasks.some((relatedTask) => relatedTask.id === task.id)) {
-        return {
-          ...task,
-          relationship_summary: {
-            ...relationshipSummary,
-            related_count: relationshipSummary.related_count + 1,
-          },
-        };
-      }
-
-      return task;
-    });
-  });
-}
-
 export function useTaskSave({
   wsId,
   boardId,
@@ -375,144 +232,221 @@ export function useTaskSave({
   const broadcast = contextBroadcast ?? getActiveBroadcast();
   const handleSaveRef = useRef<() => void>(() => {});
 
+  const saveInFlight = useRef(false);
   const handleSave = useCallback(async () => {
-    if (!name?.trim()) return;
+    if (!name?.trim() || saveInFlight.current) return;
+    saveInFlight.current = true;
+    try {
+      // Shared task links may be view-only.
+      if (!isCreateMode && shareCode && sharedPermission !== 'edit') {
+        toast({
+          title: 'Read-only access',
+          description: 'You do not have permission to edit this task.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-    // Shared task links may be view-only.
-    if (!isCreateMode && shareCode && sharedPermission !== 'edit') {
-      toast({
-        title: 'Read-only access',
-        description: 'You do not have permission to edit this task.',
-        variant: 'destructive',
-      });
-      return;
-    }
+      // Clear any pending name update
+      if (nameUpdateTimerRef.current) {
+        clearTimeout(nameUpdateTimerRef.current);
+        nameUpdateTimerRef.current = null;
+        pendingNameRef.current = null;
+      }
 
-    // Clear any pending name update
-    if (nameUpdateTimerRef.current) {
-      clearTimeout(nameUpdateTimerRef.current);
-      nameUpdateTimerRef.current = null;
-      pendingNameRef.current = null;
-    }
+      // Get current description from editor
+      let currentDescription = description;
+      if (flushEditorPendingRef.current) {
+        currentDescription = flushEditorPendingRef.current();
+      }
 
-    // Get current description from editor
-    let currentDescription = description;
-    if (flushEditorPendingRef.current) {
-      currentDescription = flushEditorPendingRef.current();
-    }
+      setIsSaving(true);
+      setIsLoading(true);
 
-    setIsSaving(true);
-    setIsLoading(true);
-
-    const trimmedName = name.trim();
-    const descriptionString =
-      serializeTaskDescriptionContent(currentDescription);
-    const descriptionYjsState =
-      currentDescription && editorInstance?.schema
-        ? Array.from(
-            convertJsonContentToYjsState(
-              currentDescription,
-              editorInstance.schema
+      const trimmedName = name.trim();
+      const descriptionString =
+        serializeTaskDescriptionContent(currentDescription);
+      const descriptionYjsState =
+        currentDescription && editorInstance?.schema
+          ? Array.from(
+              convertJsonContentToYjsState(
+                currentDescription,
+                editorInstance.schema
+              )
             )
-          )
-        : null;
+          : null;
 
-    if (trimmedName.length > MAX_TASK_NAME_LENGTH) {
-      toast({
-        title: t('title_too_long_title'),
-        description: t('title_too_long_description', {
-          max: MAX_TASK_NAME_LENGTH,
-        }),
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      setIsSaving(false);
-      return;
-    }
-
-    if (
-      descriptionString &&
-      descriptionString.length > MAX_TASK_DESCRIPTION_LENGTH
-    ) {
-      toast({
-        title: t('description_too_long_title'),
-        description: t('description_too_long_description', {
-          max: MAX_TASK_DESCRIPTION_LENGTH,
-        }),
-        variant: 'destructive',
-      });
-      setIsLoading(false);
-      setIsSaving(false);
-      return;
-    }
-
-    clearDraft(draftStorageKey);
-
-    if (isCreateMode && saveAsDraft) {
-      await handleSaveAsDraft({
-        wsId,
-        boardId,
-        draftId,
-        name: trimmedName,
-        descriptionString,
-        priority,
-        startDate,
-        endDate,
-        selectedListId,
-        estimationPoints,
-        selectedLabels,
-        selectedAssignees,
-        selectedProjects,
-        createMultiple,
-        queryClient,
-        toast,
-        onClose,
-        setIsLoading,
-        setIsSaving,
-        setName,
-        setDescription,
-        setPriority,
-        setStartDate,
-        setEndDate,
-        setEstimationPoints,
-        setSelectedLabels,
-        setSelectedAssignees,
-        setSelectedProjects,
-      });
-      return;
-    }
-
-    const schedulingSettings: SchedulingSettings = {
-      totalDuration,
-      isSplittable,
-      minSplitDurationMinutes,
-      maxSplitDurationMinutes,
-      calendarHours,
-      autoSchedule,
-    };
-
-    if (
-      !isCreateMode &&
-      hasUnsavedSchedulingChanges &&
-      saveSchedulingSettings &&
-      taskId &&
-      taskId !== 'new'
-    ) {
-      const schedulingSaved = await saveSchedulingSettings(schedulingSettings, {
-        silent: true,
-        skipRefresh: true,
-      });
-
-      if (!schedulingSaved) {
+      if (trimmedName.length > MAX_TASK_NAME_LENGTH) {
+        toast({
+          title: t('title_too_long_title'),
+          description: t('title_too_long_description', {
+            max: MAX_TASK_NAME_LENGTH,
+          }),
+          variant: 'destructive',
+        });
         setIsLoading(false);
         setIsSaving(false);
         return;
       }
-    }
 
-    if (isCreateMode) {
-      await handleCreateTask({
+      if (
+        descriptionString &&
+        descriptionString.length > MAX_TASK_DESCRIPTION_LENGTH
+      ) {
+        toast({
+          title: t('description_too_long_title'),
+          description: t('description_too_long_description', {
+            max: MAX_TASK_DESCRIPTION_LENGTH,
+          }),
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        setIsSaving(false);
+        return;
+      }
+
+      if (isCreateMode) {
+        saveDraft(draftStorageKey, {
+          ...loadDraft(draftStorageKey),
+          name: trimmedName,
+          description: currentDescription,
+          priority,
+          startDate: startDate?.toISOString(),
+          endDate: endDate?.toISOString(),
+          selectedListId,
+          estimationPoints,
+          selectedLabels,
+          selectedAssignees,
+          selectedProjects,
+          totalDuration,
+          isSplittable,
+          minSplitDurationMinutes,
+          maxSplitDurationMinutes,
+          calendarHours,
+          autoSchedule,
+        });
+      }
+
+      if (isCreateMode && saveAsDraft) {
+        await handleSaveAsDraft({
+          wsId,
+          boardId,
+          draftId,
+          name: trimmedName,
+          descriptionString,
+          priority,
+          startDate,
+          endDate,
+          selectedListId,
+          estimationPoints,
+          selectedLabels,
+          selectedAssignees,
+          selectedProjects,
+          createMultiple,
+          queryClient,
+          toast,
+          onClose,
+          setIsLoading,
+          setIsSaving,
+          setName,
+          setDescription,
+          setPriority,
+          setStartDate,
+          setEndDate,
+          setEstimationPoints,
+          setSelectedLabels,
+          setSelectedAssignees,
+          setSelectedProjects,
+        });
+        return;
+      }
+
+      const schedulingSettings: SchedulingSettings = {
+        totalDuration,
+        isSplittable,
+        minSplitDurationMinutes,
+        maxSplitDurationMinutes,
+        calendarHours,
+        autoSchedule,
+      };
+
+      if (
+        !isCreateMode &&
+        hasUnsavedSchedulingChanges &&
+        saveSchedulingSettings &&
+        taskId &&
+        taskId !== 'new'
+      ) {
+        const schedulingSaved = await saveSchedulingSettings(
+          schedulingSettings,
+          {
+            silent: true,
+            skipRefresh: true,
+          }
+        );
+
+        if (!schedulingSaved) {
+          setIsLoading(false);
+          setIsSaving(false);
+          return;
+        }
+      }
+
+      if (isCreateMode) {
+        await handleCreateTask({
+          wsId,
+          failureDescription: (error) =>
+            t('create_recovery', { error: error || t('create_unconfirmed') }),
+          name: trimmedName,
+          descriptionString,
+          descriptionYjsState,
+          priority,
+          startDate,
+          endDate,
+          selectedListId,
+          estimationPoints,
+          selectedLabels,
+          selectedAssignees,
+          selectedProjects,
+          totalDuration,
+          isSplittable,
+          minSplitDurationMinutes,
+          maxSplitDurationMinutes,
+          calendarHours,
+          autoSchedule,
+          parentTaskId,
+          pendingRelationship,
+          pendingTaskRelationships,
+          isPersonalWorkspace,
+          user,
+          userTaskSettings,
+          createMultiple,
+          boardId,
+          broadcast,
+          queryClient,
+          toast,
+          onUpdate,
+          onClose,
+          setIsLoading,
+          setIsSaving,
+          setName,
+          setDescription,
+          setPriority,
+          setStartDate,
+          setEndDate,
+          setEstimationPoints,
+          setSelectedLabels,
+          setSelectedAssignees,
+          setSelectedProjects,
+        });
+        return;
+      }
+
+      // Update mode
+      await handleUpdateTask({
+        taskId,
         wsId,
+        boardId,
         name: trimmedName,
         descriptionString,
         descriptionYjsState,
@@ -521,67 +455,22 @@ export function useTaskSave({
         endDate,
         selectedListId,
         estimationPoints,
-        selectedLabels,
-        selectedAssignees,
-        selectedProjects,
-        totalDuration,
-        isSplittable,
-        minSplitDurationMinutes,
-        maxSplitDurationMinutes,
-        calendarHours,
-        autoSchedule,
-        parentTaskId,
-        pendingRelationship,
-        pendingTaskRelationships,
-        isPersonalWorkspace,
-        user,
-        userTaskSettings,
-        createMultiple,
-        boardId,
-        broadcast,
+        collaborationMode,
+        flushEditorPendingRef,
+        updateSharedTaskMutation,
+        shareCode,
         queryClient,
         toast,
         onUpdate,
         onClose,
         setIsLoading,
         setIsSaving,
-        setName,
-        setDescription,
-        setPriority,
-        setStartDate,
-        setEndDate,
-        setEstimationPoints,
-        setSelectedLabels,
-        setSelectedAssignees,
-        setSelectedProjects,
       });
-      return;
+    } finally {
+      saveInFlight.current = false;
+      setIsSaving(false);
+      setIsLoading(false);
     }
-
-    // Update mode
-    await handleUpdateTask({
-      taskId,
-      wsId,
-      boardId,
-      name: trimmedName,
-      descriptionString,
-      descriptionYjsState,
-      priority,
-      startDate,
-      endDate,
-      selectedListId,
-      estimationPoints,
-      collaborationMode,
-      flushEditorPendingRef,
-      updateSharedTaskMutation,
-      shareCode,
-      queryClient,
-      toast,
-      onUpdate,
-      onClose,
-      setIsLoading,
-      setIsSaving,
-    });
   }, [
     name,
     description,
@@ -770,6 +659,8 @@ async function handleSaveAsDraft({
       throw new Error(err.error || 'Failed to save draft');
     }
 
+    clearDraft(getDraftStorageKey(boardId));
+
     // Invalidate drafts query so the drafts page updates
     await queryClient.invalidateQueries({ queryKey: ['task-drafts'] });
 
@@ -815,484 +706,6 @@ async function handleSaveAsDraft({
 }
 
 // Helper function for creating tasks
-export async function handleCreateTask({
-  wsId,
-  name,
-  descriptionString,
-  descriptionYjsState,
-  priority,
-  startDate,
-  endDate,
-  selectedListId,
-  estimationPoints,
-  selectedLabels,
-  selectedAssignees,
-  selectedProjects,
-  totalDuration,
-  isSplittable,
-  minSplitDurationMinutes,
-  maxSplitDurationMinutes,
-  calendarHours,
-  autoSchedule,
-  parentTaskId,
-  pendingRelationship,
-  pendingTaskRelationships,
-  isPersonalWorkspace,
-  user,
-  userTaskSettings,
-  createMultiple,
-  boardId,
-  broadcast,
-  queryClient,
-  toast,
-  onUpdate,
-  onClose,
-  setIsLoading,
-  setIsSaving,
-  setName,
-  setDescription,
-  setPriority,
-  setStartDate,
-  setEndDate,
-  setEstimationPoints,
-  setSelectedLabels,
-  setSelectedAssignees,
-  setSelectedProjects,
-}: {
-  wsId: string;
-  name: string;
-  descriptionString: string | null;
-  descriptionYjsState: number[] | null;
-  priority: 'critical' | 'high' | 'low' | 'normal' | null;
-  startDate: Date | undefined;
-  endDate: Date | undefined;
-  selectedListId: string;
-  estimationPoints: number | null | undefined;
-  selectedLabels: Array<{
-    id: string;
-    name?: string;
-    color?: string;
-    created_at?: string;
-  }>;
-  selectedAssignees: Array<{
-    id: string;
-    user_id?: string | null;
-    display_name?: string | null;
-    avatar_url?: string | null;
-  }>;
-  selectedProjects: Array<{ id: string; name?: string; status?: string }>;
-  totalDuration: number | null;
-  isSplittable: boolean;
-  minSplitDurationMinutes: number | null;
-  maxSplitDurationMinutes: number | null;
-  calendarHours: CalendarHoursType | null;
-  autoSchedule: boolean;
-  parentTaskId?: string;
-  pendingRelationship?: PendingRelationship;
-  pendingTaskRelationships?: PendingTaskRelationships;
-  isPersonalWorkspace: boolean;
-  user: {
-    id: string;
-    display_name?: string | null;
-    avatar_url?: string | null;
-  } | null;
-  userTaskSettings?: { task_auto_assign_to_self: boolean };
-  createMultiple: boolean;
-  boardId: string;
-  broadcast: BoardBroadcastFn | null;
-  queryClient: QueryClient;
-  toast: ReturnType<typeof useToast>['toast'];
-  onUpdate: () => void;
-  onClose: () => void;
-  setIsLoading: (loading: boolean) => void;
-  setIsSaving: (saving: boolean) => void;
-  setName: React.Dispatch<React.SetStateAction<string>>;
-  setDescription: React.Dispatch<React.SetStateAction<JSONContent | null>>;
-  setPriority: React.Dispatch<
-    React.SetStateAction<'critical' | 'high' | 'low' | 'normal' | null>
-  >;
-  setStartDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
-  setEndDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
-  setEstimationPoints: React.Dispatch<
-    React.SetStateAction<number | null | undefined>
-  >;
-  setSelectedLabels: React.Dispatch<
-    React.SetStateAction<
-      Array<{ id: string; name: string; color: string; created_at: string }>
-    >
-  >;
-  setSelectedAssignees: React.Dispatch<
-    React.SetStateAction<
-      Array<{
-        id: string;
-        user_id?: string | null;
-        display_name?: string | null;
-        avatar_url?: string | null;
-      }>
-    >
-  >;
-  setSelectedProjects: React.Dispatch<
-    React.SetStateAction<Array<{ id: string; name: string }>>
-  >;
-}) {
-  const normalizedPendingRelationships =
-    pendingTaskRelationships ??
-    getLegacyPendingTaskRelationships(parentTaskId, pendingRelationship);
-  const optimisticAssignees =
-    selectedAssignees.length === 0 &&
-    userTaskSettings?.task_auto_assign_to_self &&
-    user &&
-    !isPersonalWorkspace
-      ? [
-          {
-            id: user.id,
-            user_id: user.id,
-            display_name: user.display_name,
-            avatar_url: user.avatar_url,
-          },
-        ]
-      : selectedAssignees;
-  const optimisticTask = createOptimisticTask(
-    withTaskCreateRelations(
-      {
-        name: name.trim(),
-        description: descriptionString || '',
-        priority,
-        start_date: startDate?.toISOString(),
-        end_date: endDate?.toISOString(),
-        estimation_points: estimationPoints ?? null,
-        list_id: selectedListId,
-      },
-      {
-        pendingTaskRelationships: normalizedPendingRelationships,
-        selectedAssignees: optimisticAssignees,
-        selectedLabels,
-        selectedProjects,
-      }
-    )
-  );
-  let persistedTask: Task | null = null;
-
-  insertOptimisticTaskIntoBoardCaches(queryClient, boardId, optimisticTask);
-
-  if (!createMultiple) {
-    setName('');
-    setDescription(null);
-    setPriority(null);
-    setStartDate(undefined);
-    setEndDate(undefined);
-    setEstimationPoints(null);
-    setSelectedLabels([]);
-    setSelectedAssignees([]);
-    setSelectedProjects([]);
-    setIsLoading(false);
-    setIsSaving(false);
-    onClose();
-  }
-
-  try {
-    let resolvedUserId = user?.id;
-    if (!resolvedUserId) {
-      const {
-        data: { user: authUser },
-      } = await supabase.auth.getUser();
-      resolvedUserId = authUser?.id;
-    }
-
-    let desiredAssignees = [...selectedAssignees];
-    if (
-      desiredAssignees.length === 0 &&
-      userTaskSettings?.task_auto_assign_to_self &&
-      resolvedUserId &&
-      !isPersonalWorkspace
-    ) {
-      desiredAssignees = [
-        {
-          id: resolvedUserId,
-          user_id: resolvedUserId,
-        },
-      ];
-    }
-
-    const createDescriptionPayload = {
-      description: descriptionString || '',
-      description_yjs_state: descriptionYjsState ?? undefined,
-    };
-    const shouldDeferDescription = shouldChunkTaskDescriptionPayload(
-      createDescriptionPayload
-    );
-
-    const taskData: Partial<Task> = {
-      name: name.trim(),
-      description: shouldDeferDescription ? '' : descriptionString || '',
-      priority: priority,
-      start_date: startDate ? startDate.toISOString() : undefined,
-      end_date: endDate ? endDate.toISOString() : undefined,
-      estimation_points: estimationPoints ?? null,
-      // IMPORTANT: scheduling settings are personal and stored separately
-      // (task_user_scheduling_settings). Do not persist them to the shared task row.
-    };
-    const newTask = await createTask(wsId, selectedListId, {
-      ...taskData,
-      description_yjs_state: shouldDeferDescription
-        ? undefined
-        : (descriptionYjsState ?? undefined),
-      label_ids: selectedLabels.map((label) => label.id),
-      assignee_ids: desiredAssignees
-        .map((assignee) => assignee.user_id || assignee.id)
-        .filter((assigneeId): assigneeId is string => !!assigneeId),
-      project_ids: selectedProjects.map((project) => project.id),
-    });
-    persistedTask = newTask;
-    reconcileOptimisticTaskInBoardCaches(
-      queryClient,
-      boardId,
-      optimisticTask.id,
-      {
-        ...withTaskCreateRelations(newTask, {
-          pendingTaskRelationships: normalizedPendingRelationships,
-          selectedAssignees: desiredAssignees,
-          selectedLabels,
-          selectedProjects,
-        }),
-        _isOptimistic: true,
-      } as Task
-    );
-
-    if (shouldDeferDescription) {
-      await updateWorkspaceTaskDescription(wsId, newTask.id, {
-        description: descriptionString,
-        description_yjs_state: descriptionYjsState,
-      });
-      newTask.description = descriptionString ?? undefined;
-    }
-
-    // Save per-user scheduling settings for the creator (if any were provided)
-    const hasAnySchedulingValue =
-      totalDuration != null ||
-      calendarHours != null ||
-      autoSchedule === true ||
-      isSplittable === true ||
-      minSplitDurationMinutes != null ||
-      maxSplitDurationMinutes != null;
-
-    if (hasAnySchedulingValue) {
-      try {
-        await updateCurrentUserTaskSchedulingSettings(newTask.id, {
-          total_duration: totalDuration,
-          is_splittable: isSplittable,
-          min_split_duration_minutes: minSplitDurationMinutes,
-          max_split_duration_minutes: maxSplitDurationMinutes,
-          calendar_hours: calendarHours ?? null,
-          auto_schedule: autoSchedule,
-        });
-      } catch (schedulingError) {
-        console.error(
-          'Failed to save personal scheduling settings via API:',
-          schedulingError
-        );
-      }
-    }
-
-    const affectedRelationshipTaskIds = await persistPendingTaskRelationships(
-      wsId,
-      newTask.id,
-      normalizedPendingRelationships,
-      queryClient
-    );
-
-    const createdTaskWithRelations = withTaskCreateRelations(newTask, {
-      pendingTaskRelationships: normalizedPendingRelationships,
-      selectedAssignees: desiredAssignees,
-      selectedLabels,
-      selectedProjects,
-    });
-
-    const locallyCreatedTask = {
-      ...(createdTaskWithRelations as Task & { _localMutationAt?: number }),
-      _localMutationAt: Date.now(),
-    } as Task;
-
-    reconcileOptimisticTaskInBoardCaches(
-      queryClient,
-      boardId,
-      optimisticTask.id,
-      locallyCreatedTask
-    );
-    applyPendingRelationshipSummary({
-      boardId,
-      newTaskId: newTask.id,
-      queryClient,
-      pendingTaskRelationships: normalizedPendingRelationships,
-    });
-    await queryClient.invalidateQueries({
-      queryKey: ['task-list-counts', boardId],
-    });
-    await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
-
-    // Broadcast the new task to other clients
-    broadcast?.('task:upsert', { task: createdTaskWithRelations });
-    const hasRelations =
-      (createdTaskWithRelations.labels?.length ?? 0) > 0 ||
-      (createdTaskWithRelations.assignees?.length ?? 0) > 0 ||
-      (createdTaskWithRelations.projects?.length ?? 0) > 0;
-    if (hasRelations) {
-      broadcast?.('task:relations-changed', { taskId: newTask.id });
-    }
-    if (affectedRelationshipTaskIds.length > 0) {
-      broadcast?.('task:deps-changed', {
-        taskIds: affectedRelationshipTaskIds,
-      });
-    }
-
-    toast({
-      title: normalizedPendingRelationships.parentTask
-        ? 'Sub-task created'
-        : 'Task created',
-      description: normalizedPendingRelationships.parentTask
-        ? 'New sub-task added.'
-        : 'New task added.',
-    });
-    dispatchTaskSoundCue('create');
-    onUpdate();
-
-    if (createMultiple) {
-      setName('');
-      setDescription(null);
-      setTimeout(() => {
-        const input = document.querySelector<HTMLInputElement>(
-          'input[data-task-name-input]'
-        );
-        input?.focus();
-      }, 0);
-    }
-  } catch (error: unknown) {
-    if (persistedTask) {
-      reconcileOptimisticTaskInBoardCaches(
-        queryClient,
-        boardId,
-        optimisticTask.id,
-        withTaskCreateRelations(persistedTask, {
-          pendingTaskRelationships: normalizedPendingRelationships,
-          selectedAssignees: optimisticAssignees,
-          selectedLabels,
-          selectedProjects,
-        })
-      );
-    } else {
-      removeOptimisticTaskFromBoardCaches(
-        queryClient,
-        boardId,
-        optimisticTask.id
-      );
-    }
-    console.error('Error creating task:', error);
-    toast({
-      title: 'Error creating task',
-      description: (error as Error).message || 'Please try again later',
-      variant: 'destructive',
-    });
-  } finally {
-    setIsLoading(false);
-    setIsSaving(false);
-  }
-}
-
-export async function persistPendingTaskRelationships(
-  wsId: string,
-  newTaskId: string,
-  pendingTaskRelationships: PendingTaskRelationships,
-  queryClient: QueryClient
-) {
-  const affectedTaskIds = new Set<string>([newTaskId]);
-
-  const createRelationship = async ({
-    sourceTaskId,
-    targetTaskId,
-    type,
-  }: {
-    sourceTaskId: string;
-    targetTaskId: string;
-    type: 'parent_child' | 'blocks' | 'related';
-  }) => {
-    await createWorkspaceTaskRelationship(
-      wsId,
-      sourceTaskId,
-      {
-        source_task_id: sourceTaskId,
-        target_task_id: targetTaskId,
-        type,
-      },
-      internalApiBaseUrl ? { baseUrl: internalApiBaseUrl } : undefined
-    );
-    affectedTaskIds.add(sourceTaskId);
-    affectedTaskIds.add(targetTaskId);
-  };
-
-  try {
-    if (pendingTaskRelationships.parentTask?.id) {
-      await createRelationship({
-        sourceTaskId: pendingTaskRelationships.parentTask.id,
-        targetTaskId: newTaskId,
-        type: 'parent_child',
-      });
-    }
-
-    for (const childTask of dedupeById(pendingTaskRelationships.childTasks)) {
-      await createRelationship({
-        sourceTaskId: newTaskId,
-        targetTaskId: childTask.id,
-        type: 'parent_child',
-      });
-    }
-
-    for (const blockingTask of dedupeById(
-      pendingTaskRelationships.blockingTasks
-    )) {
-      await createRelationship({
-        sourceTaskId: newTaskId,
-        targetTaskId: blockingTask.id,
-        type: 'blocks',
-      });
-    }
-
-    for (const blockedByTask of dedupeById(
-      pendingTaskRelationships.blockedByTasks
-    )) {
-      await createRelationship({
-        sourceTaskId: blockedByTask.id,
-        targetTaskId: newTaskId,
-        type: 'blocks',
-      });
-    }
-
-    for (const relatedTask of dedupeById(
-      pendingTaskRelationships.relatedTasks
-    )) {
-      await createRelationship({
-        sourceTaskId: relatedTask.id,
-        targetTaskId: newTaskId,
-        type: 'related',
-      });
-    }
-  } catch (relationshipError) {
-    console.error(
-      'Failed to create pending task relationships:',
-      relationshipError
-    );
-  }
-
-  await Promise.all(
-    Array.from(affectedTaskIds).map((taskId) =>
-      queryClient.invalidateQueries({
-        queryKey: ['task-relationships', taskId],
-      })
-    )
-  );
-
-  return Array.from(affectedTaskIds);
-}
-
 // Helper function for updating tasks
 async function handleUpdateTask({
   taskId,
