@@ -82,6 +82,7 @@ export function useTaskFormState({
   const [hasDraft, setHasDraft] = useState(false);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftStorageKey = getDraftStorageKey(boardId);
+  const skipDraftSaveRef = useRef(false);
 
   // Get current form state
   const getFormState = useCallback(
@@ -155,6 +156,7 @@ export function useTaskFormState({
   useEffect(() => {
     if (!isOpen || !isCreateMode) return;
 
+    skipDraftSaveRef.current = true;
     const draft = loadDraft(draftStorageKey);
     if (!draft || !hasDraftContent(draft)) {
       clearDraft(draftStorageKey);
@@ -189,21 +191,45 @@ export function useTaskFormState({
     }
     if (Array.isArray(draft.selectedLabels))
       setSelectedLabels(draft.selectedLabels);
+    if (Array.isArray(draft.selectedAssignees))
+      setSelectedAssignees(draft.selectedAssignees);
+    if (Array.isArray(draft.selectedProjects))
+      setSelectedProjects(draft.selectedProjects);
+    if (typeof draft.totalDuration === 'number' || draft.totalDuration === null)
+      setTotalDuration(draft.totalDuration);
+    if (typeof draft.isSplittable === 'boolean')
+      setIsSplittable(draft.isSplittable);
+    if (
+      typeof draft.minSplitDurationMinutes === 'number' ||
+      draft.minSplitDurationMinutes === null
+    )
+      setMinSplitDurationMinutes(draft.minSplitDurationMinutes);
+    if (
+      typeof draft.maxSplitDurationMinutes === 'number' ||
+      draft.maxSplitDurationMinutes === null
+    )
+      setMaxSplitDurationMinutes(draft.maxSplitDurationMinutes);
+    if (
+      ['work_hours', 'personal_hours', 'meeting_hours'].includes(
+        draft.calendarHours
+      ) ||
+      draft.calendarHours === null
+    )
+      setCalendarHours(draft.calendarHours);
+    if (typeof draft.autoSchedule === 'boolean')
+      setAutoSchedule(draft.autoSchedule);
     setHasDraft(true);
   }, [isOpen, isCreateMode, draftStorageKey]);
 
   // Debounced save draft while editing in create mode
   useEffect(() => {
     if (!isOpen || !isCreateMode || isSaving) return;
+    if (skipDraftSaveRef.current) {
+      skipDraftSaveRef.current = false;
+      return;
+    }
 
-    const hasAny =
-      (name || '').trim().length > 0 ||
-      !!description ||
-      !!priority ||
-      !!startDate ||
-      !!endDate ||
-      !!estimationPoints ||
-      (selectedLabels && selectedLabels.length > 0);
+    const hasAny = hasDraftContent(getFormState());
 
     if (!hasAny) {
       clearDraft(draftStorageKey);
@@ -215,6 +241,7 @@ export function useTaskFormState({
 
     draftSaveTimerRef.current = setTimeout(() => {
       const toSave = {
+        ...loadDraft(draftStorageKey),
         name: (name || '').trim(),
         description,
         priority,
@@ -223,6 +250,14 @@ export function useTaskFormState({
         selectedListId,
         estimationPoints: estimationPoints ?? null,
         selectedLabels,
+        selectedAssignees,
+        selectedProjects,
+        totalDuration,
+        isSplittable,
+        minSplitDurationMinutes,
+        maxSplitDurationMinutes,
+        calendarHours,
+        autoSchedule,
       };
       saveDraft(draftStorageKey, toSave);
       setHasDraft(true);
@@ -235,6 +270,7 @@ export function useTaskFormState({
     isOpen,
     isCreateMode,
     isSaving,
+    getFormState,
     draftStorageKey,
     name,
     description,
@@ -244,14 +280,15 @@ export function useTaskFormState({
     selectedListId,
     estimationPoints,
     selectedLabels,
+    selectedAssignees,
+    selectedProjects,
+    totalDuration,
+    isSplittable,
+    minSplitDurationMinutes,
+    maxSplitDurationMinutes,
+    calendarHours,
+    autoSchedule,
   ]);
-
-  // Clear draft when opening in edit mode
-  useEffect(() => {
-    if (isOpen && !isCreateMode) {
-      clearDraft(draftStorageKey);
-    }
-  }, [isOpen, isCreateMode, draftStorageKey]);
 
   const clearDraftState = useCallback(() => {
     clearDraft(draftStorageKey);

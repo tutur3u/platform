@@ -1144,7 +1144,6 @@ export function TaskEditDialog({
     [parentTaskId, parentTaskName, pendingRelationship]
   );
 
-  // Task dependencies
   const {
     isLoading: dependenciesLoading,
     parentTask,
@@ -1163,6 +1162,7 @@ export function TaskEditDialog({
     savingRelationship,
     pendingRelationships,
   } = useTaskDependencies({
+    isOpen,
     taskId: task?.id,
     boardId,
     wsId: effectiveTaskWsId,

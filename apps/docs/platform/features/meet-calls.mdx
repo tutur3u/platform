@@ -458,3 +458,9 @@ The lobby separates connection progress from waiting for host admission. Guests
 can leave while waiting, and their preview is not published until they join.
 Host admission actions are labeled, and a muted participant has one mute status
 indicator rather than an additional redundant mute action.
+
+### Cloudflare browser integrations
+
+Meet must not mount Vercel Analytics or Speed Insights: their `/_vercel/*` script endpoints are not hosted by the Cloudflare Worker. A 404 for those scripts is separate from SFU media delivery.
+
+The platform user-config API uses the shared satellite app-session audience list in `apps/web/src/lib/api-auth-audiences.ts`. Keep Meet in that list and in the Rust current-user session targets. A successful local Meet call-token refresh does not verify authorization for proxied platform APIs such as `SHOW_VERSION_BADGE`.
