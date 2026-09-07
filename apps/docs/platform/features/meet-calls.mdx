@@ -204,7 +204,12 @@ Supabase service keys are not used for call tokens.
 `.github/workflows/meet-cloudflare.yaml` validates both Workers and deploys
 realtime before the frontend on `production`. It uses
 `MEET_CLOUDFLARE_API_TOKEN`, or the existing account deployment credential
-`COLAB_CLOUDFLARE_API_TOKEN` while bootstrapping. Automatic Vercel Meet production
+`COLAB_CLOUDFLARE_API_TOKEN` while bootstrapping. The deployment token needs
+Workers Scripts:Edit and Workers R2 Storage:Edit on the Tuturuuu account, plus
+Workers Routes:Edit limited to `tuturuuu.com`. Store the dedicated token in the
+`meet-production` GitHub environment, restricted to the `production` branch.
+A Worker-only token can upload signaling but fails when OpenNext populates the
+R2 cache, so verify the complete frontend deployment and authenticated smoke check. Automatic Vercel Meet production
 deployment is disabled in the CI switchboard. Preserve the Vercel deployment until the canonical
 Cloudflare sign-in and call checks pass so rollback remains available.
 

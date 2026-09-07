@@ -265,8 +265,19 @@ export function releaseParticipant(
     waiting,
   };
 
+  const closed = Object.values(state.tracks).filter(
+    (track) => track.userId === userId
+  );
   return outcome(next, {
     broadcast: [
+      ...[...new Set(closed.map((track) => track.sessionId))].map(
+        (sessionId) => ({
+          type: 'track.closed' as const,
+          userId,
+          sessionId,
+          tracks: closed.filter((track) => track.sessionId === sessionId),
+        })
+      ),
       meetPresenceMessage(next, roomId),
       { stage: next.stage, type: 'stage' },
     ],

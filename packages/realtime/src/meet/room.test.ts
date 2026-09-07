@@ -367,6 +367,14 @@ describe('meet room lifecycle', () => {
       'workspace:meeting'
     );
 
+    expect(released.broadcast).toContainEqual(
+      expect.objectContaining({
+        type: 'track.closed',
+        sessionId: 'session-1',
+        userId: HOST_ID,
+        tracks: [expect.objectContaining({ trackName: 'host-audio' })],
+      })
+    );
     expect(released.state.presence).toEqual({});
     expect(released.state.tracks).toEqual({});
     expect(released.state.stage.raisedHandUserIds).toEqual([]);
