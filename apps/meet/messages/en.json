@@ -3809,7 +3809,7 @@
       "lobby_waiting_hint": "Waiting for the host to let you in.",
       "lower_hand": "Lower hand",
       "media_device_busy": "The device could not start. Check whether another app is using it, then try again.",
-      "media_failed": "Could not transmit media. Check your connection and try again.",
+      "media_failed": "Could not start or transmit media. Try again, or leave and rejoin the call.",
       "media_permission_denied": "Access was blocked. Allow this site to use the device in your browser and system privacy settings, then try again.",
       "meeting_code": "Meeting code",
       "microphone_not_found": "No microphone was found. Connect a microphone or headset and try again.",

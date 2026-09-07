@@ -3809,7 +3809,7 @@
       "lobby_waiting_hint": "Đang chờ chủ phòng cho vào.",
       "lower_hand": "Hạ tay",
       "media_device_busy": "Không thể khởi động thiết bị. Hãy kiểm tra xem ứng dụng khác có đang sử dụng thiết bị không rồi thử lại.",
-      "media_failed": "Không thể truyền âm thanh hoặc hình ảnh. Hãy kiểm tra kết nối rồi thử lại.",
+      "media_failed": "Không thể khởi động hoặc truyền âm thanh, hình ảnh. Hãy thử lại hoặc rời và tham gia lại cuộc gọi.",
       "media_permission_denied": "Quyền truy cập bị chặn. Hãy cho phép trang web sử dụng thiết bị trong trình duyệt và cài đặt quyền riêng tư của hệ thống rồi thử lại.",
       "meeting_code": "Mã cuộc họp",
       "microphone_not_found": "Không tìm thấy micrô. Hãy kết nối micrô hoặc tai nghe rồi thử lại.",
