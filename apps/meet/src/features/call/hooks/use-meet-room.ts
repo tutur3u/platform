@@ -313,7 +313,8 @@ export function useMeetRoom({
       if (!selfUserId) return;
 
       const desired = planLocalTracks(selfUserId, next);
-      publishedRef.current = await syncPublishedSenders({
+      const previousPc = publishPcRef.current;
+      const published = await syncPublishedSenders({
         published: publishedRef.current,
         desired,
         senders: sendersRef.current,
@@ -338,7 +339,9 @@ export function useMeetRoom({
             throw new Error('sfu_track_close_failed');
         },
       });
-      const { publish } = diffLocalTracks(publishedRef.current, desired);
+      if (publishPcRef.current !== previousPc) return;
+      publishedRef.current = published;
+      const { publish } = diffLocalTracks(published, desired);
 
       if (publish.length) {
         const { pc, sessionId } = await ensurePublishSession();
