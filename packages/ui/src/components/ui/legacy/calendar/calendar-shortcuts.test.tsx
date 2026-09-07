@@ -40,6 +40,7 @@ describe('calendar keyboard navigation', () => {
     { ctrlKey: true },
     { metaKey: true },
     { altKey: true },
+    { shiftKey: true },
     { isComposing: true },
     { repeat: true },
   ])('ignores competing commands %j', (options) => {

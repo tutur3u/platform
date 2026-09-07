@@ -20,7 +20,8 @@ export function calendarShortcutView(
     isPageShortcutBlocked(event) ||
     event.metaKey ||
     event.ctrlKey ||
-    event.altKey
+    event.altKey ||
+    event.shiftKey
   )
     return null;
   return CALENDAR_VIEW_KEYS[event.key.toLowerCase()] ?? null;
