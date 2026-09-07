@@ -398,3 +398,15 @@ AudioWorklet check, and the disposable database runner with
 The disposable runner copies Git-tracked files; new migrations and tests must be
 tracked before running it. Run the Meet Cloudflare build before deployment and
 verify a signed-in live transcript plus persisted notes against Gemini afterward.
+
+### Diagnosing media on another device
+
+A working local camera preview proves capture succeeded, but does not prove other
+participants can receive it. If enabling a device shows a transmission warning,
+record its diagnostic code and the action that triggered it. `SFU_HTTP_*` identifies
+an upstream SFU rejection; `SIGNALING_*` identifies the signaling connection or
+request timeout; `RTC_*` identifies a browser peer-connection failure. The code
+contains no raw provider message, SDP, credential, or meeting content. A successful
+retry clears the previous warning for that device. Reproduce on the affected device
+before changing transport settings; synthetic sources in another browser do not
+establish physical-device compatibility.

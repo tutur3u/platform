@@ -17,7 +17,7 @@ import {
   selectOthers,
   selectSelf,
 } from '../lib/call-state';
-import { getMediaErrorKey } from '../lib/media-error';
+import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { type CallPanel, ControlBar } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { Lobby } from './lobby';
@@ -53,15 +53,24 @@ export function CallShell({
 }) {
   const t = useTranslations('meet.call');
   const aiT = useTranslations('meet.ai');
-  const runMediaAction = (
+  const runMediaAction = async (
     action: () => Promise<void>,
     device: 'microphone' | 'camera' | 'screen'
   ) => {
-    void action().catch((error: unknown) =>
-      toast.error(t(getMediaErrorKey(error, device)), {
-        id: `meet-media-${device}`,
-      })
-    );
+    const id = `meet-media-${device}`;
+    try {
+      await action();
+      toast.dismiss(id);
+    } catch (error) {
+      const key = getMediaErrorKey(error, device);
+      toast.error(t(key), {
+        id,
+        description:
+          key === 'media_failed'
+            ? t('media_error_code', { code: getMediaErrorDiagnostic(error) })
+            : undefined,
+      });
+    }
   };
   const router = useRouter();
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
@@ -128,24 +137,9 @@ export function CallShell({
         meetingName={meetingName}
         onJoin={async ({ audioEnabled, videoEnabled }) => {
           setJoined(true);
-          if (audioEnabled) {
-            try {
-              await room.toggleMicrophone();
-            } catch (error) {
-              toast.error(t(getMediaErrorKey(error, 'microphone')), {
-                id: 'meet-media-microphone',
-              });
-            }
-          }
-          if (videoEnabled) {
-            try {
-              await room.toggleCamera();
-            } catch (error) {
-              toast.error(t(getMediaErrorKey(error, 'camera')), {
-                id: 'meet-media-camera',
-              });
-            }
-          }
+          if (audioEnabled)
+            await runMediaAction(room.toggleMicrophone, 'microphone');
+          if (videoEnabled) await runMediaAction(room.toggleCamera, 'camera');
         }}
         waiting={state.admission === 'waiting'}
       />
