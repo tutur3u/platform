@@ -3,10 +3,9 @@
 import type { MailAttachment } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useEffect, useRef, useState } from 'react';
-import {
-  buildMailMessagePreviewDocument,
-  type MailMessagePreviewMode,
-} from './mail-message-preview-utils';
+import { buildMailMessagePreviewDocument } from './mail-message-preview-utils';
+import { useMailPreviewAppearance } from './mail-preview-appearance';
+import { applyMailPreviewContrast } from './mail-preview-contrast';
 
 export function MailMessagePreview({
   content,
@@ -23,7 +22,7 @@ export function MailMessagePreview({
   title: string;
   viewLabel: string;
 }) {
-  const [mode, setSelectedMode] = useState<MailMessagePreviewMode>('original');
+  const [mode, setSelectedMode] = useMailPreviewAppearance();
   const frame = useRef<HTMLIFrameElement>(null);
   const observer = useRef<ResizeObserver | null>(null);
   const [height, setHeight] = useState(320);
@@ -55,6 +54,7 @@ export function MailMessagePreview({
     observer.current?.disconnect();
     const body = frame.current?.contentDocument?.body;
     if (!body) return;
+    if (mode === 'dark') applyMailPreviewContrast(body.ownerDocument);
     observer.current = new ResizeObserver(resize);
     observer.current.observe(body);
     resize();

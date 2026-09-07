@@ -10,7 +10,7 @@ describe('buildMailMessagePreviewDocument', () => {
 
     expect(document).toContain('overflow-x:auto');
     expect(document).toContain("script-src 'none'");
-    expect(document).toContain('table{max-width:100%!important');
+    expect(document).toContain('table{max-width:100%}');
     expect(document).toContain('color-scheme:light');
   });
 
@@ -33,5 +33,20 @@ describe('buildMailMessagePreviewDocument', () => {
 
     expect(document).not.toContain('<script>');
     expect(document).not.toContain('onclick=');
+  });
+});
+
+describe('newsletter fidelity', () => {
+  it('keeps sender width, logo height and hidden preheader without leaking document titles', () => {
+    const document = buildMailMessagePreviewDocument(
+      '<html><head><title>Hidden title</title></head><body><div style="display:none;max-height:0;overflow:hidden">Preview</div><table align="center" style="max-width:37.5em"><tr><td><img height="48" src="https://example.com/logo.png" /></td></tr></table></body></html>',
+      'original'
+    );
+    expect(document).not.toContain('Hidden title');
+    expect(document).toContain('display:none;max-height:0;overflow:hidden');
+    expect(document).toContain('max-width:37.5em');
+    expect(document).toContain('height="48"');
+    expect(document).not.toContain('height:auto!important');
+    expect(document).not.toContain('max-width:100%!important');
   });
 });

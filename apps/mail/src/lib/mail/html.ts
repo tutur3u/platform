@@ -62,6 +62,13 @@ export function sanitizeMailHtml(
         (tag === 'style' && options.isolatedDocument) ||
         !FORBIDDEN_MAIL_TAGS.includes(tag)
     ),
+    nonTextTags: [
+      'script',
+      'textarea',
+      'option',
+      'title',
+      ...(options.isolatedDocument ? [] : ['style']),
+    ],
     // Stylesheets are retained ONLY by the sandboxed, CSP-protected reader.
     // Signatures and all other consumers continue to strip them.
     allowVulnerableTags: Boolean(options.isolatedDocument),
