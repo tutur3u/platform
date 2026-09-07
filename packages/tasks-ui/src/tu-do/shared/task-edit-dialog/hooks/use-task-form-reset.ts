@@ -32,6 +32,7 @@ export interface WorkspaceProject {
 
 export interface UseTaskFormResetProps {
   boardId?: string;
+  draftId?: string;
   isOpen: boolean;
   isCreateMode: boolean;
   task?: Task;
@@ -60,6 +61,7 @@ export interface UseTaskFormResetProps {
 
 export function useTaskFormReset({
   boardId,
+  draftId,
   isOpen,
   isCreateMode,
   task,
@@ -80,7 +82,6 @@ export function useTaskFormReset({
   const previousTaskIdRef = useRef<string | null>(null);
   const previousTaskHydrationVersionRef = useRef<number>(taskHydrationVersion);
   const previousIsOpenRef = useRef<boolean>(false);
-  const isMountedRef = useRef(true);
 
   // Reset form when task changes or dialog opens
   useEffect(() => {
@@ -95,7 +96,7 @@ export function useTaskFormReset({
       isOpen &&
       isCreateMode &&
       boardId &&
-      hasDraftContent(loadDraft(getDraftStorageKey(boardId)) ?? {})
+      hasDraftContent(loadDraft(getDraftStorageKey(boardId, draftId)) ?? {})
     ) {
       previousTaskIdRef.current = task?.id ?? null;
       return;
@@ -152,6 +153,7 @@ export function useTaskFormReset({
     }
   }, [
     boardId,
+    draftId,
     isCreateMode,
     isOpen,
     task,
@@ -178,16 +180,12 @@ export function useTaskFormReset({
 
   // Apply filters when dialog opens in create mode
   useEffect(() => {
-    isMountedRef.current = true;
+    let cancelled = false;
 
-    if (
-      isOpen &&
-      isCreateMode &&
+    const hasRecoveryDraft =
       boardId &&
-      hasDraftContent(loadDraft(getDraftStorageKey(boardId)) ?? {})
-    )
-      return;
-    if (isOpen && isCreateMode && filters) {
+      hasDraftContent(loadDraft(getDraftStorageKey(boardId, draftId)) ?? {});
+    if (isOpen && isCreateMode && filters && !hasRecoveryDraft) {
       // Apply labels from filters
       if (filters.labels && filters.labels.length > 0) {
         setSelectedLabels(filters.labels);
@@ -209,13 +207,13 @@ export function useTaskFormReset({
               data: { user },
             } = await supabase.auth.getUser();
 
-            if (!user || !isMountedRef.current) {
+            if (!user || cancelled) {
               return;
             }
 
             const userData = await getCurrentUserProfile().catch(() => null);
 
-            if (userData && isMountedRef.current) {
+            if (userData && !cancelled) {
               setSelectedAssignees([
                 {
                   user_id: user.id,
@@ -243,10 +241,11 @@ export function useTaskFormReset({
     }
 
     return () => {
-      isMountedRef.current = false;
+      cancelled = true;
     };
   }, [
     boardId,
+    draftId,
     isOpen,
     isCreateMode,
     filters,

@@ -16,6 +16,7 @@ import {
 interface UseTaskFormStateProps {
   task?: Task;
   boardId: string;
+  draftId?: string;
   isOpen: boolean;
   isCreateMode: boolean;
   isSaving: boolean;
@@ -24,6 +25,7 @@ interface UseTaskFormStateProps {
 export function useTaskFormState({
   task,
   boardId,
+  draftId,
   isOpen,
   isCreateMode,
   isSaving,
@@ -81,7 +83,7 @@ export function useTaskFormState({
   // Draft state
   const [hasDraft, setHasDraft] = useState(false);
   const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const draftStorageKey = getDraftStorageKey(boardId);
+  const draftStorageKey = getDraftStorageKey(boardId, draftId);
   const skipDraftSaveRef = useRef(false);
 
   // Get current form state

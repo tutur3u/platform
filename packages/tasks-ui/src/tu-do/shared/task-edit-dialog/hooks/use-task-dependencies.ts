@@ -39,6 +39,7 @@ import { usePendingTaskRelationships } from './use-pending-task-relationships';
  */
 export function useTaskDependencies({
   taskId,
+  draftId,
   boardId,
   wsId,
   listId,
@@ -69,6 +70,7 @@ export function useTaskDependencies({
     pendingRelated,
     setPendingRelated,
   } = usePendingTaskRelationships({
+    draftId,
     taskId,
     boardId,
     wsId,
@@ -145,9 +147,7 @@ export function useTaskDependencies({
     [taskId, wsId, queryClient, onUpdate, broadcast]
   );
 
-  // =========================================================================
   // Parent Task Operations
-  // =========================================================================
 
   const setParentTask = useCallback(
     async (task: RelatedTaskInfo | null) => {

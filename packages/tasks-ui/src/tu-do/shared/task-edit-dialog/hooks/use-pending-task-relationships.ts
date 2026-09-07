@@ -6,6 +6,7 @@ import { dedupeById } from './task-create-relationships';
 
 export function usePendingTaskRelationships({
   taskId,
+  draftId,
   boardId,
   wsId,
   isCreateMode,
@@ -13,6 +14,7 @@ export function usePendingTaskRelationships({
   seededRelationships,
 }: {
   taskId?: string;
+  draftId?: string;
   boardId: string;
   wsId: string;
   isCreateMode: boolean;
@@ -24,6 +26,7 @@ export function usePendingTaskRelationships({
     boardId,
     isCreateMode,
     taskId,
+    draftId,
     isOpen,
     seededRelationships?.parentTask?.id,
     seededRelationships?.childTasks.map((task) => task.id),
@@ -33,8 +36,8 @@ export function usePendingTaskRelationships({
   ]);
   const readInitial = () =>
     isCreateMode
-      ? (loadDraft(getDraftStorageKey(boardId))?.pendingTaskRelationships ??
-        seededRelationships)
+      ? (loadDraft(getDraftStorageKey(boardId, draftId))
+          ?.pendingTaskRelationships ?? seededRelationships)
       : undefined;
   const [session, setSession] = useState(sessionKey);
   const [initialPendingRelationships, setInitial] = useState(readInitial);
