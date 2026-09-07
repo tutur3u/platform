@@ -374,11 +374,10 @@ export function useMeetRoom({
 
         if (added.length) {
           const offer = await pc.createOffer();
-          // Order matters: a transceiver's `mid` is null until the local
-          // description is applied. Reading it any earlier publishes tracks
-          // with no mid and Cloudflare rejects the whole request with
-          // `406 tracks[0]: Missing mid in track`.
+          if (publishPcRef.current !== pc) return;
+          // Apply the offer before reading the assigned transceiver MIDs.
           await pc.setLocalDescription(offer);
+          if (publishPcRef.current !== pc) return;
 
           const tracks: CloudflareSfuTrack[] = added.map(
             ({ plan: added_plan, transceiver }) => ({
@@ -404,6 +403,7 @@ export function useMeetRoom({
           if (answer?.sessionDescription) {
             await pc.setRemoteDescription(answer.sessionDescription);
           }
+          if (publishPcRef.current !== pc) return;
           publishedRef.current = [
             ...publishedRef.current,
             ...added.map(({ plan }) => plan),
