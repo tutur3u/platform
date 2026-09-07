@@ -26,3 +26,18 @@ export function waitForPeerConnection(
     check();
   });
 }
+
+/** A failed session cannot be reused by the next media operation. */
+export async function preparePeerSession(
+  pc: RTCPeerConnection,
+  isCurrent: () => boolean,
+  reset: () => void
+) {
+  if (!pc.remoteDescription) return;
+  try {
+    await waitForPeerConnection(pc);
+  } catch (error) {
+    if (isCurrent()) reset();
+    throw error;
+  }
+}

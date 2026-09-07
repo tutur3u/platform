@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { waitForPeerConnection } from './peer-connection';
+import { preparePeerSession, waitForPeerConnection } from './peer-connection';
 
 function peer(initial: RTCPeerConnectionState) {
   const pc = new EventTarget() as RTCPeerConnection;
@@ -54,4 +54,31 @@ it('bounds a stalled connection and removes its listener', async () => {
   await pending;
   expect(remove).toHaveBeenCalledOnce();
   expect(vi.getTimerCount()).toBe(0);
+});
+
+it('resets a failed negotiated session before the next operation', async () => {
+  const f = peer('failed');
+  Object.defineProperty(f.pc, 'remoteDescription', { value: {} });
+  const reset = vi.fn();
+  await expect(preparePeerSession(f.pc, () => true, reset)).rejects.toThrow(
+    'sfu_connection_failed'
+  );
+  expect(reset).toHaveBeenCalledOnce();
+});
+
+it('does not reset the replacement of a stale session', async () => {
+  const f = peer('failed');
+  Object.defineProperty(f.pc, 'remoteDescription', { value: {} });
+  const reset = vi.fn();
+  await expect(preparePeerSession(f.pc, () => false, reset)).rejects.toThrow(
+    'sfu_connection_failed'
+  );
+  expect(reset).not.toHaveBeenCalled();
+});
+
+it('allows the initial offer to establish the connection', async () => {
+  const f = peer('new');
+  await expect(
+    preparePeerSession(f.pc, () => true, vi.fn())
+  ).resolves.toBeUndefined();
 });
