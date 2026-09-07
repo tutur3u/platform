@@ -3919,6 +3919,8 @@
       "reactions": "Reactions",
       "ready_to_join": "Ready when you are",
       "reconnecting": "Reconnecting…",
+      "record_save_failed": "Could not save the recording",
+      "record_start_failed": "Could not start recording",
       "recording": "Recording",
       "rejoin_call": "Rejoin",
       "remove_participant": "Remove from call",

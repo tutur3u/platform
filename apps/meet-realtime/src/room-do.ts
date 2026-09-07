@@ -1,12 +1,13 @@
 import {
   admitOrHold,
-  applyMeetRoomCommand,
   CloudflareSfuClient,
   canMeetRealtimeManageParticipants,
   canReadRoomNotes,
   createMeetRoomSnapshot,
+  MeetCommandExecutor,
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
+  type MeetRoomOutcome,
   type MeetRoomSnapshot,
   type MeetSfuIntent,
   meetAdmissionPendingMessage,
@@ -46,6 +47,7 @@ export class MeetRoomDurableObject implements DurableObject {
   private readonly state: DurableObjectState;
   private snapshot: MeetRoomSnapshot = createMeetRoomSnapshot();
   private loaded = false;
+  private commands = new MeetCommandExecutor();
 
   constructor(state: DurableObjectState, env: MeetRoomEnv) {
     this.env = env;
@@ -230,41 +232,25 @@ export class MeetRoomDurableObject implements DurableObject {
       return;
     }
 
-    const outcome = applyMeetRoomCommand(this.snapshot, {
-      message: parsed.data,
-      now: new Date().toISOString(),
-      token,
-    });
-
-    this.snapshot = outcome.state;
-    this.persist();
-
-    for (const message of outcome.reply) this.sendTo(socket, message);
-    this.broadcast(outcome.broadcast);
-    this.sendToManagers(outcome.toManagers);
-    for (const entry of outcome.direct) {
-      this.sendToUser(entry.userId, [entry.message]);
-    }
-
-    if (outcome.sfu) {
-      try {
-        const result = await this.runSfuIntent(outcome.sfu);
-        this.sendTo(socket, {
-          action: outcome.sfu.message.type,
-          requestId: outcome.sfu.requestId,
-          result,
-          type: 'sfu.response',
-        });
-      } catch (error) {
-        this.sendTo(socket, {
-          error: error instanceof Error ? error.message : 'sfu_request_failed',
-          requestId: outcome.sfu.requestId,
-          type: 'error',
-        });
+    await this.commands.run(
+      { message: parsed.data, now: new Date().toISOString(), token },
+      {
+        read: () => this.snapshot,
+        commit: (result) => this.flush(socket, result),
+        runSfu: (intent) => this.runSfuIntent(intent),
       }
-    }
+    );
+  }
 
-    this.disconnect(outcome.disconnect);
+  private flush(socket: WebSocket, result: MeetRoomOutcome) {
+    this.snapshot = result.state;
+    this.persist();
+    for (const message of result.reply) this.sendTo(socket, message);
+    this.broadcast(result.broadcast);
+    this.sendToManagers(result.toManagers);
+    for (const entry of result.direct)
+      this.sendToUser(entry.userId, [entry.message]);
+    this.disconnect(result.disconnect);
   }
 
   async webSocketClose(socket: WebSocket) {

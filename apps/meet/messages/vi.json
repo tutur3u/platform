@@ -3919,6 +3919,8 @@
       "reactions": "Biểu cảm",
       "ready_to_join": "Sẵn sàng khi bạn muốn",
       "reconnecting": "Đang kết nối lại…",
+      "record_save_failed": "Không thể lưu bản ghi âm",
+      "record_start_failed": "Không thể bắt đầu ghi âm",
       "recording": "Đang ghi",
       "rejoin_call": "Tham gia lại",
       "remove_participant": "Xóa khỏi cuộc gọi",

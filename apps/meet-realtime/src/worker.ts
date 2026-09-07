@@ -30,7 +30,9 @@ export default {
 
     const token = verifyMeetRealtimeToken(
       roomStateRequest
-        ? (request.headers.get('Authorization')?.replace(/^Bearer /, '') ?? '')
+        ? (request.headers
+            .get('Authorization')
+            ?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ?? '')
         : (url.searchParams.get('token') ?? ''),
       env.MEET_REALTIME_TOKEN_SECRET
     );

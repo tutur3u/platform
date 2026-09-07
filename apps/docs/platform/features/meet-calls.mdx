@@ -159,7 +159,7 @@ does not prove another participant receives media.
 
 Choose automatic, grid, spotlight or sidebar layouts. Each camera and shared
 screen can be focused independently or opened fullscreen. Videos fit their
-frames without cropping. Camera color filters and soft portrait processing run
+frames without cropping. Fullscreen uses a viewport-sized fallback when the browser denies native fullscreen. Camera color filters and soft portrait processing run
 locally and affect the transmitted video; no image is sent to an AI provider
 for these effects. Soft portrait is subtle whole-frame smoothing and lighting,
 not face-aware cosmetic placement. Reactions are temporary and rate limited.
@@ -540,3 +540,19 @@ camera, or screen track name. The room retires older registrations for that
 participant and track and broadcasts `track.closed` before the replacement
 `track.published`, so listeners discard obsolete receivers. Snapshot consumers
 also deduplicate old session registrations left by earlier Worker versions.
+
+## SFU commit boundary
+
+Both realtime transports use `MeetCommandExecutor`. SFU operations are serialized
+per participant, while other participants and leave/end controls stay responsive.
+A track registration or closure is persisted and broadcast only after Cloudflare
+returns success without per-track errors. The completed operation is applied to
+the latest room snapshot so concurrent host settings are preserved; a participant
+who left during the request cannot be resurrected. Closing a track requires the
+registered owner to match the signed caller.
+
+Recording finalization targets the specific session with an idempotent status
+update, never another toggle. SPA unmount and leave share the same finalizer. The
+post-call navigation buttons wait for finalization while capture and signaling
+are already stopped. A hard browser/process termination can still interrupt an
+upload; do not claim a saved recording without its storage receipt.

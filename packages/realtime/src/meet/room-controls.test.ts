@@ -55,7 +55,12 @@ describe('persistent room controls', () => {
       displayName: 'speaker',
       avatarUrl: guest.avatarUrl,
     });
-    const left = releaseParticipant(state, guestId, 'test').state;
+    const left = releaseParticipant(
+      { ...state, lastReactionAt: { [guestId]: 123, [hostId]: 456 } },
+      guestId,
+      'test'
+    ).state;
+    expect(left.lastReactionAt).toEqual({ [hostId]: 456 });
     expect(admitOrHold(left, guest, now).reply[0]).toMatchObject({
       admission: 'admitted',
     });
@@ -91,6 +96,8 @@ describe('persistent room controls', () => {
     expect(result.disconnect.sort()).toEqual([hostId, guestId].sort());
     expect(result.state.presence).toEqual({});
     expect(result.broadcast).toEqual([{ type: 'room.ended', by: hostId }]);
+    expect(result.broadcast[0]).not.toHaveProperty('requestId');
+    expect(result.state.lastReactionAt).toEqual({});
     expect(admitOrHold(result.state, guest, now).reply).toEqual([
       { type: 'room.ended' },
     ]);

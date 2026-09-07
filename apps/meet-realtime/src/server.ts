@@ -1,7 +1,7 @@
 import {
   admitOrHold,
-  applyMeetRoomCommand,
   CloudflareSfuClient,
+  MeetCommandExecutor,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
   type MeetSfuIntent,
@@ -35,6 +35,7 @@ export type MeetRealtimeServerOptions = {
   sfuClient?: SfuClient;
 };
 
+const commands = new MeetCommandExecutor();
 const PRESENCE_SWEEP_MS = 10_000;
 
 function runSfuIntent(intent: MeetSfuIntent, client: SfuClient) {
@@ -55,11 +56,7 @@ function runSfuIntent(intent: MeetSfuIntent, client: SfuClient) {
   return client.closeTracks(message);
 }
 
-async function flush(
-  ws: MeetWebSocket,
-  outcome: MeetRoomOutcome,
-  getSfuClient: () => SfuClient
-) {
+function flush(ws: MeetWebSocket, outcome: MeetRoomOutcome) {
   const { roomId } = ws.data.token;
   const room = getRoom(roomId);
   room.snapshot = outcome.state;
@@ -69,24 +66,6 @@ async function flush(
   sendToManagers(roomId, outcome.toManagers);
   for (const entry of outcome.direct) {
     sendToUser(roomId, entry.userId, [entry.message]);
-  }
-
-  if (outcome.sfu) {
-    try {
-      const result = await runSfuIntent(outcome.sfu, getSfuClient());
-      send(ws, {
-        action: outcome.sfu.message.type,
-        requestId: outcome.sfu.requestId,
-        result,
-        type: 'sfu.response',
-      });
-    } catch (error) {
-      send(ws, {
-        error: error instanceof Error ? error.message : 'sfu_request_failed',
-        requestId: outcome.sfu.requestId,
-        type: 'error',
-      });
-    }
   }
 
   disconnectUsers(roomId, outcome.disconnect);
@@ -112,14 +91,17 @@ async function handleMessage(
   }
 
   const room = getRoom(ws.data.token.roomId);
-  await flush(
-    ws,
-    applyMeetRoomCommand(room.snapshot, {
+  await commands.run(
+    {
       message: parsed.data,
       now: new Date().toISOString(),
       token: ws.data.token,
-    }),
-    getSfuClient
+    },
+    {
+      read: () => room.snapshot,
+      commit: (result) => flush(ws, result),
+      runSfu: (intent) => runSfuIntent(intent, getSfuClient()),
+    }
   );
 }
 
@@ -201,7 +183,8 @@ export function createMeetRealtimeServer(
         broadcast(token.roomId, outcome.broadcast);
         sendToManagers(token.roomId, outcome.toManagers);
 
-        if (room.snapshot.waiting[token.userId]) return;
+        disconnectUsers(token.roomId, outcome.disconnect);
+        if (room.snapshot.ended || room.snapshot.waiting[token.userId]) return;
 
         send(ws, meetPresenceMessage(room.snapshot, token.roomId));
         for (const track of remoteMeetTracks(room.snapshot, token.userId)) {

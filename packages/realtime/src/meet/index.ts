@@ -1,3 +1,4 @@
+export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';
 export type {
   MeetRealtimeClientMessage,

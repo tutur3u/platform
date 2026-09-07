@@ -88,16 +88,17 @@ export function CallStage({
     room.localStream,
     room.screenStream,
   ]);
+  const explicitFocus = tiles.find((tile) => tile.key === focus);
   const focused =
-    tiles.find((tile) => tile.key === focus) ??
+    explicitFocus ??
     tiles.find((tile) => tile.kind === 'screen') ??
     tiles.find((tile) => tile.participant.userId !== room.state.selfUserId) ??
     tiles[0];
   const spotlight =
-    layout === 'spotlight' ||
+    (layout === 'spotlight' && (!focus || !!explicitFocus)) ||
     layout === 'sidebar' ||
     (layout === 'auto' &&
-      (focus || tiles.some((tile) => tile.kind === 'screen')));
+      (explicitFocus || tiles.some((tile) => tile.kind === 'screen')));
   const render = (tile: Tile, className: string) => (
     <ParticipantTile
       key={tile.key}
@@ -111,7 +112,8 @@ export function CallStage({
       )}
       resumePlaybackLabel={t('resume_audio')}
       focused={focus === tile.key}
-      onFocus={() => onFocus(focus === tile.key ? null : tile.key)}
+      focusKey={tile.key}
+      onFocus={onFocus}
     />
   );
   if (spotlight && focused)

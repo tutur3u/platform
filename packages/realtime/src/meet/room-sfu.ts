@@ -75,6 +75,8 @@ export function applySfuCommand(
         })
       )
     );
+    if ([...closing].some((key) => state.tracks[key]?.userId !== token.userId))
+      return denied(state, 'permission_denied', message.requestId);
     const tracks = Object.fromEntries(
       Object.entries(state.tracks).filter(([key]) => !closing.has(key))
     );

@@ -12,7 +12,10 @@ export function ReactionOverlay({ state }: { state: CallState }) {
     return () => clearInterval(timer);
   }, []);
   const active = state.reactions
-    .filter((reaction) => now - Date.parse(reaction.createdAt) < 4500)
+    .filter((reaction) => {
+      const age = now - Date.parse(reaction.createdAt);
+      return age >= 0 && age < 4500;
+    })
     .slice(-6);
   return (
     <div

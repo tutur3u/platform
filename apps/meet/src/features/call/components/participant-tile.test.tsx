@@ -34,7 +34,7 @@ describe('participant media markup', () => {
       })
     ).toContain('muted=""');
   });
-  it('fits focused camera and shared screens without cropping', () => {
+  it('fits camera and shared screens without cropping', () => {
     for (const kind of ['camera', 'screen'] as const) {
       const html = renderTile({
         participant,

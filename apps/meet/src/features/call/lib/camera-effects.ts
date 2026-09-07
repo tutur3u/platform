@@ -53,6 +53,13 @@ export class CameraEffects {
   async setSource(source: MediaStreamTrack) {
     this.dispose();
     this.source = source;
+    source.addEventListener?.(
+      'ended',
+      () => {
+        if (this.source === source) this.dispose();
+      },
+      { once: true }
+    );
     try {
       return await this.setLook(this.look);
     } catch (error) {
@@ -63,7 +70,11 @@ export class CameraEffects {
   async setLook(look: CameraLook): Promise<MediaStreamTrack | null> {
     this.look = look;
     const source = this.source;
-    if (!source || source.readyState === 'ended') return null;
+    if (!source || source.readyState === 'ended') {
+      this.generation++;
+      this.stopOutput();
+      return null;
+    }
     const generation = ++this.generation;
     if (cameraFilterCss(look) === 'none') {
       this.stopOutput();

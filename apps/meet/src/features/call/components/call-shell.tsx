@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Circle, Loader2, ShieldCheck, WifiOff } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -64,6 +63,10 @@ export function CallShell({
   const [panel, setPanel] = useState<CallPanel>(null);
   const [layout, setLayout] = useState<CallLayout>('auto');
   const [focus, setFocus] = useState<string | null>(null);
+  const focusFeed = useCallback((key: string | null) => {
+    setFocus(key);
+    setLayout(key ? 'spotlight' : 'auto');
+  }, []);
   const [busyDevices, setBusyDevices] = useState<
     Partial<Record<Device, boolean>>
   >({});
@@ -172,12 +175,19 @@ export function CallShell({
             )}
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {!state.ended && (
-                <Button onClick={() => window.location.reload()}>
+                <Button
+                  disabled={saving}
+                  onClick={() => window.location.reload()}
+                >
                   {t('rejoin_call')}
                 </Button>
               )}
-              <Button variant="outline" asChild>
-                <Link href={backHref}>{t('back_to_meet')}</Link>
+              <Button
+                variant="outline"
+                disabled={saving}
+                onClick={() => router.push(backHref)}
+              >
+                <span>{t('back_to_meet')}</span>
               </Button>
             </div>
           </div>
@@ -275,11 +285,7 @@ export function CallShell({
             room={room}
             layout={layout}
             focus={focus}
-            onFocus={(key) => {
-              setFocus(key);
-              if (key) setLayout('spotlight');
-              else setLayout('auto');
-            }}
+            onFocus={focusFeed}
           />
           <ReactionOverlay state={state} />
         </main>

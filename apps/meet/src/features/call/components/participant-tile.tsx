@@ -26,6 +26,7 @@ function ParticipantTileImpl({
   kind = 'camera',
   onFocus,
   focused,
+  focusKey,
 }: {
   className?: string;
   resumePlaybackLabel: string;
@@ -35,7 +36,8 @@ function ParticipantTileImpl({
   participant: MeetRealtimePresence;
   stream?: MediaStream | null;
   kind?: 'camera' | 'screen';
-  onFocus?: () => void;
+  onFocus?: (key: string | null) => void;
+  focusKey?: string;
   focused?: boolean;
 }) {
   const t = useTranslations('meet.call');
@@ -75,7 +77,7 @@ function ParticipantTileImpl({
         'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-dynamic-surface ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
         className,
-        expanded && 'fixed inset-0 z-50 h-dvh w-screen rounded-none'
+        expanded && 'fixed inset-0 z-50 h-dvh w-screen! rounded-none'
       )}
     >
       <video
@@ -146,7 +148,11 @@ function ParticipantTileImpl({
             className="size-8"
             aria-label={focused ? t('unfocus_feed') : t('focus_feed')}
             aria-pressed={focused}
-            onClick={onFocus}
+            onClick={() =>
+              onFocus(
+                focused ? null : (focusKey ?? `${participant.userId}:${kind}`)
+              )
+            }
           >
             <Pin className="size-4" />
           </Button>
@@ -185,4 +191,23 @@ function ParticipantTileImpl({
     </div>
   );
 }
-export const ParticipantTile = memo(ParticipantTileImpl);
+export const ParticipantTile = memo(
+  ParticipantTileImpl,
+  (a, b) =>
+    a.participant.userId === b.participant.userId &&
+    a.participant.displayName === b.participant.displayName &&
+    a.participant.avatarUrl === b.participant.avatarUrl &&
+    a.participant.media.audioEnabled === b.participant.media.audioEnabled &&
+    a.participant.media.videoEnabled === b.participant.media.videoEnabled &&
+    a.participant.media.screenEnabled === b.participant.media.screenEnabled &&
+    a.handRaised === b.handRaised &&
+    a.isSelf === b.isSelf &&
+    a.isSpeaking === b.isSpeaking &&
+    a.stream === b.stream &&
+    a.className === b.className &&
+    a.resumePlaybackLabel === b.resumePlaybackLabel &&
+    a.kind === b.kind &&
+    a.focused === b.focused &&
+    a.focusKey === b.focusKey &&
+    a.onFocus === b.onFocus
+);

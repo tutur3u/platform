@@ -87,15 +87,23 @@ export function applyRoomControl(
   }
   if (message.type === 'room.end') {
     return outcome(
-      { ...state, ended: true, presence: {}, waiting: {}, tracks: {} },
       {
-        broadcast: [
+        ...state,
+        ended: true,
+        presence: {},
+        waiting: {},
+        tracks: {},
+        lastReactionAt: {},
+      },
+      {
+        reply: [
           {
             type: 'room.ended',
             by: token.userId,
             requestId: message.requestId,
           },
         ],
+        broadcast: [{ type: 'room.ended', by: token.userId }],
         disconnect: [
           ...new Set([
             ...Object.keys(state.presence),

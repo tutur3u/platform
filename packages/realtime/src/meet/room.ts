@@ -252,6 +252,8 @@ export function releaseParticipant(
 ): MeetRoomOutcome {
   const presence = { ...state.presence };
   const waiting = { ...state.waiting };
+  const lastReactionAt = { ...state.lastReactionAt };
+  delete lastReactionAt[userId];
   delete presence[userId];
   delete waiting[userId];
 
@@ -260,6 +262,7 @@ export function releaseParticipant(
   );
   const next: MeetRoomSnapshot = {
     ...state,
+    lastReactionAt,
     retiredTracks: Object.fromEntries(
       Object.entries(state.retiredTracks ?? {}).filter(
         ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
