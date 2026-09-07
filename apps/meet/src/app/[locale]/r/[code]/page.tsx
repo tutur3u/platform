@@ -63,6 +63,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
   if (access.needsDisplayName)
     return (
       <ParticipantNameForm
+        initialName={access.suggestedDisplayName ?? ''}
         meetingName={meeting.name ?? t('untitled_meeting')}
         leaveHref={leaveHref}
       />

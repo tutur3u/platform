@@ -14,13 +14,17 @@ import { useState, useTransition } from 'react';
 export function ParticipantNameForm({
   meetingName,
   leaveHref,
+  initialName,
 }: {
   meetingName: string;
   leaveHref: string;
+  initialName: string;
 }) {
   const t = useTranslations('meet.call');
   const router = useRouter();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(
+    initialName.slice(0, MAX_DISPLAY_NAME_LENGTH)
+  );
   const [saving, setSaving] = useState(false);
   const [refreshing, startTransition] = useTransition();
   const [error, setError] = useState(false);

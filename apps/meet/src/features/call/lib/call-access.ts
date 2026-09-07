@@ -69,8 +69,12 @@ export async function getMeetCallAccess(
         code: profileError.code,
       }
     );
+  const savedDisplayName =
+    typeof profile?.display_name === 'string'
+      ? profile.display_name.trim()
+      : '';
   const displayName = [
-    profile?.display_name,
+    savedDisplayName,
     profile?.user_private_details?.full_name,
     user.user_metadata?.display_name,
     user.user_metadata?.full_name,
@@ -84,7 +88,8 @@ export async function getMeetCallAccess(
     displayName: (displayName || user.email || fallbackName)
       .trim()
       .slice(0, 120),
-    needsDisplayName: !displayName && !profileError,
+    needsDisplayName: !savedDisplayName && !profileError,
+    suggestedDisplayName: displayName ?? '',
     admission: membership.ok ? ('open' as const) : ('lobby' as const),
     canReadWorkspace: membership.ok && membership.membershipType === 'MEMBER',
     workspaceSlug: toWorkspaceSlug(meeting.ws_id, {

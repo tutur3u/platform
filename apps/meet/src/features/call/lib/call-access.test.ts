@@ -212,3 +212,15 @@ it('does not ask to overwrite a profile whose lookup temporarily failed', async 
     needsDisplayName: false,
   });
 });
+
+it('suggests an account name but saves a preferred display name before future joins', async () => {
+  mocks.user.mockResolvedValue({
+    id: 'external',
+    email: 'guest@example.com',
+    user_metadata: { full_name: 'Account name' },
+  });
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
+    needsDisplayName: true,
+    suggestedDisplayName: 'Account name',
+  });
+});
