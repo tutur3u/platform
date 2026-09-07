@@ -445,3 +445,16 @@ contains no raw provider message, SDP, credential, or meeting content. A success
 retry clears the previous warning for that device. Reproduce on the affected device
 before changing transport settings; synthetic sources in another browser do not
 establish physical-device compatibility.
+
+### Participant names and admission
+
+Meet reuses the participant's saved profile or account name. If no name exists,
+the invite page asks for one before opening the realtime session, saves it through
+the current-user profile API, and refreshes the same invite. Later joins reuse the
+saved display name. A failed save leaves the form open for retry; a temporary
+profile lookup failure does not invite the user to overwrite an existing name.
+
+The lobby separates connection progress from waiting for host admission. Guests
+can leave while waiting, and their preview is not published until they join.
+Host admission actions are labeled, and a muted participant has one mute status
+indicator rather than an additional redundant mute action.

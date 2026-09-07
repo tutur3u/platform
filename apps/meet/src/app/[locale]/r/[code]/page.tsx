@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CallShell } from '@/features/call/components/call-shell';
+import { ParticipantNameForm } from '@/features/call/components/participant-name-form';
 import {
   getMeetCallAccess,
   MeetCallAccessError,
@@ -56,6 +57,16 @@ export default async function RoomPage({ params }: RoomPageProps) {
     workspaceSlug,
   } = access;
   const wsId = meeting.ws_id;
+  const leaveHref = canReadWorkspace
+    ? `/${workspaceSlug}/meetings/${meeting.id}`
+    : '/';
+  if (access.needsDisplayName)
+    return (
+      <ParticipantNameForm
+        meetingName={meeting.name ?? t('untitled_meeting')}
+        leaveHref={leaveHref}
+      />
+    );
 
   const session = await getMeetCallSession({
     displayName,
@@ -69,9 +80,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
   return (
     <CallShell
       defaultDisplayName={session.displayName}
-      leaveHref={
-        canReadWorkspace ? `/${workspaceSlug}/meetings/${meeting.id}` : '/'
-      }
+      leaveHref={leaveHref}
       canReadWorkspace={canReadWorkspace}
       meetingId={meeting.id}
       meetingName={meeting.name ?? t('untitled_meeting')}

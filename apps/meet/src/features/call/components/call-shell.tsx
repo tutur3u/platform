@@ -132,6 +132,7 @@ export function CallShell({
               ? aiT('join_notice')
               : undefined
         }
+        onLeave={() => router.push(leaveHref)}
         defaultDisplayName={defaultDisplayName}
         isJoining={state.admission === 'connecting'}
         meetingName={meetingName}

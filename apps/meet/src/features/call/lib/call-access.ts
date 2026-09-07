@@ -74,8 +74,6 @@ export async function getMeetCallAccess(
     profile?.user_private_details?.full_name,
     user.user_metadata?.display_name,
     user.user_metadata?.full_name,
-    user.email,
-    fallbackName,
   ].find(
     (value): value is string => typeof value === 'string' && !!value.trim()
   );
@@ -83,7 +81,10 @@ export async function getMeetCallAccess(
     user,
     meeting,
     isHost,
-    displayName: (displayName || fallbackName).trim().slice(0, 120),
+    displayName: (displayName || user.email || fallbackName)
+      .trim()
+      .slice(0, 120),
+    needsDisplayName: !displayName && !profileError,
     admission: membership.ok ? ('open' as const) : ('lobby' as const),
     canReadWorkspace: membership.ok && membership.membershipType === 'MEMBER',
     workspaceSlug: toWorkspaceSlug(meeting.ws_id, {

@@ -184,3 +184,31 @@ it('uses the localized fallback for an unnamed guest', async () => {
     displayName: 'Khách',
   });
 });
+
+it('requests a saved display name when only an email fallback exists', async () => {
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
+    displayName: 'guest@example.com',
+    needsDisplayName: true,
+  });
+});
+
+it('reuses a saved profile display name on the next join', async () => {
+  mocks.profile.mockResolvedValue({
+    data: { display_name: 'Saved guest' },
+    error: null,
+  });
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
+    displayName: 'Saved guest',
+    needsDisplayName: false,
+  });
+});
+
+it('does not ask to overwrite a profile whose lookup temporarily failed', async () => {
+  mocks.profile.mockResolvedValue({
+    data: null,
+    error: { code: 'unavailable' },
+  });
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
+    needsDisplayName: false,
+  });
+});
