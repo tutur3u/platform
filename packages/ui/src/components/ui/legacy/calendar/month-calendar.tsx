@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Plus } from '@tuturuuu/icons';
+import { ArrowLeft, Ellipsis, Plus } from '@tuturuuu/icons';
 import type { Workspace } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
@@ -169,7 +169,7 @@ export function MonthCalendar({
         className="grid min-h-0 flex-1 overflow-auto"
         style={{
           gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${rows}, minmax(112px, 1fr))`,
+          gridTemplateRows: `repeat(${rows}, minmax(160px, 1fr))`,
         }}
       >
         {visibleDays.map((day) => {
@@ -235,12 +235,21 @@ export function MonthCalendar({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="mt-1 w-full rounded px-1 py-1 text-left text-[10px] text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:text-xs"
+                    className="mt-1 w-full truncate rounded px-1 py-1 text-left text-[10px] text-muted-foreground hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:text-xs"
                     aria-label={t('views.open_day', { date: label })}
                   >
-                    {events.length > 3
-                      ? t('views.more_events', { count: events.length - 3 })
-                      : t('views.open_day_short')}
+                    <span className="sm:hidden" aria-hidden="true">
+                      {events.length > 3 ? (
+                        `+${events.length - 3}`
+                      ) : (
+                        <Ellipsis className="size-3.5" />
+                      )}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {events.length > 3
+                        ? t('views.more_events', { count: events.length - 3 })
+                        : t('views.open_day_short')}
+                    </span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
