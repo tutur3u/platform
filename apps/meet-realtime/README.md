@@ -19,7 +19,7 @@ Set by name only — never commit values.
 
 | variable | required | purpose |
 | --- | --- | --- |
-| `MEET_REALTIME_TOKEN_SECRET` | yes | HMAC secret for join tokens. Must match the value `apps/web` signs with. |
+| `MEET_REALTIME_TOKEN_SECRET` | yes | HMAC secret for join tokens. Must match the Meet frontend Worker and the platform's compatibility token API. |
 | `CLOUDFLARE_REALTIME_APP_ID` | yes | Cloudflare Realtime SFU app id. Not sensitive. |
 | `CLOUDFLARE_REALTIME_APP_SECRET` | yes | Cloudflare Realtime SFU app secret. **Sensitive** — treat as a bearer token. |
 | `CLOUDFLARE_REALTIME_API_BASE_URL` | no | Defaults to `https://rtc.live.cloudflare.com/v1`. |
@@ -83,9 +83,15 @@ SFU access: the protocol check must also create a real SFU session.
 
 ## Protocol
 
-Clients connect to `/realtime?token=<join token>`. The token is minted by
-`apps/web` at `/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token`
-and carries the room id, role, scopes and admission mode; the server derives the
-room from the token, never from the query string.
+Clients connect to `/realtime?token=<join token>`. The Meet frontend Worker mints
+the initial token when rendering the invite route and refreshes it through
+`/api/meet-call/[meetingId]/token`. Both paths recheck call access. Signed-in
+external guests can join company-created meetings through the lobby without
+receiving workspace membership or archive access.
+
+The token carries the room id, role, scopes and admission mode; the realtime
+server derives the room from the token, never from the query string. The platform
+keeps its workspace-scoped compatibility token API, but Meet reconnects use the
+call-specific endpoint so external guests retain access.
 
 See `packages/realtime/src/meet/messages.ts` for the full message contract.
