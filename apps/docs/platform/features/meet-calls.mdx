@@ -311,3 +311,67 @@ The `meet-production` GitHub environment must allow only the `production` branch
 and contain `MEET_REALTIME_TOKEN_SECRET` matching the Workers and platform API.
 Deployment checks required Worker secret names before rollout, then runs the
 signed-token realtime/SFU integration check against the canonical endpoint.
+
+
+## Gemini transcript and post-call notes
+
+Meet's own Cloudflare frontend Worker serves `/api/meet-ai/:wsId/:meetingId` and
+its `/chunks` endpoint. These routes do not depend on a self-hosted recording
+server. Configure `GOOGLE_GENERATIVE_AI_API_KEY` as a secret on `tuturuuu-meet`;
+without it, the panel reports that Gemini is not configured. Do not put the key
+in public environment variables or the browser. Existing deployment credentials
+do not grant permission to transfer a Gemini key to a new destination.
+
+Apply `20260907040000_meet_ai_sessions.sql` through the normal database release
+process before enabling the feature. A missing schema produces a visible
+unavailable state without breaking the call. Browser reads require workspace
+membership; only the meeting creator can start transcription, submit audio, or
+finalize notes. The server independently verifies the signed Meet app session,
+workspace membership, meeting ownership, and same-origin mutation requests.
+
+The host opens **Transcript & notes**, tells participants that audio will be sent
+to Gemini, then starts live transcription. The panel and call header show an
+active-session indicator to members. The browser mixes its current microphone
+track with received participant audio; it does not request another microphone or
+capture unrelated desktop audio. Muted tracks contribute silence. AudioWorklet
+emits independent mono 16 kHz WAV chunks about every ten seconds, skipping silence.
+Transcripts arrive after Gemini processes each chunk. This is chunked live
+transcription, not word-by-word captions, and overlapping speech is not assigned
+to guessed speaker identities.
+
+**Stop & generate notes** flushes pending audio and generates a summary, decisions,
+action items, and open questions. Leaving through the call's leave control does
+this automatically for the capturing host. Keep the page open while it finishes.
+If finalization fails, leaving still works and notes can be recovered from meeting details.
+Abrupt tab closure or a browser crash can lose the current unsubmitted chunk;
+return to the meeting details and finish the active session to generate notes
+from saved text. Interrupted or failed captures are identified as incomplete.
+A stuck notes attempt becomes eligible for manual recovery after two minutes;
+this can incur another provider charge and the earlier unknown usage remains
+visible in statistics. Notes are AI generated and should be reviewed.
+
+Only text, notes, and provider usage are retained in Supabase, not audio files.
+The capture queue is bounded to six chunks; overload or the chunk limit stops capture,
+drains accepted uploads, and attempts to finalize incomplete notes. A missing final
+audio flush is also marked incomplete. Sessions
+are limited to three hours and 1,080 submitted chunks. Database row locking makes
+chunk reservation atomic with session termination. Idempotent chunk IDs and
+sequence numbers prevent retrying an accepted provider call; unknown outcomes are
+shown as missing/unpriced, not silently retried.
+
+The default model is `gemini-3.1-flash-lite`. Costs are informational estimates in
+USD, computed on the server from Gemini usage metadata and a dated price snapshot:
+text input $0.25, audio input $0.50, and output including thinking $1.50 per million
+tokens (standard API pricing checked September 7, 2026). The panel separates
+transcription and notes costs, submitted audio minutes, and input/output tokens.
+Missing provider usage and interrupted attempts are shown explicitly; totals are
+not invoice totals and do not debit workspace AI credits. Review
+[Google's pricing](https://ai.google.dev/gemini-api/docs/pricing) when changing the
+model or rates. Never log raw audio, transcript text, or credentials.
+
+Validation: use the Meet AI API/audio tests, AI package usage tests, a real browser
+AudioWorklet check, and the disposable database runner with
+`--test supabase/tests/meet-ai.sql --typegen packages/types/src/supabase.ts`.
+The disposable runner copies Git-tracked files; new migrations and tests must be
+tracked before running it. Run the Meet Cloudflare build before deployment and
+verify a signed-in live transcript plus persisted notes against Gemini afterward.

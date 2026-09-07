@@ -15,6 +15,7 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { MeetingLocalTime } from '@/features/call/components/meeting-local-time';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
+import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
 import { RecordingSessionsOverview } from './recording-sessions-overview';
@@ -95,6 +96,9 @@ export default async function MeetingDetailPage({
         </div>
       </div>
 
+      <div className="mb-6">
+        <MeetingAiOverview wsId={wsId} meetingId={meetingId} />
+      </div>
       {/* Meeting Details */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Meeting Info */}

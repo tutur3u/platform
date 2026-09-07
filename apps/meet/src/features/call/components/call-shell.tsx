@@ -1,11 +1,14 @@
 'use client';
 
 import { Circle, WifiOff } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { MeetingAiPanel } from '@/features/meeting-ai/meeting-ai-panel';
+import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
 import { useCallRecording } from '../hooks/use-call-recording';
 import { useMeetRoom } from '../hooks/use-meet-room';
 import {
@@ -46,12 +49,22 @@ export function CallShell({
   wsId: string;
 }) {
   const t = useTranslations('meet.call');
+  const aiT = useTranslations('meet.ai');
   const runMediaAction = (action: () => Promise<void>) => {
     void action().catch(() => toast.error(t('media_failed')));
   };
   const router = useRouter();
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
   const { state } = room;
+  const audioStreams = useMemo(
+    () => [
+      ...(room.localStream ? [room.localStream] : []),
+      ...Object.values(room.remoteStreams),
+    ],
+    [room.localStream, room.remoteStreams]
+  );
+  const ai = useMeetingAi(wsId, meetingId, audioStreams);
+  const [showAi, setShowAi] = useState(false);
 
   const [joined, setJoined] = useState(false);
   const [panel, setPanel] = useState<CallPanel>(null);
@@ -87,6 +100,11 @@ export function CallShell({
             ? t('signaling_unreachable')
             : null
         }
+        transcriptionNotice={
+          ai.data?.sessions.some((session) => !session.ended_at)
+            ? aiT('join_notice')
+            : undefined
+        }
         defaultDisplayName={defaultDisplayName}
         isJoining={state.admission === 'connecting'}
         meetingName={meetingName}
@@ -118,10 +136,23 @@ export function CallShell({
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <header className="flex items-center gap-3 border-b px-4 py-2.5">
+      <header className="flex flex-wrap items-center gap-3 border-b px-4 py-2.5">
         <h1 className="min-w-0 flex-1 truncate font-medium text-sm">
           {meetingName}
         </h1>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAi(!showAi)}
+          className="h-auto max-w-full whitespace-normal text-left"
+          aria-expanded={showAi}
+        >
+          {aiT('title')}
+          {ai.data?.sessions.some((session) => !session.ended_at)
+            ? ` · ${aiT('active')}`
+            : ''}
+          {ai.data ? ` · $${ai.data.estimatedCostUsd.toFixed(4)}` : ''}
+        </Button>
         <CopyInvite meetingId={meetingId} meetingName={meetingName} />
         {state.recording.state === 'recording' ? (
           <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-0.5 font-medium text-dynamic-red text-xs">
@@ -198,6 +229,11 @@ export function CallShell({
           )}
         </main>
 
+        {showAi ? (
+          <aside className="max-h-[60dvh] w-full shrink-0 overflow-y-auto p-3 md:max-h-none md:w-96">
+            <MeetingAiPanel ai={ai} inCall />
+          </aside>
+        ) : null}
         {panel ? (
           <SidePanel
             canManage={canManage}
@@ -221,7 +257,17 @@ export function CallShell({
         cameraOn={room.media.videoEnabled}
         handRaised={handRaised}
         micOn={room.media.audioEnabled}
-        onLeave={() => router.push(leaveHref)}
+        onLeave={() => {
+          void (async () => {
+            try {
+              await ai.finish();
+            } catch {
+              toast.error(aiT('failed'));
+            } finally {
+              router.push(leaveHref);
+            }
+          })();
+        }}
         onToggleCamera={() => runMediaAction(room.toggleCamera)}
         onToggleHand={() => room.raiseHand(!handRaised)}
         onToggleMic={() => runMediaAction(room.toggleMicrophone)}
