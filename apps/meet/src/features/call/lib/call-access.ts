@@ -69,13 +69,15 @@ export async function getMeetCallAccess(
         code: profileError.code,
       }
     );
+  const savedDisplayName =
+    typeof profile?.display_name === 'string'
+      ? profile.display_name.trim()
+      : '';
   const displayName = [
-    profile?.display_name,
+    savedDisplayName,
     profile?.user_private_details?.full_name,
     user.user_metadata?.display_name,
     user.user_metadata?.full_name,
-    user.email,
-    fallbackName,
   ].find(
     (value): value is string => typeof value === 'string' && !!value.trim()
   );
@@ -83,7 +85,11 @@ export async function getMeetCallAccess(
     user,
     meeting,
     isHost,
-    displayName: (displayName || fallbackName).trim().slice(0, 120),
+    displayName: (displayName || user.email || fallbackName)
+      .trim()
+      .slice(0, 120),
+    needsDisplayName: !savedDisplayName && !profileError,
+    suggestedDisplayName: displayName?.trim() ?? '',
     admission: membership.ok ? ('open' as const) : ('lobby' as const),
     canReadWorkspace: membership.ok && membership.membershipType === 'MEMBER',
     workspaceSlug: toWorkspaceSlug(meeting.ws_id, {

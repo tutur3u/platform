@@ -14,6 +14,9 @@ vi.mock('next/navigation', () => ({
 vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }));
+vi.mock('@/features/call/components/participant-name-form', () => ({
+  ParticipantNameForm: () => null,
+}));
 vi.mock('@/features/call/components/call-shell', () => ({
   CallShell: () => null,
 }));
@@ -126,4 +129,21 @@ it('returns workspace guests to home without opening the meeting archive', async
     params: Promise.resolve({ code, locale: 'en' }),
   });
   expect(result.props.leaveHref).toBe('/');
+});
+
+it('asks for a missing name before creating the realtime session', async () => {
+  mocks.access.mockResolvedValue({
+    user: { id },
+    meeting: { id, ws_id: id, name: 'Invited call' },
+    canReadWorkspace: false,
+    needsDisplayName: true,
+  });
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'en' }),
+  });
+  expect(result.props).toMatchObject({
+    meetingName: 'Invited call',
+    leaveHref: '/',
+  });
+  expect(mocks.session).not.toHaveBeenCalled();
 });
