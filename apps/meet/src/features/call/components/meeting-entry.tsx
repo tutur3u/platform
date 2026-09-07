@@ -78,6 +78,7 @@ export function MeetingEntry({
       router.push(`/r/${encodeRoomCode(response.meeting.id)}`);
     } catch {
       toast.error(t('create_failed'));
+    } finally {
       setBusy(false);
     }
   };
@@ -98,9 +99,12 @@ export function MeetingEntry({
     }
 
     const startAt = normalizeMeetingTime(localTime);
-    const endAt = new Date(
-      new Date(startAt).getTime() + duration * 60_000
-    ).toISOString();
+    const endDate = new Date(new Date(startAt).getTime() + duration * 60_000);
+    if (Number.isNaN(endDate.getTime())) {
+      setError(t('schedule_invalid'));
+      return;
+    }
+    const endAt = endDate.toISOString();
     setBusy(true);
     setError(null);
     try {

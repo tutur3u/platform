@@ -352,7 +352,61 @@ export async function POST(
       }
     }
 
-    // Create new meeting
+    if (schedule) {
+      const meetingId = crypto.randomUUID();
+      const meetingUrl = buildMeetingDetailUrl(rawWsId, meetingId);
+      const workspaceKey = await getWorkspaceKey(wsId);
+      const encryptedFields = await encryptEventForStorage(
+        wsId,
+        {
+          title: name,
+          description: meetingUrl,
+          location: meetingUrl,
+        },
+        workspaceKey
+      );
+      const { data: scheduledResult, error: schedulingError } = await admin.rpc(
+        'create_scheduled_workspace_meeting',
+        {
+          p_meeting_id: meetingId,
+          p_ws_id: wsId,
+          p_creator_id: user.id,
+          p_name: name,
+          p_start_at: time,
+          p_end_at: schedule.endTime,
+          p_encrypted_title: encryptedFields.title,
+          p_encrypted_description: encryptedFields.description,
+          p_encrypted_location: encryptedFields.location,
+          p_is_encrypted: encryptedFields.is_encrypted,
+          p_meeting_url: meetingUrl,
+        }
+      );
+
+      if (schedulingError || !scheduledResult) {
+        console.error('Failed to schedule meeting on Calendar', {
+          wsId,
+          error: schedulingError,
+        });
+        return NextResponse.json(
+          { error: 'Failed to schedule meeting on Calendar' },
+          { status: 500 }
+        );
+      }
+
+      const result = scheduledResult as unknown as {
+        meeting: { id: string; creator: { display_name: string | null } };
+        calendar_event: { id: string; start_at: string; end_at: string };
+      };
+      return NextResponse.json({
+        meeting: result.meeting,
+        calendarEvent: {
+          ...result.calendar_event,
+          url: buildCalendarEventUrl(rawWsId, result.calendar_event.id, time),
+        },
+      });
+    }
+
+    // Instant meetings do not create Calendar events.
     const { data: meeting, error } = await supabase
       .from('workspace_meetings')
       .insert({
@@ -379,69 +433,7 @@ export async function POST(
       );
     }
 
-    if (!schedule) {
-      return NextResponse.json({ meeting });
-    }
-
-    const meetingUrl = buildMeetingDetailUrl(rawWsId, meeting.id);
-    const workspaceKey = await getWorkspaceKey(wsId);
-    const encryptedFields = await encryptEventForStorage(
-      wsId,
-      {
-        title: name,
-        description: meetingUrl,
-        location: meetingUrl,
-      },
-      workspaceKey
-    );
-    const { data: calendarEvent, error: calendarError } = await admin
-      .from('workspace_calendar_events')
-      .insert({
-        ws_id: wsId,
-        title: encryptedFields.title,
-        description: encryptedFields.description,
-        location: encryptedFields.location,
-        start_at: time,
-        end_at: schedule.endTime,
-        color: 'BLUE',
-        is_encrypted: encryptedFields.is_encrypted,
-        provider: 'tuturuuu',
-        scheduling_source: 'manual',
-        scheduling_metadata: {
-          type: 'tuturuuu_meeting',
-          meeting_id: meeting.id,
-          meeting_url: meetingUrl,
-        },
-        sync_status: 'local_only',
-      })
-      .select('id, start_at, end_at')
-      .single();
-
-    if (calendarError || !calendarEvent) {
-      const { error: rollbackError } = await supabase
-        .from('workspace_meetings')
-        .delete()
-        .eq('id', meeting.id)
-        .eq('ws_id', wsId);
-      console.error('Failed to schedule meeting on Calendar', {
-        wsId,
-        meetingId: meeting.id,
-        error: calendarError,
-        rollbackError,
-      });
-      return NextResponse.json(
-        { error: 'Failed to schedule meeting on Calendar' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      meeting,
-      calendarEvent: {
-        ...calendarEvent,
-        url: buildCalendarEventUrl(rawWsId, calendarEvent.id, time),
-      },
-    });
+    return NextResponse.json({ meeting });
   } catch (error) {
     if (error instanceof WorkspaceNotFoundError) {
       return NextResponse.json(

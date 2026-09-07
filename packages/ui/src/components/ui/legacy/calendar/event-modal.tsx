@@ -78,6 +78,7 @@ import {
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
+import { getCalendarMeetingMetadata } from './calendar-meeting-link';
 import {
   COLOR_OPTIONS,
   DateError,
@@ -207,7 +208,6 @@ export function EventModal() {
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
 
-  // Get the current event being previewed
   const generatedEvent = generatedEvents?.[currentEventIndex];
 
   // Determine if we're editing an existing event
@@ -322,6 +322,7 @@ export function EventModal() {
           external_event_id: activeEvent.external_event_id,
           google_event_id: activeEvent.google_event_id,
           google_calendar_id: activeEvent.google_calendar_id,
+          scheduling_metadata: getCalendarMeetingMetadata(activeEvent),
         };
 
         setEvent(cleanEventData);
@@ -333,7 +334,6 @@ export function EventModal() {
           sourceOption?.id ?? sourceData?.defaultSource?.id ?? null
         );
 
-        // Only check for all-day if this is an existing event (not a new one)
         if (activeEvent.id !== 'new') {
           setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent));
         } else {

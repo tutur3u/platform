@@ -106,6 +106,26 @@ describe('CalendarProvider Read-Only Mode', () => {
     expect(result.current.isModalOpen).toBe(true);
   });
 
+  it('routes a deep-linked event through a custom event adapter', async () => {
+    calendarMockState.events = [baseEvent];
+    const onOpen = vi.fn();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <CalendarProvider
+        eventAdapter={{ disableBuiltInEventUi: true, onOpen }}
+        initialEventId="event-1"
+        useQuery={mockUseQuery}
+        useQueryClient={mockUseQueryClient}
+        ws={workspace}
+      >
+        {children}
+      </CalendarProvider>
+    );
+
+    renderHook(() => useCalendar(), { wrapper });
+    await act(async () => undefined);
+    expect(onOpen).toHaveBeenCalledWith('event-1', baseEvent);
+  });
+
   it('should have readOnly set to true when passed as prop', () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
       <CalendarProvider

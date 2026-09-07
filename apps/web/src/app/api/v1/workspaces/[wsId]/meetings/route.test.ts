@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   adminFrom: vi.fn(),
+  adminRpc: vi.fn(),
   auth: vi.fn(),
-  calendarInsert: vi.fn(),
   encryptEvent: vi.fn(),
   from: vi.fn(),
   getWorkspaceKey: vi.fn(),
@@ -19,6 +19,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     auth: { admin: { getUserById: mocks.identity } },
     from: mocks.adminFrom,
+    rpc: mocks.adminRpc,
   }),
 }));
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
@@ -62,7 +63,11 @@ function authenticatedContext(...args: [email?: string]) {
   const email = args.length === 0 ? 'host@tuturuuu.com' : args[0];
   return {
     ok: true,
-    user: { id: 'actor', email },
+    user: {
+      id: 'actor',
+      email,
+      user_metadata: { email: 'spoof@tuturuuu.com' },
+    },
     supabase: { from: mocks.from, rpc: mocks.rpc },
   };
 }
@@ -89,18 +94,19 @@ beforeEach(() => {
       single: async () => ({ data: { id: 'meeting-id' }, error: null }),
     }),
   });
-  mocks.adminFrom.mockReturnValue({ insert: mocks.calendarInsert });
-  mocks.calendarInsert.mockReturnValue({
-    select: () => ({
-      single: async () => ({
-        data: {
-          id: 'calendar-event-id',
-          start_at: '2026-09-06T10:00:00Z',
-          end_at: '2026-09-06T11:00:00Z',
-        },
-        error: null,
-      }),
-    }),
+  mocks.adminRpc.mockResolvedValue({
+    data: {
+      meeting: {
+        id: 'meeting-id',
+        creator: { display_name: 'Host' },
+      },
+      calendar_event: {
+        id: 'calendar-event-id',
+        start_at: '2026-09-06T10:00:00Z',
+        end_at: '2026-09-06T11:00:00Z',
+      },
+    },
+    error: null,
   });
 });
 
@@ -200,19 +206,21 @@ describe('Calendar scheduling', () => {
       p_user_id: 'actor',
       p_permission: 'manage_calendar',
     });
-    expect(mocks.calendarInsert).toHaveBeenCalledWith(
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
+      'create_scheduled_workspace_meeting',
       expect.objectContaining({
-        start_at: '2026-09-06T10:00:00Z',
-        end_at: '2026-09-06T11:00:00Z',
-        scheduling_metadata: expect.objectContaining({
-          type: 'tuturuuu_meeting',
-          meeting_id: 'meeting-id',
-          meeting_url: 'https://meet.tuturuuu.com/personal/meetings/meeting-id',
-        }),
+        p_start_at: '2026-09-06T10:00:00Z',
+        p_end_at: '2026-09-06T11:00:00Z',
+        p_meeting_url: expect.stringContaining(
+          'https://meet.tuturuuu.com/personal/meetings/'
+        ),
       })
     );
     expect(await response.json()).toEqual(
       expect.objectContaining({
+        meeting: expect.objectContaining({
+          creator: { display_name: 'Host' },
+        }),
         calendarEvent: expect.objectContaining({
           id: 'calendar-event-id',
           url: expect.stringContaining('eventId=calendar-event-id'),
@@ -237,7 +245,7 @@ describe('Calendar scheduling', () => {
     expect(response.status).toBe(403);
     expect((await response.json()).code).toBe('CALENDAR_PERMISSION_REQUIRED');
     expect(mocks.insert).not.toHaveBeenCalled();
-    expect(mocks.calendarInsert).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
 
   it('rejects a schedule whose end is not after its start', async () => {
@@ -253,6 +261,27 @@ describe('Calendar scheduling', () => {
     );
 
     expect(response.status).toBe(400);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 without a partial meeting when the atomic RPC fails', async () => {
+    mocks.auth.mockResolvedValue(authenticatedContext());
+    mocks.adminRpc.mockResolvedValue({
+      data: null,
+      error: new Error('calendar insert failed'),
+    });
+
+    const response = await POST(
+      request({
+        name: 'Design review',
+        time: '2026-09-06T10:00:00Z',
+        schedule: { endTime: '2026-09-06T11:00:00Z' },
+      }),
+      params
+    );
+
+    expect(response.status).toBe(500);
+    expect(mocks.adminRpc).toHaveBeenCalledOnce();
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 });
