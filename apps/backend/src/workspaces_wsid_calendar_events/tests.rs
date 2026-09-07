@@ -116,7 +116,7 @@ impl OutboundHttpClient for PagedEvents {
         urls.push(request.url.to_string());
         let count = if first { 1000 } else { 1 };
         let body = (0..count)
-            .map(|id| json!({"id": format!("{}-{id}", if first { "first" } else { "last" })}))
+            .map(|id| json!({"id": format!("{}-{id:04}", if first { "first" } else { "last" }), "start_at": "2026-08-10T09:00:00Z"}))
             .collect::<Vec<_>>();
         Box::pin(async move {
             Ok(OutboundResponse {
@@ -142,7 +142,12 @@ async fn full_year_reads_beyond_database_row_limit() {
     assert_eq!(urls.len(), 2);
     let next = url::Url::parse(&urls[1]).unwrap();
     let params: std::collections::HashMap<_, _> = next.query_pairs().collect();
-    assert_eq!(params.get("offset").unwrap(), "1000");
+    assert!(!params.contains_key("offset"));
+    assert_eq!(params.get("limit").unwrap(), &EVENT_PAGE_SIZE.to_string());
+    assert_eq!(
+        params.get("or").unwrap(),
+        "(start_at.gt.\"2026-08-10T09:00:00Z\",and(start_at.eq.\"2026-08-10T09:00:00Z\",id.gt.\"first-0999\"))"
+    );
     assert_eq!(params.get("ws_id").unwrap(), "eq.workspace");
     assert_eq!(params.get("order").unwrap(), "start_at.asc,id.asc");
 }

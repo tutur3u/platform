@@ -17,6 +17,9 @@ import {
   isYesterday,
   startOfDay,
 } from 'date-fns';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
@@ -27,8 +30,13 @@ import {
 } from '../../../../lib/lunar-calendar';
 import { Button } from '../../button';
 import { Input } from '../../input';
+import { useCalendarSettings } from './settings/settings-context';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface AgendaViewProps {
+  readOnly?: boolean;
   startDate: Date;
   workspace?: Workspace;
   locale?: string;
@@ -319,11 +327,30 @@ function DateHeader({
 
 export const AgendaView = ({
   startDate,
+  readOnly = false,
   locale = 'en',
   daysToShow = 30,
 }: AgendaViewProps) => {
   const t = useTranslations('calendar');
-  const { getCurrentEvents, openModal, addEmptyEvent } = useCalendar();
+  const {
+    getCurrentEvents,
+    openModal,
+    addEmptyEvent,
+    readOnly: providerReadOnly,
+  } = useCalendar();
+  const { settings } = useCalendarSettings();
+  const cannotCreate = readOnly || providerReadOnly;
+  const createEvent = () => {
+    if (cannotCreate) return;
+    const zone = settings?.timezone?.timezone;
+    const wallTime = `${dayjs(startDate).format('YYYY-MM-DD')}T09:00:00`;
+    addEmptyEvent(
+      (zone && zone !== 'auto'
+        ? dayjs.tz(wallTime, zone)
+        : dayjs(wallTime)
+      ).toDate()
+    );
+  };
   const [query, setQuery] = useState('');
   const { timeFormat: rawTimeFormat } = useCalendarPreferences();
   const { value: showLunar } = useUserBooleanConfig(
@@ -406,7 +433,8 @@ export const AgendaView = ({
               variant="outline"
               size="icon"
               aria-label={t('views.create_event')}
-              onClick={() => addEmptyEvent(startDate)}
+              disabled={cannotCreate}
+              onClick={createEvent}
             >
               <Plus className="size-4" />
             </Button>
@@ -454,7 +482,8 @@ export const AgendaView = ({
             ) : (
               <Button
                 variant="outline"
-                onClick={() => addEmptyEvent(startDate)}
+                disabled={cannotCreate}
+                onClick={createEvent}
               >
                 {t('views.create_event')}
               </Button>

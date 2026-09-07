@@ -8,10 +8,17 @@ import {
   useCalendarViewShortcuts,
 } from './use-calendar-view-shortcuts';
 
-function ControlledViews() {
+function ControlledViews({ disabledWeek = false }: { disabledWeek?: boolean }) {
   const [view, setView] = useState<CalendarView>('week');
   useCalendarViewShortcuts({
     enabled: true,
+    availableViews: disabledWeek
+      ? [
+          { value: 'week', disabled: true },
+          { value: '4-days', disabled: true },
+          { value: 'month' },
+        ]
+      : undefined,
     day: () => setView('day'),
     '4-days': () => setView('4-days'),
     week: () => setView('week'),
@@ -49,6 +56,13 @@ describe('calendar keyboard navigation', () => {
         new KeyboardEvent('keydown', { key: 'm', ...options })
       )
     ).toBeNull();
+  });
+  it('does not invoke views disabled for the current screen', () => {
+    render(<ControlledViews disabledWeek />);
+    fireEvent.keyDown(window, { key: 'm' });
+    fireEvent.keyDown(window, { key: 'w' });
+    fireEvent.keyDown(window, { key: '4' });
+    expect(screen.getByText('month')).toBeVisible();
   });
   it('does not change views behind a modal', () => {
     render(

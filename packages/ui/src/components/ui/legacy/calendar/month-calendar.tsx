@@ -35,6 +35,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 interface MonthCalendarProps {
   date: Date;
+  readOnly?: boolean;
   workspace?: Workspace;
   visibleDates?: Date[];
   viewedMonth?: Date;
@@ -46,11 +47,13 @@ function MonthEvent({
   event,
   day,
   timePattern,
+  zone,
   onOpen,
 }: {
   event: CalendarEvent;
   day: Date;
   timePattern: string;
+  zone?: string;
   onOpen: (id: string) => void;
 }) {
   const t = useTranslations('calendar');
@@ -73,7 +76,10 @@ function MonthEvent({
       ) : (
         !allDay && (
           <span className="hidden shrink-0 tabular-nums opacity-70 lg:inline">
-            {dayjs(event.start_at).format(timePattern)}
+            {(zone && zone !== 'auto'
+              ? dayjs(event.start_at).tz(zone)
+              : dayjs(event.start_at)
+            ).format(timePattern)}
           </span>
         )
       )}
@@ -84,13 +90,20 @@ function MonthEvent({
 
 export function MonthCalendar({
   date,
+  readOnly = false,
   viewedMonth = date,
   visibleDates,
   locale = 'en',
   onDayClick,
 }: MonthCalendarProps) {
   const t = useTranslations('calendar');
-  const { getCurrentEvents, addEmptyEvent, openModal } = useCalendar();
+  const {
+    getCurrentEvents,
+    addEmptyEvent,
+    openModal,
+    readOnly: providerReadOnly,
+  } = useCalendar();
+  const cannotCreate = readOnly || providerReadOnly;
   const { settings } = useCalendarSettings();
   const { timeFormat, weekStartsOn } = useCalendarPreferences();
   const { value: showLunar } = useUserBooleanConfig(
@@ -128,6 +141,7 @@ export function MonthCalendar({
   const columns = showWeekends ? 7 : 5;
   const rows = Math.ceil(visibleDays.length / columns);
   const addEvent = (day: Date) => {
+    if (cannotCreate) return;
     const zone = settings?.timezone?.timezone;
     const wallTime = `${dayjs(day).format('YYYY-MM-DD')}T09:00:00`;
     addEmptyEvent(
@@ -203,6 +217,7 @@ export function MonthCalendar({
                 )}
                 <button
                   type="button"
+                  disabled={cannotCreate}
                   aria-label={t('views.create_on_date', { date: label })}
                   onClick={() => addEvent(day)}
                   className="hidden size-6 items-center justify-center rounded text-muted-foreground hover:bg-accent focus-visible:opacity-100 sm:flex sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
@@ -217,6 +232,7 @@ export function MonthCalendar({
                     event={event}
                     day={day}
                     timePattern={timePattern}
+                    zone={settings?.timezone?.timezone}
                     onOpen={openModal}
                   />
                 ))}
@@ -242,6 +258,7 @@ export function MonthCalendar({
                     <Button
                       size="icon"
                       variant="ghost"
+                      disabled={cannotCreate}
                       aria-label={t('views.create_on_date', { date: label })}
                       onClick={() => addEvent(day)}
                     >
@@ -255,6 +272,7 @@ export function MonthCalendar({
                         event={event}
                         day={day}
                         timePattern={timePattern}
+                        zone={settings?.timezone?.timezone}
                         onOpen={openModal}
                       />
                     ))
