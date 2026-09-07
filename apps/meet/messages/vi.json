@@ -3896,6 +3896,25 @@
       "you": "Bạn",
       "your_name": "Tên của bạn"
     },
+    "meetings": {
+      "cancel": "Hủy",
+      "code_placeholder": "Dán liên kết hoặc mã cuộc họp",
+      "create": "Tạo cuộc họp",
+      "create_description": "Đặt tên và tùy chọn lên lịch cuộc họp.",
+      "create_failed": "Không thể tạo cuộc họp. Vui lòng thử lại.",
+      "create_title": "Tạo cuộc họp",
+      "creating": "Đang tạo…",
+      "invalid_code": "Vui lòng nhập mã hoặc liên kết Tuturuuu Meet hợp lệ.",
+      "join": "Tham gia",
+      "join_description": "Dùng liên kết Tuturuuu Meet hoặc mã cuộc họp.",
+      "join_title": "Tham gia cuộc họp",
+      "meeting_code": "Liên kết hoặc mã cuộc họp",
+      "name": "Tên",
+      "name_placeholder": "Họp hàng tuần",
+      "name_required": "Vui lòng nhập tên cuộc họp.",
+      "time": "Ngày và giờ",
+      "time_hint": "Để trống để tạo cuộc họp ngay bây giờ."
+    },
     "transcription": {
       "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
       "too_large": "Bản ghi này quá lớn để phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
