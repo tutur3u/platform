@@ -2,7 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import type { PendingRelationship } from '../types/pending-relationship';
-import { clearDraft } from '../utils';
+import { isTaskDraftSaving } from './task-draft-save-session';
 
 export interface UseTaskDialogCloseProps {
   taskId?: string;
@@ -44,10 +44,10 @@ export interface UseTaskDialogCloseReturn {
 export function useTaskDialogClose({
   taskId,
   isCreateMode,
+  draftStorageKey,
   collaborationMode,
   synced,
   connected,
-  draftStorageKey,
   parentTaskId,
   pendingRelationship,
   onClose,
@@ -63,7 +63,8 @@ export function useTaskDialogClose({
 
   // Main close handler
   const handleClose = useCallback(async (): Promise<boolean> => {
-    if (isClosingRef.current) return false;
+    if (isTaskDraftSaving(draftStorageKey) || isClosingRef.current)
+      return false;
 
     // Show warning if not synced in collaboration mode
     if (
@@ -90,10 +91,6 @@ export function useTaskDialogClose({
         }
       }
 
-      if (!isCreateMode) {
-        clearDraft(draftStorageKey);
-      }
-
       onClose();
       return true;
     } catch (error) {
@@ -104,6 +101,7 @@ export function useTaskDialogClose({
       isClosingRef.current = false;
     }
   }, [
+    draftStorageKey,
     collaborationMode,
     isCreateMode,
     synced,
@@ -113,13 +111,13 @@ export function useTaskDialogClose({
     persistTaskDescription,
     hasPendingRealtimeDescriptionChanges,
     onCloseBlocked,
-    draftStorageKey,
     onClose,
     setShowSyncWarning,
   ]);
 
   // Force close handler (bypasses sync warning)
   const handleForceClose = useCallback(async () => {
+    if (isTaskDraftSaving(draftStorageKey)) return;
     setShowSyncWarning(false);
     onClose();
 
@@ -130,10 +128,6 @@ export function useTaskDialogClose({
         if (!isCreateMode && taskId) {
           await persistTaskDescription?.();
         }
-
-        if (!isCreateMode) {
-          clearDraft(draftStorageKey);
-        }
       } catch (error) {
         console.error('Error during background save on force close:', error);
       }
@@ -141,17 +135,18 @@ export function useTaskDialogClose({
 
     performBackgroundSaves();
   }, [
+    draftStorageKey,
     setShowSyncWarning,
     onClose,
     flushNameUpdate,
     isCreateMode,
     taskId,
     persistTaskDescription,
-    draftStorageKey,
   ]);
 
   // Navigate back to related task (for create mode with pending relationship)
   const handleNavigateBack = useCallback(async () => {
+    if (isTaskDraftSaving(draftStorageKey)) return;
     const taskIdToNavigateTo =
       pendingRelationship?.relatedTaskId ?? parentTaskId;
 
@@ -162,6 +157,7 @@ export function useTaskDialogClose({
 
     await onNavigateToTask(taskIdToNavigateTo);
   }, [
+    draftStorageKey,
     pendingRelationship?.relatedTaskId,
     parentTaskId,
     onNavigateToTask,
