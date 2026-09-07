@@ -6,6 +6,7 @@ const state = vi.hoisted(() => ({
   openModal: vi.fn(),
   addEmptyEvent: vi.fn(),
   events: [] as CalendarEvent[],
+  weekStartsOn: 0,
 }));
 vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
   useCalendar: () => ({
@@ -18,7 +19,10 @@ vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
   }),
 }));
 vi.mock('@tuturuuu/ui/hooks/use-calendar-preferences', () => ({
-  useCalendarPreferences: () => ({ timeFormat: '24h' }),
+  useCalendarPreferences: () => ({
+    timeFormat: '24h',
+    weekStartsOn: state.weekStartsOn,
+  }),
 }));
 vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
   useUserBooleanConfig: () => ({ value: false }),
@@ -42,6 +46,7 @@ import { YearCalendar } from './year-calendar';
 
 const date = new Date(2026, 8, 7);
 beforeEach(() => {
+  state.weekStartsOn = 0;
   state.openModal.mockClear();
   state.addEmptyEvent.mockClear();
   state.events = Array.from(
@@ -76,6 +81,27 @@ describe('calendar view interactions', () => {
     );
     expect(state.addEmptyEvent.mock.calls[0]?.[0].toISOString()).toBe(
       '2026-09-07T13:00:00.000Z'
+    );
+  });
+  it('uses the preferred first weekday unless visible dates specify one', () => {
+    const { rerender } = render(<MonthCalendar date={date} locale="en" />);
+    expect(screen.getAllByRole('region')[0]).toHaveAccessibleName(
+      'Sunday, August 30, 2026'
+    );
+    state.weekStartsOn = 1;
+    rerender(<MonthCalendar date={date} locale="en" />);
+    expect(screen.getAllByRole('region')[0]).toHaveAccessibleName(
+      'Monday, August 31, 2026'
+    );
+    rerender(
+      <MonthCalendar
+        date={date}
+        locale="en"
+        visibleDates={[new Date(2026, 8, 6)]}
+      />
+    );
+    expect(screen.getAllByRole('region')[0]).toHaveAccessibleName(
+      'Sunday, September 6, 2026'
     );
   });
   it('agenda filters by location, opens events, and clears a no-match search', () => {

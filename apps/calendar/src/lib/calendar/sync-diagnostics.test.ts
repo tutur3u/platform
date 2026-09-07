@@ -26,6 +26,16 @@ describe('safe calendar failure diagnostics', () => {
       readSyncFailures(JSON.stringify({ version: 2, failedCalendars: [] }))
     ).toEqual([]);
   });
+  it('keeps DNS failures separate from missing calendars', () => {
+    expect(
+      classifyCalendarSyncError(
+        new Error('getaddrinfo ENOTFOUND www.googleapis.com')
+      )
+    ).toBe('network');
+    expect(classifyCalendarSyncError(new Error('Calendar notFound'))).toBe(
+      'not_found'
+    );
+  });
   it.each([
     [404, 'not_found'],
     [403, 'access_denied'],

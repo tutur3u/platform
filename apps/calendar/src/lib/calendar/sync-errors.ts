@@ -41,7 +41,7 @@ export function classifyCalendarSyncError(
     )
   )
     return 'auth';
-  if (status === 404 || /not found|notfound/.test(message)) return 'not_found';
+  if (status === 404 || /\bnot ?found\b/.test(message)) return 'not_found';
   if (status === 403 || /forbidden|access denied/.test(message))
     return 'access_denied';
   if (

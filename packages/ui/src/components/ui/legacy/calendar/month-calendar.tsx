@@ -92,13 +92,13 @@ export function MonthCalendar({
   const t = useTranslations('calendar');
   const { getCurrentEvents, addEmptyEvent, openModal } = useCalendar();
   const { settings } = useCalendarSettings();
-  const { timeFormat } = useCalendarPreferences();
+  const { timeFormat, weekStartsOn } = useCalendarPreferences();
   const { value: showLunar } = useUserBooleanConfig(
     'SHOW_LUNAR_CALENDAR',
     locale.startsWith('vi')
   );
   const timePattern = getTimeFormatPattern(timeFormat);
-  const firstDay = (visibleDates?.[0]?.getDay() ?? 1) as
+  const firstDay = (visibleDates?.[0]?.getDay() ?? weekStartsOn) as
     | 0
     | 1
     | 2
