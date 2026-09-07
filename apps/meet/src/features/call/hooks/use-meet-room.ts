@@ -25,6 +25,7 @@ import {
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
+  releaseClosedSubscriptions,
 } from '../lib/remote-playback';
 import {
   createRemoteStreamCache,
@@ -106,6 +107,7 @@ export function useMeetRoom({
   const publishSessionRef = useRef<string | null>(null);
   const subscribeSessionRef = useRef<string | null>(null);
   const publishedRef = useRef<LocalTrackPlan[]>([]);
+  const pendingSubscriptionsRef = useRef(new Set<string>());
   const subscribedRef = useRef<Set<string>>(new Set());
   const screenStreamRef = useRef<MediaStream | null>(null);
   /** mid -> owning participant, the only way to attribute an inbound track. */
@@ -148,9 +150,17 @@ export function useMeetRoom({
 
     const signaling = new MeetSignaling({
       onMessage: (message) => {
-        // Retire the entire negotiation, including in-flight SDP. Remaining
-        // published tracks are pulled again by the normal subscription loop.
-        if (message.type === 'track.closed') resetSubscriber();
+        if (
+          message.type === 'track.closed' &&
+          releaseClosedSubscriptions(
+            new Set(message.tracks.map(remoteTrackKey)),
+            trackOwnersRef.current,
+            subscribedRef.current,
+            pendingSubscriptionsRef.current,
+            setRemoteMedia
+          )
+        )
+          resetSubscriber();
         if (message.type === 'participant.removed') {
           setRemoteMedia((current) => {
             const next = { ...current };
@@ -436,55 +446,62 @@ export function useMeetRoom({
         stateRef.current.selfUserId
       );
       if (!pending.length) return;
-      const { pc, sessionId } = await ensureSubscribeSession();
-      const answer = await signalingRef.current?.request<SfuTracksResponse>({
-        sessionId,
-        tracks: pending,
-        type: 'sfu.tracks.subscribe',
-      });
-      if (subscribePcRef.current !== pc) return;
-      for (const track of answer?.tracks ?? []) {
-        const owner = userIdFromTrackName(track.trackName);
-        const kind = track.trackName
-          ?.split('-')
-          .at(-1) as MeetRealtimeTrackKind;
-        const requested = pending.find(
-          (entry) => entry.trackName === track.trackName
-        );
-        if (track.mid && owner && requested)
-          trackOwnersRef.current.set(track.mid, {
-            userId: owner,
-            kind,
-            subscriptionKey: `${requested.sessionId}:${track.trackName}`,
-          });
-      }
-      if (answer?.sessionDescription) {
-        await pc.setRemoteDescription(answer.sessionDescription);
-        if (subscribePcRef.current !== pc) return;
-        const localAnswer = await pc.createAnswer();
-        if (subscribePcRef.current !== pc) return;
-        await pc.setLocalDescription(localAnswer);
-        if (subscribePcRef.current !== pc) return;
-        await signalingRef.current?.request({
-          sessionDescription: { sdp: localAnswer.sdp ?? '', type: 'answer' },
+      pendingSubscriptionsRef.current = new Set(
+        pending.map((track) => `${track.sessionId}:${track.trackName}`)
+      );
+      try {
+        const { pc, sessionId } = await ensureSubscribeSession();
+        const answer = await signalingRef.current?.request<SfuTracksResponse>({
           sessionId,
-          type: 'sfu.renegotiate',
+          tracks: pending,
+          type: 'sfu.tracks.subscribe',
         });
-      }
-      if (subscribePcRef.current !== pc) return;
-      for (const track of answer?.tracks ?? []) {
-        if (!track.mid) continue;
-        const roomTrack = Object.values(stateRef.current.remoteTracks).find(
-          (entry) =>
-            pending.some(
-              (requested) =>
-                requested.sessionId === entry.sessionId &&
-                requested.trackName === track.trackName
-            ) && entry.trackName === track.trackName
-        );
-        const owner = trackOwnersRef.current.get(track.mid);
-        if (roomTrack && owner && owner.track?.readyState !== 'ended')
-          subscribedRef.current.add(remoteTrackKey(roomTrack));
+        if (subscribePcRef.current !== pc) return;
+        for (const track of answer?.tracks ?? []) {
+          const owner = userIdFromTrackName(track.trackName);
+          const kind = track.trackName
+            ?.split('-')
+            .at(-1) as MeetRealtimeTrackKind;
+          const requested = pending.find(
+            (entry) => entry.trackName === track.trackName
+          );
+          if (track.mid && owner && requested)
+            trackOwnersRef.current.set(track.mid, {
+              userId: owner,
+              kind,
+              subscriptionKey: `${requested.sessionId}:${track.trackName}`,
+            });
+        }
+        if (answer?.sessionDescription) {
+          await pc.setRemoteDescription(answer.sessionDescription);
+          if (subscribePcRef.current !== pc) return;
+          const localAnswer = await pc.createAnswer();
+          if (subscribePcRef.current !== pc) return;
+          await pc.setLocalDescription(localAnswer);
+          if (subscribePcRef.current !== pc) return;
+          await signalingRef.current?.request({
+            sessionDescription: { sdp: localAnswer.sdp ?? '', type: 'answer' },
+            sessionId,
+            type: 'sfu.renegotiate',
+          });
+        }
+        if (subscribePcRef.current !== pc) return;
+        for (const track of answer?.tracks ?? []) {
+          if (!track.mid) continue;
+          const roomTrack = Object.values(stateRef.current.remoteTracks).find(
+            (entry) =>
+              pending.some(
+                (requested) =>
+                  requested.sessionId === entry.sessionId &&
+                  requested.trackName === track.trackName
+              ) && entry.trackName === track.trackName
+          );
+          const owner = trackOwnersRef.current.get(track.mid);
+          if (roomTrack && owner && owner.track?.readyState !== 'ended')
+            subscribedRef.current.add(remoteTrackKey(roomTrack));
+        }
+      } finally {
+        pendingSubscriptionsRef.current.clear();
       }
     };
     let active = true;

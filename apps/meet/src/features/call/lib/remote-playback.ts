@@ -49,3 +49,20 @@ export function removeRemotePlayback(
   if (!Object.keys(next[owner.userId]!).length) delete next[owner.userId];
   return next;
 }
+
+/** Only an overlapping in-flight offer needs a fresh subscriber connection. */
+export function releaseClosedSubscriptions(
+  closed: Set<string>,
+  owners: Map<string, RemoteTrackOwner>,
+  subscribed: Set<string>,
+  pending: Set<string>,
+  setMedia: (update: (current: RemoteMedia) => RemoteMedia) => void
+): boolean {
+  for (const key of closed) subscribed.delete(key);
+  for (const [mid, owner] of owners) {
+    if (!closed.has(owner.subscriptionKey)) continue;
+    owners.delete(mid);
+    setMedia((current) => removeRemotePlayback(current, owner));
+  }
+  return [...closed].some((key) => pending.has(key));
+}
