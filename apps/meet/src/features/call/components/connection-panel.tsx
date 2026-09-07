@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
 
 export function ConnectionPanel({
@@ -26,12 +26,17 @@ export function ConnectionPanel({
   const [open, setOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<MediaDiagnostics | null>(null);
   const [busy, setBusy] = useState(false);
+  const requestId = useRef(0);
   const refresh = async () => {
+    const id = ++requestId.current;
     setBusy(true);
     try {
-      setSnapshot(await read());
+      const next = await read();
+      if (id === requestId.current) setSnapshot(next);
+    } catch {
+      if (id === requestId.current) setSnapshot(null);
     } finally {
-      setBusy(false);
+      if (id === requestId.current) setBusy(false);
     }
   };
   const status = (state: string) =>
@@ -49,6 +54,11 @@ export function ConnectionPanel({
       onOpenChange={(next) => {
         setOpen(next);
         if (next) void refresh();
+        else {
+          requestId.current++;
+          setSnapshot(null);
+          setBusy(false);
+        }
       }}
     >
       <DialogTrigger asChild>
@@ -57,7 +67,7 @@ export function ConnectionPanel({
           {t('connection_title')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('connection_title')}</DialogTitle>
           <DialogDescription>{t('connection_hint')}</DialogDescription>
@@ -89,7 +99,9 @@ export function ConnectionPanel({
             ))
           ) : (
             <p className="text-muted-foreground text-sm">
-              {t('connection_checking')}
+              {busy
+                ? t('connection_checking')
+                : t('connection_stats_unavailable')}
             </p>
           )}
         </div>
@@ -124,7 +136,9 @@ export function ConnectionPanel({
         </div>
         <Button
           onClick={() => {
+            requestId.current++;
             reconnect();
+            setSnapshot(null);
             setOpen(false);
             toast.info(t('connection_reconnecting'));
           }}
