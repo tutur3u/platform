@@ -10,8 +10,7 @@ import {
   flattenAddresses,
   mailboxAddress,
 } from '../src/lib/mail/import/google-takeout';
-
-type AnyRecord = Record<string, any>;
+import type { AnyRecord } from '../src/lib/mail/repository/shared';
 
 export type StoredObjectRow = {
   bucket_name: string;
