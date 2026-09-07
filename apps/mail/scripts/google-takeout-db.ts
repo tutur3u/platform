@@ -69,6 +69,37 @@ function table(admin: AnyRecord, name: string) {
   return admin.schema('private').from(name);
 }
 
+export function sanitizePostgrestPayload<T>(value: T): T {
+  if (typeof value === 'string') {
+    return value.replaceAll(
+      /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/gu,
+      '\uFFFD'
+    ) as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map(sanitizePostgrestPayload) as T;
+  }
+  if (value && typeof value === 'object') {
+    const sanitized = Object.create(null) as Record<string, unknown>;
+    for (const [key, entry] of Object.entries(value)) {
+      const baseKey = sanitizePostgrestPayload(key);
+      let safeKey = baseKey;
+      let duplicate = 2;
+      while (Object.hasOwn(sanitized, safeKey)) {
+        safeKey = `${baseKey} [import duplicate ${duplicate}]`;
+        duplicate += 1;
+      }
+      sanitized[safeKey] = sanitizePostgrestPayload(entry);
+    }
+    return sanitized as T;
+  }
+  return value;
+}
+
+function importRows<T>(rows: T) {
+  return sanitizePostgrestPayload(rows);
+}
+
 export function escapeLikePattern(value: string) {
   return value.replaceAll(/([\\%_])/gu, '\\$1');
 }
@@ -154,6 +185,11 @@ export async function ensureImportLabels({
   customLabels: Map<string, string>;
   mailboxId: string;
 }) {
+  const safeCustomLabels = [...customLabels].map(([generatedSlug, name]) => ({
+    generatedSlug,
+    name: sanitizePostgrestPayload(name),
+    slug: sanitizePostgrestPayload(generatedSlug),
+  }));
   const system = [
     ['Inbox', 'inbox'],
     ['Sent', 'sent'],
@@ -178,18 +214,18 @@ export async function ensureImportLabels({
   const existingByName = new Map(
     (existing ?? []).map((row: AnyRecord) => [String(row.name), row])
   );
-  const custom = [...customLabels].flatMap(([slug, name]) =>
-    existingByName.has(name)
-      ? []
-      : [
-          {
-            kind: 'custom',
-            mailbox_id: mailboxId,
-            name,
-            slug,
-          },
-        ]
-  );
+  const newCustomByName = new Map<string, AnyRecord>();
+  for (const { name, slug } of safeCustomLabels) {
+    if (!existingByName.has(name) && !newCustomByName.has(name)) {
+      newCustomByName.set(name, {
+        kind: 'custom',
+        mailbox_id: mailboxId,
+        name,
+        slug,
+      });
+    }
+  }
+  const custom = [...newCustomByName.values()];
   const { error } = await table(admin, 'mail_labels').upsert(
     [...system, ...custom],
     { onConflict: 'mailbox_id,slug' }
@@ -205,7 +241,7 @@ export async function ensureImportLabels({
   const importedByName = new Map(
     (data ?? []).map((row: AnyRecord) => [String(row.name), String(row.id)])
   );
-  for (const [generatedSlug, name] of customLabels) {
+  for (const { generatedSlug, name } of safeCustomLabels) {
     const id = importedByName.get(name);
     if (id) labelIds.set(generatedSlug, id);
   }
@@ -274,7 +310,7 @@ export async function persistImportBatch({
     message.storedObjects.map((object) => ({ ...object, message_id: null }))
   );
   let result = await table(admin, 'mail_stored_objects').upsert(
-    initialObjects,
+    importRows(initialObjects),
     {
       onConflict: 'id',
     }
@@ -282,93 +318,104 @@ export async function persistImportBatch({
   if (result.error) throw result.error;
 
   result = await table(admin, 'mail_raw_messages').upsert(
-    messages.map((message) => ({
-      id: message.rawMessageId,
-      provider: 'google_takeout',
-      provider_message_id: message.providerMessageId,
-      provider_payload: {
-        account: message.account,
-        gmailLabels: message.gmailLabels,
-        gmailThreadId: message.gmailThreadId,
-        source: 'google_workspace_export',
-      },
-      raw_headers: headerRecord(message.email),
-      sha256: message.rawSha256,
-      size_bytes: message.raw.byteLength,
-      status: 'imported',
-      stored_object_id: message.storedObjects[0]?.id ?? null,
-      created_at: message.date,
-    })),
+    importRows(
+      messages.map((message) => ({
+        id: message.rawMessageId,
+        provider: 'google_takeout',
+        provider_message_id: message.providerMessageId,
+        provider_payload: {
+          account: message.account,
+          gmailLabels: message.gmailLabels,
+          gmailThreadId: message.gmailThreadId,
+          source: 'google_workspace_export',
+        },
+        raw_headers: headerRecord(message.email),
+        sha256: message.rawSha256,
+        size_bytes: message.raw.byteLength,
+        status: 'imported',
+        stored_object_id: message.storedObjects[0]?.id ?? null,
+        created_at: message.date,
+      }))
+    ),
     { onConflict: 'id' }
   );
   if (result.error) throw result.error;
 
-  result = await table(admin, 'mail_threads').upsert(threadRows, {
+  result = await table(admin, 'mail_threads').upsert(importRows(threadRows), {
     ignoreDuplicates: true,
     onConflict: 'id',
   });
   if (result.error) throw result.error;
 
   result = await table(admin, 'mail_messages').upsert(
-    messages.map((message) => {
-      const from = mailboxAddress(message.email.from);
-      const sanitizedHtml = message.email.html
-        ? sanitizeMailHtml(message.email.html)
-        : null;
-      const bodyText =
-        message.email.text ?? (sanitizedHtml ? stripHtml(sanitizedHtml) : null);
-      return {
-        body_html: message.email.html ?? null,
-        body_text: bodyText,
-        created_at: message.date,
-        direction: message.direction,
-        from_address:
-          from?.address?.trim().toLowerCase() ?? 'unknown@example.invalid',
-        from_name: from?.name?.trim() || null,
-        has_attachments: message.attachmentRows.length > 0,
-        id: message.messageId,
-        in_reply_to: message.email.inReplyTo ?? null,
-        internet_message_id: message.email.messageId ?? null,
-        mailbox_id: message.mailboxId,
-        metadata: {
-          googleTakeout: {
-            gmailLabels: message.gmailLabels,
-            gmailThreadId: message.gmailThreadId,
-            rawSha256: message.rawSha256,
+    importRows(
+      messages.map((message) => {
+        const from = mailboxAddress(message.email.from);
+        const sanitizedHtml = message.email.html
+          ? sanitizeMailHtml(message.email.html)
+          : null;
+        const bodyText =
+          message.email.text ??
+          (sanitizedHtml ? stripHtml(sanitizedHtml) : null);
+        return {
+          body_html: message.email.html ?? null,
+          body_text: bodyText,
+          created_at: message.date,
+          direction: message.direction,
+          from_address:
+            from?.address?.trim().toLowerCase() ?? 'unknown@example.invalid',
+          from_name: from?.name?.trim() || null,
+          has_attachments: message.attachmentRows.length > 0,
+          id: message.messageId,
+          in_reply_to: message.email.inReplyTo ?? null,
+          internet_message_id: message.email.messageId ?? null,
+          mailbox_id: message.mailboxId,
+          metadata: {
+            googleTakeout: {
+              gmailLabels: message.gmailLabels,
+              gmailThreadId: message.gmailThreadId,
+              rawSha256: message.rawSha256,
+            },
           },
-        },
-        provider: 'google_takeout',
-        provider_message_id: message.providerMessageId,
-        raw_message_id: message.rawMessageId,
-        received_at: message.direction === 'inbound' ? message.date : null,
-        references_headers:
-          message.email.references?.split(/\s+/u).filter(Boolean) ?? [],
-        sanitized_html: sanitizedHtml,
-        sent_at: message.direction === 'outbound' ? message.date : null,
-        size_bytes: message.raw.byteLength,
-        snippet: createSnippet({ html: sanitizedHtml, text: bodyText }),
-        status: message.status,
-        subject: message.email.subject?.trim() || '(no subject)',
-        thread_id: message.threadId,
-        updated_at: message.date,
-      };
-    }),
+          provider: 'google_takeout',
+          provider_message_id: message.providerMessageId,
+          raw_message_id: message.rawMessageId,
+          received_at: message.direction === 'inbound' ? message.date : null,
+          references_headers:
+            message.email.references?.split(/\s+/u).filter(Boolean) ?? [],
+          sanitized_html: sanitizedHtml,
+          sent_at: message.direction === 'outbound' ? message.date : null,
+          size_bytes: message.raw.byteLength,
+          snippet: createSnippet({ html: sanitizedHtml, text: bodyText }),
+          status: message.status,
+          subject: message.email.subject?.trim() || '(no subject)',
+          thread_id: message.threadId,
+          updated_at: message.date,
+        };
+      })
+    ),
     { onConflict: 'id' }
   );
   if (result.error) throw result.error;
 
   const recipients = messages.flatMap(recipientRows);
   if (recipients.length) {
-    result = await table(admin, 'mail_recipients').upsert(recipients, {
-      onConflict: 'id',
-    });
+    result = await table(admin, 'mail_recipients').upsert(
+      importRows(recipients),
+      {
+        onConflict: 'id',
+      }
+    );
     if (result.error) throw result.error;
   }
   const attachments = messages.flatMap((message) => message.attachmentRows);
   if (attachments.length) {
-    result = await table(admin, 'mail_attachments').upsert(attachments, {
-      onConflict: 'id',
-    });
+    result = await table(admin, 'mail_attachments').upsert(
+      importRows(attachments),
+      {
+        onConflict: 'id',
+      }
+    );
     if (result.error) throw result.error;
   }
   const messageLabels = messages.flatMap((message) =>
@@ -380,28 +427,31 @@ export async function persistImportBatch({
     })
   );
   if (messageLabels.length) {
-    result = await table(admin, 'mail_message_labels').upsert(messageLabels, {
-      onConflict: 'message_id,label_id',
-    });
+    result = await table(admin, 'mail_message_labels').upsert(
+      importRows(messageLabels),
+      { onConflict: 'message_id,label_id' }
+    );
     if (result.error) throw result.error;
   }
   if (mailboxOwnerId) {
     result = await table(admin, 'mail_message_user_state').upsert(
-      messages.map((message) => ({
-        archived_at: message.isArchived ? message.date : null,
-        mailbox_id: message.mailboxId,
-        message_id: message.messageId,
-        read_at: message.isRead ? message.date : null,
-        starred_at: message.isStarred ? message.date : null,
-        trashed_at: message.isTrashed ? message.date : null,
-        user_id: mailboxOwnerId,
-      })),
+      importRows(
+        messages.map((message) => ({
+          archived_at: message.isArchived ? message.date : null,
+          mailbox_id: message.mailboxId,
+          message_id: message.messageId,
+          read_at: message.isRead ? message.date : null,
+          starred_at: message.isStarred ? message.date : null,
+          trashed_at: message.isTrashed ? message.date : null,
+          user_id: mailboxOwnerId,
+        }))
+      ),
       { onConflict: 'message_id,user_id' }
     );
     if (result.error) throw result.error;
   }
   result = await table(admin, 'mail_stored_objects').upsert(
-    messages.flatMap((message) => message.storedObjects),
+    importRows(messages.flatMap((message) => message.storedObjects)),
     { onConflict: 'id' }
   );
   if (result.error) throw result.error;
@@ -417,18 +467,20 @@ export async function finalizeThreads({
   threads: ThreadSummary[];
 }) {
   const { error } = await table(admin, 'mail_threads').upsert(
-    threads.map((thread) => ({
-      created_at: thread.firstMessageAt,
-      id: thread.id,
-      last_message_at: thread.lastMessageAt,
-      mailbox_id: mailboxId,
-      message_count: thread.messageCount,
-      normalized_subject: thread.normalizedSubject,
-      status: thread.status,
-      subject: thread.subject,
-      unread_count: thread.unreadCount,
-      updated_at: thread.lastMessageAt,
-    })),
+    importRows(
+      threads.map((thread) => ({
+        created_at: thread.firstMessageAt,
+        id: thread.id,
+        last_message_at: thread.lastMessageAt,
+        mailbox_id: mailboxId,
+        message_count: thread.messageCount,
+        normalized_subject: thread.normalizedSubject,
+        status: thread.status,
+        subject: thread.subject,
+        unread_count: thread.unreadCount,
+        updated_at: thread.lastMessageAt,
+      }))
+    ),
     { onConflict: 'id' }
   );
   if (error) throw error;

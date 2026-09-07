@@ -1,17 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Calendar, Clock, Play, Search, Trash2, Users } from '@tuturuuu/icons';
 import {
-  Calendar,
-  Clock,
-  Play,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-} from '@tuturuuu/icons';
-import {
-  createWorkspaceMeeting,
   deleteWorkspaceMeeting,
   getWorkspaceMeetings,
   updateWorkspaceMeeting,
@@ -34,7 +25,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -83,19 +73,14 @@ export function MeetingsContent({
   const t = useTranslations('meet.call');
   const [searchTerm, setSearchTerm] = useState(search);
   const [currentPage, setCurrentPage] = useState(page);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [deletingMeetingId, setDeletingMeetingId] = useState<string | null>(
     null
   );
-  const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [editFormError, setEditFormError] = useState<string | null>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
-  const timeRef = useRef<HTMLInputElement>(null);
   const editNameRef = useRef<HTMLInputElement>(null);
   const editTimeRef = useRef<HTMLInputElement>(null);
 
@@ -115,42 +100,6 @@ export function MeetingsContent({
   const meetings: Meeting[] = data?.meetings || [];
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canCreate) return;
-    setFormError(null);
-    setCreating(true);
-    const name = nameRef.current?.value.trim();
-    let time = timeRef.current?.value;
-    if (!name) {
-      setFormError('Name is required.');
-      setCreating(false);
-      return;
-    }
-    if (!time) {
-      time = new Date().toISOString();
-    }
-    try {
-      await createWorkspaceMeeting(wsId, {
-        name,
-        time: normalizeMeetingTime(time),
-      });
-      setDialogOpen(false);
-      setCreating(false);
-      setFormError(null);
-      refetch();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_err) {
-      setFormError('Failed to create meeting.');
-      setCreating(false);
-    }
-  };
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,26 +187,25 @@ export function MeetingsContent({
   return (
     <>
       <div className="space-y-6">
-        <MeetingEntry canCreate={canCreate} wsId={wsId} />
-        {/* Search and Filters */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <form
-            onSubmit={handleSearch}
-            className="flex w-full max-w-sm items-center space-x-2"
-          >
-            <div className="relative flex-1">
-              <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search meetings..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <Button type="submit" size="sm">
-              Search
-            </Button>
-          </form>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
+            <Input
+              aria-label="Search meetings"
+              className="pl-9"
+              placeholder="Search meetings..."
+              value={searchTerm}
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+          <MeetingEntry
+            canCreate={canCreate}
+            onCreated={() => void refetch()}
+            wsId={wsId}
+          />
         </div>
 
         {/* Meetings Grid */}
@@ -281,14 +229,9 @@ export function MeetingsContent({
             <div className="text-center">
               <Calendar className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="mb-2 font-semibold text-lg">No meetings found</h3>
-              <p className="mb-4 text-muted-foreground">
-                Create your first meeting to get started with video conferencing
-                and AI-powered features.
+              <p className="max-w-md text-muted-foreground">
+                Your scheduled and recent meetings will appear here.
               </p>
-              <Button disabled={!canCreate} onClick={() => setDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create First Meeting
-              </Button>
             </div>
           </div>
         ) : (
@@ -392,63 +335,6 @@ export function MeetingsContent({
           </div>
         )}
       </div>
-
-      {/* Create Meeting Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild>
-          <Button
-            className="flex items-center gap-2"
-            disabled={!canCreate}
-            onClick={() => setDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Create
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New Meeting</DialogTitle>
-            <DialogDescription>Enter meeting details below.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="meeting-name">Name</Label>
-              <Input
-                id="meeting-name"
-                ref={nameRef}
-                required
-                placeholder="Meeting name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="meeting-time">Time</Label>
-              <Input
-                id="meeting-time"
-                ref={timeRef}
-                type="datetime-local"
-                placeholder="Leave blank for now"
-              />
-            </div>
-            {formError && (
-              <div className="text-dynamic-red text-sm">{formError}</div>
-            )}
-            <DialogFooter>
-              <Button
-                type="submit"
-                disabled={creating || !canCreate}
-                className="w-full"
-              >
-                {creating ? 'Creating...' : 'Create'}
-              </Button>
-              <DialogClose asChild>
-                <Button type="button" variant="outline" className="w-full">
-                  Cancel
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Meeting Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
