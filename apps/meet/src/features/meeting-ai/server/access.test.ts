@@ -35,7 +35,7 @@ describe('Meet AI satellite authorization', () => {
   beforeEach(() => vi.resetAllMocks());
   it('returns a configuration status separately from upstream failures', async () => {
     const response = await meetAiResponse(async () => {
-      throw new MeetAiGenerationError(500);
+      throw new MeetAiGenerationError('missing_configuration');
     });
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({

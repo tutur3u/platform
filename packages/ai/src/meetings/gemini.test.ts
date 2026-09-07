@@ -26,6 +26,24 @@ describe('Meet generation error boundary', () => {
       providerStatus: null,
     });
   });
+  it('reports internal failures separately without exposing their details', async () => {
+    vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic-test-key');
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.generateText.mockRejectedValue(
+      new TypeError('sensitive-internal-detail')
+    );
+    await expect(
+      generateMeetArtifact({ transcript: 'Synthetic test' })
+    ).rejects.toMatchObject({
+      status: 500,
+      reason: 'runtime_error',
+      message: 'Meeting AI processing failed',
+    });
+    expect(log).toHaveBeenCalledWith('Meet AI generation failed', {
+      reason: 'runtime_error',
+      providerStatus: null,
+    });
+  });
   it('unwraps provider failure with fixed diagnostics and no provider details', async () => {
     vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic-test-key');
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -41,6 +59,8 @@ describe('Meet generation error boundary', () => {
       generateMeetArtifact({ transcript: 'Synthetic test' })
     ).rejects.toMatchObject({
       status: 502,
+      reason: 'invalid_api_key',
+      providerStatus: 400,
       message: 'Meeting AI provider request failed',
     });
     expect(log).toHaveBeenCalledWith('Meet AI generation failed', {
