@@ -229,6 +229,8 @@ this format, filters disabled/paused connections, and returns `failedCalendars`;
 it never returns the raw diagnostic field. Older unstructured errors still show
 an aggregate warning and gain calendar-specific details on the next attempt.
 
+Per-calendar failure diagnostics and the pause shortcut currently cover Google inbound sync. Microsoft failures retain account-level reconnect/retry guidance; individual Microsoft calendar failure identification is not yet available.
+
 ## Views and keyboard support
 
 Calendar views share behavior across Calendar, Tasks, and embedded Web calendars.
@@ -245,6 +247,8 @@ by the database response limit. Shared
 settings list the shortcuts alongside command search, app launcher, and sidebar
 commands. Verify modified shortcuts in Calendar and Tasks and check typing,
 modifiers, modal focus, and mobile overflow when changing these views.
+
+Global command/app launchers remain available while editing. Calendar view shortcuts are intentionally suppressed throughout editor descendants, including non-editable embedded content, to prevent unexpected view changes while working in an editor.
 
 ## Two-Way Sync Controls
 

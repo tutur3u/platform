@@ -518,6 +518,7 @@ export const CalendarContent = ({
 
   useCalendarViewShortcuts({
     enabled: !disabled,
+    availableViews,
     day: enableDayView,
     '4-days': enable4DayView,
     week: enableWeekView,
@@ -589,6 +590,7 @@ export const CalendarContent = ({
           <CalendarLoadingSkeleton dates={dates} view={view} />
         ) : view === 'month' && dates?.[0] ? (
           <MonthCalendar
+            readOnly={disabled}
             date={dates[0]}
             workspace={workspace}
             visibleDates={dates}
@@ -621,6 +623,7 @@ export const CalendarContent = ({
           />
         ) : view === 'agenda' && dates?.[0] ? (
           <AgendaView
+            readOnly={disabled}
             startDate={dates[0]}
             workspace={workspace}
             locale={locale}

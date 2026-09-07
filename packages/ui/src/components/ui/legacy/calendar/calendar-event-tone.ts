@@ -11,5 +11,10 @@ const tones: Record<string, string> = {
   gray: 'bg-muted text-muted-foreground',
 };
 export function calendarEventTone(color: string | null | undefined) {
-  return tones[color?.toLowerCase() ?? ''] ?? 'bg-primary/10 text-primary';
+  const normalized = color?.trim().toLowerCase() ?? '';
+  return (
+    tones[
+      normalized === '#6b7280' || normalized === 'grey' ? 'gray' : normalized
+    ] ?? 'bg-primary/10 text-primary'
+  );
 }

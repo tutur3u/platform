@@ -47,6 +47,7 @@ use crate::{
     path_segments, supabase_auth,
 };
 
+const EVENT_PAGE_SIZE: usize = 1000;
 const MEMBER_TYPE: &str = "MEMBER";
 const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const MEMBERSHIP_LOOKUP_FAILED_MESSAGE: &str = "Failed to verify workspace membership";
@@ -176,22 +177,26 @@ async fn fetch_calendar_events(
     end_at: &str,
 ) -> Result<Vec<Value>, ()> {
     let mut events = Vec::new();
+    let mut cursor: Option<(String, String)> = None;
     loop {
+        let mut filters = vec![
+            ("select", "*".to_owned()),
+            ("ws_id", format!("eq.{ws_id}")),
+            // Event starts before range ends.
+            ("start_at", format!("lt.{end_at}")),
+            // Event ends after range starts.
+            ("end_at", format!("gt.{start_at}")),
+            ("order", "start_at.asc,id.asc".to_owned()),
+            ("limit", EVENT_PAGE_SIZE.to_string()),
+        ];
+        if let Some((start, id)) = &cursor {
+            filters.push((
+                "or",
+                format!("(start_at.gt.{start},and(start_at.eq.{start},id.gt.{id}))"),
+            ));
+        }
         let url = contact_data
-            .rest_url(
-                "workspace_calendar_events",
-                &[
-                    ("select", "*".to_owned()),
-                    ("ws_id", format!("eq.{ws_id}")),
-                    // Event starts before range ends.
-                    ("start_at", format!("lt.{end_at}")),
-                    // Event ends after range starts.
-                    ("end_at", format!("gt.{start_at}")),
-                    ("order", "start_at.asc,id.asc".to_owned()),
-                    ("offset", events.len().to_string()),
-                    ("limit", "1000".to_owned()),
-                ],
-            )
+            .rest_url("workspace_calendar_events", &filters)
             .ok_or(())?;
 
         let service_role_key = contact_data.service_role_key().ok_or(())?;
@@ -212,7 +217,16 @@ async fn fetch_calendar_events(
         }
 
         let page = response.json::<Vec<Value>>().map_err(|_| ())?;
-        let finished = page.len() < 1000;
+        let finished = page.len() < EVENT_PAGE_SIZE;
+        if !finished {
+            let last = page.last().ok_or(())?;
+            cursor = Some((
+                serde_json::to_string(last.get("start_at").and_then(Value::as_str).ok_or(())?)
+                    .map_err(|_| ())?,
+                serde_json::to_string(last.get("id").and_then(Value::as_str).ok_or(())?)
+                    .map_err(|_| ())?,
+            ));
+        }
         events.extend(page);
         if finished {
             return Ok(events);

@@ -104,6 +104,32 @@ describe('calendar view interactions', () => {
       'Sunday, September 6, 2026'
     );
   });
+  it('formats month events in the selected timezone', () => {
+    state.events = [
+      {
+        id: 'zoned',
+        title: 'Zoned',
+        start_at: '2026-09-07T13:00:00Z',
+        end_at: '2026-09-07T14:00:00Z',
+      },
+    ];
+    render(<MonthCalendar date={date} locale="en" />);
+    expect(screen.getByRole('button', { name: /Zoned/ })).toHaveTextContent(
+      '09:00'
+    );
+  });
+  it('disables read-only creation and uses 9am calendar time for agenda drafts', () => {
+    const { rerender } = render(<AgendaView startDate={date} readOnly />);
+    const create = screen.getByRole('button', { name: 'views.create_event' });
+    expect(create).toBeDisabled();
+    fireEvent.click(create);
+    expect(state.addEmptyEvent).not.toHaveBeenCalled();
+    rerender(<AgendaView startDate={date} />);
+    fireEvent.click(screen.getByRole('button', { name: 'views.create_event' }));
+    expect(state.addEmptyEvent.mock.calls[0]?.[0].toISOString()).toBe(
+      '2026-09-07T13:00:00.000Z'
+    );
+  });
   it('agenda filters by location, opens events, and clears a no-match search', () => {
     render(<AgendaView startDate={date} locale="vi" />);
     fireEvent.change(screen.getByRole('textbox'), {

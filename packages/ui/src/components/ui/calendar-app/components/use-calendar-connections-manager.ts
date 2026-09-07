@@ -86,7 +86,14 @@ export function useCalendarConnectionsManager(wsId: string) {
         wsId,
         syncInboundEnabled: false,
       }),
-    onSuccess: async () => {
+    onSuccess: async (_, connectionId) => {
+      setCalendarConnections(
+        calendarConnections.map((connection) =>
+          connection.id === connectionId
+            ? { ...connection, sync_inbound_enabled: false }
+            : connection
+        )
+      );
       await Promise.all(
         [
           ['calendar-sync-status', wsId],
