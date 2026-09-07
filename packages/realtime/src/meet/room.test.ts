@@ -116,6 +116,81 @@ describe('meet room admission', () => {
     ]);
   });
 
+  it('sends existing tracks only to the guest after approval', () => {
+    const host = token();
+    const joined = admitOrHold(createMeetRoomSnapshot(), host, NOW).state;
+    const published = run(
+      joined,
+      {
+        type: 'sfu.tracks.publish',
+        sessionId: 'host-session',
+        sessionDescription: { type: 'offer', sdp: 'v=0' },
+        tracks: [{ kind: 'audio', mid: '0', trackName: 'host-audio' }],
+      },
+      host
+    ).state;
+    const held = admitOrHold(
+      published,
+      token({ admission: 'lobby', role: 'speaker' }),
+      NOW
+    );
+    expect(held.reply.some((entry) => entry.type === 'track.published')).toBe(
+      false
+    );
+    const admitted = run(
+      held.state,
+      {
+        admit: true,
+        type: 'admission.decide',
+        userId: GUEST_ID,
+      },
+      host
+    );
+    expect(admitted.direct[0]?.message.type).toBe('admission.result');
+    expect(admitted.direct[1]).toMatchObject({
+      userId: GUEST_ID,
+      message: {
+        type: 'track.published',
+        userId: HOST_ID,
+        sessionId: 'host-session',
+        tracks: [{ trackName: 'host-audio' }],
+      },
+    });
+    const denied = run(
+      held.state,
+      {
+        admit: false,
+        type: 'admission.decide',
+        userId: GUEST_ID,
+      },
+      host
+    );
+    expect(
+      denied.direct.some((entry) => entry.message.type === 'track.published')
+    ).toBe(false);
+  });
+
+  it('shows existing waiting guests to a host who connects later', () => {
+    const held = admitOrHold(
+      createMeetRoomSnapshot(),
+      token({ admission: 'lobby', role: 'speaker' }),
+      NOW
+    ).state;
+    const host = admitOrHold(held, token(), NOW);
+    expect(host.reply).toContainEqual({
+      type: 'admission.pending',
+      participants: [held.waiting[GUEST_ID]],
+    });
+    const speaker = admitOrHold(
+      held,
+      token({ role: 'speaker', userId: SPEAKER_ID }),
+      NOW
+    );
+    expect(
+      speaker.reply.some((entry) => entry.type === 'admission.pending')
+    ).toBe(false);
+  });
+
   it('disconnects a denied guest without adding them to presence', () => {
     const held = admitOrHold(
       createMeetRoomSnapshot(),
