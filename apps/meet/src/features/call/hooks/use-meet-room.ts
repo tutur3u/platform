@@ -23,7 +23,10 @@ import {
 } from '../lib/negotiation';
 import { PEER_CONFIG, preparePeerSession } from '../lib/peer-connection';
 import { watchPeerRecovery } from '../lib/peer-recovery';
-import { syncPublishedSenders } from '../lib/published-senders';
+import {
+  closePublishedTrack,
+  syncPublishedSenders,
+} from '../lib/published-senders';
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
@@ -322,22 +325,10 @@ export function useMeetRoom({
         sessionId: publishSessionRef.current,
         stream,
         screenStream: screenStreamRef.current,
-        closeScreen: async (sessionId, track) => {
-          const result = await signalingRef.current?.request<SfuTracksResponse>(
-            {
-              type: 'sfu.tracks.close',
-              force: true,
-              sessionId,
-              tracks: [track],
-            }
-          );
-          if (
-            !result ||
-            result.errorCode ||
-            result.tracks?.some((entry) => entry.errorCode)
-          )
-            throw new Error('sfu_track_close_failed');
-        },
+        isCurrent: () => publishPcRef.current === previousPc,
+        reset: () => resetPublisher(true),
+        closeTrack: (sessionId, track) =>
+          closePublishedTrack(signalingRef.current, sessionId, track),
       });
       if (publishPcRef.current !== previousPc) return;
       publishedRef.current = published;
@@ -363,7 +354,7 @@ export function useMeetRoom({
               : plan.kind === 'audio'
                 ? stream.getAudioTracks()[0]
                 : stream.getVideoTracks()[0];
-          if (!source) continue;
+          if (!source || source.readyState === 'ended') continue;
 
           const transceiver = pc.addTransceiver(source, {
             direction: 'sendonly',

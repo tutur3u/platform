@@ -14,12 +14,12 @@ export function watchPeerRecovery(
   };
   const check = () => {
     const state = pc.connectionState;
-    if (state === 'closed') {
+    if (state === 'closed' || !isCurrent()) {
       clear();
       pc.removeEventListener('connectionstatechange', check);
       return;
     }
-    if (state === 'connected' || !isCurrent()) {
+    if (state === 'connected') {
       clear();
       return;
     }
@@ -28,7 +28,12 @@ export function watchPeerRecovery(
     scheduledState = state;
     timer = setTimeout(
       () => {
-        if (!isCurrent() || pc.connectionState !== state || recovered) return;
+        if (!isCurrent()) {
+          clear();
+          pc.removeEventListener('connectionstatechange', check);
+          return;
+        }
+        if (pc.connectionState !== state || recovered) return;
         recovered = true;
         pc.removeEventListener('connectionstatechange', check);
         recover();

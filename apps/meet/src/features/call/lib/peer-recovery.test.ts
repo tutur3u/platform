@@ -63,6 +63,7 @@ describe('media connection recovery', () => {
   it('does not let an obsolete or closed peer reset its replacement', () => {
     const peer = new Peer();
     const recover = vi.fn();
+    const removeListener = vi.spyOn(peer, 'removeEventListener');
     let current = true;
     watchPeerRecovery(
       peer as unknown as RTCPeerConnection,
@@ -73,6 +74,10 @@ describe('media connection recovery', () => {
     current = false;
     vi.advanceTimersByTime(1000);
     expect(recover).not.toHaveBeenCalled();
+    expect(removeListener).toHaveBeenCalledWith(
+      'connectionstatechange',
+      expect.any(Function)
+    );
     current = true;
     peer.change('disconnected');
     peer.change('closed');
