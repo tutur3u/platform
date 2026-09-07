@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
-import { calendarPeriodDates } from './calendar-period';
+import { calendarDraftDate, calendarPeriodDates } from './calendar-period';
 import {
   calendarShortcutView,
   useCalendarViewShortcuts,
@@ -76,6 +76,11 @@ describe('calendar keyboard navigation', () => {
   });
 });
 describe('event ranges', () => {
+  it('creates 9 AM drafts in the selected zone without caller plugin setup', () => {
+    expect(
+      calendarDraftDate(new Date(2026, 8, 7), 'Asia/Ho_Chi_Minh').toISOString()
+    ).toBe('2026-09-07T02:00:00.000Z');
+  });
   it('fetches the entire leap year', () => {
     const dates = calendarPeriodDates(new Date(2028, 8, 7), 'year');
     expect(
