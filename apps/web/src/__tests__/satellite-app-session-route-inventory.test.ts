@@ -267,7 +267,7 @@ describe('satellite app-session route inventory', () => {
       'utf8'
     );
     const apiAuthSource = readFileSync(
-      resolve(repoRoot, 'apps/web/src/lib/api-auth.ts'),
+      resolve(repoRoot, 'apps/web/src/lib/api-auth-audiences.ts'),
       'utf8'
     );
     const storageRouteFiles = walkRouteFiles(

@@ -445,3 +445,9 @@ contains no raw provider message, SDP, credential, or meeting content. A success
 retry clears the previous warning for that device. Reproduce on the affected device
 before changing transport settings; synthetic sources in another browser do not
 establish physical-device compatibility.
+
+### Cloudflare browser integrations
+
+Meet must not mount Vercel Analytics or Speed Insights: their `/_vercel/*` script endpoints are not hosted by the Cloudflare Worker. A 404 for those scripts is separate from SFU media delivery.
+
+The platform user-config API uses the shared satellite app-session audience list in `apps/web/src/lib/api-auth-audiences.ts`. Keep Meet in that list and in the Rust current-user session targets. A successful local Meet call-token refresh does not verify authorization for proxied platform APIs such as `SHOW_VERSION_BADGE`.

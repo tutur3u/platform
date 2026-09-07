@@ -9,9 +9,12 @@ use crate::{
     parse_json_body, supabase_auth, url_origin,
 };
 
+mod current_user_session_targets;
 mod datetime;
 mod session;
 mod validation;
+
+use current_user_session_targets::CURRENT_USER_APP_SESSION_TARGETS;
 
 use datetime::unix_seconds_to_iso8601;
 use validation::{validate_email, validate_enum, validate_string_length};
@@ -44,26 +47,7 @@ pub(crate) const SUPABASE_SERVICE_ROLE_KEY_KEYS: [&str; 3] = [
 ];
 const CONTACT_DATA_SUPABASE_URL_SETTING: &str = "SUPABASE_URL";
 const CONTACT_DATA_SERVICE_ROLE_KEY_SETTING: &str = "SUPABASE_SERVICE_ROLE_KEY";
-const CURRENT_USER_APP_SESSION_TARGETS: [&str; 18] = [
-    "calendar",
-    "chat",
-    "cms",
-    "contacts",
-    "drive",
-    "finance",
-    "hive",
-    "inventory",
-    "learn",
-    "mail",
-    "mind",
-    "mira",
-    "nova",
-    "rewise",
-    "tasks",
-    "teach",
-    "track",
-    "platform",
-];
+
 const SUPPORT_INQUIRY_TYPES: [&str; 4] = ["bug", "feature-request", "support", "job-application"];
 const SUPPORT_INQUIRY_PRODUCTS: [&str; 12] = [
     "web",

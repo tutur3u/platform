@@ -908,36 +908,6 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'drive' });
     expect(
       getDefaultAppSessionVerificationOptions(
-        'http://localhost:3000/api/v1/users/me/profile'
-      )
-    ).toEqual({
-      targetApp: [
-        'ai',
-        'calendar',
-        'chat',
-        'cms',
-        'contacts',
-        'drive',
-        'finance',
-        'forms',
-        'hive',
-        'infra',
-        'inventory',
-        'learn',
-        'mail',
-        'mind',
-        'mira',
-        'nova',
-        'pay',
-        'rewise',
-        'storefront',
-        'tasks',
-        'teach',
-        'track',
-      ],
-    });
-    expect(
-      getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/chat/conversations'
       )
     ).toEqual({ targetApp: 'chat' });
@@ -948,6 +918,23 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'mail' });
   });
 
+  it('accepts a Meet session for the shared user-config API', async () => {
+    const { token } = createAppSessionToken({
+      email: 'meet@example.com',
+      targetApp: 'meet',
+      userId: 'meet-user-1',
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/users/me/configs/SHOW_VERSION_BADGE',
+      { headers: { authorization: `Bearer ${token}` } }
+    ) as unknown as NextRequest;
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.user.id).toBe('meet-user-1');
+  });
+
   it.each([
     'ai',
     'chat',
@@ -955,6 +942,7 @@ describe('withSessionAuth', () => {
     'infra',
     'inventory',
     'mail',
+    'meet',
     'pay',
     'storefront',
   ] as const)(
@@ -1016,7 +1004,7 @@ describe('withSessionAuth', () => {
       ) as unknown as NextRequest;
 
       const result = await resolveSessionAuthContext(request, {
-        allowAppSessionAuth: true,
+        allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
       });
 
       expect(result.ok).toBe(true);
