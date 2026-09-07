@@ -14,6 +14,7 @@ import {
   selectOthers,
   selectSelf,
 } from '../lib/call-state';
+import { getMediaErrorKey } from '../lib/media-error';
 import { type CallPanel, ControlBar } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { Lobby } from './lobby';
@@ -46,8 +47,15 @@ export function CallShell({
   wsId: string;
 }) {
   const t = useTranslations('meet.call');
-  const runMediaAction = (action: () => Promise<void>) => {
-    void action().catch(() => toast.error(t('media_failed')));
+  const runMediaAction = (
+    action: () => Promise<void>,
+    device: 'microphone' | 'camera' | 'screen'
+  ) => {
+    void action().catch((error: unknown) =>
+      toast.error(t(getMediaErrorKey(error, device)), {
+        id: `meet-media-${device}`,
+      })
+    );
   };
   const router = useRouter();
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
@@ -95,15 +103,15 @@ export function CallShell({
           if (audioEnabled) {
             try {
               await room.toggleMicrophone();
-            } catch {
-              toast.error(t('media_failed'));
+            } catch (error) {
+              toast.error(t(getMediaErrorKey(error, 'microphone')));
             }
           }
           if (videoEnabled) {
             try {
               await room.toggleCamera();
-            } catch {
-              toast.error(t('media_failed'));
+            } catch (error) {
+              toast.error(t(getMediaErrorKey(error, 'camera')));
             }
           }
         }}
@@ -222,14 +230,14 @@ export function CallShell({
         handRaised={handRaised}
         micOn={room.media.audioEnabled}
         onLeave={() => router.push(leaveHref)}
-        onToggleCamera={() => runMediaAction(room.toggleCamera)}
+        onToggleCamera={() => runMediaAction(room.toggleCamera, 'camera')}
         onToggleHand={() => room.raiseHand(!handRaised)}
-        onToggleMic={() => runMediaAction(room.toggleMicrophone)}
+        onToggleMic={() => runMediaAction(room.toggleMicrophone, 'microphone')}
         onTogglePanel={setPanel}
         onToggleRecording={
           canManage ? () => void recording.toggle() : undefined
         }
-        onToggleScreen={() => runMediaAction(room.toggleScreenShare)}
+        onToggleScreen={() => runMediaAction(room.toggleScreenShare, 'screen')}
         participantCount={tiles.length}
         recordingBusy={recording.isBusy}
         recordingOn={recording.isRecording}
