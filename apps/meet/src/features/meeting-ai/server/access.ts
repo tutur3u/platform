@@ -1,3 +1,4 @@
+import { canReadSharedMeetingNotes } from './room-access';
 import 'server-only';
 import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
@@ -58,11 +59,8 @@ export async function meetAiAccess(
     userId: user.id,
     wsId,
   });
-  if (!membership.ok)
-    throw new MeetAiError(
-      membership.error === 'membership_lookup_failed' ? 500 : 403,
-      'Workspace access denied'
-    );
+  if (membership.error === 'membership_lookup_failed')
+    throw new MeetAiError(500, 'Workspace access lookup failed');
   const { data: meeting, error } = await db
     .from('workspace_meetings')
     .select('id, creator_id')
@@ -72,11 +70,30 @@ export async function meetAiAccess(
   if (error) throw new MeetAiError(500, 'Meeting lookup failed');
   if (!meeting) throw new MeetAiError(404, 'Meeting not found');
   const canManage = meeting.creator_id === user.id;
+  if (canManage && !membership.ok)
+    throw new MeetAiError(403, 'Workspace access denied');
   if (mutation && !canManage)
     throw new MeetAiError(
       403,
       'Only the meeting host can manage transcription'
     );
+  if (!mutation && !canManage) {
+    let allowed = false;
+    try {
+      allowed = await canReadSharedMeetingNotes({
+        meetingId,
+        wsId,
+        userId: user.id,
+      });
+    } catch {
+      throw new MeetAiError(503, 'Meeting sharing settings are unavailable');
+    }
+    if (!allowed)
+      throw new MeetAiError(
+        403,
+        'The host has not shared meeting notes with you'
+      );
+  }
   return { db, meetingId, user, canManage };
 }
 

@@ -1,12 +1,11 @@
 'use client';
-
-import { Circle, WifiOff } from '@tuturuuu/icons';
+import { useQuery } from '@tanstack/react-query';
+import { Circle, Loader2, ShieldCheck, WifiOff } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
-import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MeetingAiPanel } from '@/features/meeting-ai/meeting-ai-panel';
 import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
 import { useCallRecording } from '../hooks/use-call-recording';
@@ -14,28 +13,25 @@ import { useMeetRoom } from '../hooks/use-meet-room';
 import {
   countUnreadChatMessages,
   isHandRaised,
-  selectFocusedUserId,
   selectOthers,
   selectSelf,
 } from '../lib/call-state';
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
+import { CallExtras } from './call-extras';
+import { type CallLayout, CallStage } from './call-stage';
 import { ConnectionPanel } from './connection-panel';
 import { type CallPanel, ControlBar } from './control-bar';
 import { CopyInvite } from './copy-invite';
+import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
-import { ParticipantTile } from './participant-tile';
+import { ReactionOverlay } from './reaction-overlay';
 import { SidePanel } from './side-panel';
 
-/** Google Meet keeps tiles readable by growing columns with the crowd. */
-function gridColumns(count: number) {
-  if (count <= 1) return 'grid-cols-1';
-  if (count <= 4) return 'grid-cols-1 sm:grid-cols-2';
-  if (count <= 9) return 'grid-cols-2 lg:grid-cols-3';
-  return 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
-}
+type Device = 'microphone' | 'camera' | 'screen';
 
 export function CallShell({
   defaultDisplayName,
+  defaultAvatarUrl,
   canReadWorkspace = true,
   leaveHref,
   meetingId,
@@ -45,6 +41,7 @@ export function CallShell({
   wsId,
 }: {
   defaultDisplayName: string;
+  defaultAvatarUrl?: string;
   canReadWorkspace?: boolean;
   leaveHref: string;
   meetingId: string;
@@ -55,28 +52,29 @@ export function CallShell({
 }) {
   const t = useTranslations('meet.call');
   const aiT = useTranslations('meet.ai');
-  const runMediaAction = async (
-    action: () => Promise<void>,
-    device: 'microphone' | 'camera' | 'screen'
-  ) => {
-    const id = `meet-media-${device}`;
-    try {
-      await action();
-      toast.dismiss(id);
-    } catch (error) {
-      const key = getMediaErrorKey(error, device);
-      toast.error(t(key), {
-        id,
-        description:
-          key === 'media_failed'
-            ? t('media_error_code', { code: getMediaErrorDiagnostic(error) })
-            : undefined,
-      });
-    }
-  };
   const router = useRouter();
+  const [joined, setJoined] = useState(false);
+  const [left, setLeft] = useState(false);
+  const leftRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const [leaveDialog, setLeaveDialog] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [showAi, setShowAi] = useState(false);
+  const [panel, setPanel] = useState<CallPanel>(null);
+  const [layout, setLayout] = useState<CallLayout>('auto');
+  const [focus, setFocus] = useState<string | null>(null);
+  const focusFeed = useCallback((key: string | null) => {
+    setFocus(key);
+    setLayout(key ? 'spotlight' : 'auto');
+  }, []);
+  const [busyDevices, setBusyDevices] = useState<
+    Partial<Record<Device, boolean>>
+  >({});
+  const pendingDevices = useRef(new Set<Device>());
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
   const { state } = room;
+  const canManage = state.role === 'host';
+  const canReadNotes = canManage || state.settings.shareNotes;
   const audioStreams = useMemo(
     () => [
       ...(room.localStream ? [room.localStream] : []),
@@ -84,187 +82,219 @@ export function CallShell({
     ],
     [room.localStream, room.remoteStreams]
   );
-  const ai = useMeetingAi(
-    wsId,
-    meetingId,
-    audioStreams,
-    true,
-    canReadWorkspace
-  );
-  const [showAi, setShowAi] = useState(false);
-
-  const [joined, setJoined] = useState(false);
-  const [panel, setPanel] = useState<CallPanel>(null);
-  const [lastReadChatId, setLastReadChatId] = useState<string | null>(null);
-  const newestChatId = state.chat.at(-1)?.id ?? null;
-
-  const self = selectSelf(state);
-  const others = useMemo(() => selectOthers(state), [state]);
-  const focusedUserId = useMemo(() => selectFocusedUserId(state), [state]);
-  const canManage = state.role === 'host';
+  const ai = useMeetingAi(wsId, meetingId, audioStreams, !left, canReadNotes);
   const recording = useCallRecording({
     meetingId,
-    onStateChange: room.setRecordingState,
     wsId,
+    onStateChange: room.setRecordingState,
   });
-  const handRaised = state.selfUserId
-    ? isHandRaised(state, state.selfUserId)
-    : false;
+  const telemetry = useQuery({
+    queryKey: ['meet-media-health', meetingId],
+    queryFn: room.getMediaDiagnostics,
+    enabled: joined && !left,
+    refetchInterval: 2000,
+    retry: false,
+    gcTime: 0,
+  });
+  const [lastReadChatId, setLastReadChatId] = useState<string | null>(null);
+  const newestChatId = state.chat.at(-1)?.id ?? null;
+  const self = selectSelf(state);
+  const others = useMemo(() => selectOthers(state), [state]);
+  const participants = self ? [self, ...others] : others;
+  const backHref = leaveHref.includes('/meetings/')
+    ? `${leaveHref.split('/meetings/')[0]}/meetings`
+    : '/';
 
+  const runMediaAction = async (
+    action: () => Promise<void>,
+    device: Device
+  ) => {
+    if (pendingDevices.current.has(device) || leftRef.current) return;
+    pendingDevices.current.add(device);
+    setBusyDevices((current) => ({ ...current, [device]: true }));
+    const id = `meet-media-${device}`;
+    try {
+      await action();
+      toast.dismiss(id);
+    } catch (error) {
+      if (!leftRef.current) {
+        const key = getMediaErrorKey(error, device);
+        toast.error(t(key), {
+          id,
+          description:
+            key === 'media_failed'
+              ? t('media_error_code', { code: getMediaErrorDiagnostic(error) })
+              : undefined,
+        });
+      }
+    } finally {
+      pendingDevices.current.delete(device);
+      setBusyDevices((current) => ({ ...current, [device]: false }));
+    }
+  };
+  const leaveNow = useCallback(() => {
+    if (leftRef.current) return;
+    leftRef.current = true;
+    room.leave();
+    setLeft(true);
+    setLeaveDialog(false);
+    setSaving(true);
+    void Promise.allSettled([ai.finish(), recording.stop()]).then((results) => {
+      if (results.some((result) => result.status === 'rejected'))
+        toast.error(aiT('failed'));
+      setSaving(false);
+    });
+  }, [room.leave, ai.finish, recording.stop, aiT]);
   useEffect(() => {
     if (panel === 'chat') setLastReadChatId(newestChatId);
   }, [panel, newestChatId]);
-
   useEffect(() => {
-    if (state.admission === 'denied') router.push(leaveHref);
-  }, [leaveHref, router, state.admission]);
+    if (state.ended || state.admission === 'denied') leaveNow();
+  }, [state.ended, state.admission, leaveNow]);
 
-  if (!joined || state.admission === 'waiting') {
+  if (left || state.ended)
+    return (
+      <div className="min-h-dvh bg-background px-4 py-12">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <div className="rounded-2xl border bg-card p-8 text-center">
+            <ShieldCheck className="mx-auto mb-4 size-10 text-muted-foreground" />
+            <h1 className="font-semibold text-2xl">
+              {t(state.ended ? 'call_ended_title' : 'call_left_title')}
+            </h1>
+            <p className="mt-2 text-muted-foreground text-sm">
+              {t('call_left_hint')}
+            </p>
+            {saving && (
+              <p
+                role="status"
+                className="mt-4 flex items-center justify-center gap-2 text-sm"
+              >
+                <Loader2 className="size-4 animate-spin" />
+                {t('saving_notes')}
+              </p>
+            )}
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {!state.ended && (
+                <Button
+                  disabled={saving}
+                  onClick={() => window.location.reload()}
+                >
+                  {t('rejoin_call')}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                disabled={saving}
+                onClick={() => router.push(backHref)}
+              >
+                <span>{t('back_to_meet')}</span>
+              </Button>
+            </div>
+          </div>
+          {canReadNotes && <MeetingAiPanel ai={ai} />}
+        </div>
+      </div>
+    );
+  if (!joined || state.admission === 'waiting')
     return (
       <Lobby
+        avatarUrl={defaultAvatarUrl}
+        defaultDisplayName={defaultDisplayName}
         connectionError={
           room.connectionStatus === 'closed' ||
           room.connectionStatus === 'error'
             ? t('signaling_unreachable')
             : null
         }
+        isJoining={state.admission === 'connecting'}
+        meetingName={meetingName}
+        waiting={state.admission === 'waiting'}
         transcriptionNotice={
-          !canReadWorkspace
+          !canReadNotes && !canReadWorkspace
             ? t('guest_transcription_notice')
             : ai.data?.sessions.some((session) => !session.ended_at)
               ? aiT('join_notice')
               : undefined
         }
-        onLeave={() => router.push(leaveHref)}
-        defaultDisplayName={defaultDisplayName}
-        isJoining={state.admission === 'connecting'}
-        meetingName={meetingName}
-        onJoin={async ({ audioEnabled, videoEnabled }) => {
-          setJoined(true);
-          if (audioEnabled)
-            await runMediaAction(room.toggleMicrophone, 'microphone');
-          if (videoEnabled) await runMediaAction(room.toggleCamera, 'camera');
+        onLeave={() => {
+          room.leave();
+          router.push(backHref);
         }}
-        waiting={state.admission === 'waiting'}
+        onJoin={({ audioEnabled, videoEnabled, previewStream }) => {
+          setJoined(true);
+          void room
+            .adoptPreview(previewStream)
+            .then(() =>
+              Promise.all([
+                ...(audioEnabled
+                  ? [runMediaAction(room.toggleMicrophone, 'microphone')]
+                  : []),
+                ...(videoEnabled
+                  ? [runMediaAction(room.toggleCamera, 'camera')]
+                  : []),
+              ])
+            )
+            .catch(() => toast.error(t('media_failed')));
+        }}
       />
     );
-  }
-
-  const tiles = self ? [self, ...others] : others;
-  const focused = tiles.find((entry) => entry.userId === focusedUserId);
-  const isSpotlight = tiles.length > 2 && Boolean(focused);
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <header className="flex flex-wrap items-center gap-3 border-b px-4 py-2.5">
+      <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
         <h1 className="min-w-0 flex-1 truncate font-medium text-sm">
           {meetingName}
         </h1>
-        {canReadWorkspace ? (
+        {canReadNotes && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowAi(!showAi)}
-            className="h-auto max-w-full whitespace-normal text-left"
+            className="h-8 max-w-full rounded-full text-xs"
             aria-expanded={showAi}
+            onClick={() => {
+              setShowAi(!showAi);
+              setPanel(null);
+            }}
           >
             {aiT('title')}
-            {ai.data?.sessions.some((session) => !session.ended_at)
-              ? ` · ${aiT('active')}`
-              : ''}
             {ai.data ? ` · $${ai.data.estimatedCostUsd.toFixed(4)}` : ''}
           </Button>
-        ) : (
-          <p className="max-w-md text-muted-foreground text-xs">
-            {t('guest_transcription_notice')}
-          </p>
         )}
         <ConnectionPanel
           read={room.getMediaDiagnostics}
           reconnect={room.reconnectMedia}
+          telemetry={telemetry.data}
         />
         <CopyInvite meetingId={meetingId} meetingName={meetingName} />
-        {state.recording.state === 'recording' ? (
-          <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-0.5 font-medium text-dynamic-red text-xs">
-            <Circle className="size-2 animate-pulse fill-current" />
+        {state.recording.state === 'recording' && (
+          <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-xs">
+            <Circle className="size-2 fill-current motion-safe:animate-pulse" />
             {t('recording')}
           </span>
-        ) : null}
-        {room.connectionStatus === 'open' ? null : (
+        )}
+        {room.connectionStatus !== 'open' && (
           <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
             <WifiOff className="size-3.5" />
             {t('reconnecting')}
           </span>
         )}
       </header>
-
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <main className="min-h-0 flex-1 p-3">
-          {isSpotlight && focused ? (
-            <div className="flex h-full flex-col gap-3">
-              <ParticipantTile
-                resumePlaybackLabel={t('resume_audio')}
-                className="min-h-0 flex-1"
-                handRaised={isHandRaised(state, focused.userId)}
-                isSelf={focused.userId === state.selfUserId}
-                participant={focused}
-                stream={
-                  focused.userId === state.selfUserId
-                    ? room.localPreview
-                    : room.remoteStreams[focused.userId]
-                }
-              />
-              <div className="flex shrink-0 gap-2 overflow-x-auto pb-1">
-                {tiles
-                  .filter((entry) => entry.userId !== focused.userId)
-                  .map((entry) => (
-                    <ParticipantTile
-                      resumePlaybackLabel={t('resume_audio')}
-                      className="aspect-video w-40 shrink-0"
-                      handRaised={isHandRaised(state, entry.userId)}
-                      isSelf={entry.userId === state.selfUserId}
-                      key={entry.userId}
-                      participant={entry}
-                      stream={
-                        entry.userId === state.selfUserId
-                          ? room.localPreview
-                          : room.remoteStreams[entry.userId]
-                      }
-                    />
-                  ))}
-              </div>
-            </div>
-          ) : (
-            <div
-              className={cn(
-                'grid h-full auto-rows-fr gap-3',
-                gridColumns(tiles.length)
-              )}
-            >
-              {tiles.map((entry) => (
-                <ParticipantTile
-                  resumePlaybackLabel={t('resume_audio')}
-                  handRaised={isHandRaised(state, entry.userId)}
-                  isSelf={entry.userId === state.selfUserId}
-                  key={entry.userId}
-                  participant={entry}
-                  stream={
-                    entry.userId === state.selfUserId
-                      ? room.localPreview
-                      : room.remoteStreams[entry.userId]
-                  }
-                />
-              ))}
-            </div>
-          )}
+        <main className="relative min-h-0 flex-1 p-2 sm:p-3">
+          <CallStage
+            room={room}
+            layout={layout}
+            focus={focus}
+            onFocus={focusFeed}
+          />
+          <ReactionOverlay state={state} />
         </main>
-
-        {showAi && canReadWorkspace ? (
-          <aside className="max-h-[60dvh] w-full shrink-0 overflow-y-auto p-3 md:max-h-none md:w-96">
+        {showAi && canReadNotes && (
+          <aside className="max-h-[50dvh] w-full shrink-0 overflow-y-auto p-3 md:max-h-none md:w-96">
             <MeetingAiPanel ai={ai} inCall />
           </aside>
-        ) : null}
-        {panel ? (
+        )}
+        {panel && (
           <SidePanel
             canManage={canManage}
             chat={state.chat}
@@ -274,44 +304,89 @@ export function CallShell({
             onRemove={room.removeParticipant}
             onSendChat={room.sendChat}
             panel={panel}
-            participants={tiles}
+            participants={participants}
             raisedHandUserIds={state.stage.raisedHandUserIds}
             selfUserId={state.selfUserId}
             waiting={state.waiting}
+            approved={state.approved}
+            onForget={room.forgetParticipant}
+            shareNotes={state.settings.shareNotes}
+            onShareNotes={room.shareNotes}
           />
-        ) : null}
+        )}
       </div>
-
       <ControlBar
         activePanel={panel}
         cameraOn={room.media.videoEnabled}
-        handRaised={handRaised}
         micOn={room.media.audioEnabled}
-        onLeave={() => {
-          void (async () => {
-            try {
-              await ai.finish();
-            } catch {
-              toast.error(aiT('failed'));
-            } finally {
-              router.push(leaveHref);
-            }
-          })();
+        screenOn={room.media.screenEnabled}
+        handRaised={
+          state.selfUserId ? isHandRaised(state, state.selfUserId) : false
+        }
+        busyDevices={busyDevices}
+        participantCount={participants.length}
+        recordingBusy={recording.isBusy}
+        recordingOn={recording.isRecording}
+        unreadChat={
+          panel === 'chat'
+            ? 0
+            : countUnreadChatMessages(state.chat, lastReadChatId)
+        }
+        waitingCount={state.waiting.length}
+        onLeave={() => (canManage ? setLeaveDialog(true) : leaveNow())}
+        onToggleMic={() =>
+          void runMediaAction(room.toggleMicrophone, 'microphone')
+        }
+        onToggleCamera={() => void runMediaAction(room.toggleCamera, 'camera')}
+        onToggleScreen={() =>
+          void runMediaAction(room.toggleScreenShare, 'screen')
+        }
+        onToggleHand={() =>
+          room.raiseHand(
+            !(state.selfUserId && isHandRaised(state, state.selfUserId))
+          )
+        }
+        onTogglePanel={(next) => {
+          setPanel(next);
+          setShowAi(false);
         }}
-        onToggleCamera={() => runMediaAction(room.toggleCamera, 'camera')}
-        onToggleHand={() => room.raiseHand(!handRaised)}
-        onToggleMic={() => runMediaAction(room.toggleMicrophone, 'microphone')}
-        onTogglePanel={setPanel}
         onToggleRecording={
           canManage ? () => void recording.toggle() : undefined
         }
-        onToggleScreen={() => runMediaAction(room.toggleScreenShare, 'screen')}
-        participantCount={tiles.length}
-        recordingBusy={recording.isBusy}
-        recordingOn={recording.isRecording}
-        screenOn={room.media.screenEnabled}
-        unreadChat={countUnreadChatMessages(state.chat, lastReadChatId)}
-        waitingCount={canManage ? state.waiting.length : 0}
+        extraControls={
+          <CallExtras
+            layout={layout}
+            setLayout={(next) => {
+              setLayout(next);
+              setFocus(null);
+            }}
+            look={room.cameraLook}
+            setLook={(look) => {
+              void room.setCameraLook(look).catch((error) => {
+                if (
+                  !(
+                    error instanceof DOMException && error.name === 'AbortError'
+                  )
+                )
+                  toast.error(t('effects_failed'));
+              });
+            }}
+            react={room.react}
+          />
+        }
+      />
+      <LeaveDialog
+        open={leaveDialog}
+        onOpenChange={setLeaveDialog}
+        busy={ending}
+        onLeave={leaveNow}
+        onEnd={() => {
+          setEnding(true);
+          void room.endMeeting().catch(() => {
+            setEnding(false);
+            toast.error(t('end_failed'));
+          });
+        }}
       />
     </div>
   );

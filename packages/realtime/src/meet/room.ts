@@ -1,4 +1,11 @@
-import { meetTrackKey, replaceRoomPublications } from './room-tracks';
+import {
+  applyRoomControl,
+  approvedParticipantsMessage,
+  roomSettingsMessage,
+} from './room-controls';
+import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
+import { denied, outcome } from './room-outcome';
+import { applySfuCommand } from './room-sfu';
 
 export { meetTrackKey } from './room-tracks';
 
@@ -11,7 +18,6 @@ import type {
 import {
   canMeetRealtimeControlRecording,
   canMeetRealtimeManageParticipants,
-  canMeetRealtimePublish,
   canMeetRealtimeUpdateStage,
   hasMeetRealtimeScope,
   MEET_REALTIME_SCOPES,
@@ -30,6 +36,10 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  approved?: Record<string, MeetApprovedParticipant>;
+  settings?: MeetRoomSettings;
+  ended?: boolean;
+  lastReactionAt?: Record<string, number>;
   retiredTracks?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
   recording: {
@@ -76,6 +86,9 @@ export interface MeetRoomCommand {
 
 export function createMeetRoomSnapshot(): MeetRoomSnapshot {
   return {
+    approved: {},
+    settings: { shareNotes: false },
+    ended: false,
     presence: {},
     recording: { sessionId: null, state: 'idle' },
     stage: meetRealtimeStageStateSchema.parse({}),
@@ -95,6 +108,7 @@ export function createMeetPresence(
   media?: Partial<MeetRealtimePresence['media']>
 ): MeetRealtimePresence {
   return {
+    avatarUrl: token.avatarUrl,
     displayName: getMeetDisplayName(token),
     joinedAt: now,
     lastSeenAt: now,
@@ -152,29 +166,6 @@ export function meetAdmissionPendingMessage(
   };
 }
 
-function outcome(
-  state: MeetRoomSnapshot,
-  partial: Partial<Omit<MeetRoomOutcome, 'state'>> = {}
-): MeetRoomOutcome {
-  return {
-    broadcast: partial.broadcast ?? [],
-    direct: partial.direct ?? [],
-    disconnect: partial.disconnect ?? [],
-    reply: partial.reply ?? [],
-    sfu: partial.sfu ?? null,
-    toManagers: partial.toManagers ?? [],
-    state,
-  };
-}
-
-function denied(
-  state: MeetRoomSnapshot,
-  error: string,
-  requestId?: string
-): MeetRoomOutcome {
-  return outcome(state, { reply: [{ error, requestId, type: 'error' }] });
-}
-
 /**
  * Registers a participant that has just connected. Anyone holding a `lobby`
  * token lands in the waiting list instead of presence until a manager admits
@@ -185,12 +176,22 @@ export function admitOrHold(
   token: MeetRealtimeTokenPayload,
   now: string
 ): MeetRoomOutcome {
-  if (token.admission === 'lobby' && !state.presence[token.userId]) {
+  if (state.ended)
+    return outcome(state, {
+      reply: [{ type: 'room.ended' }],
+      disconnect: [token.userId],
+    });
+  if (
+    token.admission === 'lobby' &&
+    !state.presence[token.userId] &&
+    !state.approved?.[token.userId]
+  ) {
     const next: MeetRoomSnapshot = {
       ...state,
       waiting: {
         ...state.waiting,
         [token.userId]: {
+          avatarUrl: token.avatarUrl,
           displayName: getMeetDisplayName(token),
           requestedAt: now,
           userId: token.userId,
@@ -216,6 +217,8 @@ export function admitOrHold(
     broadcast: [meetPresenceMessage(next, token.roomId)],
     reply: [
       buildReady(next, token, 'admitted'),
+      roomSettingsMessage(next),
+      ...(token.role === 'host' ? [approvedParticipantsMessage(next)] : []),
       ...(canMeetRealtimeManageParticipants(token)
         ? [meetAdmissionPendingMessage(next)]
         : []),
@@ -249,6 +252,8 @@ export function releaseParticipant(
 ): MeetRoomOutcome {
   const presence = { ...state.presence };
   const waiting = { ...state.waiting };
+  const lastReactionAt = { ...state.lastReactionAt };
+  delete lastReactionAt[userId];
   delete presence[userId];
   delete waiting[userId];
 
@@ -257,6 +262,7 @@ export function releaseParticipant(
   );
   const next: MeetRoomSnapshot = {
     ...state,
+    lastReactionAt,
     retiredTracks: Object.fromEntries(
       Object.entries(state.retiredTracks ?? {}).filter(
         ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
@@ -307,12 +313,19 @@ export function applyMeetRoomCommand(
   { message, now, token }: MeetRoomCommand
 ): MeetRoomOutcome {
   const { roomId, userId } = token;
+  if (state.ended)
+    return outcome(state, {
+      reply: [{ type: 'room.ended' }],
+      disconnect: [userId],
+    });
 
   // A participant still in the lobby may do nothing but wait.
   if (state.waiting[userId] && message.type !== 'presence.join') {
     return denied(state, 'awaiting_admission');
   }
 
+  const control = applyRoomControl(state, message, token, now);
+  if (control) return control;
   switch (message.type) {
     case 'presence.join': {
       if (state.waiting[userId]) return outcome(state);
@@ -433,6 +446,7 @@ export function applyMeetRoomCommand(
         presence: {
           ...state.presence,
           [message.userId]: {
+            avatarUrl: pending.avatarUrl,
             displayName: pending.displayName,
             joinedAt: now,
             lastSeenAt: now,
@@ -446,6 +460,14 @@ export function applyMeetRoomCommand(
           },
         },
         waiting,
+        approved: {
+          ...state.approved,
+          [message.userId]: {
+            userId: message.userId,
+            displayName: pending.displayName,
+            avatarUrl: pending.avatarUrl,
+          },
+        },
       };
 
       return outcome(next, {
@@ -459,6 +481,7 @@ export function applyMeetRoomCommand(
             },
             userId: message.userId,
           },
+          { userId: message.userId, message: roomSettingsMessage(next) },
           ...remoteMeetTracks(next, message.userId).map((track) => ({
             userId: message.userId,
             message: {
@@ -469,7 +492,10 @@ export function applyMeetRoomCommand(
             },
           })),
         ],
-        toManagers: [meetAdmissionPendingMessage(next)],
+        toManagers: [
+          meetAdmissionPendingMessage(next),
+          approvedParticipantsMessage(next),
+        ],
       });
     }
 
@@ -520,9 +546,19 @@ export function applyMeetRoomCommand(
         return denied(state, 'cannot_remove_self', message.requestId);
       }
 
-      const released = releaseParticipant(state, message.userId, roomId);
+      const approved = { ...state.approved };
+      delete approved[message.userId];
+      const released = releaseParticipant(
+        { ...state, approved },
+        message.userId,
+        roomId
+      );
       return {
         ...released,
+        toManagers: [
+          ...released.toManagers,
+          approvedParticipantsMessage(released.state),
+        ],
         broadcast: [
           ...released.broadcast,
           {
@@ -576,101 +612,10 @@ export function applyMeetRoomCommand(
     }
 
     default:
-      return applySfuCommand(state, message, token);
+      return message.type.startsWith('sfu.')
+        ? applySfuCommand(state, message as MeetRealtimeSfuClientMessage, token)
+        : outcome(state);
   }
-}
-
-function applySfuCommand(
-  state: MeetRoomSnapshot,
-  message: MeetRealtimeSfuClientMessage,
-  token: MeetRealtimeTokenPayload
-): MeetRoomOutcome {
-  const requiredScope =
-    message.type === 'sfu.tracks.subscribe'
-      ? MEET_REALTIME_SCOPES.sfuSubscribe
-      : message.type === 'sfu.tracks.close'
-        ? MEET_REALTIME_SCOPES.sfuPublish
-        : MEET_REALTIME_SCOPES.sfuJoin;
-
-  if (
-    message.type === 'sfu.tracks.publish' &&
-    !message.tracks.every((track) =>
-      canMeetRealtimePublish(token, track.kind ?? 'video')
-    )
-  ) {
-    return denied(state, 'publish_not_allowed', message.requestId);
-  }
-
-  if (
-    message.type !== 'sfu.tracks.publish' &&
-    !hasMeetRealtimeScope(token, requiredScope)
-  ) {
-    return denied(state, 'permission_denied', message.requestId);
-  }
-
-  if (message.type === 'sfu.tracks.publish') {
-    const published = message.tracks.map((track) => ({
-      ...track,
-      sessionId: message.sessionId,
-      userId: token.userId,
-    }));
-    const { tracks, broadcast, retired, error } = replaceRoomPublications(
-      state.tracks,
-      published,
-      state.retiredTracks
-    );
-    if (error) return denied(state, error, message.requestId);
-    const next = { ...state, tracks, retiredTracks: retired };
-
-    return outcome(next, {
-      broadcast: [
-        ...broadcast,
-        {
-          requestId: message.requestId,
-          sessionId: message.sessionId,
-          tracks: published,
-          type: 'track.published',
-          userId: token.userId,
-        },
-      ],
-      sfu: { message, requestId: message.requestId },
-    });
-  }
-
-  if (message.type === 'sfu.tracks.close') {
-    const closing = new Set(
-      message.tracks.map((track) =>
-        meetTrackKey({
-          ...track,
-          sessionId: message.sessionId,
-          userId: token.userId,
-        })
-      )
-    );
-    const tracks = Object.fromEntries(
-      Object.entries(state.tracks).filter(([key]) => !closing.has(key))
-    );
-    const next = { ...state, tracks };
-
-    return outcome(next, {
-      broadcast: [
-        {
-          requestId: message.requestId,
-          sessionId: message.sessionId,
-          tracks: message.tracks.map((track) => ({
-            ...track,
-            sessionId: message.sessionId,
-            userId: token.userId,
-          })),
-          type: 'track.closed',
-          userId: token.userId,
-        },
-      ],
-      sfu: { message, requestId: message.requestId },
-    });
-  }
-
-  return outcome(state, { sfu: { message, requestId: message.requestId } });
 }
 
 /** Every track currently published by someone other than `userId`. */

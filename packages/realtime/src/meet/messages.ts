@@ -17,11 +17,30 @@ import {
   meetRealtimeStreamStateSchema,
   meetRealtimeTrackKindSchema,
 } from './primitives';
+import {
+  type MeetApprovedParticipant,
+  type MeetReaction,
+  type MeetRoomSettings,
+  meetReactionSchema,
+  meetRoomSettingsSchema,
+} from './room-options';
 
 const requestId = z.string().trim().min(1).max(120).optional();
 const participantId = z.string().uuid();
 
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('reaction.send'), reaction: meetReactionSchema }),
+  z.object({
+    type: z.literal('room.settings.update'),
+    settings: meetRoomSettingsSchema,
+    requestId,
+  }),
+  z.object({ type: z.literal('room.end'), requestId }),
+  z.object({
+    type: z.literal('admission.forget'),
+    userId: participantId,
+    requestId,
+  }),
   z.object({
     displayName: z.string().trim().min(1).max(120).optional(),
     media: meetMediaStateSchema.optional(),
@@ -132,6 +151,15 @@ export type MeetRealtimeRoomTrack = {
 };
 
 export type MeetRealtimeServerMessage =
+  | {
+      type: 'reaction';
+      reaction: MeetReaction;
+      userId: string;
+      createdAt: string;
+    }
+  | { type: 'room.settings'; settings: MeetRoomSettings }
+  | { type: 'room.ended'; by?: string; requestId?: string }
+  | { type: 'admission.approved'; participants: MeetApprovedParticipant[] }
   | {
       admission: 'admitted' | 'waiting';
       expiresAt: string;

@@ -144,14 +144,44 @@ and no lookup table — an invalid code is rejected before any query runs.
 Decoding tolerates case, spaces, dashes, and the `I`/`L`/`O`/`U` characters
 Crockford omits, folding them onto the digits the sender meant.
 
-A code is a convenience for sharing **inside a workspace**, not a bypass:
-`/r/<code>` still resolves workspace membership and redirects non-members
-away.
+Only signed-in accounts with a verified `@tuturuuu.com` address can create
+online meetings. Other signed-in users can follow an invitation and ask the
+host to admit them. Sign-in preserves the room link, and an existing profile
+display name is reused. A missing name is saved to the profile before joining.
 
-**Every participant must be signed in.** There are no anonymous guest links and
-none are planned, so a code always resolves against a real Tuturuuu user and a
-workspace membership. The lobby (`admission: 'lobby'`) stays in the protocol for
-future use, but today every workspace member joins with `admission: 'open'`.
+## Call controls and admission
+
+The sending and receiving arrow badges open connection details. The displayed
+latency is the selected SFU connection's round-trip time, not a measurement to
+another participant. Unavailable measurements show a dash. A device stays busy
+until its SFU publication and peer connection are ready; a local preview alone
+does not prove another participant receives media.
+
+Choose automatic, grid, spotlight or sidebar layouts. Each camera and shared
+screen can be focused independently or opened fullscreen. Videos fit their
+frames without cropping. Fullscreen uses a viewport-sized fallback when the browser denies native fullscreen. Camera color filters and soft portrait processing run
+locally and affect the transmitted video; no image is sent to an AI provider
+for these effects. Soft portrait is subtle whole-frame smoothing and lighting,
+not face-aware cosmetic placement. Reactions are temporary and rate limited.
+
+The host's People panel contains persistent approved participants. Admission
+adds a signed-in identity to this room's approved list, so reconnects and later
+visits bypass the lobby. Forgetting approval requires admission on the next
+visit; removing a current participant also removes their saved approval.
+
+Transcript and notes sharing is private by default. The host can enable it for
+admitted and approved participants, including guests outside the workspace.
+Every non-host notes read checks the signed room policy on the Durable Object;
+removing permission blocks subsequent reads. Existing downloaded information
+cannot be recalled. Transcription mutations remain host-only.
+
+Leaving stops local capture and signaling immediately while recording/notes
+finalization continues on the post-call screen. The host can leave alone or end
+the room for everyone. Ending is durable, disconnects participants and prevents
+rejoining that room. Approved participants can still read shared post-call
+notes while the host's sharing setting permits it. Room policy and approval
+state live in Cloudflare Durable Object storage; no self-hosted server or new
+database migration is required.
 
 ## Missing microphone or camera
 
@@ -510,3 +540,19 @@ camera, or screen track name. The room retires older registrations for that
 participant and track and broadcasts `track.closed` before the replacement
 `track.published`, so listeners discard obsolete receivers. Snapshot consumers
 also deduplicate old session registrations left by earlier Worker versions.
+
+## SFU commit boundary
+
+Both realtime transports use `MeetCommandExecutor`. SFU operations are serialized
+per participant, while other participants and leave/end controls stay responsive.
+A track registration or closure is persisted and broadcast only after Cloudflare
+returns success without per-track errors. The completed operation is applied to
+the latest room snapshot so concurrent host settings are preserved; a participant
+who left during the request cannot be resurrected. Closing a track requires the
+registered owner to match the signed caller.
+
+Recording finalization targets the specific session with an idempotent status
+update, never another toggle. SPA unmount and leave share the same finalizer. The
+post-call navigation buttons wait for finalization while capture and signaling
+are already stopped. A hard browser/process termination can still interrupt an
+upload; do not claim a saved recording without its storage receipt.

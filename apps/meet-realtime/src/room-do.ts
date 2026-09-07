@@ -1,11 +1,13 @@
 import {
   admitOrHold,
-  applyMeetRoomCommand,
   CloudflareSfuClient,
   canMeetRealtimeManageParticipants,
+  canReadRoomNotes,
   createMeetRoomSnapshot,
+  MeetCommandExecutor,
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
+  type MeetRoomOutcome,
   type MeetRoomSnapshot,
   type MeetSfuIntent,
   meetAdmissionPendingMessage,
@@ -45,6 +47,7 @@ export class MeetRoomDurableObject implements DurableObject {
   private readonly state: DurableObjectState;
   private snapshot: MeetRoomSnapshot = createMeetRoomSnapshot();
   private loaded = false;
+  private commands = new MeetCommandExecutor();
 
   constructor(state: DurableObjectState, env: MeetRoomEnv) {
     this.env = env;
@@ -54,7 +57,7 @@ export class MeetRoomDurableObject implements DurableObject {
   private async load() {
     if (this.loaded) return;
     const stored = await this.state.storage.get<MeetRoomSnapshot>(SNAPSHOT_KEY);
-    if (stored) this.snapshot = stored;
+    if (stored) this.snapshot = { ...createMeetRoomSnapshot(), ...stored };
     this.loaded = true;
   }
 
@@ -161,6 +164,15 @@ export class MeetRoomDurableObject implements DurableObject {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    if (new URL(request.url).pathname === '/room-state') {
+      return Response.json(
+        {
+          canReadNotes: canReadRoomNotes(this.snapshot, token),
+          ended: !!this.snapshot.ended,
+        },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      );
+    }
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
 
@@ -177,7 +189,7 @@ export class MeetRoomDurableObject implements DurableObject {
 
     // A newly admitted participant needs the tracks published before they
     // arrived, otherwise they would only ever see people who join after them.
-    if (!this.snapshot.waiting[token.userId]) {
+    if (!this.snapshot.ended && !this.snapshot.waiting[token.userId]) {
       this.sendTo(server, meetPresenceMessage(this.snapshot, token.roomId));
       for (const track of remoteMeetTracks(this.snapshot, token.userId)) {
         this.sendTo(server, {
@@ -189,6 +201,7 @@ export class MeetRoomDurableObject implements DurableObject {
       }
     }
 
+    this.disconnect(outcome.disconnect);
     void this.scheduleSweep();
 
     return new Response(null, { status: 101, webSocket: client });
@@ -219,41 +232,25 @@ export class MeetRoomDurableObject implements DurableObject {
       return;
     }
 
-    const outcome = applyMeetRoomCommand(this.snapshot, {
-      message: parsed.data,
-      now: new Date().toISOString(),
-      token,
-    });
-
-    this.snapshot = outcome.state;
-    this.persist();
-
-    for (const message of outcome.reply) this.sendTo(socket, message);
-    this.broadcast(outcome.broadcast);
-    this.sendToManagers(outcome.toManagers);
-    for (const entry of outcome.direct) {
-      this.sendToUser(entry.userId, [entry.message]);
-    }
-
-    if (outcome.sfu) {
-      try {
-        const result = await this.runSfuIntent(outcome.sfu);
-        this.sendTo(socket, {
-          action: outcome.sfu.message.type,
-          requestId: outcome.sfu.requestId,
-          result,
-          type: 'sfu.response',
-        });
-      } catch (error) {
-        this.sendTo(socket, {
-          error: error instanceof Error ? error.message : 'sfu_request_failed',
-          requestId: outcome.sfu.requestId,
-          type: 'error',
-        });
+    await this.commands.run(
+      { message: parsed.data, now: new Date().toISOString(), token },
+      {
+        read: () => this.snapshot,
+        commit: (result) => this.flush(socket, result),
+        runSfu: (intent) => this.runSfuIntent(intent),
       }
-    }
+    );
+  }
 
-    this.disconnect(outcome.disconnect);
+  private flush(socket: WebSocket, result: MeetRoomOutcome) {
+    this.snapshot = result.state;
+    this.persist();
+    for (const message of result.reply) this.sendTo(socket, message);
+    this.broadcast(result.broadcast);
+    this.sendToManagers(result.toManagers);
+    for (const entry of result.direct)
+      this.sendToUser(entry.userId, [entry.message]);
+    this.disconnect(result.disconnect);
   }
 
   async webSocketClose(socket: WebSocket) {

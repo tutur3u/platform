@@ -1,6 +1,6 @@
 'use client';
 
-import { Activity, Copy, RefreshCw } from '@tuturuuu/icons';
+import { ArrowDown, ArrowUp, Copy, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
@@ -18,8 +19,10 @@ import type { MediaDiagnostics } from '../lib/media-diagnostics';
 export function ConnectionPanel({
   read,
   reconnect,
+  telemetry,
 }: {
   read: () => Promise<MediaDiagnostics>;
+  telemetry?: MediaDiagnostics;
   reconnect: () => void;
 }) {
   const t = useTranslations('meet.call');
@@ -62,9 +65,37 @@ export function ConnectionPanel({
       }}
     >
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          <Activity className="size-4" />
-          {t('connection_title')}
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 gap-1.5 rounded-full px-2.5 tabular-nums"
+          aria-label={t('connection_title')}
+          title={t('connection_title')}
+        >
+          <ArrowUp
+            aria-hidden
+            className={cn(
+              'size-3.5',
+              telemetry?.publisher.state === 'connected'
+                ? 'text-dynamic-green'
+                : 'text-muted-foreground'
+            )}
+          />
+          <ArrowDown
+            aria-hidden
+            className={cn(
+              'size-3.5',
+              telemetry?.subscriber.state === 'connected'
+                ? 'text-dynamic-green'
+                : 'text-muted-foreground'
+            )}
+          />
+          <span className="text-xs">
+            {telemetry?.publisher.roundTripMs ??
+              telemetry?.subscriber.roundTripMs ??
+              '—'}{' '}
+            ms
+          </span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -85,6 +116,13 @@ export function ConnectionPanel({
                   <span>{label}</span>
                   <strong>{status(snapshot[direction].state)}</strong>
                 </div>
+                {snapshot[direction].roundTripMs != null && (
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    {t('connection_latency', {
+                      milliseconds: snapshot[direction].roundTripMs,
+                    })}
+                  </p>
+                )}
                 <p className="mt-1 text-muted-foreground text-xs">
                   {snapshot[direction].statsUnavailable
                     ? t('connection_stats_unavailable')

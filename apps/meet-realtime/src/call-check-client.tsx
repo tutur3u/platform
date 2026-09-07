@@ -1,11 +1,14 @@
 /** Runtime verification of the actual React call controller with synthetic media. */
+import { NextIntlClientProvider } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import messages from '../../meet/messages/en.json';
 import { ParticipantTile } from '../../meet/src/features/call/components/participant-tile';
 import { useMeetRoom } from '../../meet/src/features/call/hooks/use-meet-room';
 
+const requestedPeer = new URL(location.href).searchParams.get('peer');
 const peer =
-  new URL(location.href).searchParams.get('peer') === 'b' ? 'b' : 'a';
+  requestedPeer === 'b' || requestedPeer === 'c' ? requestedPeer : 'a';
 const nativeFetch = window.fetch.bind(window);
 window.fetch = (input, init) => {
   const url =
@@ -136,6 +139,7 @@ function CallCheck() {
     );
     return () => clearInterval(timer);
   }, []);
+  const [diagnostics, setDiagnostics] = useState('');
   const [error, setError] = useState('');
   const [energy, setEnergy] = useState<Record<string, number>>({});
   useEffect(() => {
@@ -205,6 +209,36 @@ function CallCheck() {
       <button type="button" onClick={() => run(room.toggleCamera)}>
         Toggle camera
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          run(() => room.setCameraLook({ filter: 'mono', softness: 0.3 }))
+        }
+      >
+        Apply camera effect
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          run(() => room.setCameraLook({ filter: 'none', softness: 0 }))
+        }
+      >
+        Clear camera effect
+      </button>
+      <button type="button" onClick={room.leave}>
+        Leave immediately
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          void room
+            .getMediaDiagnostics()
+            .then((value) => setDiagnostics(JSON.stringify(value)))
+        }
+      >
+        Read media diagnostics
+      </button>
+      <pre>{diagnostics}</pre>
       <button type="button" onClick={() => run(room.toggleScreenShare)}>
         Toggle screen
       </button>
@@ -272,4 +306,8 @@ function CallCheck() {
     </main>
   );
 }
-createRoot(document.getElementById('root')!).render(<CallCheck />);
+createRoot(document.getElementById('root')!).render(
+  <NextIntlClientProvider locale="en" messages={messages}>
+    <CallCheck />
+  </NextIntlClientProvider>
+);

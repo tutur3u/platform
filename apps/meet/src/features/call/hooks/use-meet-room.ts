@@ -1,7 +1,6 @@
 'use client';
 
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
-
 import type {
   CloudflareSfuTrack,
   MeetMediaState,
@@ -14,7 +13,14 @@ import {
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
+import {
+  CameraEffects,
+  type CameraLook,
+  DEFAULT_CAMERA_LOOK,
+} from '../lib/camera-effects';
+import { createLocalMediaControls } from '../lib/local-media-controls';
 import { readPeerDiagnostics } from '../lib/media-diagnostics';
+import { createRoomActions } from '../lib/room-actions';
 import type {
   MeetRoomController,
   UseMeetRoomOptions,
@@ -32,8 +38,13 @@ import {
   planRemoteSubscriptions,
   userIdFromTrackName,
 } from '../lib/negotiation';
-import { PEER_CONFIG, preparePeerSession } from '../lib/peer-connection';
+import {
+  PEER_CONFIG,
+  preparePeerSession,
+  waitForPeerConnection,
+} from '../lib/peer-connection';
 import { watchPeerRecovery } from '../lib/peer-recovery';
+import { assertPublishedResponse } from '../lib/publish-response';
 import {
   closePublishedTrack,
   syncPublishedSenders,
@@ -60,6 +71,13 @@ export function useMeetRoom({
   realtimeUrl,
   token,
 }: UseMeetRoomOptions): MeetRoomController {
+  const effects = useMemo(() => new CameraEffects(), []);
+  const [cameraLook, setCameraLookState] =
+    useState<CameraLook>(DEFAULT_CAMERA_LOOK);
+  const activeRef = useRef(true);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | undefined>(
+    undefined
+  );
   const [state, setState] = useState<CallState>(INITIAL_CALL_STATE);
   const [connectionStatus, setConnectionStatus] =
     useState<MeetSignalingStatus>('connecting');
@@ -115,6 +133,7 @@ export function useMeetRoom({
   }, []);
 
   useEffect(() => {
+    activeRef.current = true;
     let usedInitialToken = false;
 
     // Reconnects fetch fresh tokens because calls can outlast token expiry.
@@ -162,6 +181,7 @@ export function useMeetRoom({
                 track.enabled = false;
             }
             if (kind === 'video') {
+              effects.setEnabled(false);
               next.videoEnabled = false;
               for (const track of localStreamRef.current?.getVideoTracks() ??
                 [])
@@ -201,7 +221,10 @@ export function useMeetRoom({
       signaling.send({ type: 'presence.update', media: mediaRef.current });
     }, 10_000);
 
+    heartbeatRef.current = heartbeat;
     return () => {
+      activeRef.current = false;
+      effects.dispose();
       clearInterval(heartbeat);
       signaling.close();
       for (const track of localStreamRef.current?.getTracks() ?? [])
@@ -225,7 +248,7 @@ export function useMeetRoom({
       subscribeSessionRef.current = null;
       subscribedRef.current = new Set();
     };
-  }, [meetingId, realtimeUrl, resetPublisher, resetSubscriber, token]);
+  }, [effects, meetingId, realtimeUrl, resetPublisher, resetSubscriber, token]);
 
   /** Announces our media state so other clients can render mute badges. */
   const publishPresence = useCallback((next: MeetMediaState) => {
@@ -298,6 +321,7 @@ export function useMeetRoom({
   /** Pushes newly enabled local tracks to the SFU. */
   const syncLocalTracks = useCallback(
     async (stream: MediaStream, next: MeetMediaState) => {
+      if (!activeRef.current) return;
       const selfUserId = stateRef.current.selfUserId;
       if (!selfUserId) return;
 
@@ -377,9 +401,9 @@ export function useMeetRoom({
           );
 
           if (publishPcRef.current !== pc) return;
-          if (answer?.sessionDescription) {
-            await pc.setRemoteDescription(answer.sessionDescription);
-          }
+          assertPublishedResponse(answer);
+          await pc.setRemoteDescription(answer.sessionDescription);
+          await waitForPeerConnection(pc);
           if (publishPcRef.current !== pc) return;
           publishedRef.current = [
             ...publishedRef.current,
@@ -422,6 +446,7 @@ export function useMeetRoom({
   useEffect(() => {
     if (state.admission !== 'admitted') return;
     const pull = async () => {
+      if (!activeRef.current) return;
       const pending = planRemoteSubscriptions(
         stateRef.current.remoteTracks,
         subscribedRef.current,
@@ -518,99 +543,60 @@ export function useMeetRoom({
 
   const applyMedia = useCallback(
     async (next: MeetMediaState, stream: MediaStream | null) => {
+      const previous = mediaRef.current;
       mediaRef.current = next;
       setMedia(next);
       publishPresence(next);
-      await queueLocalTracks(stream ?? new MediaStream(), next);
+      try {
+        await queueLocalTracks(stream ?? new MediaStream(), next);
+      } catch (error) {
+        if (activeRef.current) {
+          const restored = { ...mediaRef.current };
+          for (const key of [
+            'audioEnabled',
+            'videoEnabled',
+            'screenEnabled',
+          ] as const)
+            if (previous[key] !== next[key] && restored[key] === next[key])
+              restored[key] = previous[key];
+          restored.screenEnabled &&=
+            screenStreamRef.current
+              ?.getVideoTracks()
+              .some((track) => track.readyState === 'live') ?? false;
+          if (!restored.screenEnabled) {
+            for (const track of screenStreamRef.current?.getTracks() ?? [])
+              track.stop();
+            screenStreamRef.current = null;
+            setScreenStream(null);
+          }
+          mediaRef.current = restored;
+          setMedia(restored);
+          for (const track of localStreamRef.current?.getAudioTracks() ?? [])
+            track.enabled = restored.audioEnabled;
+          effects.setEnabled(restored.videoEnabled);
+          publishPresence(restored);
+          resetPublisher(true);
+        }
+        throw error;
+      }
     },
-    [publishPresence, queueLocalTracks]
+    [effects, publishPresence, queueLocalTracks, resetPublisher]
   );
 
-  const toggleMicrophone = useCallback(async () => {
-    let stream = localStreamRef.current;
-    if (
-      !stream?.getAudioTracks().some((track) => track.readyState === 'live')
-    ) {
-      const audio = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream = new MediaStream([
-        ...(localStreamRef.current?.getVideoTracks() ?? []),
-        ...audio.getAudioTracks(),
-      ]);
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-    }
-    for (const track of stream.getAudioTracks()) {
-      track.enabled = !mediaRef.current.audioEnabled;
-    }
-    await applyMedia(
-      { ...mediaRef.current, audioEnabled: !mediaRef.current.audioEnabled },
-      stream
-    );
-  }, [applyMedia]);
-
-  const toggleCamera = useCallback(async () => {
-    let stream = localStreamRef.current;
-    if (
-      !stream?.getVideoTracks().some((track) => track.readyState === 'live')
-    ) {
-      const video = await navigator.mediaDevices.getUserMedia({ video: true });
-      stream = new MediaStream([
-        ...(localStreamRef.current?.getAudioTracks() ?? []),
-        ...video.getVideoTracks(),
-      ]);
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-    }
-    for (const track of stream.getVideoTracks()) {
-      track.enabled = !mediaRef.current.videoEnabled;
-    }
-    await applyMedia(
-      { ...mediaRef.current, videoEnabled: !mediaRef.current.videoEnabled },
-      stream
-    );
-  }, [applyMedia]);
-
-  const toggleScreenShare = useCallback(async () => {
-    if (mediaRef.current.screenEnabled) {
-      for (const track of screenStreamRef.current?.getTracks() ?? []) {
-        track.stop();
-      }
-      screenStreamRef.current = null;
-      setScreenStream(null);
-      await applyMedia(
-        { ...mediaRef.current, screenEnabled: false },
-        localStreamRef.current
-      );
-      return;
-    }
-
-    const display = await navigator.mediaDevices
-      .getDisplayMedia({
-        video: true,
-      })
-      .catch((error: unknown) => {
-        if (error instanceof Error && error.name === 'NotAllowedError')
-          return null;
-        throw error;
-      });
-    if (!display) return;
-    screenStreamRef.current = display;
-    setScreenStream(display);
-    // Ending the share from the browser's own bar must update the room too.
-    display.getVideoTracks()[0]?.addEventListener('ended', () => {
-      if (screenStreamRef.current !== display) return;
-      screenStreamRef.current = null;
-      setScreenStream(null);
-      void applyMedia(
-        { ...mediaRef.current, screenEnabled: false },
-        localStreamRef.current
-      ).catch(() => undefined);
-    });
-    await applyMedia(
-      { ...mediaRef.current, screenEnabled: true },
-      localStreamRef.current
-    );
-  }, [applyMedia]);
+  const { toggleMicrophone, toggleCamera, toggleScreenShare } = useMemo(
+    () =>
+      createLocalMediaControls({
+        activeRef,
+        effects,
+        localStreamRef,
+        screenStreamRef,
+        mediaRef,
+        setLocalStream,
+        setScreenStream,
+        applyMedia,
+      }),
+    [applyMedia, effects]
+  );
 
   const sharingUsers = Object.values(state.participants)
     .filter((entry) => entry.media.screenEnabled)
@@ -623,43 +609,71 @@ export function useMeetRoom({
     [buildRemoteStreams, remoteMedia, sharingUsers]
   );
 
-  const sendChat = useCallback((body: string) => {
-    const trimmed = body.trim();
-    if (trimmed)
-      signalingRef.current?.send({ body: trimmed, type: 'chat.message' });
-  }, []);
-
-  const raiseHand = useCallback((raised: boolean) => {
-    signalingRef.current?.send({ raised, type: 'hand.raise' });
-  }, []);
-
-  const decideAdmission = useCallback((userId: string, admit: boolean) => {
-    signalingRef.current?.send({ admit, type: 'admission.decide', userId });
-  }, []);
-
-  const muteParticipant = useCallback(
-    (userId: string, kinds: MeetRealtimeTrackKind[]) => {
-      signalingRef.current?.send({ kinds, type: 'participant.mute', userId });
+  const actions = useMemo(() => createRoomActions(signalingRef), []);
+  const leave = useCallback(() => {
+    activeRef.current = false;
+    clearInterval(heartbeatRef.current);
+    signalingRef.current?.close();
+    resetPublisher();
+    resetSubscriber();
+    effects.dispose();
+    for (const track of localStreamRef.current?.getTracks() ?? []) track.stop();
+    for (const track of screenStreamRef.current?.getTracks() ?? [])
+      track.stop();
+    localStreamRef.current = null;
+    screenStreamRef.current = null;
+    setLocalStream(null);
+    setScreenStream(null);
+    setConnectionStatus('closed');
+  }, [effects, resetPublisher, resetSubscriber]);
+  const setCameraLook = useCallback(
+    async (look: CameraLook) => {
+      const track = await effects.setLook(look);
+      setCameraLookState(look);
+      if (!track || !activeRef.current) return;
+      const stream = new MediaStream([
+        ...(localStreamRef.current?.getAudioTracks() ?? []),
+        track,
+      ]);
+      localStreamRef.current = stream;
+      setLocalStream(stream);
+      await queueLocalTracks(stream, mediaRef.current);
     },
-    []
+    [effects, queueLocalTracks]
   );
 
-  const removeParticipant = useCallback((userId: string) => {
-    signalingRef.current?.send({ type: 'participant.remove', userId });
-  }, []);
-
-  const setRecordingState = useCallback(
-    (recordingState: 'recording' | 'idle', sessionId?: string) => {
-      signalingRef.current?.send({
-        recordingSessionId: sessionId,
-        state: recordingState,
-        type: 'recording.state',
-      });
+  const adoptPreview = useCallback(
+    async (stream: MediaStream | null) => {
+      const source = stream
+        ?.getVideoTracks()
+        .find((track) => track.readyState === 'live');
+      if (!source) return;
+      if (!activeRef.current) {
+        source.stop();
+        return;
+      }
+      const track = await effects.setSource(source);
+      if (!track || !activeRef.current) {
+        effects.dispose();
+        return;
+      }
+      const next = new MediaStream([
+        ...(localStreamRef.current?.getAudioTracks() ?? []),
+        track,
+      ]);
+      localStreamRef.current = next;
+      setLocalStream(next);
     },
-    []
+    [effects]
   );
-
   return {
+    ...actions,
+    adoptPreview,
+    leave,
+    cameraLook,
+    setCameraLook,
+    remoteMedia,
+    screenStream,
     getMediaDiagnostics: async () => ({
       signaling: connectionStatus,
       attachedParticipants: Object.keys(remoteMedia).length,
@@ -671,16 +685,10 @@ export function useMeetRoom({
       resetPublisher(true);
     },
     connectionStatus,
-    decideAdmission,
     localStream,
     localPreview: screenStream ?? localStream,
     media,
-    muteParticipant,
-    raiseHand,
-    removeParticipant,
     remoteStreams,
-    sendChat,
-    setRecordingState,
     state,
     toggleCamera,
     toggleMicrophone,

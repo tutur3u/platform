@@ -53,6 +53,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
     isHost,
     canReadWorkspace,
     displayName,
+    avatarUrl,
     admission,
     workspaceSlug,
   } = access;
@@ -71,6 +72,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
   const session = await getMeetCallSession({
     displayName,
+    avatarUrl,
     isHost,
     admission,
     meetingId: meeting.id,
@@ -81,6 +83,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
   return (
     <CallShell
       defaultDisplayName={session.displayName}
+      defaultAvatarUrl={avatarUrl}
       leaveHref={leaveHref}
       canReadWorkspace={canReadWorkspace}
       meetingId={meeting.id}

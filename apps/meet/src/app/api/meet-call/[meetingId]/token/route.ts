@@ -16,11 +16,12 @@ export async function POST(
     const locale =
       (await cookies()).get(LOCALE_COOKIE_NAME)?.value === 'vi' ? 'vi' : 'en';
     const t = await getTranslations({ locale, namespace: 'meet.call' });
-    const { user, meeting, isHost, admission, displayName } =
+    const { user, meeting, isHost, admission, displayName, avatarUrl } =
       await getMeetCallAccess(meetingId, t('guest'));
     return Response.json(
       await getMeetCallSession({
         displayName,
+        avatarUrl,
         isHost,
         admission,
         meetingId: meeting.id,

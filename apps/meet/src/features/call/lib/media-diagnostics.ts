@@ -3,6 +3,7 @@ export async function readPeerDiagnostics(pc: RTCPeerConnection | null) {
   if (!pc)
     return {
       state: 'not_started' as const,
+      roundTripMs: null as number | null,
       streams: [],
       tracks: [],
       statsUnavailable: false,
@@ -12,6 +13,17 @@ export async function readPeerDiagnostics(pc: RTCPeerConnection | null) {
   const signalingState = pc.signalingState;
   try {
     const stats = await pc.getStats();
+    let roundTripMs: number | null = null;
+    for (const stat of stats.values()) {
+      if (
+        stat.type === 'candidate-pair' &&
+        stat.state === 'succeeded' &&
+        (stat.nominated || stat.selected) &&
+        typeof stat.currentRoundTripTime === 'number' &&
+        Number.isFinite(stat.currentRoundTripTime)
+      )
+        roundTripMs = Math.max(0, Math.round(stat.currentRoundTripTime * 1000));
+    }
     const streams: Array<{
       direction: 'sent' | 'received';
       kind: 'audio' | 'video';
@@ -41,6 +53,7 @@ export async function readPeerDiagnostics(pc: RTCPeerConnection | null) {
     }));
     return {
       state,
+      roundTripMs,
       iceState,
       signalingState,
       streams,
@@ -50,6 +63,7 @@ export async function readPeerDiagnostics(pc: RTCPeerConnection | null) {
   } catch {
     return {
       state,
+      roundTripMs: null as number | null,
       iceState,
       signalingState,
       streams: [],

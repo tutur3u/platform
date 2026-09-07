@@ -104,7 +104,9 @@ describe('meet room admission', () => {
 
     expect(result.state.waiting[GUEST_ID]).toBeUndefined();
     expect(result.state.presence[GUEST_ID]?.displayName).toBe('Guest');
-    expect(result.direct).toEqual([
+    expect(
+      result.direct.filter((entry) => entry.message.type === 'admission.result')
+    ).toEqual([
       {
         message: {
           admitted: true,
@@ -147,7 +149,9 @@ describe('meet room admission', () => {
       host
     );
     expect(admitted.direct[0]?.message.type).toBe('admission.result');
-    expect(admitted.direct[1]).toMatchObject({
+    expect(
+      admitted.direct.find((entry) => entry.message.type === 'track.published')
+    ).toMatchObject({
       userId: GUEST_ID,
       message: {
         type: 'track.published',

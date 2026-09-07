@@ -58,7 +58,7 @@ export async function getMeetCallAccess(
   const { data: profile, error: profileError } = await Promise.resolve(
     db
       .from('users')
-      .select('display_name, user_private_details(full_name)')
+      .select('display_name, avatar_url, user_private_details(full_name)')
       .eq('id', user.id)
       .maybeSingle()
   ).catch(() => ({ data: null, error: { code: 'PROFILE_LOOKUP_REJECTED' } }));
@@ -88,6 +88,16 @@ export async function getMeetCallAccess(
     displayName: (displayName || user.email || fallbackName)
       .trim()
       .slice(0, 120),
+    avatarUrl: [
+      profile?.avatar_url,
+      user.user_metadata?.avatar_url,
+      user.user_metadata?.picture,
+    ].find(
+      (value): value is string =>
+        typeof value === 'string' &&
+        value.startsWith('https://') &&
+        value.length <= 2048
+    ),
     needsDisplayName: !savedDisplayName && !profileError,
     suggestedDisplayName: displayName?.trim() ?? '',
     admission: membership.ok ? ('open' as const) : ('lobby' as const),

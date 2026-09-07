@@ -27,6 +27,7 @@ const MEETING_ID = crypto.randomUUID();
 const PEERS: Record<string, { name: string; userId: string }> = {
   a: { name: 'Peer A', userId: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691' },
   b: { name: 'Peer B', userId: '4b320da6-6c8a-43fe-b1bf-09fbe77303f9' },
+  c: { name: 'Peer C', userId: '5dbf5a89-915e-4be8-98f2-9743db25114d' },
 };
 const SECRET = process.env.MEET_REALTIME_TOKEN_SECRET || 'integration-secret';
 // biome-ignore lint/suspicious/noUndeclaredEnvVars: standalone verification harness, never a cached Turbo task.
@@ -114,7 +115,8 @@ const page = Bun.serve({
     }
 
     if (url.pathname === '/token') {
-      const peer = url.searchParams.get('peer') === 'b' ? 'b' : 'a';
+      const requested = url.searchParams.get('peer');
+      const peer = requested === 'b' || requested === 'c' ? requested : 'a';
       return Response.json({
         meetingId: MEETING_ID,
         wsId: WS_ID,
@@ -135,6 +137,7 @@ const page = Bun.serve({
 process.stdout.write(
   `room server  ${ROOM_URL}\n` +
     `harness      http://127.0.0.1:${page.port}/?peer=a\n` +
-    `             http://127.0.0.1:${page.port}/?peer=b\n\n` +
+    `             http://127.0.0.1:${page.port}/?peer=b\n` +
+    `             http://127.0.0.1:${page.port}/?peer=c (controller only)\n\n` +
     'Open both, then read #result in each tab.\n'
 );

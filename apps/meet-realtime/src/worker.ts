@@ -18,16 +18,22 @@ export default {
       return Response.json({ ok: true });
     }
 
-    if (url.pathname !== '/realtime') {
+    const roomStateRequest =
+      url.pathname === '/room-state' && request.method === 'GET';
+    if (url.pathname !== '/realtime' && !roomStateRequest) {
       return new Response('Not found', { status: 404 });
     }
 
-    if (request.headers.get('Upgrade') !== 'websocket') {
+    if (!roomStateRequest && request.headers.get('Upgrade') !== 'websocket') {
       return new Response('Expected WebSocket upgrade', { status: 426 });
     }
 
     const token = verifyMeetRealtimeToken(
-      url.searchParams.get('token') ?? '',
+      roomStateRequest
+        ? (request.headers
+            .get('Authorization')
+            ?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ?? '')
+        : (url.searchParams.get('token') ?? ''),
       env.MEET_REALTIME_TOKEN_SECRET
     );
 

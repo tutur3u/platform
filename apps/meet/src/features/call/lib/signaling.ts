@@ -115,6 +115,10 @@ export class MeetSignaling {
       return;
     }
 
+    if (message.type === 'room.ended' && message.requestId) {
+      this.pending.get(message.requestId)?.resolve(undefined);
+      this.pending.delete(message.requestId);
+    }
     if (message.type === 'sfu.response' && message.requestId) {
       this.pending.get(message.requestId)?.resolve(message.result);
       this.pending.delete(message.requestId);
