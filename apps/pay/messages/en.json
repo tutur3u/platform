@@ -549,15 +549,6 @@
     "step_try_description": "Practice in context. You can skip or close the guide at any time.",
     "title": "Guidance and learning"
   },
-  "pwa": {
-    "cache_help": "App assets are cached for faster visits. Loaded tasks and calendar views remain available in an open app. Reopening a workspace, syncing, and saving changes require a connection.",
-    "install": "Install app",
-    "install_help": "Use your browser’s Install app option. On iPhone or iPad, open the Share menu and choose Add to Home Screen.",
-    "offline_message": "Reconnect to open your workspace. Data already loaded in an open app stays available; syncing and saving changes require a connection.",
-    "offline_status": "You’re offline. Loaded data may be out of date. Reconnect to sync and save changes.",
-    "offline_title": "You're offline",
-    "retry": "Try again"
-  },
   "quiz-set-data-table": {
     "linked_modules": "Linked Modules"
   },

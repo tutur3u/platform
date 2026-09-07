@@ -15,7 +15,16 @@ export function isAllDayEvent(
   const durationMs = end.diff(start, 'millisecond');
   const isMultipleOf24Hours = durationMs % (24 * 60 * 60 * 1000) === 0;
 
-  return durationMs > 0 && isMultipleOf24Hours;
+  const spansLocalMidnights =
+    start.startOf('day').valueOf() === start.valueOf() &&
+    end.startOf('day').valueOf() === end.valueOf();
+  const wallDuration =
+    durationMs + (end.utcOffset() - start.utcOffset()) * 60_000;
+  return (
+    durationMs > 0 &&
+    (isMultipleOf24Hours ||
+      (spansLocalMidnights && wallDuration % (24 * 60 * 60 * 1000) === 0))
+  );
 }
 
 // Helper function to convert Google Calendar all-day events to proper timezone

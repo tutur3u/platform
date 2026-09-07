@@ -236,15 +236,6 @@
     "step_try_description": "Thực hành ngay trong ngữ cảnh. Bạn có thể bỏ qua hoặc đóng hướng dẫn bất cứ lúc nào.",
     "title": "Hướng dẫn và học lại"
   },
-  "pwa": {
-    "cache_help": "Tài nguyên ứng dụng được lưu đệm để tải nhanh hơn. Các công việc và chế độ xem lịch đã tải vẫn có thể xem trong ứng dụng đang mở. Việc mở lại không gian làm việc, đồng bộ và lưu thay đổi cần có kết nối.",
-    "install": "Cài đặt ứng dụng",
-    "install_help": "Chọn Cài đặt ứng dụng trong trình duyệt. Trên iPhone hoặc iPad, mở menu Chia sẻ và chọn Thêm vào Màn hình chính.",
-    "offline_message": "Kết nối lại để mở không gian làm việc. Dữ liệu đã tải trong ứng dụng đang mở vẫn có thể xem; đồng bộ và lưu thay đổi cần có kết nối.",
-    "offline_status": "Bạn đang ngoại tuyến. Dữ liệu đã tải có thể chưa cập nhật. Kết nối lại để đồng bộ và lưu thay đổi.",
-    "offline_title": "Bạn đang ngoại tuyến",
-    "retry": "Thử lại"
-  },
   "qr": {
     "image_upload": {
       "browse": "duyệt tệp",

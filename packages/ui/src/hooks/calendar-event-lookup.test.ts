@@ -1,5 +1,5 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createCalendarEventLookup } from './calendar-event-lookup';
 import {
   type CalendarCache,
@@ -26,6 +26,18 @@ describe('indexed calendar lookup', () => {
       'timed',
     ]);
     expect(lookup(new Date(2027, 0, 1))).toBe(lookup(new Date(2027, 0, 1)));
+  });
+  it('excludes the end day of all-day events across daylight saving changes', () => {
+    vi.stubEnv('TZ', 'America/New_York');
+    try {
+      const lookup = createCalendarEventLookup([
+        event('dst', '2026-03-08T00:00:00-05:00', '2026-03-09T00:00:00-04:00'),
+      ]);
+      expect(lookup(new Date(2026, 2, 8))).toHaveLength(1);
+      expect(lookup(new Date(2026, 2, 9))).toHaveLength(0);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
   it('handles sparse busy years and invalid event dates', () => {
     const events = Array.from({ length: 3000 }, (_, index) =>
@@ -56,5 +68,10 @@ describe('indexed calendar lookup', () => {
     });
     expect(cache['workspace:15']?.dbLastUpdated).toBe(15);
     expect(cache['other-workspace:15']?.dbLastUpdated).toBe(0);
+    cache = updateCalendarRangeCache(cache, 'active-range', {
+      dbLastUpdated: 0,
+    });
+    expect(cache['active-range']).toBeDefined();
+    expect(Object.keys(cache)).toHaveLength(12);
   });
 });

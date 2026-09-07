@@ -9,7 +9,9 @@ const put = vi.fn(async (request: Request | string, response: Response) => {
   entries.set(key(request), response);
 });
 const network = vi.fn();
+const background: Promise<unknown>[] = [];
 beforeEach(() => {
+  background.length = 0;
   listeners.clear();
   entries.clear();
   put.mockClear();
@@ -37,7 +39,12 @@ beforeEach(() => {
     offlineFallbackUrl: '/offline.html',
   }).addEventListeners();
 });
-async function request(path: string, mode: string, destination = '') {
+async function request(
+  path: string,
+  mode: string,
+  destination = '',
+  flush = true
+) {
   const respondWith = vi.fn();
   listeners.get('fetch')!({
     request: {
@@ -47,11 +54,13 @@ async function request(path: string, mode: string, destination = '') {
       destination,
     },
     respondWith,
-    waitUntil: vi.fn(),
+    waitUntil: (promise: Promise<unknown>) => background.push(promise),
   });
-  return respondWith.mock.calls.length
+  const response = respondWith.mock.calls.length
     ? ((await respondWith.mock.calls[0]![0]) as Response)
     : null;
+  if (flush) await Promise.all(background);
+  return response;
 }
 describe('private productivity app caching', () => {
   it('serves the fallback dependencies from precache without a network request', async () => {
@@ -102,6 +111,68 @@ describe('private productivity app caching', () => {
       )
     );
     expect(entries.size).toBe(2);
+  });
+  it('returns network responses before a slow cache write finishes', async () => {
+    let release!: () => void;
+    put.mockImplementationOnce(
+      async () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        })
+    );
+    network.mockResolvedValue(new Response('ready'));
+    const response = await request(
+      '/_next/static/slow.js',
+      'cors',
+      'script',
+      false
+    );
+    expect(await response?.text()).toBe('ready');
+    await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+    release();
+    await Promise.all(background);
+  });
+  it('retains hot assets and evicts a less recently used asset', async () => {
+    network.mockImplementation(async () => new Response('asset'));
+    await request('/_next/static/a.js', 'cors', 'script');
+    await request('/_next/static/b.js', 'cors', 'script');
+    await request('/_next/static/a.js', 'cors', 'script');
+    await request('/_next/static/c.js', 'cors', 'script');
+    expect(entries.has('https://calendar.test/_next/static/a.js')).toBe(true);
+    expect(entries.has('https://calendar.test/_next/static/b.js')).toBe(false);
+  });
+  it('uses an available navigation preload when Cache Storage is unavailable', async () => {
+    createOfflineWorker().addEventListeners();
+    vi.spyOn(caches, 'open').mockRejectedValueOnce(
+      new Error('storage unavailable')
+    );
+    const respondWith = vi.fn();
+    listeners.get('fetch')!({
+      request: {
+        url: 'https://calendar.test/personal',
+        method: 'GET',
+        mode: 'navigate',
+      },
+      preloadResponse: Promise.resolve(new Response('preloaded')),
+      respondWith,
+    });
+    expect(await (await respondWith.mock.calls[0]![0]).text()).toBe(
+      'preloaded'
+    );
+    expect(network).not.toHaveBeenCalled();
+  });
+  it('supports a zero cache limit and rejects invalid limits', async () => {
+    createOfflineWorker({
+      staticAssetsOnly: true,
+      maxRuntimeCacheEntries: 0,
+    }).addEventListeners();
+    network.mockResolvedValue(new Response('asset'));
+    await request('/_next/static/a.js', 'cors', 'script');
+    expect(put).not.toHaveBeenCalled();
+    for (const limit of [-1, NaN, 1.5])
+      expect(() =>
+        createOfflineWorker({ maxRuntimeCacheEntries: limit })
+      ).toThrow(RangeError);
   });
   it('reuses hashed assets and bounds the runtime cache', async () => {
     network.mockImplementation(async () => new Response('asset'));

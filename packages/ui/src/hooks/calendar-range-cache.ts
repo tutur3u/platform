@@ -40,11 +40,13 @@ export function updateCalendarRangeCache(
   };
   return Object.fromEntries(
     Object.entries(next)
+      .filter(([entryKey]) => entryKey !== key)
       .sort(
         (a, b) =>
           Math.max(b[1].dbLastUpdated, b[1].googleLastUpdated) -
           Math.max(a[1].dbLastUpdated, a[1].googleLastUpdated)
       )
-      .slice(0, 12)
+      .slice(0, 11)
+      .concat([[key, next[key]!]])
   );
 }

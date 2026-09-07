@@ -1,7 +1,12 @@
 'use client';
 import { Download, WifiOff } from '@tuturuuu/icons';
-import { useTranslations } from 'next-intl';
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import {
+  clearPwaInstallPrompt,
+  getPwaInstallPrompt,
+  initializePwaInstall,
+  subscribePwaInstall,
+} from '../../hooks/pwa-install-prompt';
 import { Button } from './button';
 import {
   Dialog,
@@ -11,10 +16,6 @@ import {
   DialogTitle,
 } from './dialog';
 
-interface InstallPrompt extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
 function subscribeOnline(callback: () => void) {
   window.addEventListener('online', callback);
   window.addEventListener('offline', callback);
@@ -23,15 +24,26 @@ function subscribeOnline(callback: () => void) {
     window.removeEventListener('offline', callback);
   };
 }
-export function PwaStatus() {
-  const t = useTranslations('pwa');
+export function PwaStatus({
+  labels,
+}: {
+  labels: {
+    offline_status: string;
+    install: string;
+    install_help: string;
+    cache_help: string;
+  };
+}) {
+  const t = (key: keyof typeof labels) => labels[key];
   const online = useSyncExternalStore(
     subscribeOnline,
     () => navigator.onLine,
     () => true
   );
-  const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(
-    null
+  const installPrompt = useSyncExternalStore(
+    subscribePwaInstall,
+    getPwaInstallPrompt,
+    () => null
   );
   const [installed, setInstalled] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -40,18 +52,13 @@ export function PwaStatus() {
       window.matchMedia('(display-mode: standalone)').matches ||
         ('standalone' in navigator && navigator.standalone === true)
     );
-    const beforeInstall = (event: Event) => {
-      event.preventDefault();
-      setInstallPrompt(event as InstallPrompt);
-    };
+    initializePwaInstall();
     const onInstalled = () => {
       setInstalled(true);
-      setInstallPrompt(null);
+      clearPwaInstallPrompt();
     };
-    window.addEventListener('beforeinstallprompt', beforeInstall);
     window.addEventListener('appinstalled', onInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', beforeInstall);
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
@@ -67,7 +74,7 @@ export function PwaStatus() {
     } catch {
       setShowHelp(true);
     } finally {
-      setInstallPrompt(null);
+      clearPwaInstallPrompt();
     }
   };
   return (

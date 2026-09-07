@@ -16,6 +16,7 @@ import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
+import { getTranslations } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -66,6 +67,7 @@ export default async function RootLayout({ children }: Props) {
     await getRootLocale()
   );
 
+  const pwa = await getTranslations({ locale, namespace: 'pwa' });
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
@@ -82,7 +84,14 @@ export default async function RootLayout({ children }: Props) {
               <Providers appName={siteConfig.name}>
                 <FadeSettingInitializer />
                 {children}
-                <PwaStatus />
+                <PwaStatus
+                  labels={{
+                    offline_status: pwa('offline_status'),
+                    install: pwa('install'),
+                    install_help: pwa('install_help'),
+                    cache_help: pwa('cache_help'),
+                  }}
+                />
               </Providers>
             </Suspense>
           </NuqsAdapter>
