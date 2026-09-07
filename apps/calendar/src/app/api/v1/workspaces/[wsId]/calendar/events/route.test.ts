@@ -66,16 +66,31 @@ function request(method: string, body?: unknown) {
 }
 
 function getQueryResult(data: unknown[] = []) {
-  let pageIndex = 0;
+  let cursor: { start: string; id: string } | undefined;
   const query: any = {
     eq: vi.fn(() => query),
     gt: vi.fn(() => query),
     lt: vi.fn(() => query),
     order: vi.fn(() => query),
-    or: vi.fn(() => query),
+    or: vi.fn((filter: string) => {
+      const match = filter.match(
+        /^start_at\.gt\.("[^"]+"),and\(start_at\.eq\.("[^"]+"),id\.gt\.("[^"]+")\)$/
+      );
+      if (!match || match[1] !== match[2]) throw new Error('Invalid cursor');
+      cursor = { start: JSON.parse(match[1]!), id: JSON.parse(match[3]!) };
+      return query;
+    }),
     limit: vi.fn(async (count: number) => {
-      const start = pageIndex++ * count;
-      return { data: data.slice(start, start + count), error: null };
+      const remaining = cursor
+        ? data.filter((row) => {
+            const event = row as { start_at: string; id: string };
+            return (
+              event.start_at > cursor!.start ||
+              (event.start_at === cursor!.start && event.id > cursor!.id)
+            );
+          })
+        : data;
+      return { data: remaining.slice(0, count), error: null };
     }),
     select: vi.fn(() => query),
   };
