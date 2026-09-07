@@ -2088,9 +2088,9 @@ export function TaskEditDialog({
     return currentSerializedDescription !== initialSerializedDescription;
   }, [isCreateMode, task?.id]);
 
-  // Close handlers
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
     useTaskDialogClose({
+      isSaving,
       taskId: task?.id,
       isCreateMode,
       collaborationMode: effectiveCollaborationMode,
@@ -2115,13 +2115,12 @@ export function TaskEditDialog({
     });
 
   const handleAttemptClose = useCallback(async () => {
-    if (isSaving) return false;
     if (isCreateMode && hasUnsavedChanges && formState.name.trim()) {
       setShowUnsavedWarning(true);
       return false;
     }
     return handleClose();
-  }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose, isSaving]);
+  }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose]);
 
   const handleConfirmCloseWithOverflow = useCallback(async () => {
     closeBlockedByOverflowRef.current = false;
