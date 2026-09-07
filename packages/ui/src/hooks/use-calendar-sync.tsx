@@ -15,6 +15,7 @@ import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import {
   createContext,
+  type SetStateAction,
   useCallback,
   useContext,
   useEffect,
@@ -127,7 +128,9 @@ const CalendarSyncContext = createContext<{
   calendarConnections: CalendarConnection[];
   enabledCalendarIds: Set<string>;
   updateCalendarConnection: (connectionId: string, isEnabled: boolean) => void;
-  setCalendarConnections: (connections: CalendarConnection[]) => void;
+  setCalendarConnections: (
+    connections: SetStateAction<CalendarConnection[]>
+  ) => void;
 
   // Sync status
   syncStatus: SyncStatus;
@@ -254,12 +257,7 @@ export const CalendarSyncProvider = ({
     []
   );
 
-  const setCalendarConnections = useCallback(
-    (connections: CalendarConnection[]) => {
-      setCalendarConnectionsState(connections);
-    },
-    []
-  );
+  const setCalendarConnections = setCalendarConnectionsState;
 
   // Helper to generate cache key from dates
   const getCacheKey = useCallback((dateRange: Date[]) => {

@@ -87,8 +87,8 @@ export function useCalendarConnectionsManager(wsId: string) {
         syncInboundEnabled: false,
       }),
     onSuccess: async (_, connectionId) => {
-      setCalendarConnections(
-        calendarConnections.map((connection) =>
+      setCalendarConnections((current) =>
+        current.map((connection) =>
           connection.id === connectionId
             ? { ...connection, sync_inbound_enabled: false }
             : connection

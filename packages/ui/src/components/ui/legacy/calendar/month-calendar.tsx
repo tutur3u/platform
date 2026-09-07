@@ -29,6 +29,7 @@ import { formatLunarDay, getLunarDate } from '../../../../lib/lunar-calendar';
 import { Button } from '../../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { calendarEventTone } from './calendar-event-tone';
+import { calendarDraftDate } from './calendar-period';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(utc);
@@ -142,14 +143,7 @@ export function MonthCalendar({
   const rows = Math.ceil(visibleDays.length / columns);
   const addEvent = (day: Date) => {
     if (cannotCreate) return;
-    const zone = settings?.timezone?.timezone;
-    const wallTime = `${dayjs(day).format('YYYY-MM-DD')}T09:00:00`;
-    addEmptyEvent(
-      (zone && zone !== 'auto'
-        ? dayjs.tz(wallTime, zone)
-        : dayjs(wallTime)
-      ).toDate()
-    );
+    addEmptyEvent(calendarDraftDate(day, settings?.timezone?.timezone));
   };
   return (
     <div

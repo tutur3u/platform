@@ -30,6 +30,7 @@ import {
 } from '../../../../lib/lunar-calendar';
 import { Button } from '../../button';
 import { Input } from '../../input';
+import { calendarDraftDate } from './calendar-period';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(utc);
@@ -342,14 +343,7 @@ export const AgendaView = ({
   const cannotCreate = readOnly || providerReadOnly;
   const createEvent = () => {
     if (cannotCreate) return;
-    const zone = settings?.timezone?.timezone;
-    const wallTime = `${dayjs(startDate).format('YYYY-MM-DD')}T09:00:00`;
-    addEmptyEvent(
-      (zone && zone !== 'auto'
-        ? dayjs.tz(wallTime, zone)
-        : dayjs(wallTime)
-      ).toDate()
-    );
+    addEmptyEvent(calendarDraftDate(startDate, settings?.timezone?.timezone));
   };
   const [query, setQuery] = useState('');
   const { timeFormat: rawTimeFormat } = useCalendarPreferences();
