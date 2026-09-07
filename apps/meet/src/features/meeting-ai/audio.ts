@@ -33,11 +33,14 @@ export class MeetAudioCapture {
   private context!: AudioContext;
   private node: AudioWorkletNode | null = null;
   private sources = new Map<string, MediaStreamAudioSourceNode>();
+  private sourceCleanup = new Map<string, () => void>();
+  private chunkSourceCount = 1;
   private elapsed = 0;
   private mixer: GainNode | null = null;
   constructor(private onChunk: (audio: Blob, startSeconds: number) => void) {}
   async start() {
     this.elapsed = 0;
+    this.chunkSourceCount = 1;
     this.context = new AudioContext({ sampleRate: 16000 });
     if (this.context.sampleRate !== 16000)
       throw new Error('Unsupported audio sample rate');
@@ -61,7 +64,10 @@ export class MeetAudioCapture {
       const energy =
         data.samples.reduce((sum, value) => sum + value * value, 0) /
         data.samples.length;
-      if (energy > 0.000001) this.onChunk(encodeMeetWav(data.samples), start);
+      const unscaledEnergy = energy * this.chunkSourceCount ** 2;
+      this.chunkSourceCount = Math.max(1, this.sources.size);
+      if (unscaledEnergy > 0.000001)
+        this.onChunk(encodeMeetWav(data.samples), start);
     };
     await this.context.resume();
   }
@@ -71,11 +77,8 @@ export class MeetAudioCapture {
       .flatMap((stream) => stream.getAudioTracks())
       .filter((track) => track.readyState === 'live');
     const ids = new Set(tracks.map((track) => track.id));
-    for (const [id, source] of this.sources)
-      if (!ids.has(id)) {
-        source.disconnect();
-        this.sources.delete(id);
-      }
+    for (const id of this.sources.keys())
+      if (!ids.has(id)) this.removeSource(id);
     for (const track of tracks)
       if (!this.sources.has(track.id)) {
         const source = this.context.createMediaStreamSource(
@@ -83,7 +86,20 @@ export class MeetAudioCapture {
         );
         source.connect(this.mixer!);
         this.sources.set(track.id, source);
+        const ended = () => this.removeSource(track.id);
+        track.addEventListener('ended', ended, { once: true });
+        this.sourceCleanup.set(track.id, () =>
+          track.removeEventListener('ended', ended)
+        );
       }
+    this.chunkSourceCount = Math.max(this.chunkSourceCount, this.sources.size);
+    if (this.mixer) this.mixer.gain.value = 1 / Math.max(1, this.sources.size);
+  }
+  private removeSource(id: string) {
+    this.sources.get(id)?.disconnect();
+    this.sources.delete(id);
+    this.sourceCleanup.get(id)?.();
+    this.sourceCleanup.delete(id);
     if (this.mixer) this.mixer.gain.value = 1 / Math.max(1, this.sources.size);
   }
   async stop() {
@@ -109,8 +125,7 @@ export class MeetAudioCapture {
     return flushed;
   }
   dispose() {
-    for (const source of this.sources.values()) source.disconnect();
-    this.sources.clear();
+    for (const id of this.sources.keys()) this.removeSource(id);
     this.mixer?.disconnect();
     this.mixer = null;
     this.node?.disconnect();

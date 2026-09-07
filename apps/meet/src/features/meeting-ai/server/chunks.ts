@@ -70,6 +70,7 @@ export async function transcribeMeetChunk(
   )
     throw new MeetAiError(409, 'Transcription has ended');
   // Reserve before contacting the provider; retries never repeat this billable call.
+  const reservationStarted = performance.now();
   const inserted = await db.rpc('reserve_meet_ai_chunk', {
     p_id: id,
     p_session_id: sessionId,
@@ -98,11 +99,11 @@ export async function transcribeMeetChunk(
       .select('ended_at')
       .eq('id', sessionId)
       .maybeSingle();
+    if (current.error) throw new MeetAiError(500, 'Session lookup failed');
     if (
-      current.error ||
       !current.data ||
       current.data.ended_at ||
-      Date.now() - Date.parse(inserted.data.created_at) > 30_000
+      performance.now() - reservationStarted > 30_000
     )
       throw new MeetAiError(
         409,

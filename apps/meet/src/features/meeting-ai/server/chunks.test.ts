@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { encodeMeetWav } from '../audio';
 
 const mocks = vi.hoisted(() => ({ access: vi.fn(), generate: vi.fn() }));
@@ -47,6 +47,7 @@ function request(audio = encodeMeetWav(new Float32Array(16000))) {
 }
 describe('Meet chunk idempotency', () => {
   beforeEach(() => vi.resetAllMocks());
+  afterEach(() => vi.restoreAllMocks());
   it('rejects malformed audio before touching transcript storage', async () => {
     const from = vi.fn();
     mocks.access.mockResolvedValue({
@@ -111,9 +112,16 @@ describe('Meet chunk idempotency', () => {
     expect(await transcribeMeetChunk(request(), params)).toEqual(saved);
     expect(mocks.generate).toHaveBeenCalledTimes(1);
   });
-  it.each([true, false])(
-    'rejects stale reservations before provider start (ended: %s)',
-    async (ended) => {
+  it.each([
+    { ended: true, elapsed: 0, lookupError: false, status: 409 },
+    { ended: false, elapsed: 31_000, lookupError: false, status: 409 },
+    { ended: false, elapsed: 0, lookupError: true, status: 500 },
+  ])(
+    'rejects invalid provider handoffs: %j',
+    async ({ ended, elapsed, lookupError, status }) => {
+      vi.spyOn(performance, 'now')
+        .mockReturnValueOnce(0)
+        .mockReturnValue(elapsed);
       const from = vi
         .fn()
         .mockReturnValueOnce(
@@ -126,14 +134,14 @@ describe('Meet chunk idempotency', () => {
         .mockReturnValueOnce(
           query({
             data: { ended_at: ended ? new Date().toISOString() : null },
-            error: null,
+            error: lookupError ? { message: 'unavailable' } : null,
           })
         )
         .mockReturnValue(query({ data: null, error: null }));
       const rpc = vi.fn().mockResolvedValue({
         data: {
           id,
-          created_at: new Date(Date.now() - 100_000).toISOString(),
+          created_at: new Date().toISOString(),
         },
         error: null,
       });
@@ -145,7 +153,7 @@ describe('Meet chunk idempotency', () => {
       expect(
         (await meetAiResponse(() => transcribeMeetChunk(request(), params)))
           .status
-      ).toBe(409);
+      ).toBe(status);
       expect(mocks.generate).not.toHaveBeenCalled();
     }
   );

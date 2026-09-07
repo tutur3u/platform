@@ -21,7 +21,11 @@ export function useMeetingAi(
     refetchInterval: (current) =>
       live ||
       current.state.data?.sessions.some(
-        (entry) => !entry.ended_at || entry.notes_status === 'processing'
+        (entry) =>
+          !entry.ended_at ||
+          entry.notes_status === 'processing' ||
+          (entry.notes_status === 'pending' &&
+            Date.now() - Date.parse(entry.ended_at) < 120_000)
       )
         ? 4000
         : false,
