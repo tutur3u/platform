@@ -213,7 +213,12 @@ export function admitOrHold(
 
   return outcome(next, {
     broadcast: [meetPresenceMessage(next, token.roomId)],
-    reply: [buildReady(next, token, 'admitted')],
+    reply: [
+      buildReady(next, token, 'admitted'),
+      ...(canMeetRealtimeManageParticipants(token)
+        ? [meetAdmissionPendingMessage(next)]
+        : []),
+    ],
   });
 }
 
@@ -448,6 +453,15 @@ export function applyMeetRoomCommand(
             },
             userId: message.userId,
           },
+          ...remoteMeetTracks(next, message.userId).map((track) => ({
+            userId: message.userId,
+            message: {
+              type: 'track.published' as const,
+              sessionId: track.sessionId,
+              tracks: [track],
+              userId: track.userId,
+            },
+          })),
         ],
         toManagers: [meetAdmissionPendingMessage(next)],
       });
