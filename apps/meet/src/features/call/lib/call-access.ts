@@ -89,7 +89,7 @@ export async function getMeetCallAccess(
       .trim()
       .slice(0, 120),
     needsDisplayName: !savedDisplayName && !profileError,
-    suggestedDisplayName: displayName ?? '',
+    suggestedDisplayName: displayName?.trim() ?? '',
     admission: membership.ok ? ('open' as const) : ('lobby' as const),
     canReadWorkspace: membership.ok && membership.membershipType === 'MEMBER',
     workspaceSlug: toWorkspaceSlug(meeting.ws_id, {

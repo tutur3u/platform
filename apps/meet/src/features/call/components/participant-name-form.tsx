@@ -9,6 +9,7 @@ import { MAX_DISPLAY_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
+import { prepareParticipantName } from '../lib/participant-name';
 
 /** Save identity before opening signaling, so the host sees the saved name. */
 export function ParticipantNameForm({
@@ -22,9 +23,7 @@ export function ParticipantNameForm({
 }) {
   const t = useTranslations('meet.call');
   const router = useRouter();
-  const [name, setName] = useState(
-    initialName.slice(0, MAX_DISPLAY_NAME_LENGTH)
-  );
+  const [name, setName] = useState(prepareParticipantName(initialName));
   const [saving, setSaving] = useState(false);
   const [refreshing, startTransition] = useTransition();
   const [error, setError] = useState(false);
