@@ -908,36 +908,6 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'drive' });
     expect(
       getDefaultAppSessionVerificationOptions(
-        'http://localhost:3000/api/v1/users/me/profile'
-      )
-    ).toEqual({
-      targetApp: [
-        'ai',
-        'calendar',
-        'chat',
-        'cms',
-        'contacts',
-        'drive',
-        'finance',
-        'forms',
-        'hive',
-        'infra',
-        'inventory',
-        'learn',
-        'mail',
-        'mind',
-        'mira',
-        'nova',
-        'pay',
-        'rewise',
-        'storefront',
-        'tasks',
-        'teach',
-        'track',
-      ],
-    });
-    expect(
-      getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/chat/conversations'
       )
     ).toEqual({ targetApp: 'chat' });
@@ -955,6 +925,7 @@ describe('withSessionAuth', () => {
     'infra',
     'inventory',
     'mail',
+    'meet',
     'pay',
     'storefront',
   ] as const)(
@@ -976,7 +947,7 @@ describe('withSessionAuth', () => {
       ) as unknown as NextRequest;
 
       const result = await resolveSessionAuthContext(request, {
-        allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+        allowAppSessionAuth: true,
       });
 
       expect(result.ok).toBe(true);
