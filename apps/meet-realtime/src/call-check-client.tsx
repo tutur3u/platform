@@ -14,7 +14,7 @@ window.fetch = (input, init) => {
       : input instanceof URL
         ? input.href
         : input.url;
-  if (url.endsWith('/realtime-token'))
+  if (/\/api\/meet-call\/[^/]+\/token$/.test(url))
     return nativeFetch(`/token?peer=${peer}`).then(async (response) => {
       const data = await response.json();
       return Response.json({ ...data, realtimeUrl: data.roomUrl });

@@ -260,6 +260,20 @@ change and have an operator apply this migration; an API-only deployment does
 not close direct database access. Scheduling plans are unaffected. Existing
 workspace members may still join calls regardless of their email domain.
 
+Signed-in invitees outside the workspace can join a meeting whose creator has a
+verified `@tuturuuu.com` email. They wait in the lobby until the host admits them;
+the invite grants no workspace membership, recordings, or archived transcript
+access. Guests see a transcription capability notice before joining and in the
+call. Meeting-only access is rechecked by the Cloudflare-local
+`POST /api/meet-call/:meetingId/token` route whenever the call reconnects. The
+creator must still belong to the workspace to receive host privileges.
+
+Anonymous invite navigation preserves `/r/<code>` (including locale) through the
+central login and token verification handoff. The call page resolves invite access
+directly rather than redirecting non-members through a workspace dashboard. If a
+login seems to lose the invite, inspect the nested `returnUrl`/`nextUrl` chain and
+the call authorization separately.
+
 Signed-in root navigation opens online meetings. Hosts can start an instant
 meeting, and members can enter a room code or paste a same-origin room link.
 Legacy UUID room links remain accepted.

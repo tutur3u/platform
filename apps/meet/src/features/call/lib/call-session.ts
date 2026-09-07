@@ -3,6 +3,7 @@ import 'server-only';
 
 import {
   getMeetRealtimeScopesForRole,
+  type MeetRealtimeAdmission,
   type MeetRealtimeRole,
   meetRealtimeTokenPayloadSchema,
 } from '@tuturuuu/realtime/meet';
@@ -39,12 +40,14 @@ export function getMeetRealtimeUrl() {
  */
 export async function getMeetCallSession({
   displayName,
+  admission = 'open',
   isHost,
   meetingId,
   userId,
   wsId,
 }: {
   displayName: string;
+  admission?: MeetRealtimeAdmission;
   isHost: boolean;
   meetingId: string;
   userId: string;
@@ -52,9 +55,7 @@ export async function getMeetCallSession({
 }) {
   const role: MeetRealtimeRole = isHost ? 'host' : 'speaker';
   const payload = meetRealtimeTokenPayloadSchema.parse({
-    // Members of the workspace are already trusted, so only the host skips the
-    // lobby today; guest links will flip this to 'lobby'.
-    admission: 'open',
+    admission: isHost ? 'open' : admission,
     displayName,
     exp: Math.floor((Date.now() + TOKEN_TTL_MS) / 1000),
     limits: {
