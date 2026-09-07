@@ -10,6 +10,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
+import {
+  clearDraft,
+  getDraftStorageKey,
+} from '../shared/task-edit-dialog/utils';
 import { DraftCard, type TaskDraft } from './draft-card';
 import { DraftConvertDialog } from './draft-convert-dialog';
 
@@ -54,7 +58,10 @@ export function DraftsPage({
   const deleteMutation = useMutation({
     mutationFn: async (draftId: string) =>
       deleteWorkspaceTaskDraft(wsId, draftId, getBrowserInternalApiOptions()),
-    onSuccess: () => {
+    onSuccess: (_result, draftId) => {
+      const deletedDraft = drafts.find((draft) => draft.id === draftId);
+      if (deletedDraft)
+        clearDraft(getDraftStorageKey(deletedDraft.board_id ?? '', draftId));
       queryClient.invalidateQueries({ queryKey: ['task-drafts', wsId] });
       toast.success(t('deleted_success'));
     },
@@ -64,6 +71,10 @@ export function DraftsPage({
   });
 
   const handleConverted = () => {
+    if (convertDraft)
+      clearDraft(
+        getDraftStorageKey(convertDraft.board_id ?? '', convertDraft.id)
+      );
     queryClient.invalidateQueries({ queryKey: ['task-drafts', wsId] });
     setConvertDraft(null);
   };

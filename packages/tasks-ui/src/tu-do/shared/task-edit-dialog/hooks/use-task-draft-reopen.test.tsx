@@ -91,6 +91,7 @@ it('keeps a server-backed draft separate from the board creation recovery draft'
     id: 'draft-server-1',
     name: 'Server draft',
     list_id: 'list-1',
+    assignees: [{ id: 'server-assignee' }],
   } as Task;
   const { result } = renderHook(() => {
     const props = {
@@ -102,10 +103,11 @@ it('keeps a server-backed draft separate from the board creation recovery draft'
       isSaving: false,
     };
     const form = useTaskFormState(props);
-    useTaskFormReset({ ...form, ...props });
+    useTaskFormReset({ ...form, ...props, filters: filtersWithAssignee });
     return form;
   });
   expect(result.current.name).toBe('Server draft');
+  expect(result.current.selectedAssignees).toEqual([{ id: 'server-assignee' }]);
   act(() => {
     result.current.setName('Edited server draft');
     vi.runAllTimers();

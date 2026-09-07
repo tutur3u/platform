@@ -185,7 +185,7 @@ export function useTaskFormReset({
     const hasRecoveryDraft =
       boardId &&
       hasDraftContent(loadDraft(getDraftStorageKey(boardId, draftId)) ?? {});
-    if (isOpen && isCreateMode && filters && !hasRecoveryDraft) {
+    if (isOpen && isCreateMode && filters && !draftId && !hasRecoveryDraft) {
       // Apply labels from filters
       if (filters.labels && filters.labels.length > 0) {
         setSelectedLabels(filters.labels);
