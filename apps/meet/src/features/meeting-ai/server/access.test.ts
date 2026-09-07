@@ -1,3 +1,4 @@
+import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -32,6 +33,15 @@ const request = (origin = 'https://meet.tuturuuu.com') =>
   );
 describe('Meet AI satellite authorization', () => {
   beforeEach(() => vi.resetAllMocks());
+  it('returns a safe upstream status for provider failures', async () => {
+    const response = await meetAiResponse(async () => {
+      throw new MeetAiGenerationError();
+    });
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      error: 'Meeting AI provider request failed',
+    });
+  });
   it('rejects cross-origin spending before resolving identity', async () => {
     const response = await meetAiResponse(() =>
       meetAiAccess(request('https://evil.example'), params, true)

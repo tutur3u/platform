@@ -384,3 +384,26 @@ AudioWorklet check, and the disposable database runner with
 The disposable runner copies Git-tracked files; new migrations and tests must be
 tracked before running it. Run the Meet Cloudflare build before deployment and
 verify a signed-in live transcript plus persisted notes against Gemini afterward.
+
+### Production upload and provider diagnostics
+
+If an audio chunk is rejected before reaching the Worker, inspect the request's
+Ray ID in Cloudflare Security Analytics. Binary WAV uploads can trigger OWASP
+`949110: Inbound Anomaly Score Exceeded`. Meet has a logged managed-rule exception
+(`6bcb3c2398ca4f2896222b76bc1ae9b2`) before the managed rulesets, skipping only rule
+`6179ae15870a4bb7b2d480d4843b323c` in the OWASP ruleset for this expression:
+
+```text
+(http.host eq "meet.tuturuuu.com" and http.request.method eq "POST" and http.request.uri.path wildcard "/api/meet-ai/*/*/chunks" and starts_with(http.request.headers["content-type"][0], "multipart/form-data"))
+```
+
+Keep the other managed rules active. The Worker still checks the signed actor,
+meeting ownership, same-origin request, byte limit, canonical WAV format, and
+atomic usage reservation. Do not replace this with a domain-wide WAF bypass.
+
+Provider failures return a safe `502` response. Worker logs contain only a fixed
+failure category and provider HTTP status, never provider messages, request URLs,
+credentials, audio, or transcripts. Use those categories to distinguish invalid
+keys, disabled APIs, quota, access, location, timeout, and runtime failures.
+An accepted chunk is not automatically resubmitted to the provider; preserve its
+unknown-cost record when investigating a failed attempt.

@@ -1,4 +1,5 @@
 import 'server-only';
+import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -88,12 +89,17 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
     return Response.json(
       {
         error:
-          error instanceof MeetAiError
+          error instanceof MeetAiError || error instanceof MeetAiGenerationError
             ? error.message
             : 'Meeting AI request failed',
       },
       {
-        status: error instanceof MeetAiError ? error.status : 500,
+        status:
+          error instanceof MeetAiError
+            ? error.status
+            : error instanceof MeetAiGenerationError
+              ? 502
+              : 500,
         headers: { 'Cache-Control': 'no-store' },
       }
     );

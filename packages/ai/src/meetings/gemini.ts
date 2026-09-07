@@ -1,7 +1,12 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { Effect, TuturuuuEffectError } from '@tuturuuu/utils/effect';
+import {
+  Effect,
+  runEffectAsResult,
+  TuturuuuEffectError,
+} from '@tuturuuu/utils/effect';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
+import { describeMeetAiFailure, MeetAiGenerationError } from './failure';
 import { MEET_AI_MODEL, measureMeetUsage } from './usage';
 
 export const meetNotesSchema = z.object({
@@ -18,10 +23,10 @@ export const meetNotesSchema = z.object({
   openQuestions: z.array(z.string()),
 });
 
-export function generateMeetArtifact(
+export async function generateMeetArtifact(
   input: { audio: Uint8Array } | { transcript: string }
 ) {
-  return Effect.runPromise(
+  const outcome = await runEffectAsResult(
     Effect.tryPromise({
       try: async () => {
         const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -71,12 +76,19 @@ export function generateMeetArtifact(
           ...measured,
         };
       },
-      catch: () =>
-        new TuturuuuEffectError({
+      catch: (error) => {
+        console.error(
+          'Meet AI generation failed',
+          describeMeetAiFailure(error)
+        );
+        return new TuturuuuEffectError({
           code: 'MEET_AI_GENERATION_FAILED',
           message: 'Meet AI generation failed',
           status: 502,
-        }),
+        });
+      },
     })
   );
+  if (!outcome.ok) throw new MeetAiGenerationError();
+  return outcome.data;
 }
