@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ensureImportLabels,
   escapeLikePattern,
+  sanitizePostgrestPayload,
 } from '../../../../scripts/google-takeout-db';
 import type { AnyRecord } from '../repository/shared';
 
@@ -10,6 +11,18 @@ describe('Google Takeout database helpers', () => {
     expect(escapeLikePattern(String.raw`Name_%\\Box@Example.com`)).toBe(
       String.raw`Name\_\%\\\\Box@Example.com`
     );
+  });
+
+  it('replaces unpaired UTF-16 surrogates throughout PostgREST rows', () => {
+    expect(
+      sanitizePostgrestPayload({
+        header: `before\uD800after`,
+        nested: [`low\uDC00`, 'valid \uD83D\uDE80'],
+      })
+    ).toEqual({
+      header: 'before�after',
+      nested: ['low�', 'valid 🚀'],
+    });
   });
 
   it('reuses an existing label with the same display name', async () => {
