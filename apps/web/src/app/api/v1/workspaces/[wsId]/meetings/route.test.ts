@@ -2,16 +2,23 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  adminFrom: vi.fn(),
   auth: vi.fn(),
-  identity: vi.fn(),
-  normalize: vi.fn(),
-  membership: vi.fn(),
+  calendarInsert: vi.fn(),
+  encryptEvent: vi.fn(),
   from: vi.fn(),
+  getWorkspaceKey: vi.fn(),
+  identity: vi.fn(),
   insert: vi.fn(),
+  membership: vi.fn(),
+  normalize: vi.fn(),
+  rpc: vi.fn(),
 }));
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     auth: { admin: { getUserById: mocks.identity } },
+    from: mocks.adminFrom,
   }),
 }));
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
@@ -20,23 +27,46 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: mocks.normalize,
   verifyWorkspaceMembershipType: mocks.membership,
 }));
+vi.mock('@/lib/workspace-encryption', () => ({
+  encryptEventForStorage: mocks.encryptEvent,
+  getWorkspaceKey: mocks.getWorkspaceKey,
+}));
+vi.mock('@/lib/calendar-app-url', () => ({
+  getCalendarAppOrigin: () => 'https://calendar.tuturuuu.com',
+}));
+vi.mock('@/lib/meet-app-url', () => ({
+  getMeetAppOrigin: () => 'https://meet.tuturuuu.com',
+}));
 
 import { POST } from './route';
 
 const params = { params: Promise.resolve({ wsId: 'personal' }) };
-function request() {
+
+function request(body?: Record<string, unknown>) {
   return new NextRequest(
     'https://example.test/api/v1/workspaces/personal/meetings',
     {
       method: 'POST',
-      body: JSON.stringify({
-        name: 'Test',
-        time: '2026-09-06T10:00:00Z',
-        creator_id: 'forged',
-      }),
+      body: JSON.stringify(
+        body ?? {
+          name: 'Test',
+          time: '2026-09-06T10:00:00Z',
+          creator_id: 'forged',
+        }
+      ),
     }
   );
 }
+
+function authenticatedContext(...args: [email?: string]) {
+  const email = args.length === 0 ? 'host@tuturuuu.com' : args[0];
+  return {
+    ok: true,
+    user: { id: 'actor', email },
+    supabase: { from: mocks.from, rpc: mocks.rpc },
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.identity.mockResolvedValue({
@@ -47,53 +77,60 @@ beforeEach(() => {
   });
   mocks.normalize.mockResolvedValue('workspace-id');
   mocks.membership.mockResolvedValue({ ok: true });
+  mocks.rpc.mockResolvedValue({ data: true, error: null });
+  mocks.getWorkspaceKey.mockResolvedValue(null);
+  mocks.encryptEvent.mockImplementation(async (_wsId, fields) => ({
+    ...fields,
+    is_encrypted: false,
+  }));
   mocks.from.mockReturnValue({ insert: mocks.insert });
   mocks.insert.mockReturnValue({
     select: () => ({
       single: async () => ({ data: { id: 'meeting-id' }, error: null }),
     }),
   });
+  mocks.adminFrom.mockReturnValue({ insert: mocks.calendarInsert });
+  mocks.calendarInsert.mockReturnValue({
+    select: () => ({
+      single: async () => ({
+        data: {
+          id: 'calendar-event-id',
+          start_at: '2026-09-06T10:00:00Z',
+          end_at: '2026-09-06T11:00:00Z',
+        },
+        error: null,
+      }),
+    }),
+  });
 });
+
 describe('meeting creation authorization', () => {
   it.each(['external@gmail.com', 'host@tuturuuu.com.attacker.test', undefined])(
     'denies %s before accessing database',
     async (email) => {
-      mocks.auth.mockResolvedValue({
-        ok: true,
-        user: {
-          id: 'actor',
-          email,
-          user_metadata: { email: 'spoof@tuturuuu.com' },
-        },
-        supabase: { from: mocks.from },
-      });
+      mocks.auth.mockResolvedValue(authenticatedContext(email));
       const response = await POST(request(), params);
       expect(response.status).toBe(403);
       expect((await response.json()).code).toBe('MEET_CREATION_RESTRICTED');
       expect(mocks.from).not.toHaveBeenCalled();
     }
   );
+
   it('allows an authenticated company account and stamps its actor', async () => {
-    mocks.auth.mockResolvedValue({
-      ok: true,
-      user: { id: 'actor', email: 'Host@TUTURUUU.COM' },
-      supabase: { from: mocks.from },
-    });
+    mocks.auth.mockResolvedValue(authenticatedContext('Host@TUTURUUU.COM'));
     expect((await POST(request(), params)).status).toBe(200);
     expect(mocks.insert).toHaveBeenCalledWith(
       expect.objectContaining({ creator_id: 'actor', ws_id: 'workspace-id' })
     );
   });
+
   it('still requires workspace membership for company accounts', async () => {
-    mocks.auth.mockResolvedValue({
-      ok: true,
-      user: { id: 'actor', email: 'host@tuturuuu.com' },
-      supabase: { from: mocks.from },
-    });
+    mocks.auth.mockResolvedValue(authenticatedContext());
     mocks.membership.mockResolvedValue({ ok: false });
     expect((await POST(request(), params)).status).toBe(403);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
+
   it('preserves unauthenticated rejection', async () => {
     mocks.auth.mockResolvedValue({
       ok: false,
@@ -112,11 +149,7 @@ describe('meeting creation input validation', () => {
     '{"name":123,"time":"bad"}',
     '{"name":"Meeting","time":"bad"}',
   ])('rejects invalid body %s without inserting', async (body) => {
-    mocks.auth.mockResolvedValue({
-      ok: true,
-      user: { id: 'actor', email: 'host@tuturuuu.com' },
-      supabase: { from: mocks.from },
-    });
+    mocks.auth.mockResolvedValue(authenticatedContext());
     const response = await POST(
       new NextRequest('https://example.test', { method: 'POST', body }),
       params
@@ -131,26 +164,95 @@ describe('authoritative creator identity', () => {
     { email: 'external@example.test', email_confirmed_at: '2026-01-01' },
     { email: 'host@tuturuuu.com', email_confirmed_at: null },
   ])('rejects a forged or unconfirmed company session claim', async (user) => {
-    mocks.auth.mockResolvedValue({
-      ok: true,
-      user: { id: 'actor', email: 'host@tuturuuu.com' },
-      supabase: { from: mocks.from },
-    });
+    mocks.auth.mockResolvedValue(authenticatedContext());
     mocks.identity.mockResolvedValue({ data: { user }, error: null });
     expect((await POST(request(), params)).status).toBe(403);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
+
   it('fails closed when current identity cannot be verified', async () => {
-    mocks.auth.mockResolvedValue({
-      ok: true,
-      user: { id: 'actor', email: 'host@tuturuuu.com' },
-      supabase: { from: mocks.from },
-    });
+    mocks.auth.mockResolvedValue(authenticatedContext());
     mocks.identity.mockResolvedValue({
       data: { user: null },
       error: new Error('Unavailable'),
     });
     expect((await POST(request(), params)).status).toBe(503);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe('Calendar scheduling', () => {
+  it('creates a linked Calendar event for a scheduled meeting', async () => {
+    mocks.auth.mockResolvedValue(authenticatedContext());
+
+    const response = await POST(
+      request({
+        name: 'Design review',
+        time: '2026-09-06T10:00:00Z',
+        schedule: { endTime: '2026-09-06T11:00:00Z' },
+      }),
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith('has_workspace_permission', {
+      p_ws_id: 'workspace-id',
+      p_user_id: 'actor',
+      p_permission: 'manage_calendar',
+    });
+    expect(mocks.calendarInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        start_at: '2026-09-06T10:00:00Z',
+        end_at: '2026-09-06T11:00:00Z',
+        scheduling_metadata: expect.objectContaining({
+          type: 'tuturuuu_meeting',
+          meeting_id: 'meeting-id',
+          meeting_url: 'https://meet.tuturuuu.com/personal/meetings/meeting-id',
+        }),
+      })
+    );
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        calendarEvent: expect.objectContaining({
+          id: 'calendar-event-id',
+          url: expect.stringContaining('eventId=calendar-event-id'),
+        }),
+      })
+    );
+  });
+
+  it('requires Calendar permission before inserting either record', async () => {
+    mocks.auth.mockResolvedValue(authenticatedContext());
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
+
+    const response = await POST(
+      request({
+        name: 'Design review',
+        time: '2026-09-06T10:00:00Z',
+        schedule: { endTime: '2026-09-06T11:00:00Z' },
+      }),
+      params
+    );
+
+    expect(response.status).toBe(403);
+    expect((await response.json()).code).toBe('CALENDAR_PERMISSION_REQUIRED');
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.calendarInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a schedule whose end is not after its start', async () => {
+    mocks.auth.mockResolvedValue(authenticatedContext());
+
+    const response = await POST(
+      request({
+        name: 'Design review',
+        time: '2026-09-06T10:00:00Z',
+        schedule: { endTime: '2026-09-06T09:00:00Z' },
+      }),
+      params
+    );
+
+    expect(response.status).toBe(400);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 });

@@ -24,6 +24,9 @@ const DEFAULT_MEET_APP_URL = PROD_MODE
 const DEFAULT_WEB_APP_URL = PROD_MODE
   ? 'https://tuturuuu.com'
   : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
+const DEFAULT_CALENDAR_APP_URL = PROD_MODE
+  ? 'https://calendar.tuturuuu.com'
+  : getLocalInternalAppUrl('calendar', 'http://localhost:7806');
 
 export const BASE_URL = resolveInternalAppUrl({
   appName: 'meet',
@@ -37,6 +40,15 @@ export const BASE_URL = resolveInternalAppUrl({
 });
 
 export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
+
+export const CALENDAR_URL = resolveInternalAppUrl({
+  appName: 'calendar',
+  candidates: [
+    process.env.CALENDAR_APP_URL,
+    process.env.NEXT_PUBLIC_CALENDAR_APP_URL,
+  ],
+  fallback: DEFAULT_CALENDAR_APP_URL,
+});
 
 export const TTR_URL = resolveInternalAppUrl({
   appName: 'platform',

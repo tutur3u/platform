@@ -11,6 +11,7 @@ export interface CalendarEvent {
   local?: boolean;
   location?: string;
   scheduling_note?: string;
+  scheduling_metadata?: Record<string, unknown> | null;
   locked?: boolean;
   provider?: 'tuturuuu' | 'google' | 'microsoft' | null;
   source_calendar_id?: string | null;

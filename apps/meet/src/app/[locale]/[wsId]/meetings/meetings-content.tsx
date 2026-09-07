@@ -1,7 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Clock, Play, Search, Trash2, Users } from '@tuturuuu/icons';
+import {
+  Calendar,
+  Clock,
+  ExternalLink,
+  Play,
+  Search,
+  Trash2,
+  Users,
+} from '@tuturuuu/icons';
 import {
   deleteWorkspaceMeeting,
   getWorkspaceMeetings,
@@ -52,6 +60,12 @@ interface Meeting {
     created_at: string;
     updated_at: string;
   }[];
+  calendar_event?: {
+    id: string;
+    start_at: string;
+    end_at: string;
+    url: string;
+  } | null;
 }
 
 interface MeetingsContentProps {
@@ -71,6 +85,7 @@ export function MeetingsContent({
 }: MeetingsContentProps) {
   const router = useRouter();
   const t = useTranslations('meet.call');
+  const meetingsT = useTranslations('meet.meetings');
   const [searchTerm, setSearchTerm] = useState(search);
   const [currentPage, setCurrentPage] = useState(page);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -283,6 +298,22 @@ export function MeetingsContent({
                       <Play className="mr-1 h-3 w-3" />
                       Join Meeting
                     </Button>
+                    {meeting.calendar_event && (
+                      <Button asChild size="sm" variant="outline">
+                        <a
+                          href={meeting.calendar_event.url}
+                          rel="noreferrer"
+                          target="_blank"
+                          title={meetingsT('open_calendar')}
+                        >
+                          <Calendar className="h-3 w-3" />
+                          <span className="sr-only">
+                            {meetingsT('open_calendar')}
+                          </span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

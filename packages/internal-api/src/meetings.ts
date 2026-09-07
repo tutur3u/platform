@@ -116,7 +116,11 @@ export async function getWorkspaceMeetings<T>(
 
 export async function createWorkspaceMeeting<T>(
   workspaceId: string,
-  payload: { name: string; time: string },
+  payload: {
+    name: string;
+    time: string;
+    schedule?: { endTime: string };
+  },
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<T>(meetingPath(workspaceId), {
