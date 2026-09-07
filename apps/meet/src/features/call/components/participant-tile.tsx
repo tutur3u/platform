@@ -164,20 +164,22 @@ function ParticipantTileImpl({
         {!participant.media.audioEnabled && kind === 'camera' && (
           <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
         )}
-        {onMute && !isSelf && kind === 'camera' && (
-          <Button
-            size="icon"
-            variant="ghost"
-            className="ml-auto size-8 shrink-0 rounded-full bg-background/30 text-white opacity-100 hover:bg-background/60 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-            disabled={!participant.media.audioEnabled}
-            aria-label={t('mute_participant', {
-              name: participant.displayName,
-            })}
-            onClick={() => onMute(participant.userId)}
-          >
-            <MicOff className="size-4" />
-          </Button>
-        )}
+        {onMute &&
+          !isSelf &&
+          kind === 'camera' &&
+          participant.media.audioEnabled && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="ml-auto size-8 shrink-0 rounded-full bg-background/30 text-white opacity-100 hover:bg-background/60 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+              aria-label={t('mute_participant', {
+                name: participant.displayName,
+              })}
+              onClick={() => onMute(participant.userId)}
+            >
+              <MicOff className="size-4" />
+            </Button>
+          )}
       </div>
       <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
         {onFocus && (

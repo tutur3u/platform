@@ -59,3 +59,16 @@ it('plays remote screen audio and exposes host mute only on remote cameras', () 
   expect(renderTile({ ...common, isSelf: true })).not.toContain('Mute Peer');
   expect(renderTile({ ...common, kind: 'screen' })).not.toContain('Mute Peer');
 });
+
+it('does not duplicate the mute icon with a disabled host action', () => {
+  expect(
+    renderTile({
+      participant: {
+        ...participant,
+        media: { ...participant.media, audioEnabled: false },
+      },
+      resumePlaybackLabel: 'Play audio',
+      onMute: () => undefined,
+    })
+  ).not.toContain('Mute Peer');
+});
