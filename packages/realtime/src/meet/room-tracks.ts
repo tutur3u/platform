@@ -3,6 +3,8 @@ import type {
   MeetRealtimeServerMessage,
 } from './messages';
 
+export const MAX_RETIRED_TRACKS_PER_PARTICIPANT = 512;
+
 export function meetTrackKey(track: MeetRealtimeRoomTrack) {
   return `${encodeURIComponent(track.sessionId)}:${encodeURIComponent(track.trackName ?? track.mid ?? track.userId)}`;
 }
@@ -18,7 +20,13 @@ export function replaceRoomPublications(
   retired: Record<string, true> = {}
 ) {
   if (published.some((track) => retired[retiredTrackKey(track)]))
-    return { tracks: current, broadcast: [], retired, stale: true };
+    return {
+      tracks: current,
+      broadcast: [],
+      retired,
+      stale: true,
+      error: 'stale_publication',
+    };
   const tracks = { ...current };
   const nextRetired = { ...retired };
   const closed = new Map<string, MeetRealtimeRoomTrack[]>();
@@ -39,6 +47,20 @@ export function replaceRoomPublications(
     }
     tracks[meetTrackKey(next)] = next;
   }
+  for (const userId of new Set(published.map((track) => track.userId))) {
+    const prefix = `${encodeURIComponent(userId)}:`;
+    if (
+      Object.keys(nextRetired).filter((key) => key.startsWith(prefix)).length >
+      MAX_RETIRED_TRACKS_PER_PARTICIPANT
+    )
+      return {
+        tracks: current,
+        broadcast: [],
+        retired,
+        stale: true,
+        error: 'publisher_rejoin_required',
+      };
+  }
   const broadcast: MeetRealtimeServerMessage[] = [...closed].map(
     ([sessionId, removed]) => ({
       type: 'track.closed',
@@ -47,5 +69,11 @@ export function replaceRoomPublications(
       tracks: removed,
     })
   );
-  return { tracks, broadcast, retired: nextRetired, stale: false };
+  return {
+    tracks,
+    broadcast,
+    retired: nextRetired,
+    stale: false,
+    error: undefined,
+  };
 }

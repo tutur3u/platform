@@ -614,12 +614,12 @@ function applySfuCommand(
       sessionId: message.sessionId,
       userId: token.userId,
     }));
-    const { tracks, broadcast, retired, stale } = replaceRoomPublications(
+    const { tracks, broadcast, retired, error } = replaceRoomPublications(
       state.tracks,
       published,
       state.retiredTracks
     );
-    if (stale) return denied(state, 'stale_publication', message.requestId);
+    if (error) return denied(state, error, message.requestId);
     const next = { ...state, tracks, retiredTracks: retired };
 
     return outcome(next, {

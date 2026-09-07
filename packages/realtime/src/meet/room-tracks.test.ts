@@ -65,3 +65,30 @@ it('keeps colon-containing identifiers distinct', () => {
     Object.keys(replaceRoomPublications({}, [first, second]).tracks)
   ).toHaveLength(2);
 });
+
+it('bounds retirement history without allowing an old publication to return', () => {
+  const old = { userId: 'a', sessionId: 'current', trackName: 'audio' };
+  const retired: Record<string, true> = Object.fromEntries(
+    Array.from({ length: 512 }, (_, index) => [
+      `a:session-${index}:audio`,
+      true as const,
+    ])
+  );
+  const current = { 'current:audio': old };
+  const result = replaceRoomPublications(
+    current,
+    [{ ...old, sessionId: 'next' }],
+    retired
+  );
+  expect(result.error).toBe('publisher_rejoin_required');
+  expect(result.tracks).toBe(current);
+  expect(result.retired).toBe(retired);
+  expect(result.broadcast).toEqual([]);
+  expect(
+    replaceRoomPublications(
+      current,
+      [{ ...old, sessionId: 'session-0' }],
+      retired
+    ).error
+  ).toBe('stale_publication');
+});
