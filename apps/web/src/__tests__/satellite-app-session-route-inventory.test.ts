@@ -98,6 +98,7 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/build-info/route.ts',
   // Meet transcription executes on its Cloudflare Worker. These handlers use
   // the independently tested Meet app-session and workspace/creator guard.
+  'apps/meet/src/app/api/meet-call/[meetingId]/token/route.ts',
   'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/route.ts',
   'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/chunks/route.ts',
   'apps/learn/src/app/api/auth/logout/route.ts',

@@ -13,10 +13,12 @@ export function useMeetingAi(
   wsId: string,
   meetingId: string,
   streams: MediaStream[] = [],
-  live = true
+  live = true,
+  enabled = true
 ) {
   const query = useQuery({
     queryKey: ['meet-ai', wsId, meetingId],
+    enabled,
     queryFn: () => getMeetAiState(wsId, meetingId),
     refetchInterval: (current) =>
       live ||

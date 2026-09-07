@@ -1,12 +1,14 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CallShell } from '@/features/call/components/call-shell';
+import {
+  getMeetCallAccess,
+  MeetCallAccessError,
+} from '@/features/call/lib/call-access';
 import { getMeetCallSession } from '@/features/call/lib/call-session';
 import { decodeRoomCode } from '@/features/call/lib/room-code';
-import { getMeetWorkspaceContext } from '../../[wsId]/workspace-context';
 
 export const metadata: Metadata = {
   title: 'Call',
@@ -14,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 interface RoomPageProps {
-  params: Promise<{ code: string }>;
+  params: Promise<{ code: string; locale: string }>;
 }
 
 /**
@@ -27,36 +29,38 @@ interface RoomPageProps {
 export default async function RoomPage({ params }: RoomPageProps) {
   await connection();
 
-  const { code } = await params;
+  const { code, locale } = await params;
   const meetingId = decodeRoomCode(code);
   if (!meetingId) notFound();
 
-  const supabase = await createAdminClient({ noCookie: true });
-  const { data: meeting } = await supabase
-    .from('workspace_meetings')
-    .select('id, name, creator_id, ws_id')
-    .eq('id', meetingId)
-    .maybeSingle();
-
-  if (!meeting) notFound();
-
   const t = await getTranslations('meet.call');
-  // Enforces membership and redirects non-members away.
-  const { user, workspaceSlug, wsId } = await getMeetWorkspaceContext(
-    meeting.ws_id
+  const access = await getMeetCallAccess(meetingId, t('guest')).catch(
+    (error: unknown) => {
+      if (error instanceof MeetCallAccessError) {
+        if (error.status === 401) {
+          const invite = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
+          redirect(`/login?next=${encodeURIComponent(invite)}`);
+        }
+        if (error.status === 403 || error.status === 404) notFound();
+      }
+      throw error;
+    }
   );
-
-  const profile = user as {
-    display_name?: string | null;
-    email?: string | null;
-    full_name?: string | null;
-  };
-  const displayName: string =
-    profile.display_name || profile.full_name || profile.email || t('guest');
+  const {
+    user,
+    meeting,
+    isHost,
+    canReadWorkspace,
+    displayName,
+    admission,
+    workspaceSlug,
+  } = access;
+  const wsId = meeting.ws_id;
 
   const session = await getMeetCallSession({
     displayName,
-    isHost: meeting.creator_id === user.id,
+    isHost,
+    admission,
     meetingId: meeting.id,
     userId: user.id,
     wsId,
@@ -65,7 +69,10 @@ export default async function RoomPage({ params }: RoomPageProps) {
   return (
     <CallShell
       defaultDisplayName={session.displayName}
-      leaveHref={`/${workspaceSlug}/meetings/${meeting.id}`}
+      leaveHref={
+        canReadWorkspace ? `/${workspaceSlug}/meetings/${meeting.id}` : '/'
+      }
+      canReadWorkspace={canReadWorkspace}
       meetingId={meeting.id}
       meetingName={meeting.name ?? t('untitled_meeting')}
       realtimeUrl={session.realtimeUrl}

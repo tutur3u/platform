@@ -1,6 +1,6 @@
 'use client';
 
-import { createWorkspaceMeetingRealtimeToken } from '@tuturuuu/internal-api';
+import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 
 import type {
   CloudflareSfuSessionDescription,
@@ -82,7 +82,6 @@ export function useMeetRoom({
   meetingId,
   realtimeUrl,
   token,
-  wsId,
 }: UseMeetRoomOptions): MeetRoomController {
   const [state, setState] = useState<CallState>(INITIAL_CALL_STATE);
   const [connectionStatus, setConnectionStatus] =
@@ -139,12 +138,8 @@ export function useMeetRoom({
         return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
       }
 
-      // The satellite proxies token minting to the platform API.
-      const refreshed = await createWorkspaceMeetingRealtimeToken(
-        wsId,
-        meetingId,
-        { mode: 'call' }
-      );
+      // Reauthorize invite access on Meet, including guests outside the workspace.
+      const refreshed = await createMeetCallRealtimeToken(meetingId);
       return `${refreshed.realtimeUrl}?token=${encodeURIComponent(refreshed.token)}`;
     };
 
@@ -253,7 +248,7 @@ export function useMeetRoom({
       publishedRef.current = [];
       subscribedRef.current = new Set();
     };
-  }, [meetingId, realtimeUrl, resetSubscriber, token, wsId]);
+  }, [meetingId, realtimeUrl, resetSubscriber, token]);
 
   /** Announces our media state so other clients can render mute badges. */
   const publishPresence = useCallback((next: MeetMediaState) => {

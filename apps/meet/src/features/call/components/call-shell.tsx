@@ -34,6 +34,7 @@ function gridColumns(count: number) {
 
 export function CallShell({
   defaultDisplayName,
+  canReadWorkspace = true,
   leaveHref,
   meetingId,
   meetingName,
@@ -42,6 +43,7 @@ export function CallShell({
   wsId,
 }: {
   defaultDisplayName: string;
+  canReadWorkspace?: boolean;
   leaveHref: string;
   meetingId: string;
   meetingName: string;
@@ -71,7 +73,13 @@ export function CallShell({
     ],
     [room.localStream, room.remoteStreams]
   );
-  const ai = useMeetingAi(wsId, meetingId, audioStreams);
+  const ai = useMeetingAi(
+    wsId,
+    meetingId,
+    audioStreams,
+    true,
+    canReadWorkspace
+  );
   const [showAi, setShowAi] = useState(false);
 
   const [joined, setJoined] = useState(false);
@@ -109,9 +117,11 @@ export function CallShell({
             : null
         }
         transcriptionNotice={
-          ai.data?.sessions.some((session) => !session.ended_at)
-            ? aiT('join_notice')
-            : undefined
+          !canReadWorkspace
+            ? t('guest_transcription_notice')
+            : ai.data?.sessions.some((session) => !session.ended_at)
+              ? aiT('join_notice')
+              : undefined
         }
         defaultDisplayName={defaultDisplayName}
         isJoining={state.admission === 'connecting'}
@@ -152,19 +162,25 @@ export function CallShell({
         <h1 className="min-w-0 flex-1 truncate font-medium text-sm">
           {meetingName}
         </h1>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAi(!showAi)}
-          className="h-auto max-w-full whitespace-normal text-left"
-          aria-expanded={showAi}
-        >
-          {aiT('title')}
-          {ai.data?.sessions.some((session) => !session.ended_at)
-            ? ` · ${aiT('active')}`
-            : ''}
-          {ai.data ? ` · $${ai.data.estimatedCostUsd.toFixed(4)}` : ''}
-        </Button>
+        {canReadWorkspace ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAi(!showAi)}
+            className="h-auto max-w-full whitespace-normal text-left"
+            aria-expanded={showAi}
+          >
+            {aiT('title')}
+            {ai.data?.sessions.some((session) => !session.ended_at)
+              ? ` · ${aiT('active')}`
+              : ''}
+            {ai.data ? ` · $${ai.data.estimatedCostUsd.toFixed(4)}` : ''}
+          </Button>
+        ) : (
+          <p className="max-w-md text-muted-foreground text-xs">
+            {t('guest_transcription_notice')}
+          </p>
+        )}
         <CopyInvite meetingId={meetingId} meetingName={meetingName} />
         {state.recording.state === 'recording' ? (
           <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-0.5 font-medium text-dynamic-red text-xs">
@@ -241,7 +257,7 @@ export function CallShell({
           )}
         </main>
 
-        {showAi ? (
+        {showAi && canReadWorkspace ? (
           <aside className="max-h-[60dvh] w-full shrink-0 overflow-y-auto p-3 md:max-h-none md:w-96">
             <MeetingAiPanel ai={ai} inCall />
           </aside>

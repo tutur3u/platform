@@ -5,6 +5,7 @@ import {
 } from './client';
 
 export * from './meet-ai';
+export * from './meet-call';
 
 export const MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES = 18 * 1024 * 1024;
 export const TRANSCRIPTION_MULTIPART_HEADROOM_BYTES = 1024 * 1024;
