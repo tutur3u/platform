@@ -83,6 +83,8 @@ export function createLocalMediaControls({
       try {
         processed = source ? await effects.setSource(source) : null;
       } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError')
+          throw error;
         effects.dispose();
         for (const track of video.getTracks()) track.stop();
         throw error;

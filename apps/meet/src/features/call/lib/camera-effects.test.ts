@@ -63,3 +63,30 @@ it('stops newly acquired camera media if a preselected effect cannot start', asy
   expect(source.stop).toHaveBeenCalledOnce();
   expect(await effects.setLook({ filter: 'none', softness: 0 })).toBeNull();
 });
+
+it('keeps the camera alive when a newer look supersedes pending startup', async () => {
+  let finish!: () => void;
+  const video = {
+    srcObject: null,
+    pause: vi.fn(),
+    play: () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  };
+  vi.stubGlobal('document', { createElement: () => video });
+  vi.stubGlobal('MediaStream', class {});
+  const source = {
+    readyState: 'live',
+    stop: vi.fn(),
+  } as unknown as MediaStreamTrack;
+  const effects = new CameraEffects();
+  await effects.setLook({ filter: 'warm', softness: 0 });
+  const pending = effects.setSource(source);
+  expect(await effects.setLook({ filter: 'none', softness: 0 })).toBe(source);
+  finish();
+  expect(await pending).toBe(source);
+  expect(source.stop).not.toHaveBeenCalled();
+  expect(await effects.setLook({ filter: 'none', softness: 0 })).toBe(source);
+  effects.dispose();
+});

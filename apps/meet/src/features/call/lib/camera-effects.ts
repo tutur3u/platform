@@ -63,10 +63,15 @@ export class CameraEffects {
     try {
       return await this.setLook(this.look);
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        if (this.source === source) return this.setLook(this.look);
+        throw error;
+      }
       if (this.source === source) this.dispose();
       throw error;
     }
   }
+
   async setLook(look: CameraLook): Promise<MediaStreamTrack | null> {
     this.look = look;
     const source = this.source;
