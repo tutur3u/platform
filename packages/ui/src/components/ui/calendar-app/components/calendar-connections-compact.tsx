@@ -398,8 +398,9 @@ export function CalendarConnectionsCompact({
             </div>
             {syncHealth?.lastSuccessAt && (
               <p className="text-muted-foreground text-xs">
-                {t('last_synced_at') || 'Last synced'}:{' '}
-                {new Date(syncHealth.lastSuccessAt).toLocaleString()}
+                {t('last_synced_at', {
+                  time: new Date(syncHealth.lastSuccessAt).toLocaleString(),
+                })}
               </p>
             )}
           </div>
