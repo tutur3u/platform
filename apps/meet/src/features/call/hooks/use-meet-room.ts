@@ -25,14 +25,12 @@ import {
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
-  removeRemotePlayback,
 } from '../lib/remote-playback';
 import {
   createRemoteStreamCache,
   type RemoteMedia,
 } from '../lib/remote-streams';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
-import { SubscriptionClosures } from '../lib/subscription-closures';
 
 type SfuSessionResponse = { sessionId?: string };
 type SfuTracksResponse = {
@@ -108,7 +106,6 @@ export function useMeetRoom({
   const publishSessionRef = useRef<string | null>(null);
   const subscribeSessionRef = useRef<string | null>(null);
   const publishedRef = useRef<LocalTrackPlan[]>([]);
-  const closuresRef = useRef(new SubscriptionClosures());
   const subscribedRef = useRef<Set<string>>(new Set());
   const screenStreamRef = useRef<MediaStream | null>(null);
   /** mid -> owning participant, the only way to attribute an inbound track. */
@@ -120,6 +117,15 @@ export function useMeetRoom({
   mediaRef.current = media;
 
   const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
+
+  const resetSubscriber = useCallback(() => {
+    subscribePcRef.current?.close();
+    subscribePcRef.current = null;
+    subscribeSessionRef.current = null;
+    trackOwnersRef.current.clear();
+    subscribedRef.current.clear();
+    setRemoteMedia({});
+  }, []);
 
   useEffect(() => {
     let usedInitialToken = false;
@@ -142,17 +148,9 @@ export function useMeetRoom({
 
     const signaling = new MeetSignaling({
       onMessage: (message) => {
-        if (message.type === 'track.closed') {
-          const closed = new Set(message.tracks.map(remoteTrackKey));
-          closuresRef.current.close(closed);
-          for (const key of closed) subscribedRef.current.delete(key);
-          for (const [mid, owner] of trackOwnersRef.current) {
-            if (!closed.has(owner.subscriptionKey)) continue;
-            trackOwnersRef.current.delete(mid);
-            subscribedRef.current.delete(owner.subscriptionKey);
-            setRemoteMedia((current) => removeRemotePlayback(current, owner));
-          }
-        }
+        // Retire the entire negotiation, including in-flight SDP. Remaining
+        // published tracks are pulled again by the normal subscription loop.
+        if (message.type === 'track.closed') resetSubscriber();
         if (message.type === 'participant.removed') {
           setRemoteMedia((current) => {
             const next = { ...current };
@@ -196,14 +194,9 @@ export function useMeetRoom({
         // The room forgot us while we were gone: re-announce, and clear the
         // subscription ledger so every remote track is pulled again onto the
         // fresh session.
-        subscribedRef.current = new Set();
-        trackOwnersRef.current = new Map();
-        setRemoteMedia({});
+        resetSubscriber();
         sendersRef.current.clear();
         setConnectionGeneration((value) => value + 1);
-        subscribeSessionRef.current = null;
-        subscribePcRef.current?.close();
-        subscribePcRef.current = null;
         publishSessionRef.current = null;
         publishPcRef.current?.close();
         publishPcRef.current = null;
@@ -250,7 +243,7 @@ export function useMeetRoom({
       publishedRef.current = [];
       subscribedRef.current = new Set();
     };
-  }, [meetingId, realtimeUrl, token, wsId]);
+  }, [meetingId, realtimeUrl, resetSubscriber, token, wsId]);
 
   /** Announces our media state so other clients can render mute badges. */
   const publishPresence = useCallback((next: MeetMediaState) => {
@@ -443,9 +436,6 @@ export function useMeetRoom({
         stateRef.current.selfUserId
       );
       if (!pending.length) return;
-      const isOpen = closuresRef.current.capture(
-        pending.map((track) => `${track.sessionId}:${track.trackName}`)
-      );
       const { pc, sessionId } = await ensureSubscribeSession();
       const answer = await signalingRef.current?.request<SfuTracksResponse>({
         sessionId,
@@ -461,12 +451,7 @@ export function useMeetRoom({
         const requested = pending.find(
           (entry) => entry.trackName === track.trackName
         );
-        if (
-          track.mid &&
-          owner &&
-          requested &&
-          isOpen(`${requested.sessionId}:${track.trackName}`)
-        )
+        if (track.mid && owner && requested)
           trackOwnersRef.current.set(track.mid, {
             userId: owner,
             kind,
@@ -498,12 +483,7 @@ export function useMeetRoom({
             ) && entry.trackName === track.trackName
         );
         const owner = trackOwnersRef.current.get(track.mid);
-        if (
-          roomTrack &&
-          owner &&
-          isOpen(owner.subscriptionKey) &&
-          owner.track?.readyState !== 'ended'
-        )
+        if (roomTrack && owner && owner.track?.readyState !== 'ended')
           subscribedRef.current.add(remoteTrackKey(roomTrack));
       }
     };
