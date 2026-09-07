@@ -382,7 +382,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     });
 
   const listPanel = (
-    <section className="flex h-full min-h-0 flex-col bg-background/95">
+    <section className="flex h-full min-h-0 min-w-0 max-w-full flex-col bg-background/95">
       <div className="flex min-h-16 items-center gap-3 border-dynamic border-b px-5">
         <div className="flex size-8 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
           <FolderIcon className="size-4" />
@@ -469,7 +469,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           </div>
         ) : null}
         {selectedThreads.size > 0 ? (
-          <div className="flex items-center gap-1 rounded-xl bg-foreground/[0.04] p-1">
+          <div className="flex flex-wrap items-center gap-1 rounded-xl bg-foreground/[0.04] p-1">
             <span className="px-2 text-xs tabular-nums">
               {t('selected_count', { count: selectedThreads.size })}
             </span>
@@ -580,7 +580,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   );
 
   const detailPanel = (
-    <section className="flex h-full min-h-0 bg-muted/20">
+    <section className="flex h-full min-h-0 min-w-0 max-w-full bg-muted/20">
       <ThreadDetail
         actionPending={stateMutation.isPending || deleteDraftMutation.isPending}
         isDraft={folder === 'drafts'}
@@ -621,8 +621,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   );
 
   return (
-    <div className="h-full min-h-0 overflow-hidden bg-background text-foreground">
-      <div className="h-full lg:hidden">
+    <div className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-background text-foreground">
+      <div className="h-full min-w-0 max-w-full lg:hidden">
         {threadId ? detailPanel : listPanel}
       </div>
       <ResizablePanelGroup

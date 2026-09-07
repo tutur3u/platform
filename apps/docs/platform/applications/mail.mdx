@@ -458,3 +458,56 @@ notification/approval workflows. Quarantine records remain available to operator
 through the existing delivery controls. Google IAM groups and their access grants
 are independent of Mail group configuration and must remain in place when still
 used for Google Cloud authorization.
+
+### Internal forwarding and smart labels
+
+Mailbox owners and administrators can use Settings → Automation to forward new
+incoming messages to another accessible, active mailbox in the same domain, or
+to that domain's current enabled catch-all mailbox. Delivery retains the source
+copy and preserves original content and attachments. Forwarding is one internal
+hop; forwarded copies never trigger another forwarding rule. Self, inactive,
+cross-domain and distribution-group targets are rejected. Distribution groups
+continue to use member delivery. Disabling catch-all suspends a catch-all-based
+forward until an eligible target is configured again.
+
+Smart inbox uses `gemini-3.5-flash-lite`, Google's latest stable Flash-Lite model
+verified on September 7, 2026. Enable it separately per mailbox. New incoming mail
+is classified against custom labels; only labels with both AI and automatic
+application enabled are applied. Gemini may suggest up to three new categories;
+owners and administrators can review recent suggestions under Settings → Labels.
+Suggested labels are never created automatically. Subjects, sender addresses and
+up to 6,000 text characters are processed by the configured Google AI service.
+Attachments are not sent to the classifier. The existing AI memory/usage wrapper
+continues to apply its configured policies.
+
+Classification is bounded to twelve seconds without provider retries. Failures
+are logged and never reject accepted mail. The existing manual classification
+and suggestion controls remain available for recovery and older messages.
+Completed classification events prevent repeat work on normal delivery retries.
+Concurrent duplicate deliveries can still produce duplicate AI requests; label
+assignment itself is idempotent. Forwarding errors remain retryable through the
+inbound delivery job. Configuration is stored in mailbox metadata; this feature
+requires no schema migration.
+
+The reader preserves original newsletter colors by default, with an optional
+dark appearance. Stylesheets are retained only inside a sandboxed iframe with
+scripts, forms, remote stylesheets/fonts and network APIs blocked by CSP. The
+iframe grants same-origin access to the parent solely for height measurement and
+protected inline images; it never grants script execution. External links open
+separately with no referrer. Raster CID images resolve through authorized
+attachment endpoints. Signature sanitization still removes stylesheets. Wide
+messages scroll within the reader rather than expanding the app. Rendering aims
+for common Gmail-style newsletters; it is not a claim of pixel-identical Gmail
+compatibility for every email template.
+
+Thread lists always display both the message date and delivery time. The mobile
+reader uses constrained native scrolling to prevent wide tables, subjects or
+attachment names from widening the application viewport.
+
+The reader opens messages in their original appearance, preserves hidden newsletter
+preheaders and isolated inline CSS, and offers an optional dark canvas without
+forcing colors onto every message element. Message content uses the full pane
+width; reply actions float over the bottom edge with reserved scroll space so the
+last line remains reachable. The collapsed sidebar contains folder actions only.
+Expanded navigation groups shared mailboxes by repeated address prefixes (for
+example GCP), while personal mailboxes remain directly accessible.

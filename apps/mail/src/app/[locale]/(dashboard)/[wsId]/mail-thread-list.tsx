@@ -10,13 +10,13 @@ import { useLocale, useTranslations } from 'next-intl';
 function formatDate(value: string | null, locale: string) {
   if (!value) return '';
   const date = new Date(value);
-  const today = date.toDateString() === new Date().toDateString();
-  return new Intl.DateTimeFormat(
-    locale,
-    today
-      ? { hour: 'numeric', minute: '2-digit' }
-      : { day: 'numeric', month: 'short' }
-  ).format(date);
+  if (!Number.isFinite(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 }
 
 export function MailThreadRow({
@@ -41,7 +41,7 @@ export function MailThreadRow({
   return (
     <div
       className={cn(
-        'group relative border-transparent border-l-2 transition-colors hover:bg-accent/70',
+        'group relative min-w-0 max-w-full border-transparent border-l-2 transition-colors hover:bg-accent/70',
         active && 'border-primary bg-accent',
         selected && 'bg-accent/80',
         thread.unreadCount > 0 && !active && 'bg-foreground/[0.025]'
@@ -55,7 +55,7 @@ export function MailThreadRow({
       />
       <button
         aria-current={active ? 'true' : undefined}
-        className="block w-full py-4 pr-4 pl-10 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className="block w-full min-w-0 max-w-full py-4 pr-4 pl-10 text-left focus-visible:bg-accent focus-visible:underline focus-visible:outline-none"
         onClick={onClick}
         type="button"
       >
@@ -79,7 +79,7 @@ export function MailThreadRow({
               {thread.messageCount}
             </span>
           ) : null}
-          <span className="shrink-0 text-muted-foreground text-xs">
+          <span className="max-w-[45%] shrink-0 text-right text-muted-foreground text-xs tabular-nums">
             {formatDate(thread.lastMessageAt, locale)}
           </span>
         </div>
@@ -90,7 +90,7 @@ export function MailThreadRow({
           {thread.hasAttachments ? <Paperclip className="size-3.5" /> : null}
           {thread.starred ? <Star className="size-3.5" /> : null}
         </div>
-        <p className="line-clamp-2 text-[0.8125rem] text-muted-foreground leading-5">
+        <p className="line-clamp-2 break-words text-[0.8125rem] text-muted-foreground leading-5">
           {thread.latestSnippet}
         </p>
         {thread.labels.length > 0 ? (

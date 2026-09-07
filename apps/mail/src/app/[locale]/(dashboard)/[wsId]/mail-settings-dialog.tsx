@@ -29,6 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { MailAutomationSettings } from './mail-automation-settings';
 import { MailContentState } from './mail-content-state';
 import { MailGroupSettings } from './mail-group-settings';
 import { MailLabelSettings } from './mail-label-settings';
@@ -98,10 +99,10 @@ export function MailSettingsDialog({
     if (domainId || !domainsQuery.data?.domains.length) return;
     const pilot =
       domainsQuery.data.domains.find(
-        (domain) => domain.domain === 'ingest.tutur3u.com'
+        (domain) => domain.id === mailbox?.domainId
       ) ?? domainsQuery.data.domains[0];
     setDomainId(pilot?.id ?? null);
-  }, [domainId, domainsQuery.data]);
+  }, [domainId, domainsQuery.data, mailbox?.domainId]);
   useEffect(() => {
     if (!catchAllQuery.data) return;
     setTargetMailboxId(catchAllQuery.data.targetMailboxId);
@@ -325,6 +326,14 @@ export function MailSettingsDialog({
             ) : null}
             {tab === 'automation' ? (
               <>
+                {mailbox && !mailbox.groupPolicy && settings && (
+                  <MailAutomationSettings
+                    key={`${mailbox.id}:${JSON.stringify(settings.automation)}`}
+                    mailbox={mailbox}
+                    settings={settings}
+                    workspaceId={workspaceId}
+                  />
+                )}
                 <SettingField label={t('ai_instructions')}>
                   <Textarea
                     className="min-h-44"
@@ -354,6 +363,7 @@ export function MailSettingsDialog({
             ) : null}
             {tab === 'labels' && mailbox ? (
               <MailLabelSettings
+                automaticSuggestions={settings?.labelSuggestions ?? []}
                 canManage={mailbox.role === 'owner' || mailbox.role === 'admin'}
                 mailboxId={mailbox.id}
                 workspaceId={workspaceId}

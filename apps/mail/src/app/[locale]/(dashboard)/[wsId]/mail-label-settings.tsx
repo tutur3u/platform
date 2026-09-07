@@ -28,11 +28,13 @@ const fieldClass =
   'outline-none focus-visible:ring-0 focus-visible:outline-none';
 
 export function MailLabelSettings({
+  automaticSuggestions = [],
   canManage,
   mailboxId,
   workspaceId,
 }: {
   canManage: boolean;
+  automaticSuggestions?: SuggestedMailLabel[];
   mailboxId: string;
   workspaceId: string;
 }) {
@@ -78,6 +80,17 @@ export function MailLabelSettings({
     (label) => label.kind === 'custom'
   );
 
+  const knownNames = new Set(
+    customLabels.map((label) => label.name.toLowerCase())
+  );
+  const visibleSuggestions = [...suggestions, ...automaticSuggestions].filter(
+    (suggestion) => {
+      const name = suggestion.name.toLowerCase();
+      if (knownNames.has(name)) return false;
+      knownNames.add(name);
+      return true;
+    }
+  );
   return (
     <div className="space-y-6">
       <div>
@@ -172,9 +185,9 @@ export function MailLabelSettings({
             )}
             {t('suggest_labels')}
           </Button>
-          {suggestions.length ? (
+          {visibleSuggestions.length ? (
             <div className="divide-y divide-dynamic border-dynamic border-y">
-              {suggestions.map((suggestion) => (
+              {visibleSuggestions.map((suggestion) => (
                 <div
                   className="flex items-start gap-3 py-3"
                   key={`${suggestion.name}-${suggestion.description}`}

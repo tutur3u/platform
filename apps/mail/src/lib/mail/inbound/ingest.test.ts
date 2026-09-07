@@ -189,3 +189,60 @@ describe('resolveInboundMailbox', () => {
     }
   );
 });
+
+describe('verified self-delivery', () => {
+  it('adds Inbox to an existing sent copy without duplicating the message', async () => {
+    const sent = {
+      id: 'sent',
+      direction: 'outbound',
+      internet_message_id: '<self@example.com>',
+    };
+    const assignments: unknown[] = [];
+    const admin = {
+      schema: () => ({
+        from: (table: string) => {
+          const filters: string[] = [];
+          const query = {
+            select: () => query,
+            eq: (key: string) => {
+              filters.push(key);
+              return query;
+            },
+            upsert: (value: unknown) => {
+              if (table === 'mail_message_labels') assignments.push(value);
+              return query;
+            },
+            single: async () => ({ data: { id: 'inbox' }, error: null }),
+            maybeSingle: async () => ({
+              data: filters.includes('internet_message_id') ? sent : null,
+              error: null,
+            }),
+          };
+          return query;
+        },
+      }),
+    };
+    const message = await createInboundMessage({
+      admin,
+      mailbox: { id: 'personal' },
+      provider: 'cloudflare',
+      providerMessageId: 'incoming',
+      rawMessageId: 'raw',
+      parsed: {
+        internetMessageId: '<self@example.com>',
+        attachments: [],
+        headers: {},
+        references: [],
+        inReplyTo: null,
+        bodyHtml: null,
+        bodyText: 'test',
+        cc: [],
+        to: [],
+        from: null,
+        subject: 'test',
+      },
+    });
+    expect(message).toBe(sent);
+    expect(assignments).toEqual([{ message_id: 'sent', label_id: 'inbox' }]);
+  });
+});

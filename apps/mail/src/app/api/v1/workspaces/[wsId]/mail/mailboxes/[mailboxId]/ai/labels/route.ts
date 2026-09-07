@@ -3,6 +3,7 @@ import { withAiMemory } from '@tuturuuu/ai/memory';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { MAIL_LABEL_MODEL } from '@/lib/mail/automation/policy';
 import {
   bulkUpdateMailThreads,
   getMailThread,
@@ -65,7 +66,7 @@ export async function POST(
 
     const model = await withAiMemory({
       customId: `mail-labels-${crypto.randomUUID()}`,
-      model: google('gemini-3.1-flash-lite'),
+      model: google(MAIL_LABEL_MODEL),
       product: 'ai_chat',
       source: 'mail_labels',
       surface: 'mail_labels',

@@ -35,3 +35,45 @@ describe('sanitizeMailHtml', () => {
     expect(sanitized).toContain('safe');
   });
 });
+
+describe('isolated email document rendering', () => {
+  it('retains newsletter styles only in the isolated document path', () => {
+    const html =
+      '<style>@media(max-width:600px){.body{width:100%}}</style><table bgcolor="#ffffff" style="padding:12px 20px;border-collapse:collapse"><tr><td>Hello</td></tr></table>';
+    expect(sanitizeMailHtml(html)).not.toContain('<style');
+    const isolated = sanitizeMailHtml(html, { isolatedDocument: true });
+    expect(isolated).toContain('@media');
+    expect(isolated).toContain('padding:12px 20px');
+    expect(isolated).toContain('bgcolor="#ffffff"');
+  });
+  it('maps only supplied protected inline images and isolates links', () => {
+    const output = sanitizeMailHtml(
+      '<img src="cid:logo"><a href="https://example.com" target="_top">Open</a>',
+      {
+        isolatedDocument: true,
+        inlineImages: { logo: '/api/v1/workspaces/ws/mail/image' },
+      }
+    );
+    expect(output).toContain('src="/api/v1/workspaces/ws/mail/image"');
+    expect(output).toContain('target="_blank"');
+    expect(output).toContain('rel="noopener noreferrer"');
+    expect(output).not.toContain('_top');
+  });
+  it('still removes executable tags and event handlers with stylesheet retention', () => {
+    const output = sanitizeMailHtml(
+      '<style>.a{color:red}</style><script>steal()</script><img src="x" onerror="steal()"><meta http-equiv="refresh" content="0;url=https://evil.test"><form action="https://evil.test">x</form>',
+      { isolatedDocument: true }
+    );
+    expect(output).not.toMatch(/<script|<meta|<form|onerror|steal\(/);
+  });
+});
+
+it('preserves newsletter preheader hiding and layout only in isolated documents', () => {
+  const html =
+    '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">Preview</div><table style="margin:0 auto;padding:24px 32px"><tr><td>Body</td></tr></table>';
+  const result = sanitizeMailHtml(html, { isolatedDocument: true });
+  expect(result).toContain('max-height:0');
+  expect(result).toContain('overflow:hidden');
+  expect(result).toContain('padding:24px 32px');
+  expect(sanitizeMailHtml(html)).not.toContain('mso-hide');
+});

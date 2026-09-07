@@ -1,6 +1,15 @@
 'use client';
 
-import { Archive, ArrowLeft, Paperclip, Star, Trash2 } from '@tuturuuu/icons';
+import {
+  Archive,
+  ArrowLeft,
+  Forward,
+  Paperclip,
+  Reply,
+  ReplyAll,
+  Star,
+  Trash2,
+} from '@tuturuuu/icons';
 import type {
   MailMessageDetail,
   MailThreadDetail,
@@ -17,7 +26,6 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
@@ -56,6 +64,7 @@ export function ThreadDetail({
   thread: MailThreadDetail | null;
 }) {
   const t = useTranslations('mail');
+  const [replyMessageId, setReplyMessageId] = useState<string | null>(null);
   const [deleteDraftOpen, setDeleteDraftOpen] = useState(false);
 
   if (loading) return <MailContentState kind="loading" />;
@@ -63,12 +72,14 @@ export function ThreadDetail({
   if (!thread) return <MailContentState kind="reader" />;
 
   const newest = thread.messages.at(-1);
+  const replyMessage =
+    thread.messages.find((message) => message.id === replyMessageId) ?? newest;
   const attachments = thread.messages.flatMap((message) =>
     message.attachments.map((attachment) => ({ attachment, message }))
   );
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background">
       <header className="border-dynamic border-b bg-background/80 px-4 py-3 backdrop-blur md:px-5">
         <div className="flex flex-wrap items-start gap-2">
           <Button
@@ -81,7 +92,7 @@ export function ThreadDetail({
             <ArrowLeft className="size-4" />
           </Button>
           <div className="min-w-0 flex-1 basis-40">
-            <h1 className="text-pretty font-semibold text-lg leading-tight md:text-xl">
+            <h1 className="text-pretty break-words font-semibold text-lg leading-tight md:text-xl">
               {thread.thread.subject || t('no_subject')}
             </h1>
             <p className="mt-1 text-muted-foreground text-xs">
@@ -124,41 +135,80 @@ export function ThreadDetail({
         </div>
       </header>
 
-      <Tabs className="min-h-0 flex-1 gap-0" defaultValue="conversation">
-        <div className="border-dynamic border-b px-4 py-2 md:px-5">
-          <TabsList className="h-8 bg-foreground/[0.045]">
-            <TabsTrigger value="conversation">{t('conversation')}</TabsTrigger>
-            <TabsTrigger
-              disabled={attachments.length === 0}
-              value="attachments"
-            >
-              <Paperclip className="size-3.5" />
-              {t('attachments')} ({attachments.length})
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent className="min-h-0" value="conversation">
-          <ScrollArea className="h-full">
+      <Tabs
+        className="min-h-0 min-w-0 flex-1 gap-0"
+        defaultValue="conversation"
+      >
+        {attachments.length > 0 && (
+          <div className="border-dynamic border-b px-4 py-2 md:px-5">
+            <TabsList className="h-8 bg-foreground/[0.045]">
+              <TabsTrigger value="conversation">
+                {t('conversation')}
+              </TabsTrigger>
+              <TabsTrigger
+                disabled={attachments.length === 0}
+                value="attachments"
+              >
+                <Paperclip className="size-3.5" />
+                {t('attachments')} ({attachments.length})
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        )}
+        <TabsContent className="min-h-0 min-w-0" value="conversation">
+          <div className="h-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden">
             <Accordion
-              className="mx-auto max-w-4xl space-y-3 p-3 md:p-6"
+              className="w-full min-w-0 pb-24"
               key={thread.thread.id}
               defaultValue={newest ? [newest.id] : []}
+              onValueChange={(ids) => setReplyMessageId(ids.at(-1) ?? null)}
               type="multiple"
             >
               {thread.messages.map((message) => (
-                <ThreadMessageCard
-                  key={message.id}
-                  message={message}
-                  onForward={onForward}
-                  onReply={onReply}
-                  onReplyAll={onReplyAll}
-                />
+                <ThreadMessageCard key={message.id} message={message} />
               ))}
             </Accordion>
-          </ScrollArea>
+          </div>
+          {!isDraft && replyMessage && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center px-3">
+              <div
+                className="pointer-events-auto flex max-w-full items-center gap-1 rounded-2xl border border-border/70 bg-background/95 p-1.5 shadow-lg backdrop-blur"
+                role="toolbar"
+                aria-label={t('message_actions')}
+              >
+                <Button
+                  className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                  onClick={() => onReply(replyMessage)}
+                  size="sm"
+                  variant="secondary"
+                >
+                  <Reply className="size-4" />
+                  {t('reply')}
+                </Button>
+                <Button
+                  className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                  onClick={() => onReplyAll(replyMessage)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <ReplyAll className="size-4" />
+                  {t('reply_all')}
+                </Button>
+                <Button
+                  className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                  onClick={() => onForward(replyMessage)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <Forward className="size-4" />
+                  {t('forward')}
+                </Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
-        <TabsContent className="min-h-0" value="attachments">
-          <ScrollArea className="h-full">
+        <TabsContent className="min-h-0 min-w-0" value="attachments">
+          <div className="h-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden">
             <div className="grid gap-3 p-4 sm:grid-cols-2 md:p-5 xl:grid-cols-3">
               {attachments.map(({ attachment, message }) => (
                 <a
@@ -176,7 +226,7 @@ export function ThreadDetail({
                 </a>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         </TabsContent>
       </Tabs>
       <AlertDialog onOpenChange={setDeleteDraftOpen} open={deleteDraftOpen}>

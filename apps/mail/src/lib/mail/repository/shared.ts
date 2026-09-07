@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { readMailAutomation } from '../automation/policy';
 import { readGroupPolicy } from '../groups/policy';
 import { resolveInternalMailboxName } from '../identity';
 import type {
@@ -64,6 +65,7 @@ export function toMailbox(
       : null;
 
   return {
+    automation: readMailAutomation(row.metadata),
     groupPolicy: readGroupPolicy(row.metadata),
     address: row.address,
     aiInstructions: row.ai_instructions ?? '',

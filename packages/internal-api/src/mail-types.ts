@@ -46,6 +46,14 @@ export type UpsertMailDomainPayload = Omit<
   canonicalDomainId?: string | null;
 };
 
+export interface MailAutomationSettings {
+  forwarding:
+    | { mode: 'off' }
+    | { mode: 'catch_all' }
+    | { mode: 'mailbox'; address: string };
+  smartLabelsEnabled: boolean;
+}
+
 export interface MailMailbox {
   address: string;
   aiInstructions: string;
@@ -56,6 +64,7 @@ export interface MailMailbox {
   id: string;
   outboundProviderOverride: MailProvider | null;
   providerLimits: MailProviderLimits;
+  automation?: MailAutomationSettings;
   groupPolicy?: MailGroupPolicy | null;
   role: MailMailboxRole;
   senderName: string;
@@ -74,6 +83,8 @@ export interface MailGroupPolicy {
 }
 
 export interface MailMailboxSettings {
+  labelSuggestions?: SuggestedMailLabel[];
+  automation?: MailAutomationSettings;
   groupPolicy?: MailGroupPolicy | null;
   aiInstructions: string;
   autoDraftEnabled: boolean;
@@ -83,7 +94,9 @@ export interface MailMailboxSettings {
   signatureText: string | null;
 }
 
-export type UpdateMailMailboxSettingsPayload = Partial<MailMailboxSettings>;
+export type UpdateMailMailboxSettingsPayload = Partial<
+  Omit<MailMailboxSettings, 'labelSuggestions'>
+>;
 
 export interface MailLabel {
   aiAutoApply: boolean;

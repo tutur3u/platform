@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { mailAutomationSchema } from './automation/policy';
 import { mailGroupPolicySchema } from './groups/policy';
 
 const emailAddressSchema = z.string().trim().toLowerCase().email().max(254);
@@ -38,6 +39,7 @@ export const sendMailPayloadSchema = mailDraftPayloadSchema
   );
 
 export const updateMailMailboxSettingsSchema = z.object({
+  automation: mailAutomationSchema.optional(),
   groupPolicy: mailGroupPolicySchema.nullable().optional(),
   aiInstructions: z.string().max(20_000).optional(),
   autoDraftEnabled: z.boolean().optional(),

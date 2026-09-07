@@ -17,7 +17,7 @@ export function MailWorkspace({
   if (!folder) return children;
 
   return (
-    <div className="-m-2 h-[calc(100dvh-4.25rem)] md:-m-4 md:h-dvh">
+    <div className="-m-2 h-[calc(100dvh-4.25rem)] min-w-0 md:-m-4 md:h-dvh">
       <MailAppClient folder={folder} workspaceId={workspaceId} />
     </div>
   );

@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveForwardingMailbox } from '../automation/forwarding';
+import { autoLabelMessage } from '../automation/labels';
 import { deliverGroupMessage } from '../groups/delivery';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
 import { resolveInternalMailboxName } from '../identity';
@@ -251,7 +253,7 @@ async function resolveInboundThread(
   return created;
 }
 
-export async function createInboundMessage({
+async function persistInboundMessage({
   admin,
   delivery,
   mailbox,
@@ -294,7 +296,22 @@ export async function createInboundMessage({
       .eq('internet_message_id', parsed.internetMessageId)
       .maybeSingle();
     if (existingInternetMessageError) throw existingInternetMessageError;
-    if (existingInternetMessage) return existingInternetMessage;
+    if (existingInternetMessage) {
+      // A self-addressed delivery may match our sent copy. Preserve that copy and
+      // its Sent label while also making the verified inbound delivery visible.
+      if (existingInternetMessage.direction === 'outbound') {
+        const inbox = await ensureLabel(admin, mailbox.id, 'inbox');
+        const { error } = await privateTable(
+          admin,
+          'mail_message_labels'
+        ).upsert(
+          { message_id: existingInternetMessage.id, label_id: inbox.id },
+          { onConflict: 'message_id,label_id' }
+        );
+        if (error) throw error;
+      }
+      return existingInternetMessage;
+    }
   }
 
   const sanitizedHtml = parsed.bodyHtml
@@ -396,6 +413,21 @@ export async function createInboundMessage({
     })
     .eq('id', thread.id);
 
+  return message;
+}
+
+export async function createInboundMessage(
+  args: Parameters<typeof persistInboundMessage>[0]
+) {
+  const message = await persistInboundMessage(args);
+  const target = await resolveForwardingMailbox(args.admin, args.mailbox);
+  if (target) {
+    // One internal hop only. Retain the source copy and original headers/body/
+    // attachments. Never invoke target forwarding or send an SMTP message.
+    const forwarded = await persistInboundMessage({ ...args, mailbox: target });
+    await autoLabelMessage(args.admin, target, forwarded);
+  }
+  await autoLabelMessage(args.admin, args.mailbox, message);
   return message;
 }
 

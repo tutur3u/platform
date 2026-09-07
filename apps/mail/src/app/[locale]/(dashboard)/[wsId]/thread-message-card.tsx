@@ -1,6 +1,6 @@
 'use client';
 
-import { Forward, Paperclip, Reply, ReplyAll } from '@tuturuuu/icons';
+import { ChevronDown, Paperclip } from '@tuturuuu/icons';
 import type { MailAttachment, MailMessageDetail } from '@tuturuuu/internal-api';
 import {
   AccordionContent,
@@ -8,39 +8,32 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { MailMessagePreview } from './mail-message-preview';
 
-function formatDate(value: string | null) {
-  if (!value) return '';
-  return new Intl.DateTimeFormat(undefined, {
+function formatDate(value: string | null, locale: string) {
+  if (!value || !Number.isFinite(new Date(value).getTime())) return '';
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(value));
 }
 
-export function ThreadMessageCard({
-  message,
-  onForward,
-  onReply,
-  onReplyAll,
-}: {
-  message: MailMessageDetail;
-  onForward: (message: MailMessageDetail) => void;
-  onReply: (message: MailMessageDetail) => void;
-  onReplyAll: (message: MailMessageDetail) => void;
-}) {
+export function ThreadMessageCard({ message }: { message: MailMessageDetail }) {
   const t = useTranslations('mail');
+  const locale = useLocale();
   const displayName = message.fromName || message.fromAddress;
 
   return (
     <AccordionItem
-      className="overflow-hidden rounded-xl border border-dynamic bg-background"
+      className="min-w-0 max-w-full border-dynamic border-b bg-background"
       value={message.id}
     >
-      <AccordionTrigger className="px-4 py-3 hover:no-underline" showChevron>
+      <AccordionTrigger
+        className="group px-4 py-4 hover:no-underline md:px-6"
+        showChevron
+      >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="min-w-0 flex-1 basis-40 truncate font-semibold">
@@ -66,19 +59,25 @@ export function ThreadMessageCard({
               </Badge>
             ))}
             <span className="ml-auto shrink-0 text-muted-foreground text-xs">
-              {formatDate(message.receivedAt ?? message.sentAt)}
+              {formatDate(message.receivedAt ?? message.sentAt, locale)}
             </span>
           </div>
-          <div className="mt-0.5 truncate text-muted-foreground text-xs">
+          <div className="mt-0.5 truncate text-muted-foreground text-xs group-data-[state=open]:hidden">
             {message.snippet || message.bodyText}
           </div>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="border-dynamic border-t p-0 pb-0">
-        <div className="border-dynamic border-b px-4 py-3">
+      <AccordionContent className="p-0 pb-0">
+        <div className="px-4 pb-3 md:px-6">
           <details className="group text-sm">
-            <summary className="cursor-pointer list-none font-medium text-muted-foreground hover:text-foreground">
-              {t('message_details')}
+            <summary
+              aria-label={t('message_details')}
+              className="flex max-w-full cursor-pointer list-none items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
+            >
+              <span className="truncate">
+                {t('to')}: {formatRecipients(message, 'to')}
+              </span>
+              <ChevronDown className="size-3 shrink-0 transition-transform group-open:rotate-180" />
             </summary>
             <dl className="mt-3 grid gap-2 rounded-xl bg-foreground/[0.035] p-3 text-xs">
               <Detail
@@ -101,48 +100,41 @@ export function ThreadMessageCard({
                   value={message.observedRecipient}
                 />
               ) : null}
-              {Object.entries(message.safeHeaders).map(([key, value]) => (
-                <Detail key={key} label={key} value={value} />
-              ))}
+              {Object.entries(message.safeHeaders)
+                .filter(
+                  ([key]) =>
+                    !['from', 'to', 'cc', 'bcc', 'subject'].includes(
+                      key.toLowerCase()
+                    )
+                )
+                .map(([key, value]) => (
+                  <Detail key={key} label={key} value={value} />
+                ))}
             </dl>
           </details>
         </div>
-        <div className="min-w-0 max-w-full overflow-hidden p-4 md:p-6">
+        <div className="min-w-0 max-w-full overflow-hidden">
           {message.sanitizedHtml ? (
             <MailMessagePreview
-              content={message.sanitizedHtml}
+              content={message.bodyHtml ?? message.sanitizedHtml}
+              attachments={message.attachments}
               darkLabel={t('dark_view')}
               originalLabel={t('original_view')}
               title={message.subject || t('no_subject')}
               viewLabel={t('message_appearance')}
             />
           ) : (
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-6">
+            <pre className="whitespace-pre-wrap break-words px-4 pb-6 font-sans text-sm leading-7 md:px-6">
               {message.bodyText}
             </pre>
           )}
           {message.attachments.length > 0 ? (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 p-4 sm:grid-cols-2 md:px-6">
               {message.attachments.map((attachment) => (
                 <AttachmentLink attachment={attachment} key={attachment.id} />
               ))}
             </div>
           ) : null}
-        </div>
-        <div className="flex flex-wrap gap-2 border-dynamic border-t px-4 py-3">
-          <Button
-            onClick={() => onReply(message)}
-            size="sm"
-            variant="secondary"
-          >
-            <Reply className="size-4" /> {t('reply')}
-          </Button>
-          <Button onClick={() => onReplyAll(message)} size="sm" variant="ghost">
-            <ReplyAll className="size-4" /> {t('reply_all')}
-          </Button>
-          <Button onClick={() => onForward(message)} size="sm" variant="ghost">
-            <Forward className="size-4" /> {t('forward')}
-          </Button>
         </div>
       </AccordionContent>
     </AccordionItem>

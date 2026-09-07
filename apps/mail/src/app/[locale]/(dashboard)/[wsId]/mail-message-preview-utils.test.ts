@@ -8,7 +8,8 @@ describe('buildMailMessagePreviewDocument', () => {
       'original'
     );
 
-    expect(document).toContain('overflow-x:hidden');
+    expect(document).toContain('overflow-x:auto');
+    expect(document).toContain("script-src 'none'");
     expect(document).toContain('table{max-width:100%!important');
     expect(document).toContain('color-scheme:light');
   });

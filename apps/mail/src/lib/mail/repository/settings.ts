@@ -1,3 +1,5 @@
+import { resolveForwardingMailbox } from '../automation/forwarding';
+import { mailAutomationSchema, readMailAutomation } from '../automation/policy';
 import { mailGroupPolicySchema, readGroupPolicy } from '../groups/policy';
 import type {
   MailMailboxSettings,
@@ -9,6 +11,7 @@ import { privateTable } from './shared';
 
 function toSettings(row: Record<string, any>): MailMailboxSettings {
   return {
+    automation: row.automation ?? readMailAutomation(row.metadata),
     groupPolicy: row.groupPolicy ?? readGroupPolicy(row.metadata),
     aiInstructions: row.aiInstructions ?? row.ai_instructions ?? '',
     autoDraftEnabled: Boolean(row.autoDraftEnabled ?? row.auto_draft_enabled),
@@ -29,7 +32,27 @@ export async function getMailboxSettings({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
-  return toSettings(access.mailbox);
+  const settings = toSettings(access.mailbox);
+  if (['owner', 'admin'].includes(access.role)) {
+    const { data, error } = await privateTable(access.admin, 'mail_events')
+      .select('payload')
+      .eq('mailbox_id', mailboxId)
+      .eq('event_type', 'smart_labels_completed')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    const seen = new Set<string>();
+    settings.labelSuggestions = (data ?? [])
+      .flatMap((event: Record<string, any>) => event.payload?.suggestions ?? [])
+      .filter((suggestion: { name: string }) => {
+        const key = suggestion.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 8);
+  }
+  return settings;
 }
 
 export async function updateMailboxSettings({
@@ -64,6 +87,30 @@ export async function updateMailboxSettings({
         ? mailGroupPolicySchema.parse(payload.groupPolicy)
         : undefined,
     };
+  }
+  if (payload.automation !== undefined) {
+    const automation = mailAutomationSchema.parse(payload.automation);
+    if (
+      access.mailbox.groupPolicy &&
+      (automation.forwarding.mode !== 'off' || automation.smartLabelsEnabled)
+    )
+      throw new Error('Distribution groups already deliver to members');
+    const metadata = {
+      ...(groupMetadata ?? access.metadata),
+      mail_automation: automation,
+    };
+    if (automation.forwarding.mode !== 'off') {
+      const target = await resolveForwardingMailbox(access.admin, {
+        id: mailboxId,
+        domain_id: access.mailbox.domainId,
+        metadata,
+      });
+      if (!target || !(await requireMailboxAccess(ctx, target.id)))
+        throw new Error(
+          'Choose an accessible active mailbox in the same domain, other than this mailbox'
+        );
+    }
+    groupMetadata = metadata;
   }
   const patch = {
     ...(groupMetadata ? { metadata: groupMetadata } : {}),
