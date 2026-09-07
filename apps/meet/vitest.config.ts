@@ -7,6 +7,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@tuturuuu/internal-api': path.resolve(
+        __dirname,
+        '../../packages/internal-api/src/index.ts'
+      ),
     },
   },
   test: {

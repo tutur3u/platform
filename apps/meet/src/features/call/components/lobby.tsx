@@ -24,12 +24,14 @@ export function Lobby({
   connectionError,
   isJoining,
   meetingName,
+  transcriptionNotice,
   onJoin,
   waiting,
 }: {
   defaultDisplayName: string;
   isJoining: boolean;
   meetingName: string;
+  transcriptionNotice?: string;
   /** Set when signaling could not be reached, so the CTA can explain itself. */
   connectionError?: string | null;
   onJoin: (options: {
@@ -156,6 +158,11 @@ export function Lobby({
           <h1 className="text-balance font-semibold text-2xl tracking-tight">
             {meetingName}
           </h1>
+          {transcriptionNotice ? (
+            <p role="status" className="mt-3 rounded-md border p-3 text-sm">
+              {transcriptionNotice}
+            </p>
+          ) : null}
           <p className="mt-2 text-muted-foreground text-sm">
             {waiting ? t('lobby_waiting_hint') : t('lobby_hint')}
           </p>
