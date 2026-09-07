@@ -27,6 +27,7 @@ export const SmartCalendar = ({
   disabled,
   enableHeader = true,
   experimentalGoogleToken,
+  initialEventId,
   externalState,
   extras,
   overlay,
@@ -46,6 +47,7 @@ export const SmartCalendar = ({
   disabled?: boolean;
   enableHeader?: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
+  initialEventId?: string;
   externalState?: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;
@@ -84,6 +86,7 @@ export const SmartCalendar = ({
       useQuery={useQuery}
       useQueryClient={useQueryClient}
       experimentalGoogleToken={experimentalGoogleToken}
+      initialEventId={initialEventId}
       eventAdapter={eventAdapter}
       readOnly={disabled}
     >

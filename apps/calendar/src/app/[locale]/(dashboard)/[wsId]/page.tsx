@@ -18,12 +18,25 @@ interface PageProps {
     wsId: string;
     locale: string;
   }>;
+  searchParams: Promise<{
+    date?: string;
+    eventId?: string;
+  }>;
 }
 
-export default async function CalendarPage({ params }: PageProps) {
+export default async function CalendarPage({
+  params,
+  searchParams,
+}: PageProps) {
   await connection();
 
   const { wsId, locale } = await params;
+  const deepLink = await searchParams;
+  const deepLinkDate = deepLink.date ? new Date(deepLink.date) : null;
+  const initialDate =
+    deepLinkDate && !Number.isNaN(deepLinkDate.getTime())
+      ? deepLinkDate.toISOString()
+      : undefined;
   const user = await getSatelliteAppSessionUser('calendar');
 
   if (!user?.id) redirect('/login');
@@ -58,6 +71,8 @@ export default async function CalendarPage({ params }: PageProps) {
     <CalendarWorkspacePage
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={googleToken}
+      initialDate={initialDate}
+      initialEventId={deepLink.eventId}
       isPersonalWorkspace={isPersonalWorkspace}
       locale={locale}
       smartSchedulingTasks={smartSchedulingTasks}

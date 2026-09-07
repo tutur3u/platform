@@ -1,6 +1,11 @@
 'use client';
 
-import { LogIn, Plus, Video } from '@tuturuuu/icons';
+import { LogIn, Video } from '@tuturuuu/icons';
+import {
+  CalendarClock,
+  ChevronDownIcon,
+  ExternalLink,
+} from '@tuturuuu/icons/lucide-static';
 import { createWorkspaceMeeting } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -13,14 +18,34 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { parseMeetingCode } from '../lib/meeting-code-input';
 import { normalizeMeetingTime } from '../lib/meeting-time';
 import { encodeRoomCode } from '../lib/room-code';
+
+type CreatedMeeting = {
+  meeting: { id: string };
+  calendarEvent?: { id: string; start_at: string; end_at: string; url: string };
+};
+
+function defaultScheduledTime() {
+  const value = new Date(Date.now() + 60 * 60 * 1000);
+  value.setMinutes(Math.ceil(value.getMinutes() / 15) * 15, 0, 0);
+  return new Date(value.getTime() - value.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+}
 
 export function MeetingEntry({
   canCreate,
@@ -35,33 +60,72 @@ export function MeetingEntry({
   const router = useRouter();
   const nameRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
-  const [createOpen, setCreateOpen] = useState(false);
+  const durationRef = useRef<HTMLInputElement>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createMeeting = async (event: React.FormEvent) => {
+  const startMeeting = async () => {
+    if (busy || !canCreate) return;
+    setBusy(true);
+    try {
+      const response = await createWorkspaceMeeting<CreatedMeeting>(wsId, {
+        name: t('untitled'),
+        time: new Date().toISOString(),
+      });
+      router.push(`/r/${encodeRoomCode(response.meeting.id)}`);
+    } catch {
+      toast.error(t('create_failed'));
+      setBusy(false);
+    }
+  };
+
+  const scheduleMeeting = async (event: React.FormEvent) => {
     event.preventDefault();
     if (busy || !canCreate) return;
     const name = nameRef.current?.value.trim();
+    const localTime = timeRef.current?.value;
+    const duration = Number(durationRef.current?.value || 60);
     if (!name) {
       setError(t('name_required'));
       return;
     }
+    if (!localTime || !Number.isFinite(duration) || duration < 15) {
+      setError(t('schedule_invalid'));
+      return;
+    }
 
+    const startAt = normalizeMeetingTime(localTime);
+    const endAt = new Date(
+      new Date(startAt).getTime() + duration * 60_000
+    ).toISOString();
     setBusy(true);
     setError(null);
     try {
-      const time = timeRef.current?.value || new Date().toISOString();
-      await createWorkspaceMeeting(wsId, {
+      const response = await createWorkspaceMeeting<CreatedMeeting>(wsId, {
         name,
-        time: normalizeMeetingTime(time),
+        time: startAt,
+        schedule: { endTime: endAt },
       });
-      setCreateOpen(false);
+      setScheduleOpen(false);
       onCreated();
+      toast.success(t('scheduled'), {
+        action: response.calendarEvent
+          ? {
+              label: t('open_calendar'),
+              onClick: () =>
+                window.open(
+                  response.calendarEvent?.url,
+                  '_blank',
+                  'noopener,noreferrer'
+                ),
+            }
+          : undefined,
+      });
     } catch {
-      setError(t('create_failed'));
+      setError(t('schedule_failed'));
     } finally {
       setBusy(false);
     }
@@ -80,28 +144,57 @@ export function MeetingEntry({
 
   return (
     <div className="flex shrink-0 items-center gap-2">
+      <div className="flex items-center">
+        <Button
+          className="rounded-r-none pr-3"
+          disabled={!canCreate || busy}
+          onClick={() => void startMeeting()}
+          size="sm"
+        >
+          <Video className="size-4" />
+          {busy ? t('creating') : t('create')}
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label={t('create_options')}
+              className="rounded-l-none border-l border-l-primary-foreground/25 px-2"
+              disabled={!canCreate || busy}
+              size="sm"
+            >
+              <ChevronDownIcon className="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => setScheduleOpen(true)}>
+              <CalendarClock className="size-4" />
+              <div>
+                <div className="font-medium">{t('schedule_later')}</div>
+                <div className="text-muted-foreground text-xs">
+                  {t('schedule_later_hint')}
+                </div>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <Dialog
-        open={createOpen}
+        open={scheduleOpen}
         onOpenChange={(open) => {
-          setCreateOpen(open);
+          setScheduleOpen(open);
           setError(null);
         }}
       >
-        <DialogTrigger asChild>
-          <Button disabled={!canCreate} size="sm">
-            <Plus className="size-4" />
-            {t('create')}
-          </Button>
-        </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="mb-2 flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Video className="size-5" />
+              <CalendarClock className="size-5" />
             </div>
-            <DialogTitle>{t('create_title')}</DialogTitle>
-            <DialogDescription>{t('create_description')}</DialogDescription>
+            <DialogTitle>{t('schedule_title')}</DialogTitle>
+            <DialogDescription>{t('schedule_description')}</DialogDescription>
           </DialogHeader>
-          <form className="space-y-4" onSubmit={createMeeting}>
+          <form className="space-y-4" onSubmit={scheduleMeeting}>
             <div className="space-y-2">
               <Label htmlFor="meeting-name">{t('name')}</Label>
               <Input
@@ -112,11 +205,34 @@ export function MeetingEntry({
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="meeting-time">{t('time')}</Label>
-              <Input id="meeting-time" ref={timeRef} type="datetime-local" />
-              <p className="text-muted-foreground text-xs">{t('time_hint')}</p>
+            <div className="grid grid-cols-[1fr_7rem] gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="meeting-time">{t('time')}</Label>
+                <Input
+                  defaultValue={defaultScheduledTime()}
+                  id="meeting-time"
+                  ref={timeRef}
+                  required
+                  type="datetime-local"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="meeting-duration">{t('duration')}</Label>
+                <Input
+                  defaultValue="60"
+                  id="meeting-duration"
+                  min="15"
+                  ref={durationRef}
+                  required
+                  step="15"
+                  type="number"
+                />
+              </div>
             </div>
+            <p className="flex items-center gap-1.5 text-muted-foreground text-xs">
+              <ExternalLink className="size-3.5" />
+              {t('calendar_hint')}
+            </p>
             {error && (
               <p className="text-dynamic-red text-sm" role="alert">
                 {error}
@@ -129,7 +245,7 @@ export function MeetingEntry({
                 </Button>
               </DialogClose>
               <Button disabled={busy} type="submit">
-                {busy ? t('creating') : t('create')}
+                {busy ? t('scheduling') : t('schedule')}
               </Button>
             </DialogFooter>
           </form>

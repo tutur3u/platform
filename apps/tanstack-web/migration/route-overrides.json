@@ -2365,17 +2365,17 @@
     "api:/api/v1/workspaces/:wsId/meetings:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "POST restricts creation to confirmed @tuturuuu.com accounts; GET has a partial Rust port and unported flows remain on Next.js.",
+      "note": "POST restricts creation to confirmed @tuturuuu.com accounts and can atomically pair scheduled meetings with native Calendar events; GET decorates scheduled meetings with Calendar deep links. The Rust port is partial and unported flows remain on Next.js.",
       "methods": {
         "GET": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "Partial Rust GET port still lacks app-session, workspace alias, and membership parity; app sessions and aliases fall through to Next.js."
+          "note": "Partial Rust GET port still lacks app-session, workspace alias, membership, and scheduled Calendar link parity; app sessions and aliases fall through to Next.js."
         },
         "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "Company-only creation and current confirmed identity check remain on Next.js; unported Rust POST falls through."
+          "note": "Company-only creation, current confirmed identity checks, and native Calendar scheduling remain on Next.js; unported Rust POST falls through."
         }
       }
     },

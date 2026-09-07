@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
+import type { Workspace } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +16,8 @@ const internalApiMocks = vi.hoisted(() => ({
   deleteWorkspaceCalendarEvent: vi.fn(),
   updateWorkspaceCalendarEvent: vi.fn(),
 }));
+
+const workspace = { id: 'workspace-1', name: 'Workspace' } as Workspace;
 
 vi.mock('@tuturuuu/internal-api', () => ({
   createWorkspaceCalendarEvent: internalApiMocks.createWorkspaceCalendarEvent,
@@ -66,7 +69,7 @@ describe('CalendarProvider Read-Only Mode', () => {
     function Wrapper({ children }: { children: ReactNode }) {
       return (
         <CalendarProvider
-          ws={{ id: 'workspace-1', name: 'Workspace' } as any}
+          ws={workspace}
           useQuery={mockUseQuery}
           useQueryClient={mockUseQueryClient}
           readOnly={readOnly}
@@ -83,6 +86,25 @@ describe('CalendarProvider Read-Only Mode', () => {
     end_at: '2026-06-22T10:00:00.000Z',
     ws_id: 'workspace-1',
   };
+
+  it('opens a deep-linked event after it is loaded', async () => {
+    calendarMockState.events = [baseEvent];
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <CalendarProvider
+        initialEventId="event-1"
+        useQuery={mockUseQuery}
+        useQueryClient={mockUseQueryClient}
+        ws={workspace}
+      >
+        {children}
+      </CalendarProvider>
+    );
+
+    const { result } = renderHook(() => useCalendar(), { wrapper });
+    await act(async () => undefined);
+    expect(result.current.activeEvent?.id).toBe('event-1');
+    expect(result.current.isModalOpen).toBe(true);
+  });
 
   it('should have readOnly set to true when passed as prop', () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
@@ -115,7 +137,7 @@ describe('CalendarProvider Read-Only Mode', () => {
       title: 'Test',
       start_at: new Date().toISOString(),
       end_at: new Date().toISOString(),
-    } as any);
+    });
     expect(event).toBeUndefined();
   });
 
@@ -165,7 +187,7 @@ describe('CalendarProvider Read-Only Mode', () => {
 
     const wrapper = ({ children }: { children: ReactNode }) => (
       <CalendarProvider
-        ws={{ id: 'workspace-1', name: 'Workspace' } as any}
+        ws={workspace}
         useQuery={mockUseQuery}
         useQueryClient={mockUseQueryClient}
       >
@@ -195,7 +217,7 @@ describe('CalendarProvider Read-Only Mode', () => {
   it('opens the editor directly for create flows', () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
       <CalendarProvider
-        ws={{ id: 'workspace-1', name: 'Workspace' } as any}
+        ws={workspace}
         useQuery={mockUseQuery}
         useQueryClient={mockUseQueryClient}
       >
