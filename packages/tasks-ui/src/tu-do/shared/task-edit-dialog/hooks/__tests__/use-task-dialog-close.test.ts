@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beginTaskDraftSave } from '../task-draft-save-session';
 import { useTaskDialogClose } from '../use-task-dialog-close';
 
 function createDeferred<T>() {
@@ -14,11 +15,50 @@ function createDeferred<T>() {
 }
 
 describe('useTaskDialogClose', () => {
+  let finishSave: (() => void) | undefined;
+  afterEach(() => {
+    finishSave?.();
+    finishSave = undefined;
+  });
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('blocks normal, forced, and back navigation while creation is saving', async () => {
+    const onClose = vi.fn();
+    const onNavigateToTask = vi.fn();
+    finishSave = beginTaskDraftSave('draft-key');
+    const { result } = renderHook(() =>
+      useTaskDialogClose({
+        isCreateMode: true,
+        collaborationMode: false,
+        synced: true,
+        connected: true,
+        draftStorageKey: 'draft-key',
+        onClose,
+        onNavigateToTask,
+        parentTaskId: 'parent-1',
+        flushNameUpdate: vi.fn(),
+        setShowSyncWarning: vi.fn(),
+      })
+    );
+    await act(async () => {
+      expect(await result.current.handleClose()).toBe(false);
+      await result.current.handleForceClose();
+      await result.current.handleNavigateBack();
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    expect(onNavigateToTask).not.toHaveBeenCalled();
+    finishSave?.();
+    await act(async () => {
+      await result.current.handleClose();
+    });
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('waits for description persistence verification before closing', async () => {
+    localStorage.setItem('draft-key', 'Unsubmitted task draft');
     const onClose = vi.fn();
     const flushNameUpdate = vi.fn().mockResolvedValue(undefined);
     const persistTaskDescription = vi.fn();
@@ -53,6 +93,7 @@ describe('useTaskDialogClose', () => {
     });
     expect(flushNameUpdate).toHaveBeenCalledTimes(1);
     expect(persistTaskDescription).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('draft-key')).toBe('Unsubmitted task draft');
   });
 
   it('blocks close when persistence verification fails', async () => {
@@ -146,6 +187,7 @@ describe('useTaskDialogClose', () => {
   });
 
   it('force closes immediately and continues persistence in the background', async () => {
+    localStorage.setItem('draft-key', 'Recoverable task draft');
     const onClose = vi.fn();
     const flushNameUpdate = vi.fn().mockResolvedValue(undefined);
     const persistTaskDescription = vi.fn().mockResolvedValue(true);
@@ -170,6 +212,7 @@ describe('useTaskDialogClose', () => {
     });
 
     expect(onClose).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem('draft-key')).toBe('Recoverable task draft');
 
     await waitFor(() => {
       expect(flushNameUpdate).toHaveBeenCalledTimes(1);

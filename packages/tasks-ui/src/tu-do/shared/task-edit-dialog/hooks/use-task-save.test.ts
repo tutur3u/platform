@@ -1,58 +1,68 @@
 import { QueryClient } from '@tanstack/react-query';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockCreateTask,
-  mockCreateWorkspaceTaskRelationship,
-  mockDispatchTaskSoundCue,
-} = vi.hoisted(() => ({
-  mockCreateTask: vi.fn(),
+const { mockCreateWorkspaceTaskRelationship } = vi.hoisted(() => ({
   mockCreateWorkspaceTaskRelationship: vi.fn(),
-  mockDispatchTaskSoundCue: vi.fn(),
 }));
-
-vi.mock('@tuturuuu/internal-api/tasks', async () => {
-  const actual = await vi.importActual<
-    typeof import('@tuturuuu/internal-api/tasks')
-  >('@tuturuuu/internal-api/tasks');
-
-  return {
-    ...actual,
-    createWorkspaceTaskRelationship: mockCreateWorkspaceTaskRelationship,
-  };
-});
-
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: vi.fn(() => ({
-    auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'user-1' } },
-      }),
-    },
-  })),
-}));
-
-vi.mock('@tuturuuu/utils/task-helper', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tuturuuu/utils/task-helper')>()),
-  createTask: mockCreateTask,
-}));
-
-vi.mock('../../task-sound-effects', () => ({
-  dispatchTaskSoundCue: mockDispatchTaskSoundCue,
+vi.mock('@tuturuuu/internal-api/tasks', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/internal-api/tasks')>()),
+  createWorkspaceTaskRelationship: mockCreateWorkspaceTaskRelationship,
 }));
 
 import {
   applyPendingRelationshipSummary,
-  handleCreateTask,
   persistPendingTaskRelationships,
-} from './use-task-save';
+} from './task-create-relationships';
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 describe('persistPendingTaskRelationships', () => {
+  it('surfaces failed edges and resumes after confirmed relationships', async () => {
+    const queryClient = new QueryClient();
+    const pending = {
+      parentTask: { id: 'parent', name: 'Parent' },
+      childTasks: [{ id: 'child', name: 'Child' }],
+      blockingTasks: [],
+      blockedByTasks: [],
+      relatedTasks: [],
+    };
+    let confirmed: import('./task-create-relationships').TaskCreateRelationshipEdge[] =
+      [];
+    const save = (edges: typeof confirmed) => {
+      confirmed = edges;
+    };
+    mockCreateWorkspaceTaskRelationship.mockResolvedValue({});
+    mockCreateWorkspaceTaskRelationship
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new Error('Relationship unavailable'));
+    await expect(
+      persistPendingTaskRelationships(
+        'ws-1',
+        'new-task',
+        pending,
+        queryClient,
+        { confirmed, save }
+      )
+    ).rejects.toThrow('Relationship unavailable');
+    expect(confirmed).toHaveLength(1);
+    await persistPendingTaskRelationships(
+      'ws-1',
+      'new-task',
+      pending,
+      queryClient,
+      { confirmed, save }
+    );
+    expect(confirmed).toHaveLength(2);
+    expect(mockCreateWorkspaceTaskRelationship).toHaveBeenCalledTimes(3);
+    expect(mockCreateWorkspaceTaskRelationship.mock.calls[2]?.[2]).toEqual({
+      source_task_id: 'new-task',
+      target_task_id: 'child',
+      type: 'parent_child',
+    });
+  });
+
   it('persists pending relationships in deterministic order and invalidates affected tasks', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
@@ -223,170 +233,5 @@ describe('applyPendingRelationshipSummary', () => {
         },
       }),
     ]);
-  });
-});
-
-describe('handleCreateTask', () => {
-  it('renders and closes immediately while task creation is pending', async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    const onClose = vi.fn();
-    let resolveCreateTask!: (task: Task) => void;
-    const createTaskPromise = new Promise<Task>((resolve) => {
-      resolveCreateTask = resolve;
-    });
-
-    queryClient.setQueryData(['tasks', 'board-1'], []);
-    queryClient.setQueryData(['tasks-full', 'board-1', 'filtered'], []);
-    mockCreateTask.mockReturnValueOnce(createTaskPromise);
-
-    const savePromise = handleCreateTask({
-      autoSchedule: false,
-      boardId: 'board-1',
-      broadcast: null,
-      calendarHours: null,
-      createMultiple: false,
-      descriptionString: null,
-      descriptionYjsState: null,
-      endDate: undefined,
-      estimationPoints: null,
-      isPersonalWorkspace: false,
-      isSplittable: false,
-      maxSplitDurationMinutes: null,
-      minSplitDurationMinutes: null,
-      name: 'Instant task',
-      onClose,
-      onUpdate: vi.fn(),
-      priority: null,
-      queryClient,
-      selectedAssignees: [],
-      selectedLabels: [],
-      selectedListId: 'list-1',
-      selectedProjects: [],
-      setDescription: vi.fn(),
-      setEndDate: vi.fn(),
-      setEstimationPoints: vi.fn(),
-      setIsLoading: vi.fn(),
-      setIsSaving: vi.fn(),
-      setName: vi.fn(),
-      setPriority: vi.fn(),
-      setSelectedAssignees: vi.fn(),
-      setSelectedLabels: vi.fn(),
-      setSelectedProjects: vi.fn(),
-      setStartDate: vi.fn(),
-      startDate: undefined,
-      toast: vi.fn(),
-      totalDuration: null,
-      user: { id: 'user-1' },
-      userTaskSettings: { task_auto_assign_to_self: false },
-      wsId: 'ws-1',
-    });
-
-    const pendingTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
-    expect(pendingTasks).toEqual([
-      expect.objectContaining({
-        _isOptimistic: true,
-        list_id: 'list-1',
-        name: 'Instant task',
-      }),
-    ]);
-    expect(
-      queryClient.getQueryData(['tasks-full', 'board-1', 'filtered'])
-    ).toEqual(pendingTasks);
-    expect(onClose).toHaveBeenCalledOnce();
-
-    resolveCreateTask({
-      assignees: [],
-      created_at: '2026-08-14T00:00:00.000Z',
-      id: 'task-new',
-      labels: [],
-      list_id: 'list-1',
-      name: 'Instant task',
-      projects: [],
-    } as unknown as Task);
-    await savePromise;
-
-    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
-      expect.objectContaining({
-        id: 'task-new',
-        name: 'Instant task',
-      }),
-    ]);
-    expect(
-      queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0] as Task & {
-        _isOptimistic?: boolean;
-      }
-    ).not.toHaveProperty('_isOptimistic');
-  });
-
-  it('dispatches the create sound cue once after successful task creation', async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    const toast = vi.fn();
-    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
-
-    mockCreateTask.mockResolvedValueOnce({
-      id: 'task-new',
-      name: 'New task',
-      list_id: 'list-1',
-      created_at: '2026-01-01T00:00:00Z',
-    });
-
-    await handleCreateTask({
-      autoSchedule: false,
-      boardId: 'board-1',
-      broadcast: null,
-      calendarHours: null,
-      createMultiple: false,
-      descriptionString: null,
-      descriptionYjsState: null,
-      endDate: undefined,
-      estimationPoints: null,
-      isPersonalWorkspace: false,
-      isSplittable: false,
-      maxSplitDurationMinutes: null,
-      minSplitDurationMinutes: null,
-      name: 'New task',
-      onClose: vi.fn(),
-      onUpdate: vi.fn(),
-      priority: null,
-      queryClient,
-      selectedAssignees: [],
-      selectedLabels: [],
-      selectedListId: 'list-1',
-      selectedProjects: [],
-      setDescription: vi.fn(),
-      setEndDate: vi.fn(),
-      setEstimationPoints: vi.fn(),
-      setIsLoading: vi.fn(),
-      setIsSaving: vi.fn(),
-      setName: vi.fn(),
-      setPriority: vi.fn(),
-      setSelectedAssignees: vi.fn(),
-      setSelectedLabels: vi.fn(),
-      setSelectedProjects: vi.fn(),
-      setStartDate: vi.fn(),
-      startDate: undefined,
-      toast,
-      totalDuration: null,
-      user: { id: 'user-1' },
-      userTaskSettings: { task_auto_assign_to_self: false },
-      wsId: 'ws-1',
-    });
-
-    expect(mockCreateTask).toHaveBeenCalledWith(
-      'ws-1',
-      'list-1',
-      expect.objectContaining({
-        name: 'New task',
-      })
-    );
-    expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
-    expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('create');
-    expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ['task-list-counts', 'board-1'],
-    });
   });
 });
