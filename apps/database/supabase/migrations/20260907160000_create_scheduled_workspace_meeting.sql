@@ -19,6 +19,8 @@ as $$
 declare
   meeting_row public.workspace_meetings;
   calendar_row public.workspace_calendar_events;
+  primary_calendar_id uuid;
+  creator jsonb;
 begin
   if p_end_at <= p_start_at then
     raise exception 'meeting end time must be after its start time';
@@ -28,9 +30,19 @@ begin
   values (p_meeting_id, p_ws_id, p_name, p_start_at, p_creator_id)
   returning * into meeting_row;
 
+  select id into primary_calendar_id
+  from public.workspace_calendars
+  where ws_id = p_ws_id and calendar_type = 'primary'
+  limit 1;
+
+  if primary_calendar_id is null then
+    raise exception 'workspace primary calendar not found';
+  end if;
+
   insert into public.workspace_calendar_events (
     ws_id, title, description, location, start_at, end_at, color,
-    is_encrypted, provider, scheduling_source, scheduling_metadata, sync_status
+    is_encrypted, provider, scheduling_source, scheduling_metadata, sync_status,
+    source_calendar_id
   )
   values (
     p_ws_id, p_encrypted_title, p_encrypted_description,
@@ -41,12 +53,16 @@ begin
       'meeting_id', p_meeting_id,
       'meeting_url', p_meeting_url
     ),
-    'local_only'
+    'local_only', primary_calendar_id
   )
   returning * into calendar_row;
 
+  select jsonb_build_object('display_name', display_name) into creator
+  from public.users
+  where id = p_creator_id;
+
   return jsonb_build_object(
-    'meeting', to_jsonb(meeting_row),
+    'meeting', to_jsonb(meeting_row) || jsonb_build_object('creator', creator),
     'calendar_event', to_jsonb(calendar_row)
   );
 end;

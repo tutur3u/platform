@@ -96,7 +96,10 @@ beforeEach(() => {
   });
   mocks.adminRpc.mockResolvedValue({
     data: {
-      meeting: { id: 'meeting-id' },
+      meeting: {
+        id: 'meeting-id',
+        creator: { display_name: 'Host' },
+      },
       calendar_event: {
         id: 'calendar-event-id',
         start_at: '2026-09-06T10:00:00Z',
@@ -215,6 +218,9 @@ describe('Calendar scheduling', () => {
     );
     expect(await response.json()).toEqual(
       expect.objectContaining({
+        meeting: expect.objectContaining({
+          creator: { display_name: 'Host' },
+        }),
         calendarEvent: expect.objectContaining({
           id: 'calendar-event-id',
           url: expect.stringContaining('eventId=calendar-event-id'),

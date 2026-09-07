@@ -54,7 +54,11 @@ export default async function CalendarPage({
 
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  let initialDate = requestedDate;
+  const requestedDateValue = requestedDate ? new Date(requestedDate) : null;
+  let initialDate =
+    requestedDateValue && !Number.isNaN(requestedDateValue.getTime())
+      ? requestedDateValue.toISOString()
+      : undefined;
   if (!initialDate && eventId) {
     const { data: linkedEvent, error: linkedEventError } = await sbAdmin
       .from('workspace_calendar_events')

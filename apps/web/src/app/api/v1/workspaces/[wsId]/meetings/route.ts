@@ -394,7 +394,7 @@ export async function POST(
       }
 
       const result = scheduledResult as unknown as {
-        meeting: { id: string };
+        meeting: { id: string; creator: { display_name: string | null } };
         calendar_event: { id: string; start_at: string; end_at: string };
       };
       return NextResponse.json({
