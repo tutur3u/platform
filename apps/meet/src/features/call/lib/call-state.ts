@@ -57,7 +57,7 @@ export const INITIAL_CALL_STATE: CallState = {
 const MAX_CHAT_MESSAGES = 500;
 
 export function remoteTrackKey(track: MeetRealtimeRoomTrack) {
-  return `${track.sessionId}:${track.trackName ?? track.mid ?? track.userId}`;
+  return `${encodeURIComponent(track.sessionId)}:${encodeURIComponent(track.trackName ?? track.mid ?? track.userId)}`;
 }
 
 /**

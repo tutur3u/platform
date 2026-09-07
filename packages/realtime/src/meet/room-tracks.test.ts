@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { replaceRoomPublications } from './room-tracks';
+import { meetTrackKey, replaceRoomPublications } from './room-tracks';
 
 describe('room publication replacement', () => {
   it('does not retire another participant or a different media track', () => {
@@ -42,4 +42,26 @@ describe('room publication replacement', () => {
       'track.closed',
     ]);
   });
+});
+
+it('rejects a late publish from a retired session', () => {
+  const old = { userId: 'a', sessionId: 'old', trackName: 'audio' };
+  const current = { userId: 'a', sessionId: 'new', trackName: 'audio' };
+  const replaced = replaceRoomPublications({ 'old:audio': old }, [current]);
+  const late = replaceRoomPublications(
+    replaced.tracks,
+    [old],
+    replaced.retired
+  );
+  expect(late.stale).toBe(true);
+  expect(late.tracks).toEqual(replaced.tracks);
+  expect(late.broadcast).toEqual([]);
+});
+it('keeps colon-containing identifiers distinct', () => {
+  const first = { userId: 'a', sessionId: 'a:b', trackName: 'c' };
+  const second = { userId: 'b', sessionId: 'a', trackName: 'b:c' };
+  expect(meetTrackKey(first)).not.toBe(meetTrackKey(second));
+  expect(
+    Object.keys(replaceRoomPublications({}, [first, second]).tracks)
+  ).toHaveLength(2);
 });

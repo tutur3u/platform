@@ -30,6 +30,7 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  retiredTracks?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
   recording: {
     sessionId: string | null;
@@ -256,6 +257,11 @@ export function releaseParticipant(
   );
   const next: MeetRoomSnapshot = {
     ...state,
+    retiredTracks: Object.fromEntries(
+      Object.entries(state.retiredTracks ?? {}).filter(
+        ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
+      )
+    ),
     presence,
     stage: {
       ...state.stage,
@@ -608,11 +614,13 @@ function applySfuCommand(
       sessionId: message.sessionId,
       userId: token.userId,
     }));
-    const { tracks, broadcast } = replaceRoomPublications(
+    const { tracks, broadcast, retired, stale } = replaceRoomPublications(
       state.tracks,
-      published
+      published,
+      state.retiredTracks
     );
-    const next = { ...state, tracks };
+    if (stale) return denied(state, 'stale_publication', message.requestId);
+    const next = { ...state, tracks, retiredTracks: retired };
 
     return outcome(next, {
       broadcast: [

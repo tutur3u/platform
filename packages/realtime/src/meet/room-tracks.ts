@@ -4,15 +4,23 @@ import type {
 } from './messages';
 
 export function meetTrackKey(track: MeetRealtimeRoomTrack) {
-  return `${track.sessionId}:${track.trackName ?? track.mid ?? track.userId}`;
+  return `${encodeURIComponent(track.sessionId)}:${encodeURIComponent(track.trackName ?? track.mid ?? track.userId)}`;
+}
+
+export function retiredTrackKey(track: MeetRealtimeRoomTrack) {
+  return `${encodeURIComponent(track.userId)}:${meetTrackKey(track)}`;
 }
 
 /** A recovered publisher replaces its previous registration for each named track. */
 export function replaceRoomPublications(
   current: Record<string, MeetRealtimeRoomTrack>,
-  published: MeetRealtimeRoomTrack[]
+  published: MeetRealtimeRoomTrack[],
+  retired: Record<string, true> = {}
 ) {
+  if (published.some((track) => retired[retiredTrackKey(track)]))
+    return { tracks: current, broadcast: [], retired, stale: true };
   const tracks = { ...current };
+  const nextRetired = { ...retired };
   const closed = new Map<string, MeetRealtimeRoomTrack[]>();
   for (const next of published) {
     for (const [key, previous] of Object.entries(tracks)) {
@@ -23,6 +31,7 @@ export function replaceRoomPublications(
         previous.sessionId !== next.sessionId
       ) {
         delete tracks[key];
+        nextRetired[retiredTrackKey(previous)] = true;
         const group = closed.get(previous.sessionId) ?? [];
         group.push(previous);
         closed.set(previous.sessionId, group);
@@ -38,5 +47,5 @@ export function replaceRoomPublications(
       tracks: removed,
     })
   );
-  return { tracks, broadcast };
+  return { tracks, broadcast, retired: nextRetired, stale: false };
 }
