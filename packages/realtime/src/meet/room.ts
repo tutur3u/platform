@@ -1,3 +1,7 @@
+import { meetTrackKey, replaceRoomPublications } from './room-tracks';
+
+export { meetTrackKey } from './room-tracks';
+
 import type {
   MeetRealtimeClientMessage,
   MeetRealtimeRoomTrack,
@@ -102,10 +106,6 @@ export function createMeetPresence(
     role: token.role,
     userId: token.userId,
   };
-}
-
-export function meetTrackKey(track: MeetRealtimeRoomTrack) {
-  return `${track.sessionId}:${track.trackName ?? track.mid ?? track.userId}`;
 }
 
 /** Allow throttled connected tabs a bounded grace period before expiring. */
@@ -608,14 +608,15 @@ function applySfuCommand(
       sessionId: message.sessionId,
       userId: token.userId,
     }));
-    const tracks = { ...state.tracks };
-    for (const track of published) {
-      tracks[meetTrackKey(track)] = track;
-    }
+    const { tracks, broadcast } = replaceRoomPublications(
+      state.tracks,
+      published
+    );
     const next = { ...state, tracks };
 
     return outcome(next, {
       broadcast: [
+        ...broadcast,
         {
           requestId: message.requestId,
           sessionId: message.sessionId,
