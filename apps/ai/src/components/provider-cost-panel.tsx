@@ -61,7 +61,9 @@ export function ProviderCostPanel({
                   <th>{t('app')}</th>
                   <th>{t('service')}</th>
                   <th className="text-right">{t('runs')}</th>
-                  <th className="text-right">{t('amount')}</th>
+                  <th className="text-right">
+                    {t('amount', { currency: currency.code })}
+                  </th>
                 </tr>
               </thead>
               <tbody>

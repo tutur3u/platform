@@ -455,7 +455,7 @@
     "prompts": "Prompts",
     "prompts-description": "Versioned prompt templates that this workspace can call from the agents API.",
     "provider-costs": {
-      "amount": "Reported cost (USD)",
+      "amount": "Reported cost ({currency})",
       "app": "App",
       "coverage": "Dedicated account daily totals replace covered run costs to avoid double counting. Only synchronized records are included; missing records are not free usage. USD amounts exclude unreported subscription fees, taxes or credits. Account-day records include the full UTC day when it overlaps the selected range.",
       "description": "Imported provider-reported expenses, separate from AI credits. Grouped by original run month (UTC) within the selected date range.",

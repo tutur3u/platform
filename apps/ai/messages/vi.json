@@ -455,7 +455,7 @@
     "prompts": "Prompt",
     "prompts-description": "Các mẫu prompt có phiên bản mà không gian làm việc này có thể gọi qua API agents.",
     "provider-costs": {
-      "amount": "Chi phí báo cáo (USD)",
+      "amount": "Chi phí ghi nhận ({currency})",
       "app": "Ứng dụng",
       "coverage": "Tổng ngày của tài khoản chuyên dùng thay thế chi phí lượt đã bao gồm để tránh tính hai lần. Chỉ gồm bản ghi đã đồng bộ; dữ liệu thiếu không phải miễn phí. Số tiền USD không gồm phí thuê bao, thuế hoặc tín dụng chưa báo cáo. Bản ghi ngày tính toàn bộ ngày UTC nếu giao với khoảng đã chọn.",
       "description": "Chi phí do nhà cung cấp báo cáo, tách biệt với tín dụng AI. Nhóm theo tháng gốc của lượt chạy (UTC) trong khoảng ngày đã chọn.",
