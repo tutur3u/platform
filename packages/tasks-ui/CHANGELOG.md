@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.15.2...tasks-ui-v0.16.0) (2026-09-07)
+
+
+### Features
+
+* **planning:** integrate tasks and calendar workflows ([454bb45](https://github.com/tutur3u/platform/commit/454bb4589cdc85967a75a1cb04e01dd004223cbd))
+
+
+### Bug Fixes
+
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **planning:** prevent collection redirect loops ([7ecda71](https://github.com/tutur3u/platform/commit/7ecda71eb0d4fb64810a8cb7cc8a913d654b6ac8))
+* **planning:** prevent collection redirect loops ([#5222](https://github.com/tutur3u/platform/issues/5222)) ([d62f725](https://github.com/tutur3u/platform/commit/d62f725186339d38a372f4c532b891f19a67fbc3))
+* **planning:** repair embedded APIs and simplify navigation ([5e82d77](https://github.com/tutur3u/platform/commit/5e82d77e183c5603d04cbe76bf3bba8bf3a94eca))
+* **tasks:** isolate saved draft recovery and cancel stale defaults ([bafe225](https://github.com/tutur3u/platform/commit/bafe225d3958a621ed1c0e214684448401391381))
+* **tasks:** preserve calendar drafts and recover failed task creation ([#5237](https://github.com/tutur3u/platform/issues/5237)) ([2b9acbf](https://github.com/tutur3u/platform/commit/2b9acbfcb19edff9680f4eb2c5c5b18a0e56ec8b))
+* **tasks:** preserve recovered drafts during dialog initialization ([d55e656](https://github.com/tutur3u/platform/commit/d55e65656f20ea6e9af0bd9bee21464a94451a45))
+* **tasks:** preserve recovered drafts during dialog initialization ([#5242](https://github.com/tutur3u/platform/issues/5242)) ([1240af5](https://github.com/tutur3u/platform/commit/1240af549644d1473a808c1925c7e3cf02ae85ff))
+* **tasks:** preserve saved draft fields and clear completed recovery ([2fe459c](https://github.com/tutur3u/platform/commit/2fe459cef8e1f4562b7d70f389bc334b51284d2f))
+* **tasks:** preserve task and calendar drafts until saves finish ([34b4902](https://github.com/tutur3u/platform/commit/34b4902b0382a3aa9e10249a0d83205c9a530878))
+* **tasks:** protect creation drafts across dialog close paths ([b6133bb](https://github.com/tutur3u/platform/commit/b6133bb36e9d7ee896684d4ddd1d83975d9f2815))
+* **tasks:** recover partial saves and display actionable errors ([c4887c9](https://github.com/tutur3u/platform/commit/c4887c98377fd8493f3e6ae4219763d8872e2a5b))
+* **tasks:** reset relationship drafts per editing session ([9987822](https://github.com/tutur3u/platform/commit/99878224dda961a37598b0e0d34a97f6e245b272))
+* **tasks:** retain deleted draft identity during refresh ([f10749d](https://github.com/tutur3u/platform/commit/f10749d168db14fb9cb9577dcda44538e36462d0))
+
 ## [0.15.2](https://github.com/tutur3u/platform/compare/tasks-ui-v0.15.1...tasks-ui-v0.15.2) (2026-09-04)
 
 

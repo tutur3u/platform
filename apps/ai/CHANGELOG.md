@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.11.3...ai-studio-v0.12.0) (2026-09-07)
+
+
+### Features
+
+* **ai:** aggregate external provider expenses ([9eeaa91](https://github.com/tutur3u/platform/commit/9eeaa9183ecf6f6a301093f8482e2a5852e21e5f))
+* **ai:** aggregate external provider expenses ([#5224](https://github.com/tutur3u/platform/issues/5224)) ([a3de60d](https://github.com/tutur3u/platform/commit/a3de60d7c89bfb5ae982d491c4e43fb179f4c392))
+* **ai:** expose app-scoped usage reports ([da2bf3e](https://github.com/tutur3u/platform/commit/da2bf3ebe084948a38d0493637b385845324bcdf))
+* **ai:** retain provider invoices and expose integrations ([3a8a4e7](https://github.com/tutur3u/platform/commit/3a8a4e7cebb0a2a57acedbcfb35fb74b4feed8e4))
+* **calendar:** add installable apps and bounded PWA caching ([f4b2a1c](https://github.com/tutur3u/platform/commit/f4b2a1cf7943783fddc45f537df73589f19594f6))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+
+
+### Bug Fixes
+
+* **ai:** distinguish missing and partial provider usage ([56131e6](https://github.com/tutur3u/platform/commit/56131e6c54cd0c24cadcdeec62840fcfb32ac41f))
+* **ai:** handle provider cost range and account edge cases ([f439e71](https://github.com/tutur3u/platform/commit/f439e710ba9fb5b582d2ced39712abde34978614))
+* **ai:** label provider costs in the display currency ([54cdaf9](https://github.com/tutur3u/platform/commit/54cdaf9c3e918c0f85c76f7f95aa7a9e8fb790f1))
+* **ai:** preserve credits refresh with invalid date ranges ([bb3391d](https://github.com/tutur3u/platform/commit/bb3391d820567e268b18a250bd44a41e2f5bfb23))
+* **ai:** preserve structured output and failed usage costs ([c8423c9](https://github.com/tutur3u/platform/commit/c8423c93c1905460bd2ca5d45e944f08d1634bb5))
+* **ai:** preserve structured output and failed usage costs ([#5226](https://github.com/tutur3u/platform/issues/5226)) ([ad9de07](https://github.com/tutur3u/platform/commit/ad9de077b7607f2e7de5bab580eb638c68beecd7))
+* **ai:** retain usage from completed steps on failure ([346b6e4](https://github.com/tutur3u/platform/commit/346b6e4422291324f44824bc155f9585f36de838))
+* **ai:** surface incomplete costs and price reasoning once ([7b2406e](https://github.com/tutur3u/platform/commit/7b2406e54d06d909b981281ac7fb4bd11dff435b))
+* **ai:** validate strict schemas and isolate test spies ([3ccc986](https://github.com/tutur3u/platform/commit/3ccc986b25a62945254681fb18fe2432fad3664b))
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **tasks:** preserve task and calendar drafts until saves finish ([34b4902](https://github.com/tutur3u/platform/commit/34b4902b0382a3aa9e10249a0d83205c9a530878))
+* **tasks:** recover partial saves and display actionable errors ([c4887c9](https://github.com/tutur3u/platform/commit/c4887c98377fd8493f3e6ae4219763d8872e2a5b))
+
 ## [0.11.3](https://github.com/tutur3u/platform/compare/ai-studio-v0.11.2...ai-studio-v0.11.3) (2026-08-29)
 
 

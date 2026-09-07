@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/ui-v0.30.2...ui-v0.31.0) (2026-09-07)
+
+
+### Features
+
+* **calendar:** add installable apps and bounded PWA caching ([f4b2a1c](https://github.com/tutur3u/platform/commit/f4b2a1cf7943783fddc45f537df73589f19594f6))
+* **calendar:** add installable Tasks and Calendar with bounded caching ([#5231](https://github.com/tutur3u/platform/issues/5231)) ([7078824](https://github.com/tutur3u/platform/commit/70788244874d811da3e1ce3a9af2c9389739a8c3))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **colab:** make workshops a login-first workspace ([89613ca](https://github.com/tutur3u/platform/commit/89613ca10de53fe39412c58342ee453cd0db4006))
+* **colab:** reuse the shared Tuturuuu structure shell ([11ca1fa](https://github.com/tutur3u/platform/commit/11ca1fa35bba8a64fdb9b56972b5c0f11c87339f))
+* **meet:** integrate instant rooms with Calendar ([9631fd1](https://github.com/tutur3u/platform/commit/9631fd1373615f3e8be55dd028d54b441e78a023))
+* **meet:** integrate instant rooms with Calendar ([#5248](https://github.com/tutur3u/platform/issues/5248)) ([5f3e77d](https://github.com/tutur3u/platform/commit/5f3e77df20e636fe270cdc7d1b1d88817a3f00bd))
+* **planning:** integrate tasks and calendar workflows ([454bb45](https://github.com/tutur3u/platform/commit/454bb4589cdc85967a75a1cb04e01dd004223cbd))
+
+
+### Bug Fixes
+
+* **calendar:** align view controls and stabilize event pagination ([0497af1](https://github.com/tutur3u/platform/commit/0497af126102a59d1d12af6615505a98a2ccb6a7))
+* **calendar:** contain month cell content on mobile ([a3518bb](https://github.com/tutur3u/platform/commit/a3518bbbe90009f87f6a7f38078027996bdcb3a3))
+* **calendar:** expose sync failures and repair completion tracking ([a5601a5](https://github.com/tutur3u/platform/commit/a5601a5f0fd33741392a6f6e16dad337ba4f0a35))
+* **calendar:** fail closed on linked event access ([9071075](https://github.com/tutur3u/platform/commit/90710750398ff0143f2a71f2b19c8631469018e9))
+* **calendar:** handle partial sync in every client action ([b820bbc](https://github.com/tutur3u/platform/commit/b820bbcdb725e38c13342eed96062b2f4a0afacb))
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+* **calendar:** import sync helper from calendar entry point ([753dd22](https://github.com/tutur3u/platform/commit/753dd22ab9a480144ee94384aa9983d58787d311))
+* **calendar:** initialize draft timezone helper ([e1b81c7](https://github.com/tutur3u/platform/commit/e1b81c75b8aef6d9ded2c162511f0c32b03b7db1))
+* **calendar:** make sync failures visible and recoverable ([#5227](https://github.com/tutur3u/platform/issues/5227)) ([465c9f8](https://github.com/tutur3u/platform/commit/465c9f82c5464a54675fa9d9f814c630902916e6))
+* **calendar:** preserve concurrent connection updates ([8307cbb](https://github.com/tutur3u/platform/commit/8307cbbc5d0ccb943eee77a259ab76147c1c698c))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **calendar:** respect week preferences and classify DNS failures ([ff88780](https://github.com/tutur3u/platform/commit/ff88780dc3d25edb46b5e15ee323d8eee3ad26db))
+* **calendar:** restore provider assets in tasks and format sync time ([0359132](https://github.com/tutur3u/platform/commit/0359132f96947aaeeb02bb776af3d2a24794e0b2))
+* **calendar:** show sync recovery with sidebar navigation ([033e04b](https://github.com/tutur3u/platform/commit/033e04bb44d8b1ca466ad0638e9525ca96c84202))
+* **colab:** complete shared profile and footer controls ([4cc8959](https://github.com/tutur3u/platform/commit/4cc895951d9181f86972362ca864e4aa2bba9ed2))
+* **colab:** preserve Next.js account menu parity ([1910015](https://github.com/tutur3u/platform/commit/19100151cb43220277d0970047fc8903d942348e))
+* **meet:** make Calendar scheduling atomic ([aa3a4cc](https://github.com/tutur3u/platform/commit/aa3a4cc46ccdfccfa7648923bcd8207a7a91467f))
+* **meet:** make Calendar scheduling atomic ([#5249](https://github.com/tutur3u/platform/issues/5249)) ([a2914ca](https://github.com/tutur3u/platform/commit/a2914cabde82b4f9a5549801807f73e9d2c728b0))
+* **planning:** repair embedded APIs and simplify navigation ([5e82d77](https://github.com/tutur3u/platform/commit/5e82d77e183c5603d04cbe76bf3bba8bf3a94eca))
+* **tasks:** preserve calendar drafts and recover failed task creation ([#5237](https://github.com/tutur3u/platform/issues/5237)) ([2b9acbf](https://github.com/tutur3u/platform/commit/2b9acbfcb19edff9680f4eb2c5c5b18a0e56ec8b))
+* **tasks:** preserve task and calendar drafts until saves finish ([34b4902](https://github.com/tutur3u/platform/commit/34b4902b0382a3aa9e10249a0d83205c9a530878))
+* **tasks:** recover partial saves and display actionable errors ([c4887c9](https://github.com/tutur3u/platform/commit/c4887c98377fd8493f3e6ae4219763d8872e2a5b))
+
 ## [0.30.2](https://github.com/tutur3u/platform/compare/ui-v0.30.1...ui-v0.30.2) (2026-08-31)
 
 

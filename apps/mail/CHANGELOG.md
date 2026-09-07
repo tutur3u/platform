@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/mail-v0.19.2...mail-v0.20.0) (2026-09-07)
+
+
+### Features
+
+* **calendar:** add installable apps and bounded PWA caching ([f4b2a1c](https://github.com/tutur3u/platform/commit/f4b2a1cf7943783fddc45f537df73589f19594f6))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **mail:** add smart forwarding and immersive message reader ([6d525c4](https://github.com/tutur3u/platform/commit/6d525c41404dab7cb670750a7bb5f7bd75c41836))
+* **mail:** import Google Takeout history ([21bbac9](https://github.com/tutur3u/platform/commit/21bbac94916dcbcd80c45a28e1561f7c7fd72e20))
+* **mail:** import Google Takeout history ([#5239](https://github.com/tutur3u/platform/issues/5239)) ([b6ab9fa](https://github.com/tutur3u/platform/commit/b6ab9fa6557669b88a522007e24de55306e93f25))
+* **mail:** simplify navigation and refine the mail client ([243d2c4](https://github.com/tutur3u/platform/commit/243d2c444ab6c51cf5b27ab99e38d52d5920e78c))
+* **mail:** support private distribution groups and member permissions ([f84e36a](https://github.com/tutur3u/platform/commit/f84e36acd0c4a86580aab62cfff92b6df3b924b1))
+
+
+### Bug Fixes
+
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **mail:** constrain mobile message list width ([2e2d4da](https://github.com/tutur3u/platform/commit/2e2d4da7b476a6a30e5e8b04e06da38fdd88e310))
+* **mail:** harden Takeout imports and simplify Meet actions ([#5245](https://github.com/tutur3u/platform/issues/5245)) ([6244be3](https://github.com/tutur3u/platform/commit/6244be33cee9620c67c74e944aa62b74376b4260))
+* **mail:** hide desktop panes on mobile ([36409ed](https://github.com/tutur3u/platform/commit/36409ed2f44fb3d27ebdf05dabc5de16a8609a8d))
+* **mail:** preserve catch-all delivery for inactive mailboxes ([914c07e](https://github.com/tutur3u/platform/commit/914c07effcad1547f496b7373eb7466cb660c043))
+* **mail:** preserve existing Takeout labels ([806e2e5](https://github.com/tutur3u/platform/commit/806e2e545e24a413f0f7d001de79228c4388c253))
+* **mail:** preserve newsletter layout and reader appearance ([02f07d5](https://github.com/tutur3u/platform/commit/02f07d5484a435a261dff6bbcaf0b5ad116f7798))
+* **mail:** preserve reserved import keys ([2faf607](https://github.com/tutur3u/platform/commit/2faf607ab22101f02f4ead889de6b04013e3575c))
+* **mail:** preserve sanitized import collisions ([a9b9fb4](https://github.com/tutur3u/platform/commit/a9b9fb445a6151183447f436109976e28ae89991))
+* **mail:** reconcile interrupted history imports ([7fbba63](https://github.com/tutur3u/platform/commit/7fbba6347db6d7ff46624d29d129e2d241c63960))
+* **mail:** restore inbox initialization and settings ([c818555](https://github.com/tutur3u/platform/commit/c818555365cea8d3694b0e796b634c9f77f5a612))
+* **mail:** sanitize imported label names ([a5504d9](https://github.com/tutur3u/platform/commit/a5504d99cbdd7f02f6c977011a7810dbe35afab6))
+* **mail:** sanitize legacy import payloads ([ea43343](https://github.com/tutur3u/platform/commit/ea433433bde207ae1dbeaf238c144adb96929d4d))
+* **mail:** stabilize large history imports ([6626543](https://github.com/tutur3u/platform/commit/6626543e5d67c8e9f216b674eafa5a1019ff7dba))
+* **tasks:** preserve task and calendar drafts until saves finish ([34b4902](https://github.com/tutur3u/platform/commit/34b4902b0382a3aa9e10249a0d83205c9a530878))
+* **tasks:** recover partial saves and display actionable errors ([c4887c9](https://github.com/tutur3u/platform/commit/c4887c98377fd8493f3e6ae4219763d8872e2a5b))
+
 ## [0.19.2](https://github.com/tutur3u/platform/compare/mail-v0.19.1...mail-v0.19.2) (2026-08-29)
 
 

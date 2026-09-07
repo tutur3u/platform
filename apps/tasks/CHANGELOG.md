@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/tasks-v0.32.1...tasks-v0.33.0) (2026-09-07)
+
+
+### Features
+
+* **calendar:** add installable apps and bounded PWA caching ([f4b2a1c](https://github.com/tutur3u/platform/commit/f4b2a1cf7943783fddc45f537df73589f19594f6))
+* **calendar:** add installable Tasks and Calendar with bounded caching ([#5231](https://github.com/tutur3u/platform/issues/5231)) ([7078824](https://github.com/tutur3u/platform/commit/70788244874d811da3e1ce3a9af2c9389739a8c3))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **planning:** integrate tasks and calendar workflows ([454bb45](https://github.com/tutur3u/platform/commit/454bb4589cdc85967a75a1cb04e01dd004223cbd))
+
+
+### Bug Fixes
+
+* **calendar:** expose sync failures and repair completion tracking ([a5601a5](https://github.com/tutur3u/platform/commit/a5601a5f0fd33741392a6f6e16dad337ba4f0a35))
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+* **calendar:** make sync failures visible and recoverable ([#5227](https://github.com/tutur3u/platform/issues/5227)) ([465c9f8](https://github.com/tutur3u/platform/commit/465c9f82c5464a54675fa9d9f814c630902916e6))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **calendar:** restore provider assets in tasks and format sync time ([0359132](https://github.com/tutur3u/platform/commit/0359132f96947aaeeb02bb776af3d2a24794e0b2))
+* **calendar:** transpile the PWA bootstrap entry point ([343b444](https://github.com/tutur3u/platform/commit/343b444b3ecb14467785fb711f67a9f5f830a764))
+* **planning:** authenticate embedded task dependencies ([2286cc4](https://github.com/tutur3u/platform/commit/2286cc4a9105ce13ff0ba059ecc11a3defa3c46f))
+* **planning:** authenticate embedded task dependencies ([#5225](https://github.com/tutur3u/platform/issues/5225)) ([efd21ed](https://github.com/tutur3u/platform/commit/efd21edd87b77e474abae3973edaea90160b2dd9))
+* **planning:** prevent collection redirect loops ([7ecda71](https://github.com/tutur3u/platform/commit/7ecda71eb0d4fb64810a8cb7cc8a913d654b6ac8))
+* **planning:** prevent collection redirect loops ([#5222](https://github.com/tutur3u/platform/issues/5222)) ([d62f725](https://github.com/tutur3u/platform/commit/d62f725186339d38a372f4c532b891f19a67fbc3))
+* **planning:** repair embedded APIs and simplify navigation ([5e82d77](https://github.com/tutur3u/platform/commit/5e82d77e183c5603d04cbe76bf3bba8bf3a94eca))
+* **tasks:** preserve calendar drafts and recover failed task creation ([#5237](https://github.com/tutur3u/platform/issues/5237)) ([2b9acbf](https://github.com/tutur3u/platform/commit/2b9acbfcb19edff9680f4eb2c5c5b18a0e56ec8b))
+* **tasks:** preserve task and calendar drafts until saves finish ([34b4902](https://github.com/tutur3u/platform/commit/34b4902b0382a3aa9e10249a0d83205c9a530878))
+
 ## [0.32.1](https://github.com/tutur3u/platform/compare/tasks-v0.32.0...tasks-v0.32.1) (2026-09-04)
 
 

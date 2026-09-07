@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.27.0...tanstack-web-v0.28.0) (2026-09-07)
+
+
+### Features
+
+* **assistant:** redesign Gemini Live workspace and tools ([1e7b6d1](https://github.com/tutur3u/platform/commit/1e7b6d15e2091aac257db803b4f6e39d07c1c94b))
+* **calendar:** add installable apps and bounded PWA caching ([f4b2a1c](https://github.com/tutur3u/platform/commit/f4b2a1cf7943783fddc45f537df73589f19594f6))
+* **cli:** configure external apps and CMS bindings ([c68cf0e](https://github.com/tutur3u/platform/commit/c68cf0e41a361a156d29907feb72b48dc91ae969))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **meet:** host frontend and realtime on Cloudflare ([0dbdbed](https://github.com/tutur3u/platform/commit/0dbdbed731333ff4cd82b85f95e79049ef59600f))
+* **meet:** host on Cloudflare and restrict meeting creation ([#5223](https://github.com/tutur3u/platform/issues/5223)) ([dff093b](https://github.com/tutur3u/platform/commit/dff093b4b6ade986ffd54f3c756d08589e47ad8e))
+* **meet:** integrate instant rooms with Calendar ([9631fd1](https://github.com/tutur3u/platform/commit/9631fd1373615f3e8be55dd028d54b441e78a023))
+* **meet:** integrate instant rooms with Calendar ([#5248](https://github.com/tutur3u/platform/issues/5248)) ([5f3e77d](https://github.com/tutur3u/platform/commit/5f3e77df20e636fe270cdc7d1b1d88817a3f00bd))
+* **planning:** integrate tasks and calendar workflows ([454bb45](https://github.com/tutur3u/platform/commit/454bb4589cdc85967a75a1cb04e01dd004223cbd))
+
+
+### Bug Fixes
+
+* **calendar:** complete sync recovery review follow-through ([3ec1251](https://github.com/tutur3u/platform/commit/3ec125177b11aa0bf1157c906d40c30cd2bdbdf4))
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+* **calendar:** make sync failures visible and recoverable ([#5227](https://github.com/tutur3u/platform/issues/5227)) ([465c9f8](https://github.com/tutur3u/platform/commit/465c9f82c5464a54675fa9d9f814c630902916e6))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **colab:** complete shared profile and footer controls ([4cc8959](https://github.com/tutur3u/platform/commit/4cc895951d9181f86972362ca864e4aa2bba9ed2))
+* **meet:** complete Cloudflare migration validation ([dab6309](https://github.com/tutur3u/platform/commit/dab6309a1d7f43c9a434d2825cee077e09110413))
+* **meet:** restrict meeting hosts and restore reliable call media ([2a8a533](https://github.com/tutur3u/platform/commit/2a8a53355181fc8d429653506f7c845c02cf7ae9))
+* **tasks:** preserve calendar drafts and recover failed task creation ([#5237](https://github.com/tutur3u/platform/issues/5237)) ([2b9acbf](https://github.com/tutur3u/platform/commit/2b9acbfcb19edff9680f4eb2c5c5b18a0e56ec8b))
+* **tasks:** recover partial saves and display actionable errors ([c4887c9](https://github.com/tutur3u/platform/commit/c4887c98377fd8493f3e6ae4219763d8872e2a5b))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.26.0...tanstack-web-v0.27.0) (2026-08-27)
 
 

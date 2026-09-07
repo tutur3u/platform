@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/utils-v0.27.1...utils-v0.28.0) (2026-09-07)
+
+
+### Features
+
+* **calendar:** add installable Tasks and Calendar with bounded caching ([#5231](https://github.com/tutur3u/platform/issues/5231)) ([7078824](https://github.com/tutur3u/platform/commit/70788244874d811da3e1ce3a9af2c9389739a8c3))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **meet:** host on Cloudflare and restrict meeting creation ([#5223](https://github.com/tutur3u/platform/issues/5223)) ([dff093b](https://github.com/tutur3u/platform/commit/dff093b4b6ade986ffd54f3c756d08589e47ad8e))
+
+
+### Bug Fixes
+
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **meet:** restrict meeting hosts and restore reliable call media ([2a8a533](https://github.com/tutur3u/platform/commit/2a8a53355181fc8d429653506f7c845c02cf7ae9))
+
 ## [0.27.1](https://github.com/tutur3u/platform/compare/utils-v0.27.0...utils-v0.27.1) (2026-09-04)
 
 

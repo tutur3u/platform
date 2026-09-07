@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/types-v0.28.0...types-v0.29.0) (2026-09-07)
+
+
+### Features
+
+* **ai:** aggregate external provider expenses ([9eeaa91](https://github.com/tutur3u/platform/commit/9eeaa9183ecf6f6a301093f8482e2a5852e21e5f))
+* **ai:** aggregate external provider expenses ([#5224](https://github.com/tutur3u/platform/issues/5224)) ([a3de60d](https://github.com/tutur3u/platform/commit/a3de60d7c89bfb5ae982d491c4e43fb179f4c392))
+* **ai:** retain provider invoices and expose integrations ([3a8a4e7](https://github.com/tutur3u/platform/commit/3a8a4e7cebb0a2a57acedbcfb35fb74b4feed8e4))
+* **meet:** add Gemini transcripts notes and usage statistics ([9b0cb67](https://github.com/tutur3u/platform/commit/9b0cb6785e9463e6b60770deffdc32ac82e293b5))
+* **meet:** add live Gemini transcripts, notes, and cost statistics ([#5232](https://github.com/tutur3u/platform/issues/5232)) ([c8c262a](https://github.com/tutur3u/platform/commit/c8c262a3f10e397dca7930d8c9442aba0b1293ec))
+* **meet:** integrate instant rooms with Calendar ([9631fd1](https://github.com/tutur3u/platform/commit/9631fd1373615f3e8be55dd028d54b441e78a023))
+* **meet:** integrate instant rooms with Calendar ([#5248](https://github.com/tutur3u/platform/issues/5248)) ([5f3e77d](https://github.com/tutur3u/platform/commit/5f3e77df20e636fe270cdc7d1b1d88817a3f00bd))
+
+
+### Bug Fixes
+
+* **meet:** make Calendar scheduling atomic ([aa3a4cc](https://github.com/tutur3u/platform/commit/aa3a4cc46ccdfccfa7648923bcd8207a7a91467f))
+* **meet:** make Calendar scheduling atomic ([#5249](https://github.com/tutur3u/platform/issues/5249)) ([a2914ca](https://github.com/tutur3u/platform/commit/a2914cabde82b4f9a5549801807f73e9d2c728b0))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/types-v0.27.0...types-v0.28.0) (2026-08-26)
 
 
