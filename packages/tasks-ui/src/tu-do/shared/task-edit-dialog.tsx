@@ -298,8 +298,8 @@ export function TaskEditDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Form state
   const formState = useTaskFormState({
+    draftId,
     task,
     boardId,
     isOpen,
@@ -939,9 +939,8 @@ export function TaskEditDialog({
     formState.autoSchedule,
   ]);
 
-  const draftStorageKey = getDraftStorageKey(boardId);
+  const draftStorageKey = getDraftStorageKey(boardId, draftId);
 
-  // Suggestion menus
   const suggestionMenus = useSuggestionMenus({
     editorInstance,
     isOpen,
@@ -959,7 +958,6 @@ export function TaskEditDialog({
     setShowAdvancedOptions,
   });
 
-  // Change detection
   const { hasUnsavedChanges, canSave } = useTaskChangeDetection({
     task,
     name: formState.name,
@@ -1162,6 +1160,7 @@ export function TaskEditDialog({
     savingRelationship,
     pendingRelationships,
   } = useTaskDependencies({
+    draftId,
     isOpen,
     taskId: task?.id,
     boardId,
@@ -1172,8 +1171,9 @@ export function TaskEditDialog({
     onUpdate,
   });
 
-  // Form reset
   useTaskFormReset({
+    draftId,
+    boardId,
     isOpen,
     isCreateMode,
     task,

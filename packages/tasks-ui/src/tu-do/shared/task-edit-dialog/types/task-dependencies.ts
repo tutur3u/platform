@@ -6,6 +6,7 @@ import type { PendingTaskRelationships } from './pending-relationship';
 
 export interface UseTaskDependenciesProps {
   taskId?: string;
+  draftId?: string;
   boardId: string;
   wsId: string;
   listId?: string;

@@ -660,7 +660,7 @@ async function handleSaveAsDraft({
       throw new Error(err.error || 'Failed to save draft');
     }
 
-    clearDraft(getDraftStorageKey(boardId));
+    clearDraft(getDraftStorageKey(boardId, draftId));
 
     // Invalidate drafts query so the drafts page updates
     await queryClient.invalidateQueries({ queryKey: ['task-drafts'] });

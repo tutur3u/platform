@@ -516,8 +516,8 @@ export function getTaskDescriptionPreviewText(
 /**
  * Generate draft storage key for a board
  */
-export function getDraftStorageKey(boardId: string): string {
-  return `tu-do:task-draft:${boardId}`;
+export function getDraftStorageKey(boardId: string, draftId?: string): string {
+  return `tu-do:task-draft:${boardId}${draftId ? `:saved:${draftId}` : ''}`;
 }
 
 /**
