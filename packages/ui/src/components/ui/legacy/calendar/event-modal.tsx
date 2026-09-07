@@ -52,7 +52,7 @@ import {
 } from '@tuturuuu/ui/form';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { notifySave } from '@tuturuuu/ui/save-notification';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   Select,
@@ -99,6 +99,7 @@ import {
   CalendarEventProviderIcon,
   getCalendarEventProviderDisplay,
 } from './event-provider-display';
+import { saveCalendarEventDrafts } from './save-calendar-event-drafts';
 import { useCalendarSettings } from './settings/settings-context';
 import { useEventDraftSession } from './use-event-draft-session';
 
@@ -161,7 +162,7 @@ function findEventSourceOption(
 }
 
 export function EventModal() {
-  const { toast } = useToast();
+  const toast = notifySave;
   const startPickerRef = useRef<HTMLButtonElement>(null);
   const endPickerRef = useRef<HTMLButtonElement>(null);
 
@@ -408,7 +409,8 @@ export function EventModal() {
       };
 
       if (activeEvent?.id === 'new') {
-        await addEvent(eventData as Omit<CalendarEvent, 'id'>);
+        const saved = await addEvent(eventData as Omit<CalendarEvent, 'id'>);
+        if (!saved?.id) throw new Error();
       } else if (activeEvent?.id) {
         // For multi-day events, always use the original event ID
         // The activeEvent should already contain the original event from the database
@@ -495,29 +497,13 @@ export function EventModal() {
     setIsSaving(true);
     try {
       const eventsToSave = generatedEvents;
-      const savedEvents: CalendarEvent[] = [];
-      const failedEvents: Array<{ event: CalendarEvent; error: unknown }> = [];
-
-      // Save each event individually
-      for (const eventData of eventsToSave || []) {
-        try {
-          const calendarEvent: Omit<CalendarEvent, 'id'> = {
-            title: eventData.title || 'New Event',
-            description: eventData.description || '',
-            start_at: eventData.start_at || '',
-            end_at: eventData.end_at || '',
-            color: eventData.color || 'BLUE',
-            location: eventData.location || '',
-            locked: eventData.locked || false,
-            source: sourceInputFromOption(selectedSourceOption),
-          };
-
-          const savedEvent = await addEvent(calendarEvent);
-          if (savedEvent) savedEvents.push(savedEvent);
-        } catch (error) {
-          failedEvents.push({ event: eventData as CalendarEvent, error });
-        }
-      }
+      const { savedEvents, failedEvents } = await saveCalendarEventDrafts(
+        eventsToSave ?? [],
+        addEvent,
+        sourceInputFromOption(selectedSourceOption)
+      );
+      setGeneratedEvents(failedEvents);
+      setCurrentEventIndex(0);
 
       // Show success notification
       if (savedEvents.length > 0) {
@@ -525,7 +511,7 @@ export function EventModal() {
           title: 'Success',
           description: `${savedEvents.length}/${eventsToSave?.length || 0} event${savedEvents.length > 1 ? 's' : ''} saved`,
         });
-        closeModal();
+        if (failedEvents.length === 0) closeModal();
       }
 
       // If there are failed events, show an error notification
@@ -957,10 +943,7 @@ export function EventModal() {
   const providerDisplay = getCalendarEventProviderDisplay(event);
 
   return (
-    <Dialog
-      open={isModalOpen}
-      onOpenChange={(open) => !open && !isSaving && closeModal()}
-    >
+    <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
         <DialogHeader className="border-b px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center gap-2 font-semibold text-xl">
@@ -1039,7 +1022,7 @@ export function EventModal() {
                         )}
                       </div>
                       <Select
-                        value={selectedSourceId ?? undefined}
+                        value={selectedSourceOption?.id}
                         onValueChange={(value) => setSelectedSourceId(value)}
                         disabled={sourceOptions.length === 0 || isSaving}
                       >

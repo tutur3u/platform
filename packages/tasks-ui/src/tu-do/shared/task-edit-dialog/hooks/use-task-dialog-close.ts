@@ -2,11 +2,11 @@
 
 import { useCallback, useRef } from 'react';
 import type { PendingRelationship } from '../types/pending-relationship';
+import { isTaskDraftSaving } from './task-draft-save-session';
 
 export interface UseTaskDialogCloseProps {
   taskId?: string;
   isCreateMode: boolean;
-  isSaving?: boolean;
   collaborationMode: boolean;
   synced: boolean;
   connected: boolean;
@@ -44,7 +44,7 @@ export interface UseTaskDialogCloseReturn {
 export function useTaskDialogClose({
   taskId,
   isCreateMode,
-  isSaving = false,
+  draftStorageKey,
   collaborationMode,
   synced,
   connected,
@@ -63,7 +63,8 @@ export function useTaskDialogClose({
 
   // Main close handler
   const handleClose = useCallback(async (): Promise<boolean> => {
-    if (isSaving || isClosingRef.current) return false;
+    if (isTaskDraftSaving(draftStorageKey) || isClosingRef.current)
+      return false;
 
     // Show warning if not synced in collaboration mode
     if (
@@ -100,7 +101,7 @@ export function useTaskDialogClose({
       isClosingRef.current = false;
     }
   }, [
-    isSaving,
+    draftStorageKey,
     collaborationMode,
     isCreateMode,
     synced,
@@ -116,7 +117,7 @@ export function useTaskDialogClose({
 
   // Force close handler (bypasses sync warning)
   const handleForceClose = useCallback(async () => {
-    if (isSaving) return;
+    if (isTaskDraftSaving(draftStorageKey)) return;
     setShowSyncWarning(false);
     onClose();
 
@@ -134,7 +135,7 @@ export function useTaskDialogClose({
 
     performBackgroundSaves();
   }, [
-    isSaving,
+    draftStorageKey,
     setShowSyncWarning,
     onClose,
     flushNameUpdate,
@@ -145,7 +146,7 @@ export function useTaskDialogClose({
 
   // Navigate back to related task (for create mode with pending relationship)
   const handleNavigateBack = useCallback(async () => {
-    if (isSaving) return;
+    if (isTaskDraftSaving(draftStorageKey)) return;
     const taskIdToNavigateTo =
       pendingRelationship?.relatedTaskId ?? parentTaskId;
 
@@ -156,7 +157,7 @@ export function useTaskDialogClose({
 
     await onNavigateToTask(taskIdToNavigateTo);
   }, [
-    isSaving,
+    draftStorageKey,
     pendingRelationship?.relatedTaskId,
     parentTaskId,
     onNavigateToTask,

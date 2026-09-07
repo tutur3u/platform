@@ -11,6 +11,26 @@ describe('task draft recovery', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
+  it.each([
+    { selectedAssignees: [{ id: 'user-1' }] },
+    { selectedProjects: [{ id: 'project-1' }] },
+    { totalDuration: 2 },
+    { autoSchedule: true },
+  ])('preserves a metadata-only draft: %j', (draft) => {
+    const key = getDraftStorageKey('board-1');
+    localStorage.setItem(key, JSON.stringify(draft));
+    renderHook(() =>
+      useTaskFormState({
+        boardId: 'board-1',
+        isOpen: true,
+        isCreateMode: true,
+        isSaving: false,
+      })
+    );
+    act(() => vi.runAllTimers());
+    expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject(draft);
+  });
+
   it('restores content and recovery metadata without clearing it during hydration or editing another task', () => {
     const key = getDraftStorageKey('board-1');
     const draft = {

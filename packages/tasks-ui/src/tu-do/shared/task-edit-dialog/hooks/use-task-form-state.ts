@@ -229,14 +229,7 @@ export function useTaskFormState({
       return;
     }
 
-    const hasAny =
-      (name || '').trim().length > 0 ||
-      !!description ||
-      !!priority ||
-      !!startDate ||
-      !!endDate ||
-      !!estimationPoints ||
-      (selectedLabels && selectedLabels.length > 0);
+    const hasAny = hasDraftContent(getFormState());
 
     if (!hasAny) {
       clearDraft(draftStorageKey);
@@ -277,6 +270,7 @@ export function useTaskFormState({
     isOpen,
     isCreateMode,
     isSaving,
+    getFormState,
     draftStorageKey,
     name,
     description,

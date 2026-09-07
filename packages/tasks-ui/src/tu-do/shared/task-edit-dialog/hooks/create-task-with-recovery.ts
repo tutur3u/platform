@@ -4,7 +4,7 @@ import type { JSONContent } from '@tiptap/react';
 import { updateCurrentUserTaskSchedulingSettings } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
-import type { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import type { notifySave } from '@tuturuuu/ui/save-notification';
 import {
   createOptimisticTask,
   createTask,
@@ -124,7 +124,7 @@ export async function handleCreateTask({
   boardId: string;
   broadcast: BoardBroadcastFn | null;
   queryClient: QueryClient;
-  toast: ReturnType<typeof useToast>['toast'];
+  toast: typeof notifySave;
   onUpdate: () => void;
   onClose: () => void;
   setIsLoading: (loading: boolean) => void;
@@ -313,29 +313,30 @@ export async function handleCreateTask({
       minSplitDurationMinutes != null ||
       maxSplitDurationMinutes != null;
 
-    if (hasAnySchedulingValue) {
-      try {
-        await updateCurrentUserTaskSchedulingSettings(newTask.id, {
-          total_duration: totalDuration,
-          is_splittable: isSplittable,
-          min_split_duration_minutes: minSplitDurationMinutes,
-          max_split_duration_minutes: maxSplitDurationMinutes,
-          calendar_hours: calendarHours ?? null,
-          auto_schedule: autoSchedule,
-        });
-      } catch (schedulingError) {
-        console.error(
-          'Failed to save personal scheduling settings via API:',
-          schedulingError
-        );
-      }
+    if (hasAnySchedulingValue || resumingTask) {
+      await updateCurrentUserTaskSchedulingSettings(newTask.id, {
+        total_duration: totalDuration,
+        is_splittable: isSplittable,
+        min_split_duration_minutes: minSplitDurationMinutes,
+        max_split_duration_minutes: maxSplitDurationMinutes,
+        calendar_hours: calendarHours ?? null,
+        auto_schedule: autoSchedule,
+      });
     }
 
     const affectedRelationshipTaskIds = await persistPendingTaskRelationships(
       wsId,
       newTask.id,
       normalizedPendingRelationships,
-      queryClient
+      queryClient,
+      {
+        confirmed: loadDraft(draftKey)?.confirmedRelationships ?? [],
+        save: (confirmedRelationships) =>
+          saveDraft(draftKey, {
+            ...loadDraft(draftKey),
+            confirmedRelationships,
+          }),
+      }
     );
 
     const createdTaskWithRelations = withTaskCreateRelations(newTask, {
@@ -427,12 +428,7 @@ export async function handleCreateTask({
         queryClient,
         boardId,
         optimisticTask.id,
-        withTaskCreateRelations(persistedTask, {
-          pendingTaskRelationships: normalizedPendingRelationships,
-          selectedAssignees: optimisticAssignees,
-          selectedLabels,
-          selectedProjects,
-        })
+        persistedTask
       );
     } else {
       removeOptimisticTaskFromBoardCaches(

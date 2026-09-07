@@ -4,7 +4,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import type { WorkspaceTaskUpdatePayload } from '@tuturuuu/internal-api/tasks';
 import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { notifySave } from '@tuturuuu/ui/save-notification';
 import {
   MAX_TASK_DESCRIPTION_LENGTH,
   MAX_TASK_NAME_LENGTH,
@@ -31,6 +31,7 @@ import {
   updateTaskDescriptionCaches,
 } from '../utils';
 import { handleCreateTask } from './create-task-with-recovery';
+import { beginTaskDraftSave } from './task-draft-save-session';
 
 export { handleCreateTask } from './create-task-with-recovery';
 export {
@@ -225,17 +226,17 @@ export function useTaskSave({
   setSelectedAssignees,
   setSelectedProjects,
 }: UseTaskSaveProps): UseTaskSaveReturn {
-  const { toast } = useToast();
+  const toast = notifySave;
   const t = useTranslations('ws-task-boards.dialog');
   const updateSharedTaskMutation = useUpdateSharedTask();
   const contextBroadcast = useBoardBroadcast();
   const broadcast = contextBroadcast ?? getActiveBroadcast();
   const handleSaveRef = useRef<() => void>(() => {});
 
-  const saveInFlight = useRef(false);
   const handleSave = useCallback(async () => {
-    if (!name?.trim() || saveInFlight.current) return;
-    saveInFlight.current = true;
+    if (!name?.trim()) return;
+    const finishSave = beginTaskDraftSave(draftStorageKey);
+    if (!finishSave) return;
     try {
       // Shared task links may be view-only.
       if (!isCreateMode && shareCode && sharedPermission !== 'edit') {
@@ -318,6 +319,7 @@ export function useTaskSave({
           selectedLabels,
           selectedAssignees,
           selectedProjects,
+          pendingTaskRelationships,
           totalDuration,
           isSplittable,
           minSplitDurationMinutes,
@@ -467,7 +469,7 @@ export function useTaskSave({
         setIsSaving,
       });
     } finally {
-      saveInFlight.current = false;
+      finishSave();
       setIsSaving(false);
       setIsLoading(false);
     }
@@ -490,7 +492,6 @@ export function useTaskSave({
     selectedProjects,
     queryClient,
     boardId,
-    toast,
     onUpdate,
     createMultiple,
     onClose,
@@ -596,7 +597,7 @@ async function handleSaveAsDraft({
   selectedProjects: Array<{ id: string; name?: string; status?: string }>;
   createMultiple: boolean;
   queryClient: QueryClient;
-  toast: ReturnType<typeof useToast>['toast'];
+  toast: typeof notifySave;
   onClose: () => void;
   setIsLoading: (loading: boolean) => void;
   setIsSaving: (saving: boolean) => void;
@@ -748,7 +749,7 @@ async function handleUpdateTask({
   updateSharedTaskMutation: ReturnType<typeof useUpdateSharedTask>;
   shareCode?: string;
   queryClient: QueryClient;
-  toast: ReturnType<typeof useToast>['toast'];
+  toast: typeof notifySave;
   onUpdate: () => void;
   onClose: () => void;
   setIsLoading: (loading: boolean) => void;
@@ -774,39 +775,43 @@ async function handleUpdateTask({
             undefined)
           : (descriptionString ?? undefined);
 
-      updateSharedTaskMutation.mutate(
-        {
-          shareCode,
-          updates: {
-            ...taskUpdates,
-            description: sharedDescription,
+      await updateSharedTaskMutation
+        .mutateAsync(
+          {
+            shareCode,
+            updates: {
+              ...taskUpdates,
+              description: sharedDescription,
+            },
           },
-        },
-        {
-          onSuccess: async () => {
-            toast({
-              title: 'Task updated',
-              description: 'The task has been successfully updated.',
-            });
-            dispatchTaskSoundCue('update');
-            onUpdate();
-            onClose();
-          },
-          onError: (error: Error) => {
-            console.error('Error updating shared task:', error);
-            toast({
-              title: 'Error updating task',
-              description: error.message || 'Please try again later',
-              variant: 'destructive',
-            });
-          },
-          onSettled: () => {
-            setIsLoading(false);
-            setIsSaving(false);
-            queryClient.invalidateQueries({ queryKey: ['task-history'] });
-          },
-        }
-      );
+          {
+            onSuccess: async () => {
+              toast({
+                title: 'Task updated',
+                description: 'The task has been successfully updated.',
+              });
+              dispatchTaskSoundCue('update');
+              onUpdate();
+              onClose();
+            },
+            onError: (error: Error) => {
+              console.error('Error updating shared task:', error);
+              toast({
+                title: 'Error updating task',
+                description: error.message || 'Please try again later',
+                variant: 'destructive',
+              });
+            },
+            onSettled: () => {
+              setIsLoading(false);
+              setIsSaving(false);
+              queryClient.invalidateQueries({ queryKey: ['task-history'] });
+            },
+          }
+        )
+        .catch(() => {
+          /* onError above preserves the existing error feedback. */
+        });
       return;
     }
 

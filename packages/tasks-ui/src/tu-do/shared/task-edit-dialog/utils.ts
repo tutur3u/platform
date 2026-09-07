@@ -533,7 +533,18 @@ export function hasDraftContent(draft: any): boolean {
     draft.startDate ||
     draft.endDate ||
     draft.estimationPoints != null ||
-    (Array.isArray(draft.selectedLabels) && draft.selectedLabels.length > 0)
+    ['selectedLabels', 'selectedAssignees', 'selectedProjects'].some(
+      (key) => Array.isArray(draft[key]) && draft[key].length > 0
+    ) ||
+    [
+      'totalDuration',
+      'minSplitDurationMinutes',
+      'maxSplitDurationMinutes',
+      'calendarHours',
+    ].some((key) => draft[key] != null) ||
+    draft.isSplittable === true ||
+    draft.autoSchedule === true ||
+    !!draft.persistedTask?.id
   );
 }
 

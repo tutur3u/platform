@@ -1,11 +1,11 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { createWorkspaceTaskRelationship } from '@tuturuuu/internal-api/tasks';
+import {
+  createWorkspaceTaskRelationship,
+  deleteWorkspaceTaskRelationship,
+} from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { RelatedTaskInfo } from '@tuturuuu/types/primitives/TaskRelationship';
 import type { PendingTaskRelationships } from '../types/pending-relationship';
-
-const internalApiBaseUrl =
-  typeof window !== 'undefined' ? window.location.origin : undefined;
 
 export function dedupeById(tasks: RelatedTaskInfo[]): RelatedTaskInfo[] {
   const seen = new Set<string>();
@@ -141,97 +141,77 @@ export function applyPendingRelationshipSummary({
   });
 }
 
+export interface TaskCreateRelationshipEdge {
+  source_task_id: string;
+  target_task_id: string;
+  type: 'parent_child' | 'blocks' | 'related';
+}
+
 export async function persistPendingTaskRelationships(
   wsId: string,
   newTaskId: string,
-  pendingTaskRelationships: PendingTaskRelationships,
-  queryClient: QueryClient
+  pending: PendingTaskRelationships,
+  queryClient: QueryClient,
+  progress?: {
+    confirmed: TaskCreateRelationshipEdge[];
+    save: (edges: TaskCreateRelationshipEdge[]) => void;
+  }
 ) {
-  const affectedTaskIds = new Set<string>([newTaskId]);
-
-  const createRelationship = async ({
-    sourceTaskId,
-    targetTaskId,
-    type,
-  }: {
-    sourceTaskId: string;
-    targetTaskId: string;
-    type: 'parent_child' | 'blocks' | 'related';
-  }) => {
-    await createWorkspaceTaskRelationship(
-      wsId,
-      sourceTaskId,
-      {
-        source_task_id: sourceTaskId,
-        target_task_id: targetTaskId,
-        type,
-      },
-      internalApiBaseUrl ? { baseUrl: internalApiBaseUrl } : undefined
-    );
-    affectedTaskIds.add(sourceTaskId);
-    affectedTaskIds.add(targetTaskId);
+  const desired: TaskCreateRelationshipEdge[] = [];
+  const add = (
+    source_task_id: string,
+    target_task_id: string,
+    type: TaskCreateRelationshipEdge['type']
+  ) => {
+    desired.push({ source_task_id, target_task_id, type });
   };
-
+  if (pending.parentTask?.id)
+    add(pending.parentTask.id, newTaskId, 'parent_child');
+  for (const task of dedupeById(pending.childTasks))
+    add(newTaskId, task.id, 'parent_child');
+  for (const task of dedupeById(pending.blockingTasks))
+    add(newTaskId, task.id, 'blocks');
+  for (const task of dedupeById(pending.blockedByTasks))
+    add(task.id, newTaskId, 'blocks');
+  for (const task of dedupeById(pending.relatedTasks))
+    add(task.id, newTaskId, 'related');
+  const key = (edge: TaskCreateRelationshipEdge) =>
+    `${edge.source_task_id}:${edge.target_task_id}:${edge.type}`;
+  const wanted = new Set(desired.map(key));
+  const confirmed = new Map(
+    (progress?.confirmed ?? []).map((edge) => [key(edge), edge])
+  );
+  const affectedTaskIds = new Set<string>([newTaskId]);
+  const record = (edge: TaskCreateRelationshipEdge) => {
+    affectedTaskIds.add(edge.source_task_id);
+    affectedTaskIds.add(edge.target_task_id);
+    progress?.save([...confirmed.values()]);
+  };
   try {
-    if (pendingTaskRelationships.parentTask?.id) {
-      await createRelationship({
-        sourceTaskId: pendingTaskRelationships.parentTask.id,
-        targetTaskId: newTaskId,
-        type: 'parent_child',
-      });
+    // A retry may include edits to the draft's previously confirmed relationships.
+    for (const [edgeKey, edge] of confirmed) {
+      if (wanted.has(edgeKey)) continue;
+      await deleteWorkspaceTaskRelationship(wsId, edge.source_task_id, edge);
+      confirmed.delete(edgeKey);
+      record(edge);
     }
-
-    for (const childTask of dedupeById(pendingTaskRelationships.childTasks)) {
-      await createRelationship({
-        sourceTaskId: newTaskId,
-        targetTaskId: childTask.id,
-        type: 'parent_child',
-      });
+    for (const edge of desired) {
+      if (!confirmed.has(key(edge))) {
+        await createWorkspaceTaskRelationship(wsId, edge.source_task_id, edge);
+        confirmed.set(key(edge), edge);
+        record(edge);
+      }
+      affectedTaskIds.add(edge.source_task_id);
+      affectedTaskIds.add(edge.target_task_id);
     }
-
-    for (const blockingTask of dedupeById(
-      pendingTaskRelationships.blockingTasks
-    )) {
-      await createRelationship({
-        sourceTaskId: newTaskId,
-        targetTaskId: blockingTask.id,
-        type: 'blocks',
-      });
-    }
-
-    for (const blockedByTask of dedupeById(
-      pendingTaskRelationships.blockedByTasks
-    )) {
-      await createRelationship({
-        sourceTaskId: blockedByTask.id,
-        targetTaskId: newTaskId,
-        type: 'blocks',
-      });
-    }
-
-    for (const relatedTask of dedupeById(
-      pendingTaskRelationships.relatedTasks
-    )) {
-      await createRelationship({
-        sourceTaskId: relatedTask.id,
-        targetTaskId: newTaskId,
-        type: 'related',
-      });
-    }
-  } catch (relationshipError) {
-    console.error(
-      'Failed to create pending task relationships:',
-      relationshipError
+  } finally {
+    await Promise.all(
+      [...affectedTaskIds].map((taskId) =>
+        queryClient.invalidateQueries({
+          queryKey: ['task-relationships', taskId],
+        })
+      )
     );
   }
-
-  await Promise.all(
-    Array.from(affectedTaskIds).map((taskId) =>
-      queryClient.invalidateQueries({
-        queryKey: ['task-relationships', taskId],
-      })
-    )
-  );
-
-  return Array.from(affectedTaskIds);
+  return [...affectedTaskIds];
 }

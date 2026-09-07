@@ -20,6 +20,8 @@ import {
   useBoardBroadcast,
 } from '../../board-broadcast-context';
 import type { PendingTaskRelationships } from '../types/pending-relationship';
+import { getDraftStorageKey, loadDraft } from '../utils';
+import { dedupeById as dedupeTasksById } from './task-create-relationships';
 
 export interface UseTaskDependenciesProps {
   taskId?: string;
@@ -69,17 +71,6 @@ export interface UseTaskDependenciesReturn {
   pendingRelationships: PendingTaskRelationships;
 }
 
-function dedupeTasksById(tasks: RelatedTaskInfo[]): RelatedTaskInfo[] {
-  const seen = new Set<string>();
-  return tasks.filter((task) => {
-    if (!task.id || seen.has(task.id)) {
-      return false;
-    }
-    seen.add(task.id);
-    return true;
-  });
-}
-
 /**
  * Custom hook for managing task dependencies/relationships
  * Handles parent-child, blocking, blocked-by, and related task relationships
@@ -90,9 +81,17 @@ export function useTaskDependencies({
   wsId,
   listId,
   isCreateMode,
-  initialPendingRelationships,
+  initialPendingRelationships: seededRelationships,
   onUpdate,
 }: UseTaskDependenciesProps): UseTaskDependenciesReturn {
+  const [initialPendingRelationships] = useState<
+    PendingTaskRelationships | undefined
+  >(() =>
+    isCreateMode
+      ? (loadDraft(getDraftStorageKey(boardId))?.pendingTaskRelationships ??
+        seededRelationships)
+      : seededRelationships
+  );
   const queryClient = useQueryClient();
   const tc = useTranslations('common');
   const contextBroadcast = useBoardBroadcast();

@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beginTaskDraftSave } from '../task-draft-save-session';
 import { useTaskDialogClose } from '../use-task-dialog-close';
 
 function createDeferred<T>() {
@@ -22,22 +23,20 @@ describe('useTaskDialogClose', () => {
   it('blocks normal, forced, and back navigation while creation is saving', async () => {
     const onClose = vi.fn();
     const onNavigateToTask = vi.fn();
-    const { result, rerender } = renderHook(
-      ({ isSaving }) =>
-        useTaskDialogClose({
-          isCreateMode: true,
-          isSaving,
-          collaborationMode: false,
-          synced: true,
-          connected: true,
-          draftStorageKey: 'draft-key',
-          onClose,
-          onNavigateToTask,
-          parentTaskId: 'parent-1',
-          flushNameUpdate: vi.fn(),
-          setShowSyncWarning: vi.fn(),
-        }),
-      { initialProps: { isSaving: true } }
+    const finishSave = beginTaskDraftSave('draft-key');
+    const { result } = renderHook(() =>
+      useTaskDialogClose({
+        isCreateMode: true,
+        collaborationMode: false,
+        synced: true,
+        connected: true,
+        draftStorageKey: 'draft-key',
+        onClose,
+        onNavigateToTask,
+        parentTaskId: 'parent-1',
+        flushNameUpdate: vi.fn(),
+        setShowSyncWarning: vi.fn(),
+      })
     );
     await act(async () => {
       expect(await result.current.handleClose()).toBe(false);
@@ -46,7 +45,7 @@ describe('useTaskDialogClose', () => {
     });
     expect(onClose).not.toHaveBeenCalled();
     expect(onNavigateToTask).not.toHaveBeenCalled();
-    rerender({ isSaving: false });
+    finishSave?.();
     await act(async () => {
       await result.current.handleClose();
     });

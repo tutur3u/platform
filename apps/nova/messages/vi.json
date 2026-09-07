@@ -4806,10 +4806,6 @@
     "create": "Tạo bảng",
     "create_description": "Tạo bảng nhiệm vụ",
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
-    "dialog": {
-      "create_recovery": "Chưa thể hoàn tất lưu. Bản nháp của bạn vẫn được giữ lại. Hãy kiểm tra và thử lại. {error}",
-      "create_unconfirmed": "Máy chủ chưa xác nhận tác vụ đã được lưu."
-    },
     "errors": {
       "name_exists": "Đã có bảng nhiệm vụ với tên này trong không gian làm việc."
     },

@@ -2088,9 +2088,9 @@ export function TaskEditDialog({
     return currentSerializedDescription !== initialSerializedDescription;
   }, [isCreateMode, task?.id]);
 
+  // Close handlers
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
     useTaskDialogClose({
-      isSaving,
       taskId: task?.id,
       isCreateMode,
       collaborationMode: effectiveCollaborationMode,
@@ -2114,6 +2114,7 @@ export function TaskEditDialog({
       setShowSyncWarning,
     });
 
+  // Attempt close — intercepts in create mode with unsaved changes
   const handleAttemptClose = useCallback(async () => {
     if (isCreateMode && hasUnsavedChanges && formState.name.trim()) {
       setShowUnsavedWarning(true);
