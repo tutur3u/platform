@@ -18,13 +18,16 @@ export async function loadMeetingCalendarEvent({
     return null;
   }
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('workspace_calendar_events')
     .select('id, start_at')
     .eq('ws_id', wsId)
     .eq('scheduling_metadata->>type', 'tuturuuu_meeting')
     .eq('scheduling_metadata->>meeting_id', meetingId)
+    .order('created_at', { ascending: true })
+    .limit(1)
     .maybeSingle();
+  if (error) throw error;
 
   return data;
 }
