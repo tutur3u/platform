@@ -1,5 +1,7 @@
 import type {
+  MeetApprovedParticipant,
   MeetMediaState,
+  MeetReaction,
   MeetRealtimePresence,
   MeetRealtimeRecordingState,
   MeetRealtimeRole,
@@ -7,6 +9,7 @@ import type {
   MeetRealtimeServerMessage,
   MeetRealtimeStageState,
   MeetRealtimeWaitingParticipant,
+  MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
 
 export type CallAdmission = 'connecting' | 'waiting' | 'admitted' | 'denied';
@@ -20,6 +23,14 @@ export interface CallChatMessage {
 }
 
 export interface CallState {
+  ended: boolean;
+  settings: MeetRoomSettings;
+  approved: MeetApprovedParticipant[];
+  reactions: Array<{
+    reaction: MeetReaction;
+    userId: string;
+    createdAt: string;
+  }>;
   admission: CallAdmission;
   chat: CallChatMessage[];
   /** Set when the room rejects something, cleared on the next success. */
@@ -37,6 +48,10 @@ export interface CallState {
 }
 
 export const INITIAL_CALL_STATE: CallState = {
+  ended: false,
+  settings: { shareNotes: false },
+  approved: [],
+  reactions: [],
   admission: 'connecting',
   chat: [],
   error: null,
@@ -70,6 +85,14 @@ export function reduceCallState(
   message: MeetRealtimeServerMessage
 ): CallState {
   switch (message.type) {
+    case 'room.ended':
+      return { ...state, ended: true, participants: {}, remoteTracks: {} };
+    case 'room.settings':
+      return { ...state, settings: message.settings };
+    case 'admission.approved':
+      return { ...state, approved: message.participants };
+    case 'reaction':
+      return { ...state, reactions: [...state.reactions, message].slice(-24) };
     case 'ready':
       return {
         ...state,

@@ -2,9 +2,11 @@
 
 import { Hand, MicOff, Send, UserMinus, X } from '@tuturuuu/icons';
 import type {
+  MeetApprovedParticipant,
   MeetRealtimePresence,
   MeetRealtimeWaitingParticipant,
 } from '@tuturuuu/realtime/meet';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -12,8 +14,13 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import type { CallChatMessage } from '../lib/call-state';
 import type { CallPanel } from './control-bar';
+import { RoomHostControls } from './room-host-controls';
 
 export function SidePanel({
+  approved,
+  onForget,
+  shareNotes,
+  onShareNotes,
   canManage,
   chat,
   onClose,
@@ -27,6 +34,10 @@ export function SidePanel({
   selfUserId,
   waiting,
 }: {
+  approved: MeetApprovedParticipant[];
+  onForget: (userId: string) => void;
+  shareNotes: boolean;
+  onShareNotes: (enabled: boolean) => void;
   canManage: boolean;
   chat: CallChatMessage[];
   onClose: () => void;
@@ -43,7 +54,7 @@ export function SidePanel({
   const t = useTranslations('meet.call');
 
   return (
-    <aside className="flex min-h-0 w-full shrink-0 flex-col border-l bg-background md:w-80">
+    <aside className="flex max-h-[45dvh] min-h-0 w-full shrink-0 flex-col border-l bg-background md:max-h-none md:w-80">
       <header className="flex items-center justify-between border-b px-4 py-3">
         <h2 className="font-medium text-sm">
           {panel === 'chat'
@@ -70,6 +81,10 @@ export function SidePanel({
         />
       ) : (
         <ParticipantsPanel
+          approved={approved}
+          onForget={onForget}
+          shareNotes={shareNotes}
+          onShareNotes={onShareNotes}
           canManage={canManage}
           onDecideAdmission={onDecideAdmission}
           onMute={onMute}
@@ -171,6 +186,10 @@ function ChatPanel({
 }
 
 function ParticipantsPanel({
+  approved,
+  onForget,
+  shareNotes,
+  onShareNotes,
   canManage,
   onDecideAdmission,
   onMute,
@@ -180,6 +199,10 @@ function ParticipantsPanel({
   selfUserId,
   waiting,
 }: {
+  approved: MeetApprovedParticipant[];
+  onForget: (userId: string) => void;
+  shareNotes: boolean;
+  onShareNotes: (enabled: boolean) => void;
   canManage: boolean;
   onDecideAdmission: (userId: string, admit: boolean) => void;
   onMute: (userId: string) => void;
@@ -204,6 +227,12 @@ function ParticipantsPanel({
                 className="flex items-center gap-2 rounded-lg border bg-muted/30 p-2"
                 key={entry.userId}
               >
+                <Avatar className="size-7">
+                  <AvatarImage src={entry.avatarUrl} alt="" />
+                  <AvatarFallback>
+                    {entry.displayName.slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
                 <span className="min-w-0 flex-1 truncate text-sm">
                   {entry.displayName}
                 </span>
@@ -240,6 +269,12 @@ function ParticipantsPanel({
               className="group flex items-center gap-2 px-4 py-2.5"
               key={participant.userId}
             >
+              <Avatar className="size-8">
+                <AvatarImage src={participant.avatarUrl} alt="" />
+                <AvatarFallback>
+                  {participant.displayName.slice(0, 1)}
+                </AvatarFallback>
+              </Avatar>
               <span className="min-w-0 flex-1 truncate text-sm">
                 {participant.displayName}
                 {isSelf ? (
@@ -290,6 +325,14 @@ function ParticipantsPanel({
           );
         })}
       </ul>
+      {canManage && (
+        <RoomHostControls
+          approved={approved}
+          onForget={onForget}
+          shareNotes={shareNotes}
+          onShareNotes={onShareNotes}
+        />
+      )}
     </ScrollArea>
   );
 }

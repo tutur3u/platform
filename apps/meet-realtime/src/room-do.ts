@@ -3,6 +3,7 @@ import {
   applyMeetRoomCommand,
   CloudflareSfuClient,
   canMeetRealtimeManageParticipants,
+  canReadRoomNotes,
   createMeetRoomSnapshot,
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
@@ -54,7 +55,7 @@ export class MeetRoomDurableObject implements DurableObject {
   private async load() {
     if (this.loaded) return;
     const stored = await this.state.storage.get<MeetRoomSnapshot>(SNAPSHOT_KEY);
-    if (stored) this.snapshot = stored;
+    if (stored) this.snapshot = { ...createMeetRoomSnapshot(), ...stored };
     this.loaded = true;
   }
 
@@ -161,6 +162,15 @@ export class MeetRoomDurableObject implements DurableObject {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    if (new URL(request.url).pathname === '/room-state') {
+      return Response.json(
+        {
+          canReadNotes: canReadRoomNotes(this.snapshot, token),
+          ended: !!this.snapshot.ended,
+        },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      );
+    }
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
 
@@ -177,7 +187,7 @@ export class MeetRoomDurableObject implements DurableObject {
 
     // A newly admitted participant needs the tracks published before they
     // arrived, otherwise they would only ever see people who join after them.
-    if (!this.snapshot.waiting[token.userId]) {
+    if (!this.snapshot.ended && !this.snapshot.waiting[token.userId]) {
       this.sendTo(server, meetPresenceMessage(this.snapshot, token.roomId));
       for (const track of remoteMeetTracks(this.snapshot, token.userId)) {
         this.sendTo(server, {
@@ -189,6 +199,7 @@ export class MeetRoomDurableObject implements DurableObject {
       }
     }
 
+    this.disconnect(outcome.disconnect);
     void this.scheduleSweep();
 
     return new Response(null, { status: 101, webSocket: client });

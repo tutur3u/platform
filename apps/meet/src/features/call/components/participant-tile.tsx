@@ -1,18 +1,19 @@
 'use client';
-
-import { Hand, MicOff, MonitorUp, Pin } from '@tuturuuu/icons';
+import {
+  Hand,
+  Maximize,
+  MicOff,
+  Minimize,
+  MonitorUp,
+  Pin,
+} from '@tuturuuu/icons';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { memo, useEffect, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
-
-function initials(displayName: string) {
-  return displayName
-    .split(/\s+/u)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-}
 
 function ParticipantTileImpl({
   className,
@@ -22,6 +23,9 @@ function ParticipantTileImpl({
   isSpeaking,
   participant,
   stream,
+  kind = 'camera',
+  onFocus,
+  focused,
 }: {
   className?: string;
   resumePlaybackLabel: string;
@@ -30,46 +34,79 @@ function ParticipantTileImpl({
   isSpeaking?: boolean;
   participant: MeetRealtimePresence;
   stream?: MediaStream | null;
+  kind?: 'camera' | 'screen';
+  onFocus?: () => void;
+  focused?: boolean;
 }) {
+  const t = useTranslations('meet.call');
+  const [expanded, setExpanded] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const tileRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const changed = () =>
+      setFullscreen(document.fullscreenElement === tileRef.current);
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setExpanded(false);
+    };
+    document.addEventListener('fullscreenchange', changed);
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.removeEventListener('fullscreenchange', changed);
+      document.removeEventListener('keydown', onEscape);
+    };
+  }, []);
   const showVideo = Boolean(
     stream &&
-      (participant.media.videoEnabled || participant.media.screenEnabled)
+      (kind === 'screen'
+        ? participant.media.screenEnabled
+        : participant.media.videoEnabled)
   );
-
   useEffect(() => {
     const element = videoRef.current;
-    if (!element) return;
-    return attachMediaPlayback(element, stream ?? null, setPlaybackBlocked);
+    if (element)
+      return attachMediaPlayback(element, stream ?? null, setPlaybackBlocked);
   }, [stream]);
-
   return (
     <div
+      ref={tileRef}
       className={cn(
-        'group relative isolate overflow-hidden rounded-xl bg-dynamic-surface ring-1 ring-border transition-[box-shadow,transform]',
+        'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-dynamic-surface ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
-        className
+        className,
+        expanded && 'fixed inset-0 z-50 h-dvh w-screen rounded-none'
       )}
     >
       <video
         autoPlay
-        className={cn(
-          'size-full',
-          participant.media.screenEnabled ? 'object-contain' : 'object-cover',
-          !showVideo && 'hidden',
-          // A self-view that is not mirrored feels broken to the user, but a
-          // shared screen must never be flipped.
-          isSelf && !participant.media.screenEnabled && '-scale-x-100'
-        )}
-        muted={isSelf}
         playsInline
+        muted={isSelf || kind === 'screen'}
         ref={videoRef}
+        className={cn(
+          'size-full object-contain',
+          !showVideo && 'hidden',
+          isSelf && kind === 'camera' && '-scale-x-100'
+        )}
       />
-      {playbackBlocked && !isSelf && (
-        <button
-          type="button"
-          className="absolute inset-x-3 top-3 z-10 rounded-md bg-background px-3 py-2 text-foreground text-sm shadow"
+      {!showVideo && (
+        <div className="grid size-full place-items-center">
+          <Avatar className="size-20 text-xl">
+            <AvatarImage src={participant.avatarUrl} alt="" />
+            <AvatarFallback>
+              {participant.displayName
+                .split(/\s+/u)
+                .slice(0, 2)
+                .map((name) => name[0]?.toUpperCase())
+                .join('')}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+      )}
+      {playbackBlocked && !isSelf && kind !== 'screen' && (
+        <Button
+          variant="secondary"
+          className="absolute top-3 left-3 z-20"
           onClick={() => {
             void videoRef.current
               ?.play()
@@ -78,70 +115,74 @@ function ParticipantTileImpl({
           }}
         >
           {resumePlaybackLabel}
-        </button>
+        </Button>
       )}
-      {!showVideo && (
-        <div className="grid size-full place-items-center">
-          <div className="grid size-16 place-items-center rounded-full bg-foreground/10 font-medium text-lg">
-            {initials(participant.displayName)}
-          </div>
-        </div>
-      )}
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
-        <span className="truncate font-medium text-sm text-white">
-          {participant.displayName}
-        </span>
-        {participant.media.audioEnabled ? null : (
-          <MicOff
-            aria-label="Muted"
-            className="size-3.5 shrink-0 text-white/80"
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 py-3 text-white">
+        {kind === 'screen' && (
+          <MonitorUp
+            aria-label={t('sharing_screen')}
+            className="size-4 shrink-0"
           />
         )}
-        {participant.media.screenEnabled ? (
-          <MonitorUp
-            aria-label="Sharing screen"
-            className="size-3.5 shrink-0 text-dynamic-blue"
-          />
-        ) : null}
-        {handRaised ? (
-          <Hand
-            aria-label="Hand raised"
-            className="size-3.5 shrink-0 text-dynamic-orange"
-          />
-        ) : null}
-      </div>
-
-      {isSelf ? (
-        <span className="pointer-events-none absolute top-2 right-2 rounded-md bg-black/50 px-1.5 py-0.5 font-medium text-[0.65rem] text-white uppercase tracking-wide">
-          <Pin className="mr-1 inline size-3" />
-          You
+        <span className="min-w-0 truncate font-medium text-sm">
+          {participant.displayName}
+          {isSelf ? ` · ${t('you')}` : ''}
         </span>
-      ) : null}
+        {!participant.media.audioEnabled && kind === 'camera' && (
+          <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
+        )}
+        {handRaised && (
+          <Hand
+            aria-label={t('hand_raised')}
+            className="size-4 shrink-0 text-dynamic-orange"
+          />
+        )}
+      </div>
+      <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        {onFocus && (
+          <Button
+            size="icon"
+            variant={focused ? 'secondary' : 'ghost'}
+            className="size-8"
+            aria-label={focused ? t('unfocus_feed') : t('focus_feed')}
+            aria-pressed={focused}
+            onClick={onFocus}
+          >
+            <Pin className="size-4" />
+          </Button>
+        )}
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-8"
+          aria-label={t(
+            expanded || fullscreen ? 'exit_fullscreen' : 'fullscreen_feed'
+          )}
+          onClick={() => {
+            if (expanded) {
+              setExpanded(false);
+              return;
+            }
+            if (fullscreen) {
+              void document.exitFullscreen();
+              return;
+            }
+            const tile = tileRef.current;
+            if (!tile?.requestFullscreen) {
+              setExpanded(true);
+              return;
+            }
+            void tile.requestFullscreen().catch(() => setExpanded(true));
+          }}
+        >
+          {expanded || fullscreen ? (
+            <Minimize className="size-4" />
+          ) : (
+            <Maximize className="size-4" />
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
-
-/**
- * Presence is republished on a heartbeat, so without memoisation every tile in
- * the room re-renders on a timer. Comparing the fields the tile actually paints
- * keeps a 12-person grid from thrashing.
- */
-export const ParticipantTile = memo(
-  ParticipantTileImpl,
-  (previous, next) =>
-    previous.participant.userId === next.participant.userId &&
-    previous.participant.displayName === next.participant.displayName &&
-    previous.participant.media.audioEnabled ===
-      next.participant.media.audioEnabled &&
-    previous.participant.media.videoEnabled ===
-      next.participant.media.videoEnabled &&
-    previous.participant.media.screenEnabled ===
-      next.participant.media.screenEnabled &&
-    previous.handRaised === next.handRaised &&
-    previous.isSelf === next.isSelf &&
-    previous.isSpeaking === next.isSpeaking &&
-    previous.stream === next.stream &&
-    previous.className === next.className &&
-    previous.resumePlaybackLabel === next.resumePlaybackLabel
-);
+export const ParticipantTile = memo(ParticipantTileImpl);

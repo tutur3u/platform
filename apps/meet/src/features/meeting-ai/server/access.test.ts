@@ -5,8 +5,10 @@ const mocks = vi.hoisted(() => ({
   user: vi.fn(),
   membership: vi.fn(),
   admin: vi.fn(),
+  shared: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('./room-access', () => ({ canReadSharedMeetingNotes: mocks.shared }));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.user,
 }));
@@ -65,20 +67,20 @@ describe('Meet AI satellite authorization', () => {
     ).toBe(401);
     expect(mocks.admin).not.toHaveBeenCalled();
   });
-  it.each([
-    ['membership_missing', 403],
-    ['membership_lookup_failed', 500],
-  ])('handles %s without querying meeting data', async (error, status) => {
-    const from = vi.fn();
-    mocks.admin.mockResolvedValue({ from });
-    mocks.user.mockResolvedValue({ id: 'actor' });
-    mocks.membership.mockResolvedValue({ ok: false, error });
-    expect(
-      (await meetAiResponse(() => meetAiAccess(request(), params))).status
-    ).toBe(status);
-    expect(from).not.toHaveBeenCalled();
-  });
-  it('allows member reads but reserves mutations for the creator', async () => {
+  it.each([['membership_lookup_failed', 500]])(
+    'handles %s without querying meeting data',
+    async (error, status) => {
+      const from = vi.fn();
+      mocks.admin.mockResolvedValue({ from });
+      mocks.user.mockResolvedValue({ id: 'actor' });
+      mocks.membership.mockResolvedValue({ ok: false, error });
+      expect(
+        (await meetAiResponse(() => meetAiAccess(request(), params))).status
+      ).toBe(status);
+      expect(from).not.toHaveBeenCalled();
+    }
+  );
+  it('allows shared participant reads but reserves mutations for the creator', async () => {
     const query = {
       select: vi.fn(),
       eq: vi.fn(),
@@ -92,7 +94,21 @@ describe('Meet AI satellite authorization', () => {
     mocks.admin.mockResolvedValue({ from: () => query });
     mocks.user.mockResolvedValue({ id: 'actor' });
     mocks.membership.mockResolvedValue({ ok: true });
+    mocks.shared.mockResolvedValue(false);
+    expect(
+      (await meetAiResponse(() => meetAiAccess(request(), params))).status
+    ).toBe(403);
+    mocks.shared.mockResolvedValue(true);
     expect((await meetAiAccess(request(), params)).canManage).toBe(false);
+    mocks.membership.mockResolvedValue({
+      ok: false,
+      error: 'membership_missing',
+    });
+    expect((await meetAiAccess(request(), params)).canManage).toBe(false);
+    mocks.shared.mockRejectedValue(new Error('offline'));
+    expect(
+      (await meetAiResponse(() => meetAiAccess(request(), params))).status
+    ).toBe(503);
     expect(
       (await meetAiResponse(() => meetAiAccess(request(), params, true))).status
     ).toBe(403);

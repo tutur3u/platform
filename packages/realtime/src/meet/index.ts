@@ -69,6 +69,13 @@ export {
   releaseParticipant,
   remoteMeetTracks,
 } from './room';
+export { canReadRoomNotes } from './room-controls';
+export type {
+  MeetApprovedParticipant,
+  MeetReaction,
+  MeetRoomSettings,
+} from './room-options';
+export { meetReactionSchema, meetRoomSettingsSchema } from './room-options';
 export type {
   AddTracksInput,
   CloseTracksInput,

@@ -3,6 +3,7 @@
 import {
   Circle,
   Hand,
+  Loader2,
   MessageSquare,
   Mic,
   MicOff,
@@ -16,7 +17,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 export type CallPanel = 'chat' | 'participants' | null;
 
@@ -27,8 +28,10 @@ function ControlButton({
   label,
   onClick,
   badge,
+  busy,
 }: {
   active?: boolean;
+  busy?: boolean;
   badge?: number;
   danger?: boolean;
   icon: ComponentType<{ className?: string }>;
@@ -40,6 +43,8 @@ function ControlButton({
       <TooltipTrigger asChild>
         <Button
           aria-label={label}
+          aria-busy={busy}
+          disabled={busy}
           aria-pressed={active}
           className={cn(
             'relative size-11 rounded-full',
@@ -53,7 +58,11 @@ function ControlButton({
           type="button"
           variant={danger ? 'default' : 'ghost'}
         >
-          <Icon className="size-5" />
+          {busy ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            <Icon className="size-5" />
+          )}
           {badge ? (
             <span className="absolute -top-0.5 -right-0.5 grid min-w-4 place-items-center rounded-full bg-dynamic-blue px-1 font-medium text-[0.6rem] text-white">
               {badge > 9 ? '9+' : badge}
@@ -68,6 +77,8 @@ function ControlButton({
 
 export function ControlBar({
   activePanel,
+  extraControls,
+  busyDevices,
   cameraOn,
   handRaised,
   micOn,
@@ -86,6 +97,8 @@ export function ControlBar({
   waitingCount,
 }: {
   activePanel: CallPanel;
+  extraControls?: ReactNode;
+  busyDevices?: { microphone?: boolean; camera?: boolean; screen?: boolean };
   cameraOn: boolean;
   handRaised: boolean;
   micOn: boolean;
@@ -110,18 +123,21 @@ export function ControlBar({
     <div className="flex flex-wrap items-center justify-center gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
       <ControlButton
         active={!micOn}
+        busy={busyDevices?.microphone}
         icon={micOn ? Mic : MicOff}
         label={micOn ? t('mute') : t('unmute')}
         onClick={onToggleMic}
       />
       <ControlButton
         active={!cameraOn}
+        busy={busyDevices?.camera}
         icon={cameraOn ? Video : VideoOff}
         label={cameraOn ? t('camera_off') : t('camera_on')}
         onClick={onToggleCamera}
       />
       <ControlButton
         active={screenOn}
+        busy={busyDevices?.screen}
         icon={MonitorUp}
         label={screenOn ? t('stop_sharing') : t('share_screen')}
         onClick={onToggleScreen}
@@ -142,6 +158,7 @@ export function ControlBar({
         />
       ) : null}
 
+      {extraControls}
       <div className="mx-1 h-6 w-px bg-border" />
 
       <ControlButton

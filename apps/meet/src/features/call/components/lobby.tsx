@@ -10,6 +10,7 @@ import {
   Video,
   VideoOff,
 } from '@tuturuuu/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -21,6 +22,7 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function Lobby({
   defaultDisplayName,
+  avatarUrl,
   connectionError,
   isJoining,
   meetingName,
@@ -30,12 +32,14 @@ export function Lobby({
   waiting,
 }: {
   defaultDisplayName: string;
+  avatarUrl?: string;
   isJoining: boolean;
   meetingName: string;
   transcriptionNotice?: string;
   /** Set when signaling could not be reached, so the CTA can explain itself. */
   connectionError?: string | null;
   onJoin: (options: {
+    previewStream: MediaStream | null;
     audioEnabled: boolean;
     displayName: string;
     videoEnabled: boolean;
@@ -50,6 +54,7 @@ export function Lobby({
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const transferred = useRef<MediaStream | null>(null);
 
   const cameraBlockedMessage = t('camera_blocked');
 
@@ -87,7 +92,8 @@ export function Lobby({
 
     return () => {
       cancelled = true;
-      for (const track of acquired?.getTracks() ?? []) track.stop();
+      if (transferred.current !== acquired)
+        for (const track of acquired?.getTracks() ?? []) track.stop();
     };
   }, [cameraBlockedMessage, videoEnabled]);
 
@@ -103,14 +109,20 @@ export function Lobby({
           {stream ? (
             <video
               autoPlay
-              className="size-full -scale-x-100 object-cover"
+              className="size-full -scale-x-100 object-contain"
               muted
               playsInline
               ref={videoRef}
             />
           ) : (
-            <div className="grid size-full place-items-center text-muted-foreground text-sm">
-              {previewError ?? t('camera_is_off')}
+            <div className="grid size-full place-items-center pb-12 text-muted-foreground text-sm">
+              <div className="grid justify-items-center gap-3">
+                <Avatar className="size-20">
+                  <AvatarImage src={avatarUrl} alt="" />
+                  <AvatarFallback>{displayName.slice(0, 1)}</AvatarFallback>
+                </Avatar>
+                <span>{previewError ?? t('camera_is_off')}</span>
+              </div>
             </div>
           )}
 
@@ -210,8 +222,9 @@ export function Lobby({
             className="mt-5 w-full"
             disabled={isJoining || waiting || !displayName.trim()}
             onClick={() => {
-              for (const track of stream?.getTracks() ?? []) track.stop();
+              transferred.current = stream;
               onJoin({
+                previewStream: stream,
                 audioEnabled,
                 displayName: displayName.trim(),
                 videoEnabled,

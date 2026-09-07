@@ -28,6 +28,16 @@ it('reports media counters without leaking raw WebRTC identifiers or addresses',
             framesDecoded: 3,
           },
         ],
+        [
+          'pair',
+          {
+            type: 'candidate-pair',
+            state: 'succeeded',
+            nominated: true,
+            currentRoundTripTime: 0.0234,
+            remoteCandidateId: 'private-candidate-id',
+          },
+        ],
         ['candidate', { type: 'local-candidate', address: 'private-address' }],
       ]),
     getReceivers: () => [
@@ -59,6 +69,7 @@ it('reports media counters without leaking raw WebRTC identifiers or addresses',
       framesDecoded: 3,
     },
   ]);
+  expect(result.roundTripMs).toBe(23);
   expect(JSON.stringify(result)).not.toContain('private-');
 });
 

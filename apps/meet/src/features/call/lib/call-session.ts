@@ -40,6 +40,7 @@ export function getMeetRealtimeUrl() {
  */
 export async function getMeetCallSession({
   displayName,
+  avatarUrl,
   admission = 'open',
   isHost,
   meetingId,
@@ -47,6 +48,7 @@ export async function getMeetCallSession({
   wsId,
 }: {
   displayName: string;
+  avatarUrl?: string;
   admission?: MeetRealtimeAdmission;
   isHost: boolean;
   meetingId: string;
@@ -56,6 +58,7 @@ export async function getMeetCallSession({
   const role: MeetRealtimeRole = isHost ? 'host' : 'speaker';
   const payload = meetRealtimeTokenPayloadSchema.parse({
     admission: isHost ? 'open' : admission,
+    avatarUrl,
     displayName,
     exp: Math.floor((Date.now() + TOKEN_TTL_MS) / 1000),
     limits: {

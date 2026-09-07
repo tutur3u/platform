@@ -5,7 +5,7 @@ import {
   uploadWorkspaceMeetingRecording,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { pickRecorderMimeType } from '../lib/recording';
 
 type RecordToggleResponse = {
@@ -33,6 +33,7 @@ export function useCallRecording({
   onStateChange,
   wsId,
 }: UseCallRecordingOptions) {
+  const cancelled = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -40,10 +41,23 @@ export function useCallRecording({
   const sessionIdRef = useRef<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  useEffect(
+    () => () => {
+      cancelled.current = true;
+      for (const track of streamRef.current?.getTracks() ?? []) track.stop();
+      if (recorderRef.current?.state === 'recording')
+        recorderRef.current.stop();
+    },
+    []
+  );
+
   const stop = useCallback(async () => {
+    cancelled.current = true;
     const recorder = recorderRef.current;
     const sessionId = sessionIdRef.current;
-    if (!(recorder && sessionId)) return;
+    if (!(recorder && sessionId) || recorder.state === 'inactive') return;
+    // Claim this recording before awaiting upload so leave and Stop cannot race.
+    recorderRef.current = null;
 
     setIsBusy(true);
     try {
@@ -59,6 +73,7 @@ export function useCallRecording({
           { once: true }
         );
         recorder.stop();
+        for (const track of streamRef.current?.getTracks() ?? []) track.stop();
       });
 
       for (const track of streamRef.current?.getTracks() ?? []) track.stop();
@@ -84,9 +99,14 @@ export function useCallRecording({
   }, [meetingId, onStateChange, wsId]);
 
   const start = useCallback(async () => {
+    cancelled.current = false;
     setIsBusy(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (cancelled.current) {
+        for (const track of stream.getTracks()) track.stop();
+        return;
+      }
       streamRef.current = stream;
 
       const response =
@@ -95,6 +115,11 @@ export function useCallRecording({
           meetingId
         );
       if (!response?.sessionId) throw new Error('no_session');
+      if (cancelled.current) {
+        for (const track of stream.getTracks()) track.stop();
+        await toggleWorkspaceMeetingRecording(wsId, meetingId);
+        return;
+      }
       sessionIdRef.current = response.sessionId;
 
       const mimeType = pickRecorderMimeType(
@@ -129,5 +154,5 @@ export function useCallRecording({
     [isRecording, start, stop]
   );
 
-  return { isBusy, isRecording, toggle };
+  return { isBusy, isRecording, toggle, stop };
 }
