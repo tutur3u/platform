@@ -56,12 +56,10 @@ export function DraftsPage({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (draftId: string) =>
-      deleteWorkspaceTaskDraft(wsId, draftId, getBrowserInternalApiOptions()),
-    onSuccess: (_result, draftId) => {
-      const deletedDraft = drafts.find((draft) => draft.id === draftId);
-      if (deletedDraft)
-        clearDraft(getDraftStorageKey(deletedDraft.board_id ?? '', draftId));
+    mutationFn: async (draft: TaskDraft) =>
+      deleteWorkspaceTaskDraft(wsId, draft.id, getBrowserInternalApiOptions()),
+    onSuccess: (_result, draft) => {
+      clearDraft(getDraftStorageKey(draft.board_id ?? '', draft.id));
       queryClient.invalidateQueries({ queryKey: ['task-drafts', wsId] });
       toast.success(t('deleted_success'));
     },
@@ -115,7 +113,7 @@ export function DraftsPage({
             onConvert={setConvertDraft}
             onEdit={handleEdit}
             onClick={handleEdit}
-            onDelete={(id) => deleteMutation.mutate(id)}
+            onDelete={() => deleteMutation.mutate(draft)}
             isDeleting={deleteMutation.isPending}
           />
         ))}

@@ -75,10 +75,11 @@ beforeEach(() => {
   saveDraft(savedKey, { name: 'Recover saved draft' });
   saveDraft(ordinaryKey, { name: 'Keep ordinary draft' });
 });
-function mount() {
-  const client = new QueryClient({
+function mount(
+  client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
+  })
+) {
   return render(
     <QueryClientProvider client={client}>
       <DraftsPage wsId="ws-1" />
@@ -93,11 +94,14 @@ it('clears only the matching recovery copy after deletion is confirmed', async (
       resolveDelete = resolve;
     })
   );
-  mount();
+  const client = new QueryClient();
+  mount(client);
   fireEvent.click(
     await screen.findByRole('button', { name: 'Delete saved draft' })
   );
   await waitFor(() => expect(deleteDraft).toHaveBeenCalledOnce());
+  act(() => client.setQueryData(['task-drafts', 'ws-1', 'all', false], []));
+  await screen.findByText('empty');
   expect(localStorage.getItem(savedKey)).not.toBeNull();
   await act(async () => resolveDelete());
   await waitFor(() => expect(localStorage.getItem(savedKey)).toBeNull());
