@@ -35,6 +35,10 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     settings: meetRoomSettingsSchema,
     requestId,
   }),
+  z.object({
+    type: z.literal('room.title.update'),
+    title: z.string().trim().min(1).max(255),
+  }),
   z.object({ type: z.literal('room.end'), requestId }),
   z.object({
     type: z.literal('admission.forget'),
@@ -158,6 +162,7 @@ export type MeetRealtimeServerMessage =
       createdAt: string;
     }
   | { type: 'room.settings'; settings: MeetRoomSettings }
+  | { type: 'room.title.changed'; title: string }
   | { type: 'room.ended'; by?: string; requestId?: string }
   | { type: 'admission.approved'; participants: MeetApprovedParticipant[] }
   | {

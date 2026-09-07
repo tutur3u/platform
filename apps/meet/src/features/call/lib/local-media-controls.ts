@@ -1,6 +1,7 @@
 import type { MeetMediaState } from '@tuturuuu/realtime/meet';
 import type { Dispatch, SetStateAction } from 'react';
 import type { CameraEffects } from './camera-effects';
+import { SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
 type Ref<T> = { current: T };
 type Setter<T> = Dispatch<SetStateAction<T>>;
@@ -125,9 +126,7 @@ export function createLocalMediaControls({
     }
 
     const display = await navigator.mediaDevices
-      .getDisplayMedia({
-        video: true,
-      })
+      .getDisplayMedia(SCREEN_CAPTURE_OPTIONS)
       .catch((error: unknown) => {
         if (error instanceof Error && error.name === 'NotAllowedError')
           return null;
@@ -145,6 +144,7 @@ export function createLocalMediaControls({
     // Ending the share from the browser's own bar must update the room too.
     display.getVideoTracks()[0]?.addEventListener('ended', () => {
       if (screenStreamRef.current !== display) return;
+      for (const track of display.getTracks()) track.stop();
       screenStreamRef.current = null;
       setScreenStream(null);
       void applyMedia(
@@ -152,6 +152,17 @@ export function createLocalMediaControls({
         localStreamRef.current
       ).catch(() => undefined);
     });
+    for (const track of display.getAudioTracks())
+      track.addEventListener('ended', () => {
+        if (
+          screenStreamRef.current !== display ||
+          !mediaRef.current.screenEnabled
+        )
+          return;
+        void applyMedia({ ...mediaRef.current }, localStreamRef.current).catch(
+          () => undefined
+        );
+      });
     await applyMedia(
       { ...mediaRef.current, screenEnabled: true },
       localStreamRef.current

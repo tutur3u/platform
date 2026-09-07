@@ -89,3 +89,25 @@ export function reconcileRemotePlayback(
       subscribed.add(owner.subscriptionKey);
   }
 }
+
+/** Bind once before negotiation; reconciliation also covers reused receivers. */
+export function listenRemotePlayback(
+  pc: RTCPeerConnection,
+  owners: Map<string, RemoteTrackOwner>,
+  subscribed: Set<string>,
+  isCurrentConnection: () => boolean,
+  setMedia: (update: (current: RemoteMedia) => RemoteMedia) => void
+) {
+  pc.addEventListener('track', (event) => {
+    const mid = event.transceiver.mid;
+    const owner = mid === null ? undefined : owners.get(mid);
+    if (!owner || mid === null) return;
+    attachRemotePlayback(
+      owner,
+      event.track,
+      subscribed,
+      () => isCurrentConnection() && owners.get(mid) === owner,
+      setMedia
+    );
+  });
+}

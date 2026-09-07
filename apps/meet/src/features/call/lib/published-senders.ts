@@ -1,5 +1,5 @@
 import type { CloudflareSfuTrack } from '@tuturuuu/realtime/meet';
-import type { LocalTrackPlan } from './negotiation';
+import { type LocalTrackPlan, localTrackSource } from './negotiation';
 import type { SfuTracksResponse } from './sfu-response';
 import type { MeetSignaling } from './signaling';
 
@@ -40,14 +40,9 @@ async function updateSenders({
   for (const plan of published) {
     const sender = senders.get(plan.trackName);
     const enabled = desired.some((entry) => entry.trackName === plan.trackName);
-    const source =
-      plan.kind === 'screen'
-        ? screenStream?.getVideoTracks()[0]
-        : plan.kind === 'audio'
-          ? stream.getAudioTracks()[0]
-          : stream.getVideoTracks()[0];
+    const source = localTrackSource(plan.kind, stream, screenStream);
     if (
-      (plan.kind === 'screen' && !enabled) ||
+      ((plan.kind === 'screen' || plan.kind === 'screen_audio') && !enabled) ||
       !source ||
       source.readyState === 'ended'
     ) {

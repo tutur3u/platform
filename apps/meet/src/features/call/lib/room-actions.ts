@@ -8,6 +8,8 @@ export function createRoomActions(signaling: {
   current: MeetSignaling | null;
 }) {
   return {
+    renameMeeting: (title: string) =>
+      signaling.current?.send({ type: 'room.title.update', title }),
     sendChat: (body: string) => {
       const text = body.trim();
       if (text) signaling.current?.send({ type: 'chat.message', body: text });

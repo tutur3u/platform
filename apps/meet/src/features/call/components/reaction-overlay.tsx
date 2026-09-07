@@ -25,16 +25,16 @@ export function ReactionOverlay({ state }: { state: CallState }) {
       {active.map((entry) => (
         <div
           key={`${entry.userId}:${entry.createdAt}`}
-          className="motion-safe:fade-in motion-safe:slide-in-from-bottom-2 flex items-center gap-2 rounded-full border bg-background/95 px-3 py-2 shadow-lg motion-safe:animate-in"
+          className="motion-safe:fade-in motion-safe:slide-in-from-bottom-2 flex items-center gap-3 rounded-2xl border border-dynamic-pink/30 bg-background/95 px-4 py-3 shadow-dynamic-pink/15 shadow-xl motion-safe:animate-in"
         >
           <span
-            className="text-2xl"
+            className="text-5xl drop-shadow-sm"
             role="img"
             aria-label={t(`reaction_${entry.reaction}`)}
           >
             {REACTION_GLYPHS[entry.reaction]}
           </span>
-          <span className="max-w-28 truncate text-xs">
+          <span className="max-w-28 truncate font-medium text-sm">
             {state.participants[entry.userId]?.displayName}
           </span>
         </div>

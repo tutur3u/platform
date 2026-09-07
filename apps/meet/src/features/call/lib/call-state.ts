@@ -23,6 +23,7 @@ export interface CallChatMessage {
 }
 
 export interface CallState {
+  title?: string;
   ended: boolean;
   settings: MeetRoomSettings;
   approved: MeetApprovedParticipant[];
@@ -85,6 +86,8 @@ export function reduceCallState(
   message: MeetRealtimeServerMessage
 ): CallState {
   switch (message.type) {
+    case 'room.title.changed':
+      return { ...state, title: message.title };
     case 'room.ended':
       return { ...state, ended: true, participants: {}, remoteTracks: {} };
     case 'room.settings':

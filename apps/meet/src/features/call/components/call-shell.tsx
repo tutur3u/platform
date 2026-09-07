@@ -24,7 +24,9 @@ import { type CallPanel, ControlBar } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
+import { MeetingTitle } from './meeting-title';
 import { ReactionOverlay } from './reaction-overlay';
+import { ScreenAudioStatus } from './screen-audio-status';
 import { SidePanel } from './side-panel';
 
 type Device = 'microphone' | 'camera' | 'screen';
@@ -78,9 +80,10 @@ export function CallShell({
   const audioStreams = useMemo(
     () => [
       ...(room.localStream ? [room.localStream] : []),
+      ...(room.screenStream ? [room.screenStream] : []),
       ...Object.values(room.remoteStreams),
     ],
-    [room.localStream, room.remoteStreams]
+    [room.localStream, room.screenStream, room.remoteStreams]
   );
   const ai = useMeetingAi(wsId, meetingId, audioStreams, !left, canReadNotes);
   const recording = useCallRecording({
@@ -242,9 +245,12 @@ export function CallShell({
   return (
     <div className="flex h-dvh flex-col bg-background">
       <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
-        <h1 className="min-w-0 flex-1 truncate font-medium text-sm">
-          {meetingName}
-        </h1>
+        <MeetingTitle
+          meetingId={meetingId}
+          title={room.state.title ?? meetingName}
+          canManage={canManage}
+          onSaved={room.renameMeeting}
+        />
         {canReadNotes && (
           <Button
             variant="outline"
@@ -265,7 +271,10 @@ export function CallShell({
           reconnect={room.reconnectMedia}
           telemetry={telemetry.data}
         />
-        <CopyInvite meetingId={meetingId} meetingName={meetingName} />
+        <CopyInvite
+          meetingId={meetingId}
+          meetingName={room.state.title ?? meetingName}
+        />
         {state.recording.state === 'recording' && (
           <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-xs">
             <Circle className="size-2 fill-current motion-safe:animate-pulse" />
@@ -281,6 +290,11 @@ export function CallShell({
       </header>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="relative min-h-0 flex-1 p-2 sm:p-3">
+          {room.screenStream && (
+            <div className="absolute top-3 left-3 z-20">
+              <ScreenAudioStatus stream={room.screenStream} />
+            </div>
+          )}
           <CallStage
             room={room}
             layout={layout}

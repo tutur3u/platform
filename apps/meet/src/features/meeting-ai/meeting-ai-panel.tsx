@@ -1,7 +1,14 @@
 'use client';
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import type { useMeetingAi } from './use-meeting-ai';
 
@@ -77,95 +84,146 @@ export function MeetingAiPanel({
                 ))}
             </div>
           ) : null}
-          <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-xs">
+          <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
             <span>{t('cost')}</span>
-            <strong>${data.estimatedCostUsd.toFixed(6)} USD</strong>
-            <span>{t('transcript')}</span>
-            <span>${data.transcriptionCostUsd.toFixed(6)}</span>
-            <span>{t('notes')}</span>
-            <span>${data.notesCostUsd.toFixed(6)}</span>
-            <span>{t('model')}</span>
-            <span className="break-all">{data.model}</span>
-            <span>{t('input_tokens')}</span>
-            <span>{data.inputTokens.toLocaleString()}</span>
-            <span>{t('output_tokens')}</span>
-            <span>{data.outputTokens.toLocaleString()}</span>
-            <span>{t('audio_minutes')}</span>
-            <span>
-              {(
-                data.chunks.reduce(
-                  (total, chunk) => total + chunk.duration_seconds,
-                  0
-                ) / 60
-              ).toFixed(1)}
-            </span>
+            <strong className="tabular-nums">
+              ${data.estimatedCostUsd.toFixed(6)} USD
+            </strong>
           </div>
+          <Accordion type="single" collapsible>
+            <AccordionItem value="usage">
+              <AccordionTrigger>{t('usage_details')}</AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-xs">
+                  <span>{t('cost')}</span>
+                  <strong>${data.estimatedCostUsd.toFixed(6)} USD</strong>
+                  <span>{t('transcript')}</span>
+                  <span>${data.transcriptionCostUsd.toFixed(6)}</span>
+                  <span>{t('notes')}</span>
+                  <span>${data.notesCostUsd.toFixed(6)}</span>
+                  <span>{t('model')}</span>
+                  <span className="break-all">{data.model}</span>
+                  <span>{t('input_tokens')}</span>
+                  <span>{data.inputTokens.toLocaleString()}</span>
+                  <span>{t('output_tokens')}</span>
+                  <span>{data.outputTokens.toLocaleString()}</span>
+                  <span>{t('audio_minutes')}</span>
+                  <span>
+                    {(
+                      data.chunks.reduce(
+                        (total, chunk) => total + chunk.duration_seconds,
+                        0
+                      ) / 60
+                    ).toFixed(1)}
+                  </span>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
           {data.unpricedRequests ? (
             <p className="text-xs">
               {t('unpriced', { count: data.unpricedRequests })}
             </p>
           ) : null}
-          <section
-            className="max-h-80 space-y-2 overflow-y-auto"
-            aria-label={t('transcript')}
+          <Tabs
+            defaultValue={inCall ? 'transcript' : 'notes'}
+            className="min-h-0"
           >
-            <h3 className="font-medium text-sm">{t('transcript')}</h3>
-            {data.chunks.length === 0 ? (
-              <p className="text-muted-foreground text-sm">{t('empty')}</p>
-            ) : null}
-            {data.chunks.map((chunk) => (
-              <p key={chunk.id} className="text-sm">
-                <span className="mr-2 text-muted-foreground text-xs">
-                  {Math.floor(chunk.start_seconds / 60)}:
-                  {String(Math.floor(chunk.start_seconds % 60)).padStart(
-                    2,
-                    '0'
-                  )}
-                </span>
-                {chunk.transcript ||
-                  t(
-                    chunk.status === 'processing'
-                      ? 'processing'
-                      : chunk.status === 'failed'
-                        ? 'missing'
-                        : 'silence'
-                  )}
-              </p>
-            ))}
-          </section>
-          {data.sessions.map((session) =>
-            session.notes ? (
-              <div key={session.id} className="space-y-2 border-t pt-3 text-sm">
-                <h3 className="font-medium">{t('notes')}</h3>
-                {session.notes.incomplete ? (
-                  <p className="text-destructive">{t('partial')}</p>
+            <TabsList className="w-full">
+              <TabsTrigger value="transcript" className="flex-1">
+                {t('transcript')}
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="flex-1">
+                {t('notes')}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="transcript">
+              <section
+                className="max-h-80 space-y-2 overflow-y-auto"
+                aria-label={t('transcript')}
+              >
+                <h3 className="font-medium text-sm">{t('transcript')}</h3>
+                {data.chunks.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">{t('empty')}</p>
                 ) : null}
-                <p className="whitespace-pre-wrap">{session.notes.summary}</p>
-                <h4 className="font-medium">{t('decisions')}</h4>
-                <ul className="list-inside list-disc">
-                  {session.notes.decisions.map((value, index) => (
-                    <li key={`${index}-${value}`}>{value}</li>
-                  ))}
-                </ul>
-                <h4 className="font-medium">{t('actions')}</h4>
-                <ul className="list-inside list-disc">
-                  {session.notes.actionItems.map((item, index) => (
-                    <li key={`${index}-${item.task}`}>
-                      {item.task}
-                      {item.owner ? ` — ${item.owner}` : ''}
-                      {item.dueDate ? ` (${item.dueDate})` : ''}
-                    </li>
-                  ))}
-                </ul>
-                <h4 className="font-medium">{t('questions')}</h4>
-                <ul className="list-inside list-disc">
-                  {session.notes.openQuestions.map((value, index) => (
-                    <li key={`${index}-${value}`}>{value}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null
-          )}
+                {data.chunks.map((chunk) => (
+                  <p key={chunk.id} className="text-sm">
+                    <span className="mr-2 text-muted-foreground text-xs">
+                      {Math.floor(chunk.start_seconds / 60)}:
+                      {String(Math.floor(chunk.start_seconds % 60)).padStart(
+                        2,
+                        '0'
+                      )}
+                    </span>
+                    {chunk.transcript ||
+                      t(
+                        chunk.status === 'processing'
+                          ? 'processing'
+                          : chunk.status === 'failed'
+                            ? 'missing'
+                            : 'silence'
+                      )}
+                  </p>
+                ))}
+              </section>
+            </TabsContent>
+            <TabsContent value="notes">
+              {!data.sessions.some((session) => session.notes) && (
+                <p className="py-4 text-muted-foreground text-sm">
+                  {t('notes_empty')}
+                </p>
+              )}
+              <Accordion
+                type="multiple"
+                defaultValue={data.sessions
+                  .filter((session) => session.notes)
+                  .slice(-1)
+                  .map((session) => session.id)}
+              >
+                {data.sessions.map((session) =>
+                  session.notes ? (
+                    <AccordionItem key={session.id} value={session.id}>
+                      <AccordionTrigger>
+                        {t('session_notes', {
+                          number: data.sessions.indexOf(session) + 1,
+                        })}
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-2 text-sm">
+                        {session.notes.incomplete ? (
+                          <p className="text-destructive">{t('partial')}</p>
+                        ) : null}
+                        <p className="whitespace-pre-wrap">
+                          {session.notes.summary}
+                        </p>
+                        <h4 className="font-medium">{t('decisions')}</h4>
+                        <ul className="list-inside list-disc">
+                          {session.notes.decisions.map((value, index) => (
+                            <li key={`${index}-${value}`}>{value}</li>
+                          ))}
+                        </ul>
+                        <h4 className="font-medium">{t('actions')}</h4>
+                        <ul className="list-inside list-disc">
+                          {session.notes.actionItems.map((item, index) => (
+                            <li key={`${index}-${item.task}`}>
+                              {item.task}
+                              {item.owner ? ` — ${item.owner}` : ''}
+                              {item.dueDate ? ` (${item.dueDate})` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                        <h4 className="font-medium">{t('questions')}</h4>
+                        <ul className="list-inside list-disc">
+                          {session.notes.openQuestions.map((value, index) => (
+                            <li key={`${index}-${value}`}>{value}</li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ) : null
+                )}
+              </Accordion>
+            </TabsContent>
+          </Tabs>
         </>
       ) : null}
     </section>

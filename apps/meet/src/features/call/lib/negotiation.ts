@@ -30,7 +30,8 @@ export function planLocalTracks(
     audioEnabled: boolean;
     screenEnabled: boolean;
     videoEnabled: boolean;
-  }
+  },
+  screenHasAudio = false
 ): LocalTrackPlan[] {
   const plan: LocalTrackPlan[] = [];
   if (media.audioEnabled) {
@@ -41,6 +42,11 @@ export function planLocalTracks(
   }
   if (media.screenEnabled) {
     plan.push({ kind: 'screen', trackName: localTrackName(userId, 'screen') });
+    if (screenHasAudio)
+      plan.push({
+        kind: 'screen_audio',
+        trackName: localTrackName(userId, 'screen_audio'),
+      });
   }
   return plan;
 }
@@ -139,7 +145,20 @@ export function userIdFromTrackName(
 
   const userId = trackName.slice(0, separator);
   const kind = trackName.slice(separator + 1);
-  if (!['audio', 'video', 'screen'].includes(kind)) return null;
+  if (!['audio', 'video', 'screen', 'screen_audio'].includes(kind)) return null;
 
   return userId || null;
+}
+
+/** Resolve each publication from its owning capture, independent of microphone state. */
+export function localTrackSource(
+  kind: MeetRealtimeTrackKind,
+  stream: MediaStream,
+  screen: MediaStream | null
+) {
+  if (kind === 'screen') return screen?.getVideoTracks()[0];
+  if (kind === 'screen_audio') return screen?.getAudioTracks()[0];
+  return kind === 'audio'
+    ? stream.getAudioTracks()[0]
+    : stream.getVideoTracks()[0];
 }

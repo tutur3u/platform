@@ -47,3 +47,15 @@ describe('participant media markup', () => {
     }
   });
 });
+
+it('plays remote screen audio and exposes host mute only on remote cameras', () => {
+  const common = {
+    participant,
+    resumePlaybackLabel: 'Play audio',
+    onMute: () => undefined,
+  };
+  expect(renderTile({ ...common, kind: 'screen' })).not.toContain('muted=""');
+  expect(renderTile(common)).toContain('Mute Peer');
+  expect(renderTile({ ...common, isSelf: true })).not.toContain('Mute Peer');
+  expect(renderTile({ ...common, kind: 'screen' })).not.toContain('Mute Peer');
+});

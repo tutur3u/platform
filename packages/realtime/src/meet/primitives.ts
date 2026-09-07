@@ -2,7 +2,12 @@ import { z } from 'zod';
 
 export const meetRealtimeRoleSchema = z.enum(['host', 'speaker', 'viewer']);
 export const meetRealtimeRoomModeSchema = z.enum(['call', 'webinar', 'stream']);
-export const meetRealtimeTrackKindSchema = z.enum(['audio', 'video', 'screen']);
+export const meetRealtimeTrackKindSchema = z.enum([
+  'audio',
+  'video',
+  'screen',
+  'screen_audio',
+]);
 
 export type MeetRealtimeRole = z.infer<typeof meetRealtimeRoleSchema>;
 export type MeetRealtimeRoomMode = z.infer<typeof meetRealtimeRoomModeSchema>;

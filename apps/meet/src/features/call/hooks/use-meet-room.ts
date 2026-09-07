@@ -31,9 +31,11 @@ export type {
   UseMeetRoomOptions,
 } from '../lib/room-controller';
 
+import { applyForcedMute } from '../lib/forced-media';
 import {
   diffLocalTracks,
   type LocalTrackPlan,
+  localTrackSource,
   planLocalTracks,
   planRemoteSubscriptions,
   userIdFromTrackName,
@@ -49,8 +51,9 @@ import {
   closePublishedTrack,
   syncPublishedSenders,
 } from '../lib/published-senders';
+import { watchReceiverHealth } from '../lib/receiver-health';
 import {
-  attachRemotePlayback,
+  listenRemotePlayback,
   type RemoteTrackOwner,
   reconcileRemotePlayback,
   releaseClosedSubscriptions,
@@ -123,6 +126,7 @@ export function useMeetRoom({
     if (recover) setConnectionGeneration((value) => value + 1);
   }, []);
 
+  const lastReceiveRecovery = useRef(0);
   const resetSubscriber = useCallback(() => {
     subscribePcRef.current?.close();
     subscribePcRef.current = null;
@@ -172,28 +176,16 @@ export function useMeetRoom({
           message.type === 'participant.muted' &&
           message.userId === stateRef.current.selfUserId
         ) {
-          const next = { ...mediaRef.current };
-          for (const kind of message.kinds) {
-            if (kind === 'audio') {
-              next.audioEnabled = false;
-              for (const track of localStreamRef.current?.getAudioTracks() ??
-                [])
-                track.enabled = false;
-            }
-            if (kind === 'video') {
-              effects.setEnabled(false);
-              next.videoEnabled = false;
-              for (const track of localStreamRef.current?.getVideoTracks() ??
-                [])
-                track.enabled = false;
-            }
-            if (kind === 'screen') {
-              next.screenEnabled = false;
-              for (const track of screenStreamRef.current?.getTracks() ?? [])
-                track.stop();
-              setScreenStream(null);
-              screenStreamRef.current = null;
-            }
+          const next = applyForcedMute(
+            mediaRef.current,
+            message.kinds,
+            localStreamRef.current,
+            screenStreamRef.current,
+            () => effects.setEnabled(false)
+          );
+          if (message.kinds.includes('screen')) {
+            setScreenStream(null);
+            screenStreamRef.current = null;
           }
           mediaRef.current = next;
           setMedia(next);
@@ -292,21 +284,27 @@ export function useMeetRoom({
     const pc = new RTCPeerConnection(PEER_CONFIG);
     subscribePcRef.current = pc;
     watchPeerRecovery(pc, () => subscribePcRef.current === pc, resetSubscriber);
+    watchReceiverHealth(
+      pc,
+      trackOwnersRef.current,
+      () => stateRef.current.participants,
+      () => subscribePcRef.current === pc,
+      () => {
+        // A persistent network failure must not create a tight session churn loop.
+        if (Date.now() - lastReceiveRecovery.current < 60_000) return;
+        lastReceiveRecovery.current = Date.now();
+        console.warn('Meet receiving media stalled; rebuilding subscriber');
+        resetSubscriber();
+      }
+    );
 
-    pc.addEventListener('track', (event) => {
-      const mid = event.transceiver.mid;
-      const owner = mid ? trackOwnersRef.current.get(mid) : undefined;
-      if (!owner) return;
-      attachRemotePlayback(
-        owner,
-        event.track,
-        subscribedRef.current,
-        () =>
-          subscribePcRef.current === pc &&
-          trackOwnersRef.current.get(mid!) === owner,
-        setRemoteMedia
-      );
-    });
+    listenRemotePlayback(
+      pc,
+      trackOwnersRef.current,
+      subscribedRef.current,
+      () => subscribePcRef.current === pc,
+      setRemoteMedia
+    );
 
     const result = await signalingRef.current?.request<SfuSessionResponse>({
       type: 'sfu.session.create',
@@ -325,7 +323,13 @@ export function useMeetRoom({
       const selfUserId = stateRef.current.selfUserId;
       if (!selfUserId) return;
 
-      const desired = planLocalTracks(selfUserId, next);
+      const desired = planLocalTracks(
+        selfUserId,
+        next,
+        screenStreamRef.current
+          ?.getAudioTracks()
+          .some((track) => track.readyState === 'live')
+      );
       const previousPc = publishPcRef.current;
       const published = await syncPublishedSenders({
         published: publishedRef.current,
@@ -358,12 +362,11 @@ export function useMeetRoom({
         }> = [];
 
         for (const plan of publish) {
-          const source =
-            plan.kind === 'screen'
-              ? screenStreamRef.current?.getVideoTracks()[0]
-              : plan.kind === 'audio'
-                ? stream.getAudioTracks()[0]
-                : stream.getVideoTracks()[0];
+          const source = localTrackSource(
+            plan.kind,
+            stream,
+            screenStreamRef.current
+          );
           if (!source || source.readyState === 'ended') continue;
 
           const transceiver = pc.addTransceiver(source, {
