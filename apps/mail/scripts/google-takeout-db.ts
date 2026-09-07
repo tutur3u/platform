@@ -84,7 +84,7 @@ export async function loadImportMailbox(admin: AnyRecord, address: string) {
     const { data: user, error: userError } = await admin
       .from('user_private_details')
       .select('user_id')
-      .ilike('email', address)
+      .eq('email', address)
       .maybeSingle();
     if (userError) throw userError;
     stateUserId = user?.user_id ?? null;

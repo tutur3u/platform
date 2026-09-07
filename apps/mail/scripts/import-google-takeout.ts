@@ -271,12 +271,6 @@ async function importMailbox({
         `${mailbox.id}:${threadKey}`
       );
       updateThread(threads, parsed, threadId);
-      if (providerExists) {
-        skippedExisting += 1;
-        seenProviderIds.add(parsed.providerMessageId);
-        if (internetId) seenInternetIds.add(internetId);
-        continue;
-      }
       seenProviderIds.add(parsed.providerMessageId);
       if (internetId) seenInternetIds.add(internetId);
       const labels = customLabels(parsed);
@@ -284,9 +278,13 @@ async function importMailbox({
         labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
       }
       for (const label of labels) labelNames.set(label.slug, label.name);
-      messages += 1;
-      attachments += parsed.email.attachments.length;
-      attachmentBytes += parsed.attachmentBytes;
+      if (providerExists) {
+        skippedExisting += 1;
+      } else {
+        messages += 1;
+        attachments += parsed.email.attachments.length;
+        attachmentBytes += parsed.attachmentBytes;
+      }
       if (args.apply) {
         const messageId = deterministicUuid(
           'google-takeout-message',

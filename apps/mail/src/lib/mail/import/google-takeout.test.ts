@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -7,33 +7,38 @@ import {
   normalizeGmailLabels,
   parseTakeoutMessage,
   readMboxMessages,
+  slugifyGoogleLabel,
 } from './google-takeout';
 
 describe('Google Takeout mail import', () => {
   it('streams mbox messages and restores mboxrd From lines', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'mail-takeout-'));
-    const path = join(dir, 'mail.mbox');
-    await writeFile(
-      path,
-      [
-        'From sender@example.com Sat Sep  5 11:11:11 +0000 2026\n',
-        'Message-ID: <one@example.com>\n\n',
-        '>From preserved body line\n',
-        '>>From already quoted body line\n',
-        'From sender@example.com Sun Sep  6 12:12:12 2026\n',
-        'Message-ID: <two@example.com>\n\nSecond\n',
-      ].join('')
-    );
+    try {
+      const path = join(dir, 'mail.mbox');
+      await writeFile(
+        path,
+        [
+          'From sender@example.com Sat Sep  5 11:11:11 +0000 2026\n',
+          'Message-ID: <one@example.com>\n\n',
+          '>From preserved body line\n',
+          '>>From already quoted body line\n',
+          'From sender@example.com Sun Sep  6 12:12:12 2026\n',
+          'Message-ID: <two@example.com>\n\nSecond\n',
+        ].join('')
+      );
 
-    const messages: string[] = [];
-    for await (const raw of readMboxMessages(path)) {
-      messages.push(raw.toString());
+      const messages: string[] = [];
+      for await (const raw of readMboxMessages(path)) {
+        messages.push(raw.toString());
+      }
+
+      expect(messages).toHaveLength(2);
+      expect(messages[0]).toContain('\nFrom preserved body line\n');
+      expect(messages[0]).toContain('\n>From already quoted body line\n');
+      expect(messages[1]).toContain('<two@example.com>');
+    } finally {
+      await rm(dir, { force: true, recursive: true });
     }
-
-    expect(messages).toHaveLength(2);
-    expect(messages[0]).toContain('\nFrom preserved body line\n');
-    expect(messages[0]).toContain('\n>From already quoted body line\n');
-    expect(messages[1]).toContain('<two@example.com>');
   });
 
   it('normalizes folded and repeated Gmail labels', () => {
@@ -91,5 +96,11 @@ describe('Google Takeout mail import', () => {
     expect(first).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u
     );
+  });
+
+  it('creates nonempty collision-safe slugs for international labels', () => {
+    expect(slugifyGoogleLabel('安全')).toMatch(/^label-[0-9a-f]{10}$/u);
+    expect(slugifyGoogleLabel('Résumé')).not.toBe(slugifyGoogleLabel('Resume'));
+    expect(slugifyGoogleLabel('Résumé')).toBe(slugifyGoogleLabel('Résumé'));
   });
 });

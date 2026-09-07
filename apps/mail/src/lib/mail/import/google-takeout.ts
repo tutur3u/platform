@@ -216,11 +216,13 @@ export function deterministicUuid(namespace: string, value: string) {
 }
 
 export function slugifyGoogleLabel(value: string) {
-  return value
+  const base = value
     .normalize('NFKD')
     .replaceAll(/[\u0300-\u036f]/gu, '')
     .toLowerCase()
     .replaceAll(/[^a-z0-9]+/gu, '-')
     .replaceAll(/^-|-$/gu, '')
-    .slice(0, 80);
+    .slice(0, 69);
+  const suffix = createHash('sha256').update(value).digest('hex').slice(0, 10);
+  return `${base || 'label'}-${suffix}`;
 }

@@ -12,7 +12,7 @@ const MAX_INLINE_FILTER_IDS = 250;
 const MESSAGE_LIST_COLUMNS =
   'body_text,created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
 const THREAD_SCAN_COLUMNS =
-  'created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
+  'body_text,created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
 
 export async function loadAllRows(
   createQuery: () => AnyRecord,
