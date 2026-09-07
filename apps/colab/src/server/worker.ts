@@ -59,7 +59,9 @@ async function handle(
   if (url.pathname.startsWith('/auth/') || url.pathname === '/verify-token')
     return authRoute(request, env);
   if (!url.pathname.startsWith('/api/')) {
-    const appPage = ['/', '/join', '/host', '/guide'].includes(url.pathname);
+    const appPage = ['/', '/workshops', '/join', '/host', '/guide'].includes(
+      url.pathname
+    );
     const guestInvite =
       url.pathname === '/' &&
       /^[a-f0-9-]{36}$/.test(url.searchParams.get('room') ?? '');
@@ -112,6 +114,30 @@ async function handle(
       identity,
       canHost: identity ? staff(identity) : false,
     });
+  if (url.pathname === '/api/workshops' && request.method === 'GET') {
+    requireRule(identity?.email, 'sign_in_required', 401);
+    const ids = await env.ROOMS.getByName(`directory:${identity.id}`).roomIds();
+    const workshops = [];
+    // Bounded batches avoid a fan-out spike; denied rooms never disclose metadata.
+    for (let offset = 0; offset < ids.length; offset += 10) {
+      const results = await Promise.allSettled(
+        ids
+          .slice(offset, offset + 10)
+          .map((id) => env.ROOMS.getByName(id).summary(identity))
+      );
+      for (const result of results) {
+        if (result.status === 'fulfilled') workshops.push(result.value);
+        else if (
+          !(result.reason instanceof Error) ||
+          !['not_invited', 'private_room', 'room_missing'].includes(
+            result.reason.message
+          )
+        )
+          throw result.reason;
+      }
+    }
+    return Response.json({ workshops });
+  }
   if (url.pathname === '/api/rooms' && request.method === 'POST') {
     requireRule(identity && staff(identity), 'staff_only', 403);
     await env.ROOMS.getByName(`host:${identity.id}`).limit(
@@ -120,10 +146,13 @@ async function handle(
       86400_000
     );
     const id = crypto.randomUUID();
-    return Response.json(
-      await env.ROOMS.getByName(id).create(id, identity, await bodyOf(request)),
-      { status: 201 }
+    const view = await env.ROOMS.getByName(id).create(
+      id,
+      identity,
+      await bodyOf(request)
     );
+    await env.ROOMS.getByName(`directory:${identity.id}`).rememberRoom(id);
+    return Response.json(view, { status: 201 });
   }
   const match =
     /^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|action|password|ai|live))?$/.exec(
@@ -155,11 +184,21 @@ async function handle(
       };
       return Response.json(result.view, { headers });
     }
+    if (identity.email)
+      await env.ROOMS.getByName(`directory:${identity.id}`).rememberRoom(
+        match[1]
+      );
     return Response.json(result.view);
   }
   requireRule(identity, 'sign_in_required', 401);
-  if (!action && request.method === 'GET')
-    return Response.json(await room.view(identity));
+  if (!action && request.method === 'GET') {
+    const view = await room.view(identity);
+    if (identity.email)
+      await env.ROOMS.getByName(`directory:${identity.id}`).rememberRoom(
+        match[1]
+      );
+    return Response.json(view);
+  }
   if (action === 'live' && request.method === 'GET') {
     requireRule(
       request.headers.get('origin') === env.APP_ORIGIN ||

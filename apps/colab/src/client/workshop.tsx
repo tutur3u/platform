@@ -1,12 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ColabRequestError, colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
+import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useEffect, useState } from 'react';
+import { ActivityLog } from './activity-log';
 import { Admin } from './admin';
 import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
 import { Join } from './join';
+import { navigateWorkspace, useWorkspaceLocation } from './navigation';
 import { newestRoomView } from './room-cache';
+import { SelectField } from './select-field';
 import { TeamDesk } from './team-desk';
 
 export function Workshop({
@@ -19,6 +26,9 @@ export function Workshop({
   leave: () => void;
 }) {
   const c = useCopy();
+  const currentLocation = useWorkspaceLocation();
+  const requestedSection =
+    new URL(currentLocation, location.origin).hash.slice(1) || 'mission';
   const cache = useQueryClient();
   const key = ['room', roomId];
   const [online, setOnline] = useState(false);
@@ -119,13 +129,25 @@ export function Workshop({
   if (!query.data || (query.isError && !unavailable))
     return (
       <div className="workshop">
-        <button type="button" className="quiet" onClick={leave}>
+        <Button type="button" variant="ghost" onClick={leave}>
           ← {c.back}
-        </button>
+        </Button>
         <Join roomId={roomId} identity={identity} joined={joined} />
       </div>
     );
   const room = query.data;
+  const allowedSections = [
+    'mission',
+    'team-prompt',
+    'team-skills',
+    'sandbox-desk',
+    'practice-journal',
+    'activity',
+    ...(room.self.admin ? ['controls'] : []),
+  ];
+  const section = allowedSections.includes(requestedSection)
+    ? requestedSection
+    : 'mission';
   const ownTeam = room.teams.find((t) => t.id === room.self.teamId);
   if (selected && !room.teams.some((t) => t.id === selected)) setSelected('');
   const team =
@@ -146,15 +168,12 @@ export function Workshop({
     <div className="workshop">
       <div className="room-heading">
         <div>
-          <button type="button" className="quiet back" onClick={leave}>
+          <Button type="button" variant="ghost" size="sm" onClick={leave}>
             ← {c.back}
-          </button>
+          </Button>
           <h1>{room.title}</h1>
           <p className="room-meta">
-            <span className="status">
-              <span className="live-dot" />
-              {phase}
-            </span>
+            <Badge variant="outline">{phase}</Badge>
             <span>
               {new Date(room.startsAt).toLocaleString()} —{' '}
               {new Date(room.endsAt).toLocaleTimeString()}
@@ -164,9 +183,15 @@ export function Workshop({
         <div className="presence">
           <div className="avatars">
             {room.members.slice(0, 5).map((m) => (
-              <span className="avatar" title={m.name} key={m.id}>
-                {m.name.slice(0, 1).toUpperCase()}
-              </span>
+              <Avatar
+                title={m.name}
+                key={m.id}
+                className="-ml-1 size-7 border-2 border-background"
+              >
+                <AvatarFallback className="text-xs">
+                  {m.name.slice(0, 1).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
             ))}
           </div>
           <span>
@@ -174,8 +199,35 @@ export function Workshop({
           </span>
         </div>
       </div>
+      <Tabs
+        value={section}
+        onValueChange={(value) =>
+          navigateWorkspace(`${location.pathname}${location.search}#${value}`)
+        }
+        className="mb-4"
+      >
+        <TabsList className="h-auto max-w-full flex-wrap justify-start">
+          {[
+            ['mission', c.studio.overview],
+            ['team-prompt', c.studio.editor],
+            ['team-skills', c.studio.skills],
+            ['sandbox-desk', c.studio.sandbox],
+            ['practice-journal', c.studio.results],
+            ['activity', c.studio.audit],
+            ...(room.self.admin ? [['controls', c.studio.controls]] : []),
+          ].map(([id, title]) => (
+            <TabsTrigger key={id} value={id ?? ''}>
+              {title}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       <div className="workshop-layout">
-        <aside id="mission" className="mission panel">
+        <aside
+          hidden={section !== 'mission'}
+          id="mission"
+          className="mission panel"
+        >
           <p className="eyebrow">{c.mission}</p>
           <h2>{room.scenario.title}</h2>
           <p>{room.scenario.brief}</p>
@@ -190,20 +242,24 @@ export function Workshop({
             <p className="fine-print">{c.sandboxHelp}</p>
           </div>
         </aside>
-        <section className="team-area">
+        <section
+          className="team-area"
+          hidden={['mission', 'activity', 'controls'].includes(section)}
+        >
           <div className="team-toolbar">
             <label>
               {c.teamWork}
-              <select
+              <SelectField
+                label={c.teamWork}
                 value={team?.id ?? ''}
-                onChange={(e) => setSelected(e.target.value)}
+                onValueChange={(value) => setSelected(value)}
               >
                 {room.teams.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
                 ))}
-              </select>
+              </SelectField>
             </label>
             <span className="privacy-label" role="status">
               {room.showcase ? c.showcaseOn : c.showcaseOff}
@@ -216,6 +272,7 @@ export function Workshop({
               <TeamDesk
                 key={ownTeam.id}
                 team={ownTeam}
+                section={section}
                 active={team?.id === ownTeam.id}
                 writable={writable}
                 busy={mutate.isPending}
@@ -227,6 +284,7 @@ export function Workshop({
             <TeamDesk
               key={team.id}
               team={team}
+              section={section}
               writable={false}
               busy={mutate.isPending}
               action={action}
@@ -234,8 +292,11 @@ export function Workshop({
           )}
         </section>
       </div>
+      {section === 'activity' && <ActivityLog room={room} />}
       {room.self.admin && (
-        <Admin room={room} action={action} busy={mutate.isPending} />
+        <div hidden={section !== 'controls'}>
+          <Admin room={room} action={action} busy={mutate.isPending} />
+        </div>
       )}
       <p className="fine-print budget">
         {c.limitHint} ({room.aiCalls}/200)

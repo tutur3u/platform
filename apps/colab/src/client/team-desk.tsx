@@ -1,4 +1,9 @@
 import type { Team } from '@tuturuuu/multiplayer';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useState } from 'react';
 import { useCopy } from './i18n';
 import { MockDesk } from './mock-desk';
@@ -9,12 +14,14 @@ export function TeamDesk({
   busy,
   action,
   active = true,
+  section = 'team-prompt',
 }: {
   team: Team;
   writable: boolean;
   busy: boolean;
   action: (body: Record<string, unknown>, route?: string) => Promise<void>;
   active?: boolean;
+  section?: string;
 }) {
   const c = useCopy();
   const [draft, setDraft] = useState(team.prompt);
@@ -27,8 +34,9 @@ export function TeamDesk({
   };
   return (
     <>
-      <section
+      <Card
         id={active ? 'team-prompt' : undefined}
+        hidden={section !== 'team-prompt'}
         className="panel prompt-panel"
       >
         <div className="panel-heading">
@@ -36,17 +44,24 @@ export function TeamDesk({
             <span className="section-number">01 / {c.promptSection}</span>
             <h2>{c.promptTitle}</h2>
           </div>
-          <span className="file-badge">system.md</span>
+          <Badge variant="outline">system.md</Badge>
         </div>
         <p>{c.promptHelp}</p>
+        <Badge variant="secondary" className="mb-3">
+          {!writable
+            ? c.studio.viewOnly
+            : changed
+              ? c.studio.unsaved
+              : c.studio.saved}
+        </Badge>
         {writable ? (
           <>
             <label className="sr-only" htmlFor="prompt">
               {c.promptLabel}
             </label>
-            <textarea
+            <Textarea
               id="prompt"
-              className="prompt-editor"
+              className="prompt-editor min-h-64"
               maxLength={12000}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -59,27 +74,29 @@ export function TeamDesk({
             {stale && (
               <p className="notice">
                 {c.newer}{' '}
-                <button
+                <Button
                   type="button"
-                  className="quiet"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setDraft(team.prompt);
                     setRevision(team.revision);
                   }}
                 >
                   {c.reload}
-                </button>
+                </Button>
               </p>
             )}
             <div className="action-row">
-              <button
+              <Button
                 type="button"
-                className="quiet"
+                variant="ghost"
+                size="sm"
                 onClick={() => setDraft(c.starterText)}
               >
                 {c.starter}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 disabled={busy || !changed || stale}
                 onClick={async () => {
@@ -90,15 +107,16 @@ export function TeamDesk({
                 }}
               >
                 {busy ? c.working : changed ? c.save : c.saved}
-              </button>
+              </Button>
             </div>
           </>
         ) : (
           <pre className="readonly-prompt">{team.prompt || c.emptyPrompt}</pre>
         )}
-      </section>
-      <section
+      </Card>
+      <Card
         id={active ? 'team-skills' : undefined}
+        hidden={section !== 'team-skills'}
         className="panel skills-panel"
       >
         <div className="panel-heading">
@@ -106,26 +124,25 @@ export function TeamDesk({
             <span className="section-number">02 / {c.skillsSection}</span>
             <h2>{c.skills}</h2>
           </div>
-          <span className="file-badge">.md</span>
+          <Badge variant="outline">.md</Badge>
         </div>
         {writable && (
           <div className="compile-row">
             <label className="checkbox">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={multiple}
-                onChange={(e) => setMultiple(e.target.checked)}
+                onCheckedChange={(checked) => setMultiple(checked === true)}
               />
               {c.multiple}
             </label>
-            <button
+            <Button
               type="button"
-              className="primary"
+              size="sm"
               disabled={busy || changed || team.prompt.length < 10}
               onClick={() => invoke({ action: 'compile', multiple }, 'ai')}
             >
               {busy ? c.working : c.compile}
-            </button>
+            </Button>
           </div>
         )}
         {changed && writable && <p className="fine-print">{c.saveBefore}</p>}
@@ -139,7 +156,7 @@ export function TeamDesk({
               </summary>
               <p>{skill.description}</p>
               <pre>{skill.markdown}</pre>
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   const url = URL.createObjectURL(
@@ -155,16 +172,19 @@ export function TeamDesk({
                 }}
               >
                 {c.download}
-              </button>
+              </Button>
             </details>
           ))
         ) : (
           <p className="empty">{c.skillsEmpty}</p>
         )}
-      </section>
-      <MockDesk team={team} active={active} />
-      <section
+      </Card>
+      <div hidden={section !== 'sandbox-desk'}>
+        <MockDesk team={team} active={active} />
+      </div>
+      <Card
         id={active ? 'practice-journal' : undefined}
+        hidden={section !== 'practice-journal'}
         className="panel journal-panel"
       >
         <div className="panel-heading">
@@ -173,14 +193,14 @@ export function TeamDesk({
             <h2>{c.runs}</h2>
           </div>
           {writable && (
-            <button
+            <Button
               type="button"
-              className="primary"
+              size="sm"
               disabled={busy || changed || !team.skills.length}
               onClick={() => invoke({ action: 'run' }, 'ai')}
             >
               {busy ? c.working : c.run} <span aria-hidden="true">↗</span>
-            </button>
+            </Button>
           )}
         </div>
         {!team.runs.length && <p className="empty">{c.runsEmpty}</p>}
@@ -213,7 +233,7 @@ export function TeamDesk({
             </details>
           </details>
         ))}
-      </section>
+      </Card>
     </>
   );
 }

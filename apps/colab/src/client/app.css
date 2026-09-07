@@ -209,3 +209,54 @@
     }
   }
 }
+
+@layer components {
+  .colab-content .workshop-layout {
+    display: block;
+  }
+  .colab-content .workshop {
+    max-width: 1200px;
+    padding: 24px;
+  }
+  .colab-content .mission {
+    position: static;
+    max-width: 900px;
+  }
+  .colab-content .panel {
+    padding: 20px;
+    box-shadow: none;
+  }
+  .colab-content .panel-heading {
+    margin-bottom: 12px;
+  }
+  .colab-content .panel-heading h2,
+  .colab-content .mission h2 {
+    font-size: 18px;
+  }
+  .colab-content .section-number {
+    letter-spacing: 0.03em;
+  }
+  .colab-content .prompt-editor {
+    min-height: 260px;
+  }
+  .colab-content .room-heading {
+    margin-bottom: 16px;
+  }
+  .colab-content .room-heading h1 {
+    font-size: 24px;
+  }
+  .colab-content .admin-grid {
+    gap: 20px;
+  }
+  .colab-content .team-toolbar {
+    margin-bottom: 16px;
+  }
+  .colab-content [hidden] {
+    display: none;
+  }
+  @media (max-width: 620px) {
+    .colab-content .workshop {
+      padding: 12px;
+    }
+  }
+}

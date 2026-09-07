@@ -1,3 +1,4 @@
+import { Button } from '@tuturuuu/ui/button';
 import { useState } from 'react';
 import { useCopy } from './i18n';
 import { WorkspaceLink } from './navigation';
@@ -23,20 +24,20 @@ export function LandingPreview() {
             {c.systemPrompt}
           </div>
           <div className="segmented">
-            <button
+            <Button
               type="button"
               aria-pressed={!refined}
               onClick={() => setRefined(false)}
             >
               {c.firstDraft}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               aria-pressed={refined}
               onClick={() => setRefined(true)}
             >
               {c.betterDraft}
-            </button>
+            </Button>
           </div>
           <blockquote>{refined ? c.refinedPrompt : c.roughPrompt}</blockquote>
           <p className="fine-print">{c.previewDisclaimer}</p>

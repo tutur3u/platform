@@ -23,8 +23,9 @@ export const ShellNavigation: SatelliteContentProps['Navigation'] = ({
       isCollapsed={isCollapsed}
       renderLink={(link) => {
         const active =
-          link.href === '/'
-            ? location.pathname === '/' && !current.includes('room=')
+          link.href === '/' || link.href === '/workshops'
+            ? ['/', '/workshops'].includes(location.pathname) &&
+              !current.includes('room=')
             : link.href?.startsWith('/')
               ? location.pathname === link.href
               : link.href?.startsWith('#') &&

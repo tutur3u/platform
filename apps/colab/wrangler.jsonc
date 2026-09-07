@@ -14,6 +14,7 @@
       "/join",
       "/host",
       "/guide",
+      "/workshops",
       "/api/*",
       "/auth/*",
       "/verify-token"

@@ -11,13 +11,13 @@ projections; the Worker owns authentication, inference, storage and WebSockets.
 ## Shared application shell
 
 `apps/colab/src/client/structure.tsx` composes the same
-`@tuturuuu/ui/custom/structure` component used by satellite apps. It uses shared
+`@tuturuuu/ui/custom/satellite-shell` component used by satellite apps. It uses shared
 UI buttons, icons and design tokens, with persistent desktop collapse, a mobile
 navigation drawer, account controls and room-section links. The app imports the
 shared UI stylesheet through Tailwind's Vite integration. Keep Colab content CSS
 in the components layer so shared component utilities remain authoritative.
-The higher-level satellite wrapper requires Next.js routing; do not import it
-into this Cloudflare Vite application.
+Colab supplies a History API navigation adapter so the sidebar and account menu
+stay mounted between pages.
 
 ## Running a workshop
 
@@ -236,3 +236,25 @@ extended by this mechanism. The visible client checks its session every minute
 and reopens its room WebSocket when renewed credentials change. Temporary
 identity-service failures retain the current workspace and can be retried;
 explicit sign-out, account revocation, and private-room access denial still apply.
+
+## Workshop directory and activity log
+
+Workshops is the default signed-in screen and is also available at `/workshops`.
+Current/upcoming and past sessions have separate searchable tabs. Join and host
+remain dialogs. Within a room, Brief, Prompt, Skills, Sandbox, Results, Activity
+log and Host controls keep the interface focused. Editor components stay mounted
+when tabs or selected teams change, preserving local unsaved work.
+
+The directory uses per-account Durable Object identifiers in the existing ROOMS
+binding. Creation, successful joining and authorized visits register a room.
+Reads recheck membership and private mode against each room before returning
+metadata; withdrawn access is excluded. The directory returns the 100 most
+recently visited rooms. Legacy rooms appear after an authorized visit to their
+existing link; no global historical enumeration or backfill is performed.
+
+The room persists its latest 200 successful actions with time, actor display name
+and action category. Password values, invitation addresses, prompts and tool
+payloads are not copied into audit entries. Host operations are admin-only;
+team work entries follow the current live-sharing policy, including immediate
+WebSocket removal when sharing is disabled. Old rooms begin with an empty log;
+this is a bounded workshop activity record, not a compliance archive.

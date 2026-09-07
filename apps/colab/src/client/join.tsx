@@ -1,8 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
+import { Button } from '@tuturuuu/ui/button';
+import { Input } from '@tuturuuu/ui/input';
+import { useState } from 'react';
 import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
+import { SelectField } from './select-field';
 export function Join({
   roomId,
   identity,
@@ -13,6 +17,7 @@ export function Join({
   joined: (room: RoomView) => void;
 }) {
   const c = useCopy();
+  const [teamId, setTeamId] = useState('team-1');
   const cache = useQueryClient();
   const join = useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -34,14 +39,14 @@ export function Join({
           join.mutate({
             name: f.get('name'),
             password: f.get('password'),
-            teamId: f.get('teamId'),
+            teamId,
           });
         }}
       >
         {!identity && (
           <label>
             {c.name}
-            <input
+            <Input
               name="name"
               required
               maxLength={60}
@@ -51,7 +56,7 @@ export function Join({
         )}
         <label>
           {c.password}
-          <input
+          <Input
             name="password"
             type="password"
             autoComplete="off"
@@ -61,22 +66,18 @@ export function Join({
         </label>
         <label>
           {c.team}
-          <select name="teamId">
+          <SelectField label={c.team} value={teamId} onValueChange={setTeamId}>
             {Array.from({ length: 12 }, (_, i) => (
               <option key={i} value={`team-${i + 1}`}>
                 {c.team} {i + 1}
               </option>
             ))}
-          </select>
+          </SelectField>
         </label>
         <p className="fine-print">{c.joinTeamHelp}</p>
-        <button
-          type="submit"
-          className="primary wide"
-          disabled={join.isPending}
-        >
+        <Button type="submit" className="w-full" disabled={join.isPending}>
           {join.isPending ? c.working : c.enter}
-        </button>
+        </Button>
         <ErrorNotice error={join.error} />
       </form>
       <a

@@ -46,19 +46,30 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       pages.push(page);
     }
     const [host, viewer, writer] = pages;
+    for (const page of [viewer, writer])
+      await page.getByRole('tab', { name: 'Prompt', exact: true }).click();
     const teamSelect = (page) =>
       page.getByRole('combobox', { name: 'Team work' });
+    const chooseTeam = async (page) => {
+      await teamSelect(page).click();
+      await page.getByRole('option', { name: 'Team 2', exact: true }).click();
+    };
+    const teamCount = async (page, count) => {
+      await teamSelect(page).click();
+      await expect(page.getByRole('option')).toHaveCount(count);
+      await page.keyboard.press('Escape');
+    };
     const originalDocument = await viewer.evaluate(
       () => performance.timeOrigin
     );
     await viewer.locator('#prompt').fill('Keep my unsaved team draft');
-    await teamSelect(viewer).selectOption('team-2');
+    await chooseTeam(viewer);
     await expect(viewer.locator('#team-skills')).toHaveCount(1);
     await expect(viewer.locator('#sandbox-desk')).toHaveCount(1);
     await expect(viewer.locator('.readonly-prompt:visible')).toBeVisible();
     await expect(
       viewer.getByRole('button', { name: 'Save team prompt' })
-    ).toHaveCount(0);
+    ).not.toBeVisible();
     await writer
       .locator('#prompt')
       .fill('Read the launch brief and request approval before publishing.');
@@ -68,7 +79,14 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(viewer.locator('.readonly-prompt:visible')).toContainText(
       'Read the launch brief'
     );
-    await host.locator('.admin-panel > summary').click();
+    await viewer
+      .getByRole('tab', { name: 'Activity log', exact: true })
+      .click();
+    await expect(
+      viewer.getByText('Saved a team prompt', { exact: true })
+    ).toBeVisible();
+    await viewer.getByRole('tab', { name: 'Prompt', exact: true }).click();
+    await host.getByRole('tab', { name: 'Host controls', exact: true }).click();
     const toggle = host.getByRole('checkbox', { name: 'Share team work live' });
     const beforeCompile = await (await request(path, owner)).json();
     const compiling = request(`${path}/ai`, bob, {
@@ -80,7 +98,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       .toBeGreaterThan(beforeCompile.aiCalls);
     await toggle.click();
     await expect(toggle).not.toBeChecked();
-    await expect(teamSelect(viewer).locator('option')).toHaveCount(1);
+    await teamCount(viewer, 1);
     const compiled = await compiling;
     assert.equal(compiled.status, 200, await compiled.clone().text());
     await expect(
@@ -88,7 +106,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     ).toHaveCount(0);
     await toggle.click();
     await expect(toggle).toBeChecked();
-    await teamSelect(viewer).selectOption('team-2');
+    await chooseTeam(viewer);
     for (const action of ['run']) {
       const response = await request(`${path}/ai`, bob, {
         action,
@@ -96,19 +114,23 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       });
       assert.equal(response.status, 200, await response.clone().text());
     }
+    await viewer.getByRole('tab', { name: 'Skills', exact: true }).click();
     await expect(
       viewer.getByText('demo-skill/SKILL.md', { exact: true })
     ).toBeVisible();
+    await viewer.getByRole('tab', { name: 'Results', exact: true }).click();
     await expect(
       viewer.getByText('Live demo agent result', { exact: true })
     ).toBeVisible();
+    await viewer.getByRole('tab', { name: 'Sandbox', exact: true }).click();
     await expect(
       viewer.getByText('Live demo document', { exact: true })
     ).toBeVisible();
+    await viewer.getByRole('tab', { name: 'Prompt', exact: true }).click();
     await toggle.click();
     await expect(toggle).not.toBeChecked();
-    await expect(teamSelect(viewer)).toHaveValue('team-1');
-    await expect(teamSelect(viewer).locator('option')).toHaveCount(1);
+    await expect(teamSelect(viewer)).toContainText('Team 1');
+    await teamCount(viewer, 1);
     await expect(viewer.locator('#prompt')).toHaveValue(
       'Keep my unsaved team draft'
     );
@@ -118,7 +140,8 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(
       viewer.getByText('Live demo document', { exact: true })
     ).toHaveCount(0);
-    await expect(teamSelect(writer).locator('option')).toHaveCount(1);
+    await teamCount(writer, 1);
+    await writer.getByRole('tab', { name: 'Results', exact: true }).click();
     await expect(
       writer.getByText('Live demo agent result', { exact: true })
     ).toBeVisible();
@@ -144,9 +167,9 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     );
     await toggle.click();
     await expect(toggle).toBeChecked();
-    await expect(teamSelect(viewer).locator('option')).toHaveCount(2);
-    await expect(teamSelect(viewer)).toHaveValue('team-1');
-    await teamSelect(viewer).selectOption('team-2');
+    await teamCount(viewer, 2);
+    await expect(teamSelect(viewer)).toContainText('Team 1');
+    await chooseTeam(viewer);
     await expect(viewer.locator('.readonly-prompt:visible')).toHaveText(
       'Updated while sharing is off'
     );
@@ -156,9 +179,9 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     );
     await toggle.click();
     await expect(toggle).not.toBeChecked();
-    await expect(teamSelect(viewer).locator('option')).toHaveCount(1);
+    await teamCount(viewer, 1);
     await viewer.reload();
-    await expect(teamSelect(viewer).locator('option')).toHaveCount(1);
+    await teamCount(viewer, 1);
     // Promoted room admins can control sharing too, regardless of email domain.
     assert.equal(
       (
@@ -170,12 +193,14 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       ).status,
       200
     );
-    await viewer.locator('.admin-panel > summary').click();
+    await viewer
+      .getByRole('tab', { name: 'Host controls', exact: true })
+      .click();
     await viewer
       .getByRole('checkbox', { name: 'Share team work live' })
       .click();
     await expect(toggle).toBeChecked();
-    await expect(teamSelect(writer).locator('option')).toHaveCount(2);
+    await teamCount(writer, 2);
     const beforeConflict = await (await request(path, owner)).json();
     const conflicting = request(`${path}/ai`, bob, {
       action: 'compile',

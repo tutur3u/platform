@@ -61,7 +61,20 @@ export type Team = {
   runs: Run[];
 };
 export type Scenario = { title: string; brief: string; criteria: string[] };
+export type AuditEntry = {
+  id: string;
+  at: number;
+  actor: string;
+  action: string;
+  teamId?: string;
+  adminOnly?: boolean;
+};
+export type WorkshopSummary = Pick<
+  Room,
+  'id' | 'title' | 'startsAt' | 'endsAt' | 'mode' | 'showcase' | 'maxUsers'
+> & { memberCount: number; teamCount: number; admin: boolean };
 export type Room = {
+  audit?: AuditEntry[];
   id: string;
   title: string;
   ownerId: string;
@@ -164,6 +177,12 @@ export function projectRoom(
   } = room;
   return {
     ...safe,
+    audit: (room.audit ?? []).filter(
+      (entry) =>
+        self.admin ||
+        (!entry.adminOnly &&
+          (!entry.teamId || room.showcase || entry.teamId === self.teamId))
+    ),
     mode: now >= room.endsAt && room.mode === 'open' ? 'readonly' : room.mode,
     invites: self.admin ? invites : undefined,
     members: room.members

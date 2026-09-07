@@ -14,7 +14,7 @@ export async function colabRequest<T>(
   body?: Record<string, unknown>
 ): Promise<T> {
   if (
-    !/^\/(session|logout|rooms(?:\/[a-f0-9-]{36}(?:\/(join|action|password|ai))?)?)$/.test(
+    !/^\/(session|logout|workshops|rooms(?:\/[a-f0-9-]{36}(?:\/(join|action|password|ai))?)?)$/.test(
       path
     )
   )

@@ -1,9 +1,10 @@
 import {
   BookOpen,
   Building2,
+  CalendarDays,
   FileText,
   FlaskConical,
-  Home,
+  History,
   Layers,
   PanelLeftOpen,
   Settings,
@@ -70,9 +71,9 @@ export function Structure({
   const links = useMemo<(NavLink | null)[]>(
     () => [
       {
-        title: c.shellHome,
-        href: '/',
-        icon: <Home className="size-4" />,
+        title: c.studio.workshops,
+        href: '/workshops',
+        icon: <CalendarDays className="size-4" />,
       },
       ...(!roomId
         ? [
@@ -119,6 +120,11 @@ export function Structure({
               title: c.runs,
               href: '#practice-journal',
               icon: <BookOpen className="size-4" />,
+            },
+            {
+              title: c.studio.audit,
+              href: '#activity',
+              icon: <History className="size-4" />,
             },
           ]
         : [

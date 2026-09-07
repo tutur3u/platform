@@ -67,7 +67,7 @@ export function handleWorkspaceLink(
   const target = new URL(href, location.origin);
   if (
     target.origin !== location.origin ||
-    !['/', '/host', '/guide', '/join'].includes(target.pathname)
+    !['/', '/workshops', '/host', '/guide', '/join'].includes(target.pathname)
   )
     return;
   event.preventDefault();

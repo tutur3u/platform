@@ -20,13 +20,13 @@
   body {
     margin: 0;
   }
-  button,
-  input,
+  button:not([data-slot]),
+  input:not([data-slot]),
   select,
-  textarea {
+  textarea:not([data-slot]) {
     font: inherit;
   }
-  button,
+  button:not([data-slot]),
   .button {
     display: inline-flex;
     gap: 12px;
@@ -45,14 +45,14 @@
       background 0.15s,
       transform 0.15s;
   }
-  button:hover,
+  button:not([data-slot]):hover,
   .button:hover {
     background: var(--soft);
   }
-  button:active {
+  button:not([data-slot]):active {
     transform: translateY(1px);
   }
-  button:disabled {
+  button:not([data-slot]):disabled {
     opacity: 0.45;
     cursor: not-allowed;
   }
@@ -80,9 +80,9 @@
     outline: 3px solid var(--ring);
     outline-offset: 3px;
   }
-  input,
+  input:not([data-slot]),
   select,
-  textarea {
+  textarea:not([data-slot]) {
     width: 100%;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -91,7 +91,7 @@
     padding: 12px;
     min-width: 0;
   }
-  textarea {
+  textarea:not([data-slot]) {
     resize: vertical;
     min-height: 120px;
     line-height: 1.75;
@@ -439,7 +439,7 @@
     .paper-front {
       animation: none;
     }
-    button,
+    button:not([data-slot]),
     .button {
       transition: none;
     }

@@ -150,6 +150,7 @@ function App() {
       )}
       {roomId ? (
         <Workshop
+          key={roomId}
           roomId={roomId}
           identity={session.data?.identity ?? null}
           leave={() => navigate('')}

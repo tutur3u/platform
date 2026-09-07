@@ -11,6 +11,7 @@ import {
   RoomError,
   requireRule,
   text,
+  type WorkshopSummary,
 } from '@tuturuuu/multiplayer';
 import { compileSkills, makeScenario, runAgent } from './ai';
 import { hash, randomToken } from './auth';
@@ -31,15 +32,91 @@ export class ColabRoom extends DurableObject<Env> {
       .exec<{ value: string }>('SELECT value FROM state WHERE id = 1')
       .toArray()[0];
     requireRule(row, 'room_missing', 404);
-    return JSON.parse(row.value);
+    const room = JSON.parse(row.value) as Room;
+    const audit = this.ctx.storage.sql
+      .exec<{ value: string }>('SELECT value FROM state WHERE id = 2')
+      .toArray()[0];
+    room.audit = audit ? JSON.parse(audit.value) : [];
+    return room;
   }
   private save(room: Room) {
     room.revision++;
-    this.ctx.storage.sql.exec(
-      'INSERT OR REPLACE INTO state(id, value) VALUES(1, ?)',
-      JSON.stringify(room)
-    );
+    // Keep private audit data out of the legacy room JSON. Older Worker versions
+    // spread unknown room fields into their projections during a rollback.
+    const { audit, ...state } = room;
+    this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec(
+        'INSERT OR REPLACE INTO state(id, value) VALUES(1, ?)',
+        JSON.stringify(state)
+      );
+      this.ctx.storage.sql.exec(
+        'INSERT OR REPLACE INTO state(id, value) VALUES(2, ?)',
+        JSON.stringify(audit ?? [])
+      );
+    });
     this.broadcast(room);
+  }
+  // Per-account index stores identifiers only; every list read rechecks room access.
+  rememberRoom(id: string) {
+    this.ctx.storage.sql.exec(
+      'CREATE TABLE IF NOT EXISTS directory (id TEXT PRIMARY KEY, visited INTEGER NOT NULL)'
+    );
+    this.ctx.storage.sql.exec(
+      'INSERT OR REPLACE INTO directory VALUES (?, ?)',
+      id,
+      Date.now()
+    );
+  }
+  roomIds() {
+    this.ctx.storage.sql.exec(
+      'CREATE TABLE IF NOT EXISTS directory (id TEXT PRIMARY KEY, visited INTEGER NOT NULL)'
+    );
+    return this.ctx.storage.sql
+      .exec<{ id: string }>(
+        'SELECT id FROM directory ORDER BY visited DESC LIMIT 100'
+      )
+      .toArray()
+      .map((row) => row.id);
+  }
+  summary(identity: Identity): WorkshopSummary {
+    const room = this.read();
+    const self = memberOf(room, identity);
+    return {
+      id: room.id,
+      title: room.title,
+      startsAt: room.startsAt,
+      endsAt: room.endsAt,
+      mode:
+        Date.now() >= room.endsAt && room.mode === 'open'
+          ? 'readonly'
+          : room.mode,
+      showcase: room.showcase,
+      maxUsers: room.maxUsers,
+      memberCount: room.members.length,
+      teamCount: room.teams.length,
+      admin: self.admin,
+    };
+  }
+  private record(
+    room: Room,
+    action: string,
+    identity?: Identity,
+    adminOnly = false
+  ) {
+    const member = room.members.find((m) => m.id === identity?.id);
+    room.audit = [
+      ...(room.audit ?? []),
+      {
+        id: crypto.randomUUID(),
+        at: Date.now(),
+        actor: identity?.name ?? 'Colab',
+        action,
+        adminOnly,
+        teamId: ['prompt', 'compile', 'run'].includes(action)
+          ? member?.teamId
+          : undefined,
+      },
+    ].slice(-200);
   }
   async limit(key: string, max: number, windowMs: number) {
     const now = Date.now();
@@ -70,6 +147,7 @@ export class ColabRoom extends DurableObject<Env> {
       'room_exists',
       409
     );
+    this.record(room, 'created', identity);
     this.save(room);
     return projectRoom(room, identity);
   }
@@ -93,6 +171,7 @@ export class ColabRoom extends DurableObject<Env> {
       text(body.teamId, 30),
       Boolean(room.passwordHash && room.passwordHash === suppliedHash)
     );
+    this.record(room, 'joined', identity, true);
     this.save(room);
     return {
       view: projectRoom(room, identity),
@@ -103,6 +182,7 @@ export class ColabRoom extends DurableObject<Env> {
     await this.limit(`action:${identity.id}`, 90, 60_000);
     const room = this.read();
     mutateRoom(room, identity, body);
+    this.record(room, String(body.action), identity, body.action !== 'prompt');
     this.save(room);
     return projectRoom(room, identity, this.online());
   }
@@ -131,6 +211,7 @@ export class ColabRoom extends DurableObject<Env> {
     room.passwordHash = digest;
     room.passwordExpires = Math.min(Date.now() + minutes * 60_000, room.endsAt);
     room.members = room.members.filter((m) => m.guestVersion === undefined);
+    this.record(room, 'password', identity, true);
     this.save(room);
     return { password, expires: room.passwordExpires };
   }
@@ -212,6 +293,12 @@ export class ColabRoom extends DurableObject<Env> {
         current.records = result.records;
         current.runs = [...current.runs, result.run].slice(-10);
       }
+      this.record(
+        room,
+        String(body.action),
+        identity,
+        body.action === 'scenario'
+      );
       this.save(room);
       return projectRoom(room, identity, this.online());
     } finally {
@@ -298,6 +385,7 @@ export class ColabRoom extends DurableObject<Env> {
       return;
     }
     if (room.mode === 'open') room.mode = 'readonly';
+    this.record(room, 'ended');
     this.save(room);
   }
 }

@@ -1,4 +1,8 @@
 import type { MockApp, Team } from '@tuturuuu/multiplayer';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import { Input } from '@tuturuuu/ui/input';
 import { useState } from 'react';
 import { appNames, useCopy } from './i18n';
 
@@ -20,20 +24,17 @@ export function MockDesk({
   const chat = ['zalo', 'messenger', 'teams'].includes(app);
   const board = ['jira', 'trello'].includes(app);
   return (
-    <section
-      id={active ? 'sandbox-desk' : undefined}
-      className="panel mock-panel"
-    >
+    <Card id={active ? 'sandbox-desk' : undefined} className="panel mock-panel">
       <div className="panel-heading">
         <div>
           <span className="section-number">03 / {c.sandboxSection}</span>
           <h2>{c.mockDesk}</h2>
         </div>
-        <span className="sandbox-label">{c.sandbox.split(' · ')[0]}</span>
+        <Badge variant="secondary">{c.simulated}</Badge>
       </div>
       <nav className="app-tabs" aria-label={c.mockDesk}>
         {Object.entries(appNames).map(([id, name]) => (
-          <button
+          <Button
             type="button"
             aria-pressed={id === app}
             key={id}
@@ -43,7 +44,7 @@ export function MockDesk({
             }}
           >
             {name}
-          </button>
+          </Button>
         ))}
       </nav>
       <div className="mock-window">
@@ -54,7 +55,7 @@ export function MockDesk({
         </div>
         <label className="mock-search">
           <span className="sr-only">{c.searchRecords}</span>
-          <input
+          <Input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -86,6 +87,6 @@ export function MockDesk({
           {!records.length && <p className="empty">{c.mockEmpty}</p>}
         </div>
       </div>
-    </section>
+    </Card>
   );
 }

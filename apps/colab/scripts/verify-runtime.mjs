@@ -3,6 +3,7 @@ import { createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { Miniflare } from 'miniflare';
+import { verifyDirectory } from './verify-directory.mjs';
 import { verifyShowcase } from './verify-showcase.mjs';
 
 const workerDir =
@@ -357,7 +358,7 @@ try {
   });
   await page.clock.install();
   await page.goto('http://127.0.0.1:8795/');
-  await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
+  await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
   assert.equal(await page.locator('.colab-toolbar').count(), 0);
   assert.match(
     await page.evaluate(() => getComputedStyle(document.body).fontFamily),
@@ -461,7 +462,7 @@ try {
   await joinDialog.waitFor({ state: 'hidden' });
   await assertStableShell();
   await nav('Workshops').click();
-  await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
+  await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
   await assertStableShell();
   await page
     .getByRole('button', { name: 'Notifications', exact: true })
@@ -517,7 +518,7 @@ try {
     fullPage: true,
   });
   await page.reload();
-  await page.getByRole('heading', { name: 'Welcome back, host' }).waitFor();
+  await page.getByRole('heading', { name: 'Workshops', exact: true }).waitFor();
   assert.equal(
     await page.evaluate(() =>
       document.documentElement.classList.contains('dark')
@@ -538,12 +539,12 @@ try {
   await page.getByRole('menuitem', { name: 'Language', exact: true }).hover();
   await page.getByRole('menuitem', { name: 'Tiếng Việt', exact: true }).click();
   await page
-    .getByRole('heading', { name: 'Chào mừng trở lại, host' })
+    .getByRole('heading', { name: 'Buổi thực hành', exact: true })
     .waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
   await page
-    .getByRole('heading', { name: 'Chào mừng trở lại, host' })
+    .getByRole('heading', { name: 'Buổi thực hành', exact: true })
     .waitFor();
   const closeNav = page
     .locator('aside')
@@ -587,7 +588,7 @@ try {
   });
   await page.keyboard.press('Escape');
   await page
-    .getByRole('heading', { name: 'Chào mừng trở lại, host' })
+    .getByRole('heading', { name: 'Buổi thực hành', exact: true })
     .waitFor();
   await page.goto('http://127.0.0.1:8795/host');
   const mobileHost = page.getByRole('dialog', {
@@ -614,6 +615,7 @@ try {
   await page.goto(`http://127.0.0.1:8795/?room=${room.id}`);
   await page.getByRole('heading', { name: 'Runtime verification' }).waitFor();
   await initialSocket;
+  await page.getByRole('tab', { name: /^(Prompt|Câu lệnh)$/ }).click();
   await page.locator('#prompt').fill('Unsaved prompt survives session renewal');
   await page.context().addCookies([
     {
@@ -636,6 +638,7 @@ try {
     fullPage: true,
   });
   assert.deepEqual(errors, []);
+  await verifyDirectory({ request, owner, alice, browser });
   await verifyShowcase({ browser, request, owner, alice, bob });
   console.log(
     'PASS: runtime auth, CSRF, invitations, team isolation, showcase broadcast, concurrent edits, guest rotation, read-only, private revocation, desktop/mobile and Vietnamese UI.'
