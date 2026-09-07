@@ -85,11 +85,13 @@ export async function listMailThreads({
     threadScan: true,
     userId: ctx.user.id,
   });
-  const rowIds = rows.map((row: AnyRecord) => row.id as string);
-  const { data: recipientRows, error: recipientError } = rowIds.length
+  const outboundRowIds = rows.flatMap((row: AnyRecord) =>
+    row.direction === 'outbound' ? [row.id as string] : []
+  );
+  const { data: recipientRows, error: recipientError } = outboundRowIds.length
     ? await privateTable(access.admin, 'mail_recipients')
         .select('address, display_name, kind, message_id')
-        .in('message_id', rowIds)
+        .in('message_id', outboundRowIds)
         .in('kind', ['to', 'cc'])
     : { data: [], error: null };
   if (recipientError) {
