@@ -55,13 +55,20 @@ export async function getMeetCallAccess(
     )
       throw new MeetCallAccessError(403, 'Guest access is unavailable');
   }
-  const { data: profile } = await Promise.resolve(
+  const { data: profile, error: profileError } = await Promise.resolve(
     db
       .from('users')
       .select('display_name, user_private_details(full_name)')
       .eq('id', user.id)
       .maybeSingle()
-  ).catch(() => ({ data: null }));
+  ).catch(() => ({ data: null, error: { code: 'PROFILE_LOOKUP_REJECTED' } }));
+  if (profileError)
+    console.warn(
+      'Meet participant profile lookup failed; using account identity',
+      {
+        code: profileError.code,
+      }
+    );
   const displayName = [
     profile?.display_name,
     profile?.user_private_details?.full_name,
