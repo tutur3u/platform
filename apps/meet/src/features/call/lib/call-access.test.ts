@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   membership: vi.fn(),
   host: vi.fn(),
   meeting: vi.fn(),
+  profile: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
@@ -27,9 +28,20 @@ beforeEach(() => {
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
   mocks.admin.mockResolvedValue({
-    from: () => query,
+    from: (table: string) => {
+      if (table !== 'users') return query;
+      const profileQuery = {
+        select: vi.fn(),
+        eq: vi.fn(),
+        maybeSingle: mocks.profile,
+      };
+      profileQuery.select.mockReturnValue(profileQuery);
+      profileQuery.eq.mockReturnValue(profileQuery);
+      return profileQuery;
+    },
     auth: { admin: { getUserById: mocks.host } },
   });
+  mocks.profile.mockResolvedValue({ data: null, error: null });
   mocks.user.mockResolvedValue({ id: 'external', email: 'guest@example.com' });
   mocks.membership.mockResolvedValue({ ok: false });
   mocks.meeting.mockResolvedValue({
@@ -50,7 +62,7 @@ beforeEach(() => {
 });
 
 it('allows an external signed-in invitee without granting workspace access', async () => {
-  expect(await getMeetCallAccess(meetingId)).toMatchObject({
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
     isHost: false,
     canReadWorkspace: false,
     user: { id: 'external' },
@@ -69,7 +81,7 @@ it.each([
   'rejects guests when the creator is not a verified company account: %j',
   async (user) => {
     mocks.host.mockResolvedValue({ data: { user }, error: null });
-    await expect(getMeetCallAccess(meetingId)).rejects.toMatchObject({
+    await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
       status: 403,
     });
   }
@@ -77,7 +89,7 @@ it.each([
 
 it('keeps workspace members admitted without making them hosts', async () => {
   mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
-  expect(await getMeetCallAccess(meetingId)).toMatchObject({
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
     isHost: false,
     canReadWorkspace: true,
   });
@@ -86,14 +98,14 @@ it('keeps workspace members admitted without making them hosts', async () => {
 
 it('does not let a removed creator regain host access as a guest', async () => {
   mocks.user.mockResolvedValue({ id: 'host' });
-  await expect(getMeetCallAccess(meetingId)).rejects.toMatchObject({
+  await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
     status: 403,
   });
 });
 
 it('requires sign-in before reading meeting metadata', async () => {
   mocks.user.mockResolvedValue(null);
-  await expect(getMeetCallAccess(meetingId)).rejects.toMatchObject({
+  await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
     status: 401,
   });
   expect(mocks.admin).not.toHaveBeenCalled();
@@ -104,7 +116,7 @@ it('does not turn a failed membership lookup into guest access', async () => {
     ok: false,
     error: 'membership_lookup_failed',
   });
-  await expect(getMeetCallAccess(meetingId)).rejects.toMatchObject({
+  await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
     status: 500,
   });
   expect(mocks.host).not.toHaveBeenCalled();
@@ -112,7 +124,7 @@ it('does not turn a failed membership lookup into guest access', async () => {
 
 it('preserves workspace guest admission without exposing member-only archives', async () => {
   mocks.membership.mockResolvedValue({ ok: true, membershipType: 'GUEST' });
-  expect(await getMeetCallAccess(meetingId)).toMatchObject({
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
     admission: 'open',
     canReadWorkspace: false,
   });
@@ -125,7 +137,7 @@ it('preserves workspace guest admission without exposing member-only archives', 
 it('uses the profile name and canonical personal workspace path', async () => {
   mocks.user.mockResolvedValue({
     id: 'host',
-    display_name: 'Meeting Host',
+    user_metadata: { display_name: 'Meeting Host' },
     email: 'host@tuturuuu.com',
   });
   mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
@@ -138,7 +150,7 @@ it('uses the profile name and canonical personal workspace path', async () => {
     },
     error: null,
   });
-  expect(await getMeetCallAccess(meetingId)).toMatchObject({
+  expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
     displayName: 'Meeting Host',
     workspaceSlug: 'personal',
     admission: 'open',
@@ -149,7 +161,26 @@ it('uses the profile name and canonical personal workspace path', async () => {
 it('does not grant host privileges to a creator downgraded to workspace guest', async () => {
   mocks.user.mockResolvedValue({ id: 'host' });
   mocks.membership.mockResolvedValue({ ok: true, membershipType: 'GUEST' });
-  await expect(getMeetCallAccess(meetingId)).rejects.toMatchObject({
+  await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
     status: 403,
+  });
+});
+
+it('uses the stored profile for app sessions without profile metadata', async () => {
+  mocks.profile.mockResolvedValue({
+    data: {
+      display_name: null,
+      user_private_details: { full_name: 'Stored Full Name' },
+    },
+    error: null,
+  });
+  expect(await getMeetCallAccess(meetingId, 'Khách')).toMatchObject({
+    displayName: 'Stored Full Name',
+  });
+});
+it('uses the localized fallback for an unnamed guest', async () => {
+  mocks.user.mockResolvedValue({ id: 'external', user_metadata: {} });
+  expect(await getMeetCallAccess(meetingId, 'Khách')).toMatchObject({
+    displayName: 'Khách',
   });
 });

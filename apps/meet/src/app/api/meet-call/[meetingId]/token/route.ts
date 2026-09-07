@@ -13,8 +13,11 @@ export async function POST(
     return Response.json({ error: 'Invalid origin' }, { status: 403, headers });
   try {
     const { meetingId } = await params;
+    const locale =
+      (await cookies()).get(LOCALE_COOKIE_NAME)?.value === 'vi' ? 'vi' : 'en';
+    const t = await getTranslations({ locale, namespace: 'meet.call' });
     const { user, meeting, isHost, admission, displayName } =
-      await getMeetCallAccess(meetingId);
+      await getMeetCallAccess(meetingId, t('guest'));
     return Response.json(
       await getMeetCallSession({
         displayName,
@@ -41,3 +44,7 @@ export async function POST(
     );
   }
 }
+
+import { LOCALE_COOKIE_NAME } from '@tuturuuu/satellite/constants';
+import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';

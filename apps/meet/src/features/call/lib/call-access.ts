@@ -16,7 +16,10 @@ export class MeetCallAccessError extends Error {
 }
 
 /** Invite possession permits this call only, never workspace or archive access. */
-export async function getMeetCallAccess(meetingId: string) {
+export async function getMeetCallAccess(
+  meetingId: string,
+  fallbackName: string
+) {
   if (!z.uuid().safeParse(meetingId).success)
     throw new MeetCallAccessError(404, 'Meeting not found');
   const user = await getSatelliteAppSessionUser('meet');
@@ -52,17 +55,28 @@ export async function getMeetCallAccess(meetingId: string) {
     )
       throw new MeetCallAccessError(403, 'Guest access is unavailable');
   }
-  const profile = user as {
-    display_name?: string | null;
-    full_name?: string | null;
-    email?: string | null;
-  };
+  const { data: profile } = await Promise.resolve(
+    db
+      .from('users')
+      .select('display_name, user_private_details(full_name)')
+      .eq('id', user.id)
+      .maybeSingle()
+  ).catch(() => ({ data: null }));
+  const displayName = [
+    profile?.display_name,
+    profile?.user_private_details?.full_name,
+    user.user_metadata?.display_name,
+    user.user_metadata?.full_name,
+    user.email,
+    fallbackName,
+  ].find(
+    (value): value is string => typeof value === 'string' && !!value.trim()
+  );
   return {
     user,
     meeting,
     isHost,
-    displayName:
-      profile.display_name || profile.full_name || profile.email || 'Guest',
+    displayName: (displayName || fallbackName).trim().slice(0, 120),
     admission: membership.ok ? ('open' as const) : ('lobby' as const),
     canReadWorkspace: membership.ok && membership.membershipType === 'MEMBER',
     workspaceSlug: toWorkspaceSlug(meeting.ws_id, {

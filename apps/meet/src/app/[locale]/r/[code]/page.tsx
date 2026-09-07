@@ -33,16 +33,19 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const meetingId = decodeRoomCode(code);
   if (!meetingId) notFound();
 
-  const access = await getMeetCallAccess(meetingId).catch((error: unknown) => {
-    if (error instanceof MeetCallAccessError) {
-      if (error.status === 401) {
-        const invite = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
-        redirect(`/login?next=${encodeURIComponent(invite)}`);
+  const t = await getTranslations('meet.call');
+  const access = await getMeetCallAccess(meetingId, t('guest')).catch(
+    (error: unknown) => {
+      if (error instanceof MeetCallAccessError) {
+        if (error.status === 401) {
+          const invite = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
+          redirect(`/login?next=${encodeURIComponent(invite)}`);
+        }
+        if (error.status === 403 || error.status === 404) notFound();
       }
-      if (error.status === 403 || error.status === 404) notFound();
+      throw error;
     }
-    throw error;
-  });
+  );
   const {
     user,
     meeting,
@@ -53,7 +56,6 @@ export default async function RoomPage({ params }: RoomPageProps) {
     workspaceSlug,
   } = access;
   const wsId = meeting.ws_id;
-  const t = await getTranslations('meet.call');
 
   const session = await getMeetCallSession({
     displayName,
@@ -68,7 +70,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
     <CallShell
       defaultDisplayName={session.displayName}
       leaveHref={
-        admission === 'open' ? `/${workspaceSlug}/meetings/${meeting.id}` : '/'
+        canReadWorkspace ? `/${workspaceSlug}/meetings/${meeting.id}` : '/'
       }
       canReadWorkspace={canReadWorkspace}
       meetingId={meeting.id}

@@ -111,3 +111,19 @@ it('does not turn a forbidden invite into an unrelated home-page redirect', asyn
     RoomPage({ params: Promise.resolve({ code, locale: 'en' }) })
   ).rejects.toThrow('not-found');
 });
+
+it('returns workspace guests to home without opening the meeting archive', async () => {
+  mocks.access.mockResolvedValue({
+    user: { id },
+    meeting: { id, ws_id: id },
+    isHost: false,
+    canReadWorkspace: false,
+    admission: 'open',
+    displayName: 'Collaborator',
+    workspaceSlug: 'internal',
+  });
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'en' }),
+  });
+  expect(result.props.leaveHref).toBe('/');
+});

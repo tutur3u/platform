@@ -1,8 +1,20 @@
 import { verifyMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ access: vi.fn() }));
+const mocks = vi.hoisted(() => ({ access: vi.fn(), locale: vi.fn() }));
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/satellite/constants', () => ({
+  LOCALE_COOKIE_NAME: 'NEXT_LOCALE',
+}));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: mocks.locale }),
+}));
+vi.mock('next-intl/server', () => ({
+  getTranslations:
+    async ({ locale }: { locale: string }) =>
+    () =>
+      locale === 'vi' ? 'Khách' : 'Guest',
+}));
 vi.mock('@/features/call/lib/call-access', () => ({
   getMeetCallAccess: mocks.access,
   MeetCallAccessError: class extends Error {
@@ -55,7 +67,7 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
     wsId: id,
     userId: id,
   });
-  expect(mocks.access).toHaveBeenCalledWith(id);
+  expect(mocks.access).toHaveBeenCalledWith(id, 'Guest');
 });
 
 it('keeps the host out of the lobby', async () => {
@@ -87,4 +99,10 @@ it('rechecks authorization on every refresh', async () => {
     new MeetCallAccessError(401, 'Sign in to join')
   );
   expect((await POST(request(), context)).status).toBe(401);
+});
+
+it('preserves the Vietnamese fallback locale during refresh', async () => {
+  mocks.locale.mockReturnValue({ value: 'vi' });
+  await POST(request(), context);
+  expect(mocks.access).toHaveBeenCalledWith(id, 'Khách');
 });
