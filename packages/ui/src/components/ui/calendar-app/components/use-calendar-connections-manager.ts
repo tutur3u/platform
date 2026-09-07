@@ -79,6 +79,26 @@ export function useCalendarConnectionsManager(wsId: string) {
     },
   });
 
+  const pauseFailedCalendarMutation = useMutation({
+    mutationFn: (connectionId: string) =>
+      updateCalendarConnectionRequest({
+        id: connectionId,
+        wsId,
+        syncInboundEnabled: false,
+      }),
+    onSuccess: async () => {
+      await Promise.all(
+        [
+          ['calendar-sync-status', wsId],
+          ['calendar-connections', wsId],
+          ['provider-calendar-list', wsId],
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey }))
+      );
+      toast.success(t('sync_recovery.calendar_paused'));
+    },
+    onError: () => toast.error(t('sync_recovery.pause_failed')),
+  });
+
   // Fetch connected accounts
   const accountsQuery = useQuery({
     queryKey: ['calendar-accounts', wsId],
@@ -579,6 +599,8 @@ export function useCalendarConnectionsManager(wsId: string) {
 
   return {
     accounts,
+    failedCalendars: syncStatusData?.failedCalendars ?? [],
+    pauseFailedCalendarMutation,
     calendarConnections,
     calendarsByAccount,
     providerAccountStatuses,

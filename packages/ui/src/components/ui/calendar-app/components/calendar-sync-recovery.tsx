@@ -5,6 +5,8 @@ import type { CalendarConnectionsManagerState } from './use-calendar-connections
 
 type RecoveryState = Pick<
   CalendarConnectionsManagerState,
+  | 'failedCalendars'
+  | 'pauseFailedCalendarMutation'
   | 'accounts'
   | 'providerAccountStatuses'
   | 'syncHealth'
@@ -42,7 +44,8 @@ export function needsCalendarSyncAttention(
 
 export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
   const { t, syncHealth, syncStatusError, providerAccountStatuses } = state;
-  if (!needsCalendarSyncAttention(state)) return null;
+  if (!needsCalendarSyncAttention(state) && !state.syncMutation.isPending)
+    return null;
   const reconnectAccounts = state.accounts.filter(
     (account) =>
       providerAccountStatuses[account.id]?.state === 'reconnect_required'
@@ -93,10 +96,50 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
       <AlertTriangle className="size-4 text-dynamic-orange" />
       <AlertTitle>{t('sync_recovery.attention')}</AlertTitle>
       <AlertDescription className="space-y-3">
-        <p>{t(description)}</p>
+        <p>
+          {t(
+            state.syncMutation.isPending
+              ? 'sync_recovery.syncing_description'
+              : description
+          )}
+        </p>
         <p className="text-muted-foreground text-xs">
           {t('sync_recovery.saved_events')}
         </p>
+        {!!state.failedCalendars?.length && (
+          <ul className="space-y-2">
+            {state.failedCalendars.map((failure) => (
+              <li
+                key={failure.connectionId}
+                className="space-y-2 rounded-md border p-3"
+              >
+                <p className="break-words font-medium">
+                  {failure.calendarName}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {t(
+                    failure.code === 'not_found' ||
+                      failure.code === 'access_denied'
+                      ? 'sync_recovery.calendar_unavailable'
+                      : 'sync_recovery.calendar_failed'
+                  )}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={state.pauseFailedCalendarMutation.isPending}
+                  onClick={() =>
+                    state.pauseFailedCalendarMutation.mutate(
+                      failure.connectionId
+                    )
+                  }
+                >
+                  {t('sync_recovery.pause_calendar')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
         {syncHealth?.lastSuccessAt && (
           <p className="text-xs">
             {t('last_synced_at')}:{' '}

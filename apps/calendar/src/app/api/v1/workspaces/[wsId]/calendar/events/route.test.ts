@@ -70,7 +70,11 @@ function getQueryResult(data: unknown[] = []) {
     eq: vi.fn(() => query),
     gt: vi.fn(() => query),
     lt: vi.fn(() => query),
-    order: vi.fn(async () => ({ data, error: null })),
+    order: vi.fn(() => query),
+    range: vi.fn(async (start: number, end: number) => ({
+      data: data.slice(start, end + 1),
+      error: null,
+    })),
     select: vi.fn(() => query),
   };
   return query;
@@ -234,6 +238,22 @@ describe('workspace calendar event collection authorization', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ count: 1, data: events });
+  });
+
+  it('loads events beyond the database row cap for a full year', async () => {
+    const events = Array.from({ length: 1003 }, (_, index) => ({
+      id: `event-${index}`,
+      title: `Event ${index}`,
+    }));
+    const query = getQueryResult(events);
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn(() => query) });
+    const response = await GET(request('GET'), params());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ count: 1003, data: events });
+    expect(query.range.mock.calls).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
   });
 
   it('preserves authorized POST response and writes only after authorization', async () => {

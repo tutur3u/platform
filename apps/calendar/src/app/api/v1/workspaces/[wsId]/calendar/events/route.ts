@@ -122,11 +122,18 @@ export async function GET(request: Request, { params }: Params) {
       .eq('ws_id', wsId)
       .lt('start_at', new Date(end_at).toISOString()) // Event starts before range ends
       .gt('end_at', new Date(start_at).toISOString()) // Event ends after range starts
-      .order('start_at', { ascending: true });
+      .order('start_at', { ascending: true })
+      .order('id', { ascending: true });
 
-    const { data: events, error } = await query;
-
-    if (error) throw error;
+    // Year views can exceed PostgREST's 1,000-row response limit.
+    const events: NonNullable<Awaited<typeof query>['data']> = [];
+    const pageSize = 1000;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await query.range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      events.push(...(data ?? []));
+      if (!data || data.length < pageSize) break;
+    }
 
     // Decrypt encrypted events
     const decryptedEvents = deduplicateCalendarEvents(

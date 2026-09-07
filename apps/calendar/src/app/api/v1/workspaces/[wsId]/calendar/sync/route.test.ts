@@ -95,6 +95,8 @@ function createAdminSupabaseMock({
   ];
   const connectionRows = [
     {
+      id: 'primary-connection',
+      calendar_name: 'Primary',
       auth_token_id: 'google-token-id',
       calendar_id: 'primary',
       is_enabled: true,
@@ -509,7 +511,7 @@ describe('workspace calendar sync route', () => {
         ) as never,
         { params: Promise.resolve({ wsId: WS_ID }) }
       );
-      expect(response.status).toBe(partial ? 200 : 500);
+      expect(response.status).toBe(200);
       expect(await response.json()).toMatchObject({ code: 'auth' });
       expect(dashboardUpdateMock).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'failed', error_type: 'auth' })
@@ -566,6 +568,27 @@ describe('workspace calendar sync route', () => {
       deleted: 1,
       failedConnections: 1,
       processedConnections: 1,
+      failedCalendars: [
+        {
+          connectionId: 'primary-connection',
+          calendarName: 'Primary',
+          code: 'configuration',
+        },
+      ],
     });
+    expect(dashboardUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error_stack_trace: JSON.stringify({
+          version: 1,
+          failedCalendars: [
+            {
+              connectionId: 'primary-connection',
+              calendarName: 'Primary',
+              code: 'configuration',
+            },
+          ],
+        }),
+      })
+    );
   });
 });

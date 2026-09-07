@@ -1,3 +1,4 @@
+mod diagnostics;
 mod health;
 use health::classify_calendar_sync_health;
 
@@ -37,6 +38,7 @@ struct ConnectionRow {
     calendar_id: Option<Value>,
     calendar_name: Option<Value>,
     is_enabled: Option<bool>,
+    sync_inbound_enabled: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -46,6 +48,7 @@ struct DashboardRow {
     end_time: Option<String>,
     error_message: Option<Value>,
     error_type: Option<String>,
+    error_stack_trace: Option<String>,
     cooldown_remaining_seconds: Option<i64>,
 }
 
@@ -163,6 +166,7 @@ async fn sync_status_response(
                 "calendar_id": c.calendar_id,
                 "calendar_name": c.calendar_name,
                 "is_enabled": c.is_enabled,
+                "sync_inbound_enabled": c.sync_inbound_enabled,
             })
         })
         .collect();
@@ -184,6 +188,7 @@ async fn sync_status_response(
         200,
         json!({
             "health": health,
+            "failedCalendars": diagnostics::failed_calendars(&recent_runs, &connections),
             "accountsSummary": {
                 "total": accounts.len(),
                 "google": google_count,
@@ -276,7 +281,8 @@ async fn fetch_connections(
         &[
             (
                 "select",
-                "id,auth_token_id,calendar_id,calendar_name,is_enabled".to_owned(),
+                "id,auth_token_id,calendar_id,calendar_name,is_enabled,sync_inbound_enabled"
+                    .to_owned(),
             ),
             ("ws_id", format!("eq.{ws_id}")),
             ("order", "created_at.asc".to_owned()),
@@ -304,7 +310,7 @@ async fn fetch_dashboard(
         &[
             (
                 "select",
-                "status,start_time,end_time,error_message,error_type,cooldown_remaining_seconds"
+                "status,start_time,end_time,error_message,error_type,error_stack_trace,cooldown_remaining_seconds"
                     .to_owned(),
             ),
             ("ws_id", format!("eq.{ws_id}")),

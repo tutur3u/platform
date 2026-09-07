@@ -1,6 +1,7 @@
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { performIncrementalActiveSync } from './incremental-active-sync';
+import type { CalendarSyncFailure } from './sync-diagnostics';
 import {
   CalendarProviderSyncError,
   classifyCalendarSyncError,
@@ -8,6 +9,8 @@ import {
 
 type GoogleTokenRow = { id: string };
 type CalendarConnectionRow = {
+  id: string;
+  calendar_name: string;
   calendar_id: string;
   auth_token_id?: string | null;
   workspace_calendar_id?: string | null;
@@ -46,6 +49,7 @@ export async function syncGoogleInbound(args: {
       processedConnections: 0,
       failedConnections: 0,
       failureType: null,
+      failedCalendars: [] as CalendarSyncFailure[],
     };
   }
 
@@ -53,8 +57,8 @@ export async function syncGoogleInbound(args: {
     .from('calendar_connections')
     .select(
       args.settingsAvailable
-        ? 'calendar_id, auth_token_id, workspace_calendar_id, access_role, sync_delete_enabled, sync_inbound_enabled'
-        : 'calendar_id, auth_token_id, workspace_calendar_id, access_role'
+        ? 'id, calendar_name, calendar_id, auth_token_id, workspace_calendar_id, access_role, sync_delete_enabled, sync_inbound_enabled'
+        : 'id, calendar_name, calendar_id, auth_token_id, workspace_calendar_id, access_role'
     )
     .eq('ws_id', args.wsId)
     .eq('is_enabled', true)
@@ -75,6 +79,7 @@ export async function syncGoogleInbound(args: {
   let updated = 0;
   let deleted = 0;
   let failedConnections = 0;
+  const failedCalendars: CalendarSyncFailure[] = [];
   let firstConnectionError: unknown;
   let authError: unknown;
 
@@ -98,7 +103,10 @@ export async function syncGoogleInbound(args: {
         const body = await result.json();
         throw new CalendarProviderSyncError(
           body.error || 'Google sync failed',
-          result.status === 401 ? 'auth' : 'unknown'
+          classifyCalendarSyncError({
+            code: result.status,
+            message: body.error,
+          })
         );
       }
 
@@ -107,6 +115,11 @@ export async function syncGoogleInbound(args: {
       deleted += result.eventsDeleted;
     } catch (error) {
       failedConnections += 1;
+      failedCalendars.push({
+        connectionId: connection.id,
+        calendarName: connection.calendar_name,
+        code: classifyCalendarSyncError(error),
+      });
       firstConnectionError ??= error;
       if (classifyCalendarSyncError(error) === 'auth') authError ??= error;
       console.warn('Google calendar connection sync failed', {
@@ -118,22 +131,13 @@ export async function syncGoogleInbound(args: {
     }
   }
 
-  if (
-    googleConnections.length > 0 &&
-    failedConnections === googleConnections.length
-  ) {
-    const prioritizedError = authError ?? firstConnectionError;
-    throw prioritizedError instanceof Error
-      ? prioritizedError
-      : new Error('Google sync failed for all connected calendars');
-  }
-
   return {
     inserted,
     updated,
     deleted,
     processedConnections: googleConnections.length - failedConnections,
     failedConnections,
+    failedCalendars,
     failureType: firstConnectionError
       ? classifyCalendarSyncError(authError ?? firstConnectionError)
       : null,

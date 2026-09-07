@@ -1,6 +1,7 @@
 'use client';
 
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { isPageShortcutBlocked } from '@tuturuuu/utils/keyboard-shortcuts';
 import { useEffect } from 'react';
 import type { TaskFilters } from '../../task-filter';
 
@@ -35,12 +36,7 @@ export function useKeyboardShortcuts({
   // General keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Ignore shortcuts when typing in input fields
-      const target = event.target as HTMLElement;
-      const isInputField =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+      if (isPageShortcutBlocked(event)) return;
 
       if (event.key === 'Escape') {
         clearSelection();
@@ -52,8 +48,7 @@ export function useKeyboardShortcuts({
         !event.ctrlKey &&
         !event.metaKey &&
         !event.shiftKey &&
-        !event.altKey &&
-        !isInputField
+        !event.altKey
       ) {
         event.preventDefault();
         event.stopPropagation();
@@ -68,6 +63,8 @@ export function useKeyboardShortcuts({
       if (
         (event.ctrlKey || event.metaKey) &&
         event.key.toLowerCase() === 'm' &&
+        !event.altKey &&
+        !event.shiftKey &&
         selectedTasks.size > 0
       ) {
         event.preventDefault();
@@ -91,15 +88,7 @@ export function useKeyboardShortcuts({
   // Multi-select specific shortcuts (Shift key handling)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input field
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
+      if (isPageShortcutBlocked(e)) return;
 
       // Only Shift key (without other modifiers) enables multiselect mode
       if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {

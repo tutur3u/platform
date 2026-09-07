@@ -1,3 +1,4 @@
+import { isShortcutEventIgnored } from '@tuturuuu/utils/keyboard-shortcuts';
 import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
 import { type KeyboardEvent, type RefObject, useEffect, useState } from 'react';
 
@@ -73,6 +74,7 @@ export function getAppsLauncherGridTarget({
 export function useAppsLauncherShortcut(onOpen: () => void) {
   useEffect(() => {
     const handleShortcut = (event: globalThis.KeyboardEvent) => {
+      if (isShortcutEventIgnored(event)) return;
       if (
         event.key.toLocaleLowerCase() === 'k' &&
         (event.metaKey || event.ctrlKey) &&

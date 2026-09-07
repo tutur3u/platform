@@ -9,6 +9,8 @@ import type { CalendarConnectionsManagerState } from './use-calendar-connections
 function state(overrides: Partial<CalendarConnectionsManagerState> = {}) {
   return {
     accounts: [],
+    failedCalendars: [],
+    pauseFailedCalendarMutation: { mutate: vi.fn(), isPending: false },
     providerAccountStatuses: {},
     syncStatusError: false,
     syncHealth: {
@@ -84,4 +86,27 @@ describe('calendar sync recovery actions', () => {
     render(<CalendarSyncRecovery state={value} />);
     expect(screen.queryByRole('alert')).toBeNull();
   });
+});
+
+it('can pause an identified calendar during the retry cooldown without deleting saved events', () => {
+  const value = state({
+    manualSyncDisabled: true,
+    failedCalendars: [
+      {
+        connectionId: 'broken',
+        calendarName: 'Unavailable calendar',
+        code: 'not_found',
+      },
+    ],
+  });
+  render(<CalendarSyncRecovery state={value} />);
+  expect(screen.getByRole('button', { name: 'sync_now' })).toBeDisabled();
+  expect(screen.getByText('Unavailable calendar')).toBeVisible();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'sync_recovery.pause_calendar' })
+  );
+  expect(value.pauseFailedCalendarMutation.mutate).toHaveBeenCalledWith(
+    'broken'
+  );
+  expect(value.syncMutation.mutate).not.toHaveBeenCalled();
 });

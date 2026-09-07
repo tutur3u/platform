@@ -212,6 +212,40 @@ stuck at `running`. Provider rate limits and transient outages offer retry,
 while authentication failures offer reconnection. Operators should inspect the
 Calendar cron execution and dashboard run when retries continue to fail.
 
+### Recovering individual calendar failures
+
+The warning names each failed Google calendar after a sync attempt. **Pause sync
+for this calendar** turns off only its inbound import; it preserves its saved
+events and visibility, and does not disconnect the account or affect other
+calendars. This action is available during the manual retry cooldown. Restore
+provider access when applicable, then re-enable inbound sync from the calendar's
+sync controls. **Sync now** retries the remaining enabled calendars.
+
+The sync handler stores sanitized version-1 `failedCalendars` diagnostics in the
+existing `calendar_sync_dashboard.error_stack_trace` text field. Each entry has
+only `connectionId`, `calendarName`, and a classified `code`. Never store OAuth
+credentials, provider response payloads, or headers there. The status API parses
+this format, filters disabled/paused connections, and returns `failedCalendars`;
+it never returns the raw diagnostic field. Older unstructured errors still show
+an aggregate warning and gain calendar-specific details on the next attempt.
+
+## Views and keyboard support
+
+Calendar views share behavior across Calendar, Tasks, and embedded Web calendars.
+Use D, 4, W, M, Y, or A for day, four days, week, month, year, or agenda. These
+page shortcuts are inactive inside editors, menus, and dialogs, during input
+composition, or alongside Cmd/Ctrl/Alt. Month selection updates the host's
+controlled state and is restored from the saved view preference.
+
+Month provides event previews and day details; year opens the selected month or
+day; agenda searches titles and locations across its 30-day window. Event queries
+must cover the entire year or all 30 agenda days, not just the first day.
+The event route reads ordered 1,000-row pages so busy years are not truncated
+by the database response limit. Shared
+settings list the shortcuts alongside command search, app launcher, and sidebar
+commands. Verify modified shortcuts in Calendar and Tasks and check typing,
+modifiers, modal focus, and mobile overflow when changing these views.
+
 ## Two-Way Sync Controls
 
 Calendar sync has two layers of user control:

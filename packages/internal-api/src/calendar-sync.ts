@@ -31,7 +31,14 @@ export interface CalendarSyncHealth {
   retryAfterSeconds: number | null;
 }
 
+export interface CalendarSyncFailure {
+  connectionId: string;
+  calendarName: string;
+  code: string;
+}
+
 export interface CalendarSyncStatusResponse {
+  failedCalendars?: CalendarSyncFailure[];
   health: CalendarSyncHealth;
   accountsSummary: { total: number; google: number; microsoft: number };
   connectionsSummary: { total: number; enabled: number };
@@ -41,7 +48,12 @@ export interface CalendarSyncResult {
   ok: boolean;
   error?: string;
   summary?: {
-    google?: { inserted?: number; updated?: number; deleted?: number };
+    google?: {
+      inserted?: number;
+      updated?: number;
+      deleted?: number;
+      failedCalendars?: CalendarSyncFailure[];
+    };
     microsoft?: { inserted?: number; updated?: number; deleted?: number };
   };
   alreadyRunning?: boolean;

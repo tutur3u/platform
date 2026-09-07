@@ -612,6 +612,13 @@ export async function POST(
       .update({
         status: partialFailure ? 'failed' : 'completed',
         error_type: partialFailure ? failureType : null,
+        error_stack_trace: JSON.stringify({
+          version: 1,
+          failedCalendars:
+            'failedCalendars' in googleSummary
+              ? googleSummary.failedCalendars
+              : [],
+        }),
         error_message: partialFailure
           ? 'Some calendars or events could not be synchronized'
           : null,
