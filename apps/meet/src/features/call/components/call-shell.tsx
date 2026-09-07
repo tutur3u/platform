@@ -19,6 +19,7 @@ import {
   selectSelf,
 } from '../lib/call-state';
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
+import { ConnectionPanel } from './connection-panel';
 import { type CallPanel, ControlBar } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { Lobby } from './lobby';
@@ -178,6 +179,10 @@ export function CallShell({
             {t('guest_transcription_notice')}
           </p>
         )}
+        <ConnectionPanel
+          read={room.getMediaDiagnostics}
+          reconnect={room.reconnectMedia}
+        />
         <CopyInvite meetingId={meetingId} meetingName={meetingName} />
         {state.recording.state === 'recording' ? (
           <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-0.5 font-medium text-dynamic-red text-xs">

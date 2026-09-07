@@ -108,6 +108,24 @@ describe('CloudflareSfuClient', () => {
     expect(getJsonBody(fetchMock.mock.calls[3]?.[1])).toEqual({ tracks });
   });
 
+  it('can close a screen track without a WebRTC renegotiation', async () => {
+    const fetchMock = createFetchMock();
+    const client = new CloudflareSfuClient({
+      appId: 'app-1',
+      appSecret: 'secret-1',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await client.closeTracks({
+      sessionId: 'session-1',
+      tracks: [{ mid: '2' }],
+      force: true,
+    });
+    expect(getJsonBody(fetchMock.mock.calls[0]?.[1])).toEqual({
+      tracks: [{ mid: '2' }],
+      force: true,
+    });
+  });
+
   it('sends an offer as sessionDescription when one is supplied', async () => {
     const fetchMock = createFetchMock();
     const client = new CloudflareSfuClient({

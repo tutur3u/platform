@@ -23,6 +23,7 @@ export type RenegotiateInput = {
 };
 
 export type CloseTracksInput = {
+  force?: boolean;
   sessionId: string;
   tracks: SfuTrack[];
 };
@@ -136,7 +137,10 @@ export class CloudflareSfuClient {
     return this.request(
       `/sessions/${encodeURIComponent(input.sessionId)}/tracks/close`,
       {
-        body: JSON.stringify({ tracks: input.tracks }),
+        body: JSON.stringify({
+          tracks: input.tracks,
+          ...(input.force === undefined ? {} : { force: input.force }),
+        }),
         method: 'PUT',
       }
     );

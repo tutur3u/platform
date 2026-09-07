@@ -3,7 +3,6 @@
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 
 import type {
-  CloudflareSfuSessionDescription,
   CloudflareSfuTrack,
   MeetMediaState,
   MeetRealtimeTrackKind,
@@ -15,6 +14,17 @@ import {
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
+import { readPeerDiagnostics } from '../lib/media-diagnostics';
+import type {
+  MeetRoomController,
+  UseMeetRoomOptions,
+} from '../lib/room-controller';
+
+export type {
+  MeetRoomController,
+  UseMeetRoomOptions,
+} from '../lib/room-controller';
+
 import {
   diffLocalTracks,
   type LocalTrackPlan,
@@ -22,7 +32,12 @@ import {
   planRemoteSubscriptions,
   userIdFromTrackName,
 } from '../lib/negotiation';
-import { preparePeerSession } from '../lib/peer-connection';
+import { PEER_CONFIG, preparePeerSession } from '../lib/peer-connection';
+import { watchPeerRecovery } from '../lib/peer-recovery';
+import {
+  closePublishedTrack,
+  syncPublishedSenders,
+} from '../lib/published-senders';
 import {
   attachRemotePlayback,
   type RemoteTrackOwner,
@@ -33,53 +48,13 @@ import {
   createRemoteStreamCache,
   type RemoteMedia,
 } from '../lib/remote-streams';
+import type {
+  SfuSessionResponse,
+  SfuTracksResponse,
+} from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
 
-type SfuSessionResponse = { sessionId?: string };
-type SfuTracksResponse = {
-  requiresImmediateRenegotiation?: boolean;
-  sessionDescription?: CloudflareSfuSessionDescription;
-  tracks?: Array<{ mid?: string; trackName?: string }>;
-};
-
-export interface UseMeetRoomOptions {
-  meetingId: string;
-  realtimeUrl: string;
-  token: string;
-  wsId: string;
-}
-
-export interface MeetRoomController {
-  connectionStatus: MeetSignalingStatus;
-  decideAdmission: (userId: string, admit: boolean) => void;
-  localStream: MediaStream | null;
-  localPreview: MediaStream | null;
-  media: MeetMediaState;
-  muteParticipant: (userId: string, kinds: MeetRealtimeTrackKind[]) => void;
-  raiseHand: (raised: boolean) => void;
-  removeParticipant: (userId: string) => void;
-  remoteStreams: Record<string, MediaStream>;
-  sendChat: (body: string) => void;
-  setRecordingState: (state: 'recording' | 'idle', sessionId?: string) => void;
-  state: CallState;
-  toggleCamera: () => Promise<void>;
-  toggleMicrophone: () => Promise<void>;
-  toggleScreenShare: () => Promise<void>;
-}
-
-const PEER_CONFIG: RTCConfiguration = {
-  bundlePolicy: 'max-bundle',
-  iceServers: [{ urls: 'stun:stun.cloudflare.com:3478' }],
-};
-
-/**
- * Drives one participant's side of a call: the signaling socket, the single
- * publishing peer connection and the single subscribing peer connection.
- *
- * Cloudflare Realtime is not mesh — every participant keeps exactly two peer
- * connections to the SFU regardless of room size, which is what keeps a large
- * room affordable.
- */
+/** One signaling socket and separate publishing/subscribing SFU connections. */
 export function useMeetRoom({
   meetingId,
   realtimeUrl,
@@ -121,12 +96,13 @@ export function useMeetRoom({
 
   const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
 
-  const resetPublisher = useCallback(() => {
+  const resetPublisher = useCallback((recover = false) => {
     publishPcRef.current?.close();
     publishPcRef.current = null;
     publishSessionRef.current = null;
     sendersRef.current.clear();
     publishedRef.current = [];
+    if (recover) setConnectionGeneration((value) => value + 1);
   }, []);
 
   const resetSubscriber = useCallback(() => {
@@ -206,9 +182,7 @@ export function useMeetRoom({
         setState((current) => reduceCallState(current, message));
       },
       onReconnected: () => {
-        // The room forgot us while we were gone: re-announce, and clear the
-        // subscription ledger so every remote track is pulled again onto the
-        // fresh session.
+        // Re-announce and resubscribe on fresh media sessions.
         resetSubscriber();
         resetPublisher();
         setConnectionGeneration((value) => value + 1);
@@ -268,6 +242,11 @@ export function useMeetRoom({
 
     const pc = new RTCPeerConnection(PEER_CONFIG);
     publishPcRef.current = pc;
+    watchPeerRecovery(
+      pc,
+      () => publishPcRef.current === pc,
+      () => resetPublisher(true)
+    );
 
     const result = await signalingRef.current?.request<SfuSessionResponse>({
       type: 'sfu.session.create',
@@ -277,7 +256,7 @@ export function useMeetRoom({
     if (publishPcRef.current !== pc) throw new Error('sfu_session_replaced');
     publishSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
-  }, []);
+  }, [resetPublisher]);
 
   const ensureSubscribeSession = useCallback(async () => {
     if (subscribeSessionRef.current && subscribePcRef.current) {
@@ -289,6 +268,7 @@ export function useMeetRoom({
 
     const pc = new RTCPeerConnection(PEER_CONFIG);
     subscribePcRef.current = pc;
+    watchPeerRecovery(pc, () => subscribePcRef.current === pc, resetSubscriber);
 
     pc.addEventListener('track', (event) => {
       const mid = event.transceiver.mid;
@@ -313,7 +293,7 @@ export function useMeetRoom({
     if (subscribePcRef.current !== pc) throw new Error('sfu_session_replaced');
     subscribeSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
-  }, []);
+  }, [resetSubscriber]);
 
   /** Pushes newly enabled local tracks to the SFU. */
   const syncLocalTracks = useCallback(
@@ -322,31 +302,30 @@ export function useMeetRoom({
       if (!selfUserId) return;
 
       const desired = planLocalTracks(selfUserId, next);
-      const { publish } = diffLocalTracks(publishedRef.current, desired);
-
-      // Keep stable SFU track names across mute/unmute and share restarts.
-      // Replacing the sender source avoids duplicate transceivers/subscriptions.
-      for (const plan of publishedRef.current) {
-        const enabled = desired.some(
-          (entry) => entry.trackName === plan.trackName
-        );
-        const source =
-          plan.kind === 'screen'
-            ? screenStreamRef.current?.getVideoTracks()[0]
-            : plan.kind === 'audio'
-              ? stream.getAudioTracks()[0]
-              : stream.getVideoTracks()[0];
-        await sendersRef.current
-          .get(plan.trackName)
-          ?.replaceTrack(enabled ? (source ?? null) : null);
-      }
+      const previousPc = publishPcRef.current;
+      const published = await syncPublishedSenders({
+        published: publishedRef.current,
+        desired,
+        senders: sendersRef.current,
+        pc: publishPcRef.current,
+        sessionId: publishSessionRef.current,
+        stream,
+        screenStream: screenStreamRef.current,
+        isCurrent: () => publishPcRef.current === previousPc,
+        reset: () => resetPublisher(true),
+        closeTrack: (sessionId, track) =>
+          closePublishedTrack(signalingRef.current, sessionId, track),
+      });
+      if (publishPcRef.current !== previousPc) return;
+      publishedRef.current = published;
+      const { publish } = diffLocalTracks(published, desired);
 
       if (publish.length) {
         const { pc, sessionId } = await ensurePublishSession();
         await preparePeerSession(
           pc,
           () => publishPcRef.current === pc,
-          resetPublisher
+          () => resetPublisher(true)
         );
         if (publishPcRef.current !== pc) return;
         const added: Array<{
@@ -361,7 +340,7 @@ export function useMeetRoom({
               : plan.kind === 'audio'
                 ? stream.getAudioTracks()[0]
                 : stream.getVideoTracks()[0];
-          if (!source) continue;
+          if (!source || source.readyState === 'ended') continue;
 
           const transceiver = pc.addTransceiver(source, {
             direction: 'sendonly',
@@ -372,11 +351,10 @@ export function useMeetRoom({
 
         if (added.length) {
           const offer = await pc.createOffer();
-          // Order matters: a transceiver's `mid` is null until the local
-          // description is applied. Reading it any earlier publishes tracks
-          // with no mid and Cloudflare rejects the whole request with
-          // `406 tracks[0]: Missing mid in track`.
+          if (publishPcRef.current !== pc) return;
+          // Apply the offer before reading the assigned transceiver MIDs.
           await pc.setLocalDescription(offer);
+          if (publishPcRef.current !== pc) return;
 
           const tracks: CloudflareSfuTrack[] = added.map(
             ({ plan: added_plan, transceiver }) => ({
@@ -402,6 +380,7 @@ export function useMeetRoom({
           if (answer?.sessionDescription) {
             await pc.setRemoteDescription(answer.sessionDescription);
           }
+          if (publishPcRef.current !== pc) return;
           publishedRef.current = [
             ...publishedRef.current,
             ...added.map(({ plan }) => plan),
@@ -439,8 +418,7 @@ export function useMeetRoom({
     ).catch(() => undefined);
   }, [connectionGeneration, queueLocalTracks, state.admission]);
 
-  // Serialize SDP exchanges: a track broadcast must never cancel an in-flight
-  // offer/answer and leave the subscriber in have-remote-offer.
+  // Serialize SDP exchanges across track broadcasts.
   useEffect(() => {
     if (state.admission !== 'admitted') return;
     const pull = async () => {
@@ -679,6 +657,16 @@ export function useMeetRoom({
   );
 
   return {
+    getMediaDiagnostics: async () => ({
+      signaling: connectionStatus,
+      attachedParticipants: Object.keys(remoteMedia).length,
+      publisher: await readPeerDiagnostics(publishPcRef.current),
+      subscriber: await readPeerDiagnostics(subscribePcRef.current),
+    }),
+    reconnectMedia: () => {
+      resetSubscriber();
+      resetPublisher(true);
+    },
     connectionStatus,
     decideAdmission,
     localStream,
