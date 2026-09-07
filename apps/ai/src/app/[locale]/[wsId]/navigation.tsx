@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Lock,
   MessageSquare,
+  Plug,
   Sparkles,
 } from '@tuturuuu/icons';
 import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
@@ -86,6 +87,11 @@ export async function getNavigationLinks({
       title: t('observe'),
       icon: <Activity className="h-4 w-4" />,
       children: [
+        {
+          title: t('integrations'),
+          href: href('integrations'),
+          icon: <Plug className="h-4 w-4" />,
+        },
         {
           title: t('runs'),
           href: href('runs'),

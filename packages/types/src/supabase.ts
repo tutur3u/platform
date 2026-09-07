@@ -4065,6 +4065,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      external_provider_invoices: {
+        Row: {
+          account_id: string;
+          actor_id: string;
+          amount_usd: number;
+          app_id: string;
+          currency: string;
+          issued_on: string;
+          provider: string;
+          reference: string;
+          reviewed_on: string;
+          source: string;
+          status: string;
+          synced_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          account_id: string;
+          actor_id: string;
+          amount_usd: number;
+          app_id: string;
+          currency?: string;
+          issued_on: string;
+          provider: string;
+          reference: string;
+          reviewed_on: string;
+          source?: string;
+          status?: string;
+          synced_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          account_id?: string;
+          actor_id?: string;
+          amount_usd?: number;
+          app_id?: string;
+          currency?: string;
+          issued_on?: string;
+          provider?: string;
+          reference?: string;
+          reviewed_on?: string;
+          source?: string;
+          status?: string;
+          synced_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       external_user_monthly_report_logs: {
         Row: {
           approved_at: string | null;
@@ -16871,6 +16919,30 @@ export type Database = {
           service: string;
         }[];
       };
+      get_external_provider_invoices: {
+        Args: { p_ws_id: string };
+        Returns: {
+          account_id: string;
+          actor_id: string;
+          amount_usd: number;
+          app_id: string;
+          currency: string;
+          issued_on: string;
+          provider: string;
+          reference: string;
+          reviewed_on: string;
+          source: string;
+          status: string;
+          synced_at: string;
+          ws_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'external_provider_invoices';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       get_finance_overview_metrics: {
         Args: {
           _actor_id: string;
@@ -18188,6 +18260,20 @@ export type Database = {
           p_occurred_at: string;
           p_provider: string;
           p_service: string;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
+      record_external_provider_invoice: {
+        Args: {
+          p_account_id: string;
+          p_actor_id: string;
+          p_amount_usd: number;
+          p_app_id: string;
+          p_issued_on: string;
+          p_provider: string;
+          p_reference: string;
+          p_reviewed_on: string;
           p_ws_id: string;
         };
         Returns: undefined;

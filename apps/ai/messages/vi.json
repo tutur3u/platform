@@ -126,6 +126,28 @@
       "unavailable": "Không tải được tổng quan",
       "unavailable_description": "Không gian làm việc này không có quyền xem mức dùng AI Studio, hoặc dữ liệu không tải được."
     },
+    "integrations": "Tích hợp",
+    "integrations-page": {
+      "all-time": "Hóa đơn đã lưu từ trước đến nay",
+      "amount": "Số tiền",
+      "coverage": "Hóa đơn và mức sử dụng là hai góc nhìn có thể trùng chi phí; không cộng hai tổng này. Yêu cầu AI được ghi ở Mức sử dụng; hóa đơn không trừ tín dụng AI. Thiếu dữ liệu không có nghĩa dịch vụ miễn phí.",
+      "description": "Kết nối nhà cung cấp, hóa đơn lưu trữ và mức sử dụng của các ứng dụng.",
+      "empty": "Chưa có biên nhận trong chế độ xem này. Nhập hóa đơn đã đối soát hoặc bật đồng bộ chi phí trong ứng dụng tích hợp.",
+      "error": "Một số bản ghi chưa tải được. Chọn Làm mới để thử lại; tổng chi phí có thể chưa đầy đủ.",
+      "invoice-description": "Bản chụp hóa đơn nhà cung cấp đã đối soát thủ công, tính theo ngày phát hành. Số tiền gốc lưu bằng USD; quy đổi chỉ để hiển thị. Hóa đơn mới cần được đối soát và nhập.",
+      "invoices": "Lịch sử hóa đơn đã thanh toán",
+      "issued": "Phát hành",
+      "last-sync": "Đã nhận biên nhận",
+      "loading": "Đang tải bản ghi nhà cung cấp…",
+      "paid": "Đã thanh toán · bản đã đối soát",
+      "provider": "Nhà cung cấp / ứng dụng",
+      "providers": "Tích hợp đã ghi nhận",
+      "providers-description": "Nhà cung cấp có hóa đơn lưu trữ hoặc mức sử dụng trong kỳ đã chọn. Thời gian đồng bộ xác nhận bản ghi đã nhận, không xác nhận kết nối hoạt động hay hóa đơn đầy đủ.",
+      "reference": "Mã hóa đơn",
+      "reviewed": "Đối soát",
+      "select-range": "Chọn khoảng ngày hợp lệ.",
+      "selected": "Hóa đơn trong kỳ đã chọn"
+    },
     "keys": {
       "action_error": "Không thể hoàn tất thao tác với khóa API.",
       "active": "Đang hoạt động",

@@ -4,12 +4,15 @@ import type { UseQueryResult } from '@tanstack/react-query';
 import type { getAiStudioProviderCosts } from '@tuturuuu/internal-api/ai-studio';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import type { DisplayCurrency } from '@/lib/display-currency';
 import { SectionCard } from './studio/section-card';
 
 export function ProviderCostPanel({
   query,
   range,
+  currency = { code: 'USD', rate: 1 },
 }: {
+  currency?: DisplayCurrency;
   query: UseQueryResult<Awaited<ReturnType<typeof getAiStudioProviderCosts>>>;
   range: { from: string; to: string } | null;
 }) {
@@ -17,10 +20,10 @@ export function ProviderCostPanel({
   const money = (value: number) =>
     new Intl.NumberFormat(undefined, {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 6,
-    }).format(Number(value));
+      currency: currency.code,
+      minimumFractionDigits: currency.code === 'VND' ? 0 : 2,
+      maximumFractionDigits: currency.code === 'VND' ? 0 : 6,
+    }).format(Number(value) * currency.rate);
   return (
     <div id="provider-costs" className="scroll-mt-6">
       <SectionCard

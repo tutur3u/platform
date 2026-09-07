@@ -416,3 +416,27 @@ export function getAiStudioProviderCosts(
     query: range,
   });
 }
+
+export interface ExternalProviderInvoice {
+  app_id: string;
+  provider: string;
+  account_id: string;
+  reference: string;
+  issued_on: string;
+  reviewed_on: string;
+  amount_usd: number;
+  currency: 'USD';
+  status: 'paid';
+  source: 'reviewed_provider_invoice';
+  synced_at: string;
+}
+
+export function getAiStudioProviderInvoices(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    currency: 'USD';
+    rows: ExternalProviderInvoice[];
+  }>(workspaceAiPath(workspaceId, 'provider-invoices'), { cache: 'no-store' });
+}

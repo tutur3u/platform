@@ -229,3 +229,44 @@ provider bills must remain explicit coverage gaps. Cache reports privately and
 keep machine credentials on the server.
 
 Validate with `bun run --cwd apps/ai test src/app/v1/usage/route.test.ts`.
+
+## Reviewed provider invoices
+
+`POST /v1/provider-invoices` accepts an immutable, manually reviewed paid invoice
+snapshot. Use the same workspace-matched external-app credential as provider
+cost ingestion. Workspace, app and actor attribution come from the credential.
+
+```json
+{
+  "provider": "neon",
+  "accountId": "dedicated-account",
+  "reference": "example-invoice",
+  "issuedOn": "2026-01-01",
+  "reviewedOn": "2026-01-02",
+  "amountUsd": 1.25,
+  "currency": "USD",
+  "status": "paid",
+  "source": "reviewed_provider_invoice"
+}
+```
+
+Success returns `{ "accepted": true, "reference": "example-invoice" }`.
+Identical retries retain one receipt per workspace/app/provider/account/reference.
+Conflicting snapshots return `409`; review the evidence rather than generating a
+new reference to bypass the conflict. Unknown fields, negative amounts, future
+reviews and reviews before issuance are rejected. Keep real invoice details and
+credentials in private configuration, never source control.
+
+AI Studio **Integrations** shows retained invoices separately from measured
+provider usage. Its workspace-authorized read API is
+`GET /api/v1/workspaces/{wsId}/ai/provider-invoices` and requires `use_ai_studio`.
+It paginates storage reads to avoid silently truncating all-time invoice totals.
+Invoice periods use issue dates; they do not establish consumption dates. Original
+amounts stay in USD and display conversion does not change the ledger. Do not add
+invoice and usage totals when they cover the same expenses. Neither invoice
+imports nor provider costs debit AI credits.
+
+Apply migration `20260907110000_external_provider_invoices.sql` through the normal
+production migration workflow before enabling invoice delivery. This endpoint
+stores reviewed evidence; it does not fetch future provider invoices. A receipt's
+sync time confirms persistence, not connection health or complete cost coverage.

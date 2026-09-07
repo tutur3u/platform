@@ -126,6 +126,28 @@
       "unavailable": "Overview unavailable",
       "unavailable_description": "This workspace does not have AI Studio usage access, or the data could not be loaded."
     },
+    "integrations": "Integrations",
+    "integrations-page": {
+      "all-time": "All-time retained invoices",
+      "amount": "Amount",
+      "coverage": "Invoices and metered usage are separate views of expenses and may overlap. Do not add these totals together. AI requests remain in Usage; invoices never debit AI credits. Missing records do not mean a service is free.",
+      "description": "Provider connections, retained invoices, and measured usage across your apps.",
+      "empty": "No receipts in this view yet. Import reviewed invoices or enable provider-cost sync in the connected app.",
+      "error": "Some provider records are unavailable. Use Refresh to retry; totals may be incomplete.",
+      "invoice-description": "Manually reviewed provider snapshots, grouped by issue date. Original amounts stay in USD; currency conversion is for display. New invoices require a reviewed import.",
+      "invoices": "Paid invoice history",
+      "issued": "Issued",
+      "last-sync": "Receipt received",
+      "loading": "Loading provider records…",
+      "paid": "Paid · reviewed snapshot",
+      "provider": "Provider / app",
+      "providers": "Reported integrations",
+      "providers-description": "Providers with retained invoices or usage in the selected period. Sync time confirms a received record, not connection health or complete billing coverage.",
+      "reference": "Invoice reference",
+      "reviewed": "Reviewed",
+      "select-range": "Choose a valid date range.",
+      "selected": "Invoices in selected period"
+    },
     "keys": {
       "action_error": "The API key action could not be completed.",
       "active": "Active",
