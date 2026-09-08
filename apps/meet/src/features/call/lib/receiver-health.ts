@@ -9,6 +9,8 @@ export function createReceiverHealthCheck() {
     { bytes: number; since: number; baseline: number }
   >();
   const resumedTracks = new WeakSet<MediaStreamTrack>();
+  const missingVideoSince = new Map<string, number>();
+  const undecodedSince = new Map<string, number>();
   return (
     pc: RTCPeerConnection,
     stats: RTCStatsReport,
@@ -48,7 +50,28 @@ export function createReceiverHealthCheck() {
           stat.type === 'inbound-rtp' &&
           (stat.mid === mid || stat.trackIdentifier === track.id)
       );
-      // Unsupported stats cannot establish a failed stream.
+      const video = owner.kind === 'video' || owner.kind === 'screen';
+      // Inbound stats may not exist until the first packet. A working sibling
+      // stream plus a persistently muted video track distinguishes this from
+      // a browser that supplies no inbound statistics at all.
+      const missingVideo =
+        video &&
+        track.muted &&
+        !inbound.length &&
+        [...stats.values()].some(
+          (stat) =>
+            stat.type === 'inbound-rtp' &&
+            typeof stat.bytesReceived === 'number' &&
+            Number.isFinite(stat.bytesReceived) &&
+            stat.bytesReceived > 0
+        );
+      if (missingVideo) {
+        const since = missingVideoSince.get(key) ?? now;
+        missingVideoSince.set(key, since);
+        setReceiverPacketState(track, false);
+        if (now - since >= 20_000) stalled = true;
+      } else missingVideoSince.delete(key);
+      // Unsupported stats alone cannot establish a failed stream.
       if (
         !inbound.length ||
         inbound.some(
@@ -59,7 +82,8 @@ export function createReceiverHealthCheck() {
         )
       ) {
         observations.delete(key);
-        setReceiverPacketState(track, undefined);
+        undecodedSince.delete(key);
+        if (!missingVideo) setReceiverPacketState(track, undefined);
         continue;
       }
       const bytes = inbound.reduce((sum, stat) => sum + stat.bytesReceived, 0);
@@ -67,7 +91,17 @@ export function createReceiverHealthCheck() {
       const baseline =
         previous?.baseline ?? (resumedTracks.has(track) ? bytes : 0);
       resumedTracks.delete(track);
-      setReceiverPacketState(track, bytes > baseline && !track.muted);
+      const noDecodedFrames =
+        video && bytes > 0 && inbound.every((stat) => stat.framesDecoded === 0);
+      if (noDecodedFrames) {
+        const since = undecodedSince.get(key) ?? now;
+        undecodedSince.set(key, since);
+        if (now - since >= 20_000) stalled = true;
+      } else undecodedSince.delete(key);
+      setReceiverPacketState(
+        track,
+        bytes > baseline && !track.muted && !noDecodedFrames
+      );
       if (!previous || previous.bytes !== bytes)
         observations.set(key, { bytes, since: now, baseline });
       else if (now - previous.since >= 20_000 && (bytes === 0 || track.muted))
@@ -75,8 +109,8 @@ export function createReceiverHealthCheck() {
       // The resume baseline controls the badge only. Prior packets on an unmuted
       // receiver may be followed by legitimate silence/DTX or static screen content.
     }
-    for (const key of observations.keys())
-      if (!active.has(key)) observations.delete(key);
+    for (const map of [observations, missingVideoSince, undecodedSince])
+      for (const key of map.keys()) if (!active.has(key)) map.delete(key);
     return stalled;
   };
 }

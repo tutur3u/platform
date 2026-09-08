@@ -625,3 +625,23 @@ relay candidate, incoming audio energy and decoded video in both directions;
 repeat with `&relay=tls` to allow only TLS/443 and rule out direct UDP success. Synthetic
 media avoids recording real microphones or cameras. This does not substitute
 for checking previously affected physical devices.
+
+
+### Audio works but a remote camera stays blank
+
+The receiving watchdog also handles video tracks with no initial RTP report when
+another incoming track proves that the browser exposes inbound statistics.
+WebRTC may create an inbound report only after the first packet, so an absent
+video report is not always an unsupported-statistics case. A live, muted video
+track with enabled remote camera and working sibling inbound stats gets a
+20-second grace period before subscriber recovery. With no usable inbound
+statistics at all, the watchdog continues to avoid guessing.
+
+Video that receives packets but reports zero decoded frames also gets a separate
+20-second first-frame deadline. Incoming byte growth does not reset this deadline.
+A successfully decoded static camera or screen does not trigger this condition.
+Disabling media, replacing a publication, or ending its track clears the deadline.
+Recovery rebuilds the subscriber connection while preserving local publishing and
+room membership, using the existing one-minute recovery throttle. This corrects
+missed recovery cases; it does not identify a codec or network fault on a device
+that has not been inspected.
