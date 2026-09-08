@@ -4,7 +4,6 @@ import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 import type {
   CloudflareSfuTrack,
   MeetMediaState,
-  MeetRealtimeTrackKind,
 } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -25,6 +24,10 @@ import type {
   MeetRoomController,
   UseMeetRoomOptions,
 } from '../lib/room-controller';
+import {
+  applySubscribeResponse,
+  pruneObsoleteReceivers,
+} from '../lib/subscribe-response';
 
 export type {
   MeetRoomController,
@@ -38,7 +41,6 @@ import {
   localTrackSource,
   planLocalTracks,
   planRemoteSubscriptions,
-  userIdFromTrackName,
 } from '../lib/negotiation';
 import {
   configurePeerIce,
@@ -98,7 +100,6 @@ export function useMeetRoom({
     screenEnabled: false,
     videoEnabled: false,
   });
-
   const signalingRef = useRef<MeetSignaling | null>(null);
   const publishPcRef = useRef<RTCPeerConnection | null>(null);
   const subscribePcRef = useRef<RTCPeerConnection | null>(null);
@@ -108,7 +109,6 @@ export function useMeetRoom({
   const pendingSubscriptionsRef = useRef(new Set<string>());
   const subscribedRef = useRef<Set<string>>(new Set());
   const screenStreamRef = useRef<MediaStream | null>(null);
-  /** mid -> owning participant, the only way to attribute an inbound track. */
   const trackOwnersRef = useRef<Map<string, RemoteTrackOwner>>(new Map());
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -450,6 +450,12 @@ export function useMeetRoom({
     if (state.admission !== 'admitted') return;
     const pull = async () => {
       if (!activeRef.current) return;
+      pruneObsoleteReceivers(
+        stateRef.current.remoteTracks,
+        trackOwnersRef.current,
+        subscribedRef.current,
+        setRemoteMedia
+      );
       const pending = planRemoteSubscriptions(
         stateRef.current.remoteTracks,
         subscribedRef.current,
@@ -476,21 +482,14 @@ export function useMeetRoom({
           type: 'sfu.tracks.subscribe',
         });
         if (subscribePcRef.current !== pc) return;
-        for (const track of answer?.tracks ?? []) {
-          const owner = userIdFromTrackName(track.trackName);
-          const kind = track.trackName
-            ?.split('-')
-            .at(-1) as MeetRealtimeTrackKind;
-          const requested = pending.find(
-            (entry) => entry.trackName === track.trackName
-          );
-          if (track.mid && owner && requested)
-            trackOwnersRef.current.set(track.mid, {
-              userId: owner,
-              kind,
-              subscriptionKey: `${encodeURIComponent(requested.sessionId ?? '')}:${encodeURIComponent(track.trackName ?? '')}`,
-            });
-        }
+        applySubscribeResponse(
+          answer,
+          pending,
+          stateRef.current.remoteTracks,
+          trackOwnersRef.current,
+          subscribedRef.current,
+          setRemoteMedia
+        );
         if (answer?.sessionDescription) {
           await pc.setRemoteDescription(answer.sessionDescription);
           if (subscribePcRef.current !== pc) return;
@@ -683,6 +682,7 @@ export function useMeetRoom({
       publisher: await readPeerDiagnostics(publishPcRef.current),
       subscriber: await readPeerDiagnostics(subscribePcRef.current),
     }),
+    reconnectReceivingMedia: resetSubscriber,
     reconnectMedia: () => {
       resetSubscriber();
       resetPublisher(true);

@@ -27,6 +27,7 @@ export interface MeetRoomController
   connectionStatus: MeetSignalingStatus;
   getMediaDiagnostics: () => Promise<MediaDiagnostics>;
   reconnectMedia: () => void;
+  reconnectReceivingMedia: () => void;
   decideAdmission: (userId: string, admit: boolean) => void;
   localStream: MediaStream | null;
   localPreview: MediaStream | null;

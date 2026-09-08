@@ -1,13 +1,15 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { Circle, Loader2, ShieldCheck, WifiOff } from '@tuturuuu/icons';
+import { Bell, BellOff, Circle, WifiOff } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MeetingAiPanel } from '@/features/meeting-ai/meeting-ai-panel';
+import { NotesSharingControl } from '@/features/meeting-ai/notes-sharing-control';
 import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
+import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useCallRecording } from '../hooks/use-call-recording';
 import { useMeetRoom } from '../hooks/use-meet-room';
 import {
@@ -17,6 +19,7 @@ import {
   selectSelf,
 } from '../lib/call-state';
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
+import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
 import { type CallLayout, CallStage } from './call-stage';
 import { ConnectionPanel } from './connection-panel';
@@ -75,6 +78,16 @@ export function CallShell({
   const pendingDevices = useRef(new Set<Device>());
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
   const { state } = room;
+  const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
+    setPanel(next);
+    setShowAi(false);
+  }, []);
+  const notifications = useCallNotifications(
+    state,
+    joined && !left,
+    room.connectionStatus === 'open',
+    openNoticePanel
+  );
   const canManage = state.role === 'host';
   const canReadNotes = canManage || state.settings.shareNotes;
   const audioStreams = useMemo(
@@ -157,46 +170,19 @@ export function CallShell({
 
   if (left || state.ended)
     return (
-      <div className="min-h-dvh bg-background px-4 py-12">
-        <div className="mx-auto max-w-2xl space-y-6">
-          <div className="rounded-2xl border bg-card p-8 text-center">
-            <ShieldCheck className="mx-auto mb-4 size-10 text-muted-foreground" />
-            <h1 className="font-semibold text-2xl">
-              {t(state.ended ? 'call_ended_title' : 'call_left_title')}
-            </h1>
-            <p className="mt-2 text-muted-foreground text-sm">
-              {t('call_left_hint')}
-            </p>
-            {saving && (
-              <p
-                role="status"
-                className="mt-4 flex items-center justify-center gap-2 text-sm"
-              >
-                <Loader2 className="size-4 animate-spin" />
-                {t('saving_notes')}
-              </p>
-            )}
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              {!state.ended && (
-                <Button
-                  disabled={saving}
-                  onClick={() => window.location.reload()}
-                >
-                  {t('rejoin_call')}
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                disabled={saving}
-                onClick={() => router.push(backHref)}
-              >
-                <span>{t('back_to_meet')}</span>
-              </Button>
-            </div>
-          </div>
-          {canReadNotes && <MeetingAiPanel ai={ai} />}
-        </div>
-      </div>
+      <CallEnded
+        ended={state.ended}
+        canManage={canManage}
+        canReadNotes={
+          state.ended ? !!state.settings.shareNotesAfterMeeting : canReadNotes
+        }
+        shareNotesAfterMeeting={state.settings.shareNotesAfterMeeting}
+        wsId={wsId}
+        meetingId={meetingId}
+        meetingName={state.title ?? meetingName}
+        backHref={backHref}
+        saving={saving}
+      />
     );
   if (!joined || state.admission === 'waiting')
     return (
@@ -263,9 +249,27 @@ export function CallShell({
             }}
           >
             {aiT('title')}
-            {ai.data ? ` · $${ai.data.estimatedCostUsd.toFixed(4)}` : ''}
+            {canManage && ai.data?.estimatedCostUsd != null
+              ? ` · $${ai.data.estimatedCostUsd.toFixed(4)}`
+              : ''}
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8 rounded-full"
+          aria-label={t(
+            notifications.sound ? 'mute_notifications' : 'enable_notifications'
+          )}
+          aria-pressed={notifications.sound}
+          onClick={notifications.toggleSound}
+        >
+          {notifications.sound ? (
+            <Bell className="size-4" />
+          ) : (
+            <BellOff className="size-4" />
+          )}
+        </Button>
         <ConnectionPanel
           read={room.getMediaDiagnostics}
           reconnect={room.reconnectMedia}
@@ -306,6 +310,15 @@ export function CallShell({
         {showAi && canReadNotes && (
           <aside className="max-h-[50dvh] w-full shrink-0 overflow-y-auto p-3 md:max-h-none md:w-96">
             <MeetingAiPanel ai={ai} inCall />
+            {canManage && (
+              <div className="mt-3">
+                <NotesSharingControl
+                  wsId={wsId}
+                  meetingId={meetingId}
+                  initialEnabled={state.settings.shareNotesAfterMeeting}
+                />
+              </div>
+            )}
           </aside>
         )}
         {panel && (

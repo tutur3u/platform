@@ -645,3 +645,34 @@ Recovery rebuilds the subscriber connection while preserving local publishing an
 room membership, using the existing one-minute recovery throttle. This corrects
 missed recovery cases; it does not identify a codec or network fault on a device
 that has not been inspected.
+
+
+### Decoded video with an avatar-only tile
+
+If incoming diagnostics show decoded video frames and a live, unmuted receiver,
+inspect presentation before resetting the SFU. Tile readiness uses a React external
+store so an unmute event between rendering and listener installation cannot leave
+an old avatar visible. Audio and muted video have separate media elements; camera
+replacement preserves the audio element's stream. Playback retries on metadata and
+can-play events after a replaced stream interrupts `play()`. The incoming-video
+retry action preserves local publishing. Rejected subscription responses and stale
+publisher sessions cannot take ownership of a replacement receiver.
+
+### Call alerts and post-meeting privacy
+
+Join, admission-request, chat and raised-hand changes display actionable in-call
+notifications. Short sound cues are unlocked by browser interaction, rate-limited,
+and can be muted from the header. Initial snapshots, reconnect snapshots and the
+participant's own actions do not produce notification bursts.
+
+Live notes sharing and post-meeting sharing are separate room settings. Both are
+disabled by default. The host may enable post-meeting access for approved people
+from the transcript panel or centered ended-meeting screen. Ended invite/detail
+pages perform a signed read-only room-state check and never open a call socket.
+Notes open on demand with transcript and notes tabs; there is no join button for
+an ended room. The authenticated host-only sharing mutation reaches the room
+Worker over signed HTTP and also works after its WebSocket has closed.
+
+AI read responses use explicit field projections. Non-admin readers receive no
+raw provider usage and null cost/token fields; cost totals and breakdowns render
+only for the room admin. Sharing permission is rechecked on every notes request.

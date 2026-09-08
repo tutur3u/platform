@@ -94,7 +94,7 @@ export async function meetAiAccess(
         'The host has not shared meeting notes with you'
       );
   }
-  return { db, meetingId, user, canManage };
+  return { db, meetingId, wsId, user, canManage };
 }
 
 export async function meetAiResponse(work: () => Promise<unknown>) {

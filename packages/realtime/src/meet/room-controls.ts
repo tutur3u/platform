@@ -29,7 +29,9 @@ export function canReadRoomNotes(
   return (
     token.role === 'host' ||
     Boolean(
-      state.settings?.shareNotes &&
+      (state.ended
+        ? state.settings?.shareNotesAfterMeeting
+        : state.settings?.shareNotes) &&
         (state.presence[token.userId] || state.approved?.[token.userId])
     )
   );
@@ -90,7 +92,10 @@ export function applyRoomControl(
       broadcast: [{ type: 'room.title.changed', title: message.title }],
     });
   if (message.type === 'room.settings.update') {
-    const next = { ...state, settings: message.settings };
+    const next = {
+      ...state,
+      settings: { ...state.settings, ...message.settings },
+    };
     return outcome(next, { broadcast: [roomSettingsMessage(next)] });
   }
   if (message.type === 'admission.forget') {

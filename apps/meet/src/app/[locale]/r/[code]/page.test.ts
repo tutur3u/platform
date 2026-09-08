@@ -1,7 +1,17 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
 
-const mocks = vi.hoisted(() => ({ access: vi.fn(), session: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  access: vi.fn(),
+  session: vi.fn(),
+  policy: vi.fn(),
+}));
+vi.mock('@/features/meeting-ai/server/room-access', () => ({
+  readMeetingRoomPolicy: mocks.policy,
+}));
+vi.mock('@/features/call/components/call-ended', () => ({
+  CallEnded: () => null,
+}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
 vi.mock('next/navigation', () => ({
   notFound: () => {
@@ -42,6 +52,7 @@ const id = '00000000-0000-4000-8000-000000000001';
 const code = encodeRoomCode(id);
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.policy.mockResolvedValue({ ended: false, canReadNotes: false });
   mocks.access.mockResolvedValue({
     user: { id, email: 'guest@example.com' },
     meeting: { id, ws_id: id, name: 'Invited call' },
@@ -144,6 +155,32 @@ it('asks for a missing name before creating the realtime session', async () => {
   expect(result.props).toMatchObject({
     meetingName: 'Invited call',
     leaveHref: '/',
+  });
+  expect(mocks.session).not.toHaveBeenCalled();
+});
+
+it('renders a closed room without starting a call or requesting a profile name', async () => {
+  mocks.access.mockResolvedValue({
+    ...(await mocks.access()),
+    needsDisplayName: true,
+  });
+  mocks.policy.mockResolvedValue({ ended: true, canReadNotes: false });
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'en' }),
+  });
+  expect(result.props).toMatchObject({ canReadNotes: false, canManage: false });
+  expect(mocks.session).not.toHaveBeenCalled();
+});
+
+it('opens an authorized ended-room notes deep link without joining', async () => {
+  mocks.policy.mockResolvedValue({ ended: true, canReadNotes: true });
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'en' }),
+    searchParams: Promise.resolve({ notes: '1' }),
+  });
+  expect(result.props).toMatchObject({
+    canReadNotes: true,
+    initialShowNotes: true,
   });
   expect(mocks.session).not.toHaveBeenCalled();
 });

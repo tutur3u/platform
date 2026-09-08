@@ -118,6 +118,7 @@ export function CallStage({
       focused={focus === tile.key}
       focusKey={tile.key}
       onFocus={onFocus}
+      onRetry={room.reconnectReceivingMedia}
       onMute={room.state.role === 'host' ? mute : undefined}
     />
   );

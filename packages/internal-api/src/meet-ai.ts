@@ -36,12 +36,12 @@ export type MeetAiState = {
   sessions: MeetAiSession[];
   chunks: MeetAiChunk[];
   model: string;
-  transcriptionCostUsd: number;
-  notesCostUsd: number;
-  estimatedCostUsd: number;
-  unpricedRequests: number;
-  inputTokens: number;
-  outputTokens: number;
+  transcriptionCostUsd: number | null;
+  notesCostUsd: number | null;
+  estimatedCostUsd: number | null;
+  unpricedRequests: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
 };
 const path = (wsId: string, meetingId: string) =>
   `/api/meet-ai/${encodePathSegment(wsId)}/${encodePathSegment(meetingId)}`;
@@ -87,5 +87,20 @@ export function uploadMeetAiChunk(
   return getInternalApiClient(options).json<MeetAiChunk>(
     `${path(wsId, meetingId)}/chunks`,
     { method: 'POST', body: data }
+  );
+}
+
+export function updateMeetNotesSharing(
+  wsId: string,
+  meetingId: string,
+  settings: { shareNotes?: boolean; shareNotesAfterMeeting?: boolean }
+) {
+  return getInternalApiClient().json<{ updated: boolean }>(
+    path(wsId, meetingId),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'sharing', ...settings }),
+    }
   );
 }

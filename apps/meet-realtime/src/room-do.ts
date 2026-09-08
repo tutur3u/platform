@@ -17,6 +17,7 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
+import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
 
 import { getSessionIceServers, type TurnEnv } from './turn-credentials';
 
@@ -171,10 +172,25 @@ export class MeetRoomDurableObject implements DurableObject {
     }
 
     if (new URL(request.url).pathname === '/room-state') {
+      if (request.method === 'PATCH') {
+        if (token.role !== 'host')
+          return new Response('Forbidden', { status: 403 });
+        const body = await request.json().catch(() => null);
+        const patch = parseMeetRoomSettingsPatch(body, this.snapshot.settings);
+        if (!patch.success)
+          return new Response('Invalid settings', { status: 400 });
+        const settings = patch.data;
+        this.snapshot = { ...this.snapshot, settings };
+        this.persist();
+        this.broadcast([{ type: 'room.settings', settings }]);
+      }
       return Response.json(
         {
           canReadNotes: canReadRoomNotes(this.snapshot, token),
           ended: !!this.snapshot.ended,
+          ...(token.role === 'host'
+            ? { settings: this.snapshot.settings ?? { shareNotes: false } }
+            : {}),
         },
         { headers: { 'Cache-Control': 'private, no-store' } }
       );

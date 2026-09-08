@@ -22,10 +22,12 @@ import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CALENDAR_URL } from '@/constants/common';
+import { CallEnded } from '@/features/call/components/call-ended';
 import { MeetingLocalTime } from '@/features/call/components/meeting-local-time';
 import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
 import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
+import { readMeetingRoomPolicy } from '@/features/meeting-ai/server/room-access';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
 import { loadMeetingCalendarEvent } from './meeting-calendar-event';
@@ -73,6 +75,25 @@ export default async function MeetingDetailPage({
     notFound();
   }
 
+  const isHost = meeting.creator_id === user.id;
+  const policy = await readMeetingRoomPolicy({
+    meetingId,
+    wsId,
+    userId: user.id,
+    isHost,
+  });
+  if (policy.ended)
+    return (
+      <CallEnded
+        canManage={isHost}
+        canReadNotes={policy.canReadNotes}
+        shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
+        meetingId={meetingId}
+        wsId={wsId}
+        meetingName={meeting.name ?? t('untitled_meeting')}
+        backHref={`/${workspaceSlug}/meetings`}
+      />
+    );
   const permissions = await getPermissions({ user, wsId });
   const calendarEvent = await loadMeetingCalendarEvent({
     supabase,
@@ -116,7 +137,9 @@ export default async function MeetingDetailPage({
       </div>
 
       <div className="mb-6">
-        <MeetingAiOverview wsId={wsId} meetingId={meetingId} />
+        {policy.canReadNotes && (
+          <MeetingAiOverview wsId={wsId} meetingId={meetingId} />
+        )}
       </div>
       {/* Meeting Details */}
       <div className="grid gap-6 md:grid-cols-2">

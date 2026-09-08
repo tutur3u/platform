@@ -5,7 +5,6 @@ import {
   Calendar,
   Clock,
   ExternalLink,
-  Play,
   Search,
   Trash2,
   Users,
@@ -38,12 +37,11 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { format } from 'date-fns';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MeetingEntry } from '@/features/call/components/meeting-entry';
+import { MeetingRoomAction } from '@/features/call/components/meeting-room-action';
 import { normalizeMeetingTime } from '@/features/call/lib/meeting-time';
-import { encodeRoomCode } from '@/features/call/lib/room-code';
 
 interface Meeting {
   id: string;
@@ -83,7 +81,6 @@ export function MeetingsContent({
   pageSize,
   search,
 }: MeetingsContentProps) {
-  const router = useRouter();
   const t = useTranslations('meet.call');
   const meetingsT = useTranslations('meet.meetings');
   const [searchTerm, setSearchTerm] = useState(search);
@@ -183,10 +180,6 @@ export function MeetingsContent({
       editTimeRef.current.value = localTime.toISOString().slice(0, 16);
     }
   }, [editDialogOpen, editingMeeting]);
-
-  const handleJoinMeeting = (meetingId: string) => {
-    router.push(`/r/${encodeRoomCode(meetingId)}`);
-  };
 
   if (error) {
     return (
@@ -290,14 +283,7 @@ export function MeetingsContent({
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 pt-2">
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => handleJoinMeeting(meeting.id)}
-                    >
-                      <Play className="mr-1 h-3 w-3" />
-                      Join Meeting
-                    </Button>
+                    <MeetingRoomAction meetingId={meeting.id} />
                     {meeting.calendar_event && (
                       <Button asChild size="sm" variant="outline">
                         <a

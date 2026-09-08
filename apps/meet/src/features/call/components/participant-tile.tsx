@@ -6,13 +6,14 @@ import {
   Minimize,
   MonitorUp,
   Pin,
+  RefreshCw,
 } from '@tuturuuu/icons';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
 import {
   MediaReceivingStatus,
@@ -30,6 +31,7 @@ function ParticipantTileImpl({
   kind = 'camera',
   onFocus,
   onMute,
+  onRetry,
   focused,
   focusKey,
 }: {
@@ -43,6 +45,7 @@ function ParticipantTileImpl({
   kind?: 'camera' | 'screen';
   onFocus?: (key: string | null) => void;
   onMute?: (userId: string) => void;
+  onRetry?: () => void;
   focusKey?: string;
   focused?: boolean;
 }) {
@@ -50,6 +53,17 @@ function ParticipantTileImpl({
   const [expanded, setExpanded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const videoTrack = stream?.getVideoTracks()[0];
+  const audioTrack = !isSelf ? stream?.getAudioTracks()[0] : undefined;
+  const videoStream = useMemo(
+    () => (videoTrack ? new MediaStream([videoTrack]) : null),
+    [videoTrack]
+  );
+  const audioStream = useMemo(
+    () => (audioTrack ? new MediaStream([audioTrack]) : null),
+    [audioTrack]
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const tileRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -75,8 +89,16 @@ function ParticipantTileImpl({
   useEffect(() => {
     const element = videoRef.current;
     if (element)
-      return attachMediaPlayback(element, stream ?? null, setPlaybackBlocked);
-  }, [stream]);
+      return attachMediaPlayback(element, videoStream, () => undefined);
+  }, [videoStream]);
+  useEffect(() => {
+    if (audioRef.current)
+      return attachMediaPlayback(
+        audioRef.current,
+        audioStream,
+        setPlaybackBlocked
+      );
+  }, [audioStream]);
   return (
     <div
       ref={tileRef}
@@ -90,19 +112,19 @@ function ParticipantTileImpl({
         expanded && 'fixed inset-0 z-50 h-dvh w-screen! rounded-none'
       )}
     >
+      <audio ref={audioRef} autoPlay />
       <video
         autoPlay
         playsInline
-        muted={isSelf}
+        muted
         ref={videoRef}
         className={cn(
-          'size-full object-contain',
-          !showVideo && 'hidden',
+          'absolute inset-0 size-full object-contain',
           isSelf && kind === 'camera' && '-scale-x-100'
         )}
       />
       {!showVideo && (
-        <div className="grid size-full place-items-center">
+        <div className="absolute inset-0 grid size-full place-items-center bg-dynamic-surface">
           <Avatar className="size-20 text-xl">
             <AvatarImage src={participant.avatarUrl} alt="" />
             <AvatarFallback>
@@ -120,7 +142,7 @@ function ParticipantTileImpl({
           variant="secondary"
           className="absolute bottom-16 left-3 z-20"
           onClick={() => {
-            void videoRef.current
+            void audioRef.current
               ?.play()
               .then(() => setPlaybackBlocked(false))
               .catch(() => undefined);
@@ -129,6 +151,22 @@ function ParticipantTileImpl({
           {resumePlaybackLabel}
         </Button>
       )}
+      {!isSelf &&
+        !showVideo &&
+        (kind === 'screen'
+          ? participant.media.screenEnabled
+          : participant.media.videoEnabled) &&
+        onRetry && (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="absolute bottom-16 left-1/2 -translate-x-1/2"
+            onClick={onRetry}
+          >
+            <RefreshCw className="size-3.5" />
+            {t('retry_video')}
+          </Button>
+        )}
       {handRaised && kind === 'camera' && (
         <div
           role="status"
@@ -251,5 +289,6 @@ export const ParticipantTile = memo(
     a.focused === b.focused &&
     a.focusKey === b.focusKey &&
     a.onFocus === b.onFocus &&
-    a.onMute === b.onMute
+    a.onMute === b.onMute &&
+    a.onRetry === b.onRetry
 );

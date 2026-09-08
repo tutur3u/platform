@@ -1,3 +1,4 @@
+import { readMeetingRoomPolicy } from './room-access';
 import 'server-only';
 import {
   generateMeetArtifact,
@@ -72,44 +73,72 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
     configured: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     canManage,
     sessions: sessions.map((session) => ({
-      ...session,
+      id: session.id,
+      user_id: session.user_id,
+      created_at: session.created_at,
+      ended_at: session.ended_at,
+      notes_started_at: session.notes_started_at,
+      notes_status: session.notes_status,
+      notes_cost_usd: canManage ? session.notes_cost_usd : null,
       notes:
         session.notes === null ? null : meetNotesSchema.parse(session.notes),
     })),
     chunks: chunks.map((chunk) => ({
-      ...chunk,
+      id: chunk.id,
+      sequence: chunk.sequence,
+      start_seconds: chunk.start_seconds,
+      duration_seconds: chunk.duration_seconds,
+      transcript: chunk.transcript,
+      cost_usd: canManage ? chunk.cost_usd : null,
       status:
         chunk.status === 'processing' &&
         Date.now() - Date.parse(chunk.created_at) > 90_000
           ? 'failed'
           : chunk.status,
     })),
-    transcriptionCostUsd: chunks.reduce(
-      (sum, chunk) => sum + (chunk.cost_usd ?? 0),
-      0
-    ),
-    notesCostUsd: sessions.reduce(
-      (sum, session) => sum + (session.notes_cost_usd ?? 0),
-      0
-    ),
+    transcriptionCostUsd: canManage
+      ? chunks.reduce((sum, chunk) => sum + (chunk.cost_usd ?? 0), 0)
+      : null,
+    notesCostUsd: canManage
+      ? sessions.reduce(
+          (sum, session) => sum + (session.notes_cost_usd ?? 0),
+          0
+        )
+      : null,
     model: MEET_AI_MODEL,
-    estimatedCostUsd,
-    unpricedRequests,
-    inputTokens,
-    outputTokens,
+    estimatedCostUsd: canManage ? estimatedCostUsd : null,
+    unpricedRequests: canManage ? unpricedRequests : null,
+    inputTokens: canManage ? inputTokens : null,
+    outputTokens: canManage ? outputTokens : null,
   } satisfies MeetAiState;
 }
 
 const actionSchema = z.object({
-  action: z.enum(['start', 'finish']),
+  action: z.enum(['start', 'finish', 'sharing']),
+  shareNotes: z.boolean().optional(),
+  shareNotesAfterMeeting: z.boolean().optional(),
   sessionId: z.uuid().optional(),
   expectedChunks: z.number().int().min(0).max(1080).optional(),
   captureIncomplete: z.boolean().optional(),
 });
 export async function changeMeetAi(request: Request, params: MeetAiParams) {
-  const { db, meetingId, user } = await meetAiAccess(request, params, true);
+  const { db, meetingId, wsId, user } = await meetAiAccess(
+    request,
+    params,
+    true
+  );
   const parsed = actionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) throw new MeetAiError(400, 'Invalid request');
+  if (parsed.data.action === 'sharing') {
+    await readMeetingRoomPolicy(
+      { meetingId, wsId, userId: user.id, isHost: true },
+      {
+        shareNotes: parsed.data.shareNotes,
+        shareNotesAfterMeeting: parsed.data.shareNotesAfterMeeting,
+      }
+    );
+    return { updated: true };
+  }
   if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY)
     throw new MeetAiError(503, 'Meeting AI is not configured');
   const { action, sessionId } = parsed.data;

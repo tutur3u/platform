@@ -9,8 +9,13 @@ export const meetReactionSchema = z.enum([
   'celebrate',
 ]);
 export type MeetReaction = z.infer<typeof meetReactionSchema>;
+export const meetRoomSettingsPatchSchema = z.object({
+  shareNotes: z.boolean().optional(),
+  shareNotesAfterMeeting: z.boolean().optional(),
+});
 export const meetRoomSettingsSchema = z.object({
   shareNotes: z.boolean().default(false),
+  shareNotesAfterMeeting: z.boolean().optional(),
 });
 export type MeetRoomSettings = z.infer<typeof meetRoomSettingsSchema>;
 export type MeetApprovedParticipant = {
@@ -18,3 +23,12 @@ export type MeetApprovedParticipant = {
   displayName: string;
   avatarUrl?: string;
 };
+
+export function parseMeetRoomSettingsPatch(
+  value: unknown,
+  current: MeetRoomSettings = { shareNotes: false }
+) {
+  return meetRoomSettingsPatchSchema
+    .transform((patch) => ({ ...current, ...patch }))
+    .safeParse(value);
+}
