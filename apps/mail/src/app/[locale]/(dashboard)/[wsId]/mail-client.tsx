@@ -521,6 +521,11 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
                 </Button>
               </div>
             ) : null}
+            {threadsQuery.data?.pages.at(-1)?.pagination.truncated ? (
+              <p className="px-4 py-3 text-center text-muted-foreground text-xs">
+                {t('thread_list_truncated')}
+              </p>
+            ) : null}
           </div>
         ) : (
           <MailContentState

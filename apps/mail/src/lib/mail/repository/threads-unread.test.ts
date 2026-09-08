@@ -29,4 +29,11 @@ describe('normalizeThreadPagination', () => {
       normalizeThreadPagination({ page: Number.NaN, pageSize: 0 })
     ).toEqual({ page: 1, pageSize: 1 });
   });
+
+  it('documents the bounded thread history in the response contract', () => {
+    expect(normalizeThreadPagination({ page: 26, pageSize: 40 })).toEqual({
+      page: 25,
+      pageSize: 40,
+    });
+  });
 });

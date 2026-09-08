@@ -324,6 +324,7 @@
     "load_failed": "Không thể tải thư",
     "load_failed_description": "Không thể truy xuất thư. Kiểm tra kết nối và thử lại.",
     "load_more": "Tải thêm",
+    "thread_list_truncated": "Đang hiển thị 1.000 cuộc trò chuyện mới nhất. Hãy tìm kiếm để xem thư cũ hơn.",
     "loading": "Đang tải thư",
     "loading_message": "Đang tải thư",
     "mail_settings": "Cài đặt Mail",

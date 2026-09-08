@@ -116,9 +116,10 @@ export async function listMailThreads({
   const start = (page - 1) * pageSize;
   const threadIds = allThreadIds.slice(start, start + pageSize);
   const canLoadMore = hasMore && page < MAX_THREAD_PAGE;
+  const truncated = hasMore && page >= MAX_THREAD_PAGE;
   if (threadIds.length === 0) {
     return {
-      pagination: { hasMore: canLoadMore, page, pageSize, total },
+      pagination: { hasMore: canLoadMore, page, pageSize, total, truncated },
       threads: [],
     };
   }
@@ -225,7 +226,7 @@ export async function listMailThreads({
     ];
   });
   return {
-    pagination: { hasMore: canLoadMore, page, pageSize, total },
+    pagination: { hasMore: canLoadMore, page, pageSize, total, truncated },
     threads: summaries,
   };
 }

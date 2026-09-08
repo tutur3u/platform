@@ -228,6 +228,7 @@ export interface MailThreadsResponse {
     page: number;
     pageSize: number;
     total: number | null;
+    truncated: boolean;
   };
   threads: MailThreadSummary[];
 }

@@ -8,7 +8,13 @@ function cache(): InfiniteData<MailThreadsResponse> {
     pageParams: [1],
     pages: [
       {
-        pagination: { hasMore: false, page: 1, pageSize: 40, total: 2 },
+        pagination: {
+          hasMore: false,
+          page: 1,
+          pageSize: 40,
+          total: 2,
+          truncated: false,
+        },
         threads: [
           { id: 'a', starred: false, unreadCount: 2 },
           { id: 'b', starred: true, unreadCount: 0 },
