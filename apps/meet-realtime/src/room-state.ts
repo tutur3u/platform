@@ -60,6 +60,10 @@ export function broadcast(
       for (const message of messages) {
         if (
           message.type !== 'room.ended' &&
+          !(
+            message.type === 'participant.removed' &&
+            message.userId === client.data.token.userId
+          ) &&
           !getRoom(roomId).snapshot.presence[client.data.token.userId]
         )
           continue;
