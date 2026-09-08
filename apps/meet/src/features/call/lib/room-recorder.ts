@@ -2,6 +2,7 @@
 export class RoomRecorder {
   private context: AudioContext | null = null;
   private destination: MediaStreamAudioDestinationNode | null = null;
+  private silence: ConstantSourceNode | null = null;
   private sources = new Map<string, MediaStreamAudioSourceNode>();
   private videos = new Map<string, HTMLVideoElement>();
   private canvas: HTMLCanvasElement | null = null;
@@ -17,10 +18,18 @@ export class RoomRecorder {
     await this.prepare();
     if (!this.context) throw new Error('Recording cancelled');
     this.destination = this.context.createMediaStreamDestination();
+    // Keep the audio clock flowing even when every participant is muted.
+    // Chromium can otherwise wait forever for the first audio sample and
+    // produce an empty recording despite receiving canvas video frames.
+    this.silence = this.context.createConstantSource();
+    this.silence.offset.value = 0;
+    this.silence.connect(this.destination);
+    this.silence.start();
     this.canvas = document.createElement('canvas');
     this.canvas.width = 1280;
     this.canvas.height = 720;
     this.update(streams);
+    this.draw();
     const video =
       typeof this.canvas.captureStream === 'function'
         ? this.canvas.captureStream(15)
@@ -102,6 +111,9 @@ export class RoomRecorder {
     this.timer = null;
     for (const source of this.sources.values()) source.disconnect();
     this.sources.clear();
+    this.silence?.stop();
+    this.silence?.disconnect();
+    this.silence = null;
     for (const video of this.videos.values()) {
       video.pause();
       video.srcObject = null;
