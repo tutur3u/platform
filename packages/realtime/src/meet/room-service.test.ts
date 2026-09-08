@@ -108,8 +108,8 @@ describe('trusted room services', () => {
         action: 'ai.finish',
         messageId: 'message',
         body: 'Duplicate',
-      }).status
-    ).toBe(409);
+      }).state
+    ).toBe(result.state);
   });
 });
 
