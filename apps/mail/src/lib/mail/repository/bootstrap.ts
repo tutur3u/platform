@@ -205,17 +205,16 @@ export async function getMailBootstrap(
   const roleByMailboxId = new Map<string, MailMailboxRole>(
     (memberRows ?? []).map((row: AnyRecord) => [row.mailbox_id, row.role])
   );
-  const unreadByMailbox = await getUnreadInboxCounts(
-    admin,
-    mailboxIds,
-    ctx.user.id
-  );
-  const personalDisplayNames = await getCanonicalUserDisplayNames(
-    admin,
-    (mailboxRows ?? [])
-      .filter((row: AnyRecord) => row.type === 'personal')
-      .map((row: AnyRecord) => row.created_by)
-  );
+  const [unreadByMailbox, personalDisplayNames, labels] = await Promise.all([
+    getUnreadInboxCounts(admin, mailboxIds, ctx.user.id),
+    getCanonicalUserDisplayNames(
+      admin,
+      (mailboxRows ?? [])
+        .filter((row: AnyRecord) => row.type === 'personal')
+        .map((row: AnyRecord) => row.created_by)
+    ),
+    listLabels(admin, mailboxIds),
+  ]);
   const mailboxes: MailMailbox[] = (mailboxRows ?? []).map(
     (row: AnyRecord) => ({
       ...toMailbox(
@@ -226,11 +225,6 @@ export async function getMailBootstrap(
       unreadCount: unreadByMailbox.get(row.id) ?? 0,
     })
   );
-  const labels = await listLabels(
-    admin,
-    mailboxes.map((mailbox) => mailbox.id)
-  );
-
   return {
     labels,
     mailboxes,

@@ -8,6 +8,7 @@ type SearchResult = {
 };
 
 const DATABASE_PAGE_SIZE = 1000;
+const THREAD_SCAN_PAGE_SIZE = 200;
 const MAX_INLINE_FILTER_IDS = 250;
 const MESSAGE_LIST_COLUMNS =
   'body_text,created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
@@ -28,6 +29,39 @@ export async function loadAllRows(
     const page = data ?? [];
     rows.push(...page);
     if (page.length < DATABASE_PAGE_SIZE) return rows;
+  }
+}
+
+export async function loadRowsUntilThreadCount(
+  createQuery: () => AnyRecord,
+  minimumThreadCount: number,
+  includeRow: (row: AnyRecord) => boolean = () => true
+) {
+  const rows: AnyRecord[] = [];
+  const threadIds = new Set<string>();
+
+  for (let start = 0; ; start += THREAD_SCAN_PAGE_SIZE) {
+    const { data, error } = await createQuery().range(
+      start,
+      start + THREAD_SCAN_PAGE_SIZE - 1
+    );
+    if (error) {
+      throw new Error(`Failed to list mail messages: ${error.message}`);
+    }
+
+    const page = data ?? [];
+    for (const row of page) {
+      if (!includeRow(row)) continue;
+      rows.push(row);
+      if (row.thread_id) threadIds.add(row.thread_id as string);
+    }
+
+    if (page.length < THREAD_SCAN_PAGE_SIZE) {
+      return { hasMore: false, rows, threadCount: threadIds.size };
+    }
+    if (threadIds.size >= minimumThreadCount) {
+      return { hasMore: true, rows, threadCount: threadIds.size };
+    }
   }
 }
 
@@ -262,9 +296,7 @@ export async function queryMailMessageRows({
   const start = threadScan ? 0 : (page - 1) * pageSize;
   if (needsLocalFiltering) {
     const trashedIdSet = new Set(trashedIds);
-    const rows = (
-      await loadAllRows(buildQuery, 'Failed to list mail messages')
-    ).filter((row) => {
+    const includeRow = (row: AnyRecord) => {
       const id = row.id as string;
       if (includedIds && !includedIds.has(id)) return false;
       if (excludedIds.has(id)) return false;
@@ -272,9 +304,26 @@ export async function queryMailMessageRows({
         return row.status === 'quarantined' || trashedIdSet.has(id);
       }
       return true;
-    });
+    };
+    if (threadScan) {
+      const targetThreadCount = page * pageSize + 1;
+      const result = await loadRowsUntilThreadCount(
+        buildQuery,
+        targetThreadCount,
+        includeRow
+      );
+      return {
+        rows: result.rows,
+        total: result.hasMore
+          ? Math.max(result.threadCount, targetThreadCount)
+          : result.threadCount,
+      };
+    }
+    const rows = (
+      await loadAllRows(buildQuery, 'Failed to list mail messages')
+    ).filter(includeRow);
     return {
-      rows: threadScan ? rows : rows.slice(start, start + pageSize),
+      rows: rows.slice(start, start + pageSize),
       total: rows.length,
     };
   }

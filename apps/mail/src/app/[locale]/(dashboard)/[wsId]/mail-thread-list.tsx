@@ -22,12 +22,14 @@ function formatDate(value: string | null, locale: string) {
 export function MailThreadRow({
   active,
   onClick,
+  onPrefetch,
   onSelect,
   selected,
   thread,
 }: {
   active: boolean;
   onClick: () => void;
+  onPrefetch: () => void;
   onSelect: (selected: boolean) => void;
   selected: boolean;
   thread: MailThreadSummary;
@@ -41,8 +43,8 @@ export function MailThreadRow({
   return (
     <div
       className={cn(
-        'group relative min-w-0 max-w-full border-transparent border-l-2 transition-colors hover:bg-accent/70',
-        active && 'border-primary bg-accent',
+        'group relative min-w-0 max-w-full overflow-hidden rounded-xl transition-[background-color,transform] duration-200 hover:bg-accent/65 active:scale-[0.995]',
+        active && 'bg-primary/[0.09]',
         selected && 'bg-accent/80',
         thread.unreadCount > 0 && !active && 'bg-foreground/[0.025]'
       )}
@@ -57,6 +59,8 @@ export function MailThreadRow({
         aria-current={active ? 'true' : undefined}
         className="block w-full min-w-0 max-w-full py-4 pr-4 pl-10 text-left focus-visible:bg-accent focus-visible:underline focus-visible:outline-none"
         onClick={onClick}
+        onFocus={onPrefetch}
+        onPointerEnter={onPrefetch}
         type="button"
       >
         <div className="mb-1 flex items-center gap-2">

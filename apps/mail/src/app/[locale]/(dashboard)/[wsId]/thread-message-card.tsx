@@ -27,7 +27,7 @@ export function ThreadMessageCard({ message }: { message: MailMessageDetail }) {
 
   return (
     <AccordionItem
-      className="min-w-0 max-w-full border-dynamic border-b bg-background"
+      className="min-w-0 max-w-full overflow-hidden rounded-2xl border-0 bg-background shadow-foreground/5 shadow-sm transition-shadow data-[state=open]:shadow-foreground/8 data-[state=open]:shadow-md"
       value={message.id}
     >
       <AccordionTrigger
@@ -177,7 +177,7 @@ function AttachmentLink({ attachment }: { attachment: MailAttachment }) {
     </>
   );
   const className = cn(
-    'flex items-center gap-2 rounded-xl border border-dynamic p-3 text-sm',
+    'flex items-center gap-2 rounded-xl bg-foreground/[0.045] p-3 text-sm',
     !unavailable && 'transition hover:bg-foreground/5'
   );
   return unavailable ? (

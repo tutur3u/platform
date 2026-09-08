@@ -17,8 +17,11 @@ import {
   hydrateMailMessage,
 } from './messages';
 import { bulkUpdateMail } from './organization';
-import { queryMailMessageRows } from './search';
+import { loadAllRows, queryMailMessageRows } from './search';
 import { type AnyRecord, mailMessageTable, privateTable } from './shared';
+
+const THREAD_PARTICIPANT_COLUMNS =
+  'direction,from_address,from_name,has_attachments,id,thread_id';
 
 function toThread(row: AnyRecord): MailThread {
   return {
@@ -77,47 +80,88 @@ export async function listMailThreads({
   if (!access) return null;
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
-  const { rows } = await queryMailMessageRows({
+  const { rows, total } = await queryMailMessageRows({
     privateToUser: Boolean(access.mailbox.groupPolicy),
     admin: access.admin,
     mailboxId,
-    params: { ...params, page: 1 },
+    params,
     threadScan: true,
     userId: ctx.user.id,
   });
-  const outboundRowIds = rows.flatMap((row: AnyRecord) =>
+  const latestByThread = new Map<string, AnyRecord>();
+  for (const row of rows) {
+    const threadId = row.thread_id as string | null;
+    if (!threadId) continue;
+    if (!latestByThread.has(threadId)) latestByThread.set(threadId, row);
+  }
+  const allThreadIds = [...latestByThread.keys()];
+  const start = (page - 1) * pageSize;
+  const threadIds = allThreadIds.slice(start, start + pageSize);
+  if (threadIds.length === 0) {
+    return {
+      pagination: { page, pageSize, total },
+      threads: [],
+    };
+  }
+  const messageIds = threadIds
+    .map((threadId) => latestByThread.get(threadId)?.id as string | undefined)
+    .filter((id): id is string => Boolean(id));
+  const [{ data: threads, error }, visibleMessageRows, labels] =
+    await Promise.all([
+      privateTable(access.admin, 'mail_threads')
+        .select('*')
+        .eq('mailbox_id', mailboxId)
+        .in('id', threadIds),
+      loadAllRows(
+        () =>
+          mailMessageTable(access, ctx)
+            .select(THREAD_PARTICIPANT_COLUMNS)
+            .eq('mailbox_id', mailboxId)
+            .in('thread_id', threadIds)
+            .order('id'),
+        'Failed to load visible thread messages'
+      ),
+      getLabelsByMessageId(access.admin, messageIds),
+    ]);
+  if (error) throw new Error(`Failed to list mail threads: ${error.message}`);
+  const outboundRowIds = visibleMessageRows.flatMap((row: AnyRecord) =>
     row.direction === 'outbound' ? [row.id as string] : []
   );
-  const { data: recipientRows, error: recipientError } = outboundRowIds.length
-    ? await privateTable(access.admin, 'mail_recipients')
-        .select('address, display_name, kind, message_id')
-        .in('message_id', outboundRowIds)
-        .in('kind', ['to', 'cc'])
-    : { data: [], error: null };
-  if (recipientError) {
+  const [states, recipientResult] = await Promise.all([
+    getStatesByMessageId(
+      access.admin,
+      visibleMessageRows.map((row: AnyRecord) => row.id),
+      ctx.user.id
+    ),
+    outboundRowIds.length
+      ? privateTable(access.admin, 'mail_recipients')
+          .select('address, display_name, kind, message_id')
+          .in('message_id', outboundRowIds)
+          .in('kind', ['to', 'cc'])
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (recipientResult.error) {
     throw new Error(
-      `Failed to load thread participants: ${recipientError.message}`
+      `Failed to load thread participants: ${recipientResult.error.message}`
     );
   }
   const recipientsByMessage = new Map<string, AnyRecord[]>();
-  for (const recipient of recipientRows ?? []) {
+  for (const recipient of recipientResult.data ?? []) {
     const current = recipientsByMessage.get(recipient.message_id) ?? [];
     current.push(recipient);
     recipientsByMessage.set(recipient.message_id, current);
   }
-  const latestByThread = new Map<string, AnyRecord>();
   const participantsByThread = new Map<
     string,
     Map<string, { address: string; displayName: string | null }>
   >();
   const attachmentThreads = new Set<string>();
-  for (const row of rows) {
-    const threadId = row.thread_id as string | null;
-    if (!threadId) continue;
-    if (!latestByThread.has(threadId)) latestByThread.set(threadId, row);
-    if (row.has_attachments) attachmentThreads.add(threadId);
+  for (const row of visibleMessageRows) {
+    const rowThreadId = row.thread_id as string | null;
+    if (!rowThreadId) continue;
+    if (row.has_attachments) attachmentThreads.add(rowThreadId);
     const participants =
-      participantsByThread.get(threadId) ??
+      participantsByThread.get(rowThreadId) ??
       new Map<string, { address: string; displayName: string | null }>();
     const candidates =
       row.direction === 'outbound'
@@ -136,41 +180,12 @@ export async function listMailThreads({
         participants.set(candidate.address, candidate);
       }
     }
-    participantsByThread.set(threadId, participants);
+    participantsByThread.set(rowThreadId, participants);
   }
-  const allThreadIds = [...latestByThread.keys()];
-  const start = (page - 1) * pageSize;
-  const threadIds = allThreadIds.slice(start, start + pageSize);
-  if (threadIds.length === 0) {
-    return {
-      pagination: { page, pageSize, total: allThreadIds.length },
-      threads: [],
-    };
-  }
-  const messageIds = threadIds
-    .map((threadId) => latestByThread.get(threadId)?.id as string | undefined)
-    .filter((id): id is string => Boolean(id));
-  const visibleThreadIds = new Set(threadIds);
-  const visibleRows = rows.filter((row: AnyRecord) =>
-    visibleThreadIds.has(row.thread_id)
-  );
-  const [{ data: threads, error }, states, labels] = await Promise.all([
-    privateTable(access.admin, 'mail_threads')
-      .select('*')
-      .eq('mailbox_id', mailboxId)
-      .in('id', threadIds),
-    getStatesByMessageId(
-      access.admin,
-      visibleRows.map((row: AnyRecord) => row.id),
-      ctx.user.id
-    ),
-    getLabelsByMessageId(access.admin, messageIds),
-  ]);
-  if (error) throw new Error(`Failed to list mail threads: ${error.message}`);
   const threadById = new Map<string, AnyRecord>(
     (threads ?? []).map((thread: AnyRecord) => [thread.id as string, thread])
   );
-  const unreadByThread = getThreadUnreadCounts(visibleRows, states);
+  const unreadByThread = getThreadUnreadCounts(visibleMessageRows, states);
   const summaries: MailThreadSummary[] = threadIds.flatMap((threadId) => {
     const thread = threadById.get(threadId);
     const message = latestByThread.get(threadId);
@@ -191,7 +206,7 @@ export async function listMailThreads({
     ];
   });
   return {
-    pagination: { page, pageSize, total: allThreadIds.length },
+    pagination: { page, pageSize, total },
     threads: summaries,
   };
 }
