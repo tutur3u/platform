@@ -44,6 +44,7 @@ const command = z.discriminatedUnion('action', [
   z.object({ action: z.literal('attach'), attachment }),
   z.object({ action: z.literal('attachment'), id: z.uuid() }),
   z.object({ action: z.literal('attachment.discard'), id: z.uuid() }),
+  z.object({ action: z.literal('attachment.deleted'), id: z.uuid() }),
   z.object({
     action: z.literal('recording.save'),
     sessionId: z.uuid(),
@@ -190,6 +191,15 @@ export function roomService(
           : {}),
       },
     };
+  }
+  if (message.action === 'attachment.deleted') {
+    const file = snapshot.attachments?.[message.id];
+    if (!file) return { state: snapshot, body: { ok: true } };
+    if (file.ownerAccountId !== accountId || !file.discarded || file.published)
+      return fail('Attachment cannot be removed');
+    const attachments = { ...snapshot.attachments };
+    delete attachments[message.id];
+    return { state: { ...snapshot, attachments }, body: { ok: true } };
   }
   if (message.action === 'attachment.discard') {
     const file = snapshot.attachments?.[message.id];

@@ -32,6 +32,11 @@ export function applyUsageReport(
   bytes: number,
   now: string
 ): RoomUsage {
+  const knownDevices = new Set([
+    ...Object.keys(usage.deviceBytes ?? {}),
+    ...Object.keys(usage.reportedDevices ?? {}),
+    ...Object.values(usage.reports).map((report) => report.deviceId),
+  ]);
   const key = `${deviceId}:${reportId}`;
   const prior = usage.reports[key];
   const previous = prior?.bytes ?? 0;
@@ -43,8 +48,7 @@ export function applyUsageReport(
   const deviceTotal = usage.deviceBytes?.[deviceId] ?? 0;
   const allowance = Math.max(1, (time - started) / 1000) * 125_000_000;
   if (
-    (!(deviceId in (usage.deviceBytes ?? {})) &&
-      Object.keys(usage.deviceBytes ?? {}).length >= 4096) ||
+    (!knownDevices.has(deviceId) && knownDevices.size >= 4096) ||
     !Number.isSafeInteger(bytes) ||
     bytes < 0 ||
     !Number.isFinite(allowance) ||
