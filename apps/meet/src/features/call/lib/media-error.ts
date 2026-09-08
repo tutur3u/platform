@@ -25,6 +25,8 @@ export function getMediaErrorDiagnostic(error: unknown): string {
   if (sfuStatus) return `SFU_HTTP_${sfuStatus[1]}`;
 
   const knownErrors: Record<string, string> = {
+    turn_not_configured: 'TURN_NOT_CONFIGURED',
+    turn_credentials_unavailable: 'TURN_CREDENTIALS_UNAVAILABLE',
     signaling_closed: 'SIGNALING_CLOSED',
     signaling_timeout: 'SIGNALING_TIMEOUT',
     sfu_connection_failed: 'SFU_CONNECTION_FAILED',

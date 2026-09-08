@@ -28,8 +28,32 @@ const peers = new Set<RTCPeerConnection>();
 const NativePeer = window.RTCPeerConnection;
 window.RTCPeerConnection = class extends NativePeer {
   constructor(configuration?: RTCConfiguration) {
-    super(configuration);
+    super(
+      new URL(location.href).searchParams.has('relay')
+        ? { ...configuration, iceTransportPolicy: 'relay' }
+        : configuration
+    );
     peers.add(this);
+  }
+  override setConfiguration(configuration: RTCConfiguration) {
+    if (new URL(location.href).searchParams.get('relay') === 'tls') {
+      configuration = {
+        ...configuration,
+        iceTransportPolicy: 'relay',
+        iceServers: configuration.iceServers
+          ?.map((server) => ({
+            ...server,
+            urls: (Array.isArray(server.urls)
+              ? server.urls
+              : [server.urls]
+            ).filter(
+              (url) => url === 'turns:turn.cloudflare.com:443?transport=tcp'
+            ),
+          }))
+          .filter((server) => server.urls.length),
+      };
+    }
+    super.setConfiguration(configuration);
   }
 };
 const sockets: WebSocket[] = [];

@@ -1,6 +1,9 @@
 import type { CloudflareSfuSessionDescription } from '@tuturuuu/realtime/meet';
 
-export type SfuSessionResponse = { sessionId?: string };
+export type SfuSessionResponse = {
+  sessionId?: string;
+  iceServers?: RTCIceServer[];
+};
 export type SfuTracksResponse = {
   errorCode?: string;
   requiresImmediateRenegotiation?: boolean;
