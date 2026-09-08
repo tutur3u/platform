@@ -60,3 +60,16 @@ export async function generateTurnCredentials(
     throw new Error('turn_credentials_unavailable');
   }
 }
+
+/** Relay outages must not disable callers whose direct ICE path still works. */
+export async function getSessionIceServers(
+  env: TurnEnv,
+  request: typeof fetch = fetch
+) {
+  try {
+    return await generateTurnCredentials(env, request);
+  } catch {
+    console.warn('Meet TURN credentials unavailable; using direct ICE');
+    return undefined;
+  }
+}

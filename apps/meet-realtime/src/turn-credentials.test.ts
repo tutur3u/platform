@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { generateTurnCredentials } from './turn-credentials.ts';
+import {
+  generateTurnCredentials,
+  getSessionIceServers,
+} from './turn-credentials.ts';
 
 const env = {
   CLOUDFLARE_TURN_KEY_ID: 'meet-key',
@@ -62,4 +65,25 @@ test('fails safely when configuration, provider, or response cannot supply relay
       generateTurnCredentials(env, request as typeof fetch),
       /^Error: turn_credentials_unavailable$/
     );
+});
+
+test('a relay provider outage preserves direct session configuration', async () => {
+  const warnings: unknown[][] = [];
+  const original = console.warn;
+  console.warn = (...args) => {
+    warnings.push(args);
+  };
+  try {
+    assert.equal(
+      await getSessionIceServers(env, (async () => {
+        throw new Error('private-provider-detail');
+      }) as typeof fetch),
+      undefined
+    );
+    assert.deepEqual(warnings, [
+      ['Meet TURN credentials unavailable; using direct ICE'],
+    ]);
+  } finally {
+    console.warn = original;
+  }
 });

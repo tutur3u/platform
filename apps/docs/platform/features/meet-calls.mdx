@@ -616,7 +616,8 @@ Create a dedicated Meet TURN app in Cloudflare and install only
 never reaches the browser or logs. Only authenticated, admitted participants
 can create sessions and receive the 24-hour credentials. Each replacement
 session receives fresh credentials. Missing configuration or generation failures
-produce safe TURN diagnostic codes, rather than silently claiming relay support.
+log a fixed warning and preserve direct ICE connectivity. Production checks still
+fail if relay credentials are unavailable, so degraded coverage stays visible.
 
 To verify restrictive-network behavior, run the isolated call-controller harness
 against the production Worker and open peers with `&relay=1`. Confirm a selected

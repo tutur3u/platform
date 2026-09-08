@@ -18,7 +18,7 @@ import {
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
 
-import { generateTurnCredentials, type TurnEnv } from './turn-credentials';
+import { getSessionIceServers, type TurnEnv } from './turn-credentials';
 
 /**
  * One Durable Object per meeting room.
@@ -137,8 +137,10 @@ export class MeetRoomDurableObject implements DurableObject {
     const { message } = intent;
 
     if (message.type === 'sfu.session.create') {
-      const iceServers = await generateTurnCredentials(this.env);
-      const session = await client.createSession(message.sessionDescription);
+      const [session, iceServers] = await Promise.all([
+        client.createSession(message.sessionDescription),
+        getSessionIceServers(this.env),
+      ]);
       return { ...session, iceServers };
     }
     if (

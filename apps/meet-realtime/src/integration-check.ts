@@ -222,28 +222,30 @@ try {
           .join('; ') || 'no sessionId returned'
   );
 
-  const iceServers = (
-    sfu?.result as
-      | {
-          iceServers?: Array<{
-            urls: string[];
-            username?: string;
-            credential?: string;
-          }>;
-        }
-      | undefined
-  )?.iceServers;
-  check(
-    'admitted session receives expiring TURN credentials including TLS443',
-    Boolean(
-      iceServers?.some(
-        (server) =>
-          server.username &&
-          server.credential &&
-          server.urls.includes('turns:turn.cloudflare.com:443?transport=tcp')
+  if (REMOTE_URL) {
+    const iceServers = (
+      sfu?.result as
+        | {
+            iceServers?: Array<{
+              urls: string[];
+              username?: string;
+              credential?: string;
+            }>;
+          }
+        | undefined
+    )?.iceServers;
+    check(
+      'admitted session receives expiring TURN credentials including TLS443',
+      Boolean(
+        iceServers?.some(
+          (server) =>
+            server.username &&
+            server.credential &&
+            server.urls.includes('turns:turn.cloudflare.com:443?transport=tcp')
+        )
       )
-    )
-  );
+    );
+  }
 
   // --- host controls -----------------------------------------------------
   host.send({ kinds: ['audio'], type: 'participant.mute', userId: GUEST_ID });
