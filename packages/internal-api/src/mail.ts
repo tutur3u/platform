@@ -40,6 +40,7 @@ import type {
   UpsertMailMailboxMemberPayload,
 } from './mail-types';
 
+export { getMailAttachmentText } from './mail-attachment-preview';
 export * from './mail-types';
 
 function workspaceMailPath(workspaceId: string, suffix = '') {
@@ -65,7 +66,6 @@ function mailPlatformPath(suffix: string) {
 
 function normalizeMessagesQuery(params?: ListMailMessagesParams) {
   if (!params) return undefined;
-
   return Object.fromEntries(
     Object.entries(params).filter(([, value]) => value !== undefined)
   ) as Record<string, InternalApiQueryValue>;

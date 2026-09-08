@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { mailAttachmentPreviewType } from '@/lib/mail/attachment-preview';
 import { getAuthorizedAttachment } from '@/lib/mail/repository';
 import { withMailContext } from '@/lib/mail/route-utils';
 import { streamMailStoredObject } from '@/lib/mail/storage';
@@ -39,13 +40,26 @@ export async function GET(
       /[\r\n"]/gu,
       '_'
     );
+    const preview = mailAttachmentPreviewType(
+      object.contentType ??
+        authorized.attachment.content_type ??
+        'application/octet-stream',
+      authorized.attachment.filename
+    );
+    const inline =
+      preview &&
+      (request.nextUrl.searchParams.get('preview') === '1' ||
+        authorized.attachment.disposition === 'inline');
     const headers = new Headers({
+      'Content-Security-Policy':
+        "sandbox; default-src 'none'; frame-ancestors 'self'",
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'private, no-store',
       'Content-Disposition': `${
-        authorized.attachment.disposition === 'inline' ? 'inline' : 'attachment'
+        inline ? 'inline' : 'attachment'
       }; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
       'Content-Type':
+        (inline ? preview.contentType : null) ??
         object.contentType ??
         authorized.attachment.content_type ??
         'application/octet-stream',

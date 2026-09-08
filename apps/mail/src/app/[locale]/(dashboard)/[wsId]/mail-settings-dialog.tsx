@@ -34,6 +34,7 @@ import { MailContentState } from './mail-content-state';
 import { MailGroupSettings } from './mail-group-settings';
 import { MailLabelSettings } from './mail-label-settings';
 import { MailMemberSettings } from './mail-member-settings';
+import { MailReadingSettings } from './mail-reading-settings';
 import { MailSignaturePreview } from './mail-signature-preview';
 
 export function MailSettingsDialog({
@@ -167,6 +168,12 @@ export function MailSettingsDialog({
       {
         items: [
           {
+            description: t('reading_settings_description'),
+            icon: Mail,
+            label: t('reading_settings'),
+            name: 'reading',
+          },
+          {
             description: t('identity_description'),
             icon: Mail,
             label: t('identity'),
@@ -211,7 +218,9 @@ export function MailSettingsDialog({
         ? membersQuery
         : settingsQuery;
   const settingsUnavailable =
-    tab !== 'labels' && (activeQuery.isLoading || activeQuery.isError);
+    tab !== 'reading' &&
+    tab !== 'labels' &&
+    (activeQuery.isLoading || activeQuery.isError);
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -233,6 +242,7 @@ export function MailSettingsDialog({
             />
           ) : null}
           <div hidden={settingsUnavailable} className="space-y-6">
+            {tab === 'reading' ? <MailReadingSettings /> : null}
             {tab === 'identity' ? (
               <>
                 <SettingField

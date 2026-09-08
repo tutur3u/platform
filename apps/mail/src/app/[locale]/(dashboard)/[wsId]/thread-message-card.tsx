@@ -1,16 +1,18 @@
 'use client';
 
-import { ChevronDown, Paperclip } from '@tuturuuu/icons';
-import type { MailAttachment, MailMessageDetail } from '@tuturuuu/internal-api';
+import { ChevronDown } from '@tuturuuu/icons';
+import type { MailMessageDetail } from '@tuturuuu/internal-api';
 import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
-import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
+import { MailAttachmentCard } from './mail-attachment-card';
+import type { MailFolder } from './mail-folders';
 import { MailMessagePreview } from './mail-message-preview';
+import { visibleMailLabels } from './mail-visible-labels';
 
 function formatDate(value: string | null, locale: string) {
   if (!value || !Number.isFinite(new Date(value).getTime())) return '';
@@ -20,7 +22,13 @@ function formatDate(value: string | null, locale: string) {
   }).format(new Date(value));
 }
 
-export function ThreadMessageCard({ message }: { message: MailMessageDetail }) {
+export function ThreadMessageCard({
+  message,
+  folder,
+}: {
+  message: MailMessageDetail;
+  folder?: MailFolder;
+}) {
   const t = useTranslations('mail');
   const locale = useLocale();
   const displayName = message.fromName || message.fromAddress;
@@ -31,7 +39,7 @@ export function ThreadMessageCard({ message }: { message: MailMessageDetail }) {
       value={message.id}
     >
       <AccordionTrigger
-        className="group px-4 py-4 hover:no-underline md:px-6"
+        className="group min-w-0 max-w-full overflow-hidden px-4 py-4 hover:no-underline md:px-6"
         showChevron
       >
         <div className="min-w-0 flex-1">
@@ -47,7 +55,7 @@ export function ThreadMessageCard({ message }: { message: MailMessageDetail }) {
             {message.deliveryRoute === 'catch_all' ? (
               <Badge variant="outline">{t('catch_all')}</Badge>
             ) : null}
-            {message.labels.map((label) => (
+            {visibleMailLabels(message.labels, folder).map((label) => (
               <Badge className="gap-1.5" key={label.id} variant="secondary">
                 <span
                   className="size-1.5 rounded-full bg-foreground/30"
@@ -62,7 +70,7 @@ export function ThreadMessageCard({ message }: { message: MailMessageDetail }) {
               {formatDate(message.receivedAt ?? message.sentAt, locale)}
             </span>
           </div>
-          <div className="mt-0.5 truncate text-muted-foreground text-xs group-data-[state=open]:hidden">
+          <div className="mt-1 line-clamp-2 whitespace-normal break-words text-muted-foreground text-xs group-data-[state=open]:hidden">
             {message.snippet || message.bodyText}
           </div>
         </div>
@@ -131,7 +139,10 @@ export function ThreadMessageCard({ message }: { message: MailMessageDetail }) {
           {message.attachments.length > 0 ? (
             <div className="grid gap-2 p-4 sm:grid-cols-2 md:px-6">
               {message.attachments.map((attachment) => (
-                <AttachmentLink attachment={attachment} key={attachment.id} />
+                <MailAttachmentCard
+                  attachment={attachment}
+                  key={attachment.id}
+                />
               ))}
             </div>
           ) : null}
@@ -162,31 +173,5 @@ function Detail({ label, value }: { label: string; value: string }) {
       <dt className="font-medium text-muted-foreground">{label}</dt>
       <dd className="min-w-0 break-all">{value}</dd>
     </div>
-  );
-}
-
-function AttachmentLink({ attachment }: { attachment: MailAttachment }) {
-  const unavailable = !attachment.protectedUrl;
-  const content = (
-    <>
-      <Paperclip className="size-4 shrink-0" />
-      <span className="min-w-0 flex-1 truncate">{attachment.filename}</span>
-      <span className="text-muted-foreground text-xs">
-        {Math.ceil(attachment.sizeBytes / 1024)} KB
-      </span>
-    </>
-  );
-  const className = cn(
-    'flex items-center gap-2 rounded-xl bg-foreground/[0.045] p-3 text-sm',
-    !unavailable && 'transition hover:bg-foreground/5'
-  );
-  return unavailable ? (
-    <div aria-disabled className={cn(className, 'opacity-60')}>
-      {content}
-    </div>
-  ) : (
-    <a className={className} href={attachment.protectedUrl ?? undefined}>
-      {content}
-    </a>
   );
 }

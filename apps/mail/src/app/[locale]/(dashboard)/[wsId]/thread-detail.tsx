@@ -29,10 +29,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import { MailAttachmentCard } from './mail-attachment-card';
 import { MailContentState } from './mail-content-state';
+import type { MailFolder } from './mail-folders';
 import { ThreadMessageCard } from './thread-message-card';
 
 export function ThreadDetail({
+  folder,
   actionPending,
   isDraft,
   error,
@@ -48,6 +51,7 @@ export function ThreadDetail({
   onTrash,
   thread,
 }: {
+  folder?: MailFolder;
   actionPending: boolean;
   isDraft: boolean;
   error?: boolean;
@@ -165,7 +169,11 @@ export function ThreadDetail({
               type="multiple"
             >
               {thread.messages.map((message) => (
-                <ThreadMessageCard key={message.id} message={message} />
+                <ThreadMessageCard
+                  folder={folder}
+                  key={message.id}
+                  message={message}
+                />
               ))}
             </Accordion>
           </div>
@@ -210,20 +218,11 @@ export function ThreadDetail({
         <TabsContent className="min-h-0 min-w-0" value="attachments">
           <div className="h-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden">
             <div className="grid gap-3 p-4 sm:grid-cols-2 md:p-5 xl:grid-cols-3">
-              {attachments.map(({ attachment, message }) => (
-                <a
-                  className="rounded-2xl bg-background p-4 shadow-foreground/5 shadow-sm transition hover:bg-foreground/5"
-                  href={attachment.protectedUrl ?? undefined}
+              {attachments.map(({ attachment }) => (
+                <MailAttachmentCard
+                  attachment={attachment}
                   key={attachment.id}
-                >
-                  <Paperclip className="mb-4 size-5" />
-                  <div className="truncate font-medium text-sm">
-                    {attachment.filename}
-                  </div>
-                  <div className="mt-1 truncate text-muted-foreground text-xs">
-                    {message.fromName || message.fromAddress}
-                  </div>
-                </a>
+                />
               ))}
             </div>
           </div>
