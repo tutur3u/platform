@@ -253,7 +253,10 @@ export class MeetRoomDurableObject implements DurableObject {
     this.disconnect(result.disconnect);
   }
 
-  async webSocketClose(socket: WebSocket) {
+  async webSocketClose(socket: WebSocket, code: number, reason: string) {
+    // Complete the peer's close handshake before awaiting presence/storage work.
+    // Otherwise browsers can wait a minute before emitting close and reconnecting.
+    socket.close(code === 1005 || code === 1006 ? 1000 : code, reason);
     await this.releaseSocket(socket);
   }
 
