@@ -1,7 +1,6 @@
 import type {
   CloudflareSfuTrack,
   MeetRealtimeRoomTrack,
-  MeetRealtimeTrackKind,
 } from '@tuturuuu/realtime/meet';
 import { remoteTrackKey } from './call-state';
 import { userIdFromTrackName } from './negotiation';
@@ -34,10 +33,11 @@ export function applySubscribeResponse(
       sessionId: requested.sessionId,
       trackName: track.trackName,
     } as MeetRealtimeRoomTrack);
-    if (!live[subscriptionKey]) continue;
+    const publication = live[subscriptionKey];
+    if (!publication || publication.userId !== userId) continue;
     owners.set(track.mid, {
       userId,
-      kind: track.trackName.split('-').at(-1) as MeetRealtimeTrackKind,
+      kind: publication.kind,
       subscriptionKey,
     });
   }

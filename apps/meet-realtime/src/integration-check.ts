@@ -296,7 +296,16 @@ try {
         (await (await policy('speaker')).json()).canReadNotes === true
       );
       host.send({ type: 'room.end', requestId: 'end-policy-check' });
-      await host.waitFor('room.ended');
+      const endedAck = await host.waitFor(
+        'room.ended',
+        (message) =>
+          message.type === 'room.ended' &&
+          message.requestId === 'end-policy-check'
+      );
+      check(
+        'host receives a correlated room-end acknowledgement',
+        Boolean(endedAck)
+      );
       const endedPolicy = await (await policy('speaker')).json();
       check(
         'ending the room disables post-call sharing by default',

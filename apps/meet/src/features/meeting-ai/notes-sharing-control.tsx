@@ -5,7 +5,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export function NotesSharingControl({
   wsId,
@@ -20,6 +20,7 @@ export function NotesSharingControl({
 }) {
   const t = useTranslations('meet.call');
   const [enabled, setEnabled] = useState(initialEnabled);
+  useEffect(() => setEnabled(initialEnabled), [initialEnabled]);
   const mutation = useMutation({
     mutationFn: (shareNotesAfterMeeting: boolean) =>
       updateMeetNotesSharing(wsId, meetingId, { shareNotesAfterMeeting }),

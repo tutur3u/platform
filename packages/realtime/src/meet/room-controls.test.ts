@@ -192,7 +192,11 @@ it('requires separate opt-in for notes after ending a meeting', () => {
     type: 'room.settings.update',
     settings: { shareNotes: true },
   }).state;
-  const ended = run(shared, { type: 'room.end', requestId: 'end' }).state;
+  const outcome = run(shared, { type: 'room.end', requestId: 'end' });
+  expect(outcome.reply).toContainEqual(
+    expect.objectContaining({ type: 'room.ended', requestId: 'end' })
+  );
+  const ended = outcome.state;
   expect(canReadRoomNotes(ended, guest)).toBe(false);
   expect(canReadRoomNotes(ended, host)).toBe(true);
   expect(

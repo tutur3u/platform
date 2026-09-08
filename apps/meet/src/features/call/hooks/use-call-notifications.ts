@@ -20,7 +20,15 @@ export function useCallNotifications(
   useEffect(() => {
     const unlock = () => {
       try {
-        audio.current ??= new AudioContext();
+        const Audio =
+          window.AudioContext ??
+          (
+            window as Window & {
+              webkitAudioContext?: typeof AudioContext;
+            }
+          ).webkitAudioContext;
+        if (!Audio) return;
+        audio.current ??= new Audio();
         void audio.current.resume().catch(() => undefined);
       } catch {
         /* Visual notifications remain available without Web Audio. */
@@ -42,10 +50,9 @@ export function useCallNotifications(
         : [];
     previous.current = state;
     wasConnected.current = connected;
-    for (const notice of notices.slice(-3)) {
+    for (const notice of notices) {
       const panel = notice.kind === 'chat' ? 'chat' : 'participants';
       toast.info(t(`notice_${notice.kind}`, { name: notice.name }), {
-        id: `meet-${notice.id}`,
         description: notice.body?.slice(0, 140),
         duration: notice.kind === 'waiting' ? 10000 : 5000,
         action: {

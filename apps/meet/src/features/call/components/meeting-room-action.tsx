@@ -13,7 +13,6 @@ export function MeetingRoomAction({ meetingId }: { meetingId: string }) {
     queryKey: ['meet-room-state', meetingId],
     queryFn: () => getMeetCallRoomState(meetingId),
     staleTime: 15000,
-    refetchInterval: 30000,
     retry: false,
   });
   const notes = data?.ended && data.canReadNotes;

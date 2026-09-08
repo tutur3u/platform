@@ -190,6 +190,9 @@ it('redacts all costs and raw usage from a shared-notes reader', async () => {
   const state = await readMeetAi(new Request('https://meet.test'), params);
   expect(state.estimatedCostUsd).toBeNull();
   expect(state.inputTokens).toBeNull();
+  expect(state.outputTokens).toBeNull();
+  expect(state.transcriptionCostUsd).toBeNull();
+  expect(state.notesCostUsd).toBeNull();
   expect(state.chunks[0]).toMatchObject({
     transcript: 'Hello',
     cost_usd: null,

@@ -160,6 +160,10 @@ it('asks for a missing name before creating the realtime session', async () => {
 });
 
 it('renders a closed room without starting a call or requesting a profile name', async () => {
+  mocks.access.mockResolvedValue({
+    ...(await mocks.access()),
+    needsDisplayName: true,
+  });
   mocks.policy.mockResolvedValue({ ended: true, canReadNotes: false });
   const result = await RoomPage({
     params: Promise.resolve({ code, locale: 'en' }),

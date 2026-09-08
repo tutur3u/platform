@@ -40,7 +40,11 @@ it('keeps admission notices private to hosts and ignores own chat', () => {
   const notices = collectCallNotices(before, {
     ...after,
     role: 'speaker',
-    selfUserId: 'peer',
+    chat: [...after.chat, { ...after.chat[0]!, id: 'own', userId: 'self' }],
   });
-  expect(notices).toEqual([]);
+  expect(notices.map((notice) => notice.kind)).toEqual([
+    'joined',
+    'chat',
+    'hand',
+  ]);
 });

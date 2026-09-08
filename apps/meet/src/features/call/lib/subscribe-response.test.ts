@@ -87,3 +87,14 @@ it('prevents delayed events from an obsolete receiver replacing current video', 
   expect(media.peer?.video).toBe(replacement);
   expect(subscribed.size).toBe(0);
 });
+
+it('rejects a track name claiming another participant identity', () => {
+  const owners = new Map<string, RemoteTrackOwner>();
+  applySubscribeResponse(
+    { tracks: [{ mid: '1', trackName: 'peer-video' }] },
+    pending,
+    { 'new:peer-video': { ...live['new:peer-video']!, userId: 'different' } },
+    owners
+  );
+  expect(owners.size).toBe(0);
+});
