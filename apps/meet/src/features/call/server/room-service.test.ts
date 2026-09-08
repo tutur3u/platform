@@ -40,6 +40,7 @@ it.each([false, null])(
     });
     await expect(personalWorkspace('creator')).resolves.toBe('personal-drive');
     expect(mocks.from).toHaveBeenCalledWith('workspaces');
+    expect(mocks.query.select).toHaveBeenCalledWith('id, deleted');
     expect(mocks.query.eq).toHaveBeenCalledWith('creator_id', 'creator');
     expect(mocks.query.eq).toHaveBeenCalledWith('personal', true);
   }
