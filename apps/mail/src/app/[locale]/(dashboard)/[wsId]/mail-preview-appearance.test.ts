@@ -43,4 +43,16 @@ describe('mail appearance persistence', () => {
     storage.clear();
     expect(getMailPreviewAppearance()).toBe('dark');
   });
+  it('retains the selected preference when writes fail but reads still work', () => {
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => {
+          throw new Error('quota exceeded');
+        },
+      },
+    });
+    setMailPreviewAppearance('original');
+    expect(getMailPreviewAppearance()).toBe('original');
+  });
 });

@@ -214,11 +214,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       closeThread: () => void setThreadId(null),
       folder,
       invalidateMailbox,
-      reopenThread: (nextThreadId): void => {
-        const nextThread = threads.find((thread) => thread.id === nextThreadId);
-        if (nextThread) openThread(nextThread);
-        else void setThreadId(nextThreadId);
-      },
+      reopenThread: (nextThreadId) => void setThreadId(nextThreadId),
       selectedThreads,
       setSelectedThreads,
       threadId,

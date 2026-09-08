@@ -46,4 +46,16 @@ describe('archive navigation', () => {
     storage.clear();
     expect(getMailArchiveBehavior()).toBe('next');
   });
+  it('retains the selected preference when writes fail but reads still work', () => {
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: () => null,
+        setItem: () => {
+          throw new Error('quota exceeded');
+        },
+      },
+    });
+    setMailArchiveBehavior('list');
+    expect(getMailArchiveBehavior()).toBe('list');
+  });
 });

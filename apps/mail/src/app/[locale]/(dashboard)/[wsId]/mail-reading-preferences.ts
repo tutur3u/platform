@@ -5,11 +5,14 @@ export type MailArchiveBehavior = 'next' | 'list';
 const key = 'tuturuuu-mail-after-archive';
 const listeners = new Set<() => void>();
 let fallback: MailArchiveBehavior = 'next';
+let hasUnsavedPreference = false;
 export function getMailArchiveBehavior(): MailArchiveBehavior {
+  if (hasUnsavedPreference) return fallback;
   try {
     const value = window.localStorage.getItem(key);
-    if (value === null) return 'next';
-    return value === 'next' || value === 'list' ? value : fallback;
+    if (value === null) fallback = 'next';
+    if (value === 'next' || value === 'list') fallback = value;
+    return fallback;
   } catch {
     return fallback;
   }
@@ -18,7 +21,9 @@ export function setMailArchiveBehavior(value: MailArchiveBehavior) {
   fallback = value;
   try {
     window.localStorage.setItem(key, value);
+    hasUnsavedPreference = false;
   } catch {
+    hasUnsavedPreference = true;
     /* Retain in memory. */
   }
   for (const listener of listeners) listener();
@@ -26,7 +31,11 @@ export function setMailArchiveBehavior(value: MailArchiveBehavior) {
 function subscribe(listener: () => void) {
   listeners.add(listener);
   const onStorage = (event: StorageEvent) => {
-    if (event.key === key || event.key === null) listener();
+    if (event.key === key || event.key === null) {
+      hasUnsavedPreference = false;
+      if (event.newValue === null) fallback = 'next';
+      listener();
+    }
   };
   window.addEventListener('storage', onStorage);
   return () => {

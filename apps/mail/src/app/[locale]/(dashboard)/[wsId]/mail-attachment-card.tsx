@@ -1,7 +1,11 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Download, Paperclip } from '@tuturuuu/icons';
-import type { MailAttachment } from '@tuturuuu/internal-api';
+import {
+  getMailAttachmentText,
+  type MailAttachment,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -30,6 +34,13 @@ export function MailAttachmentCard({
     attachment.filename
   );
   const url = attachment.protectedUrl;
+  const textPreview = useQuery({
+    queryKey: ['mail', 'attachment-text', url],
+    queryFn: ({ signal }) => getMailAttachmentText(url!, signal),
+    enabled: open && preview?.kind === 'text' && Boolean(url),
+    retry: false,
+    gcTime: 0,
+  });
   const previewUrl = url ? mailAttachmentPreviewUrl(url) : undefined;
   return (
     <>
@@ -80,7 +91,7 @@ export function MailAttachmentCard({
             <DialogDescription>{t('attachment_preview')}</DialogDescription>
           </DialogHeader>
           <div className="min-h-0 overflow-auto rounded-lg bg-muted/30">
-            {failed ? (
+            {failed || (preview?.kind === 'text' && textPreview.isError) ? (
               <p className="p-6 text-muted-foreground text-sm">
                 {t('attachment_preview_failed')}
               </p>
@@ -109,13 +120,15 @@ export function MailAttachmentCard({
                 onError={() => setFailed(true)}
               />
             ) : preview?.kind === 'text' ? (
-              <iframe
-                className="h-[60dvh] w-full border-0 bg-background [color-scheme:light_dark]"
-                sandbox=""
-                referrerPolicy="no-referrer"
-                src={previewUrl}
-                title={attachment.filename}
-              />
+              textPreview.isPending ? (
+                <p className="p-6 text-muted-foreground text-sm">
+                  {t('loading')}
+                </p>
+              ) : (
+                <pre className="max-h-[60dvh] whitespace-pre-wrap break-words p-4 font-mono text-sm leading-6">
+                  {textPreview.data}
+                </pre>
+              )
             ) : null}
           </div>
           {url ? (

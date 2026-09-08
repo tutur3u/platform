@@ -55,7 +55,9 @@ allowlist: raster images, supported video/audio types, and plain text (including
 mailbox and message authorization as downloads and preserves byte-range support.
 HTML, SVG, and other unsupported types remain downloads. Responses are private,
 uncached, MIME-sniffing-disabled, and sandboxed. The reader exposes previews from
-both the conversation and Attachments tab, with a separate download action.
+both the conversation and Attachments tab, with a separate download action. Text
+previews use the internal API client, render escaped text in the reader theme, and
+fall back to download on authorization failures or files larger than 1 MiB.
 
 ## SES Receiving Setup
 

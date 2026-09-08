@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { contrastRatio, readableMailColor } from './mail-preview-contrast';
+import {
+  contrastRatio,
+  mailDarkSurface,
+  readableMailColor,
+} from './mail-preview-contrast';
 
 describe('mail contrast', () => {
   it('makes the navy newsletter footer readable on dark paper', () => {
@@ -17,5 +21,10 @@ describe('mail contrast', () => {
     expect(
       contrastRatio(readableMailColor([255, 255, 255], background), background)
     ).toBeGreaterThanOrEqual(4.5);
+  });
+  it('matches dark reader surfaces without turning dark appearance white in a light app', () => {
+    expect(mailDarkSurface([10, 10, 10])).toEqual([10, 10, 10]);
+    expect(mailDarkSurface([255, 255, 255])).toEqual([18, 18, 18]);
+    expect(mailDarkSurface([230, 230, 230])).toEqual([18, 18, 18]);
   });
 });

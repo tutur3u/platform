@@ -40,6 +40,10 @@ function composite(color: RGB, background: RGB, alpha: number): RGB {
   ) as RGB;
 }
 
+export function mailDarkSurface(sampled: RGB): RGB {
+  return luminance(sampled) < 0.05 ? sampled : darkBackground;
+}
+
 function css(color: RGB) {
   return `rgb(${color.join(',')})`;
 }
@@ -64,7 +68,7 @@ export function applyMailPreviewContrast(
       context.fillStyle = color;
       context.fillRect(0, 0, 1, 1);
       const [r, g, b, alpha] = context.getImageData(0, 0, 1, 1).data;
-      if (alpha) surfaceBackground = [r!, g!, b!];
+      if (alpha) surfaceBackground = mailDarkSurface([r!, g!, b!]);
     }
   }
   document.documentElement.style.setProperty(
