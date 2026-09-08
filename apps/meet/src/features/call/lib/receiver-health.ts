@@ -70,12 +70,10 @@ export function createReceiverHealthCheck() {
       setReceiverPacketState(track, bytes > baseline && !track.muted);
       if (!previous || previous.bytes !== bytes)
         observations.set(key, { bytes, since: now, baseline });
-      else if (
-        now - previous.since >= 20_000 &&
-        (bytes <= baseline || track.muted)
-      )
+      else if (now - previous.since >= 20_000 && (bytes === 0 || track.muted))
         stalled = true;
-      // Silence/DTX and static screen content may legitimately stop changing counters.
+      // The resume baseline controls the badge only. Prior packets on an unmuted
+      // receiver may be followed by legitimate silence/DTX or static screen content.
     }
     for (const key of observations.keys())
       if (!active.has(key)) observations.delete(key);

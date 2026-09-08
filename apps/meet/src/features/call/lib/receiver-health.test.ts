@@ -118,7 +118,24 @@ it('requires fresh packets after a participant re-enables the same receiver', ()
   f.participants.peer!.media.videoEnabled = true;
   f.sample(2000, 200);
   expect(receiverPacketState(track)).toBe(false);
-  expect(f.sample(22_000, 200)).toBe(true);
+  expect(f.sample(22_000, 200)).toBe(false);
   f.sample(23_000, 300);
   expect(receiverPacketState(track)).toBe(true);
 });
+
+for (const kind of ['audio', 'video', 'screen', 'screen_audio'] as const) {
+  it(`does not rebuild an unmuted resumed ${kind} with prior packets but still recovers a muted receiver`, () => {
+    const f = fixture();
+    f.owners.get('0')!.kind = kind;
+    f.track.muted = false;
+    f.sample(0, 200);
+    const media = f.participants.peer!.media;
+    media.audioEnabled = media.videoEnabled = media.screenEnabled = false;
+    f.sample(1000, 200);
+    media.audioEnabled = media.videoEnabled = media.screenEnabled = true;
+    f.sample(2000, 200);
+    expect(f.sample(22_000, 200)).toBe(false);
+    f.track.muted = true;
+    expect(f.sample(23_000, 200)).toBe(true);
+  });
+}
