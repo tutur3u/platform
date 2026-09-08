@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   selected: { current: 'a' as string | null },
   mutations: [] as Array<{
-    options: Record<string, (...args: any[]) => any>;
+    options: { mutationKey: string[]; [key: string]: any };
     mutate: ReturnType<typeof vi.fn>;
   }>,
   reopen: vi.fn(),
@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => mocks.client,
-  useMutation: (options: Record<string, (...args: any[]) => any>) => {
+  useMutation: (options: { mutationKey: string[]; [key: string]: any }) => {
     const mutation = { options, mutate: vi.fn() };
     mocks.mutations.push(mutation);
     return mutation;
@@ -57,26 +57,38 @@ describe('archive and auto-read ordering', () => {
   it.each([false, true])(
     'waits for archive success before reading the next message (bulk=%s)',
     async (bulk) => {
-      const autoRead = mocks.mutations[0]!;
-      const archive = mocks.mutations[bulk ? 2 : 1]!;
+      const autoRead = mocks.mutations.find(
+        (entry) => entry.options.mutationKey.at(-1) === 'auto-read'
+      )!;
+      const archive = mocks.mutations.find(
+        (entry) =>
+          entry.options.mutationKey.at(-1) === (bulk ? 'bulk' : 'state')
+      )!;
       const variables = bulk
         ? 'archive'
         : { action: 'archive', targetThreadId: 'a' };
       const context = await archive.options.onMutate!(variables);
       expect(mocks.reopen).toHaveBeenCalledWith('b');
       expect(autoRead.mutate).not.toHaveBeenCalled();
-      mocks.selected.current = 'b';
+      // A fast response can arrive before navigation renders.
+      expect(mocks.selected.current).toBe('a');
       archive.options.onSuccess!({}, variables, context);
       expect(autoRead.mutate).toHaveBeenCalledWith('b');
     }
   );
   it('restores a failed archive without starting another optimistic read mutation', async () => {
-    const archive = mocks.mutations[1]!;
+    const archive = mocks.mutations.find(
+      (entry) => entry.options.mutationKey.at(-1) === 'state'
+    )!;
     const variables = { action: 'archive', targetThreadId: 'a' };
     const context = await archive.options.onMutate!(variables);
     mocks.selected.current = 'b';
     archive.options.onError!(new Error('failed'), variables, context);
     expect(mocks.reopen).toHaveBeenLastCalledWith('a');
-    expect(mocks.mutations[0]!.mutate).not.toHaveBeenCalled();
+    expect(
+      mocks.mutations.find(
+        (entry) => entry.options.mutationKey.at(-1) === 'auto-read'
+      )!.mutate
+    ).not.toHaveBeenCalled();
   });
 });

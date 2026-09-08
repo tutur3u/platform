@@ -290,6 +290,7 @@ export function useMailThreadActions({
   // Read the auto-selected conversation only after archive succeeds. This
   // request has no optimistic snapshot that could overwrite archive rollback.
   const autoReadMutation = useMutation({
+    mutationKey: ['mail', workspaceId, activeMailboxId, 'auto-read'],
     mutationFn: (targetThreadId: string) =>
       updateMailThreadState(
         workspaceId,
@@ -300,10 +301,10 @@ export function useMailThreadActions({
     onError: () => toast.error(t('update_failed')),
     onSettled: () => void invalidateMailbox(),
   });
+  // The successful navigation intent is authoritative even before React renders it.
   const markAutoSelectedRead = (nextThreadId: string | null | undefined) => {
     if (
       nextThreadId &&
-      selectedThreadIdRef.current === nextThreadId &&
       threads.some(
         (thread) => thread.id === nextThreadId && thread.unreadCount > 0
       )
@@ -313,6 +314,7 @@ export function useMailThreadActions({
   };
 
   const stateMutation = useMutation({
+    mutationKey: ['mail', workspaceId, activeMailboxId, 'state'],
     mutationFn: ({
       action,
       targetThreadId,
@@ -369,6 +371,7 @@ export function useMailThreadActions({
   });
 
   const bulkMutation = useMutation({
+    mutationKey: ['mail', workspaceId, activeMailboxId, 'bulk'],
     mutationFn: (action: BulkAction) =>
       bulkUpdateMailThreads(workspaceId, activeMailboxId ?? '', {
         action,
