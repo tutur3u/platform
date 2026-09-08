@@ -57,7 +57,20 @@ export function broadcast(
   eachClient(
     roomId,
     (client) => {
-      for (const message of messages) send(client, message);
+      const admitted =
+        getRoom(roomId).snapshot.presence[client.data.token.userId];
+      for (const message of messages) {
+        if (
+          message.type !== 'room.ended' &&
+          !(
+            message.type === 'participant.removed' &&
+            message.userId === client.data.token.userId
+          ) &&
+          !admitted
+        )
+          continue;
+        send(client, message);
+      }
     },
     except
   );

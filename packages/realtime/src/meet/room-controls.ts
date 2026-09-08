@@ -2,9 +2,13 @@ import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
 } from './messages';
-import type { MeetRealtimeTokenPayload } from './primitives';
+import type {
+  MeetRealtimePresence,
+  MeetRealtimeTokenPayload,
+} from './primitives';
 import type { MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
+import { failActiveRecording } from './room-recording';
 
 export function approvedParticipantsMessage(
   state: MeetRoomSnapshot
@@ -32,7 +36,14 @@ export function canReadRoomNotes(
       (state.ended
         ? state.settings?.shareNotesAfterMeeting
         : state.settings?.shareNotes) &&
-        (state.presence[token.userId] || state.approved?.[token.userId])
+        (state.presence[token.userId] ||
+          Object.values(state.presence).some(
+            (person) =>
+              (person.accountId ?? person.userId) ===
+              (token.accountId ?? token.userId)
+          ) ||
+          state.approved?.[token.accountId ?? token.userId] ||
+          state.approved?.[token.userId])
     )
   );
 }
@@ -94,20 +105,24 @@ export function applyRoomControl(
   if (message.type === 'room.settings.update') {
     const next = {
       ...state,
-      settings: { ...state.settings, ...message.settings },
+      settings: { shareNotes: false, ...state.settings, ...message.settings },
     };
     return outcome(next, { broadcast: [roomSettingsMessage(next)] });
   }
   if (message.type === 'admission.forget') {
     const approved = { ...state.approved };
     delete approved[message.userId];
+    const accountId =
+      state.presence[message.userId]?.accountId ??
+      state.waiting[message.userId]?.accountId;
+    if (accountId) delete approved[accountId];
     const next = { ...state, approved };
     return outcome(next, { toManagers: [approvedParticipantsMessage(next)] });
   }
   if (message.type === 'room.end') {
     return outcome(
       {
-        ...state,
+        ...failActiveRecording(state, now),
         ended: true,
         presence: {},
         waiting: {},
@@ -133,4 +148,21 @@ export function applyRoomControl(
     );
   }
   return null;
+}
+
+/** Remember admission when it occurs, so ending a room cannot undo a later revocation. */
+export function rememberAdmission(
+  state: MeetRoomSnapshot,
+  person: MeetRealtimePresence
+) {
+  if (person.role === 'host') return state.approved;
+  const accountId = person.accountId ?? person.userId;
+  return {
+    ...state.approved,
+    [accountId]: {
+      userId: accountId,
+      displayName: person.displayName,
+      avatarUrl: person.avatarUrl,
+    },
+  };
 }

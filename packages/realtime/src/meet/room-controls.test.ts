@@ -218,3 +218,29 @@ it('requires separate opt-in for notes after ending a meeting', () => {
     )
   ).toBe(false);
 });
+
+it('retains open-admission account access to shared post-meeting notes', () => {
+  const visitor = { ...guest, admission: 'open' as const, accountId: guestId };
+  const state = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), host, now).state,
+    visitor,
+    now
+  ).state;
+  state.settings = { shareNotes: false, shareNotesAfterMeeting: true };
+  const ended = run(state, { type: 'room.end' }).state;
+  expect(Object.keys(ended.presence)).toHaveLength(0);
+  expect(canReadRoomNotes(ended, { ...visitor, userId: hostId })).toBe(true);
+});
+it('does not restore a connected participant’s forgotten approval when the room ends', () => {
+  const visitor = { ...guest, admission: 'open' as const, accountId: guestId };
+  let state = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), host, now).state,
+    visitor,
+    now
+  ).state;
+  state.settings = { shareNotes: false, shareNotesAfterMeeting: true };
+  state = run(state, { type: 'admission.forget', userId: guestId }).state;
+  const ended = run(state, { type: 'room.end' }).state;
+  expect(canReadRoomNotes(ended, visitor)).toBe(false);
+  expect(ended.approved?.[guestId]).toBeUndefined();
+});

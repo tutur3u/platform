@@ -8,7 +8,6 @@ import {
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
-  type MeetRoomSnapshot,
   type MeetSfuIntent,
   meetAdmissionPendingMessage,
   meetPresenceMessage,
@@ -18,6 +17,8 @@ import {
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
 import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
+import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
+import { type RoomServiceState, roomService } from './room-service';
 
 import { getSessionIceServers, type TurnEnv } from './turn-credentials';
 
@@ -48,8 +49,8 @@ type SocketAttachment = {
 export class MeetRoomDurableObject implements DurableObject {
   private readonly env: MeetRoomEnv;
   private readonly state: DurableObjectState;
-  private snapshot: MeetRoomSnapshot = createMeetRoomSnapshot();
-  private loaded = false;
+  private snapshot: RoomServiceState = createMeetRoomSnapshot();
+  private loading: Promise<void> | null = null;
   private commands = new MeetCommandExecutor();
 
   constructor(state: DurableObjectState, env: MeetRoomEnv) {
@@ -57,14 +58,43 @@ export class MeetRoomDurableObject implements DurableObject {
     this.state = state;
   }
 
-  private async load() {
-    if (this.loaded) return;
-    const stored = await this.state.storage.get<MeetRoomSnapshot>(SNAPSHOT_KEY);
-    if (stored) this.snapshot = { ...createMeetRoomSnapshot(), ...stored };
-    this.loaded = true;
+  private load() {
+    this.loading ??= this.state.blockConcurrencyWhile(async () => {
+      const stored =
+        await this.state.storage.get<RoomServiceState>(SNAPSHOT_KEY);
+      if (stored) this.snapshot = { ...createMeetRoomSnapshot(), ...stored };
+      const counter = await this.state.storage.get<
+        number | { requests: number; writes: number }
+      >('usage-http-requests');
+      if (counter !== undefined) {
+        this.snapshot.usage ??= createRoomUsage();
+        this.snapshot.usage.httpRequests = Math.max(
+          this.snapshot.usage.httpRequests,
+          typeof counter === 'number' ? counter : counter.requests
+        );
+        this.snapshot.usage.httpCounterWrites = Math.max(
+          this.snapshot.usage.httpCounterWrites ?? 0,
+          typeof counter === 'number' ? counter : counter.writes
+        );
+      }
+      let migrated = false;
+      for (const request of Object.values(this.snapshot.aiRequests ?? {})) {
+        if (request.status === 'pending' && request.startedAt === undefined) {
+          request.startedAt = Date.now();
+          migrated = true;
+        }
+      }
+      if (migrated) {
+        this.snapshot.usage ??= createRoomUsage();
+        this.snapshot.usage.storageWrites++;
+        await this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
+      }
+    });
+    return this.loading;
   }
 
   private persist() {
+    if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
     // Fire-and-forget: the in-memory snapshot is authoritative while the object
     // is alive, and storage only has to survive eviction.
     void this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
@@ -93,7 +123,20 @@ export class MeetRoomDurableObject implements DurableObject {
   private broadcast(messages: MeetRealtimeServerMessage[]) {
     if (!messages.length) return;
     for (const socket of this.sockets()) {
-      for (const message of messages) this.sendTo(socket, message);
+      const token = this.tokenOf(socket);
+      const admitted = token && this.snapshot.presence[token.userId];
+      for (const message of messages) {
+        if (
+          message.type !== 'room.ended' &&
+          !(
+            message.type === 'participant.removed' &&
+            message.userId === token?.userId
+          ) &&
+          !admitted
+        )
+          continue;
+        this.sendTo(socket, message);
+      }
     }
   }
 
@@ -158,6 +201,16 @@ export class MeetRoomDurableObject implements DurableObject {
 
   async fetch(request: Request): Promise<Response> {
     await this.load();
+    this.snapshot.usage ??= createRoomUsage();
+    this.snapshot.usage.httpRequests++;
+    this.snapshot.usage.httpCounterWrites =
+      (this.snapshot.usage.httpCounterWrites ?? 0) + 1;
+    this.state.waitUntil(
+      this.state.storage.put('usage-http-requests', {
+        requests: this.snapshot.usage.httpRequests,
+        writes: this.snapshot.usage.httpCounterWrites,
+      })
+    );
 
     const rawToken = request.headers.get('x-meet-token');
     if (!rawToken) {
@@ -171,6 +224,55 @@ export class MeetRoomDurableObject implements DurableObject {
       return new Response('Unauthorized', { status: 401 });
     }
 
+    if (new URL(request.url).pathname === '/room-service') {
+      const body = await request.json().catch(() => null);
+      const result = roomService(this.snapshot, token, body);
+      const changed = this.snapshot !== result.state;
+      this.snapshot = result.state;
+      if (!result.status) {
+        if (changed) this.persist();
+        this.broadcast(result.messages ?? []);
+      }
+      return Response.json(result.body, {
+        status: result.status ?? 200,
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
+    if (new URL(request.url).pathname === '/room-device') {
+      const body = (await request.json().catch(() => null)) as {
+        mode?: string;
+      } | null;
+      const accountId = token.accountId ?? token.userId;
+      const others = Object.values(this.snapshot.presence).filter(
+        (person) =>
+          (person.accountId ?? person.userId) === accountId &&
+          person.userId !== token.userId
+      );
+      if (body?.mode === 'switch') {
+        for (const person of others) {
+          const result = releaseParticipant(
+            this.snapshot,
+            person.userId,
+            token.roomId
+          );
+          this.snapshot = result.state;
+          this.sendToUser(person.userId, [
+            {
+              type: 'participant.removed',
+              by: token.userId,
+              userId: person.userId,
+            },
+          ]);
+          this.broadcast(result.broadcast);
+          this.disconnect([person.userId]);
+        }
+        this.persist();
+      }
+      return Response.json(
+        { otherDeviceCount: others.length },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      );
+    }
     if (new URL(request.url).pathname === '/room-state') {
       if (request.method === 'PATCH') {
         if (token.role !== 'host')
@@ -203,6 +305,12 @@ export class MeetRoomDurableObject implements DurableObject {
 
     const outcome = admitOrHold(this.snapshot, token, new Date().toISOString());
     this.snapshot = outcome.state;
+    if (this.snapshot.usage && this.snapshot.presence[token.userId])
+      if (Object.keys(this.snapshot.usage.devices).length < 4096)
+        this.snapshot.usage.devices[token.userId] = true;
+      else if (!this.snapshot.usage.devices[token.userId])
+        this.snapshot.usage.limitedReports =
+          (this.snapshot.usage.limitedReports ?? 0) + 1;
     this.persist();
 
     for (const message of outcome.reply) this.sendTo(server, message);
@@ -248,6 +356,8 @@ export class MeetRoomDurableObject implements DurableObject {
       return;
     }
 
+    this.snapshot.usage ??= createRoomUsage();
+    this.snapshot.usage.webSocketMessages++;
     const parsed = meetRealtimeClientMessageSchema.safeParse(json);
     if (!parsed.success) {
       this.sendTo(socket, { error: 'malformed_event', type: 'error' });

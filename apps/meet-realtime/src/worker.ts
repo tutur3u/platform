@@ -19,8 +19,10 @@ export default {
     }
 
     const roomStateRequest =
-      url.pathname === '/room-state' &&
-      ['GET', 'PATCH'].includes(request.method);
+      (url.pathname === '/room-state' &&
+        ['GET', 'PATCH'].includes(request.method)) ||
+      (['/room-device', '/room-service'].includes(url.pathname) &&
+        request.method === 'POST');
     if (url.pathname !== '/realtime' && !roomStateRequest) {
       return new Response('Not found', { status: 404 });
     }
