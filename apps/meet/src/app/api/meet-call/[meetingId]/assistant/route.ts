@@ -4,10 +4,10 @@ import {
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
 import { answerMeetChat } from '@tuturuuu/ai/meetings/chat';
-import { MEET_AI_MODEL } from '@tuturuuu/ai/meetings/usage';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
 import { MeetCallAccessError } from '@/features/call/lib/call-access';
+import { getMeetChatModel } from '@/features/call/server/chat-model';
 import {
   callRoomService,
   personalWorkspace,
@@ -25,7 +25,8 @@ export async function POST(
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid message');
     const { messageId } = input.data;
     const wsId = await personalWorkspace(access.user.id);
-    const allowance = await checkAiCredits(wsId, MEET_AI_MODEL, 'chat', {
+    const model = await getMeetChatModel(wsId);
+    const allowance = await checkAiCredits(wsId, model.id, 'chat', {
       userId: access.user.id,
       estimatedInputTokens: 16000,
     });
@@ -37,7 +38,7 @@ export async function POST(
     const db = await createAdminClient({ noCookie: true });
     const cap = await capMaxOutputTokensByCredits(
       db,
-      MEET_AI_MODEL,
+      model.id,
       Math.min(allowance.maxOutputTokens ?? 2048, 2048),
       allowance.remainingCredits
     );
@@ -49,7 +50,12 @@ export async function POST(
     let costUsd: number | null = null;
     let chargedAnswer: string | undefined;
     try {
-      const answer = await answerMeetChat(context.chat, cap, context.prompt);
+      const answer = await answerMeetChat(
+        context.chat,
+        cap,
+        context.prompt,
+        model
+      );
       costUsd = answer.costUsd;
       if (
         !answer.usage.available ||
@@ -65,7 +71,7 @@ export async function POST(
       const charge = await deductAiCredits({
         wsId,
         userId: access.user.id,
-        modelId: MEET_AI_MODEL,
+        modelId: model.id,
         inputTokens: answer.usage.inputTokens,
         outputTokens: answer.usage.outputTokens,
         feature: 'chat',

@@ -1,6 +1,14 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  model: vi.fn(async () => ({
+    id: 'google/gemini-3.5-flash-lite',
+    providerModelId: 'gemini-3.5-flash-lite',
+    inputPricePerToken: 0.3 / 1_000_000,
+    outputPricePerToken: 2.5 / 1_000_000,
+    cacheReadPricePerToken: null,
+    tieredPricing: false,
+  })),
   personal: vi.fn(async () => 'tagger-personal-workspace'),
   service: vi.fn(async () => ({
     chat: [{ body: 'Recent context', displayName: 'Guest' }],
@@ -20,6 +28,9 @@ const mocks = vi.hoisted(() => ({
   deduct: vi.fn(async () => ({ success: true })),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('@/features/call/server/chat-model', () => ({
+  getMeetChatModel: mocks.model,
+}));
 vi.mock('@/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
@@ -71,9 +82,23 @@ it('charges the tagger personal quota and uses server-supplied recent chat', asy
   });
   expect(response.status).toBe(200);
   expect(mocks.personal).toHaveBeenCalledWith('tagger');
+  expect(mocks.model).toHaveBeenCalledWith('tagger-personal-workspace');
+  expect(mocks.check).toHaveBeenCalledWith(
+    'tagger-personal-workspace',
+    'google/gemini-3.5-flash-lite',
+    'chat',
+    expect.objectContaining({ userId: 'tagger' })
+  );
+  expect(mocks.cap).toHaveBeenCalledWith(
+    expect.anything(),
+    'google/gemini-3.5-flash-lite',
+    1024,
+    100
+  );
   expect(mocks.deduct).toHaveBeenCalledWith(
     expect.objectContaining({
       wsId: 'tagger-personal-workspace',
+      modelId: 'google/gemini-3.5-flash-lite',
       userId: 'tagger',
       inputTokens: 100,
       outputTokens: 20,
@@ -82,7 +107,11 @@ it('charges the tagger personal quota and uses server-supplied recent chat', asy
   expect(mocks.answer).toHaveBeenCalledWith(
     [{ body: 'Recent context', displayName: 'Guest' }],
     1024,
-    '@Tuturuuu original question'
+    '@Tuturuuu original question',
+    expect.objectContaining({
+      id: 'google/gemini-3.5-flash-lite',
+      providerModelId: 'gemini-3.5-flash-lite',
+    })
   );
   expect(mocks.service).toHaveBeenLastCalledWith(
     expect.anything(),
