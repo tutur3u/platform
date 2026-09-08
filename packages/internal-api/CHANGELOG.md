@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/internal-api-v0.34.0...internal-api-v0.35.0) (2026-09-08)
+
+
+### Features
+
+* **meet:** improve shared audio, receiving recovery, and call controls ([#5250](https://github.com/tutur3u/platform/issues/5250)) ([45a9e2e](https://github.com/tutur3u/platform/commit/45a9e2ea556cb9b1634fc69752f7feb73007f4fd))
+
+
+### Bug Fixes
+
+* **mail:** address review feedback ([5a81705](https://github.com/tutur3u/platform/commit/5a81705366fb4c13fe2693b8320b8ba9f9023cec))
+* **mail:** disclose bounded thread history ([e54ce46](https://github.com/tutur3u/platform/commit/e54ce46975a70ed01776a606538c4dd06897229f))
+* **mail:** speed up and polish message interactions ([#5255](https://github.com/tutur3u/platform/issues/5255)) ([4732cde](https://github.com/tutur3u/platform/commit/4732cde391580c716641ad9cc4349b5e88fbc024))
+* **meet:** synchronize video readiness and refine room experience ([6c98340](https://github.com/tutur3u/platform/commit/6c98340d442307878737ea1c5b38290fb228bef8))
+* **meet:** synchronize video readiness and refine room experience ([#5256](https://github.com/tutur3u/platform/issues/5256)) ([f27f237](https://github.com/tutur3u/platform/commit/f27f237b495d8105345b764fa796096117a0b160))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/internal-api-v0.33.1...internal-api-v0.34.0) (2026-09-07)
 
 
