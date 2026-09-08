@@ -108,7 +108,10 @@ it('charges the tagger personal quota and uses server-supplied recent chat', asy
     [{ body: 'Recent context', displayName: 'Guest' }],
     1024,
     '@Tuturuuu original question',
-    await mocks.model()
+    expect.objectContaining({
+      id: 'google/gemini-3.5-flash-lite',
+      providerModelId: 'gemini-3.5-flash-lite',
+    })
   );
   expect(mocks.service).toHaveBeenLastCalledWith(
     expect.anything(),

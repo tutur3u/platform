@@ -23,7 +23,7 @@ export function measureMeetChatUsage(metadata: unknown, model: MeetChatModel) {
   const { inputTokens, outputTokens } = tokens;
   const cached = (metadata as { cachedContentTokenCount?: unknown })
     .cachedContentTokenCount;
-  const cachedTokens = cached === undefined ? 0 : cached;
+  const cachedTokens = cached ?? 0;
   const validCache =
     typeof cachedTokens === 'number' &&
     Number.isFinite(cachedTokens) &&

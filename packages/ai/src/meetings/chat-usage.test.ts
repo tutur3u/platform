@@ -25,6 +25,14 @@ describe('Mira catalog usage', () => {
       available: true,
     });
   });
+  it('treats a null cache counter as no cached input', () => {
+    expect(
+      measureMeetChatUsage(
+        { ...metadata, cachedContentTokenCount: null },
+        model
+      ).costUsd
+    ).toBeCloseTo(0.0006);
+  });
   it('bills cached input at its own catalog rate', () => {
     expect(
       measureMeetChatUsage({ ...metadata, cachedContentTokenCount: 500 }, model)

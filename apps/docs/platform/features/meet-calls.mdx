@@ -1,5 +1,6 @@
 ---
 title: Meet calls
+updated: '2026-09-09'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 ---
 
@@ -8,8 +9,8 @@ Tuturuuu Meet calls are Google-Meet-style conferences carried by the
 Live, which powers one-to-many broadcast and is documented separately.
 
 Every participant holds exactly **two peer connections** to the SFU — one
-publishing, one subscribing — regardless of room size. Calls are not mesh, so
-cost and CPU stay flat as a room grows.
+publishing, one subscribing — regardless of room size. Connection count stays
+fixed; bandwidth and decoding work still grow with subscribed media tracks.
 
 ## Pieces
 

@@ -46,6 +46,7 @@ it('selects the personal plan default and matching enabled model prices', async 
     id: 'google/gemini-3.5-flash-lite',
     providerModelId: 'gemini-3.5-flash-lite',
     inputPricePerToken: data.input_price_per_token,
+    cacheReadPricePerToken: data.cache_read_price_per_token,
     outputPricePerToken: data.output_price_per_token,
     tieredPricing: false,
   });
@@ -83,3 +84,16 @@ it('marks tiered catalog pricing for incomplete cost coverage', async () => {
     tieredPricing: true,
   });
 });
+
+it.each([-1, NaN, Infinity])(
+  'retains unknown cache pricing for invalid rate %s',
+  async (rate) => {
+    mocks.single.mockResolvedValue({
+      data: { ...data, cache_read_price_per_token: rate },
+      error: null,
+    });
+    expect(await getMeetChatModel('personal')).toMatchObject({
+      cacheReadPricePerToken: null,
+    });
+  }
+);
