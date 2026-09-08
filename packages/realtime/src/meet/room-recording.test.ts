@@ -2,25 +2,30 @@ import { describe, expect, it } from 'vitest';
 import {
   admitOrHold,
   createMeetRoomSnapshot,
-  type MeetRealtimeTokenPayload,
+  meetRealtimeTokenPayloadSchema,
 } from './index';
 import { applyRecording } from './room-recording';
 
 const now = '2026-09-09T00:00:00Z';
-const host = {
-  userId: 'host-device',
-  accountId: 'host-account',
+const host = meetRealtimeTokenPayloadSchema.parse({
+  roomId: 'workspace:meeting',
+  mode: 'call',
+  admission: 'open',
+  meetingId: '5e5217de-9bb3-4e20-8d99-526ad3e7e34f',
+  wsId: '0f1a64f7-780f-4d30-9d72-5530f204e95c',
+  userId: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691',
+  accountId: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2692',
   exp: 2000000000,
   role: 'host',
   scopes: [],
   limits: { video: { defaultCameraEnabled: false } },
-} as unknown as MeetRealtimeTokenPayload;
-const guest = {
+});
+const guest = meetRealtimeTokenPayloadSchema.parse({
   ...host,
-  userId: 'guest-device',
-  accountId: 'guest-account',
+  userId: '4b320da6-6c8a-43fe-b1bf-09fbe77303f9',
+  accountId: '4b320da6-6c8a-43fe-b1bf-09fbe77303f8',
   role: 'speaker',
-} as MeetRealtimeTokenPayload;
+});
 const initial = () =>
   admitOrHold(
     admitOrHold(createMeetRoomSnapshot(), host, now).state,
@@ -95,4 +100,15 @@ it('retains ready recordings when their owner releases the lease after upload', 
   state.recordings![0]!.status = 'ready';
   state.recordings![0]!.path = 'verified-recording.webm';
   expect(run(state, 'idle').state.recordings?.[0]?.status).toBe('ready');
+});
+
+it('lets an admin clear a stopped guest recording without clearing another session', () => {
+  const state = initial();
+  state.settings = { shareNotes: false, allowParticipantRecording: true };
+  const started = run(state, 'starting', guest).state;
+  const stopping = run(started, 'stopping', host).state;
+  expect(
+    run(stopping, 'idle', host, 'different').state.recording.sessionId
+  ).toBe('recording-a');
+  expect(run(stopping, 'idle', host).state.recording.sessionId).toBeNull();
 });

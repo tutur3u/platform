@@ -90,7 +90,12 @@ export function applyRecording(
     if (message.state === 'recording' && state.recording.state !== 'starting')
       return denied(state, 'recording_invalid_transition', message.requestId);
     if (
-      !owns ||
+      !(
+        owns ||
+        (manages &&
+          state.recording.state === 'stopping' &&
+          (message.state === 'idle' || message.state === 'error'))
+      ) ||
       (message.recordingSessionId !== undefined &&
         message.recordingSessionId !== state.recording.sessionId) ||
       (message.state === 'recording' && !message.recordingSessionId)

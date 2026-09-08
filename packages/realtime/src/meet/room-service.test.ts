@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   admitOrHold,
+  applyMeetRoomCommand,
   createMeetRoomSnapshot,
   meetRealtimeTokenPayloadSchema,
 } from './index';
@@ -170,4 +171,63 @@ it('keeps legacy pending requests active until Worker migration timestamps them'
     roomService(state, token, { action: 'ai.reserve', messageId: 'message' })
       .status
   ).toBe(409);
+});
+
+it('discards only the uploader’s unsent files and preserves sent files after an acknowledgement is lost', () => {
+  const file = {
+    id: account,
+    name: 'file.txt',
+    size: 10,
+    contentType: 'text/plain',
+    path: 'Meet/chat/file.txt',
+    storageWsId: token.wsId,
+  };
+  const state = roomService(initial(), token, {
+    action: 'attach',
+    attachment: file,
+  }).state;
+  const other = { ...token, accountId: token.meetingId };
+  expect(
+    roomService(state, other, { action: 'attachment.discard', id: account })
+      .status
+  ).toBe(404);
+  const sent = applyMeetRoomCommand(state, {
+    token: { ...token, scopes: [...token.scopes, 'chat:write'] },
+    now,
+    message: { type: 'chat.message', body: 'File', attachmentIds: [account] },
+  });
+  expect(sent.state.attachments?.[account]?.published).toBe(true);
+  expect(
+    roomService(sent.state, token, {
+      action: 'attachment.discard',
+      id: account,
+    }).status
+  ).toBe(409);
+  const discarded = roomService(state, token, {
+    action: 'attachment.discard',
+    id: account,
+  });
+  expect(discarded.status).toBeUndefined();
+  expect(
+    roomService(discarded.state, token, { action: 'attachment', id: account })
+      .status
+  ).toBe(404);
+});
+
+it('acknowledges a repeated completed assistant settlement without duplicating messages or cost', () => {
+  const reserved = roomService(initial(), token, {
+    action: 'ai.reserve',
+    messageId: 'message',
+  }).state;
+  const command = {
+    action: 'ai.finish',
+    messageId: 'message',
+    body: 'Answer',
+    costUsd: 0.001,
+  };
+  const done = roomService(reserved, token, command);
+  const retried = roomService(done.state, token, command);
+  expect(retried.status).toBeUndefined();
+  expect(retried.state).toBe(done.state);
+  expect(retried.messages).toBeUndefined();
 });

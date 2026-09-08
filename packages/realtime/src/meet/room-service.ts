@@ -15,7 +15,11 @@ const attachment = z.object({
   path: z.string().trim().min(1).max(1024),
   storageWsId: z.uuid(),
 });
-export type RoomAttachment = z.infer<typeof attachment>;
+export type RoomAttachment = z.infer<typeof attachment> & {
+  ownerAccountId?: string;
+  discarded?: boolean;
+  published?: boolean;
+};
 export type RoomChatMessage = Extract<
   MeetRealtimeServerMessage,
   { type: 'chat.message' }
@@ -39,6 +43,7 @@ const command = z.discriminatedUnion('action', [
   z.object({ action: z.literal('recording.list') }),
   z.object({ action: z.literal('attach'), attachment }),
   z.object({ action: z.literal('attachment'), id: z.uuid() }),
+  z.object({ action: z.literal('attachment.discard'), id: z.uuid() }),
   z.object({
     action: z.literal('recording.save'),
     sessionId: z.uuid(),
@@ -186,6 +191,22 @@ export function roomService(
       },
     };
   }
+  if (message.action === 'attachment.discard') {
+    const file = snapshot.attachments?.[message.id];
+    if (!file || file.ownerAccountId !== accountId)
+      return fail('Attachment unavailable', 404);
+    if (file.published) return fail('Attachment is already shared', 409);
+    return {
+      state: {
+        ...snapshot,
+        attachments: {
+          ...snapshot.attachments,
+          [message.id]: { ...file, discarded: true },
+        },
+      },
+      body: { path: file.path, storageWsId: file.storageWsId },
+    };
+  }
   // Finalize an already authorized generation even if its user left meanwhile.
   if (message.action !== 'ai.finish' && (!admitted || snapshot.ended))
     return fail('Join the active meeting first');
@@ -197,7 +218,10 @@ export function roomService(
         ...snapshot,
         attachments: {
           ...snapshot.attachments,
-          [message.attachment.id]: message.attachment,
+          [message.attachment.id]: {
+            ...message.attachment,
+            ownerAccountId: accountId,
+          },
         },
       },
       body: { ok: true },
@@ -205,7 +229,7 @@ export function roomService(
   }
   if (message.action === 'attachment') {
     const file = snapshot.attachments?.[message.id];
-    return file
+    return file && !file.discarded
       ? { state: snapshot, body: file }
       : fail('Attachment unavailable', 404);
   }
@@ -248,7 +272,10 @@ export function roomService(
     };
   }
   const pending = snapshot.aiRequests?.[message.messageId];
-  if (!pending || pending.userId !== accountId || pending.status !== 'pending')
+  if (!pending || pending.userId !== accountId)
+    return fail('Assistant request unavailable', 409);
+  if (pending.status === 'done') return { state: snapshot, body: { ok: true } };
+  if (pending.status !== 'pending')
     return fail('Assistant request unavailable', 409);
   const response: RoomChatMessage | undefined = message.body
     ? {
