@@ -4,7 +4,11 @@ import type { RemoteTrackOwner } from './remote-playback';
 
 /** A live receiver is not proof of incoming RTP. Give a new publication time to start. */
 export function createReceiverHealthCheck() {
-  const observations = new Map<string, { bytes: number; since: number }>();
+  const observations = new Map<
+    string,
+    { bytes: number; since: number; baseline: number }
+  >();
+  const resumedTracks = new WeakSet<MediaStreamTrack>();
   return (
     pc: RTCPeerConnection,
     stats: RTCStatsReport,
@@ -32,7 +36,11 @@ export function createReceiverHealthCheck() {
           : owner.kind === 'video'
             ? media.videoEnabled
             : media.screenEnabled);
-      if (!expected) continue;
+      if (!expected) {
+        resumedTracks.add(track);
+        setReceiverPacketState(track, false);
+        continue;
+      }
       const key = `${mid}:${owner.subscriptionKey}`;
       active.add(key);
       const inbound = [...stats.values()].filter(
@@ -55,11 +63,17 @@ export function createReceiverHealthCheck() {
         continue;
       }
       const bytes = inbound.reduce((sum, stat) => sum + stat.bytesReceived, 0);
-      setReceiverPacketState(track, bytes > 0 && !track.muted);
       const previous = observations.get(key);
+      const baseline =
+        previous?.baseline ?? (resumedTracks.has(track) ? bytes : 0);
+      resumedTracks.delete(track);
+      setReceiverPacketState(track, bytes > baseline && !track.muted);
       if (!previous || previous.bytes !== bytes)
-        observations.set(key, { bytes, since: now });
-      else if (now - previous.since >= 20_000 && (bytes === 0 || track.muted))
+        observations.set(key, { bytes, since: now, baseline });
+      else if (
+        now - previous.since >= 20_000 &&
+        (bytes <= baseline || track.muted)
+      )
         stalled = true;
       // Silence/DTX and static screen content may legitimately stop changing counters.
     }

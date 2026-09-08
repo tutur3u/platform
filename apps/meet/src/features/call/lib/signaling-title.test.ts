@@ -109,3 +109,32 @@ it('replays a persisted title after the socket drops before acknowledgement', as
   expect(replacement.sent).toHaveLength(1);
   signaling.close();
 });
+
+it('does not retry a permanent title rejection', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('WebSocket', Socket);
+  const signaling = new MeetSignaling({
+    resolveUrl: () => 'ws://test',
+    onMessage: vi.fn(),
+  });
+  signaling.connect();
+  await Promise.resolve();
+  const socket = Socket.instances[0]!;
+  socket.open();
+  signaling.announceTitle('Rejected title');
+  socket.dispatchEvent(
+    new MessageEvent('message', {
+      data: JSON.stringify({
+        type: 'error',
+        error: 'host_required',
+        requestId: socket.sent[0]!.requestId,
+      }),
+    })
+  );
+  await vi.advanceTimersByTimeAsync(30_000);
+  expect(socket.sent).toHaveLength(1);
+  signaling.announceTitle('New title');
+  expect(socket.sent.at(-1)?.title).toBe('New title');
+  socket.ack();
+  signaling.close();
+});

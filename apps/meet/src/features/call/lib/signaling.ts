@@ -209,8 +209,13 @@ export class MeetSignaling {
         () => {
           if (this.pendingTitle === title) this.pendingTitle = null;
         },
-        () => {
-          /* The persisted title is retried after reconnect or timeout. */
+        (error: unknown) => {
+          const retryable =
+            error instanceof Error &&
+            (error.message === 'signaling_closed' ||
+              error.message === 'signaling_timeout');
+          if (!retryable && this.pendingTitle === title)
+            this.pendingTitle = null;
         }
       )
       .finally(() => {

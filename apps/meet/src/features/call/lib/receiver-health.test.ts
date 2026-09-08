@@ -105,3 +105,20 @@ it('reports zero-packet receivers as waiting even when the track is unmuted', ()
     receiverPacketState(f.track as unknown as MediaStreamTrack)
   ).toBeUndefined();
 });
+
+it('requires fresh packets after a participant re-enables the same receiver', () => {
+  const f = fixture();
+  f.track.muted = false;
+  const track = f.track as unknown as MediaStreamTrack;
+  f.sample(0, 200);
+  expect(receiverPacketState(track)).toBe(true);
+  f.participants.peer!.media.videoEnabled = false;
+  f.sample(1000, 200);
+  expect(receiverPacketState(track)).toBe(false);
+  f.participants.peer!.media.videoEnabled = true;
+  f.sample(2000, 200);
+  expect(receiverPacketState(track)).toBe(false);
+  expect(f.sample(22_000, 200)).toBe(true);
+  f.sample(23_000, 300);
+  expect(receiverPacketState(track)).toBe(true);
+});

@@ -3864,6 +3864,7 @@
       "device_screen": "screen share",
       "edit_title": "Edit meeting title",
       "edit_title_hint": "The updated title will be visible to everyone in this meeting.",
+      "edit_title_of": "Edit meeting title: {title}",
       "effects_failed": "Could not apply camera effects. Try another filter.",
       "effects_hint": "Processed on your device and visible to everyone in the call.",
       "end_failed": "Could not end the meeting. Check your connection and try again.",

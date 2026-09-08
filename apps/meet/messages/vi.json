@@ -3864,6 +3864,7 @@
       "device_screen": "chia sẻ màn hình",
       "edit_title": "Đổi tiêu đề cuộc họp",
       "edit_title_hint": "Tiêu đề mới sẽ hiển thị với mọi người trong cuộc họp.",
+      "edit_title_of": "Chỉnh sửa tên cuộc họp: {title}",
       "effects_failed": "Không thể áp dụng hiệu ứng camera. Hãy thử bộ lọc khác.",
       "effects_hint": "Xử lý trên thiết bị của bạn và hiển thị cho mọi người trong cuộc gọi.",
       "end_failed": "Không thể kết thúc cuộc họp. Kiểm tra kết nối và thử lại.",
