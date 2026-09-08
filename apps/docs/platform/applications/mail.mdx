@@ -36,6 +36,29 @@ token refresh same-origin through `/api/auth/refresh-app-session`; a valid
 refresh cookie should rotate the Mail-local and Web-issued app-session cookies
 without sending the browser back through `apps/web` login.
 
+## Reading and attachment previews
+
+Settings → Reading stores the archive navigation and email appearance preferences
+in the current browser. Archiving an open inbox conversation selects the next
+visible conversation by default, falling back to the previous one at the end of
+the loaded list. Users can choose to return to the list instead. Bulk archive
+skips all selected conversations when choosing the next message.
+
+Email frames remain hidden until the saved appearance is restored and contrast
+adjustments finish. Dark mode matches neutral paper surfaces to the reader's
+background while preserving colored panels and images. Original mode retains the
+sender's colors. Neither mode enables scripts inside email HTML.
+
+The protected attachment endpoint accepts `?preview=1` for a passive-format
+allowlist: raster images, supported video/audio types, and plain text (including
+`.txt` files stored as `application/octet-stream`). Preview access uses the same
+mailbox and message authorization as downloads and preserves byte-range support.
+HTML, SVG, and other unsupported types remain downloads. Responses are private,
+uncached, MIME-sniffing-disabled, and sandboxed. The reader exposes previews from
+both the conversation and Attachments tab, with a separate download action. Text
+previews use the internal API client, render escaped text in the reader theme, and
+fall back to download on authorization failures or files larger than 1 MiB.
+
 ## SES Receiving Setup
 
 Do not change DNS from code or migrations. The current public MX for `tuturuuu.com` is Google-routed, so real `@tuturuuu.com` receiving requires an explicit staged MX cutover or a pilot subdomain first.

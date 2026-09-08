@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-external-apps
-description: "Integrate branded external apps with Tuturuuu app sessions, uploads, and content APIs."
+description: "Integrate branded external apps with Tuturuuu app sessions, workspace invitations and members, Drive storage, uploads, and content APIs."
 ---
 
 # Tuturuuu External Apps
@@ -17,12 +17,14 @@ Then map both sides of the integration:
 - the external app's auth/session, admin API routes, storage routes, and public
   content readers
 - the Tuturuuu control-plane routes under `apps/web/src/app/api/v1/auth` and
-  `apps/web/src/app/api/v1/workspaces/[wsId]/external-projects`
+  `apps/web/src/app/api/v1/workspaces/[wsId]`, including external projects,
+  member access, roles, and Drive storage
 - the external app manifest/schema and any `read*` model normalizers that
   convert entries, blocks, assets, profile data, and metadata into app content
 
 Read `references/external-app-patterns.md` when implementing auth exchange,
-direct uploads, storage browsing, publish/delivery behavior, or error reporting.
+invitation decisions, member or role management, Drive browsing, direct
+uploads, publish/delivery behavior, or error reporting.
 
 ## Integration Rules
 
@@ -35,6 +37,16 @@ direct uploads, storage browsing, publish/delivery behavior, or error reporting.
 - Reauthorize refresh requests against the linked workspace and requested
   external-project scopes. Refresh tokens must not carry normal
   `external-projects:*`, `read`, `manage`, or `publish` bearer scopes.
+- Treat a pending linked-workspace invitation as a first-class sign-in state.
+  Let the user accept or decline inside the external app through Tuturuuu's
+  single-use invitation-action exchange; never send them away to find the
+  invitation manually. Keep the action token server-only in a short-lived,
+  encrypted `HttpOnly` cookie and protect decisions with same-origin and CSRF
+  checks.
+- Include member, invitation, role, and Drive management when the external app
+  has an authenticated admin surface and the registration grants those scopes.
+  Use external-app-aware workspace APIs; do not fall back to browser Supabase
+  sessions or standard dashboard-only routes that reject valid app sessions.
 - Keep file bytes out of app API routes. Request signed upload metadata through
   the app API, upload directly from the browser to the signed URL, then save only
   the returned storage path and file metadata with the entry or asset mutation.
@@ -56,7 +68,7 @@ direct uploads, storage browsing, publish/delivery behavior, or error reporting.
 Run focused tests around the integration boundary before broader checks:
 
 ```bash
-bun test <session-tests> <auth-exchange-tests> <mutation-tests> <upload-url-tests>
+bun test <session-tests> <auth-exchange-tests> <invitation-tests> <member-tests> <drive-tests> <mutation-tests> <upload-url-tests>
 python3 plugins/tuturuuu/scripts/validate_plugin.py
 ```
 

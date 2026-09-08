@@ -244,6 +244,14 @@ it('reclaims a discarded attachment slot only after storage deletion succeeds', 
     action: 'attach',
     attachment: file,
   }).state;
+  for (let i = 0; i < 999; i++) {
+    const id = `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`;
+    state.attachments![id] = { ...file, id };
+  }
+  const nextUpload = {
+    action: 'attach',
+    attachment: { ...file, id: token.meetingId },
+  };
   expect(
     roomService(state, token, { action: 'attachment.deleted', id: account })
       .status
@@ -252,11 +260,13 @@ it('reclaims a discarded attachment slot only after storage deletion succeeds', 
     action: 'attachment.discard',
     id: account,
   }).state;
+  expect(roomService(discarded, token, nextUpload).status).toBe(409);
   const deleted = roomService(discarded, token, {
     action: 'attachment.deleted',
     id: account,
   });
   expect(deleted.state.attachments?.[account]).toBeUndefined();
+  expect(roomService(deleted.state, token, nextUpload).status).toBeUndefined();
   expect(
     roomService(deleted.state, token, {
       action: 'attachment.deleted',

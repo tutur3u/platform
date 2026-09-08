@@ -1,7 +1,7 @@
 # External App Integration Patterns
 
 Use this reference when an app outside `apps/web` needs Tuturuuu identity,
-external-project content, storage, or publishing.
+workspace access, external-project content, Drive storage, or publishing.
 
 ## Auth And Session Shape
 
@@ -29,6 +29,30 @@ Refresh tokens should use a dedicated refresh-only scope, such as
 normal `external-projects:*`, `external-projects:manage`,
 `external-projects:publish`, or `external-projects:read` bearer tokens.
 
+## Pending Workspace Invitations
+
+The app-token exchange can return `PENDING_WORKSPACE_INVITE` with a safe
+invitation summary and a single-use `invitationActionToken`. This is an
+actionable auth state, not a generic forbidden error.
+
+The external app should:
+
+1. Validate that the invitation workspace matches its configured workspace.
+2. Store the action token server-side in a short-lived encrypted `HttpOnly`
+   cookie together with a generated CSRF token and expiry.
+3. Return only the invitation summary, expiry, and CSRF token to the browser.
+4. Present clear Accept and Decline actions inside the external app.
+5. Post the server-held token, decision, app credentials, requested scopes, and
+   workspace ID to `/api/v1/auth/app-token/invitation-decision`.
+6. On acceptance, validate the returned session and rotate it into the normal
+   admin-session cookie. On decline, clear pending state and return to a useful
+   signed-out screen.
+
+Never expose `invitationActionToken` or the app secret to the browser. Apply
+same-origin validation and timing-safe CSRF comparison to the decision route.
+Clear terminal expired, already-used, missing, accepted, and declined states;
+keep a still-valid pending cookie only for retryable upstream failures.
+
 ## Environment Contract
 
 Prefer app-specific names and keep them server-only unless a value is safe for
@@ -50,8 +74,12 @@ External app API routes should be narrow proxies or mutations:
 - `GET /api/admin/session`: returns safe session state, never tokens.
 - `POST /api/auth/verify-app-token`: exchanges the handoff token and sets the
   encrypted cookie.
+- `POST /api/auth/pending-invitation`: accepts or declines the linked-workspace
+  invitation and either creates the normal app session or clears pending state.
 - `POST /api/auth/session/refresh`: refreshes from the encrypted cookie and
   rotates the cookie.
+- `GET` / mutation routes under `/api/admin/members`: proxy external-app-aware
+  member, pending-invitation, and role operations for the linked workspace.
 - `GET /api/admin/storage`: lists linked external-project storage or returns a
   signed read URL for one file.
 - `POST /api/admin/<resource>/upload-url`: returns signed upload metadata only.
@@ -61,6 +89,24 @@ External app API routes should be narrow proxies or mutations:
 Use explicit `cache: "no-store"` for admin session, auth, and storage calls.
 Use public delivery caching only in public content readers that can tolerate
 stale data.
+
+## Workspace Access Management
+
+Authenticated external-app admin surfaces should expose workspace access in
+place when the app registration grants the required scopes:
+
+- list current members and pending invitations
+- invite people and revoke outstanding invitations
+- update permitted member roles and remove access with explicit confirmation
+- prevent the current operator from accidentally removing their own access
+- show loading, empty, success, and actionable error states without exposing
+  internal route names or raw platform payloads
+
+Request the narrow `workspace:members:read` / `workspace:members:write` and
+`workspace:roles:read` / `workspace:roles:write` scopes needed by the UI. Route
+browser calls through the external app's server and the external-app-aware
+Tuturuuu endpoints. Pin every operation to the configured workspace; ignore or
+reject browser-provided workspace IDs.
 
 ## Direct Upload Save Sequence
 
@@ -105,9 +151,17 @@ the asset record and keep linked entries consistent.
 
 ## Storage Browsing
 
-Storage file management should use the linked workspace and external-project
-storage routes. The external app can present folders/files, rename/delete
-operations, and signed read URLs, but all privileged operations stay server-side.
+Drive storage management is a baseline admin capability when the app requests
+`workspace:drive:read` or `workspace:drive:write`. Use the linked workspace's
+external-app-aware storage routes. The external app should provide folder and
+file browsing, signed previews/downloads, direct uploads, rename/move, and
+confirmed delete where granted; all privileged operations stay server-side.
+
+Pin storage roots and every requested path to the configured workspace. Reject
+absolute paths, traversal, cross-workspace identifiers, unsupported file types,
+and oversized uploads before requesting signed metadata. Never proxy file bytes
+through the app server or expose signed URLs beyond the operation that needs
+them.
 
 Common admin failure handling:
 
@@ -152,6 +206,15 @@ pattern.
 
 Add focused tests for:
 
+- pending invitation exchange stores the action token only in an encrypted,
+  short-lived `HttpOnly` cookie and returns a safe summary
+- invitation accept creates a validated app session; decline and terminal
+  failures clear pending state; retryable upstream failures remain actionable
+- invitation decisions enforce same-origin and CSRF checks
+- member and role routes require the matching scopes, pin the configured
+  workspace, and prevent accidental self-removal
+- Drive list, preview, upload, move/rename, and delete routes reject traversal
+  and cross-workspace input and keep signed URLs and file bytes server-bounded
 - direct file uploads rejected by metadata save routes
 - signed upload URL route validates type, size, slug/path, method, headers, and
   returned storage path

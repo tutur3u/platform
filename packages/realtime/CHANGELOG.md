@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/realtime-v0.3.0...realtime-v0.4.0) (2026-09-08)
+
+
+### Features
+
+* **meet:** improve shared audio, receiving recovery, and call controls ([#5250](https://github.com/tutur3u/platform/issues/5250)) ([45a9e2e](https://github.com/tutur3u/platform/commit/45a9e2ea556cb9b1634fc69752f7feb73007f4fd))
+
+
+### Bug Fixes
+
+* **meet:** apply partial sharing policies atomically ([8915cac](https://github.com/tutur3u/platform/commit/8915cac00022966c0690f1f35643600ade96d7a7))
+* **meet:** synchronize video readiness and refine room experience ([6c98340](https://github.com/tutur3u/platform/commit/6c98340d442307878737ea1c5b38290fb228bef8))
+* **meet:** synchronize video readiness and refine room experience ([#5256](https://github.com/tutur3u/platform/issues/5256)) ([f27f237](https://github.com/tutur3u/platform/commit/f27f237b495d8105345b764fa796096117a0b160))
+* **meet:** verify media ownership and retain call notifications ([9b7402e](https://github.com/tutur3u/platform/commit/9b7402e568658fe6614eb9ee77c9b015a5e01b50))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/realtime-v0.2.0...realtime-v0.3.0) (2026-09-07)
 
 
