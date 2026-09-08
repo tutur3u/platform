@@ -89,3 +89,10 @@ describe('room recording lease', () => {
     expect(run(stopped, 'idle').state.recording.state).toBe('idle');
   });
 });
+
+it('retains ready recordings when their owner releases the lease after upload', () => {
+  const state = run(initial(), 'starting').state;
+  state.recordings![0]!.status = 'ready';
+  state.recordings![0]!.path = 'verified-recording.webm';
+  expect(run(state, 'idle').state.recordings?.[0]?.status).toBe('ready');
+});

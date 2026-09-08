@@ -85,3 +85,18 @@ it('bounds implausible reports and keeps counting after bounded history rotates'
   expect(replay.receivedBytes).toBe(usage.receivedBytes);
   expect(summarizeRoomUsage(replay)?.limitedReports).toBeGreaterThan(0);
 });
+
+it('does not let a rejected report baseline another device’s initial bytes', () => {
+  const now = new Date().toISOString();
+  const rejected = applyUsageReport(
+    createRoomUsage(),
+    'bad-device',
+    'bad-report',
+    Number.MAX_SAFE_INTEGER,
+    now
+  );
+  expect(
+    applyUsageReport(rejected, 'good-device', 'new-report', 1000, now)
+      .receivedBytes
+  ).toBe(1000);
+});

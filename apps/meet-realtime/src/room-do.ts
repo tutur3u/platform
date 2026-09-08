@@ -8,7 +8,6 @@ import {
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
-  type MeetRoomSnapshot,
   type MeetSfuIntent,
   meetAdmissionPendingMessage,
   meetPresenceMessage,
@@ -62,17 +61,31 @@ export class MeetRoomDurableObject implements DurableObject {
   private load() {
     this.loading ??= this.state.blockConcurrencyWhile(async () => {
       const stored =
-        await this.state.storage.get<MeetRoomSnapshot>(SNAPSHOT_KEY);
+        await this.state.storage.get<RoomServiceState>(SNAPSHOT_KEY);
       if (stored) this.snapshot = { ...createMeetRoomSnapshot(), ...stored };
-      const httpRequests = await this.state.storage.get<number>(
-        'usage-http-requests'
-      );
-      if (httpRequests !== undefined) {
+      const counter = await this.state.storage.get<
+        number | { requests: number; writes: number }
+      >('usage-http-requests');
+      if (counter !== undefined) {
         this.snapshot.usage ??= createRoomUsage();
         this.snapshot.usage.httpRequests = Math.max(
           this.snapshot.usage.httpRequests,
-          httpRequests
+          typeof counter === 'number' ? counter : counter.requests
         );
+        if (typeof counter !== 'number')
+          this.snapshot.usage.httpCounterWrites = counter.writes;
+      }
+      let migrated = false;
+      for (const request of Object.values(this.snapshot.aiRequests ?? {})) {
+        if (request.status === 'pending' && request.startedAt === undefined) {
+          request.startedAt = Date.now();
+          migrated = true;
+        }
+      }
+      if (migrated) {
+        this.snapshot.usage ??= createRoomUsage();
+        this.snapshot.usage.storageWrites++;
+        await this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
       }
     });
     return this.loading;
@@ -112,6 +125,10 @@ export class MeetRoomDurableObject implements DurableObject {
         const token = this.tokenOf(socket);
         if (
           message.type !== 'room.ended' &&
+          !(
+            message.type === 'participant.removed' &&
+            message.userId === token?.userId
+          ) &&
           (!token || !this.snapshot.presence[token.userId])
         )
           continue;
@@ -183,11 +200,13 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.load();
     this.snapshot.usage ??= createRoomUsage();
     this.snapshot.usage.httpRequests++;
+    this.snapshot.usage.httpCounterWrites =
+      (this.snapshot.usage.httpCounterWrites ?? 0) + 1;
     this.state.waitUntil(
-      this.state.storage.put(
-        'usage-http-requests',
-        this.snapshot.usage.httpRequests
-      )
+      this.state.storage.put('usage-http-requests', {
+        requests: this.snapshot.usage.httpRequests,
+        writes: this.snapshot.usage.httpCounterWrites,
+      })
     );
 
     const rawToken = request.headers.get('x-meet-token');

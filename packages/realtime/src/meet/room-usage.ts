@@ -9,6 +9,7 @@ export interface RoomUsage {
   webSocketMessages: number;
   httpRequests: number;
   storageWrites: number;
+  httpCounterWrites?: number;
   limitedReports?: number;
   reportedDevices?: Record<string, true>;
   deviceBytes?: Record<string, number>;
@@ -58,7 +59,7 @@ export function applyUsageReport(
   }
   // Once bounded history rolls over, baseline unfamiliar streams instead of
   // replaying their historical bytes. Subsequent increments continue counting.
-  const baseline = !prior && (full || (usage.limitedReports ?? 0) > 0);
+  const baseline = full;
   const delta = baseline ? 0 : bytes - previous;
   reports[key] = { bytes, deviceId, updatedAt: now };
   return {
@@ -85,7 +86,7 @@ export function summarizeRoomUsage(usage: RoomUsage | undefined) {
     limitedReports: usage.limitedReports ?? 0,
     webSocketMessages: usage.webSocketMessages,
     httpRequests: usage.httpRequests,
-    storageWrites: usage.storageWrites,
+    storageWrites: usage.storageWrites + (usage.httpCounterWrites ?? 0),
     sfuEgressUsd: (usage.receivedBytes / 1_000_000_000) * 0.05,
     durableRequestsUsd:
       ((usage.httpRequests + usage.webSocketMessages / 20) / 1_000_000) * 0.15,

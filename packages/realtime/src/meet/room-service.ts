@@ -215,7 +215,8 @@ export function roomService(
         (request) =>
           request.userId === accountId &&
           request.status === 'pending' &&
-          Date.now() - (request.startedAt ?? 0) < 120000
+          (request.startedAt === undefined ||
+            Date.now() - request.startedAt < 120000)
       )
     )
       return fail('Assistant request already in progress', 409);

@@ -162,3 +162,12 @@ it('permits new questions after an abandoned request while retaining late cost a
   expect(late.status).toBeUndefined();
   expect(late.state.aiRequests?.abandoned?.costUsd).toBe(0.001);
 });
+
+it('keeps legacy pending requests active until Worker migration timestamps them', () => {
+  const state = initial();
+  state.aiRequests = { legacy: { userId: account, status: 'pending' } };
+  expect(
+    roomService(state, token, { action: 'ai.reserve', messageId: 'message' })
+      .status
+  ).toBe(409);
+});
