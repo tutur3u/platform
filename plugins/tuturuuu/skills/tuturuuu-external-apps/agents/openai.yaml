@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu External Apps"
   short_description: "Build branded apps connected to Tuturuuu"
-  default_prompt: "Build this external app with Tuturuuu auth, direct uploads, and content delivery."
+  default_prompt: "Add Tuturuuu auth, workspace invitations, members, Drive, uploads, and content to this external app."
