@@ -72,8 +72,10 @@ export class MeetRoomDurableObject implements DurableObject {
           this.snapshot.usage.httpRequests,
           typeof counter === 'number' ? counter : counter.requests
         );
-        if (typeof counter !== 'number')
-          this.snapshot.usage.httpCounterWrites = counter.writes;
+        this.snapshot.usage.httpCounterWrites = Math.max(
+          this.snapshot.usage.httpCounterWrites ?? 0,
+          typeof counter === 'number' ? counter : counter.writes
+        );
       }
       let migrated = false;
       for (const request of Object.values(this.snapshot.aiRequests ?? {})) {
@@ -121,15 +123,16 @@ export class MeetRoomDurableObject implements DurableObject {
   private broadcast(messages: MeetRealtimeServerMessage[]) {
     if (!messages.length) return;
     for (const socket of this.sockets()) {
+      const token = this.tokenOf(socket);
+      const admitted = token && this.snapshot.presence[token.userId];
       for (const message of messages) {
-        const token = this.tokenOf(socket);
         if (
           message.type !== 'room.ended' &&
           !(
             message.type === 'participant.removed' &&
             message.userId === token?.userId
           ) &&
-          (!token || !this.snapshot.presence[token.userId])
+          !admitted
         )
           continue;
         this.sendTo(socket, message);
@@ -222,11 +225,8 @@ export class MeetRoomDurableObject implements DurableObject {
     }
 
     if (new URL(request.url).pathname === '/room-service') {
-      const result = roomService(
-        this.snapshot,
-        token,
-        await request.json().catch(() => null)
-      );
+      const body = await request.json().catch(() => null);
+      const result = roomService(this.snapshot, token, body);
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;
       if (!result.status) {
@@ -306,7 +306,11 @@ export class MeetRoomDurableObject implements DurableObject {
     const outcome = admitOrHold(this.snapshot, token, new Date().toISOString());
     this.snapshot = outcome.state;
     if (this.snapshot.usage && this.snapshot.presence[token.userId])
-      this.snapshot.usage.devices[token.userId] = true;
+      if (Object.keys(this.snapshot.usage.devices).length < 4096)
+        this.snapshot.usage.devices[token.userId] = true;
+      else if (!this.snapshot.usage.devices[token.userId])
+        this.snapshot.usage.limitedReports =
+          (this.snapshot.usage.limitedReports ?? 0) + 1;
     this.persist();
 
     for (const message of outcome.reply) this.sendTo(server, message);

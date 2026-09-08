@@ -98,7 +98,7 @@ export const meetRoomLimitsSchema = z
   .default(DEFAULT_ROOM_LIMITS);
 
 export const meetRealtimeTokenPayloadSchema = z.object({
-  accountId: z.string().uuid().optional(),
+  accountId: z.uuid().optional(),
   admission: meetRealtimeAdmissionSchema.default('open'),
   avatarUrl: z
     .url()
@@ -122,7 +122,7 @@ export type MeetRealtimeTokenPayload = z.infer<
 >;
 
 export const meetRealtimePresenceSchema = z.object({
-  accountId: z.string().uuid().optional(),
+  accountId: z.uuid().optional(),
   avatarUrl: z
     .url()
     .max(2048)
@@ -139,7 +139,7 @@ export const meetRealtimePresenceSchema = z.object({
 export type MeetRealtimePresence = z.infer<typeof meetRealtimePresenceSchema>;
 
 export const meetRealtimeWaitingParticipantSchema = z.object({
-  accountId: z.string().uuid().optional(),
+  accountId: z.uuid().optional(),
   avatarUrl: z
     .url()
     .max(2048)

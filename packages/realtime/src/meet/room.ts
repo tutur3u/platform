@@ -11,6 +11,7 @@ import {
   type RoomRecording,
   recordingMessage,
 } from './room-recording';
+import type { RoomAttachment } from './room-service';
 import { applySfuCommand } from './room-sfu';
 import {
   applyUsageReport,
@@ -46,6 +47,7 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  attachments?: Record<string, RoomAttachment>;
   usage?: RoomUsage;
   approved?: Record<string, MeetApprovedParticipant>;
   settings?: MeetRoomSettings;
@@ -386,7 +388,7 @@ export function applyMeetRoomCommand(
       return outcome({
         ...state,
         usage: applyUsageReport(
-          state.usage ?? createRoomUsage(),
+          state.usage ?? createRoomUsage(now),
           userId,
           message.reportId,
           message.bytesReceived,
@@ -397,6 +399,17 @@ export function applyMeetRoomCommand(
     case 'chat.message': {
       if (!hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.chatWrite)) {
         return denied(state, 'permission_denied', message.requestId);
+      }
+      const attachments = { ...state.attachments };
+      for (const id of message.attachmentIds ?? []) {
+        const file = attachments[id];
+        if (
+          !file ||
+          file.discarded ||
+          file.ownerAccountId !== (token.accountId ?? userId)
+        )
+          return denied(state, 'attachment_unavailable', message.requestId);
+        attachments[id] = { ...file, published: true };
       }
       const entry: Extract<
         MeetRealtimeServerMessage,
@@ -414,7 +427,11 @@ export function applyMeetRoomCommand(
         attachmentIds: message.attachmentIds,
       };
       return outcome(
-        { ...state, chat: [...(state.chat ?? []), entry].slice(-500) },
+        {
+          ...state,
+          attachments,
+          chat: [...(state.chat ?? []), entry].slice(-500),
+        },
         {
           direct: Object.keys(state.presence)
             .filter((id) => id !== userId)
@@ -508,7 +525,16 @@ export function applyMeetRoomCommand(
         usage: state.usage
           ? {
               ...state.usage,
-              devices: { ...state.usage.devices, [message.userId]: true },
+              devices:
+                Object.keys(state.usage.devices).length < 4096
+                  ? { ...state.usage.devices, [message.userId]: true }
+                  : state.usage.devices,
+              limitedReports:
+                (state.usage.limitedReports ?? 0) +
+                (Object.keys(state.usage.devices).length >= 4096 &&
+                !state.usage.devices[message.userId]
+                  ? 1
+                  : 0),
             }
           : undefined,
         approved: {

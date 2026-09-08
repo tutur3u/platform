@@ -76,8 +76,15 @@ it('bounds implausible reports and keeps counting after bounded history rotates'
       .receivedBytes
   ).toBe(0);
   for (let i = 0; i < 513; i++)
-    usage = applyUsageReport(usage, 'a', String(i), 10, now);
+    usage = applyUsageReport(
+      usage,
+      'a',
+      String(i),
+      10,
+      new Date(Date.parse(now) + i).toISOString()
+    );
   expect(Object.keys(usage.reports)).toHaveLength(512);
+  expect(usage.reports['a:0']).toBeUndefined();
   const total = usage.receivedBytes;
   usage = applyUsageReport(usage, 'a', '512', 30, now);
   expect(usage.receivedBytes).toBe(total + 20);
@@ -99,4 +106,21 @@ it('does not let a rejected report baseline another device’s initial bytes', (
     applyUsageReport(rejected, 'good-device', 'new-report', 1000, now)
       .receivedBytes
   ).toBe(1000);
+});
+
+it('bounds distinct reporting devices without resetting their allowances', () => {
+  const usage = createRoomUsage();
+  usage.deviceBytes = Object.fromEntries(
+    Array.from({ length: 4096 }, (_, i) => [String(i), 10])
+  );
+  const next = applyUsageReport(
+    usage,
+    'new-device',
+    'report',
+    10,
+    new Date().toISOString()
+  );
+  expect(Object.keys(next.deviceBytes!)).toHaveLength(4096);
+  expect(next.limitedReports).toBe(1);
+  expect(next.receivedBytes).toBe(0);
 });

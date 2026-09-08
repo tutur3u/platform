@@ -14,9 +14,9 @@ export interface RoomUsage {
   reportedDevices?: Record<string, true>;
   deviceBytes?: Record<string, number>;
 }
-export function createRoomUsage(): RoomUsage {
+export function createRoomUsage(now = new Date().toISOString()): RoomUsage {
   return {
-    startedAt: new Date().toISOString(),
+    startedAt: now,
     receivedBytes: 0,
     reports: {},
     devices: {},
@@ -43,6 +43,8 @@ export function applyUsageReport(
   const deviceTotal = usage.deviceBytes?.[deviceId] ?? 0;
   const allowance = Math.max(1, (time - started) / 1000) * 125_000_000;
   if (
+    (!(deviceId in (usage.deviceBytes ?? {})) &&
+      Object.keys(usage.deviceBytes ?? {}).length >= 4096) ||
     !Number.isSafeInteger(bytes) ||
     bytes < 0 ||
     !Number.isFinite(allowance) ||

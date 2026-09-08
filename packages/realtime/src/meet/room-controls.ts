@@ -121,6 +121,20 @@ export function applyRoomControl(
       {
         ...failActiveRecording(state, now),
         ended: true,
+        approved: {
+          ...Object.fromEntries(
+            Object.values(state.presence).map((person) => [
+              person.accountId ?? person.userId,
+              {
+                userId: person.accountId ?? person.userId,
+                displayName: person.displayName,
+                avatarUrl: person.avatarUrl,
+                approvedAt: now,
+              },
+            ])
+          ),
+          ...state.approved,
+        },
         presence: {},
         waiting: {},
         tracks: {},

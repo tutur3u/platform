@@ -218,3 +218,16 @@ it('requires separate opt-in for notes after ending a meeting', () => {
     )
   ).toBe(false);
 });
+
+it('retains open-admission account access to shared post-meeting notes', () => {
+  const visitor = { ...guest, admission: 'open' as const, accountId: guestId };
+  const state = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), host, now).state,
+    visitor,
+    now
+  ).state;
+  state.settings = { shareNotes: false, shareNotesAfterMeeting: true };
+  const ended = run(state, { type: 'room.end' }).state;
+  expect(Object.keys(ended.presence)).toHaveLength(0);
+  expect(canReadRoomNotes(ended, { ...visitor, userId: hostId })).toBe(true);
+});
