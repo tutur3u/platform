@@ -139,3 +139,26 @@ it('shares recording metadata after a call only when explicitly enabled', () => 
   expect(JSON.stringify(result.body)).not.toContain('private-storage-path');
   expect(roomService(state, token, { action: 'read' }).status).toBe(403);
 });
+
+it('permits new questions after an abandoned request while retaining late cost accounting', () => {
+  const state = initial();
+  state.aiRequests = {
+    abandoned: {
+      userId: account,
+      status: 'pending',
+      startedAt: Date.now() - 180000,
+    },
+  };
+  const next = roomService(state, token, {
+    action: 'ai.reserve',
+    messageId: 'message',
+  });
+  expect(next.status).toBeUndefined();
+  const late = roomService(next.state, token, {
+    action: 'ai.finish',
+    messageId: 'abandoned',
+    costUsd: 0.001,
+  });
+  expect(late.status).toBeUndefined();
+  expect(late.state.aiRequests?.abandoned?.costUsd).toBe(0.001);
+});
