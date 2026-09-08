@@ -45,9 +45,38 @@ function css(color: RGB) {
 }
 
 /** Runs in the trusted parent, never by enabling scripts inside the email. */
-export function applyMailPreviewContrast(document: Document) {
+export function applyMailPreviewContrast(
+  document: Document,
+  surface?: HTMLElement | null
+) {
   const view = document.defaultView;
   if (!view) return;
+  let surfaceBackground = darkBackground;
+  if (surface) {
+    const color =
+      surface.ownerDocument.defaultView?.getComputedStyle(
+        surface
+      ).backgroundColor;
+    const canvas = surface.ownerDocument.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d');
+    if (context && color) {
+      context.fillStyle = color;
+      context.fillRect(0, 0, 1, 1);
+      const [r, g, b, alpha] = context.getImageData(0, 0, 1, 1).data;
+      if (alpha) surfaceBackground = [r!, g!, b!];
+    }
+  }
+  document.documentElement.style.setProperty(
+    'background-color',
+    css(surfaceBackground),
+    'important'
+  );
+  document.body.style.setProperty(
+    'background-color',
+    css(surfaceBackground),
+    'important'
+  );
   const backgrounds = new WeakMap<Element, RGB>();
   for (const element of [
     document.body,
@@ -55,7 +84,7 @@ export function applyMailPreviewContrast(document: Document) {
   ]) {
     const style = view.getComputedStyle(element);
     const parentBackground =
-      backgrounds.get(element.parentElement!) ?? darkBackground;
+      backgrounds.get(element.parentElement!) ?? surfaceBackground;
     const original = parseColor(style.backgroundColor);
     let background = parentBackground;
     if (original && original.alpha > 0) {
@@ -63,10 +92,10 @@ export function applyMailPreviewContrast(document: Document) {
       // Convert light neutral paper surfaces, preserving colored brand panels.
       if (
         Math.max(...background) - Math.min(...background) < 24 &&
-        luminance(background) > 0.5 &&
+        (luminance(background) > 0.5 || luminance(background) < 0.05) &&
         element.tagName !== 'IMG'
       ) {
-        background = darkBackground;
+        background = surfaceBackground;
         element.style.setProperty(
           'background-color',
           css(background),

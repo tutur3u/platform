@@ -19,6 +19,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import type { MailFolder } from './mail-folders';
+import {
+  getMailArchiveBehavior,
+  nextMailThreadId,
+} from './mail-reading-preferences';
 
 type ThreadAction = Parameters<typeof updateMailThreadState>[3]['action'];
 type BulkAction = 'archive' | 'mark_read' | 'trash';
@@ -300,13 +304,31 @@ export function useMailThreadActions({
     onMutate: async ({ action, targetThreadId }) => {
       setSyncState('syncing');
       const context = await snapshot(new Set([targetThreadId]), action);
-      if (action === 'archive' || action === 'trash') closeThread();
-      return context;
+      let navigatedTo: string | null | undefined;
+      if (
+        selectedThreadIdRef.current === targetThreadId &&
+        (action === 'archive' || action === 'trash')
+      ) {
+        navigatedTo =
+          action === 'archive' &&
+          folder === 'inbox' &&
+          getMailArchiveBehavior() === 'next'
+            ? nextMailThreadId(
+                threads,
+                targetThreadId,
+                new Set([targetThreadId])
+              )
+            : null;
+        if (navigatedTo) reopenThread(navigatedTo);
+        else closeThread();
+      }
+      return { navigatedTo, snapshot: context };
     },
     onError: (_error, variables, context) => {
-      restore(context);
+      restore(context?.snapshot);
       if (
-        selectedThreadIdRef.current === null &&
+        context?.navigatedTo !== undefined &&
+        selectedThreadIdRef.current === context.navigatedTo &&
         (variables.action === 'archive' || variables.action === 'trash')
       ) {
         reopenThread(variables.targetThreadId);
@@ -328,12 +350,35 @@ export function useMailThreadActions({
       setSyncState('syncing');
       const ids = new Set(selectedThreads);
       const optimistic = await snapshot(ids, action);
+      const previousThreadId = selectedThreadIdRef.current;
+      let navigatedTo: string | null | undefined;
+      if (
+        previousThreadId &&
+        ids.has(previousThreadId) &&
+        (action === 'archive' || action === 'trash')
+      ) {
+        navigatedTo =
+          action === 'archive' &&
+          folder === 'inbox' &&
+          getMailArchiveBehavior() === 'next'
+            ? nextMailThreadId(threads, previousThreadId, ids)
+            : null;
+        if (navigatedTo) reopenThread(navigatedTo);
+        else closeThread();
+      }
       setSelectedThreads(new Set());
-      return { ids, optimistic };
+      return { ids, optimistic, previousThreadId, navigatedTo };
     },
     onError: (_error, _action, context) => {
       restore(context?.optimistic);
       if (context?.ids) setSelectedThreads(context.ids);
+      if (
+        context?.previousThreadId &&
+        context.navigatedTo !== undefined &&
+        selectedThreadIdRef.current === context.navigatedTo
+      ) {
+        reopenThread(context.previousThreadId);
+      }
       setSyncState('failed');
       toast.error(t('update_failed'));
     },

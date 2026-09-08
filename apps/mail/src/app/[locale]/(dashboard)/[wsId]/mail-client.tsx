@@ -214,7 +214,11 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       closeThread: () => void setThreadId(null),
       folder,
       invalidateMailbox,
-      reopenThread: (nextThreadId) => void setThreadId(nextThreadId),
+      reopenThread: (nextThreadId): void => {
+        const nextThread = threads.find((thread) => thread.id === nextThreadId);
+        if (nextThread) openThread(nextThread);
+        else void setThreadId(nextThreadId);
+      },
       selectedThreads,
       setSelectedThreads,
       threadId,
@@ -246,7 +250,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     setComposerVisible(true);
     void setComposeParam('1');
   };
-  const openThread = (thread: MailThreadSummary) => {
+  const openThread = (thread: MailThreadSummary): void => {
     void setThreadId(thread.id);
     if (!activeMailboxId || thread.unreadCount <= 0) return;
     mutateThread('mark_read', thread.id);
@@ -490,6 +494,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           <div className="space-y-1 p-2">
             {threads.map((thread) => (
               <MailThreadRow
+                folder={folder}
                 active={thread.id === threadId}
                 key={thread.id}
                 onClick={() => openThread(thread)}
@@ -540,6 +545,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const detailPanel = (
     <section className="flex h-full min-h-0 min-w-0 max-w-full bg-muted/20">
       <ThreadDetail
+        folder={folder}
         actionPending={stateMutation.isPending || deleteDraftMutation.isPending}
         isDraft={folder === 'drafts'}
         labelActions={

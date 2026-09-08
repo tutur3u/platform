@@ -2,10 +2,12 @@
 
 import type { MailAttachment } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { buildMailMessagePreviewDocument } from './mail-message-preview-utils';
 import { useMailPreviewAppearance } from './mail-preview-appearance';
 import { applyMailPreviewContrast } from './mail-preview-contrast';
+
+const subscribeHydration = () => () => {};
 
 export function MailMessagePreview({
   content,
@@ -23,6 +25,12 @@ export function MailMessagePreview({
   viewLabel: string;
 }) {
   const [mode, setSelectedMode] = useMailPreviewAppearance();
+  const hydrated = useSyncExternalStore(
+    subscribeHydration,
+    () => true,
+    () => false
+  );
+  const [readyDocument, setReadyDocument] = useState<string | null>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const observer = useRef<ResizeObserver | null>(null);
   const [height, setHeight] = useState<string | number>(
@@ -41,6 +49,11 @@ export function MailMessagePreview({
         attachment.protectedUrl!,
       ])
   );
+  const previewDocument = buildMailMessagePreviewDocument(
+    content,
+    mode,
+    inlineImages
+  );
   useEffect(() => () => observer.current?.disconnect(), []);
   function resize() {
     const body = frame.current?.contentDocument?.body;
@@ -55,8 +68,14 @@ export function MailMessagePreview({
   function observeContent() {
     observer.current?.disconnect();
     const body = frame.current?.contentDocument?.body;
-    if (!body) return;
-    if (mode === 'dark') applyMailPreviewContrast(body.ownerDocument);
+    if (!hydrated || !body?.hasAttribute('data-mail-preview')) return;
+    if (mode === 'dark') {
+      applyMailPreviewContrast(
+        body.ownerDocument,
+        frame.current?.parentElement
+      );
+    }
+    setReadyDocument(previewDocument);
     observer.current = new ResizeObserver(resize);
     observer.current.observe(body);
     resize();
@@ -88,13 +107,20 @@ export function MailMessagePreview({
         </Button>
       </fieldset>
       <iframe
+        key={previewDocument}
         className="block w-full max-w-full border-0 bg-background"
         ref={frame}
         onLoad={observeContent}
-        style={{ height }}
+        style={{
+          height,
+          visibility:
+            hydrated && readyDocument === previewDocument
+              ? 'visible'
+              : 'hidden',
+        }}
         referrerPolicy="no-referrer"
         sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-        srcDoc={buildMailMessagePreviewDocument(content, mode, inlineImages)}
+        srcDoc={hydrated ? previewDocument : undefined}
         title={title}
       />
     </div>

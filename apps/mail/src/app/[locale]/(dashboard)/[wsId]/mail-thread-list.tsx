@@ -8,6 +8,9 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
+import type { MailFolder } from './mail-folders';
+import { visibleMailLabels } from './mail-visible-labels';
+
 function formatDate(value: string | null, locale: string) {
   if (!value) return '';
   const date = new Date(value);
@@ -22,6 +25,7 @@ function formatDate(value: string | null, locale: string) {
 
 export function MailThreadRow({
   active,
+  folder,
   onClick,
   onPrefetch,
   onSelect,
@@ -29,6 +33,7 @@ export function MailThreadRow({
   thread,
 }: {
   active: boolean;
+  folder?: MailFolder;
   onClick: () => void;
   onPrefetch: () => void;
   onSelect: (selected: boolean) => void;
@@ -38,6 +43,7 @@ export function MailThreadRow({
   const t = useTranslations('mail');
   const locale = useLocale();
   const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const labels = visibleMailLabels(thread.labels, folder);
   const participant = thread.participants[0];
   const participantLabel =
     participant?.displayName || participant?.address || t('unknown_sender');
@@ -114,9 +120,9 @@ export function MailThreadRow({
         <p className="line-clamp-2 break-words text-[0.8125rem] text-muted-foreground leading-5">
           {thread.latestSnippet}
         </p>
-        {thread.labels.length > 0 ? (
+        {labels.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-1">
-            {thread.labels.slice(0, 3).map((label) => (
+            {labels.slice(0, 3).map((label) => (
               <Badge
                 className="gap-1.5 text-[0.68rem]"
                 key={label.id}

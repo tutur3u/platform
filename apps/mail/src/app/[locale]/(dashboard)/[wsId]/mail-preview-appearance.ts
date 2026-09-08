@@ -5,7 +5,7 @@ import type { MailMessagePreviewMode } from './mail-message-preview-utils';
 
 const key = 'tuturuuu-mail-message-appearance';
 const listeners = new Set<() => void>();
-let fallback: MailMessagePreviewMode = 'original';
+let fallback: MailMessagePreviewMode = 'dark';
 
 export function getMailPreviewAppearance(): MailMessagePreviewMode {
   try {
@@ -42,7 +42,7 @@ export function useMailPreviewAppearance() {
   const mode = useSyncExternalStore(
     subscribe,
     getMailPreviewAppearance,
-    () => 'original' as const
+    () => 'dark' as const
   );
   return [mode, setMailPreviewAppearance] as const;
 }
