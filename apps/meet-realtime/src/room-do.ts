@@ -64,6 +64,16 @@ export class MeetRoomDurableObject implements DurableObject {
       const stored =
         await this.state.storage.get<MeetRoomSnapshot>(SNAPSHOT_KEY);
       if (stored) this.snapshot = { ...createMeetRoomSnapshot(), ...stored };
+      const httpRequests = await this.state.storage.get<number>(
+        'usage-http-requests'
+      );
+      if (httpRequests !== undefined) {
+        this.snapshot.usage ??= createRoomUsage();
+        this.snapshot.usage.httpRequests = Math.max(
+          this.snapshot.usage.httpRequests,
+          httpRequests
+        );
+      }
     });
     return this.loading;
   }
@@ -173,6 +183,12 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.load();
     this.snapshot.usage ??= createRoomUsage();
     this.snapshot.usage.httpRequests++;
+    this.state.waitUntil(
+      this.state.storage.put(
+        'usage-http-requests',
+        this.snapshot.usage.httpRequests
+      )
+    );
 
     const rawToken = request.headers.get('x-meet-token');
     if (!rawToken) {

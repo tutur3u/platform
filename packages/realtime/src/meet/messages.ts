@@ -22,7 +22,7 @@ import {
   type MeetReaction,
   type MeetRoomSettings,
   meetReactionSchema,
-  meetRoomSettingsSchema,
+  meetRoomSettingsPatchSchema,
 } from './room-options';
 
 const requestId = z.string().trim().min(1).max(120).optional();
@@ -32,12 +32,12 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('usage.report'),
     reportId: z.uuid(),
-    bytesReceived: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+    bytesReceived: z.number().int().min(0).max(1_000_000_000_000),
   }),
   z.object({ type: z.literal('reaction.send'), reaction: meetReactionSchema }),
   z.object({
     type: z.literal('room.settings.update'),
-    settings: meetRoomSettingsSchema,
+    settings: meetRoomSettingsPatchSchema,
     requestId,
   }),
   z.object({

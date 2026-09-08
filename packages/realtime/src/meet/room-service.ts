@@ -12,7 +12,7 @@ const attachment = z.object({
   name: z.string().min(1).max(255),
   size: z.number().int().positive().max(100_000_000),
   contentType: z.string().max(255),
-  path: z.string().max(1024),
+  path: z.string().trim().min(1).max(1024),
   storageWsId: z.uuid(),
 });
 export type RoomAttachment = z.infer<typeof attachment>;
@@ -41,7 +41,7 @@ const command = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('recording.save'),
     sessionId: z.uuid(),
-    path: z.string().max(1024),
+    path: z.string().trim().min(1).max(1024),
     storageWsId: z.uuid(),
   }),
   z.object({ action: z.literal('recording.read'), sessionId: z.uuid() }),

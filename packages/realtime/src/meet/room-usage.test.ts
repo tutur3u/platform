@@ -8,11 +8,41 @@ import {
 describe('room cost estimates', () => {
   it('counts cumulative reports once and ignores late smaller values', () => {
     let usage = createRoomUsage();
-    usage = applyUsageReport(usage, 'a', 'report', 1000, 'now');
-    usage = applyUsageReport(usage, 'a', 'report', 1000, 'now');
-    usage = applyUsageReport(usage, 'a', 'report', 900, 'now');
-    usage = applyUsageReport(usage, 'a', 'report', 1200, 'now');
-    usage = applyUsageReport(usage, 'b', 'report', 500, 'now');
+    usage = applyUsageReport(
+      usage,
+      'a',
+      'report',
+      1000,
+      new Date().toISOString()
+    );
+    usage = applyUsageReport(
+      usage,
+      'a',
+      'report',
+      1000,
+      new Date().toISOString()
+    );
+    usage = applyUsageReport(
+      usage,
+      'a',
+      'report',
+      900,
+      new Date().toISOString()
+    );
+    usage = applyUsageReport(
+      usage,
+      'a',
+      'report',
+      1200,
+      new Date().toISOString()
+    );
+    usage = applyUsageReport(
+      usage,
+      'b',
+      'report',
+      500,
+      new Date().toISOString()
+    );
     expect(usage.receivedBytes).toBe(1700);
   });
   it('never presents missing measurements as complete billing', () => {
@@ -27,7 +57,31 @@ describe('room cost estimates', () => {
     expect(summary.complete).toBe(false);
   });
   it('retains a zero-byte report for measurement coverage', () => {
-    const usage = applyUsageReport(createRoomUsage(), 'a', 'report', 0, 'now');
+    const usage = applyUsageReport(
+      createRoomUsage(),
+      'a',
+      'report',
+      0,
+      new Date().toISOString()
+    );
     expect(summarizeRoomUsage(usage)?.reportingDevices).toBe(1);
   });
+});
+
+it('bounds implausible reports and keeps counting after bounded history rotates', () => {
+  let usage = createRoomUsage();
+  const now = new Date().toISOString();
+  expect(
+    applyUsageReport(usage, 'a', 'x', Number.MAX_SAFE_INTEGER, now)
+      .receivedBytes
+  ).toBe(0);
+  for (let i = 0; i < 513; i++)
+    usage = applyUsageReport(usage, 'a', String(i), 10, now);
+  expect(Object.keys(usage.reports)).toHaveLength(512);
+  const total = usage.receivedBytes;
+  usage = applyUsageReport(usage, 'a', '512', 30, now);
+  expect(usage.receivedBytes).toBe(total + 20);
+  const replay = applyUsageReport(usage, 'a', '0', 10, now);
+  expect(replay.receivedBytes).toBe(usage.receivedBytes);
+  expect(summarizeRoomUsage(replay)?.limitedReports).toBeGreaterThan(0);
 });

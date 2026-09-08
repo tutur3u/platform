@@ -7,6 +7,7 @@ import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { denied, outcome } from './room-outcome';
 import {
   applyRecording,
+  failActiveRecording,
   type RoomRecording,
   recordingMessage,
 } from './room-recording';
@@ -278,11 +279,9 @@ export function releaseParticipant(
     Object.entries(state.tracks).filter(([, track]) => track.userId !== userId)
   );
   const next: MeetRoomSnapshot = {
-    ...state,
-    recording:
-      state.recording.ownerDeviceId === userId
-        ? { state: 'idle', sessionId: null }
-        : state.recording,
+    ...(state.recording.ownerDeviceId === userId
+      ? failActiveRecording(state)
+      : state),
     lastReactionAt,
     retiredTracks: Object.fromEntries(
       Object.entries(state.retiredTracks ?? {}).filter(
@@ -417,7 +416,9 @@ export function applyMeetRoomCommand(
       return outcome(
         { ...state, chat: [...(state.chat ?? []), entry].slice(-500) },
         {
-          broadcast: [entry],
+          direct: Object.keys(state.presence)
+            .filter((id) => id !== userId)
+            .map((userId) => ({ userId, message: entry })),
           reply: [{ ...entry, requestId: message.requestId }],
         }
       );
@@ -603,6 +604,10 @@ export function applyMeetRoomCommand(
 
       const approved = { ...state.approved };
       delete approved[message.userId];
+      const accountId =
+        state.presence[message.userId]?.accountId ??
+        state.waiting[message.userId]?.accountId;
+      if (accountId) delete approved[accountId];
       const released = releaseParticipant(
         { ...state, approved },
         message.userId,

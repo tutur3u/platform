@@ -579,7 +579,7 @@ describe('meet room lifecycle', () => {
 });
 
 it('keeps device presence separate while remembering admission by account', () => {
-  const accountId = GUEST_ID;
+  const accountId = '6e2d4c91-35a8-4c55-8f1e-2a7b9d6c4e10';
   const firstDevice = token({
     accountId,
     userId: GUEST_ID,

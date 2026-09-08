@@ -42,7 +42,13 @@ export function applyRecording(
   if (!controls && !(owns && ['idle', 'error'].includes(message.state)))
     return denied(state, 'permission_denied', message.requestId);
   let next = state;
-  if (message.state === 'starting') {
+  // Older clients claimed a recording directly; keep that transition atomic too.
+  if (
+    message.state === 'starting' ||
+    (message.state === 'recording' &&
+      !token.accountId &&
+      ['idle', 'error'].includes(state.recording.state))
+  ) {
     if (!['idle', 'error'].includes(state.recording.state))
       return denied(state, 'recording_already_active', message.requestId);
     if (!message.recordingSessionId)
@@ -57,7 +63,7 @@ export function applyRecording(
       ...state,
       recording: {
         sessionId: message.recordingSessionId,
-        state: 'starting',
+        state: message.state,
         ownerDeviceId: token.userId,
       },
       recordings: [
@@ -74,14 +80,26 @@ export function applyRecording(
   } else if (message.state === 'stopping') {
     if (!state.recording.sessionId)
       return denied(state, 'recording_not_active', message.requestId);
+    if (
+      message.recordingSessionId !== undefined &&
+      message.recordingSessionId !== state.recording.sessionId
+    )
+      return denied(state, 'recording_not_owned', message.requestId);
     next = { ...state, recording: { ...state.recording, state: 'stopping' } };
   } else {
     if (message.state === 'recording' && state.recording.state !== 'starting')
       return denied(state, 'recording_invalid_transition', message.requestId);
-    if (!owns || message.recordingSessionId !== state.recording.sessionId)
+    if (
+      !owns ||
+      (message.recordingSessionId !== undefined &&
+        message.recordingSessionId !== state.recording.sessionId) ||
+      (message.state === 'recording' && !message.recordingSessionId)
+    )
       return denied(state, 'recording_not_owned', message.requestId);
     next = {
-      ...state,
+      ...(message.state === 'error' || message.state === 'idle'
+        ? failActiveRecording(state, now)
+        : state),
       recording:
         message.state === 'idle' || message.state === 'error'
           ? { sessionId: null, state: message.state }
@@ -92,4 +110,20 @@ export function applyRecording(
     reply: [recordingMessage(next, message.requestId)],
     broadcast: [recordingMessage(next)],
   });
+}
+
+export function failActiveRecording(
+  state: MeetRoomSnapshot,
+  now = new Date().toISOString()
+): MeetRoomSnapshot {
+  return {
+    ...state,
+    recording: { sessionId: null, state: 'idle' },
+    recordings: state.recordings?.map((record) =>
+      record.sessionId === state.recording.sessionId &&
+      record.status === 'recording'
+        ? { ...record, status: 'failed', endedAt: now }
+        : record
+    ),
+  };
 }

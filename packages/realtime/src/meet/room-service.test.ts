@@ -71,12 +71,18 @@ describe('trusted room services', () => {
       }).status
     ).toBe(409);
     const other = { ...token, accountId: 'other', userId: 'other' };
+    const otherState = initial();
+    otherState.presence[other.userId] = {
+      ...otherState.presence[token.userId]!,
+      userId: other.userId,
+      accountId: other.accountId,
+    };
     expect(
-      roomService(initial(), other, {
+      roomService(otherState, other, {
         action: 'ai.reserve',
         messageId: 'message',
       }).status
-    ).toBe(403);
+    ).toBe(404);
   });
   it('preserves incurred AI costs when the meeting ends during generation', () => {
     const reserved = roomService(initial(), token, {

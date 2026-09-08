@@ -57,7 +57,14 @@ export function broadcast(
   eachClient(
     roomId,
     (client) => {
-      for (const message of messages) send(client, message);
+      for (const message of messages) {
+        if (
+          message.type !== 'room.ended' &&
+          !getRoom(roomId).snapshot.presence[client.data.token.userId]
+        )
+          continue;
+        send(client, message);
+      }
     },
     except
   );
