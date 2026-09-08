@@ -306,7 +306,6 @@ try {
         'host can enable post-call notes after socket closes',
         (
           await policy('host', {
-            shareNotes: true,
             shareNotesAfterMeeting: true,
           })
         ).ok
@@ -315,7 +314,7 @@ try {
         'approved guest can read opted-in post-call notes',
         (await (await policy('speaker')).json()).canReadNotes === true
       );
-      await policy('host', { shareNotes: true, shareNotesAfterMeeting: false });
+      await policy('host', { shareNotesAfterMeeting: false });
       check(
         'post-call sharing revocation takes effect',
         (await (await policy('speaker')).json()).canReadNotes === false

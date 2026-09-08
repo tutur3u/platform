@@ -167,3 +167,16 @@ it('renders a closed room without starting a call or requesting a profile name',
   expect(result.props).toMatchObject({ canReadNotes: false, canManage: false });
   expect(mocks.session).not.toHaveBeenCalled();
 });
+
+it('opens an authorized ended-room notes deep link without joining', async () => {
+  mocks.policy.mockResolvedValue({ ended: true, canReadNotes: true });
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'en' }),
+    searchParams: Promise.resolve({ notes: '1' }),
+  });
+  expect(result.props).toMatchObject({
+    canReadNotes: true,
+    initialShowNotes: true,
+  });
+  expect(mocks.session).not.toHaveBeenCalled();
+});

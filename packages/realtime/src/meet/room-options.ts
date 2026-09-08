@@ -9,6 +9,10 @@ export const meetReactionSchema = z.enum([
   'celebrate',
 ]);
 export type MeetReaction = z.infer<typeof meetReactionSchema>;
+export const meetRoomSettingsPatchSchema = z.object({
+  shareNotes: z.boolean().optional(),
+  shareNotesAfterMeeting: z.boolean().optional(),
+});
 export const meetRoomSettingsSchema = z.object({
   shareNotes: z.boolean().default(false),
   shareNotesAfterMeeting: z.boolean().optional(),

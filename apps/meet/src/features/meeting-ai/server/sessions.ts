@@ -130,21 +130,11 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
   const parsed = actionSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) throw new MeetAiError(400, 'Invalid request');
   if (parsed.data.action === 'sharing') {
-    const policy = await readMeetingRoomPolicy({
-      meetingId,
-      wsId,
-      userId: user.id,
-      isHost: true,
-    });
     await readMeetingRoomPolicy(
       { meetingId, wsId, userId: user.id, isHost: true },
       {
-        shareNotes:
-          parsed.data.shareNotes ?? policy.settings?.shareNotes ?? false,
-        shareNotesAfterMeeting:
-          parsed.data.shareNotesAfterMeeting ??
-          policy.settings?.shareNotesAfterMeeting ??
-          false,
+        shareNotes: parsed.data.shareNotes,
+        shareNotesAfterMeeting: parsed.data.shareNotesAfterMeeting,
       }
     );
     return { updated: true };
