@@ -62,6 +62,7 @@ export function createReceiverHealthCheck() {
           (stat) =>
             stat.type === 'inbound-rtp' &&
             typeof stat.bytesReceived === 'number' &&
+            Number.isFinite(stat.bytesReceived) &&
             stat.bytesReceived > 0
         );
       if (missingVideo) {

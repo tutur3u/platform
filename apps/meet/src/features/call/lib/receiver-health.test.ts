@@ -26,7 +26,11 @@ function fixture() {
     time: number,
     bytes: unknown = 0,
     report = true,
-    options: { frames?: number; otherInbound?: boolean } = {}
+    options: {
+      frames?: number;
+      otherInbound?: boolean;
+      siblingBytes?: number;
+    } = {}
   ) =>
     check(
       pc,
@@ -45,7 +49,16 @@ function fixture() {
             ]
           : []),
         ...(options.otherInbound
-          ? [['audio', { type: 'inbound-rtp', mid: '1', bytesReceived: 100 }]]
+          ? [
+              [
+                'audio',
+                {
+                  type: 'inbound-rtp',
+                  mid: '1',
+                  bytesReceived: options.siblingBytes ?? 100,
+                },
+              ],
+            ]
           : []),
       ] as Array<[string, object]>) as unknown as RTCStatsReport,
       owners,
@@ -196,4 +209,13 @@ it('clears the first-frame deadline when the camera is disabled or replaced', ()
   expect(f.sample(30_000, 300, true, { frames: 0 })).toBe(false);
   f.owners.get('0')!.subscriptionKey = 'replacement:video';
   expect(f.sample(50_000, 400, true, { frames: 0 })).toBe(false);
+});
+
+it('ignores invalid sibling counters when video has no inbound report', () => {
+  for (const siblingBytes of [Infinity, NaN, -1, 0]) {
+    const f = fixture();
+    const options = { otherInbound: true, siblingBytes };
+    f.sample(0, 0, false, options);
+    expect(f.sample(30_000, 0, false, options)).toBe(false);
+  }
 });
