@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/meet-v0.25.0...meet-v0.26.0) (2026-09-08)
+
+
+### Features
+
+* **meet:** improve shared audio, receiving recovery, and call controls ([#5250](https://github.com/tutur3u/platform/issues/5250)) ([45a9e2e](https://github.com/tutur3u/platform/commit/45a9e2ea556cb9b1634fc69752f7feb73007f4fd))
+
+
+### Bug Fixes
+
+* **meet:** add Cloudflare TURN fallback for restricted networks ([b0e93db](https://github.com/tutur3u/platform/commit/b0e93dbcce28007e87582be0180d52502c24efea))
+* **meet:** add Cloudflare TURN fallback for restricted networks ([#5253](https://github.com/tutur3u/platform/issues/5253)) ([62a945c](https://github.com/tutur3u/platform/commit/62a945c2655493b17619f2465d528b2d49116964))
+* **meet:** apply partial sharing policies atomically ([8915cac](https://github.com/tutur3u/platform/commit/8915cac00022966c0690f1f35643600ade96d7a7))
+* **meet:** bound closing-socket recovery and fence stale events ([ff98eed](https://github.com/tutur3u/platform/commit/ff98eed0b876bab105c5fe06cab0afb9c45ae1a0))
+* **meet:** bound recovery from stuck closing sockets ([#5252](https://github.com/tutur3u/platform/issues/5252)) ([bd1bf89](https://github.com/tutur3u/platform/commit/bd1bf891c78f4b39383283ed5cfa69233127a9e8))
+* **meet:** clear stale media state and rejected title retries ([9447bbf](https://github.com/tutur3u/platform/commit/9447bbfa3fa3fa625809bb4d09d29c34b6cba3ac))
+* **meet:** ignore invalid sibling packet counters ([3194e88](https://github.com/tutur3u/platform/commit/3194e886d41af7eba9faf944c8257eecd3b20293))
+* **meet:** preserve direct calls during TURN outages ([8cb5836](https://github.com/tutur3u/platform/commit/8cb5836289e67c41913915e017639b6e7edcd968))
+* **meet:** preserve quiet receivers after resuming media ([218c274](https://github.com/tutur3u/platform/commit/218c274136f902b376112bffcf325a22365a54bf))
+* **meet:** preserve terminal decisions during reconnect ([f45a7b0](https://github.com/tutur3u/platform/commit/f45a7b032afa0f91d236f90c9fdfdf0c245b5295))
+* **meet:** recover video receivers that never decode ([3ecce34](https://github.com/tutur3u/platform/commit/3ecce34de0229dd766cd6a32f06803bcca5f32ae))
+* **meet:** recover video receivers that never decode ([#5254](https://github.com/tutur3u/platform/issues/5254)) ([3e4fcbe](https://github.com/tutur3u/platform/commit/3e4fcbeeeff675349c3f8f8ef17367430b7cf44a))
+* **meet:** release rejected receiver bindings ([a9ea5e9](https://github.com/tutur3u/platform/commit/a9ea5e9c4fcbec26046b9768685bdc2b63b865a7))
+* **meet:** synchronize video readiness and refine room experience ([6c98340](https://github.com/tutur3u/platform/commit/6c98340d442307878737ea1c5b38290fb228bef8))
+* **meet:** synchronize video readiness and refine room experience ([#5256](https://github.com/tutur3u/platform/issues/5256)) ([f27f237](https://github.com/tutur3u/platform/commit/f27f237b495d8105345b764fa796096117a0b160))
+* **meet:** validate subscribed media kinds ([0a0f9fb](https://github.com/tutur3u/platform/commit/0a0f9fb8ffb5673244a2ada2478af908cfe1c71a))
+* **meet:** verify media ownership and retain call notifications ([9b7402e](https://github.com/tutur3u/platform/commit/9b7402e568658fe6614eb9ee77c9b015a5e01b50))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/meet-v0.24.2...meet-v0.25.0) (2026-09-07)
 
 

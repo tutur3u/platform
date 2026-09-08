@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.1](https://github.com/tutur3u/platform/compare/contacts-v0.19.0...contacts-v0.19.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **contacts:** restore monthly report dialog scrolling ([20a30ba](https://github.com/tutur3u/platform/commit/20a30ba0aa605fd6f11bee377586628f62061d93))
+* **contacts:** restore monthly report dialog scrolling ([#5258](https://github.com/tutur3u/platform/issues/5258)) ([c749a11](https://github.com/tutur3u/platform/commit/c749a11c7823a8d114360d179757641aa2d438e1))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/contacts-v0.18.6...contacts-v0.19.0) (2026-09-07)
 
 

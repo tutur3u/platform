@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.0...tasks-ui-v0.16.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **tasks:** refresh cached kanban lists after hydration ([6bd55b9](https://github.com/tutur3u/platform/commit/6bd55b9d79cbbe98575271e93007034cab912f3f))
+* **tasks:** refresh cached kanban lists after hydration ([#5259](https://github.com/tutur3u/platform/issues/5259)) ([56abb8c](https://github.com/tutur3u/platform/commit/56abb8c8a471390726da0f196b8788739c7dff28))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.15.2...tasks-ui-v0.16.0) (2026-09-07)
 
 

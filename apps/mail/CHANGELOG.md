@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.1](https://github.com/tutur3u/platform/compare/mail-v0.20.0...mail-v0.20.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **mail:** address review feedback ([5a81705](https://github.com/tutur3u/platform/commit/5a81705366fb4c13fe2693b8320b8ba9f9023cec))
+* **mail:** disclose bounded thread history ([e54ce46](https://github.com/tutur3u/platform/commit/e54ce46975a70ed01776a606538c4dd06897229f))
+* **mail:** speed up and polish message interactions ([6387cec](https://github.com/tutur3u/platform/commit/6387cec86821b448268e5d8a6dc47b35988e1d65))
+* **mail:** speed up and polish message interactions ([#5255](https://github.com/tutur3u/platform/issues/5255)) ([4732cde](https://github.com/tutur3u/platform/commit/4732cde391580c716641ad9cc4349b5e88fbc024))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/mail-v0.19.2...mail-v0.20.0) (2026-09-07)
 
 
