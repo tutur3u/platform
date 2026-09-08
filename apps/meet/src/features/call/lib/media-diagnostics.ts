@@ -40,7 +40,13 @@ export async function readPeerDiagnostics(
       if (stat.type !== 'outbound-rtp' && stat.type !== 'inbound-rtp') continue;
       if (stat.kind !== 'audio' && stat.kind !== 'video') continue;
       const sent = stat.type === 'outbound-rtp';
-      if (!sent) onReceived?.(stat.id, number(stat.bytesReceived));
+      if (
+        !sent &&
+        typeof stat.bytesReceived === 'number' &&
+        Number.isFinite(stat.bytesReceived) &&
+        stat.bytesReceived >= 0
+      )
+        onReceived?.(stat.id, stat.bytesReceived);
       streams.push({
         direction: sent ? 'sent' : 'received',
         kind: stat.kind,

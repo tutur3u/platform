@@ -139,9 +139,11 @@ const config = await fetch(`/token?peer=${peer}`).then((response) =>
   response.json()
 );
 function RemotePeer({
+  outputDeviceId,
   entry,
   tracks,
 }: {
+  outputDeviceId: string;
   entry: import('@tuturuuu/realtime/meet').MeetRealtimePresence;
   tracks: import('../../meet/src/features/call/lib/remote-streams').RemoteMedia[string];
 }) {
@@ -166,12 +168,14 @@ function RemotePeer({
   return (
     <>
       <ParticipantTile
+        outputDeviceId={outputDeviceId}
         resumePlaybackLabel="Play meeting audio"
         participant={entry}
         stream={camera}
       />
       {entry.media.screenEnabled && (
         <ParticipantTile
+          outputDeviceId={outputDeviceId}
           resumePlaybackLabel="Play screen audio"
           participant={entry}
           kind="screen"
@@ -502,6 +506,7 @@ function CallCheck() {
               {energy[`${entry.userId}:screen_audio`]?.toFixed(2) ?? 'pending'}
             </p>
             <RemotePeer
+              outputDeviceId={outputDeviceId}
               entry={entry}
               tracks={room.remoteMedia[entry.userId] ?? {}}
             />

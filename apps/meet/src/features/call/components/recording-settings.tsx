@@ -55,7 +55,6 @@ export function RecordingSettings({
               checked={!!room.state.settings[key]}
               onCheckedChange={(enabled) =>
                 room.updateSettings({
-                  ...room.state.settings,
                   [key]: enabled,
                 })
               }

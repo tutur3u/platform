@@ -128,6 +128,10 @@ export function reduceCallState(
         chat: [
           ...state.chat,
           {
+            accountId: message.accountId,
+            avatarUrl: message.avatarUrl,
+            assistant: message.assistant,
+            attachmentIds: message.attachmentIds,
             body: message.body,
             createdAt: message.createdAt,
             displayName: message.displayName,

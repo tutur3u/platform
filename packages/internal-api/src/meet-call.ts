@@ -11,12 +11,15 @@ export function createMeetCallRealtimeToken(
   options?: InternalApiClientOptions,
   device?: { deviceId: string; joinMode?: 'switch' | 'additional' }
 ) {
-  return getInternalApiClient(options).json<{
-    requiresDeviceChoice?: boolean;
-    otherDeviceCount?: number;
-    token: string;
-    realtimeUrl: string;
-  }>(`/api/meet-call/${encodePathSegment(meetingId)}/token`, {
+  return getInternalApiClient(options).json<
+    | {
+        requiresDeviceChoice: true;
+        otherDeviceCount: number;
+        token?: never;
+        realtimeUrl?: never;
+      }
+    | { requiresDeviceChoice?: false; token: string; realtimeUrl: string }
+  >(`/api/meet-call/${encodePathSegment(meetingId)}/token`, {
     method: 'POST',
     body: device ? JSON.stringify(device) : undefined,
   });
@@ -137,4 +140,14 @@ export function getMeetRoomCosts(meetingId: string) {
   }>(`/api/meet-call/${encodePathSegment(meetingId)}/costs`, {
     cache: 'no-store',
   });
+}
+
+export function discardMeetChatFile(meetingId: string, id: string) {
+  return getInternalApiClient().json<{ ok: boolean }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/files`,
+    {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    }
+  );
 }

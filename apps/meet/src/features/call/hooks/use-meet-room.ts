@@ -145,6 +145,8 @@ export function useMeetRoom({
         undefined,
         deviceId ? { deviceId, joinMode: 'additional' } : undefined
       );
+      if (refreshed.requiresDeviceChoice)
+        throw new Error('Device confirmation required');
       return `${refreshed.realtimeUrl}?token=${encodeURIComponent(refreshed.token)}`;
     };
     const signaling = new MeetSignaling({

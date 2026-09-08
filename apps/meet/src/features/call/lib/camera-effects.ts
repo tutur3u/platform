@@ -29,6 +29,38 @@ export class CameraEffects {
   private timer: ReturnType<typeof setInterval> | undefined;
   private generation = 0;
   private look = DEFAULT_CAMERA_LOOK;
+  private readLook = () => this.look;
+
+  /** Prepare a replacement without stopping the working camera on failure. */
+  async replaceSource(source: MediaStreamTrack) {
+    const generation = ++this.generation;
+    const candidate = new CameraEffects();
+    candidate.look = this.look;
+    candidate.readLook = this.readLook;
+    try {
+      const output = await candidate.setSource(source);
+      if (generation !== this.generation) {
+        candidate.dispose();
+        throw new DOMException('Camera changed', 'AbortError');
+      }
+      this.dispose();
+      this.source = candidate.source;
+      this.output = candidate.output;
+      this.video = candidate.video;
+      this.timer = candidate.timer;
+      source.addEventListener?.(
+        'ended',
+        () => {
+          if (this.source === source) this.dispose();
+        },
+        { once: true }
+      );
+      return output;
+    } catch (error) {
+      candidate.dispose();
+      throw error;
+    }
+  }
 
   setEnabled(enabled: boolean) {
     if (this.source) this.source.enabled = enabled;
@@ -112,7 +144,7 @@ export class CameraEffects {
       throw new Error('camera_effects_unavailable');
     }
     const draw = () => {
-      context.filter = cameraFilterCss(this.look);
+      context.filter = cameraFilterCss(this.readLook());
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
     };
     draw();

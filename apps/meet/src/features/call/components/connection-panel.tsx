@@ -31,6 +31,11 @@ export function ConnectionPanel({
   const t = useTranslations('meet.call');
   const [open, setOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<MediaDiagnostics | null>(null);
+  const snapshotTelemetry = useRef(telemetry);
+  const data =
+    snapshot && snapshotTelemetry.current === telemetry
+      ? snapshot
+      : (telemetry ?? snapshot);
   const [busy, setBusy] = useState(false);
   const requestId = useRef(0);
   const refresh = async () => {
@@ -38,7 +43,10 @@ export function ConnectionPanel({
     setBusy(true);
     try {
       const next = await read();
-      if (id === requestId.current) setSnapshot(next);
+      if (id === requestId.current) {
+        snapshotTelemetry.current = telemetry;
+        setSnapshot(next);
+      }
     } catch {
       if (id === requestId.current) setSnapshot(null);
     } finally {
@@ -48,7 +56,7 @@ export function ConnectionPanel({
 
   const content = (
     <>
-      <ConnectionOverview data={telemetry ?? snapshot} />
+      <ConnectionOverview data={data} />
       <div className="flex flex-wrap gap-2">
         <Button
           disabled={busy}
@@ -60,13 +68,13 @@ export function ConnectionPanel({
           {t('connection_refresh')}
         </Button>
         <Button
-          disabled={!(telemetry ?? snapshot) || busy}
+          disabled={!data || busy}
           size="sm"
           variant="outline"
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(
-                JSON.stringify(telemetry ?? snapshot, null, 2)
+                JSON.stringify(data, null, 2)
               );
               toast.success(t('connection_copied'));
             } catch {
@@ -81,6 +89,7 @@ export function ConnectionPanel({
       <Button
         onClick={() => {
           requestId.current++;
+          setBusy(false);
           reconnect();
           setSnapshot(null);
           setOpen(false);

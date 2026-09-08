@@ -45,6 +45,7 @@ export async function personalWorkspace(userId: string) {
     .select('id')
     .eq('creator_id', userId)
     .eq('personal', true)
+    .is('deleted_at', null)
     .single();
   if (error || !data)
     throw new MeetCallAccessError(503, 'Personal workspace is unavailable');
@@ -64,7 +65,12 @@ export async function roomRoute(
     )
       throw new MeetCallAccessError(403, 'Invalid origin');
     const access = await getMeetCallAccess(meetingId, 'Participant');
-    return Response.json(await run(access), {
+    const result = await run(access);
+    if (result instanceof Response) {
+      result.headers.set('Cache-Control', 'private, no-store');
+      return result;
+    }
+    return Response.json(result, {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {

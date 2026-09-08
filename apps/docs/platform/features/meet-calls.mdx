@@ -91,8 +91,8 @@ all; `{}` and `{autoDiscover: true}` are both rejected.
 An inbound track arrives with an opaque id, so nothing on the
 `RTCPeerConnection` says who published it. Attribution comes from the track
 name, which is deliberately `<deviceIdentity>-<kind>`: the subscribe response returns a
-`mid` per track, the client maps `mid → userId`, and the `track` event is
-matched against that map.
+`mid` per track, the client maps `mid → userId` (the device identity, not
+the account ID), and the `track` event is matched against that map.
 
 This is load-bearing. Keying inbound streams by the browser's track id instead
 means the UI cannot tell participants apart, and every tile ends up rendering
@@ -719,7 +719,9 @@ sharing retains text resolution at a lower frame rate. Higher-quality camera mod
 allows 1.6 Mbps. These are ceilings, not promised usage or minimum bandwidth.
 Speech has a separate 48 kbps ceiling; screen audio uses 96 kbps. Video shares the
 available outgoing bandwidth estimate with a reserve for audio. Congestion reduces
-quality promptly, while recovery requires four healthy samples to avoid oscillation.
+quality promptly, while recovery requires four measured healthy samples to avoid
+oscillation. Missing statistics never trigger an upgrade. Video pauses when its
+share of estimated capacity is too small after reserving speech bandwidth.
 Sending pauses when the participant is alone and resumes when an audience joins.
 Sender parameter failures preserve the working transport rather than forcing a
 reconnect. Initial encodings are capped before negotiation.
@@ -729,6 +731,8 @@ settings. Estimates use [SFU pricing](https://developers.cloudflare.com/realtime
 and [Durable Object request pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/),
 checked September 8, 2026, before account-wide allowances or discounts. TURN-to-SFU
 traffic is not charged twice. Reports are cumulative and deduplicated across samples.
+Per-device accounting retains at most 4,096 identities per room; reports beyond
+that limit are marked as incomplete rather than growing storage without bound.
 
 **These are partial usage estimates, not invoices.** RTP payload counters omit
 transport overhead and reports can miss disconnected devices. Worker CPU, Durable

@@ -118,8 +118,17 @@ const page = Bun.serve({
       const directory = new URL('../../meet/.open-next/assets', import.meta.url)
         .pathname;
       const styles: string[] = [];
-      for await (const path of new Bun.Glob('**/*.css').scan(directory))
-        styles.push(await Bun.file(`${directory}/${path}`).text());
+      try {
+        for await (const path of new Bun.Glob('**/*.css').scan(directory))
+          styles.push(await Bun.file(`${directory}/${path}`).text());
+      } catch {
+        // Report the missing build below instead of serving an unstyled harness.
+      }
+      if (!styles.length)
+        return new Response(
+          'Build Meet first: bun run --cwd apps/meet build:cloudflare',
+          { status: 503 }
+        );
       return new Response(styles.join('\n'), {
         headers: { 'Content-Type': 'text/css' },
       });

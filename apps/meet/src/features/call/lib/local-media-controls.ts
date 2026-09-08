@@ -36,6 +36,7 @@ export function createLocalMediaControls({
         : mediaRef.current.videoEnabled;
     if (!enabled) {
       deviceIds[kind] = deviceId;
+      if (kind === 'video') effects.dispose();
       for (const track of old
         ?.getTracks()
         .filter((track) => track.kind === kind) ?? []) {
@@ -68,21 +69,24 @@ export function createLocalMediaControls({
     try {
       const source = acquired.getTracks()[0];
       const selected =
-        kind === 'video' && source ? await effects.setSource(source) : source;
+        kind === 'video' && source
+          ? await effects.replaceSource(source)
+          : source;
       if (!activeRef.current) {
         if (kind === 'video') effects.dispose();
         for (const track of acquired.getTracks()) track.stop();
         return;
       }
+      const current = localStreamRef.current;
       const next = new MediaStream([
-        ...(old?.getTracks().filter((track) => track.kind !== kind) ?? []),
+        ...(current?.getTracks().filter((track) => track.kind !== kind) ?? []),
         ...(selected ? [selected] : []),
       ]);
       localStreamRef.current = next;
       setLocalStream(next);
       committed = true;
       deviceIds[kind] = deviceId;
-      for (const track of old
+      for (const track of current
         ?.getTracks()
         .filter((track) => track.kind === kind) ?? [])
         track.stop();

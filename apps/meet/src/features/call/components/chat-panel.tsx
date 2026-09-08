@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   askMeetAssistant,
+  discardMeetChatFile,
   readMeetChatFile,
   uploadMeetChatFile,
 } from '@tuturuuu/internal-api';
@@ -107,7 +108,18 @@ export function ChatPanel({
     [files, setFiles] = useState<File[]>([]),
     [busy, setBusy] = useState(false),
     [thinking, setThinking] = useState(false);
-  const uploaded = useRef(new WeakMap<File, { id: string }>());
+  const uploaded = useRef(new Map<File, { id: string }>());
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    const receipts = uploaded.current;
+    return () => {
+      mounted.current = false;
+      for (const receipt of receipts.values())
+        void discardMeetChatFile(meetingId, receipt.id).catch(() => undefined);
+      receipts.clear();
+    };
+  }, [meetingId]);
   const bottom = useRef<HTMLDivElement>(null),
     input = useRef<HTMLInputElement>(null);
   const newest = chat.at(-1)?.id;
@@ -123,6 +135,12 @@ export function ChatPanel({
         const receipt =
           uploaded.current.get(file) ??
           (await uploadMeetChatFile(meetingId, file));
+        if (!mounted.current) {
+          void discardMeetChatFile(meetingId, receipt.id).catch(
+            () => undefined
+          );
+          return;
+        }
         uploaded.current.set(file, receipt);
         attachments.push(receipt);
       }
@@ -131,6 +149,7 @@ export function ChatPanel({
         body,
         attachments.map((a) => a.id)
       );
+      uploaded.current.clear();
       setDraft('');
       setFiles([]);
       if (/(^|\s)@Tuturuuu\b/i.test(body)) {
@@ -230,9 +249,15 @@ export function ChatPanel({
                   className="size-5"
                   disabled={busy}
                   aria-label={t('remove_attachment')}
-                  onClick={() =>
-                    setFiles((all) => all.filter((_, i) => i !== index))
-                  }
+                  onClick={() => {
+                    const receipt = uploaded.current.get(file);
+                    if (receipt)
+                      void discardMeetChatFile(meetingId, receipt.id).catch(
+                        () => undefined
+                      );
+                    uploaded.current.delete(file);
+                    setFiles((all) => all.filter((_, i) => i !== index));
+                  }}
                 >
                   <X className="size-3" />
                 </Button>
@@ -293,7 +318,9 @@ export function ChatPanel({
             size="sm"
             disabled={busy}
             onClick={() =>
-              setDraft((text) => `${text}${text ? ' ' : ''}@Tuturuuu `)
+              setDraft(
+                (text) => `${text.slice(0, 1989)}${text ? ' ' : ''}@Tuturuuu `
+              )
             }
           >
             <AtSign className="size-4" />

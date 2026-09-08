@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   service: vi.fn(async (_access: unknown, _command: unknown) => ({
     saved: false,
   })),
+  remove: vi.fn(async () => undefined),
   metadata: vi.fn(async () => ({ size: 100, contentType: 'video/webm' })),
   upload: vi.fn(async () => ({ provider: 'r2', token: 'synthetic-test' })),
 }));
@@ -21,6 +22,7 @@ vi.mock('@/features/call/lib/call-access', () => ({
 }));
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   createWorkspaceStorageSignedReadUrl: vi.fn(),
+  deleteWorkspaceStorageObjectByPath: mocks.remove,
   createWorkspaceStorageUploadPayload: mocks.upload,
   getWorkspaceStorageObjectMetadataForProvider: mocks.metadata,
   resolveWorkspaceStorageProvider: async () => ({ provider: 'r2' }),
@@ -88,10 +90,37 @@ it('does not mark a mismatched uploaded object ready', async () => {
     status: 409,
   });
   expect(mocks.service).toHaveBeenCalledTimes(1);
+  expect(mocks.remove).toHaveBeenCalledWith(
+    'creator-drive',
+    `Meet/room/Recordings/${sessionId}.webm`
+  );
 });
 it('keeps a saved session idempotent without issuing another upload', async () => {
   mocks.service.mockResolvedValueOnce({ saved: true });
   const response = await POST(request('POST'), params);
   expect(await response.json()).toEqual({ alreadySaved: true, ok: true });
   expect(mocks.upload).not.toHaveBeenCalled();
+});
+
+it('rejects malformed recording JSON as a client error', async () => {
+  for (const handler of [POST, PUT]) {
+    await expect(
+      handler(
+        new Request('https://meet.test/recording', {
+          method: 'POST',
+          body: '{',
+        }),
+        params
+      )
+    ).rejects.toMatchObject({ status: 400 });
+  }
+});
+it('does not reuse uploaded bytes with a different content type', async () => {
+  mocks.metadata.mockResolvedValueOnce({
+    size: 100,
+    contentType: 'audio/webm',
+  });
+  await expect(POST(request('POST'), params)).rejects.toMatchObject({
+    status: 409,
+  });
 });

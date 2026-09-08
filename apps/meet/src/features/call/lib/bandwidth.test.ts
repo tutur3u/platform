@@ -62,7 +62,7 @@ describe('media bandwidth budgets', () => {
   });
 
   test('shares constrained capacity across video senders and restores quality gradually', async () => {
-    let available = 220000;
+    let available: number | undefined = 220000;
     const applied: RTCRtpSendParameters[] = [];
     const makeSender = () =>
       ({
@@ -100,7 +100,17 @@ describe('media bandwidth budgets', () => {
     });
     try {
       await settle();
-      expect(applied[0]?.encodings[0]?.maxBitrate).toBe(32000);
+      expect(applied[0]?.encodings[0]?.maxBitrate).toBe(30400);
+      available = 100000;
+      watcher.refresh();
+      await settle();
+      expect(applied.at(-2)?.encodings[0]?.active).toBe(false);
+      available = undefined;
+      for (let i = 0; i < 5; i++) {
+        watcher.refresh();
+        await settle();
+      }
+      expect(applied.at(-2)?.encodings[0]?.scaleResolutionDownBy).toBe(2);
       available = 4000000;
       watcher.refresh();
       await settle();

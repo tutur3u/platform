@@ -56,9 +56,16 @@ export async function POST(request: Request, { params }: Params) {
         },
       });
     } catch (error) {
-      await deleteWorkspaceStorageObjectByPath(wsId, path).catch(
-        () => undefined
-      );
+      // A lost response can follow a committed attachment. Never delete its
+      // bytes unless the service definitively rejected registration.
+      if (
+        error instanceof MeetCallAccessError &&
+        error.status >= 400 &&
+        error.status < 500
+      )
+        await deleteWorkspaceStorageObjectByPath(wsId, path).catch(
+          () => undefined
+        );
       throw error;
     }
     return { id, name, size: file.size, contentType };
@@ -78,15 +85,40 @@ export async function GET(request: Request, { params }: Params) {
       size: number;
       contentType: string;
     }>(access, { action: 'attachment', id });
+    const downloadUrl = await createWorkspaceStorageSignedReadUrl(
+      file.storageWsId,
+      file.path,
+      { expiresIn: 120 }
+    );
+    if (new URL(request.url).searchParams.get('download') === '1')
+      return new Response(null, {
+        status: 307,
+        headers: { Location: downloadUrl },
+      });
     return {
       ...file,
       path: undefined,
       storageWsId: undefined,
-      url: await createWorkspaceStorageSignedReadUrl(
-        file.storageWsId,
-        file.path,
-        { expiresIn: 120 }
-      ),
+      // Authorize again and mint a fresh signed URL when opened, including after
+      // a long call. No polling or changing a playing video's source is needed.
+      url: `/api/meet-call/${encodeURIComponent(meetingId)}/files?id=${encodeURIComponent(id!)}&download=1`,
     };
+  });
+}
+
+export async function DELETE(request: Request, { params }: Params) {
+  const { meetingId } = await params;
+  return roomRoute(request, meetingId, async (access) => {
+    const input = z
+      .object({ id: z.uuid() })
+      .safeParse(await request.json().catch(() => null));
+    if (!input.success)
+      throw new MeetCallAccessError(400, 'Invalid attachment');
+    const file = await callRoomService<{ path: string; storageWsId: string }>(
+      access,
+      { action: 'attachment.discard', id: input.data.id }
+    );
+    await deleteWorkspaceStorageObjectByPath(file.storageWsId, file.path);
+    return { ok: true };
   });
 }

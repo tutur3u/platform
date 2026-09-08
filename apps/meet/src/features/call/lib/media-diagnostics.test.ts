@@ -116,6 +116,10 @@ it('counts cumulative bytes once across refreshes and connection replacement', a
     first = peer();
   expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
   expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
+  bytes = Number.NaN;
+  expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
+  bytes = -1;
+  expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
   bytes = 150;
   expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(150);
   bytes = 20;

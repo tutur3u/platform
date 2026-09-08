@@ -15,7 +15,7 @@ export function createRoomActions(signaling: {
         reportId,
         bytesReceived,
       }),
-    updateSettings: (settings: MeetRoomSettings) =>
+    updateSettings: (settings: Partial<MeetRoomSettings>) =>
       signaling.current?.send({ type: 'room.settings.update', settings }),
     controlRecording: async (
       state: 'starting' | 'recording' | 'stopping' | 'idle' | 'error',
@@ -31,8 +31,8 @@ export function createRoomActions(signaling: {
     renameMeeting: (title: string) => signaling.current?.announceTitle(title),
     sendChat: async (body: string, attachmentIds?: string[]) => {
       const text = body.trim();
-      if (!text || !signaling.current?.isOpen)
-        throw new Error('signaling_closed');
+      if (!text) throw new Error('empty_message');
+      if (!signaling.current?.isOpen) throw new Error('signaling_closed');
       return signaling.current.request<{ id: string }>({
         type: 'chat.message',
         body: text,

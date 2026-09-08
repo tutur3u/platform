@@ -41,6 +41,7 @@ vi.mock('@/features/call/server/room-service', () => ({
     ),
 }));
 
+import { MeetCallAccessError } from '@/features/call/lib/call-access';
 import { POST } from './route';
 
 const params = { params: Promise.resolve({ meetingId: 'room' }) };
@@ -86,10 +87,18 @@ it('does not upload if room admission fails', async () => {
 it('cleans up only this upload when attachment registration fails', async () => {
   mocks.service
     .mockResolvedValueOnce({})
-    .mockRejectedValueOnce(new Error('Room ended'));
+    .mockRejectedValueOnce(new MeetCallAccessError(403, 'Room ended'));
   await expect(POST(request(), params)).rejects.toThrow('Room ended');
   expect(mocks.remove).toHaveBeenCalledWith(
     'creator-drive',
     mocks.upload.mock.calls[0]?.[1]
   );
+});
+
+it('preserves uploaded bytes when the registration outcome is uncertain', async () => {
+  mocks.service
+    .mockResolvedValueOnce({})
+    .mockRejectedValueOnce(new Error('Response lost'));
+  await expect(POST(request(), params)).rejects.toThrow('Response lost');
+  expect(mocks.remove).not.toHaveBeenCalled();
 });

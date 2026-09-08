@@ -115,3 +115,30 @@ it('records provider cost even if quota deduction fails', async () => {
     costUsd: 0.001,
   });
 });
+it('retries settlement with the answer without charging or generating twice', async () => {
+  mocks.service
+    .mockResolvedValueOnce({ chat: [], prompt: '@Tuturuuu question' })
+    .mockRejectedValueOnce(new Error('Response lost'));
+  const response = await POST(request(), {
+    params: Promise.resolve({ meetingId: 'room' }),
+  });
+  expect(response.status).toBe(200);
+  expect(mocks.answer).toHaveBeenCalledOnce();
+  expect(mocks.deduct).toHaveBeenCalledOnce();
+  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+    action: 'ai.finish',
+    messageId: 'message',
+    body: 'Answer',
+    costUsd: 0.001,
+  });
+});
+it('rejects malformed JSON before checking quota or generating', async () => {
+  await expect(
+    POST(
+      new Request('https://meet.test/assistant', { method: 'POST', body: '{' }),
+      { params: Promise.resolve({ meetingId: 'room' }) }
+    )
+  ).rejects.toMatchObject({ status: 400 });
+  expect(mocks.answer).not.toHaveBeenCalled();
+  expect(mocks.check).not.toHaveBeenCalled();
+});

@@ -167,7 +167,7 @@ export function ParticipantsPanel({
                     </Button>
                   ) : null}
                   <Button
-                    aria-label={t('remove_participant')}
+                    aria-label={`${t('remove_participant')}: ${participant.displayName}`}
                     className="size-7 text-dynamic-red"
                     onClick={() => onRemove(participant.userId)}
                     size="icon"

@@ -112,7 +112,7 @@ export function ConnectedCallShell({
     retry: false,
     gcTime: 0,
   });
-  useRoomUsage(
+  const flushUsage = useRoomUsage(
     telemetry.data,
     joined && !left && state.admission === 'admitted',
     room.reportUsage
@@ -156,6 +156,7 @@ export function ConnectedCallShell({
   const leaveNow = useCallback(() => {
     if (leftRef.current) return;
     leftRef.current = true;
+    flushUsage();
     room.leave();
     setLeft(true);
     setLeaveDialog(false);
@@ -165,7 +166,7 @@ export function ConnectedCallShell({
         toast.error(aiT('failed'));
       setSaving(false);
     });
-  }, [room.leave, ai.finish, recording.stop, aiT]);
+  }, [room.leave, ai.finish, recording.stop, aiT, flushUsage]);
   useEffect(() => {
     if (panel === 'chat') setLastReadChatId(newestChatId);
   }, [panel, newestChatId]);

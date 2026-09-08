@@ -77,7 +77,7 @@ export function ConnectionOverview({
             <Wifi className="size-3" />
             {data?.signaling === 'open'
               ? t('connection_connected')
-              : t('connection_connecting')}
+              : status(data?.signaling ?? 'connecting')}
           </Badge>
         </div>
       </div>

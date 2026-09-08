@@ -12,7 +12,12 @@ import { useTranslations } from 'next-intl';
 import { type ComponentProps, useState } from 'react';
 import { ConnectedCallShell } from './call-shell';
 
-export function CallShell(props: ComponentProps<typeof ConnectedCallShell>) {
+export function CallShell(
+  props: Omit<
+    ComponentProps<typeof ConnectedCallShell>,
+    'token' | 'realtimeUrl'
+  >
+) {
   const t = useTranslations('meet.call');
   const [deviceId] = useState(() => crypto.randomUUID());
   const [mode, setMode] = useState<'switch' | 'additional' | undefined>();

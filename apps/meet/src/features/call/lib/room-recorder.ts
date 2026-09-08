@@ -7,9 +7,15 @@ export class RoomRecorder {
   private canvas: HTMLCanvasElement | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private output: MediaStream | null = null;
+  private unlock: Promise<void> | null = null;
+  prepare() {
+    this.context ??= new AudioContext();
+    this.unlock ??= this.context.resume();
+    return this.unlock;
+  }
   async start(streams: MediaStream[]) {
-    this.context = new AudioContext();
-    await this.context.resume();
+    await this.prepare();
+    if (!this.context) throw new Error('Recording cancelled');
     this.destination = this.context.createMediaStreamDestination();
     this.canvas = document.createElement('canvas');
     this.canvas.width = 1280;
@@ -107,6 +113,7 @@ export class RoomRecorder {
     this.output = null;
     if (this.context?.state !== 'closed') void this.context?.close();
     this.context = null;
+    this.unlock = null;
     this.destination = null;
     this.canvas = null;
   }

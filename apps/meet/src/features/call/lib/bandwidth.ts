@@ -58,9 +58,15 @@ export function watchSenderBandwidth({
           stat.state === 'succeeded' &&
           (stat.nominated || stat.selected)
         ) {
-          if (Number.isFinite(stat.availableOutgoingBitrate))
+          if (
+            Number.isFinite(stat.availableOutgoingBitrate) &&
+            stat.availableOutgoingBitrate >= 0
+          )
             available = stat.availableOutgoingBitrate;
-          if (Number.isFinite(stat.currentRoundTripTime))
+          if (
+            Number.isFinite(stat.currentRoundTripTime) &&
+            stat.currentRoundTripTime >= 0
+          )
             rtt = stat.currentRoundTripTime * 1000;
         }
       if (
@@ -69,7 +75,10 @@ export function watchSenderBandwidth({
       ) {
         constrained = true;
         good = 0;
-      } else if (++good >= 4) constrained = false;
+      } else if (available !== null || rtt !== null) {
+        good = Math.min(4, good + 1);
+        if (good === 4) constrained = false;
+      } else good = 0;
       const senders = [...readSenders().entries()];
       for (const [name, sender] of senders) {
         if (!active || readPeer() !== pc) break;
@@ -88,7 +97,7 @@ export function watchSenderBandwidth({
         // Share the congestion estimate across video senders, reserving speech bandwidth.
         if (available !== null && sender.track.kind === 'video')
           budget.maxBitrate = Math.max(
-            32000,
+            1,
             Math.min(
               budget.maxBitrate,
               Math.floor(
@@ -100,7 +109,17 @@ export function watchSenderBandwidth({
               )
             )
           );
-        const target = { ...budget, active: hasAudience() };
+        // Below the speech reserve, suspend video instead of spending a minimum
+        // video bitrate that could starve audio. Keep the track so recovery does
+        // not require capture permissions or another SFU negotiation.
+        const videoSuspended =
+          sender.track.kind === 'video' &&
+          available !== null &&
+          budget.maxBitrate < 32000;
+        const target = {
+          ...budget,
+          active: hasAudience() && !videoSuspended,
+        };
         const signature = JSON.stringify(target);
         if (applied.get(sender) === signature) continue;
         const parameters = sender.getParameters();

@@ -1,6 +1,7 @@
 import {
   createWorkspaceStorageSignedReadUrl,
   createWorkspaceStorageUploadPayload,
+  deleteWorkspaceStorageObjectByPath,
   getWorkspaceStorageObjectMetadataForProvider,
   resolveWorkspaceStorageProvider,
   WorkspaceStorageError,
@@ -27,7 +28,9 @@ const recordingInput = z.object({
 export async function POST(request: Request, { params }: Params) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
-    const input = recordingInput.safeParse(await request.json());
+    const input = recordingInput.safeParse(
+      await request.json().catch(() => null)
+    );
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid recording');
     const { sessionId, contentType, size } = input.data;
     const authorization = await callRoomService<{ saved: boolean }>(access, {
@@ -45,7 +48,10 @@ export async function POST(request: Request, { params }: Params) {
         provider,
         `${directory}/${filename}`
       );
-      if (stored.size !== size)
+      if (
+        stored.size !== size ||
+        stored.contentType?.split(';')[0] !== contentType
+      )
         throw new MeetCallAccessError(409, 'Recording size mismatch');
       return { alreadyUploaded: true };
     } catch (error) {
@@ -65,10 +71,16 @@ export async function POST(request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
-    const input = recordingInput.safeParse(await request.json());
+    const input = recordingInput.safeParse(
+      await request.json().catch(() => null)
+    );
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid recording');
     const { sessionId, contentType, size } = input.data;
-    await callRoomService(access, { action: 'recording.authorize', sessionId });
+    const authorization = await callRoomService<{ saved: boolean }>(access, {
+      action: 'recording.authorize',
+      sessionId,
+    });
+    if (authorization.saved) return { ok: true };
     const wsId = await personalWorkspace(access.meeting.creator_id!);
     const path = `Meet/${meetingId}/Recordings/${sessionId}.${contentType.includes('mp4') ? 'mp4' : 'webm'}`;
     const { provider } = await resolveWorkspaceStorageProvider(wsId);
@@ -80,8 +92,10 @@ export async function PUT(request: Request, { params }: Params) {
     if (
       stored.size !== size ||
       stored.contentType?.split(';')[0] !== contentType
-    )
+    ) {
+      await deleteWorkspaceStorageObjectByPath(wsId, path);
       throw new MeetCallAccessError(409, 'Recording metadata mismatch');
+    }
     await callRoomService(access, {
       action: 'recording.save',
       sessionId,
@@ -104,12 +118,15 @@ export async function GET(request: Request, { params }: Params) {
       access,
       { action: 'recording.read', sessionId }
     );
+    const url = await createWorkspaceStorageSignedReadUrl(
+      record.storageWsId,
+      record.path,
+      { expiresIn: 120 }
+    );
+    if (new URL(request.url).searchParams.get('download') === '1')
+      return new Response(null, { status: 307, headers: { Location: url } });
     return {
-      url: await createWorkspaceStorageSignedReadUrl(
-        record.storageWsId,
-        record.path,
-        { expiresIn: 120 }
-      ),
+      url: `/api/meet-call/${encodeURIComponent(meetingId)}/recording?sessionId=${encodeURIComponent(sessionId)}&download=1`,
     };
   });
 }

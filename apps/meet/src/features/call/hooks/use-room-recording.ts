@@ -24,6 +24,7 @@ export function useRoomRecording(
     latestStreams = useRef(streams),
     cancelled = useRef(false),
     size = useRef(0),
+    captureFailed = useRef(false),
     stopRef = useRef<() => Promise<void>>(() => Promise.resolve());
   latestStreams.current = streams;
   const control = room.controlRecording;
@@ -46,7 +47,8 @@ export function useRoomRecording(
         const blob = new Blob(chunks.current, { type: current.mimeType });
         backup = blob;
         mixer.current?.dispose();
-        if (!blob.size) throw new Error('Empty recording');
+        if (!blob.size || captureFailed.current)
+          throw new Error('Invalid recording');
         await uploadMeetRoomRecording(meetingId, id, blob);
         toast.success(t('recording_saved'));
       } catch {
@@ -98,10 +100,11 @@ export function useRoomRecording(
   );
   useEffect(() => {
     if (
-      recorder.current &&
+      (recorder.current || inflight.current) &&
       (room.state.recording.state === 'stopping' ||
         room.state.ended ||
-        room.state.recording.ownerDeviceId !== room.state.selfUserId)
+        (room.state.recording.ownerDeviceId &&
+          room.state.recording.ownerDeviceId !== room.state.selfUserId))
     )
       void stop();
   }, [room.state.recording, room.state.ended, room.state.selfUserId, stop]);
@@ -113,11 +116,13 @@ export function useRoomRecording(
     const id = crypto.randomUUID();
     let claimed = false;
     try {
+      const mix = new RoomRecorder();
+      mixer.current = mix;
+      const unlocked = mix.prepare();
+      await unlocked;
       await control('starting', id);
       claimed = true;
       if (cancelled.current) return;
-      const mix = new RoomRecorder();
-      mixer.current = mix;
       const media = await mix.start(latestStreams.current);
       if (cancelled.current) return;
       const mimeType = [
@@ -138,6 +143,7 @@ export function useRoomRecording(
       });
       chunks.current = [];
       size.current = 0;
+      captureFailed.current = false;
       session.current = id;
       recorder.current = current;
       current.addEventListener('dataavailable', (event) => {
@@ -151,12 +157,13 @@ export function useRoomRecording(
         }
       });
       current.addEventListener('error', () => {
+        captureFailed.current = true;
         toast.error(t('record_save_failed'));
         void stopRef.current();
       });
       current.start(1000);
       await control('recording', id);
-      setRecording(true);
+      if (!cancelled.current) setRecording(true);
     } catch {
       toast.error(t('record_start_failed'));
       cancelled.current = true;
@@ -179,7 +186,7 @@ export function useRoomRecording(
       room.state.recording.state === 'starting'
     ) {
       await control('stopping', room.state.recording.sessionId ?? undefined);
-      if (recording) await stop();
+      await stop();
     } else await start();
   };
   return { isBusy: busy, isRecording: recording, stop, toggle };

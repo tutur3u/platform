@@ -21,7 +21,7 @@ export async function POST(
   return roomRoute(request, meetingId, async (access) => {
     const input = z
       .object({ messageId: z.string().min(1).max(200) })
-      .safeParse(await request.json());
+      .safeParse(await request.json().catch(() => null));
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid message');
     const { messageId } = input.data;
     const wsId = await personalWorkspace(access.user.id);
@@ -47,6 +47,7 @@ export async function POST(
       prompt: string;
     }>(access, { action: 'ai.reserve', messageId });
     let costUsd: number | null = null;
+    let chargedAnswer: string | undefined;
     try {
       const answer = await answerMeetChat(context.chat, cap, context.prompt);
       costUsd = answer.costUsd;
@@ -72,19 +73,35 @@ export async function POST(
       });
       if (!charge.success)
         throw new MeetCallAccessError(503, 'AI quota accounting failed');
+      chargedAnswer = answer.text.slice(0, 16000);
       await callRoomService(access, {
         action: 'ai.finish',
         messageId,
-        body: answer.text.slice(0, 16000),
+        body: chargedAnswer,
         costUsd,
       });
       return { ok: true };
     } catch (error) {
-      await callRoomService(access, {
-        action: 'ai.finish',
-        messageId,
-        costUsd,
-      }).catch(() => undefined);
+      // Settlement is idempotent by message ID. Retain the charged answer on
+      // every retry; an unavailable response must not turn it into a failed,
+      // empty assistant message or trigger another generation and charge.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          await callRoomService(access, {
+            action: 'ai.finish',
+            messageId,
+            body: chargedAnswer,
+            costUsd,
+          });
+          if (chargedAnswer !== undefined) return { ok: true };
+          break;
+        } catch {
+          if (attempt < 2)
+            await new Promise((resolve) =>
+              setTimeout(resolve, 250 * (attempt + 1))
+            );
+        }
+      }
       throw error;
     }
   });

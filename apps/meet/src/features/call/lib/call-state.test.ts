@@ -385,3 +385,24 @@ describe('recovered publisher snapshots', () => {
     ]);
   });
 });
+
+it('preserves assistant and attachment metadata for live chat messages', () => {
+  const next = reduceCallState(INITIAL_CALL_STATE, {
+    type: 'chat.message',
+    id: 'message',
+    userId: 'device',
+    accountId: 'account',
+    avatarUrl: 'https://example.test/avatar.png',
+    assistant: true,
+    attachmentIds: ['file'],
+    body: 'Answer',
+    displayName: 'Mira',
+    createdAt: new Date().toISOString(),
+  });
+  expect(next.chat[0]).toMatchObject({
+    accountId: 'account',
+    assistant: true,
+    attachmentIds: ['file'],
+    avatarUrl: 'https://example.test/avatar.png',
+  });
+});
