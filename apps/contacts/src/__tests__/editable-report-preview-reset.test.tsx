@@ -144,6 +144,43 @@ describe('EditableReportPreview form reset behavior', () => {
     };
   });
 
+  it('keeps the monthly report editor within the viewport and scrollable', () => {
+    render(
+      <EditableReportPreview
+        wsId="ws-1"
+        report={{
+          id: 'report-1',
+          user_id: 'user-1',
+          user_name: 'Test User',
+          group_id: 'group-1',
+          group_name: 'Test Group',
+          title: 'Current title',
+          content: 'Current content',
+          feedback: 'Current feedback',
+          report_approval_status: 'PENDING',
+          scores: [],
+        }}
+        configs={[]}
+        isNew={false}
+        canUpdateReports
+      />
+    );
+
+    openExistingReportEditor();
+
+    expect(screen.getByRole('dialog')).toHaveClass(
+      'max-h-[calc(100dvh-1rem)]',
+      'grid-rows-[auto_minmax(0,1fr)]',
+      'overflow-hidden'
+    );
+    expect(screen.getByTestId('monthly-report-form-scroll-region')).toHaveClass(
+      'min-h-0',
+      'touch-pan-y',
+      'overflow-y-auto',
+      'overscroll-contain'
+    );
+  });
+
   it('shows the saved rejected revision and preserves local edits', () => {
     const report = {
       id: 'report-1',

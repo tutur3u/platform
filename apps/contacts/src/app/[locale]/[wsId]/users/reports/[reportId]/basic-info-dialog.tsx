@@ -121,14 +121,19 @@ export function ReportBasicInfoDialog({
               {t('ws-reports.edit_report')}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogContent className="grid max-h-[calc(100dvh-1rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:max-h-[90dvh] sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>{t('ws-reports.basic_info')}</DialogTitle>
               <DialogDescription>
                 {t('ws-reports.selected_user_description')}
               </DialogDescription>
             </DialogHeader>
-            <UserReportForm {...formProps} onDelete={undefined} />
+            <div
+              className="min-h-0 touch-pan-y overflow-y-auto overscroll-contain pr-1"
+              data-testid="monthly-report-form-scroll-region"
+            >
+              <UserReportForm {...formProps} onDelete={undefined} />
+            </div>
           </DialogContent>
         </Dialog>
 
