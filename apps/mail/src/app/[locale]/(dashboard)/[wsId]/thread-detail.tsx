@@ -79,8 +79,8 @@ export function ThreadDetail({
   );
 
   return (
-    <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background">
-      <header className="border-dynamic border-b bg-background/80 px-4 py-3 backdrop-blur md:px-5">
+    <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-muted/20">
+      <header className="bg-background/90 px-4 py-3 backdrop-blur md:px-5">
         <div className="flex flex-wrap items-start gap-2">
           <Button
             aria-label={t('back_to_messages')}
@@ -140,7 +140,7 @@ export function ThreadDetail({
         defaultValue="conversation"
       >
         {attachments.length > 0 && (
-          <div className="border-dynamic border-b px-4 py-2 md:px-5">
+          <div className="px-4 py-2 md:px-5">
             <TabsList className="h-8 bg-foreground/[0.045]">
               <TabsTrigger value="conversation">
                 {t('conversation')}
@@ -158,7 +158,7 @@ export function ThreadDetail({
         <TabsContent className="min-h-0 min-w-0" value="conversation">
           <div className="h-full min-w-0 max-w-full overflow-y-auto overflow-x-hidden">
             <Accordion
-              className="w-full min-w-0 pb-24"
+              className="w-full min-w-0 space-y-2 p-2 pb-24 md:p-3 md:pb-24"
               key={thread.thread.id}
               defaultValue={newest ? [newest.id] : []}
               onValueChange={(ids) => setReplyMessageId(ids.at(-1) ?? null)}
@@ -172,7 +172,7 @@ export function ThreadDetail({
           {!isDraft && replyMessage && (
             <div className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center px-3">
               <div
-                className="pointer-events-auto flex max-w-full items-center gap-1 rounded-2xl border border-border/70 bg-background/95 p-1.5 shadow-lg backdrop-blur"
+                className="pointer-events-auto flex max-w-full items-center gap-1 rounded-2xl bg-background/95 p-1.5 shadow-foreground/10 shadow-lg backdrop-blur"
                 role="toolbar"
                 aria-label={t('message_actions')}
               >
@@ -212,7 +212,7 @@ export function ThreadDetail({
             <div className="grid gap-3 p-4 sm:grid-cols-2 md:p-5 xl:grid-cols-3">
               {attachments.map(({ attachment, message }) => (
                 <a
-                  className="rounded-2xl border border-dynamic bg-background p-4 transition hover:bg-foreground/5"
+                  className="rounded-2xl bg-background p-4 shadow-foreground/5 shadow-sm transition hover:bg-foreground/5"
                   href={attachment.protectedUrl ?? undefined}
                   key={attachment.id}
                 >

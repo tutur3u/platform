@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -18,18 +17,14 @@ import {
   X,
 } from '@tuturuuu/icons';
 import {
-  bulkUpdateMailThreads,
   deleteMailDraft,
   getMailBootstrap,
   getMailThread,
   listMailThreads,
-  type MailBootstrapResponse,
   type MailMessageDetail,
   type MailThreadSummary,
-  type MailThreadsResponse,
   type SendMailMessagePayload,
   sendMailMessage,
-  updateMailThreadState,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -59,6 +54,7 @@ import {
 } from './mail-pane-layout';
 import { MailQuickFilters } from './mail-quick-filters';
 import { escapeHtml, forwardSubject, replySubject } from './mail-reply-utils';
+import { MailSyncStatus } from './mail-sync-status';
 import { MailThreadRow } from './mail-thread-list';
 import {
   getMailThreadsQueryKey,
@@ -66,13 +62,12 @@ import {
   MAIL_THREAD_PAGE_SIZE,
 } from './mail-thread-query';
 import { ThreadDetail } from './thread-detail';
+import { useMailThreadActions } from './use-mail-thread-actions';
 
 interface MailAppClientProps {
   folder: MailFolder;
   workspaceId: string;
 }
-
-type ThreadAction = Parameters<typeof updateMailThreadState>[3]['action'];
 
 export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const t = useTranslations('mail');
@@ -176,7 +171,11 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     queryFn: () =>
       getMailThread(workspaceId, activeMailboxId ?? '', threadId ?? ''),
     queryKey: ['mail', workspaceId, activeMailboxId, 'thread', threadId],
+    staleTime: 30_000,
   });
+
+  const threads =
+    threadsQuery.data?.pages.flatMap((page) => page.threads) ?? [];
 
   const invalidateMailbox = async () => {
     await Promise.all([
@@ -209,20 +208,19 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     },
   });
 
-  const stateMutation = useMutation({
-    mutationFn: (action: ThreadAction) =>
-      updateMailThreadState(
-        workspaceId,
-        activeMailboxId ?? '',
-        threadId ?? '',
-        { action }
-      ),
-    onError: () => toast.error(t('update_failed')),
-    onSuccess: async (_data, action) => {
-      await invalidateMailbox();
-      if (action === 'archive' || action === 'trash') await setThreadId(null);
-    },
-  });
+  const { bulkMutation, mutateThread, stateMutation, syncState } =
+    useMailThreadActions({
+      activeMailboxId,
+      closeThread: () => void setThreadId(null),
+      folder,
+      invalidateMailbox,
+      reopenThread: (nextThreadId) => void setThreadId(nextThreadId),
+      selectedThreads,
+      setSelectedThreads,
+      threadId,
+      threads,
+      workspaceId,
+    });
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId: string) =>
       deleteMailDraft(workspaceId, activeMailboxId ?? '', draftId),
@@ -235,21 +233,6 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         error instanceof Error ? error.message : t('delete_draft_failed')
       ),
   });
-  const bulkMutation = useMutation({
-    mutationFn: (action: 'archive' | 'mark_read' | 'trash') =>
-      bulkUpdateMailThreads(workspaceId, activeMailboxId ?? '', {
-        action,
-        threadIds: [...selectedThreads],
-      }),
-    onError: () => toast.error(t('update_failed')),
-    onSuccess: async () => {
-      setSelectedThreads(new Set());
-      await invalidateMailbox();
-    },
-  });
-
-  const threads =
-    threadsQuery.data?.pages.flatMap((page) => page.threads) ?? [];
   const filterChips = useMemo(
     () =>
       query.match(
@@ -266,47 +249,15 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const openThread = (thread: MailThreadSummary) => {
     void setThreadId(thread.id);
     if (!activeMailboxId || thread.unreadCount <= 0) return;
-
-    queryClient.setQueryData<InfiniteData<MailThreadsResponse>>(
-      threadQueryKey,
-      (current) =>
-        current
-          ? {
-              ...current,
-              pages: current.pages.map((page) => ({
-                ...page,
-                threads: page.threads.map((item) =>
-                  item.id === thread.id ? { ...item, unreadCount: 0 } : item
-                ),
-              })),
-            }
-          : current
-    );
-    if (folder === 'inbox') {
-      queryClient.setQueryData<MailBootstrapResponse>(
-        ['mail', workspaceId, 'bootstrap'],
-        (current) =>
-          current
-            ? {
-                ...current,
-                mailboxes: current.mailboxes.map((mailbox) =>
-                  mailbox.id === activeMailboxId
-                    ? {
-                        ...mailbox,
-                        unreadCount: Math.max(
-                          0,
-                          mailbox.unreadCount - thread.unreadCount
-                        ),
-                      }
-                    : mailbox
-                ),
-              }
-            : current
-      );
-    }
-    void updateMailThreadState(workspaceId, activeMailboxId, thread.id, {
-      action: 'mark_read',
-    }).then(invalidateMailbox, invalidateMailbox);
+    mutateThread('mark_read', thread.id);
+  };
+  const prefetchThread = (nextThreadId: string) => {
+    if (!activeMailboxId) return;
+    void queryClient.prefetchQuery({
+      queryFn: () => getMailThread(workspaceId, activeMailboxId, nextThreadId),
+      queryKey: ['mail', workspaceId, activeMailboxId, 'thread', nextThreadId],
+      staleTime: 30_000,
+    });
   };
   const replyReferences = (message: MailMessageDetail) => [
     ...message.references,
@@ -408,6 +359,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             className={cn('size-4', threadsQuery.isFetching && 'animate-spin')}
           />
         </Button>
+        <MailSyncStatus state={syncState} />
       </div>
       <div className="space-y-2 border-dynamic border-b p-3">
         <div className="relative">
@@ -535,12 +487,13 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         ) : !activeMailboxId ? (
           <MailContentState kind="no_mailbox" />
         ) : threads.length ? (
-          <div className="divide-y divide-dynamic">
+          <div className="space-y-1 p-2">
             {threads.map((thread) => (
               <MailThreadRow
                 active={thread.id === threadId}
                 key={thread.id}
                 onClick={() => openThread(thread)}
+                onPrefetch={() => prefetchThread(thread.id)}
                 onSelect={(selected) =>
                   setSelectedThreads((current) => {
                     const next = new Set(current);
@@ -567,6 +520,11 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
                   {t('load_more')}
                 </Button>
               </div>
+            ) : null}
+            {threadsQuery.data?.pages.at(-1)?.pagination.truncated ? (
+              <p className="px-4 py-3 text-center text-muted-foreground text-xs">
+                {t('thread_list_truncated')}
+              </p>
             ) : null}
           </div>
         ) : (
@@ -597,13 +555,13 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         error={detailQuery.isError}
         onRetry={() => void detailQuery.refetch()}
         loading={detailQuery.isLoading}
-        onArchive={() => stateMutation.mutate('archive')}
+        onArchive={() => mutateThread('archive')}
         onBack={() => setThreadId(null)}
         onForward={handleForward}
         onReply={handleReply}
         onReplyAll={handleReplyAll}
         onStar={() =>
-          stateMutation.mutate(
+          mutateThread(
             detailQuery.data?.messages.at(-1)?.starred ? 'unstar' : 'star'
           )
         }
@@ -613,7 +571,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           );
           if (folder === 'drafts' && draft)
             deleteDraftMutation.mutate(draft.id);
-          else stateMutation.mutate('trash');
+          else mutateThread('trash');
         }}
         thread={detailQuery.data ?? null}
       />

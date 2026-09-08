@@ -25,7 +25,9 @@ export function MailMessagePreview({
   const [mode, setSelectedMode] = useMailPreviewAppearance();
   const frame = useRef<HTMLIFrameElement>(null);
   const observer = useRef<ResizeObserver | null>(null);
-  const [height, setHeight] = useState(320);
+  const [height, setHeight] = useState<string | number>(
+    'max(20rem, calc(100dvh - 13rem))'
+  );
   const inlineImages = Object.fromEntries(
     attachments
       .filter(
