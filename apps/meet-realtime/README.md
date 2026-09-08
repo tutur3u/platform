@@ -95,3 +95,16 @@ keeps its workspace-scoped compatibility token API, but Meet reconnects use the
 call-specific endpoint so external guests retain access.
 
 See `packages/realtime/src/meet/messages.ts` for the full message contract.
+
+
+### Cloudflare TURN configuration
+
+The production realtime Worker also requires `CLOUDFLARE_TURN_KEY_ID` and
+`CLOUDFLARE_TURN_API_TOKEN`, from the dedicated **Tuturuuu Meet Production**
+Cloudflare TURN app. Store both as encrypted Worker secrets; do not commit them
+or send the permanent token to browsers. Session creation returns expiring relay
+credentials to admitted participants. A TURN outage logs a fixed warning and
+preserves direct ICE connectivity; CI still verifies relay availability.
+The optional local Bun server remains STUN-only. Use the remote Cloudflare
+Worker for relay checks, including the call-controller harness with `relay=1`
+or `relay=tls` for TLS443-only media tests.

@@ -598,3 +598,30 @@ immediately, before the delayed policy close event arrives. Meet watches that st
 period instead of waiting for the browser's longer timeout. Events from the old
 socket cannot change the replacement connection or settle its pending requests.
 Intentional leave and promptly received policy-close codes still stop retries.
+
+
+### Media timeout and managed TURN fallback
+
+`SFU_CONNECTION_TIMEOUT` means ICE/DTLS did not connect to the media service.
+A working local microphone preview does not prove that audio can reach the SFU.
+Meet now obtains expiring Cloudflare TURN credentials with each admitted SFU
+session and installs them on both publishing and receiving peer connections
+before negotiation. UDP, TCP, and TLS on port 443 provide alternative network
+paths; no self-hosted relay is required. Port 53 is filtered because browsers
+restrict it. Direct connections remain eligible, avoiding unnecessary relaying.
+
+Create a dedicated Meet TURN app in Cloudflare and install only
+`CLOUDFLARE_TURN_KEY_ID` and `CLOUDFLARE_TURN_API_TOKEN` in the
+`tuturuuu-meet-realtime` Worker before deploying this change. The permanent key
+never reaches the browser or logs. Only authenticated, admitted participants
+can create sessions and receive the 24-hour credentials. Each replacement
+session receives fresh credentials. Missing configuration or generation failures
+log a fixed warning and preserve direct ICE connectivity. Production checks still
+fail if relay credentials are unavailable, so degraded coverage stays visible.
+
+To verify restrictive-network behavior, run the isolated call-controller harness
+against the production Worker and open peers with `&relay=1`. Confirm a selected
+relay candidate, incoming audio energy and decoded video in both directions;
+repeat with `&relay=tls` to allow only TLS/443 and rule out direct UDP success. Synthetic
+media avoids recording real microphones or cameras. This does not substitute
+for checking previously affected physical devices.

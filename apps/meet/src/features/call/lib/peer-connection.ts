@@ -46,3 +46,14 @@ export async function preparePeerSession(
     throw error;
   }
 }
+
+/** Apply the session's short-lived relay credentials before any offer is created. */
+export function configurePeerIce(
+  pc: RTCPeerConnection,
+  iceServers?: RTCIceServer[]
+) {
+  pc.setConfiguration({
+    ...pc.getConfiguration(),
+    iceServers: iceServers ?? PEER_CONFIG.iceServers,
+  });
+}

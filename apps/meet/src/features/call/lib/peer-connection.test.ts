@@ -1,5 +1,9 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { preparePeerSession, waitForPeerConnection } from './peer-connection';
+import {
+  configurePeerIce,
+  preparePeerSession,
+  waitForPeerConnection,
+} from './peer-connection';
 
 function peer(initial: RTCPeerConnectionState) {
   const pc = new EventTarget() as RTCPeerConnection;
@@ -81,4 +85,28 @@ it('allows the initial offer to establish the connection', async () => {
   await expect(
     preparePeerSession(f.pc, () => true, vi.fn())
   ).resolves.toBeUndefined();
+});
+
+it('installs short-lived TURN credentials while preserving relay-only test policy', () => {
+  const setConfiguration = vi.fn();
+  const pc = {
+    getConfiguration: () => ({
+      bundlePolicy: 'max-bundle',
+      iceTransportPolicy: 'relay',
+    }),
+    setConfiguration,
+  } as unknown as RTCPeerConnection;
+  const iceServers = [
+    {
+      urls: 'turns:turn.cloudflare.com:443?transport=tcp',
+      username: 'temporary',
+      credential: 'temporary',
+    },
+  ];
+  configurePeerIce(pc, iceServers);
+  expect(setConfiguration).toHaveBeenCalledWith({
+    bundlePolicy: 'max-bundle',
+    iceTransportPolicy: 'relay',
+    iceServers,
+  });
 });

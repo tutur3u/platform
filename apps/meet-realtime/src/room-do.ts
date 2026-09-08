@@ -18,6 +18,8 @@ import {
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
 
+import { getSessionIceServers, type TurnEnv } from './turn-credentials';
+
 /**
  * One Durable Object per meeting room.
  *
@@ -27,7 +29,7 @@ import {
  * the same model `cloudflare/meet` uses.
  */
 
-export interface MeetRoomEnv {
+export interface MeetRoomEnv extends TurnEnv {
   CLOUDFLARE_REALTIME_API_BASE_URL?: string;
   CLOUDFLARE_REALTIME_APP_ID: string;
   CLOUDFLARE_REALTIME_APP_SECRET: string;
@@ -135,7 +137,11 @@ export class MeetRoomDurableObject implements DurableObject {
     const { message } = intent;
 
     if (message.type === 'sfu.session.create') {
-      return client.createSession(message.sessionDescription);
+      const [session, iceServers] = await Promise.all([
+        client.createSession(message.sessionDescription),
+        getSessionIceServers(this.env),
+      ]);
+      return { ...session, iceServers };
     }
     if (
       message.type === 'sfu.tracks.publish' ||

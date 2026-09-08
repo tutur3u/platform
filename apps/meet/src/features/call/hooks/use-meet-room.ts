@@ -41,6 +41,7 @@ import {
   userIdFromTrackName,
 } from '../lib/negotiation';
 import {
+  configurePeerIce,
   PEER_CONFIG,
   preparePeerSession,
   waitForPeerConnection,
@@ -242,7 +243,6 @@ export function useMeetRoom({
     };
   }, [effects, meetingId, realtimeUrl, resetPublisher, resetSubscriber, token]);
 
-  /** Announces our media state so other clients can render mute badges. */
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });
   }, []);
@@ -262,13 +262,13 @@ export function useMeetRoom({
       () => publishPcRef.current === pc,
       () => resetPublisher(true)
     );
-
     const result = await signalingRef.current?.request<SfuSessionResponse>({
       type: 'sfu.session.create',
     });
     if (!result?.sessionId) throw new Error('sfu_session_failed');
 
     if (publishPcRef.current !== pc) throw new Error('sfu_session_replaced');
+    configurePeerIce(pc, result.iceServers);
     publishSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
   }, [resetPublisher]);
@@ -305,13 +305,13 @@ export function useMeetRoom({
       () => subscribePcRef.current === pc,
       setRemoteMedia
     );
-
     const result = await signalingRef.current?.request<SfuSessionResponse>({
       type: 'sfu.session.create',
     });
     if (!result?.sessionId) throw new Error('sfu_session_failed');
 
     if (subscribePcRef.current !== pc) throw new Error('sfu_session_replaced');
+    configurePeerIce(pc, result.iceServers);
     subscribeSessionRef.current = result.sessionId;
     return { pc, sessionId: result.sessionId };
   }, [resetSubscriber]);
