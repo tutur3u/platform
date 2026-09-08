@@ -46,7 +46,8 @@ export function useRoomRecording(
         const blob = new Blob(chunks.current, { type: current.mimeType });
         backup = blob;
         mixer.current?.dispose();
-        if (blob.size) await uploadMeetRoomRecording(meetingId, id, blob);
+        if (!blob.size) throw new Error('Empty recording');
+        await uploadMeetRoomRecording(meetingId, id, blob);
         toast.success(t('recording_saved'));
       } catch {
         const file = backup;

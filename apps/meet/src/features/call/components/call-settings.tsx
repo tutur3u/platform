@@ -64,16 +64,25 @@ export function CallSettings({
         </DialogHeader>
         <Tabs defaultValue="devices">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="devices" className="gap-1.5">
-              <Mic className="size-4" />
+            <TabsTrigger
+              value="devices"
+              className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
+            >
+              <Mic className="hidden size-4 sm:block" />
               {t('devices')}
             </TabsTrigger>
-            <TabsTrigger value="connection" className="gap-1.5">
-              <Activity className="size-4" />
+            <TabsTrigger
+              value="connection"
+              className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
+            >
+              <Activity className="hidden size-4 sm:block" />
               {t('connection_title')}
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="gap-1.5">
-              <Settings2 className="size-4" />
+            <TabsTrigger
+              value="preferences"
+              className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
+            >
+              <Settings2 className="hidden size-4 sm:block" />
               {t('preferences')}
             </TabsTrigger>
           </TabsList>

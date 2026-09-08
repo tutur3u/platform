@@ -737,3 +737,14 @@ attributed per room and are shown as unallocated. Reconcile against Cloudflare
 account billing before using these estimates as a complete budget. Unknown AI costs
 are shown as missing coverage rather than zero-cost requests. Merely reading a cost
 panel does not force a Durable Object snapshot write.
+
+### Room policy verification
+
+`bun apps/meet-realtime/src/room-controls-check.ts` verifies lobby chat privacy,
+one room-wide recording, private recording/cost access, and same-account device
+switching against the Worker. Set `MEET_CHECK_REALTIME_URL` and
+`MEET_REALTIME_TOKEN_SECRET`; the default endpoint is local port 8799. The check
+uses a fresh synthetic room, ends it after success, and never uploads files or
+calls Gemini. The production deployment workflow runs this after the existing
+signaling/SFU check. Abandoned Mira requests release their per-account pending
+limit after two minutes; late provider costs can still be recorded.

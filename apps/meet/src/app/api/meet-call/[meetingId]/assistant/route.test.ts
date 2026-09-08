@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   personal: vi.fn(async () => 'tagger-personal-workspace'),
   service: vi.fn(async () => ({
     chat: [{ body: 'Recent context', displayName: 'Guest' }],
+    prompt: '@Tuturuuu original question',
   })),
   check: vi.fn(async () => ({
     allowed: true,
@@ -80,7 +81,8 @@ it('charges the tagger personal quota and uses server-supplied recent chat', asy
   );
   expect(mocks.answer).toHaveBeenCalledWith(
     [{ body: 'Recent context', displayName: 'Guest' }],
-    1024
+    1024,
+    '@Tuturuuu original question'
   );
   expect(mocks.service).toHaveBeenLastCalledWith(
     expect.anything(),

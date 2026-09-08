@@ -44,10 +44,11 @@ export async function POST(
     if (!cap) throw new MeetCallAccessError(403, 'AI quota is exhausted');
     const context = await callRoomService<{
       chat: Array<{ body: string; displayName: string; assistant?: boolean }>;
+      prompt: string;
     }>(access, { action: 'ai.reserve', messageId });
     let costUsd: number | null = null;
     try {
-      const answer = await answerMeetChat(context.chat, cap);
+      const answer = await answerMeetChat(context.chat, cap, context.prompt);
       costUsd = answer.costUsd;
       if (
         !answer.usage.available ||
