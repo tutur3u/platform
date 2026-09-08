@@ -592,7 +592,8 @@ confirmed receiving and waiting states. Ended tracks are excluded from stall
 recovery. Persisted title announcements are acknowledged by the room and retained
 across signaling reconnects until delivery; intentional leave clears that outbox.
 
-The Durable Object explicitly replies to a client WebSocket close before releasing
-presence. This avoids a browser close-handshake timeout delaying reconnection.
-Production verification checks the close acknowledgement within three seconds
-and confirms the host can reconnect afterward.
+A browser can keep its signaling socket in `CLOSING` while waiting for a remote
+close handshake. Meet watches that state and retries after a five-second grace
+period instead of waiting for the browser's longer timeout. Events from the old
+socket cannot change the replacement connection or settle its pending requests.
+Intentional leave and promptly received policy-close codes still stop retries.

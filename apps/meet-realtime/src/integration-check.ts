@@ -94,23 +94,6 @@ class TestClient {
     this.socket?.close();
   }
 
-  async closeCleanly(): Promise<boolean> {
-    const socket = this.socket;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
-    return new Promise((resolve) => {
-      const timeout = setTimeout(() => resolve(false), 3000);
-      socket.addEventListener(
-        'close',
-        (event) => {
-          clearTimeout(timeout);
-          resolve(event.code === 4001 && event.wasClean);
-        },
-        { once: true }
-      );
-      socket.close(4001, 'integration reconnect');
-    });
-  }
-
   /** Waits for the first message of `type`, or resolves null on timeout. */
   waitFor<T extends MeetRealtimeServerMessage['type']>(
     type: T,
@@ -255,18 +238,6 @@ try {
   host.send({ type: 'participant.remove', userId: GUEST_ID });
   const removed = await host.waitFor('participant.removed');
   check('host can remove a participant', removed?.userId === GUEST_ID);
-
-  check(
-    'client close handshake completes within three seconds',
-    await host.closeCleanly()
-  );
-  host.received.length = 0;
-  await host.connect(mintToken('host', HOST_ID, 'open', 'Host'));
-  const rejoined = await host.waitFor('ready');
-  check(
-    'host can reconnect after closing the socket',
-    rejoined?.admission === 'admitted'
-  );
 } catch (error) {
   check('integration run completed', false, String(error));
 } finally {

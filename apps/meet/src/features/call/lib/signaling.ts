@@ -53,6 +53,7 @@ export class MeetSignaling {
   private attempt = 0;
   private hasConnected = false;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private socketWatch: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: MeetSignalingOptions) {
     this.options = options;
@@ -75,8 +76,10 @@ export class MeetSignaling {
 
       const socket = new WebSocket(url);
       this.socket = socket;
+      this.watchClosingSocket(socket);
 
       socket.addEventListener('open', () => {
+        if (this.socket !== socket || this.closedByUs) return;
         const reconnected = this.hasConnected;
         this.attempt = 0;
         this.hasConnected = true;
@@ -84,19 +87,50 @@ export class MeetSignaling {
         if (reconnected) this.options.onReconnected?.();
         this.flushTitle();
       });
-      socket.addEventListener('error', () =>
-        this.options.onStatusChange?.('error')
-      );
+      socket.addEventListener('error', () => {
+        if (this.socket === socket && !this.closedByUs)
+          this.options.onStatusChange?.('error');
+      });
       socket.addEventListener('close', (event) => {
-        this.failAllPending(new Error('signaling_closed'));
-        if (this.closedByUs) return;
-        this.options.onStatusChange?.('closed');
-        this.scheduleReconnect((event as CloseEvent).code);
+        this.finishSocket(socket, (event as CloseEvent).code);
       });
       socket.addEventListener('message', (event) => {
-        this.handleMessage(String(event.data));
+        if (this.socket === socket && !this.closedByUs)
+          this.handleMessage(String(event.data));
       });
     })();
+  }
+
+  private clearSocketWatch() {
+    if (this.socketWatch) clearInterval(this.socketWatch);
+    this.socketWatch = null;
+  }
+
+  private finishSocket(socket: WebSocket, code?: number) {
+    if (this.socket !== socket) return;
+    this.clearSocketWatch();
+    this.socket = null;
+    this.failAllPending(new Error('signaling_closed'));
+    if (this.closedByUs) return;
+    this.options.onStatusChange?.('closed');
+    this.scheduleReconnect(code);
+  }
+
+  private watchClosingSocket(socket: WebSocket) {
+    this.clearSocketWatch();
+    let closingSince: number | null = null;
+    this.socketWatch = setInterval(() => {
+      if (this.closedByUs || this.socket !== socket) return;
+      // Chrome may remain CLOSING for a minute before delivering a close event.
+      if (socket.readyState === 2) {
+        closingSince ??= Date.now();
+        if (Date.now() - closingSince >= 5000) this.finishSocket(socket);
+      } else if (socket.readyState === 3) {
+        this.finishSocket(socket);
+      } else {
+        closingSince = null;
+      }
+    }, 1000);
   }
 
   private scheduleReconnect(closeCode?: number) {
@@ -232,6 +266,7 @@ export class MeetSignaling {
 
   close() {
     this.closedByUs = true;
+    this.clearSocketWatch();
     this.pendingTitle = null;
     if (this.titleRetry) clearTimeout(this.titleRetry);
     this.titleRetry = null;
