@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/satellite-v0.17.0...satellite-v0.18.0) (2026-09-07)
+
+
+### Features
+
+* **mail:** simplify navigation and refine the mail client ([243d2c4](https://github.com/tutur3u/platform/commit/243d2c444ab6c51cf5b27ab99e38d52d5920e78c))
+
+
+### Bug Fixes
+
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **colab:** complete shared profile and footer controls ([4cc8959](https://github.com/tutur3u/platform/commit/4cc895951d9181f86972362ca864e4aa2bba9ed2))
+* **colab:** preserve Next.js account menu parity ([1910015](https://github.com/tutur3u/platform/commit/19100151cb43220277d0970047fc8903d942348e))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/satellite-v0.16.0...satellite-v0.17.0) (2026-08-31)
 
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/drive-v0.26.3...drive-v0.27.0) (2026-09-07)
+
+
+### Features
+
+* **calendar:** add installable apps and bounded PWA caching ([f4b2a1c](https://github.com/tutur3u/platform/commit/f4b2a1cf7943783fddc45f537df73589f19594f6))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+
+
+### Bug Fixes
+
+* **calendar:** expose sync failures and repair completion tracking ([a5601a5](https://github.com/tutur3u/platform/commit/a5601a5f0fd33741392a6f6e16dad337ba4f0a35))
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+* **calendar:** make sync failures visible and recoverable ([#5227](https://github.com/tutur3u/platform/issues/5227)) ([465c9f8](https://github.com/tutur3u/platform/commit/465c9f82c5464a54675fa9d9f814c630902916e6))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **tasks:** preserve task and calendar drafts until saves finish ([34b4902](https://github.com/tutur3u/platform/commit/34b4902b0382a3aa9e10249a0d83205c9a530878))
+* **tasks:** recover partial saves and display actionable errors ([c4887c9](https://github.com/tutur3u/platform/commit/c4887c98377fd8493f3e6ae4219763d8872e2a5b))
+
 ## [0.26.3](https://github.com/tutur3u/platform/compare/drive-v0.26.2...drive-v0.26.3) (2026-08-31)
 
 

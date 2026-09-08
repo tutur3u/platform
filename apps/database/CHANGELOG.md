@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.31.0](https://github.com/tutur3u/platform/compare/database-v1.30.1...database-v1.31.0) (2026-09-07)
+
+
+### Features
+
+* **ai:** aggregate external provider expenses ([9eeaa91](https://github.com/tutur3u/platform/commit/9eeaa9183ecf6f6a301093f8482e2a5852e21e5f))
+* **ai:** aggregate external provider expenses ([#5224](https://github.com/tutur3u/platform/issues/5224)) ([a3de60d](https://github.com/tutur3u/platform/commit/a3de60d7c89bfb5ae982d491c4e43fb179f4c392))
+* **ai:** retain provider invoices and expose integrations ([3a8a4e7](https://github.com/tutur3u/platform/commit/3a8a4e7cebb0a2a57acedbcfb35fb74b4feed8e4))
+* **meet:** add Gemini transcripts notes and usage statistics ([9b0cb67](https://github.com/tutur3u/platform/commit/9b0cb6785e9463e6b60770deffdc32ac82e293b5))
+* **meet:** add live Gemini transcripts, notes, and cost statistics ([#5232](https://github.com/tutur3u/platform/issues/5232)) ([c8c262a](https://github.com/tutur3u/platform/commit/c8c262a3f10e397dca7930d8c9442aba0b1293ec))
+* **meet:** host on Cloudflare and restrict meeting creation ([#5223](https://github.com/tutur3u/platform/issues/5223)) ([dff093b](https://github.com/tutur3u/platform/commit/dff093b4b6ade986ffd54f3c756d08589e47ad8e))
+
+
+### Bug Fixes
+
+* **ai:** handle provider cost range and account edge cases ([f439e71](https://github.com/tutur3u/platform/commit/f439e710ba9fb5b582d2ced39712abde34978614))
+* **meet:** harden AI capture lifecycle and usage accounting ([e237fdb](https://github.com/tutur3u/platform/commit/e237fdbf7f0938e94d2d1a5d4a94e9c1d54a1de4))
+* **meet:** make Calendar scheduling atomic ([aa3a4cc](https://github.com/tutur3u/platform/commit/aa3a4cc46ccdfccfa7648923bcd8207a7a91467f))
+* **meet:** make Calendar scheduling atomic ([#5249](https://github.com/tutur3u/platform/issues/5249)) ([a2914ca](https://github.com/tutur3u/platform/commit/a2914cabde82b4f9a5549801807f73e9d2c728b0))
+* **meet:** preserve scheduled event consistency ([39fdf65](https://github.com/tutur3u/platform/commit/39fdf6573b332b7f8e6b3e143f14242778924ba5))
+* **meet:** restrict meeting hosts and restore reliable call media ([2a8a533](https://github.com/tutur3u/platform/commit/2a8a53355181fc8d429653506f7c845c02cf7ae9))
+
 ## [1.30.1](https://github.com/tutur3u/platform/compare/database-v1.30.0...database-v1.30.1) (2026-09-04)
 
 

@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/internal-api-v0.33.1...internal-api-v0.34.0) (2026-09-07)
+
+
+### Features
+
+* **ai:** aggregate external provider expenses ([9eeaa91](https://github.com/tutur3u/platform/commit/9eeaa9183ecf6f6a301093f8482e2a5852e21e5f))
+* **ai:** aggregate external provider expenses ([#5224](https://github.com/tutur3u/platform/issues/5224)) ([a3de60d](https://github.com/tutur3u/platform/commit/a3de60d7c89bfb5ae982d491c4e43fb179f4c392))
+* **ai:** retain provider invoices and expose integrations ([3a8a4e7](https://github.com/tutur3u/platform/commit/3a8a4e7cebb0a2a57acedbcfb35fb74b4feed8e4))
+* **assistant:** redesign Gemini Live workspace and tools ([1e7b6d1](https://github.com/tutur3u/platform/commit/1e7b6d15e2091aac257db803b4f6e39d07c1c94b))
+* **colab:** launch multiplayer prompt workshops on Cloudflare ([7a4a3f9](https://github.com/tutur3u/platform/commit/7a4a3f9b4a12a0d7439cdb296398a21c0cd8939f))
+* **colab:** redesign workshops and add activity history ([32a0811](https://github.com/tutur3u/platform/commit/32a081194d0e7ef81a9a918a337c0b4018960051))
+* **mail:** add smart forwarding and immersive message reader ([6d525c4](https://github.com/tutur3u/platform/commit/6d525c41404dab7cb670750a7bb5f7bd75c41836))
+* **mail:** support private distribution groups and member permissions ([f84e36a](https://github.com/tutur3u/platform/commit/f84e36acd0c4a86580aab62cfff92b6df3b924b1))
+* **meet:** add Gemini transcripts notes and usage statistics ([9b0cb67](https://github.com/tutur3u/platform/commit/9b0cb6785e9463e6b60770deffdc32ac82e293b5))
+* **meet:** add live Gemini transcripts, notes, and cost statistics ([#5232](https://github.com/tutur3u/platform/issues/5232)) ([c8c262a](https://github.com/tutur3u/platform/commit/c8c262a3f10e397dca7930d8c9442aba0b1293ec))
+* **meet:** integrate instant rooms with Calendar ([9631fd1](https://github.com/tutur3u/platform/commit/9631fd1373615f3e8be55dd028d54b441e78a023))
+* **meet:** integrate instant rooms with Calendar ([#5248](https://github.com/tutur3u/platform/issues/5248)) ([5f3e77d](https://github.com/tutur3u/platform/commit/5f3e77df20e636fe270cdc7d1b1d88817a3f00bd))
+
+
+### Bug Fixes
+
+* **ai:** preserve structured output and failed usage costs ([#5226](https://github.com/tutur3u/platform/issues/5226)) ([ad9de07](https://github.com/tutur3u/platform/commit/ad9de077b7607f2e7de5bab580eb638c68beecd7))
+* **ai:** surface incomplete costs and price reasoning once ([7b2406e](https://github.com/tutur3u/platform/commit/7b2406e54d06d909b981281ac7fb4bd11dff435b))
+* **calendar:** expose sync failures and repair completion tracking ([a5601a5](https://github.com/tutur3u/platform/commit/a5601a5f0fd33741392a6f6e16dad337ba4f0a35))
+* **calendar:** handle partial sync in every client action ([b820bbc](https://github.com/tutur3u/platform/commit/b820bbcdb725e38c13342eed96062b2f4a0afacb))
+* **calendar:** make sync failures visible and recoverable ([#5227](https://github.com/tutur3u/platform/issues/5227)) ([465c9f8](https://github.com/tutur3u/platform/commit/465c9f82c5464a54675fa9d9f814c630902916e6))
+* **calendar:** recover failed syncs and redesign calendar views ([7d22948](https://github.com/tutur3u/platform/commit/7d22948095a29d236f698d42dde362fc38311dd0))
+* **calendar:** recover failed syncs and redesign calendar views ([#5230](https://github.com/tutur3u/platform/issues/5230)) ([e52605d](https://github.com/tutur3u/platform/commit/e52605d671f921b1564746afcdedf2478deee78e))
+* **colab:** renew account sessions and host workshops in a dialog ([ab3c72f](https://github.com/tutur3u/platform/commit/ab3c72f79643feabd63b62f5937a7f255e4a3dd7))
+* **colab:** resolve API types from source in clean builds ([df163f8](https://github.com/tutur3u/platform/commit/df163f8c8d5b7554ef2e4f37b5598f56e0b05887))
+* **meet:** harden AI capture lifecycle and usage accounting ([e237fdb](https://github.com/tutur3u/platform/commit/e237fdbf7f0938e94d2d1a5d4a94e9c1d54a1de4))
+* **meet:** preserve invite access for external guests ([0546e4e](https://github.com/tutur3u/platform/commit/0546e4e4f1520eaf80a7f52861e845050232e0ae))
+* **meet:** preserve invite access for external guests ([#5234](https://github.com/tutur3u/platform/issues/5234)) ([5d25d9e](https://github.com/tutur3u/platform/commit/5d25d9e37dc443534e53846b74578c8954459166))
+* **planning:** repair embedded APIs and simplify navigation ([5e82d77](https://github.com/tutur3u/platform/commit/5e82d77e183c5603d04cbe76bf3bba8bf3a94eca))
+
 ## [0.33.1](https://github.com/tutur3u/platform/compare/internal-api-v0.33.0...internal-api-v0.33.1) (2026-09-02)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/offline-v0.1.4...offline-v0.2.0) (2026-09-07)
+
+
+### Features
+
+* **calendar:** add installable apps and bounded PWA caching ([f4b2a1c](https://github.com/tutur3u/platform/commit/f4b2a1cf7943783fddc45f537df73589f19594f6))
+* **calendar:** add installable Tasks and Calendar with bounded caching ([#5231](https://github.com/tutur3u/platform/issues/5231)) ([7078824](https://github.com/tutur3u/platform/commit/70788244874d811da3e1ce3a9af2c9389739a8c3))
+
+
+### Bug Fixes
+
+* **calendar:** harden PWA lifecycle and cache retention ([14565c0](https://github.com/tutur3u/platform/commit/14565c0106e74b947e152fd8bb787de7f70bc54d))
+
 ## [0.1.4](https://github.com/tutur3u/platform/compare/offline-v0.1.3...offline-v0.1.4) (2026-08-21)
 
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/ai-v0.8.4...ai-v0.9.0) (2026-09-07)
+
+
+### Features
+
+* **meet:** add Gemini transcripts notes and usage statistics ([9b0cb67](https://github.com/tutur3u/platform/commit/9b0cb6785e9463e6b60770deffdc32ac82e293b5))
+* **meet:** add live Gemini transcripts, notes, and cost statistics ([#5232](https://github.com/tutur3u/platform/issues/5232)) ([c8c262a](https://github.com/tutur3u/platform/commit/c8c262a3f10e397dca7930d8c9442aba0b1293ec))
+
+
+### Bug Fixes
+
+* **meet:** diagnose provider failures safely ([3f1bfbf](https://github.com/tutur3u/platform/commit/3f1bfbf35bd8e3cc4a7e6911462652d28049dfdf))
+* **meet:** harden AI capture lifecycle and usage accounting ([e237fdb](https://github.com/tutur3u/platform/commit/e237fdbf7f0938e94d2d1a5d4a94e9c1d54a1de4))
+* **meet:** place Gemini requests in a supported region ([3e5aea7](https://github.com/tutur3u/platform/commit/3e5aea7b2229aedb0664ba607b7c8e1822f7f27a))
+* **meet:** preserve safe AI failure classifications ([0046adc](https://github.com/tutur3u/platform/commit/0046adcfc73704018a2ac50339a225f3e7faf23b))
+* **meet:** run Gemini requests from a supported region ([#5235](https://github.com/tutur3u/platform/issues/5235)) ([e2c9c44](https://github.com/tutur3u/platform/commit/e2c9c44b41b9961801fbbcce01180266c7b57209))
+
 ## [0.8.4](https://github.com/tutur3u/platform/compare/ai-v0.8.3...ai-v0.8.4) (2026-09-04)
 
 

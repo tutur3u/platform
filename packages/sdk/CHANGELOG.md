@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/sdk-v0.20.1...sdk-v0.21.0) (2026-09-07)
+
+
+### Features
+
+* **cli:** configure external apps and CMS bindings ([c68cf0e](https://github.com/tutur3u/platform/commit/c68cf0e41a361a156d29907feb72b48dc91ae969))
+
 ## [0.20.1](https://github.com/tutur3u/platform/compare/sdk-v0.20.0...sdk-v0.20.1) (2026-08-11)
 
 
