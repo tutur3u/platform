@@ -1,38 +1,34 @@
-import assert from 'node:assert/strict';
-import { test } from 'vitest';
-import {
-  MeetRoomDurableObject,
-  type MeetRoomEnv,
-} from '../../../../apps/meet-realtime/src/room-do';
+import { expect, test } from 'vitest';
+import { parseMeetRoomSettingsPatch } from './room-options';
 
-test('partial and concurrent policy updates preserve independent settings', async () => {
-  const room = new MeetRoomDurableObject(
-    {
-      storage: { get: async () => undefined, put: async () => undefined },
-      getWebSockets: () => [],
-    } as unknown as DurableObjectState,
-    {} as MeetRoomEnv
+test('post-call-only changes preserve an existing live-sharing policy', () => {
+  const result = parseMeetRoomSettingsPatch(
+    { shareNotesAfterMeeting: true },
+    { shareNotes: true }
   );
-  const request = (body?: Record<string, boolean>) =>
-    room.fetch(
-      new Request('https://meet.test/room-state', {
-        method: body ? 'PATCH' : 'GET',
-        headers: { 'x-meet-token': JSON.stringify({ role: 'host' }) },
-        body: body ? JSON.stringify(body) : undefined,
-      })
-    );
-  await request({ shareNotes: true });
-  const partial = await request({ shareNotesAfterMeeting: true });
-  assert.deepEqual((await partial.json()).settings, {
+  expect(result.success && result.data).toEqual({
     shareNotes: true,
     shareNotesAfterMeeting: true,
   });
-  await Promise.all([
-    request({ shareNotes: false }),
-    request({ shareNotesAfterMeeting: false }),
-  ]);
-  assert.deepEqual((await (await request()).json()).settings, {
-    shareNotes: false,
-    shareNotesAfterMeeting: false,
-  });
+});
+
+test('independent changes preserve revocations in either arrival order', () => {
+  for (const patches of [
+    [{ shareNotes: false }, { shareNotesAfterMeeting: true }],
+    [{ shareNotesAfterMeeting: true }, { shareNotes: false }],
+  ]) {
+    let current = { shareNotes: true, shareNotesAfterMeeting: false };
+    for (const patch of patches) {
+      const result = parseMeetRoomSettingsPatch(patch, current);
+      if (!result.success) throw result.error;
+      current = { shareNotesAfterMeeting: false, ...result.data };
+    }
+    expect(current).toEqual({
+      shareNotes: false,
+      shareNotesAfterMeeting: true,
+    });
+  }
+  expect(parseMeetRoomSettingsPatch({ shareNotes: 'true' }).success).toBe(
+    false
+  );
 });

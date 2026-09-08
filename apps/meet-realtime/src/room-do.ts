@@ -17,7 +17,7 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
-import { meetRoomSettingsPatchSchema } from '../../../packages/realtime/src/meet/room-options';
+import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
 
 import { getSessionIceServers, type TurnEnv } from './turn-credentials';
 
@@ -175,15 +175,11 @@ export class MeetRoomDurableObject implements DurableObject {
       if (request.method === 'PATCH') {
         if (token.role !== 'host')
           return new Response('Forbidden', { status: 403 });
-        const patch = meetRoomSettingsPatchSchema.safeParse(
-          await request.json().catch(() => null)
-        );
+        const body = await request.json().catch(() => null);
+        const patch = parseMeetRoomSettingsPatch(body, this.snapshot.settings);
         if (!patch.success)
           return new Response('Invalid settings', { status: 400 });
-        const settings = {
-          ...(this.snapshot.settings ?? { shareNotes: false }),
-          ...patch.data,
-        };
+        const settings = patch.data;
         this.snapshot = { ...this.snapshot, settings };
         this.persist();
         this.broadcast([{ type: 'room.settings', settings }]);

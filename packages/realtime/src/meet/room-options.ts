@@ -23,3 +23,12 @@ export type MeetApprovedParticipant = {
   displayName: string;
   avatarUrl?: string;
 };
+
+export function parseMeetRoomSettingsPatch(
+  value: unknown,
+  current: MeetRoomSettings = { shareNotes: false }
+) {
+  return meetRoomSettingsPatchSchema
+    .transform((patch) => ({ ...current, ...patch }))
+    .safeParse(value);
+}
