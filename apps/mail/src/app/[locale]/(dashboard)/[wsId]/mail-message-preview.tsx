@@ -2,7 +2,13 @@
 
 import type { MailAttachment } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { buildMailMessagePreviewDocument } from './mail-message-preview-utils';
 import { useMailPreviewAppearance } from './mail-preview-appearance';
 import { applyMailPreviewContrast } from './mail-preview-contrast';
@@ -55,7 +61,7 @@ export function MailMessagePreview({
     inlineImages
   );
   useEffect(() => () => observer.current?.disconnect(), []);
-  function resize() {
+  const resize = useCallback(() => {
     const body = frame.current?.contentDocument?.body;
     if (body)
       setHeight(
@@ -64,8 +70,8 @@ export function MailMessagePreview({
           Math.min(30_000, Math.ceil(body.getBoundingClientRect().height) + 16)
         )
       );
-  }
-  function observeContent() {
+  }, []);
+  const observeContent = useCallback(() => {
     observer.current?.disconnect();
     const body = frame.current?.contentDocument?.body;
     if (!hydrated || !body?.hasAttribute('data-mail-preview')) return;
@@ -79,7 +85,26 @@ export function MailMessagePreview({
     observer.current = new ResizeObserver(resize);
     observer.current.observe(body);
     resize();
-  }
+  }, [hydrated, mode, previewDocument, resize]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    let request = 0;
+    const prepare = () => {
+      const document = frame.current?.contentDocument;
+      if (
+        document?.readyState !== 'loading' &&
+        document?.body?.hasAttribute('data-mail-preview')
+      ) {
+        // Do not wait for remote images to finish downloading before reading.
+        observeContent();
+      } else {
+        request = requestAnimationFrame(prepare);
+      }
+    };
+    request = requestAnimationFrame(prepare);
+    return () => cancelAnimationFrame(request);
+  }, [hydrated, observeContent]);
 
   return (
     <div className="min-w-0 max-w-full overflow-hidden bg-background">
