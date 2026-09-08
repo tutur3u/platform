@@ -6,6 +6,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 
 function formatDate(value: string | null, locale: string) {
   if (!value) return '';
@@ -36,9 +37,24 @@ export function MailThreadRow({
 }) {
   const t = useTranslations('mail');
   const locale = useLocale();
+  const prefetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const participant = thread.participants[0];
   const participantLabel =
     participant?.displayName || participant?.address || t('unknown_sender');
+  const cancelPrefetch = () => {
+    if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
+    prefetchTimer.current = null;
+  };
+  const schedulePrefetch = () => {
+    cancelPrefetch();
+    prefetchTimer.current = setTimeout(onPrefetch, 180);
+  };
+  useEffect(
+    () => () => {
+      if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
+    },
+    []
+  );
 
   return (
     <div
@@ -60,7 +76,8 @@ export function MailThreadRow({
         className="block w-full min-w-0 max-w-full py-4 pr-4 pl-10 text-left focus-visible:bg-accent focus-visible:underline focus-visible:outline-none"
         onClick={onClick}
         onFocus={onPrefetch}
-        onPointerEnter={onPrefetch}
+        onPointerEnter={schedulePrefetch}
+        onPointerLeave={cancelPrefetch}
         type="button"
       >
         <div className="mb-1 flex items-center gap-2">

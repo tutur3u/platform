@@ -3,8 +3,9 @@ import type { ListMailMessagesParams } from '../types';
 import { type AnyRecord, privateTable } from './shared';
 
 type SearchResult = {
+  hasMore?: boolean;
   rows: AnyRecord[];
-  total: number;
+  total: number | null;
 };
 
 const DATABASE_PAGE_SIZE = 1000;
@@ -229,7 +230,14 @@ export async function queryMailMessageRows({
     includedIds = intersectIds(includedIds, ids);
 
   if (params.folder === 'inbox' || !params.folder) {
-    for (const id of [...archivedIds, ...trashedIds]) excludedIds.add(id);
+    if (!parsed.states.includes('archived')) {
+      for (const id of archivedIds) excludedIds.add(id);
+    }
+    if (!parsed.states.includes('trash')) {
+      for (const id of trashedIds) excludedIds.add(id);
+    }
+  } else if (params.folder !== 'trash') {
+    for (const id of trashedIds) excludedIds.add(id);
   }
   if (parsed.states.includes('unread')) {
     for (const id of readIds) excludedIds.add(id);
@@ -313,10 +321,9 @@ export async function queryMailMessageRows({
         includeRow
       );
       return {
+        hasMore: result.hasMore,
         rows: result.rows,
-        total: result.hasMore
-          ? Math.max(result.threadCount, targetThreadCount)
-          : result.threadCount,
+        total: result.hasMore ? null : result.threadCount,
       };
     }
     const rows = (

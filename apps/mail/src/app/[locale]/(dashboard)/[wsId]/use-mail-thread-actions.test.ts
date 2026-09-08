@@ -8,7 +8,7 @@ function cache(): InfiniteData<MailThreadsResponse> {
     pageParams: [1],
     pages: [
       {
-        pagination: { page: 1, pageSize: 40, total: 2 },
+        pagination: { hasMore: false, page: 1, pageSize: 40, total: 2 },
         threads: [
           { id: 'a', starred: false, unreadCount: 2 },
           { id: 'b', starred: true, unreadCount: 0 },
@@ -56,5 +56,29 @@ describe('optimistic mail thread updates', () => {
       starred: true,
       unreadCount: 0,
     });
+  });
+
+  it('removes read conversations from an unread search immediately', () => {
+    const result = updateThreadPages(
+      cache(),
+      new Set(['a']),
+      'mark_read',
+      'inbox',
+      'from:sender@example.com is:unread'
+    );
+
+    expect(result?.pages[0]?.threads.map((thread) => thread.id)).toEqual(['b']);
+  });
+
+  it('recognizes quoted state filters when updating optimistic results', () => {
+    const result = updateThreadPages(
+      cache(),
+      new Set(['b']),
+      'unstar',
+      'inbox',
+      'is:"starred"'
+    );
+
+    expect(result?.pages[0]?.threads.map((thread) => thread.id)).toEqual(['a']);
   });
 });

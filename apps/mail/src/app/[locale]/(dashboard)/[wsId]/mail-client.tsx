@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -22,13 +21,10 @@ import {
   getMailBootstrap,
   getMailThread,
   listMailThreads,
-  type MailBootstrapResponse,
   type MailMessageDetail,
   type MailThreadSummary,
-  type MailThreadsResponse,
   type SendMailMessagePayload,
   sendMailMessage,
-  updateMailThreadState,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -253,47 +249,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const openThread = (thread: MailThreadSummary) => {
     void setThreadId(thread.id);
     if (!activeMailboxId || thread.unreadCount <= 0) return;
-
-    queryClient.setQueryData<InfiniteData<MailThreadsResponse>>(
-      threadQueryKey,
-      (current) =>
-        current
-          ? {
-              ...current,
-              pages: current.pages.map((page) => ({
-                ...page,
-                threads: page.threads.map((item) =>
-                  item.id === thread.id ? { ...item, unreadCount: 0 } : item
-                ),
-              })),
-            }
-          : current
-    );
-    if (folder === 'inbox') {
-      queryClient.setQueryData<MailBootstrapResponse>(
-        ['mail', workspaceId, 'bootstrap'],
-        (current) =>
-          current
-            ? {
-                ...current,
-                mailboxes: current.mailboxes.map((mailbox) =>
-                  mailbox.id === activeMailboxId
-                    ? {
-                        ...mailbox,
-                        unreadCount: Math.max(
-                          0,
-                          mailbox.unreadCount - thread.unreadCount
-                        ),
-                      }
-                    : mailbox
-                ),
-              }
-            : current
-      );
-    }
-    void updateMailThreadState(workspaceId, activeMailboxId, thread.id, {
-      action: 'mark_read',
-    }).then(invalidateMailbox, invalidateMailbox);
+    mutateThread('mark_read', thread.id);
   };
   const prefetchThread = (nextThreadId: string) => {
     if (!activeMailboxId) return;

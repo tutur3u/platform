@@ -223,7 +223,12 @@ export interface MailMessagesResponse {
 }
 
 export interface MailThreadsResponse {
-  pagination: { page: number; pageSize: number; total: number };
+  pagination: {
+    hasMore: boolean;
+    page: number;
+    pageSize: number;
+    total: number | null;
+  };
   threads: MailThreadSummary[];
 }
 

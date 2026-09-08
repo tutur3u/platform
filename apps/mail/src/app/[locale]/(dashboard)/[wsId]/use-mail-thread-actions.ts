@@ -17,7 +17,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { MailFolder } from './mail-folders';
 
 type ThreadAction = Parameters<typeof updateMailThreadState>[3]['action'];
@@ -33,11 +33,34 @@ type OptimisticContext = {
   threadCaches: ThreadCacheSnapshot;
 };
 
-function shouldRemoveFromFolder(action: ThreadAction, folder: MailFolder) {
+function hasStateFilter(query: string, state: string) {
+  return new RegExp(`(?:^|\\s)is:(?:"${state}"|${state})(?:\\s|$)`, 'iu').test(
+    query
+  );
+}
+
+function shouldRemoveFromFolder(
+  action: ThreadAction,
+  folder: MailFolder,
+  query: string
+) {
   if (action === 'trash') return folder !== 'trash';
-  if (action === 'archive') return folder === 'inbox';
-  if (action === 'restore') return folder === 'archive' || folder === 'trash';
-  if (action === 'unstar') return folder === 'starred';
+  if (action === 'archive') {
+    return folder === 'inbox' && !hasStateFilter(query, 'archived');
+  }
+  if (action === 'restore') {
+    return (
+      folder === 'archive' ||
+      folder === 'trash' ||
+      hasStateFilter(query, 'archived') ||
+      hasStateFilter(query, 'trash')
+    );
+  }
+  if (action === 'unstar') {
+    return folder === 'starred' || hasStateFilter(query, 'starred');
+  }
+  if (action === 'mark_read' && hasStateFilter(query, 'unread')) return true;
+  if (action === 'mark_unread' && hasStateFilter(query, 'read')) return true;
   return false;
 }
 
@@ -45,10 +68,11 @@ export function updateThreadPages(
   current: InfiniteData<MailThreadsResponse> | undefined,
   threadIds: Set<string>,
   action: ThreadAction,
-  folder: MailFolder
+  folder: MailFolder,
+  query = ''
 ) {
   if (!current) return current;
-  const remove = shouldRemoveFromFolder(action, folder);
+  const remove = shouldRemoveFromFolder(action, folder, query);
   const removedCount = remove
     ? current.pages.reduce(
         (count, page) =>
@@ -64,7 +88,10 @@ export function updateThreadPages(
       ...page,
       pagination: {
         ...page.pagination,
-        total: Math.max(0, page.pagination.total - removedCount),
+        total:
+          page.pagination.total === null
+            ? null
+            : Math.max(0, page.pagination.total - removedCount),
       },
       threads: page.threads.flatMap((thread) => {
         if (!threadIds.has(thread.id)) return [thread];
@@ -123,7 +150,13 @@ function applyOptimisticUpdate({
   for (const [queryKey, current] of caches) {
     queryClient.setQueryData(
       queryKey,
-      updateThreadPages(current, threadIds, action, queryKey[4] as MailFolder)
+      updateThreadPages(
+        current,
+        threadIds,
+        action,
+        queryKey[4] as MailFolder,
+        String(queryKey[7] ?? '')
+      )
     );
   }
   for (const threadId of threadIds) {
@@ -186,6 +219,8 @@ export function useMailThreadActions({
   const t = useTranslations('mail');
   const queryClient = useQueryClient();
   const [syncState, setSyncState] = useState<MailSyncState>('idle');
+  const selectedThreadIdRef = useRef(threadId);
+  selectedThreadIdRef.current = threadId;
 
   const snapshot = async (
     ids: Set<string>,
@@ -270,7 +305,10 @@ export function useMailThreadActions({
     },
     onError: (_error, variables, context) => {
       restore(context);
-      if (variables.action === 'archive' || variables.action === 'trash') {
+      if (
+        selectedThreadIdRef.current === null &&
+        (variables.action === 'archive' || variables.action === 'trash')
+      ) {
         reopenThread(variables.targetThreadId);
       }
       setSyncState('failed');
@@ -305,8 +343,8 @@ export function useMailThreadActions({
 
   return {
     bulkMutation,
-    mutateThread: (action: ThreadAction) => {
-      if (threadId) stateMutation.mutate({ action, targetThreadId: threadId });
+    mutateThread: (action: ThreadAction, targetThreadId = threadId) => {
+      if (targetThreadId) stateMutation.mutate({ action, targetThreadId });
     },
     stateMutation,
     syncState,

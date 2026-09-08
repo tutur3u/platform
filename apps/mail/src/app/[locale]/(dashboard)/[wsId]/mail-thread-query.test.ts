@@ -25,10 +25,12 @@ describe('mail thread query helpers', () => {
   });
 
   it('returns the next page only while rows remain', () => {
-    const response = (page: number, total: number) =>
-      ({ pagination: { page, pageSize: 40, total } }) as never;
+    const response = (page: number, total: number | null, hasMore = false) =>
+      ({ pagination: { hasMore, page, pageSize: 40, total } }) as never;
 
     expect(getNextMailThreadPage(response(1, 41))).toBe(2);
     expect(getNextMailThreadPage(response(2, 41))).toBeUndefined();
+    expect(getNextMailThreadPage(response(1, null, true))).toBe(2);
+    expect(getNextMailThreadPage(response(1, null))).toBeUndefined();
   });
 });

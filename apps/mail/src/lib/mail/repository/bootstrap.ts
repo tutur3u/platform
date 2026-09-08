@@ -213,7 +213,10 @@ export async function getMailBootstrap(
         .filter((row: AnyRecord) => row.type === 'personal')
         .map((row: AnyRecord) => row.created_by)
     ),
-    listLabels(admin, mailboxIds),
+    listLabels(
+      admin,
+      (mailboxRows ?? []).map((row: AnyRecord) => row.id)
+    ),
   ]);
   const mailboxes: MailMailbox[] = (mailboxRows ?? []).map(
     (row: AnyRecord) => ({

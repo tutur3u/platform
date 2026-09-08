@@ -26,6 +26,8 @@ export function getMailThreadsQueryKey(scope: MailThreadQueryScope) {
 }
 
 export function getNextMailThreadPage(lastPage: MailThreadsResponse) {
+  if (lastPage.pagination.hasMore) return lastPage.pagination.page + 1;
+  if (lastPage.pagination.total === null) return undefined;
   const loadedThrough = lastPage.pagination.page * lastPage.pagination.pageSize;
   return loadedThrough < lastPage.pagination.total
     ? lastPage.pagination.page + 1

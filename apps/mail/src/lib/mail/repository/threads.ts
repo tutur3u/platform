@@ -22,6 +22,21 @@ import { type AnyRecord, mailMessageTable, privateTable } from './shared';
 
 const THREAD_PARTICIPANT_COLUMNS =
   'direction,from_address,from_name,has_attachments,id,thread_id';
+const MAX_THREAD_PAGE = 25;
+
+export function normalizeThreadPagination({
+  page,
+  pageSize,
+}: Pick<ListMailThreadsParams, 'page' | 'pageSize'>) {
+  const requestedPage =
+    typeof page === 'number' && Number.isFinite(page) ? page : 1;
+  const requestedPageSize =
+    typeof pageSize === 'number' && Number.isFinite(pageSize) ? pageSize : 40;
+  return {
+    page: Math.min(MAX_THREAD_PAGE, Math.max(1, Math.floor(requestedPage))),
+    pageSize: Math.min(100, Math.max(1, Math.floor(requestedPageSize))),
+  };
+}
 
 function toThread(row: AnyRecord): MailThread {
   return {
@@ -78,13 +93,16 @@ export async function listMailThreads({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
-  const page = Math.max(1, params.page ?? 1);
-  const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
-  const { rows, total } = await queryMailMessageRows({
+  const { page, pageSize } = normalizeThreadPagination(params);
+  const {
+    hasMore = false,
+    rows,
+    total,
+  } = await queryMailMessageRows({
     privateToUser: Boolean(access.mailbox.groupPolicy),
     admin: access.admin,
     mailboxId,
-    params,
+    params: { ...params, page, pageSize },
     threadScan: true,
     userId: ctx.user.id,
   });
@@ -97,9 +115,10 @@ export async function listMailThreads({
   const allThreadIds = [...latestByThread.keys()];
   const start = (page - 1) * pageSize;
   const threadIds = allThreadIds.slice(start, start + pageSize);
+  const canLoadMore = hasMore && page < MAX_THREAD_PAGE;
   if (threadIds.length === 0) {
     return {
-      pagination: { page, pageSize, total },
+      pagination: { hasMore: canLoadMore, page, pageSize, total },
       threads: [],
     };
   }
@@ -206,7 +225,7 @@ export async function listMailThreads({
     ];
   });
   return {
-    pagination: { page, pageSize, total },
+    pagination: { hasMore: canLoadMore, page, pageSize, total },
     threads: summaries,
   };
 }
