@@ -1,6 +1,7 @@
 import {
   applyRoomControl,
   approvedParticipantsMessage,
+  rememberAdmission,
   roomSettingsMessage,
 } from './room-controls';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
@@ -223,16 +224,19 @@ export function admitOrHold(
     });
   }
 
+  const person = createMeetPresence(token, now);
   const next: MeetRoomSnapshot = {
     ...state,
+    approved: rememberAdmission(state, person),
     presence: {
       ...state.presence,
-      [token.userId]: createMeetPresence(token, now),
+      [token.userId]: person,
     },
   };
 
   return outcome(next, {
     broadcast: [meetPresenceMessage(next, token.roomId)],
+    toManagers: [approvedParticipantsMessage(next)],
     reply: [
       buildReady(next, token, 'admitted'),
       roomSettingsMessage(next),

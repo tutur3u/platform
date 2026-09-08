@@ -2,7 +2,10 @@ import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
 } from './messages';
-import type { MeetRealtimeTokenPayload } from './primitives';
+import type {
+  MeetRealtimePresence,
+  MeetRealtimeTokenPayload,
+} from './primitives';
 import type { MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 import { failActiveRecording } from './room-recording';
@@ -121,20 +124,6 @@ export function applyRoomControl(
       {
         ...failActiveRecording(state, now),
         ended: true,
-        approved: {
-          ...Object.fromEntries(
-            Object.values(state.presence).map((person) => [
-              person.accountId ?? person.userId,
-              {
-                userId: person.accountId ?? person.userId,
-                displayName: person.displayName,
-                avatarUrl: person.avatarUrl,
-                approvedAt: now,
-              },
-            ])
-          ),
-          ...state.approved,
-        },
         presence: {},
         waiting: {},
         tracks: {},
@@ -159,4 +148,21 @@ export function applyRoomControl(
     );
   }
   return null;
+}
+
+/** Remember admission when it occurs, so ending a room cannot undo a later revocation. */
+export function rememberAdmission(
+  state: MeetRoomSnapshot,
+  person: MeetRealtimePresence
+) {
+  if (person.role === 'host') return state.approved;
+  const accountId = person.accountId ?? person.userId;
+  return {
+    ...state.approved,
+    [accountId]: {
+      userId: accountId,
+      displayName: person.displayName,
+      avatarUrl: person.avatarUrl,
+    },
+  };
 }

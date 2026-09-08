@@ -231,3 +231,36 @@ it('acknowledges a repeated completed assistant settlement without duplicating m
   expect(retried.state).toBe(done.state);
   expect(retried.messages).toBeUndefined();
 });
+it('reclaims a discarded attachment slot only after storage deletion succeeds', () => {
+  const file = {
+    id: account,
+    name: 'file.txt',
+    size: 10,
+    contentType: 'text/plain',
+    path: 'Meet/file.txt',
+    storageWsId: token.wsId,
+  };
+  const state = roomService(initial(), token, {
+    action: 'attach',
+    attachment: file,
+  }).state;
+  expect(
+    roomService(state, token, { action: 'attachment.deleted', id: account })
+      .status
+  ).toBe(403);
+  const discarded = roomService(state, token, {
+    action: 'attachment.discard',
+    id: account,
+  }).state;
+  const deleted = roomService(discarded, token, {
+    action: 'attachment.deleted',
+    id: account,
+  });
+  expect(deleted.state.attachments?.[account]).toBeUndefined();
+  expect(
+    roomService(deleted.state, token, {
+      action: 'attachment.deleted',
+      id: account,
+    }).status
+  ).toBeUndefined();
+});

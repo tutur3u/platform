@@ -124,3 +124,17 @@ it('bounds distinct reporting devices without resetting their allowances', () =>
   expect(next.limitedReports).toBe(1);
   expect(next.receivedBytes).toBe(0);
 });
+it('includes legacy reporting identities when enforcing the distinct-device bound', () => {
+  const usage = createRoomUsage();
+  usage.reportedDevices = Object.fromEntries(
+    Array.from({ length: 4095 }, (_, i) => [String(i), true as const])
+  );
+  usage.reports.legacy = {
+    deviceId: 'legacy',
+    bytes: 10,
+    updatedAt: usage.startedAt,
+  };
+  const next = applyUsageReport(usage, 'new', 'report', 10, usage.startedAt);
+  expect(next.limitedReports).toBe(1);
+  expect(next.deviceBytes).toBeUndefined();
+});
