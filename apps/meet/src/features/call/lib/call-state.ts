@@ -15,6 +15,10 @@ import type {
 export type CallAdmission = 'connecting' | 'waiting' | 'admitted' | 'denied';
 
 export interface CallChatMessage {
+  accountId?: string;
+  avatarUrl?: string;
+  assistant?: boolean;
+  attachmentIds?: string[];
   body: string;
   createdAt: string;
   displayName: string;
@@ -38,6 +42,7 @@ export interface CallState {
   error: string | null;
   participants: Record<string, MeetRealtimePresence>;
   recording: {
+    ownerDeviceId?: string;
     sessionId: string | null;
     state: MeetRealtimeRecordingState;
   };
@@ -191,7 +196,11 @@ export function reduceCallState(
       return {
         ...state,
         recording: {
-          sessionId: message.recordingSessionId ?? state.recording.sessionId,
+          ownerDeviceId: message.ownerDeviceId,
+          sessionId:
+            message.state === 'idle' || message.state === 'error'
+              ? null
+              : (message.recordingSessionId ?? state.recording.sessionId),
           state: message.state,
         },
       };

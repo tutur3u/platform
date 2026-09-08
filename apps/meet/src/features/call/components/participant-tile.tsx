@@ -22,6 +22,7 @@ import {
 
 function ParticipantTileImpl({
   className,
+  outputDeviceId,
   resumePlaybackLabel,
   handRaised,
   isSelf,
@@ -36,6 +37,7 @@ function ParticipantTileImpl({
   focusKey,
 }: {
   className?: string;
+  outputDeviceId?: string;
   resumePlaybackLabel: string;
   handRaised?: boolean;
   isSelf?: boolean;
@@ -99,6 +101,13 @@ function ParticipantTileImpl({
         setPlaybackBlocked
       );
   }, [audioStream]);
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio && outputDeviceId !== undefined && 'setSinkId' in audio)
+      void audio
+        .setSinkId(outputDeviceId)
+        .catch(() => setPlaybackBlocked(true));
+  }, [outputDeviceId]);
   return (
     <div
       ref={tileRef}

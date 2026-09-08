@@ -918,6 +918,7 @@
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/storage-core": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",

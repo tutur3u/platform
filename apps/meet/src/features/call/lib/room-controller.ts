@@ -13,11 +13,16 @@ export interface UseMeetRoomOptions {
   meetingId: string;
   realtimeUrl: string;
   token: string;
+  deviceId?: string;
   wsId: string;
 }
 
 export interface MeetRoomController
   extends ReturnType<typeof createRoomActions> {
+  getSelectedDevices: () => { audio: string; video: string };
+  getBandwidthMode: () => import('./bandwidth').BandwidthMode;
+  selectDevice: (kind: 'audio' | 'video', deviceId: string) => Promise<void>;
+  setBandwidthMode: (mode: import('./bandwidth').BandwidthMode) => void;
   leave: () => void;
   adoptPreview: (stream: MediaStream | null) => Promise<void>;
   cameraLook: CameraLook;
@@ -36,7 +41,7 @@ export interface MeetRoomController
   raiseHand: (raised: boolean) => void;
   removeParticipant: (userId: string) => void;
   remoteStreams: Record<string, MediaStream>;
-  sendChat: (body: string) => void;
+
   setRecordingState: (state: 'recording' | 'idle', sessionId?: string) => void;
   state: CallState;
   toggleCamera: () => Promise<void>;

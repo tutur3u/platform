@@ -101,6 +101,11 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/token/route.ts',
   // Read-only room policy is signed against Meet's Cloudflare Durable Object.
   'apps/meet/src/app/api/meet-call/[meetingId]/state/route.ts',
+  // Meet room services use app-session auth plus the signed Durable Object admission/admin policy.
+  'apps/meet/src/app/api/meet-call/[meetingId]/assistant/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/costs/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/recording/route.ts',
   // In-call title edits preserve scheduling fields and require the creator.
   'apps/meet/src/app/api/meet-call/[meetingId]/title/route.ts',
   'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/route.ts',

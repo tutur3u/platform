@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, BellOff, Circle, WifiOff } from '@tuturuuu/icons';
+import { Circle, WifiOff } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
@@ -10,8 +10,9 @@ import { MeetingAiPanel } from '@/features/meeting-ai/meeting-ai-panel';
 import { NotesSharingControl } from '@/features/meeting-ai/notes-sharing-control';
 import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
 import { useCallNotifications } from '../hooks/use-call-notifications';
-import { useCallRecording } from '../hooks/use-call-recording';
 import { useMeetRoom } from '../hooks/use-meet-room';
+import { useRoomRecording } from '../hooks/use-room-recording';
+import { useRoomUsage } from '../hooks/use-room-usage';
 import {
   countUnreadChatMessages,
   isHandRaised,
@@ -21,8 +22,8 @@ import {
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
+import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
-import { ConnectionPanel } from './connection-panel';
 import { type CallPanel, ControlBar } from './control-bar';
 import { CopyInvite } from './copy-invite';
 import { LeaveDialog } from './leave-dialog';
@@ -34,7 +35,7 @@ import { SidePanel } from './side-panel';
 
 type Device = 'microphone' | 'camera' | 'screen';
 
-export function CallShell({
+export function ConnectedCallShell({
   defaultDisplayName,
   defaultAvatarUrl,
   canReadWorkspace = true,
@@ -43,6 +44,7 @@ export function CallShell({
   meetingName,
   realtimeUrl,
   token,
+  deviceId,
   wsId,
 }: {
   defaultDisplayName: string;
@@ -53,6 +55,7 @@ export function CallShell({
   meetingName: string;
   realtimeUrl: string;
   token: string;
+  deviceId?: string;
   wsId: string;
 }) {
   const t = useTranslations('meet.call');
@@ -65,6 +68,7 @@ export function CallShell({
   const [leaveDialog, setLeaveDialog] = useState(false);
   const [ending, setEnding] = useState(false);
   const [showAi, setShowAi] = useState(false);
+  const [outputDeviceId, setOutputDeviceId] = useState('');
   const [panel, setPanel] = useState<CallPanel>(null);
   const [layout, setLayout] = useState<CallLayout>('auto');
   const [focus, setFocus] = useState<string | null>(null);
@@ -76,7 +80,7 @@ export function CallShell({
     Partial<Record<Device, boolean>>
   >({});
   const pendingDevices = useRef(new Set<Device>());
-  const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
+  const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId, deviceId });
   const { state } = room;
   const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
     setPanel(next);
@@ -99,11 +103,7 @@ export function CallShell({
     [room.localStream, room.screenStream, room.remoteStreams]
   );
   const ai = useMeetingAi(wsId, meetingId, audioStreams, !left, canReadNotes);
-  const recording = useCallRecording({
-    meetingId,
-    wsId,
-    onStateChange: room.setRecordingState,
-  });
+  const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({
     queryKey: ['meet-media-health', meetingId],
     queryFn: room.getMediaDiagnostics,
@@ -112,6 +112,11 @@ export function CallShell({
     retry: false,
     gcTime: 0,
   });
+  useRoomUsage(
+    telemetry.data,
+    joined && !left && state.admission === 'admitted',
+    room.reportUsage
+  );
   const [lastReadChatId, setLastReadChatId] = useState<string | null>(null);
   const newestChatId = state.chat.at(-1)?.id ?? null;
   const self = selectSelf(state);
@@ -249,31 +254,18 @@ export function CallShell({
             }}
           >
             {aiT('title')}
-            {canManage && ai.data?.estimatedCostUsd != null
-              ? ` · $${ai.data.estimatedCostUsd.toFixed(4)}`
-              : ''}
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8 rounded-full"
-          aria-label={t(
-            notifications.sound ? 'mute_notifications' : 'enable_notifications'
-          )}
-          aria-pressed={notifications.sound}
-          onClick={notifications.toggleSound}
-        >
-          {notifications.sound ? (
-            <Bell className="size-4" />
-          ) : (
-            <BellOff className="size-4" />
-          )}
-        </Button>
-        <ConnectionPanel
-          read={room.getMediaDiagnostics}
-          reconnect={room.reconnectMedia}
+        <CallSettings
+          meetingId={meetingId}
+          room={room}
           telemetry={telemetry.data}
+          ai={ai}
+          canManage={canManage}
+          sound={notifications.sound}
+          onSound={notifications.toggleSound}
+          outputDeviceId={outputDeviceId}
+          onOutput={setOutputDeviceId}
         />
         <CopyInvite
           meetingId={meetingId}
@@ -300,6 +292,7 @@ export function CallShell({
             </div>
           )}
           <CallStage
+            outputDeviceId={outputDeviceId}
             room={room}
             layout={layout}
             focus={focus}
@@ -323,6 +316,7 @@ export function CallShell({
         )}
         {panel && (
           <SidePanel
+            meetingId={meetingId}
             canManage={canManage}
             chat={state.chat}
             onClose={() => setPanel(null)}
@@ -353,7 +347,7 @@ export function CallShell({
         busyDevices={busyDevices}
         participantCount={participants.length}
         recordingBusy={recording.isBusy}
-        recordingOn={recording.isRecording}
+        recordingOn={state.recording.state === 'recording'}
         unreadChat={
           panel === 'chat'
             ? 0
@@ -378,7 +372,12 @@ export function CallShell({
           setShowAi(false);
         }}
         onToggleRecording={
-          canManage ? () => void recording.toggle() : undefined
+          canManage || state.settings.allowParticipantRecording
+            ? () =>
+                void recording
+                  .toggle()
+                  .catch(() => toast.error(t('record_start_failed')))
+            : undefined
         }
         extraControls={
           <CallExtras
@@ -418,3 +417,5 @@ export function CallShell({
     </div>
   );
 }
+
+export { CallShell } from './device-session-gate';

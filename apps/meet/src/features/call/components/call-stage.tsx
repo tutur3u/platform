@@ -21,11 +21,13 @@ function columns(count: number) {
 }
 export function CallStage({
   room,
+  outputDeviceId,
   layout,
   focus,
   onFocus,
 }: {
   room: MeetRoomController;
+  outputDeviceId?: string;
   layout: CallLayout;
   focus: string | null;
   onFocus: (key: string | null) => void;
@@ -105,6 +107,7 @@ export function CallStage({
       (explicitFocus || tiles.some((tile) => tile.kind === 'screen')));
   const render = (tile: Tile, className: string) => (
     <ParticipantTile
+      outputDeviceId={outputDeviceId}
       key={tile.key}
       className={className}
       kind={tile.kind}

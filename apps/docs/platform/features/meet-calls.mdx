@@ -90,7 +90,7 @@ all; `{}` and `{autoDiscover: true}` are both rejected.
 
 An inbound track arrives with an opaque id, so nothing on the
 `RTCPeerConnection` says who published it. Attribution comes from the track
-name, which is deliberately `<userId>-<kind>`: the subscribe response returns a
+name, which is deliberately `<deviceIdentity>-<kind>`: the subscribe response returns a
 `mid` per track, the client maps `mid → userId`, and the `track` event is
 matched against that map.
 
@@ -110,9 +110,8 @@ restart does not produce a synchronised retry stampede from every participant.
 
 Two details make it actually work:
 
-- **Each attempt fetches a fresh join token** from web's
-  `POST /api/v1/workspaces/<wsId>/meetings/<meetingId>/realtime-token`, which
-  the satellite proxies. Join
+- **Each attempt fetches a fresh join token** from Meet's Cloudflare-local
+  `POST /api/meet-call/<meetingId>/token`, preserving the current device identity. Join
   tokens are short-lived and calls are not, so reusing the original token would
   let a client reconnect for ten minutes and then fail forever on
   "Reconnecting…". Membership is re-checked on every refresh.
@@ -676,3 +675,65 @@ Worker over signed HTTP and also works after its WebSocket has closed.
 AI read responses use explicit field projections. Non-admin readers receive no
 raw provider usage and null cost/token fields; cost totals and breakdowns render
 only for the room admin. Sharing permission is rechecked on every notes request.
+
+
+## Room settings, recordings, and devices
+
+The in-call settings dialog contains audio/video input, supported audio output,
+connection diagnostics, notification sounds, and admin-only cost breakdowns.
+Changing an input replaces its track on the existing call. Output selection uses
+`HTMLMediaElement.setSinkId` where supported; unsupported browsers explain the
+limitation instead of presenting a non-working selector.
+
+Each browser call generates a device ID. The server derives a signed device
+identity from the account and device IDs; media and SFU sessions use that identity,
+while admission approvals use the account ID. Joining another device offers a
+switch or an additional connection. Switching only removes that account's other
+connections. Keep microphones or speakers muted on nearby devices to avoid echo.
+
+Recording permissions start disabled for participants. Admins can independently
+share saved recordings and allow participants to start/stop recording. The Durable
+Object holds one recording lease for the room; a remote stop cannot be overwritten
+by a delayed start. The recording device composites its available video and mixes
+audio locally, and must remain available until saving completes. Recordings stop
+at 55 MiB and upload directly to the creator's personal Drive using a scoped signed
+URL, followed by server-side metadata verification. Failed saves offer a local copy.
+This is browser capture, not a Cloudflare server-side recording service.
+
+## Chat and Mira
+
+Room chat supports Markdown, avatars, and up to five 25 MiB attachments per message.
+Files use the creator's personal Drive provider and storage capacity checks. Room
+admission controls attachment access; a signed URL is short-lived. Mention
+`@Tuturuuu` to ask Mira using the recent 40 room messages. Uploaded file contents
+are not automatically read by Mira. The mention author's personal AI allowance is
+checked and actual reported token usage is deducted from that author's quota.
+Requests are deduplicated by chat message ID. The internal server-service token
+scope is never included in browser join tokens.
+
+## Bandwidth and cost attribution
+
+Balanced mode caps camera sending at 900 kbps / 24 fps and screen sharing at
+1.8 Mbps / 15 fps. Data saver lowers camera resolution and frame rate, while screen
+sharing retains text resolution at a lower frame rate. Higher-quality camera mode
+allows 1.6 Mbps. These are ceilings, not promised usage or minimum bandwidth.
+Speech has a separate 48 kbps ceiling; screen audio uses 96 kbps. Video shares the
+available outgoing bandwidth estimate with a reserve for audio. Congestion reduces
+quality promptly, while recovery requires four healthy samples to avoid oscillation.
+Sending pauses when the participant is alone and resumes when an audience joins.
+Sender parameter failures preserve the working transport rather than forcing a
+reconnect. Initial encodings are capped before negotiation.
+
+Admins see client-reported received RTP bytes and server request counters in
+settings. Estimates use [SFU pricing](https://developers.cloudflare.com/realtime/sfu/pricing/)
+and [Durable Object request pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/),
+checked September 8, 2026, before account-wide allowances or discounts. TURN-to-SFU
+traffic is not charged twice. Reports are cumulative and deduplicated across samples.
+
+**These are partial usage estimates, not invoices.** RTP payload counters omit
+transport overhead and reports can miss disconnected devices. Worker CPU, Durable
+Object duration/storage, R2 operations/storage, and shared plan charges are not yet
+attributed per room and are shown as unallocated. Reconcile against Cloudflare
+account billing before using these estimates as a complete budget. Unknown AI costs
+are shown as missing coverage rather than zero-cost requests. Merely reading a cost
+panel does not force a Durable Object snapshot write.

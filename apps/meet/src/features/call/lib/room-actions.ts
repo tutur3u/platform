@@ -1,6 +1,7 @@
 import type {
   MeetReaction,
   MeetRealtimeTrackKind,
+  MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
 import type { MeetSignaling } from './signaling';
 
@@ -8,10 +9,35 @@ export function createRoomActions(signaling: {
   current: MeetSignaling | null;
 }) {
   return {
+    reportUsage: (reportId: string, bytesReceived: number) =>
+      signaling.current?.send({
+        type: 'usage.report',
+        reportId,
+        bytesReceived,
+      }),
+    updateSettings: (settings: MeetRoomSettings) =>
+      signaling.current?.send({ type: 'room.settings.update', settings }),
+    controlRecording: async (
+      state: 'starting' | 'recording' | 'stopping' | 'idle' | 'error',
+      sessionId?: string
+    ) => {
+      if (!signaling.current?.isOpen) throw new Error('signaling_closed');
+      await signaling.current.request({
+        type: 'recording.state',
+        state,
+        recordingSessionId: sessionId,
+      });
+    },
     renameMeeting: (title: string) => signaling.current?.announceTitle(title),
-    sendChat: (body: string) => {
+    sendChat: async (body: string, attachmentIds?: string[]) => {
       const text = body.trim();
-      if (text) signaling.current?.send({ type: 'chat.message', body: text });
+      if (!text || !signaling.current?.isOpen)
+        throw new Error('signaling_closed');
+      return signaling.current.request<{ id: string }>({
+        type: 'chat.message',
+        body: text,
+        attachmentIds,
+      });
     },
     raiseHand: (raised: boolean) =>
       signaling.current?.send({ type: 'hand.raise', raised }),

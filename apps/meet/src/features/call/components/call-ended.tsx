@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
 import { NotesSharingControl } from '@/features/meeting-ai/notes-sharing-control';
+import { EndedMeetingSettings } from './ended-meeting-settings';
 
 export function CallEnded({
   ended = true,
@@ -77,6 +78,11 @@ export function CallEnded({
                 {t(showNotes ? 'hide_meeting_notes' : 'view_meeting_notes')}
               </Button>
             )}
+            <EndedMeetingSettings
+              wsId={wsId}
+              meetingId={meetingId}
+              canManage={canManage}
+            />
             <Button asChild variant="outline">
               <Link href={backHref}>
                 <ArrowLeft className="size-4" />

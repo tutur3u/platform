@@ -40,6 +40,9 @@ export function getMeetRealtimeUrl() {
  */
 export async function getMeetCallSession({
   displayName,
+  deviceId,
+  service = false,
+  workspaceMember = false,
   avatarUrl,
   admission = 'open',
   isHost,
@@ -48,6 +51,9 @@ export async function getMeetCallSession({
   wsId,
 }: {
   displayName: string;
+  deviceId?: string;
+  service?: boolean;
+  workspaceMember?: boolean;
   avatarUrl?: string;
   admission?: MeetRealtimeAdmission;
   isHost: boolean;
@@ -55,6 +61,9 @@ export async function getMeetCallSession({
   userId: string;
   wsId: string;
 }) {
+  const deviceUserId = deviceId
+    ? await meetDeviceIdentity(userId, deviceId)
+    : userId;
   const role: MeetRealtimeRole = isHost ? 'host' : 'speaker';
   const payload = meetRealtimeTokenPayloadSchema.parse({
     admission: isHost ? 'open' : admission,
@@ -75,8 +84,14 @@ export async function getMeetCallSession({
     mode: 'call',
     role,
     roomId: `${wsId}:${meetingId}`,
-    scopes: getMeetRealtimeScopesForRole(role),
-    userId,
+    scopes: [
+      ...getMeetRealtimeScopesForRole(role),
+      ...(service
+        ? ['meet:server', ...(workspaceMember ? ['meet:workspace-member'] : [])]
+        : []),
+    ],
+    userId: deviceUserId,
+    accountId: userId,
     wsId,
   });
 
@@ -86,4 +101,19 @@ export async function getMeetCallSession({
     role,
     token: signMeetRealtimeToken(payload, getTokenSecret()),
   };
+}
+
+/** Account-bound identity prevents a client-chosen device ID impersonating another participant. */
+export async function meetDeviceIdentity(accountId: string, deviceId: string) {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`${accountId}:${deviceId}`)
+  );
+  const bytes = new Uint8Array(digest).slice(0, 16);
+  bytes[6] = (bytes[6]! & 15) | 64;
+  bytes[8] = (bytes[8]! & 63) | 128;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join(
+    ''
+  );
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }

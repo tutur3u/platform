@@ -1,10 +1,14 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 /** Runtime verification of the actual React call controller with synthetic media. */
 import { NextIntlClientProvider } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import messages from '../../meet/messages/en.json';
+import { CallSettings } from '../../meet/src/features/call/components/call-settings';
 import { ParticipantTile } from '../../meet/src/features/call/components/participant-tile';
+import { ParticipantsPanel } from '../../meet/src/features/call/components/participants-panel';
 import { useMeetRoom } from '../../meet/src/features/call/hooks/use-meet-room';
+import type { useMeetingAi } from '../../meet/src/features/meeting-ai/use-meeting-ai';
 
 const requestedPeer = new URL(location.href).searchParams.get('peer');
 const peer =
@@ -216,6 +220,9 @@ function CallCheck() {
     );
     return () => clearInterval(timer);
   }, []);
+  const [outputDeviceId, setOutputDeviceId] = useState('');
+  const [sound, setSound] = useState(true);
+  const [showRequest, setShowRequest] = useState(true);
   const [diagnostics, setDiagnostics] = useState('');
   const [error, setError] = useState('');
   const [energy, setEnergy] = useState<Record<string, number>>({});
@@ -260,6 +267,46 @@ function CallCheck() {
   };
   return (
     <main>
+      {new URL(location.href).searchParams.has('ui') && (
+        <div className="flex items-start gap-4 rounded-xl border p-4">
+          <CallSettings
+            room={room}
+            meetingId={config.meetingId}
+            ai={{ data: undefined } as ReturnType<typeof useMeetingAi>}
+            canManage={room.state.role === 'host'}
+            sound={sound}
+            onSound={() => setSound(!sound)}
+            outputDeviceId={outputDeviceId}
+            onOutput={setOutputDeviceId}
+          />
+          <aside className="flex h-96 w-80 flex-col rounded-xl border bg-background">
+            <ParticipantsPanel
+              approved={room.state.approved}
+              onForget={room.forgetParticipant}
+              shareNotes={false}
+              onShareNotes={() => undefined}
+              canManage={room.state.role === 'host'}
+              onDecideAdmission={() => setShowRequest(false)}
+              onMute={() => undefined}
+              onRemove={() => undefined}
+              participants={Object.values(room.state.participants)}
+              raisedHandUserIds={[]}
+              selfUserId={room.state.selfUserId}
+              waiting={
+                showRequest
+                  ? [
+                      {
+                        userId: '00000000-0000-4000-8000-000000000002',
+                        displayName: 'Guest with a longer display name',
+                        requestedAt: new Date().toISOString(),
+                      },
+                    ]
+                  : []
+              }
+            />
+          </aside>
+        </div>
+      )}
       <h1>Actual call controller — peer {peer}</h1>
       <p>
         Connection: {room.connectionStatus}; admission: {room.state.admission}
@@ -284,6 +331,48 @@ function CallCheck() {
         }
       >
         Start playback measurement
+      </button>
+      <button type="button" onClick={() => room.setBandwidthMode('saver')}>
+        Use data saver
+      </button>
+      <button type="button" onClick={() => room.setBandwidthMode('auto')}>
+        Use balanced bandwidth
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          setDiagnostics(
+            JSON.stringify(
+              [...peers]
+                .filter((pc) => pc.connectionState === 'connected')
+                .flatMap((pc) =>
+                  pc
+                    .getSenders()
+                    .filter((sender) => sender.track)
+                    .map((sender) => ({
+                      kind: sender.track?.kind,
+                      encodings: sender
+                        .getParameters()
+                        .encodings.map(
+                          ({
+                            active,
+                            maxBitrate,
+                            maxFramerate,
+                            scaleResolutionDownBy,
+                          }) => ({
+                            active,
+                            maxBitrate,
+                            maxFramerate,
+                            scaleResolutionDownBy,
+                          })
+                        ),
+                    }))
+                )
+            )
+          )
+        }
+      >
+        Read sender limits
       </button>
       <button type="button" onClick={() => run(room.toggleMicrophone)}>
         Toggle microphone
@@ -422,7 +511,9 @@ function CallCheck() {
   );
 }
 createRoot(document.getElementById('root')!).render(
-  <NextIntlClientProvider locale="en" messages={messages}>
-    <CallCheck />
-  </NextIntlClientProvider>
+  <QueryClientProvider client={new QueryClient()}>
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <CallCheck />
+    </NextIntlClientProvider>
+  </QueryClientProvider>
 );
