@@ -50,6 +50,7 @@ export class MeetSignaling {
   private titleRetry: ReturnType<typeof setTimeout> | null = null;
   private socket: WebSocket | null = null;
   private closedByUs = false;
+  private selfUserId: string | null = null;
   private attempt = 0;
   private hasConnected = false;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -171,6 +172,15 @@ export class MeetSignaling {
       this.pending.delete(message.requestId);
     }
 
+    if (message.type === 'ready') this.selfUserId = message.userId;
+    // The server sends these decisions before its 4403 close. Preserve them
+    // immediately: Chrome may withhold the close event past our recovery grace.
+    const terminal =
+      message.type === 'room.ended' ||
+      (message.type === 'admission.result' && !message.admitted) ||
+      (message.type === 'participant.removed' &&
+        message.userId === this.selfUserId);
+    if (terminal) this.close();
     this.options.onMessage(message);
   }
 

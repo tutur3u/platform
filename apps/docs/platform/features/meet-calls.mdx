@@ -593,7 +593,8 @@ recovery. Persisted title announcements are acknowledged by the room and retaine
 across signaling reconnects until delivery; intentional leave clears that outbox.
 
 A browser can keep its signaling socket in `CLOSING` while waiting for a remote
-close handshake. Meet watches that state and retries after a five-second grace
+close handshake. Removal, admission denial, and meeting-end messages stop retries
+immediately, before the delayed policy close event arrives. Meet watches that state and retries after a five-second grace
 period instead of waiting for the browser's longer timeout. Events from the old
 socket cannot change the replacement connection or settle its pending requests.
 Intentional leave and promptly received policy-close codes still stop retries.

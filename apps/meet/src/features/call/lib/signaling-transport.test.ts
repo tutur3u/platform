@@ -102,3 +102,65 @@ it.each([1000, 4403])(
     signaling.close();
   }
 );
+
+it.each([
+  { type: 'participant.removed', userId: 'self', by: 'host' },
+  { type: 'admission.result', admitted: false, decidedBy: 'host' },
+  { type: 'room.ended' },
+])(
+  'preserves $type while the policy close event is delayed',
+  async (message) => {
+    const { signaling, options } = fixture();
+    await Promise.resolve();
+    const socket = Socket.instances[0]!;
+    socket.open();
+    socket.dispatchEvent(
+      new MessageEvent('message', {
+        data: JSON.stringify({ type: 'ready', userId: 'self' }),
+      })
+    );
+    socket.dispatchEvent(
+      new MessageEvent('message', { data: JSON.stringify(message) })
+    );
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(Socket.instances).toHaveLength(1);
+    expect(options.onMessage).toHaveBeenLastCalledWith(message);
+    socket.closed(4403);
+    signaling.close();
+  }
+);
+it('acknowledges the owner end request before closing transport', async () => {
+  const { signaling } = fixture();
+  await Promise.resolve();
+  const socket = Socket.instances[0]!;
+  socket.open();
+  const ended = signaling.request({ type: 'room.end' });
+  socket.dispatchEvent(
+    new MessageEvent('message', {
+      data: JSON.stringify({
+        type: 'room.ended',
+        requestId: socket.sent[0]!.requestId,
+      }),
+    })
+  );
+  await expect(ended).resolves.toBeUndefined();
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(Socket.instances).toHaveLength(1);
+});
+it('continues recovery when another participant was removed', async () => {
+  const { signaling } = fixture();
+  await Promise.resolve();
+  const socket = Socket.instances[0]!;
+  socket.open();
+  for (const message of [
+    { type: 'ready', userId: 'self' },
+    { type: 'participant.removed', userId: 'other', by: 'host' },
+  ])
+    socket.dispatchEvent(
+      new MessageEvent('message', { data: JSON.stringify(message) })
+    );
+  socket.close();
+  await vi.advanceTimersByTimeAsync(7000);
+  expect(Socket.instances).toHaveLength(2);
+  signaling.close();
+});
