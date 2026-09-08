@@ -263,6 +263,67 @@ try {
   host.send({ type: 'participant.remove', userId: GUEST_ID });
   const removed = await host.waitFor('participant.removed');
   check('host can remove a participant', removed?.userId === GUEST_ID);
+  if (REMOTE_URL) {
+    const endpoint = new URL(ROOM_URL);
+    endpoint.protocol = 'https:';
+    endpoint.pathname = '/room-state';
+    const policy = (role: MeetRealtimeRole, settings?: object) =>
+      fetch(endpoint, {
+        method: settings ? 'PATCH' : 'GET',
+        headers: {
+          Authorization: `Bearer ${mintToken(role, role === 'host' ? HOST_ID : GUEST_ID, 'lobby', 'Policy check')}`,
+          'Content-Type': 'application/json',
+        },
+        body: settings ? JSON.stringify(settings) : undefined,
+        signal: AbortSignal.timeout(5000),
+      });
+    check(
+      'guest cannot change notes sharing',
+      (await policy('speaker', { shareNotes: true })).status === 403
+    );
+    check(
+      'host can update room sharing over signed HTTP',
+      (await policy('host', { shareNotes: true })).ok
+    );
+    const returning = new TestClient();
+    try {
+      await returning.connect(mintToken('speaker', GUEST_ID, 'lobby', 'Guest'));
+      await returning.waitFor('ready');
+      host.send({ admit: true, type: 'admission.decide', userId: GUEST_ID });
+      await returning.waitFor('admission.result');
+      check(
+        'approved guest can read live shared notes',
+        (await (await policy('speaker')).json()).canReadNotes === true
+      );
+      host.send({ type: 'room.end', requestId: 'end-policy-check' });
+      await host.waitFor('room.ended');
+      const endedPolicy = await (await policy('speaker')).json();
+      check(
+        'ending the room disables post-call sharing by default',
+        endedPolicy.ended === true && endedPolicy.canReadNotes === false
+      );
+      check(
+        'host can enable post-call notes after socket closes',
+        (
+          await policy('host', {
+            shareNotes: true,
+            shareNotesAfterMeeting: true,
+          })
+        ).ok
+      );
+      check(
+        'approved guest can read opted-in post-call notes',
+        (await (await policy('speaker')).json()).canReadNotes === true
+      );
+      await policy('host', { shareNotes: true, shareNotesAfterMeeting: false });
+      check(
+        'post-call sharing revocation takes effect',
+        (await (await policy('speaker')).json()).canReadNotes === false
+      );
+    } finally {
+      returning.close();
+    }
+  }
 } catch (error) {
   check('integration run completed', false, String(error));
 } finally {

@@ -27,3 +27,10 @@ export function updateMeetCallTitle(meetingId: string, name: string) {
     }
   );
 }
+
+export function getMeetCallRoomState(meetingId: string) {
+  return getInternalApiClient().json<{ ended: boolean; canReadNotes: boolean }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/state`,
+    { cache: 'no-store' }
+  );
+}

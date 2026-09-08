@@ -19,11 +19,12 @@ function renderTile(props: ComponentProps<typeof ParticipantTile>) {
   );
 }
 describe('participant media markup', () => {
-  it('renders an unmuted video element when the remote camera is off', () => {
+  it('keeps audio separate from a muted video element when the camera is off', () => {
     const html = renderTile({ participant, resumePlaybackLabel: 'Play audio' });
     expect(html).toContain('<video');
-    expect(html).not.toContain('muted=""');
-    expect(html).toContain('hidden');
+    expect(html.match(/<audio[^>]*>/u)?.[0]).not.toContain('muted');
+    expect(html.match(/<video[^>]*>/u)?.[0]).toContain('muted');
+    expect(html.match(/<video[^>]*>/u)?.[0]).not.toContain('hidden');
   });
   it('mutes the local preview to prevent feedback', () => {
     expect(
@@ -54,7 +55,9 @@ it('plays remote screen audio and exposes host mute only on remote cameras', () 
     resumePlaybackLabel: 'Play audio',
     onMute: () => undefined,
   };
-  expect(renderTile({ ...common, kind: 'screen' })).not.toContain('muted=""');
+  expect(
+    renderTile({ ...common, kind: 'screen' }).match(/<audio[^>]*>/u)?.[0]
+  ).not.toContain('muted');
   expect(renderTile(common)).toContain('Mute Peer');
   expect(renderTile({ ...common, isSelf: true })).not.toContain('Mute Peer');
   expect(renderTile({ ...common, kind: 'screen' })).not.toContain('Mute Peer');

@@ -2,25 +2,45 @@
 import { AudioLines, Loader2, Video } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useReducer } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import {
   RECEIVER_PACKET_EVENT,
   streamPacketState,
 } from '../lib/receiver-packet-state';
 
 export function useStreamReadiness(stream?: MediaStream | null) {
-  const [, refresh] = useReducer((value: number) => value + 1, 0);
-  useEffect(() => {
-    const tracks = stream?.getTracks() ?? [];
-    for (const track of tracks)
-      for (const event of ['mute', 'unmute', 'ended', RECEIVER_PACKET_EVENT])
-        track.addEventListener(event, refresh);
-    return () => {
+  const subscribe = useCallback(
+    (refresh: () => void) => {
+      const tracks = stream?.getTracks() ?? [];
       for (const track of tracks)
         for (const event of ['mute', 'unmute', 'ended', RECEIVER_PACKET_EVENT])
-          track.removeEventListener(event, refresh);
-    };
-  }, [stream]);
+          track.addEventListener(event, refresh);
+      return () => {
+        for (const track of tracks)
+          for (const event of [
+            'mute',
+            'unmute',
+            'ended',
+            RECEIVER_PACKET_EVENT,
+          ])
+            track.removeEventListener(event, refresh);
+      };
+    },
+    [stream]
+  );
+  const snapshot = useCallback(
+    () =>
+      (stream?.getTracks() ?? [])
+        .map(
+          (track) =>
+            `${track.id}:${track.readyState}:${track.muted}:${streamPacketState([track])}`
+        )
+        .join('|'),
+    [stream]
+  );
+  // React rechecks after subscription: unmute can happen between render and
+  // listener installation, including before the first packet-state event.
+  useSyncExternalStore(subscribe, snapshot, () => '');
   const receiving = (track: MediaStreamTrack) =>
     track.readyState === 'live' && !track.muted;
   return {

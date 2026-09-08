@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { CallEnded } from '@/features/call/components/call-ended';
 import { CallShell } from '@/features/call/components/call-shell';
 import { ParticipantNameForm } from '@/features/call/components/participant-name-form';
 import {
@@ -10,6 +11,7 @@ import {
 } from '@/features/call/lib/call-access';
 import { getMeetCallSession } from '@/features/call/lib/call-session';
 import { decodeRoomCode } from '@/features/call/lib/room-code';
+import { readMeetingRoomPolicy } from '@/features/meeting-ai/server/room-access';
 
 export const metadata: Metadata = {
   title: 'Call',
@@ -17,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 interface RoomPageProps {
+  searchParams?: Promise<{ notes?: string }>;
   params: Promise<{ code: string; locale: string }>;
 }
 
@@ -27,7 +30,10 @@ interface RoomPageProps {
  * no sidebar, and so a shared link never has to carry a workspace id: the code
  * encodes the meeting, and the workspace is resolved from it.
  */
-export default async function RoomPage({ params }: RoomPageProps) {
+export default async function RoomPage({
+  params,
+  searchParams,
+}: RoomPageProps) {
   await connection();
 
   const { code, locale } = await params;
@@ -61,6 +67,25 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const leaveHref = canReadWorkspace
     ? `/${workspaceSlug}/meetings/${meeting.id}`
     : '/';
+  const policy = await readMeetingRoomPolicy({
+    meetingId,
+    wsId,
+    userId: user.id,
+    isHost,
+  });
+  if (policy.ended)
+    return (
+      <CallEnded
+        initialShowNotes={(await searchParams)?.notes === '1'}
+        canManage={isHost}
+        canReadNotes={policy.canReadNotes}
+        shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
+        meetingId={meetingId}
+        wsId={wsId}
+        meetingName={meeting.name ?? t('untitled_meeting')}
+        backHref={canReadWorkspace ? `/${workspaceSlug}/meetings` : '/'}
+      />
+    );
   if (access.needsDisplayName)
     return (
       <ParticipantNameForm

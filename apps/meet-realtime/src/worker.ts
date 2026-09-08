@@ -19,7 +19,8 @@ export default {
     }
 
     const roomStateRequest =
-      url.pathname === '/room-state' && request.method === 'GET';
+      url.pathname === '/room-state' &&
+      ['GET', 'PATCH'].includes(request.method);
     if (url.pathname !== '/realtime' && !roomStateRequest) {
       return new Response('Not found', { status: 404 });
     }
@@ -49,8 +50,6 @@ export default {
     const headers = new Headers(request.headers);
     headers.set('x-meet-token', JSON.stringify(token));
 
-    return room.fetch(
-      new Request(request.url, { headers, method: request.method })
-    );
+    return room.fetch(new Request(request, { headers }));
   },
 };

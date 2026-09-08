@@ -186,3 +186,31 @@ it('restricts live title announcements to the host', () => {
     }).success
   ).toBe(false);
 });
+
+it('requires separate opt-in for notes after ending a meeting', () => {
+  const shared = run(admitted(), {
+    type: 'room.settings.update',
+    settings: { shareNotes: true },
+  }).state;
+  const ended = run(shared, { type: 'room.end', requestId: 'end' }).state;
+  expect(canReadRoomNotes(ended, guest)).toBe(false);
+  expect(canReadRoomNotes(ended, host)).toBe(true);
+  expect(
+    canReadRoomNotes(
+      {
+        ...ended,
+        settings: { shareNotes: false, shareNotesAfterMeeting: true },
+      },
+      guest
+    )
+  ).toBe(true);
+  expect(
+    canReadRoomNotes(
+      {
+        ...ended,
+        settings: { shareNotes: true, shareNotesAfterMeeting: false },
+      },
+      guest
+    )
+  ).toBe(false);
+});

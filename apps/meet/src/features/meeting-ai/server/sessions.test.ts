@@ -163,3 +163,39 @@ describe('Meet notes finalization', () => {
     expect(state.estimatedCostUsd).toBe(0);
   });
 });
+
+it('redacts all costs and raw usage from a shared-notes reader', async () => {
+  dbWith([
+    result([
+      {
+        ...session,
+        notes: null,
+        notes_cost_usd: 7,
+        notes_usage: { inputTokens: 999 },
+        notes_unpriced_attempts: 1,
+      },
+    ]),
+    result([
+      {
+        id: 'chunk',
+        status: 'completed',
+        transcript: 'Hello',
+        cost_usd: 4,
+        usage: { outputTokens: 200 },
+      },
+    ]),
+  ]);
+  const access = await mocks.access();
+  mocks.access.mockResolvedValue({ ...access, canManage: false });
+  const state = await readMeetAi(new Request('https://meet.test'), params);
+  expect(state.estimatedCostUsd).toBeNull();
+  expect(state.inputTokens).toBeNull();
+  expect(state.chunks[0]).toMatchObject({
+    transcript: 'Hello',
+    cost_usd: null,
+  });
+  expect(state.chunks[0]).not.toHaveProperty('usage');
+  expect(state.sessions[0]).toMatchObject({ notes_cost_usd: null });
+  expect(state.sessions[0]).not.toHaveProperty('notes_usage');
+  expect(state.sessions[0]).not.toHaveProperty('notes_unpriced_attempts');
+});

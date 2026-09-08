@@ -4,11 +4,11 @@ import { attachMediaPlayback } from './media-playback';
 function fixture() {
   const document = new EventTarget();
   const play = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-  const element = {
+  const element = Object.assign(new EventTarget(), {
     srcObject: null,
     ownerDocument: document,
     play,
-  } as unknown as HTMLMediaElement;
+  }) as unknown as HTMLMediaElement;
   const stream = {} as MediaStream;
   return { document, element, play, stream };
 }
@@ -54,4 +54,16 @@ describe('media playback recovery', () => {
     expect(play).not.toHaveBeenCalled();
     cleanup();
   });
+});
+
+it('retries interrupted playback when the replacement stream becomes ready', async () => {
+  const { element, play, stream } = fixture();
+  play.mockRejectedValueOnce(new DOMException('Replaced stream', 'AbortError'));
+  const cleanup = attachMediaPlayback(element, stream, vi.fn());
+  await Promise.resolve();
+  element.dispatchEvent(new Event('loadedmetadata'));
+  expect(play).toHaveBeenCalledTimes(2);
+  cleanup();
+  element.dispatchEvent(new Event('canplay'));
+  expect(play).toHaveBeenCalledTimes(2);
 });
