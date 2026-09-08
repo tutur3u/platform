@@ -90,3 +90,30 @@ it('keeps the camera alive when a newer look supersedes pending startup', async 
   expect(await effects.setLook({ filter: 'none', softness: 0 })).toBe(source);
   effects.dispose();
 });
+
+it('retains a working camera when preparing a replacement fails', async () => {
+  vi.stubGlobal('document', {
+    createElement: () => ({
+      play: () => Promise.reject(new Error('blocked')),
+      srcObject: null,
+    }),
+  });
+  vi.stubGlobal('MediaStream', class {});
+  const source = {
+    readyState: 'live',
+    stop: vi.fn(),
+  } as unknown as MediaStreamTrack;
+  const replacement = {
+    readyState: 'live',
+    stop: vi.fn(),
+  } as unknown as MediaStreamTrack;
+  const effects = new CameraEffects();
+  await effects.setSource(source);
+  await expect(
+    effects.setLook({ filter: 'warm', softness: 0 })
+  ).rejects.toThrow();
+  await expect(effects.replaceSource(replacement)).rejects.toThrow('blocked');
+  expect(source.stop).not.toHaveBeenCalled();
+  expect(await effects.setLook({ filter: 'none', softness: 0 })).toBe(source);
+  effects.dispose();
+});

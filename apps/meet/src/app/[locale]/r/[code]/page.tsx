@@ -9,7 +9,6 @@ import {
   getMeetCallAccess,
   MeetCallAccessError,
 } from '@/features/call/lib/call-access';
-import { getMeetCallSession } from '@/features/call/lib/call-session';
 import { decodeRoomCode } from '@/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@/features/meeting-ai/server/room-access';
 
@@ -60,7 +59,6 @@ export default async function RoomPage({
     canReadWorkspace,
     displayName,
     avatarUrl,
-    admission,
     workspaceSlug,
   } = access;
   const wsId = meeting.ws_id;
@@ -95,26 +93,14 @@ export default async function RoomPage({
       />
     );
 
-  const session = await getMeetCallSession({
-    displayName,
-    avatarUrl,
-    isHost,
-    admission,
-    meetingId: meeting.id,
-    userId: user.id,
-    wsId,
-  });
-
   return (
     <CallShell
-      defaultDisplayName={session.displayName}
+      defaultDisplayName={displayName}
       defaultAvatarUrl={avatarUrl}
       leaveHref={leaveHref}
       canReadWorkspace={canReadWorkspace}
       meetingId={meeting.id}
       meetingName={meeting.name ?? t('untitled_meeting')}
-      realtimeUrl={session.realtimeUrl}
-      token={session.token}
       wsId={wsId}
     />
   );

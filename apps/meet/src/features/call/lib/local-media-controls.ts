@@ -27,6 +27,82 @@ export function createLocalMediaControls({
     stream: MediaStream | null
   ) => Promise<void>;
 }) {
+  const deviceIds = { audio: '', video: '' };
+  const selectDevice = async (kind: 'audio' | 'video', deviceId: string) => {
+    const old = localStreamRef.current;
+    const enabled =
+      kind === 'audio'
+        ? mediaRef.current.audioEnabled
+        : mediaRef.current.videoEnabled;
+    if (!enabled) {
+      deviceIds[kind] = deviceId;
+      if (kind === 'video') effects.dispose();
+      for (const track of old
+        ?.getTracks()
+        .filter((track) => track.kind === kind) ?? []) {
+        old?.removeTrack(track);
+        track.stop();
+      }
+      return;
+    }
+    const acquired = await navigator.mediaDevices.getUserMedia({
+      [kind]: {
+        deviceId: deviceId ? { exact: deviceId } : undefined,
+        ...(kind === 'audio'
+          ? {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            }
+          : {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { ideal: 24 },
+            }),
+      },
+    });
+    if (!activeRef.current) {
+      for (const track of acquired.getTracks()) track.stop();
+      return;
+    }
+    let committed = false;
+    try {
+      const source = acquired.getTracks()[0];
+      const selected =
+        kind === 'video' && source
+          ? await effects.replaceSource(source)
+          : source;
+      if (!activeRef.current) {
+        if (kind === 'video') effects.dispose();
+        for (const track of acquired.getTracks()) track.stop();
+        return;
+      }
+      const enabledNow =
+        kind === 'audio'
+          ? mediaRef.current.audioEnabled
+          : mediaRef.current.videoEnabled;
+      if (selected) selected.enabled = enabledNow;
+      if (kind === 'video') effects.setEnabled(enabledNow);
+      const current = localStreamRef.current;
+      const next = new MediaStream([
+        ...(current?.getTracks().filter((track) => track.kind !== kind) ?? []),
+        ...(selected ? [selected] : []),
+      ]);
+      localStreamRef.current = next;
+      setLocalStream(next);
+      committed = true;
+      deviceIds[kind] = deviceId;
+      for (const track of current
+        ?.getTracks()
+        .filter((track) => track.kind === kind) ?? [])
+        track.stop();
+      await applyMedia({ ...mediaRef.current }, next);
+    } catch (error) {
+      // Keep an installed source alive so transport recovery can republish it.
+      if (!committed) for (const track of acquired.getTracks()) track.stop();
+      throw error;
+    }
+  };
   const toggleMicrophone = async () => {
     let stream = localStreamRef.current;
     if (
@@ -34,6 +110,7 @@ export function createLocalMediaControls({
     ) {
       const audio = await navigator.mediaDevices.getUserMedia({
         audio: {
+          deviceId: deviceIds.audio ? { exact: deviceIds.audio } : undefined,
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
@@ -68,6 +145,7 @@ export function createLocalMediaControls({
     ) {
       const video = await navigator.mediaDevices.getUserMedia({
         video: {
+          deviceId: deviceIds.video ? { exact: deviceIds.video } : undefined,
           width: { ideal: 1280 },
           height: { ideal: 720 },
           frameRate: { ideal: 24 },
@@ -169,5 +247,11 @@ export function createLocalMediaControls({
     );
   };
 
-  return { toggleMicrophone, toggleCamera, toggleScreenShare };
+  return {
+    toggleMicrophone,
+    toggleCamera,
+    toggleScreenShare,
+    selectDevice,
+    getSelectedDevices: () => ({ ...deviceIds }),
+  };
 }

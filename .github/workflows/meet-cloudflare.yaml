@@ -139,4 +139,6 @@ jobs:
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
           MEET_CHECK_REALTIME_URL: wss://meet-realtime.tuturuuu.com/realtime
-        run: bun apps/meet-realtime/src/integration-check.ts
+        run: |
+          bun apps/meet-realtime/src/integration-check.ts
+          bun apps/meet-realtime/src/room-controls-check.ts

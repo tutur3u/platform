@@ -86,55 +86,6 @@ export function MeetingAiPanel({
                 ))}
             </div>
           ) : null}
-          {data.canManage && (
-            <>
-              <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
-                <span>{t('cost')}</span>
-                <strong className="tabular-nums">
-                  ${(data.estimatedCostUsd ?? 0).toFixed(6)} USD
-                </strong>
-              </div>
-              <Accordion type="single" collapsible>
-                <AccordionItem value="usage">
-                  <AccordionTrigger>{t('usage_details')}</AccordionTrigger>
-                  <AccordionContent>
-                    <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-xs">
-                      <span>{t('cost')}</span>
-                      <strong>
-                        ${(data.estimatedCostUsd ?? 0).toFixed(6)} USD
-                      </strong>
-                      <span>{t('transcript')}</span>
-                      <span>
-                        ${(data.transcriptionCostUsd ?? 0).toFixed(6)}
-                      </span>
-                      <span>{t('notes')}</span>
-                      <span>${(data.notesCostUsd ?? 0).toFixed(6)}</span>
-                      <span>{t('model')}</span>
-                      <span className="break-all">{data.model}</span>
-                      <span>{t('input_tokens')}</span>
-                      <span>{(data.inputTokens ?? 0).toLocaleString()}</span>
-                      <span>{t('output_tokens')}</span>
-                      <span>{(data.outputTokens ?? 0).toLocaleString()}</span>
-                      <span>{t('audio_minutes')}</span>
-                      <span>
-                        {(
-                          data.chunks.reduce(
-                            (total, chunk) => total + chunk.duration_seconds,
-                            0
-                          ) / 60
-                        ).toFixed(1)}
-                      </span>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-              {data.unpricedRequests ? (
-                <p className="text-xs">
-                  {t('unpriced', { count: data.unpricedRequests })}
-                </p>
-              ) : null}
-            </>
-          )}
           <Tabs
             defaultValue={inCall ? 'transcript' : 'notes'}
             className="min-h-0"

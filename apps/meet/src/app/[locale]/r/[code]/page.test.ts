@@ -79,13 +79,8 @@ it('renders the invited call for a non-member after sign-in', async () => {
     canReadWorkspace: false,
     leaveHref: '/',
   });
-  expect(mocks.session).toHaveBeenCalledWith(
-    expect.objectContaining({
-      admission: 'lobby',
-      isHost: false,
-      displayName: 'Guest Display Name',
-    })
-  );
+  expect(mocks.session).not.toHaveBeenCalled();
+  expect(result.props.defaultDisplayName).toBe('Guest Display Name');
 });
 
 it('leaves a personal workspace call through its canonical URL', async () => {

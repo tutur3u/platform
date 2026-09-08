@@ -89,3 +89,39 @@ it('distinguishes no media connection from unavailable statistics', async () => 
     statsUnavailable: true,
   });
 });
+
+it('counts cumulative bytes once across refreshes and connection replacement', async () => {
+  const { createMediaDiagnosticsReader } = await import('./media-diagnostics');
+  let bytes = 100;
+  const peer = () =>
+    ({
+      connectionState: 'connected',
+      iceConnectionState: 'connected',
+      signalingState: 'stable',
+      getReceivers: () => [],
+      getStats: async () =>
+        new Map([
+          [
+            'inbound',
+            {
+              id: 'inbound',
+              type: 'inbound-rtp',
+              kind: 'video',
+              bytesReceived: bytes,
+            },
+          ],
+        ]),
+    }) as unknown as RTCPeerConnection;
+  const read = createMediaDiagnosticsReader(),
+    first = peer();
+  expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
+  expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
+  bytes = Number.NaN;
+  expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
+  bytes = -1;
+  expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(100);
+  bytes = 150;
+  expect((await read('open', 1, null, first)).receivedBytesTotal).toBe(150);
+  bytes = 20;
+  expect((await read('open', 1, null, peer())).receivedBytesTotal).toBe(170);
+});

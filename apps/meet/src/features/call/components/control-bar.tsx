@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  Circle,
+  CircleDot,
   Hand,
   Loader2,
   MessageSquare,
@@ -9,6 +9,7 @@ import {
   MicOff,
   MonitorUp,
   PhoneOff,
+  Square,
   Users,
   Video,
   VideoOff,
@@ -157,7 +158,9 @@ export function ControlBar({
       {onToggleRecording ? (
         <ControlButton
           active={recordingOn}
-          icon={Circle}
+          icon={recordingOn ? Square : CircleDot}
+          busy={recordingBusy}
+          attention={recordingOn}
           label={recordingOn ? t('stop_recording') : t('start_recording')}
           onClick={recordingBusy ? () => undefined : onToggleRecording}
         />

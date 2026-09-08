@@ -114,6 +114,25 @@ const page = Bun.serve({
       });
     }
 
+    if (url.pathname === '/ui.css') {
+      const directory = new URL('../../meet/.open-next/assets', import.meta.url)
+        .pathname;
+      const styles: string[] = [];
+      try {
+        for await (const path of new Bun.Glob('**/*.css').scan(directory))
+          styles.push(await Bun.file(`${directory}/${path}`).text());
+      } catch {
+        // Report the missing build below instead of serving an unstyled harness.
+      }
+      if (!styles.length)
+        return new Response(
+          'Build Meet first: bun run --cwd apps/meet build:cloudflare',
+          { status: 503 }
+        );
+      return new Response(styles.join('\n'), {
+        headers: { 'Content-Type': 'text/css' },
+      });
+    }
     if (url.pathname === '/token') {
       const requested = url.searchParams.get('peer');
       const peer = requested === 'b' || requested === 'c' ? requested : 'a';
@@ -126,7 +145,13 @@ const page = Bun.serve({
       });
     }
 
-    return new Response(PAGE, {
+    const page = url.searchParams.has('ui')
+      ? PAGE.replace(
+          '<meta',
+          '<html class="dark"><link rel="stylesheet" href="/ui.css" /><meta'
+        )
+      : PAGE;
+    return new Response(page, {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   },

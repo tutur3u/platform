@@ -6,19 +6,16 @@ import type {
   MeetMediaState,
 } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { encodingBudget } from '../lib/bandwidth';
 import {
   type CallState,
   INITIAL_CALL_STATE,
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
-import {
-  CameraEffects,
-  type CameraLook,
-  DEFAULT_CAMERA_LOOK,
-} from '../lib/camera-effects';
+import { CameraEffects } from '../lib/camera-effects';
 import { createLocalMediaControls } from '../lib/local-media-controls';
-import { readPeerDiagnostics } from '../lib/media-diagnostics';
+import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
 import { createRoomActions } from '../lib/room-actions';
 import type {
   MeetRoomController,
@@ -28,6 +25,8 @@ import {
   applySubscribeResponse,
   pruneObsoleteReceivers,
 } from '../lib/subscribe-response';
+import { useCameraControls } from './use-camera-controls';
+import { useSenderBandwidth } from './use-sender-bandwidth';
 
 export type {
   MeetRoomController,
@@ -70,16 +69,15 @@ import type {
   SfuTracksResponse,
 } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
-
 /** One signaling socket and separate publishing/subscribing SFU connections. */
 export function useMeetRoom({
   meetingId,
   realtimeUrl,
   token,
+  deviceId,
 }: UseMeetRoomOptions): MeetRoomController {
+  const diagnostics = useMemo(() => createMediaDiagnosticsReader(), []);
   const effects = useMemo(() => new CameraEffects(), []);
-  const [cameraLook, setCameraLookState] =
-    useState<CameraLook>(DEFAULT_CAMERA_LOOK);
   const activeRef = useRef(true);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | undefined>(
     undefined
@@ -112,12 +110,9 @@ export function useMeetRoom({
   const trackOwnersRef = useRef<Map<string, RemoteTrackOwner>>(new Map());
   const stateRef = useRef(state);
   stateRef.current = state;
-
   const mediaRef = useRef(media);
   mediaRef.current = media;
-
   const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
-
   const resetPublisher = useCallback((recover = false) => {
     publishPcRef.current?.close();
     publishPcRef.current = null;
@@ -126,7 +121,6 @@ export function useMeetRoom({
     publishedRef.current = [];
     if (recover) setConnectionGeneration((value) => value + 1);
   }, []);
-
   const lastReceiveRecovery = useRef(0);
   const resetSubscriber = useCallback(() => {
     subscribePcRef.current?.close();
@@ -136,23 +130,25 @@ export function useMeetRoom({
     subscribedRef.current.clear();
     setRemoteMedia({});
   }, []);
-
   useEffect(() => {
     activeRef.current = true;
     let usedInitialToken = false;
-
     // Reconnects fetch fresh tokens because calls can outlast token expiry.
     const resolveUrl = async () => {
       if (!usedInitialToken) {
         usedInitialToken = true;
         return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
       }
-
       // Reauthorize invite access on Meet, including guests outside the workspace.
-      const refreshed = await createMeetCallRealtimeToken(meetingId);
+      const refreshed = await createMeetCallRealtimeToken(
+        meetingId,
+        undefined,
+        deviceId ? { deviceId, joinMode: 'additional' } : undefined
+      );
+      if (refreshed.requiresDeviceChoice)
+        throw new Error('Device confirmation required');
       return `${refreshed.realtimeUrl}?token=${encodeURIComponent(refreshed.token)}`;
     };
-
     const signaling = new MeetSignaling({
       onMessage: (message) => {
         if (
@@ -199,7 +195,6 @@ export function useMeetRoom({
         resetSubscriber();
         resetPublisher();
         setConnectionGeneration((value) => value + 1);
-
         signalingRef.current?.send({
           media: mediaRef.current,
           type: 'presence.join',
@@ -213,7 +208,6 @@ export function useMeetRoom({
     const heartbeat = setInterval(() => {
       signaling.send({ type: 'presence.update', media: mediaRef.current });
     }, 10_000);
-
     heartbeatRef.current = heartbeat;
     return () => {
       activeRef.current = false;
@@ -241,8 +235,15 @@ export function useMeetRoom({
       subscribeSessionRef.current = null;
       subscribedRef.current = new Set();
     };
-  }, [effects, meetingId, realtimeUrl, resetPublisher, resetSubscriber, token]);
-
+  }, [
+    effects,
+    meetingId,
+    realtimeUrl,
+    resetPublisher,
+    resetSubscriber,
+    token,
+    deviceId,
+  ]);
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });
   }, []);
@@ -369,8 +370,15 @@ export function useMeetRoom({
           );
           if (!source || source.readyState === 'ended') continue;
 
+          source.contentHint =
+            source.kind === 'audio'
+              ? 'speech'
+              : plan.kind === 'screen'
+                ? 'detail'
+                : 'motion';
           const transceiver = pc.addTransceiver(source, {
             direction: 'sendonly',
+            sendEncodings: [encodingBudget(plan.kind, 'auto', null, null)],
           });
           sendersRef.current.set(plan.trackName, transceiver.sender);
           added.push({ plan, transceiver });
@@ -585,7 +593,13 @@ export function useMeetRoom({
     [effects, publishPresence, queueLocalTracks, resetPublisher]
   );
 
-  const { toggleMicrophone, toggleCamera, toggleScreenShare } = useMemo(
+  const {
+    toggleMicrophone,
+    toggleCamera,
+    toggleScreenShare,
+    selectDevice,
+    getSelectedDevices,
+  } = useMemo(
     () =>
       createLocalMediaControls({
         activeRef,
@@ -600,6 +614,11 @@ export function useMeetRoom({
     [applyMedia, effects]
   );
 
+  const { setBandwidthMode, getBandwidthMode } = useSenderBandwidth(
+    publishPcRef,
+    sendersRef,
+    Object.keys(state.participants).length
+  );
   const sharingUsers = Object.values(state.participants)
     .filter((entry) => entry.media.screenEnabled)
     .map((entry) => entry.userId)
@@ -628,60 +647,31 @@ export function useMeetRoom({
     setScreenStream(null);
     setConnectionStatus('closed');
   }, [effects, resetPublisher, resetSubscriber]);
-  const setCameraLook = useCallback(
-    async (look: CameraLook) => {
-      const track = await effects.setLook(look);
-      setCameraLookState(look);
-      if (!track || !activeRef.current) return;
-      const stream = new MediaStream([
-        ...(localStreamRef.current?.getAudioTracks() ?? []),
-        track,
-      ]);
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-      await queueLocalTracks(stream, mediaRef.current);
-    },
-    [effects, queueLocalTracks]
-  );
-
-  const adoptPreview = useCallback(
-    async (stream: MediaStream | null) => {
-      const source = stream
-        ?.getVideoTracks()
-        .find((track) => track.readyState === 'live');
-      if (!source) return;
-      if (!activeRef.current) {
-        source.stop();
-        return;
-      }
-      const track = await effects.setSource(source);
-      if (!track || !activeRef.current) {
-        effects.dispose();
-        return;
-      }
-      const next = new MediaStream([
-        ...(localStreamRef.current?.getAudioTracks() ?? []),
-        track,
-      ]);
-      localStreamRef.current = next;
-      setLocalStream(next);
-    },
-    [effects]
+  const { cameraLook, setCameraLook, adoptPreview } = useCameraControls(
+    effects,
+    activeRef,
+    localStreamRef,
+    mediaRef,
+    setLocalStream,
+    queueLocalTracks
   );
   return {
     ...actions,
+    setBandwidthMode,
+    getBandwidthMode,
     adoptPreview,
     leave,
     cameraLook,
     setCameraLook,
     remoteMedia,
     screenStream,
-    getMediaDiagnostics: async () => ({
-      signaling: connectionStatus,
-      attachedParticipants: Object.keys(remoteMedia).length,
-      publisher: await readPeerDiagnostics(publishPcRef.current),
-      subscriber: await readPeerDiagnostics(subscribePcRef.current),
-    }),
+    getMediaDiagnostics: () =>
+      diagnostics(
+        connectionStatus,
+        Object.keys(remoteMedia).length,
+        publishPcRef.current,
+        subscribePcRef.current
+      ),
     reconnectReceivingMedia: resetSubscriber,
     reconnectMedia: () => {
       resetSubscriber();
@@ -696,5 +686,7 @@ export function useMeetRoom({
     toggleCamera,
     toggleMicrophone,
     toggleScreenShare,
+    selectDevice,
+    getSelectedDevices,
   };
 }

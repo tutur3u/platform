@@ -156,10 +156,15 @@ export class MeetSignaling {
 
     if (
       (message.type === 'room.ended' ||
-        message.type === 'room.title.changed') &&
+        message.type === 'room.title.changed' ||
+        message.type === 'recording.state') &&
       message.requestId
     ) {
       this.pending.get(message.requestId)?.resolve(undefined);
+      this.pending.delete(message.requestId);
+    }
+    if (message.type === 'chat.message' && message.requestId) {
+      this.pending.get(message.requestId)?.resolve({ id: message.id });
       this.pending.delete(message.requestId);
     }
     if (message.type === 'sfu.response' && message.requestId) {

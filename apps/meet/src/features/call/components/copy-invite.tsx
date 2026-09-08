@@ -2,6 +2,7 @@
 
 import { Check, Link2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -24,11 +25,16 @@ export function CopyInvite({
   const copy = async () => {
     const origin = window.location.origin;
     const code = encodeRoomCode(meetingId);
-    await navigator.clipboard.writeText(
-      `${meetingName}\n${buildJoinUrl(origin, meetingId)}\n${t('meeting_code')}: ${code}`
-    );
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(
+        `${meetingName}\n${buildJoinUrl(origin, meetingId)}\n${t('meeting_code')}: ${code}`
+      );
+      toast.success(t('invite_copied'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error(t('connection_copy_failed'));
+    }
   };
 
   return (
@@ -46,7 +52,7 @@ export function CopyInvite({
           ) : (
             <Link2 className="size-3.5" />
           )}
-          {copied ? t('copied') : t('copy_invite')}
+          {t('invite')}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{t('copy_invite_hint')}</TooltipContent>
