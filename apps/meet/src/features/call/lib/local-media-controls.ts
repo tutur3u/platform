@@ -77,6 +77,12 @@ export function createLocalMediaControls({
         for (const track of acquired.getTracks()) track.stop();
         return;
       }
+      const enabledNow =
+        kind === 'audio'
+          ? mediaRef.current.audioEnabled
+          : mediaRef.current.videoEnabled;
+      if (selected) selected.enabled = enabledNow;
+      if (kind === 'video') effects.setEnabled(enabledNow);
       const current = localStreamRef.current;
       const next = new MediaStream([
         ...(current?.getTracks().filter((track) => track.kind !== kind) ?? []),

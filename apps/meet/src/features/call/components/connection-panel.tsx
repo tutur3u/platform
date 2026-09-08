@@ -31,6 +31,8 @@ export function ConnectionPanel({
   const t = useTranslations('meet.call');
   const [open, setOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<MediaDiagnostics | null>(null);
+  const latestTelemetry = useRef(telemetry);
+  latestTelemetry.current = telemetry;
   const snapshotTelemetry = useRef(telemetry);
   const data =
     snapshot && snapshotTelemetry.current === telemetry
@@ -44,7 +46,7 @@ export function ConnectionPanel({
     try {
       const next = await read();
       if (id === requestId.current) {
-        snapshotTelemetry.current = telemetry;
+        snapshotTelemetry.current = latestTelemetry.current;
         setSnapshot(next);
       }
     } catch {
