@@ -32,7 +32,12 @@ export function canReadRoomNotes(
       (state.ended
         ? state.settings?.shareNotesAfterMeeting
         : state.settings?.shareNotes) &&
-        (state.presence[token.userId] || state.approved?.[token.userId])
+        (Object.values(state.presence).some(
+          (person) =>
+            (person.accountId ?? person.userId) ===
+            (token.accountId ?? token.userId)
+        ) ||
+          state.approved?.[token.accountId ?? token.userId])
     )
   );
 }

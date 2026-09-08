@@ -11,10 +11,14 @@ export const meetReactionSchema = z.enum([
 export type MeetReaction = z.infer<typeof meetReactionSchema>;
 export const meetRoomSettingsPatchSchema = z.object({
   shareNotes: z.boolean().optional(),
+  shareRecordings: z.boolean().optional(),
+  allowParticipantRecording: z.boolean().optional(),
   shareNotesAfterMeeting: z.boolean().optional(),
 });
 export const meetRoomSettingsSchema = z.object({
   shareNotes: z.boolean().default(false),
+  shareRecordings: z.boolean().optional(),
+  allowParticipantRecording: z.boolean().optional(),
   shareNotesAfterMeeting: z.boolean().optional(),
 });
 export type MeetRoomSettings = z.infer<typeof meetRoomSettingsSchema>;

@@ -29,6 +29,11 @@ const requestId = z.string().trim().min(1).max(120).optional();
 const participantId = z.string().uuid();
 
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('usage.report'),
+    reportId: z.uuid(),
+    bytesReceived: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
+  }),
   z.object({ type: z.literal('reaction.send'), reaction: meetReactionSchema }),
   z.object({
     type: z.literal('room.settings.update'),
@@ -59,6 +64,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     body: z.string().trim().min(1).max(2_000),
     requestId,
     type: z.literal('chat.message'),
+    attachmentIds: z.array(z.uuid()).max(5).optional(),
   }),
   z.object({
     requestId,
@@ -183,6 +189,10 @@ export type MeetRealtimeServerMessage =
       type: 'presence';
     }
   | {
+      accountId?: string;
+      avatarUrl?: string;
+      assistant?: boolean;
+      attachmentIds?: string[];
       body: string;
       createdAt: string;
       displayName: string;
@@ -219,6 +229,7 @@ export type MeetRealtimeServerMessage =
       userId: string;
     }
   | {
+      ownerDeviceId?: string;
       recordingSessionId?: string;
       requestId?: string;
       state: MeetRealtimeRecordingState;

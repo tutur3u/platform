@@ -530,8 +530,17 @@ describe('meet room lifecycle', () => {
 
   it('tracks recording state for the whole room', () => {
     const joined = admitOrHold(createMeetRoomSnapshot(), token(), NOW).state;
-    const result = run(
+    const claimed = run(
       joined,
+      {
+        type: 'recording.state',
+        state: 'starting',
+        recordingSessionId: 'session-abc',
+      },
+      token()
+    ).state;
+    const result = run(
+      claimed,
       {
         recordingSessionId: 'session-abc',
         state: 'recording',
@@ -543,6 +552,7 @@ describe('meet room lifecycle', () => {
     expect(result.state.recording).toEqual({
       sessionId: 'session-abc',
       state: 'recording',
+      ownerDeviceId: HOST_ID,
     });
     expect(result.broadcast[0]).toMatchObject({
       recordingSessionId: 'session-abc',
@@ -552,7 +562,11 @@ describe('meet room lifecycle', () => {
   });
 
   it('keeps recording control away from ordinary speakers', () => {
-    const joined = admitOrHold(createMeetRoomSnapshot(), token(), NOW).state;
+    const joined = admitOrHold(
+      createMeetRoomSnapshot(),
+      token({ role: 'speaker', userId: GUEST_ID }),
+      NOW
+    ).state;
     const result = run(
       joined,
       { state: 'recording', type: 'recording.state' },
@@ -562,4 +576,29 @@ describe('meet room lifecycle', () => {
     expect(result.reply[0]).toMatchObject({ error: 'permission_denied' });
     expect(result.state.recording.state).toBe('idle');
   });
+});
+
+it('keeps device presence separate while remembering admission by account', () => {
+  const accountId = GUEST_ID;
+  const firstDevice = token({
+    accountId,
+    userId: GUEST_ID,
+    role: 'speaker',
+    admission: 'lobby',
+  });
+  let state = admitOrHold(createMeetRoomSnapshot(), token(), NOW).state;
+  state = admitOrHold(state, firstDevice, NOW).state;
+  state = run(
+    state,
+    { type: 'admission.decide', userId: firstDevice.userId, admit: true },
+    token()
+  ).state;
+  const secondDevice = { ...firstDevice, userId: SPEAKER_ID };
+  state = admitOrHold(state, secondDevice, NOW).state;
+  expect(state.waiting[SPEAKER_ID]).toBeUndefined();
+  expect(state.presence[GUEST_ID]?.accountId).toBe(accountId);
+  expect(state.presence[SPEAKER_ID]?.accountId).toBe(accountId);
+  state = releaseParticipant(state, GUEST_ID, firstDevice.roomId).state;
+  expect(state.presence[SPEAKER_ID]).toBeDefined();
+  expect(state.approved?.[accountId]).toBeDefined();
 });

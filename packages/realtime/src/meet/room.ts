@@ -5,7 +5,17 @@ import {
 } from './room-controls';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { denied, outcome } from './room-outcome';
+import {
+  applyRecording,
+  type RoomRecording,
+  recordingMessage,
+} from './room-recording';
 import { applySfuCommand } from './room-sfu';
+import {
+  applyUsageReport,
+  createRoomUsage,
+  type RoomUsage,
+} from './room-usage';
 
 export { meetTrackKey } from './room-tracks';
 
@@ -16,7 +26,6 @@ import type {
   MeetRealtimeSfuClientMessage,
 } from './messages';
 import {
-  canMeetRealtimeControlRecording,
   canMeetRealtimeManageParticipants,
   canMeetRealtimeUpdateStage,
   hasMeetRealtimeScope,
@@ -36,13 +45,17 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  usage?: RoomUsage;
   approved?: Record<string, MeetApprovedParticipant>;
   settings?: MeetRoomSettings;
   ended?: boolean;
   lastReactionAt?: Record<string, number>;
   retiredTracks?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
+  recordings?: RoomRecording[];
+  chat?: Extract<MeetRealtimeServerMessage, { type: 'chat.message' }>[];
   recording: {
+    ownerDeviceId?: string;
     sessionId: string | null;
     state: MeetRealtimeRecordingState;
   };
@@ -108,6 +121,7 @@ export function createMeetPresence(
   media?: Partial<MeetRealtimePresence['media']>
 ): MeetRealtimePresence {
   return {
+    accountId: token.accountId,
     avatarUrl: token.avatarUrl,
     displayName: getMeetDisplayName(token),
     joinedAt: now,
@@ -184,13 +198,14 @@ export function admitOrHold(
   if (
     token.admission === 'lobby' &&
     !state.presence[token.userId] &&
-    !state.approved?.[token.userId]
+    !state.approved?.[token.accountId ?? token.userId]
   ) {
     const next: MeetRoomSnapshot = {
       ...state,
       waiting: {
         ...state.waiting,
         [token.userId]: {
+          accountId: token.accountId,
           avatarUrl: token.avatarUrl,
           displayName: getMeetDisplayName(token),
           requestedAt: now,
@@ -218,6 +233,8 @@ export function admitOrHold(
     reply: [
       buildReady(next, token, 'admitted'),
       roomSettingsMessage(next),
+      recordingMessage(next),
+      ...(next.chat ?? []),
       ...(token.role === 'host' ? [approvedParticipantsMessage(next)] : []),
       ...(canMeetRealtimeManageParticipants(token)
         ? [meetAdmissionPendingMessage(next)]
@@ -262,6 +279,10 @@ export function releaseParticipant(
   );
   const next: MeetRoomSnapshot = {
     ...state,
+    recording:
+      state.recording.ownerDeviceId === userId
+        ? { state: 'idle', sessionId: null }
+        : state.recording,
     lastReactionAt,
     retiredTracks: Object.fromEntries(
       Object.entries(state.retiredTracks ?? {}).filter(
@@ -296,6 +317,7 @@ export function releaseParticipant(
         })
       ),
       meetPresenceMessage(next, roomId),
+      recordingMessage(next),
       { stage: next.stage, type: 'stage' },
     ],
     toManagers: [meetAdmissionPendingMessage(next)],
@@ -360,24 +382,45 @@ export function applyMeetRoomCommand(
       });
     }
 
+    case 'usage.report':
+      if (!state.presence[userId]) return denied(state, 'awaiting_admission');
+      return outcome({
+        ...state,
+        usage: applyUsageReport(
+          state.usage ?? createRoomUsage(),
+          userId,
+          message.reportId,
+          message.bytesReceived,
+          now
+        ),
+      });
+
     case 'chat.message': {
       if (!hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.chatWrite)) {
         return denied(state, 'permission_denied', message.requestId);
       }
-      return outcome(state, {
-        broadcast: [
-          {
-            body: message.body,
-            createdAt: now,
-            displayName:
-              state.presence[userId]?.displayName ?? getMeetDisplayName(token),
-            id: `${now}:${userId}`,
-            requestId: message.requestId,
-            type: 'chat.message',
-            userId,
-          },
-        ],
-      });
+      const entry: Extract<
+        MeetRealtimeServerMessage,
+        { type: 'chat.message' }
+      > = {
+        type: 'chat.message',
+        body: message.body,
+        createdAt: now,
+        displayName:
+          state.presence[userId]?.displayName ?? getMeetDisplayName(token),
+        avatarUrl: token.avatarUrl,
+        accountId: token.accountId,
+        id: crypto.randomUUID(),
+        userId,
+        attachmentIds: message.attachmentIds,
+      };
+      return outcome(
+        { ...state, chat: [...(state.chat ?? []), entry].slice(-500) },
+        {
+          broadcast: [entry],
+          reply: [{ ...entry, requestId: message.requestId }],
+        }
+      );
     }
 
     case 'stage.update': {
@@ -446,6 +489,7 @@ export function applyMeetRoomCommand(
         presence: {
           ...state.presence,
           [message.userId]: {
+            accountId: pending.accountId,
             avatarUrl: pending.avatarUrl,
             displayName: pending.displayName,
             joinedAt: now,
@@ -460,10 +504,16 @@ export function applyMeetRoomCommand(
           },
         },
         waiting,
+        usage: state.usage
+          ? {
+              ...state.usage,
+              devices: { ...state.usage.devices, [message.userId]: true },
+            }
+          : undefined,
         approved: {
           ...state.approved,
-          [message.userId]: {
-            userId: message.userId,
+          [pending.accountId ?? message.userId]: {
+            userId: pending.accountId ?? message.userId,
             displayName: pending.displayName,
             avatarUrl: pending.avatarUrl,
           },
@@ -482,6 +532,11 @@ export function applyMeetRoomCommand(
             userId: message.userId,
           },
           { userId: message.userId, message: roomSettingsMessage(next) },
+          { userId: message.userId, message: recordingMessage(next) },
+          ...(next.chat ?? []).map((entry) => ({
+            userId: message.userId,
+            message: entry,
+          })),
           ...remoteMeetTracks(next, message.userId).map((track) => ({
             userId: message.userId,
             message: {
@@ -572,28 +627,8 @@ export function applyMeetRoomCommand(
       };
     }
 
-    case 'recording.state': {
-      if (!canMeetRealtimeControlRecording(token)) {
-        return denied(state, 'permission_denied', message.requestId);
-      }
-      const next: MeetRoomSnapshot = {
-        ...state,
-        recording: {
-          sessionId: message.recordingSessionId ?? state.recording.sessionId,
-          state: message.state,
-        },
-      };
-      return outcome(next, {
-        broadcast: [
-          {
-            recordingSessionId: next.recording.sessionId ?? undefined,
-            requestId: message.requestId,
-            state: next.recording.state,
-            type: 'recording.state',
-          },
-        ],
-      });
-    }
+    case 'recording.state':
+      return applyRecording(state, message, token, now);
 
     case 'stream.state': {
       if (!hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.streamControl)) {
