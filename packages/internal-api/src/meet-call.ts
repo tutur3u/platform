@@ -16,3 +16,14 @@ export function createMeetCallRealtimeToken(
     method: 'POST',
   });
 }
+
+/** Persist only the title; leave meeting time and calendar metadata intact. */
+export function updateMeetCallTitle(meetingId: string, name: string) {
+  return getInternalApiClient().json<{ name: string }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/title`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    }
+  );
+}

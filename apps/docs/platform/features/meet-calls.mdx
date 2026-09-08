@@ -556,3 +556,38 @@ update, never another toggle. SPA unmount and leave share the same finalizer. Th
 post-call navigation buttons wait for finalization while capture and signaling
 are already stopped. A hard browser/process termination can still interrupt an
 upload; do not claim a saved recording without its storage receipt.
+
+
+## Screen audio and in-call controls
+
+Screen sharing requests audio separately from the microphone, including browser
+hints for window and system audio. The browser picker remains authoritative:
+capabilities depend on browser, operating system, and the chosen source. Select
+**Share audio** when offered. The in-call badge reports whether captured audio is
+available; a video-only capture still works. Remote screen tiles play shared audio,
+and muting the microphone does not mute shared audio. Stopping screen sharing
+stops both its audio and video tracks. The host's shared audio is included in the
+existing consent-controlled transcription mixer.
+
+The host can click the meeting title to rename it in a dialog, without changing
+the meeting time or calendar linkage, and hover or keyboard-focus a participant's
+name to mute their microphone. Touch layouts keep the action visible. Participants
+cannot remotely unmute someone. Raised hands use a prominent orange tile badge and
+outline; reactions use larger, labeled overlays with reduced-motion support.
+Transcript and Notes have separate tabs, with expandable usage and session notes.
+
+Receiving badges distinguish an enabled remote device from an arriving track.
+A connected SFU receiver with a live track is not proof of packet delivery. Meet
+checks receiving counters with a 20-second grace period and rebuilds only the
+subscriber when an expected stream never delivers packets or remains muted and
+stalled. Automatic rebuilds are limited to one per minute. Missing statistics,
+normal silence/DTX, and a static screen with an unmuted track do not trigger this
+recovery. This is a recovery mechanism, not evidence that an affected physical
+network or device is fixed; verify each audio/video direction on those devices.
+
+
+Packet counters that are unavailable or invalid remain unknown rather than being
+counted as zero. The tile indicator distinguishes unknown packet statistics from
+confirmed receiving and waiting states. Ended tracks are excluded from stall
+recovery. Persisted title announcements are acknowledged by the room and retained
+across signaling reconnects until delivery; intentional leave clears that outbox.

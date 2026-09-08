@@ -64,9 +64,12 @@ export function applyRoomControl(
     );
   }
   if (
-    !['room.settings.update', 'room.end', 'admission.forget'].includes(
-      message.type
-    )
+    ![
+      'room.settings.update',
+      'room.title.update',
+      'room.end',
+      'admission.forget',
+    ].includes(message.type)
   )
     return null;
   if (token.role !== 'host')
@@ -75,6 +78,17 @@ export function applyRoomControl(
       'permission_denied',
       'requestId' in message ? message.requestId : undefined
     );
+  if (message.type === 'room.title.update')
+    return outcome(state, {
+      reply: [
+        {
+          type: 'room.title.changed',
+          title: message.title,
+          requestId: message.requestId,
+        },
+      ],
+      broadcast: [{ type: 'room.title.changed', title: message.title }],
+    });
   if (message.type === 'room.settings.update') {
     const next = { ...state, settings: message.settings };
     return outcome(next, { broadcast: [roomSettingsMessage(next)] });

@@ -2,7 +2,7 @@
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
 import { ParticipantTile } from './participant-tile';
 export type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar';
@@ -31,6 +31,10 @@ export function CallStage({
   onFocus: (key: string | null) => void;
 }) {
   const t = useTranslations('meet.call');
+  const mute = useCallback(
+    (userId: string) => room.muteParticipant(userId, ['audio']),
+    [room.muteParticipant]
+  );
   const cache = useRef(new Map<string, MediaStream>());
   const tiles = useMemo(() => {
     const result: Tile[] = [];
@@ -73,7 +77,7 @@ export function CallStage({
           kind: 'screen',
           stream: self
             ? room.screenStream
-            : streamFor(screenKey, [remote?.screen]),
+            : streamFor(screenKey, [remote?.screen, remote?.screen_audio]),
         });
       }
     }
@@ -114,6 +118,7 @@ export function CallStage({
       focused={focus === tile.key}
       focusKey={tile.key}
       onFocus={onFocus}
+      onMute={room.state.role === 'host' ? mute : undefined}
     />
   );
   if (spotlight && focused)
@@ -144,7 +149,7 @@ export function CallStage({
   return (
     <div
       className={cn(
-        'grid h-full min-h-0 auto-rows-fr gap-3 overflow-auto p-1',
+        'grid h-full min-h-0 auto-rows-[minmax(8rem,1fr)] gap-3 overflow-auto p-1',
         columns(tiles.length)
       )}
     >

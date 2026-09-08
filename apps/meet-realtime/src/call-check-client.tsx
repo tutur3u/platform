@@ -1,6 +1,6 @@
 /** Runtime verification of the actual React call controller with synthetic media. */
 import { NextIntlClientProvider } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import messages from '../../meet/messages/en.json';
 import { ParticipantTile } from '../../meet/src/features/call/components/participant-tile';
@@ -23,6 +23,14 @@ window.fetch = (input, init) => {
       return Response.json({ ...data, realtimeUrl: data.roomUrl });
     });
   return nativeFetch(input, init);
+};
+const peers = new Set<RTCPeerConnection>();
+const NativePeer = window.RTCPeerConnection;
+window.RTCPeerConnection = class extends NativePeer {
+  constructor(configuration?: RTCConfiguration) {
+    super(configuration);
+    peers.add(this);
+  }
 };
 const sockets: WebSocket[] = [];
 const NativeWebSocket = window.WebSocket;
@@ -94,12 +102,57 @@ navigator.mediaDevices.getUserMedia = async (constraints) => {
 };
 navigator.mediaDevices.getDisplayMedia = async () => {
   sharedStream = camera(true);
+  const audio = await navigator.mediaDevices.getUserMedia({ audio: true });
+  for (const track of audio.getAudioTracks()) sharedStream.addTrack(track);
   return sharedStream;
 };
 
 const config = await fetch(`/token?peer=${peer}`).then((response) =>
   response.json()
 );
+function RemotePeer({
+  entry,
+  tracks,
+}: {
+  entry: import('@tuturuuu/realtime/meet').MeetRealtimePresence;
+  tracks: import('../../meet/src/features/call/lib/remote-streams').RemoteMedia[string];
+}) {
+  const camera = useMemo(
+    () =>
+      new MediaStream(
+        [tracks?.audio, tracks?.video].filter(
+          (track): track is MediaStreamTrack => Boolean(track)
+        )
+      ),
+    [tracks?.audio, tracks?.video]
+  );
+  const screen = useMemo(
+    () =>
+      new MediaStream(
+        [tracks?.screen, tracks?.screen_audio].filter(
+          (track): track is MediaStreamTrack => Boolean(track)
+        )
+      ),
+    [tracks?.screen, tracks?.screen_audio]
+  );
+  return (
+    <>
+      <ParticipantTile
+        resumePlaybackLabel="Play meeting audio"
+        participant={entry}
+        stream={camera}
+      />
+      {entry.media.screenEnabled && (
+        <ParticipantTile
+          resumePlaybackLabel="Play screen audio"
+          participant={entry}
+          kind="screen"
+          stream={screen}
+        />
+      )}
+    </>
+  );
+}
 function CallCheck() {
   const room = useMeetRoom({
     meetingId: config.meetingId,
@@ -145,24 +198,29 @@ function CallCheck() {
   useEffect(() => {
     const audioContexts: AudioContext[] = [];
     const timers: ReturnType<typeof setInterval>[] = [];
-    for (const [id, stream] of Object.entries(room.remoteStreams)) {
-      if (!stream.getAudioTracks().length) continue;
-      const context = new AudioContext();
-      audioContexts.push(context);
-      contexts.add(context);
-      void context.resume();
-      const analyser = context.createAnalyser();
-      context.createMediaStreamSource(stream).connect(analyser);
-      const samples = new Uint8Array(analyser.fftSize);
-      timers.push(
-        setInterval(() => {
-          analyser.getByteTimeDomainData(samples);
-          const level =
-            samples.reduce((sum, value) => sum + Math.abs(value - 128), 0) /
-            samples.length;
-          setEnergy((current) => ({ ...current, [id]: level }));
-        }, 500)
-      );
+    for (const [userId, tracks] of Object.entries(room.remoteMedia)) {
+      for (const kind of ['audio', 'screen_audio'] as const) {
+        const track = tracks[kind];
+        if (!track) continue;
+        const id = `${userId}:${kind}`;
+        const stream = new MediaStream([track]);
+        const context = new AudioContext();
+        audioContexts.push(context);
+        contexts.add(context);
+        void context.resume();
+        const analyser = context.createAnalyser();
+        context.createMediaStreamSource(stream).connect(analyser);
+        const samples = new Uint8Array(analyser.fftSize);
+        timers.push(
+          setInterval(() => {
+            analyser.getByteTimeDomainData(samples);
+            const level =
+              samples.reduce((sum, value) => sum + Math.abs(value - 128), 0) /
+              samples.length;
+            setEnergy((current) => ({ ...current, [id]: level }));
+          }, 500)
+        );
+      }
     }
     return () => {
       for (const timer of timers) clearInterval(timer);
@@ -171,7 +229,7 @@ function CallCheck() {
         void context.close();
       }
     };
-  }, [room.remoteStreams]);
+  }, [room.remoteMedia]);
   const run = (action: () => Promise<void>) => {
     setError('');
     void action().catch((error) => setError(String(error)));
@@ -224,6 +282,38 @@ function CallCheck() {
         }
       >
         Clear camera effect
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const receiver = [...peers]
+            .reverse()
+            .find(
+              (pc) =>
+                pc.connectionState === 'connected' &&
+                pc.getSenders().every((sender) => !sender.track) &&
+                pc.getReceivers().length
+            );
+          if (!receiver) {
+            setError('No connected subscriber');
+            return;
+          }
+          const original = receiver.getStats.bind(receiver);
+          receiver.getStats = async () => {
+            const stats = await original();
+            return new Map(
+              [...stats.entries()].map(([id, stat]) => [
+                id,
+                stat.type === 'inbound-rtp'
+                  ? { ...stat, bytesReceived: 0 }
+                  : stat,
+              ])
+            ) as unknown as RTCStatsReport;
+          };
+          setError('Simulated stalled receiver counters');
+        }}
+      >
+        Simulate stalled receiver
       </button>
       <button type="button" onClick={room.leave}>
         Leave immediately
@@ -294,12 +384,13 @@ function CallCheck() {
           <section key={entry.userId}>
             <p>
               {entry.displayName}: {JSON.stringify(entry.media)}; received audio
-              energy: {energy[entry.userId]?.toFixed(2) ?? 'pending'}
+              energy: {energy[`${entry.userId}:audio`]?.toFixed(2) ?? 'pending'}
+              ; shared audio energy:{' '}
+              {energy[`${entry.userId}:screen_audio`]?.toFixed(2) ?? 'pending'}
             </p>
-            <ParticipantTile
-              resumePlaybackLabel="Play meeting audio"
-              participant={entry}
-              stream={room.remoteStreams[entry.userId]}
+            <RemotePeer
+              entry={entry}
+              tracks={room.remoteMedia[entry.userId] ?? {}}
             />
           </section>
         ))}

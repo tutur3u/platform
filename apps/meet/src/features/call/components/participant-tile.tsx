@@ -14,6 +14,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { memo, useEffect, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
+import {
+  MediaReceivingStatus,
+  useStreamReadiness,
+} from './media-receiving-status';
 
 function ParticipantTileImpl({
   className,
@@ -25,6 +29,7 @@ function ParticipantTileImpl({
   stream,
   kind = 'camera',
   onFocus,
+  onMute,
   focused,
   focusKey,
 }: {
@@ -37,6 +42,7 @@ function ParticipantTileImpl({
   stream?: MediaStream | null;
   kind?: 'camera' | 'screen';
   onFocus?: (key: string | null) => void;
+  onMute?: (userId: string) => void;
   focusKey?: string;
   focused?: boolean;
 }) {
@@ -59,8 +65,9 @@ function ParticipantTileImpl({
       document.removeEventListener('keydown', onEscape);
     };
   }, []);
+  const readiness = useStreamReadiness(stream);
   const showVideo = Boolean(
-    stream &&
+    readiness.video &&
       (kind === 'screen'
         ? participant.media.screenEnabled
         : participant.media.videoEnabled)
@@ -76,6 +83,9 @@ function ParticipantTileImpl({
       className={cn(
         'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-dynamic-surface ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
+        handRaised &&
+          kind === 'camera' &&
+          'shadow-dynamic-orange/15 shadow-lg ring-2 ring-dynamic-orange',
         className,
         expanded && 'fixed inset-0 z-50 h-dvh w-screen! rounded-none'
       )}
@@ -83,7 +93,7 @@ function ParticipantTileImpl({
       <video
         autoPlay
         playsInline
-        muted={isSelf || kind === 'screen'}
+        muted={isSelf}
         ref={videoRef}
         className={cn(
           'size-full object-contain',
@@ -105,10 +115,10 @@ function ParticipantTileImpl({
           </Avatar>
         </div>
       )}
-      {playbackBlocked && !isSelf && kind !== 'screen' && (
+      {playbackBlocked && !isSelf && (
         <Button
           variant="secondary"
-          className="absolute top-3 left-3 z-20"
+          className="absolute bottom-16 left-3 z-20"
           onClick={() => {
             void videoRef.current
               ?.play()
@@ -119,7 +129,16 @@ function ParticipantTileImpl({
           {resumePlaybackLabel}
         </Button>
       )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 py-3 text-white">
+      {handRaised && kind === 'camera' && (
+        <div
+          role="status"
+          className="motion-safe:zoom-in absolute top-3 left-3 flex items-center gap-2 rounded-full border border-dynamic-orange/50 bg-background/95 px-3 py-2 font-semibold text-dynamic-orange text-sm shadow-lg motion-safe:animate-in"
+        >
+          <Hand className="size-5 fill-dynamic-orange/20" />
+          {t('hand_raised')}
+        </div>
+      )}
+      <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 bg-gradient-to-t from-black/70 to-transparent px-3 py-3 text-white">
         {kind === 'screen' && (
           <MonitorUp
             aria-label={t('sharing_screen')}
@@ -130,17 +149,39 @@ function ParticipantTileImpl({
           {participant.displayName}
           {isSelf ? ` · ${t('you')}` : ''}
         </span>
+        {!isSelf && (
+          <MediaReceivingStatus
+            audio={readiness.receivingAudio}
+            video={readiness.receivingVideo}
+            expectAudio={kind === 'camera' && participant.media.audioEnabled}
+            expectVideo={
+              kind === 'camera'
+                ? participant.media.videoEnabled
+                : participant.media.screenEnabled
+            }
+          />
+        )}
         {!participant.media.audioEnabled && kind === 'camera' && (
           <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
         )}
-        {handRaised && (
-          <Hand
-            aria-label={t('hand_raised')}
-            className="size-4 shrink-0 text-dynamic-orange"
-          />
-        )}
+        {onMute &&
+          !isSelf &&
+          kind === 'camera' &&
+          participant.media.audioEnabled && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="ml-auto size-8 shrink-0 rounded-full bg-background/30 text-white opacity-100 hover:bg-background/60 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+              aria-label={t('mute_participant', {
+                name: participant.displayName,
+              })}
+              onClick={() => onMute(participant.userId)}
+            >
+              <MicOff className="size-4" />
+            </Button>
+          )}
       </div>
-      <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+      <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
         {onFocus && (
           <Button
             size="icon"
@@ -209,5 +250,6 @@ export const ParticipantTile = memo(
     a.kind === b.kind &&
     a.focused === b.focused &&
     a.focusKey === b.focusKey &&
-    a.onFocus === b.onFocus
+    a.onFocus === b.onFocus &&
+    a.onMute === b.onMute
 );

@@ -165,3 +165,24 @@ describe('persistent room controls', () => {
     ).toHaveLength(1);
   });
 });
+
+it('restricts live title announcements to the host', () => {
+  const state = admitted();
+  const denied = run(
+    state,
+    { type: 'room.title.update', title: 'Changed' },
+    guest
+  );
+  expect(denied.reply).toContainEqual(
+    expect.objectContaining({ type: 'error', error: 'permission_denied' })
+  );
+  expect(
+    run(state, { type: 'room.title.update', title: 'Changed' }).broadcast
+  ).toContainEqual({ type: 'room.title.changed', title: 'Changed' });
+  expect(
+    meetRealtimeClientMessageSchema.safeParse({
+      type: 'room.title.update',
+      title: ' ',
+    }).success
+  ).toBe(false);
+});

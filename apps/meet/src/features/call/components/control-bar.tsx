@@ -24,6 +24,7 @@ export type CallPanel = 'chat' | 'participants' | null;
 function ControlButton({
   active,
   danger,
+  attention,
   icon: Icon,
   label,
   onClick,
@@ -34,6 +35,7 @@ function ControlButton({
   busy?: boolean;
   badge?: number;
   danger?: boolean;
+  attention?: boolean;
   icon: ComponentType<{ className?: string }>;
   label: string;
   onClick: () => void;
@@ -47,11 +49,13 @@ function ControlButton({
           disabled={busy}
           aria-pressed={active}
           className={cn(
-            'relative size-11 rounded-full',
+            'relative size-10 rounded-full sm:size-11',
             danger &&
               'bg-dynamic-red text-white hover:bg-dynamic-red/90 focus-visible:ring-dynamic-red',
             // Google Meet's convention: a lit control means the device is OFF.
-            !danger && active && 'bg-foreground/15 hover:bg-foreground/20'
+            !danger && active && 'bg-foreground/15 hover:bg-foreground/20',
+            attention &&
+              'bg-dynamic-orange/20 text-dynamic-orange ring-2 ring-dynamic-orange/60 hover:bg-dynamic-orange/30'
           )}
           onClick={onClick}
           size="icon"
@@ -120,7 +124,7 @@ export function ControlBar({
   const t = useTranslations('meet.call');
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-2 border-t bg-background/95 px-4 py-3 backdrop-blur">
+    <div className="flex flex-wrap items-center justify-center gap-1 border-t bg-background/95 px-2 py-3 backdrop-blur sm:gap-2 sm:px-4">
       <ControlButton
         active={!micOn}
         busy={busyDevices?.microphone}
@@ -144,6 +148,7 @@ export function ControlBar({
       />
       <ControlButton
         active={handRaised}
+        attention={handRaised}
         icon={Hand}
         label={handRaised ? t('lower_hand') : t('raise_hand')}
         onClick={onToggleHand}

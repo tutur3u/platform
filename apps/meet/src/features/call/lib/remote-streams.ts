@@ -17,6 +17,7 @@ export function createRemoteStreamCache() {
       Object.entries(media).map(([id, tracks]) => {
         const selected = [
           tracks.audio,
+          sharing.has(id) ? tracks.screen_audio : undefined,
           (sharing.has(id) ? tracks.screen : undefined) ?? tracks.video,
         ].filter((track): track is MediaStreamTrack => Boolean(track));
         let stream = cache.get(id);

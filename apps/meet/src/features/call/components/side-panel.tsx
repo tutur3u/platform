@@ -299,7 +299,9 @@ function ParticipantsPanel({
                 <span className="flex gap-1">
                   {participant.media.audioEnabled ? (
                     <Button
-                      aria-label={t('mute_participant')}
+                      aria-label={t('mute_participant', {
+                        name: participant.displayName,
+                      })}
                       className="size-7"
                       onClick={() => onMute(participant.userId)}
                       size="icon"

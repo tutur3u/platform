@@ -45,6 +45,9 @@ export class MeetSignaling {
   private readonly options: MeetSignalingOptions;
   private readonly pending = new Map<string, PendingRequest>();
   private nextRequestId = 0;
+  private pendingTitle: string | null = null;
+  private titleInFlight = false;
+  private titleRetry: ReturnType<typeof setTimeout> | null = null;
   private socket: WebSocket | null = null;
   private closedByUs = false;
   private attempt = 0;
@@ -79,6 +82,7 @@ export class MeetSignaling {
         this.hasConnected = true;
         this.options.onStatusChange?.('open');
         if (reconnected) this.options.onReconnected?.();
+        this.flushTitle();
       });
       socket.addEventListener('error', () =>
         this.options.onStatusChange?.('error')
@@ -115,7 +119,11 @@ export class MeetSignaling {
       return;
     }
 
-    if (message.type === 'room.ended' && message.requestId) {
+    if (
+      (message.type === 'room.ended' ||
+        message.type === 'room.title.changed') &&
+      message.requestId
+    ) {
       this.pending.get(message.requestId)?.resolve(undefined);
       this.pending.delete(message.requestId);
     }
@@ -179,8 +187,54 @@ export class MeetSignaling {
     });
   }
 
+  /** Keep the latest persisted title until the room acknowledges it, including reconnects. */
+  announceTitle(title: string) {
+    if (this.closedByUs) return;
+    this.pendingTitle = title;
+    this.flushTitle();
+  }
+
+  private flushTitle() {
+    if (
+      !this.isOpen ||
+      this.pendingTitle === null ||
+      this.titleInFlight ||
+      this.closedByUs
+    )
+      return;
+    const title = this.pendingTitle;
+    this.titleInFlight = true;
+    void this.request({ type: 'room.title.update', title })
+      .then(
+        () => {
+          if (this.pendingTitle === title) this.pendingTitle = null;
+        },
+        (error: unknown) => {
+          const retryable =
+            error instanceof Error &&
+            (error.message === 'signaling_closed' ||
+              error.message === 'signaling_timeout');
+          if (!retryable && this.pendingTitle === title)
+            this.pendingTitle = null;
+        }
+      )
+      .finally(() => {
+        this.titleInFlight = false;
+        if (this.pendingTitle !== null && !this.closedByUs) {
+          if (this.titleRetry) clearTimeout(this.titleRetry);
+          this.titleRetry = setTimeout(() => {
+            this.titleRetry = null;
+            this.flushTitle();
+          }, 1000);
+        }
+      });
+  }
+
   close() {
     this.closedByUs = true;
+    this.pendingTitle = null;
+    if (this.titleRetry) clearTimeout(this.titleRetry);
+    this.titleRetry = null;
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
