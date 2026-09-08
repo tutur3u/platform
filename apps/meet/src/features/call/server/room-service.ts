@@ -42,12 +42,11 @@ export async function personalWorkspace(userId: string) {
   const db = await createAdminClient({ noCookie: true });
   const { data, error } = await db
     .from('workspaces')
-    .select('id')
+    .select('id, deleted')
     .eq('creator_id', userId)
     .eq('personal', true)
-    .is('deleted_at', null)
     .single();
-  if (error || !data)
+  if (error || !data || data.deleted === true)
     throw new MeetCallAccessError(503, 'Personal workspace is unavailable');
   return data.id;
 }
