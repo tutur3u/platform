@@ -8,6 +8,7 @@ let fallback: MailArchiveBehavior = 'next';
 export function getMailArchiveBehavior(): MailArchiveBehavior {
   try {
     const value = window.localStorage.getItem(key);
+    if (value === null) return 'next';
     return value === 'next' || value === 'list' ? value : fallback;
   } catch {
     return fallback;

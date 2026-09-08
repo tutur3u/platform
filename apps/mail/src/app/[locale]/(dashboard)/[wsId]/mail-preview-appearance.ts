@@ -10,6 +10,7 @@ let fallback: MailMessagePreviewMode = 'dark';
 export function getMailPreviewAppearance(): MailMessagePreviewMode {
   try {
     const saved = window.localStorage.getItem(key);
+    if (saved === null) return 'dark';
     return saved === 'dark' || saved === 'original' ? saved : fallback;
   } catch {
     return fallback;

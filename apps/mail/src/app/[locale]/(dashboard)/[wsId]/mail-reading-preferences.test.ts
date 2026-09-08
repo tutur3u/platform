@@ -31,4 +31,19 @@ describe('archive navigation', () => {
     expect(getMailArchiveBehavior()).toBe('list');
     expect(storage.get('tuturuuu-mail-after-archive')).toBe('list');
   });
+  it('restores the default when another tab removes or clears storage', () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => storage.set(key, value),
+      },
+    });
+    setMailArchiveBehavior('list');
+    storage.delete('tuturuuu-mail-after-archive');
+    expect(getMailArchiveBehavior()).toBe('next');
+    setMailArchiveBehavior('list');
+    storage.clear();
+    expect(getMailArchiveBehavior()).toBe('next');
+  });
 });

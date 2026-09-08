@@ -31,4 +31,16 @@ describe('mail appearance persistence', () => {
     expect(getMailPreviewAppearance()).toBe('dark');
     setMailPreviewAppearance('original');
   });
+  it('returns to dark when the saved original preference is cleared', () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => storage.set(key, value),
+      },
+    });
+    setMailPreviewAppearance('original');
+    storage.clear();
+    expect(getMailPreviewAppearance()).toBe('dark');
+  });
 });
