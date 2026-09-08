@@ -170,7 +170,7 @@ export function ChatPanel({
   };
   return (
     <>
-      <ScrollArea className="min-h-0 flex-1 px-4 py-3">
+      <ScrollArea className="[&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 min-h-0 min-w-0 flex-1 px-4 py-3 [&_[data-radix-scroll-area-viewport]>div]:w-full [&_[data-radix-scroll-area-viewport]>div]:max-w-full">
         <ol aria-live="polite" aria-relevant="additions" className="space-y-5">
           {chat.map((message) => (
             <li key={message.id} className="flex gap-2">
@@ -198,7 +198,7 @@ export function ChatPanel({
                     })}
                   </time>
                 </div>
-                <div className="text-sm">
+                <div className="wrap-break-word min-w-0 text-sm">
                   <AssistantMarkdown text={message.body} />
                 </div>
                 {message.attachmentIds?.map((id) => (
