@@ -119,6 +119,10 @@ export async function DELETE(request: Request, { params }: Params) {
       { action: 'attachment.discard', id: input.data.id }
     );
     await deleteWorkspaceStorageObjectByPath(file.storageWsId, file.path);
+    await callRoomService(access, {
+      action: 'attachment.deleted',
+      id: input.data.id,
+    });
     return { ok: true };
   });
 }

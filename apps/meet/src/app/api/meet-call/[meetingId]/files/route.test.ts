@@ -42,7 +42,7 @@ vi.mock('@/features/call/server/room-service', () => ({
 }));
 
 import { MeetCallAccessError } from '@/features/call/lib/call-access';
-import { POST } from './route';
+import { DELETE, POST } from './route';
 
 const params = { params: Promise.resolve({ meetingId: 'room' }) };
 function request() {
@@ -101,4 +101,45 @@ it('preserves uploaded bytes when the registration outcome is uncertain', async 
     .mockRejectedValueOnce(new Error('Response lost'));
   await expect(POST(request(), params)).rejects.toThrow('Response lost');
   expect(mocks.remove).not.toHaveBeenCalled();
+});
+
+it('reclaims the attachment slot only after deleting its server-owned storage path', async () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  mocks.service.mockResolvedValueOnce({
+    path: 'Meet/chat/file',
+    storageWsId: 'creator-drive',
+  });
+  await DELETE(
+    new Request('https://meet.test/files', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    }),
+    params
+  );
+  expect(mocks.remove).toHaveBeenCalledWith('creator-drive', 'Meet/chat/file');
+  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+    action: 'attachment.deleted',
+    id,
+  });
+  expect(mocks.remove.mock.invocationCallOrder[0]).toBeLessThan(
+    mocks.service.mock.invocationCallOrder.at(-1)!
+  );
+});
+it('retains cleanup metadata when storage deletion fails', async () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  mocks.service.mockResolvedValueOnce({
+    path: 'Meet/chat/file',
+    storageWsId: 'creator-drive',
+  });
+  mocks.remove.mockRejectedValueOnce(new Error('Storage unavailable'));
+  await expect(
+    DELETE(
+      new Request('https://meet.test/files', {
+        method: 'DELETE',
+        body: JSON.stringify({ id }),
+      }),
+      params
+    )
+  ).rejects.toThrow('Storage unavailable');
+  expect(mocks.service).toHaveBeenCalledOnce();
 });
