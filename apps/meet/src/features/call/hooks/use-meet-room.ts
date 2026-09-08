@@ -100,7 +100,6 @@ export function useMeetRoom({
     screenEnabled: false,
     videoEnabled: false,
   });
-
   const signalingRef = useRef<MeetSignaling | null>(null);
   const publishPcRef = useRef<RTCPeerConnection | null>(null);
   const subscribePcRef = useRef<RTCPeerConnection | null>(null);
@@ -110,7 +109,6 @@ export function useMeetRoom({
   const pendingSubscriptionsRef = useRef(new Set<string>());
   const subscribedRef = useRef<Set<string>>(new Set());
   const screenStreamRef = useRef<MediaStream | null>(null);
-  /** mid -> owning participant, the only way to attribute an inbound track. */
   const trackOwnersRef = useRef<Map<string, RemoteTrackOwner>>(new Map());
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -488,7 +486,9 @@ export function useMeetRoom({
           answer,
           pending,
           stateRef.current.remoteTracks,
-          trackOwnersRef.current
+          trackOwnersRef.current,
+          subscribedRef.current,
+          setRemoteMedia
         );
         if (answer?.sessionDescription) {
           await pc.setRemoteDescription(answer.sessionDescription);

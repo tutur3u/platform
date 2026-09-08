@@ -20,15 +20,15 @@ export function useCallNotifications(
   useEffect(() => {
     const unlock = () => {
       try {
-        const Audio =
+        const AudioCtor =
           window.AudioContext ??
           (
             window as Window & {
               webkitAudioContext?: typeof AudioContext;
             }
           ).webkitAudioContext;
-        if (!Audio) return;
-        audio.current ??= new Audio();
+        if (!AudioCtor) return;
+        audio.current ??= new AudioCtor();
         void audio.current.resume().catch(() => undefined);
       } catch {
         /* Visual notifications remain available without Web Audio. */

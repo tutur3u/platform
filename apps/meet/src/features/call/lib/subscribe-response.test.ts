@@ -98,3 +98,33 @@ it('rejects a track name claiming another participant identity', () => {
   );
   expect(owners.size).toBe(0);
 });
+
+it('clears an existing receiver and playback when its mid is rejected', () => {
+  const track = new EventTarget() as MediaStreamTrack;
+  const owner: RemoteTrackOwner = {
+    userId: 'peer',
+    kind: 'video',
+    subscriptionKey: 'old:peer-video',
+    track,
+  };
+  const owners = new Map([['1', owner]]);
+  const subscribed = new Set([owner.subscriptionKey]);
+  let media: RemoteMedia = { peer: { video: track } };
+  applySubscribeResponse(
+    {
+      tracks: [
+        { mid: '1', trackName: 'peer-video', errorCode: 'trackNotFound' },
+      ],
+    },
+    pending,
+    live,
+    owners,
+    subscribed,
+    (update) => {
+      media = update(media);
+    }
+  );
+  expect(owners.size).toBe(0);
+  expect(subscribed.size).toBe(0);
+  expect(media).toEqual({});
+});
