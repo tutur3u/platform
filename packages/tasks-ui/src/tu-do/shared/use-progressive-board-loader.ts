@@ -66,13 +66,24 @@ export function useProgressiveBoardLoader(
   useEffect(() => {
     if (Object.keys(initialPagination).length === 0) return;
 
-    setPagination((current) => {
+    const hydrateMissingEntries = (
+      current: Record<string, ListPaginationState>
+    ) => {
       const missingEntries = Object.entries(initialPagination).filter(
         ([listId]) => !current[listId]
       );
-      if (missingEntries.length === 0) return current;
+      return missingEntries.length === 0
+        ? current
+        : { ...current, ...Object.fromEntries(missingEntries) };
+    };
 
-      const hydrated = { ...current, ...Object.fromEntries(missingEntries) };
+    // A parent effect can request cache revalidation in the same effect pass
+    // that supplies the browser-restored pagination. Keep the imperative ref in
+    // sync immediately instead of waiting for React to process the state update.
+    paginationRef.current = hydrateMissingEntries(paginationRef.current);
+
+    setPagination((current) => {
+      const hydrated = hydrateMissingEntries(current);
       paginationRef.current = hydrated;
       return hydrated;
     });
