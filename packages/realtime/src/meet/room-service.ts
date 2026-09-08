@@ -28,6 +28,7 @@ export type RoomServiceState = MeetRoomSnapshot & {
     {
       userId: string;
       status: 'pending' | 'done' | 'failed';
+      startedAt?: number;
       costUsd?: number | null;
     }
   >;
@@ -212,7 +213,9 @@ export function roomService(
     if (
       Object.values(snapshot.aiRequests ?? {}).some(
         (request) =>
-          request.userId === accountId && request.status === 'pending'
+          request.userId === accountId &&
+          request.status === 'pending' &&
+          Date.now() - (request.startedAt ?? 0) < 120000
       )
     )
       return fail('Assistant request already in progress', 409);
@@ -231,7 +234,11 @@ export function roomService(
       ...snapshot,
       aiRequests: {
         ...snapshot.aiRequests,
-        [message.messageId]: { userId: accountId, status: 'pending' as const },
+        [message.messageId]: {
+          userId: accountId,
+          status: 'pending' as const,
+          startedAt: Date.now(),
+        },
       },
     };
     return {
