@@ -1,6 +1,7 @@
-import type {
-  CloudflareSfuTrack,
-  MeetRealtimeRoomTrack,
+import {
+  type CloudflareSfuTrack,
+  type MeetRealtimeRoomTrack,
+  meetRealtimeTrackKindSchema,
 } from '@tuturuuu/realtime/meet';
 import { remoteTrackKey } from './call-state';
 import { userIdFromTrackName } from './negotiation';
@@ -35,9 +36,13 @@ export function applySubscribeResponse(
     } as MeetRealtimeRoomTrack);
     const publication = live[subscriptionKey];
     if (!publication || publication.userId !== userId) continue;
+    const kind = meetRealtimeTrackKindSchema.safeParse(
+      publication.kind ?? track.trackName.split('-').at(-1)
+    );
+    if (!kind.success) continue;
     owners.set(track.mid, {
       userId,
-      kind: publication.kind,
+      kind: kind.data,
       subscriptionKey,
     });
   }
