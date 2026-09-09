@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { createElement } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -44,4 +50,37 @@ it.each([
   expect(error).toHaveBeenCalledTimes(
     test.state === 'failed' && !test.refreshing ? 1 : 0
   );
+});
+
+it('deduplicates immediate activations until the refresh settles', async () => {
+  let finish!: () => void;
+  const onRefresh = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      })
+  );
+  render(
+    createElement(
+      TooltipProvider,
+      null,
+      createElement(MailSyncStatus, {
+        state: 'synced',
+        refreshing: false,
+        onRefresh,
+      })
+    )
+  );
+  const button = screen.getByRole('button');
+  fireEvent.click(button);
+  fireEvent.click(button);
+  expect(onRefresh).toHaveBeenCalledOnce();
+  await act(async () => {
+    finish();
+  });
+  fireEvent.click(button);
+  expect(onRefresh).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    finish();
+  });
 });
