@@ -11,7 +11,6 @@ import {
   CheckCheck,
   Info,
   Loader2,
-  RefreshCw,
   Search,
   Trash2,
   X,
@@ -35,7 +34,6 @@ import {
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
 import { toast } from '@tuturuuu/ui/sonner';
-import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
@@ -378,20 +376,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             {activeMailbox?.address}
           </p>
         </div>
-        <Button
-          aria-label={t('refresh')}
-          disabled={threadsQuery.isFetching || bootstrapQuery.isFetching}
-          onClick={() =>
-            activeMailboxId ? threadsQuery.refetch() : bootstrapQuery.refetch()
-          }
-          size="icon"
-          variant="ghost"
-        >
-          <RefreshCw
-            className={cn('size-4', threadsQuery.isFetching && 'animate-spin')}
-          />
-        </Button>
-        <MailSyncStatus state={syncState} />
+        <MailSyncStatus
+          state={syncState}
+          refreshing={threadsQuery.isFetching || bootstrapQuery.isFetching}
+          onRefresh={() => {
+            if (activeMailboxId) void threadsQuery.refetch();
+            else void bootstrapQuery.refetch();
+          }}
+        />
       </div>
       <div className="space-y-2 border-dynamic border-b p-3">
         <div className="relative">
