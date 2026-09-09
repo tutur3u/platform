@@ -101,7 +101,12 @@ export function Workshop({
           ) {
             cache.removeQueries({ queryKey: ['room', roomId] });
             socket.close(1000);
-            if (message.type === 'room_deleted') leaveRef.current();
+            if (message.type === 'room_deleted') {
+              if (localStorage.getItem('colab-recent-room') === roomId)
+                localStorage.removeItem('colab-recent-room');
+              void cache.invalidateQueries({ queryKey: ['workshops'] });
+              leaveRef.current();
+            }
             return;
           }
           const room = message as RoomView;
@@ -232,7 +237,7 @@ export function Workshop({
           </span>
         </div>
       </div>
-      <ErrorNotice error={mutate.error ?? remove.error} />
+      <ErrorNotice error={remove.error ?? mutate.error} />
       <div className="workshop-layout">
         <div hidden={section !== 'mission'}>
           <MissionBrief room={room} />

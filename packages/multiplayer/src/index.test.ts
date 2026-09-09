@@ -140,6 +140,8 @@ describe('server-authoritative room policy', () => {
   it('applies compatible defaults and lets admins bound room and team AI usage', () => {
     const legacy = room();
     delete (legacy as Partial<Room>).limits;
+    delete (legacy as Partial<Room>).scenarios;
+    delete (legacy.scenario as Partial<Room['scenario']>).id;
     for (const team of legacy.teams) {
       delete (team as Partial<(typeof legacy.teams)[number]>).limits;
       delete (team as Partial<(typeof legacy.teams)[number]>).aiCalls;
@@ -149,6 +151,8 @@ describe('server-authoritative room policy', () => {
     }
     normalizeRoom(legacy);
     expect(legacy.limits.aiCallLimit).toBe(200);
+    expect(legacy.scenarios.length).toBeGreaterThan(1);
+    expect(legacy.scenario.id).toBe('legacy-scenario-1');
     expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
     expect(legacy.teams[0]?.records).toHaveLength(192);
     expect(legacy.teams[0]?.records[0]?.title).toBe('Team-edited launch brief');
@@ -263,9 +267,11 @@ describe('server-authoritative room policy', () => {
   it('creates, renames and removes teams while keeping every member assigned', () => {
     const r = room();
     joinRoom(r, alice, 'team-2', false, now);
+    r.limits = { aiCallLimit: 12, agentTurnLimit: 3, toolCallLimit: 2 };
     mutateRoom(r, owner, { action: 'teamCreate', name: 'Research Lab' }, now);
     const created = r.teams.at(-1)!;
     expect(created.name).toBe('Research Lab');
+    expect(created.limits).toEqual(r.limits);
     mutateRoom(
       r,
       owner,
@@ -283,6 +289,17 @@ describe('server-authoritative room policy', () => {
     expect(() =>
       mutateRoom(r, owner, { action: 'memberRemove', memberId: owner.id }, now)
     ).toThrow('owner_protected');
+  });
+  it('selects scenarios by stable id when titles are repeated', () => {
+    const r = room();
+    r.scenarios.push({ ...r.scenarios[0]!, id: 'duplicate-title' });
+    mutateRoom(
+      r,
+      owner,
+      { action: 'selectScenario', scenarioId: 'duplicate-title' },
+      now
+    );
+    expect(r.scenario.id).toBe('duplicate-title');
   });
   it('shares teams by default and filters them immediately when an admin disables showcase', () => {
     const r = room();

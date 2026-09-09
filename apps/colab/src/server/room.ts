@@ -168,14 +168,21 @@ export class ColabRoom extends DurableObject<Env> {
     const member = memberOf(room, identity);
     requireRule(member.id === room.ownerId, 'owner_only', 403);
     for (const ws of this.ctx.getWebSockets()) {
-      ws.send(JSON.stringify({ type: 'room_deleted' }));
-      ws.close(1000, 'room_deleted');
+      try {
+        ws.send(JSON.stringify({ type: 'room_deleted' }));
+        ws.close(1000, 'room_deleted');
+      } catch {
+        // A stale socket must not prevent the owner from deleting the workshop.
+      }
     }
     await this.ctx.storage.deleteAlarm();
     this.ctx.storage.transactionSync(() => {
       this.ctx.storage.sql.exec('DELETE FROM state');
       this.ctx.storage.sql.exec('DELETE FROM limits');
     });
+    return room.members
+      .filter((participant) => participant.email)
+      .map((participant) => participant.id);
   }
   async join(
     identity: Identity,

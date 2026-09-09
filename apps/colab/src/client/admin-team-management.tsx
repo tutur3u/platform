@@ -302,12 +302,13 @@ export function AdminTeamManagement({
               variant="destructive"
               disabled={busy}
               onClick={() => {
-                if (removeMember)
-                  void action({
-                    action: 'memberRemove',
-                    memberId: removeMember.id,
-                  });
-                setRemoveMember(null);
+                if (!removeMember) return;
+                void action({
+                  action: 'memberRemove',
+                  memberId: removeMember.id,
+                })
+                  .then(() => setRemoveMember(null))
+                  .catch(() => {});
               }}
             >
               {c.removeMember}
@@ -332,9 +333,10 @@ export function AdminTeamManagement({
               variant="destructive"
               disabled={busy}
               onClick={() => {
-                if (removeTeam)
-                  void action({ action: 'teamDelete', teamId: removeTeam.id });
-                setRemoveTeam(null);
+                if (!removeTeam) return;
+                void action({ action: 'teamDelete', teamId: removeTeam.id })
+                  .then(() => setRemoveTeam(null))
+                  .catch(() => {});
               }}
             >
               {c.deleteTeam}

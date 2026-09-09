@@ -1,3 +1,5 @@
+import { riseMetadata } from './mock-rise-metadata';
+
 export const mockAppCatalog = [
   { id: 'drive', name: 'Google Drive', kind: 'documents' },
   { id: 'notion', name: 'Notion', kind: 'documents' },
@@ -663,18 +665,13 @@ const risePracticeRecords: Record<
 
 export const mockApps: MockApp[] = mockAppCatalog.map(({ id }) => id);
 
-function inRiseContext(value: string) {
-  return value
-    .replaceAll('Project Lotus', 'RISE Pathways')
-    .replaceAll('Lotus', 'RISE')
-    .replaceAll('LOTUS', 'RISE')
-    .replaceAll('LOT-', 'RISE-')
-    .replaceAll('#project-lotus', '#rise-operations');
-}
-
 export function seedRecords(): MockRecord[] {
   return mockAppCatalog.flatMap(({ id: app }) => {
-    const profile = { ...profiles[app], ...risePracticeRecords[app] };
+    const profile = {
+      ...profiles[app],
+      ...risePracticeRecords[app],
+      ...riseMetadata,
+    };
     const entries: ReadonlyArray<readonly [string, string]> = [
       profile.primary,
       profile.followup,
@@ -688,8 +685,8 @@ export function seedRecords(): MockRecord[] {
     return entries.map(([title, content], index) => ({
       id: `${app}-${index + 1}`,
       app,
-      title: inRiseContext(title),
-      content: inRiseContext(content),
+      title,
+      content,
     }));
   });
 }

@@ -102,7 +102,9 @@ async function handle(
       403
     );
     requireRule(
-      request.method === 'POST' || request.method === 'DELETE',
+      request.method === 'POST' ||
+        (request.method === 'DELETE' &&
+          /^\/api\/rooms\/[a-f0-9-]{36}$/.test(url.pathname)),
       'method_not_allowed',
       405
     );
@@ -197,8 +199,12 @@ async function handle(
   }
   requireRule(identity, 'sign_in_required', 401);
   if (!action && request.method === 'DELETE') {
-    await room.delete(identity);
-    await env.ROOMS.getByName(`directory:${identity.id}`).forgetRoom(match[1]);
+    const participantIds = await room.delete(identity);
+    await Promise.all(
+      participantIds.map((participantId) =>
+        env.ROOMS.getByName(`directory:${participantId}`).forgetRoom(match[1])
+      )
+    );
     return Response.json({ ok: true });
   }
   if (!action && request.method === 'GET') {

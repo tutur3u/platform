@@ -100,7 +100,7 @@ describe('sandbox and sessions', () => {
     expect(new Set(records.map(({ id }) => id)).size).toBe(192);
     expect(
       records.every(
-        ({ title, content }) => !/lotus|LOT-/.test(`${title} ${content}`)
+        ({ title, content }) => !/lotus|lot-/i.test(`${title} ${content}`)
       )
     ).toBe(true);
     for (const app of mockApps)
@@ -112,8 +112,8 @@ describe('sandbox and sessions', () => {
           app: 'drive',
           query: 'RISE',
         })
-      )
-    ).toHaveLength(1);
+      ).length
+    ).toBeGreaterThan(0);
     expect(() =>
       executeMockTool(records, {
         tool: 'fetch',

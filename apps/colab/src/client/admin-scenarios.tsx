@@ -29,19 +29,17 @@ export function AdminScenarios({
         {c.scenarioLibrary}
         <SelectField
           label={c.scenarioLibrary}
-          value={room.scenarios.findIndex(
-            (item) => item.title === room.scenario.title
-          )}
+          value={room.scenario.id}
           disabled={busy}
           onValueChange={(value) =>
             void action({
               action: 'selectScenario',
-              index: Number(value),
+              scenarioId: value,
             }).catch(() => {})
           }
         >
-          {room.scenarios.map((scenario, index) => (
-            <option key={`${scenario.title}-${index}`} value={index}>
+          {room.scenarios.map((scenario) => (
+            <option key={scenario.id} value={scenario.id}>
               {scenario.title}
             </option>
           ))}

@@ -7,8 +7,8 @@
 @source "./";
 
 @layer components {
-  .colab-content .skills-panel,
-  .colab-content .mock-panel {
+  .colab-content .studio-panel.skills-panel,
+  .colab-content .studio-panel.mock-panel {
     gap: 28px;
   }
   .colab-content .mock-toolbar {

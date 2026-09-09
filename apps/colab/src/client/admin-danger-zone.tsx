@@ -57,7 +57,7 @@ export function AdminDangerZone({
               <Button
                 variant="destructive"
                 disabled={busy}
-                onClick={() => void onDelete()}
+                onClick={() => void onDelete().catch(() => {})}
               >
                 {busy ? c.working : c.deletePermanently}
               </Button>

@@ -55,7 +55,12 @@ export type Team = {
   aiCalls: number;
   limits: TeamLimits;
 };
-export type Scenario = { title: string; brief: string; criteria: string[] };
+export type Scenario = {
+  id: string;
+  title: string;
+  brief: string;
+  criteria: string[];
+};
 export type AuditEntry = {
   id: string;
   at: number;
@@ -137,6 +142,24 @@ export function workshopScheduleError(
 export function normalizeRoom(room: Room): Room {
   room.aiCalls ??= 0;
   room.limits = { ...defaultWorkshopLimits, ...room.limits };
+  const storedScenario = room.scenario as Scenario & { id?: string };
+  const storedScenarios = (room as Room & { scenarios?: Scenario[] }).scenarios;
+  const scenarios = (
+    storedScenarios?.length
+      ? storedScenarios
+      : [storedScenario, ...starterScenarios()]
+  ).map((scenario, index) => ({
+    ...scenario,
+    id: scenario.id ?? `legacy-scenario-${index + 1}`,
+  }));
+  const selected = scenarios.find(
+    (scenario) =>
+      (storedScenario.id && scenario.id === storedScenario.id) ||
+      (scenario.title === storedScenario.title &&
+        scenario.brief === storedScenario.brief)
+  );
+  room.scenarios = scenarios;
+  room.scenario = selected ?? scenarios[0]!;
   const catalog = seedRecords();
   room.teams = room.teams.map((team) => {
     const present = new Set(team.records.map((record) => record.id));
@@ -272,6 +295,7 @@ export function projectRoom(
 export function starterScenarios(): Scenario[] {
   return [
     {
+      id: 'rise-pathways',
       title: 'Find your place at RISE',
       brief:
         'Help RISE introduce its four pathways to innovation: Marketing & Growth, Product & Development, External Relations, and People & Culture. Use the practice apps to turn the bilingual campaign brief into a clear recruitment plan without inventing dates, approvals, or student information.',
@@ -282,6 +306,7 @@ export function starterScenarios(): Scenario[] {
       ],
     },
     {
+      id: 'rise-induction-day',
       title: 'Induction Day, without the busywork',
       brief:
         'Coordinate RISE Induction Day and the Start Up Showcase across the four departments. Review calendars, task boards, registrations, and venue notes; then propose owners, a run sheet, and two conflict-free check-in options.',
@@ -292,6 +317,7 @@ export function starterScenarios(): Scenario[] {
       ],
     },
     {
+      id: 'rise-study-workflow',
       title: 'Study smarter, contribute better',
       brief:
         'Create a weekly plan for a RISE member balancing classes, a group assignment, and club responsibilities. Summarize course notes, identify deadlines, break work into focused tasks, and draft a respectful message when priorities conflict.',
@@ -302,6 +328,7 @@ export function starterScenarios(): Scenario[] {
       ],
     },
     {
+      id: 'rise-partnership-outreach',
       title: 'Partnership outreach with purpose',
       brief:
         'Support External Relations in researching a potential ecosystem partner and drafting a concise outreach note. Connect the partnership to RISE’s mission of sustainable, real-world impact while clearly marking facts that still need verification.',
@@ -500,7 +527,20 @@ export function mutateRoom(
       records: seedRecords(),
       runs: [],
       aiCalls: 0,
-      limits: { ...defaultTeamLimits },
+      limits: {
+        aiCallLimit: Math.min(
+          defaultTeamLimits.aiCallLimit,
+          room.limits.aiCallLimit
+        ),
+        agentTurnLimit: Math.min(
+          defaultTeamLimits.agentTurnLimit,
+          room.limits.agentTurnLimit
+        ),
+        toolCallLimit: Math.min(
+          defaultTeamLimits.toolCallLimit,
+          room.limits.toolCallLimit
+        ),
+      },
     });
   } else if (action === 'teamRename') {
     const team = room.teams.find((item) => item.id === body.teamId);
@@ -566,7 +606,8 @@ export function mutateRoom(
     team.records = seedRecords();
   } else if (action === 'selectScenario') {
     editable(room, now);
-    const index = number(body.index, 0, room.scenarios.length - 1);
-    room.scenario = room.scenarios[index]!;
+    const scenario = room.scenarios.find((item) => item.id === body.scenarioId);
+    requireRule(scenario, 'invalid_input');
+    room.scenario = scenario;
   } else throw new RoomError('unknown_action');
 }

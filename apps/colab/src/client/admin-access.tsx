@@ -79,6 +79,7 @@ export function AdminAccess({
               await navigator.clipboard.writeText(
                 `${location.origin}/?room=${room.id}`
               );
+              setCopyError(undefined);
               setCopied(true);
               setTimeout(() => setCopied(false), 2500);
             } catch (error) {

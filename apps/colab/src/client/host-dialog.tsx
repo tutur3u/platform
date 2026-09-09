@@ -14,16 +14,11 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useState } from 'react';
+import { localDateTimeValue } from './date-time';
 import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
 import { closeWorkspaceDialog, WorkspaceLink } from './navigation';
 
-function dateValue(time: number | null) {
-  if (time === null) return '';
-  const date = new Date(time);
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  return date.toISOString().slice(0, 16);
-}
 export function HostWorkshopDialog({
   open,
   canHost,
@@ -37,8 +32,8 @@ export function HostWorkshopDialog({
   const start = Date.now() + 5 * 60_000;
   const [draft, setDraft] = useState(() => ({
     title: c.defaultTitle,
-    starts: dateValue(start),
-    ends: dateValue(start + 60 * 60_000),
+    starts: localDateTimeValue(start),
+    ends: localDateTimeValue(start + 60 * 60_000),
     capacity: '24',
     teams: '4',
   }));

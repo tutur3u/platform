@@ -5,14 +5,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useState } from 'react';
+import { localDateTimeValue } from './date-time';
 import { useCopy } from './i18n';
-
-function dateValue(time: number | null) {
-  if (time === null) return '';
-  const date = new Date(time);
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-  return date.toISOString().slice(0, 16);
-}
 
 export function AdminSchedule({
   room,
@@ -24,8 +18,8 @@ export function AdminSchedule({
   busy: boolean;
 }) {
   const c = useCopy();
-  const [starts, setStarts] = useState(() => dateValue(room.startsAt));
-  const [ends, setEnds] = useState(() => dateValue(room.endsAt));
+  const [starts, setStarts] = useState(() => localDateTimeValue(room.startsAt));
+  const [ends, setEnds] = useState(() => localDateTimeValue(room.endsAt));
   const [error, setError] = useState<string | null>(null);
   const clear = (setter: (value: string) => void) => {
     setter('');
