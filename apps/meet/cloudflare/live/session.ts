@@ -18,7 +18,11 @@ import { connectLiveProvider } from './provider';
 import { speakApprovedText } from './public-speech';
 import { liveRegistry } from './registry';
 import { refreshLiveRegistry } from './registry-heartbeat';
-import { approveLiveMemory, type LiveProposal } from './reviews';
+import {
+  approveLiveMemory,
+  type LiveProposal,
+  liveReviewEvent,
+} from './reviews';
 import { liveRoomCommand } from './room';
 import { checkpointSchema, type SavedSession } from './session-state';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
@@ -498,13 +502,7 @@ export class MeetLiveDurableObject {
     respond({ error: 'Tool unavailable' });
   }
   private emitReview(review: LiveProposal) {
-    this.emit({
-      type: 'review',
-      id: review.id,
-      action: review.name === 'remember' ? 'remember' : 'share',
-      text: review.text,
-      status: review.status,
-    });
+    this.emit(liveReviewEvent(review));
   }
   private async decide(id: string, approved: boolean) {
     const saved = this.saved!;
@@ -694,7 +692,8 @@ export class MeetLiveDurableObject {
       this.env,
       this.saved,
       () => this.persist(),
-      () => this.state.storage.setAlarm(Date.now() + 60000)
+      () => this.state.storage.setAlarm(Date.now() + 60000),
+      this.state.storage
     );
   }
 }

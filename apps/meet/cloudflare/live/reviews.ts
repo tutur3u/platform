@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import type { LiveSessionClaims } from '../../src/features/live-assistant/contracts';
+import type {
+  LiveAssistantEvent,
+  LiveSessionClaims,
+} from '../../src/features/live-assistant/contracts';
 import { type LiveEnvironment, liveDatabase, readLiveMemory } from './storage';
 
 export const proposalSchema = z.object({
@@ -29,4 +32,14 @@ export async function approveLiveMemory(
       p_category: proposal.category ?? 'preference',
     },
   });
+}
+
+export function liveReviewEvent(review: LiveProposal): LiveAssistantEvent {
+  return {
+    type: 'review',
+    id: review.id,
+    action: review.name === 'remember' ? 'remember' : 'share',
+    text: review.text,
+    status: review.status,
+  };
 }

@@ -4117,7 +4117,7 @@
       "pause": "Pause microphone",
       "personal": "Personal assistant",
       "personal_hint": "Only you hear Mira. Your meeting microphone is muted while you talk privately.",
-      "private_mic_hint": "Your meeting microphone stays muted during private conversation. Unmuting it pauses Mira’s private input.",
+      "private_mic_hint": "Your meeting microphone stays muted during private conversation. Unmuting it pauses Mira’s private input. The private conversation is cleared when this assistant session ends; only memories you approve are kept.",
       "processing": "Applying your decision…",
       "resume": "Resume microphone",
       "retry": "Try again",

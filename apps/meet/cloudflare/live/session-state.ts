@@ -17,6 +17,7 @@ export type SavedSession = {
   coverageGap?: boolean;
   publicBillings?: Record<string, LiveBillingState>;
   ended?: boolean;
+  contextErased?: boolean;
   startedAt: number;
   reviews: LiveProposal[];
 };

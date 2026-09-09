@@ -4117,7 +4117,7 @@
       "pause": "Tạm dừng micrô",
       "personal": "Trợ lý cá nhân",
       "personal_hint": "Chỉ bạn nghe Mira. Micrô cuộc họp được tắt khi bạn trò chuyện riêng.",
-      "private_mic_hint": "Micrô cuộc họp được tắt khi trò chuyện riêng. Bật micrô cuộc họp sẽ tạm dừng đầu vào riêng của Mira.",
+      "private_mic_hint": "Micrô cuộc họp được tắt khi trò chuyện riêng. Bật micrô cuộc họp sẽ tạm dừng đầu vào riêng của Mira. Cuộc trò chuyện riêng được xóa khi phiên trợ lý kết thúc; chỉ những ghi nhớ bạn phê duyệt được giữ lại.",
       "processing": "Đang áp dụng quyết định…",
       "resume": "Tiếp tục micrô",
       "retry": "Thử lại",

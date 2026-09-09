@@ -1,4 +1,6 @@
+import type { DurableObjectStorage } from '@cloudflare/workers-types';
 import { settleLiveBilling } from './billing';
+import { eraseEndedLiveContext } from './erase-context';
 import type { SavedSession } from './session-state';
 import type { LiveEnvironment } from './storage';
 import { reportLiveUsage } from './usage-report';
@@ -8,8 +10,14 @@ export async function finalizeSessionBilling(
   env: LiveEnvironment,
   saved: SavedSession,
   persist: () => Promise<void>,
-  retry: () => Promise<void>
+  retry: () => Promise<void>,
+  storage: DurableObjectStorage
 ) {
+  try {
+    await eraseEndedLiveContext(storage, saved, retry);
+  } catch {
+    await retry();
+  }
   for (const [id, billing] of Object.entries(saved.publicBillings ?? {})) {
     try {
       const final = await settleLiveBilling(env, saved.claims, billing, true);

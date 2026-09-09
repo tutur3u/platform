@@ -53,7 +53,9 @@ Context compression and session resumption support long conversations within
 available quota. They do not create a literally infinite model context window.
 The active journal keeps bounded recent turns and rolling checkpoints; a private
 Durable Object archive supports searching earlier turns in that session. Model
-summaries can omit details. Audio is not archived, and audio never received by
+summaries can omit details. Ending the session clears its journal, private review
+text, resumption handle, and archive in bounded batches; approved user memories
+and billing receipts remain separate. Audio is not archived, and audio never received by
 the service cannot be reconstructed after an outage.
 
 ## Usage and costs
