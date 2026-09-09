@@ -6,6 +6,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import type { MailSyncState } from './use-mail-thread-actions';
 
 export function MailSyncStatus({
@@ -15,9 +16,10 @@ export function MailSyncStatus({
 }: {
   state: MailSyncState;
   refreshing: boolean;
-  onRefresh: () => void;
+  onRefresh: () => unknown;
 }) {
   const t = useTranslations('mail');
+  const refreshingRef = useRef(false);
   const busy = refreshing || state === 'syncing';
   const failed = state === 'failed' && !busy;
   const Icon = failed ? CloudAlert : RefreshCw;
@@ -31,10 +33,17 @@ export function MailSyncStatus({
           aria-busy={busy}
           aria-disabled={busy}
           className={cn(failed && 'text-destructive')}
-          onClick={() => {
-            if (busy) return;
-            if (failed) toast.error(t('sync_failed_description'));
-            onRefresh();
+          onClick={async () => {
+            if (busy || refreshingRef.current) return;
+            refreshingRef.current = true;
+            try {
+              if (failed) toast.error(t('sync_failed_description'));
+              await onRefresh();
+            } catch {
+              toast.error(t('load_failed'));
+            } finally {
+              refreshingRef.current = false;
+            }
           }}
           size="icon"
           variant="ghost"
