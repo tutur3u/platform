@@ -66,11 +66,11 @@ it('drains queued uploads and finalizes when capture overloads', async () => {
     expect(mocks.update).toHaveBeenLastCalledWith('workspace', 'meeting', {
       action: 'finish',
       sessionId: 'session',
-      expectedChunks: 60,
+      expectedChunks: 30,
       captureIncomplete: true,
     })
   );
-  expect(mocks.upload).toHaveBeenCalledTimes(60);
+  expect(mocks.upload).toHaveBeenCalledTimes(30);
   expect(hook.result.current.ownsSession).toBe(false);
   hook.unmount();
 });

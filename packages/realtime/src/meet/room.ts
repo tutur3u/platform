@@ -260,6 +260,7 @@ function buildReady(
 ): Extract<MeetRealtimeServerMessage, { type: 'ready' }> {
   return {
     admission,
+    tracks: admission === 'admitted' ? Object.values(state.tracks) : [],
     expiresAt: new Date(token.exp * 1000).toISOString(),
     limits: token.limits,
     mode: token.mode,

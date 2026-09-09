@@ -23,3 +23,17 @@ it('does not retry rejected messages', async () => {
   ).rejects.toThrow('permission_denied');
   expect(request).toHaveBeenCalledTimes(1);
 });
+
+it('settles after three bounded transport attempts', async () => {
+  const request = vi.fn().mockRejectedValue(new Error('signaling_timeout'));
+  await expect(
+    sendRecoverableChat(
+      { request, isClosed: false },
+      'Hello',
+      [],
+      async () => {}
+    )
+  ).rejects.toThrow('signaling_timeout');
+  expect(request).toHaveBeenCalledTimes(3);
+  expect(request.mock.calls.every((call) => call[1] === 5000)).toBe(true);
+});

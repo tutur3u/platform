@@ -105,7 +105,15 @@ export function reduceCallState(
       return {
         ...state,
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
-        remoteTracks: {},
+        remoteTracks: message.tracks
+          ? Object.fromEntries(
+              message.tracks
+                .filter((track) => track.userId !== message.userId)
+                .map((track) => [remoteTrackKey(track), track])
+            )
+          : message.resumed
+            ? state.remoteTracks
+            : {},
         role: message.role,
         selfUserId: message.userId,
         stage: message.stage,

@@ -299,6 +299,24 @@ export class MeetRoomDurableObject implements DurableObject {
         { headers: { 'Cache-Control': 'private, no-store' } }
       );
     }
+    const previous = this.snapshot.presence[token.userId];
+    if (
+      previous &&
+      Date.now() - Date.parse(previous.lastSeenAt) >= 30_000 &&
+      !this.sockets().some(
+        (socket) =>
+          socket.readyState === WebSocket.OPEN &&
+          this.tokenOf(socket)?.userId === token.userId
+      )
+    ) {
+      const expired = releaseParticipant(
+        this.snapshot,
+        token.userId,
+        token.roomId
+      );
+      this.snapshot = expired.state;
+      this.broadcast(expired.broadcast);
+    }
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
 

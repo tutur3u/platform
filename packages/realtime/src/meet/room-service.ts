@@ -12,6 +12,7 @@ import type {
   MeetRealtimeTokenPayload,
   MeetRoomSnapshot,
 } from './index';
+import { retainRoomChat } from './room-chat';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 
@@ -493,7 +494,7 @@ export function roomService(
     return {
       state: {
         ...snapshot,
-        chat: [...(snapshot.chat ?? []), response].slice(-500),
+        chat: retainRoomChat([...(snapshot.chat ?? []), response]),
         aiRequests: {
           ...snapshot.aiRequests,
           [message.messageId]: {
@@ -537,7 +538,7 @@ export function roomService(
       },
     },
     chat: response
-      ? [...(snapshot.chat ?? []), response].slice(-500)
+      ? retainRoomChat([...(snapshot.chat ?? []), response])
       : snapshot.chat,
   };
   return { state, body: { ok: true }, messages: response ? [response] : [] };

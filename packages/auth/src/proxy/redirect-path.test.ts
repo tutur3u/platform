@@ -17,3 +17,15 @@ it('keeps Meet room context through nested login aliases', () => {
   ).toBe('/');
   expect(normalizeAuthRedirectPath('/login?next=%2Flogin', origin)).toBe('/');
 });
+
+it('preserves encoded query delimiters in direct and nested destinations', () => {
+  const origin = 'https://meet.tuturuuu.com';
+  const path = '/r/room?label=one%26two%23three';
+  expect(normalizeAuthRedirectPath(path, origin)).toBe(path);
+  expect(
+    normalizeAuthRedirectPath(`/login?next=${encodeURIComponent(path)}`, origin)
+  ).toBe(path);
+  expect(normalizeAuthRedirectPath(encodeURIComponent(path), origin)).toBe(
+    path
+  );
+});

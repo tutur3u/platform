@@ -79,3 +79,16 @@ it('aborts a stalled upload and releases the recovery queue', async () => {
     vi.useRealTimers();
   }
 });
+
+it('cancels a backoff immediately when the meeting is left', async () => {
+  const controller = new AbortController();
+  const upload = vi.fn().mockResolvedValue({ status: 'processing' });
+  const task = recoverMeetChunk(upload, {
+    deadline: Date.now() + 10000,
+    signal: controller.signal,
+    onRetry: () => controller.abort(new Error('left')),
+    wait: () => new Promise(() => {}),
+  });
+  await expect(task).rejects.toThrow('left');
+  expect(upload).toHaveBeenCalledTimes(1);
+});

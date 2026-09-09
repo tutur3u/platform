@@ -75,3 +75,30 @@ it('marks only new messages as unsaved when history is disabled', () => {
     false,
   ]);
 });
+
+it('does not evict saved history when many unsaved messages arrive', () => {
+  let state = admitOrHold(
+    createMeetRoomSnapshot(),
+    token,
+    new Date().toISOString()
+  ).state;
+  state = applyChatMessage(
+    state,
+    message,
+    token,
+    new Date().toISOString()
+  ).state;
+  const savedId = state.chat?.[0]?.id;
+  state.settings = { shareNotes: false, saveChat: false };
+  for (let index = 0; index < 501; index++)
+    state = applyChatMessage(
+      state,
+      { ...message, clientMessageId: crypto.randomUUID() },
+      token,
+      new Date().toISOString()
+    ).state;
+  expect(state.chat?.some((entry) => entry.id === savedId)).toBe(true);
+  expect(state.chat?.filter((entry) => entry.retained === false)).toHaveLength(
+    500
+  );
+});

@@ -406,3 +406,26 @@ it('preserves assistant and attachment metadata for live chat messages', () => {
     avatarUrl: 'https://example.test/avatar.png',
   });
 });
+
+it('restores the authoritative track registry on a resumed connection', () => {
+  const stale = { userId: OTHER, sessionId: 'old', trackName: 'camera' };
+  const fresh = { userId: OTHER, sessionId: 'new', trackName: 'camera' };
+  const state = reduceAll([
+    READY,
+    {
+      type: 'track.published',
+      userId: OTHER,
+      sessionId: 'old',
+      tracks: [stale],
+    },
+  ]);
+  const resumed = reduceCallState(state, {
+    ...READY,
+    resumed: true,
+    tracks: [fresh],
+  });
+  expect(Object.values(resumed.remoteTracks)).toEqual([fresh]);
+  expect(
+    reduceCallState(resumed, { ...READY, resumed: true }).remoteTracks
+  ).toEqual(resumed.remoteTracks);
+});

@@ -22,9 +22,12 @@ export function normalizeAuthRedirectPath(
     return fallbackPath;
   }
 
-  let candidate = decodeURIComponentSafely(rawValue);
+  let candidate = rawValue;
 
   for (let depth = 0; depth < AUTH_REDIRECT_MAX_DEPTH; depth += 1) {
+    // Decode an encoded outer path, never query data inside an already parsed URL.
+    if (/^(?:%2f|https?%3a)/i.test(candidate))
+      candidate = decodeURIComponentSafely(candidate);
     let url: URL;
 
     try {
@@ -33,7 +36,11 @@ export function normalizeAuthRedirectPath(
       return fallbackPath;
     }
 
-    if (url.origin !== requestOrigin) {
+    if (
+      url.origin !== requestOrigin ||
+      new URL(decodeURIComponentSafely(url.pathname), requestOrigin).origin !==
+        requestOrigin
+    ) {
       return fallbackPath;
     }
 
@@ -47,7 +54,7 @@ export function normalizeAuthRedirectPath(
         return fallbackPath;
       }
 
-      candidate = decodeURIComponentSafely(nestedValue);
+      candidate = nestedValue;
       continue;
     }
 
