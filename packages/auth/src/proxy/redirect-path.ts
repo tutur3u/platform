@@ -32,15 +32,13 @@ export function normalizeAuthRedirectPath(
 
     try {
       url = new URL(candidate, requestOrigin);
+      if (
+        url.origin !== requestOrigin ||
+        new URL(decodeURIComponentSafely(url.pathname), requestOrigin)
+          .origin !== requestOrigin
+      )
+        return fallbackPath;
     } catch {
-      return fallbackPath;
-    }
-
-    if (
-      url.origin !== requestOrigin ||
-      new URL(decodeURIComponentSafely(url.pathname), requestOrigin).origin !==
-        requestOrigin
-    ) {
       return fallbackPath;
     }
 

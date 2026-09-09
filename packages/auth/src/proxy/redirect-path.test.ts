@@ -1,6 +1,12 @@
 import { expect, it } from 'vitest';
 import { normalizeAuthRedirectPath } from './redirect-path';
 
+it('falls back when decoding a path produces an invalid URL authority', () => {
+  expect(
+    normalizeAuthRedirectPath('/%2f%5b', 'https://meet.tuturuuu.com')
+  ).toBe('/');
+});
+
 it('keeps Meet room context through nested login aliases', () => {
   const origin = 'https://meet.tuturuuu.com';
   expect(normalizeAuthRedirectPath('/login?next=%2Fr%2Froom', origin)).toBe(

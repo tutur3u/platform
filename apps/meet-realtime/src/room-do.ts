@@ -316,6 +316,7 @@ export class MeetRoomDurableObject implements DurableObject {
       );
       this.snapshot = expired.state;
       this.broadcast(expired.broadcast);
+      this.sendToManagers(expired.toManagers);
     }
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
