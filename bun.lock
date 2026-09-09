@@ -953,6 +953,7 @@
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.0.1",
+        "mdast-util-from-markdown": "^2.0.3",
         "postcss": "^8.5.28",
         "typescript": "7.0.2",
         "vitest": "^5.0.0",

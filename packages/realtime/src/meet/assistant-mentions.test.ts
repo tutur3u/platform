@@ -57,3 +57,7 @@ it.each([
 ])('recognizes visible Markdown mentions: %s', (body) => {
   expect(hasMeetAssistantMention(body)).toBe(true);
 });
+
+it('still recognizes a plain paragraph after a raw HTML block', () => {
+  expect(hasMeetAssistantMention('<div>HTML</div>\n\n@ttr help')).toBe(true);
+});

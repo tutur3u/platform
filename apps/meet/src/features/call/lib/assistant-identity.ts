@@ -38,7 +38,11 @@ export function remarkMeetMentions() {
       )
         return;
       // Match request detection: raw HTML paragraphs do not invoke Mira.
-      if (node.children?.some((child) => child.type === 'html')) return;
+      if (
+        ['paragraph', 'heading', 'tableCell'].includes(node.type) &&
+        node.children?.some((child) => child.type === 'html')
+      )
+        return;
       if (!node.children) return;
       node.children = node.children.flatMap((child) => {
         if (child.type !== 'text' || !child.value) {

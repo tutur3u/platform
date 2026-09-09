@@ -45,7 +45,11 @@ export function hasMeetAssistantMention(text: string) {
     )
       return false;
     // Raw HTML fragments have no trustworthy Markdown text boundaries.
-    if (node.children?.some((child) => child.type === 'html')) return false;
+    if (
+      ['paragraph', 'heading', 'tableCell'].includes(node.type) &&
+      node.children?.some((child) => child.type === 'html')
+    )
+      return false;
     if (node.type === 'text')
       return (
         findMeetAssistantMentions(

@@ -79,3 +79,22 @@ it.each([
   remarkMeetMentions()(tree, { value: source });
   expect(tree).toEqual(before);
 });
+
+it('preserves raw HTML while highlighting a separate normal paragraph', () => {
+  const source = '<div>HTML</div>\n\n@ttr help';
+  const tree = fromMarkdown(source);
+  const html = structuredClone(tree.children[0]);
+  remarkMeetMentions()(tree, { value: source });
+  expect(tree.children[0]).toEqual(html);
+  expect(tree.children[1]).toMatchObject({
+    type: 'paragraph',
+    children: [
+      {
+        type: 'link',
+        title: MEET_MENTION_MARKER,
+        children: [{ type: 'text', value: '@ttr' }],
+      },
+      { type: 'text', value: ' help' },
+    ],
+  });
+});
