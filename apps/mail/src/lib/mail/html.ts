@@ -98,7 +98,17 @@ export function sanitizeMailHtml(
       },
     },
     allowedAttributes: {
-      '*': ['class', 'style', 'title', 'dir', 'lang', 'align', 'bgcolor'],
+      '*': [
+        'class',
+        'style',
+        'title',
+        'dir',
+        'lang',
+        'align',
+        'bgcolor',
+        ...(options.isolatedDocument ? ['id'] : []),
+      ],
+      ...(options.isolatedDocument ? { blockquote: ['type'] } : {}),
       a: ['href', 'name', 'target', 'rel'],
       img: ['src', 'alt', 'width', 'height'],
       font: ['color', 'face', 'size'],
