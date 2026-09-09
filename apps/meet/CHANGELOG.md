@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/meet-v0.27.0...meet-v0.28.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add grounded Mira tools with private approvals ([1ae6826](https://github.com/tutur3u/platform/commit/1ae6826ea9ee5e47329b53f2c6c1a0bc5d68a5f9))
+* **meet:** give Mira a distinct identity and refine call panels ([#5269](https://github.com/tutur3u/platform/issues/5269)) ([6ba3f1c](https://github.com/tutur3u/platform/commit/6ba3f1c5e2408ae0a564c97177282978f38b4ce8))
+* **meet:** give Mira live tools and private workspace approvals ([#5275](https://github.com/tutur3u/platform/issues/5275)) ([4f53e8a](https://github.com/tutur3u/platform/commit/4f53e8aa4e3f386b1f4e83cb9fbad6fec7878c00))
+
+
+### Bug Fixes
+
+* **meet:** adapt review details to chat width ([558029b](https://github.com/tutur3u/platform/commit/558029b770a388af73966bf53ef61217c82194c1))
+* **meet:** adapt review details to chat width ([#5281](https://github.com/tutur3u/platform/issues/5281)) ([049cec6](https://github.com/tutur3u/platform/commit/049cec673bfdc4cc635884cd329752d1ac2ea2aa))
+* **meet:** bound complete citation footers ([510e156](https://github.com/tutur3u/platform/commit/510e156770e5577d15a2202a2cbe208d729d9a56))
+* **meet:** bound stalled recovery and preserve retry accounting ([49665ab](https://github.com/tutur3u/platform/commit/49665ab53cbd2db14a015320ba5aaf73bd5cf500))
+* **meet:** clarify citations and inline private reviews ([78f146a](https://github.com/tutur3u/platform/commit/78f146a0d47558ab60092fb112512c14fa1187c9))
+* **meet:** clarify citations and inline private reviews ([#5279](https://github.com/tutur3u/platform/issues/5279)) ([21be6a3](https://github.com/tutur3u/platform/commit/21be6a3e541669e630a991298bc0aef880db955f))
+* **meet:** clear stale avatar overlays over playing video ([#5272](https://github.com/tutur3u/platform/issues/5272)) ([75db1b3](https://github.com/tutur3u/platform/commit/75db1b3ed2686155301ec7dc1586b03588155fd9))
+* **meet:** clear stale overlays over playing video ([8a3acab](https://github.com/tutur3u/platform/commit/8a3acab0c8e6b145d34a08c6c9d7ea69a87fe5d7))
+* **meet:** guard private review loading in compiled clients ([28d0cab](https://github.com/tutur3u/platform/commit/28d0cab0cbdbdba8ec855e333b53d41bc0dbee06))
+* **meet:** guard private review loading in compiled clients ([#5278](https://github.com/tutur3u/platform/issues/5278)) ([b8afeed](https://github.com/tutur3u/platform/commit/b8afeed32db8a87994c1c0ae9948cd142b72fa92))
+* **meet:** harden private assistant reviews and search boundaries ([0a536d5](https://github.com/tutur3u/platform/commit/0a536d582c68e48d279e93ada064240010778791))
+* **meet:** include retry costs in transcription breakdown ([69150c6](https://github.com/tutur3u/platform/commit/69150c67ec86bf2851f076048c9833f5bc46e073))
+* **meet:** keep review decisions readable in narrow panels ([5e9e96e](https://github.com/tutur3u/platform/commit/5e9e96e5420aca5860161c96dd31bad54d6a38af))
+* **meet:** keep review decisions readable in narrow panels ([#5280](https://github.com/tutur3u/platform/issues/5280)) ([6253b65](https://github.com/tutur3u/platform/commit/6253b659408503e7ffaec5bc5a9920b798e53cd5))
+* **meet:** parse literal blocks when extracting sources ([75adae2](https://github.com/tutur3u/platform/commit/75adae28f3faf6c0767be56f17dcb0df130b4a98))
+* **meet:** preserve markdown and review edge states ([4a766cc](https://github.com/tutur3u/platform/commit/4a766ccf7a26f7db080edd9c1ef5df85c5f08ed5))
+* **meet:** preserve retained chat and safe reconnect state ([01f744c](https://github.com/tutur3u/platform/commit/01f744cb9b7083ed6976d1f20615c64b7b5c44c2))
+* **meet:** preserve verified search and private delivery outcomes ([6598047](https://github.com/tutur3u/platform/commit/65980470c547529039c2cdace9b30df497072402))
+* **meet:** recover invitations transcription and signaling ([94668ce](https://github.com/tutur3u/platform/commit/94668cef9b452eb67cbad63ff618307c1a4b306a))
+* **meet:** recover invitations, transcription, and reconnects ([#5284](https://github.com/tutur3u/platform/issues/5284)) ([b65d3c0](https://github.com/tutur3u/platform/commit/b65d3c02dbdd1ad2477c400924fdad0a3b83347e))
+* **meet:** recover malformed reviews and preserve shared chat history ([331387c](https://github.com/tutur3u/platform/commit/331387ce90ef02cd9b99b44a65e50bd694ad1218))
+* **meet:** reset video presentation through camera toggles and stalls ([328fb41](https://github.com/tutur3u/platform/commit/328fb410ba2eb05eb72d6d3bc0e845bf73191cfd))
+* **meet:** retain reconnect state and cancel abandoned recovery ([9acbe9f](https://github.com/tutur3u/platform/commit/9acbe9fe3b1053018c4ebbbadb2260753dd2ee37))
+* **meet:** use owned assistant message type export ([787ec04](https://github.com/tutur3u/platform/commit/787ec04be18add04fbabb03ce6870f5104b3c170))
+* **meet:** validate private continuations and incomplete search usage ([0a19050](https://github.com/tutur3u/platform/commit/0a190506d5e51408e8a55cbfe4633ebee3f30348))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/meet-v0.26.0...meet-v0.27.0) (2026-09-09)
 
 

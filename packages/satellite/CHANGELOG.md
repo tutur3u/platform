@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/satellite-v0.18.0...satellite-v0.19.0) (2026-09-09)
+
+
+### Features
+
+* **colab:** refine workshop experience and limits ([231f85f](https://github.com/tutur3u/platform/commit/231f85f7e1488e4400539ede5e8f8a85a0ae5948))
+* **colab:** refine workshop experience and limits ([#5274](https://github.com/tutur3u/platform/issues/5274)) ([2b18c54](https://github.com/tutur3u/platform/commit/2b18c54ca4e09ee2b788a268a7a42ddf8ef70e61))
+
+
+### Bug Fixes
+
+* **colab:** address workshop review feedback ([e2e5438](https://github.com/tutur3u/platform/commit/e2e543867a00db4eac79a14798c0e46d0891b66b))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/satellite-v0.17.0...satellite-v0.18.0) (2026-09-07)
 
 

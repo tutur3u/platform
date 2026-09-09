@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/internal-api-v0.36.0...internal-api-v0.37.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add grounded Mira tools with private approvals ([1ae6826](https://github.com/tutur3u/platform/commit/1ae6826ea9ee5e47329b53f2c6c1a0bc5d68a5f9))
+* **meet:** give Mira live tools and private workspace approvals ([#5275](https://github.com/tutur3u/platform/issues/5275)) ([4f53e8a](https://github.com/tutur3u/platform/commit/4f53e8aa4e3f386b1f4e83cb9fbad6fec7878c00))
+
+
+### Bug Fixes
+
+* **mail:** speed inbox loading and independent archive actions ([103b747](https://github.com/tutur3u/platform/commit/103b7473ca479465d8b74dcd45730d2845c4c62f))
+* **mail:** speed inbox loading and independent archive actions ([#5270](https://github.com/tutur3u/platform/issues/5270)) ([4c010c0](https://github.com/tutur3u/platform/commit/4c010c0da8877215ee0fdc8c5e6934eb9bba8503))
+* **meet:** bound stalled recovery and preserve retry accounting ([49665ab](https://github.com/tutur3u/platform/commit/49665ab53cbd2db14a015320ba5aaf73bd5cf500))
+* **meet:** harden private assistant reviews and search boundaries ([0a536d5](https://github.com/tutur3u/platform/commit/0a536d582c68e48d279e93ada064240010778791))
+* **meet:** recover invitations, transcription, and reconnects ([#5284](https://github.com/tutur3u/platform/issues/5284)) ([b65d3c0](https://github.com/tutur3u/platform/commit/b65d3c02dbdd1ad2477c400924fdad0a3b83347e))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/internal-api-v0.35.0...internal-api-v0.36.0) (2026-09-09)
 
 

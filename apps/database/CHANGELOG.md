@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.31.1](https://github.com/tutur3u/platform/compare/database-v1.31.0...database-v1.31.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **meet:** bound stalled recovery and preserve retry accounting ([49665ab](https://github.com/tutur3u/platform/commit/49665ab53cbd2db14a015320ba5aaf73bd5cf500))
+* **meet:** include retry costs in transcription breakdown ([69150c6](https://github.com/tutur3u/platform/commit/69150c67ec86bf2851f076048c9833f5bc46e073))
+* **meet:** recover invitations transcription and signaling ([94668ce](https://github.com/tutur3u/platform/commit/94668cef9b452eb67cbad63ff618307c1a4b306a))
+* **meet:** recover invitations, transcription, and reconnects ([#5284](https://github.com/tutur3u/platform/issues/5284)) ([b65d3c0](https://github.com/tutur3u/platform/commit/b65d3c02dbdd1ad2477c400924fdad0a3b83347e))
+
 ## [1.31.0](https://github.com/tutur3u/platform/compare/database-v1.30.1...database-v1.31.0) (2026-09-07)
 
 
