@@ -31,10 +31,10 @@ export function RecipientField({
 
   const commit = () => {
     const parsed = parseRecipientInput(input);
-    if (parsed.length === 0) return;
+    if (parsed.length === 0) return !input.trim();
     if (parsed.some((recipient) => !recipient.valid)) {
       setInvalid(true);
-      return;
+      return false;
     }
     const excluded = new Set(
       disabledAddresses.map((value) => value.toLowerCase())
@@ -56,6 +56,7 @@ export function RecipientField({
     );
     setInput('');
     setInvalid(false);
+    return true;
   };
 
   return (
@@ -91,6 +92,7 @@ export function RecipientField({
           </Badge>
         ))}
         <Input
+          aria-label={label}
           aria-invalid={invalid}
           className="h-8 min-w-32 flex-1 border-0 bg-transparent px-1 shadow-none outline-none focus-visible:outline-none focus-visible:ring-0"
           onBlur={commit}
@@ -99,6 +101,18 @@ export function RecipientField({
             setInvalid(false);
           }}
           onKeyDown={(event) => {
+            if (event.nativeEvent.isComposing) return;
+            const modifier =
+              (event.ctrlKey || event.metaKey) &&
+              !event.altKey &&
+              !event.shiftKey;
+            if (
+              event.key === 'Escape' ||
+              (modifier && ['enter', 's'].includes(event.key.toLowerCase()))
+            ) {
+              if (!commit()) event.preventDefault();
+              return;
+            }
             if (['Enter', ',', ';'].includes(event.key)) {
               event.preventDefault();
               commit();

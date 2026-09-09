@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
+import { MailKeyboardSetting } from './mail-keyboard-help';
 import { useMailPreviewAppearance } from './mail-preview-appearance';
 import { useMailArchiveBehavior } from './mail-reading-preferences';
 
@@ -20,6 +21,7 @@ export function MailReadingSettings() {
       <p className="text-muted-foreground text-sm">
         {t('reading_settings_description')}
       </p>
+      <MailKeyboardSetting />
       <div className="space-y-2">
         <Label htmlFor="mail-after-archive">{t('after_archive')}</Label>
         <Select

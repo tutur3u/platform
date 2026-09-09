@@ -64,6 +64,7 @@ export function MailThreadRow({
 
   return (
     <div
+      data-mail-thread-id={thread.id}
       className={cn(
         'group relative min-w-0 max-w-full overflow-hidden rounded-xl transition-[background-color,transform] duration-200 hover:bg-accent/65 active:scale-[0.995]',
         active && 'bg-primary/[0.09]',
@@ -78,8 +79,9 @@ export function MailThreadRow({
         onCheckedChange={(value) => onSelect(value === true)}
       />
       <button
+        data-mail-thread-open={thread.id}
         aria-current={active ? 'true' : undefined}
-        className="block w-full min-w-0 max-w-full py-4 pr-4 pl-10 text-left focus-visible:bg-accent focus-visible:underline focus-visible:outline-none"
+        className="block w-full min-w-0 max-w-full py-4 pr-4 pl-10 text-left focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         onClick={onClick}
         onFocus={onPrefetch}
         onPointerEnter={schedulePrefetch}
