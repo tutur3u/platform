@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.48.0](https://github.com/tutur3u/platform/compare/platform-v0.47.0...platform-v0.48.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add room settings, Mira chat and adaptive media ([#5262](https://github.com/tutur3u/platform/issues/5262)) ([2e149a3](https://github.com/tutur3u/platform/commit/2e149a3b5d5153a6c2368f58bc51e0bf8133398c))
+* **meet:** add room settings, shared recordings, Mira and adaptive bandwidth ([6b912f0](https://github.com/tutur3u/platform/commit/6b912f0084d3e170a3e9c66a49f66666609b3c02))
+* **meet:** coordinate room devices, recordings, and trusted services ([#5261](https://github.com/tutur3u/platform/issues/5261)) ([c0f7110](https://github.com/tutur3u/platform/commit/c0f71107160d56691d0af3946ea8a7089cfbd1ae))
+
+
+### Bug Fixes
+
+* **mail:** address reader review edge cases ([986a107](https://github.com/tutur3u/platform/commit/986a10737f8b6ec00ccaef15421a9488f614852b))
+* **mail:** improve reading flow and attachment previews ([#5260](https://github.com/tutur3u/platform/issues/5260)) ([0ae24c1](https://github.com/tutur3u/platform/commit/0ae24c15d15107814d5afad84af754b53ada43fd))
+* **mail:** polish viewed state and dark reader controls ([4123d2b](https://github.com/tutur3u/platform/commit/4123d2b34f806c36080775ef18c6d56e2801172d))
+* **mail:** polish viewed state and dark reader controls ([#5268](https://github.com/tutur3u/platform/issues/5268)) ([206bfd6](https://github.com/tutur3u/platform/commit/206bfd669456c3dd410756e5f6fd822bf063f305))
+* **meet:** cover nullable cache usage and review feedback ([45f294e](https://github.com/tutur3u/platform/commit/45f294e5a87107b06d9c855ab1572c964646b2f4))
+* **meet:** harden media controls and room resource lifecycle ([ad6c9ed](https://github.com/tutur3u/platform/commit/ad6c9ed621bc52017d6008ed3486305dce60c5a3))
+* **meet:** harden room state transitions and usage accounting ([b427db9](https://github.com/tutur3u/platform/commit/b427db9b1761ab7ca1c0416c0eac9bc2800ec604))
+* **meet:** keep chat content within narrow sidebars ([5e66d5e](https://github.com/tutur3u/platform/commit/5e66d5eee64ef645bf41e806e09368051454dd00))
+* **meet:** pin Mira questions and verify room policy on deployment ([3ab149d](https://github.com/tutur3u/platform/commit/3ab149d00688c277a51a57974ca65a990d2f4470))
+* **meet:** preserve current settings during media updates ([d4882f1](https://github.com/tutur3u/platform/commit/d4882f16e1e602eba4b8c9ee35b288c76c62497c))
+* **meet:** preserve recording output in silent rooms ([1b43fb6](https://github.com/tutur3u/platform/commit/1b43fb6bc21631b58b9d612ad07628a6da3b2566))
+* **meet:** preserve revoked approvals and reclaim upload slots ([0413cdf](https://github.com/tutur3u/platform/commit/0413cdfbe2be00d6dba015da65ef40504ff6d51c))
+* **meet:** preserve room updates and bound usage accounting ([278a7e8](https://github.com/tutur3u/platform/commit/278a7e86dfc0b03fc7645e580b2efa3467038512))
+* **meet:** preserve terminal events and isolate usage safeguards ([44629a2](https://github.com/tutur3u/platform/commit/44629a22c35cf56e91155fc72523a622b6b22780))
+* **meet:** prevent chat text clipping in narrow sidebars ([#5267](https://github.com/tutur3u/platform/issues/5267)) ([27ffdf3](https://github.com/tutur3u/platform/commit/27ffdf33e3ba4d86a1c0aed6d0ff3e802d53c178))
+* **meet:** recover abandoned assistant requests ([9d84a0b](https://github.com/tutur3u/platform/commit/9d84a0bd15b3b80fcd4876bac95d800393b19168))
+* **meet:** release attachment slots after storage cleanup ([6d0f066](https://github.com/tutur3u/platform/commit/6d0f0666139818a1ae69e0b7e20acc1a2eb0a883))
+* **meet:** resolve active personal Drive workspaces ([a277523](https://github.com/tutur3u/platform/commit/a27752300a476e8b0d1ae8878899482492be8184))
+* **meet:** resolve active personal Drive workspaces ([#5264](https://github.com/tutur3u/platform/issues/5264)) ([ff6e9d6](https://github.com/tutur3u/platform/commit/ff6e9d6f5f2ab0fee071f4019213e668d94c3a0d))
+* **meet:** resolve Mira model and pricing from personal plan ([5f063d6](https://github.com/tutur3u/platform/commit/5f063d6edf46865db934250ccac550e8ba04154d))
+* **meet:** save recordings when every participant is muted ([#5265](https://github.com/tutur3u/platform/issues/5265)) ([8e44d4a](https://github.com/tutur3u/platform/commit/8e44d4a4159df61f703ec280716a1e121697db0b))
+* **meet:** use personal plan model for Mira and its costs ([#5266](https://github.com/tutur3u/platform/issues/5266)) ([3684569](https://github.com/tutur3u/platform/commit/36845692a0076cbc7e75a93eec9dbd6e84bf60df))
+
 ## [0.47.0](https://github.com/tutur3u/platform/compare/platform-v0.46.0...platform-v0.47.0) (2026-09-08)
 
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/realtime-v0.4.0...realtime-v0.5.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** coordinate room devices, recordings, and trusted services ([#5261](https://github.com/tutur3u/platform/issues/5261)) ([c0f7110](https://github.com/tutur3u/platform/commit/c0f71107160d56691d0af3946ea8a7089cfbd1ae))
+
+
+### Bug Fixes
+
+* **meet:** harden room state transitions and usage accounting ([b427db9](https://github.com/tutur3u/platform/commit/b427db9b1761ab7ca1c0416c0eac9bc2800ec604))
+* **meet:** preserve revoked approvals and reclaim upload slots ([0413cdf](https://github.com/tutur3u/platform/commit/0413cdfbe2be00d6dba015da65ef40504ff6d51c))
+* **meet:** preserve room updates and bound usage accounting ([278a7e8](https://github.com/tutur3u/platform/commit/278a7e86dfc0b03fc7645e580b2efa3467038512))
+* **meet:** preserve terminal events and isolate usage safeguards ([44629a2](https://github.com/tutur3u/platform/commit/44629a22c35cf56e91155fc72523a622b6b22780))
+* **meet:** recover abandoned assistant requests ([9d84a0b](https://github.com/tutur3u/platform/commit/9d84a0bd15b3b80fcd4876bac95d800393b19168))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/realtime-v0.3.0...realtime-v0.4.0) (2026-09-08)
 
 

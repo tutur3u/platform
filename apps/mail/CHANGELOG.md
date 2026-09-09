@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.2](https://github.com/tutur3u/platform/compare/mail-v0.20.1...mail-v0.20.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* **mail:** address reader review edge cases ([986a107](https://github.com/tutur3u/platform/commit/986a10737f8b6ec00ccaef15421a9488f614852b))
+* **mail:** improve reading flow and attachment previews ([#5260](https://github.com/tutur3u/platform/issues/5260)) ([0ae24c1](https://github.com/tutur3u/platform/commit/0ae24c15d15107814d5afad84af754b53ada43fd))
+* **mail:** polish viewed state and dark reader controls ([4123d2b](https://github.com/tutur3u/platform/commit/4123d2b34f806c36080775ef18c6d56e2801172d))
+* **mail:** polish viewed state and dark reader controls ([#5268](https://github.com/tutur3u/platform/issues/5268)) ([206bfd6](https://github.com/tutur3u/platform/commit/206bfd669456c3dd410756e5f6fd822bf063f305))
+
 ## [0.20.1](https://github.com/tutur3u/platform/compare/mail-v0.20.0...mail-v0.20.1) (2026-09-08)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/internal-api-v0.35.0...internal-api-v0.36.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add room settings, Mira chat and adaptive media ([#5262](https://github.com/tutur3u/platform/issues/5262)) ([2e149a3](https://github.com/tutur3u/platform/commit/2e149a3b5d5153a6c2368f58bc51e0bf8133398c))
+* **meet:** add room settings, shared recordings, Mira and adaptive bandwidth ([6b912f0](https://github.com/tutur3u/platform/commit/6b912f0084d3e170a3e9c66a49f66666609b3c02))
+
+
+### Bug Fixes
+
+* **mail:** improve reading flow and attachment previews ([#5260](https://github.com/tutur3u/platform/issues/5260)) ([0ae24c1](https://github.com/tutur3u/platform/commit/0ae24c15d15107814d5afad84af754b53ada43fd))
+* **meet:** harden media controls and room resource lifecycle ([ad6c9ed](https://github.com/tutur3u/platform/commit/ad6c9ed621bc52017d6008ed3486305dce60c5a3))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/internal-api-v0.34.0...internal-api-v0.35.0) (2026-09-08)
 
 
