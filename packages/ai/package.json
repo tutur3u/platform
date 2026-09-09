@@ -92,7 +92,9 @@
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "remark-parse": "^11.0.0",
     "streamdown": "^2.6.0",
+    "unified": "^11.0.5",
     "uuid": "^14.0.2",
     "zca-js": "^2.1.2",
     "zod": "^4.5.4"
