@@ -145,7 +145,7 @@ export function AssistantPrivateReview({
                   {t('assistant_decision_saving')}
                 </p>
               )}
-              <div className="grid @xs:grid-cols-2 grid-cols-1 gap-2">
+              <div className="grid @md:grid-cols-2 grid-cols-1 gap-2">
                 {review.status === 'interrupted' ? (
                   <Button
                     variant="outline"
