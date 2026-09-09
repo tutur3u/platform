@@ -34,11 +34,11 @@ export function AssistantToolPreview({
     return String(value ?? '—');
   };
   return (
-    <dl className="divide-y rounded-lg border bg-muted/20 px-3">
+    <dl className="@container divide-y rounded-lg border bg-muted/20 px-3">
       {fields.map(([name, value]) => (
         <div
           key={name}
-          className="grid gap-1 py-2 sm:grid-cols-[8rem_1fr] sm:gap-3"
+          className="grid @md:grid-cols-[8rem_1fr] @md:gap-3 gap-1 py-2"
         >
           <dt className="font-medium text-muted-foreground text-xs capitalize">
             {name.replaceAll('_', ' ')}
