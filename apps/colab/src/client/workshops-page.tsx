@@ -12,13 +12,7 @@ import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
 import { WorkspaceLink } from './navigation';
 
-export function WorkshopsPage({
-  canHost,
-  navigate,
-}: {
-  canHost: boolean;
-  navigate: (id: string) => void;
-}) {
+export function WorkshopsPage({ canHost }: { canHost: boolean }) {
   const c = useCopy();
   const s = c.studio;
   const [tab, setTab] = useState('current');
@@ -41,9 +35,9 @@ export function WorkshopsPage({
       tab === 'past' ? b.endsAt - a.endsAt : a.startsAt - b.startsAt
     );
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 md:p-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <div className="mx-auto max-w-6xl space-y-8 p-5 md:p-8">
+      <header className="flex flex-wrap items-start justify-between gap-6">
+        <div className="max-w-2xl">
           <h1 className="font-semibold text-2xl tracking-tight">
             {s.workshops}
           </h1>
@@ -51,24 +45,24 @@ export function WorkshopsPage({
             {s.directoryDescription}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" asChild>
             <WorkspaceLink href="/join">
-              <Users className="size-4" />
+              <Users className="size-4" aria-hidden="true" />
               {c.join}
             </WorkspaceLink>
           </Button>
           {canHost && (
             <Button size="sm" asChild>
               <WorkspaceLink href="/host">
-                <Plus className="size-4" />
+                <Plus className="size-4" aria-hidden="true" />
                 {c.host}
               </WorkspaceLink>
             </Button>
           )}
         </div>
       </header>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-card p-3">
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="current">
@@ -85,10 +79,14 @@ export function WorkshopsPage({
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
+        <div className="flex min-w-[min(100%,18rem)] flex-1 items-center justify-end gap-2 sm:flex-none">
+          <div className="relative min-w-0 flex-1 sm:w-72">
+            <Search
+              className="absolute top-2.5 left-3 size-4 text-muted-foreground"
+              aria-hidden="true"
+            />
             <Input
+              type="search"
               className="h-9 pl-9"
               aria-label={s.search}
               placeholder={s.search}
@@ -103,7 +101,7 @@ export function WorkshopsPage({
             disabled={query.isFetching}
             onClick={() => void query.refetch()}
           >
-            <RefreshCw className="size-4" />
+            <RefreshCw className="size-4" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -115,22 +113,32 @@ export function WorkshopsPage({
           ))}
         </div>
       ) : query.isError && !query.data ? null : rooms.length ? (
-        <div className="divide-y rounded-xl border bg-card">
+        <div className="grid gap-3">
           {rooms.map((room) => (
             <article
               key={room.id}
-              className="flex flex-wrap items-center gap-4 p-4"
+              className="flex flex-wrap items-center gap-4 rounded-xl border bg-card p-5 transition-colors hover:bg-muted/30"
             >
               <div className="rounded-lg border bg-muted/40 p-2.5">
-                <CalendarDays className="size-5 text-muted-foreground" />
+                <CalendarDays
+                  className="size-5 text-muted-foreground"
+                  aria-hidden="true"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <Button
                   variant="link"
                   className="h-auto max-w-full justify-start p-0 font-medium text-base"
-                  onClick={() => navigate(room.id)}
+                  asChild
                 >
-                  <span className="truncate">{room.title}</span>
+                  <WorkspaceLink
+                    href={`/?room=${room.id}`}
+                    onClick={() =>
+                      localStorage.setItem('colab-recent-room', room.id)
+                    }
+                  >
+                    <span className="truncate">{room.title}</span>
+                  </WorkspaceLink>
                 </Button>
                 <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
                   <span>
@@ -168,23 +176,36 @@ export function WorkshopsPage({
         </div>
       ) : (
         <div className="flex flex-col items-center rounded-xl border border-dashed px-6 py-16 text-center">
-          <CalendarDays className="mb-4 size-8 text-muted-foreground" />
+          <CalendarDays
+            className="mb-4 size-8 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h2 className="font-medium text-base">
             {search ? s.noResults : s.empty}
           </h2>
           <p className="mt-2 max-w-sm text-muted-foreground text-sm">
             {s.emptyHelp}
           </p>
-          <Button variant="outline" className="mt-5" asChild>
-            <WorkspaceLink href="/join">{c.join}</WorkspaceLink>
-          </Button>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Button variant="outline" asChild>
+              <WorkspaceLink href="/join">{c.join}</WorkspaceLink>
+            </Button>
+            {canHost && (
+              <Button asChild>
+                <WorkspaceLink href="/host">
+                  <Plus className="size-4" aria-hidden="true" />
+                  {c.host}
+                </WorkspaceLink>
+              </Button>
+            )}
+          </div>
         </div>
       )}
       {recent &&
         /^[a-f0-9-]{36}$/.test(recent) &&
         !all.some((room) => room.id === recent) && (
-          <Button variant="outline" size="sm" onClick={() => navigate(recent)}>
-            {c.recent}
+          <Button variant="outline" size="sm" asChild>
+            <WorkspaceLink href={`/?room=${recent}`}>{c.recent}</WorkspaceLink>
           </Button>
         )}
       <p className="text-muted-foreground text-xs">{s.historyHelp}</p>

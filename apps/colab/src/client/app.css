@@ -263,8 +263,8 @@
 
 @layer components {
   .colab-content .studio-panel {
-    gap: 16px;
-    padding: 20px;
+    gap: 24px;
+    padding: 24px;
     box-shadow: none;
   }
   .colab-content .studio-panel > p,
@@ -343,7 +343,8 @@
   }
   .colab-content .team-toolbar {
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 16px;
+    margin-bottom: 0;
   }
   .colab-content .team-toolbar > label {
     display: grid;
@@ -360,6 +361,16 @@
   }
   .colab-content .room-heading h1 {
     margin: 8px 0 12px;
+  }
+  .colab-content .team-area,
+  .colab-content .own-team-desk {
+    display: grid;
+    gap: 24px;
+  }
+  .colab-content .team-area > .panel,
+  .colab-content .own-team-desk > .panel,
+  .colab-content .studio-panel .empty {
+    margin: 0;
   }
   .colab-content .room-meta,
   .colab-content .presence,
@@ -476,7 +487,7 @@
     flex-wrap: wrap;
     gap: 8px 16px;
     align-items: center;
-    margin-top: 24px;
+    margin-top: 32px;
     padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -612,6 +623,7 @@
   @media (max-width: 620px) {
     .colab-content .studio-panel {
       padding: 16px;
+      gap: 20px;
     }
     .colab-content .presence {
       padding-top: 8px;

@@ -230,7 +230,7 @@ export function Workshop({
             </Badge>
           </div>
           {!writable && (
-            <Alert className="mb-4">
+            <Alert>
               <AlertDescription>{c.readOnlyHelp}</AlertDescription>
             </Alert>
           )}

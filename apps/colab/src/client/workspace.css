@@ -198,6 +198,15 @@
     color: var(--muted-foreground);
     margin: 0 0 24px;
   }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
   @media (max-width: 760px) {
     .colab-content .workspace-home,
     .colab-content .home:has(.entry-focused),
@@ -219,6 +228,13 @@
     }
     .workspace-recent {
       align-items: start;
+    }
+    .settings-row {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .settings-row [data-slot="button"] {
+      width: 100%;
     }
   }
 }

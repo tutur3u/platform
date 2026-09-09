@@ -418,14 +418,26 @@
   margin-top: 28px;
 }
 .join-card {
+  display: grid;
+  gap: 20px;
   max-width: 470px;
   margin: 55px auto;
 }
 .join-card h1 {
   font-size: 36px;
+  margin: 0;
 }
 .join-card > p {
   font-size: 13px;
+  margin: 0;
+}
+.join-card form {
+  display: grid;
+  gap: 16px;
+}
+.join-card form > label,
+.join-card form > p {
+  margin: 0;
 }
 @media (max-width: 1050px) {
   .workshop {

@@ -22,6 +22,7 @@ export function ActivityLog({ room }: { room: RoomView }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold text-base">{c.audit}</h2>
         <Input
+          type="search"
           className="h-8 max-w-xs"
           aria-label={c.audit}
           placeholder={c.everyone}

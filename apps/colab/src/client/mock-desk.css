@@ -3,6 +3,12 @@
   border-radius: 10px;
   overflow: hidden;
 }
+.mock-toolbar {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.35fr) minmax(260px, 1fr);
+  gap: 12px;
+  align-items: end;
+}
 .mock-titlebar {
   display: flex;
   gap: 10px;
@@ -37,6 +43,9 @@
 .mock-content {
   padding: 14px;
   background: var(--background);
+  max-height: min(560px, 58vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .mock-item {
   display: flex;
@@ -61,7 +70,7 @@
   color: var(--colab-muted);
 }
 .mock-documents .mock-item {
-  padding: 16px;
+  padding: 18px 16px;
   border-bottom: 1px solid var(--line);
 }
 .mock-documents .mock-item-heading {
@@ -135,6 +144,9 @@
   border-color: var(--line);
 }
 @media (max-width: 620px) {
+  .mock-toolbar {
+    grid-template-columns: 1fr;
+  }
   .mock-board {
     grid-template-columns: 1fr;
   }

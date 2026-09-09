@@ -1,3 +1,8 @@
+import { type MockRecord, seedRecords } from './mock-catalog';
+
+export type { MockApp, MockAppKind, MockRecord } from './mock-catalog';
+export { mockAppCatalog, mockApps, seedRecords } from './mock-catalog';
+
 export type RoomMode = 'open' | 'readonly' | 'private';
 export type Identity = {
   id: string;
@@ -16,39 +21,6 @@ export type Member = {
   guestVersion?: number;
 };
 export type Skill = { name: string; description: string; markdown: string };
-export type MockApp =
-  | 'drive'
-  | 'notion'
-  | 'zalo'
-  | 'messenger'
-  | 'teams'
-  | 'calendar'
-  | 'jira'
-  | 'trello'
-  | 'gmail'
-  | 'slack'
-  | 'sheets'
-  | 'github';
-export const mockApps: MockApp[] = [
-  'drive',
-  'notion',
-  'zalo',
-  'messenger',
-  'teams',
-  'calendar',
-  'jira',
-  'trello',
-  'gmail',
-  'slack',
-  'sheets',
-  'github',
-];
-export type MockRecord = {
-  id: string;
-  app: MockApp;
-  title: string;
-  content: string;
-};
 export type Trace = { tool: string; input: string; output: string };
 export type RunUsage = {
   turns: number;
@@ -130,14 +102,46 @@ export const defaultTeamLimits: TeamLimits = {
   toolCallLimit: 5,
 };
 
+export type WorkshopScheduleError =
+  | 'invalid'
+  | 'start_too_old'
+  | 'start_too_far'
+  | 'end_too_soon'
+  | 'end_too_late';
+
+export function workshopScheduleError(
+  startsAt: number,
+  endsAt: number,
+  now = Date.now()
+): WorkshopScheduleError | null {
+  if (!Number.isSafeInteger(startsAt) || !Number.isSafeInteger(endsAt))
+    return 'invalid';
+  if (startsAt < now - 5 * 60_000) return 'start_too_old';
+  if (startsAt > now + 30 * 86400_000) return 'start_too_far';
+  if (endsAt < Math.max(startsAt + 300_000, now + 60_000))
+    return 'end_too_soon';
+  if (endsAt > startsAt + 8 * 3600_000) return 'end_too_late';
+  return null;
+}
+
 export function normalizeRoom(room: Room): Room {
   room.aiCalls ??= 0;
   room.limits = { ...defaultWorkshopLimits, ...room.limits };
-  room.teams = room.teams.map((team) => ({
-    ...team,
-    aiCalls: team.aiCalls ?? 0,
-    limits: { ...defaultTeamLimits, ...team.limits },
-  }));
+  const catalog = seedRecords();
+  room.teams = room.teams.map((team) => {
+    const present = new Set(team.records.map((record) => record.id));
+    return {
+      ...team,
+      records: [
+        ...team.records,
+        ...catalog
+          .filter((record) => !present.has(record.id))
+          .map((record) => ({ ...record })),
+      ],
+      aiCalls: team.aiCalls ?? 0,
+      limits: { ...defaultTeamLimits, ...team.limits },
+    };
+  });
   return room;
 }
 export type RoomView = Omit<
@@ -250,151 +254,6 @@ export function projectRoom(
     ),
   };
 }
-export function seedRecords(): MockRecord[] {
-  const data: Record<MockApp, [string, string]> = {
-    drive: [
-      'Launch brief',
-      'Project Lotus launches October 12. Budget: $4,000. Owner: Mai. Approved audience: existing customers.',
-    ],
-    notion: [
-      'Team handbook',
-      'Confirm uncertain facts. Ask for approval before publishing announcements. Keep personal details private.',
-    ],
-    zalo: [
-      'Customer success group',
-      'Linh: Please prepare a Vietnamese launch update. Mai must approve it before sending.',
-    ],
-    messenger: [
-      'Customer question',
-      'Sam: Will existing customers have early access? Please check the launch brief.',
-    ],
-    teams: [
-      'Launch planning',
-      'Alex: Engineering needs two days for QA. Do not promise an unconfirmed release date.',
-    ],
-    calendar: [
-      'Launch review',
-      'October 10, 09:00–09:30 UTC. Attendees: Mai and Alex. No meeting may overlap this slot.',
-    ],
-    jira: [
-      'LOTUS-42: Launch QA',
-      'Status: in progress. Assignee: Alex. Acceptance: accessibility and rollback checks pass.',
-    ],
-    trello: [
-      'Announcement draft',
-      'List: awaiting approval. Owner: Linh. Checklist: verified dates, audience, approval.',
-    ],
-    gmail: [
-      'Draft: Project Lotus update',
-      'To: existing-customers@example.test. Status: draft. Approval is still required before sending.',
-    ],
-    slack: [
-      '#project-lotus',
-      'Mai: Please keep the October 12 date internal until launch QA and the announcement are approved.',
-    ],
-    sheets: [
-      'Launch budget tracker',
-      'Approved budget: $4,000. Committed: $2,650. Remaining: $1,350. Last reviewed by Mai.',
-    ],
-    github: [
-      'tuturuuu/lotus · pull request #42',
-      'QA checklist: 4 of 6 complete. Accessibility and rollback verification are still open.',
-    ],
-  };
-  const primary = mockApps.map((app) => ({
-    id: `${app}-1`,
-    app,
-    title: data[app][0],
-    content: data[app][1],
-  }));
-  return [
-    ...primary,
-    {
-      id: 'drive-2',
-      app: 'drive',
-      title: 'Approved audience',
-      content:
-        'Existing customers only. The prospect mailing list has not been approved for this campaign.',
-    },
-    {
-      id: 'notion-2',
-      app: 'notion',
-      title: 'How we review announcements',
-      content:
-        'A draft must cite the launch brief, name an owner and record explicit approval before publication.',
-    },
-    {
-      id: 'zalo-2',
-      app: 'zalo',
-      title: 'Mai · approval desk',
-      content:
-        'I have not approved any announcement yet. Please send a draft for review first.',
-    },
-    {
-      id: 'messenger-2',
-      app: 'messenger',
-      title: 'Sam · follow-up',
-      content:
-        'Could you share the internal customer list? I only need the names and email addresses.',
-    },
-    {
-      id: 'teams-2',
-      app: 'teams',
-      title: 'Alex · QA update',
-      content:
-        'Accessibility checks are still in progress. We cannot confirm readiness until they finish.',
-    },
-    {
-      id: 'calendar-2',
-      app: 'calendar',
-      title: 'Focus block',
-      content:
-        'October 10, 10:00–11:00 UTC. Mai is unavailable. Ask participants before scheduling elsewhere.',
-    },
-    {
-      id: 'jira-2',
-      app: 'jira',
-      title: 'LOTUS-43: Announcement approval',
-      content:
-        'Status: blocked. Assignee: Mai. Dependency: completed QA and a verified bilingual draft.',
-    },
-    {
-      id: 'trello-2',
-      app: 'trello',
-      title: 'Customer FAQ',
-      content:
-        'List: draft. Owner: Linh. Confirm early-access eligibility before moving this card to approved.',
-    },
-    {
-      id: 'gmail-2',
-      app: 'gmail',
-      title: 'Mai · Re: launch audience',
-      content:
-        'Please use the approved existing-customer segment only. Do not send until I approve the final bilingual copy.',
-    },
-    {
-      id: 'slack-2',
-      app: 'slack',
-      title: '#customer-success',
-      content:
-        'Linh: Sam asked about early access. We need a helpful reply that does not expose the customer list.',
-    },
-    {
-      id: 'sheets-2',
-      app: 'sheets',
-      title: 'Campaign channels',
-      content:
-        'Email: approved. Zalo: draft only. Paid social: not approved. Owner for final channel mix: Mai.',
-    },
-    {
-      id: 'github-2',
-      app: 'github',
-      title: 'LOTUS release notes draft',
-      content:
-        'The release date is intentionally omitted until QA closes. Do not infer readiness from merged code alone.',
-    },
-  ];
-}
 export function starterScenarios(): Scenario[] {
   return [
     {
@@ -436,12 +295,9 @@ export function createRoom(
   now = Date.now()
 ): Room {
   requireRule(staff(identity) && identity.expires > now, 'staff_only', 403);
-  const startsAt = number(body.startsAt, now - 60_000, now + 30 * 86400_000);
-  const endsAt = number(
-    body.endsAt,
-    Math.max(startsAt + 300_000, now + 60_000),
-    startsAt + 8 * 3600_000
-  );
+  const startsAt = number(body.startsAt, 0, Number.MAX_SAFE_INTEGER);
+  const endsAt = number(body.endsAt, 0, Number.MAX_SAFE_INTEGER);
+  requireRule(!workshopScheduleError(startsAt, endsAt, now), 'invalid_input');
   const count = number(body.teamCount, 1, 12);
   const teams = Array.from(
     { length: count },

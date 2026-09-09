@@ -1,3 +1,4 @@
+import { type MockApp, mockAppCatalog } from '@tuturuuu/multiplayer';
 import { createContext, useCallback, useContext } from 'react';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
@@ -46,20 +47,9 @@ export function useLauncherCopy() {
     [locale]
   );
 }
-export const appNames = {
-  drive: 'Google Drive',
-  notion: 'Notion',
-  zalo: 'Zalo',
-  messenger: 'Messenger',
-  teams: 'Microsoft Teams',
-  calendar: 'Google Calendar',
-  jira: 'Jira',
-  trello: 'Trello',
-  gmail: 'Gmail',
-  slack: 'Slack',
-  sheets: 'Google Sheets',
-  github: 'GitHub',
-};
+export const appNames = Object.fromEntries(
+  mockAppCatalog.map(({ id, name }) => [id, name])
+) as Record<MockApp, string>;
 
 export function useShellCopy() {
   const c = useCopy();

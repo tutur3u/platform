@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
-import type { RoomView } from '@tuturuuu/multiplayer';
+import { type RoomView, workshopScheduleError } from '@tuturuuu/multiplayer';
+import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -31,15 +32,15 @@ export function HostWorkshopDialog({
   navigate: (id: string) => void;
 }) {
   const c = useCopy();
+  const start = Date.now() + 5 * 60_000;
   const [draft, setDraft] = useState(() => ({
     title: c.defaultTitle,
-    starts: dateValue(Date.now() + 60_000),
-    ends: dateValue(Date.now() + 3660_000),
+    starts: dateValue(start),
+    ends: dateValue(start + 60 * 60_000),
     capacity: '24',
     teams: '4',
   }));
-  const update = (key: keyof typeof draft, value: string) =>
-    setDraft((current) => ({ ...current, [key]: value }));
+  const [formError, setFormError] = useState<string | null>(null);
   const create = useMutation({
     mutationFn: () =>
       colabRequest<RoomView>('/rooms', {
@@ -51,11 +52,20 @@ export function HostWorkshopDialog({
       }),
     onSuccess: (room) => navigate(room.id),
   });
+  const update = (key: keyof typeof draft, value: string) => {
+    setFormError(null);
+    if (!create.isPending) create.reset();
+    setDraft((current) => ({ ...current, [key]: value }));
+  };
   return (
     <Dialog
       open={open}
       onOpenChange={(value) => {
-        if (!value) closeWorkspaceDialog();
+        if (!value) {
+          setFormError(null);
+          if (!create.isPending) create.reset();
+          closeWorkspaceDialog();
+        }
       }}
     >
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -67,9 +77,18 @@ export function HostWorkshopDialog({
         </DialogHeader>
         {canHost ? (
           <form
-            className="grid gap-4"
+            className="grid gap-5"
             onSubmit={(event) => {
               event.preventDefault();
+              const issue = workshopScheduleError(
+                new Date(draft.starts).getTime(),
+                new Date(draft.ends).getTime()
+              );
+              if (issue) {
+                setFormError(c.scheduleErrors[issue]);
+                return;
+              }
+              setFormError(null);
               create.mutate();
             }}
           >
@@ -78,6 +97,8 @@ export function HostWorkshopDialog({
               <Input
                 id="host-title"
                 name="title"
+                autoComplete="off"
+                disabled={create.isPending}
                 required
                 maxLength={100}
                 value={draft.title}
@@ -92,7 +113,10 @@ export function HostWorkshopDialog({
                   id="host-starts"
                   name="starts"
                   type="datetime-local"
+                  autoComplete="off"
+                  disabled={create.isPending}
                   required
+                  aria-describedby="host-schedule-help"
                   value={draft.starts}
                   onChange={(event) => update('starts', event.target.value)}
                 />
@@ -103,19 +127,30 @@ export function HostWorkshopDialog({
                   id="host-ends"
                   name="ends"
                   type="datetime-local"
+                  autoComplete="off"
+                  disabled={create.isPending}
                   required
+                  aria-describedby="host-schedule-help"
                   value={draft.ends}
                   onChange={(event) => update('ends', event.target.value)}
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <p
+              id="host-schedule-help"
+              className="-mt-2 text-muted-foreground text-xs"
+            >
+              {c.scheduleFieldHelp}
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="host-capacity">{c.capacity}</Label>
                 <Input
                   id="host-capacity"
                   name="capacity"
                   type="number"
+                  autoComplete="off"
+                  disabled={create.isPending}
                   min={2}
                   max={100}
                   required
@@ -130,6 +165,8 @@ export function HostWorkshopDialog({
                   id="host-teams"
                   name="teams"
                   type="number"
+                  autoComplete="off"
+                  disabled={create.isPending}
                   min={1}
                   max={12}
                   required
@@ -139,6 +176,11 @@ export function HostWorkshopDialog({
                 />
               </div>
             </div>
+            {formError && (
+              <Alert variant="destructive" role="alert">
+                <AlertDescription>{formError}</AlertDescription>
+              </Alert>
+            )}
             <ErrorNotice error={create.error} />
             <Button
               type="submit"
