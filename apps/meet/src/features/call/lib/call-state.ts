@@ -11,10 +11,12 @@ import type {
   MeetRealtimeWaitingParticipant,
   MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
+import { retainRoomChat } from '@tuturuuu/realtime/meet';
 
 export type CallAdmission = 'connecting' | 'waiting' | 'admitted' | 'denied';
 
 export interface CallChatMessage {
+  retained?: boolean;
   accountId?: string;
   avatarUrl?: string;
   assistant?: boolean;
@@ -75,8 +77,6 @@ export const INITIAL_CALL_STATE: CallState = {
   waiting: [],
 };
 
-const MAX_CHAT_MESSAGES = 500;
-
 export function remoteTrackKey(track: MeetRealtimeRoomTrack) {
   return `${encodeURIComponent(track.sessionId)}:${encodeURIComponent(track.trackName ?? track.mid ?? track.userId)}`;
 }
@@ -105,7 +105,15 @@ export function reduceCallState(
       return {
         ...state,
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
-        remoteTracks: {},
+        remoteTracks: message.tracks
+          ? Object.fromEntries(
+              message.tracks
+                .filter((track) => track.userId !== message.userId)
+                .map((track) => [remoteTrackKey(track), track])
+            )
+          : message.resumed
+            ? state.remoteTracks
+            : {},
         role: message.role,
         selfUserId: message.userId,
         stage: message.stage,
@@ -125,7 +133,7 @@ export function reduceCallState(
     case 'chat.message':
       return {
         ...state,
-        chat: [
+        chat: retainRoomChat([
           ...state.chat,
           {
             accountId: message.accountId,
@@ -137,8 +145,9 @@ export function reduceCallState(
             displayName: message.displayName,
             id: message.id,
             userId: message.userId,
+            retained: message.retained,
           },
-        ].slice(-MAX_CHAT_MESSAGES),
+        ]),
       };
 
     case 'admission.pending':

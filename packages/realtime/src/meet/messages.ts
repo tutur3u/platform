@@ -196,6 +196,7 @@ export type MeetRealtimeServerMessage =
       stage: MeetRealtimeStageState;
       type: 'ready';
       resumed?: boolean;
+      tracks?: MeetRealtimeRoomTrack[];
       userId: string;
     }
   | {

@@ -141,7 +141,8 @@ export async function transcribeMeetChunk(
     let failure = db
       .from('meet_ai_chunks')
       .update({ status: 'failed' })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('status', 'processing');
     if (inserted.data.attempt_id)
       failure = failure.eq('attempt_id', inserted.data.attempt_id);
     await failure;

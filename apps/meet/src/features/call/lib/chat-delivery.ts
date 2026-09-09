@@ -16,12 +16,12 @@ export async function sendRecoverableChat(
   for (let attempt = 0; ; attempt++) {
     if (signaling.isClosed) throw new Error('signaling_closed');
     try {
-      return await signaling.request<{ id: string }>(message);
+      return await signaling.request<{ id: string }>(message, 5000);
     } catch (error) {
       if (
         !(error instanceof Error) ||
         !['signaling_closed', 'signaling_timeout'].includes(error.message) ||
-        attempt >= 6
+        attempt >= 2
       )
         throw error;
       await wait(Math.min(1000 * 2 ** attempt, 5000));

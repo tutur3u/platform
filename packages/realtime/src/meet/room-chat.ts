@@ -1,3 +1,4 @@
+import { retainRoomChat } from './chat-retention';
 import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
@@ -7,19 +8,7 @@ import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 
-export function retainRoomChat(
-  messages: Extract<MeetRealtimeServerMessage, { type: 'chat.message' }>[]
-) {
-  const retained = new Set(
-    messages.filter((message) => message.retained !== false).slice(-500)
-  );
-  const transient = new Set(
-    messages.filter((message) => message.retained === false).slice(-500)
-  );
-  return messages.filter(
-    (message) => retained.has(message) || transient.has(message)
-  );
-}
+export { retainRoomChat } from './chat-retention';
 export function applyChatMessage(
   state: MeetRoomSnapshot,
   message: Extract<MeetRealtimeClientMessage, { type: 'chat.message' }>,

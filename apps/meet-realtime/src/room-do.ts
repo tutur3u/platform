@@ -257,6 +257,7 @@ export class MeetRoomDurableObject implements DurableObject {
           person.userId !== token.userId
       );
       if (body?.mode === 'switch') {
+        const released = [];
         for (const person of others) {
           const result = releaseParticipant(
             this.snapshot,
@@ -264,6 +265,10 @@ export class MeetRoomDurableObject implements DurableObject {
             token.roomId
           );
           this.snapshot = result.state;
+          released.push({ person, result });
+        }
+        await this.persist();
+        for (const { person, result } of released) {
           this.sendToUser(person.userId, [
             {
               type: 'participant.removed',
@@ -272,9 +277,9 @@ export class MeetRoomDurableObject implements DurableObject {
             },
           ]);
           this.broadcast(result.broadcast);
+          this.sendToManagers(result.toManagers);
           this.disconnect([person.userId]);
         }
-        await this.persist();
       }
       return Response.json(
         { otherDeviceCount: others.length },
@@ -304,6 +309,26 @@ export class MeetRoomDurableObject implements DurableObject {
         },
         { headers: { 'Cache-Control': 'private, no-store' } }
       );
+    }
+    const previous = this.snapshot.presence[token.userId];
+    if (
+      previous &&
+      Date.now() - Date.parse(previous.lastSeenAt) >= 30_000 &&
+      !this.sockets().some(
+        (socket) =>
+          socket.readyState === WebSocket.OPEN &&
+          this.tokenOf(socket)?.userId === token.userId
+      )
+    ) {
+      const expired = releaseParticipant(
+        this.snapshot,
+        token.userId,
+        token.roomId
+      );
+      this.snapshot = expired.state;
+      await this.persist();
+      this.broadcast(expired.broadcast);
+      this.sendToManagers(expired.toManagers);
     }
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
@@ -417,12 +442,19 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.load();
     const token = this.tokenOf(socket);
     if (!token) return;
+    if (
+      !this.snapshot.presence[token.userId] &&
+      !this.snapshot.waiting[token.userId]
+    )
+      return;
 
     // Only drop presence once the participant has no socket left, so a page
     // with two tabs does not remove itself from the room.
     const stillConnected = this.sockets().some(
       (candidate) =>
-        candidate !== socket && this.tokenOf(candidate)?.userId === token.userId
+        candidate !== socket &&
+        candidate.readyState === WebSocket.OPEN &&
+        this.tokenOf(candidate)?.userId === token.userId
     );
     if (stillConnected) return;
     if (recoverable && this.snapshot.presence[token.userId]) {
@@ -475,6 +507,7 @@ export class MeetRoomDurableObject implements DurableObject {
         (userId) => !pruned.presence[userId]
       );
       this.snapshot = pruned;
+      const releases = [];
       for (const userId of expired) {
         const token = sockets
           .map((socket) => this.tokenOf(socket))
@@ -485,7 +518,14 @@ export class MeetRoomDurableObject implements DurableObject {
           (firstSocket ? this.tokenOf(firstSocket)?.roomId : undefined);
         const outcome = releaseParticipant(this.snapshot, userId, roomId ?? '');
         this.snapshot = outcome.state;
+        releases.push(outcome);
+      }
+      await this.persist();
+      for (const outcome of releases) {
         this.broadcast(outcome.broadcast);
+        this.sendToManagers(outcome.toManagers);
+      }
+      for (const userId of expired) {
         for (const socket of sockets) {
           if (
             this.tokenOf(socket)?.userId === userId &&
@@ -495,7 +535,6 @@ export class MeetRoomDurableObject implements DurableObject {
           }
         }
       }
-      await this.persist();
     }
 
     if (

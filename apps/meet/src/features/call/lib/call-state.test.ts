@@ -15,6 +15,34 @@ const SELF = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691';
 const OTHER = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
 const THIRD = 'c1f0c9b7-1a4e-4b0c-9d0a-0a1c2b3d4e5f';
 
+it('keeps saved chat through unsaved traffic and deduplicates reconnect replay', () => {
+  let state = INITIAL_CALL_STATE;
+  const saved: MeetRealtimeServerMessage = {
+    type: 'chat.message',
+    id: 'saved',
+    userId: SELF,
+    displayName: 'Host',
+    body: 'Keep this',
+    createdAt: '2026-09-09T00:00:00Z',
+    retained: true,
+  };
+  state = reduceCallState(state, saved);
+  for (let i = 0; i < 510; i++)
+    state = reduceCallState(state, {
+      ...saved,
+      id: `transient-${i}`,
+      retained: false,
+    });
+  state = reduceCallState(state, saved);
+  expect(state.chat).toHaveLength(501);
+  expect(state.chat.filter((message) => message.id === 'saved')).toHaveLength(
+    1
+  );
+  expect(state.chat.some((message) => message.id === 'transient-0')).toBe(
+    false
+  );
+});
+
 function presence(userId: string, displayName: string, media = {}) {
   return {
     displayName,
@@ -405,4 +433,27 @@ it('preserves assistant and attachment metadata for live chat messages', () => {
     attachmentIds: ['file'],
     avatarUrl: 'https://example.test/avatar.png',
   });
+});
+
+it('restores the authoritative track registry on a resumed connection', () => {
+  const stale = { userId: OTHER, sessionId: 'old', trackName: 'camera' };
+  const fresh = { userId: OTHER, sessionId: 'new', trackName: 'camera' };
+  const state = reduceAll([
+    READY,
+    {
+      type: 'track.published',
+      userId: OTHER,
+      sessionId: 'old',
+      tracks: [stale],
+    },
+  ]);
+  const resumed = reduceCallState(state, {
+    ...READY,
+    resumed: true,
+    tracks: [fresh],
+  });
+  expect(Object.values(resumed.remoteTracks)).toEqual([fresh]);
+  expect(
+    reduceCallState(resumed, { ...READY, resumed: true }).remoteTracks
+  ).toEqual(resumed.remoteTracks);
 });
