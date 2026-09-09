@@ -28,6 +28,13 @@ const mocks = vi.hoisted(() => ({
   deduct: vi.fn(async () => ({ success: true })),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: async () => ({ withoutPermission: () => false }),
+  verifyWorkspaceMembershipType: async () => ({ ok: true }),
+}));
+vi.mock('@tuturuuu/ai/meetings/workspace-tools', () => ({
+  createMeetWorkspaceTools: () => ({}),
+}));
 vi.mock('@/features/call/server/chat-model', () => ({
   getMeetChatModel: mocks.model,
 }));
@@ -50,7 +57,13 @@ vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
 }));
 vi.mock('@tuturuuu/ai/meetings/chat', () => ({ answerMeetChat: mocks.answer }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => ({}),
+  createAdminClient: async () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({ single: async () => ({ data: { name: 'Personal' } }) }),
+      }),
+    }),
+  }),
 }));
 vi.mock('@/features/call/server/room-service', () => ({
   personalWorkspace: mocks.personal,
@@ -111,7 +124,9 @@ it('charges the tagger personal quota and uses server-supplied recent chat', asy
     expect.objectContaining({
       id: 'google/gemini-3.5-flash-lite',
       providerModelId: 'gemini-3.5-flash-lite',
-    })
+    }),
+    expect.objectContaining({ timezone: 'UTC' }),
+    expect.objectContaining({ workspaceTools: {} })
   );
   expect(mocks.service).toHaveBeenLastCalledWith(
     expect.anything(),
@@ -171,3 +186,85 @@ it('rejects malformed JSON before checking quota or generating', async () => {
   expect(mocks.answer).not.toHaveBeenCalled();
   expect(mocks.check).not.toHaveBeenCalled();
 });
+it.each([0, 3])(
+  'saves private previews without publishing their body after %i failed settlements',
+  async (failures) => {
+    if (failures) {
+      mocks.service.mockResolvedValueOnce({
+        chat: [],
+        prompt: '@Tuturuuu question',
+      });
+      for (let attempt = 0; attempt < failures; attempt++)
+        mocks.service.mockRejectedValueOnce(new Error('Response lost'));
+    }
+    mocks.answer.mockResolvedValueOnce({
+      text: 'Private task',
+      costUsd: 0.001,
+      usage: { available: true, inputTokens: 100, outputTokens: 20 },
+      privateResult: true,
+      messages: [],
+      approvals: [],
+    } as never);
+    const response = await POST(request(), {
+      params: Promise.resolve({ meetingId: 'room' }),
+    });
+    expect(await response.json()).toEqual({ ok: true, reviewId: 'message' });
+    expect(mocks.service).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'ai.review.save',
+        review: expect.objectContaining({ text: 'Private task' }),
+      })
+    );
+    expect(mocks.service).toHaveBeenCalledTimes(2 + failures);
+  }
+);
+it('rejects invalid timezones before generation', async () => {
+  await expect(
+    POST(
+      new Request('https://meet.test/assistant', {
+        method: 'POST',
+        body: JSON.stringify({
+          messageId: 'message',
+          timezone: 'bad/timezone',
+        }),
+      }),
+      { params: Promise.resolve({ meetingId: 'room' }) }
+    )
+  ).rejects.toMatchObject({ status: 400 });
+  expect(mocks.answer).not.toHaveBeenCalled();
+});
+
+it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
+  'settles a claimed review when its saved continuation is malformed: %s',
+  async (continuation) => {
+    const { generateMeetAssistant } = await import(
+      '@/features/call/server/assistant-generation'
+    );
+    const review = {
+      workspaceId: 'workspace',
+      continuation,
+      approvals: [],
+      timezone: 'UTC',
+    };
+    mocks.service
+      .mockResolvedValueOnce(review as never)
+      .mockResolvedValueOnce(review as never);
+    await expect(
+      generateMeetAssistant(
+        { user: { id: 'tagger' }, meeting: { id: 'room' } } as never,
+        {
+          messageId: 'message',
+          timezone: 'UTC',
+          resume: { revision: 1, approved: true },
+        }
+      )
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+      action: 'ai.finish',
+      messageId: 'message',
+      costUsd: 0,
+    });
+    expect(mocks.answer).not.toHaveBeenCalled();
+  }
+);

@@ -709,7 +709,7 @@ admission controls attachment access; a signed URL is short-lived. Mention
 `@Tuturuuu` or `@ttr` (case-insensitive) to ask Mira using the recent 40 room
 messages. Uploaded file contents
 are not automatically read by Mira. The mention author's personal AI allowance is
-checked and reported tokens are deducted from that author's quota. Mira uses the plan-default Google language model for checks, generation, and deduction. Cost estimates use its catalog prices and reported cached input; missing cache prices or tiered pricing remain incomplete.
+checked and reported tokens are deducted from that author's quota. Mira uses the plan-default Google language model for checks, generation, and deduction. It has current-time, admitted-participant, and Google Search tools; web replies include source links. The browser supplies the requester timezone, and participant counts distinguish people from multiple devices. All generation steps and reported search queries count toward the requester quota. Search cost estimates use paid list rates before project-wide free allowances; missing provider usage or grounding coverage stays incomplete. Cost estimates use its catalog prices and reported cached input; missing cache prices or tiered pricing remain incomplete.
 Requests are deduplicated by chat message ID. The internal server-service token
 scope is never included in browser join tokens.
 
@@ -772,3 +772,21 @@ The meeting settings button is last in the call header. Returning from the
 post-call screen invalidates cached meeting lists and room state before
 navigation, including personal-workspace aliases, so newly created meetings
 are fetched.
+
+### Private workspace tool reviews in Meet
+
+When composing an assistant mention, choose the workspace for task, calendar,
+finance, and time-tracking tools. Personal workspace is the default; billing always
+uses the requester personal AI allowance. Meet reuses the platform tool definitions
+and executors, checks membership and permissions on every generation, and only sends
+detailed schemas for selected tools.
+
+Workspace tool calls require the requester to review and approve the exact inputs.
+Their results remain in a private Mira review; **Share with meeting** is a separate
+explicit action. Other participants cannot read, approve, or share those drafts.
+Draft continuations remain server-side in the room Durable Object and are omitted
+from room broadcasts and browser review responses. Revisions and an execution claim
+prevent duplicate approvals from repeating a mutation. If a request remains in an
+uncertain executing state, do not repeat it; inspect the platform result first. Failed or timed-out reviews can be discarded without making their actions executable again, including after the room ends.
+Web search runs in an isolated request containing only the explicit question; model-supplied query rewrites and recent room history are not forwarded. Questions containing known participant names or room-title terms are blocked at that boundary. Missing grounded sources produce an unavailable-search result. Web search is disabled while continuing private workspace results. Unsupported platform-only tools such as E2EE key setup,
+file conversion, and client UI controls are not exposed in the Meet tool set.

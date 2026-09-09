@@ -43,10 +43,18 @@ export function getMeetCallRoomState(meetingId: string) {
   );
 }
 
-export function askMeetAssistant(meetingId: string, messageId: string) {
-  return getInternalApiClient().json<{ ok: boolean }>(
+export function askMeetAssistant(
+  meetingId: string,
+  messageId: string,
+  timezone?: string,
+  workspaceId?: string
+) {
+  return getInternalApiClient().json<{ ok: boolean; reviewId?: string }>(
     `/api/meet-call/${encodePathSegment(meetingId)}/assistant`,
-    { method: 'POST', body: JSON.stringify({ messageId }) }
+    {
+      method: 'POST',
+      body: JSON.stringify({ messageId, timezone, workspaceId }),
+    }
   );
 }
 export function uploadMeetChatFile(meetingId: string, file: File) {
@@ -149,5 +157,38 @@ export function discardMeetChatFile(meetingId: string, id: string) {
       method: 'DELETE',
       body: JSON.stringify({ id }),
     }
+  );
+}
+
+export interface MeetAssistantReview {
+  text: string;
+  approvals: Array<{ id: string; toolName: string; input: unknown }>;
+  workspaceId: string;
+  workspaceName: string;
+  timezone: string;
+  status: 'ready' | 'executing' | 'interrupted' | 'shared' | 'discarded';
+  revision: number;
+}
+export function listMeetAssistantReviews(meetingId: string) {
+  return getInternalApiClient().json<Array<{ id: string; status: string }>>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/assistant/review`,
+    { cache: 'no-store' }
+  );
+}
+export function getMeetAssistantReview(meetingId: string, messageId: string) {
+  return getInternalApiClient().json<MeetAssistantReview>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/assistant/review?messageId=${encodeURIComponent(messageId)}`,
+    { cache: 'no-store' }
+  );
+}
+export function respondMeetAssistantReview(
+  meetingId: string,
+  messageId: string,
+  revision: number,
+  action: 'approve' | 'deny' | 'share' | 'discard'
+) {
+  return getInternalApiClient().json<{ ok: boolean }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/assistant/review`,
+    { method: 'POST', body: JSON.stringify({ messageId, revision, action }) }
   );
 }
