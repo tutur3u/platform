@@ -374,7 +374,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           state={syncState}
           refreshing={threadsQuery.isFetching || bootstrapQuery.isFetching}
           onRefresh={() =>
-            activeMailboxId ? threadsQuery.refetch() : bootstrapQuery.refetch()
+            activeMailboxId
+              ? threadsQuery.refetch({ throwOnError: true })
+              : bootstrapQuery.refetch({ throwOnError: true })
           }
         />
       </div>

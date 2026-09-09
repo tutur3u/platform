@@ -84,3 +84,30 @@ it('deduplicates immediate activations until the refresh settles', async () => {
     finish();
   });
 });
+
+it('reports a refresh failure and allows another attempt', async () => {
+  const onRefresh = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('offline'))
+    .mockResolvedValue(undefined);
+  render(
+    createElement(
+      TooltipProvider,
+      null,
+      createElement(MailSyncStatus, {
+        state: 'synced',
+        refreshing: false,
+        onRefresh,
+      })
+    )
+  );
+  const button = screen.getByRole('button');
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  expect(error).toHaveBeenCalledWith('load_failed');
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  expect(onRefresh).toHaveBeenCalledTimes(2);
+});
