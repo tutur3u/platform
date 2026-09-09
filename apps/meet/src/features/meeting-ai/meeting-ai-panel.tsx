@@ -40,6 +40,11 @@ export function MeetingAiPanel({
               {t(ai.capturing ? 'capturing' : 'active')}
             </p>
           ) : null}
+          {ai.recovering ? (
+            <p role="status" className="rounded-lg border bg-muted p-3 text-sm">
+              {t('recovering', { count: ai.pendingChunks })}
+            </p>
+          ) : null}
           {ai.captureError ||
           data.chunks.some((chunk) => chunk.status === 'failed') ? (
             <p role="alert" className="text-destructive text-sm">

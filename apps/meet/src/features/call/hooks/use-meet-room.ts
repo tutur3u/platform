@@ -152,6 +152,15 @@ export function useMeetRoom({
     const signaling = new MeetSignaling({
       onMessage: (message) => {
         if (
+          message.type === 'ready' &&
+          message.admission === 'admitted' &&
+          !message.resumed
+        ) {
+          resetSubscriber();
+          resetPublisher();
+          setConnectionGeneration((value) => value + 1);
+        }
+        if (
           message.type === 'track.closed' &&
           releaseClosedSubscriptions(
             new Set(message.tracks.map(remoteTrackKey)),
@@ -191,10 +200,7 @@ export function useMeetRoom({
         setState((current) => reduceCallState(current, message));
       },
       onReconnected: () => {
-        // Re-announce and resubscribe on fresh media sessions.
-        resetSubscriber();
-        resetPublisher();
-        setConnectionGeneration((value) => value + 1);
+        // The ready message decides whether the server retained our media.
         signalingRef.current?.send({
           media: mediaRef.current,
           type: 'presence.join',

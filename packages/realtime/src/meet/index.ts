@@ -4,6 +4,7 @@ export {
   hasMeetAssistantMention,
   MEET_ASSISTANT_USER_ID,
 } from './assistant-mentions';
+export { retainRoomChat } from './chat-retention';
 export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';
 export type {

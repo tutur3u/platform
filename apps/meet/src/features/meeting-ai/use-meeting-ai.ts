@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MeetAudioCapture } from './audio';
+import { recoverMeetChunk } from './chunk-recovery';
 
 export function useMeetingAi(
   wsId: string,
@@ -43,7 +44,8 @@ export function useMeetingAi(
     retry: false,
   });
   const { mutateAsync: uploadChunk } = useMutation({
-    mutationFn: (data: FormData) => uploadMeetAiChunk(wsId, meetingId, data),
+    mutationFn: ({ data, signal }: { data: FormData; signal: AbortSignal }) =>
+      uploadMeetAiChunk(wsId, meetingId, data, undefined, signal),
     retry: false,
   });
   const [busy, setBusy] = useState(false);
@@ -54,10 +56,13 @@ export function useMeetingAi(
   const [capturing, setCapturing] = useState(false);
   const [captureError, setCaptureError] = useState(false);
   const errorRef = useRef(false);
+  const [recovering, setRecovering] = useState(false);
+  const [pendingChunks, setPendingChunks] = useState(0);
   const capture = useRef<MeetAudioCapture | null>(null);
   const session = useRef<string | null>(null);
   const queue = useRef(Promise.resolve());
   const pending = useRef(0);
+  const recovery = useRef(new AbortController());
   const sequence = useRef(0);
   const finishRef = useRef<(() => Promise<void>) | null>(null);
   const autoFinishRequested = useRef(false);
@@ -73,6 +78,7 @@ export function useMeetingAi(
       (entry) => entry.id === session.current
     );
     if (current?.ended_at) {
+      recovery.current.abort();
       capture.current?.dispose();
       capture.current = null;
       setCapturing(false);
@@ -84,12 +90,16 @@ export function useMeetingAi(
     mounted.current = true;
     return () => {
       mounted.current = false;
+      recovery.current.abort();
       capture.current?.dispose();
     };
   }, []);
 
   const start = useCallback(async () => {
     if (capture.current || busyRef.current) return;
+    if (pending.current)
+      throw new Error('Previous transcription is still finishing');
+    recovery.current = new AbortController();
     busyRef.current = true;
     let finishStarting!: () => void;
     starting.current = new Promise<void>((resolve) => {
@@ -102,7 +112,7 @@ export function useMeetingAi(
     const recorder = new MeetAudioCapture((audio, startSeconds) => {
       const sessionId = session.current;
       if (!sessionId) return;
-      if (pending.current >= 6 || sequence.current >= 1080) {
+      if (pending.current >= 30 || sequence.current >= 1080) {
         recorder.dispose();
         capture.current = null;
         setCapturing(false);
@@ -126,18 +136,27 @@ export function useMeetingAi(
       data.set('sequence', String(sequence.current++));
       data.set('startSeconds', String(startSeconds));
       pending.current++;
+      setPendingChunks(pending.current);
+      const recoverySignal = recovery.current.signal;
+      const deadline = Date.now() + 5 * 60_000;
       queue.current = queue.current.then(async () => {
         try {
-          const result = await uploadChunk(data);
-          if (result.status !== 'completed') {
-            setCaptureError(true);
-            errorRef.current = true;
-          }
+          await recoverMeetChunk((signal) => uploadChunk({ data, signal }), {
+            deadline,
+            signal: recoverySignal,
+            onRetry: () => {
+              if (mounted.current) setRecovering(true);
+            },
+          });
         } catch {
-          setCaptureError(true);
+          if (mounted.current) setCaptureError(true);
           errorRef.current = true;
         } finally {
           pending.current--;
+          if (mounted.current) {
+            setPendingChunks(pending.current);
+            setRecovering(false);
+          }
         }
       });
     });
@@ -221,6 +240,8 @@ export function useMeetingAi(
     busy,
     capturing,
     captureError,
+    recovering,
+    pendingChunks,
     start,
     finish,
     ownsSession,

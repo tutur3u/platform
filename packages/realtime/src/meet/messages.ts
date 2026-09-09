@@ -64,6 +64,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     body: z.string().trim().min(1).max(2_000),
     requestId,
     type: z.literal('chat.message'),
+    clientMessageId: z.uuid().optional(),
     attachmentIds: z.array(z.uuid()).max(5).optional(),
   }),
   z.object({
@@ -181,6 +182,8 @@ export type MeetRealtimeServerMessage =
       roomId: string;
       stage: MeetRealtimeStageState;
       type: 'ready';
+      resumed?: boolean;
+      tracks?: MeetRealtimeRoomTrack[];
       userId: string;
     }
   | {
@@ -199,6 +202,8 @@ export type MeetRealtimeServerMessage =
       id: string;
       requestId?: string;
       type: 'chat.message';
+      clientMessageId?: string;
+      retained?: boolean;
       userId: string;
     }
   | {

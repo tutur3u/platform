@@ -17,6 +17,7 @@ import type { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
 import type { MeetRoomController } from '../lib/room-controller';
 import { AiCosts } from './ai-costs';
+import { ChatSettings } from './chat-settings';
 import { CloudflareCosts } from './cloudflare-costs';
 import { ConnectionPanel } from './connection-panel';
 import { DeviceSettings } from './device-settings';
@@ -116,6 +117,7 @@ export function CallSettings({
                 onCheckedChange={onSound}
               />
             </div>
+            <ChatSettings room={room} canManage={canManage} />
             <RecordingSettings
               room={room}
               meetingId={meetingId}

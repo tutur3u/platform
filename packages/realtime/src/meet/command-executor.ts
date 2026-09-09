@@ -10,7 +10,7 @@ import { outcome } from './room-outcome';
 
 type CommandOptions = {
   read: () => MeetRoomSnapshot;
-  commit: (result: MeetRoomOutcome) => void;
+  commit: (result: MeetRoomOutcome) => void | Promise<void>;
   runSfu: (intent: MeetSfuIntent) => Promise<unknown>;
 };
 function assertSfuSuccess(result: unknown) {
@@ -30,13 +30,14 @@ export class MeetCommandExecutor {
   private pending = new Map<string, Promise<void>>();
   run(command: MeetRoomCommand, options: CommandOptions): Promise<void> {
     if (!command.message.type.startsWith('sfu.')) {
-      options.commit(applyMeetRoomCommand(options.read(), command));
-      return Promise.resolve();
+      return Promise.resolve(
+        options.commit(applyMeetRoomCommand(options.read(), command))
+      );
     }
     const key = `${command.token.roomId}:${command.token.userId}`;
-    const task = (this.pending.get(key) ?? Promise.resolve()).then(() =>
-      this.execute(command, options)
-    );
+    const task = (this.pending.get(key) ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => this.execute(command, options));
     this.pending.set(key, task);
     void task
       .finally(() => {
@@ -48,36 +49,22 @@ export class MeetCommandExecutor {
   private async execute(command: MeetRoomCommand, options: CommandOptions) {
     const planned = applyMeetRoomCommand(options.read(), command);
     if (!planned.sfu) {
-      options.commit(planned);
+      await options.commit(planned);
       return;
     }
+    let result: unknown;
     try {
       if (!options.read().presence[command.token.userId])
         throw new Error('participant_left');
-      const result = await options.runSfu(planned.sfu);
+      result = await options.runSfu(planned.sfu);
       assertSfuSuccess(result);
-      const current = options.read();
-      if (current.ended || !current.presence[command.token.userId])
+      if (
+        options.read().ended ||
+        !options.read().presence[command.token.userId]
+      )
         throw new Error('participant_left');
-      // Rebase only this completed operation onto the latest presence/settings state.
-      const confirmed = applyMeetRoomCommand(current, command);
-      if (!confirmed.sfu) {
-        options.commit(confirmed);
-        return;
-      }
-      const response: MeetRealtimeServerMessage = {
-        type: 'sfu.response',
-        action: planned.sfu.message.type,
-        requestId: planned.sfu.requestId,
-        result,
-      };
-      options.commit({
-        ...confirmed,
-        sfu: null,
-        reply: [...confirmed.reply, response],
-      });
     } catch (error) {
-      options.commit(
+      await options.commit(
         outcome(options.read(), {
           reply: [
             {
@@ -89,6 +76,25 @@ export class MeetCommandExecutor {
           ],
         })
       );
+      return;
     }
+    const current = options.read();
+    // Rebase only this completed operation onto the latest presence/settings state.
+    const confirmed = applyMeetRoomCommand(current, command);
+    if (!confirmed.sfu) {
+      await options.commit(confirmed);
+      return;
+    }
+    const response: MeetRealtimeServerMessage = {
+      type: 'sfu.response',
+      action: planned.sfu.message.type,
+      requestId: planned.sfu.requestId,
+      result,
+    };
+    await options.commit({
+      ...confirmed,
+      sfu: null,
+      reply: [...confirmed.reply, response],
+    });
   }
 }

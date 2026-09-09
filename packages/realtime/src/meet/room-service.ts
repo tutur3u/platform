@@ -12,6 +12,7 @@ import type {
   MeetRealtimeTokenPayload,
   MeetRoomSnapshot,
 } from './index';
+import { retainRoomChat } from './room-chat';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 
@@ -482,6 +483,7 @@ export function roomService(
     if (!review.text.trim()) return fail('There is no answer to share', 409);
     const response: RoomChatMessage = {
       type: 'chat.message',
+      retained: snapshot.settings?.saveChat !== false,
       id: crypto.randomUUID(),
       userId: MEET_ASSISTANT_USER_ID,
       displayName: 'Mira',
@@ -492,7 +494,7 @@ export function roomService(
     return {
       state: {
         ...snapshot,
-        chat: [...(snapshot.chat ?? []), response].slice(-500),
+        chat: retainRoomChat([...(snapshot.chat ?? []), response]),
         aiRequests: {
           ...snapshot.aiRequests,
           [message.messageId]: {
@@ -513,6 +515,7 @@ export function roomService(
   const response: RoomChatMessage | undefined = message.body
     ? {
         type: 'chat.message',
+        retained: snapshot.settings?.saveChat !== false,
         id: crypto.randomUUID(),
         userId: MEET_ASSISTANT_USER_ID,
         displayName: 'Mira',
@@ -535,7 +538,7 @@ export function roomService(
       },
     },
     chat: response
-      ? [...(snapshot.chat ?? []), response].slice(-500)
+      ? retainRoomChat([...(snapshot.chat ?? []), response])
       : snapshot.chat,
   };
   return { state, body: { ok: true }, messages: response ? [response] : [] };

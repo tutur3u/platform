@@ -194,6 +194,10 @@ export class MeetSignaling {
     this.pending.clear();
   }
 
+  get isClosed() {
+    return this.closedByUs;
+  }
+
   get isOpen() {
     return this.socket?.readyState === WebSocket.OPEN;
   }
@@ -205,7 +209,10 @@ export class MeetSignaling {
   }
 
   /** Sends a message and resolves with the matching `sfu.response` result. */
-  request<T = unknown>(message: MeetRequestMessage): Promise<T> {
+  request<T = unknown>(
+    message: MeetRequestMessage,
+    timeoutMs = REQUEST_TIMEOUT_MS
+  ): Promise<T> {
     if (!this.isOpen) {
       return Promise.reject(new Error('signaling_closed'));
     }
@@ -217,7 +224,7 @@ export class MeetSignaling {
       const timeout = setTimeout(() => {
         this.pending.delete(requestId);
         reject(new Error('signaling_timeout'));
-      }, REQUEST_TIMEOUT_MS);
+      }, timeoutMs);
 
       this.pending.set(requestId, {
         reject: (error) => {

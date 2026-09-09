@@ -3,6 +3,7 @@ import type {
   MeetRealtimeTrackKind,
   MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
+import { sendRecoverableChat } from './chat-delivery';
 import type { MeetSignaling } from './signaling';
 
 export function createRoomActions(signaling: {
@@ -32,12 +33,8 @@ export function createRoomActions(signaling: {
     sendChat: async (body: string, attachmentIds?: string[]) => {
       const text = body.trim();
       if (!text) throw new Error('empty_message');
-      if (!signaling.current?.isOpen) throw new Error('signaling_closed');
-      return signaling.current.request<{ id: string }>({
-        type: 'chat.message',
-        body: text,
-        attachmentIds,
-      });
+      if (!signaling.current) throw new Error('signaling_closed');
+      return sendRecoverableChat(signaling.current, text, attachmentIds);
     },
     raiseHand: (raised: boolean) =>
       signaling.current?.send({ type: 'hand.raise', raised }),
