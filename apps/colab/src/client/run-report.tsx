@@ -1,5 +1,7 @@
-import type { Run } from '@tuturuuu/multiplayer';
+import type { Run, TeamLimits } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
+import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
+import { Component, type ReactNode } from 'react';
 import { useCopy } from './i18n';
 
 function pretty(value: string) {
@@ -10,16 +12,49 @@ function pretty(value: string) {
   }
 }
 
-export function RunReport({ run, number }: { run: Run; number: number }) {
+class MarkdownFallbackBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function ReadableMarkdown({ text }: { text: string }) {
+  return (
+    <MarkdownFallbackBoundary fallback={<p>{text}</p>}>
+      <MemoizedReactMarkdown>{text}</MemoizedReactMarkdown>
+    </MarkdownFallbackBoundary>
+  );
+}
+
+export function RunReport({
+  isLatest,
+  limits,
+  run,
+  number,
+}: {
+  isLatest: boolean;
+  limits: TeamLimits;
+  run: Run;
+  number: number;
+}) {
   const c = useCopy();
   const usage = run.usage ?? {
     turns: run.trace.length + 1,
     toolCalls: run.trace.length,
-    turnLimit: 6,
-    toolCallLimit: 6,
+    turnLimit: limits.agentTurnLimit,
+    toolCallLimit: limits.toolCallLimit,
   };
   return (
-    <details className="run-report" open={number === 1}>
+    <details className="run-report" open={isLatest}>
       <summary>
         <span className="run-index">{number}</span>
         <span>
@@ -33,11 +68,15 @@ export function RunReport({ run, number }: { run: Run; number: number }) {
       <div className="run-report-body">
         <section className="run-outcome">
           <p className="run-label">{c.agentAnswer}</p>
-          <div className="readable-output">{run.answer}</div>
+          <div className="readable-output">
+            <ReadableMarkdown text={run.answer} />
+          </div>
         </section>
         <section className="coach-card">
           <p className="run-label">{c.coachNotes}</p>
-          <div className="readable-output">{run.feedback}</div>
+          <div className="readable-output">
+            <ReadableMarkdown text={run.feedback} />
+          </div>
         </section>
         <section>
           <div className="run-section-heading">

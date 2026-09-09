@@ -20,6 +20,11 @@ function LimitFields({
   maximum?: TeamLimits;
 }) {
   const c = useCopy();
+  const [agentTurnLimit, setAgentTurnLimit] = useState(limits.agentTurnLimit);
+  const toolCallMaximum = Math.min(
+    agentTurnLimit,
+    maximum?.toolCallLimit ?? 20
+  );
   return (
     <div className="limit-fields">
       <Label>
@@ -42,6 +47,9 @@ function LimitFields({
           min={1}
           max={maximum?.agentTurnLimit ?? 20}
           defaultValue={limits.agentTurnLimit}
+          onChange={(event) =>
+            setAgentTurnLimit(Number(event.currentTarget.value))
+          }
           placeholder="6"
           required
         />
@@ -52,7 +60,7 @@ function LimitFields({
           name="toolCallLimit"
           type="number"
           min={0}
-          max={maximum?.toolCallLimit ?? 20}
+          max={toolCallMaximum}
           defaultValue={limits.toolCallLimit}
           placeholder="5"
           required

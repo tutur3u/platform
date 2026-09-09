@@ -131,6 +131,38 @@ describe('server-authoritative room policy', () => {
         now
       )
     ).toThrow('invalid_input');
+    mutateRoom(
+      legacy,
+      owner,
+      {
+        action: 'limits',
+        scope: 'room',
+        aiCallLimit: 100,
+        agentTurnLimit: 6,
+        toolCallLimit: 5,
+      },
+      now
+    );
+    expect(legacy.teams[0]?.limits).toEqual({
+      aiCallLimit: 20,
+      agentTurnLimit: 4,
+      toolCallLimit: 3,
+    });
+    expect(() =>
+      mutateRoom(
+        legacy,
+        owner,
+        {
+          action: 'limits',
+          scope: 'unexpected',
+          teamId: 'team-1',
+          aiCallLimit: 20,
+          agentTurnLimit: 4,
+          toolCallLimit: 3,
+        },
+        now
+      )
+    ).toThrow('invalid_input');
   });
   it('requires invitations, preserves capacity, and allows idempotent rejoin', () => {
     const r = room();

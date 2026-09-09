@@ -151,7 +151,7 @@
   "roomAccess": "Truy cập phòng",
   "roomId": "Liên kết hoặc mã phòng",
   "roomBudget": "Ngân sách buổi thực hành",
-  "roomLimitsHelp": "Đây là giới hạn chung của phòng. Khi giảm, giới hạn của các nhóm cũng được điều chỉnh theo mức tối đa mới.",
+  "roomLimitsHelp": "Đây là giới hạn chung của phòng. Khi giảm, giới hạn nhóm được điều chỉnh theo mức tối đa mới; khi tăng, giới hạn riêng đã chọn của mỗi nhóm vẫn giữ nguyên.",
   "roomMode": "Quyền truy cập phòng",
   "roughPrompt": "Giúp nhóm tổ chức buổi ra mắt sản phẩm.",
   "roughResult": "AI có mục tiêu nhưng chưa biết cách xử lý trùng lịch hoặc ai sẽ duyệt lời mời.",

@@ -5,7 +5,7 @@ import type {
   LaunchableAppCategory,
 } from '@tuturuuu/utils/launchable-apps';
 import { LAUNCHABLE_APP_CATEGORIES } from '@tuturuuu/utils/launchable-apps';
-import type { KeyboardEvent } from 'react';
+import type { ElementType, KeyboardEvent } from 'react';
 import {
   APP_LAUNCHER_CATEGORY_TONES,
   AppLauncherItem,
@@ -24,6 +24,7 @@ export function AppsLauncherCatalog({
   getAppTitle,
   getAppUrl,
   getCategoryLabel,
+  linkComponent,
   navigateLabel,
   onActiveAppChange,
   onAppKeyDown,
@@ -40,6 +41,7 @@ export function AppsLauncherCatalog({
   getAppTitle: (app: LaunchableApp) => string;
   getAppUrl: (app: LaunchableApp) => string;
   getCategoryLabel: (category: LaunchableAppCategory) => string;
+  linkComponent?: ElementType;
   navigateLabel: string;
   onActiveAppChange: (app: LaunchableApp) => void;
   onAppKeyDown: (
@@ -93,6 +95,7 @@ export function AppsLauncherCatalog({
                   getAppUrl={getAppUrl}
                   key={category}
                   label={getCategoryLabel(category)}
+                  linkComponent={linkComponent}
                   onActiveAppChange={onActiveAppChange}
                   onAppKeyDown={onAppKeyDown}
                   onOpen={onOpen}
@@ -122,6 +125,7 @@ function AppCategorySection({
   getAppTitle,
   getAppUrl,
   label,
+  linkComponent,
   onActiveAppChange,
   onAppKeyDown,
   onOpen,
@@ -134,6 +138,7 @@ function AppCategorySection({
   getAppTitle: (app: LaunchableApp) => string;
   getAppUrl: (app: LaunchableApp) => string;
   label: string;
+  linkComponent?: ElementType;
   onActiveAppChange: (app: LaunchableApp) => void;
   onAppKeyDown: (
     event: KeyboardEvent<HTMLAnchorElement>,
@@ -176,6 +181,7 @@ function AppCategorySection({
             getAppUrl={getAppUrl}
             isActive={activeAppSlug === app.slug}
             key={app.slug}
+            linkComponent={linkComponent}
             onFocus={() => onActiveAppChange(app)}
             onKeyDown={(event) => onAppKeyDown(event, app)}
             onOpen={onOpen}

@@ -19,7 +19,7 @@ import {
   LAUNCHABLE_APPS,
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
-import { type CSSProperties, useRef, useState } from 'react';
+import { type CSSProperties, type ElementType, useRef, useState } from 'react';
 import { AppsLauncherCatalog } from './apps-launcher-catalog';
 import { AppsLauncherToolbar, LauncherMark } from './apps-launcher-controls';
 import {
@@ -37,6 +37,7 @@ export type AppsLauncherTranslate = (
 export interface AppsLauncherCoreDialogProps {
   closeLabel: string;
   currentWorkspace?: LaunchableWorkspace | null;
+  linkComponent?: ElementType;
   onOpenChange: (open: boolean) => void;
   open: boolean;
   t: AppsLauncherTranslate;
@@ -45,6 +46,7 @@ export interface AppsLauncherCoreDialogProps {
 export function AppsLauncherCoreDialog({
   closeLabel,
   currentWorkspace,
+  linkComponent,
   onOpenChange,
   open,
   t,
@@ -173,6 +175,7 @@ export function AppsLauncherCoreDialog({
             getAppUrl={resolveUrl}
             getAppTitle={getAppTitle}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
+            linkComponent={linkComponent}
             navigateLabel={t('navigate')}
             onActiveAppChange={(app) => setActiveApp(app)}
             onAppKeyDown={handleAppKeyDown}

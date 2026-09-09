@@ -1,6 +1,7 @@
 'use client';
 
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { AppsLauncherCoreDialog } from './apps-launcher-core';
 
@@ -21,6 +22,7 @@ export function AppsLauncherDialog({
     <AppsLauncherCoreDialog
       closeLabel={commonT('close')}
       currentWorkspace={currentWorkspace}
+      linkComponent={Link}
       onOpenChange={onOpenChange}
       open={open}
       t={(key, values) => t(key as never, values as never)}

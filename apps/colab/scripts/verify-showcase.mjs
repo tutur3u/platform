@@ -57,6 +57,14 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       host.getByRole('searchbox', { name: 'Search apps', exact: true })
     ).toBeVisible();
     await expect(host.locator('[data-slot="app-card"]')).toHaveCount(28);
+    await expect(host.getByText('28 apps', { exact: true })).toBeVisible();
+    const appSearch = host.getByRole('searchbox', {
+      name: 'Search apps',
+      exact: true,
+    });
+    await appSearch.fill('calendar');
+    await expect(host.getByText('1 app', { exact: true })).toBeVisible();
+    await appSearch.clear();
     await expect(
       host.getByRole('link', { name: 'Calendar', exact: true })
     ).toBeVisible();

@@ -589,6 +589,7 @@ export function mutateRoom(
     target.teamId = String(body.teamId);
   } else if (action === 'limits') {
     const scope = body.scope;
+    requireRule(scope === 'room' || scope === 'team', 'invalid_input');
     const limits = {
       aiCallLimit: number(body.aiCallLimit, 1, 2000),
       agentTurnLimit: number(body.agentTurnLimit, 1, 20),

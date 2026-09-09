@@ -13,25 +13,35 @@ export function useCopy() {
   const locale = useContext(LocaleContext);
   return getMessages(locale);
 }
+
+function formatMessage(
+  template: string,
+  values?: Record<string, number | string>
+) {
+  const withPlurals = template.replace(
+    /\{(\w+), plural, one \{# ([^{}]+)\} other \{# ([^{}]+)\}\}/g,
+    (match, name: string, one: string, other: string) => {
+      const count = Number(values?.[name]);
+      if (!Number.isFinite(count)) return match;
+      return `${count} ${count === 1 ? one : other}`;
+    }
+  );
+  return withPlurals.replace(/\{(\w+)\}/g, (match, name: string) =>
+    String(values?.[name] ?? match)
+  );
+}
+
 export function useLauncherCopy() {
   const locale = useContext(LocaleContext);
   return useCallback(
     (key: string, values?: Record<string, number | string>) => {
-      if (key === 'apps_count') {
-        const count = Number(values?.count ?? 0);
-        return locale === 'vi'
-          ? `${count} ứng dụng`
-          : `${count} ${count === 1 ? 'app' : 'apps'}`;
-      }
       let value: unknown = getMessages(locale).command_launcher;
       for (const part of key.split('.')) {
         if (!value || typeof value !== 'object') return key;
         value = (value as Record<string, unknown>)[part];
       }
       if (typeof value !== 'string') return key;
-      return value.replace(/\{(\w+)\}/g, (match, name: string) =>
-        String(values?.[name] ?? match)
-      );
+      return formatMessage(value, values);
     },
     [locale]
   );

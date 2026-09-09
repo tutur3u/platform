@@ -236,7 +236,13 @@ export function TeamDesk({
         </div>
         {!team.runs.length && <p className="empty">{c.runsEmpty}</p>}
         {[...team.runs].reverse().map((run, i) => (
-          <RunReport key={run.id} run={run} number={i + 1} />
+          <RunReport
+            isLatest={i === 0}
+            key={run.id}
+            limits={team.limits}
+            run={run}
+            number={team.runs.length - i}
+          />
         ))}
       </Card>
     </>

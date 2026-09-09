@@ -151,7 +151,7 @@
   "roomAccess": "Room access",
   "roomId": "Room link or ID",
   "roomBudget": "Workshop budget",
-  "roomLimitsHelp": "These are room-wide caps. Lowering them also brings team limits within the new maximum.",
+  "roomLimitsHelp": "These are room-wide caps. Lowering them brings team limits within the new maximum; raising them keeps each team's chosen limits unchanged.",
   "roomMode": "Room access",
   "roughPrompt": "Help our team organize the product launch.",
   "roughResult": "The agent has a goal, but no guidance about scheduling conflicts or who approves the invitation.",
