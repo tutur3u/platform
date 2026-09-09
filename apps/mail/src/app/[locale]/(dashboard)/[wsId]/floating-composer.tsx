@@ -3,7 +3,6 @@
 import {
   copyMailDraftAttachments,
   createMailDraft,
-  deleteMailDraft,
   deleteMailDraftAttachment,
   type MailAttachment,
   type MailMailbox,
@@ -25,10 +24,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MailComposerAttachments } from './mail-composer-attachments';
-import { MailComposerCloseDialog } from './mail-composer-close-dialog';
 import { MailComposerEditor } from './mail-composer-editor';
 import { MailComposerFooter } from './mail-composer-footer';
 import { MailComposerHeader } from './mail-composer-header';
+import type { ComposerSelection } from './mail-composer-selection';
 import { MailComposerSendReview } from './mail-composer-send-review';
 import type {
   ComposeInitialDraft,
@@ -38,7 +37,6 @@ import {
   applyAiDraftToBody,
   buildComposerInitialBody,
   type ComposerWarning,
-  getComposerCloseAction,
   getComposerWarnings,
   getSendableMailboxes,
   mailHtmlToText,
@@ -67,8 +65,9 @@ export function FloatingComposer({
   const t = useTranslations('mail');
   const sendableMailboxes = getSendableMailboxes(mailboxes);
   const defaultMailbox =
-    sendableMailboxes.find((mailbox) => mailbox.id === selectedMailboxId) ??
-    sendableMailboxes[0];
+    sendableMailboxes.find(
+      (mailbox) => mailbox.id === (initialDraft?.mailboxId ?? selectedMailboxId)
+    ) ?? sendableMailboxes[0];
   const [mailboxId, setMailboxId] = useState(defaultMailbox?.id ?? '');
   const [to, setTo] = useState<string[]>([]);
   const [cc, setCc] = useState<string[]>([]);
@@ -85,7 +84,7 @@ export function FloatingComposer({
   const [showBcc, setShowBcc] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [maximized, setMaximized] = useState(false);
-  const [discardOpen, setDiscardOpen] = useState(false);
+  const [selection, setSelection] = useState<ComposerSelection | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [sendReviewOpen, setSendReviewOpen] = useState(false);
   const [sendWarnings, setSendWarnings] = useState<ComposerWarning[]>([]);
@@ -99,6 +98,8 @@ export function FloatingComposer({
     attachmentIds: string[];
     sourceMessageId: string;
   } | null>(null);
+  const initializedRef = useRef(false);
+  const closingRef = useRef(false);
   const draftIdRef = useRef<string | null>(null);
   const dirtyVersionRef = useRef(0);
   const failedSaveVersionRef = useRef<number | null>(null);
@@ -108,7 +109,12 @@ export function FloatingComposer({
   );
 
   useEffect(() => {
-    if (!open || !defaultMailbox) return;
+    if (!open) {
+      initializedRef.current = false;
+      return;
+    }
+    if (!defaultMailbox || initializedRef.current) return;
+    initializedRef.current = true;
     const initialBody = buildComposerInitialBody(initialDraft, defaultMailbox);
     setMailboxId(defaultMailbox?.id ?? '');
     setTo(initialDraft?.to ?? []);
@@ -120,10 +126,10 @@ export function FloatingComposer({
     setSubject(initialDraft?.subject ?? '');
     setBodyHtml(initialBody.html);
     setBodyText(initialBody.text);
-    setDraftId(null);
-    draftIdRef.current = null;
+    setDraftId(initialDraft?.draftId ?? null);
+    draftIdRef.current = initialDraft?.draftId ?? null;
     failedSaveVersionRef.current = null;
-    setAttachments([]);
+    setAttachments(initialDraft?.attachments ?? []);
     setPendingAttachmentCopy(
       initialDraft?.sourceMessageId && initialDraft.sourceAttachmentIds?.length
         ? {
@@ -132,11 +138,12 @@ export function FloatingComposer({
           }
         : null
     );
-    setSaveState('idle');
+    setSaveState(initialDraft?.draftId ? 'saved' : 'idle');
     setSendReviewOpen(false);
     setAiOpen(false);
+    setSelection(null);
     setSendWarnings([]);
-    setDirty(Boolean(initialDraft));
+    setDirty(Boolean(initialDraft && !initialDraft.draftId));
     dirtyVersionRef.current = initialDraft ? 1 : 0;
     setMinimized(false);
   }, [defaultMailbox, initialDraft, open]);
@@ -211,7 +218,7 @@ export function FloatingComposer({
         .catch(() => {
           failedSaveVersionRef.current = savingVersion;
           setSaveState('failed');
-          return draftIdRef.current;
+          return null;
         });
       return saveChainRef.current;
     },
@@ -220,6 +227,7 @@ export function FloatingComposer({
 
   const markDirty = () => {
     dirtyVersionRef.current += 1;
+    setSaveState(online ? 'saving' : 'offline');
     setDirty(true);
   };
 
@@ -287,7 +295,8 @@ export function FloatingComposer({
       setSaveState('offline');
       return;
     }
-    await persist(snapshot, true);
+    const saved = await persist(snapshot, true);
+    if (!saved || attachments.length) return;
     draftIdRef.current = null;
     setDraftId(null);
     setAttachments([]);
@@ -297,10 +306,10 @@ export function FloatingComposer({
 
   const uploadFiles = async (files: FileList | File[], inline = false) => {
     markDirty();
-    const savedDraftId = await persist(snapshot, true);
-    if (!savedDraftId) return;
     setUploading(true);
     try {
+      const savedDraftId = await persist(snapshot, true);
+      if (!savedDraftId) return;
       for (const file of Array.from(files)) {
         const contentId = inline
           ? `${crypto.randomUUID()}@tuturuuu.mail`
@@ -326,8 +335,12 @@ export function FloatingComposer({
   };
 
   const performSend = async () => {
-    if (!canSend) return;
+    if (!canSend || uploading) return;
     const savedDraftId = await persist();
+    if (dirty && !savedDraftId) {
+      toast.error(t('save_failed'));
+      return;
+    }
     await onSend(mailboxId, { ...snapshot, draftId: savedDraftId });
     onOpenChange(false);
   };
@@ -349,42 +362,32 @@ export function FloatingComposer({
     await performSend();
   };
 
-  const saveAndClose = () => {
+  const saveAndClose = async () => {
+    if (uploading || sending || closingRef.current) return;
+    if (!dirty) {
+      await saveChainRef.current;
+      onOpenChange(false);
+      return;
+    }
     if (!online) {
       setSaveState('offline');
+      toast.error(t('save_offline'));
       return;
     }
     const closingVersion = dirtyVersionRef.current;
-    setDiscardOpen(false);
+    closingRef.current = true;
+    const savedDraftId = await persist(snapshot, true);
+    closingRef.current = false;
+    if (!savedDraftId || failedSaveVersionRef.current === closingVersion) {
+      toast.error(t('save_failed'));
+      return;
+    }
+    if (dirtyVersionRef.current !== closingVersion) return;
     onOpenChange(false);
-    void persist(snapshot, true).then((savedDraftId) => {
-      if (!savedDraftId || failedSaveVersionRef.current === closingVersion) {
-        toast.error(t('save_failed'));
-      }
-    });
-  };
-
-  const discardAndClose = () => {
-    const currentDraftId = draftIdRef.current;
-    setDiscardOpen(false);
-    onOpenChange(false);
-    if (!currentDraftId) return;
-    void deleteMailDraft(workspaceId, mailboxId, currentDraftId).catch(
-      (error) =>
-        toast.error(
-          error instanceof Error ? error.message : t('delete_draft_failed')
-        )
-    );
   };
 
   const requestClose = () => {
-    if (getComposerCloseAction(minimized) === 'minimize') {
-      setMaximized(false);
-      setMinimized(true);
-      setAiOpen(false);
-      return;
-    }
-    setDiscardOpen(true);
+    void saveAndClose();
   };
 
   const toggleComposerSize = () => {
@@ -426,6 +429,11 @@ export function FloatingComposer({
           event.dataTransfer.dropEffect = 'copy';
         }}
         onKeyDown={(event) => {
+          if (
+            event.defaultPrevented ||
+            !event.currentTarget.contains(event.target as Node)
+          )
+            return;
           if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
             void requestSend();
@@ -462,12 +470,17 @@ export function FloatingComposer({
           </div>
         ) : null}
         <MailComposerHeader
-          closeLabel={t('close')}
+          closeLabel={t('save_and_close')}
           maximizeLabel={t('maximize')}
           maximized={maximized}
           minimized={minimized}
-          minimizeLabel={t('minimize')}
           newMessageLabel={t('new_message')}
+          minimizeLabel={t('minimize')}
+          onMinimize={() => {
+            setMaximized(false);
+            setMinimized(true);
+            setAiOpen(false);
+          }}
           onRequestClose={requestClose}
           onToggleSize={toggleComposerSize}
           restoreLabel={t('restore')}
@@ -480,6 +493,7 @@ export function FloatingComposer({
             <div className="grid grid-cols-[3.25rem_minmax(0,1fr)] items-center border-dynamic border-b px-3 py-1.5">
               <span className="text-muted-foreground text-xs">{t('from')}</span>
               <Select
+                disabled={uploading || attachments.length > 0}
                 value={mailboxId}
                 onValueChange={(value) => void changeMailbox(value)}
               >
@@ -583,10 +597,13 @@ export function FloatingComposer({
               value={subject}
             />
             <MailComposerEditor
+              onSelectionChange={setSelection}
+              onEnhance={() => setAiOpen(true)}
               imageUrlToInsert={imageUrlToInsert}
               initialHtml={bodyHtml}
               onImageInserted={() => setImageUrlToInsert(null)}
               onChange={(value) => {
+                setAiOpen(false);
                 setBodyHtml(value.html);
                 setBodyText(value.text);
                 markDirty();
@@ -609,14 +626,21 @@ export function FloatingComposer({
               removeLabel={t('remove_attachment')}
             />
             <MailComposerFooter
+              selectionOnly={Boolean(selection)}
               aiOpen={aiOpen}
-              bodyHtml={bodyHtml}
-              bodyText={bodyText}
+              bodyHtml={selection ? '' : bodyHtml}
+              bodyText={selection?.text ?? bodyText}
               canSend={canSend}
               estimatedBytes={estimatedBytes}
               mailboxId={mailboxId}
               messageLimit={messageLimit}
               onAiApply={(result) => {
+                if (selection) {
+                  if (!selection.apply(result.content))
+                    toast.error(t('ai_selection_changed'));
+                  setSelection(null);
+                  return;
+                }
                 const nextBodyHtml = applyAiDraftToBody(
                   bodyHtml,
                   result.content
@@ -627,7 +651,6 @@ export function FloatingComposer({
                 markDirty();
               }}
               onAiOpenChange={setAiOpen}
-              onDiscard={() => setDiscardOpen(true)}
               onSend={() => void requestSend()}
               onUpload={(files, inline) => void uploadFiles(files, inline)}
               recipientLimit={recipientLimit}
@@ -641,19 +664,6 @@ export function FloatingComposer({
           </>
         ) : null}
       </section>
-
-      <MailComposerCloseDialog
-        cancelLabel={t('cancel')}
-        description={t('close_draft_description')}
-        discardLabel={t('discard')}
-        onDiscard={discardAndClose}
-        onOpenChange={setDiscardOpen}
-        onSave={saveAndClose}
-        open={discardOpen}
-        saveDisabled={!online}
-        saveLabel={t('save')}
-        title={t('close_draft')}
-      />
 
       <MailComposerSendReview
         cancelLabel={t('continue_editing')}

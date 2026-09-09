@@ -1,19 +1,12 @@
 import type { MailMailbox } from '@tuturuuu/internal-api';
 import { canSendAsGroup } from '@/lib/mail/groups/policy';
+import { splitComposerQuote } from './mail-composer-quote';
 import type { ComposeInitialDraft } from './mail-composer-types';
 
 export type ComposerWarning =
   | 'empty_message'
   | 'empty_subject'
   | 'missing_attachment';
-
-export type ComposerCloseAction = 'confirm' | 'minimize';
-
-export function getComposerCloseAction(
-  minimized: boolean
-): ComposerCloseAction {
-  return minimized ? 'confirm' : 'minimize';
-}
 
 export function getSendableMailboxes(mailboxes: MailMailbox[]) {
   return mailboxes.filter(
@@ -39,7 +32,7 @@ function escapeHtml(value: string) {
     .replaceAll("'", '&#39;');
 }
 
-function textToHtml(value: string) {
+export function textToHtml(value: string) {
   return value
     .split(/\n{2,}/u)
     .map((paragraph) => escapeHtml(paragraph).replaceAll('\n', '<br>'))
@@ -48,6 +41,8 @@ function textToHtml(value: string) {
 }
 
 export function applyAiDraftToBody(bodyHtml: string, content: string) {
+  const { authored, quoted } = splitComposerQuote(bodyHtml);
+  bodyHtml = authored;
   const generatedHtml = textToHtml(content.trim());
   const signatureIndex = bodyHtml.search(
     /<div\b[^>]*data-mail-signature=["']true["'][^>]*>/iu
@@ -58,8 +53,8 @@ export function applyAiDraftToBody(bodyHtml: string, content: string) {
   );
   const suffixIndex = suffixIndexes.length ? Math.min(...suffixIndexes) : -1;
   return suffixIndex >= 0
-    ? `${generatedHtml}${bodyHtml.slice(suffixIndex)}`
-    : generatedHtml;
+    ? `${generatedHtml}${bodyHtml.slice(suffixIndex)}${quoted}`
+    : `${generatedHtml}${quoted}`;
 }
 
 export function mailHtmlToText(value: string) {
@@ -96,9 +91,15 @@ export function buildComposerInitialBody(
   initialDraft: ComposeInitialDraft | null | undefined,
   mailbox: MailMailbox
 ) {
-  const baseHtml = initialDraft?.bodyHtml?.trim() ?? '';
+  const baseHtml =
+    initialDraft?.bodyHtml?.trim() ||
+    (initialDraft?.bodyText ? textToHtml(initialDraft.bodyText) : '');
   const signature = getSignature(mailbox);
-  if (!signature.html || baseHtml.includes('data-mail-signature="true"')) {
+  if (
+    initialDraft?.draftId ||
+    !signature.html ||
+    baseHtml.includes('data-mail-signature="true"')
+  ) {
     return {
       html: baseHtml,
       text: initialDraft?.bodyText ?? mailHtmlToText(baseHtml),

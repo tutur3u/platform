@@ -572,6 +572,32 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         loading={detailQuery.isLoading}
         onArchive={() => mutateThread('archive')}
         onBack={() => setThreadId(null)}
+        onEditDraft={(message) =>
+          openCompose({
+            draftId: message.id,
+            mailboxId: message.mailboxId,
+            attachments: message.attachments,
+            subject: message.subject,
+            bodyHtml: message.bodyHtml ?? '',
+            bodyText: message.bodyText ?? '',
+            to: message.recipients
+              .filter((r) => r.kind === 'to')
+              .map((r) => r.address),
+            cc: message.recipients
+              .filter((r) => r.kind === 'cc')
+              .map((r) => r.address),
+            bcc: message.recipients
+              .filter((r) => r.kind === 'bcc')
+              .map((r) => r.address),
+            recipientDisplayNames: Object.fromEntries(
+              message.recipients
+                .filter((r) => r.displayName)
+                .map((r) => [r.address, r.displayName!])
+            ),
+            inReplyTo: message.inReplyTo,
+            references: message.references,
+          })
+        }
         onForward={handleForward}
         onReply={handleReply}
         onReplyAll={handleReplyAll}
@@ -642,7 +668,10 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         mailboxes={mailboxes}
         onOpenChange={(nextOpen) => {
           setComposerVisible(nextOpen);
-          if (!nextOpen) setComposeDraft(null);
+          if (!nextOpen) {
+            setComposeDraft(null);
+            void invalidateMailbox();
+          }
           void setComposeParam(nextOpen ? '1' : null);
         }}
         onSend={(nextMailboxId, payload) =>

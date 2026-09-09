@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Paperclip, Send, Trash2 } from '@tuturuuu/icons';
+import { Image as ImageIcon, Paperclip, Send } from '@tuturuuu/icons';
 import type { GenerateMailAiDraftResponse } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
@@ -6,6 +6,7 @@ import { MailComposerAi } from './mail-composer-ai';
 import { formatMailBytes } from './mail-composer-utils';
 
 export function MailComposerFooter({
+  selectionOnly,
   aiOpen,
   bodyHtml,
   bodyText,
@@ -15,7 +16,6 @@ export function MailComposerFooter({
   messageLimit,
   onAiApply,
   onAiOpenChange,
-  onDiscard,
   onSend,
   onUpload,
   recipientLimit,
@@ -26,6 +26,7 @@ export function MailComposerFooter({
   uploading,
   workspaceId,
 }: {
+  selectionOnly: boolean;
   aiOpen: boolean;
   bodyHtml: string;
   bodyText: string;
@@ -35,7 +36,6 @@ export function MailComposerFooter({
   messageLimit: number;
   onAiApply: (result: GenerateMailAiDraftResponse) => void;
   onAiOpenChange: (open: boolean) => void;
-  onDiscard: () => void;
   onSend: () => void;
   onUpload: (files: FileList, inline?: boolean) => void;
   recipientLimit: number;
@@ -52,12 +52,14 @@ export function MailComposerFooter({
     <footer className="flex flex-wrap items-center gap-1.5 border-dynamic border-t bg-muted/20 px-3 py-3">
       <Button
         className="rounded-lg px-5"
-        disabled={!canSend || sending}
+        disabled={!canSend || sending || uploading}
         onClick={onSend}
       >
         <Send className="size-4" /> {sending ? t('sending') : t('send')}
       </Button>
       <MailComposerAi
+        key={`${selectionOnly}:${bodyHtml}:${bodyText}`}
+        selectionOnly={selectionOnly}
         bodyHtml={bodyHtml}
         bodyText={bodyText}
         mailboxId={mailboxId}
@@ -88,15 +90,6 @@ export function MailComposerFooter({
         /{formatMailBytes(messageLimit)}
         {uploading ? ` · ${t('uploading')}` : ''}
       </span>
-      <Button
-        aria-label={t('discard')}
-        className="ml-auto md:ml-0"
-        onClick={onDiscard}
-        size="icon"
-        variant="ghost"
-      >
-        <Trash2 className="size-4" />
-      </Button>
     </footer>
   );
 }

@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   applyAiDraftToBody,
   buildComposerInitialBody,
-  getComposerCloseAction,
   getComposerWarnings,
   mailHtmlToText,
 } from './mail-composer-utils';
@@ -33,13 +32,6 @@ describe('buildComposerInitialBody', () => {
     expect(body.html.indexOf('data-mail-signature')).toBeLessThan(
       body.html.indexOf('<blockquote>')
     );
-  });
-});
-
-describe('getComposerCloseAction', () => {
-  it('minimizes first and confirms closure from the minimized state', () => {
-    expect(getComposerCloseAction(false)).toBe('minimize');
-    expect(getComposerCloseAction(true)).toBe('confirm');
   });
 });
 
