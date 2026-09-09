@@ -15,6 +15,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { attachMediaPlayback } from '../lib/media-playback';
+import { observeVideoPresentation } from '../lib/video-presentation';
 import {
   MediaReceivingStatus,
   useStreamReadiness,
@@ -68,6 +69,27 @@ function ParticipantTileImpl({
   );
   const videoRef = useRef<HTMLVideoElement>(null);
   const tileRef = useRef<HTMLDivElement>(null);
+  const videoEnabled =
+    kind === 'screen'
+      ? participant.media.screenEnabled
+      : participant.media.videoEnabled;
+  const [presentedStream, setPresentedStream] = useState<MediaStream | null>(
+    null
+  );
+  const presentingVideo = Boolean(
+    videoStream && presentedStream === videoStream
+  );
+  useEffect(() => {
+    const video = videoRef.current;
+    setPresentedStream(null);
+    if (!video || !videoStream || !videoEnabled) return;
+    return observeVideoPresentation(
+      video,
+      videoStream,
+      (presenting) => setPresentedStream(presenting ? videoStream : null),
+      kind === 'camera'
+    );
+  }, [videoStream, videoEnabled, kind]);
   useEffect(() => {
     const changed = () =>
       setFullscreen(document.fullscreenElement === tileRef.current);
@@ -83,7 +105,7 @@ function ParticipantTileImpl({
   }, []);
   const readiness = useStreamReadiness(stream);
   const showVideo = Boolean(
-    readiness.video &&
+    presentingVideo &&
       (kind === 'screen'
         ? participant.media.screenEnabled
         : participant.media.videoEnabled)
@@ -129,6 +151,7 @@ function ParticipantTileImpl({
         ref={videoRef}
         className={cn(
           'absolute inset-0 size-full object-contain',
+          !showVideo && 'opacity-0',
           isSelf && kind === 'camera' && '-scale-x-100'
         )}
       />
@@ -199,7 +222,7 @@ function ParticipantTileImpl({
         {!isSelf && (
           <MediaReceivingStatus
             audio={readiness.receivingAudio}
-            video={readiness.receivingVideo}
+            video={presentingVideo || readiness.receivingVideo}
             expectAudio={kind === 'camera' && participant.media.audioEnabled}
             expectVideo={
               kind === 'camera'
