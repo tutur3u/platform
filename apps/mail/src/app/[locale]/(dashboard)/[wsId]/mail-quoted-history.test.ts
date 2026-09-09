@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sanitizeMailHtml } from '@/lib/mail/html';
 import {
   collapseMailQuotedHistory,
@@ -108,6 +108,34 @@ describe('quoted HTML history', () => {
         '<div class="gmail_quote"><p>On Monday, Lan wrote:</p><blockquote type="cite">Only original content</blockquote></div>'
       )
     ).toBeNull();
+  });
+  it('supports long folded Outlook recipient fields', () => {
+    const recipients = Array.from(
+      { length: 30 },
+      (_, i) => `Recipient ${i}`
+    ).join('<br>');
+    const details = render(
+      `<p>Thanks</p><div>From: Lan<br>Sent: Monday<br>To: ${recipients}<br>Subject: Update</div><p>Old body</p>`
+    );
+    expect(details?.textContent).toContain('Old body');
+    expect(
+      splitMailQuotedText(
+        `Thanks\n\nFrom: Lan\nSent: Monday\nTo: ${recipients.replaceAll('<br>', '\n')}\nSubject: Update\nOld body`
+      ).quoted
+    ).toContain('Old body');
+  });
+  it('normalizes structured inline Outlook labels without matching prose', () => {
+    const details = render(
+      '<p>Thanks</p><div><b>From:</b> Lan <b>Sent:</b> Monday <b>To:</b> Minh <b>Subject:</b> Update</div><p>Old body</p>'
+    );
+    expect(details?.textContent).toContain('Old body');
+  });
+  it('does not clone overlapping newsletter subtrees while finding headers', () => {
+    document.body.innerHTML = `${'<div>'.repeat(100)}<p>Newsletter body</p>${'</div>'.repeat(100)}`;
+    const clone = vi.spyOn(Node.prototype, 'cloneNode');
+    collapseMailQuotedHistory(document, 'Quoted text');
+    expect(clone).not.toHaveBeenCalled();
+    clone.mockRestore();
   });
   it('does not restore executable content while preserving quote markers', () => {
     render(

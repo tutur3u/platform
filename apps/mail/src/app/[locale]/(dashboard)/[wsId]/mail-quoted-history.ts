@@ -1,15 +1,10 @@
+import {
+  findOutlookHistoryHeaders,
+  hasOutlookHeaderLines,
+} from './mail-outlook-history';
+
 const REPLY_ATTRIBUTION =
   /^(?:on\b[\s\S]{0,500}\bwrote\s*:|(?:vào\s|trong thư trước[,\s])[\s\S]{0,500}(?:đã viết|viết)\s*:)/iu;
-const OUTLOOK_HEADERS =
-  /^(?:from|từ)\s*:[^\n]+\n(?:[^\n]*\n){0,4}\s*(?:sent|date|đã gửi|ngày)\s*:[^\n]+\n(?:[^\n]*\n){0,4}\s*(?:to|đến)\s*:[^\n]+\n(?:[^\n]*\n){0,4}\s*(?:subject|chủ đề)\s*:/iu;
-
-function headerText(element: Element) {
-  const copy = element.cloneNode(true) as Element;
-  for (const br of copy.querySelectorAll('br')) br.replaceWith('\n');
-  for (const block of copy.querySelectorAll('p,div,tr')) block.append('\n');
-  return copy.textContent?.trim() ?? '';
-}
-
 function hasVisibleAuthoredContent(document: Document, before: Node) {
   const range = document.createRange();
   range.setStart(document.body, 0);
@@ -49,24 +44,21 @@ function hasVisibleAuthoredContent(document: Document, before: Node) {
 export function collapseMailQuotedHistory(document: Document, label: string) {
   const body = document.body;
   if (body.querySelector('[data-mail-quoted-history]')) return;
+  const outlookHeaders = findOutlookHistoryHeaders(body);
   const candidates = Array.from(
     body.querySelectorAll<HTMLElement>(
       '.gmail_quote, .gmail_quote_container, #divRplyFwdMsg, #x_divRplyFwdMsg, blockquote, div, p'
     )
   );
   for (const candidate of candidates) {
-    const text = candidate.textContent?.trim() ?? '';
     const gmail = candidate.matches('.gmail_quote, .gmail_quote_container');
     const outlook =
       /^(?:x_)?divRplyFwdMsg$/iu.test(candidate.id) ||
-      (OUTLOOK_HEADERS.test(headerText(candidate)) &&
-        !Array.from(candidate.children).some((child) =>
-          OUTLOOK_HEADERS.test(headerText(child))
-        ));
+      outlookHeaders.has(candidate);
     const quote =
       candidate.tagName === 'BLOCKQUOTE' &&
       (candidate.getAttribute('type') === 'cite' ||
-        REPLY_ATTRIBUTION.test(text) ||
+        REPLY_ATTRIBUTION.test(candidate.textContent?.trim() ?? '') ||
         REPLY_ATTRIBUTION.test(
           candidate.previousElementSibling?.textContent?.trim() ?? ''
         ));
@@ -109,7 +101,7 @@ export function splitMailQuotedText(text: string) {
   const lines = text.split('\n');
   if (
     REPLY_ATTRIBUTION.test(text.trimStart()) ||
-    OUTLOOK_HEADERS.test(text.trimStart()) ||
+    hasOutlookHeaderLines(lines) ||
     /^[-_]{2,}\s*(?:original message|forwarded message|thư gốc)\s*[-_]{2,}/iu.test(
       text.trimStart()
     ) ||
@@ -123,8 +115,7 @@ export function splitMailQuotedText(text: string) {
       /^(?:(?:on|vào)\s|trong thư trước[,\s])/iu.test(line) &&
       REPLY_ATTRIBUTION.test(lines.slice(index, index + 4).join(' '));
     const outlook =
-      /^(?:from|từ)\s*:/iu.test(line) &&
-      OUTLOOK_HEADERS.test(lines.slice(index, index + 20).join('\n'));
+      /^(?:from|từ)\s*:/iu.test(line) && hasOutlookHeaderLines(lines, index);
     const separator =
       /^[-_]{2,}\s*(?:original message|forwarded message|thư gốc)\s*[-_]{2,}$/iu.test(
         line
