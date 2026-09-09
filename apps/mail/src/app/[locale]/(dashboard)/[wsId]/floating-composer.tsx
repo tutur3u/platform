@@ -51,6 +51,7 @@ import {
   mailHtmlToText,
 } from './mail-composer-utils';
 import { RecipientField } from './recipient-field';
+import { useMailComposerKeyboard } from './use-mail-composer-keyboard';
 
 export function FloatingComposer({
   ref,
@@ -409,11 +410,29 @@ export function FloatingComposer({
     setMaximized((current) => !current);
   };
 
+  const composerKeyboard = useMailComposerKeyboard({
+    open: open && Boolean(defaultMailbox),
+    preferBody: Boolean(initialDraft?.to?.length),
+    onSend: () => {
+      void requestSend();
+    },
+    onSave: () => {
+      void saveAndClose(false);
+    },
+    onClose: requestClose,
+    onAi: () => {
+      setMinimized(false);
+      setAiOpen((current) => !current);
+    },
+  });
   useImperativeHandle(ref, () => ({ save: () => saveAndClose(false) }));
   if (!open || !defaultMailbox) return null;
   return (
     <>
       <section
+        ref={composerKeyboard.ref}
+        data-mail-composer
+        tabIndex={-1}
         aria-label={t('new_message')}
         className={cn(
           'fixed z-50 flex flex-col overflow-hidden border border-dynamic bg-background shadow-2xl',
@@ -441,29 +460,7 @@ export function FloatingComposer({
           event.preventDefault();
           event.dataTransfer.dropEffect = 'copy';
         }}
-        onKeyDown={(event) => {
-          if (
-            event.defaultPrevented ||
-            !event.currentTarget.contains(event.target as Node)
-          )
-            return;
-          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-            event.preventDefault();
-            void requestSend();
-          }
-          if (
-            event.key.toLowerCase() === 'j' &&
-            (event.metaKey || event.ctrlKey)
-          ) {
-            event.preventDefault();
-            setMinimized(false);
-            setAiOpen((current) => !current);
-          }
-          if (event.key === 'Escape') {
-            event.preventDefault();
-            requestClose();
-          }
-        }}
+        onKeyDown={composerKeyboard.onKeyDown}
         onPaste={(event) => {
           const files = event.clipboardData.files;
           if (!files.length) return;

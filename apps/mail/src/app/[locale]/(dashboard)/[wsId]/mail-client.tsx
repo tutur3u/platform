@@ -10,6 +10,7 @@ import {
   Archive,
   CheckCheck,
   Info,
+  Keyboard,
   Loader2,
   Search,
   Trash2,
@@ -19,7 +20,6 @@ import {
   deleteMailDraft,
   getMailThread,
   listMailThreads,
-  type MailMessageDetail,
   type MailThreadSummary,
   type SendMailMessagePayload,
   sendMailMessage,
@@ -47,6 +47,7 @@ import { toComposeInitialDraft } from './mail-composer-utils';
 import { MailContentState } from './mail-content-state';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
+import { MailKeyboardHelp } from './mail-keyboard-help';
 import { MailLabelMenu } from './mail-label-menu';
 import {
   getCurrentMailPaneLayout,
@@ -54,7 +55,7 @@ import {
   setCurrentMailPaneLayout,
 } from './mail-pane-layout';
 import { MailQuickFilters } from './mail-quick-filters';
-import { escapeHtml, forwardSubject, replySubject } from './mail-reply-utils';
+import { createMailReplyActions } from './mail-reply-actions';
 import { MailSyncStatus } from './mail-sync-status';
 import { MailThreadRow } from './mail-thread-list';
 import {
@@ -64,6 +65,7 @@ import {
 } from './mail-thread-query';
 import { ThreadDetail } from './thread-detail';
 import { useMailBootstrap } from './use-mail-bootstrap';
+import { useMailKeyboard } from './use-mail-keyboard';
 import { useMailThreadActions } from './use-mail-thread-actions';
 import { useMailViewedThreadRead } from './use-mail-viewed-thread-read';
 
@@ -278,89 +280,80 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       staleTime: 30_000,
     });
   };
-  const replyReferences = (message: MailMessageDetail) => [
-    ...message.references,
-    ...(message.internetMessageId ? [message.internetMessageId] : []),
-  ];
-  const quote = (message: MailMessageDetail) =>
-    `<p><br></p><blockquote type="cite"><p>${escapeHtml(t('quoted_message', { sender: message.fromName || message.fromAddress }))}</p>${message.sanitizedHtml || `<p>${escapeHtml(message.bodyText ?? '').replaceAll('\n', '<br>')}</p>`}</blockquote>`;
-  const handleReply = (message: MailMessageDetail) =>
-    openCompose({
-      bodyHtml: quote(message),
-      quotedAttachments: message.attachments,
-      sourceMessageId: message.id,
-      sourceAttachmentIds: message.attachments
-        .filter((item) => item.contentId)
-        .map((item) => item.id),
-      inReplyTo: message.internetMessageId,
-      recipientDisplayNames: message.fromName
-        ? { [message.fromAddress.toLowerCase()]: message.fromName }
-        : {},
-      references: replyReferences(message),
-      subject: replySubject(message.subject),
-      threadId: message.threadId ?? undefined,
-      to: [message.fromAddress],
-    });
-  const handleReplyAll = (message: MailMessageDetail) => {
-    const excluded = new Set(
-      mailboxes.map((mailbox) => mailbox.address.toLowerCase())
-    );
-    const candidates = [
-      {
-        address: message.fromAddress,
-        displayName: message.fromName,
-      },
-      ...message.recipients
-        .filter(
-          (recipient) => recipient.kind === 'to' || recipient.kind === 'cc'
-        )
-        .map((recipient) => ({
-          address: recipient.address,
-          displayName: recipient.displayName,
-        })),
-    ].filter(({ address }) => !excluded.has(address.toLowerCase()));
-    const unique = [
-      ...new Map(
-        candidates.map((recipient) => [
-          recipient.address.toLowerCase(),
-          recipient,
-        ])
-      ).values(),
-    ];
-    openCompose({
-      bodyHtml: quote(message),
-      quotedAttachments: message.attachments,
-      cc: unique.slice(1).map((recipient) => recipient.address),
-      sourceMessageId: message.id,
-      sourceAttachmentIds: message.attachments
-        .filter((item) => item.contentId)
-        .map((item) => item.id),
-      inReplyTo: message.internetMessageId,
-      recipientDisplayNames: Object.fromEntries(
-        unique.flatMap((recipient) =>
-          recipient.displayName
-            ? [[recipient.address.toLowerCase(), recipient.displayName]]
-            : []
-        )
-      ),
-      references: replyReferences(message),
-      subject: replySubject(message.subject),
-      threadId: message.threadId ?? undefined,
-      to: unique.slice(0, 1).map((recipient) => recipient.address),
-    });
-  };
-  const handleForward = (message: MailMessageDetail) =>
-    openCompose({
-      bodyHtml: quote(message),
-      quotedAttachments: message.attachments,
-      sourceAttachmentIds: message.attachments.map(
-        (attachment) => attachment.id
-      ),
-      sourceMessageId: message.id,
-      subject: forwardSubject(message.subject),
-      threadId: message.threadId ?? undefined,
-      to: [],
-    });
+  const { handleReply, handleReplyAll, handleForward } = createMailReplyActions(
+    t,
+    mailboxes,
+    openCompose
+  );
+
+  const keyboard = useMailKeyboard({
+    threads,
+    threadId,
+    folder,
+    selectionScope,
+    composerOpen: composerVisible,
+    selected: selectedThreads,
+    setSelected: setSelectedThreads,
+    openThread: (id) => {
+      void setThreadId(id);
+    },
+    compose: () => {
+      void openCompose(null);
+    },
+    reply: (mode) => {
+      const message =
+        detailQuery.data?.thread.id === threadId
+          ? detailQuery.data.messages.at(-1)
+          : undefined;
+      if (!message) return;
+      if (folder === 'drafts') {
+        const draft = detailQuery.data?.messages.findLast(
+          (item) => item.status === 'draft'
+        );
+        if (draft) void openCompose(toComposeInitialDraft(draft));
+      } else if (mode === 'reply') void handleReply(message);
+      else if (mode === 'reply_all') void handleReplyAll(message);
+      else void handleForward(message);
+    },
+    action: (action, id) => {
+      if (
+        action === 'mark_unread' &&
+        id === threadId &&
+        queryClient.isMutating({
+          mutationKey: ['mail', workspaceId, activeMailboxId, 'viewed-read'],
+        })
+      )
+        return;
+      if (action === 'mark_unread' && id === threadId) void setThreadId(null);
+      mutateThread(action, id);
+    },
+    bulkAction: (action) => bulkMutation.mutate(action),
+    deleteDraft: () => {
+      const draft =
+        detailQuery.data?.thread.id === threadId
+          ? detailQuery.data.messages.findLast(
+              (item) => item.status === 'draft'
+            )
+          : undefined;
+      if (draft && !deleteDraftMutation.isPending)
+        deleteDraftMutation.mutate(draft.id);
+    },
+    navigate: (nextFolder) => {
+      const params = new URLSearchParams();
+      if (activeMailboxId) params.set('mailbox', activeMailboxId);
+      router.push(`${getMailFolderHref(workspaceId, nextFolder)}?${params}`);
+    },
+    refresh: () => {
+      if (
+        threadsQuery.isFetching ||
+        bootstrapQuery.isFetching ||
+        actionsPending
+      )
+        return;
+      if (activeMailboxId) void threadsQuery.refetch();
+      else void bootstrapQuery.refetch();
+    },
+  });
 
   const listPanel = (
     <section className="flex h-full min-h-0 min-w-0 max-w-full flex-col bg-background/95">
@@ -390,6 +383,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label={t('search')}
+            data-mail-search
             className="h-9 rounded-lg border-transparent bg-muted/60 pr-10 pl-9 shadow-none focus-visible:border-border focus-visible:bg-background"
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('search')}
@@ -417,24 +411,36 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             </PopoverContent>
           </Popover>
         </div>
-        <MailQuickFilters
-          disabled={threads.length === 0 || bulkMutation.isPending}
-          onQueryChange={(next) => void setQuery(next)}
-          onSelectAll={(selected) =>
-            setSelectedThreads(
-              new Set(selected ? threads.map((thread) => thread.id) : [])
-            )
-          }
-          query={query}
-          selection={
-            threads.length > 0 &&
-            threads.every((thread) => selectedThreads.has(thread.id))
-              ? true
-              : selectedThreads.size > 0
-                ? 'indeterminate'
-                : false
-          }
-        />
+        <div className="flex items-center justify-between gap-1">
+          <MailQuickFilters
+            disabled={threads.length === 0 || bulkMutation.isPending}
+            onQueryChange={(next) => void setQuery(next)}
+            onSelectAll={(selected) =>
+              setSelectedThreads(
+                new Set(selected ? threads.map((thread) => thread.id) : [])
+              )
+            }
+            query={query}
+            selection={
+              threads.length > 0 &&
+              threads.every((thread) => selectedThreads.has(thread.id))
+                ? true
+                : selectedThreads.size > 0
+                  ? 'indeterminate'
+                  : false
+            }
+          />
+          <Button
+            aria-label={t('keyboard_shortcuts')}
+            title={t('keyboard_shortcuts')}
+            onClick={() => keyboard.setHelpOpen(true)}
+            size="icon"
+            variant="ghost"
+            className="size-7 shrink-0"
+          >
+            <Keyboard className="size-3.5" />
+          </Button>
+        </div>
         {filterChips.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {[...new Set(filterChips)].map((chip) => (
@@ -614,7 +620,10 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   );
 
   return (
-    <div className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-background text-foreground">
+    <div
+      ref={keyboard.rootRef}
+      className="h-full min-h-0 min-w-0 max-w-full overflow-hidden bg-background text-foreground"
+    >
       <div className="h-full min-w-0 max-w-full lg:hidden">
         {threadId ? detailPanel : listPanel}
       </div>
@@ -653,6 +662,10 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+      <MailKeyboardHelp
+        open={keyboard.helpOpen}
+        onOpenChange={keyboard.setHelpOpen}
+      />
       <FloatingComposer
         key={composeSession}
         ref={composerRef}
