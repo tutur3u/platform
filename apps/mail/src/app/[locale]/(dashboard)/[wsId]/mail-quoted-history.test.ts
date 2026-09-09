@@ -78,6 +78,30 @@ describe('quoted HTML history', () => {
       )
     ).toBeNull();
   });
+  it.each([
+    '<div style="display:none">Hidden preheader</div>',
+    '<style>.preheader{display:none}</style><div class="preheader">Hidden preheader</div>',
+    '<div style="max-height:0;overflow:hidden;opacity:0">Hidden preheader</div>',
+  ])('leaves quote-only HTML visible after hidden preheaders', (preheader) => {
+    expect(
+      render(`${preheader}<div class="gmail_quote">Only original content</div>`)
+    ).toBeNull();
+  });
+  it('does not confuse authored prose with Outlook header lines', () => {
+    expect(
+      render(
+        '<p>Hello</p><p>From: our team, sent: yesterday, to: your team, subject: next steps.</p><p>Important new content.</p>'
+      )
+    ).toBeNull();
+  });
+  it('keeps quote markers scoped to isolated reader sanitization', () => {
+    const source =
+      '<blockquote type="cite" id="divRplyFwdMsg">Old message</blockquote>';
+    expect(sanitizeMailHtml(source)).not.toMatch(/type=|id=/);
+    expect(sanitizeMailHtml(source, { isolatedDocument: true })).toContain(
+      'type="cite"'
+    );
+  });
   it('does not restore executable content while preserving quote markers', () => {
     render(
       '<p>Thanks</p><div id="divRplyFwdMsg" onclick="alert(1)">From: Lan</div><script>alert(1)</script><img src="javascript:alert(1)">'
@@ -105,5 +129,8 @@ describe('quoted plain text', () => {
     const inline = 'Reply\n> question\nMy answer';
     expect(splitMailQuotedText(inline).quoted).toBeNull();
     expect(splitMailQuotedText('> Only original text').quoted).toBeNull();
+    expect(
+      splitMailQuotedText('> Only original text\n> Second line').quoted
+    ).toBeNull();
   });
 });

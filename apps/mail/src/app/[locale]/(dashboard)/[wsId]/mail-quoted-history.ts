@@ -1,7 +1,49 @@
 const REPLY_ATTRIBUTION =
   /^(?:on\b[\s\S]{0,500}\bwrote\s*:|(?:vào\s|trong thư trước[,\s])[\s\S]{0,500}(?:đã viết|viết)\s*:)/iu;
 const OUTLOOK_HEADERS =
-  /^(?:from|từ)\s*:[\s\S]{1,1000}(?:sent|date|đã gửi|ngày)\s*:[\s\S]{1,1000}(?:to|đến)\s*:[\s\S]{1,1000}(?:subject|chủ đề)\s*:/iu;
+  /^(?:from|từ)\s*:[^\n]+\n(?:[^\n]*\n){0,4}\s*(?:sent|date|đã gửi|ngày)\s*:[^\n]+\n(?:[^\n]*\n){0,4}\s*(?:to|đến)\s*:[^\n]+\n(?:[^\n]*\n){0,4}\s*(?:subject|chủ đề)\s*:/iu;
+
+function headerText(element: Element) {
+  const copy = element.cloneNode(true) as Element;
+  for (const br of copy.querySelectorAll('br')) br.replaceWith('\n');
+  for (const block of copy.querySelectorAll('p,div,tr')) block.append('\n');
+  return copy.textContent?.trim() ?? '';
+}
+
+function hasVisibleAuthoredContent(document: Document, before: Node) {
+  const range = document.createRange();
+  range.setStart(document.body, 0);
+  range.setEndBefore(before);
+  const walker = document.createTreeWalker(document.body, 5);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    if (!range.intersectsNode(node)) continue;
+    const element =
+      node.nodeType === 1 ? (node as Element) : node.parentElement;
+    const media = element?.matches('img,video');
+    if (node.nodeType !== 3 && !media) continue;
+    if (!media && !node.textContent?.trim()) continue;
+    let visible = true;
+    for (let parent = element; parent; parent = parent.parentElement) {
+      const style = document.defaultView?.getComputedStyle(parent);
+      if (
+        parent.matches('style,script,[hidden]') ||
+        style?.display === 'none' ||
+        style?.visibility === 'hidden' ||
+        style?.visibility === 'collapse' ||
+        style?.opacity === '0' ||
+        style?.contentVisibility === 'hidden' ||
+        (!media && style?.fontSize === '0px') ||
+        (style?.overflow === 'hidden' &&
+          (style.maxHeight === '0px' || style.height === '0px'))
+      ) {
+        visible = false;
+        break;
+      }
+    }
+    if (visible) return true;
+  }
+  return false;
+}
 
 /** Keep uncertain/quote-only messages intact; this is a reversible reader view. */
 export function collapseMailQuotedHistory(document: Document, label: string) {
@@ -17,9 +59,9 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
     const gmail = candidate.matches('.gmail_quote, .gmail_quote_container');
     const outlook =
       /^(?:x_)?divRplyFwdMsg$/iu.test(candidate.id) ||
-      (OUTLOOK_HEADERS.test(text) &&
+      (OUTLOOK_HEADERS.test(headerText(candidate)) &&
         !Array.from(candidate.children).some((child) =>
-          OUTLOOK_HEADERS.test(child.textContent?.trim() ?? '')
+          OUTLOOK_HEADERS.test(headerText(child))
         ));
     const quote =
       candidate.tagName === 'BLOCKQUOTE' &&
@@ -38,14 +80,7 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
     ) {
       start = candidate.previousElementSibling!;
     }
-    const prefix = document.createRange();
-    prefix.setStart(body, 0);
-    prefix.setEndBefore(start);
-    const authored = prefix.cloneContents();
-    for (const hidden of authored.querySelectorAll('style, script, [hidden]'))
-      hidden.remove();
-    if (!authored.textContent?.trim() && !authored.querySelector('img,video'))
-      continue;
+    if (!hasVisibleAuthoredContent(document, start)) continue;
 
     const details = document.createElement('details');
     details.setAttribute('data-mail-quoted-history', '');
@@ -72,6 +107,9 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
 
 export function splitMailQuotedText(text: string) {
   const lines = text.split('\n');
+  if (lines.every((line) => !line.trim() || /^\s*>/.test(line))) {
+    return { authored: text, quoted: null };
+  }
   for (let index = 1; index < lines.length; index++) {
     const line = lines[index]!.trim();
     const attribution =

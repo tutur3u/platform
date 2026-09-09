@@ -108,7 +108,7 @@ export function sanitizeMailHtml(
         'bgcolor',
         ...(options.isolatedDocument ? ['id'] : []),
       ],
-      blockquote: ['type'],
+      ...(options.isolatedDocument ? { blockquote: ['type'] } : {}),
       a: ['href', 'name', 'target', 'rel'],
       img: ['src', 'alt', 'width', 'height'],
       font: ['color', 'face', 'size'],

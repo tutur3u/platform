@@ -52,7 +52,7 @@ export function ThreadMessageCard({
             <PopoverTrigger asChild>
               <button
                 type="button"
-                aria-label={t('message_details')}
+                aria-label={`${t('message_details')}: ${sender}${recipient ? ` → ${recipient}` : ''}`}
                 className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-ring/50 transition-colors hover:bg-muted/50 focus-visible:outline-2"
               >
                 <Address
