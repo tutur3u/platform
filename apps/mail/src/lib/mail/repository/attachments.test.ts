@@ -3,6 +3,7 @@ import type { MailRouteContext } from '../types';
 import { copyAttachmentsToDraft } from './attachments';
 
 const inserted = vi.hoisted(() => vi.fn());
+const source = vi.hoisted(() => ({ contentId: '<logo@example.com>' }));
 vi.mock('./bootstrap', () => ({
   requireMailboxAccess: async () => ({ admin: {} }),
 }));
@@ -29,7 +30,7 @@ vi.mock('./shared', () => ({
       eq: () => query,
       maybeSingle: async () => ({
         data: {
-          content_id: '<logo@example.com>',
+          content_id: source.contentId,
           content_type: 'image/png',
           disposition: 'inline',
           filename: 'logo.png',
@@ -64,3 +65,26 @@ it('preserves an authorized source attachment CID and inline disposition in a co
     })
   );
 });
+it.each(['<logo image@example.com>', '<logo:1>', '<"logo">', '<logo;1>'])(
+  'copies a file with unsupported inbound CID %s as a regular attachment',
+  async (contentId) => {
+    source.contentId = contentId;
+    inserted.mockClear();
+    const copied = await copyAttachmentsToDraft({
+      attachmentIds: ['image'],
+      ctx: {} as MailRouteContext,
+      draftId: 'draft',
+      mailboxId: 'mailbox',
+      sourceMessageId: 'source',
+    });
+    expect(copied).toHaveLength(1);
+    expect(inserted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content_id: null,
+        disposition: 'attachment',
+        message_id: 'draft',
+      })
+    );
+    source.contentId = '<logo@example.com>';
+  }
+);
