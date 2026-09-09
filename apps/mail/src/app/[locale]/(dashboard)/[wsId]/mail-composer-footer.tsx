@@ -58,7 +58,6 @@ export function MailComposerFooter({
         <Send className="size-4" /> {sending ? t('sending') : t('send')}
       </Button>
       <MailComposerAi
-        key={`${selectionOnly}:${bodyHtml}:${bodyText}`}
         selectionOnly={selectionOnly}
         bodyHtml={bodyHtml}
         bodyText={bodyText}

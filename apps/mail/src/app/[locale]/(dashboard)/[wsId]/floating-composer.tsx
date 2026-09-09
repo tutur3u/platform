@@ -22,7 +22,15 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type Ref,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { MailComposerAttachments } from './mail-composer-attachments';
 import { MailComposerEditor } from './mail-composer-editor';
 import { MailComposerFooter } from './mail-composer-footer';
@@ -31,6 +39,7 @@ import type { ComposerSelection } from './mail-composer-selection';
 import { MailComposerSendReview } from './mail-composer-send-review';
 import type {
   ComposeInitialDraft,
+  MailComposerHandle,
   MailComposerSaveState,
 } from './mail-composer-types';
 import {
@@ -44,6 +53,7 @@ import {
 import { RecipientField } from './recipient-field';
 
 export function FloatingComposer({
+  ref,
   initialDraft,
   mailboxes,
   onOpenChange,
@@ -53,6 +63,7 @@ export function FloatingComposer({
   sending,
   workspaceId,
 }: {
+  ref?: Ref<MailComposerHandle>;
   initialDraft?: ComposeInitialDraft | null;
   mailboxes: MailMailbox[];
   onOpenChange: (open: boolean) => void;
@@ -271,7 +282,6 @@ export function FloatingComposer({
     })();
   }, [mailboxId, open, pendingAttachmentCopy, persist, snapshot, workspaceId]);
 
-  if (!open || !defaultMailbox) return null;
   const combinedRecipients = [...to, ...cc, ...bcc];
   const recipientLimit = activeMailbox?.providerLimits.maxRecipients ?? 50;
   const messageLimit =
@@ -362,17 +372,17 @@ export function FloatingComposer({
     await performSend();
   };
 
-  const saveAndClose = async () => {
-    if (uploading || sending || closingRef.current) return;
+  const saveAndClose = async (close = true): Promise<boolean> => {
+    if (uploading || sending || closingRef.current) return false;
     if (!dirty) {
       await saveChainRef.current;
-      onOpenChange(false);
-      return;
+      if (close) onOpenChange(false);
+      return true;
     }
     if (!online) {
       setSaveState('offline');
       toast.error(t('save_offline'));
-      return;
+      return false;
     }
     const closingVersion = dirtyVersionRef.current;
     closingRef.current = true;
@@ -380,10 +390,11 @@ export function FloatingComposer({
     closingRef.current = false;
     if (!savedDraftId || failedSaveVersionRef.current === closingVersion) {
       toast.error(t('save_failed'));
-      return;
+      return false;
     }
-    if (dirtyVersionRef.current !== closingVersion) return;
-    onOpenChange(false);
+    if (dirtyVersionRef.current !== closingVersion) return false;
+    if (close) onOpenChange(false);
+    return true;
   };
 
   const requestClose = () => {
@@ -398,6 +409,8 @@ export function FloatingComposer({
     setMaximized((current) => !current);
   };
 
+  useImperativeHandle(ref, () => ({ save: () => saveAndClose(false) }));
+  if (!open || !defaultMailbox) return null;
   return (
     <>
       <section
@@ -597,6 +610,10 @@ export function FloatingComposer({
               value={subject}
             />
             <MailComposerEditor
+              attachments={[
+                ...(initialDraft?.quotedAttachments ?? []),
+                ...attachments,
+              ]}
               onSelectionChange={setSelection}
               onEnhance={() => setAiOpen(true)}
               imageUrlToInsert={imageUrlToInsert}

@@ -3,6 +3,7 @@ export interface ComposeInitialDraft {
   draftId?: string;
   mailboxId?: string;
   attachments?: MailAttachment[];
+  quotedAttachments?: MailAttachment[];
   bcc?: string[];
   bodyHtml?: string;
   bodyText?: string;
@@ -23,3 +24,7 @@ export type MailComposerSaveState =
   | 'offline'
   | 'saved'
   | 'saving';
+
+export interface MailComposerHandle {
+  save: () => Promise<boolean>;
+}

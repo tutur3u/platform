@@ -15,6 +15,7 @@ import {
   Sparkles,
   Undo2,
 } from '@tuturuuu/icons';
+import type { MailAttachment } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -30,6 +31,7 @@ import { mailHtmlToText } from './mail-composer-utils';
 import { MailMessagePreview } from './mail-message-preview';
 
 export function MailComposerEditor({
+  attachments = [],
   imageUrlToInsert,
   initialHtml,
   onImageInserted,
@@ -37,6 +39,7 @@ export function MailComposerEditor({
   onSelectionChange,
   onEnhance,
 }: {
+  attachments?: MailAttachment[];
   imageUrlToInsert?: string | null;
   initialHtml: string;
   onSelectionChange: (selection: ComposerSelection | null) => void;
@@ -198,7 +201,7 @@ export function MailComposerEditor({
             {quoteOpen && (
               <MailMessagePreview
                 content={parts.quoted}
-                attachments={[]}
+                attachments={attachments}
                 title={t('quoted_text')}
               />
             )}

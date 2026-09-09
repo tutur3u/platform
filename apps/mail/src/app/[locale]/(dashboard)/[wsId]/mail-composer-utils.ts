@@ -1,4 +1,4 @@
-import type { MailMailbox } from '@tuturuuu/internal-api';
+import type { MailMailbox, MailMessageDetail } from '@tuturuuu/internal-api';
 import { canSendAsGroup } from '@/lib/mail/groups/policy';
 import { splitComposerQuote } from './mail-composer-quote';
 import type { ComposeInitialDraft } from './mail-composer-types';
@@ -69,8 +69,9 @@ export function mailHtmlToText(value: string) {
     .trim();
   if (typeof DOMParser !== 'undefined')
     return (
-      new DOMParser().parseFromString(text, 'text/html').body.textContent ??
-      text
+      new DOMParser()
+        .parseFromString(text, 'text/html')
+        .body.textContent?.trim() ?? text
     );
   const entities: Record<string, string> = {
     amp: '&',
@@ -79,10 +80,23 @@ export function mailHtmlToText(value: string) {
     quot: '"',
     apos: "'",
   };
-  return text.replace(
-    /&(amp|lt|gt|quot|apos);/gu,
-    (_, name: string) => entities[name]!
-  );
+  return text
+    .replace(
+      /&(amp|lt|gt|quot|apos|#(?:[0-9]+|x[0-9a-f]+));/giu,
+      (entity, name: string) => {
+        if (!name.startsWith('#')) return entities[name] ?? entity;
+        const point =
+          name[1]?.toLowerCase() === 'x'
+            ? Number.parseInt(name.slice(2), 16)
+            : Number.parseInt(name.slice(1), 10);
+        return point > 0 &&
+          point <= 0x10ffff &&
+          !(point >= 0xd800 && point <= 0xdfff)
+          ? String.fromCodePoint(point)
+          : '\uFFFD';
+      }
+    )
+    .trim();
 }
 
 function getSignature(mailbox: MailMailbox) {
@@ -180,4 +194,30 @@ export function getComposerWarnings({
   }
 
   return warnings;
+}
+
+export function toComposeInitialDraft(
+  message: MailMessageDetail
+): ComposeInitialDraft {
+  return {
+    draftId: message.id,
+    mailboxId: message.mailboxId,
+    attachments: message.attachments,
+    subject: message.subject === '(no subject)' ? '' : message.subject,
+    bodyHtml: message.bodyHtml ?? '',
+    bodyText: message.bodyText ?? '',
+    to: message.recipients.filter((r) => r.kind === 'to').map((r) => r.address),
+    cc: message.recipients.filter((r) => r.kind === 'cc').map((r) => r.address),
+    bcc: message.recipients
+      .filter((r) => r.kind === 'bcc')
+      .map((r) => r.address),
+    recipientDisplayNames: Object.fromEntries(
+      message.recipients
+        .filter((r) => r.displayName)
+        .map((r) => [r.address, r.displayName!])
+    ),
+    inReplyTo: message.inReplyTo,
+    references: message.references,
+    threadId: message.threadId ?? undefined,
+  };
 }

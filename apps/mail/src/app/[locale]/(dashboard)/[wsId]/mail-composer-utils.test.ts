@@ -1,10 +1,11 @@
-import type { MailMailbox } from '@tuturuuu/internal-api';
+import type { MailMailbox, MailMessageDetail } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
   applyAiDraftToBody,
   buildComposerInitialBody,
   getComposerWarnings,
   mailHtmlToText,
+  toComposeInitialDraft,
 } from './mail-composer-utils';
 
 const mailbox = {
@@ -106,5 +107,39 @@ describe('plain-text composer payload', () => {
     expect(
       mailHtmlToText('<p>R&amp;D &lt;report&gt; &quot;ready&quot;</p>')
     ).toBe('R&D <report> "ready"');
+  });
+});
+
+describe('draft resume metadata', () => {
+  it('preserves identity, attachments and thread context without promoting the no-subject placeholder', () => {
+    const draft = toComposeInitialDraft({
+      id: 'draft',
+      mailboxId: 'mailbox',
+      threadId: 'thread',
+      subject: '(no subject)',
+      bodyHtml: '<p>Reply</p>',
+      attachments: [],
+      recipients: [
+        {
+          kind: 'to',
+          address: 'recipient@example.com',
+          displayName: 'Recipient',
+        },
+      ],
+      references: ['parent'],
+      inReplyTo: 'parent',
+    } as unknown as MailMessageDetail);
+    expect(draft).toMatchObject({
+      draftId: 'draft',
+      mailboxId: 'mailbox',
+      threadId: 'thread',
+      subject: '',
+      to: ['recipient@example.com'],
+      references: ['parent'],
+      inReplyTo: 'parent',
+    });
+  });
+  it('decodes numeric references without a browser parser', () => {
+    expect(mailHtmlToText('<p>It&#39;s &#x1f44d;</p>')).toBe("It's \u{1f44d}");
   });
 });

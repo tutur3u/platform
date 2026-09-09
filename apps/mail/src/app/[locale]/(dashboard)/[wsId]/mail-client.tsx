@@ -41,7 +41,11 @@ import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FloatingComposer } from './floating-composer';
-import type { ComposeInitialDraft } from './mail-composer-types';
+import type {
+  ComposeInitialDraft,
+  MailComposerHandle,
+} from './mail-composer-types';
+import { toComposeInitialDraft } from './mail-composer-utils';
 import { MailContentState } from './mail-content-state';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
@@ -86,6 +90,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const [composeDraft, setComposeDraft] = useState<ComposeInitialDraft | null>(
     null
   );
+  const composerRef = useRef<MailComposerHandle>(null);
+  const [composeSession, setComposeSession] = useState(0);
   const [composerVisible, setComposerVisible] = useState(composeParam === '1');
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(
     new Set()
@@ -254,7 +260,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     [query]
   );
 
-  const openCompose = (draft: ComposeInitialDraft | null) => {
+  const openCompose = async (draft: ComposeInitialDraft | null) => {
+    if (composerVisible && !(await composerRef.current?.save())) return;
+    setComposeSession((current) => current + 1);
     setComposeDraft(draft);
     setComposerVisible(true);
     void setComposeParam('1');
@@ -275,10 +283,15 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     ...(message.internetMessageId ? [message.internetMessageId] : []),
   ];
   const quote = (message: MailMessageDetail) =>
-    `<p><br></p><blockquote><p>${escapeHtml(t('quoted_message', { sender: message.fromName || message.fromAddress }))}</p>${message.sanitizedHtml || `<p>${escapeHtml(message.bodyText ?? '').replaceAll('\n', '<br>')}</p>`}</blockquote>`;
+    `<p><br></p><blockquote type="cite"><p>${escapeHtml(t('quoted_message', { sender: message.fromName || message.fromAddress }))}</p>${message.sanitizedHtml || `<p>${escapeHtml(message.bodyText ?? '').replaceAll('\n', '<br>')}</p>`}</blockquote>`;
   const handleReply = (message: MailMessageDetail) =>
     openCompose({
       bodyHtml: quote(message),
+      quotedAttachments: message.attachments,
+      sourceMessageId: message.id,
+      sourceAttachmentIds: message.attachments
+        .filter((item) => item.contentId)
+        .map((item) => item.id),
       inReplyTo: message.internetMessageId,
       recipientDisplayNames: message.fromName
         ? { [message.fromAddress.toLowerCase()]: message.fromName }
@@ -316,7 +329,12 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     ];
     openCompose({
       bodyHtml: quote(message),
+      quotedAttachments: message.attachments,
       cc: unique.slice(1).map((recipient) => recipient.address),
+      sourceMessageId: message.id,
+      sourceAttachmentIds: message.attachments
+        .filter((item) => item.contentId)
+        .map((item) => item.id),
       inReplyTo: message.internetMessageId,
       recipientDisplayNames: Object.fromEntries(
         unique.flatMap((recipient) =>
@@ -334,6 +352,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const handleForward = (message: MailMessageDetail) =>
     openCompose({
       bodyHtml: quote(message),
+      quotedAttachments: message.attachments,
       sourceAttachmentIds: message.attachments.map(
         (attachment) => attachment.id
       ),
@@ -572,32 +591,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         loading={detailQuery.isLoading}
         onArchive={() => mutateThread('archive')}
         onBack={() => setThreadId(null)}
-        onEditDraft={(message) =>
-          openCompose({
-            draftId: message.id,
-            mailboxId: message.mailboxId,
-            attachments: message.attachments,
-            subject: message.subject,
-            bodyHtml: message.bodyHtml ?? '',
-            bodyText: message.bodyText ?? '',
-            to: message.recipients
-              .filter((r) => r.kind === 'to')
-              .map((r) => r.address),
-            cc: message.recipients
-              .filter((r) => r.kind === 'cc')
-              .map((r) => r.address),
-            bcc: message.recipients
-              .filter((r) => r.kind === 'bcc')
-              .map((r) => r.address),
-            recipientDisplayNames: Object.fromEntries(
-              message.recipients
-                .filter((r) => r.displayName)
-                .map((r) => [r.address, r.displayName!])
-            ),
-            inReplyTo: message.inReplyTo,
-            references: message.references,
-          })
-        }
+        onEditDraft={(message) => {
+          void openCompose(toComposeInitialDraft(message));
+        }}
         onForward={handleForward}
         onReply={handleReply}
         onReplyAll={handleReplyAll}
@@ -664,6 +660,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         </ResizablePanelGroup>
       </div>
       <FloatingComposer
+        key={composeSession}
+        ref={composerRef}
         initialDraft={composeDraft}
         mailboxes={mailboxes}
         onOpenChange={(nextOpen) => {

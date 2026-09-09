@@ -50,12 +50,24 @@ export function MailComposerAi({
     threadId ? 'follow_up' : 'draft'
   );
   const [instructions, setInstructions] = useState('');
-  const [result, setResult] = useState<GenerateMailAiDraftResponse | null>(
-    null
-  );
+  const context = JSON.stringify([
+    selectionOnly,
+    bodyHtml,
+    bodyText,
+    mailboxId,
+    recipients,
+    subject,
+    threadId,
+  ]);
+  const [completion, setCompletion] = useState<{
+    context: string;
+    result: GenerateMailAiDraftResponse;
+  } | null>(null);
+  const result = completion?.context === context ? completion.result : null;
   const generation = useMutation({
-    mutationFn: (request: GenerationRequest) =>
-      generateMailAiDraft(workspaceId, mailboxId, {
+    mutationFn: async (request: GenerationRequest & { context: string }) => ({
+      context: request.context,
+      result: await generateMailAiDraft(workspaceId, mailboxId, {
         bodyHtml,
         bodyText,
         instructions: selectionOnly
@@ -66,13 +78,15 @@ export function MailComposerAi({
         subject,
         threadId,
       }),
-    onSuccess: setResult,
+    }),
+    onSuccess: setCompletion,
   });
   const generate = (request: GenerationRequest) => {
+    if (generation.isPending) return;
     setMode(request.mode);
     setInstructions(request.instructions);
-    setResult(null);
-    generation.mutate(request);
+    setCompletion(null);
+    generation.mutate({ ...request, context });
   };
   const quickActions: GenerationRequest[] = [
     { instructions: t('ai_quick_polish_prompt'), mode: 'rewrite' },
@@ -98,7 +112,7 @@ export function MailComposerAi({
     <Popover onOpenChange={onOpenChange} open={open}>
       <PopoverTrigger asChild>
         <Button
-          aria-label={t('write_with_ai')}
+          aria-label={t(selectionOnly ? 'enhance_selection' : 'write_with_ai')}
           className="gap-2"
           size="sm"
           type="button"
@@ -154,7 +168,7 @@ export function MailComposerAi({
             <Tabs
               onValueChange={(value) => {
                 setMode(value as MailAiDraftMode);
-                setResult(null);
+                setCompletion(null);
               }}
               value={mode}
             >

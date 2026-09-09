@@ -8,9 +8,10 @@ import {
   waitFor,
 } from '@testing-library/react';
 import type { MailMailbox } from '@tuturuuu/internal-api';
-import { createElement as h } from 'react';
+import { createRef, createElement as h } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FloatingComposer } from './floating-composer';
+import type { MailComposerHandle } from './mail-composer-types';
 
 const api = vi.hoisted(() => ({
   create: vi.fn(),
@@ -127,5 +128,35 @@ describe('save on composer close', () => {
     expect((screen.getByLabelText('Body') as HTMLTextAreaElement).value).toBe(
       '<p>New content</p>'
     );
+  });
+});
+
+describe('saving before switching drafts', () => {
+  it('exposes a save gate without closing the old session prematurely', async () => {
+    const ref = createRef<MailComposerHandle>();
+    const close = vi.fn();
+    render(
+      h(FloatingComposer, {
+        ref,
+        open: true,
+        initialDraft: { draftId: 'old', bodyHtml: '<p>Old</p>' },
+        mailboxes: [mailbox],
+        selectedMailboxId: mailbox.id,
+        sending: false,
+        workspaceId: 'personal',
+        onOpenChange: close,
+        onSend: vi.fn(),
+      })
+    );
+    fireEvent.change(screen.getByLabelText('Body'), {
+      target: { value: '<p>Keep before switching</p>' },
+    });
+    let saved = false;
+    await act(async () => {
+      saved = await ref.current!.save();
+    });
+    expect(saved).toBe(true);
+    expect(api.update.mock.calls[0]?.[2]).toBe('old');
+    expect(close).not.toHaveBeenCalled();
   });
 });

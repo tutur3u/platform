@@ -92,11 +92,14 @@ fall back to download on authorization failures or files larger than 1 MiB.
 Close saves the latest draft before dismissing the composer; offline or failed saves
 keep the editor open. Untouched empty composers close without creating a draft.
 Drafts exposes Continue editing and deletion, and reopening keeps the original draft
-identity, recipients, reply headers and attachments. The reader header omits its back
+identity, recipients, reply headers and attachments. Switching composers waits for
+the previous draft to save before starting a new editor session. The reader header omits its back
 button; narrow layouts retain a message-list action on the floating toolbar.
 
 The composer keeps recognized trailing Gmail/Outlook history outside the rich-text
-editor, collapsed by default, preserving its HTML when saving or sending. Selecting
+editor, collapsed by default, preserving its HTML when saving or sending. Bounded
+reply blocks are recognized; ambiguous Outlook tails and authored quotations stay
+editable. Inline quoted images retain their attachment metadata. Selecting
 text exposes Enhance selection. AI previews replace only that passage after review;
 a document change invalidates the captured selection. Plain-text reading caps runs
 of blank lines without changing stored text or meaningful indentation.

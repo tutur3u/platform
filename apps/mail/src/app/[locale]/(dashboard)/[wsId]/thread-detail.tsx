@@ -77,6 +77,20 @@ export function ThreadDetail({
   const [replyMessageId, setReplyMessageId] = useState<string | null>(null);
   const [deleteDraftOpen, setDeleteDraftOpen] = useState(false);
 
+  const draft = thread?.messages.findLast(
+    (message) => message.status === 'draft'
+  );
+  const mobileList = (
+    <Button
+      className="lg:hidden"
+      aria-label={t('back_to_messages')}
+      onClick={onBack}
+      size="icon"
+      variant="ghost"
+    >
+      <List className="size-4" />
+    </Button>
+  );
   const newest = thread?.messages.at(-1);
   const threadInfo = thread?.thread ?? summary;
   const header = threadInfo ? (
@@ -95,8 +109,11 @@ export function ThreadDetail({
 
   if (loading || error || !thread)
     return (
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
         {header}
+        <div className="absolute inset-x-0 bottom-4 z-20 flex justify-center lg:hidden">
+          {mobileList}
+        </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <MailContentState
             kind={loading ? 'loading' : error ? 'error' : 'reader'}
@@ -162,17 +179,9 @@ export function ThreadDetail({
                 role="toolbar"
                 aria-label={t('message_actions')}
               >
-                <Button
-                  className="lg:hidden"
-                  aria-label={t('back_to_messages')}
-                  onClick={onBack}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <List className="size-4" />
-                </Button>
-                {isDraft && newest && onEditDraft && (
-                  <Button onClick={() => onEditDraft(newest)} size="sm">
+                {mobileList}
+                {isDraft && draft && onEditDraft && (
+                  <Button onClick={() => onEditDraft(draft)} size="sm">
                     <Pencil className="size-4" />
                     {t('edit_draft')}
                   </Button>

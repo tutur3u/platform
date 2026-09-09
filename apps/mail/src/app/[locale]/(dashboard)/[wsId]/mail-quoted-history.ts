@@ -4,7 +4,7 @@ import {
   OUTLOOK_HEADER_ELEMENTS,
 } from './mail-outlook-history';
 
-const REPLY_ATTRIBUTION =
+export const REPLY_ATTRIBUTION =
   /^(?:on\b[\s\S]{0,500}\bwrote\s*:|(?:vào\s|trong thư trước[,\s])[\s\S]{0,500}(?:đã viết|viết)\s*:)/iu;
 function hasVisibleAuthoredContent(document: Document, before: Node) {
   const range = document.createRange();
