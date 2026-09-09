@@ -55,11 +55,8 @@ beforeEach(() => {
 
 describe('archive and auto-read ordering', () => {
   it.each([false, true])(
-    'waits for archive success before reading the next message (bulk=%s)',
+    'leaves read tracking to the loaded reader instead of nesting mutations (bulk=%s)',
     async (bulk) => {
-      const autoRead = mocks.mutations.find(
-        (entry) => entry.options.mutationKey.at(-1) === 'auto-read'
-      )!;
       const archive = mocks.mutations.find(
         (entry) =>
           entry.options.mutationKey.at(-1) === (bulk ? 'bulk' : 'state')
@@ -69,11 +66,15 @@ describe('archive and auto-read ordering', () => {
         : { action: 'archive', targetThreadId: 'a' };
       const context = await archive.options.onMutate!(variables);
       expect(mocks.reopen).toHaveBeenCalledWith('b');
-      expect(autoRead.mutate).not.toHaveBeenCalled();
+      expect(
+        mocks.mutations.every((entry) => !entry.mutate.mock.calls.length)
+      ).toBe(true);
       // A fast response can arrive before navigation renders.
       expect(mocks.selected.current).toBe('a');
       archive.options.onSuccess!({}, variables, context);
-      expect(autoRead.mutate).toHaveBeenCalledWith('b');
+      expect(
+        mocks.mutations.every((entry) => !entry.mutate.mock.calls.length)
+      ).toBe(true);
     }
   );
   it('restores a failed archive without starting another optimistic read mutation', async () => {
@@ -86,9 +87,7 @@ describe('archive and auto-read ordering', () => {
     archive.options.onError!(new Error('failed'), variables, context);
     expect(mocks.reopen).toHaveBeenLastCalledWith('a');
     expect(
-      mocks.mutations.find(
-        (entry) => entry.options.mutationKey.at(-1) === 'auto-read'
-      )!.mutate
-    ).not.toHaveBeenCalled();
+      mocks.mutations.every((entry) => !entry.mutate.mock.calls.length)
+    ).toBe(true);
   });
 });

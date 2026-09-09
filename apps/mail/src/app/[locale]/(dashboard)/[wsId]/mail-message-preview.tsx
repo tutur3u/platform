@@ -1,7 +1,6 @@
 'use client';
 
 import type { MailAttachment } from '@tuturuuu/internal-api';
-import { Button } from '@tuturuuu/ui/button';
 import {
   useCallback,
   useEffect,
@@ -18,19 +17,13 @@ const subscribeHydration = () => () => {};
 export function MailMessagePreview({
   content,
   attachments,
-  darkLabel,
-  originalLabel,
   title,
-  viewLabel,
 }: {
   content: string;
   attachments: MailAttachment[];
-  darkLabel: string;
-  originalLabel: string;
   title: string;
-  viewLabel: string;
 }) {
-  const [mode, setSelectedMode] = useMailPreviewAppearance();
+  const [mode] = useMailPreviewAppearance();
   const hydrated = useSyncExternalStore(
     subscribeHydration,
     () => true,
@@ -108,29 +101,6 @@ export function MailMessagePreview({
 
   return (
     <div className="min-w-0 max-w-full overflow-hidden bg-background">
-      <fieldset
-        className="flex items-center justify-end gap-1 px-4 pb-2 md:px-6"
-        aria-label={viewLabel}
-      >
-        <Button
-          aria-pressed={mode === 'dark'}
-          onClick={() => setSelectedMode('dark')}
-          size="sm"
-          type="button"
-          variant={mode === 'dark' ? 'secondary' : 'ghost'}
-        >
-          {darkLabel}
-        </Button>
-        <Button
-          aria-pressed={mode === 'original'}
-          onClick={() => setSelectedMode('original')}
-          size="sm"
-          type="button"
-          variant={mode === 'original' ? 'secondary' : 'ghost'}
-        >
-          {originalLabel}
-        </Button>
-      </fieldset>
       <iframe
         key={previewDocument}
         className="block w-full max-w-full border-0 bg-background"

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   contrastRatio,
+  mailBorderColor,
   mailDarkSurface,
+  neutralMailSurface,
   readableMailColor,
 } from './mail-preview-contrast';
 
@@ -26,5 +28,25 @@ describe('mail contrast', () => {
     expect(mailDarkSurface([10, 10, 10])).toEqual([10, 10, 10]);
     expect(mailDarkSurface([255, 255, 255])).toEqual([18, 18, 18]);
     expect(mailDarkSurface([230, 230, 230])).toEqual([18, 18, 18]);
+  });
+});
+
+describe('neutral email surfaces and borders', () => {
+  it('recognizes black, gray and white panels without flattening brand colors', () => {
+    for (const color of [
+      [0, 0, 0],
+      [128, 128, 128],
+      [255, 255, 255],
+    ] as [number, number, number][])
+      expect(neutralMailSurface(color)).toBe(true);
+    expect(neutralMailSurface([0, 80, 180])).toBe(false);
+  });
+  it('softens bright neutral borders while retaining subtle and colored dividers', () => {
+    const surface: [number, number, number] = [10, 10, 10];
+    const border = mailBorderColor([255, 255, 255], surface);
+    expect(contrastRatio(border, surface)).toBeGreaterThan(1.5);
+    expect(contrastRatio(border, surface)).toBeLessThan(3);
+    expect(mailBorderColor([40, 40, 40], surface)).toEqual([40, 40, 40]);
+    expect(mailBorderColor([0, 80, 180], surface)).toEqual([0, 80, 180]);
   });
 });

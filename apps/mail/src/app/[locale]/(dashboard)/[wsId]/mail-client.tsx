@@ -63,6 +63,7 @@ import {
 } from './mail-thread-query';
 import { ThreadDetail } from './thread-detail';
 import { useMailThreadActions } from './use-mail-thread-actions';
+import { useMailViewedThreadRead } from './use-mail-viewed-thread-read';
 
 interface MailAppClientProps {
   folder: MailFolder;
@@ -221,6 +222,17 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       threads,
       workspaceId,
     });
+  useMailViewedThreadRead({
+    workspaceId,
+    mailboxId: activeMailboxId,
+    threadId,
+    detail: detailQuery.data,
+    blocked:
+      stateMutation.isPending ||
+      bulkMutation.isPending ||
+      detailQuery.isError ||
+      folder === 'drafts',
+  });
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId: string) =>
       deleteMailDraft(workspaceId, activeMailboxId ?? '', draftId),
@@ -248,8 +260,6 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   };
   const openThread = (thread: MailThreadSummary): void => {
     void setThreadId(thread.id);
-    if (!activeMailboxId || thread.unreadCount <= 0) return;
-    mutateThread('mark_read', thread.id);
   };
   const prefetchThread = (nextThreadId: string) => {
     if (!activeMailboxId) return;

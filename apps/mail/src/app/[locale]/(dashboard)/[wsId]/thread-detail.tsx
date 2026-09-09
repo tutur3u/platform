@@ -27,8 +27,10 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import { MailAppearanceControls } from './mail-appearance-controls';
 import { MailAttachmentCard } from './mail-attachment-card';
 import { MailContentState } from './mail-content-state';
 import type { MailFolder } from './mail-folders';
@@ -184,33 +186,54 @@ export function ThreadDetail({
                 role="toolbar"
                 aria-label={t('message_actions')}
               >
-                <Button
-                  className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
-                  onClick={() => onReply(replyMessage)}
-                  size="sm"
-                  variant="secondary"
-                >
-                  <Reply className="size-4" />
-                  {t('reply')}
-                </Button>
-                <Button
-                  className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
-                  onClick={() => onReplyAll(replyMessage)}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <ReplyAll className="size-4" />
-                  {t('reply_all')}
-                </Button>
-                <Button
-                  className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
-                  onClick={() => onForward(replyMessage)}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <Forward className="size-4" />
-                  {t('forward')}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                      aria-label={t('reply')}
+                      onClick={() => onReply(replyMessage)}
+                      size="sm"
+                      variant="secondary"
+                    >
+                      <Reply className="size-4" />
+                      <span className="hidden sm:inline">{t('reply')}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('reply')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                      aria-label={t('reply_all')}
+                      onClick={() => onReplyAll(replyMessage)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <ReplyAll className="size-4" />
+                      <span className="hidden sm:inline">{t('reply_all')}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('reply_all')}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      className="gap-1 px-2 text-xs sm:px-3 sm:text-sm"
+                      aria-label={t('forward')}
+                      onClick={() => onForward(replyMessage)}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <Forward className="size-4" />
+                      <span className="hidden sm:inline">{t('forward')}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('forward')}</TooltipContent>
+                </Tooltip>
+                {thread.messages.some((message) => message.sanitizedHtml) && (
+                  <MailAppearanceControls />
+                )}
               </div>
             </div>
           )}
