@@ -141,6 +141,22 @@ describe('Meet proxy auth handoff', () => {
     );
   });
 
+  it('resumes a pending invite when authentication returns to the home page', async () => {
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user' });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
+    const invite = '/r/pmfe4p67f-s4z33jjmr-vv1zmrer';
+    const response = await proxy(
+      new NextRequest('https://meet.tuturuuu.com/', {
+        headers: { cookie: `meet_pending_invite=${invite}` },
+      })
+    );
+    expect(response.headers.get('location')).toBe(
+      `https://meet.tuturuuu.com${invite}`
+    );
+    expect(response.cookies.get('meet_pending_invite')?.maxAge).toBe(0);
+    expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
+  });
+
   it('registers Meet auth public paths without making root public', () => {
     const options = mocks.getCentralizedAuthOptions() as
       | {

@@ -59,18 +59,18 @@ it('drains queued uploads and finalizes when capture overloads', async () => {
   const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
   await act(() => hook.result.current.start());
   await act(async () => {
-    for (let index = 0; index < 7; index++)
+    for (let index = 0; index < 61; index++)
       mocks.onChunk?.(new Blob(['audio']), index * 10);
   });
   await waitFor(() =>
     expect(mocks.update).toHaveBeenLastCalledWith('workspace', 'meeting', {
       action: 'finish',
       sessionId: 'session',
-      expectedChunks: 6,
+      expectedChunks: 60,
       captureIncomplete: true,
     })
   );
-  expect(mocks.upload).toHaveBeenCalledTimes(6);
+  expect(mocks.upload).toHaveBeenCalledTimes(60);
   expect(hook.result.current.ownsSession).toBe(false);
   hook.unmount();
 });

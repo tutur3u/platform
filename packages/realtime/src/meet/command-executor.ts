@@ -10,7 +10,7 @@ import { outcome } from './room-outcome';
 
 type CommandOptions = {
   read: () => MeetRoomSnapshot;
-  commit: (result: MeetRoomOutcome) => void;
+  commit: (result: MeetRoomOutcome) => void | Promise<void>;
   runSfu: (intent: MeetSfuIntent) => Promise<unknown>;
 };
 function assertSfuSuccess(result: unknown) {
@@ -30,8 +30,9 @@ export class MeetCommandExecutor {
   private pending = new Map<string, Promise<void>>();
   run(command: MeetRoomCommand, options: CommandOptions): Promise<void> {
     if (!command.message.type.startsWith('sfu.')) {
-      options.commit(applyMeetRoomCommand(options.read(), command));
-      return Promise.resolve();
+      return Promise.resolve(
+        options.commit(applyMeetRoomCommand(options.read(), command))
+      );
     }
     const key = `${command.token.roomId}:${command.token.userId}`;
     const task = (this.pending.get(key) ?? Promise.resolve()).then(() =>
@@ -48,7 +49,7 @@ export class MeetCommandExecutor {
   private async execute(command: MeetRoomCommand, options: CommandOptions) {
     const planned = applyMeetRoomCommand(options.read(), command);
     if (!planned.sfu) {
-      options.commit(planned);
+      await options.commit(planned);
       return;
     }
     try {
@@ -62,7 +63,7 @@ export class MeetCommandExecutor {
       // Rebase only this completed operation onto the latest presence/settings state.
       const confirmed = applyMeetRoomCommand(current, command);
       if (!confirmed.sfu) {
-        options.commit(confirmed);
+        await options.commit(confirmed);
         return;
       }
       const response: MeetRealtimeServerMessage = {
@@ -71,13 +72,13 @@ export class MeetCommandExecutor {
         requestId: planned.sfu.requestId,
         result,
       };
-      options.commit({
+      await options.commit({
         ...confirmed,
         sfu: null,
         reply: [...confirmed.reply, response],
       });
     } catch (error) {
-      options.commit(
+      await options.commit(
         outcome(options.read(), {
           reply: [
             {

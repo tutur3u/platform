@@ -194,6 +194,10 @@ export class MeetSignaling {
     this.pending.clear();
   }
 
+  get isClosed() {
+    return this.closedByUs;
+  }
+
   get isOpen() {
     return this.socket?.readyState === WebSocket.OPEN;
   }

@@ -1,3 +1,4 @@
+import { applyChatMessage } from './room-chat';
 import {
   applyRoomControl,
   approvedParticipantsMessage,
@@ -224,7 +225,9 @@ export function admitOrHold(
     });
   }
 
-  const person = createMeetPresence(token, now);
+  const previous = state.presence[token.userId];
+  const person = createMeetPresence(token, now, previous?.media);
+  if (previous) person.joinedAt = previous.joinedAt;
   const next: MeetRoomSnapshot = {
     ...state,
     approved: rememberAdmission(state, person),
@@ -238,7 +241,7 @@ export function admitOrHold(
     broadcast: [meetPresenceMessage(next, token.roomId)],
     toManagers: [approvedParticipantsMessage(next)],
     reply: [
-      buildReady(next, token, 'admitted'),
+      { ...buildReady(next, token, 'admitted'), resumed: !!previous },
       roomSettingsMessage(next),
       recordingMessage(next),
       ...(next.chat ?? []),
@@ -254,7 +257,7 @@ function buildReady(
   state: MeetRoomSnapshot,
   token: MeetRealtimeTokenPayload,
   admission: 'admitted' | 'waiting'
-): MeetRealtimeServerMessage {
+): Extract<MeetRealtimeServerMessage, { type: 'ready' }> {
   return {
     admission,
     expiresAt: new Date(token.exp * 1000).toISOString(),
@@ -400,50 +403,8 @@ export function applyMeetRoomCommand(
         ),
       });
 
-    case 'chat.message': {
-      if (!hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.chatWrite)) {
-        return denied(state, 'permission_denied', message.requestId);
-      }
-      const attachments = { ...state.attachments };
-      for (const id of message.attachmentIds ?? []) {
-        const file = attachments[id];
-        if (
-          !file ||
-          file.discarded ||
-          file.ownerAccountId !== (token.accountId ?? userId)
-        )
-          return denied(state, 'attachment_unavailable', message.requestId);
-        attachments[id] = { ...file, published: true };
-      }
-      const entry: Extract<
-        MeetRealtimeServerMessage,
-        { type: 'chat.message' }
-      > = {
-        type: 'chat.message',
-        body: message.body,
-        createdAt: now,
-        displayName:
-          state.presence[userId]?.displayName ?? getMeetDisplayName(token),
-        avatarUrl: token.avatarUrl,
-        accountId: token.accountId,
-        id: crypto.randomUUID(),
-        userId,
-        attachmentIds: message.attachmentIds,
-      };
-      return outcome(
-        {
-          ...state,
-          attachments,
-          chat: [...(state.chat ?? []), entry].slice(-500),
-        },
-        {
-          direct: Object.keys(state.presence)
-            .filter((id) => id !== userId)
-            .map((userId) => ({ userId, message: entry })),
-          reply: [{ ...entry, requestId: message.requestId }],
-        }
-      );
-    }
+    case 'chat.message':
+      return applyChatMessage(state, message, token, now);
 
     case 'stage.update': {
       if (!canMeetRealtimeUpdateStage(token)) {

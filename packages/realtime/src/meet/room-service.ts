@@ -482,6 +482,7 @@ export function roomService(
     if (!review.text.trim()) return fail('There is no answer to share', 409);
     const response: RoomChatMessage = {
       type: 'chat.message',
+      retained: snapshot.settings?.saveChat !== false,
       id: crypto.randomUUID(),
       userId: MEET_ASSISTANT_USER_ID,
       displayName: 'Mira',
@@ -513,6 +514,7 @@ export function roomService(
   const response: RoomChatMessage | undefined = message.body
     ? {
         type: 'chat.message',
+        retained: snapshot.settings?.saveChat !== false,
         id: crypto.randomUUID(),
         userId: MEET_ASSISTANT_USER_ID,
         displayName: 'Mira',

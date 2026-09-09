@@ -24,6 +24,12 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
+import {
+  clearMeetInvite,
+  normalizeMeetInvite,
+  pendingMeetInvite,
+  rememberMeetInvite,
+} from './features/call/lib/invite-continuation';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const AUTH_PUBLIC_PATHS = [
@@ -163,7 +169,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // If the auth middleware returned a redirect response, return it
   if (authRes.headers.has('Location')) {
-    return authRes;
+    return rememberMeetInvite(req, authRes);
   }
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
@@ -194,6 +200,19 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return loginRedirect;
   }
 
+  const pendingInvite = pendingMeetInvite(req);
+  if (
+    hasSatelliteSession &&
+    pendingInvite &&
+    isRootPathOrLocaleRoot(req.nextUrl.pathname)
+  ) {
+    const response = clearMeetInvite(
+      NextResponse.redirect(new URL(pendingInvite, req.nextUrl))
+    );
+    propagateAuthCookies(authRes, response);
+    return response;
+  }
+
   if (isRootPathOrLocaleRoot(req.nextUrl.pathname) && hasSatelliteSession) {
     try {
       const defaultWorkspace = await getCurrentUserDefaultWorkspace(
@@ -217,6 +236,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Continue with locale handling
   const localeRes = handleLocale({ req });
   propagateAuthCookies(authRes, localeRes);
+  if (hasSatelliteSession && normalizeMeetInvite(req.nextUrl.pathname))
+    clearMeetInvite(localeRes);
   return localeRes;
 }
 

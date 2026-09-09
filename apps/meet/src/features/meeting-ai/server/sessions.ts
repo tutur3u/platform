@@ -47,7 +47,8 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       usage: chunk.usage,
       done:
         chunk.status !== 'processing' ||
-        Date.now() - Date.parse(chunk.created_at) > 90_000,
+        Date.now() - Date.parse(chunk.attempt_started_at ?? chunk.created_at) >
+          90_000,
     })),
     ...sessions.map((session) => ({
       cost: session.notes_cost_usd,
@@ -65,6 +66,10 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
     inputTokens += usage?.inputTokens ?? 0;
     outputTokens += usage?.outputTokens ?? 0;
   }
+  unpricedRequests += chunks.reduce(
+    (sum, chunk) => sum + (chunk.unpriced_attempts ?? 0),
+    0
+  );
   unpricedRequests += sessions.reduce(
     (sum, session) => sum + session.notes_unpriced_attempts,
     0
@@ -92,7 +97,8 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       cost_usd: canManage ? chunk.cost_usd : null,
       status:
         chunk.status === 'processing' &&
-        Date.now() - Date.parse(chunk.created_at) > 90_000
+        Date.now() - Date.parse(chunk.attempt_started_at ?? chunk.created_at) >
+          90_000
           ? 'failed'
           : chunk.status,
     })),
@@ -212,7 +218,8 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     chunks.some(
       (chunk) =>
         chunk.status === 'processing' &&
-        Date.now() - Date.parse(chunk.created_at) < 90_000
+        Date.now() - Date.parse(chunk.attempt_started_at ?? chunk.created_at) <
+          90_000
     )
   ) {
     throw new MeetAiError(409, 'Audio is still processing');

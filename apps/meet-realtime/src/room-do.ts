@@ -95,9 +95,11 @@ export class MeetRoomDurableObject implements DurableObject {
 
   private persist() {
     if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
-    // Fire-and-forget: the in-memory snapshot is authoritative while the object
-    // is alive, and storage only has to survive eviction.
-    void this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
+    // Output gating keeps acknowledgements behind the durable write.
+    return this.state.storage.put(SNAPSHOT_KEY, {
+      ...this.snapshot,
+      chat: this.snapshot.chat?.filter((message) => message.retained !== false),
+    });
   }
 
   private sockets() {
@@ -230,7 +232,7 @@ export class MeetRoomDurableObject implements DurableObject {
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;
       if (!result.status) {
-        if (changed) this.persist();
+        if (changed) await this.persist();
         this.broadcast(result.messages ?? []);
       }
       return Response.json(result.body, {
@@ -266,7 +268,7 @@ export class MeetRoomDurableObject implements DurableObject {
           this.broadcast(result.broadcast);
           this.disconnect([person.userId]);
         }
-        this.persist();
+        await this.persist();
       }
       return Response.json(
         { otherDeviceCount: others.length },
@@ -283,7 +285,7 @@ export class MeetRoomDurableObject implements DurableObject {
           return new Response('Invalid settings', { status: 400 });
         const settings = patch.data;
         this.snapshot = { ...this.snapshot, settings };
-        this.persist();
+        await this.persist();
         this.broadcast([{ type: 'room.settings', settings }]);
       }
       return Response.json(
@@ -311,7 +313,7 @@ export class MeetRoomDurableObject implements DurableObject {
       else if (!this.snapshot.usage.devices[token.userId])
         this.snapshot.usage.limitedReports =
           (this.snapshot.usage.limitedReports ?? 0) + 1;
-    this.persist();
+    await this.persist();
 
     for (const message of outcome.reply) this.sendTo(server, message);
     this.broadcast(outcome.broadcast);
@@ -374,9 +376,9 @@ export class MeetRoomDurableObject implements DurableObject {
     );
   }
 
-  private flush(socket: WebSocket, result: MeetRoomOutcome) {
+  private async flush(socket: WebSocket, result: MeetRoomOutcome) {
     this.snapshot = result.state;
-    this.persist();
+    await this.persist();
     for (const message of result.reply) this.sendTo(socket, message);
     this.broadcast(result.broadcast);
     this.sendToManagers(result.toManagers);
@@ -385,15 +387,15 @@ export class MeetRoomDurableObject implements DurableObject {
     this.disconnect(result.disconnect);
   }
 
-  async webSocketClose(socket: WebSocket) {
-    await this.releaseSocket(socket);
+  async webSocketClose(socket: WebSocket, code: number) {
+    await this.releaseSocket(socket, code !== 1000);
   }
 
   async webSocketError(socket: WebSocket) {
-    await this.releaseSocket(socket);
+    await this.releaseSocket(socket, true);
   }
 
-  private async releaseSocket(socket: WebSocket) {
+  private async releaseSocket(socket: WebSocket, recoverable = false) {
     await this.load();
     const token = this.tokenOf(socket);
     if (!token) return;
@@ -405,6 +407,17 @@ export class MeetRoomDurableObject implements DurableObject {
         candidate !== socket && this.tokenOf(candidate)?.userId === token.userId
     );
     if (stillConnected) return;
+    if (recoverable && this.snapshot.presence[token.userId]) {
+      // Keep SFU tracks during the existing 30-second presence grace period.
+      // The alarm retires them if the same device does not reconnect.
+      this.snapshot.presence[token.userId] = {
+        ...this.snapshot.presence[token.userId]!,
+        lastSeenAt: new Date().toISOString(),
+      };
+      await this.persist();
+      await this.scheduleSweep();
+      return;
+    }
 
     const outcome = releaseParticipant(
       this.snapshot,
@@ -412,7 +425,7 @@ export class MeetRoomDurableObject implements DurableObject {
       token.roomId
     );
     this.snapshot = outcome.state;
-    this.persist();
+    await this.persist();
     this.broadcast(outcome.broadcast);
     this.sendToManagers(outcome.toManagers);
   }
@@ -464,12 +477,16 @@ export class MeetRoomDurableObject implements DurableObject {
           }
         }
       }
-      this.persist();
+      await this.persist();
     }
 
-    if (sockets.length === 0) return;
+    if (
+      sockets.length === 0 &&
+      Object.keys(this.snapshot.presence).length === 0
+    )
+      return;
 
-    const roomId = this.tokenOf(sockets[0] as WebSocket)?.roomId;
+    const roomId = sockets[0] ? this.tokenOf(sockets[0])?.roomId : undefined;
     if (roomId) {
       this.broadcast([meetPresenceMessage(this.snapshot, roomId)]);
     }

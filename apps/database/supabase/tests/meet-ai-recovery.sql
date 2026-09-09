@@ -1,0 +1,23 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(7);
+insert into public.users(id) values ('00000000-0000-4000-8000-000000009701'), ('00000000-0000-4000-8000-000000009702');
+insert into public.workspaces(id, name, personal, creator_id) values ('00000000-0000-4000-8000-000000009711', 'AI test', false, '00000000-0000-4000-8000-000000009701');
+insert into public.workspace_members(ws_id, user_id, type) values ('00000000-0000-4000-8000-000000009711', '00000000-0000-4000-8000-000000009701', 'MEMBER') on conflict do nothing;
+insert into public.workspace_meetings(id, ws_id, creator_id, name, time) values ('00000000-0000-4000-8000-000000009721', '00000000-0000-4000-8000-000000009711', '00000000-0000-4000-8000-000000009701', 'AI test', now());
+insert into public.meet_ai_sessions(id, meeting_id, user_id) values ('00000000-0000-4000-8000-000000009731', '00000000-0000-4000-8000-000000009721', '00000000-0000-4000-8000-000000009701');
+
+select lives_ok($$select public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10)$$, 'first attempt reserved');
+create temporary table old_lease as select attempt_id from public.meet_ai_chunks;
+select ok(public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10) is null, 'active attempt cannot be claimed twice');
+update public.meet_ai_chunks set status = 'failed';
+select is((public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10)).attempts, 2, 'failed attempt is retryable');
+select ok((select attempt_id <> (select attempt_id from old_lease) from public.meet_ai_chunks), 'retry replaces the lease');
+select is((select unpriced_attempts from public.meet_ai_chunks), 1, 'uncertain prior cost is retained');
+update public.meet_ai_chunks set attempt_started_at = now() - interval '2 minutes';
+select is((public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10)).attempts, 3, 'abandoned attempt can recover');
+update public.meet_ai_chunks set status = 'failed', attempts = 5;
+select ok(public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10) is null, 'paid retry attempts are bounded');
+select * from finish();
+rollback;

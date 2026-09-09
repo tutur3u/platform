@@ -63,13 +63,13 @@ export async function transcribeMeetChunk(
     .eq('sequence', sequence)
     .maybeSingle();
   if (existing.error) throw new MeetAiError(500, 'Chunk lookup failed');
-  if (existing.data) return existing.data;
+  if (existing.data?.status === 'completed') return existing.data;
   if (
     session.ended_at ||
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
   )
     throw new MeetAiError(409, 'Transcription has ended');
-  // Reserve before contacting the provider; retries never repeat this billable call.
+  // Claim one provider attempt at a time, including recovery of failed attempts.
   const reservationStarted = performance.now();
   const inserted = await db.rpc('reserve_meet_ai_chunk', {
     p_id: id,
@@ -110,8 +110,8 @@ export async function transcribeMeetChunk(
         'Transcription has ended or reservation expired'
       );
     const result = await generateMeetArtifact({ audio: bytes });
-    const save = () =>
-      db
+    const save = () => {
+      let write = db
         .from('meet_ai_chunks')
         .update({
           status: 'completed',
@@ -119,16 +119,24 @@ export async function transcribeMeetChunk(
           usage: result.usage,
           cost_usd: result.costUsd,
         })
-        .eq('id', id)
-        .select('*')
-        .single();
+        .eq('id', id);
+      if (inserted.data.attempt_id)
+        write = write.eq('attempt_id', inserted.data.attempt_id);
+      return write.select('*').single();
+    };
     // Retry persistence, never the billable provider request.
     let saved = await save();
     if (saved.error) saved = await save();
     if (saved.error) throw new MeetAiError(500, 'Could not save transcript');
     return saved.data;
   } catch (error) {
-    await db.from('meet_ai_chunks').update({ status: 'failed' }).eq('id', id);
+    let failure = db
+      .from('meet_ai_chunks')
+      .update({ status: 'failed' })
+      .eq('id', id);
+    if (inserted.data.attempt_id)
+      failure = failure.eq('attempt_id', inserted.data.attempt_id);
+    await failure;
     throw error;
   }
 }

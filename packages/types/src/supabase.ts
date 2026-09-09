@@ -23495,6 +23495,9 @@ export type Database = {
       };
       meet_ai_chunks: {
         Row: {
+          attempt_id: string;
+          attempt_started_at: string;
+          attempts: number;
           cost_usd: number | null;
           created_at: string;
           duration_seconds: number;
@@ -23504,9 +23507,13 @@ export type Database = {
           start_seconds: number;
           status: string;
           transcript: string | null;
+          unpriced_attempts: number;
           usage: Json | null;
         };
         Insert: {
+          attempt_id?: string;
+          attempt_started_at?: string;
+          attempts?: number;
           cost_usd?: number | null;
           created_at?: string;
           duration_seconds: number;
@@ -23516,9 +23523,13 @@ export type Database = {
           start_seconds: number;
           status?: string;
           transcript?: string | null;
+          unpriced_attempts?: number;
           usage?: Json | null;
         };
         Update: {
+          attempt_id?: string;
+          attempt_started_at?: string;
+          attempts?: number;
           cost_usd?: number | null;
           created_at?: string;
           duration_seconds?: number;
@@ -23528,6 +23539,7 @@ export type Database = {
           start_seconds?: number;
           status?: string;
           transcript?: string | null;
+          unpriced_attempts?: number;
           usage?: Json | null;
         };
         Relationships: [
@@ -44566,6 +44578,9 @@ export type Database = {
           p_start_seconds: number;
         };
         Returns: {
+          attempt_id: string;
+          attempt_started_at: string;
+          attempts: number;
           cost_usd: number | null;
           created_at: string;
           duration_seconds: number;
@@ -44575,6 +44590,7 @@ export type Database = {
           start_seconds: number;
           status: string;
           transcript: string | null;
+          unpriced_attempts: number;
           usage: Json | null;
         };
         SetofOptions: {
