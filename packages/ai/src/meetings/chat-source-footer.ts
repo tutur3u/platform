@@ -61,7 +61,29 @@ export function formatMeetSourceAnswer(
       tree.children
         .filter((node) => (node.position?.end.offset ?? Infinity) <= budget - 2)
         .at(-1)?.position?.end.offset ?? 0;
-    body = `${body.slice(0, end).trimEnd()}\n…`.trimStart();
+    if (end) {
+      body = `${body.slice(0, end).trimEnd()}\n…`;
+    } else {
+      // A single long block still deserves a useful preview. Render its prefix
+      // as escaped plain text, reserving room for worst-case Markdown escaping.
+      const plain = (node: {
+        type?: string;
+        value?: string;
+        children?: unknown[];
+      }): string =>
+        node.value ??
+        node.children
+          ?.map((child) => plain(child as Parameters<typeof plain>[0]))
+          .join(' ') ??
+        '';
+      let prefix = plain(tree.children[0] ?? {}).slice(
+        0,
+        Math.floor((budget - 2) / 2)
+      );
+      const boundary = prefix.search(/\s+\S*$/u);
+      if (boundary > 0) prefix = prefix.slice(0, boundary);
+      body = `${prefix.trim().replace(/[\\`*_{}[\]()#+.!|><~&-]/gu, '\\$&')}\n…`;
+    }
   }
   return footer ? `${body}\n\n${footer}` : body;
 }

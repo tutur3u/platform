@@ -41,3 +41,16 @@ it('reserves complete source links within the persisted message limit', () => {
   expect(answer).toMatch(/>\)$/);
   expect(selectMeetSources(sources)).toHaveLength(1);
 });
+
+it('keeps a readable escaped prefix when the first paragraph alone is oversized', () => {
+  const answer = formatMeetSourceAnswer(
+    'Useful explanation with **formatting** and [links](https://example.com). '.repeat(
+      1000
+    ),
+    [{ sourceType: 'url', id: 'ref', url: 'https://example.com' }]
+  );
+  expect(answer.length).toBeLessThanOrEqual(16000);
+  expect(answer).toContain('Useful explanation with');
+  expect(answer.length).toBeGreaterThan(1000);
+  expect(answer).toMatch(/\n…\n\n- \[example\.com\]/);
+});
