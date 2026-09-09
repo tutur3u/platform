@@ -238,3 +238,18 @@ it('rejects sharing empty approval-only drafts', () => {
     }).status
   ).toBe(409);
 });
+
+it('preserves the existing chat retention limit when sharing a draft', () => {
+  const state = save(initial(), { ...review, approvals: [] }).state;
+  state.chat = Array.from({ length: 300 }, (_, i) => ({
+    ...state.chat![0]!,
+    id: `prior-${i}`,
+  }));
+  const shared = roomService(state, token, {
+    action: 'ai.review.share',
+    messageId: 'message',
+    revision: 1,
+  });
+  expect(shared.state.chat).toHaveLength(301);
+  expect(shared.state.chat?.[0]?.id).toBe('prior-0');
+});

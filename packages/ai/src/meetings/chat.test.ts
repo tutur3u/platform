@@ -56,6 +56,7 @@ it('provides live tools, truthful time context, and a bounded generation loop', 
     context
   );
   const input = mocks.generate.mock.calls[0]![0];
+  expect(input.tools).not.toHaveProperty('select_workspace_tools');
   expect(input.tools).toHaveProperty('get_current_time');
   expect(input.tools).toHaveProperty('get_meeting_context');
   expect(input.tools).toHaveProperty('google_search');

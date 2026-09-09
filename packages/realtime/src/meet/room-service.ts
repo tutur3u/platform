@@ -492,7 +492,7 @@ export function roomService(
     return {
       state: {
         ...snapshot,
-        chat: [...(snapshot.chat ?? []), response].slice(-200),
+        chat: [...(snapshot.chat ?? []), response].slice(-500),
         aiRequests: {
           ...snapshot.aiRequests,
           [message.messageId]: {

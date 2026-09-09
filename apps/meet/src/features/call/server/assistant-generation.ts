@@ -99,10 +99,19 @@ export async function generateMeetAssistant(
       messageId: input.messageId,
       revision: input.resume.revision,
     });
-    const saved = JSON.parse(review.continuation) as {
-      messages: MeetAssistantMessage[];
-      context: RoomContext;
-    };
+    let saved: { messages: MeetAssistantMessage[]; context: RoomContext };
+    try {
+      saved = JSON.parse(review.continuation);
+      if (!saved || !Array.isArray(saved.messages) || !saved.context)
+        throw new Error('Invalid review continuation');
+    } catch {
+      await callRoomService(access, {
+        action: 'ai.finish',
+        messageId: input.messageId,
+        costUsd: 0,
+      }).catch(() => undefined);
+      throw new MeetCallAccessError(409, 'Review data is unavailable');
+    }
     context = saved.context;
     messages = [
       ...saved.messages,
