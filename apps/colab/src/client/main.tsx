@@ -155,11 +155,7 @@ function App() {
           leave={() => navigate('')}
         />
       ) : (
-        <WorkspacePages
-          canHost={session.data?.canHost ?? false}
-          identity={session.data?.identity ?? null}
-          navigate={navigate}
-        />
+        <WorkspacePages canHost={session.data?.canHost ?? false} />
       )}
     </Structure>
   );

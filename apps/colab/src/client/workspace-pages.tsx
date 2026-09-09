@@ -1,13 +1,8 @@
-import type { Identity } from '@tuturuuu/multiplayer';
 import { useCopy } from './i18n';
 import { LandingPreview, WorkshopDetails } from './landing-preview';
 import { WorkshopsPage } from './workshops-page';
 
-export function WorkspacePages(props: {
-  canHost: boolean;
-  identity: Identity | null;
-  navigate: (id: string) => void;
-}) {
+export function WorkspacePages(props: { canHost: boolean }) {
   const c = useCopy();
   const w = c.workspace;
   const path = location.pathname;
@@ -24,5 +19,5 @@ export function WorkspacePages(props: {
         <WorkshopDetails />
       </div>
     );
-  return <WorkshopsPage canHost={props.canHost} navigate={props.navigate} />;
+  return <WorkshopsPage canHost={props.canHost} />;
 }

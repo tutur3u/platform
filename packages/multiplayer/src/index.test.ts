@@ -76,16 +76,48 @@ describe('server-authoritative room policy', () => {
         createRoom('r', owner, { ...input, ...changes }, now)
       ).toThrow();
   });
+  it('allows an immediate workshop after its minute-rounded start time ages', () => {
+    const roundedStart = now - 4 * 60_000;
+    expect(() =>
+      createRoom(
+        'r',
+        owner,
+        {
+          ...input,
+          startsAt: roundedStart,
+          endsAt: roundedStart + 3600_000,
+        },
+        now
+      )
+    ).not.toThrow();
+    expect(() =>
+      createRoom(
+        'r',
+        owner,
+        {
+          ...input,
+          startsAt: now - 6 * 60_000,
+          endsAt: now + 3600_000,
+        },
+        now
+      )
+    ).toThrow('invalid_input');
+  });
   it('applies compatible defaults and lets admins bound room and team AI usage', () => {
     const legacy = room();
     delete (legacy as Partial<Room>).limits;
     for (const team of legacy.teams) {
       delete (team as Partial<(typeof legacy.teams)[number]>).limits;
       delete (team as Partial<(typeof legacy.teams)[number]>).aiCalls;
+      team.records = [
+        { ...team.records[0]!, title: 'Team-edited launch brief' },
+      ];
     }
     normalizeRoom(legacy);
     expect(legacy.limits.aiCallLimit).toBe(200);
     expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
+    expect(legacy.teams[0]?.records).toHaveLength(192);
+    expect(legacy.teams[0]?.records[0]?.title).toBe('Team-edited launch brief');
     mutateRoom(
       legacy,
       owner,

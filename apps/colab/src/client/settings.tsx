@@ -108,7 +108,7 @@ export function ColabSettings({
         </Button>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+          <div className="settings-row">
             <span className="flex items-center gap-2 text-sm">
               <Globe className="h-4 w-4" />
               {c.language}
@@ -144,7 +144,7 @@ export function ColabSettings({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+          <div className="settings-row">
             <span className="flex items-center gap-2 text-sm">
               <Palette className="h-4 w-4" />
               {t('common.theme')}
@@ -158,7 +158,7 @@ export function ColabSettings({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+          <div className="settings-row">
             <span className="flex items-center gap-2 text-sm">
               <PanelLeft className="h-4 w-4" />
               {t('common.sidebar')}
@@ -169,7 +169,7 @@ export function ColabSettings({
                 sidebar.handleBehaviorChange(value as SidebarBehavior)
               }
             >
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

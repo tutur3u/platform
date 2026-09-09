@@ -86,9 +86,20 @@ describe('sandbox and sessions', () => {
     const records = seedRecords();
     const other = seedRecords();
     expect(mockApps).toEqual(
-      expect.arrayContaining(['gmail', 'slack', 'sheets', 'github'])
+      expect.arrayContaining([
+        'gmail',
+        'slack',
+        'linear',
+        'airtable',
+        'figma',
+        'zoom',
+      ])
     );
-    expect(records).toHaveLength(24);
+    expect(mockApps).toHaveLength(24);
+    expect(records).toHaveLength(192);
+    expect(new Set(records.map(({ id }) => id)).size).toBe(192);
+    for (const app of mockApps)
+      expect(records.filter((record) => record.app === app)).toHaveLength(8);
     expect(
       JSON.parse(
         executeMockTool(records, {

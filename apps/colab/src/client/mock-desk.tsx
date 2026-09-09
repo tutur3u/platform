@@ -1,4 +1,4 @@
-import type { MockApp, Team } from '@tuturuuu/multiplayer';
+import { type MockApp, mockAppCatalog, type Team } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -17,13 +17,14 @@ export function MockDesk({
   const c = useCopy();
   const [app, setApp] = useState<MockApp>('drive');
   const [query, setQuery] = useState('');
-  const records = team.records.filter(
-    (r) =>
-      r.app === app &&
-      `${r.title} ${r.content}`.toLowerCase().includes(query.toLowerCase())
+  const appRecords = team.records.filter((record) => record.app === app);
+  const records = appRecords.filter((r) =>
+    `${r.title} ${r.content}`.toLowerCase().includes(query.toLowerCase())
   );
-  const chat = ['zalo', 'messenger', 'teams', 'slack', 'gmail'].includes(app);
-  const board = ['jira', 'trello', 'github'].includes(app);
+  const selectedApp = mockAppCatalog.find(({ id }) => id === app)!;
+  const chat = selectedApp.kind === 'chat';
+  const board = selectedApp.kind === 'board';
+  const calendar = selectedApp.kind === 'calendar';
   return (
     <Card
       id={active ? 'sandbox-desk' : undefined}
@@ -34,9 +35,11 @@ export function MockDesk({
           <span className="section-number">03 / {c.sandboxSection}</span>
           <h2>{c.mockDesk}</h2>
         </div>
-        <Badge variant="secondary">{c.practiceData}</Badge>
+        <Badge variant="secondary">
+          {mockAppCatalog.length} {c.practiceAppsAvailable}
+        </Badge>
       </div>
-      <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
+      <div className="mock-toolbar">
         <SelectField
           label={c.mockDesk}
           value={app}
@@ -45,9 +48,10 @@ export function MockDesk({
             setQuery('');
           }}
         >
-          {Object.entries(appNames).map(([id, name]) => (
+          {mockAppCatalog.map(({ id, name }) => (
             <option key={id} value={id}>
-              {name}
+              {name} ·{' '}
+              {team.records.filter((record) => record.app === id).length}
             </option>
           ))}
         </SelectField>
@@ -65,22 +69,24 @@ export function MockDesk({
         <div className="mock-titlebar">
           <span className="mock-monogram">{appNames[app].slice(0, 1)}</span>
           <strong>{appNames[app]}</strong>
-          <span className="mock-caption">{c.practiceData}</span>
+          <span className="mock-caption" aria-live="polite">
+            {records.length} {query ? c.matches : c.records}
+          </span>
         </div>
         <div
-          className={`mock-content ${chat ? 'mock-chat' : board ? 'mock-board' : app === 'calendar' ? 'mock-calendar' : 'mock-documents'}`}
+          className={`mock-content ${chat ? 'mock-chat' : board ? 'mock-board' : calendar ? 'mock-calendar' : 'mock-documents'}`}
         >
           {records.map((record, i) => (
             <article className="mock-item" key={record.id}>
               {chat && (
                 <span className="avatar">{record.title.slice(0, 1)}</span>
               )}
-              {app === 'calendar' && (
-                <span className="time-label">{`${9 + i}:00`}</span>
-              )}
+              {calendar && <span className="time-label">{`${9 + i}:00`}</span>}
               <div className="mock-item-body">
                 <div className="mock-item-heading">
-                  {app === 'drive' && <span className="document-mark">▤</span>}
+                  {selectedApp.kind === 'documents' && (
+                    <span className="document-mark">▤</span>
+                  )}
                   {board && <span className="board-tag">{record.id}</span>}
                   <h3>{record.title}</h3>
                 </div>

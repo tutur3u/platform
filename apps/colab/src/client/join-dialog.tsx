@@ -37,7 +37,7 @@ export function JoinRoomDialog({
           <DialogDescription>{c.inviteHelp}</DialogDescription>
         </DialogHeader>
         <form
-          className="grid gap-4"
+          className="grid gap-5"
           onSubmit={(event) => {
             event.preventDefault();
             const value = String(
@@ -58,6 +58,8 @@ export function JoinRoomDialog({
             <Input
               id="join-room-id"
               name="room"
+              autoComplete="off"
+              spellCheck={false}
               required
               placeholder="https://colab.tuturuuu.com/?room=…"
               aria-invalid={invalid}
