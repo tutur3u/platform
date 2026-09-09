@@ -21,7 +21,7 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.64",
+    "@ai-sdk/google": "^4.0.65",
     "@aws-sdk/client-s3": "3.1125.0",
     "@formatjs/intl-localematcher": "^0.8.13",
     "@tanstack/react-query": "5.102.8",
@@ -42,7 +42,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "ai": "^7.0.93",
+    "ai": "^7.0.94",
     "cookies-next": "^6.1.1",
     "dayjs": "1.11.23",
     "mailauth": "^5.0.3",
@@ -64,7 +64,7 @@
     "@testing-library/react": "^16.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.5",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@types/sanitize-html": "^2.16.1",

@@ -25,7 +25,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.64",
+    "@ai-sdk/google": "^4.0.65",
     "@formatjs/intl-localematcher": "^0.8.13",
     "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.102.8",
@@ -48,7 +48,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "ai": "^7.0.93",
+    "ai": "^7.0.94",
     "cmdk": "^1.1.1",
     "cookies-next": "^6.1.1",
     "dayjs": "^1.11.23",
@@ -71,7 +71,7 @@
     "@tanstack/react-query-devtools": "^5.102.8",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.5",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",

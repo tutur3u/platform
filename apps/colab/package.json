@@ -23,16 +23,16 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260904.1",
-    "@playwright/test": "^1.62.1",
+    "@cloudflare/workers-types": "^5.20260908.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
-    "miniflare": "4",
+    "miniflare": "^4.20260730.0",
     "typescript": "7.0.2",
     "vite": "^8.2.2",
     "vitest": "^5.0.0",
-    "wrangler": "^4.129.0"
+    "wrangler": "^4.130.0"
   }
 }

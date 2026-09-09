@@ -104,8 +104,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.5",
-    "@supabase/supabase-js": "^2.115.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
     "@tuturuuu/types": "workspace:*",
     "next": "^16.3.4",
     "react": "^19.2.8",
@@ -114,7 +114,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@types/react": "^19.2.18",
     "next": "^16.3.4",
     "react": "^19.2.8",
