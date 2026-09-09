@@ -424,12 +424,19 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.load();
     const token = this.tokenOf(socket);
     if (!token) return;
+    if (
+      !this.snapshot.presence[token.userId] &&
+      !this.snapshot.waiting[token.userId]
+    )
+      return;
 
     // Only drop presence once the participant has no socket left, so a page
     // with two tabs does not remove itself from the room.
     const stillConnected = this.sockets().some(
       (candidate) =>
-        candidate !== socket && this.tokenOf(candidate)?.userId === token.userId
+        candidate !== socket &&
+        candidate.readyState === WebSocket.OPEN &&
+        this.tokenOf(candidate)?.userId === token.userId
     );
     if (stillConnected) return;
     if (recoverable && this.snapshot.presence[token.userId]) {

@@ -82,6 +82,12 @@ test('intentional leave immediately retires presence', async () => {
     typeof createMeetRoomSnapshot
   >;
   assert.equal(saved.presence[token.userId], undefined);
+  await room.webSocketClose(socket, 1000);
+  assert.equal(
+    values.get('snapshot'),
+    saved,
+    'a duplicate close does not write or broadcast another release'
+  );
 });
 test('messages marked unsaved never enter durable snapshots', async () => {
   const { room, socket, values } = fixture();
