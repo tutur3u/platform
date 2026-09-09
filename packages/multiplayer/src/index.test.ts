@@ -299,6 +299,10 @@ describe('server-authoritative room policy', () => {
   it('selects scenarios by stable id when titles are repeated', () => {
     const r = room();
     r.scenarios.push({ ...r.scenarios[0]!, id: 'duplicate-title' });
+    normalizeRoom(r);
+    expect(
+      r.scenarios.filter((scenario) => scenario.title === r.scenario.title)
+    ).toHaveLength(2);
     mutateRoom(
       r,
       owner,

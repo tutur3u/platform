@@ -150,20 +150,18 @@ export function normalizeRoom(room: Room): Room {
   const storedScenarios = (room as Room & { scenarios?: Scenario[] }).scenarios;
   const scenarioSource = storedScenarios?.length
     ? storedScenarios
-    : [...starterScenarios(), storedScenario];
-  const scenarios = scenarioSource
-    .filter(
-      (scenario, index) =>
-        scenarioSource.findIndex(
-          (candidate) =>
-            candidate.title === scenario.title &&
-            candidate.brief === scenario.brief
-        ) === index
-    )
-    .map((scenario, index) => ({
-      ...scenario,
-      id: scenario.id ?? `legacy-scenario-${index + 1}`,
-    }));
+    : [...starterScenarios(), storedScenario].filter(
+        (scenario, index, candidates) =>
+          candidates.findIndex(
+            (candidate) =>
+              candidate.title === scenario.title &&
+              candidate.brief === scenario.brief
+          ) === index
+      );
+  const scenarios = scenarioSource.map((scenario, index) => ({
+    ...scenario,
+    id: scenario.id ?? `legacy-scenario-${index + 1}`,
+  }));
   const selected = scenarios.find(
     (scenario) =>
       (storedScenario.id && scenario.id === storedScenario.id) ||
