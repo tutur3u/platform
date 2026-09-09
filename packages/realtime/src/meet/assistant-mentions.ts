@@ -27,6 +27,15 @@ export function meetMentionPrecedingCharacter(source: string, offset = 0) {
   return source[index] ?? '';
 }
 
+type MentionContainer = { type: string; children?: MentionContainer[] };
+
+/** Inline HTML nested in formatting still makes its containing text block inert. */
+export function hasMeetMentionHtml(node: MentionContainer): boolean {
+  return (
+    node.type === 'html' || (node.children?.some(hasMeetMentionHtml) ?? false)
+  );
+}
+
 export function hasMeetAssistantMention(text: string) {
   const tree = fromMarkdown(text, {
     extensions: [gfm()],
@@ -47,7 +56,7 @@ export function hasMeetAssistantMention(text: string) {
     // Raw HTML fragments have no trustworthy Markdown text boundaries.
     if (
       ['paragraph', 'heading', 'tableCell'].includes(node.type) &&
-      node.children?.some((child) => child.type === 'html')
+      hasMeetMentionHtml(node)
     )
       return false;
     if (node.type === 'text')

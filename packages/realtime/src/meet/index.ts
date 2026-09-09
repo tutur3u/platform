@@ -1,6 +1,7 @@
 export {
   findMeetAssistantMentions,
   hasMeetAssistantMention,
+  hasMeetMentionHtml,
   MEET_ASSISTANT_USER_ID,
   meetMentionPrecedingCharacter,
 } from './assistant-mentions';

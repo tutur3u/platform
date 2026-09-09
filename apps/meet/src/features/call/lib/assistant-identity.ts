@@ -1,5 +1,6 @@
 import {
   findMeetAssistantMentions,
+  hasMeetMentionHtml,
   MEET_ASSISTANT_USER_ID as MEET_ASSISTANT_ID,
   meetMentionPrecedingCharacter,
 } from '@tuturuuu/realtime/meet';
@@ -40,7 +41,7 @@ export function remarkMeetMentions() {
       // Match request detection: raw HTML paragraphs do not invoke Mira.
       if (
         ['paragraph', 'heading', 'tableCell'].includes(node.type) &&
-        node.children?.some((child) => child.type === 'html')
+        hasMeetMentionHtml(node)
       )
         return;
       if (!node.children) return;

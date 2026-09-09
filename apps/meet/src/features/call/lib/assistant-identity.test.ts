@@ -73,6 +73,9 @@ it.each([
   '[person](https://example.com)@tuturuuu',
   '<span>@ttr</span>',
   '<span> **@ttr** </span>',
+  '**<span> @ttr </span>**',
+  '*<span> @tuturuuu </span>*',
+  '## **<span> @ttr </span>**',
 ])('keeps adjacent Markdown text inert: %s', (source) => {
   const tree = fromMarkdown(source);
   const before = structuredClone(tree);
