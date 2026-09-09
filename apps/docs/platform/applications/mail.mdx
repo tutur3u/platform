@@ -70,6 +70,13 @@ bright neutral borders while preserving colored panels and images. Compact
 Dark/Original icon controls live on the floating action toolbar with tooltips.
 Original mode retains the sender's colors. Neither mode enables scripts inside email HTML.
 
+Message headers use a single truncated sender-to-recipient row. The participant
+button opens full address details; the separate chevron collapses the message.
+The reader collapses recognized Gmail, Outlook, cite-style, and plain-text reply
+history into a native disclosure. Quote-only and unrecognized messages remain
+visible. Quote detection runs on the sanitized isolated document before it is
+revealed; it never modifies stored message content or outgoing reply headers.
+
 The protected attachment endpoint accepts `?preview=1` for a passive-format
 allowlist: raster images, supported video/audio types, and plain text (including
 `.txt` files stored as `application/octet-stream`). Preview access uses the same

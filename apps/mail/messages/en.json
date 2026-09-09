@@ -364,6 +364,7 @@
     "original_view": "Original",
     "outbound_provider": "Outbound provider",
     "preview_attachment": "Preview {filename}",
+    "quoted_text": "Quoted text",
     "quoted_message": "On an earlier message, {sender} wrote:",
     "reading_settings": "Reading",
     "reading_settings_description": "Customize reading preferences for this browser. Changes are saved automatically.",
