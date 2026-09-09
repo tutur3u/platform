@@ -1,14 +1,25 @@
-export const riseMetadata = {
-  owner: 'The relevant RISE department owns this practice workspace.',
-  collaborators:
-    'Department leads and assigned student contributors can collaborate.',
-  timeline:
-    'Confirm course deadlines, member capacity, and event dependencies before setting dates.',
-  status:
-    'The next useful action is drafted and awaits the responsible student lead.',
-  access:
-    'Use only necessary club data; keep personal and assessed student work private.',
-  risk: 'Unverified event details, partner claims, and AI output must be checked by a person.',
-  metric: '8 practice records · 4 RISE departments · human review required.',
-  next: 'Use the available evidence to propose one practical, reviewable next step.',
-} as const;
+const departments = [
+  'Marketing & Growth',
+  'Product & Development',
+  'External Relations',
+  'People & Culture',
+] as const;
+
+export function riseMetadata(
+  appName: string,
+  appIndex: number,
+  primaryTitle: string,
+  followupTitle: string
+) {
+  const department = departments[appIndex % departments.length]!;
+  return {
+    owner: `${department} owns the RISE ${appName} workspace; its student lead reviews changes.`,
+    collaborators: `Assigned ${department} members collaborate here with the other RISE departments.`,
+    timeline: `${appName} planning must account for class deadlines, member capacity, and confirmed event dependencies.`,
+    status: `“${primaryTitle}” is active; its next decision still needs a named human owner.`,
+    access: `${appName} contains practice club data only; personal and assessed student work stays private.`,
+    risk: `Details in “${followupTitle}” may be proposals; verify them before outreach, scheduling, or publishing.`,
+    metric: `192 practice records per team · 8 in ${appName} · human review required.`,
+    next: `Review “${followupTitle}” in ${appName} and propose one practical next step for ${department}.`,
+  };
+}

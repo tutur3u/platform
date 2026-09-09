@@ -88,6 +88,7 @@ export type Room = {
   passwordHash: string | null;
   passwordExpires: number;
   guestVersion: number;
+  directoryMemberIds: string[];
   teams: Team[];
   scenario: Scenario;
   scenarios: Scenario[];
@@ -142,16 +143,27 @@ export function workshopScheduleError(
 export function normalizeRoom(room: Room): Room {
   room.aiCalls ??= 0;
   room.limits = { ...defaultWorkshopLimits, ...room.limits };
+  room.directoryMemberIds ??= room.members
+    .filter((member) => member.email)
+    .map((member) => member.id);
   const storedScenario = room.scenario as Scenario & { id?: string };
   const storedScenarios = (room as Room & { scenarios?: Scenario[] }).scenarios;
-  const scenarios = (
-    storedScenarios?.length
-      ? storedScenarios
-      : [storedScenario, ...starterScenarios()]
-  ).map((scenario, index) => ({
-    ...scenario,
-    id: scenario.id ?? `legacy-scenario-${index + 1}`,
-  }));
+  const scenarioSource = storedScenarios?.length
+    ? storedScenarios
+    : [...starterScenarios(), storedScenario];
+  const scenarios = scenarioSource
+    .filter(
+      (scenario, index) =>
+        scenarioSource.findIndex(
+          (candidate) =>
+            candidate.title === scenario.title &&
+            candidate.brief === scenario.brief
+        ) === index
+    )
+    .map((scenario, index) => ({
+      ...scenario,
+      id: scenario.id ?? `legacy-scenario-${index + 1}`,
+    }));
   const selected = scenarios.find(
     (scenario) =>
       (storedScenario.id && scenario.id === storedScenario.id) ||
@@ -179,7 +191,7 @@ export function normalizeRoom(room: Room): Room {
 }
 export type RoomView = Omit<
   Room,
-  'passwordHash' | 'invites' | 'guestVersion'
+  'passwordHash' | 'invites' | 'guestVersion' | 'directoryMemberIds'
 > & { invites?: string[]; self: Member; online: string[] };
 export class RoomError extends Error {
   constructor(
@@ -258,6 +270,7 @@ export function projectRoom(
     passwordHash: _hash,
     invites,
     guestVersion: _version,
+    directoryMemberIds: _directoryMemberIds,
     ...safe
   } = room;
   return {
@@ -399,6 +412,7 @@ export function createRoom(
     passwordHash: null,
     passwordExpires: 0,
     guestVersion: 0,
+    directoryMemberIds: [identity.id],
     teams,
     scenario: starterScenarios()[0]!,
     aiCalls: 0,
@@ -441,6 +455,8 @@ export function joinRoom(
     admin: false,
     ...(identity.email ? {} : { guestVersion: room.guestVersion }),
   });
+  if (identity.email && !room.directoryMemberIds.includes(identity.id))
+    room.directoryMemberIds.push(identity.id);
 }
 export function mutateRoom(
   room: Room,

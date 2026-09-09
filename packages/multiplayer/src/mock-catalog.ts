@@ -666,11 +666,17 @@ const risePracticeRecords: Record<
 export const mockApps: MockApp[] = mockAppCatalog.map(({ id }) => id);
 
 export function seedRecords(): MockRecord[] {
-  return mockAppCatalog.flatMap(({ id: app }) => {
+  return mockAppCatalog.flatMap(({ id: app, name }, appIndex) => {
+    const riseRecords = risePracticeRecords[app];
     const profile = {
       ...profiles[app],
-      ...risePracticeRecords[app],
-      ...riseMetadata,
+      ...riseRecords,
+      ...riseMetadata(
+        name,
+        appIndex,
+        riseRecords.primary[0],
+        riseRecords.followup[0]
+      ),
     };
     const entries: ReadonlyArray<readonly [string, string]> = [
       profile.primary,

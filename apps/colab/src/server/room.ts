@@ -180,9 +180,7 @@ export class ColabRoom extends DurableObject<Env> {
       this.ctx.storage.sql.exec('DELETE FROM state');
       this.ctx.storage.sql.exec('DELETE FROM limits');
     });
-    return room.members
-      .filter((participant) => participant.email)
-      .map((participant) => participant.id);
+    return room.directoryMemberIds;
   }
   async join(
     identity: Identity,

@@ -200,11 +200,23 @@ async function handle(
   requireRule(identity, 'sign_in_required', 401);
   if (!action && request.method === 'DELETE') {
     const participantIds = await room.delete(identity);
-    await Promise.all(
-      participantIds.map((participantId) =>
-        env.ROOMS.getByName(`directory:${participantId}`).forgetRoom(match[1])
-      )
-    );
+    for (let offset = 0; offset < participantIds.length; offset += 10) {
+      const results = await Promise.allSettled(
+        participantIds
+          .slice(offset, offset + 10)
+          .map((participantId) =>
+            env.ROOMS.getByName(`directory:${participantId}`).forgetRoom(
+              match[1]
+            )
+          )
+      );
+      const failures = results.filter((result) => result.status === 'rejected');
+      if (failures.length)
+        console.warn('Colab workshop directory cleanup incomplete', {
+          roomId: match[1],
+          failures: failures.length,
+        });
+    }
     return Response.json({ ok: true });
   }
   if (!action && request.method === 'GET') {

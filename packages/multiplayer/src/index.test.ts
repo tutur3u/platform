@@ -152,7 +152,12 @@ describe('server-authoritative room policy', () => {
     normalizeRoom(legacy);
     expect(legacy.limits.aiCallLimit).toBe(200);
     expect(legacy.scenarios.length).toBeGreaterThan(1);
-    expect(legacy.scenario.id).toBe('legacy-scenario-1');
+    expect(legacy.scenario.id).toBe('rise-pathways');
+    expect(
+      legacy.scenarios.filter(
+        (scenario) => scenario.title === legacy.scenario.title
+      )
+    ).toHaveLength(1);
     expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
     expect(legacy.teams[0]?.records).toHaveLength(192);
     expect(legacy.teams[0]?.records[0]?.title).toBe('Team-edited launch brief');
@@ -285,6 +290,7 @@ describe('server-authoritative room policy', () => {
     );
     mutateRoom(r, owner, { action: 'memberRemove', memberId: alice.id }, now);
     expect(r.members.some((member) => member.id === alice.id)).toBe(false);
+    expect(r.directoryMemberIds).toContain(alice.id);
     expect(r.invites).not.toContain(alice.email);
     expect(() =>
       mutateRoom(r, owner, { action: 'memberRemove', memberId: owner.id }, now)
