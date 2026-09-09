@@ -40,6 +40,7 @@ describe('quoted HTML history', () => {
       );
       expect(details?.textContent).toContain('Previous message');
       expect(details?.textContent).not.toContain('New reply');
+      expect(document.body.textContent).toContain('New reply');
       expect(document.querySelector('p')?.textContent).toBe('New reply');
     }
   );
@@ -147,6 +148,7 @@ describe('quoted HTML history', () => {
     expect(document.body.querySelectorAll('table')).toHaveLength(1);
     expect(details?.textContent).toContain('Old body');
     expect(details?.textContent).not.toContain('New reply');
+    expect(document.body.textContent).toContain('New reply');
   });
   it('recognizes Outlook fields spread across table rows', () => {
     const details = render(
@@ -161,6 +163,7 @@ describe('quoted HTML history', () => {
     );
     expect(details?.textContent).toContain('Old body');
     expect(details?.textContent).not.toContain('New reply');
+    expect(document.body.textContent).toContain('New reply');
     expect(details?.parentElement).toBe(document.body);
   });
   it.each([
