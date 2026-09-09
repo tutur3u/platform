@@ -64,7 +64,7 @@ function setup() {
   const invalidateMailbox = vi.fn(async () => {});
   const reopenThread = vi.fn();
   const props = {
-    activeMailboxId: 'box',
+    activeMailboxId: 'box' as string | null,
     workspaceId: 'ws',
     threadId: 'a',
     threads: rows,
@@ -181,4 +181,21 @@ it('pins rollback and reconciliation to the original mailbox after navigation', 
   expect(otherInvalidate).not.toHaveBeenCalled();
   expect(hook.result.current.syncState).toBe('idle');
   expect(hook.reopenThread).not.toHaveBeenCalledWith('a');
+});
+
+it('does not send single or bulk actions during an unresolved mailbox transition', async () => {
+  const hook = setup();
+  hook.rerender({
+    ...hook.props,
+    activeMailboxId: null,
+    selectedThreads: new Set(['a']),
+  });
+  await act(async () => {
+    hook.result.current.mutateThread('archive');
+    hook.result.current.bulkMutation.mutate('archive');
+  });
+  expect(mocks.update).not.toHaveBeenCalled();
+  expect(mocks.bulk).not.toHaveBeenCalled();
+  expect(hook.ids()).toEqual(['a', 'b', 'c']);
+  expect(hook.result.current.syncState).toBe('idle');
 });

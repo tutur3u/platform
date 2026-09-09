@@ -560,6 +560,7 @@ export function useMailThreadActions({
     bulkMutation: {
       ...bulkMutation,
       mutate: (action: BulkAction) => {
+        if (!activeMailboxId) return;
         const threadIds = [...selectedThreads].filter(
           (id) => !inFlight.current.has(id)
         );
@@ -568,18 +569,19 @@ export function useMailThreadActions({
         bulkMutation.mutate({
           action,
           threadIds,
-          mailboxId: activeMailboxId ?? '',
+          mailboxId: activeMailboxId,
           targetWorkspaceId: workspaceId,
         });
       },
     },
     mutateThread: (action: ThreadAction, targetThreadId = threadId) => {
+      if (!activeMailboxId) return;
       if (!targetThreadId || inFlight.current.has(targetThreadId)) return;
       inFlight.current.add(targetThreadId);
       stateMutation.mutate({
         action,
         targetThreadId,
-        mailboxId: activeMailboxId ?? '',
+        mailboxId: activeMailboxId,
         targetWorkspaceId: workspaceId,
       });
     },

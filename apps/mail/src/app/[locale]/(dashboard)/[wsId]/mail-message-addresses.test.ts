@@ -20,6 +20,9 @@ describe('mail participants', () => {
   });
   it('preserves parsed recipients and full names', () => {
     expect(formatMailSender(message)).toBe('Sender <sender@example.com>');
+    expect(formatMailSender({ ...message, fromName: '   ' })).toBe(
+      'sender@example.com'
+    );
     expect(
       formatMailRecipients(
         {

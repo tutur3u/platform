@@ -98,14 +98,7 @@ export function ThreadMessageCard({
               <ChevronDown className="size-3 shrink-0 transition-transform group-open:rotate-180" />
             </summary>
             <dl className="mt-3 grid gap-2 rounded-xl bg-foreground/[0.035] p-3 text-xs">
-              <Detail
-                label={t('from')}
-                value={
-                  message.fromName
-                    ? `${message.fromName} <${message.fromAddress}>`
-                    : message.fromAddress
-                }
-              />
+              <Detail label={t('from')} value={sender} />
               <Detail
                 label={t('to')}
                 value={formatMailRecipients(message, 'to')}
