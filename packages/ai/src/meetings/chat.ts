@@ -144,9 +144,11 @@ export async function answerMeetChat(
             approvals,
             privateResult,
             messages: [...initialMessages, ...result.responseMessages],
-            text: links.length
-              ? `${result.text}\n\n${links.join('\n')}`
-              : result.text,
+            text: search.unavailable()
+              ? 'Google did not return verified sources for this question. Please try again or ask a more specific public question.'
+              : links.length
+                ? `${result.text}\n\n${links.join('\n')}`
+                : result.text,
             ...measureMeetGeneration(
               [
                 ...result.steps.map((step) => ({

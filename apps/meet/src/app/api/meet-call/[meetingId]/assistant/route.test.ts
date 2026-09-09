@@ -186,28 +186,39 @@ it('rejects malformed JSON before checking quota or generating', async () => {
   expect(mocks.answer).not.toHaveBeenCalled();
   expect(mocks.check).not.toHaveBeenCalled();
 });
-it('saves private previews without publishing their body to the room', async () => {
-  mocks.answer.mockResolvedValueOnce({
-    text: 'Private task',
-    costUsd: 0.001,
-    usage: { available: true, inputTokens: 100, outputTokens: 20 },
-    privateResult: true,
-    messages: [],
-    approvals: [],
-  } as never);
-  const response = await POST(request(), {
-    params: Promise.resolve({ meetingId: 'room' }),
-  });
-  expect(await response.json()).toEqual({ ok: true, reviewId: 'message' });
-  expect(mocks.service).toHaveBeenLastCalledWith(
-    expect.anything(),
-    expect.objectContaining({
-      action: 'ai.review.save',
-      review: expect.objectContaining({ text: 'Private task' }),
-    })
-  );
-  expect(mocks.service).toHaveBeenCalledTimes(2);
-});
+it.each([0, 3])(
+  'saves private previews without publishing their body after %i failed settlements',
+  async (failures) => {
+    if (failures) {
+      mocks.service.mockResolvedValueOnce({
+        chat: [],
+        prompt: '@Tuturuuu question',
+      });
+      for (let attempt = 0; attempt < failures; attempt++)
+        mocks.service.mockRejectedValueOnce(new Error('Response lost'));
+    }
+    mocks.answer.mockResolvedValueOnce({
+      text: 'Private task',
+      costUsd: 0.001,
+      usage: { available: true, inputTokens: 100, outputTokens: 20 },
+      privateResult: true,
+      messages: [],
+      approvals: [],
+    } as never);
+    const response = await POST(request(), {
+      params: Promise.resolve({ meetingId: 'room' }),
+    });
+    expect(await response.json()).toEqual({ ok: true, reviewId: 'message' });
+    expect(mocks.service).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'ai.review.save',
+        review: expect.objectContaining({ text: 'Private task' }),
+      })
+    );
+    expect(mocks.service).toHaveBeenCalledTimes(2 + failures);
+  }
+);
 it('rejects invalid timezones before generation', async () => {
   await expect(
     POST(

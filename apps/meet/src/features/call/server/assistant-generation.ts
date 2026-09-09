@@ -148,7 +148,7 @@ export async function generateMeetAssistant(
       messageId: input.messageId,
     });
   let costUsd: number | null = null;
-  let settlement: unknown;
+  let settlement: Record<string, unknown> | undefined;
   try {
     const answer = await answerMeetChat(
       context.chat,
@@ -234,7 +234,12 @@ export async function generateMeetAssistant(
     if (settlement) {
       try {
         await callRoomService(access, settlement);
-        return { ok: true };
+        return {
+          ok: true,
+          ...(settlement.action === 'ai.review.save'
+            ? { reviewId: input.messageId }
+            : {}),
+        };
       } catch {
         // Retain any saved review and record incurred usage when delivery stays unavailable.
       }

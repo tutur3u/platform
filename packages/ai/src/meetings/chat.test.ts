@@ -130,3 +130,26 @@ it('appends only provider-returned web sources', async () => {
   );
   expect(answer.text).not.toContain('javascript:');
 });
+
+it('does not publish an outer-model answer when its search returned no grounded sources', async () => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic');
+  mocks.generate
+    .mockImplementationOnce(async (input) => {
+      await input.tools.google_search.execute(
+        {},
+        {
+          toolCallId: 'search',
+          messages: [],
+          context: {},
+        }
+      );
+      return { ...result(), text: 'Invented current facts' };
+    })
+    .mockResolvedValueOnce({ ...result(), text: 'Unverified search facts' });
+  const answer = await answerMeetChat([], 900, 'RMIT news', model, context);
+  expect(answer.text).toContain('did not return verified sources');
+  expect(answer.text).not.toContain('Invented');
+  expect(answer.text).not.toContain('Unverified');
+  expect(answer.usage.available).toBe(true);
+  expect(answer.usage.inputTokens).toBe(200);
+});

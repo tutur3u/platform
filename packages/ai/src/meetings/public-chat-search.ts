@@ -17,6 +17,7 @@ export function publicMeetSearch(
   return {
     steps,
     sources,
+    unavailable: () => searched && sources.length === 0,
     tool: tool({
       description:
         'Search Google for the requester’s explicit public question. No chat-history search or custom query is accepted. One provider attempt per answer.',
