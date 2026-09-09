@@ -11,7 +11,8 @@ export class ColabRequestError extends Error {
 /** Same-origin transport for the independently deployed Colab Worker. */
 export async function colabRequest<T>(
   path: string,
-  body?: Record<string, unknown>
+  body?: Record<string, unknown>,
+  options?: { method?: 'DELETE' }
 ): Promise<T> {
   if (
     !/^\/(session|logout|workshops|rooms(?:\/[a-f0-9-]{36}(?:\/(join|action|password|ai))?)?)$/.test(
@@ -20,7 +21,7 @@ export async function colabRequest<T>(
   )
     throw new Error('invalid_path');
   const response = await fetch(`/api${path}`, {
-    method: body ? 'POST' : 'GET',
+    method: options?.method ?? (body ? 'POST' : 'GET'),
     credentials: 'same-origin',
     cache: 'no-store',
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
