@@ -44,3 +44,25 @@ describe('reader actions while loading the next body', () => {
     expect(screen.getByRole('status', { name: 'loading' })).toBeTruthy();
   });
 });
+
+it('does not show a misleading retry-backed compose action when no message is selected', () => {
+  const onRetry = vi.fn();
+  render(
+    createElement(ThreadDetail, {
+      thread: null,
+      loading: false,
+      isDraft: false,
+      actionPending: false,
+      onRetry,
+      onArchive: vi.fn(),
+      onBack: vi.fn(),
+      onForward: vi.fn(),
+      onReply: vi.fn(),
+      onReplyAll: vi.fn(),
+      onStar: vi.fn(),
+      onTrash: vi.fn(),
+    })
+  );
+  expect(screen.queryByRole('button', { name: 'compose' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'retry' })).toBeNull();
+});

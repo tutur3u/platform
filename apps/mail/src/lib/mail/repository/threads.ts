@@ -375,17 +375,17 @@ async function loadMissingSnippets(
   const ids = messages
     .filter((message) => message.snippet == null)
     .map((message) => message.id);
-  if (!ids.length) return new Map<string, string>();
+  if (!ids.length) return new Map<string, string | null>();
   const { data, error } = await privateTable(admin, 'mail_messages')
     .select('id,body_text')
     .eq('mailbox_id', mailboxId)
     .in('id', ids);
   if (error)
     throw new Error(`Failed to load thread previews: ${error.message}`);
-  return new Map<string, string>(
+  return new Map<string, string | null>(
     (data ?? []).map((row: AnyRecord) => [
       row.id,
-      row.body_text?.slice(0, 500) ?? '',
+      row.body_text?.slice(0, 500) ?? null,
     ])
   );
 }

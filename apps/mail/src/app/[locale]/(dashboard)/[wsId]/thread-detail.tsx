@@ -92,7 +92,7 @@ export function ThreadDetail({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <MailContentState
             kind={loading ? 'loading' : error ? 'error' : 'reader'}
-            onAction={onRetry}
+            onAction={error ? onRetry : undefined}
           />
         </div>
       </div>

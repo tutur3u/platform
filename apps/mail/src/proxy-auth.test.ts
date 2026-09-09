@@ -221,3 +221,18 @@ describe('Mail entry redirect', () => {
     }
   );
 });
+
+it('persists an explicit English entry locale over a Vietnamese cookie or language header', async () => {
+  mocks.authProxy.mockResolvedValue(NextResponse.next());
+  mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+  mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+  const response = await proxy(
+    new NextRequest('https://mail.tuturuuu.localhost/en/personal', {
+      headers: { cookie: 'NEXT_LOCALE=vi', 'accept-language': 'vi' },
+    })
+  );
+  expect(response.headers.get('location')).toBe(
+    'https://mail.tuturuuu.localhost/personal/inbox'
+  );
+  expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('en');
+});

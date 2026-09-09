@@ -179,5 +179,6 @@ it('pins rollback and reconciliation to the original mailbox after navigation', 
   });
   expect(hook.invalidateMailbox).toHaveBeenCalledTimes(1);
   expect(otherInvalidate).not.toHaveBeenCalled();
+  expect(hook.result.current.syncState).toBe('idle');
   expect(hook.reopenThread).not.toHaveBeenCalledWith('a');
 });

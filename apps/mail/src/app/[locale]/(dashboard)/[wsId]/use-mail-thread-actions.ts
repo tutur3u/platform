@@ -237,7 +237,18 @@ export function useMailThreadActions({
 }) {
   const t = useTranslations('mail');
   const queryClient = useQueryClient();
-  const [syncState, setSyncState] = useState<MailSyncState>('idle');
+  const [syncStates, setSyncStates] = useState<Record<string, MailSyncState>>(
+    {}
+  );
+  const setSyncState = (
+    scope: { mailboxId: string; targetWorkspaceId: string },
+    state: MailSyncState
+  ) => {
+    setSyncStates((current) => ({
+      ...current,
+      [`${scope.targetWorkspaceId}/${scope.mailboxId}`]: state,
+    }));
+  };
   const actionKey = ['mail', workspaceId, activeMailboxId, 'actions'];
   const pendingActions = useMutationState({
     filters: { mutationKey: actionKey, status: 'pending' },
@@ -416,9 +427,10 @@ export function useMailThreadActions({
       updateMailThreadState(targetWorkspaceId, mailboxId, targetThreadId, {
         action,
       }),
-    onMutate: async ({ action, targetThreadId }) => {
+    onMutate: async (variables) => {
+      const { action, targetThreadId } = variables;
       beginOperation();
-      setSyncState('syncing');
+      setSyncState(variables, 'syncing');
       const context = await snapshot(new Set([targetThreadId]), action);
       let navigatedTo: string | null | undefined;
       if (
@@ -451,11 +463,11 @@ export function useMailThreadActions({
       ) {
         reopenThread(variables.targetThreadId);
       }
-      setSyncState('failed');
+      setSyncState(variables, 'failed');
       toast.error(t('update_failed'));
     },
-    onSuccess: () => {
-      setSyncState('synced');
+    onSuccess: (_data, variables) => {
+      setSyncState(variables, 'synced');
     },
     onSettled: async (_data, _error, variables, context) => {
       inFlight.current.delete(variables.targetThreadId);
@@ -481,9 +493,10 @@ export function useMailThreadActions({
         action,
         threadIds,
       }),
-    onMutate: async ({ action, threadIds }) => {
+    onMutate: async (variables) => {
+      const { action, threadIds } = variables;
       beginOperation();
-      setSyncState('syncing');
+      setSyncState(variables, 'syncing');
       const ids = new Set(threadIds);
       for (const id of ids) inFlight.current.add(id);
       const optimistic = await snapshot(ids, action);
@@ -512,7 +525,7 @@ export function useMailThreadActions({
         settle: settleOperation,
       };
     },
-    onError: (_error, _action, context) => {
+    onError: (_error, variables, context) => {
       restore(context?.optimistic);
       if (
         context?.ids &&
@@ -529,11 +542,11 @@ export function useMailThreadActions({
       ) {
         reopenThread(context.previousThreadId);
       }
-      setSyncState('failed');
+      setSyncState(variables, 'failed');
       toast.error(t('update_failed'));
     },
-    onSuccess: () => {
-      setSyncState('synced');
+    onSuccess: (_data, variables) => {
+      setSyncState(variables, 'synced');
     },
     onSettled: async (_data, _error, variables, context) => {
       for (const id of variables.threadIds) inFlight.current.delete(id);
@@ -571,6 +584,8 @@ export function useMailThreadActions({
       });
     },
     stateMutation,
-    syncState: actionsPending ? ('syncing' as const) : syncState,
+    syncState: actionsPending
+      ? ('syncing' as const)
+      : (syncStates[operationScope] ?? 'idle'),
   };
 }

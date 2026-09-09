@@ -348,7 +348,7 @@ export async function getMailUnreadCounts(ctx: MailRouteContext) {
       'mailbox_id, mailbox:mail_mailboxes!mail_mailbox_members_mailbox_id_fkey!inner(status)'
     )
     .eq('user_id', ctx.user.id)
-    .eq('mailbox.status', 'active');
+    .neq('mailbox.status', 'archived');
   if (error)
     throw new Error(`Failed to load mail memberships: ${error.message}`);
   return Object.fromEntries(

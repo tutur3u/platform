@@ -70,10 +70,15 @@ describe('group access', () => {
   });
 });
 
-it('counts only active mailboxes from the authenticated user membership query', async () => {
+it('counts the same non-archived mailboxes from the authenticated user membership query', async () => {
   const eq = vi.fn();
+  const neq = vi.fn();
   const query = {
     select: vi.fn(() => query),
+    neq: (...args: unknown[]) => {
+      neq(...args);
+      return query;
+    },
     eq: (...args: unknown[]) => {
       eq(...args);
       return query;
@@ -90,7 +95,7 @@ it('counts only active mailboxes from the authenticated user membership query', 
   vi.mocked(queryMailMessageRows).mockResolvedValue({ rows: [], total: 4 });
   expect(await getMailUnreadCounts(ctx)).toEqual({ allowed: 4 });
   expect(eq).toHaveBeenCalledWith('user_id', 'user');
-  expect(eq).toHaveBeenCalledWith('mailbox.status', 'active');
+  expect(neq).toHaveBeenCalledWith('mailbox.status', 'archived');
   expect(queryMailMessageRows).toHaveBeenCalledWith(
     expect.objectContaining({ mailboxId: 'allowed', userId: 'user' })
   );

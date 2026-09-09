@@ -278,6 +278,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         : '/personal/inbox';
     const inboxRedirect = NextResponse.redirect(redirectUrl);
     propagateAuthCookies(authRes, inboxRedirect);
+    if (loginSegmentIndex === 1)
+      inboxRedirect.cookies.set(
+        LOCALE_COOKIE_NAME,
+        pathSegments[0] ?? defaultLocale,
+        { path: '/', sameSite: 'lax' }
+      );
     return inboxRedirect;
   }
 

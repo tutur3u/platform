@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,7 +20,12 @@ describe('progressive Mail bootstrap', () => {
       labels: [],
       mailboxes: [{ id: 'box', unreadCount: null }],
     });
-    mocks.counts.mockReturnValue(new Promise(() => {}));
+    let resolveCounts!: (counts: Record<string, number | null>) => void;
+    mocks.counts.mockReturnValue(
+      new Promise((resolve) => {
+        resolveCounts = resolve;
+      })
+    );
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -34,5 +39,9 @@ describe('progressive Mail bootstrap', () => {
     ]);
     expect(mocks.bootstrap).toHaveBeenCalledWith('ws', undefined, false);
     await waitFor(() => expect(mocks.counts).toHaveBeenCalledWith('ws'));
+    await act(async () => resolveCounts({ box: 0 }));
+    await waitFor(() =>
+      expect(result.current.data?.mailboxes[0]?.unreadCount).toBe(0)
+    );
   });
 });
