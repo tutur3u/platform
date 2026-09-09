@@ -4,36 +4,73 @@ import { gfm } from 'micromark-extension-gfm';
 
 export const MEET_ASSISTANT_USER_ID = '00000000-0000-4000-8000-000000000001';
 
+type MentionNode = {
+  type: string;
+  value?: string;
+  children?: MentionNode[];
+};
+
 /** Shared standalone handle boundaries for rendering and assistant requests. */
 export function findMeetAssistantMentions(
   text: string,
-  precedingCharacter = ''
+  precedingCharacter = '',
+  followingCharacter = ''
 ) {
   const prefix = precedingCharacter.slice(-1);
   return [
-    ...(prefix + text).matchAll(
-      /(^|[\s([{"'“‘,:;!?*])(@(?:tuturuuu|ttr))(?![\p{L}\p{N}_-])/giu
+    ...(prefix + text + followingCharacter.slice(0, 1)).matchAll(
+      /(^|[\s([{"'“‘,:;!?])(@(?:tuturuuu|ttr))(?![\p{L}\p{N}_-])/giu
     ),
-  ].map((match) => ({
-    start: match.index + match[1]!.length - prefix.length,
-    end: match.index + match[0].length - prefix.length,
-  }));
+  ]
+    .map((match) => ({
+      start: match.index + match[1]!.length - prefix.length,
+      end: match.index + match[0].length - prefix.length,
+    }))
+    .filter((match) => match.start >= 0 && match.end <= text.length);
 }
 
-/** Formatting markers do not create a new word boundary. */
-export function meetMentionPrecedingCharacter(source: string, offset = 0) {
-  let index = offset - 1;
-  while (index >= 0 && '*_~'.includes(source[index]!)) index--;
-  return source[index] ?? '';
+function containsHtml(node: MentionNode): boolean {
+  return node.type === 'html' || (node.children?.some(containsHtml) ?? false);
 }
 
-type MentionContainer = { type: string; children?: MentionContainer[] };
-
-/** Inline HTML nested in formatting still makes its containing text block inert. */
-export function hasMeetMentionHtml(node: MentionContainer): boolean {
-  return (
-    node.type === 'html' || (node.children?.some(hasMeetMentionHtml) ?? false)
-  );
+/** Resolve boundaries from visible text, including adjacent formatted/code/link text. */
+export function getMeetAssistantMentions(tree: MentionNode) {
+  let visible = '';
+  const spans: { node: MentionNode; start: number; end: number }[] = [];
+  const visit = (node: MentionNode, eligible: boolean) => {
+    const block = ['paragraph', 'heading', 'tableCell'].includes(node.type);
+    if (block) visible += '\n';
+    const allowed = eligible && !(block && containsHtml(node));
+    if (node.type === 'text') {
+      const start = visible.length;
+      visible += node.value ?? '';
+      if (allowed) spans.push({ node, start, end: visible.length });
+    } else if (node.type === 'inlineCode') {
+      visible += node.value ?? '';
+    } else if (node.type === 'code') {
+      visible += `\n${node.value ?? ''}\n`;
+    } else if (
+      ['html', 'break', 'image', 'imageReference'].includes(node.type)
+    ) {
+      visible += '\n';
+    } else {
+      const childrenAllowed =
+        allowed && !['link', 'linkReference'].includes(node.type);
+      for (const child of node.children ?? []) visit(child, childrenAllowed);
+    }
+    if (block) visible += '\n';
+  };
+  visit(tree, true);
+  const mentions = new Map<MentionNode, { start: number; end: number }[]>();
+  for (const span of spans) {
+    const matches = findMeetAssistantMentions(
+      span.node.value ?? '',
+      visible[span.start - 1] ?? '',
+      visible[span.end] ?? ''
+    );
+    if (matches.length) mentions.set(span.node, matches);
+  }
+  return mentions;
 }
 
 export function hasMeetAssistantMention(text: string) {
@@ -41,32 +78,5 @@ export function hasMeetAssistantMention(text: string) {
     extensions: [gfm()],
     mdastExtensions: [gfmFromMarkdown()],
   });
-  const visit = (node: {
-    type: string;
-    value?: string;
-    position?: { start: { offset?: number } };
-    children?: typeof tree.children;
-  }): boolean => {
-    if (
-      ['code', 'inlineCode', 'link', 'linkReference', 'html'].includes(
-        node.type
-      )
-    )
-      return false;
-    // Raw HTML fragments have no trustworthy Markdown text boundaries.
-    if (
-      ['paragraph', 'heading', 'tableCell'].includes(node.type) &&
-      hasMeetMentionHtml(node)
-    )
-      return false;
-    if (node.type === 'text')
-      return (
-        findMeetAssistantMentions(
-          node.value ?? '',
-          meetMentionPrecedingCharacter(text, node.position?.start.offset)
-        ).length > 0
-      );
-    return node.children?.some(visit) ?? false;
-  };
-  return visit(tree);
+  return getMeetAssistantMentions(tree).size > 0;
 }

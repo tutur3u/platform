@@ -16,10 +16,6 @@ it.each([
   '**@Tuturuuu**',
 ])('recognizes standalone handle: %s', (body) => {
   expect(hasMeetAssistantMention(body)).toBe(true);
-  const match = findMeetAssistantMentions(body)[0]!;
-  expect(['@tuturuuu', '@ttr']).toContain(
-    body.slice(match.start, match.end).toLowerCase()
-  );
 });
 it.each([
   'person@Tuturuuu.com',
@@ -49,6 +45,14 @@ it.each([
   '**<span> @ttr </span>**',
   '*<span> @tuturuuu </span>*',
   '## **<span> @ttr </span>**',
+  '**@ttr**foo',
+  '**@ttr**-foo',
+  '**@ttr**&#120;',
+  'word**@ttr**',
+  '`code`**@ttr**',
+  '`@`ttr',
+  '**@tt**r',
+  '**@**ttr',
 ])('does not request AI for inert Markdown or another handle: %s', (body) => {
   expect(hasMeetAssistantMention(body)).toBe(false);
 });
@@ -63,4 +67,11 @@ it.each([
 
 it('still recognizes a plain paragraph after a raw HTML block', () => {
   expect(hasMeetAssistantMention('<div>HTML</div>\n\n@ttr help')).toBe(true);
+});
+
+it('returns text-node offsets for both aliases', () => {
+  expect(findMeetAssistantMentions('Hi @TTR and @tuturuuu.')).toEqual([
+    { start: 3, end: 7 },
+    { start: 12, end: 21 },
+  ]);
 });

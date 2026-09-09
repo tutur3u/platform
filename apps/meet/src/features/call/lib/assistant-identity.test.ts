@@ -76,10 +76,18 @@ it.each([
   '**<span> @ttr </span>**',
   '*<span> @tuturuuu </span>*',
   '## **<span> @ttr </span>**',
+  '**@ttr**foo',
+  '**@ttr**-foo',
+  '**@ttr**&#120;',
+  'word**@ttr**',
+  '`code`**@ttr**',
+  '`@`ttr',
+  '**@tt**r',
+  '**@**ttr',
 ])('keeps adjacent Markdown text inert: %s', (source) => {
   const tree = fromMarkdown(source);
   const before = structuredClone(tree);
-  remarkMeetMentions()(tree, { value: source });
+  remarkMeetMentions()(tree);
   expect(tree).toEqual(before);
 });
 
@@ -87,7 +95,7 @@ it('preserves raw HTML while highlighting a separate normal paragraph', () => {
   const source = '<div>HTML</div>\n\n@ttr help';
   const tree = fromMarkdown(source);
   const html = structuredClone(tree.children[0]);
-  remarkMeetMentions()(tree, { value: source });
+  remarkMeetMentions()(tree);
   expect(tree.children[0]).toEqual(html);
   expect(tree.children[1]).toMatchObject({
     type: 'paragraph',

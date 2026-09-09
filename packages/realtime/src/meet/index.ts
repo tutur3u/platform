@@ -1,9 +1,8 @@
 export {
   findMeetAssistantMentions,
+  getMeetAssistantMentions,
   hasMeetAssistantMention,
-  hasMeetMentionHtml,
   MEET_ASSISTANT_USER_ID,
-  meetMentionPrecedingCharacter,
 } from './assistant-mentions';
 export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';

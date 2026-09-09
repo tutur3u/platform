@@ -1,8 +1,6 @@
 import {
-  findMeetAssistantMentions,
-  hasMeetMentionHtml,
+  getMeetAssistantMentions,
   MEET_ASSISTANT_USER_ID as MEET_ASSISTANT_ID,
-  meetMentionPrecedingCharacter,
 } from '@tuturuuu/realtime/meet';
 
 export { MEET_ASSISTANT_ID };
@@ -21,7 +19,6 @@ export function isMeetAssistant(message: {
 type MarkdownNode = {
   type: string;
   value?: string;
-  position?: { start: { offset?: number } };
   url?: string;
   title?: string | null;
   children?: MarkdownNode[];
@@ -29,19 +26,13 @@ type MarkdownNode = {
 
 /** Transform text nodes only: code, existing links and raw HTML stay untouched. */
 export function remarkMeetMentions() {
-  return (tree: MarkdownNode, file?: { value?: unknown }) => {
-    const source = String(file?.value ?? '');
+  return (tree: MarkdownNode) => {
+    const mentions = getMeetAssistantMentions(tree);
     const visit = (node: MarkdownNode) => {
       if (
         ['code', 'inlineCode', 'link', 'linkReference', 'html'].includes(
           node.type
         )
-      )
-        return;
-      // Match request detection: raw HTML paragraphs do not invoke Mira.
-      if (
-        ['paragraph', 'heading', 'tableCell'].includes(node.type) &&
-        hasMeetMentionHtml(node)
       )
         return;
       if (!node.children) return;
@@ -51,12 +42,8 @@ export function remarkMeetMentions() {
           return [child];
         }
         const value = child.value;
-        const offset = child.position?.start.offset ?? 0;
-        const matches = findMeetAssistantMentions(
-          value,
-          meetMentionPrecedingCharacter(source, offset)
-        );
-        if (!matches.length) return [child];
+        const matches = mentions.get(child);
+        if (!matches?.length) return [child];
         const result: MarkdownNode[] = [];
         let end = 0;
         for (const match of matches) {
