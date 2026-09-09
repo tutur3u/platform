@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  hasMeetAssistantMention,
+  MEET_ASSISTANT_USER_ID,
+} from './assistant-mentions';
 import type {
   MeetRealtimeServerMessage,
   MeetRealtimeTokenPayload,
@@ -260,7 +264,7 @@ export function roomService(
       (m) =>
         m.id === message.messageId &&
         (m.accountId ?? m.userId) === accountId &&
-        /(^|\s)@Tuturuuu\b/i.test(m.body)
+        hasMeetAssistantMention(m.body)
     );
     if (!original) return fail('Mention not found', 404);
     if (snapshot.aiRequests?.[message.messageId])
@@ -291,7 +295,7 @@ export function roomService(
     ? {
         type: 'chat.message',
         id: crypto.randomUUID(),
-        userId: '00000000-0000-4000-8000-000000000001',
+        userId: MEET_ASSISTANT_USER_ID,
         displayName: 'Mira',
         assistant: true,
         body: message.body,

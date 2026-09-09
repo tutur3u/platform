@@ -14,6 +14,7 @@ import {
   readMeetChatFile,
   uploadMeetChatFile,
 } from '@tuturuuu/internal-api';
+import { hasMeetAssistantMention } from '@tuturuuu/realtime/meet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -26,6 +27,7 @@ import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import {
   isMeetAssistant,
   MEET_ASSISTANT_PROFILE,
+  MEET_MENTION_MARKER,
   remarkMeetMentions,
 } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
@@ -43,11 +45,11 @@ const mentionPlugins = [remarkMeetMentions];
 const mentionComponents: NonNullable<
   ComponentProps<typeof AssistantMarkdown>['components']
 > = {
-  a: ({ href, children, node: _node, ...props }) =>
-    href === MEET_ASSISTANT_PROFILE ? (
+  a: ({ href, title, children }) =>
+    href === MEET_ASSISTANT_PROFILE && title === MEET_MENTION_MARKER ? (
       <MiraProfile mention />
     ) : (
-      <a {...props} href={href} target="_blank" rel="noopener noreferrer">
+      <a title={title} href={href} target="_blank" rel="noopener noreferrer">
         {children}
       </a>
     ),
@@ -170,7 +172,7 @@ export function ChatPanel({
       uploaded.current.clear();
       setDraft('');
       setFiles([]);
-      if (/(^|\s)@Tuturuuu\b/i.test(body)) {
+      if (hasMeetAssistantMention(body)) {
         setThinking(true);
         try {
           await askMeetAssistant(meetingId, sent.id);

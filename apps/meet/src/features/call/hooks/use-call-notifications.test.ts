@@ -12,6 +12,7 @@ import { useCallNotifications } from './use-call-notifications';
 
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -64,6 +65,7 @@ it.each([false, true])(
     rerender({ state: { ...initial, participants: { peer } } });
     expect(mocks.info).toHaveBeenCalledTimes(1);
     expect(start).toHaveBeenCalledTimes(1);
+    expect(mocks.info.mock.calls.at(-1)?.[1].id).toBeUndefined();
     act(() => result.current.toggleSound());
     now.mockReturnValue(13000);
     rerender({

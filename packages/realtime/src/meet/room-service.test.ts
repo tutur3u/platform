@@ -274,3 +274,15 @@ it('reclaims a discarded attachment slot only after storage deletion succeeds', 
     }).status
   ).toBeUndefined();
 });
+
+it.each(['(@Tuturuuu)', 'Hello,@Tuturuuu!', '**@Tuturuuu**'])(
+  'accepts standalone assistant mention boundaries: %s',
+  (body) => {
+    const state = initial();
+    state.chat![0]!.body = body;
+    expect(
+      roomService(state, token, { action: 'ai.reserve', messageId: 'message' })
+        .status
+    ).toBeUndefined();
+  }
+);

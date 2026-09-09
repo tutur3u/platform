@@ -3,6 +3,7 @@ import {
   isMeetAssistant,
   MEET_ASSISTANT_ID,
   MEET_ASSISTANT_PROFILE,
+  MEET_MENTION_MARKER,
   remarkMeetMentions,
 } from './assistant-identity';
 
@@ -33,12 +34,14 @@ describe('Meet assistant identity', () => {
       {
         type: 'link',
         url: MEET_ASSISTANT_PROFILE,
+        title: MEET_MENTION_MARKER,
         children: [{ type: 'text', value: '@Tuturuuu' }],
       },
       { type: 'text', value: ', ask ' },
       {
         type: 'link',
         url: MEET_ASSISTANT_PROFILE,
+        title: MEET_MENTION_MARKER,
         children: [{ type: 'text', value: '@Tuturuuu' }],
       },
       { type: 'text', value: ' now. email@Tuturuuu @TuturuuuExtra' },
@@ -53,7 +56,8 @@ describe('Meet assistant identity', () => {
         { type: 'html', value: '<b>@Tuturuuu</b>' },
         {
           type: 'link',
-          url: 'https://example.com',
+          url: MEET_ASSISTANT_PROFILE,
+          title: 'Ordinary profile link',
           children: [{ type: 'text', value: '@Tuturuuu' }],
         },
       ],

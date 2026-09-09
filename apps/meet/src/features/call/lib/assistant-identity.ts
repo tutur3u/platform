@@ -1,4 +1,11 @@
-export const MEET_ASSISTANT_ID = '00000000-0000-4000-8000-000000000001';
+import {
+  findMeetAssistantMentions,
+  MEET_ASSISTANT_USER_ID as MEET_ASSISTANT_ID,
+} from '@tuturuuu/realtime/meet';
+
+export { MEET_ASSISTANT_ID };
+// A renderer-local marker survives sanitization without treating authored URLs as mentions.
+export const MEET_MENTION_MARKER = `meet-mention:${crypto.randomUUID()}`;
 export const MEET_ASSISTANT_PROFILE =
   'https://meet.tuturuuu.com/#tuturuuu-assistant';
 
@@ -13,6 +20,7 @@ type MarkdownNode = {
   type: string;
   value?: string;
   url?: string;
+  title?: string;
   children?: MarkdownNode[];
 };
 
@@ -33,20 +41,21 @@ export function remarkMeetMentions() {
           return [child];
         }
         const value = child.value;
-        const matches = [...value.matchAll(/(^|[\s(])(@tuturuuu)\b/gi)];
+        const matches = findMeetAssistantMentions(value);
         if (!matches.length) return [child];
         const result: MarkdownNode[] = [];
         let end = 0;
         for (const match of matches) {
-          const start = match.index + match[1]!.length;
+          const start = match.start;
           if (start > end)
             result.push({ type: 'text', value: value.slice(end, start) });
           result.push({
             type: 'link',
             url: MEET_ASSISTANT_PROFILE,
+            title: MEET_MENTION_MARKER,
             children: [{ type: 'text', value: '@Tuturuuu' }],
           });
-          end = start + match[2]!.length;
+          end = match.end;
         }
         if (end < value.length)
           result.push({ type: 'text', value: value.slice(end) });

@@ -62,7 +62,7 @@ export function useCallNotifications(
       if (notice.kind === 'chat') chatToasts.current.add(notice.id);
       const panel = notice.kind === 'chat' ? 'chat' : 'participants';
       toast.info(t(`notice_${notice.kind}`, { name: notice.name }), {
-        id: notice.id,
+        id: notice.kind === 'chat' ? notice.id : undefined,
         onDismiss: () => chatToasts.current.delete(notice.id),
         onAutoClose: () => chatToasts.current.delete(notice.id),
         description: notice.body?.slice(0, 140),
