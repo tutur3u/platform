@@ -8,13 +8,13 @@ import {
   answerMeetChat,
   type MeetAssistantMessage,
 } from '@tuturuuu/ai/meetings/chat';
-import type { MeetAssistantContext } from '@tuturuuu/ai/meetings/chat-tools';
 import { createMeetWorkspaceTools } from '@tuturuuu/ai/meetings/workspace-tools';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
+import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
 import { getMeetChatModel } from './chat-model';
 import { callRoomService, personalWorkspace } from './room-service';
@@ -30,11 +30,25 @@ export type PrivateAssistantReview = {
   status: 'ready' | 'executing' | 'interrupted' | 'shared' | 'discarded';
   revision: number;
 };
-type RoomContext = {
-  chat: Array<{ body: string; displayName: string; assistant?: boolean }>;
-  prompt: string;
-  meetingContext: Omit<MeetAssistantContext, 'title' | 'timezone'>;
-};
+const roomContextSchema = z.object({
+  chat: z.array(
+    z.object({
+      body: z.string(),
+      displayName: z.string(),
+      assistant: z.boolean().optional(),
+    })
+  ),
+  prompt: z.string(),
+  meetingContext: z.object({
+    observedAt: z.string(),
+    participantCount: z.number().int().nonnegative(),
+    deviceCount: z.number().int().nonnegative(),
+    participants: z.array(
+      z.object({ displayName: z.string(), role: z.string() })
+    ),
+  }),
+});
+type RoomContext = z.infer<typeof roomContextSchema>;
 
 export async function generateMeetAssistant(
   access: Access,
@@ -101,9 +115,13 @@ export async function generateMeetAssistant(
     });
     let saved: { messages: MeetAssistantMessage[]; context: RoomContext };
     try {
-      saved = JSON.parse(review.continuation);
-      if (!saved || !Array.isArray(saved.messages) || !saved.context)
+      const raw = JSON.parse(review.continuation);
+      if (!raw || !Array.isArray(raw.messages))
         throw new Error('Invalid review continuation');
+      saved = {
+        messages: raw.messages,
+        context: roomContextSchema.parse(raw.context),
+      };
     } catch {
       await callRoomService(access, {
         action: 'ai.finish',

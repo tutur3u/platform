@@ -224,33 +224,36 @@ it('rejects invalid timezones before generation', async () => {
   expect(mocks.answer).not.toHaveBeenCalled();
 });
 
-it('settles a claimed review immediately when its saved continuation is malformed', async () => {
-  const { generateMeetAssistant } = await import(
-    '@/features/call/server/assistant-generation'
-  );
-  const review = {
-    workspaceId: 'workspace',
-    continuation: 'invalid JSON',
-    approvals: [],
-    timezone: 'UTC',
-  };
-  mocks.service
-    .mockResolvedValueOnce(review as never)
-    .mockResolvedValueOnce(review as never);
-  await expect(
-    generateMeetAssistant(
-      { user: { id: 'tagger' }, meeting: { id: 'room' } } as never,
-      {
-        messageId: 'message',
-        timezone: 'UTC',
-        resume: { revision: 1, approved: true },
-      }
-    )
-  ).rejects.toMatchObject({ status: 409 });
-  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
-    action: 'ai.finish',
-    messageId: 'message',
-    costUsd: 0,
-  });
-  expect(mocks.answer).not.toHaveBeenCalled();
-});
+it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
+  'settles a claimed review when its saved continuation is malformed: %s',
+  async (continuation) => {
+    const { generateMeetAssistant } = await import(
+      '@/features/call/server/assistant-generation'
+    );
+    const review = {
+      workspaceId: 'workspace',
+      continuation,
+      approvals: [],
+      timezone: 'UTC',
+    };
+    mocks.service
+      .mockResolvedValueOnce(review as never)
+      .mockResolvedValueOnce(review as never);
+    await expect(
+      generateMeetAssistant(
+        { user: { id: 'tagger' }, meeting: { id: 'room' } } as never,
+        {
+          messageId: 'message',
+          timezone: 'UTC',
+          resume: { revision: 1, approved: true },
+        }
+      )
+    ).rejects.toMatchObject({ status: 409 });
+    expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+      action: 'ai.finish',
+      messageId: 'message',
+      costUsd: 0,
+    });
+    expect(mocks.answer).not.toHaveBeenCalled();
+  }
+);

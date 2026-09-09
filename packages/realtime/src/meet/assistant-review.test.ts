@@ -115,6 +115,13 @@ it('claims exactly once and rejects sharing before tool approvals are resolved',
       revision: 1,
     }).status
   ).toBe(409);
+  claimed.state.aiRequests!.message!.startedAt = 0;
+  expect(
+    roomService(claimed.state, token, {
+      action: 'ai.review.get',
+      messageId: 'message',
+    }).body
+  ).toMatchObject({ status: 'interrupted' });
   const completed = save(claimed.state, {
     ...review,
     continuation: 'completed',

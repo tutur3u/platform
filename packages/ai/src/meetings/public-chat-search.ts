@@ -19,7 +19,7 @@ export function publicMeetSearch(
     sources,
     tool: tool({
       description:
-        'Search Google for the requester’s explicit public question. No chat-history search or custom query is accepted. One request per answer.',
+        'Search Google for the requester’s explicit public question. No chat-history search or custom query is accepted. One provider attempt per answer.',
       inputSchema: z.object({}),
       execute: async () => {
         const query = question
@@ -31,8 +31,18 @@ export function publicMeetSearch(
         const words = new Set(normalize(query).split(/[^\p{L}\p{N}]+/u));
         const privateWords = privateTerms
           .flatMap((term) => normalize(term).split(/[^\p{L}\p{N}]+/u))
-          .filter((word) => word.length >= 3);
-        if (!query || privateWords.some((word) => words.has(word)))
+          .filter((word) => word.length > 0);
+        if (
+          !query ||
+          privateWords.some(
+            (word) =>
+              words.has(word) ||
+              (/\p{Script=Han}|\p{Script=Hiragana}|\p{Script=Katakana}|\p{Script=Hangul}/u.test(
+                word
+              ) &&
+                normalize(query).includes(word))
+          )
+        )
           return {
             error:
               'Search omitted because this question contains a participant name or room detail. Ask a public question without private meeting information.',
@@ -40,9 +50,10 @@ export function publicMeetSearch(
         if (searched)
           return {
             error:
-              'Search limit reached for this answer. Ask a follow-up for another search.',
+              'The search attempt for this answer has already been used. Ask a follow-up to try again.',
           };
         searched = true;
+        steps.push({}); // A failed provider attempt has unknown usage, never zero cost.
         const result = await generateText({
           model,
           tools: createGoogleSearchToolSet(),
@@ -51,9 +62,28 @@ export function publicMeetSearch(
           maxRetries: 0,
           abortSignal: signal,
         });
-        steps.push(...result.steps);
+        steps.length = 0;
         sources.push(
-          ...result.sources.filter((source) => source.sourceType === 'url')
+          ...result.sources
+            .filter((source) => source.sourceType === 'url')
+            .filter((source) => {
+              try {
+                return ['https:', 'http:'].includes(
+                  new URL(source.url).protocol
+                );
+              } catch {
+                return false;
+              }
+            })
+        );
+        steps.push(
+          ...result.steps.map((step, index) => ({
+            ...step,
+            toolCalls:
+              sources.length && index === result.steps.length - 1
+                ? [...(step.toolCalls ?? []), { toolName: 'google_search' }]
+                : step.toolCalls,
+          }))
         );
         if (!sources.length)
           return {
