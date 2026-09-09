@@ -12,31 +12,49 @@ import {
   List,
   ListOrdered,
   Redo2,
+  Sparkles,
   Undo2,
 } from '@tuturuuu/icons';
+import type { MailAttachment } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { splitComposerQuote } from './mail-composer-quote';
+import {
+  type ComposerSelection,
+  captureComposerSelection,
+} from './mail-composer-selection';
+import { mailHtmlToText } from './mail-composer-utils';
+import { MailMessagePreview } from './mail-message-preview';
 
 export function MailComposerEditor({
+  attachments = [],
   imageUrlToInsert,
   initialHtml,
   onImageInserted,
   onChange,
+  onSelectionChange,
+  onEnhance,
 }: {
+  attachments?: MailAttachment[];
   imageUrlToInsert?: string | null;
   initialHtml: string;
+  onSelectionChange: (selection: ComposerSelection | null) => void;
+  onEnhance: () => void;
   onImageInserted?: () => void;
   onChange: (value: { html: string; text: string }) => void;
 }) {
   const t = useTranslations('mail');
+  const parts = useMemo(() => splitComposerQuote(initialHtml), [initialHtml]);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [hasSelection, setHasSelection] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const [href, setHref] = useState('https://');
   const editor = useEditor({
-    content: initialHtml,
+    content: parts.authored,
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
@@ -44,14 +62,27 @@ export function MailComposerEditor({
       Placeholder.configure({ placeholder: t('write_message') }),
     ],
     immediatelyRender: false,
-    onUpdate: ({ editor: nextEditor }) =>
-      onChange({ html: nextEditor.getHTML(), text: nextEditor.getText() }),
+    onUpdate: ({ editor: nextEditor }) => {
+      const html = nextEditor.getHTML() + parts.quoted;
+      onChange({
+        html,
+        text: [nextEditor.getText(), mailHtmlToText(parts.quoted)]
+          .filter(Boolean)
+          .join('\n\n'),
+      });
+      onSelectionChange(null);
+    },
+    onSelectionUpdate: ({ editor: current }) => {
+      const selection = captureComposerSelection(current);
+      setHasSelection(Boolean(selection));
+      onSelectionChange(selection);
+    },
   });
 
   useEffect(() => {
-    if (!editor || editor.getHTML() === initialHtml) return;
-    editor.commands.setContent(initialHtml, { emitUpdate: false });
-  }, [editor, initialHtml]);
+    if (!editor || editor.getHTML() === parts.authored) return;
+    editor.commands.setContent(parts.authored, { emitUpdate: false });
+  }, [editor, parts.authored]);
 
   useEffect(() => {
     if (!editor || !imageUrlToInsert) return;
@@ -140,11 +171,43 @@ export function MailComposerEditor({
         >
           <Redo2 className="size-4" />
         </ToolButton>
+        {hasSelection && (
+          <Button
+            className="ml-auto gap-1"
+            size="sm"
+            variant="secondary"
+            type="button"
+            onClick={onEnhance}
+          >
+            <Sparkles className="size-3.5" />
+            {t('enhance_selection')}
+          </Button>
+        )}
       </div>
-      <EditorContent
-        className="min-h-0 flex-1 overflow-y-auto [&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
-        editor={editor}
-      />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <EditorContent
+          className="[&_.ProseMirror]:min-h-56 [&_.ProseMirror]:px-5 [&_.ProseMirror]:py-5 [&_.ProseMirror]:text-sm [&_.ProseMirror]:leading-6 [&_.ProseMirror]:outline-none [&_.ProseMirror_a]:underline [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5 [&_.ProseMirror_p]:my-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5 [&_.is-editor-empty:first-child:before]:pointer-events-none [&_.is-editor-empty:first-child:before]:float-left [&_.is-editor-empty:first-child:before]:h-0 [&_.is-editor-empty:first-child:before]:text-muted-foreground [&_.is-editor-empty:first-child:before]:content-[attr(data-placeholder)]"
+          editor={editor}
+        />
+        {parts.quoted && (
+          <details
+            className="mx-5 mb-5"
+            open={quoteOpen}
+            onToggle={(event) => setQuoteOpen(event.currentTarget.open)}
+          >
+            <summary className="w-fit cursor-pointer rounded-md border px-2 py-1 text-muted-foreground text-xs hover:text-foreground">
+              {t('quoted_text')}
+            </summary>
+            {quoteOpen && (
+              <MailMessagePreview
+                content={parts.quoted}
+                attachments={attachments}
+                title={t('quoted_text')}
+              />
+            )}
+          </details>
+        )}
+      </div>
     </div>
   );
 }

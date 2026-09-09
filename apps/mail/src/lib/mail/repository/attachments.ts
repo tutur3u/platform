@@ -13,6 +13,7 @@ import { type AnyRecord, mailMessageTable, privateTable } from './shared';
 
 export const MAX_MAIL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const MAX_MAIL_ATTACHMENTS = 32;
+const CONTENT_ID_PATTERN = /^[a-z0-9.!#$%&'*+/=?^_`{|}~@-]+$/iu;
 
 function r2Location(row: AnyRecord): MailStoredObjectLocation {
   return {
@@ -113,7 +114,7 @@ export async function uploadDraftAttachment({
   if (bytes.byteLength === 0 || bytes.byteLength > MAX_MAIL_ATTACHMENT_BYTES) {
     throw new Error('Attachment size is outside the allowed range');
   }
-  if (contentId && !/^[a-z0-9.!#$%&'*+/=?^_`{|}~@-]+$/iu.test(contentId)) {
+  if (contentId && !CONTENT_ID_PATTERN.test(contentId)) {
     throw new Error('Attachment content ID is invalid');
   }
   const { data: draft, error: draftError } = await mailMessageTable(access, ctx)
@@ -242,14 +243,26 @@ export async function copyAttachmentsToDraft({
       messageId: sourceMessageId,
     });
     if (!source) throw new Error('Source attachment was not found');
+    const sourceContentId = source.attachment.content_id?.replace(
+      /^<|>$/gu,
+      ''
+    );
+    // Inbound mail can contain malformed CIDs; preserve the file without blocking recovery.
+    const contentId =
+      sourceContentId && CONTENT_ID_PATTERN.test(sourceContentId)
+        ? sourceContentId
+        : null;
     copied.push(
       await uploadDraftAttachment({
         bytes: await readMailStoredObject(source.location),
-        contentId: null,
+        contentId,
         contentType:
           source.attachment.content_type || 'application/octet-stream',
         ctx,
-        disposition: 'attachment',
+        disposition:
+          contentId && source.attachment.disposition === 'inline'
+            ? 'inline'
+            : 'attachment',
         draftId,
         filename: source.attachment.filename,
         mailboxId,

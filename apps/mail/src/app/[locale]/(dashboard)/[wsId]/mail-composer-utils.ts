@@ -1,19 +1,12 @@
-import type { MailMailbox } from '@tuturuuu/internal-api';
+import type { MailMailbox, MailMessageDetail } from '@tuturuuu/internal-api';
 import { canSendAsGroup } from '@/lib/mail/groups/policy';
+import { splitComposerQuote } from './mail-composer-quote';
 import type { ComposeInitialDraft } from './mail-composer-types';
 
 export type ComposerWarning =
   | 'empty_message'
   | 'empty_subject'
   | 'missing_attachment';
-
-export type ComposerCloseAction = 'confirm' | 'minimize';
-
-export function getComposerCloseAction(
-  minimized: boolean
-): ComposerCloseAction {
-  return minimized ? 'confirm' : 'minimize';
-}
 
 export function getSendableMailboxes(mailboxes: MailMailbox[]) {
   return mailboxes.filter(
@@ -39,7 +32,7 @@ function escapeHtml(value: string) {
     .replaceAll("'", '&#39;');
 }
 
-function textToHtml(value: string) {
+export function textToHtml(value: string) {
   return value
     .split(/\n{2,}/u)
     .map((paragraph) => escapeHtml(paragraph).replaceAll('\n', '<br>'))
@@ -48,6 +41,8 @@ function textToHtml(value: string) {
 }
 
 export function applyAiDraftToBody(bodyHtml: string, content: string) {
+  const { authored, quoted } = splitComposerQuote(bodyHtml);
+  bodyHtml = authored;
   const generatedHtml = textToHtml(content.trim());
   const signatureIndex = bodyHtml.search(
     /<div\b[^>]*data-mail-signature=["']true["'][^>]*>/iu
@@ -58,12 +53,12 @@ export function applyAiDraftToBody(bodyHtml: string, content: string) {
   );
   const suffixIndex = suffixIndexes.length ? Math.min(...suffixIndexes) : -1;
   return suffixIndex >= 0
-    ? `${generatedHtml}${bodyHtml.slice(suffixIndex)}`
-    : generatedHtml;
+    ? `${generatedHtml}${bodyHtml.slice(suffixIndex)}${quoted}`
+    : `${generatedHtml}${quoted}`;
 }
 
 export function mailHtmlToText(value: string) {
-  return value
+  const text = value
     .replaceAll(/<br\s*\/?>/giu, '\n')
     .replaceAll(/<\/p>/giu, '\n')
     .replaceAll(/<[^>]+>/gu, ' ')
@@ -71,6 +66,36 @@ export function mailHtmlToText(value: string) {
     .replaceAll(/\s+\n/gu, '\n')
     .replaceAll(/\n\s+/gu, '\n')
     .replaceAll(/[ \t]+/gu, ' ')
+    .trim();
+  if (typeof DOMParser !== 'undefined')
+    return (
+      new DOMParser()
+        .parseFromString(text, 'text/html')
+        .body.textContent?.trim() ?? text
+    );
+  const entities: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+  };
+  return text
+    .replace(
+      /&(amp|lt|gt|quot|apos|#(?:[0-9]+|x[0-9a-f]+));/giu,
+      (entity, name: string) => {
+        if (!name.startsWith('#')) return entities[name] ?? entity;
+        const point =
+          name[1]?.toLowerCase() === 'x'
+            ? Number.parseInt(name.slice(2), 16)
+            : Number.parseInt(name.slice(1), 10);
+        return point > 0 &&
+          point <= 0x10ffff &&
+          !(point >= 0xd800 && point <= 0xdfff)
+          ? String.fromCodePoint(point)
+          : '\uFFFD';
+      }
+    )
     .trim();
 }
 
@@ -96,9 +121,15 @@ export function buildComposerInitialBody(
   initialDraft: ComposeInitialDraft | null | undefined,
   mailbox: MailMailbox
 ) {
-  const baseHtml = initialDraft?.bodyHtml?.trim() ?? '';
+  const baseHtml =
+    initialDraft?.bodyHtml?.trim() ||
+    (initialDraft?.bodyText ? textToHtml(initialDraft.bodyText) : '');
   const signature = getSignature(mailbox);
-  if (!signature.html || baseHtml.includes('data-mail-signature="true"')) {
+  if (
+    initialDraft?.draftId ||
+    !signature.html ||
+    baseHtml.includes('data-mail-signature="true"')
+  ) {
     return {
       html: baseHtml,
       text: initialDraft?.bodyText ?? mailHtmlToText(baseHtml),
@@ -163,4 +194,30 @@ export function getComposerWarnings({
   }
 
   return warnings;
+}
+
+export function toComposeInitialDraft(
+  message: MailMessageDetail
+): ComposeInitialDraft {
+  return {
+    draftId: message.id,
+    mailboxId: message.mailboxId,
+    attachments: message.attachments,
+    subject: message.subject === '(no subject)' ? '' : message.subject,
+    bodyHtml: message.bodyHtml ?? '',
+    bodyText: message.bodyText ?? '',
+    to: message.recipients.filter((r) => r.kind === 'to').map((r) => r.address),
+    cc: message.recipients.filter((r) => r.kind === 'cc').map((r) => r.address),
+    bcc: message.recipients
+      .filter((r) => r.kind === 'bcc')
+      .map((r) => r.address),
+    recipientDisplayNames: Object.fromEntries(
+      message.recipients
+        .filter((r) => r.displayName)
+        .map((r) => [r.address, r.displayName!])
+    ),
+    inReplyTo: message.inReplyTo,
+    references: message.references,
+    threadId: message.threadId ?? undefined,
+  };
 }

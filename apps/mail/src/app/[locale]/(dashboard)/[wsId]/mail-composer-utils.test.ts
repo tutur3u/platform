@@ -1,11 +1,11 @@
-import type { MailMailbox } from '@tuturuuu/internal-api';
+import type { MailMailbox, MailMessageDetail } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
   applyAiDraftToBody,
   buildComposerInitialBody,
-  getComposerCloseAction,
   getComposerWarnings,
   mailHtmlToText,
+  toComposeInitialDraft,
 } from './mail-composer-utils';
 
 const mailbox = {
@@ -33,13 +33,6 @@ describe('buildComposerInitialBody', () => {
     expect(body.html.indexOf('data-mail-signature')).toBeLessThan(
       body.html.indexOf('<blockquote>')
     );
-  });
-});
-
-describe('getComposerCloseAction', () => {
-  it('minimizes first and confirms closure from the minimized state', () => {
-    expect(getComposerCloseAction(false)).toBe('minimize');
-    expect(getComposerCloseAction(true)).toBe('confirm');
   });
 });
 
@@ -106,5 +99,55 @@ describe('getComposerWarnings', () => {
         subject: 'Re: update',
       })
     ).toEqual([]);
+  });
+});
+
+describe('plain-text composer payload', () => {
+  it('decodes escaped text without turning it into markup', () => {
+    expect(
+      mailHtmlToText('<p>R&amp;D &lt;report&gt; &quot;ready&quot;</p>')
+    ).toBe('R&D <report> "ready"');
+  });
+});
+
+describe('draft resume metadata', () => {
+  it('preserves identity, attachments and thread context without promoting the no-subject placeholder', () => {
+    const draft = toComposeInitialDraft({
+      id: 'draft',
+      mailboxId: 'mailbox',
+      threadId: 'thread',
+      subject: '(no subject)',
+      bodyHtml: '<p>Reply</p>',
+      bodyText: 'Reply',
+      attachments: [
+        { id: 'inline-image', contentId: 'logo', disposition: 'inline' },
+      ],
+      recipients: [
+        {
+          kind: 'to',
+          address: 'recipient@example.com',
+          displayName: 'Recipient',
+        },
+      ],
+      references: ['parent'],
+      inReplyTo: 'parent',
+    } as unknown as MailMessageDetail);
+    expect(draft).toMatchObject({
+      draftId: 'draft',
+      bodyHtml: '<p>Reply</p>',
+      bodyText: 'Reply',
+      attachments: [
+        { id: 'inline-image', contentId: 'logo', disposition: 'inline' },
+      ],
+      mailboxId: 'mailbox',
+      threadId: 'thread',
+      subject: '',
+      to: ['recipient@example.com'],
+      references: ['parent'],
+      inReplyTo: 'parent',
+    });
+  });
+  it('decodes numeric references without a browser parser', () => {
+    expect(mailHtmlToText('<p>It&#39;s &#x1f44d;</p>')).toBe("It's \u{1f44d}");
   });
 });

@@ -1,6 +1,13 @@
 'use client';
 
-import { Forward, Paperclip, Reply, ReplyAll } from '@tuturuuu/icons';
+import {
+  Forward,
+  List,
+  Paperclip,
+  Pencil,
+  Reply,
+  ReplyAll,
+} from '@tuturuuu/icons';
 import type {
   MailMessageDetail,
   MailThreadDetail,
@@ -39,6 +46,7 @@ export function ThreadDetail({
   loading,
   onArchive,
   onBack,
+  onEditDraft,
   onForward,
   onReply,
   onReplyAll,
@@ -56,6 +64,7 @@ export function ThreadDetail({
   loading: boolean;
   onArchive: () => void;
   onBack: () => void;
+  onEditDraft?: (message: MailMessageDetail) => void;
   onForward: (message: MailMessageDetail) => void;
   onReply: (message: MailMessageDetail) => void;
   onReplyAll: (message: MailMessageDetail) => void;
@@ -68,6 +77,20 @@ export function ThreadDetail({
   const [replyMessageId, setReplyMessageId] = useState<string | null>(null);
   const [deleteDraftOpen, setDeleteDraftOpen] = useState(false);
 
+  const draft = thread?.messages.findLast(
+    (message) => message.status === 'draft'
+  );
+  const mobileList = (
+    <Button
+      className="lg:hidden"
+      aria-label={t('back_to_messages')}
+      onClick={onBack}
+      size="icon"
+      variant="ghost"
+    >
+      <List className="size-4" />
+    </Button>
+  );
   const newest = thread?.messages.at(-1);
   const threadInfo = thread?.thread ?? summary;
   const header = threadInfo ? (
@@ -78,7 +101,6 @@ export function ThreadDetail({
       actionPending={actionPending || (isDraft && !thread)}
       isDraft={isDraft}
       labelActions={labelActions}
-      onBack={onBack}
       onStar={onStar}
       onArchive={onArchive}
       onTrash={() => (isDraft ? setDeleteDraftOpen(true) : onTrash())}
@@ -87,8 +109,11 @@ export function ThreadDetail({
 
   if (loading || error || !thread)
     return (
-      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
         {header}
+        <div className="absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center lg:hidden">
+          {mobileList}
+        </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <MailContentState
             kind={loading ? 'loading' : error ? 'error' : 'reader'}
@@ -147,13 +172,20 @@ export function ThreadDetail({
               ))}
             </Accordion>
           </div>
-          {(hasHtml || (!isDraft && replyMessage)) && (
+          {(hasHtml || replyMessage) && (
             <div className="pointer-events-none absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center px-3">
               <div
                 className="pointer-events-auto flex max-w-full items-center gap-1 rounded-2xl bg-background/95 p-1.5 shadow-foreground/10 shadow-lg backdrop-blur"
                 role="toolbar"
                 aria-label={t('message_actions')}
               >
+                {mobileList}
+                {isDraft && draft && onEditDraft && (
+                  <Button onClick={() => onEditDraft(draft)} size="sm">
+                    <Pencil className="size-4" />
+                    {t('edit_draft')}
+                  </Button>
+                )}
                 {!isDraft && replyMessage && (
                   <>
                     <Tooltip>

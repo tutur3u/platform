@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2, X } from '@tuturuuu/icons';
+import { Maximize2, Minimize2, Minus, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 
 export function MailComposerHeader({
@@ -6,8 +6,9 @@ export function MailComposerHeader({
   maximized,
   maximizeLabel,
   minimized,
-  minimizeLabel,
   newMessageLabel,
+  minimizeLabel,
+  onMinimize,
   onRequestClose,
   onToggleSize,
   restoreLabel,
@@ -18,8 +19,9 @@ export function MailComposerHeader({
   maximized: boolean;
   maximizeLabel: string;
   minimized: boolean;
-  minimizeLabel: string;
   newMessageLabel: string;
+  minimizeLabel: string;
+  onMinimize: () => void;
   onRequestClose: () => void;
   onToggleSize: () => void;
   restoreLabel: string;
@@ -44,6 +46,17 @@ export function MailComposerHeader({
         </span>
       </button>
       <div className="flex shrink-0 items-center gap-0.5">
+        {!minimized && (
+          <Button
+            aria-label={minimizeLabel}
+            className="size-8"
+            onClick={onMinimize}
+            size="icon"
+            variant="ghost"
+          >
+            <Minus className="size-3.5" />
+          </Button>
+        )}
         <Button
           aria-label={sizeLabel}
           className="size-8 max-md:hidden"
@@ -54,7 +67,7 @@ export function MailComposerHeader({
           <SizeIcon className="size-3.5" />
         </Button>
         <Button
-          aria-label={minimized ? closeLabel : minimizeLabel}
+          aria-label={closeLabel}
           className="size-8"
           onClick={onRequestClose}
           size="icon"

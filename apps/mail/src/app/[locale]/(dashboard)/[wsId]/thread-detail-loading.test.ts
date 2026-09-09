@@ -12,6 +12,7 @@ afterEach(cleanup);
 describe('reader actions while loading the next body', () => {
   it('keeps the selected summary archive action enabled while the body is loading', () => {
     const onArchive = vi.fn();
+    const onBack = vi.fn();
     render(
       createElement(ThreadDetail, {
         summary: {
@@ -25,7 +26,7 @@ describe('reader actions while loading the next body', () => {
         isDraft: false,
         actionPending: false,
         onArchive,
-        onBack: vi.fn(),
+        onBack,
         onForward: vi.fn(),
         onReply: vi.fn(),
         onReplyAll: vi.fn(),
@@ -41,6 +42,8 @@ describe('reader actions while loading the next body', () => {
     expect(screen.getByRole('button', { name: 'unstar' })).toBeTruthy();
     fireEvent.click(archive);
     expect(onArchive).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: 'back_to_messages' }));
+    expect(onBack).toHaveBeenCalledOnce();
     expect(screen.getByRole('status', { name: 'loading' })).toBeTruthy();
   });
 });

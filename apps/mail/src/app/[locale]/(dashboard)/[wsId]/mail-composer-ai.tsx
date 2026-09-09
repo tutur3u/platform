@@ -21,6 +21,7 @@ interface GenerationRequest {
 }
 
 export function MailComposerAi({
+  selectionOnly = false,
   bodyHtml,
   bodyText,
   mailboxId,
@@ -32,6 +33,7 @@ export function MailComposerAi({
   threadId,
   workspaceId,
 }: {
+  selectionOnly?: boolean;
   bodyHtml: string;
   bodyText: string;
   mailboxId: string;
@@ -48,33 +50,49 @@ export function MailComposerAi({
     threadId ? 'follow_up' : 'draft'
   );
   const [instructions, setInstructions] = useState('');
-  const [result, setResult] = useState<GenerateMailAiDraftResponse | null>(
-    null
-  );
+  const context = JSON.stringify([
+    selectionOnly,
+    bodyHtml,
+    bodyText,
+    mailboxId,
+    recipients,
+    subject,
+    threadId,
+  ]);
+  const [completion, setCompletion] = useState<{
+    context: string;
+    result: GenerateMailAiDraftResponse;
+  } | null>(null);
+  const result = completion?.context === context ? completion.result : null;
   const generation = useMutation({
-    mutationFn: (request: GenerationRequest) =>
-      generateMailAiDraft(workspaceId, mailboxId, {
+    mutationFn: async (request: GenerationRequest & { context: string }) => ({
+      context: request.context,
+      result: await generateMailAiDraft(workspaceId, mailboxId, {
         bodyHtml,
         bodyText,
-        instructions: request.instructions,
-        mode: request.mode,
+        instructions: selectionOnly
+          ? `Rewrite only the selected passage. Return only its replacement, without greeting, subject, signature or quoted history. ${request.instructions}`
+          : request.instructions,
+        mode: selectionOnly ? 'rewrite' : request.mode,
         recipients,
         subject,
         threadId,
       }),
-    onSuccess: setResult,
+    }),
+    onSuccess: setCompletion,
   });
   const generate = (request: GenerationRequest) => {
+    if (generation.isPending) return;
     setMode(request.mode);
     setInstructions(request.instructions);
-    setResult(null);
-    generation.mutate(request);
+    setCompletion(null);
+    generation.mutate({ ...request, context });
   };
   const quickActions: GenerationRequest[] = [
     { instructions: t('ai_quick_polish_prompt'), mode: 'rewrite' },
     { instructions: t('ai_quick_concise_prompt'), mode: 'rewrite' },
     { instructions: t('ai_quick_warm_prompt'), mode: 'rewrite' },
-    ...(threadId
+    ...(threadId && !selectionOnly
       ? ([
           {
             instructions: t('ai_quick_follow_up_prompt'),
@@ -87,21 +105,23 @@ export function MailComposerAi({
     t('ai_quick_polish'),
     t('ai_quick_concise'),
     t('ai_quick_warm'),
-    ...(threadId ? [t('ai_quick_follow_up')] : []),
+    ...(threadId && !selectionOnly ? [t('ai_quick_follow_up')] : []),
   ];
 
   return (
     <Popover onOpenChange={onOpenChange} open={open}>
       <PopoverTrigger asChild>
         <Button
-          aria-label={t('write_with_ai')}
+          aria-label={t(selectionOnly ? 'enhance_selection' : 'write_with_ai')}
           className="gap-2"
           size="sm"
           type="button"
           variant="secondary"
         >
           <Sparkles className="size-4" />
-          <span className="max-sm:sr-only">{t('write_with_ai')}</span>
+          <span className="max-sm:sr-only">
+            {t(selectionOnly ? 'enhance_selection' : 'write_with_ai')}
+          </span>
           <kbd className="hidden rounded border border-dynamic px-1.5 py-0.5 font-normal text-[0.65rem] text-muted-foreground lg:inline">
             {t('ai_shortcut')}
           </kbd>
@@ -119,7 +139,13 @@ export function MailComposerAi({
           <div className="min-w-0">
             <div className="font-semibold text-sm">{t('ai_compose_title')}</div>
             <p className="mt-0.5 text-muted-foreground text-xs leading-5">
-              {t(threadId ? 'ai_context_thread' : 'ai_context_mailbox')}
+              {t(
+                selectionOnly
+                  ? 'ai_context_selection'
+                  : threadId
+                    ? 'ai_context_thread'
+                    : 'ai_context_mailbox'
+              )}
             </p>
           </div>
         </div>
@@ -138,24 +164,34 @@ export function MailComposerAi({
               </Button>
             ))}
           </div>
-          <Tabs
-            onValueChange={(value) => {
-              setMode(value as MailAiDraftMode);
-              setResult(null);
-            }}
-            value={mode}
-          >
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="draft">{t('ai_mode_draft')}</TabsTrigger>
-              <TabsTrigger value="follow_up">
-                {t('ai_mode_follow_up')}
-              </TabsTrigger>
-              <TabsTrigger value="rewrite">{t('ai_mode_rewrite')}</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {!selectionOnly && (
+            <Tabs
+              onValueChange={(value) => {
+                setMode(value as MailAiDraftMode);
+                setCompletion(null);
+              }}
+              value={mode}
+            >
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger disabled={generation.isPending} value="draft">
+                  {t('ai_mode_draft')}
+                </TabsTrigger>
+                <TabsTrigger disabled={generation.isPending} value="follow_up">
+                  {t('ai_mode_follow_up')}
+                </TabsTrigger>
+                <TabsTrigger disabled={generation.isPending} value="rewrite">
+                  {t('ai_mode_rewrite')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
           <Textarea
+            disabled={generation.isPending}
             className="min-h-24 resize-y outline-none focus-visible:outline-none focus-visible:ring-0"
-            onChange={(event) => setInstructions(event.target.value)}
+            onChange={(event) => {
+              setInstructions(event.target.value);
+              setCompletion(null);
+            }}
             placeholder={t('ai_compose_instructions_placeholder')}
             value={instructions}
           />
@@ -222,7 +258,7 @@ export function MailComposerAi({
             size="sm"
             type="button"
           >
-            {t('use_draft')}
+            {t(selectionOnly ? 'replace_selection' : 'use_draft')}
           </Button>
         </div>
       </PopoverContent>
