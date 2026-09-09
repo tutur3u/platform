@@ -5,12 +5,14 @@ import {
   FileText,
   Loader2,
   Paperclip,
+  RefreshCw,
   Send,
   X,
 } from '@tuturuuu/icons';
 import {
   askMeetAssistant,
   discardMeetChatFile,
+  listMeetAssistantReviews,
   readMeetChatFile,
   uploadMeetChatFile,
 } from '@tuturuuu/internal-api';
@@ -20,49 +22,15 @@ import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
-import {
-  isMeetAssistant,
-  MEET_ASSISTANT_PROFILE,
-  MEET_MENTION_MARKER,
-  remarkMeetMentions,
-} from '../lib/assistant-identity';
+import { useEffect, useRef, useState } from 'react';
+import { isMeetAssistant } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
-import { AssistantPrivateReviews } from './assistant-private-review';
+import { AssistantPrivateReview } from './assistant-private-review';
 import { AssistantWorkspacePicker } from './assistant-workspace-picker';
+import { ChatMessageBody } from './chat-message-body';
 import { MiraAvatar, MiraProfile } from './mira-profile';
-
-const AssistantMarkdown = dynamic(
-  () =>
-    import('@tuturuuu/ui/chat/ai-message-markdown').then(
-      (module) => module.AssistantMarkdown
-    ),
-  { ssr: false }
-);
-
-const mentionPlugins = [remarkMeetMentions];
-const mentionComponents: NonNullable<
-  ComponentProps<typeof AssistantMarkdown>['components']
-> = {
-  a: ({ href, title, children, node, ...props }) =>
-    href === MEET_ASSISTANT_PROFILE &&
-    node?.properties.title === MEET_MENTION_MARKER ? (
-      <MiraProfile mention>{children}</MiraProfile>
-    ) : (
-      <a
-        {...props}
-        title={title}
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {children}
-      </a>
-    ),
-};
 
 function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
   const t = useTranslations('meet.call');
@@ -134,6 +102,12 @@ export function ChatPanel({
 }) {
   const t = useTranslations('meet.call');
   const queryClient = useQueryClient();
+  const reviews = useQuery({
+    queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
+    queryFn: () => listMeetAssistantReviews(meetingId),
+    enabled: !!selfUserId,
+    retry: false,
+  });
   const [assistantWorkspace, setAssistantWorkspace] =
     useState<string>('personal');
   const [draft, setDraft] = useState(''),
@@ -154,7 +128,7 @@ export function ChatPanel({
   }, [meetingId]);
   const bottom = useRef<HTMLDivElement>(null),
     input = useRef<HTMLInputElement>(null);
-  const newest = chat.at(-1)?.id;
+  const newest = `${chat.at(-1)?.id ?? ''}:${reviews.data?.map((review) => review.id).join(',') ?? ''}`;
   useEffect(() => {
     if (newest) bottom.current?.scrollIntoView({ behavior: 'smooth' });
   }, [newest]);
@@ -217,11 +191,10 @@ export function ChatPanel({
           selfUserId={selfUserId}
         />
       )}
-      <AssistantPrivateReviews meetingId={meetingId} selfUserId={selfUserId} />
       <ScrollArea className="[&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 min-h-0 min-w-0 flex-1 px-4 py-3 [&_[data-radix-scroll-area-viewport]>div]:w-full [&_[data-radix-scroll-area-viewport]>div]:max-w-full">
         <ol aria-live="polite" aria-relevant="additions" className="space-y-5">
           {chat.map((message) => (
-            <li key={message.id} className="flex gap-2">
+            <li key={message.id} className="@container flex gap-2">
               {isMeetAssistant(message) ? (
                 <MiraProfile>
                   <MiraAvatar />
@@ -255,20 +228,56 @@ export function ChatPanel({
                   </time>
                 </div>
                 <div className="wrap-break-word min-w-0 text-sm">
-                  <AssistantMarkdown
-                    text={message.body}
-                    remarkPlugins={mentionPlugins}
-                    components={mentionComponents}
+                  <ChatMessageBody
+                    body={message.body}
+                    assistant={isMeetAssistant(message)}
                   />
                 </div>
+                {reviews.data?.some((review) => review.id === message.id) && (
+                  <AssistantPrivateReview
+                    meetingId={meetingId}
+                    selfUserId={selfUserId}
+                    messageId={message.id}
+                  />
+                )}
                 {message.attachmentIds?.map((id) => (
                   <ChatAttachment key={id} meetingId={meetingId} id={id} />
                 ))}
               </div>
             </li>
           ))}
+          {reviews.data
+            ?.filter(
+              (review) => !chat.some((message) => message.id === review.id)
+            )
+            .map((review) => (
+              <li key={`review-${review.id}`}>
+                <AssistantPrivateReview
+                  meetingId={meetingId}
+                  selfUserId={selfUserId}
+                  messageId={review.id}
+                />
+              </li>
+            ))}
         </ol>
-        {!chat.length && (
+        {reviews.isError && (
+          <div
+            role="alert"
+            className="mt-3 rounded-xl border border-destructive/30 p-3 text-sm"
+          >
+            <p>{t('assistant_review_failed')}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => void reviews.refetch()}
+            >
+              <RefreshCw className="size-3.5" />
+              {t('assistant_review_retry')}
+            </Button>
+          </div>
+        )}
+        {!chat.length && !reviews.data?.length && (
           <div className="space-y-2 py-10 text-center">
             <div className="flex justify-center">
               <MiraAvatar size={36} />

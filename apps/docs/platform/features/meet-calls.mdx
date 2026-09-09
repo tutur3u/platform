@@ -792,7 +792,14 @@ Web search runs in an isolated request containing only the explicit question; mo
 file conversion, and client UI controls are not exposed in the Meet tool set.
 
 Verify private reviews with the production React compiler enabled: let a review
-arrive while no review dialog is selected, then open it and deny the action.
+arrive inline while its detail query is still loading, then deny the action.
 The list can load before the detail query, so callback inputs such as the revision
 must remain guarded during that interval. An uncompiled development fixture alone
 does not cover compiler-generated callback dependency reads.
+
+Private reviews appear inline beneath the request that created them. Approval,
+denial, and the separate sharing decision stay requester-only; orphaned reviews
+whose request has left the retained chat history appear at the end of the thread.
+Provider citation IDs are resolved only against their exact returned sources.
+Older unmapped references show an unavailable-reference badge rather than a guessed
+link, and the source footer is displayed as an expandable list of source cards.

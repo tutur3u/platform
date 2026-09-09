@@ -1,6 +1,10 @@
 import { generateText, type LanguageModel, tool } from 'ai';
 import { z } from 'zod';
 import { createGoogleSearchToolSet } from '../tools/google-search-tool';
+import {
+  type MeetCitationSource,
+  resolveMeetCitations,
+} from './chat-citations';
 import type { MeetGenerationStep } from './chat-generation-usage';
 
 /** Search receives only the explicit public question, never the room history. */
@@ -12,7 +16,7 @@ export function publicMeetSearch(
   privateTerms: string[] = []
 ) {
   const steps: MeetGenerationStep[] = [];
-  const sources: Array<{ sourceType: 'url'; url: string; title?: string }> = [];
+  const sources: MeetCitationSource[] = [];
   let searched = false;
   return {
     steps,
@@ -91,7 +95,10 @@ export function publicMeetSearch(
             error:
               'Google did not return grounded sources for this question. No verified web answer is available.',
           };
-        return { answer: result.text, sources };
+        return {
+          answer: resolveMeetCitations(result.text, sources),
+          sources: sources.map(({ url, title }) => ({ url, title })),
+        };
       },
     }),
   };

@@ -1,6 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { Effect, Either } from '@tuturuuu/utils/effect';
 import { generateText, type ModelMessage, stepCountIs, type ToolSet } from 'ai';
+import { resolveMeetCitations } from './chat-citations';
 import { measureMeetGeneration } from './chat-generation-usage';
 import { type MeetAssistantContext, meetAssistantTools } from './chat-tools';
 import type { MeetChatModel } from './chat-usage';
@@ -147,7 +148,7 @@ export async function answerMeetChat(
             text: search.unavailable()
               ? 'Google did not return verified sources for this question. Please try again or ask a more specific public question.'
               : links.length
-                ? `${result.text}\n\n${links.join('\n')}`
+                ? `${resolveMeetCitations(result.text, sources)}\n\n${links.join('\n')}`
                 : result.text,
             ...measureMeetGeneration(
               [
