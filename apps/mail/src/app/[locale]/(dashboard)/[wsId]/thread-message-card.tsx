@@ -126,10 +126,7 @@ export function ThreadMessageCard({
             <MailMessagePreview
               content={message.bodyHtml ?? message.sanitizedHtml}
               attachments={message.attachments}
-              darkLabel={t('dark_view')}
-              originalLabel={t('original_view')}
               title={message.subject || t('no_subject')}
-              viewLabel={t('message_appearance')}
             />
           ) : (
             <pre className="whitespace-pre-wrap break-words px-4 pb-6 font-sans text-sm leading-7 md:px-6">

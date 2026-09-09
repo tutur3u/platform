@@ -1,5 +1,6 @@
 ---
 title: Tuturuuu Mail
+updated: '2026-09-09'
 description: Multi-mailbox client with permanent SES and Cloudflare transports.
 ---
 
@@ -42,12 +43,16 @@ Settings → Reading stores the archive navigation and email appearance preferen
 in the current browser. Archiving an open inbox conversation selects the next
 visible conversation by default, falling back to the previous one at the end of
 the loaded list. Users can choose to return to the list instead. Bulk archive
-skips all selected conversations when choosing the next message.
+skips all selected conversations when choosing the next message. Loaded unread
+conversations are marked read even when opened through restored URLs or archive
+navigation. Read updates wait for pending archive/trash operations to settle.
 
 Email frames remain hidden until the saved appearance is restored and contrast
 adjustments finish. Dark mode matches neutral paper surfaces to the reader's
-background while preserving colored panels and images. Original mode retains the
-sender's colors. Neither mode enables scripts inside email HTML.
+background, including black and gray panels and neutral gradients, and softens
+bright neutral borders while preserving colored panels and images. Compact
+Dark/Original icon controls live on the floating action toolbar with tooltips.
+Original mode retains the sender's colors. Neither mode enables scripts inside email HTML.
 
 The protected attachment endpoint accepts `?preview=1` for a passive-format
 allowlist: raster images, supported video/audio types, and plain text (including
@@ -540,8 +545,8 @@ assignment itself is idempotent. Forwarding errors remain retryable through the
 inbound delivery job. Configuration is stored in mailbox metadata; this feature
 requires no schema migration.
 
-The reader preserves original newsletter colors by default, with an optional
-dark appearance. Stylesheets are retained only inside a sandboxed iframe with
+The reader defaults to dark appearance, with original newsletter colors available
+from the floating toolbar or Reading settings. Stylesheets are retained only inside a sandboxed iframe with
 scripts, forms, remote stylesheets/fonts and network APIs blocked by CSP. The
 iframe grants same-origin access to the parent solely for height measurement and
 protected inline images; it never grants script execution. External links open
@@ -555,9 +560,8 @@ Thread lists always display both the message date and delivery time. The mobile
 reader uses constrained native scrolling to prevent wide tables, subjects or
 attachment names from widening the application viewport.
 
-The reader opens messages in their original appearance, preserves hidden newsletter
-preheaders and isolated inline CSS, and offers an optional dark canvas without
-forcing colors onto every message element. Message content uses the full pane
+The reader preserves hidden newsletter preheaders and isolated inline CSS. Dark
+appearance adapts neutral surfaces and borders while preserving branded colors. Message content uses the full pane
 width; reply actions float over the bottom edge with reserved scroll space so the
 last line remains reachable. The collapsed sidebar contains folder actions only.
 Expanded navigation groups shared mailboxes by repeated address prefixes (for

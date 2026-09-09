@@ -44,6 +44,21 @@ export function mailDarkSurface(sampled: RGB): RGB {
   return luminance(sampled) < 0.05 ? sampled : darkBackground;
 }
 
+export function neutralMailSurface(color: RGB) {
+  return Math.max(...color) - Math.min(...color) < 24;
+}
+
+export function mailBorderColor(color: RGB, background: RGB): RGB {
+  // Keep useful dividers, but prevent white/currentColor borders from glowing.
+  if (
+    !neutralMailSurface(color) ||
+    luminance(background) >= 0.1 ||
+    contrastRatio(color, background) < 3
+  )
+    return color;
+  return composite(lightText, background, 0.2);
+}
+
 function css(color: RGB) {
   return `rgb(${color.join(',')})`;
 }
@@ -55,22 +70,30 @@ export function applyMailPreviewContrast(
 ) {
   const view = document.defaultView;
   if (!view) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1;
+  const context = canvas.getContext('2d');
+  const readColor = (value: string) => {
+    const parsed = parseColor(value);
+    if (parsed) return parsed;
+    if (!context || !view.CSS.supports('color', value)) return null;
+    context.clearRect(0, 0, 1, 1);
+    context.fillStyle = value;
+    context.fillRect(0, 0, 1, 1);
+    const [r, g, b, alpha] = context.getImageData(0, 0, 1, 1).data;
+    return { rgb: [r!, g!, b!] as RGB, alpha: alpha! / 255 };
+  };
   let surfaceBackground = darkBackground;
   if (surface) {
     const color =
       surface.ownerDocument.defaultView?.getComputedStyle(
         surface
       ).backgroundColor;
-    const canvas = surface.ownerDocument.createElement('canvas');
-    canvas.width = canvas.height = 1;
-    const context = canvas.getContext('2d');
-    if (context && color) {
-      context.fillStyle = color;
-      context.fillRect(0, 0, 1, 1);
-      const [r, g, b, alpha] = context.getImageData(0, 0, 1, 1).data;
-      if (alpha) surfaceBackground = mailDarkSurface([r!, g!, b!]);
-    }
+    const sampled = color ? readColor(color) : null;
+    if (sampled && sampled.alpha > 0)
+      surfaceBackground = mailDarkSurface(sampled.rgb);
   }
+
   document.documentElement.style.setProperty(
     'background-color',
     css(surfaceBackground),
@@ -89,16 +112,12 @@ export function applyMailPreviewContrast(
     const style = view.getComputedStyle(element);
     const parentBackground =
       backgrounds.get(element.parentElement!) ?? surfaceBackground;
-    const original = parseColor(style.backgroundColor);
+    const original = readColor(style.backgroundColor);
     let background = parentBackground;
     if (original && original.alpha > 0) {
       background = composite(original.rgb, parentBackground, original.alpha);
-      // Convert light neutral paper surfaces, preserving colored brand panels.
-      if (
-        Math.max(...background) - Math.min(...background) < 24 &&
-        (luminance(background) > 0.5 || luminance(background) < 0.05) &&
-        element.tagName !== 'IMG'
-      ) {
+      // Normalize neutral paper, black and gray panels to the host surface.
+      if (neutralMailSurface(background) && element.tagName !== 'IMG') {
         background = surfaceBackground;
         element.style.setProperty(
           'background-color',
@@ -107,23 +126,59 @@ export function applyMailPreviewContrast(
         );
       }
     }
-    backgrounds.set(element, background);
-    if (['IMG', 'STYLE', 'BR', 'HR'].includes(element.tagName)) continue;
-    const foreground = parseColor(style.color);
-    if (!foreground || foreground.alpha === 0) continue;
-    const visibleColor = composite(
-      foreground.rgb,
-      background,
-      foreground.alpha
+    // Sender gradients can paint opaque black/white over background-color.
+    // Only remove entirely neutral gradients; keep brand gradients and images.
+    const gradientColors = style.backgroundImage.match(
+      /(?:rgba?|color|oklch|oklab|lab|lch)\([^)]*\)/g
     );
-    const readable = readableMailColor(visibleColor, background);
-    if (readable !== visibleColor) {
-      element.style.setProperty('color', css(readable), 'important');
-      element.style.setProperty(
-        '-webkit-text-fill-color',
-        css(readable),
-        'important'
+    if (
+      element.tagName !== 'IMG' &&
+      !style.backgroundImage.includes('url(') &&
+      gradientColors?.length &&
+      gradientColors.every((value) => {
+        const color = readColor(value);
+        return color && neutralMailSurface(color.rgb);
+      })
+    ) {
+      element.style.setProperty('background-image', 'none', 'important');
+    }
+    backgrounds.set(element, background);
+    const foreground = readColor(style.color);
+    if (
+      !['IMG', 'STYLE', 'BR', 'HR'].includes(element.tagName) &&
+      foreground &&
+      foreground.alpha > 0
+    ) {
+      const visibleColor = composite(
+        foreground.rgb,
+        background,
+        foreground.alpha
       );
+      const readable = readableMailColor(visibleColor, background);
+      if (readable !== visibleColor) {
+        element.style.setProperty('color', css(readable), 'important');
+        element.style.setProperty(
+          '-webkit-text-fill-color',
+          css(readable),
+          'important'
+        );
+      }
+    }
+    // Resolve currentColor after foreground correction so borders cannot turn white.
+    const borderStyle = view.getComputedStyle(element);
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      if (
+        borderStyle.getPropertyValue(`border-${side}-style`) === 'none' ||
+        parseFloat(borderStyle.getPropertyValue(`border-${side}-width`)) === 0
+      )
+        continue;
+      const property = `border-${side}-color`;
+      const color = readColor(borderStyle.getPropertyValue(property));
+      if (!color || color.alpha === 0) continue;
+      const visible = composite(color.rgb, background, color.alpha);
+      const softened = mailBorderColor(visible, background);
+      if (softened !== visible)
+        element.style.setProperty(property, css(softened), 'important');
     }
   }
 }
