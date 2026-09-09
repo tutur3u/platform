@@ -22,8 +22,8 @@ export function MockDesk({
       r.app === app &&
       `${r.title} ${r.content}`.toLowerCase().includes(query.toLowerCase())
   );
-  const chat = ['zalo', 'messenger', 'teams'].includes(app);
-  const board = ['jira', 'trello'].includes(app);
+  const chat = ['zalo', 'messenger', 'teams', 'slack', 'gmail'].includes(app);
+  const board = ['jira', 'trello', 'github'].includes(app);
   return (
     <Card
       id={active ? 'sandbox-desk' : undefined}
@@ -34,7 +34,7 @@ export function MockDesk({
           <span className="section-number">03 / {c.sandboxSection}</span>
           <h2>{c.mockDesk}</h2>
         </div>
-        <Badge variant="secondary">{c.simulated}</Badge>
+        <Badge variant="secondary">{c.practiceData}</Badge>
       </div>
       <div className="grid gap-3 sm:grid-cols-[220px_1fr]">
         <SelectField
@@ -65,7 +65,7 @@ export function MockDesk({
         <div className="mock-titlebar">
           <span className="mock-monogram">{appNames[app].slice(0, 1)}</span>
           <strong>{appNames[app]}</strong>
-          <span className="mock-caption">{c.simulated}</span>
+          <span className="mock-caption">{c.practiceData}</span>
         </div>
         <div
           className={`mock-content ${chat ? 'mock-chat' : board ? 'mock-board' : app === 'calendar' ? 'mock-calendar' : 'mock-documents'}`}

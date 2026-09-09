@@ -101,7 +101,6 @@ function App() {
     <Structure
       roomId={roomId}
       identity={session.data?.identity ?? null}
-      navigate={navigate}
       loading={session.isPending}
       onLogout={async () => {
         if (session.data?.identity?.email) {

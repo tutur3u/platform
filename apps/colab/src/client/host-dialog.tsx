@@ -81,6 +81,7 @@ export function HostWorkshopDialog({
                 required
                 maxLength={100}
                 value={draft.title}
+                placeholder={c.workshopNamePlaceholder}
                 onChange={(event) => update('title', event.target.value)}
               />
             </div>
@@ -119,6 +120,7 @@ export function HostWorkshopDialog({
                   max={100}
                   required
                   value={draft.capacity}
+                  placeholder="24"
                   onChange={(event) => update('capacity', event.target.value)}
                 />
               </div>
@@ -132,6 +134,7 @@ export function HostWorkshopDialog({
                   max={12}
                   required
                   value={draft.teams}
+                  placeholder="4"
                   onChange={(event) => update('teams', event.target.value)}
                 />
               </div>

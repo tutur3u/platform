@@ -47,6 +47,32 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     }
     const [host, viewer, writer] = pages;
     await expect(host.getByRole('tab')).toHaveCount(0);
+    await host
+      .getByRole('button', { name: 'Switch application', exact: true })
+      .click();
+    await expect(
+      host.getByRole('heading', { name: 'Apps', exact: true })
+    ).toBeVisible();
+    await expect(
+      host.getByRole('searchbox', { name: 'Search apps', exact: true })
+    ).toBeVisible();
+    await expect(host.locator('[data-slot="app-card"]')).toHaveCount(28);
+    await expect(host.getByText('28 apps', { exact: true })).toBeVisible();
+    const appSearch = host.getByRole('searchbox', {
+      name: 'Search apps',
+      exact: true,
+    });
+    await appSearch.fill('calendar');
+    await expect(host.getByText('1 app', { exact: true })).toBeVisible();
+    await appSearch.clear();
+    await expect(
+      host.getByRole('link', { name: 'Calendar', exact: true })
+    ).toBeVisible();
+    await host.screenshot({
+      path: '/private/tmp/colab-apps-launcher.png',
+      fullPage: true,
+    });
+    await host.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(
       viewer.getByRole('link', { name: 'Host controls', exact: true })
     ).toHaveCount(0);
@@ -144,7 +170,9 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(
       viewer.getByText('Live demo agent result', { exact: true })
     ).toBeVisible();
-    await viewer.getByRole('link', { name: 'Sandbox', exact: true }).click();
+    await viewer
+      .getByRole('link', { name: 'Practice apps', exact: true })
+      .click();
     await expect(
       viewer.getByText('Live demo document', { exact: true })
     ).toBeVisible();
@@ -253,7 +281,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     });
     assert.deepEqual(errors, []);
     console.log(
-      'PASS: three-browser live showcase, saved prompts, skills, mock records, run results, instant hide/show, admin-only controls, delegated admin, reconnect privacy, own draft preservation.'
+      'PASS: three-browser live showcase, saved prompts, skills, practice data, run results, instant hide/show, admin-only controls, delegated admin, reconnect privacy, own draft preservation.'
     );
   } finally {
     await Promise.all(contexts.map((context) => context.close()));

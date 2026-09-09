@@ -32,9 +32,19 @@ import type {
   LaunchableApp,
   LaunchableAppCategory,
 } from '@tuturuuu/utils/launchable-apps';
-import Link from 'next/link';
-import type { KeyboardEventHandler } from 'react';
+import type {
+  ComponentPropsWithoutRef,
+  ComponentType,
+  ElementType,
+  KeyboardEventHandler,
+} from 'react';
 import type { AppOpenMode } from './apps-launcher-catalog';
+
+type AppLauncherLinkProps = ComponentPropsWithoutRef<'a'> & {
+  'data-active'?: boolean;
+  'data-app-slug': string;
+  'data-slot': string;
+};
 
 const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   apps: Boxes,
@@ -95,6 +105,7 @@ export function AppLauncherItem({
   description,
   getAppUrl,
   isActive,
+  linkComponent,
   onFocus,
   onKeyDown,
   onOpen,
@@ -105,6 +116,7 @@ export function AppLauncherItem({
   description: string;
   getAppUrl: (app: LaunchableApp) => string;
   isActive: boolean;
+  linkComponent?: ElementType;
   onFocus: () => void;
   onKeyDown: KeyboardEventHandler<HTMLAnchorElement>;
   onOpen: () => void;
@@ -115,29 +127,28 @@ export function AppLauncherItem({
   const tone = APP_LAUNCHER_CATEGORY_TONES[app.category];
   const href = getAppUrl(app);
   const descriptionId = `apps-launcher-description-${app.slug}`;
-
-  return (
-    <Link
-      aria-describedby={descriptionId}
-      aria-label={title}
-      className={cn(
-        'group relative flex min-h-36 w-full cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-border/70 bg-card/40 px-5 py-4 text-center text-card-foreground outline-none transition-[background-color,border-color,transform] duration-200 ease-out hover:-translate-y-px hover:border-foreground/20 hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0',
-        isActive &&
-          'border-foreground/25 bg-muted/60 ring-2 ring-ring/70 ring-offset-2 ring-offset-background'
-      )}
-      data-active={isActive || undefined}
-      data-app-slug={app.slug}
-      data-slot="app-card"
-      href={href}
-      id={`apps-launcher-app-${app.slug}`}
-      onClick={onOpen}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
-      onPointerEnter={onFocus}
-      prefetch={false}
-      rel={openMode === 'new-tab' ? 'noopener noreferrer' : undefined}
-      target={openMode === 'new-tab' ? '_blank' : undefined}
-    >
+  const linkProps: AppLauncherLinkProps = {
+    'aria-describedby': descriptionId,
+    'aria-label': title,
+    className: cn(
+      'group relative flex min-h-36 w-full cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-border/70 bg-card/40 px-5 py-4 text-center text-card-foreground outline-none transition-[background-color,border-color,transform] duration-200 ease-out hover:-translate-y-px hover:border-foreground/20 hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0',
+      isActive &&
+        'border-foreground/25 bg-muted/60 ring-2 ring-ring/70 ring-offset-2 ring-offset-background'
+    ),
+    'data-active': isActive || undefined,
+    'data-app-slug': app.slug,
+    'data-slot': 'app-card',
+    href,
+    id: `apps-launcher-app-${app.slug}`,
+    onClick: onOpen,
+    onFocus,
+    onKeyDown,
+    onPointerEnter: onFocus,
+    rel: openMode === 'new-tab' ? 'noopener noreferrer' : undefined,
+    target: openMode === 'new-tab' ? '_blank' : undefined,
+  };
+  const content = (
+    <>
       <span
         className={cn(
           'flex size-14 shrink-0 items-center justify-center rounded-2xl border shadow-xs transition-transform duration-200 ease-out group-hover:-translate-y-0.5 group-hover:scale-105 group-focus-visible:-translate-y-0.5 group-focus-visible:scale-105 motion-reduce:transition-none',
@@ -173,6 +184,13 @@ export function AppLauncherItem({
           <ArrowRight className="size-3.5" />
         )}
       </span>
-    </Link>
+    </>
   );
+
+  if (linkComponent) {
+    const LinkComponent = linkComponent as ComponentType<AppLauncherLinkProps>;
+    return <LinkComponent {...linkProps}>{content}</LinkComponent>;
+  }
+
+  return <a {...linkProps}>{content}</a>;
 }

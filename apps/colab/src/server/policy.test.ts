@@ -1,4 +1,4 @@
-import { seedRecords } from '@tuturuuu/multiplayer';
+import { mockApps, seedRecords } from '@tuturuuu/multiplayer';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { executeMockTool } from './ai';
 import { authRoute, sign, verify } from './auth';
@@ -85,6 +85,10 @@ describe('sandbox and sessions', () => {
   it('can only read/write allowlisted in-memory mock apps', () => {
     const records = seedRecords();
     const other = seedRecords();
+    expect(mockApps).toEqual(
+      expect.arrayContaining(['gmail', 'slack', 'sheets', 'github'])
+    );
+    expect(records).toHaveLength(24);
     expect(
       JSON.parse(
         executeMockTool(records, {

@@ -24,7 +24,11 @@ export type MockApp =
   | 'teams'
   | 'calendar'
   | 'jira'
-  | 'trello';
+  | 'trello'
+  | 'gmail'
+  | 'slack'
+  | 'sheets'
+  | 'github';
 export const mockApps: MockApp[] = [
   'drive',
   'notion',
@@ -34,6 +38,10 @@ export const mockApps: MockApp[] = [
   'calendar',
   'jira',
   'trello',
+  'gmail',
+  'slack',
+  'sheets',
+  'github',
 ];
 export type MockRecord = {
   id: string;
@@ -42,6 +50,12 @@ export type MockRecord = {
   content: string;
 };
 export type Trace = { tool: string; input: string; output: string };
+export type RunUsage = {
+  turns: number;
+  toolCalls: number;
+  turnLimit: number;
+  toolCallLimit: number;
+};
 export type Run = {
   id: string;
   at: number;
@@ -50,7 +64,14 @@ export type Run = {
   answer: string;
   trace: Trace[];
   feedback: string;
+  usage?: RunUsage;
 };
+export type TeamLimits = {
+  aiCallLimit: number;
+  agentTurnLimit: number;
+  toolCallLimit: number;
+};
+export type WorkshopLimits = TeamLimits;
 export type Team = {
   id: string;
   name: string;
@@ -59,6 +80,8 @@ export type Team = {
   skills: Skill[];
   records: MockRecord[];
   runs: Run[];
+  aiCalls: number;
+  limits: TeamLimits;
 };
 export type Scenario = { title: string; brief: string; criteria: string[] };
 export type AuditEntry = {
@@ -92,8 +115,31 @@ export type Room = {
   scenario: Scenario;
   scenarios: Scenario[];
   aiCalls: number;
+  limits: WorkshopLimits;
   revision: number;
 };
+
+export const defaultWorkshopLimits: WorkshopLimits = {
+  aiCallLimit: 200,
+  agentTurnLimit: 8,
+  toolCallLimit: 6,
+};
+export const defaultTeamLimits: TeamLimits = {
+  aiCallLimit: 50,
+  agentTurnLimit: 6,
+  toolCallLimit: 5,
+};
+
+export function normalizeRoom(room: Room): Room {
+  room.aiCalls ??= 0;
+  room.limits = { ...defaultWorkshopLimits, ...room.limits };
+  room.teams = room.teams.map((team) => ({
+    ...team,
+    aiCalls: team.aiCalls ?? 0,
+    limits: { ...defaultTeamLimits, ...team.limits },
+  }));
+  return room;
+}
 export type RoomView = Omit<
   Room,
   'passwordHash' | 'invites' | 'guestVersion'
@@ -238,6 +284,22 @@ export function seedRecords(): MockRecord[] {
       'Announcement draft',
       'List: awaiting approval. Owner: Linh. Checklist: verified dates, audience, approval.',
     ],
+    gmail: [
+      'Draft: Project Lotus update',
+      'To: existing-customers@example.test. Status: draft. Approval is still required before sending.',
+    ],
+    slack: [
+      '#project-lotus',
+      'Mai: Please keep the October 12 date internal until launch QA and the announcement are approved.',
+    ],
+    sheets: [
+      'Launch budget tracker',
+      'Approved budget: $4,000. Committed: $2,650. Remaining: $1,350. Last reviewed by Mai.',
+    ],
+    github: [
+      'tuturuuu/lotus · pull request #42',
+      'QA checklist: 4 of 6 complete. Accessibility and rollback verification are still open.',
+    ],
   };
   const primary = mockApps.map((app) => ({
     id: `${app}-1`,
@@ -303,6 +365,34 @@ export function seedRecords(): MockRecord[] {
       content:
         'List: draft. Owner: Linh. Confirm early-access eligibility before moving this card to approved.',
     },
+    {
+      id: 'gmail-2',
+      app: 'gmail',
+      title: 'Mai · Re: launch audience',
+      content:
+        'Please use the approved existing-customer segment only. Do not send until I approve the final bilingual copy.',
+    },
+    {
+      id: 'slack-2',
+      app: 'slack',
+      title: '#customer-success',
+      content:
+        'Linh: Sam asked about early access. We need a helpful reply that does not expose the customer list.',
+    },
+    {
+      id: 'sheets-2',
+      app: 'sheets',
+      title: 'Campaign channels',
+      content:
+        'Email: approved. Zalo: draft only. Paid social: not approved. Owner for final channel mix: Mai.',
+    },
+    {
+      id: 'github-2',
+      app: 'github',
+      title: 'LOTUS release notes draft',
+      content:
+        'The release date is intentionally omitted until QA closes. Do not infer readiness from merged code alone.',
+    },
   ];
 }
 export function starterScenarios(): Scenario[] {
@@ -363,6 +453,8 @@ export function createRoom(
       skills: [],
       records: seedRecords(),
       runs: [],
+      aiCalls: 0,
+      limits: { ...defaultTeamLimits },
     })
   );
   return {
@@ -399,6 +491,7 @@ export function createRoom(
       ],
     },
     aiCalls: 0,
+    limits: { ...defaultWorkshopLimits },
     scenarios: starterScenarios(),
     revision: 0,
   };
@@ -494,6 +587,42 @@ export function mutateRoom(
       'invalid_team'
     );
     target.teamId = String(body.teamId);
+  } else if (action === 'limits') {
+    const scope = body.scope;
+    requireRule(scope === 'room' || scope === 'team', 'invalid_input');
+    const limits = {
+      aiCallLimit: number(body.aiCallLimit, 1, 2000),
+      agentTurnLimit: number(body.agentTurnLimit, 1, 20),
+      toolCallLimit: number(body.toolCallLimit, 0, 20),
+    };
+    requireRule(limits.toolCallLimit <= limits.agentTurnLimit, 'invalid_input');
+    if (scope === 'room') {
+      room.limits = limits;
+      for (const team of room.teams) {
+        team.limits.aiCallLimit = Math.min(
+          team.limits.aiCallLimit,
+          limits.aiCallLimit
+        );
+        team.limits.agentTurnLimit = Math.min(
+          team.limits.agentTurnLimit,
+          limits.agentTurnLimit
+        );
+        team.limits.toolCallLimit = Math.min(
+          team.limits.toolCallLimit,
+          limits.toolCallLimit
+        );
+      }
+    } else {
+      const team = room.teams.find((item) => item.id === body.teamId);
+      requireRule(team, 'invalid_team');
+      requireRule(
+        limits.aiCallLimit <= room.limits.aiCallLimit &&
+          limits.agentTurnLimit <= room.limits.agentTurnLimit &&
+          limits.toolCallLimit <= room.limits.toolCallLimit,
+        'invalid_input'
+      );
+      team.limits = limits;
+    }
   } else if (action === 'reset') {
     editable(room, now);
     const team = room.teams.find((t) => t.id === body.teamId);

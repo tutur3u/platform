@@ -102,6 +102,12 @@ describe('AI output boundaries', () => {
       ],
       records: seedRecords(),
       runs: [],
+      aiCalls: 0,
+      limits: {
+        aiCallLimit: 50,
+        agentTurnLimit: 6,
+        toolCallLimit: 5,
+      },
     };
     const result = await runAgent(env, team, starterScenarios()[0]!);
     expect(run).toHaveBeenCalledTimes(4);
@@ -110,8 +116,14 @@ describe('AI output boundaries', () => {
       'zalo.create',
     ]);
     expect(result.records).toHaveLength(team.records.length + 1);
-    expect(team.records).toHaveLength(16);
+    expect(team.records).toHaveLength(24);
     expect(result.run.prompt).toBe(team.prompt);
     expect(result.run.scenario).toBe(starterScenarios()[0]!.brief);
+    expect(result.run.usage).toEqual({
+      turns: 3,
+      toolCalls: 2,
+      turnLimit: 6,
+      toolCallLimit: 5,
+    });
   });
 });

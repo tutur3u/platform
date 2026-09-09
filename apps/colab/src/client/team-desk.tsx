@@ -14,6 +14,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useState } from 'react';
 import { useCopy } from './i18n';
 import { MockDesk } from './mock-desk';
+import { RunReport } from './run-report';
 
 export function TeamDesk({
   team,
@@ -22,6 +23,7 @@ export function TeamDesk({
   action,
   active = true,
   section = 'team-prompt',
+  roomAiAvailable = true,
 }: {
   team: Team;
   writable: boolean;
@@ -29,6 +31,7 @@ export function TeamDesk({
   action: (body: Record<string, unknown>, route?: string) => Promise<void>;
   active?: boolean;
   section?: string;
+  roomAiAvailable?: boolean;
 }) {
   const c = useCopy();
   const [draft, setDraft] = useState(team.prompt);
@@ -145,7 +148,13 @@ export function TeamDesk({
             <Button
               type="button"
               size="sm"
-              disabled={busy || changed || team.prompt.length < 10}
+              disabled={
+                busy ||
+                changed ||
+                team.prompt.length < 10 ||
+                !roomAiAvailable ||
+                team.aiCalls >= team.limits.aiCallLimit
+              }
               onClick={() => invoke({ action: 'compile', multiple }, 'ai')}
             >
               {busy ? c.working : c.compile}
@@ -204,45 +213,36 @@ export function TeamDesk({
             <h2>{c.runs}</h2>
           </div>
           {writable && (
-            <Button
-              type="button"
-              size="sm"
-              disabled={busy || changed || !team.skills.length}
-              onClick={() => invoke({ action: 'run' }, 'ai')}
-            >
-              {busy ? c.working : c.run} <span aria-hidden="true">↗</span>
-            </Button>
+            <div className="run-action">
+              <span>
+                {team.aiCalls}/{team.limits.aiCallLimit} {c.aiOperationsShort}
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                disabled={
+                  busy ||
+                  changed ||
+                  !team.skills.length ||
+                  !roomAiAvailable ||
+                  team.aiCalls >= team.limits.aiCallLimit
+                }
+                onClick={() => invoke({ action: 'run' }, 'ai')}
+              >
+                {busy ? c.working : c.run} <span aria-hidden="true">↗</span>
+              </Button>
+            </div>
           )}
         </div>
         {!team.runs.length && <p className="empty">{c.runsEmpty}</p>}
         {[...team.runs].reverse().map((run, i) => (
-          <details className="run" key={run.id} open={i === 0}>
-            <summary>
-              <strong>#{team.runs.length - i}</strong>{' '}
-              {new Date(run.at).toLocaleString()}{' '}
-              <span>
-                {run.trace.length} {c.trace}
-              </span>
-            </summary>
-            <h3>{c.result}</h3>
-            <pre>{run.answer}</pre>
-            <h3>{c.feedback}</h3>
-            <pre className="feedback">{run.feedback}</pre>
-            <h3>{c.trace}</h3>
-            {run.trace.map((trace, j) => (
-              <details className="trace" key={`${run.id}-${j}`}>
-                <summary>
-                  {j + 1}. {trace.tool}
-                </summary>
-                <pre>{trace.input}</pre>
-                <pre>{trace.output}</pre>
-              </details>
-            ))}
-            <details>
-              <summary>{c.viewPrompt}</summary>
-              <pre>{run.prompt}</pre>
-            </details>
-          </details>
+          <RunReport
+            isLatest={i === 0}
+            key={run.id}
+            limits={team.limits}
+            run={run}
+            number={team.runs.length - i}
+          />
         ))}
       </Card>
     </>

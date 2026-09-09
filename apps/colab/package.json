@@ -16,6 +16,7 @@
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/multiplayer": "workspace:*",
+    "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "next-themes": "^0.4.6",
     "react": "^19.2.8",

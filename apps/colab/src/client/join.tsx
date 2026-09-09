@@ -51,6 +51,7 @@ export function Join({
               required
               maxLength={60}
               autoComplete="nickname"
+              placeholder={c.namePlaceholder}
             />
           </label>
         )}
@@ -62,6 +63,7 @@ export function Join({
             autoComplete="off"
             maxLength={200}
             required={!identity}
+            placeholder={c.passwordPlaceholder}
           />
         </label>
         <label>
