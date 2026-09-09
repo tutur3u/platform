@@ -938,7 +938,9 @@
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "react-hook-form": "^7.87.0",
+        "remark-parse": "^11.0.0",
         "server-only": "^0.0.1",
+        "unified": "^11.0.5",
         "zod": "^4.5.4",
       },
       "devDependencies": {

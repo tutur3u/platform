@@ -55,3 +55,18 @@ it('preserves the original validated URL for exact citation matching', () => {
       ?.url
   ).toBe('https://example.com');
 });
+
+it('extracts a real footer after an HTML block containing fence-looking text', () => {
+  const html = '<pre>\n~~~\n</pre>';
+  expect(
+    splitChatSources(`${html}\n\n- [Example](<https://example.com/>)`)
+  ).toEqual({
+    text: html,
+    sources: [{ title: 'Example', url: 'https://example.com/' }],
+  });
+  const insideHtml = '<pre>\n\n- [Example](<https://example.com/>)';
+  expect(splitChatSources(insideHtml)).toEqual({
+    text: insideHtml,
+    sources: [],
+  });
+});
