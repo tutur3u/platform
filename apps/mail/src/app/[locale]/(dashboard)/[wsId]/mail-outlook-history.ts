@@ -1,3 +1,5 @@
+export const OUTLOOK_HEADER_ELEMENTS = 'div,p,blockquote,table,tbody,tr';
+
 const FIELD = /^\s*(from|từ|sent|date|đã gửi|ngày|to|đến|subject|chủ đề)\s*:/iu;
 const FIELDS = [
   /^(?:from|từ)$/iu,
@@ -72,7 +74,7 @@ export function findOutlookHistoryHeaders(body: HTMLElement) {
   const matches = new Map<string, boolean>();
   // Prefer the innermost complete header and skip its enclosing wrappers.
   for (const candidate of Array.from(
-    body.querySelectorAll('div,p')
+    body.querySelectorAll(OUTLOOK_HEADER_ELEMENTS)
   ).reverse()) {
     if (covered.has(candidate)) continue;
     const range = ranges.get(candidate)!;

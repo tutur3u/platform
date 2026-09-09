@@ -1,6 +1,7 @@
 import {
   findOutlookHistoryHeaders,
   hasOutlookHeaderLines,
+  OUTLOOK_HEADER_ELEMENTS,
 } from './mail-outlook-history';
 
 const REPLY_ATTRIBUTION =
@@ -47,7 +48,7 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
   const outlookHeaders = findOutlookHistoryHeaders(body);
   const candidates = Array.from(
     body.querySelectorAll<HTMLElement>(
-      '.gmail_quote, .gmail_quote_container, #divRplyFwdMsg, #x_divRplyFwdMsg, blockquote, div, p'
+      `.gmail_quote, .gmail_quote_container, #divRplyFwdMsg, #x_divRplyFwdMsg, ${OUTLOOK_HEADER_ELEMENTS}`
     )
   );
   for (const candidate of candidates) {
@@ -63,14 +64,16 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
           candidate.previousElementSibling?.textContent?.trim() ?? ''
         ));
     if (!gmail && !outlook && !quote) continue;
-    let start: Node = candidate;
+    const quoteContainer = candidate.closest('blockquote');
+    const quotedElement = quoteContainer ?? candidate;
+    let start: Node = quotedElement;
     if (
-      quote &&
+      (quote || quoteContainer) &&
       REPLY_ATTRIBUTION.test(
-        candidate.previousElementSibling?.textContent?.trim() ?? ''
+        quotedElement.previousElementSibling?.textContent?.trim() ?? ''
       )
     ) {
-      start = candidate.previousElementSibling!;
+      start = quotedElement.previousElementSibling!;
     }
     if (!hasVisibleAuthoredContent(document, start)) return;
 
@@ -79,19 +82,35 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
     const summary = document.createElement('summary');
     summary.textContent = label;
     details.append(summary);
-    if (outlook) {
+    if (outlook && !quoteContainer) {
       // Outlook places its header and quoted body in separate siblings, often
       // nested in Word-generated wrappers. Range keeps that markup intact.
+      const containers: Element[] = [];
+      for (
+        let parent = start.parentElement;
+        parent && parent !== body;
+        parent = parent.parentElement
+      )
+        containers.push(parent);
       const history = document.createRange();
       history.setStartBefore(start);
       history.setEnd(body, body.childNodes.length);
       const fragment = history.extractContents();
-      history.insertNode(details);
+      for (const container of containers) {
+        if (
+          container.textContent?.trim() ||
+          container.querySelector('img,video,svg,canvas,hr')
+        )
+          break;
+        container.remove();
+      }
+      // Append after the remaining authored prefix, never inside tbody/tr.
+      body.append(details);
       details.append(fragment);
     } else {
       start.parentNode!.insertBefore(details, start);
-      if (start !== candidate) details.append(start);
-      details.append(candidate);
+      if (start !== quotedElement) details.append(start);
+      details.append(quotedElement);
     }
     return;
   }

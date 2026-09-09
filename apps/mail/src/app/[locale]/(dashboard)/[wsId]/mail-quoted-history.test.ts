@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sanitizeMailHtml } from '@/lib/mail/html';
 import {
   collapseMailQuotedHistory,
   splitMailQuotedText,
 } from './mail-quoted-history';
+
+afterEach(() => vi.restoreAllMocks());
 
 beforeEach(() => {
   document.body.innerHTML = '';
@@ -135,7 +137,44 @@ describe('quoted HTML history', () => {
     const clone = vi.spyOn(Node.prototype, 'cloneNode');
     collapseMailQuotedHistory(document, 'Quoted text');
     expect(clone).not.toHaveBeenCalled();
-    clone.mockRestore();
+  });
+  it('collapses table-based Outlook headers without placing details inside a table', () => {
+    const details = render(
+      '<p>New reply</p><table><tr><td>From: Lan<br>Sent: Monday<br>To: Minh<br>Subject: Update</td></tr></table><p>Old body</p>'
+    );
+    expect(details?.parentElement).toBe(document.body);
+    expect(details?.querySelector('table')).not.toBeNull();
+    expect(document.body.querySelectorAll('table')).toHaveLength(1);
+    expect(details?.textContent).toContain('Old body');
+    expect(details?.textContent).not.toContain('New reply');
+  });
+  it('recognizes Outlook fields spread across table rows', () => {
+    const details = render(
+      '<p>New reply</p><table><tr><td>From:</td><td>Lan</td></tr><tr><td>Sent:</td><td>Monday</td></tr><tr><td>To:</td><td>Minh</td></tr><tr><td>Subject:</td><td>Update</td></tr></table><p>Old body</p>'
+    );
+    expect(details?.textContent).toContain('Old body');
+    expect(details?.parentElement).toBe(document.body);
+  });
+  it('keeps authored table rows outside quoted history', () => {
+    const details = render(
+      '<table><tr><td>New reply</td></tr><tr><td>From: Lan<br>Sent: Monday<br>To: Minh<br>Subject: Update</td></tr><tr><td>Old body</td></tr></table>'
+    );
+    expect(details?.textContent).toContain('Old body');
+    expect(details?.textContent).not.toContain('New reply');
+    expect(details?.parentElement).toBe(document.body);
+  });
+  it.each([
+    'From: Lan<br>Sent: Monday<br>To: Minh<br>Subject: Update',
+    '<div>From: Lan<br>Sent: Monday<br>To: Minh<br>Subject: Update</div>',
+  ])('keeps replies after Outlook blockquotes visible', (header) => {
+    const details = render(
+      `<p>New reply</p><blockquote>${header}<p>Old body</p></blockquote><p>Additional answer</p>`
+    );
+    expect(details?.textContent).toContain('Old body');
+    expect(details?.textContent).not.toContain('Additional answer');
+    expect(document.body.lastElementChild?.textContent).toBe(
+      'Additional answer'
+    );
   });
   it('does not restore executable content while preserving quote markers', () => {
     render(
