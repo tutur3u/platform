@@ -7,6 +7,14 @@ export function createMailReplyActions(
   mailboxes: MailMailbox[],
   openCompose: (draft: ComposeInitialDraft | null) => Promise<void>
 ) {
+  const replyRecipients = (message: MailMessageDetail) => {
+    const recipients = message.recipients.filter(
+      (item) => item.kind === 'reply_to'
+    );
+    return recipients.length
+      ? recipients
+      : [{ address: message.fromAddress, displayName: message.fromName }];
+  };
   const replyReferences = (message: MailMessageDetail) => [
     ...message.references,
     ...(message.internetMessageId ? [message.internetMessageId] : []),
@@ -22,23 +30,24 @@ export function createMailReplyActions(
         .filter((item) => item.contentId)
         .map((item) => item.id),
       inReplyTo: message.internetMessageId,
-      recipientDisplayNames: message.fromName
-        ? { [message.fromAddress.toLowerCase()]: message.fromName }
-        : {},
+      recipientDisplayNames: Object.fromEntries(
+        replyRecipients(message).flatMap((item) =>
+          item.displayName
+            ? [[item.address.toLowerCase(), item.displayName]]
+            : []
+        )
+      ),
       references: replyReferences(message),
       subject: replySubject(message.subject),
       threadId: message.threadId ?? undefined,
-      to: [message.fromAddress],
+      to: replyRecipients(message).map((item) => item.address),
     });
   const handleReplyAll = (message: MailMessageDetail) => {
     const excluded = new Set(
       mailboxes.map((mailbox) => mailbox.address.toLowerCase())
     );
     const candidates = [
-      {
-        address: message.fromAddress,
-        displayName: message.fromName,
-      },
+      ...replyRecipients(message),
       ...message.recipients
         .filter(
           (recipient) => recipient.kind === 'to' || recipient.kind === 'cc'

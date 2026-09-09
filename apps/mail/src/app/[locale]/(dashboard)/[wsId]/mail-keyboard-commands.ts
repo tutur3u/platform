@@ -86,7 +86,7 @@ export function mailKeyboardTargetBlocked(target: EventTarget | null) {
     typeof (target as Element).closest === 'function' &&
     Boolean(
       (target as Element).closest(
-        'input, textarea, select, video, audio, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="menu"], [role="listbox"], [role="dialog"], [data-mail-composer]'
+        'input, textarea, select, video, audio, [contenteditable]:not([contenteditable="false"]), [role="checkbox"], [role="radio"], [role="switch"], [role="textbox"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="menu"], [role="listbox"], [role="dialog"], [data-mail-composer]'
       )
     )
   );

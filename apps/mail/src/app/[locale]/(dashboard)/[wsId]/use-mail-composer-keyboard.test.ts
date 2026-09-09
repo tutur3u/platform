@@ -52,16 +52,16 @@ it('focuses the reply body and supports save, AI and send modifiers', async () =
   const body = screen.getByRole('textbox', { name: 'Body' });
   await waitFor(() => expect(document.activeElement).toBe(body));
   fireEvent.keyDown(body, { key: 's', ctrlKey: true });
-  expect(callbacks.onSave).toHaveBeenCalledOnce();
+  await waitFor(() => expect(callbacks.onSave).toHaveBeenCalledOnce());
   expect(callbacks.onClose).not.toHaveBeenCalled();
   fireEvent.keyDown(body, { key: 'j', metaKey: true });
-  expect(callbacks.onAi).toHaveBeenCalledOnce();
+  await waitFor(() => expect(callbacks.onAi).toHaveBeenCalledOnce());
   fireEvent.keyDown(body, { key: 'Enter', ctrlKey: true });
-  expect(callbacks.onSend).toHaveBeenCalledOnce();
+  await waitFor(() => expect(callbacks.onSend).toHaveBeenCalledOnce());
   fireEvent.keyDown(body, { key: 'Enter', ctrlKey: true, repeat: true });
-  expect(callbacks.onSend).toHaveBeenCalledOnce();
+  await waitFor(() => expect(callbacks.onSend).toHaveBeenCalledOnce());
   fireEvent.keyDown(body, { key: 'Escape' });
-  expect(callbacks.onClose).toHaveBeenCalledOnce();
+  await waitFor(() => expect(callbacks.onClose).toHaveBeenCalledOnce());
 });
 it('leaves normal typing, IME and unrelated modifier combinations alone', () => {
   const callbacks = setup();

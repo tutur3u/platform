@@ -1,10 +1,14 @@
 'use client';
 
-import type { MailThreadSummary } from '@tuturuuu/internal-api';
+import type {
+  MailThreadDetail,
+  MailThreadSummary,
+} from '@tuturuuu/internal-api';
 import {
   type Dispatch,
   type SetStateAction,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -26,6 +30,7 @@ type Action =
   | 'mark_unread';
 export interface MailKeyboardOptions {
   threads: MailThreadSummary[];
+  openDetail?: MailThreadDetail | null;
   threadId: string | null;
   folder: MailFolder;
   composerOpen: boolean;
@@ -47,6 +52,7 @@ export function useMailKeyboard(options: MailKeyboardOptions) {
   const [helpOpen, setHelpOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const pendingGo = useRef(0);
+  const handler = useRef<(event: KeyboardEvent) => void>(() => {});
   const previousScope = useRef(options.selectionScope);
   const focusThread = (id: string | null) => {
     const rows = rootRef.current?.querySelectorAll<HTMLButtonElement>(
@@ -72,7 +78,7 @@ export function useMailKeyboard(options: MailKeyboardOptions) {
     }
   }, [options.selectionScope, enabled, options.composerOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (
         event.defaultPrevented ||
@@ -93,7 +99,17 @@ export function useMailKeyboard(options: MailKeyboardOptions) {
           ? event.target.closest<HTMLElement>('[data-mail-thread-id]')
           : null;
       const targetId = row?.dataset.mailThreadId ?? options.threadId;
-      const current = options.threads.find((thread) => thread.id === targetId);
+      const current =
+        options.threads.find((thread) => thread.id === targetId) ??
+        (options.openDetail?.thread.id === targetId
+          ? {
+              id: options.openDetail.thread.id,
+              starred: options.openDetail.messages.at(-1)?.starred ?? false,
+            }
+          : null) ??
+        (targetId === options.threadId && targetId
+          ? { id: targetId, starred: false }
+          : null);
       const command = mailKeyboardCommand(event);
       if (
         pendingGo.current &&
@@ -259,8 +275,13 @@ export function useMailKeyboard(options: MailKeyboardOptions) {
       event.preventDefault();
       options.action(action, current.id);
     };
-    return subscribeMailKeyboard(rootRef.current, onKeyDown);
+    handler.current = onKeyDown;
   });
+  useEffect(
+    () =>
+      subscribeMailKeyboard(rootRef.current, (event) => handler.current(event)),
+    []
+  );
 
   return { rootRef, helpOpen, setHelpOpen };
 }

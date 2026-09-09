@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { MailThreadSummary } from '@tuturuuu/internal-api';
+import type {
+  MailThreadDetail,
+  MailThreadSummary,
+} from '@tuturuuu/internal-api';
 import { createElement as h, useState } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { type MailKeyboardOptions, useMailKeyboard } from './use-mail-keyboard';
@@ -70,6 +73,9 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  document.querySelectorAll('[data-keyboard-test-modal]').forEach((node) => {
+    node.remove();
+  });
   vi.restoreAllMocks();
 });
 const key = (target: Element | Window, value: string, extra = {}) =>
@@ -125,6 +131,7 @@ it.each(['INPUT', 'EDITOR', 'MODAL', 'COMPOSER', 'IME', 'REPEAT', 'MODIFIER'])(
       const modal = document.createElement('div');
       modal.setAttribute('role', 'dialog');
       modal.dataset.state = 'open';
+      modal.dataset.keyboardTestModal = 'true';
       document.body.append(modal);
     }
     key(target, 'e', {
@@ -194,4 +201,29 @@ it('expires folder sequences and does not apply mailbox actions to drafts', () =
   expect(actions.action).not.toHaveBeenCalled();
   key(window, '#', { shiftKey: true });
   expect(actions.deleteDraft).toHaveBeenCalledOnce();
+});
+
+it('targets an open thread outside the loaded list', () => {
+  const actions = setup({
+    threadId: 'outside',
+    openDetail: {
+      thread: { id: 'outside' },
+      messages: [{ starred: true }],
+    } as unknown as MailThreadDetail,
+  });
+  key(window, 's');
+  expect(actions.action).toHaveBeenCalledWith('unstar', 'outside');
+  key(window, 'r');
+  expect(actions.reply).toHaveBeenCalledWith('reply');
+});
+it('preserves native checkbox navigation', () => {
+  const actions = setup();
+  const checkbox = document.createElement('button');
+  checkbox.setAttribute('role', 'checkbox');
+  screen.getByRole('button', { name: 'a' }).parentElement!.append(checkbox);
+  checkbox.focus();
+  key(checkbox, 'ArrowDown');
+  key(checkbox, 'End');
+  expect(document.activeElement).toBe(checkbox);
+  expect(actions.openThread).not.toHaveBeenCalled();
 });

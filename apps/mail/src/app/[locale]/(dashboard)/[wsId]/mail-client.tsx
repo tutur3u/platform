@@ -291,6 +291,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     threadId,
     folder,
     selectionScope,
+    openDetail: detailQuery.data,
     composerOpen: composerVisible,
     selected: selectedThreads,
     setSelected: setSelectedThreads,
