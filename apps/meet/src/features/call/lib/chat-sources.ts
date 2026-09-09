@@ -3,6 +3,25 @@ export interface ChatSource {
   title: string;
 }
 
+function hasOpenFence(lines: string[]) {
+  let fence: { marker: string; length: number } | undefined;
+  for (const line of lines) {
+    const match = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (!match) continue;
+    if (!fence) {
+      if (match[1]![0] === '`' && match[2]!.includes('`')) continue;
+      fence = { marker: match[1]![0]!, length: match[1]!.length };
+    } else if (
+      match[1]![0] === fence.marker &&
+      match[1]!.length >= fence.length &&
+      !match[2]!.trim()
+    ) {
+      fence = undefined;
+    }
+  }
+  return !!fence;
+}
+
 /** Older Mira messages store provider sources as a final list of Markdown links. */
 export function splitChatSources(body: string) {
   const lines = body.trimEnd().split('\n');
@@ -27,7 +46,7 @@ export function splitChatSources(body: string) {
     !sources.length ||
     end === 0 ||
     lines[end - 1]?.trim() ||
-    (lines.slice(0, end).join('\n').match(/```/g)?.length ?? 0) % 2
+    hasOpenFence(lines.slice(0, end))
   )
     return { text: body, sources: [] as ChatSource[] };
   return {

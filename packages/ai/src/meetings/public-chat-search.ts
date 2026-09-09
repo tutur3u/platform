@@ -6,6 +6,7 @@ import {
   resolveMeetCitations,
 } from './chat-citations';
 import type { MeetGenerationStep } from './chat-generation-usage';
+import { selectMeetSources } from './chat-source-footer';
 
 /** Search receives only the explicit public question, never the room history. */
 export function publicMeetSearch(
@@ -69,17 +70,19 @@ export function publicMeetSearch(
         });
         steps.length = 0;
         sources.push(
-          ...result.sources
-            .filter((source) => source.sourceType === 'url')
-            .filter((source) => {
-              try {
-                return ['https:', 'http:'].includes(
-                  new URL(source.url).protocol
-                );
-              } catch {
-                return false;
-              }
-            })
+          ...selectMeetSources(
+            result.sources
+              .filter((source) => source.sourceType === 'url')
+              .filter((source) => {
+                try {
+                  return ['https:', 'http:'].includes(
+                    new URL(source.url).protocol
+                  );
+                } catch {
+                  return false;
+                }
+              })
+          )
         );
         steps.push(
           ...result.steps.map((step, index) => ({
@@ -97,7 +100,11 @@ export function publicMeetSearch(
           };
         return {
           answer: resolveMeetCitations(result.text, sources),
-          sources: sources.map(({ url, title }) => ({ url, title })),
+          sources: [
+            ...new Map(
+              sources.map(({ url, title }) => [url, { url, title }])
+            ).values(),
+          ],
         };
       },
     }),

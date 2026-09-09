@@ -21,6 +21,7 @@ it('leaves ordinary lists, unsafe links, and code examples untouched', () => {
     '- [Example](<https://example.com/>)',
     'Answer\n\n- [Unsafe](<javascript:alert(1)>)',
     '```\n\n- [Example](<https://example.com/>)',
+    '~~~ts\n\n- [Example](<https://example.com/>)',
   ])
     expect(splitChatSources(body)).toEqual({ text: body, sources: [] });
 });
