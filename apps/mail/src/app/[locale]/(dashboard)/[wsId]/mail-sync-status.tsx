@@ -2,6 +2,7 @@
 
 import { CloudAlert, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -18,8 +19,8 @@ export function MailSyncStatus({
 }) {
   const t = useTranslations('mail');
   const busy = refreshing || state === 'syncing';
-  const failed = state === 'failed';
-  const Icon = failed && !busy ? CloudAlert : RefreshCw;
+  const failed = state === 'failed' && !busy;
+  const Icon = failed ? CloudAlert : RefreshCw;
   const label = busy ? t('syncing') : failed ? t('sync_failed') : t('synced');
 
   return (
@@ -31,7 +32,9 @@ export function MailSyncStatus({
           aria-disabled={busy}
           className={cn(failed && 'text-destructive')}
           onClick={() => {
-            if (!busy) onRefresh();
+            if (busy) return;
+            if (failed) toast.error(t('sync_failed_description'));
+            onRefresh();
           }}
           size="icon"
           variant="ghost"
