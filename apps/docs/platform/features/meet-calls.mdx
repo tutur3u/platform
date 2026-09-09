@@ -790,3 +790,9 @@ prevent duplicate approvals from repeating a mutation. If a request remains in a
 uncertain executing state, do not repeat it; inspect the platform result first. Failed or timed-out reviews can be discarded without making their actions executable again, including after the room ends.
 Web search runs in an isolated request containing only the explicit question; model-supplied query rewrites and recent room history are not forwarded. Questions containing known participant names or room-title terms are blocked at that boundary. Missing grounded sources produce an unavailable-search result. Web search is disabled while continuing private workspace results. Unsupported platform-only tools such as E2EE key setup,
 file conversion, and client UI controls are not exposed in the Meet tool set.
+
+Verify private reviews with the production React compiler enabled: let a review
+arrive while no review dialog is selected, then open it and deny the action.
+The list can load before the detail query, so callback inputs such as the revision
+must remain guarded during that interval. An uncompiled development fixture alone
+does not cover compiler-generated callback dependency reads.
