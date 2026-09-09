@@ -58,7 +58,7 @@ export function applyAiDraftToBody(bodyHtml: string, content: string) {
 }
 
 export function mailHtmlToText(value: string) {
-  return value
+  const text = value
     .replaceAll(/<br\s*\/?>/giu, '\n')
     .replaceAll(/<\/p>/giu, '\n')
     .replaceAll(/<[^>]+>/gu, ' ')
@@ -67,6 +67,22 @@ export function mailHtmlToText(value: string) {
     .replaceAll(/\n\s+/gu, '\n')
     .replaceAll(/[ \t]+/gu, ' ')
     .trim();
+  if (typeof DOMParser !== 'undefined')
+    return (
+      new DOMParser().parseFromString(text, 'text/html').body.textContent ??
+      text
+    );
+  const entities: Record<string, string> = {
+    amp: '&',
+    lt: '<',
+    gt: '>',
+    quot: '"',
+    apos: "'",
+  };
+  return text.replace(
+    /&(amp|lt|gt|quot|apos);/gu,
+    (_, name: string) => entities[name]!
+  );
 }
 
 function getSignature(mailbox: MailMailbox) {

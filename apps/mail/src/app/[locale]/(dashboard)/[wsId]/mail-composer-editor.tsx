@@ -61,7 +61,12 @@ export function MailComposerEditor({
     immediatelyRender: false,
     onUpdate: ({ editor: nextEditor }) => {
       const html = nextEditor.getHTML() + parts.quoted;
-      onChange({ html, text: mailHtmlToText(html) });
+      onChange({
+        html,
+        text: [nextEditor.getText(), mailHtmlToText(parts.quoted)]
+          .filter(Boolean)
+          .join('\n\n'),
+      });
       onSelectionChange(null);
     },
     onSelectionUpdate: ({ editor: current }) => {

@@ -100,3 +100,11 @@ describe('getComposerWarnings', () => {
     ).toEqual([]);
   });
 });
+
+describe('plain-text composer payload', () => {
+  it('decodes escaped text without turning it into markup', () => {
+    expect(
+      mailHtmlToText('<p>R&amp;D &lt;report&gt; &quot;ready&quot;</p>')
+    ).toBe('R&D <report> "ready"');
+  });
+});
