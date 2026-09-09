@@ -953,6 +953,7 @@
         "@typescript/native-preview": "7.0.0-dev.20260707.2",
         "babel-plugin-react-compiler": "^1.0.0",
         "jsdom": "^30.0.1",
+        "mdast-util-from-markdown": "^2.0.3",
         "postcss": "^8.5.28",
         "typescript": "7.0.2",
         "vitest": "^5.0.0",
@@ -2314,6 +2315,9 @@
       "name": "@tuturuuu/realtime",
       "version": "0.2.0",
       "dependencies": {
+        "mdast-util-from-markdown": "^2.0.3",
+        "mdast-util-gfm": "^3.1.0",
+        "micromark-extension-gfm": "^3.0.0",
         "yjs": "^13.6.32",
         "zod": "^4.5.4",
       },

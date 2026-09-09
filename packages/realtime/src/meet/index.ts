@@ -1,3 +1,9 @@
+export {
+  findMeetAssistantMentions,
+  getMeetAssistantMentions,
+  hasMeetAssistantMention,
+  MEET_ASSISTANT_USER_ID,
+} from './assistant-mentions';
 export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';
 export type {

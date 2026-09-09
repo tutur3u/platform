@@ -12,6 +12,7 @@ import type { CallChatMessage } from '../lib/call-state';
 import { ChatPanel } from './chat-panel';
 import type { CallPanel } from './control-bar';
 import { ParticipantsPanel } from './participants-panel';
+import { ResizableCallPanel } from './resizable-call-panel';
 
 export function SidePanel({
   meetingId,
@@ -53,7 +54,13 @@ export function SidePanel({
   const t = useTranslations('meet.call');
 
   return (
-    <aside className="flex max-h-[45dvh] min-h-0 w-full shrink-0 flex-col border-l bg-background md:max-h-none md:w-80">
+    <ResizableCallPanel
+      label={
+        panel === 'chat'
+          ? t('chat')
+          : t('participants', { count: participants.length })
+      }
+    >
       <header className="flex items-center justify-between border-b px-4 py-3">
         <h2 className="font-medium text-sm">
           {panel === 'chat'
@@ -95,6 +102,6 @@ export function SidePanel({
           waiting={waiting}
         />
       )}
-    </aside>
+    </ResizableCallPanel>
   );
 }

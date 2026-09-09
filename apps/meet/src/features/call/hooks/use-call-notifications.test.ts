@@ -3,7 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { afterEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ info: vi.fn() }));
+const mocks = vi.hoisted(() => ({ info: vi.fn(), dismiss: vi.fn() }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: mocks }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 
@@ -12,6 +12,7 @@ import { useCallNotifications } from './use-call-notifications';
 
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -53,7 +54,7 @@ it.each([false, true])(
     };
     const open = vi.fn();
     const { result, rerender } = renderHook(
-      ({ state }) => useCallNotifications(state, true, true, open),
+      ({ state }) => useCallNotifications(state, true, true, open, null),
       { initialProps: { state: initial } }
     );
     act(() => document.dispatchEvent(new Event('pointerdown')));
@@ -64,6 +65,7 @@ it.each([false, true])(
     rerender({ state: { ...initial, participants: { peer } } });
     expect(mocks.info).toHaveBeenCalledTimes(1);
     expect(start).toHaveBeenCalledTimes(1);
+    expect(mocks.info.mock.calls.at(-1)?.[1].id).toBeUndefined();
     act(() => result.current.toggleSound());
     now.mockReturnValue(13000);
     rerender({
@@ -94,3 +96,37 @@ it.each([false, true])(
     expect(mocks.info).toHaveBeenCalledTimes(6);
   }
 );
+
+it('suppresses chat toasts in the open panel without replaying them on close', () => {
+  const initial: CallState = {
+    ...INITIAL_CALL_STATE,
+    admission: 'admitted',
+    role: 'host',
+    selfUserId: 'self',
+  };
+  const open = vi.fn();
+  const { rerender } = renderHook(
+    ({ state, panel }: { state: CallState; panel: 'chat' | null }) =>
+      useCallNotifications(state, true, true, open, panel),
+    { initialProps: { state: initial, panel: 'chat' as 'chat' | null } }
+  );
+  const message = {
+    id: 'one',
+    body: 'Visible in chat',
+    userId: 'peer',
+    displayName: 'Peer',
+    createdAt: '',
+  };
+  const next = { ...initial, chat: [message] };
+  rerender({ state: next, panel: 'chat' });
+  expect(mocks.info).not.toHaveBeenCalled();
+  rerender({ state: next, panel: null });
+  expect(mocks.info).not.toHaveBeenCalled();
+  rerender({
+    state: { ...next, chat: [...next.chat, { ...message, id: 'two' }] },
+    panel: null,
+  });
+  expect(mocks.info).toHaveBeenCalledTimes(1);
+  rerender({ state: next, panel: 'chat' });
+  expect(mocks.dismiss).toHaveBeenCalledWith('chat:two');
+});

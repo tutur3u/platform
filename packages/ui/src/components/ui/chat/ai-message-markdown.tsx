@@ -4,8 +4,13 @@ import { cjk } from '@streamdown/cjk';
 import { code } from '@streamdown/code';
 import { createMathPlugin } from '@streamdown/math';
 import { mermaid as mermaidPlugin } from '@streamdown/mermaid';
-import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { Streamdown } from 'streamdown';
+import {
+  Component,
+  type ComponentProps,
+  type ErrorInfo,
+  type ReactNode,
+} from 'react';
+import { defaultRemarkPlugins, Streamdown } from 'streamdown';
 
 const math = createMathPlugin({ singleDollarTextMath: true });
 const markdownPlugins = {
@@ -40,9 +45,13 @@ class AiMarkdownErrorBoundary extends Component<
 export function AssistantMarkdown({
   isAnimating,
   text,
+  components,
+  remarkPlugins,
 }: {
   isAnimating?: boolean;
   text: string;
+  components?: ComponentProps<typeof Streamdown>['components'];
+  remarkPlugins?: ComponentProps<typeof Streamdown>['remarkPlugins'];
 }) {
   return (
     <div className="wrap-break-word [&_pre]:overflow-x-hidden! [&_pre]:whitespace-pre-wrap! [&_pre_code]:whitespace-pre-wrap! min-w-0 max-w-full overflow-hidden [&_a]:break-all [&_pre]:max-w-full">
@@ -50,6 +59,12 @@ export function AssistantMarkdown({
         fallback={<p className="whitespace-pre-wrap">{text}</p>}
       >
         <Streamdown
+          components={components}
+          remarkPlugins={
+            remarkPlugins
+              ? [...Object.values(defaultRemarkPlugins), ...remarkPlugins]
+              : undefined
+          }
           caret="block"
           controls={{ code: !isAnimating, mermaid: !isAnimating }}
           isAnimating={isAnimating}
