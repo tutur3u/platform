@@ -164,7 +164,7 @@ it('does not expose private continuation in general room state or discard it int
   expect(discarded.messages).toBeUndefined();
   expect(discarded.state.aiRequests?.message?.review?.continuation).toBe('');
 });
-it('counts people once across multiple devices and excludes waiting or remembered approvals', () => {
+it('counts people once across multiple devices', () => {
   const state = initial();
   delete state.aiRequests;
   state.presence.device2 = {
@@ -182,4 +182,59 @@ it('counts people once across multiple devices and excludes waiting or remembere
       participants: expect.any(Array),
     },
   });
+});
+
+it('omits private reviews from host read responses too', () => {
+  const state = save(initial()).state;
+  const body = roomService(
+    state,
+    { ...token, role: 'host', accountId: other, userId: other },
+    { action: 'read' }
+  ).body;
+  expect(JSON.stringify(body)).not.toContain('private-continuation');
+  expect(JSON.stringify(body)).not.toContain('Private task information');
+  expect(JSON.stringify(body)).not.toContain('create_task');
+});
+it('allows interrupted reviews to be discarded without permitting mutation replay, including after room end', () => {
+  const claimed = roomService(save(initial()).state, token, {
+    action: 'ai.review.claim',
+    messageId: 'message',
+    revision: 1,
+  }).state;
+  const failed = roomService(claimed, token, {
+    action: 'ai.finish',
+    messageId: 'message',
+    costUsd: 0.01,
+  }).state;
+  expect(
+    roomService(failed, token, {
+      action: 'ai.review.get',
+      messageId: 'message',
+    }).body
+  ).toMatchObject({ status: 'interrupted' });
+  expect(
+    roomService(failed, token, {
+      action: 'ai.review.claim',
+      messageId: 'message',
+      revision: 1,
+    }).status
+  ).toBe(409);
+  failed.ended = true;
+  const discarded = roomService(failed, token, {
+    action: 'ai.review.discard',
+    messageId: 'message',
+    revision: 1,
+  });
+  expect(discarded.status).toBeUndefined();
+  expect(discarded.state.aiRequests?.message?.review?.continuation).toBe('');
+});
+it('rejects sharing empty approval-only drafts', () => {
+  const state = save(initial(), { ...review, text: '', approvals: [] }).state;
+  expect(
+    roomService(state, token, {
+      action: 'ai.review.share',
+      messageId: 'message',
+      revision: 1,
+    }).status
+  ).toBe(409);
 });

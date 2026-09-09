@@ -5,7 +5,7 @@ import { measureMeetGeneration } from './chat-generation-usage';
 import { type MeetAssistantContext, meetAssistantTools } from './chat-tools';
 import type { MeetChatModel } from './chat-usage';
 import { selectMeetWorkspaceTools } from './chat-workspace-selection';
-import { legacyMeetSearch } from './legacy-chat-search';
+import { publicMeetSearch } from './public-chat-search';
 
 export type MeetAssistantMessage = ModelMessage;
 
@@ -53,14 +53,18 @@ export async function answerMeetChat(
             model.providerModelId
           );
           const signal = AbortSignal.timeout(45000);
-          const legacy = model.providerModelId.startsWith('gemini-2');
-          const stepBudget = Math.max(
-            1,
-            Math.floor(maxOutputTokens / (legacy ? 4 : 3))
+          const stepBudget = Math.max(1, Math.floor(maxOutputTokens / 4));
+          const search = publicMeetSearch(
+            languageModel,
+            stepBudget,
+            signal,
+            question,
+            [
+              context.title,
+              ...context.participants.map((person) => person.displayName),
+            ]
           );
-          const search = legacyMeetSearch(languageModel, stepBudget, signal);
-          if (legacy && !options.messages)
-            publicTools.google_search = search.tool;
+          if (!options.messages) publicTools.google_search = search.tool;
           const tools: ToolSet = {
             ...publicTools,
             select_workspace_tools: selection.selector,
@@ -91,7 +95,15 @@ export async function answerMeetChat(
           });
           const sources = [...result.sources, ...search.sources]
             .filter((source) => source.sourceType === 'url')
-            .filter((source) => /^https?:\/\//u.test(source.url));
+            .filter((source) => {
+              try {
+                return ['http:', 'https:'].includes(
+                  new URL(source.url).protocol
+                );
+              } catch {
+                return false;
+              }
+            });
           const links = [
             ...new Map(sources.map((source) => [source.url, source])).values(),
           ]
@@ -126,16 +138,12 @@ export async function answerMeetChat(
               : result.text,
             ...measureMeetGeneration(
               [
-                ...result.steps.map((step) =>
-                  legacy
-                    ? {
-                        ...step,
-                        toolCalls: step.toolCalls.filter(
-                          (call) => call.toolName !== 'google_search'
-                        ),
-                      }
-                    : step
-                ),
+                ...result.steps.map((step) => ({
+                  ...step,
+                  toolCalls: step.toolCalls.filter(
+                    (call) => call.toolName !== 'google_search'
+                  ),
+                })),
                 ...search.steps,
               ],
               model

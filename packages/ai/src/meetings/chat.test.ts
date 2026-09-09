@@ -32,6 +32,7 @@ const result = () => ({
   responseMessages: [],
   steps: [
     {
+      toolCalls: [],
       providerMetadata: {
         google: {
           usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20 },
@@ -58,7 +59,7 @@ it('provides live tools, truthful time context, and a bounded generation loop', 
   expect(input.tools).toHaveProperty('get_current_time');
   expect(input.tools).toHaveProperty('get_meeting_context');
   expect(input.tools).toHaveProperty('google_search');
-  expect(input.maxOutputTokens).toBe(300);
+  expect(input.maxOutputTokens).toBe(225);
   expect(input.messages[0].content).toContain('currentUtc');
   expect(input.prepareStep({ stepNumber: 2 })).toMatchObject({
     toolChoice: 'none',
@@ -119,6 +120,7 @@ it('appends only provider-returned web sources', async () => {
         title: 'Official information',
       },
       { sourceType: 'url', url: 'javascript:alert(1)', title: 'Bad' },
+      { sourceType: 'url', url: 'https://[bad' },
     ],
   });
   const answer = await answerMeetChat([], 900, 'lookup', model, context);

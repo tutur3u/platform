@@ -42,7 +42,10 @@ export function AssistantWorkspacePicker({
             {t('assistant_personal_workspace')}
           </SelectItem>
           {workspaces.data
-            ?.filter((workspace) => !workspace.personal)
+            ?.filter(
+              (workspace) =>
+                !workspace.personal && workspace.access_type === 'member'
+            )
             .map((workspace) => (
               <SelectItem key={workspace.id} value={workspace.id}>
                 {workspace.name ?? workspace.id}

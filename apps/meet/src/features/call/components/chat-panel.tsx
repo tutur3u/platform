@@ -193,12 +193,12 @@ export function ChatPanel({
             Intl.DateTimeFormat().resolvedOptions().timeZone,
             assistantWorkspace === 'personal' ? undefined : assistantWorkspace
           );
-          await queryClient.invalidateQueries({
-            queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
-          });
         } catch {
           toast.error(t('assistant_failed'));
         } finally {
+          await queryClient.invalidateQueries({
+            queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
+          });
           setThinking(false);
         }
       }

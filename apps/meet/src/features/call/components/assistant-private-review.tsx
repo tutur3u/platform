@@ -54,16 +54,19 @@ export function AssistantPrivateReviews({
     gcTime: 0,
   });
   const mutation = useMutation({
-    mutationFn: (action: 'approve' | 'deny' | 'share' | 'discard') =>
-      respondMeetAssistantReview(
-        meetingId,
-        selected!,
-        detail.data!.revision,
-        action
-      ),
-    onSuccess: async (_, action) => {
+    mutationFn: ({
+      action,
+      messageId,
+      revision,
+    }: {
+      action: 'approve' | 'deny' | 'share' | 'discard';
+      messageId: string;
+      revision: number;
+    }) => respondMeetAssistantReview(meetingId, messageId, revision, action),
+    onSuccess: async (_, { action, messageId }) => {
       await queryClient.invalidateQueries({ queryKey: key });
-      if (action === 'share' || action === 'discard') setSelected(null);
+      if (action === 'share' || action === 'discard')
+        setSelected((current) => (current === messageId ? null : current));
     },
     onError: () => {
       toast.error(t('assistant_review_failed'));
@@ -72,6 +75,12 @@ export function AssistantPrivateReviews({
   });
   if (!list.data?.length && !selected) return null;
   const review = detail.data;
+  const act = (action: 'approve' | 'deny' | 'share' | 'discard') =>
+    mutation.mutate({
+      action,
+      messageId: selected!,
+      revision: detail.data!.revision,
+    });
   const actionable = review?.status === 'ready' && !mutation.isPending;
   return (
     <>
@@ -139,25 +148,34 @@ export function AssistantPrivateReviews({
                     />
                   </section>
                 ))}
-                {review.status === 'executing' && (
+                {['executing', 'interrupted'].includes(review.status) && (
                   <p role="status" className="text-muted-foreground text-sm">
                     {t('assistant_review_processing')}
                   </p>
                 )}
                 <div className="flex flex-wrap justify-end gap-2">
-                  {review.approvals.length ? (
+                  {review.status === 'interrupted' ? (
+                    <Button
+                      variant="outline"
+                      disabled={mutation.isPending}
+                      onClick={() => act('discard')}
+                    >
+                      <X className="size-4" />
+                      {t('assistant_discard_draft')}
+                    </Button>
+                  ) : review.approvals.length ? (
                     <>
                       <Button
                         variant="outline"
                         disabled={!actionable}
-                        onClick={() => mutation.mutate('deny')}
+                        onClick={() => act('deny')}
                       >
                         <X className="size-4" />
                         {t('assistant_deny_actions')}
                       </Button>
                       <Button
                         disabled={!actionable}
-                        onClick={() => mutation.mutate('approve')}
+                        onClick={() => act('approve')}
                       >
                         <Check className="size-4" />
                         {t('assistant_approve_actions')}
@@ -168,14 +186,14 @@ export function AssistantPrivateReviews({
                       <Button
                         variant="outline"
                         disabled={!actionable}
-                        onClick={() => mutation.mutate('discard')}
+                        onClick={() => act('discard')}
                       >
                         <X className="size-4" />
                         {t('assistant_discard_draft')}
                       </Button>
                       <Button
                         disabled={!actionable || !review.text}
-                        onClick={() => mutation.mutate('share')}
+                        onClick={() => act('share')}
                       >
                         <Send className="size-4" />
                         {t('assistant_share_draft')}

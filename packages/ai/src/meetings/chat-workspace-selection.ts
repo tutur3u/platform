@@ -12,7 +12,7 @@ export function selectMeetWorkspaceTools(
   for (const message of messages ?? []) {
     if (!Array.isArray(message.content)) continue;
     for (const part of message.content) {
-      if (part.type === 'tool-call' && tools[part.toolName])
+      if (part.type === 'tool-call' && Object.hasOwn(tools, part.toolName))
         selected.add(part.toolName);
     }
   }
@@ -23,7 +23,7 @@ export function selectMeetWorkspaceTools(
       description: `Choose relevant workspace tools before using them. Selection does not access data or perform changes. Available tools: ${names.map((name) => `${name}: ${MIRA_TOOL_DIRECTORY[name as MiraToolName] ?? name}`).join('; ')}`,
       inputSchema: z.object({
         names: z
-          .array(z.string().refine((name) => !!tools[name]))
+          .array(z.string().refine((name) => Object.hasOwn(tools, name)))
           .min(1)
           .max(8),
       }),

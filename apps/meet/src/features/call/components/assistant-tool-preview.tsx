@@ -16,13 +16,15 @@ export function AssistantToolPreview({
     if (typeof value === 'string') {
       if (
         /^\d{4}-\d{2}-\d{2}T/u.test(value) &&
+        /(?:Z|[+-]\d{2}:\d{2})$/iu.test(value) &&
         Number.isFinite(Date.parse(value))
       ) {
-        return new Intl.DateTimeFormat(locale, {
+        const formatted = new Intl.DateTimeFormat(locale, {
           timeZone: timezone,
           dateStyle: 'medium',
-          timeStyle: 'short',
+          timeStyle: 'long',
         }).format(new Date(value));
+        return `${formatted} (${value})`;
       }
       return value;
     }

@@ -787,7 +787,6 @@ explicit action. Other participants cannot read, approve, or share those drafts.
 Draft continuations remain server-side in the room Durable Object and are omitted
 from room broadcasts and browser review responses. Revisions and an execution claim
 prevent duplicate approvals from repeating a mutation. If a request remains in an
-uncertain executing state, do not repeat it; inspect the platform result first.
-Web search is disabled while continuing private workspace results so they cannot
-be sent to a search query. Unsupported platform-only tools such as E2EE key setup,
+uncertain executing state, do not repeat it; inspect the platform result first. Failed or timed-out reviews can be discarded without making their actions executable again, including after the room ends.
+Web search runs in an isolated request containing only the explicit question; model-supplied query rewrites and recent room history are not forwarded. Questions containing known participant names or room-title terms are blocked at that boundary. Missing grounded sources produce an unavailable-search result. Web search is disabled while continuing private workspace results. Unsupported platform-only tools such as E2EE key setup,
 file conversion, and client UI controls are not exposed in the Meet tool set.

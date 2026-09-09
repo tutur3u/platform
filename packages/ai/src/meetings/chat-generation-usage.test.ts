@@ -52,3 +52,30 @@ it('keeps missing step usage and missing search billing coverage incomplete', ()
     )
   ).toMatchObject({ costUsd: null, searchCount: 1 });
 });
+
+it('keeps empty grounding metadata incomplete for known search calls and counts legacy prompts once', () => {
+  const searchStep = {
+    ...step,
+    toolCalls: [{ toolName: 'google_search' }],
+    providerMetadata: {
+      google: {
+        ...step.providerMetadata.google,
+        groundingMetadata: { webSearchQueries: [] as string[] },
+      },
+    },
+  };
+  expect(measureMeetGeneration([searchStep], model)).toMatchObject({
+    costUsd: null,
+    searchCount: 1,
+  });
+  searchStep.providerMetadata.google.groundingMetadata.webSearchQueries = [
+    'one',
+    'two',
+  ];
+  expect(
+    measureMeetGeneration([searchStep], {
+      ...model,
+      providerModelId: 'gemini-2.5-flash',
+    }).searchCount
+  ).toBe(1);
+});

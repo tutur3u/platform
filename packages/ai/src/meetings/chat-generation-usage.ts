@@ -35,9 +35,12 @@ export function measureMeetGeneration(
     );
     if (
       Array.isArray(queries) &&
+      queries.length > 0 &&
       queries.every((query) => typeof query === 'string')
     ) {
-      searchCount += queries.length;
+      searchCount += model.providerModelId.startsWith('gemini-2.5')
+        ? 1
+        : queries.length;
       // Paid list-rate estimate before project-wide free allowance; verified
       // 2026-09-09: https://ai.google.dev/gemini-api/docs/pricing
       const fee = model.providerModelId.startsWith('gemini-3')

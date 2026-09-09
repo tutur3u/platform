@@ -213,7 +213,11 @@ export function roomService(
             : [],
         ...(admin
           ? {
-              aiRequests: snapshot.aiRequests ?? {},
+              aiRequests: Object.fromEntries(
+                Object.entries(snapshot.aiRequests ?? {}).map(
+                  ([id, { review: _, ...request }]) => [id, request]
+                )
+              ),
               cloudflare: summarizeRoomUsage(snapshot.usage),
             }
           : {}),
@@ -247,9 +251,12 @@ export function roomService(
   }
   // Finalize an already authorized generation even if its user left meanwhile.
   if (
-    !['ai.finish', 'ai.review.save', 'ai.review.get'].includes(
-      message.action
-    ) &&
+    ![
+      'ai.finish',
+      'ai.review.save',
+      'ai.review.get',
+      'ai.review.discard',
+    ].includes(message.action) &&
     (!admitted || snapshot.ended)
   )
     return fail('Join the active meeting first');
@@ -341,7 +348,15 @@ export function roomService(
     const parsedReview = assistantReviewCommand.parse(message);
     if (parsedReview.action === 'ai.review.get') {
       return pending.review
-        ? { state: snapshot, body: pending.review }
+        ? {
+            state: snapshot,
+            body:
+              pending.review.status === 'executing' &&
+              (pending.status === 'failed' ||
+                Date.now() - (pending.startedAt ?? 0) > 120000)
+                ? { ...pending.review, status: 'interrupted' }
+                : pending.review,
+          }
         : fail('Review unavailable', 404);
     }
     if (parsedReview.action === 'ai.review.save') {
@@ -400,7 +415,15 @@ export function roomService(
       };
     }
     const review = pending.review;
-    if (review?.status !== 'ready' || review.revision !== parsedReview.revision)
+    const canDiscardInterrupted =
+      parsedReview.action === 'ai.review.discard' &&
+      review?.status === 'executing' &&
+      (pending.status === 'failed' ||
+        Date.now() - (pending.startedAt ?? 0) > 120000);
+    if (
+      (!canDiscardInterrupted && review?.status !== 'ready') ||
+      review?.revision !== parsedReview.revision
+    )
       return fail('Review changed or already handled', 409);
     if (parsedReview.action === 'ai.review.claim') {
       if (
@@ -456,6 +479,7 @@ export function roomService(
     }
     if (review.approvals.length)
       return fail('Resolve pending actions before sharing', 409);
+    if (!review.text.trim()) return fail('There is no answer to share', 409);
     const response: RoomChatMessage = {
       type: 'chat.message',
       id: crypto.randomUUID(),

@@ -166,7 +166,7 @@ export interface MeetAssistantReview {
   workspaceId: string;
   workspaceName: string;
   timezone: string;
-  status: 'ready' | 'executing' | 'shared' | 'discarded';
+  status: 'ready' | 'executing' | 'interrupted' | 'shared' | 'discarded';
   revision: number;
 }
 export function listMeetAssistantReviews(meetingId: string) {

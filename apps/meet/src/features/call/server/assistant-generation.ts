@@ -27,7 +27,7 @@ export type PrivateAssistantReview = {
   workspaceId: string;
   workspaceName: string;
   timezone: string;
-  status: 'ready' | 'executing' | 'shared' | 'discarded';
+  status: 'ready' | 'executing' | 'interrupted' | 'shared' | 'discarded';
   revision: number;
 };
 type RoomContext = {
@@ -204,6 +204,14 @@ export async function generateMeetAssistant(
       }
     }
   } catch (error) {
+    if (settlement) {
+      try {
+        await callRoomService(access, settlement);
+        return { ok: true };
+      } catch {
+        // Retain any saved review and record incurred usage when delivery stays unavailable.
+      }
+    }
     await callRoomService(access, {
       action: 'ai.finish',
       messageId: input.messageId,
