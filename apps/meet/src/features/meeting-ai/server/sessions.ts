@@ -37,7 +37,10 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
         throw new MeetAiError(413, 'Meeting transcript exceeds display limit');
     }
   }
-  let estimatedCostUsd = 0,
+  let estimatedCostUsd = chunks.reduce(
+      (sum, chunk) => sum + (chunk.prior_cost_usd ?? 0),
+      0
+    ),
     unpricedRequests = 0,
     inputTokens = 0,
     outputTokens = 0;

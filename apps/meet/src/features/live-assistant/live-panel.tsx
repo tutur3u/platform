@@ -1,0 +1,268 @@
+'use client';
+import {
+  Brain,
+  Check,
+  Headphones,
+  LockKeyhole,
+  Mic,
+  Pause,
+  Play,
+  Radio,
+  ShieldCheck,
+  Square,
+  Users,
+  X,
+} from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
+import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import { MiraAvatar } from '../call/components/mira-profile';
+import type { MeetRoomController } from '../call/lib/room-controller';
+import { useLiveAssistant } from './use-live-assistant';
+
+export function MeetLivePanel({
+  room,
+  meetingId,
+  outputDeviceId,
+  canManage,
+}: {
+  room: MeetRoomController;
+  meetingId: string;
+  outputDeviceId: string;
+  canManage: boolean;
+}) {
+  const t = useTranslations('meet.live');
+  const streams = [
+    room.localStream,
+    ...Object.values(room.remoteStreams),
+  ].filter((stream): stream is MediaStream => !!stream);
+  const live = useLiveAssistant(meetingId, outputDeviceId, {
+    streams,
+    microphoneEnabled: room.media.audioEnabled,
+  });
+  const [draft, setDraft] = useState('');
+  const active = !['idle', 'error', 'ended'].includes(live.status);
+  const ready = ['listening', 'paused'].includes(live.status);
+  // If the user unmutes the meeting, stop personal capture before any further audio is sent.
+  useEffect(() => {
+    if (active && live.mode === 'personal' && room.media.audioEnabled)
+      live.send({ type: 'pause', paused: true });
+  }, [active, live.mode, room.media.audioEnabled, live.send]);
+  const start = async (mode: 'personal' | 'room') => {
+    if (mode === 'personal' && room.media.audioEnabled)
+      await room.toggleMicrophone();
+    await live.start(mode, streams, room.getSelectedDevices().audio);
+  };
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          variant={active ? 'secondary' : 'outline'}
+          size="sm"
+          className="gap-2 rounded-full"
+        >
+          <MiraAvatar size={18} />
+          <span>{t('title')}</span>
+          {active && <Radio className="size-3.5 motion-safe:animate-pulse" />}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="flex max-h-[85dvh] flex-col overflow-hidden sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MiraAvatar />
+            {t('title')}
+            <ShieldCheck className="size-4 text-muted-foreground" />
+          </DialogTitle>
+          <DialogDescription>{t('hint')}</DialogDescription>
+        </DialogHeader>
+        <div className="min-h-0 space-y-4 overflow-y-auto">
+          {!active ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => void start('personal')}
+              >
+                <Headphones className="size-6" />
+                <strong className="block">{t('personal')}</strong>
+                <span className="block text-muted-foreground text-sm">
+                  {t('personal_hint')}
+                </span>
+              </button>
+              {canManage && (
+                <button
+                  type="button"
+                  className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => void start('room')}
+                >
+                  <Users className="size-6" />
+                  <strong className="block">{t('room')}</strong>
+                  <span className="block text-muted-foreground text-sm">
+                    {t('room_hint')}
+                  </span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="gap-1">
+                  {live.mode === 'personal' ? (
+                    <LockKeyhole className="size-3" />
+                  ) : (
+                    <Users className="size-3" />
+                  )}
+                  {t(live.mode === 'personal' ? 'only_you' : 'everyone')}
+                </Badge>
+                <Badge variant="outline">
+                  {t(
+                    `state_${live.status as 'connecting' | 'listening' | 'paused' | 'recovering'}`
+                  )}
+                </Badge>
+                {live.organized && (
+                  <Badge variant="outline" className="gap-1">
+                    <Brain className="size-3" />
+                    {t('organized')}
+                  </Badge>
+                )}
+              </div>
+              <p className="rounded-lg bg-muted/50 p-3 text-muted-foreground text-xs">
+                {t(
+                  live.mode === 'personal'
+                    ? 'private_mic_hint'
+                    : 'room_consent_hint'
+                )}
+              </p>
+              <div className="space-y-3" aria-live="polite">
+                {live.transcript.map((turn, index) => (
+                  <div
+                    key={`${index}-${turn.role}`}
+                    className="rounded-lg bg-muted/30 p-3"
+                  >
+                    <span className="font-medium text-xs">
+                      {turn.role === 'assistant' ? 'Mira' : t('you')}
+                    </span>
+                    <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">
+                      {turn.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {live.reviews.map((review) => (
+                <section
+                  key={review.id}
+                  className="space-y-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4"
+                >
+                  <div className="flex items-center gap-2 font-medium">
+                    <ShieldCheck className="size-5" />
+                    {t(
+                      review.action === 'remember'
+                        ? 'review_memory'
+                        : 'review_share'
+                    )}
+                  </div>
+                  <p className="whitespace-pre-wrap rounded-lg bg-background p-3 text-sm">
+                    {review.text}
+                  </p>
+                  {review.status === 'pending' ? (
+                    <div className="flex gap-2">
+                      <Button
+                        disabled={!ready}
+                        onClick={() =>
+                          live.send({
+                            type: 'decision',
+                            id: review.id,
+                            approved: true,
+                          })
+                        }
+                      >
+                        <Check className="size-4" />
+                        {t('approve')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={!ready}
+                        onClick={() =>
+                          live.send({
+                            type: 'decision',
+                            id: review.id,
+                            approved: false,
+                          })
+                        }
+                      >
+                        <X className="size-4" />
+                        {t('deny')}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Badge variant="secondary">{t(review.status)}</Badge>
+                  )}
+                </section>
+              ))}
+              <div className="flex items-end gap-2">
+                <Textarea
+                  aria-label={t('message')}
+                  placeholder={t('message')}
+                  value={draft}
+                  maxLength={4000}
+                  onChange={(event) => setDraft(event.target.value)}
+                />
+                <Button
+                  disabled={!draft.trim() || !ready}
+                  onClick={() => {
+                    live.send({ type: 'text', text: draft });
+                    setDraft('');
+                  }}
+                >
+                  <Play className="size-4" />
+                  {t('send')}
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                <Button
+                  variant="outline"
+                  disabled={live.mode === 'personal' && room.media.audioEnabled}
+                  onClick={() =>
+                    live.send({
+                      type: 'pause',
+                      paused: live.status !== 'paused',
+                    })
+                  }
+                >
+                  {live.status === 'paused' ? (
+                    <Mic className="size-4" />
+                  ) : (
+                    <Pause className="size-4" />
+                  )}
+                  {t(live.status === 'paused' ? 'resume' : 'pause')}
+                </Button>
+                <Button variant="destructive" onClick={() => void live.stop()}>
+                  <Square className="size-4" />
+                  {t('stop')}
+                </Button>
+              </div>
+            </>
+          )}
+          {live.error && (
+            <p
+              role="alert"
+              className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm"
+            >
+              {t('session_error')}
+            </p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

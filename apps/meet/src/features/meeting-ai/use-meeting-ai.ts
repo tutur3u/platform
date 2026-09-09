@@ -44,7 +44,8 @@ export function useMeetingAi(
     retry: false,
   });
   const { mutateAsync: uploadChunk } = useMutation({
-    mutationFn: (data: FormData) => uploadMeetAiChunk(wsId, meetingId, data),
+    mutationFn: ({ data, signal }: { data: FormData; signal: AbortSignal }) =>
+      uploadMeetAiChunk(wsId, meetingId, data, undefined, signal),
     retry: false,
   });
   const [busy, setBusy] = useState(false);
@@ -133,7 +134,7 @@ export function useMeetingAi(
       const deadline = Date.now() + 5 * 60_000;
       queue.current = queue.current.then(async () => {
         try {
-          await recoverMeetChunk(() => uploadChunk(data), {
+          await recoverMeetChunk((signal) => uploadChunk({ data, signal }), {
             deadline,
             onRetry: () => {
               if (mounted.current) setRecovering(true);

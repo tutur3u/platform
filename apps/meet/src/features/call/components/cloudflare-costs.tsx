@@ -78,6 +78,17 @@ export function CloudflareCosts({ meetingId }: { meetingId: string }) {
             : ''}
         </p>
       )}
+      {data?.live && data.live.sessions > 0 && (
+        <p className="text-xs">
+          {t('live_assistant_cost', {
+            cost: usd(data.live.costUsd),
+            count: data.live.sessions,
+          })}
+          {data.live.incomplete > 0
+            ? ` · ${t('unpriced_requests', { count: data.live.incomplete })}`
+            : ''}
+        </p>
+      )}
       <a
         href="https://developers.cloudflare.com/realtime/sfu/pricing/"
         target="_blank"

@@ -142,6 +142,7 @@ export function getMeetRoomCosts(meetingId: string) {
       durableRequestsUsd: number;
       pricingDate: string;
     };
+    live?: { sessions: number; costUsd: number; incomplete: number };
     miraRequests: number;
     miraCostUsd: number;
     miraUnpriced: number;

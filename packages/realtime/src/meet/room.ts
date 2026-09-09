@@ -364,11 +364,17 @@ export function applyMeetRoomCommand(
         ...state,
         presence: {
           ...state.presence,
-          [userId]: createMeetPresence(
-            { ...token, displayName: message.displayName || token.displayName },
-            now,
-            message.media
-          ),
+          [userId]: {
+            ...createMeetPresence(
+              {
+                ...token,
+                displayName: message.displayName || token.displayName,
+              },
+              now,
+              message.media
+            ),
+            joinedAt: state.presence[userId]?.joinedAt ?? now,
+          },
         },
       };
       return outcome(next, {

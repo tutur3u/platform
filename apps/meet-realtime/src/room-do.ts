@@ -232,7 +232,13 @@ export class MeetRoomDurableObject implements DurableObject {
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;
       if (!result.status) {
-        if (changed) await this.persist();
+        if (
+          changed &&
+          !['live.audio', 'live.share.audio'].includes(
+            (body as { action?: string } | null)?.action ?? ''
+          )
+        )
+          await this.persist();
         this.broadcast(result.messages ?? []);
       }
       return Response.json(result.body, {
@@ -316,6 +322,18 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.persist();
 
     for (const message of outcome.reply) this.sendTo(server, message);
+    if (
+      this.snapshot.liveAssistant &&
+      this.snapshot.liveAssistant.expiresAt > Date.now() &&
+      this.snapshot.presence[token.userId]
+    ) {
+      this.sendTo(server, {
+        type: 'assistant.live',
+        sessionId: this.snapshot.liveAssistant.sessionId,
+        ownerId: this.snapshot.liveAssistant.ownerId,
+        active: true,
+      });
+    }
     this.broadcast(outcome.broadcast);
     this.sendToManagers(outcome.toManagers);
 

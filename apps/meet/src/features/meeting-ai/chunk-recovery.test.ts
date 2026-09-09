@@ -46,3 +46,36 @@ describe('transcription recovery', () => {
     expect(now).toBe(3000);
   });
 });
+
+it('never starts an upload after the queued deadline expires', async () => {
+  const upload = vi.fn();
+  await expect(
+    recoverMeetChunk(upload, {
+      deadline: 100,
+      now: () => 100,
+      onRetry: vi.fn(),
+    })
+  ).rejects.toThrow('recovery timed out');
+  expect(upload).not.toHaveBeenCalled();
+});
+it('aborts a stalled upload and releases the recovery queue', async () => {
+  vi.useFakeTimers();
+  try {
+    const upload = vi.fn(
+      (signal: AbortSignal) =>
+        new Promise<{ status: string }>((_, reject) =>
+          signal.addEventListener('abort', () => reject(new Error('aborted')))
+        )
+    );
+    const task = recoverMeetChunk(upload, {
+      deadline: Date.now() + 1000,
+      onRetry: vi.fn(),
+    });
+    const assertion = expect(task).rejects.toThrow('recovery timed out');
+    await vi.advanceTimersByTimeAsync(1000);
+    await assertion;
+    expect(upload).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});

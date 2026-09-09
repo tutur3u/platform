@@ -23495,13 +23495,14 @@ export type Database = {
       };
       meet_ai_chunks: {
         Row: {
-          attempt_id: string;
+          attempt_id: string | null;
           attempt_started_at: string;
           attempts: number;
           cost_usd: number | null;
           created_at: string;
           duration_seconds: number;
           id: string;
+          prior_cost_usd: number;
           sequence: number;
           session_id: string;
           start_seconds: number;
@@ -23511,13 +23512,14 @@ export type Database = {
           usage: Json | null;
         };
         Insert: {
-          attempt_id?: string;
+          attempt_id?: string | null;
           attempt_started_at?: string;
           attempts?: number;
           cost_usd?: number | null;
           created_at?: string;
           duration_seconds: number;
           id: string;
+          prior_cost_usd?: number;
           sequence: number;
           session_id: string;
           start_seconds: number;
@@ -23527,13 +23529,14 @@ export type Database = {
           usage?: Json | null;
         };
         Update: {
-          attempt_id?: string;
+          attempt_id?: string | null;
           attempt_started_at?: string;
           attempts?: number;
           cost_usd?: number | null;
           created_at?: string;
           duration_seconds?: number;
           id?: string;
+          prior_cost_usd?: number;
           sequence?: number;
           session_id?: string;
           start_seconds?: number;
@@ -23548,6 +23551,45 @@ export type Database = {
             columns: ['session_id'];
             isOneToOne: false;
             referencedRelation: 'meet_ai_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_ai_memories: {
+        Row: {
+          category: string;
+          content: string;
+          created_at: string;
+          id: string;
+          user_id: string;
+        };
+        Insert: {
+          category: string;
+          content: string;
+          created_at?: string;
+          id?: string;
+          user_id: string;
+        };
+        Update: {
+          category?: string;
+          content?: string;
+          created_at?: string;
+          id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_memories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_memories_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -23611,6 +23653,39 @@ export type Database = {
             foreignKeyName: 'meet_ai_sessions_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_ai_user_preferences: {
+        Row: {
+          memory_enabled: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          memory_enabled?: boolean;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          memory_enabled?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_user_preferences_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_user_preferences_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -44578,13 +44653,14 @@ export type Database = {
           p_start_seconds: number;
         };
         Returns: {
-          attempt_id: string;
+          attempt_id: string | null;
           attempt_started_at: string;
           attempts: number;
           cost_usd: number | null;
           created_at: string;
           duration_seconds: number;
           id: string;
+          prior_cost_usd: number;
           sequence: number;
           session_id: string;
           start_seconds: number;
@@ -44655,6 +44731,22 @@ export type Database = {
       revoke_user_session: {
         Args: { session_id: string; target_user_id: string };
         Returns: boolean;
+      };
+      save_meet_ai_memory: {
+        Args: { p_category: string; p_content: string; p_user_id: string };
+        Returns: {
+          category: string;
+          content: string;
+          created_at: string;
+          id: string;
+          user_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_memories';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       search_finance_invoices: {
         Args: {

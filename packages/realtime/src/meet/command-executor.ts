@@ -35,9 +35,9 @@ export class MeetCommandExecutor {
       );
     }
     const key = `${command.token.roomId}:${command.token.userId}`;
-    const task = (this.pending.get(key) ?? Promise.resolve()).then(() =>
-      this.execute(command, options)
-    );
+    const task = (this.pending.get(key) ?? Promise.resolve())
+      .catch(() => undefined)
+      .then(() => this.execute(command, options));
     this.pending.set(key, task);
     void task
       .finally(() => {
@@ -52,31 +52,17 @@ export class MeetCommandExecutor {
       await options.commit(planned);
       return;
     }
+    let result: unknown;
     try {
       if (!options.read().presence[command.token.userId])
         throw new Error('participant_left');
-      const result = await options.runSfu(planned.sfu);
+      result = await options.runSfu(planned.sfu);
       assertSfuSuccess(result);
-      const current = options.read();
-      if (current.ended || !current.presence[command.token.userId])
+      if (
+        options.read().ended ||
+        !options.read().presence[command.token.userId]
+      )
         throw new Error('participant_left');
-      // Rebase only this completed operation onto the latest presence/settings state.
-      const confirmed = applyMeetRoomCommand(current, command);
-      if (!confirmed.sfu) {
-        await options.commit(confirmed);
-        return;
-      }
-      const response: MeetRealtimeServerMessage = {
-        type: 'sfu.response',
-        action: planned.sfu.message.type,
-        requestId: planned.sfu.requestId,
-        result,
-      };
-      await options.commit({
-        ...confirmed,
-        sfu: null,
-        reply: [...confirmed.reply, response],
-      });
     } catch (error) {
       await options.commit(
         outcome(options.read(), {
@@ -90,6 +76,25 @@ export class MeetCommandExecutor {
           ],
         })
       );
+      return;
     }
+    const current = options.read();
+    // Rebase only this completed operation onto the latest presence/settings state.
+    const confirmed = applyMeetRoomCommand(current, command);
+    if (!confirmed.sfu) {
+      await options.commit(confirmed);
+      return;
+    }
+    const response: MeetRealtimeServerMessage = {
+      type: 'sfu.response',
+      action: planned.sfu.message.type,
+      requestId: planned.sfu.requestId,
+      result,
+    };
+    await options.commit({
+      ...confirmed,
+      sfu: null,
+      reply: [...confirmed.reply, response],
+    });
   }
 }

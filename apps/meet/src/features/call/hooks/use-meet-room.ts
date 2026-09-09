@@ -1,11 +1,11 @@
 'use client';
-
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 import type {
   CloudflareSfuTrack,
   MeetMediaState,
 } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { deliverRoomAssistantAudio } from '@/features/live-assistant/room-audio';
 import { encodingBudget } from '../lib/bandwidth';
 import {
   type CallState,
@@ -151,6 +151,7 @@ export function useMeetRoom({
     };
     const signaling = new MeetSignaling({
       onMessage: (message) => {
+        if (deliverRoomAssistantAudio(meetingId, message)) return;
         if (
           message.type === 'ready' &&
           message.admission === 'admitted' &&

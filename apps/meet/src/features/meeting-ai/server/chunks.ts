@@ -91,6 +91,14 @@ export async function transcribeMeetChunk(
       .eq('sequence', sequence)
       .single();
     if (duplicate.error) throw new MeetAiError(500, 'Chunk lookup failed');
+    const exhausted =
+      duplicate.data.attempts >= 5 &&
+      (duplicate.data.status === 'failed' ||
+        (duplicate.data.status === 'processing' &&
+          Date.now() - Date.parse(duplicate.data.attempt_started_at) >=
+            90_000));
+    if (exhausted)
+      throw new MeetAiError(409, 'Transcription retries exhausted');
     return duplicate.data;
   }
   try {

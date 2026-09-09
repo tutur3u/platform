@@ -1,0 +1,108 @@
+import { describe, expect, it } from 'vitest';
+import { meetRealtimeTokenPayloadSchema } from './primitives';
+import { admitOrHold, createMeetRoomSnapshot } from './room';
+import { roomService } from './room-service';
+
+const ownerId = '00000000-0000-4000-8000-000000000001';
+const sessionId = '00000000-0000-4000-8000-000000000002';
+const token = meetRealtimeTokenPayloadSchema.parse({
+  userId: ownerId,
+  accountId: ownerId,
+  wsId: '00000000-0000-4000-8000-000000000003',
+  meetingId: '00000000-0000-4000-8000-000000000004',
+  roomId: 'room',
+  role: 'host',
+  mode: 'call',
+  admission: 'open',
+  limits: {},
+  scopes: ['meet:server'],
+  exp: 2000000000,
+});
+const initial = () =>
+  admitOrHold(createMeetRoomSnapshot(), token, new Date().toISOString()).state;
+describe('room Live authority', () => {
+  it('requires admission even with a signed service token', () => {
+    expect(
+      roomService(createMeetRoomSnapshot(), token, { action: 'live.context' })
+        .status
+    ).toBe(403);
+  });
+  it('allows one room assistant and requires an admin to invite it', () => {
+    expect(
+      roomService(
+        initial(),
+        { ...token, role: 'speaker' },
+        { action: 'live.reserve', sessionId }
+      ).status
+    ).toBe(403);
+    const first = roomService(initial(), token, {
+      action: 'live.reserve',
+      sessionId,
+    });
+    expect(first.status).toBeUndefined();
+    expect(
+      roomService(first.state, token, {
+        action: 'live.reserve',
+        sessionId: crypto.randomUUID(),
+      }).status
+    ).toBe(409);
+  });
+  it('does not allow host browser tokens to impersonate assistant audio', () => {
+    const first = roomService(initial(), token, {
+      action: 'live.reserve',
+      sessionId,
+    });
+    const command = {
+      action: 'live.audio',
+      sessionId,
+      sequence: 0,
+      data: 'AAAA',
+      at: Date.now(),
+    };
+    expect(roomService(first.state, token, command).status).toBe(403);
+    const result = roomService(
+      first.state,
+      { ...token, scopes: ['meet:server', 'meet:live-server'] },
+      command
+    );
+    expect(result.messages?.[0]?.type).toBe('assistant.audio');
+    expect(
+      roomService(
+        result.state,
+        { ...token, scopes: ['meet:server', 'meet:live-server'] },
+        command
+      ).messages
+    ).toBeUndefined();
+  });
+  it('rejects shared speech without a server-issued disclosure grant', () => {
+    const command = {
+      action: 'live.share.audio',
+      id: sessionId,
+      sequence: 0,
+      data: 'AAAA',
+      at: Date.now(),
+    };
+    const server = { ...token, scopes: ['meet:server', 'meet:live-server'] };
+    expect(roomService(initial(), server, command).status).toBe(409);
+    expect(
+      roomService(initial(), token, {
+        action: 'live.share',
+        id: sessionId,
+        text: 'Approved text',
+      }).status
+    ).toBe(403);
+    const shared = roomService(initial(), server, {
+      action: 'live.share',
+      id: sessionId,
+      text: 'Approved text',
+    });
+    expect(shared.messages?.[0]).toMatchObject({
+      type: 'chat.message',
+      assistant: true,
+      body: 'Approved text',
+    });
+    expect(roomService(shared.state, server, command).messages?.[0]?.type).toBe(
+      'assistant.audio'
+    );
+  });
+});
