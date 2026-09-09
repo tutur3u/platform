@@ -42,7 +42,7 @@ export function normalizeAuthRedirectPath(
       return fallbackPath;
     }
 
-    if (AUTH_LOOP_PATHS.has(url.pathname)) {
+    if (AUTH_LOOP_PATHS.has(decodeURIComponentSafely(url.pathname))) {
       const nestedValue =
         url.searchParams.get('nextUrl') ??
         url.searchParams.get('next') ??

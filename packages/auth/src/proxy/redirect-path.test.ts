@@ -9,6 +9,9 @@ it('falls back when decoding a path produces an invalid URL authority', () => {
 
 it('keeps Meet room context through nested login aliases', () => {
   const origin = 'https://meet.tuturuuu.com';
+  expect(normalizeAuthRedirectPath('/%6cogin?next=%2Fr%2Froom', origin)).toBe(
+    '/r/room'
+  );
   expect(normalizeAuthRedirectPath('/login?next=%2Fr%2Froom', origin)).toBe(
     '/r/room'
   );

@@ -251,6 +251,7 @@ export class MeetRoomDurableObject implements DurableObject {
           person.userId !== token.userId
       );
       if (body?.mode === 'switch') {
+        const released = [];
         for (const person of others) {
           const result = releaseParticipant(
             this.snapshot,
@@ -258,6 +259,10 @@ export class MeetRoomDurableObject implements DurableObject {
             token.roomId
           );
           this.snapshot = result.state;
+          released.push({ person, result });
+        }
+        await this.persist();
+        for (const { person, result } of released) {
           this.sendToUser(person.userId, [
             {
               type: 'participant.removed',
@@ -266,9 +271,9 @@ export class MeetRoomDurableObject implements DurableObject {
             },
           ]);
           this.broadcast(result.broadcast);
+          this.sendToManagers(result.toManagers);
           this.disconnect([person.userId]);
         }
-        await this.persist();
       }
       return Response.json(
         { otherDeviceCount: others.length },
@@ -315,6 +320,7 @@ export class MeetRoomDurableObject implements DurableObject {
         token.roomId
       );
       this.snapshot = expired.state;
+      await this.persist();
       this.broadcast(expired.broadcast);
       this.sendToManagers(expired.toManagers);
     }
@@ -476,6 +482,7 @@ export class MeetRoomDurableObject implements DurableObject {
         (userId) => !pruned.presence[userId]
       );
       this.snapshot = pruned;
+      const releases = [];
       for (const userId of expired) {
         const token = sockets
           .map((socket) => this.tokenOf(socket))
@@ -486,7 +493,14 @@ export class MeetRoomDurableObject implements DurableObject {
           (firstSocket ? this.tokenOf(firstSocket)?.roomId : undefined);
         const outcome = releaseParticipant(this.snapshot, userId, roomId ?? '');
         this.snapshot = outcome.state;
+        releases.push(outcome);
+      }
+      await this.persist();
+      for (const outcome of releases) {
         this.broadcast(outcome.broadcast);
+        this.sendToManagers(outcome.toManagers);
+      }
+      for (const userId of expired) {
         for (const socket of sockets) {
           if (
             this.tokenOf(socket)?.userId === userId &&
@@ -496,7 +510,6 @@ export class MeetRoomDurableObject implements DurableObject {
           }
         }
       }
-      await this.persist();
     }
 
     if (

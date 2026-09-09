@@ -43,8 +43,27 @@ function fixture() {
   const socket = {
     deserializeAttachment: () => ({ token }),
   } as unknown as WebSocket;
-  return { room, socket, values };
+  return { room, socket, values, storage };
 }
+test('a failed expiry write never broadcasts an uncommitted participant release', async () => {
+  const { room, values, storage } = fixture();
+  const snapshot = values.get('snapshot') as ReturnType<
+    typeof createMeetRoomSnapshot
+  >;
+  snapshot.presence[token.userId]!.lastSeenAt = '2020-01-01T00:00:00Z';
+  const sent: unknown[] = [];
+  const observer = room as unknown as {
+    broadcast: (messages: unknown[]) => void;
+  };
+  observer.broadcast = (messages) => {
+    sent.push(...messages);
+  };
+  storage.put = async () => {
+    throw new Error('storage unavailable');
+  };
+  await assert.rejects(room.alarm(), /storage unavailable/);
+  assert.deepEqual(sent, []);
+});
 test('unexpected close retains media presence until its grace expires', async () => {
   const { room, socket, values } = fixture();
   await room.webSocketClose(socket, 1006);
