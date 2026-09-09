@@ -1,3 +1,4 @@
+import { fromMarkdown } from 'mdast-util-from-markdown';
 import { describe, expect, it } from 'vitest';
 import {
   isMeetAssistant,
@@ -65,4 +66,16 @@ describe('Meet assistant identity', () => {
     remarkMeetMentions()(tree);
     expect(tree).toEqual(before);
   });
+});
+
+it.each([
+  '`code`@ttr',
+  '[person](https://example.com)@tuturuuu',
+  '<span>@ttr</span>',
+  '<span> **@ttr** </span>',
+])('keeps adjacent Markdown text inert: %s', (source) => {
+  const tree = fromMarkdown(source);
+  const before = structuredClone(tree);
+  remarkMeetMentions()(tree, { value: source });
+  expect(tree).toEqual(before);
 });

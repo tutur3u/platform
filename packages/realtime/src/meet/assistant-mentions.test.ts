@@ -42,6 +42,10 @@ it.each([
   '@ttrExtra',
   '@ttr-user',
   'person@ttr.com',
+  '`code`@ttr',
+  '[person](https://example.com)@tuturuuu',
+  '<span>@ttr</span>',
+  '<span> **@ttr** </span>',
 ])('does not request AI for inert Markdown or another handle: %s', (body) => {
   expect(hasMeetAssistantMention(body)).toBe(false);
 });
