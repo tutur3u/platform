@@ -75,12 +75,15 @@ export function AssistantPrivateReviews({
   });
   if (!list.data?.length && !selected) return null;
   const review = detail.data;
-  const act = (action: 'approve' | 'deny' | 'share' | 'discard') =>
+  const revision = review?.revision;
+  const act = (action: 'approve' | 'deny' | 'share' | 'discard') => {
+    if (!selected || revision === undefined) return;
     mutation.mutate({
       action,
-      messageId: selected!,
-      revision: detail.data!.revision,
+      messageId: selected,
+      revision,
     });
+  };
   const actionable = review?.status === 'ready' && !mutation.isPending;
   return (
     <>
