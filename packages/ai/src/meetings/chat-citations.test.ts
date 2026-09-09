@@ -30,3 +30,20 @@ it('preserves code and rejects unsafe source URLs', () => {
     ])
   ).toBe('`[ref]`\n```\n[ref]\n```');
 });
+
+it('preserves all Markdown code forms and existing links', () => {
+  const source = {
+    id: 'ref',
+    sourceType: 'url' as const,
+    url: 'https://example.com',
+  };
+  for (const body of [
+    '~~~ts\n[ref]\n~~~',
+    '    [ref]',
+    '``[ref] ` code``',
+    '```ts\n[ref]',
+    '[ref](https://other.example)',
+    '![ref](https://other.example/image)',
+  ])
+    expect(resolveMeetCitations(body, [source])).toBe(body);
+});

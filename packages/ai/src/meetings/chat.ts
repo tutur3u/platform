@@ -118,12 +118,10 @@ export async function answerMeetChat(
             });
           const links = [
             ...new Map(sources.map((source) => [source.url, source])).values(),
-          ]
-            .slice(0, 8)
-            .map(
-              (source) =>
-                `- [${(source.title ?? new URL(source.url).hostname).replace(/[[\]\r\n]/gu, ' ')}](<${source.url.replace(/[<>\s]/gu, encodeURIComponent)}>)`
-            );
+          ].map(
+            (source) =>
+              `- [${(source.title ?? new URL(source.url).hostname).replace(/[[\]\r\n]/gu, ' ')}](<${source.url.replace(/[<>\s]/gu, encodeURIComponent)}>)`
+          );
           const approvals = result.content.flatMap((part) =>
             part.type === 'tool-approval-request' && !part.isAutomatic
               ? [

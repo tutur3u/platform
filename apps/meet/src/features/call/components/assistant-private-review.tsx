@@ -68,7 +68,7 @@ export function AssistantPrivateReview({
         <div className="min-w-0 flex-1 space-y-1">
           <h3 className="font-semibold text-sm">
             {t(
-              review?.approvals.length
+              review?.status === 'ready' && review.approvals.length
                 ? 'assistant_decision_needed'
                 : 'assistant_private_reviews'
             )}
@@ -176,7 +176,7 @@ export function AssistantPrivateReview({
                 ) : (
                   <>
                     <Button
-                      disabled={!actionable || !review.text}
+                      disabled={!actionable || !review.text.trim()}
                       onClick={() => act('share')}
                     >
                       <Send className="size-4" />

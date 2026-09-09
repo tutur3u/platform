@@ -18,6 +18,7 @@ it('extracts the existing server source footer and deduplicates URLs', () => {
 it('leaves ordinary lists, unsafe links, and code examples untouched', () => {
   for (const body of [
     'A list\n- [Example](<https://example.com/>)',
+    '- [Example](<https://example.com/>)',
     'Answer\n\n- [Unsafe](<javascript:alert(1)>)',
     '```\n\n- [Example](<https://example.com/>)',
   ])
@@ -45,4 +46,11 @@ it('turns unresolved legacy reference IDs into a readable unavailable marker wit
     type: 'text',
     value: '. [a regular quote]',
   });
+});
+
+it('preserves the original validated URL for exact citation matching', () => {
+  expect(
+    splitChatSources('Answer\n\n- [Example](<https://example.com>)').sources[0]
+      ?.url
+  ).toBe('https://example.com');
 });

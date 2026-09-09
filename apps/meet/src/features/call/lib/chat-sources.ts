@@ -16,7 +16,7 @@ export function splitChatSources(body: string) {
     try {
       const url = new URL(match[2]!);
       if (!['https:', 'http:'].includes(url.protocol)) break;
-      sources.unshift({ title: match[1]!, url: url.href });
+      sources.unshift({ title: match[1]!, url: match[2]! });
     } catch {
       break;
     }
@@ -25,6 +25,7 @@ export function splitChatSources(body: string) {
   // Require the separate footer emitted by the server, not a list inside a paragraph/code.
   if (
     !sources.length ||
+    end === 0 ||
     lines[end - 1]?.trim() ||
     (lines.slice(0, end).join('\n').match(/```/g)?.length ?? 0) % 2
   )

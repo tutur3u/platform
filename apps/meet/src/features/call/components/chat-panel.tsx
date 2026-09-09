@@ -277,7 +277,7 @@ export function ChatPanel({
             </Button>
           </div>
         )}
-        {!chat.length && !reviews.data?.length && (
+        {!chat.length && !reviews.isError && !reviews.data?.length && (
           <div className="space-y-2 py-10 text-center">
             <div className="flex justify-center">
               <MiraAvatar size={36} />
