@@ -131,7 +131,12 @@ export function WorkshopsPage({ canHost }: { canHost: boolean }) {
                   className="h-auto max-w-full justify-start p-0 font-medium text-base"
                   asChild
                 >
-                  <WorkspaceLink href={`/?room=${room.id}`}>
+                  <WorkspaceLink
+                    href={`/?room=${room.id}`}
+                    onClick={() =>
+                      localStorage.setItem('colab-recent-room', room.id)
+                    }
+                  >
                     <span className="truncate">{room.title}</span>
                   </WorkspaceLink>
                 </Button>

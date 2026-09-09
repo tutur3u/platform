@@ -169,7 +169,7 @@ export function ColabSettings({
                 sidebar.handleBehaviorChange(value as SidebarBehavior)
               }
             >
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full min-[761px]:w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

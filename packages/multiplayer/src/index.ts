@@ -127,13 +127,16 @@ export function workshopScheduleError(
 export function normalizeRoom(room: Room): Room {
   room.aiCalls ??= 0;
   room.limits = { ...defaultWorkshopLimits, ...room.limits };
+  const catalog = seedRecords();
   room.teams = room.teams.map((team) => {
     const present = new Set(team.records.map((record) => record.id));
     return {
       ...team,
       records: [
         ...team.records,
-        ...seedRecords().filter((record) => !present.has(record.id)),
+        ...catalog
+          .filter((record) => !present.has(record.id))
+          .map((record) => ({ ...record })),
       ],
       aiCalls: team.aiCalls ?? 0,
       limits: { ...defaultTeamLimits, ...team.limits },

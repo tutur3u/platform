@@ -54,14 +54,18 @@ export function HostWorkshopDialog({
   });
   const update = (key: keyof typeof draft, value: string) => {
     setFormError(null);
-    create.reset();
+    if (!create.isPending) create.reset();
     setDraft((current) => ({ ...current, [key]: value }));
   };
   return (
     <Dialog
       open={open}
       onOpenChange={(value) => {
-        if (!value) closeWorkspaceDialog();
+        if (!value) {
+          setFormError(null);
+          if (!create.isPending) create.reset();
+          closeWorkspaceDialog();
+        }
       }}
     >
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
@@ -94,6 +98,7 @@ export function HostWorkshopDialog({
                 id="host-title"
                 name="title"
                 autoComplete="off"
+                disabled={create.isPending}
                 required
                 maxLength={100}
                 value={draft.title}
@@ -109,6 +114,7 @@ export function HostWorkshopDialog({
                   name="starts"
                   type="datetime-local"
                   autoComplete="off"
+                  disabled={create.isPending}
                   required
                   aria-describedby="host-schedule-help"
                   value={draft.starts}
@@ -122,6 +128,7 @@ export function HostWorkshopDialog({
                   name="ends"
                   type="datetime-local"
                   autoComplete="off"
+                  disabled={create.isPending}
                   required
                   aria-describedby="host-schedule-help"
                   value={draft.ends}
@@ -143,6 +150,7 @@ export function HostWorkshopDialog({
                   name="capacity"
                   type="number"
                   autoComplete="off"
+                  disabled={create.isPending}
                   min={2}
                   max={100}
                   required
@@ -158,6 +166,7 @@ export function HostWorkshopDialog({
                   name="teams"
                   type="number"
                   autoComplete="off"
+                  disabled={create.isPending}
                   min={1}
                   max={12}
                   required

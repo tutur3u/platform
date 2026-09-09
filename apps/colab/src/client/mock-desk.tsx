@@ -3,7 +3,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { appNames, useCopy } from './i18n';
 import { SelectField } from './select-field';
 
@@ -25,6 +25,12 @@ export function MockDesk({
   const chat = selectedApp.kind === 'chat';
   const board = selectedApp.kind === 'board';
   const calendar = selectedApp.kind === 'calendar';
+  const resultLabel = `${records.length} ${query ? c.matches : c.records}`;
+  const [announcedResult, setAnnouncedResult] = useState(resultLabel);
+  useEffect(() => {
+    const timer = setTimeout(() => setAnnouncedResult(resultLabel), 400);
+    return () => clearTimeout(timer);
+  }, [resultLabel]);
   return (
     <Card
       id={active ? 'sandbox-desk' : undefined}
@@ -69,8 +75,9 @@ export function MockDesk({
         <div className="mock-titlebar">
           <span className="mock-monogram">{appNames[app].slice(0, 1)}</span>
           <strong>{appNames[app]}</strong>
-          <span className="mock-caption" aria-live="polite">
-            {records.length} {query ? c.matches : c.records}
+          <span className="mock-caption">{resultLabel}</span>
+          <span className="sr-only" aria-live="polite">
+            {announcedResult}
           </span>
         </div>
         <div
