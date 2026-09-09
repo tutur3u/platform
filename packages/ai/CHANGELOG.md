@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/ai-v0.9.0...ai-v0.10.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add room settings, Mira chat and adaptive media ([#5262](https://github.com/tutur3u/platform/issues/5262)) ([2e149a3](https://github.com/tutur3u/platform/commit/2e149a3b5d5153a6c2368f58bc51e0bf8133398c))
+* **meet:** add room settings, shared recordings, Mira and adaptive bandwidth ([6b912f0](https://github.com/tutur3u/platform/commit/6b912f0084d3e170a3e9c66a49f66666609b3c02))
+
+
+### Bug Fixes
+
+* **meet:** cover nullable cache usage and review feedback ([45f294e](https://github.com/tutur3u/platform/commit/45f294e5a87107b06d9c855ab1572c964646b2f4))
+* **meet:** pin Mira questions and verify room policy on deployment ([3ab149d](https://github.com/tutur3u/platform/commit/3ab149d00688c277a51a57974ca65a990d2f4470))
+* **meet:** resolve Mira model and pricing from personal plan ([5f063d6](https://github.com/tutur3u/platform/commit/5f063d6edf46865db934250ccac550e8ba04154d))
+* **meet:** use personal plan model for Mira and its costs ([#5266](https://github.com/tutur3u/platform/issues/5266)) ([3684569](https://github.com/tutur3u/platform/commit/36845692a0076cbc7e75a93eec9dbd6e84bf60df))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/ai-v0.8.4...ai-v0.9.0) (2026-09-07)
 
 

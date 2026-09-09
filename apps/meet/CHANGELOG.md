@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/meet-v0.26.0...meet-v0.27.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add room settings, Mira chat and adaptive media ([#5262](https://github.com/tutur3u/platform/issues/5262)) ([2e149a3](https://github.com/tutur3u/platform/commit/2e149a3b5d5153a6c2368f58bc51e0bf8133398c))
+* **meet:** add room settings, shared recordings, Mira and adaptive bandwidth ([6b912f0](https://github.com/tutur3u/platform/commit/6b912f0084d3e170a3e9c66a49f66666609b3c02))
+
+
+### Bug Fixes
+
+* **meet:** cover nullable cache usage and review feedback ([45f294e](https://github.com/tutur3u/platform/commit/45f294e5a87107b06d9c855ab1572c964646b2f4))
+* **meet:** harden media controls and room resource lifecycle ([ad6c9ed](https://github.com/tutur3u/platform/commit/ad6c9ed621bc52017d6008ed3486305dce60c5a3))
+* **meet:** keep chat content within narrow sidebars ([5e66d5e](https://github.com/tutur3u/platform/commit/5e66d5eee64ef645bf41e806e09368051454dd00))
+* **meet:** pin Mira questions and verify room policy on deployment ([3ab149d](https://github.com/tutur3u/platform/commit/3ab149d00688c277a51a57974ca65a990d2f4470))
+* **meet:** preserve current settings during media updates ([d4882f1](https://github.com/tutur3u/platform/commit/d4882f16e1e602eba4b8c9ee35b288c76c62497c))
+* **meet:** preserve recording output in silent rooms ([1b43fb6](https://github.com/tutur3u/platform/commit/1b43fb6bc21631b58b9d612ad07628a6da3b2566))
+* **meet:** prevent chat text clipping in narrow sidebars ([#5267](https://github.com/tutur3u/platform/issues/5267)) ([27ffdf3](https://github.com/tutur3u/platform/commit/27ffdf33e3ba4d86a1c0aed6d0ff3e802d53c178))
+* **meet:** release attachment slots after storage cleanup ([6d0f066](https://github.com/tutur3u/platform/commit/6d0f0666139818a1ae69e0b7e20acc1a2eb0a883))
+* **meet:** resolve active personal Drive workspaces ([a277523](https://github.com/tutur3u/platform/commit/a27752300a476e8b0d1ae8878899482492be8184))
+* **meet:** resolve active personal Drive workspaces ([#5264](https://github.com/tutur3u/platform/issues/5264)) ([ff6e9d6](https://github.com/tutur3u/platform/commit/ff6e9d6f5f2ab0fee071f4019213e668d94c3a0d))
+* **meet:** resolve Mira model and pricing from personal plan ([5f063d6](https://github.com/tutur3u/platform/commit/5f063d6edf46865db934250ccac550e8ba04154d))
+* **meet:** save recordings when every participant is muted ([#5265](https://github.com/tutur3u/platform/issues/5265)) ([8e44d4a](https://github.com/tutur3u/platform/commit/8e44d4a4159df61f703ec280716a1e121697db0b))
+* **meet:** use personal plan model for Mira and its costs ([#5266](https://github.com/tutur3u/platform/issues/5266)) ([3684569](https://github.com/tutur3u/platform/commit/36845692a0076cbc7e75a93eec9dbd6e84bf60df))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/meet-v0.25.0...meet-v0.26.0) (2026-09-08)
 
 
