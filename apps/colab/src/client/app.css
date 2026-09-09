@@ -389,6 +389,226 @@
     border: 1px solid var(--border);
     border-radius: 8px;
   }
+  .mission-next-step {
+    display: grid;
+    gap: 6px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+  }
+  .mission-next-step span,
+  .run-label {
+    color: var(--muted-foreground);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .colab-content .mission-next-step p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .limits-panel .panel-heading h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+  }
+  .limits-panel .panel-heading p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 12px;
+  }
+  .limit-form,
+  .team-limit-card {
+    display: grid;
+    gap: 14px;
+  }
+  .team-limit-card {
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .colab-content .team-limit-card > [data-slot="label"] {
+    display: grid;
+    gap: 8px;
+    max-width: 320px;
+  }
+  .limit-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .colab-content .limit-fields [data-slot="label"] {
+    display: grid;
+    gap: 7px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+  }
+  .usage-meter {
+    display: grid;
+    gap: 7px;
+  }
+  .usage-meter > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted-foreground);
+    font-size: 12px;
+  }
+  .usage-meter strong {
+    color: var(--foreground);
+    font-variant-numeric: tabular-nums;
+  }
+  .usage-track {
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--muted);
+  }
+  .usage-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--primary);
+    transition: width 180ms ease;
+  }
+  .workshop-budget {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    margin-top: 24px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+  }
+  .workshop-budget strong {
+    color: var(--foreground);
+  }
+  .run-action {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .run-action > span {
+    color: var(--muted-foreground);
+    font-size: 11px;
+  }
+  .run-report {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .run-report + .run-report {
+    margin-top: 12px;
+  }
+  .run-report > summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .run-report > summary::-webkit-details-marker {
+    display: none;
+  }
+  .run-report > summary > span:nth-child(2) {
+    display: grid;
+    gap: 2px;
+  }
+  .run-report summary small {
+    color: var(--muted-foreground);
+  }
+  .run-index,
+  .step-number {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--muted);
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .run-report-body {
+    display: grid;
+    gap: 18px;
+    padding: 0 14px 14px;
+  }
+  .run-outcome,
+  .coach-card {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 10px;
+    background: var(--muted);
+  }
+  .coach-card {
+    border-left: 3px solid var(--primary);
+  }
+  .readable-output {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .run-section-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .colab-content .run-section-heading p {
+    margin: 0 0 4px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+  }
+  .run-usage {
+    display: flex;
+    gap: 6px;
+  }
+  .step-list {
+    display: grid;
+    gap: 8px;
+    padding: 0;
+    list-style: none;
+  }
+  .colab-content .step-list > li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .technical-details {
+    margin-top: 8px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+  }
+  .technical-details summary {
+    width: fit-content;
+    cursor: pointer;
+  }
+  .technical-details pre {
+    max-height: 260px;
+    overflow: auto;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--background);
+    color: var(--foreground);
+    white-space: pre-wrap;
+    font-size: 11px;
+  }
+  .prompt-details {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .empty.compact {
+    padding: 16px;
+  }
   @media (max-width: 620px) {
     .colab-content .studio-panel {
       padding: 16px;
@@ -399,6 +619,19 @@
     .colab-content .team-toolbar {
       flex-direction: column;
       align-items: stretch;
+    }
+    .limit-fields {
+      grid-template-columns: 1fr;
+    }
+    .run-report > summary {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+    .run-report > summary > [data-slot="badge"] {
+      grid-column: 2;
+      justify-self: start;
+    }
+    .run-section-heading {
+      flex-direction: column;
     }
   }
 }

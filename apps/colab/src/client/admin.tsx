@@ -16,6 +16,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useState } from 'react';
 import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
+import { LimitsPanel } from './limits-panel';
 import { SelectField } from './select-field';
 
 export function Admin({
@@ -44,7 +45,11 @@ export function Admin({
     <Card className="studio-panel admin-panel shadow-none">
       <h2 className="font-semibold text-base">{c.facilitator}</h2>
       <p>{c.adminHelp}</p>
-      <Accordion type="multiple" defaultValue={['access']} className="w-full">
+      <Accordion
+        type="multiple"
+        defaultValue={['access', 'limits']}
+        className="w-full"
+      >
         <AccordionItem value="access">
           <AccordionTrigger className="py-4 text-sm">
             {c.roomMode}
@@ -111,7 +116,13 @@ export function Admin({
               >
                 <Label>
                   {c.inviteEmail}
-                  <Input type="email" name="email" required maxLength={254} />
+                  <Input
+                    type="email"
+                    name="email"
+                    required
+                    maxLength={254}
+                    placeholder={c.inviteEmailPlaceholder}
+                  />
                 </Label>
                 <Button type="submit" disabled={busy}>
                   {c.invite}
@@ -160,6 +171,7 @@ export function Admin({
                     min={1}
                     max={480}
                     defaultValue={60}
+                    placeholder="60"
                   />
                 </Label>
                 <Button type="submit" disabled={password.isPending}>
@@ -177,6 +189,14 @@ export function Admin({
               )}
               <ErrorNotice error={password.error} />
             </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="limits">
+          <AccordionTrigger className="py-4 text-sm">
+            {c.usageLimits}
+          </AccordionTrigger>
+          <AccordionContent forceMount>
+            <LimitsPanel room={room} action={action} busy={busy} />
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="scenario">

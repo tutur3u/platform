@@ -32,7 +32,6 @@ import type {
   LaunchableApp,
   LaunchableAppCategory,
 } from '@tuturuuu/utils/launchable-apps';
-import Link from 'next/link';
 import type { KeyboardEventHandler } from 'react';
 import type { AppOpenMode } from './apps-launcher-catalog';
 
@@ -117,7 +116,7 @@ export function AppLauncherItem({
   const descriptionId = `apps-launcher-description-${app.slug}`;
 
   return (
-    <Link
+    <a
       aria-describedby={descriptionId}
       aria-label={title}
       className={cn(
@@ -134,7 +133,6 @@ export function AppLauncherItem({
       onFocus={onFocus}
       onKeyDown={onKeyDown}
       onPointerEnter={onFocus}
-      prefetch={false}
       rel={openMode === 'new-tab' ? 'noopener noreferrer' : undefined}
       target={openMode === 'new-tab' ? '_blank' : undefined}
     >
@@ -173,6 +171,6 @@ export function AppLauncherItem({
           <ArrowRight className="size-3.5" />
         )}
       </span>
-    </Link>
+    </a>
   );
 }

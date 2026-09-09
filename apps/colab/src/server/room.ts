@@ -6,6 +6,7 @@ import {
   joinRoom,
   memberOf,
   mutateRoom,
+  normalizeRoom,
   projectRoom,
   type Room,
   RoomError,
@@ -32,7 +33,7 @@ export class ColabRoom extends DurableObject<Env> {
       .exec<{ value: string }>('SELECT value FROM state WHERE id = 1')
       .toArray()[0];
     requireRule(row, 'room_missing', 404);
-    const room = JSON.parse(row.value) as Room;
+    const room = normalizeRoom(JSON.parse(row.value) as Room);
     const audit = this.ctx.storage.sql
       .exec<{ value: string }>('SELECT value FROM state WHERE id = 2')
       .toArray()[0];
@@ -112,7 +113,7 @@ export class ColabRoom extends DurableObject<Env> {
         actor: identity?.name ?? 'Colab',
         action,
         adminOnly,
-        teamId: ['prompt', 'compile', 'run'].includes(action)
+        teamId: ['prompt', 'compile', 'run', 'limits'].includes(action)
           ? member?.teamId
           : undefined,
       },
@@ -234,7 +235,13 @@ export class ColabRoom extends DurableObject<Env> {
       'prompt_required'
     );
     requireRule(body.action !== 'run' || team.skills.length, 'skills_required');
-    requireRule(room.aiCalls < 200, 'ai_budget', 429);
+    requireRule(room.aiCalls < room.limits.aiCallLimit, 'ai_budget', 429);
+    if (body.action !== 'scenario')
+      requireRule(
+        team.aiCalls < team.limits.aiCallLimit,
+        'team_ai_budget',
+        429
+      );
     const now = Date.now();
     const busy = this.ctx.storage.sql
       .exec<{ expires: number }>(
@@ -250,6 +257,7 @@ export class ColabRoom extends DurableObject<Env> {
       job
     );
     room.aiCalls++;
+    if (body.action !== 'scenario') team.aiCalls++;
     this.save(room);
     const snapshot = room;
     try {
@@ -263,7 +271,16 @@ export class ColabRoom extends DurableObject<Env> {
           : undefined;
       const result =
         body.action === 'run'
-          ? await runAgent(this.env, team, room.scenario)
+          ? await runAgent(this.env, team, room.scenario, {
+              agentTurnLimit: Math.min(
+                room.limits.agentTurnLimit,
+                team.limits.agentTurnLimit
+              ),
+              toolCallLimit: Math.min(
+                room.limits.toolCallLimit,
+                team.limits.toolCallLimit
+              ),
+            })
           : undefined;
       room = this.read();
       const actor = memberOf(room, identity);

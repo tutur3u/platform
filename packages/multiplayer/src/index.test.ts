@@ -6,7 +6,9 @@ import {
   joinRoom,
   memberOf,
   mutateRoom,
+  normalizeRoom,
   projectRoom,
+  type Room,
   staff,
 } from './index';
 
@@ -73,6 +75,62 @@ describe('server-authoritative room policy', () => {
       expect(() =>
         createRoom('r', owner, { ...input, ...changes }, now)
       ).toThrow();
+  });
+  it('applies compatible defaults and lets admins bound room and team AI usage', () => {
+    const legacy = room();
+    delete (legacy as Partial<Room>).limits;
+    for (const team of legacy.teams) {
+      delete (team as Partial<(typeof legacy.teams)[number]>).limits;
+      delete (team as Partial<(typeof legacy.teams)[number]>).aiCalls;
+    }
+    normalizeRoom(legacy);
+    expect(legacy.limits.aiCallLimit).toBe(200);
+    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
+    mutateRoom(
+      legacy,
+      owner,
+      {
+        action: 'limits',
+        scope: 'room',
+        aiCallLimit: 80,
+        agentTurnLimit: 5,
+        toolCallLimit: 4,
+      },
+      now
+    );
+    mutateRoom(
+      legacy,
+      owner,
+      {
+        action: 'limits',
+        scope: 'team',
+        teamId: 'team-1',
+        aiCallLimit: 20,
+        agentTurnLimit: 4,
+        toolCallLimit: 3,
+      },
+      now
+    );
+    expect(legacy.teams[0]?.limits).toEqual({
+      aiCallLimit: 20,
+      agentTurnLimit: 4,
+      toolCallLimit: 3,
+    });
+    expect(() =>
+      mutateRoom(
+        legacy,
+        owner,
+        {
+          action: 'limits',
+          scope: 'team',
+          teamId: 'team-1',
+          aiCallLimit: 81,
+          agentTurnLimit: 4,
+          toolCallLimit: 3,
+        },
+        now
+      )
+    ).toThrow('invalid_input');
   });
   it('requires invitations, preserves capacity, and allows idempotent rejoin', () => {
     const r = room();

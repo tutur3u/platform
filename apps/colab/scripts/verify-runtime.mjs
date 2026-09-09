@@ -192,6 +192,30 @@ try {
     }),
   ]);
   assert.deepEqual(concurrent.map((r) => r.status).sort(), [200, 409]);
+  response = await request(`${path}/action`, owner, {
+    action: 'limits',
+    scope: 'room',
+    aiCallLimit: 80,
+    agentTurnLimit: 7,
+    toolCallLimit: 5,
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  response = await request(`${path}/action`, owner, {
+    action: 'limits',
+    scope: 'team',
+    teamId: 'team-2',
+    aiCallLimit: 20,
+    agentTurnLimit: 5,
+    toolCallLimit: 4,
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  const limitedRoom = await response.json();
+  assert.equal(limitedRoom.limits.aiCallLimit, 80);
+  assert.deepEqual(limitedRoom.teams[1].limits, {
+    aiCallLimit: 20,
+    agentTurnLimit: 5,
+    toolCallLimit: 4,
+  });
   response = await request(`${path}/password`, owner, { minutes: 60 });
   const pass = await response.json();
   assert.equal(response.status, 200);

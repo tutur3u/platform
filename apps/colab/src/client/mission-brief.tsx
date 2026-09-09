@@ -1,6 +1,5 @@
-import { CircleCheck, ShieldCheck } from '@tuturuuu/icons';
+import { CircleCheck } from '@tuturuuu/icons';
 import type { RoomView } from '@tuturuuu/multiplayer';
-import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import {
   Card,
   CardContent,
@@ -39,11 +38,10 @@ export function MissionBrief({ room }: { room: RoomView }) {
             ))}
           </ul>
         </section>
-        <Alert>
-          <ShieldCheck />
-          <AlertTitle>{c.sandbox}</AlertTitle>
-          <AlertDescription>{c.sandboxHelp}</AlertDescription>
-        </Alert>
+        <div className="mission-next-step">
+          <span>{c.nextStep}</span>
+          <p>{c.nextStepHelp}</p>
+        </div>
       </CardContent>
     </Card>
   );

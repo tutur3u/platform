@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
-  Building2,
   CalendarDays,
   FileText,
   FlaskConical,
@@ -12,6 +11,7 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
+import { AppsLauncherCoreDialog } from '@tuturuuu/satellite/apps-launcher-core';
 import { Button } from '@tuturuuu/ui/button';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SatelliteContent } from '@tuturuuu/ui/custom/satellite-content';
@@ -20,19 +20,13 @@ import { SatelliteShell } from '@tuturuuu/ui/custom/satellite-shell';
 import { getFilteredLinks } from '@tuturuuu/ui/custom/satellite-shell-utils';
 import { useSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import { useSatelliteShell } from '@tuturuuu/ui/custom/use-satellite-shell';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { ReportProblemDialogContent } from '@tuturuuu/ui/report-problem-dialog-content';
 import { type ReactNode, useMemo, useState } from 'react';
 import { AccountMenu } from './account-menu';
 import logo from './assets/tuturuuu.png';
-import { type Locale, useCopy, useShellCopy } from './i18n';
+import { type Locale, useCopy, useLauncherCopy, useShellCopy } from './i18n';
 import { ColabNotifications } from './notifications';
 import { ColabSettings } from './settings';
 import { ShellNavigation } from './shell-navigation';
@@ -49,7 +43,6 @@ export function Structure({
   onLocaleChange,
   identity,
   roomId,
-  navigate,
 }: {
   children: ReactNode;
   loading: boolean;
@@ -57,9 +50,9 @@ export function Structure({
   onLocaleChange: (locale: Locale | undefined) => void;
   identity: Identity | null;
   roomId: string;
-  navigate: (id: string) => void;
 }) {
   const c = useCopy();
+  const launcherT = useLauncherCopy();
   // Subscribe to the room cache so admin navigation follows realtime role changes.
   const { data: room } = useQuery<RoomView>({
     queryKey: ['room', roomId],
@@ -213,30 +206,13 @@ export function Structure({
         />
       </Dialog>
 
-      <Dialog open={appsOpen} onOpenChange={setAppsOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{c.appMenu}</DialogTitle>
-            <DialogDescription>{c.shellPlatform}</DialogDescription>
-          </DialogHeader>
-          <Button variant="ghost" asChild>
-            <a href="https://tuturuuu.com">
-              <Building2 className="size-4" />
-              {c.shellPlatform}
-            </a>
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              navigate('');
-              setAppsOpen(false);
-            }}
-          >
-            <FlaskConical className="size-4" />
-            Colab
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <AppsLauncherCoreDialog
+        closeLabel={c.common.close}
+        currentWorkspace={null}
+        open={appsOpen}
+        onOpenChange={setAppsOpen}
+        t={launcherT}
+      />
       <SatelliteShell
         isCollapsed={collapsed}
         setIsCollapsed={handleToggle}

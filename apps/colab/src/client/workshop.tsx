@@ -244,6 +244,7 @@ export function Workshop({
                 writable={writable}
                 busy={mutate.isPending}
                 action={action}
+                roomAiAvailable={room.aiCalls < room.limits.aiCallLimit}
               />
             </div>
           )}
@@ -255,6 +256,7 @@ export function Workshop({
               writable={false}
               busy={mutate.isPending}
               action={action}
+              roomAiAvailable={room.aiCalls < room.limits.aiCallLimit}
             />
           )}
         </section>
@@ -265,9 +267,16 @@ export function Workshop({
           <Admin room={room} action={action} busy={mutate.isPending} />
         </div>
       )}
-      <p className="fine-print budget">
-        {c.limitHint} ({room.aiCalls}/200)
-      </p>
+      <div className="workshop-budget" role="status">
+        <span>{c.roomBudget}</span>
+        <strong>
+          {room.aiCalls} / {room.limits.aiCallLimit} {c.aiOperationsShort}
+        </strong>
+        <span>
+          {room.limits.agentTurnLimit} {c.turnsShort} ·{' '}
+          {room.limits.toolCallLimit} {c.toolCallsShort} {c.perRun}
+        </span>
+      </div>
     </div>
   );
 }
