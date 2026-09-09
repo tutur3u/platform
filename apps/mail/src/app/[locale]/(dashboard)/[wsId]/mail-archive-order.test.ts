@@ -54,6 +54,17 @@ beforeEach(() => {
 });
 
 describe('archive and auto-read ordering', () => {
+  it.each(['state', 'bulk'])(
+    'keeps %s pending until mailbox invalidation completes',
+    async (key) => {
+      const mutation = mocks.mutations.find(
+        (entry) => entry.options.mutationKey.at(-1) === key
+      )!;
+      const settled = mutation.options.onSettled();
+      expect(settled).toBeInstanceOf(Promise);
+      await settled;
+    }
+  );
   it.each([false, true])(
     'leaves read tracking to the loaded reader instead of nesting mutations (bulk=%s)',
     async (bulk) => {

@@ -340,7 +340,7 @@ export function useMailThreadActions({
     onSuccess: () => {
       setSyncState('synced');
     },
-    onSettled: () => void invalidateMailbox(),
+    onSettled: () => invalidateMailbox(),
   });
 
   const bulkMutation = useMutation({
@@ -389,7 +389,7 @@ export function useMailThreadActions({
     onSuccess: () => {
       setSyncState('synced');
     },
-    onSettled: () => void invalidateMailbox(),
+    onSettled: () => invalidateMailbox(),
   });
 
   return {

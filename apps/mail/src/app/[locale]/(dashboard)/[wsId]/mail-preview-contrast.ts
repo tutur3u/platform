@@ -143,31 +143,42 @@ export function applyMailPreviewContrast(
       element.style.setProperty('background-image', 'none', 'important');
     }
     backgrounds.set(element, background);
+    const foreground = readColor(style.color);
+    if (
+      !['IMG', 'STYLE', 'BR', 'HR'].includes(element.tagName) &&
+      foreground &&
+      foreground.alpha > 0
+    ) {
+      const visibleColor = composite(
+        foreground.rgb,
+        background,
+        foreground.alpha
+      );
+      const readable = readableMailColor(visibleColor, background);
+      if (readable !== visibleColor) {
+        element.style.setProperty('color', css(readable), 'important');
+        element.style.setProperty(
+          '-webkit-text-fill-color',
+          css(readable),
+          'important'
+        );
+      }
+    }
+    // Resolve currentColor after foreground correction so borders cannot turn white.
+    const borderStyle = view.getComputedStyle(element);
     for (const side of ['top', 'right', 'bottom', 'left']) {
+      if (
+        borderStyle.getPropertyValue(`border-${side}-style`) === 'none' ||
+        parseFloat(borderStyle.getPropertyValue(`border-${side}-width`)) === 0
+      )
+        continue;
       const property = `border-${side}-color`;
-      const color = readColor(style.getPropertyValue(property));
+      const color = readColor(borderStyle.getPropertyValue(property));
       if (!color || color.alpha === 0) continue;
       const visible = composite(color.rgb, background, color.alpha);
       const softened = mailBorderColor(visible, background);
       if (softened !== visible)
         element.style.setProperty(property, css(softened), 'important');
-    }
-    if (['IMG', 'STYLE', 'BR', 'HR'].includes(element.tagName)) continue;
-    const foreground = readColor(style.color);
-    if (!foreground || foreground.alpha === 0) continue;
-    const visibleColor = composite(
-      foreground.rgb,
-      background,
-      foreground.alpha
-    );
-    const readable = readableMailColor(visibleColor, background);
-    if (readable !== visibleColor) {
-      element.style.setProperty('color', css(readable), 'important');
-      element.style.setProperty(
-        '-webkit-text-fill-color',
-        css(readable),
-        'important'
-      );
     }
   }
 }
