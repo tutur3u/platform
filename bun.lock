@@ -2314,6 +2314,9 @@
       "name": "@tuturuuu/realtime",
       "version": "0.2.0",
       "dependencies": {
+        "mdast-util-from-markdown": "^2.0.3",
+        "mdast-util-gfm": "^3.1.0",
+        "micromark-extension-gfm": "^3.0.0",
         "yjs": "^13.6.32",
         "zod": "^4.5.4",
       },

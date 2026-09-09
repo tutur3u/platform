@@ -3953,7 +3953,7 @@
       "microphone_not_found": "Không tìm thấy micrô. Hãy kết nối micrô hoặc tai nghe rồi thử lại.",
       "mira_hint": "Hỏi Mira bằng @Tuturuuu",
       "mira_profile": "Hồ sơ trợ lý Tuturuuu",
-      "mira_profile_hint": "Mira là trợ lý AI của Tuturuuu. Nhắc @Tuturuuu để đặt câu hỏi về cuộc trò chuyện này.",
+      "mira_profile_hint": "Mira là trợ lý AI của Tuturuuu. Nhắc @Tuturuuu hoặc @ttr để đặt câu hỏi về cuộc trò chuyện này.",
       "mira_requests": "{count} yêu cầu Mira",
       "mira_thinking": "Mira đang suy nghĩ…",
       "mute": "Tắt micro",

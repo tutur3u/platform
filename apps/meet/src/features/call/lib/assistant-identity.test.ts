@@ -23,8 +23,7 @@ describe('Meet assistant identity', () => {
       children: [
         {
           type: 'text',
-          value:
-            'Hi @tuturuuu, ask @Tuturuuu now. email@Tuturuuu @TuturuuuExtra',
+          value: 'Hi @tuturuuu, ask @TTR now. email@Tuturuuu @TuturuuuExtra',
         },
       ],
     };
@@ -35,14 +34,14 @@ describe('Meet assistant identity', () => {
         type: 'link',
         url: MEET_ASSISTANT_PROFILE,
         title: MEET_MENTION_MARKER,
-        children: [{ type: 'text', value: '@Tuturuuu' }],
+        children: [{ type: 'text', value: '@tuturuuu' }],
       },
       { type: 'text', value: ', ask ' },
       {
         type: 'link',
         url: MEET_ASSISTANT_PROFILE,
         title: MEET_MENTION_MARKER,
-        children: [{ type: 'text', value: '@Tuturuuu' }],
+        children: [{ type: 'text', value: '@TTR' }],
       },
       { type: 'text', value: ' now. email@Tuturuuu @TuturuuuExtra' },
     ]);

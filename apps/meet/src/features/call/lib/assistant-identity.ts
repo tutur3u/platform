@@ -53,7 +53,7 @@ export function remarkMeetMentions() {
             type: 'link',
             url: MEET_ASSISTANT_PROFILE,
             title: MEET_MENTION_MARKER,
-            children: [{ type: 'text', value: '@Tuturuuu' }],
+            children: [{ type: 'text', value: value.slice(start, match.end) }],
           });
           end = match.end;
         }

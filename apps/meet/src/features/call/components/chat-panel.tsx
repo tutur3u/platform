@@ -45,11 +45,18 @@ const mentionPlugins = [remarkMeetMentions];
 const mentionComponents: NonNullable<
   ComponentProps<typeof AssistantMarkdown>['components']
 > = {
-  a: ({ href, title, children }) =>
-    href === MEET_ASSISTANT_PROFILE && title === MEET_MENTION_MARKER ? (
-      <MiraProfile mention />
+  a: ({ href, title, children, node, ...props }) =>
+    href === MEET_ASSISTANT_PROFILE &&
+    node?.properties.title === MEET_MENTION_MARKER ? (
+      <MiraProfile mention>{children}</MiraProfile>
     ) : (
-      <a title={title} href={href} target="_blank" rel="noopener noreferrer">
+      <a
+        {...props}
+        title={title}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         {children}
       </a>
     ),

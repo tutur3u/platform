@@ -3953,7 +3953,7 @@
       "microphone_not_found": "No microphone was found. Connect a microphone or headset and try again.",
       "mira_hint": "Ask Mira with @Tuturuuu",
       "mira_profile": "Tuturuuu assistant profile",
-      "mira_profile_hint": "Mira is Tuturuuu’s AI assistant. Mention @Tuturuuu to ask a question about this conversation.",
+      "mira_profile_hint": "Mira is Tuturuuu’s AI assistant. Mention @Tuturuuu or @ttr to ask a question about this conversation.",
       "mira_requests": "{count} Mira requests",
       "mira_thinking": "Mira is thinking…",
       "mute": "Mute microphone",

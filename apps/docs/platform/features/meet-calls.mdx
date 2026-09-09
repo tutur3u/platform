@@ -706,7 +706,7 @@ This is browser capture, not a Cloudflare server-side recording service.
 Room chat supports Markdown, avatars, and up to five 25 MiB attachments per message.
 Files use the creator's personal Drive provider and storage capacity checks. Room
 admission controls attachment access; a signed URL is short-lived. Mention
-`@Tuturuuu` to ask Mira using the recent 40 room messages. Uploaded file contents
+`@Tuturuuu` or `@ttr` (case-insensitive) to ask Mira using the recent 40 room messages. Uploaded file contents
 are not automatically read by Mira. The mention author's personal AI allowance is
 checked and reported tokens are deducted from that author's quota. Mira uses the plan-default Google language model for checks, generation, and deduction. Cost estimates use its catalog prices and reported cached input; missing cache prices or tiered pricing remain incomplete.
 Requests are deduplicated by chat message ID. The internal server-service token
@@ -758,8 +758,8 @@ limit after two minutes; late provider costs can still be recorded.
 
 Mira replies carry a server-only assistant marker and reserved sender identity.
 The Nova avatar and official badge require both; choosing the display name Mira
-does not grant either. Standalone `@Tuturuuu` mentions open the assistant mini
-profile on hover, keyboard focus, or tap. Code and existing Markdown links are
+does not grant either. Standalone `@Tuturuuu` and `@ttr` mentions
+(case-insensitive) open the assistant mini profile on hover, keyboard focus, or tap. Code and existing Markdown links are
 not rewritten into mentions. Chat message toasts are suppressed while chat is
 open; admission and other call alerts remain active.
 

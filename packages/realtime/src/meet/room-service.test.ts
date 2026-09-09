@@ -275,14 +275,32 @@ it('reclaims a discarded attachment slot only after storage deletion succeeds', 
   ).toBeUndefined();
 });
 
-it.each(['(@Tuturuuu)', 'Hello,@Tuturuuu!', '**@Tuturuuu**'])(
-  'accepts standalone assistant mention boundaries: %s',
+it.each([
+  '(@Tuturuuu)',
+  'Hello,@Tuturuuu!',
+  '**@Tuturuuu**',
+  '@ttr help',
+  '@TTR help',
+  '@tuturuuu help',
+])('accepts standalone assistant mention boundaries: %s', (body) => {
+  const state = initial();
+  state.chat![0]!.body = body;
+  expect(
+    roomService(state, token, { action: 'ai.reserve', messageId: 'message' })
+      .status
+  ).toBeUndefined();
+});
+
+it.each(['[@ttr](https://example.com)', '`@tuturuuu`'])(
+  'rejects AI reservation for an inert mention: %s',
   (body) => {
     const state = initial();
     state.chat![0]!.body = body;
-    expect(
-      roomService(state, token, { action: 'ai.reserve', messageId: 'message' })
-        .status
-    ).toBeUndefined();
+    const result = roomService(state, token, {
+      action: 'ai.reserve',
+      messageId: 'message',
+    });
+    expect(result.status).toBe(404);
+    expect(result.state.aiRequests).toEqual(state.aiRequests);
   }
 );
