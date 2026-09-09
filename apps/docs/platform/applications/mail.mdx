@@ -56,7 +56,8 @@ skips all selected conversations when choosing the next message. Loaded unread
 conversations are marked read even when opened through restored URLs or archive
 navigation. Read updates wait for pending archive/trash operations to settle.
 Archive controls track the affected conversation, so the next conversation remains
-actionable while earlier requests finish. Failed operations restore only their
+actionable while earlier requests finish. Its header remains available from the
+inbox summary while the message body loads. Failed operations restore only their
 own conversations and counters; mailbox reconciliation waits for overlapping
 operations to finish. Catch-all headers fall back to the observed delivery
 recipient, then the envelope recipient when parsed To recipients are absent.

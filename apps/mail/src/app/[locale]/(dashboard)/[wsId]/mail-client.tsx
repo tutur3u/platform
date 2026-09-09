@@ -549,6 +549,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     </section>
   );
 
+  const selectedSummary =
+    threads.find((thread) => thread.id === threadId) ?? null;
   const detailPanel = (
     <section className="flex h-full min-h-0 min-w-0 max-w-full bg-muted/20">
       <ThreadDetail
@@ -575,7 +577,10 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         onReplyAll={handleReplyAll}
         onStar={() =>
           mutateThread(
-            detailQuery.data?.messages.at(-1)?.starred ? 'unstar' : 'star'
+            (detailQuery.data?.messages.at(-1)?.starred ??
+              selectedSummary?.starred)
+              ? 'unstar'
+              : 'star'
           )
         }
         onTrash={() => {
@@ -587,6 +592,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           else mutateThread('trash');
         }}
         thread={detailQuery.data ?? null}
+        summary={selectedSummary}
       />
     </section>
   );
