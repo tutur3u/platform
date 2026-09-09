@@ -82,11 +82,12 @@ export function uploadMeetAiChunk(
   wsId: string,
   meetingId: string,
   data: FormData,
-  options?: InternalApiClientOptions
+  options?: InternalApiClientOptions,
+  signal?: AbortSignal
 ) {
   return getInternalApiClient(options).json<MeetAiChunk>(
     `${path(wsId, meetingId)}/chunks`,
-    { method: 'POST', body: data }
+    { method: 'POST', body: data, signal }
   );
 }
 

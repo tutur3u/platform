@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   admitOrHold,
+  applyMeetRoomCommand,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
   meetRealtimeTokenPayloadSchema,
@@ -32,6 +33,15 @@ describe('same-device signaling recovery', () => {
       token,
       '2026-09-09T12:00:10.000Z'
     );
+    const announced = applyMeetRoomCommand(resumed.state, {
+      token,
+      now: '2026-09-09T12:00:11.000Z',
+      message: {
+        type: 'presence.join',
+        media: initial.state.presence[token.userId]!.media,
+      },
+    });
+    expect(announced.state.presence[token.userId]?.joinedAt).toBe(now);
     expect(initial.reply[0]).toMatchObject({ resumed: false });
     expect(resumed.reply[0]).toMatchObject({ resumed: true });
     expect(resumed.state.presence[token.userId]).toMatchObject({

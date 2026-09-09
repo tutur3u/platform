@@ -185,3 +185,19 @@ describe('confirmed SFU room transitions', () => {
     expect(f.results.at(-1)?.broadcast).toEqual([]);
   });
 });
+
+it('does not translate a persistence failure into an SFU failure and lets the next command run', async () => {
+  const f = fixture();
+  const commit = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('storage unavailable'))
+    .mockResolvedValue(undefined);
+  const options = { ...f.options, commit };
+  await expect(
+    f.executor.run({ message: publish(), token, now }, options)
+  ).rejects.toThrow('storage unavailable');
+  expect(commit).toHaveBeenCalledTimes(1);
+  expect(commit.mock.calls[0]?.[0].reply[0].type).toBe('sfu.response');
+  await f.executor.run({ message: publish('next'), token, now }, options);
+  expect(f.options.runSfu).toHaveBeenCalledTimes(2);
+});

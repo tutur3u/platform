@@ -1,9 +1,13 @@
 -- A retry claims a fresh lease. An expired worker cannot overwrite its successor.
 alter table public.meet_ai_chunks
-  add column attempt_id uuid not null default gen_random_uuid(),
+  add column attempt_id uuid,
   add column attempt_started_at timestamptz not null default now(),
   add column attempts integer not null default 1 check (attempts between 1 and 5),
+  add column prior_cost_usd numeric not null default 0 check (prior_cost_usd >= 0),
   add column unpriced_attempts integer not null default 0 check (unpriced_attempts >= 0);
+
+-- Existing rows acquire their first lease lazily; no volatile-default table rewrite.
+alter table public.meet_ai_chunks alter column attempt_id set default gen_random_uuid();
 
 create or replace function public.reserve_meet_ai_chunk(
   p_id uuid, p_session_id uuid, p_sequence integer,
@@ -29,7 +33,10 @@ begin
     end if;
     update public.meet_ai_chunks set
       status = 'processing', attempt_id = gen_random_uuid(), attempt_started_at = now(),
-      attempts = attempts + 1, unpriced_attempts = unpriced_attempts + 1
+      attempts = attempts + 1,
+      unpriced_attempts = unpriced_attempts + case when chunk.cost_usd is null then 1 else 0 end,
+      prior_cost_usd = prior_cost_usd + coalesce(chunk.cost_usd, 0),
+      transcript = null, usage = null, cost_usd = null
       where id = p_id returning * into chunk;
     return chunk;
   end if;

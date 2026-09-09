@@ -23495,13 +23495,14 @@ export type Database = {
       };
       meet_ai_chunks: {
         Row: {
-          attempt_id: string;
+          attempt_id: string | null;
           attempt_started_at: string;
           attempts: number;
           cost_usd: number | null;
           created_at: string;
           duration_seconds: number;
           id: string;
+          prior_cost_usd: number;
           sequence: number;
           session_id: string;
           start_seconds: number;
@@ -23511,13 +23512,14 @@ export type Database = {
           usage: Json | null;
         };
         Insert: {
-          attempt_id?: string;
+          attempt_id?: string | null;
           attempt_started_at?: string;
           attempts?: number;
           cost_usd?: number | null;
           created_at?: string;
           duration_seconds: number;
           id: string;
+          prior_cost_usd?: number;
           sequence: number;
           session_id: string;
           start_seconds: number;
@@ -23527,13 +23529,14 @@ export type Database = {
           usage?: Json | null;
         };
         Update: {
-          attempt_id?: string;
+          attempt_id?: string | null;
           attempt_started_at?: string;
           attempts?: number;
           cost_usd?: number | null;
           created_at?: string;
           duration_seconds?: number;
           id?: string;
+          prior_cost_usd?: number;
           sequence?: number;
           session_id?: string;
           start_seconds?: number;
@@ -44578,13 +44581,14 @@ export type Database = {
           p_start_seconds: number;
         };
         Returns: {
-          attempt_id: string;
+          attempt_id: string | null;
           attempt_started_at: string;
           attempts: number;
           cost_usd: number | null;
           created_at: string;
           duration_seconds: number;
           id: string;
+          prior_cost_usd: number;
           sequence: number;
           session_id: string;
           start_seconds: number;
