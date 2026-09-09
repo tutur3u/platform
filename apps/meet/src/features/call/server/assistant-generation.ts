@@ -4,7 +4,10 @@ import {
   checkAiCredits,
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
-import { answerMeetChat } from '@tuturuuu/ai/meetings/chat';
+import {
+  answerMeetChat,
+  type MeetAssistantMessage,
+} from '@tuturuuu/ai/meetings/chat';
 import type { MeetAssistantContext } from '@tuturuuu/ai/meetings/chat-tools';
 import { createMeetWorkspaceTools } from '@tuturuuu/ai/meetings/workspace-tools';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -12,7 +15,6 @@ import {
   getPermissions,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import type { ModelMessage } from 'ai';
 import { MeetCallAccessError } from '../lib/call-access';
 import { getMeetChatModel } from './chat-model';
 import { callRoomService, personalWorkspace } from './room-service';
@@ -90,7 +92,7 @@ export async function generateMeetAssistant(
   );
   if (!cap) throw new MeetCallAccessError(403, 'AI quota is exhausted');
   let context: RoomContext;
-  let messages: ModelMessage[] | undefined;
+  let messages: MeetAssistantMessage[] | undefined;
   if (input.resume) {
     const review = await callRoomService<PrivateAssistantReview>(access, {
       action: 'ai.review.claim',
@@ -98,7 +100,7 @@ export async function generateMeetAssistant(
       revision: input.resume.revision,
     });
     const saved = JSON.parse(review.continuation) as {
-      messages: ModelMessage[];
+      messages: MeetAssistantMessage[];
       context: RoomContext;
     };
     context = saved.context;

@@ -7,6 +7,8 @@ import type { MeetChatModel } from './chat-usage';
 import { selectMeetWorkspaceTools } from './chat-workspace-selection';
 import { legacyMeetSearch } from './legacy-chat-search';
 
+export type MeetAssistantMessage = ModelMessage;
+
 export async function answerMeetChat(
   history: Array<{ body: string; displayName: string; assistant?: boolean }>,
   maxOutputTokens: number,
