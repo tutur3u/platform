@@ -1,5 +1,5 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Download,
   FileText,
@@ -31,6 +31,8 @@ import {
   remarkMeetMentions,
 } from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
+import { AssistantPrivateReviews } from './assistant-private-review';
+import { AssistantWorkspacePicker } from './assistant-workspace-picker';
 import { MiraAvatar, MiraProfile } from './mira-profile';
 
 const AssistantMarkdown = dynamic(
@@ -131,6 +133,9 @@ export function ChatPanel({
   meetingId: string;
 }) {
   const t = useTranslations('meet.call');
+  const queryClient = useQueryClient();
+  const [assistantWorkspace, setAssistantWorkspace] =
+    useState<string>('personal');
   const [draft, setDraft] = useState(''),
     [files, setFiles] = useState<File[]>([]),
     [busy, setBusy] = useState(false),
@@ -182,7 +187,15 @@ export function ChatPanel({
       if (hasMeetAssistantMention(body)) {
         setThinking(true);
         try {
-          await askMeetAssistant(meetingId, sent.id);
+          await askMeetAssistant(
+            meetingId,
+            sent.id,
+            Intl.DateTimeFormat().resolvedOptions().timeZone,
+            assistantWorkspace === 'personal' ? undefined : assistantWorkspace
+          );
+          await queryClient.invalidateQueries({
+            queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
+          });
         } catch {
           toast.error(t('assistant_failed'));
         } finally {
@@ -197,6 +210,14 @@ export function ChatPanel({
   };
   return (
     <>
+      {hasMeetAssistantMention(draft) && (
+        <AssistantWorkspacePicker
+          value={assistantWorkspace}
+          onChange={setAssistantWorkspace}
+          selfUserId={selfUserId}
+        />
+      )}
+      <AssistantPrivateReviews meetingId={meetingId} selfUserId={selfUserId} />
       <ScrollArea className="[&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-radix-scroll-area-viewport]>div]:!min-w-0 min-h-0 min-w-0 flex-1 px-4 py-3 [&_[data-radix-scroll-area-viewport]>div]:w-full [&_[data-radix-scroll-area-viewport]>div]:max-w-full">
         <ol aria-live="polite" aria-relevant="additions" className="space-y-5">
           {chat.map((message) => (

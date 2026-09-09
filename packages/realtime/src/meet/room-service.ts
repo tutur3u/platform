@@ -3,6 +3,10 @@ import {
   hasMeetAssistantMention,
   MEET_ASSISTANT_USER_ID,
 } from './assistant-mentions';
+import {
+  type AssistantReview,
+  assistantReviewCommand,
+} from './assistant-review';
 import type {
   MeetRealtimeServerMessage,
   MeetRealtimeTokenPayload,
@@ -36,34 +40,42 @@ export type RoomServiceState = MeetRoomSnapshot & {
     {
       userId: string;
       status: 'pending' | 'done' | 'failed';
+      review?: AssistantReview;
       startedAt?: number;
       costUsd?: number | null;
     }
   >;
 };
-const command = z.discriminatedUnion('action', [
-  z.object({ action: z.literal('read') }),
-  z.object({ action: z.literal('costs') }),
-  z.object({ action: z.literal('recording.list') }),
-  z.object({ action: z.literal('attach'), attachment }),
-  z.object({ action: z.literal('attachment'), id: z.uuid() }),
-  z.object({ action: z.literal('attachment.discard'), id: z.uuid() }),
-  z.object({ action: z.literal('attachment.deleted'), id: z.uuid() }),
-  z.object({
-    action: z.literal('recording.save'),
-    sessionId: z.uuid(),
-    path: z.string().trim().min(1).max(1024),
-    storageWsId: z.uuid(),
-  }),
-  z.object({ action: z.literal('recording.read'), sessionId: z.uuid() }),
-  z.object({ action: z.literal('recording.authorize'), sessionId: z.uuid() }),
-  z.object({ action: z.literal('ai.reserve'), messageId: z.string().max(200) }),
-  z.object({
-    action: z.literal('ai.finish'),
-    messageId: z.string().max(200),
-    body: z.string().max(16000).optional(),
-    costUsd: z.number().nonnegative().nullable().optional(),
-  }),
+const command = z.union([
+  assistantReviewCommand,
+  z.discriminatedUnion('action', [
+    z.object({ action: z.literal('read') }),
+    z.object({ action: z.literal('ai.review.list') }),
+    z.object({ action: z.literal('costs') }),
+    z.object({ action: z.literal('recording.list') }),
+    z.object({ action: z.literal('attach'), attachment }),
+    z.object({ action: z.literal('attachment'), id: z.uuid() }),
+    z.object({ action: z.literal('attachment.discard'), id: z.uuid() }),
+    z.object({ action: z.literal('attachment.deleted'), id: z.uuid() }),
+    z.object({
+      action: z.literal('recording.save'),
+      sessionId: z.uuid(),
+      path: z.string().trim().min(1).max(1024),
+      storageWsId: z.uuid(),
+    }),
+    z.object({ action: z.literal('recording.read'), sessionId: z.uuid() }),
+    z.object({ action: z.literal('recording.authorize'), sessionId: z.uuid() }),
+    z.object({
+      action: z.literal('ai.reserve'),
+      messageId: z.string().max(200),
+    }),
+    z.object({
+      action: z.literal('ai.finish'),
+      messageId: z.string().max(200),
+      body: z.string().max(16000).optional(),
+      costUsd: z.number().nonnegative().nullable().optional(),
+    }),
+  ]),
 ]);
 export function roomService(
   snapshot: RoomServiceState,
@@ -93,6 +105,18 @@ export function roomService(
     token.scopes.includes('meet:workspace-member');
   const admin = token.role === 'host';
   const message = parsed.data;
+  if (message.action === 'ai.review.list')
+    return {
+      state: snapshot,
+      body: Object.entries(snapshot.aiRequests ?? {}).flatMap(
+        ([id, request]) =>
+          request.userId === accountId &&
+          request.review &&
+          ['ready', 'executing'].includes(request.review.status)
+            ? [{ id, status: request.review.status }]
+            : []
+      ),
+    };
   if (message.action === 'recording.authorize') {
     const record = snapshot.recordings?.find(
       (r) => r.sessionId === message.sessionId && r.ownerAccountId === accountId
@@ -222,7 +246,12 @@ export function roomService(
     };
   }
   // Finalize an already authorized generation even if its user left meanwhile.
-  if (message.action !== 'ai.finish' && (!admitted || snapshot.ended))
+  if (
+    !['ai.finish', 'ai.review.save', 'ai.review.get'].includes(
+      message.action
+    ) &&
+    (!admitted || snapshot.ended)
+  )
     return fail('Join the active meeting first');
   if (message.action === 'attach') {
     if (Object.keys(snapshot.attachments ?? {}).length >= 1000)
@@ -282,12 +311,178 @@ export function roomService(
     };
     return {
       state,
-      body: { chat: snapshot.chat?.slice(-40) ?? [], prompt: original.body },
+      body: {
+        chat: snapshot.chat?.slice(-40) ?? [],
+        prompt: original.body,
+        meetingContext: {
+          observedAt: new Date().toISOString(),
+          deviceCount: Object.keys(snapshot.presence).length,
+          participantCount: new Set(
+            Object.values(snapshot.presence).map(
+              (person) => person.accountId ?? person.userId
+            )
+          ).size,
+          participants: [
+            ...new Map(
+              Object.values(snapshot.presence).map((person) => [
+                person.accountId ?? person.userId,
+                { displayName: person.displayName, role: person.role },
+              ])
+            ).values(),
+          ],
+        },
+      },
     };
   }
   const pending = snapshot.aiRequests?.[message.messageId];
   if (!pending || pending.userId !== accountId)
     return fail('Assistant request unavailable', 409);
+  if (message.action.startsWith('ai.review.')) {
+    const parsedReview = assistantReviewCommand.parse(message);
+    if (parsedReview.action === 'ai.review.get') {
+      return pending.review
+        ? { state: snapshot, body: pending.review }
+        : fail('Review unavailable', 404);
+    }
+    if (parsedReview.action === 'ai.review.save') {
+      if (
+        pending.review?.status === 'ready' &&
+        pending.review.continuation === parsedReview.review.continuation
+      )
+        return { state: snapshot, body: pending.review };
+      if (
+        pending.status !== 'pending' ||
+        (pending.review && pending.review.status !== 'executing')
+      )
+        return fail('Review is not being generated', 409);
+      const otherReviews = Object.entries(snapshot.aiRequests ?? {}).filter(
+        ([id, request]) =>
+          id !== message.messageId &&
+          request.review &&
+          ['ready', 'executing'].includes(request.review.status)
+      );
+      const privateBytes =
+        otherReviews.reduce(
+          (sum, [, request]) =>
+            sum +
+            new TextEncoder().encode(request.review!.continuation).byteLength,
+          0
+        ) +
+        new TextEncoder().encode(parsedReview.review.continuation).byteLength;
+      if (otherReviews.length >= 4 || privateBytes > 400000)
+        return fail(
+          'Private review capacity reached. Finish existing reviews first.',
+          409
+        );
+      const review: AssistantReview = {
+        ...parsedReview.review,
+        status: 'ready',
+        revision: (pending.review?.revision ?? 0) + 1,
+      };
+      const costUsd =
+        pending.costUsd === null || parsedReview.costUsd === null
+          ? null
+          : (pending.costUsd ?? 0) + parsedReview.costUsd;
+      return {
+        state: {
+          ...snapshot,
+          aiRequests: {
+            ...snapshot.aiRequests,
+            [message.messageId]: {
+              ...pending,
+              status: 'done',
+              review,
+              costUsd,
+            },
+          },
+        },
+        body: review,
+      };
+    }
+    const review = pending.review;
+    if (review?.status !== 'ready' || review.revision !== parsedReview.revision)
+      return fail('Review changed or already handled', 409);
+    if (parsedReview.action === 'ai.review.claim') {
+      if (
+        Object.entries(snapshot.aiRequests ?? {}).some(
+          ([id, request]) =>
+            id !== message.messageId &&
+            request.userId === accountId &&
+            request.status === 'pending' &&
+            (request.startedAt === undefined ||
+              Date.now() - request.startedAt < 120000)
+        )
+      )
+        return fail('Assistant request already in progress', 409);
+      if (!review.approvals.length)
+        return fail('No actions awaiting approval', 409);
+      const claimed = { ...review, status: 'executing' as const };
+      return {
+        state: {
+          ...snapshot,
+          aiRequests: {
+            ...snapshot.aiRequests,
+            [message.messageId]: {
+              ...pending,
+              status: 'pending',
+              startedAt: Date.now(),
+              review: claimed,
+            },
+          },
+        },
+        body: claimed,
+      };
+    }
+    if (parsedReview.action === 'ai.review.discard') {
+      return {
+        state: {
+          ...snapshot,
+          aiRequests: {
+            ...snapshot.aiRequests,
+            [message.messageId]: {
+              ...pending,
+              review: {
+                ...review,
+                continuation: '',
+                text: '',
+                approvals: [],
+                status: 'discarded',
+              },
+            },
+          },
+        },
+        body: { ok: true },
+      };
+    }
+    if (review.approvals.length)
+      return fail('Resolve pending actions before sharing', 409);
+    const response: RoomChatMessage = {
+      type: 'chat.message',
+      id: crypto.randomUUID(),
+      userId: MEET_ASSISTANT_USER_ID,
+      displayName: 'Mira',
+      assistant: true,
+      body: review.text,
+      createdAt: new Date().toISOString(),
+    };
+    return {
+      state: {
+        ...snapshot,
+        chat: [...(snapshot.chat ?? []), response].slice(-200),
+        aiRequests: {
+          ...snapshot.aiRequests,
+          [message.messageId]: {
+            ...pending,
+            review: { ...review, continuation: '', status: 'shared' },
+          },
+        },
+      },
+      body: { ok: true },
+      messages: [response],
+    };
+  }
+  if (message.action !== 'ai.finish')
+    return fail('Invalid assistant action', 400);
   if (pending.status === 'done') return { state: snapshot, body: { ok: true } };
   if (pending.status !== 'pending')
     return fail('Assistant request unavailable', 409);
@@ -309,7 +504,10 @@ export function roomService(
       [message.messageId]: {
         ...pending,
         status: response ? ('done' as const) : ('failed' as const),
-        costUsd: message.costUsd,
+        costUsd:
+          pending.costUsd === null || message.costUsd === null
+            ? null
+            : (pending.costUsd ?? 0) + (message.costUsd ?? 0),
       },
     },
     chat: response
