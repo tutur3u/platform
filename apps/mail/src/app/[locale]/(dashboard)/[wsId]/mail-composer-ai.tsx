@@ -173,19 +173,25 @@ export function MailComposerAi({
               value={mode}
             >
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="draft">{t('ai_mode_draft')}</TabsTrigger>
-                <TabsTrigger value="follow_up">
+                <TabsTrigger disabled={generation.isPending} value="draft">
+                  {t('ai_mode_draft')}
+                </TabsTrigger>
+                <TabsTrigger disabled={generation.isPending} value="follow_up">
                   {t('ai_mode_follow_up')}
                 </TabsTrigger>
-                <TabsTrigger value="rewrite">
+                <TabsTrigger disabled={generation.isPending} value="rewrite">
                   {t('ai_mode_rewrite')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           )}
           <Textarea
+            disabled={generation.isPending}
             className="min-h-24 resize-y outline-none focus-visible:outline-none focus-visible:ring-0"
-            onChange={(event) => setInstructions(event.target.value)}
+            onChange={(event) => {
+              setInstructions(event.target.value);
+              setCompletion(null);
+            }}
             placeholder={t('ai_compose_instructions_placeholder')}
             value={instructions}
           />

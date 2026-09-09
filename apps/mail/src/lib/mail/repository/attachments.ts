@@ -245,11 +245,12 @@ export async function copyAttachmentsToDraft({
     copied.push(
       await uploadDraftAttachment({
         bytes: await readMailStoredObject(source.location),
-        contentId: null,
+        contentId: source.attachment.content_id?.replace(/^<|>$/gu, '') ?? null,
         contentType:
           source.attachment.content_type || 'application/octet-stream',
         ctx,
-        disposition: 'attachment',
+        disposition:
+          source.attachment.disposition === 'inline' ? 'inline' : 'attachment',
         draftId,
         filename: source.attachment.filename,
         mailboxId,

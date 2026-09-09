@@ -118,7 +118,10 @@ describe('draft resume metadata', () => {
       threadId: 'thread',
       subject: '(no subject)',
       bodyHtml: '<p>Reply</p>',
-      attachments: [],
+      bodyText: 'Reply',
+      attachments: [
+        { id: 'inline-image', contentId: 'logo', disposition: 'inline' },
+      ],
       recipients: [
         {
           kind: 'to',
@@ -131,6 +134,11 @@ describe('draft resume metadata', () => {
     } as unknown as MailMessageDetail);
     expect(draft).toMatchObject({
       draftId: 'draft',
+      bodyHtml: '<p>Reply</p>',
+      bodyText: 'Reply',
+      attachments: [
+        { id: 'inline-image', contentId: 'logo', disposition: 'inline' },
+      ],
       mailboxId: 'mailbox',
       threadId: 'thread',
       subject: '',

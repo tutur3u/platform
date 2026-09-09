@@ -262,6 +262,8 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
   const openCompose = async (draft: ComposeInitialDraft | null) => {
     if (composerVisible && !(await composerRef.current?.save())) return;
+    if (composerVisible)
+      void queryClient.invalidateQueries({ queryKey: ['mail', workspaceId] });
     setComposeSession((current) => current + 1);
     setComposeDraft(draft);
     setComposerVisible(true);
@@ -668,7 +670,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           setComposerVisible(nextOpen);
           if (!nextOpen) {
             setComposeDraft(null);
-            void invalidateMailbox();
+            void queryClient.invalidateQueries({
+              queryKey: ['mail', workspaceId],
+            });
           }
           void setComposeParam(nextOpen ? '1' : null);
         }}

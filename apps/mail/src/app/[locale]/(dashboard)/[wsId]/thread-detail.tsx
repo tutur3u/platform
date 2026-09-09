@@ -111,7 +111,7 @@ export function ThreadDetail({
     return (
       <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
         {header}
-        <div className="absolute inset-x-0 bottom-4 z-20 flex justify-center lg:hidden">
+        <div className="absolute inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-20 flex justify-center lg:hidden">
           {mobileList}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
