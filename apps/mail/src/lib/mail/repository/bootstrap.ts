@@ -160,7 +160,8 @@ async function ensurePersonalMailbox(ctx: MailRouteContext) {
 }
 
 export async function getMailBootstrap(
-  ctx: MailRouteContext
+  ctx: MailRouteContext,
+  includeUnreadCounts = true
 ): Promise<MailBootstrapResponse> {
   const admin = await getAdminClient();
   await ensurePersonalMailbox(ctx);
@@ -206,7 +207,13 @@ export async function getMailBootstrap(
     (memberRows ?? []).map((row: AnyRecord) => [row.mailbox_id, row.role])
   );
   const [unreadByMailbox, personalDisplayNames, labels] = await Promise.all([
-    getUnreadInboxCounts(admin, mailboxIds, ctx.user.id),
+    includeUnreadCounts
+      ? getUnreadInboxCounts(
+          admin,
+          (mailboxRows ?? []).map((row: AnyRecord) => row.id),
+          ctx.user.id
+        )
+      : Promise.resolve(new Map<string, number | null>()),
     getCanonicalUserDisplayNames(
       admin,
       (mailboxRows ?? [])
@@ -225,7 +232,7 @@ export async function getMailBootstrap(
         roleByMailboxId.get(row.id) ?? 'viewer',
         personalDisplayNames.get(row.created_by)
       ),
-      unreadCount: unreadByMailbox.get(row.id) ?? 0,
+      unreadCount: unreadByMailbox.get(row.id) ?? null,
     })
   );
   return {
@@ -317,11 +324,12 @@ export async function requireMailboxAccess(
     return null;
   }
 
-  await ensureSystemLabels(admin, mailboxId);
-  const personalDisplayName =
+  const [, personalDisplayName] = await Promise.all([
+    ensureSystemLabels(admin, mailboxId),
     mailbox.type === 'personal'
-      ? await getCanonicalUserDisplayName(admin, mailbox.created_by)
-      : null;
+      ? getCanonicalUserDisplayName(admin, mailbox.created_by)
+      : Promise.resolve(null),
+  ]);
 
   return {
     admin,
@@ -329,4 +337,25 @@ export async function requireMailboxAccess(
     mailbox: toMailbox(mailbox, member.role, personalDisplayName),
     role: member.role as MailMailboxRole,
   };
+}
+
+// Counts are optional navigation metadata, fetched after mailbox discovery.
+// Resolve membership again on the server; never trust client-supplied mailbox IDs.
+export async function getMailUnreadCounts(ctx: MailRouteContext) {
+  const admin = await getAdminClient();
+  const { data, error } = await privateTable(admin, 'mail_mailbox_members')
+    .select(
+      'mailbox_id, mailbox:mail_mailboxes!mail_mailbox_members_mailbox_id_fkey!inner(status)'
+    )
+    .eq('user_id', ctx.user.id)
+    .eq('mailbox.status', 'active');
+  if (error)
+    throw new Error(`Failed to load mail memberships: ${error.message}`);
+  return Object.fromEntries(
+    await getUnreadInboxCounts(
+      admin,
+      (data ?? []).map((row: AnyRecord) => row.mailbox_id),
+      ctx.user.id
+    )
+  );
 }

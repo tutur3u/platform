@@ -18,7 +18,6 @@ import {
 } from '@tuturuuu/icons';
 import {
   deleteMailDraft,
-  getMailBootstrap,
   getMailThread,
   listMailThreads,
   type MailMessageDetail,
@@ -62,6 +61,7 @@ import {
   MAIL_THREAD_PAGE_SIZE,
 } from './mail-thread-query';
 import { ThreadDetail } from './thread-detail';
+import { useMailBootstrap } from './use-mail-bootstrap';
 import { useMailThreadActions } from './use-mail-thread-actions';
 import { useMailViewedThreadRead } from './use-mail-viewed-thread-read';
 
@@ -119,10 +119,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     layoutReadyRef.current = true;
   }, []);
 
-  const bootstrapQuery = useQuery({
-    queryFn: () => getMailBootstrap(workspaceId),
-    queryKey: ['mail', workspaceId, 'bootstrap'],
-  });
+  const bootstrapQuery = useMailBootstrap(workspaceId);
   const mailboxes = bootstrapQuery.data?.mailboxes ?? [];
   const activeMailbox =
     mailboxes.find((mailbox) => mailbox.id === mailboxId) ?? mailboxes[0];
@@ -186,6 +183,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       queryClient.invalidateQueries({
         queryKey: ['mail', workspaceId, 'bootstrap'],
       }),
+      queryClient.invalidateQueries({
+        queryKey: ['mail', workspaceId, 'bootstrap-counts'],
+      }),
     ]);
   };
 
@@ -209,29 +209,30 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     },
   });
 
-  const { bulkMutation, mutateThread, stateMutation, syncState } =
-    useMailThreadActions({
-      activeMailboxId,
-      closeThread: () => void setThreadId(null),
-      folder,
-      invalidateMailbox,
-      reopenThread: (nextThreadId) => void setThreadId(nextThreadId),
-      selectedThreads,
-      setSelectedThreads,
-      threadId,
-      threads,
-      workspaceId,
-    });
+  const {
+    bulkMutation,
+    mutateThread,
+    actionPending,
+    actionsPending,
+    syncState,
+  } = useMailThreadActions({
+    activeMailboxId,
+    closeThread: () => void setThreadId(null),
+    folder,
+    invalidateMailbox,
+    reopenThread: (nextThreadId) => void setThreadId(nextThreadId),
+    selectedThreads,
+    setSelectedThreads,
+    threadId,
+    threads,
+    workspaceId,
+  });
   useMailViewedThreadRead({
     workspaceId,
     mailboxId: activeMailboxId,
     threadId,
     detail: detailQuery.data,
-    blocked:
-      stateMutation.isPending ||
-      bulkMutation.isPending ||
-      detailQuery.isError ||
-      folder === 'drafts',
+    blocked: actionsPending || detailQuery.isError || folder === 'drafts',
   });
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId: string) =>
@@ -437,7 +438,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             </span>
             <Button
               aria-label={t('mark_read')}
-              disabled={bulkMutation.isPending}
+              disabled={actionsPending}
               onClick={() => bulkMutation.mutate('mark_read')}
               size="icon"
               variant="ghost"
@@ -446,7 +447,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             </Button>
             <Button
               aria-label={t('archive')}
-              disabled={bulkMutation.isPending}
+              disabled={actionsPending}
               onClick={() => bulkMutation.mutate('archive')}
               size="icon"
               variant="ghost"
@@ -463,7 +464,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             ) : null}
             <Button
               aria-label={t('trash')}
-              disabled={bulkMutation.isPending}
+              disabled={actionsPending}
               onClick={() => bulkMutation.mutate('trash')}
               size="icon"
               variant="ghost"
@@ -552,7 +553,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     <section className="flex h-full min-h-0 min-w-0 max-w-full bg-muted/20">
       <ThreadDetail
         folder={folder}
-        actionPending={stateMutation.isPending || deleteDraftMutation.isPending}
+        actionPending={actionPending || deleteDraftMutation.isPending}
         isDraft={folder === 'drafts'}
         labelActions={
           activeMailboxId && threadId ? (

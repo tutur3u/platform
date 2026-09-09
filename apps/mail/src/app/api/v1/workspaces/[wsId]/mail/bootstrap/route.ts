@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getMailBootstrap } from '@/lib/mail/repository';
+import {
+  getMailBootstrap,
+  getMailUnreadCounts,
+} from '@/lib/mail/repository/bootstrap';
 import { withMailContext } from '@/lib/mail/route-utils';
 
 type RouteParams = {
@@ -13,7 +16,11 @@ export async function GET(
   const { wsId } = await params;
 
   return withMailContext(request, wsId, async (ctx) => {
-    const payload = await getMailBootstrap(ctx);
+    const view = request.nextUrl.searchParams.get('view');
+    const payload =
+      view === 'counts'
+        ? await getMailUnreadCounts(ctx)
+        : await getMailBootstrap(ctx, view !== 'mailboxes');
     return NextResponse.json(payload);
   });
 }

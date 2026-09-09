@@ -1,8 +1,7 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getMailBootstrap,
   type MailMailbox,
   type MailMailboxSettings,
   updateMailMailboxSettings,
@@ -20,6 +19,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useMailBootstrap } from './use-mail-bootstrap';
 
 export function MailAutomationSettings({
   mailbox,
@@ -38,10 +38,7 @@ export function MailAutomationSettings({
   };
   const [automation, setAutomation] = useState(initial);
   const canManage = ['owner', 'admin'].includes(mailbox.role);
-  const bootstrap = useQuery({
-    queryKey: ['mail', workspaceId, 'bootstrap'],
-    queryFn: () => getMailBootstrap(workspaceId),
-  });
+  const bootstrap = useMailBootstrap(workspaceId);
   const candidates = (bootstrap.data?.mailboxes ?? []).filter(
     (candidate) =>
       candidate.id !== mailbox.id &&

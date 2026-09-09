@@ -44,12 +44,21 @@ export function useMailViewedThreadRead({
       }),
     onError: () => toast.error(t('update_failed')),
     onSettled: async (_data, _error, target) => {
+      if (
+        client.isMutating({
+          mutationKey: ['mail', workspaceId, target.mailboxId, 'actions'],
+        }) > 0
+      )
+        return;
       await Promise.all([
         client.invalidateQueries({
           queryKey: ['mail', workspaceId, target.mailboxId],
         }),
         client.invalidateQueries({
           queryKey: ['mail', workspaceId, 'bootstrap'],
+        }),
+        client.invalidateQueries({
+          queryKey: ['mail', workspaceId, 'bootstrap-counts'],
         }),
       ]);
     },

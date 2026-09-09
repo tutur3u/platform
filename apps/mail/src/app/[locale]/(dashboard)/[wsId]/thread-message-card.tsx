@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown } from '@tuturuuu/icons';
+import { ArrowRight, ChevronDown } from '@tuturuuu/icons';
 import type { MailMessageDetail } from '@tuturuuu/internal-api';
 import {
   AccordionContent,
@@ -8,9 +8,14 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
 import { MailAttachmentCard } from './mail-attachment-card';
 import type { MailFolder } from './mail-folders';
+import {
+  formatMailRecipients,
+  formatMailSender,
+} from './mail-message-addresses';
 import { MailMessagePreview } from './mail-message-preview';
 import { visibleMailLabels } from './mail-visible-labels';
 
@@ -31,7 +36,8 @@ export function ThreadMessageCard({
 }) {
   const t = useTranslations('mail');
   const locale = useLocale();
-  const displayName = message.fromName || message.fromAddress;
+  const sender = formatMailSender(message);
+  const recipient = formatMailRecipients(message, 'to');
 
   return (
     <AccordionItem
@@ -44,12 +50,16 @@ export function ThreadMessageCard({
       >
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="min-w-0 flex-1 basis-40 truncate font-semibold">
-              {displayName}
-              {message.fromName ? (
-                <span className="mt-0.5 block truncate font-normal text-muted-foreground text-xs">
-                  &lt;{message.fromAddress}&gt;
-                </span>
+            <span className="flex min-w-0 flex-1 basis-60 items-center gap-2 text-left">
+              <Address value={sender} />
+              {recipient ? (
+                <>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="size-3.5 shrink-0 text-muted-foreground"
+                  />
+                  <Address value={recipient} muted />
+                </>
               ) : null}
             </span>
             {message.deliveryRoute === 'catch_all' ? (
@@ -83,7 +93,7 @@ export function ThreadMessageCard({
               className="flex max-w-full cursor-pointer list-none items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
             >
               <span className="truncate">
-                {t('to')}: {formatRecipients(message, 'to')}
+                {t('to')}: {formatMailRecipients(message, 'to')}
               </span>
               <ChevronDown className="size-3 shrink-0 transition-transform group-open:rotate-180" />
             </summary>
@@ -96,11 +106,17 @@ export function ThreadMessageCard({
                     : message.fromAddress
                 }
               />
-              <Detail label={t('to')} value={formatRecipients(message, 'to')} />
-              <Detail label={t('cc')} value={formatRecipients(message, 'cc')} />
+              <Detail
+                label={t('to')}
+                value={formatMailRecipients(message, 'to')}
+              />
+              <Detail
+                label={t('cc')}
+                value={formatMailRecipients(message, 'cc')}
+              />
               <Detail
                 label={t('bcc')}
-                value={formatRecipients(message, 'bcc')}
+                value={formatMailRecipients(message, 'bcc')}
               />
               {message.observedRecipient ? (
                 <Detail
@@ -149,18 +165,19 @@ export function ThreadMessageCard({
   );
 }
 
-function formatRecipients(
-  message: MailMessageDetail,
-  kind: 'bcc' | 'cc' | 'to'
-) {
-  return message.recipients
-    .filter((recipient) => recipient.kind === kind)
-    .map((recipient) =>
-      recipient.displayName
-        ? `${recipient.displayName} <${recipient.address}>`
-        : recipient.address
-    )
-    .join(', ');
+function Address({ value, muted = false }: { value: string; muted?: boolean }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={`line-clamp-2 min-w-0 flex-1 break-all ${muted ? 'font-normal text-muted-foreground text-xs' : 'font-semibold'}`}
+        >
+          {value}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-sm break-all">{value}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {

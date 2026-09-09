@@ -143,7 +143,7 @@ describe('Mail proxy auth handoff', () => {
     expect(mocks.normalizeAuthRedirectPath).toHaveBeenCalledWith(
       '/personal',
       'https://mail.tuturuuu.localhost',
-      '/personal'
+      '/personal/inbox'
     );
   });
 
@@ -187,4 +187,37 @@ describe('Mail proxy auth handoff', () => {
     expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledOnce();
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
   });
+});
+
+describe('Mail entry redirect', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.authProxy.mockResolvedValue(NextResponse.next());
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+    mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user' });
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
+  });
+  it.each(['/', '/en', '/vi', '/personal', '/vi/personal'])(
+    'opens personal inbox directly from %s and preserves query state',
+    async (path) => {
+      const response = await proxy(
+        new NextRequest(
+          `https://mail.tuturuuu.localhost${path}?mailbox=selected`
+        )
+      );
+      expect(response.headers.get('location')).toBe(
+        `https://mail.tuturuuu.localhost${path.startsWith('/vi') ? '/vi' : ''}/personal/inbox?mailbox=selected`
+      );
+      expect(mocks.propagateAuthCookies).toHaveBeenCalled();
+    }
+  );
+  it.each(['no-redirect', 'hash-nav', 'multiAccount'])(
+    'preserves the %s auth/navigation escape hatch',
+    async (flag) => {
+      const response = await proxy(
+        new NextRequest(`https://mail.tuturuuu.localhost/?${flag}=1`)
+      );
+      expect(response.headers.get('location')).toBeNull();
+    }
+  );
 });

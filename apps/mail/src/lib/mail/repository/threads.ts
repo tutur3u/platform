@@ -126,23 +126,32 @@ export async function listMailThreads({
   const messageIds = threadIds
     .map((threadId) => latestByThread.get(threadId)?.id as string | undefined)
     .filter((id): id is string => Boolean(id));
-  const [{ data: threads, error }, visibleMessageRows, labels] =
-    await Promise.all([
-      privateTable(access.admin, 'mail_threads')
-        .select('*')
-        .eq('mailbox_id', mailboxId)
-        .in('id', threadIds),
-      loadAllRows(
-        () =>
-          mailMessageTable(access, ctx)
-            .select(THREAD_PARTICIPANT_COLUMNS)
-            .eq('mailbox_id', mailboxId)
-            .in('thread_id', threadIds)
-            .order('id'),
-        'Failed to load visible thread messages'
-      ),
-      getLabelsByMessageId(access.admin, messageIds),
-    ]);
+  const [
+    { data: threads, error },
+    visibleMessageRows,
+    labels,
+    fallbackSnippets,
+  ] = await Promise.all([
+    privateTable(access.admin, 'mail_threads')
+      .select('*')
+      .eq('mailbox_id', mailboxId)
+      .in('id', threadIds),
+    loadAllRows(
+      () =>
+        mailMessageTable(access, ctx)
+          .select(THREAD_PARTICIPANT_COLUMNS)
+          .eq('mailbox_id', mailboxId)
+          .in('thread_id', threadIds)
+          .order('id'),
+      'Failed to load visible thread messages'
+    ),
+    getLabelsByMessageId(access.admin, messageIds),
+    loadMissingSnippets(
+      access.admin,
+      mailboxId,
+      threadIds.map((id) => latestByThread.get(id)!)
+    ),
+  ]);
   if (error) throw new Error(`Failed to list mail threads: ${error.message}`);
   const outboundRowIds = visibleMessageRows.flatMap((row: AnyRecord) =>
     row.direction === 'outbound' ? [row.id as string] : []
@@ -217,7 +226,8 @@ export async function listMailThreads({
         hasAttachments: attachmentThreads.has(threadId),
         labels: labels.get(message.id) ?? [],
         latestMessageId: message.id,
-        latestSnippet: message.snippet ?? message.body_text ?? null,
+        latestSnippet:
+          message.snippet ?? fallbackSnippets.get(message.id) ?? null,
         participants: [...(participantsByThread.get(threadId)?.values() ?? [])],
         starred: Boolean(state?.starred_at),
         subject: resolveMailThreadSubject(thread.subject, message.subject),
@@ -355,4 +365,27 @@ export async function updateMailThreadState({
   }
 
   return getMailThread({ ctx, mailboxId, threadId });
+}
+
+async function loadMissingSnippets(
+  admin: AnyRecord,
+  mailboxId: string,
+  messages: AnyRecord[]
+) {
+  const ids = messages
+    .filter((message) => message.snippet == null)
+    .map((message) => message.id);
+  if (!ids.length) return new Map<string, string>();
+  const { data, error } = await privateTable(admin, 'mail_messages')
+    .select('id,body_text')
+    .eq('mailbox_id', mailboxId)
+    .in('id', ids);
+  if (error)
+    throw new Error(`Failed to load thread previews: ${error.message}`);
+  return new Map<string, string>(
+    (data ?? []).map((row: AnyRecord) => [
+      row.id,
+      row.body_text?.slice(0, 500) ?? '',
+    ])
+  );
 }
