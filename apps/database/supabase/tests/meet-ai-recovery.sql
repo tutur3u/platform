@@ -17,7 +17,7 @@ select ok((select attempt_id <> (select attempt_id from old_lease) from public.m
 select is((select unpriced_attempts from public.meet_ai_chunks), 1, 'uncertain prior cost is retained');
 update public.meet_ai_chunks set attempt_started_at = now() - interval '2 minutes';
 select is((public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10)).attempts, 3, 'abandoned attempt can recover');
-update public.meet_ai_chunks set status = 'failed', cost_usd = 0.25, transcript = 'stale';
+update public.meet_ai_chunks set status = 'failed', cost_usd = 0.25, transcript = 'stale', usage = '{"inputTokens": 1}'::jsonb;
 select public.reserve_meet_ai_chunk('00000000-0000-4000-8000-000000009741', '00000000-0000-4000-8000-000000009731', 0, 0, 10);
 select is((select prior_cost_usd from public.meet_ai_chunks), 0.25::numeric, 'known prior costs survive retries');
 select is((select unpriced_attempts from public.meet_ai_chunks), 2, 'known cost is not counted as unknown');

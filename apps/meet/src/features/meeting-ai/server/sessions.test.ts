@@ -162,6 +162,17 @@ describe('Meet notes finalization', () => {
     expect(state.unpricedRequests).toBe(3);
     expect(state.estimatedCostUsd).toBe(0);
   });
+  it('includes earlier charged attempts in the transcription breakdown', async () => {
+    dbWith([
+      result([session]),
+      result([
+        { id, status: 'completed', cost_usd: 0.5, prior_cost_usd: 0.25 },
+      ]),
+    ]);
+    const state = await readMeetAi(request(), params);
+    expect(state.transcriptionCostUsd).toBe(0.75);
+    expect(state.estimatedCostUsd).toBe(0.75);
+  });
 });
 
 it('redacts all costs and raw usage from a shared-notes reader', async () => {

@@ -106,7 +106,11 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
           : chunk.status,
     })),
     transcriptionCostUsd: canManage
-      ? chunks.reduce((sum, chunk) => sum + (chunk.cost_usd ?? 0), 0)
+      ? chunks.reduce(
+          (sum, chunk) =>
+            sum + (chunk.cost_usd ?? 0) + (chunk.prior_cost_usd ?? 0),
+          0
+        )
       : null,
     notesCostUsd: canManage
       ? sessions.reduce(
