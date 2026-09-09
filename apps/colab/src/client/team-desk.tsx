@@ -1,3 +1,4 @@
+import { Download, FileText, Rocket, Sparkles } from '@tuturuuu/icons';
 import type { Team } from '@tuturuuu/multiplayer';
 import {
   Accordion,
@@ -127,14 +128,17 @@ export function TeamDesk({
       <Card
         id={active ? 'team-skills' : undefined}
         hidden={section !== 'team-skills'}
-        className="studio-panel skills-panel shadow-none"
+        className="studio-panel skills-panel gap-7 shadow-none"
       >
         <div className="panel-heading">
           <div>
             <span className="section-number">02 / {c.skillsSection}</span>
             <h2>{c.skills}</h2>
           </div>
-          <Badge variant="outline">.md</Badge>
+          <Badge variant="outline">
+            <FileText className="size-3.5" aria-hidden="true" />
+            .md
+          </Badge>
         </div>
         {writable && (
           <div className="compile-row">
@@ -157,6 +161,7 @@ export function TeamDesk({
               }
               onClick={() => invoke({ action: 'compile', multiple }, 'ai')}
             >
+              <Sparkles className="size-4" aria-hidden="true" />
               {busy ? c.working : c.compile}
             </Button>
           </div>
@@ -189,6 +194,7 @@ export function TeamDesk({
                       setTimeout(() => URL.revokeObjectURL(url), 1000);
                     }}
                   >
+                    <Download className="size-4" aria-hidden="true" />
                     {c.download}
                   </Button>
                 </AccordionContent>
@@ -229,7 +235,8 @@ export function TeamDesk({
                 }
                 onClick={() => invoke({ action: 'run' }, 'ai')}
               >
-                {busy ? c.working : c.run} <span aria-hidden="true">↗</span>
+                <Rocket className="size-4" aria-hidden="true" />
+                {busy ? c.working : c.run}
               </Button>
             </div>
           )}

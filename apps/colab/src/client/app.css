@@ -7,6 +7,13 @@
 @source "./";
 
 @layer components {
+  .colab-content .skills-panel,
+  .colab-content .mock-panel {
+    gap: 28px;
+  }
+  .colab-content .mock-toolbar {
+    margin-bottom: 4px;
+  }
   :root {
     color: var(--foreground);
     background: var(--background);
@@ -335,6 +342,168 @@
   .colab-content .admin-panel > p {
     margin: 0;
   }
+  .admin-command-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--card), var(--muted));
+  }
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-command-header h2 {
+    margin: 6px 0;
+    font-size: 22px;
+  }
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-command-header p,
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-tab-heading p,
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .danger-card p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .admin-tabs {
+    display: grid;
+    grid-template-columns: 210px minmax(0, 1fr);
+    min-height: 520px;
+  }
+  .admin-tabs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-radius: 0;
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    background: var(--muted);
+  }
+  .admin-tabs-list [data-slot="tabs-trigger"] {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .admin-tab-content {
+    display: grid;
+    gap: 24px;
+    padding: 24px;
+  }
+  .admin-tab-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-tab-heading h3,
+  .danger-card h4,
+  .subsection-heading h4 {
+    margin: 0 0 6px;
+    font-size: 16px;
+  }
+  .admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .admin-stat-grid > div {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .admin-stat-grid span {
+    color: var(--muted-foreground);
+    font-size: 11px;
+  }
+  .admin-stat-grid strong {
+    font-size: 18px;
+  }
+  .admin-subsection {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .subsection-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .subsection-heading h4 {
+    margin: 0;
+  }
+  .member-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .member-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .member-actions select {
+    min-width: 150px;
+  }
+  .team-management-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .team-management-card {
+    display: grid;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .team-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--muted);
+  }
+  .invite-chips {
+    display: grid;
+    gap: 8px;
+  }
+  .invite-chips > span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--muted);
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+  .compact-empty {
+    padding: 18px;
+  }
+  .danger-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--destructive) 35%, var(--border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--destructive) 5%, var(--card));
+  }
   .colab-content .compile-row {
     padding: 12px;
     border: 1px solid var(--border);
@@ -510,6 +679,51 @@
     overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 12px;
+  }
+  @media (max-width: 900px) {
+    .admin-tabs {
+      grid-template-columns: 1fr;
+    }
+    .admin-tabs-list {
+      flex-direction: row;
+      overflow-x: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-tabs-list [data-slot="tabs-trigger"] {
+      width: auto;
+      white-space: nowrap;
+    }
+    .admin-stat-grid,
+    .team-management-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .member-card {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .member-actions {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+  }
+  @media (max-width: 620px) {
+    .admin-command-header,
+    .admin-tab-heading,
+    .danger-card {
+      flex-direction: column;
+    }
+    .admin-tab-content,
+    .admin-command-header {
+      padding: 18px;
+    }
+    .admin-stat-grid,
+    .team-management-grid {
+      grid-template-columns: 1fr;
+    }
+    .member-actions select {
+      min-width: min(100%, 220px);
+    }
   }
   .run-report + .run-report {
     margin-top: 12px;

@@ -101,7 +101,11 @@ async function handle(
       'invalid_origin',
       403
     );
-    requireRule(request.method === 'POST', 'method_not_allowed', 405);
+    requireRule(
+      request.method === 'POST' || request.method === 'DELETE',
+      'method_not_allowed',
+      405
+    );
   }
   if (url.pathname === '/api/logout' && request.method === 'POST')
     return Response.json(
@@ -175,7 +179,8 @@ async function handle(
     const result = await room.join(guest, body, attemptKey);
     if (!identity) {
       guest.guestVersion = result.guestVersion;
-      guest.expires = Math.min(guest.expires, result.view.endsAt);
+      if (result.view.endsAt !== null)
+        guest.expires = Math.min(guest.expires, result.view.endsAt);
       const headers = {
         'Set-Cookie': sessionCookie(
           await sign(guest, env.COLAB_SESSION_SECRET),
@@ -191,6 +196,11 @@ async function handle(
     return Response.json(result.view);
   }
   requireRule(identity, 'sign_in_required', 401);
+  if (!action && request.method === 'DELETE') {
+    await room.delete(identity);
+    await env.ROOMS.getByName(`directory:${identity.id}`).forgetRoom(match[1]);
+    return Response.json({ ok: true });
+  }
   if (!action && request.method === 'GET') {
     const view = await room.view(identity);
     if (identity.email)

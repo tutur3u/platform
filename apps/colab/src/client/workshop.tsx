@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, CalendarClock } from '@tuturuuu/icons';
 import { ColabRequestError, colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityLog } from './activity-log';
 import { Admin } from './admin';
 import { ErrorNotice } from './home';
@@ -31,6 +32,8 @@ export function Workshop({
   const requestedSection =
     new URL(currentLocation, location.origin).hash.slice(1) || 'mission';
   const cache = useQueryClient();
+  const leaveRef = useRef(leave);
+  leaveRef.current = leave;
   const key = ['room', roomId];
   const [online, setOnline] = useState(false);
   const [selected, setSelected] = useState('');
@@ -51,6 +54,19 @@ export function Workshop({
       body: Record<string, unknown>;
     }) => colabRequest<RoomView>(`/rooms/${roomId}/${route}`, body),
     onSuccess: joined,
+  });
+  const remove = useMutation({
+    mutationFn: () =>
+      colabRequest<{ ok: true }>(`/rooms/${roomId}`, undefined, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      if (localStorage.getItem('colab-recent-room') === roomId)
+        localStorage.removeItem('colab-recent-room');
+      cache.removeQueries({ queryKey: key });
+      void cache.invalidateQueries({ queryKey: ['workshops'] });
+      leave();
+    },
   });
   const action = async (body: Record<string, unknown>, route = 'action') => {
     await mutate.mutateAsync({ route, body });
@@ -78,12 +94,17 @@ export function Workshop({
       socket.onmessage = (event) => {
         if (event.data === 'pong') return;
         try {
-          if (JSON.parse(event.data).type === 'access_revoked') {
+          const message = JSON.parse(event.data);
+          if (
+            message.type === 'access_revoked' ||
+            message.type === 'room_deleted'
+          ) {
             cache.removeQueries({ queryKey: ['room', roomId] });
             socket.close(1000);
+            if (message.type === 'room_deleted') leaveRef.current();
             return;
           }
-          const room = JSON.parse(event.data) as RoomView;
+          const room = message as RoomView;
           if (room.id === roomId && room.self?.id === activeId)
             cache.setQueryData(['room', roomId], room);
         } catch {
@@ -123,6 +144,10 @@ export function Workshop({
       setOnline(false);
     };
   }, [roomId, activeId, cache, identity?.expires, identity?.email]);
+  useEffect(() => {
+    if (selected && !query.data?.teams.some((team) => team.id === selected))
+      setSelected('');
+  }, [query.data?.teams, selected]);
   if (query.isPending) return <div className="loading">{c.loading}</div>;
   const unavailable =
     query.error instanceof TypeError ||
@@ -131,7 +156,8 @@ export function Workshop({
     return (
       <div className="workshop">
         <Button type="button" variant="ghost" onClick={leave}>
-          ← {c.back}
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          {c.back}
         </Button>
         <Join roomId={roomId} identity={identity} joined={joined} />
       </div>
@@ -150,21 +176,30 @@ export function Workshop({
     ? requestedSection
     : 'mission';
   const ownTeam = room.teams.find((t) => t.id === room.self.teamId);
-  if (selected && !room.teams.some((t) => t.id === selected)) setSelected('');
   const team =
     room.teams.find((t) => t.id === (selected || room.self.teamId)) ??
     ownTeam ??
     room.teams[0];
   const writable =
-    room.mode === 'open' && now >= room.startsAt && now < room.endsAt;
+    room.mode === 'open' &&
+    (room.startsAt === null || now >= room.startsAt) &&
+    (room.endsAt === null || now < room.endsAt);
   const phase =
     room.mode !== 'open'
       ? c[room.mode]
-      : now < room.startsAt
+      : room.startsAt !== null && now < room.startsAt
         ? c.scheduled
-        : now >= room.endsAt
+        : room.endsAt !== null && now >= room.endsAt
           ? c.readonly
           : c.open;
+  const schedule =
+    room.startsAt === null && room.endsAt === null
+      ? c.alwaysOpen
+      : room.startsAt === null
+        ? `${c.openNow} · ${c.until} ${new Date(room.endsAt!).toLocaleString()}`
+        : room.endsAt === null
+          ? `${new Date(room.startsAt).toLocaleString()} · ${c.noEndDate}`
+          : `${new Date(room.startsAt).toLocaleString()} — ${new Date(room.endsAt).toLocaleString()}`;
   return (
     <div className="workshop">
       <div className="room-heading">
@@ -172,9 +207,9 @@ export function Workshop({
           <h1>{room.title}</h1>
           <p className="room-meta">
             <Badge variant="outline">{phase}</Badge>
-            <span>
-              {new Date(room.startsAt).toLocaleString()} —{' '}
-              {new Date(room.endsAt).toLocaleTimeString()}
+            <span className="inline-flex items-center gap-2">
+              <CalendarClock className="size-4" aria-hidden="true" />
+              {schedule}
             </span>
           </p>
         </div>
@@ -197,7 +232,7 @@ export function Workshop({
           </span>
         </div>
       </div>
-      <ErrorNotice error={mutate.error} />
+      <ErrorNotice error={mutate.error ?? remove.error} />
       <div className="workshop-layout">
         <div hidden={section !== 'mission'}>
           <MissionBrief room={room} />
@@ -264,7 +299,14 @@ export function Workshop({
       {section === 'activity' && <ActivityLog room={room} />}
       {room.self.admin && (
         <div hidden={section !== 'controls'}>
-          <Admin room={room} action={action} busy={mutate.isPending} />
+          <Admin
+            room={room}
+            action={action}
+            busy={mutate.isPending || remove.isPending}
+            onDelete={async () => {
+              await remove.mutateAsync();
+            }}
+          />
         </div>
       )}
       <div className="workshop-budget" role="status">

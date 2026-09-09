@@ -76,6 +76,40 @@ describe('server-authoritative room policy', () => {
         createRoom('r', owner, { ...input, ...changes }, now)
       ).toThrow();
   });
+  it('supports open-ended workshops and treats missing dates as always active', () => {
+    for (const schedule of [
+      { startsAt: null, endsAt: null },
+      { startsAt: null, endsAt: now + 3600_000 },
+      { startsAt: now + 1000, endsAt: null },
+    ]) {
+      const openEnded = createRoom('r', owner, { ...input, ...schedule }, now);
+      expect(openEnded.startsAt).toBe(schedule.startsAt);
+      expect(openEnded.endsAt).toBe(schedule.endsAt);
+    }
+    expect(() =>
+      editable(
+        createRoom('r', owner, { ...input, startsAt: null, endsAt: null }, now),
+        now + 365 * 86400_000
+      )
+    ).not.toThrow();
+  });
+  it('lets admins clear either schedule boundary after creation', () => {
+    const scheduled = room();
+    mutateRoom(
+      scheduled,
+      owner,
+      { action: 'schedule', startsAt: null, endsAt: scheduled.endsAt },
+      now
+    );
+    expect(scheduled.startsAt).toBeNull();
+    mutateRoom(
+      scheduled,
+      owner,
+      { action: 'schedule', startsAt: null, endsAt: null },
+      now
+    );
+    expect(scheduled.endsAt).toBeNull();
+  });
   it('allows an immediate workshop after its minute-rounded start time ages', () => {
     const roundedStart = now - 4 * 60_000;
     expect(() =>
@@ -218,15 +252,37 @@ describe('server-authoritative room policy', () => {
     r.guestVersion++;
     expect(() => memberOf(r, guest, now)).toThrow('not_invited');
   });
-  it('allows an invited lobby but prevents early edits and late joins', () => {
+  it('allows invited people to join before and after the working window', () => {
     const r = room();
     r.startsAt = now + 1000;
     joinRoom(r, alice, 'team-1', false, now);
     expect(() => editable(r, now)).toThrow('room_not_open');
-    expect(() => joinRoom(r, bob, 'team-2', false, r.endsAt)).toThrow(
-      'room_not_open'
+    joinRoom(r, bob, 'team-2', false, r.endsAt!);
+    expect(projectRoom(r, alice, [], r.endsAt!).mode).toBe('readonly');
+  });
+  it('creates, renames and removes teams while keeping every member assigned', () => {
+    const r = room();
+    joinRoom(r, alice, 'team-2', false, now);
+    mutateRoom(r, owner, { action: 'teamCreate', name: 'Research Lab' }, now);
+    const created = r.teams.at(-1)!;
+    expect(created.name).toBe('Research Lab');
+    mutateRoom(
+      r,
+      owner,
+      { action: 'teamRename', teamId: created.id, name: 'Product Lab' },
+      now
     );
-    expect(projectRoom(r, alice, [], r.endsAt).mode).toBe('readonly');
+    expect(created.name).toBe('Product Lab');
+    mutateRoom(r, owner, { action: 'teamDelete', teamId: 'team-2' }, now);
+    expect(r.members.find((member) => member.id === alice.id)?.teamId).toBe(
+      'team-1'
+    );
+    mutateRoom(r, owner, { action: 'memberRemove', memberId: alice.id }, now);
+    expect(r.members.some((member) => member.id === alice.id)).toBe(false);
+    expect(r.invites).not.toContain(alice.email);
+    expect(() =>
+      mutateRoom(r, owner, { action: 'memberRemove', memberId: owner.id }, now)
+    ).toThrow('owner_protected');
   });
   it('shares teams by default and filters them immediately when an admin disables showcase', () => {
     const r = room();

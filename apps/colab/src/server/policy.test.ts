@@ -98,6 +98,11 @@ describe('sandbox and sessions', () => {
     expect(mockApps).toHaveLength(24);
     expect(records).toHaveLength(192);
     expect(new Set(records.map(({ id }) => id)).size).toBe(192);
+    expect(
+      records.every(
+        ({ title, content }) => !/lotus|LOT-/.test(`${title} ${content}`)
+      )
+    ).toBe(true);
     for (const app of mockApps)
       expect(records.filter((record) => record.app === app)).toHaveLength(8);
     expect(
@@ -105,7 +110,7 @@ describe('sandbox and sessions', () => {
         executeMockTool(records, {
           tool: 'search',
           app: 'drive',
-          query: 'Lotus',
+          query: 'RISE',
         })
       )
     ).toHaveLength(1);
@@ -126,7 +131,7 @@ describe('sandbox and sessions', () => {
       title: 'Changed',
       content: 'Simulation',
     });
-    expect(other[0]!.title).toBe('Launch brief');
+    expect(other[0]!.title).toBe('RISE Pathways campaign brief');
     expect(records[0]!.title).toBe('Changed');
     expect(() =>
       executeMockTool(records, {

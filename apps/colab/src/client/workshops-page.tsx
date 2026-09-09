@@ -1,5 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, Plus, RefreshCw, Search, Users } from '@tuturuuu/icons';
+import {
+  CalendarClock,
+  CalendarDays,
+  Plus,
+  RefreshCw,
+  Search,
+  Users,
+} from '@tuturuuu/icons';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { WorkshopSummary } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -28,11 +35,16 @@ export function WorkshopsPage({ canHost }: { canHost: boolean }) {
   const rooms = all
     .filter(
       (room) =>
-        (tab === 'past' ? room.endsAt <= now : room.endsAt > now) &&
+        (tab === 'past'
+          ? room.endsAt !== null && room.endsAt <= now
+          : room.endsAt === null || room.endsAt > now) &&
         room.title.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) =>
-      tab === 'past' ? b.endsAt - a.endsAt : a.startsAt - b.startsAt
+      tab === 'past'
+        ? (b.endsAt ?? 0) - (a.endsAt ?? 0)
+        : (a.startsAt ?? Number.MAX_SAFE_INTEGER) -
+          (b.startsAt ?? Number.MAX_SAFE_INTEGER)
     );
   return (
     <div className="mx-auto max-w-6xl space-y-8 p-5 md:p-8">
@@ -68,13 +80,13 @@ export function WorkshopsPage({ canHost }: { canHost: boolean }) {
             <TabsTrigger value="current">
               {s.current}
               <Badge variant="secondary">
-                {all.filter((r) => r.endsAt > now).length}
+                {all.filter((r) => r.endsAt === null || r.endsAt > now).length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="past">
               {s.past}
               <Badge variant="secondary">
-                {all.filter((r) => r.endsAt <= now).length}
+                {all.filter((r) => r.endsAt !== null && r.endsAt <= now).length}
               </Badge>
             </TabsTrigger>
           </TabsList>
@@ -87,6 +99,8 @@ export function WorkshopsPage({ canHost }: { canHost: boolean }) {
             />
             <Input
               type="search"
+              name="workshop-search"
+              autoComplete="off"
               className="h-9 pl-9"
               aria-label={s.search}
               placeholder={s.search}
@@ -141,12 +155,15 @@ export function WorkshopsPage({ canHost }: { canHost: boolean }) {
                   </WorkspaceLink>
                 </Button>
                 <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
-                  <span>
-                    {new Date(room.startsAt).toLocaleString()} –{' '}
-                    {new Date(room.endsAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarClock className="size-3.5" aria-hidden="true" />
+                    {room.startsAt === null && room.endsAt === null
+                      ? c.alwaysOpen
+                      : room.startsAt === null
+                        ? `${c.openNow} · ${c.until} ${new Date(room.endsAt!).toLocaleString()}`
+                        : room.endsAt === null
+                          ? `${new Date(room.startsAt).toLocaleString()} · ${c.noEndDate}`
+                          : `${new Date(room.startsAt).toLocaleString()} – ${new Date(room.endsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                   </span>
                   <span>
                     {room.memberCount}/{room.maxUsers} {s.people} ·{' '}
@@ -155,12 +172,18 @@ export function WorkshopsPage({ canHost }: { canHost: boolean }) {
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <Badge variant={room.endsAt <= now ? 'secondary' : 'outline'}>
-                  {room.endsAt <= now
+                <Badge
+                  variant={
+                    room.endsAt !== null && room.endsAt <= now
+                      ? 'secondary'
+                      : 'outline'
+                  }
+                >
+                  {room.endsAt !== null && room.endsAt <= now
                     ? s.ended
                     : room.mode !== 'open'
                       ? c[room.mode]
-                      : room.startsAt > now
+                      : room.startsAt !== null && room.startsAt > now
                         ? s.upcoming
                         : s.live}
                 </Badge>

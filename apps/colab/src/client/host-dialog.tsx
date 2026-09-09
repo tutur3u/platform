@@ -1,4 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
+import { CalendarClock, X } from '@tuturuuu/icons';
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import { type RoomView, workshopScheduleError } from '@tuturuuu/multiplayer';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
@@ -17,7 +18,8 @@ import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
 import { closeWorkspaceDialog, WorkspaceLink } from './navigation';
 
-function dateValue(time: number) {
+function dateValue(time: number | null) {
+  if (time === null) return '';
   const date = new Date(time);
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
   return date.toISOString().slice(0, 16);
@@ -45,8 +47,8 @@ export function HostWorkshopDialog({
     mutationFn: () =>
       colabRequest<RoomView>('/rooms', {
         title: draft.title,
-        startsAt: new Date(draft.starts).getTime(),
-        endsAt: new Date(draft.ends).getTime(),
+        startsAt: draft.starts ? new Date(draft.starts).getTime() : null,
+        endsAt: draft.ends ? new Date(draft.ends).getTime() : null,
         maxUsers: Number(draft.capacity),
         teamCount: Number(draft.teams),
       }),
@@ -81,8 +83,8 @@ export function HostWorkshopDialog({
             onSubmit={(event) => {
               event.preventDefault();
               const issue = workshopScheduleError(
-                new Date(draft.starts).getTime(),
-                new Date(draft.ends).getTime()
+                draft.starts ? new Date(draft.starts).getTime() : null,
+                draft.ends ? new Date(draft.ends).getTime() : null
               );
               if (issue) {
                 setFormError(c.scheduleErrors[issue]);
@@ -106,42 +108,79 @@ export function HostWorkshopDialog({
                 onChange={(event) => update('title', event.target.value)}
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="host-starts">{c.starts}</Label>
-                <Input
-                  id="host-starts"
-                  name="starts"
-                  type="datetime-local"
-                  autoComplete="off"
-                  disabled={create.isPending}
-                  required
-                  aria-describedby="host-schedule-help"
-                  value={draft.starts}
-                  onChange={(event) => update('starts', event.target.value)}
+            <div className="rounded-xl border bg-muted/20 p-4">
+              <div className="mb-4 flex items-start gap-3">
+                <CalendarClock
+                  className="mt-0.5 size-5 text-muted-foreground"
+                  aria-hidden="true"
                 />
+                <div className="space-y-1">
+                  <p className="font-medium text-sm">{c.scheduleTitle}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {c.scheduleFieldHelp}
+                  </p>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="host-ends">{c.ends}</Label>
-                <Input
-                  id="host-ends"
-                  name="ends"
-                  type="datetime-local"
-                  autoComplete="off"
-                  disabled={create.isPending}
-                  required
-                  aria-describedby="host-schedule-help"
-                  value={draft.ends}
-                  onChange={(event) => update('ends', event.target.value)}
-                />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="host-starts">{c.starts}</Label>
+                    {draft.starts && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => update('starts', '')}
+                      >
+                        <X className="size-3.5" aria-hidden="true" />
+                        {c.unset}
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    id="host-starts"
+                    name="starts"
+                    type="datetime-local"
+                    autoComplete="off"
+                    disabled={create.isPending}
+                    aria-describedby="host-schedule-help"
+                    value={draft.starts}
+                    onChange={(event) => update('starts', event.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor="host-ends">{c.ends}</Label>
+                    {draft.ends && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => update('ends', '')}
+                      >
+                        <X className="size-3.5" aria-hidden="true" />
+                        {c.unset}
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    id="host-ends"
+                    name="ends"
+                    type="datetime-local"
+                    autoComplete="off"
+                    disabled={create.isPending}
+                    aria-describedby="host-schedule-help"
+                    value={draft.ends}
+                    onChange={(event) => update('ends', event.target.value)}
+                  />
+                </div>
               </div>
+              <p id="host-schedule-help" className="sr-only">
+                {c.scheduleFieldHelp}
+              </p>
             </div>
-            <p
-              id="host-schedule-help"
-              className="-mt-2 text-muted-foreground text-xs"
-            >
-              {c.scheduleFieldHelp}
-            </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="host-capacity">{c.capacity}</Label>

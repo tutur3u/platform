@@ -1,3 +1,4 @@
+import { FileText, Search } from '@tuturuuu/icons';
 import { type MockApp, mockAppCatalog, type Team } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
@@ -34,7 +35,7 @@ export function MockDesk({
   return (
     <Card
       id={active ? 'sandbox-desk' : undefined}
-      className="studio-panel mock-panel shadow-none"
+      className="studio-panel mock-panel gap-7 shadow-none"
     >
       <div className="panel-heading">
         <div>
@@ -63,12 +64,21 @@ export function MockDesk({
         </SelectField>
         <Label className="min-w-0">
           <span className="sr-only">{c.searchRecords}</span>
-          <Input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={c.searchRecords}
-          />
+          <span className="relative block">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              type="search"
+              name="practice-data-search"
+              autoComplete="off"
+              className="pl-9"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={c.searchRecords}
+            />
+          </span>
         </Label>
       </div>
       <div className="mock-window">
@@ -92,7 +102,10 @@ export function MockDesk({
               <div className="mock-item-body">
                 <div className="mock-item-heading">
                   {selectedApp.kind === 'documents' && (
-                    <span className="document-mark">▤</span>
+                    <FileText
+                      className="document-mark size-4"
+                      aria-hidden="true"
+                    />
                   )}
                   {board && <span className="board-tag">{record.id}</span>}
                   <h3>{record.title}</h3>
