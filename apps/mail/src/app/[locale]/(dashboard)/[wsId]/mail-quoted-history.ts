@@ -80,7 +80,7 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
     ) {
       start = candidate.previousElementSibling!;
     }
-    if (!hasVisibleAuthoredContent(document, start)) continue;
+    if (!hasVisibleAuthoredContent(document, start)) return;
 
     const details = document.createElement('details');
     details.setAttribute('data-mail-quoted-history', '');
@@ -107,7 +107,14 @@ export function collapseMailQuotedHistory(document: Document, label: string) {
 
 export function splitMailQuotedText(text: string) {
   const lines = text.split('\n');
-  if (lines.every((line) => !line.trim() || /^\s*>/.test(line))) {
+  if (
+    REPLY_ATTRIBUTION.test(text.trimStart()) ||
+    OUTLOOK_HEADERS.test(text.trimStart()) ||
+    /^[-_]{2,}\s*(?:original message|forwarded message|thư gốc)\s*[-_]{2,}/iu.test(
+      text.trimStart()
+    ) ||
+    lines.every((line) => !line.trim() || /^\s*>/.test(line))
+  ) {
     return { authored: text, quoted: null };
   }
   for (let index = 1; index < lines.length; index++) {

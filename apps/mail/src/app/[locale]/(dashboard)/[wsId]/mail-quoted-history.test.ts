@@ -102,6 +102,13 @@ describe('quoted HTML history', () => {
       'type="cite"'
     );
   });
+  it('does not treat attribution inside quote-only Gmail mail as an authored reply', () => {
+    expect(
+      render(
+        '<div class="gmail_quote"><p>On Monday, Lan wrote:</p><blockquote type="cite">Only original content</blockquote></div>'
+      )
+    ).toBeNull();
+  });
   it('does not restore executable content while preserving quote markers', () => {
     render(
       '<p>Thanks</p><div id="divRplyFwdMsg" onclick="alert(1)">From: Lan</div><script>alert(1)</script><img src="javascript:alert(1)">'
@@ -128,6 +135,9 @@ describe('quoted plain text', () => {
   it('preserves inline answers and quote-only mail', () => {
     const inline = 'Reply\n> question\nMy answer';
     expect(splitMailQuotedText(inline).quoted).toBeNull();
+    expect(
+      splitMailQuotedText('On Monday, Lan wrote:\n> Only original text').quoted
+    ).toBeNull();
     expect(splitMailQuotedText('> Only original text').quoted).toBeNull();
     expect(
       splitMailQuotedText('> Only original text\n> Second line').quoted
