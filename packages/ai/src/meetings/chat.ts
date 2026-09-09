@@ -83,15 +83,21 @@ export async function answerMeetChat(
               options.workspaceTools?.[toolCall.toolName]
                 ? 'user-approval'
                 : undefined,
-            prepareStep: ({ stepNumber }) => ({
-              activeTools: [
-                ...Object.keys(publicTools),
-                ...(hasWorkspaceTools
-                  ? ['select_workspace_tools', ...selection.active()]
-                  : []),
-              ],
-              ...(stepNumber >= 2 ? { toolChoice: 'none' as const } : {}),
-            }),
+            prepareStep: ({ stepNumber }) => {
+              const selected = selection.active();
+              if (stepNumber >= 2)
+                return selected.length
+                  ? { activeTools: selected }
+                  : { toolChoice: 'none' as const };
+              return {
+                activeTools: [
+                  ...Object.keys(publicTools),
+                  ...(hasWorkspaceTools
+                    ? ['select_workspace_tools', ...selected]
+                    : []),
+                ],
+              };
+            },
             maxRetries: 0,
             abortSignal: signal,
             system:
