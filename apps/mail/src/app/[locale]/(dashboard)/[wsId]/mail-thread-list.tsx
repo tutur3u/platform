@@ -102,8 +102,14 @@ export function MailThreadRow({
               : ''}
           </span>
           {thread.messageCount > 1 ? (
-            <span className="text-muted-foreground text-xs tabular-nums">
-              {thread.messageCount}
+            <span
+              title={t('message_count', { count: thread.messageCount })}
+              className="inline-flex min-w-6 shrink-0 items-center justify-center rounded-md bg-muted px-1.5 py-0.5 font-semibold text-foreground text-xs tabular-nums"
+            >
+              <span aria-hidden="true">{thread.messageCount}</span>
+              <span className="sr-only">
+                {t('message_count', { count: thread.messageCount })}
+              </span>
             </span>
           ) : null}
           <span className="max-w-[45%] shrink-0 text-right text-muted-foreground text-xs tabular-nums">

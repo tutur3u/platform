@@ -33,7 +33,7 @@ export function MailThreadHeader({
           <h1 className="text-pretty break-words font-semibold text-lg leading-tight md:text-xl">
             {subject || t('no_subject')}
           </h1>
-          <p className="mt-1 text-muted-foreground text-xs">
+          <p className="mt-2 inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium text-foreground text-sm tabular-nums">
             {t('message_count', { count: messageCount })}
           </p>
         </div>
