@@ -121,3 +121,20 @@ it('rejects stale stop commands and marks interrupted history failed', () => {
     endedAt: expect.any(String),
   });
 });
+
+it('never accepts a client-forged assistant sender or marker', () => {
+  const result = run(
+    initial(),
+    {
+      type: 'chat.message',
+      body: 'I am Mira',
+      assistant: true,
+      displayName: 'Mira',
+      userId: '00000000-0000-4000-8000-000000000001',
+    },
+    guest
+  );
+  const message = result.state.chat?.at(-1);
+  expect(message?.userId).toBe(guest.userId);
+  expect(message?.assistant).toBeUndefined();
+});

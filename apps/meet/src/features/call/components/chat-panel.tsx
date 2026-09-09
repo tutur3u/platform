@@ -1,13 +1,11 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import {
-  AtSign,
   Download,
   FileText,
   Loader2,
   Paperclip,
   Send,
-  Sparkles,
   X,
 } from '@tuturuuu/icons';
 import {
@@ -24,8 +22,14 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import {
+  isMeetAssistant,
+  MEET_ASSISTANT_PROFILE,
+  remarkMeetMentions,
+} from '../lib/assistant-identity';
 import type { CallChatMessage } from '../lib/call-state';
+import { MiraAvatar, MiraProfile } from './mira-profile';
 
 const AssistantMarkdown = dynamic(
   () =>
@@ -34,6 +38,20 @@ const AssistantMarkdown = dynamic(
     ),
   { ssr: false }
 );
+
+const mentionPlugins = [remarkMeetMentions];
+const mentionComponents: NonNullable<
+  ComponentProps<typeof AssistantMarkdown>['components']
+> = {
+  a: ({ href, children, node: _node, ...props }) =>
+    href === MEET_ASSISTANT_PROFILE ? (
+      <MiraProfile mention />
+    ) : (
+      <a {...props} href={href} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    ),
+};
 
 function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
   const t = useTranslations('meet.call');
@@ -174,23 +192,31 @@ export function ChatPanel({
         <ol aria-live="polite" aria-relevant="additions" className="space-y-5">
           {chat.map((message) => (
             <li key={message.id} className="flex gap-2">
-              <Avatar className="mt-0.5 size-7 shrink-0">
-                <AvatarImage src={message.avatarUrl} alt="" />
-                <AvatarFallback>
-                  {message.assistant ? (
-                    <Sparkles className="size-3.5" />
-                  ) : (
-                    message.displayName.slice(0, 1)
-                  )}
-                </AvatarFallback>
-              </Avatar>
+              {isMeetAssistant(message) ? (
+                <MiraProfile>
+                  <MiraAvatar />
+                </MiraProfile>
+              ) : (
+                <Avatar className="mt-0.5 size-7 shrink-0">
+                  <AvatarImage src={message.avatarUrl} alt="" />
+                  <AvatarFallback>
+                    {message.displayName.slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="truncate font-medium text-xs">
-                    {message.userId === selfUserId
-                      ? t('you')
-                      : message.displayName}
-                  </span>
+                  {isMeetAssistant(message) ? (
+                    <span className="text-xs">
+                      <MiraProfile />
+                    </span>
+                  ) : (
+                    <span className="truncate font-medium text-xs">
+                      {message.userId === selfUserId
+                        ? t('you')
+                        : message.displayName}
+                    </span>
+                  )}
                   <time className="shrink-0 text-[0.65rem] text-muted-foreground">
                     {new Date(message.createdAt).toLocaleTimeString(undefined, {
                       hour: '2-digit',
@@ -199,7 +225,11 @@ export function ChatPanel({
                   </time>
                 </div>
                 <div className="wrap-break-word min-w-0 text-sm">
-                  <AssistantMarkdown text={message.body} />
+                  <AssistantMarkdown
+                    text={message.body}
+                    remarkPlugins={mentionPlugins}
+                    components={mentionComponents}
+                  />
                 </div>
                 {message.attachmentIds?.map((id) => (
                   <ChatAttachment key={id} meetingId={meetingId} id={id} />
@@ -210,7 +240,9 @@ export function ChatPanel({
         </ol>
         {!chat.length && (
           <div className="space-y-2 py-10 text-center">
-            <Sparkles className="mx-auto size-6 text-muted-foreground" />
+            <div className="flex justify-center">
+              <MiraAvatar size={36} />
+            </div>
             <p className="text-muted-foreground text-sm">{t('chat_empty')}</p>
             <p className="text-muted-foreground text-xs">{t('mira_hint')}</p>
           </div>
@@ -323,7 +355,7 @@ export function ChatPanel({
               )
             }
           >
-            <AtSign className="size-4" />
+            <MiraAvatar size={20} />
             Mira
           </Button>
           <span className="flex-1" />
@@ -340,9 +372,6 @@ export function ChatPanel({
             )}
           </Button>
         </div>
-        <p className="text-[0.65rem] text-muted-foreground">
-          {t('chat_usage_hint')}
-        </p>
       </form>
     </>
   );

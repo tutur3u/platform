@@ -30,6 +30,7 @@ import { LeaveDialog } from './leave-dialog';
 import { Lobby } from './lobby';
 import { MeetingTitle } from './meeting-title';
 import { ReactionOverlay } from './reaction-overlay';
+import { ResizableCallPanel } from './resizable-call-panel';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SidePanel } from './side-panel';
 
@@ -90,7 +91,8 @@ export function ConnectedCallShell({
     state,
     joined && !left,
     room.connectionStatus === 'open',
-    openNoticePanel
+    openNoticePanel,
+    panel
   );
   const canManage = state.role === 'host';
   const canReadNotes = canManage || state.settings.shareNotes;
@@ -257,17 +259,6 @@ export function ConnectedCallShell({
             {aiT('title')}
           </Button>
         )}
-        <CallSettings
-          meetingId={meetingId}
-          room={room}
-          telemetry={telemetry.data}
-          ai={ai}
-          canManage={canManage}
-          sound={notifications.sound}
-          onSound={notifications.toggleSound}
-          outputDeviceId={outputDeviceId}
-          onOutput={setOutputDeviceId}
-        />
         <CopyInvite
           meetingId={meetingId}
           meetingName={room.state.title ?? meetingName}
@@ -284,6 +275,17 @@ export function ConnectedCallShell({
             {t('reconnecting')}
           </span>
         )}
+        <CallSettings
+          meetingId={meetingId}
+          room={room}
+          telemetry={telemetry.data}
+          ai={ai}
+          canManage={canManage}
+          sound={notifications.sound}
+          onSound={notifications.toggleSound}
+          outputDeviceId={outputDeviceId}
+          onOutput={setOutputDeviceId}
+        />
       </header>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="relative min-h-0 flex-1 p-2 sm:p-3">
@@ -302,18 +304,20 @@ export function ConnectedCallShell({
           <ReactionOverlay state={state} />
         </main>
         {showAi && canReadNotes && (
-          <aside className="max-h-[50dvh] w-full shrink-0 overflow-y-auto p-3 md:max-h-none md:w-96">
-            <MeetingAiPanel ai={ai} inCall />
-            {canManage && (
-              <div className="mt-3">
-                <NotesSharingControl
-                  wsId={wsId}
-                  meetingId={meetingId}
-                  initialEnabled={state.settings.shareNotesAfterMeeting}
-                />
-              </div>
-            )}
-          </aside>
+          <ResizableCallPanel label={aiT('title')}>
+            <div className="min-h-0 overflow-y-auto p-3">
+              <MeetingAiPanel ai={ai} inCall />
+              {canManage && (
+                <div className="mt-3">
+                  <NotesSharingControl
+                    wsId={wsId}
+                    meetingId={meetingId}
+                    initialEnabled={state.settings.shareNotesAfterMeeting}
+                  />
+                </div>
+              )}
+            </div>
+          </ResizableCallPanel>
         )}
         {panel && (
           <SidePanel

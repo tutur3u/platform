@@ -753,3 +753,18 @@ uses a fresh synthetic room, ends it after success, and never uploads files or
 calls Gemini. The production deployment workflow runs this after the existing
 signaling/SFU check. Abandoned Mira requests release their per-account pending
 limit after two minutes; late provider costs can still be recorded.
+
+### Assistant identity and panel interactions
+
+Mira replies carry a server-only assistant marker and reserved sender identity.
+The Nova avatar and official badge require both; choosing the display name Mira
+does not grant either. Standalone `@Tuturuuu` mentions open the assistant mini
+profile on hover, keyboard focus, or tap. Code and existing Markdown links are
+not rewritten into mentions. Chat message toasts are suppressed while chat is
+open; admission and other call alerts remain active.
+
+Desktop chat, participants, and transcript panels have a draggable separator.
+Focus the separator and use left/right arrows to adjust it with a keyboard.
+The meeting settings button is last in the call header. Returning from the
+post-call screen invalidates cached meeting lists and room state before navigation,
+including personal-workspace aliases, so newly created meetings are fetched.

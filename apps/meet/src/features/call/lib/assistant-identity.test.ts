@@ -1,0 +1,65 @@
+import { describe, expect, it } from 'vitest';
+import {
+  isMeetAssistant,
+  MEET_ASSISTANT_ID,
+  MEET_ASSISTANT_PROFILE,
+  remarkMeetMentions,
+} from './assistant-identity';
+
+describe('Meet assistant identity', () => {
+  it('requires both the reserved sender and the server assistant marker', () => {
+    expect(isMeetAssistant({ userId: 'ordinary-user', assistant: true })).toBe(
+      false
+    );
+    expect(isMeetAssistant({ userId: MEET_ASSISTANT_ID })).toBe(false);
+    expect(
+      isMeetAssistant({ userId: MEET_ASSISTANT_ID, assistant: true })
+    ).toBe(true);
+  });
+  it('highlights standalone mentions while preserving adjacent text', () => {
+    const tree = {
+      type: 'paragraph',
+      children: [
+        {
+          type: 'text',
+          value:
+            'Hi @tuturuuu, ask @Tuturuuu now. email@Tuturuuu @TuturuuuExtra',
+        },
+      ],
+    };
+    remarkMeetMentions()(tree);
+    expect(tree.children).toEqual([
+      { type: 'text', value: 'Hi ' },
+      {
+        type: 'link',
+        url: MEET_ASSISTANT_PROFILE,
+        children: [{ type: 'text', value: '@Tuturuuu' }],
+      },
+      { type: 'text', value: ', ask ' },
+      {
+        type: 'link',
+        url: MEET_ASSISTANT_PROFILE,
+        children: [{ type: 'text', value: '@Tuturuuu' }],
+      },
+      { type: 'text', value: ' now. email@Tuturuuu @TuturuuuExtra' },
+    ]);
+  });
+  it('does not reinterpret code, raw HTML or existing links as profile mentions', () => {
+    const tree = {
+      type: 'root',
+      children: [
+        { type: 'inlineCode', value: '@Tuturuuu' },
+        { type: 'code', value: '@Tuturuuu' },
+        { type: 'html', value: '<b>@Tuturuuu</b>' },
+        {
+          type: 'link',
+          url: 'https://example.com',
+          children: [{ type: 'text', value: '@Tuturuuu' }],
+        },
+      ],
+    };
+    const before = structuredClone(tree);
+    remarkMeetMentions()(tree);
+    expect(tree).toEqual(before);
+  });
+});

@@ -9,7 +9,8 @@ export function useCallNotifications(
   state: CallState,
   enabled: boolean,
   connected: boolean,
-  openPanel: (panel: 'chat' | 'participants') => void
+  openPanel: (panel: 'chat' | 'participants') => void,
+  activePanel: 'chat' | 'participants' | null
 ) {
   const t = useTranslations('meet.call');
   const previous = useRef(state);
@@ -17,6 +18,12 @@ export function useCallNotifications(
   const [sound, setSound] = useState(true);
   const audio = useRef<AudioContext | null>(null);
   const lastSound = useRef(0);
+  const chatToasts = useRef(new Set<string>());
+  useEffect(() => {
+    if (activePanel !== 'chat') return;
+    for (const id of chatToasts.current) toast.dismiss(id);
+    chatToasts.current.clear();
+  }, [activePanel]);
   useEffect(() => {
     const unlock = () => {
       try {
@@ -51,8 +58,13 @@ export function useCallNotifications(
     previous.current = state;
     wasConnected.current = connected;
     for (const notice of notices) {
+      if (notice.kind === 'chat' && activePanel === 'chat') continue;
+      if (notice.kind === 'chat') chatToasts.current.add(notice.id);
       const panel = notice.kind === 'chat' ? 'chat' : 'participants';
       toast.info(t(`notice_${notice.kind}`, { name: notice.name }), {
+        id: notice.id,
+        onDismiss: () => chatToasts.current.delete(notice.id),
+        onAutoClose: () => chatToasts.current.delete(notice.id),
         description: notice.body?.slice(0, 140),
         duration: notice.kind === 'waiting' ? 10000 : 5000,
         action: {
@@ -89,6 +101,6 @@ export function useCallNotifications(
       oscillator.disconnect();
       gain.disconnect();
     };
-  }, [state, enabled, connected, sound, openPanel, t]);
+  }, [state, enabled, connected, sound, openPanel, activePanel, t]);
   return { sound, toggleSound: () => setSound((value) => !value) };
 }

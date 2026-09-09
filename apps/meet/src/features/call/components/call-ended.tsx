@@ -1,4 +1,5 @@
 'use client';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, FileText, Loader2, PhoneOff } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
@@ -31,6 +32,7 @@ export function CallEnded({
   backHref: string;
   saving?: boolean;
 }) {
+  const queryClient = useQueryClient();
   const t = useTranslations('meet.call');
   const [showNotes, setShowNotes] = useState(initialShowNotes);
   return (
@@ -84,7 +86,18 @@ export function CallEnded({
               canManage={canManage}
             />
             <Button asChild variant="outline">
-              <Link href={backHref}>
+              <Link
+                href={backHref}
+                onClick={() => {
+                  void queryClient.invalidateQueries({
+                    queryKey: ['meetings'],
+                    refetchType: 'all',
+                  });
+                  void queryClient.invalidateQueries({
+                    queryKey: ['meet-room-state', meetingId],
+                  });
+                }}
+              >
                 <ArrowLeft className="size-4" />
                 {t('back_to_meet')}
               </Link>
