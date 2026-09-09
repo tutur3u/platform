@@ -1,18 +1,10 @@
 'use client';
 
-import {
-  Archive,
-  ArrowLeft,
-  Forward,
-  Paperclip,
-  Reply,
-  ReplyAll,
-  Star,
-  Trash2,
-} from '@tuturuuu/icons';
+import { Forward, Paperclip, Reply, ReplyAll } from '@tuturuuu/icons';
 import type {
   MailMessageDetail,
   MailThreadDetail,
+  MailThreadSummary,
 } from '@tuturuuu/internal-api';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import {
@@ -34,6 +26,7 @@ import { MailAppearanceControls } from './mail-appearance-controls';
 import { MailAttachmentCard } from './mail-attachment-card';
 import { MailContentState } from './mail-content-state';
 import type { MailFolder } from './mail-folders';
+import { MailThreadHeader } from './mail-thread-header';
 import { ThreadMessageCard } from './thread-message-card';
 
 export function ThreadDetail({
@@ -52,6 +45,7 @@ export function ThreadDetail({
   onStar,
   onTrash,
   thread,
+  summary,
 }: {
   folder?: MailFolder;
   actionPending: boolean;
@@ -68,17 +62,43 @@ export function ThreadDetail({
   onStar: () => void;
   onTrash: () => void;
   thread: MailThreadDetail | null;
+  summary?: MailThreadSummary | null;
 }) {
   const t = useTranslations('mail');
   const [replyMessageId, setReplyMessageId] = useState<string | null>(null);
   const [deleteDraftOpen, setDeleteDraftOpen] = useState(false);
 
-  if (loading) return <MailContentState kind="loading" />;
-  if (error) return <MailContentState kind="error" onAction={onRetry} />;
-  if (!thread) return <MailContentState kind="reader" />;
+  const newest = thread?.messages.at(-1);
+  const threadInfo = thread?.thread ?? summary;
+  const header = threadInfo ? (
+    <MailThreadHeader
+      subject={threadInfo.subject}
+      messageCount={thread?.messages.length ?? threadInfo.messageCount}
+      starred={newest?.starred ?? summary?.starred ?? false}
+      actionPending={actionPending || (isDraft && !thread)}
+      isDraft={isDraft}
+      labelActions={labelActions}
+      onBack={onBack}
+      onStar={onStar}
+      onArchive={onArchive}
+      onTrash={() => (isDraft ? setDeleteDraftOpen(true) : onTrash())}
+    />
+  ) : null;
+
+  if (loading || error || !thread)
+    return (
+      <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+        {header}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <MailContentState
+            kind={loading ? 'loading' : error ? 'error' : 'reader'}
+            onAction={error ? onRetry : undefined}
+          />
+        </div>
+      </div>
+    );
 
   const hasHtml = thread.messages.some((message) => message.sanitizedHtml);
-  const newest = thread.messages.at(-1);
   const replyMessage =
     thread.messages.find((message) => message.id === replyMessageId) ?? newest;
   const attachments = thread.messages.flatMap((message) =>
@@ -87,60 +107,7 @@ export function ThreadDetail({
 
   return (
     <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col bg-muted/20">
-      <header className="bg-background/90 px-4 py-3 backdrop-blur md:px-5">
-        <div className="flex flex-wrap items-start gap-2">
-          <Button
-            aria-label={t('back_to_messages')}
-            className="shrink-0"
-            onClick={onBack}
-            size="icon"
-            variant="ghost"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-          <div className="min-w-0 flex-1 basis-40">
-            <h1 className="text-pretty break-words font-semibold text-lg leading-tight md:text-xl">
-              {thread.thread.subject || t('no_subject')}
-            </h1>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {t('message_count', { count: thread.messages.length })}
-            </p>
-          </div>
-          <div className="flex items-center gap-1">
-            {labelActions}
-            <Button
-              aria-label={newest?.starred ? t('unstar') : t('star')}
-              aria-pressed={Boolean(newest?.starred)}
-              disabled={actionPending}
-              onClick={onStar}
-              size="icon"
-              variant="ghost"
-            >
-              <Star
-                className={newest?.starred ? 'size-4 fill-current' : 'size-4'}
-              />
-            </Button>
-            <Button
-              aria-label={t('archive')}
-              disabled={actionPending}
-              onClick={onArchive}
-              size="icon"
-              variant="ghost"
-            >
-              <Archive className="size-4" />
-            </Button>
-            <Button
-              aria-label={isDraft ? t('delete_draft') : t('trash')}
-              disabled={actionPending}
-              onClick={() => (isDraft ? setDeleteDraftOpen(true) : onTrash())}
-              size="icon"
-              variant="ghost"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
+      {header}
 
       <Tabs
         className="min-h-0 min-w-0 flex-1 gap-0"

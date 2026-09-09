@@ -16,7 +16,6 @@ import type {
   ListMailMessagesParams,
   ListMailThreadsParams,
   MailAttachment,
-  MailBootstrapResponse,
   MailCatchAllConfiguration,
   MailDomain,
   MailFolderDefinition,
@@ -41,6 +40,7 @@ import type {
 } from './mail-types';
 
 export { getMailAttachmentText } from './mail-attachment-preview';
+export { getMailBootstrap, getMailUnreadCounts } from './mail-bootstrap';
 export * from './mail-types';
 
 function workspaceMailPath(workspaceId: string, suffix = '') {
@@ -87,20 +87,6 @@ export async function listWorkspaceEmails(
   );
 
   return payload.emails ?? [];
-}
-
-export async function getMailBootstrap(
-  workspaceId: string,
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(withMailApiBaseUrl(options));
-  return client.json<MailBootstrapResponse>(
-    workspaceMailPath(workspaceId, '/bootstrap'),
-    {
-      cache: 'no-store',
-      credentials: 'include',
-    }
-  );
 }
 
 export async function listMailMessages(

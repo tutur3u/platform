@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_GROUP_POLICY } from '../groups/policy';
 import type { MailRouteContext } from '../types';
-import { requireMailboxAccess } from './bootstrap';
+import { getMailUnreadCounts, requireMailboxAccess } from './bootstrap';
+import { queryMailMessageRows } from './search';
 import { getAdminClient } from './shared';
 
+vi.mock('./search', () => ({ queryMailMessageRows: vi.fn() }));
 vi.mock('./shared', async (original) => ({
   ...(await original<object>()),
   getAdminClient: vi.fn(),
@@ -66,4 +68,35 @@ describe('group access', () => {
     setAccess('owner', 'disabled');
     expect(await requireMailboxAccess(ctx, 'group')).toBeNull();
   });
+});
+
+it('counts the same non-archived mailboxes from the authenticated user membership query', async () => {
+  const eq = vi.fn();
+  const neq = vi.fn();
+  const query = {
+    select: vi.fn(() => query),
+    neq: (...args: unknown[]) => {
+      neq(...args);
+      return query;
+    },
+    eq: (...args: unknown[]) => {
+      eq(...args);
+      return query;
+    },
+    // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
+    then: (resolve: (value: object) => unknown) =>
+      Promise.resolve({ data: [{ mailbox_id: 'allowed' }], error: null }).then(
+        resolve
+      ),
+  };
+  vi.mocked(getAdminClient).mockResolvedValue({
+    schema: () => ({ from: () => query }),
+  } as never);
+  vi.mocked(queryMailMessageRows).mockResolvedValue({ rows: [], total: 4 });
+  expect(await getMailUnreadCounts(ctx)).toEqual({ allowed: 4 });
+  expect(eq).toHaveBeenCalledWith('user_id', 'user');
+  expect(neq).toHaveBeenCalledWith('mailbox.status', 'archived');
+  expect(queryMailMessageRows).toHaveBeenCalledWith(
+    expect.objectContaining({ mailboxId: 'allowed', userId: 'user' })
+  );
 });

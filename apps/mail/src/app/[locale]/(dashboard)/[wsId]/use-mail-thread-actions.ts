@@ -5,6 +5,7 @@ import {
   type QueryClient,
   type QueryKey,
   useMutation,
+  useMutationState,
   useQueryClient,
 } from '@tanstack/react-query';
 import {
@@ -23,6 +24,7 @@ import {
   getMailArchiveBehavior,
   nextMailThreadId,
 } from './mail-reading-preferences';
+import { restoreThreadPages } from './mail-thread-rollback';
 
 type ThreadAction = Parameters<typeof updateMailThreadState>[3]['action'];
 type BulkAction = 'archive' | 'mark_read' | 'trash';
@@ -32,7 +34,10 @@ type ThreadCacheSnapshot = Array<
   [QueryKey, InfiniteData<MailThreadsResponse> | undefined]
 >;
 type OptimisticContext = {
-  bootstrap: MailBootstrapResponse | undefined;
+  mailboxId: string;
+  workspaceId: string;
+  ids: Set<string>;
+  unreadDelta: number;
   details: Array<readonly [string, MailThreadDetail | undefined]>;
   threadCaches: ThreadCacheSnapshot;
 };
@@ -174,6 +179,16 @@ function applyOptimisticUpdate({
     unreadCount > 0 &&
     ['archive', 'mark_read', 'trash'].includes(action)
   ) {
+    queryClient.setQueryData<Record<string, number | null>>(
+      ['mail', workspaceId, 'bootstrap-counts'],
+      (current) =>
+        current && current[mailboxId] != null
+          ? {
+              ...current,
+              [mailboxId]: Math.max(0, current[mailboxId] - unreadCount),
+            }
+          : current
+    );
     queryClient.setQueryData<MailBootstrapResponse>(
       ['mail', workspaceId, 'bootstrap'],
       (current) =>
@@ -184,10 +199,10 @@ function applyOptimisticUpdate({
                 mailbox.id === mailboxId
                   ? {
                       ...mailbox,
-                      unreadCount: Math.max(
-                        0,
-                        mailbox.unreadCount - unreadCount
-                      ),
+                      unreadCount:
+                        mailbox.unreadCount === null
+                          ? null
+                          : Math.max(0, mailbox.unreadCount - unreadCount),
                     }
                   : mailbox
               ),
@@ -222,7 +237,52 @@ export function useMailThreadActions({
 }) {
   const t = useTranslations('mail');
   const queryClient = useQueryClient();
-  const [syncState, setSyncState] = useState<MailSyncState>('idle');
+  const [syncStates, setSyncStates] = useState<Record<string, MailSyncState>>(
+    {}
+  );
+  const setSyncState = (
+    scope: { mailboxId: string; targetWorkspaceId: string },
+    state: MailSyncState
+  ) => {
+    setSyncStates((current) => ({
+      ...current,
+      [`${scope.targetWorkspaceId}/${scope.mailboxId}`]: state,
+    }));
+  };
+  const actionKey = ['mail', workspaceId, activeMailboxId, 'actions'];
+  const pendingActions = useMutationState({
+    filters: { mutationKey: actionKey, status: 'pending' },
+    select: (mutation) =>
+      mutation.state.variables as {
+        targetThreadId?: string;
+        threadIds?: string[];
+      },
+  });
+  const inFlight = useRef(new Set<string>());
+  const operations = useRef(new Map<string, number>());
+  const operationScope = `${workspaceId}/${activeMailboxId}`;
+  const beginOperation = () =>
+    operations.current.set(
+      operationScope,
+      (operations.current.get(operationScope) ?? 0) + 1
+    );
+  const settleOperation = async () => {
+    const remaining = Math.max(
+      0,
+      (operations.current.get(operationScope) ?? 1) - 1
+    );
+    operations.current.set(operationScope, remaining);
+    if (!remaining) {
+      operations.current.delete(operationScope);
+      await invalidateMailbox();
+    }
+  };
+  const actionsPending = pendingActions.length > 0;
+  const actionPending = pendingActions.some(
+    (variables) =>
+      variables.targetThreadId === threadId ||
+      Boolean(threadId && variables.threadIds?.includes(threadId))
+  );
   const selectedThreadIdRef = useRef(threadId);
   selectedThreadIdRef.current = threadId;
 
@@ -231,9 +291,14 @@ export function useMailThreadActions({
     action: ThreadAction
   ): Promise<OptimisticContext | null> => {
     if (!activeMailboxId) return null;
-    await queryClient.cancelQueries({
-      queryKey: ['mail', workspaceId, activeMailboxId],
-    });
+    await Promise.all([
+      queryClient.cancelQueries({
+        queryKey: ['mail', workspaceId, activeMailboxId],
+      }),
+      queryClient.cancelQueries({
+        queryKey: ['mail', workspaceId, 'bootstrap-counts'],
+      }),
+    ]);
     const threadCaches = queryClient.getQueriesData<
       InfiniteData<MailThreadsResponse>
     >({ queryKey: ['mail', workspaceId, activeMailboxId, 'threads'] });
@@ -242,6 +307,9 @@ export function useMailThreadActions({
       workspaceId,
       'bootstrap',
     ]);
+    const beforeCounts = queryClient.getQueryData<
+      Record<string, number | null>
+    >(['mail', workspaceId, 'bootstrap-counts']);
     const details = [...ids].map(
       (id) =>
         [
@@ -267,17 +335,73 @@ export function useMailThreadActions({
       unreadCount,
       workspaceId,
     });
-    return { bootstrap, details, threadCaches };
+    const nextBootstrap = queryClient.getQueryData<MailBootstrapResponse>([
+      'mail',
+      workspaceId,
+      'bootstrap',
+    ]);
+    const beforeUnread =
+      beforeCounts?.[activeMailboxId] ??
+      bootstrap?.mailboxes.find((mailbox) => mailbox.id === activeMailboxId)
+        ?.unreadCount ??
+      0;
+    const afterUnread =
+      queryClient.getQueryData<Record<string, number | null>>([
+        'mail',
+        workspaceId,
+        'bootstrap-counts',
+      ])?.[activeMailboxId] ??
+      nextBootstrap?.mailboxes.find((mailbox) => mailbox.id === activeMailboxId)
+        ?.unreadCount ??
+      0;
+    return {
+      ids,
+      mailboxId: activeMailboxId,
+      workspaceId,
+      unreadDelta: beforeUnread - afterUnread,
+      details,
+      threadCaches,
+    };
   };
 
   const restore = (context: OptimisticContext | null | undefined) => {
-    if (!context || !activeMailboxId) return;
+    if (!context) return;
+    const { mailboxId: activeMailboxId, workspaceId } = context;
     for (const [key, data] of context.threadCaches as ThreadCacheSnapshot) {
-      queryClient.setQueryData(key, data);
+      queryClient.setQueryData<InfiniteData<MailThreadsResponse>>(
+        key,
+        (current) => restoreThreadPages(current, data, context.ids)
+      );
     }
-    queryClient.setQueryData(
+    queryClient.setQueryData<MailBootstrapResponse>(
       ['mail', workspaceId, 'bootstrap'],
-      context.bootstrap
+      (current) =>
+        current
+          ? {
+              ...current,
+              mailboxes: current.mailboxes.map((mailbox) =>
+                mailbox.id === activeMailboxId
+                  ? {
+                      ...mailbox,
+                      unreadCount:
+                        mailbox.unreadCount === null
+                          ? null
+                          : mailbox.unreadCount + context.unreadDelta,
+                    }
+                  : mailbox
+              ),
+            }
+          : current
+    );
+    queryClient.setQueryData<Record<string, number | null>>(
+      ['mail', workspaceId, 'bootstrap-counts'],
+      (current) =>
+        current && current[activeMailboxId] != null
+          ? {
+              ...current,
+              [activeMailboxId]: current[activeMailboxId] + context.unreadDelta,
+            }
+          : current
     );
     for (const [id, detail] of context.details) {
       queryClient.setQueryData(
@@ -288,22 +412,25 @@ export function useMailThreadActions({
   };
 
   const stateMutation = useMutation({
-    mutationKey: ['mail', workspaceId, activeMailboxId, 'state'],
+    mutationKey: [...actionKey, 'state'],
     mutationFn: ({
       action,
       targetThreadId,
+      mailboxId,
+      targetWorkspaceId,
     }: {
       action: ThreadAction;
       targetThreadId: string;
+      mailboxId: string;
+      targetWorkspaceId: string;
     }) =>
-      updateMailThreadState(
-        workspaceId,
-        activeMailboxId ?? '',
-        targetThreadId,
-        { action }
-      ),
-    onMutate: async ({ action, targetThreadId }) => {
-      setSyncState('syncing');
+      updateMailThreadState(targetWorkspaceId, mailboxId, targetThreadId, {
+        action,
+      }),
+    onMutate: async (variables) => {
+      const { action, targetThreadId } = variables;
+      beginOperation();
+      setSyncState(variables, 'syncing');
       const context = await snapshot(new Set([targetThreadId]), action);
       let navigatedTo: string | null | undefined;
       if (
@@ -323,36 +450,55 @@ export function useMailThreadActions({
         if (navigatedTo) reopenThread(navigatedTo);
         else closeThread();
       }
-      return { navigatedTo, snapshot: context };
+      return { navigatedTo, snapshot: context, settle: settleOperation };
     },
     onError: (_error, variables, context) => {
       restore(context?.snapshot);
       if (
-        context?.navigatedTo !== undefined &&
+        context?.snapshot?.mailboxId === activeMailboxId &&
+        context.snapshot.workspaceId === workspaceId &&
+        context.navigatedTo !== undefined &&
         selectedThreadIdRef.current === context.navigatedTo &&
         (variables.action === 'archive' || variables.action === 'trash')
       ) {
         reopenThread(variables.targetThreadId);
       }
-      setSyncState('failed');
+      setSyncState(variables, 'failed');
       toast.error(t('update_failed'));
     },
-    onSuccess: () => {
-      setSyncState('synced');
+    onSuccess: (_data, variables) => {
+      setSyncState(variables, 'synced');
     },
-    onSettled: () => invalidateMailbox(),
+    onSettled: async (_data, _error, variables, context) => {
+      inFlight.current.delete(variables.targetThreadId);
+      // Earlier requests must not refetch and resurrect later optimistic archives.
+      await (context?.settle ?? settleOperation)();
+    },
   });
 
   const bulkMutation = useMutation({
-    mutationKey: ['mail', workspaceId, activeMailboxId, 'bulk'],
-    mutationFn: (action: BulkAction) =>
-      bulkUpdateMailThreads(workspaceId, activeMailboxId ?? '', {
+    mutationKey: [...actionKey, 'bulk'],
+    mutationFn: ({
+      action,
+      threadIds,
+      mailboxId,
+      targetWorkspaceId,
+    }: {
+      action: BulkAction;
+      threadIds: string[];
+      mailboxId: string;
+      targetWorkspaceId: string;
+    }) =>
+      bulkUpdateMailThreads(targetWorkspaceId, mailboxId, {
         action,
-        threadIds: [...selectedThreads],
+        threadIds,
       }),
-    onMutate: async (action) => {
-      setSyncState('syncing');
-      const ids = new Set(selectedThreads);
+    onMutate: async (variables) => {
+      const { action, threadIds } = variables;
+      beginOperation();
+      setSyncState(variables, 'syncing');
+      const ids = new Set(threadIds);
+      for (const id of ids) inFlight.current.add(id);
       const optimistic = await snapshot(ids, action);
       const previousThreadId = selectedThreadIdRef.current;
       let navigatedTo: string | null | undefined;
@@ -371,33 +517,77 @@ export function useMailThreadActions({
         else closeThread();
       }
       setSelectedThreads(new Set());
-      return { ids, optimistic, previousThreadId, navigatedTo };
+      return {
+        ids,
+        optimistic,
+        previousThreadId,
+        navigatedTo,
+        settle: settleOperation,
+      };
     },
-    onError: (_error, _action, context) => {
+    onError: (_error, variables, context) => {
       restore(context?.optimistic);
-      if (context?.ids) setSelectedThreads(context.ids);
       if (
-        context?.previousThreadId &&
+        context?.ids &&
+        context.optimistic?.mailboxId === activeMailboxId &&
+        context.optimistic.workspaceId === workspaceId
+      )
+        setSelectedThreads(context.ids);
+      if (
+        context?.optimistic?.mailboxId === activeMailboxId &&
+        context.optimistic.workspaceId === workspaceId &&
+        context.previousThreadId &&
         context.navigatedTo !== undefined &&
         selectedThreadIdRef.current === context.navigatedTo
       ) {
         reopenThread(context.previousThreadId);
       }
-      setSyncState('failed');
+      setSyncState(variables, 'failed');
       toast.error(t('update_failed'));
     },
-    onSuccess: () => {
-      setSyncState('synced');
+    onSuccess: (_data, variables) => {
+      setSyncState(variables, 'synced');
     },
-    onSettled: () => invalidateMailbox(),
+    onSettled: async (_data, _error, variables, context) => {
+      for (const id of variables.threadIds) inFlight.current.delete(id);
+      await (context?.settle ?? settleOperation)();
+    },
   });
 
   return {
-    bulkMutation,
+    actionPending,
+    actionsPending,
+    bulkMutation: {
+      ...bulkMutation,
+      mutate: (action: BulkAction) => {
+        if (!activeMailboxId) return;
+        const threadIds = [...selectedThreads].filter(
+          (id) => !inFlight.current.has(id)
+        );
+        if (!threadIds.length) return;
+        for (const id of threadIds) inFlight.current.add(id);
+        bulkMutation.mutate({
+          action,
+          threadIds,
+          mailboxId: activeMailboxId,
+          targetWorkspaceId: workspaceId,
+        });
+      },
+    },
     mutateThread: (action: ThreadAction, targetThreadId = threadId) => {
-      if (targetThreadId) stateMutation.mutate({ action, targetThreadId });
+      if (!activeMailboxId) return;
+      if (!targetThreadId || inFlight.current.has(targetThreadId)) return;
+      inFlight.current.add(targetThreadId);
+      stateMutation.mutate({
+        action,
+        targetThreadId,
+        mailboxId: activeMailboxId,
+        targetWorkspaceId: workspaceId,
+      });
     },
     stateMutation,
-    syncState,
+    syncState: actionsPending
+      ? ('syncing' as const)
+      : (syncStates[operationScope] ?? 'idle'),
   };
 }

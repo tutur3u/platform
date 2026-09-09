@@ -9,6 +9,7 @@ import {
   getMailCatchAllConfiguration,
   getMailMailboxSettings,
   getMailThread,
+  getMailUnreadCounts,
   listMailDomains,
   listMailMessages,
   listMailThreads,
@@ -298,4 +299,24 @@ describe('mail internal API helpers', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+});
+
+it('separates mailbox discovery from unread counts without caching authenticated responses', async () => {
+  const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}));
+  const options = {
+    baseUrl: 'https://internal.example.com',
+    fetch: fetchMock as unknown as typeof fetch,
+  };
+  await getMailBootstrap('personal', options, false);
+  await getMailUnreadCounts('personal', options);
+  expect(fetchMock).toHaveBeenNthCalledWith(
+    1,
+    'https://internal.example.com/api/v1/workspaces/personal/mail/bootstrap?view=mailboxes',
+    expect.objectContaining({ cache: 'no-store', credentials: 'include' })
+  );
+  expect(fetchMock).toHaveBeenNthCalledWith(
+    2,
+    'https://internal.example.com/api/v1/workspaces/personal/mail/bootstrap?view=counts',
+    expect.objectContaining({ cache: 'no-store', credentials: 'include' })
+  );
 });

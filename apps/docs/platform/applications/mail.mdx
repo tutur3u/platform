@@ -37,6 +37,15 @@ token refresh same-origin through `/api/auth/refresh-app-session`; a valid
 refresh cookie should rotate the Mail-local and Web-issued app-session cookies
 without sending the browser back through `apps/web` login.
 
+Authenticated root and personal workspace entry requests redirect directly to
+`/personal/inbox` in the proxy, preserving query state and locale. Mailbox discovery
+uses bootstrap `?view=mailboxes`; unread badges load separately through
+`?view=counts` and stay unknown until available. Both paths retain session and
+membership checks. The default bootstrap response still includes counts for other
+clients. Thread scans fetch previews rather than full bodies; missing legacy
+snippets are loaded only for the visible page. State scans exclude read-only rows
+unless the requested search needs read state.
+
 ## Reading and attachment previews
 
 Settings → Reading stores the archive navigation and email appearance preferences
@@ -46,6 +55,13 @@ the loaded list. Users can choose to return to the list instead. Bulk archive
 skips all selected conversations when choosing the next message. Loaded unread
 conversations are marked read even when opened through restored URLs or archive
 navigation. Read updates wait for pending archive/trash operations to settle.
+Archive controls track the affected conversation, so the next conversation remains
+actionable while earlier requests finish. Its header remains available from the
+inbox summary while the message body loads. Failed operations restore only their
+own conversations and counters; mailbox reconciliation waits for overlapping
+operations to finish. Catch-all headers fall back to the observed delivery
+recipient, then the envelope recipient when parsed To recipients are absent.
+Sender and recipient summaries clamp long addresses and expose full text in tooltips.
 
 Email frames remain hidden until the saved appearance is restored and contrast
 adjustments finish. Dark mode matches neutral paper surfaces to the reader's

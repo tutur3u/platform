@@ -72,7 +72,7 @@ export interface MailMailbox {
   signatureText: string | null;
   status: MailMailboxStatus;
   type: MailMailboxType;
-  unreadCount: number;
+  unreadCount: number | null;
 }
 
 export interface MailGroupPolicy {

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   }>,
   reopen: vi.fn(),
   client: {
+    isMutating: vi.fn().mockReturnValue(1),
     cancelQueries: vi.fn().mockResolvedValue(undefined),
     getQueriesData: vi.fn().mockReturnValue([]),
     getQueryData: vi.fn(),
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 vi.mock('@tanstack/react-query', () => ({
+  useMutationState: () => [],
   useQueryClient: () => mocks.client,
   useMutation: (options: { mutationKey: string[]; [key: string]: any }) => {
     const mutation = { options, mutate: vi.fn() };
@@ -24,7 +26,10 @@ vi.mock('@tanstack/react-query', () => ({
   },
 }));
 vi.mock('react', () => ({
-  useRef: () => mocks.selected,
+  useRef: (value: unknown) =>
+    value instanceof Set || value instanceof Map
+      ? { current: value }
+      : mocks.selected,
   useState: () => ['idle', vi.fn()],
 }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
@@ -60,7 +65,10 @@ describe('archive and auto-read ordering', () => {
       const mutation = mocks.mutations.find(
         (entry) => entry.options.mutationKey.at(-1) === key
       )!;
-      const settled = mutation.options.onSettled();
+      const settled = mutation.options.onSettled(undefined, undefined, {
+        targetThreadId: 'a',
+        threadIds: ['a'],
+      });
       expect(settled).toBeInstanceOf(Promise);
       await settled;
     }
@@ -73,7 +81,7 @@ describe('archive and auto-read ordering', () => {
           entry.options.mutationKey.at(-1) === (bulk ? 'bulk' : 'state')
       )!;
       const variables = bulk
-        ? 'archive'
+        ? { action: 'archive', threadIds: ['a'] }
         : { action: 'archive', targetThreadId: 'a' };
       const context = await archive.options.onMutate!(variables);
       expect(mocks.reopen).toHaveBeenCalledWith('b');

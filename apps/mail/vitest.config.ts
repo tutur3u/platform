@@ -4,6 +4,8 @@ import { defineConfig } from 'vitest/config';
 const silent = process.env.CHECK_DETAILS === '1' ? false : 'passed-only';
 
 export default defineConfig({
+  esbuild: { jsx: 'automatic' },
+  oxc: false,
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
   },

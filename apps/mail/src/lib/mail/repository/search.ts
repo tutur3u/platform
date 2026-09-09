@@ -14,7 +14,7 @@ const MAX_INLINE_FILTER_IDS = 250;
 const MESSAGE_LIST_COLUMNS =
   'body_text,created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
 const THREAD_SCAN_COLUMNS =
-  'body_text,created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
+  'created_at,direction,from_address,from_name,has_attachments,id,mailbox_id,received_at,sent_at,snippet,status,subject,thread_id';
 
 export async function loadAllRows(
   createQuery: () => AnyRecord,
@@ -182,6 +182,7 @@ export async function queryMailMessageRows({
         .select('message_id, read_at, starred_at, archived_at, trashed_at')
         .eq('mailbox_id', mailboxId)
         .eq('user_id', userId)
+        .or(mailStateFilter(params))
         .order('message_id'),
     'Failed to search mail state'
   );
@@ -342,4 +343,14 @@ export async function queryMailMessageRows({
   if (error) throw new Error(`Failed to list mail messages: ${error.message}`);
 
   return { rows: data ?? [], total: count ?? 0 };
+}
+
+export function mailStateFilter(params: ListMailMessagesParams) {
+  const { states } = parseMailSearch(params.query);
+  const fields = ['archived_at', 'trashed_at'];
+  if (states.includes('read') || states.includes('unread'))
+    fields.push('read_at');
+  if (params.folder === 'starred' || states.includes('starred'))
+    fields.push('starred_at');
+  return fields.map((field) => `${field}.not.is.null`).join(',');
 }

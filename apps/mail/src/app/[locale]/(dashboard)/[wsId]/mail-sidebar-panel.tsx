@@ -3,7 +3,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Mail, PenLine, Settings, Users } from '@tuturuuu/icons';
 import {
-  getMailBootstrap,
   getMailboxOrganization,
   listMailThreads,
   type MailMailbox,
@@ -32,6 +31,7 @@ import {
   MAIL_THREAD_PAGE_SIZE,
 } from './mail-thread-query';
 import { MailboxGroups } from './mailbox-groups';
+import { useMailBootstrap } from './use-mail-bootstrap';
 
 export function MailSidebarPanel({
   closeOnMobile,
@@ -51,10 +51,7 @@ export function MailSidebarPanel({
   const queryClient = useQueryClient();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const bootstrapQuery = useQuery({
-    queryFn: () => getMailBootstrap(workspaceId),
-    queryKey: ['mail', workspaceId, 'bootstrap'],
-  });
+  const bootstrapQuery = useMailBootstrap(workspaceId);
   const mailboxes = bootstrapQuery.data?.mailboxes ?? [];
   const visibleMailboxes = mailboxes.filter((mailbox) =>
     `${mailbox.displayName} ${mailbox.address}`
@@ -378,7 +375,7 @@ function MailboxButton({
           {mailbox.address}
         </span>
       </span>
-      {mailbox.unreadCount > 0 ? (
+      {(mailbox.unreadCount ?? 0) > 0 ? (
         <span className="rounded-full bg-foreground px-2 py-0.5 text-background text-xs tabular-nums">
           {mailbox.unreadCount}
         </span>

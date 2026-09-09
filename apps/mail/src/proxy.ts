@@ -13,10 +13,6 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
-import {
-  getCurrentUserDefaultWorkspace,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -185,7 +181,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       req.nextUrl.searchParams.get('next') ??
         req.nextUrl.searchParams.get('nextUrl'),
       req.nextUrl.origin,
-      '/personal'
+      '/personal/inbox'
     );
     const loginRedirect = clearSupabaseAuthCookies(
       req,
@@ -260,39 +256,35 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     pathSegments.length === 1 &&
     supportedLocales.includes(pathSegments[0] as Locale);
 
+  const isPersonalIndex =
+    pathSegments[loginSegmentIndex] === 'personal' &&
+    pathSegments.length === loginSegmentIndex + 1;
+
   const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
   const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
   const isMultiAccountFlow = req.nextUrl.searchParams.has('multiAccount');
 
   if (
-    (isRootPath || isLocaleRootPath) &&
+    (isRootPath || isLocaleRootPath || isPersonalIndex) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
     !isMultiAccountFlow &&
     hasSatelliteSession
   ) {
-    try {
-      const defaultWorkspace = await getCurrentUserDefaultWorkspace(
-        withForwardedInternalApiAuth(authRequestHeaders)
+    const redirectUrl = req.nextUrl.clone();
+    redirectUrl.pathname =
+      loginSegmentIndex === 1 && pathSegments[0] !== defaultLocale
+        ? `/${pathSegments[0]}/personal/inbox`
+        : '/personal/inbox';
+    const inboxRedirect = NextResponse.redirect(redirectUrl);
+    propagateAuthCookies(authRes, inboxRedirect);
+    if (loginSegmentIndex === 1)
+      inboxRedirect.cookies.set(
+        LOCALE_COOKIE_NAME,
+        pathSegments[0] ?? defaultLocale,
+        { path: '/', sameSite: 'lax' }
       );
-      const target = defaultWorkspace
-        ? defaultWorkspace.personal
-          ? 'personal'
-          : defaultWorkspace.id === ROOT_WORKSPACE_ID
-            ? 'internal'
-            : defaultWorkspace.id
-        : 'personal';
-      const redirectUrl = new URL(`/${target}`, req.nextUrl);
-      const wsRedirect = NextResponse.redirect(redirectUrl);
-      propagateAuthCookies(authRes, wsRedirect);
-      return wsRedirect;
-    } catch {
-      const fallbackRedirect = NextResponse.redirect(
-        new URL('/personal', req.nextUrl)
-      );
-      propagateAuthCookies(authRes, fallbackRedirect);
-      return fallbackRedirect;
-    }
+    return inboxRedirect;
   }
 
   const localeRes = handleLocale({ req });
