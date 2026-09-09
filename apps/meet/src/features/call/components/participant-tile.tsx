@@ -69,6 +69,10 @@ function ParticipantTileImpl({
   );
   const videoRef = useRef<HTMLVideoElement>(null);
   const tileRef = useRef<HTMLDivElement>(null);
+  const videoEnabled =
+    kind === 'screen'
+      ? participant.media.screenEnabled
+      : participant.media.videoEnabled;
   const [presentedStream, setPresentedStream] = useState<MediaStream | null>(
     null
   );
@@ -77,11 +81,15 @@ function ParticipantTileImpl({
   );
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !videoStream) return;
-    return observeVideoPresentation(video, videoStream, (presenting) =>
-      setPresentedStream(presenting ? videoStream : null)
+    setPresentedStream(null);
+    if (!video || !videoStream || !videoEnabled) return;
+    return observeVideoPresentation(
+      video,
+      videoStream,
+      (presenting) => setPresentedStream(presenting ? videoStream : null),
+      kind === 'camera'
     );
-  }, [videoStream]);
+  }, [videoStream, videoEnabled, kind]);
   useEffect(() => {
     const changed = () =>
       setFullscreen(document.fullscreenElement === tileRef.current);
@@ -97,7 +105,7 @@ function ParticipantTileImpl({
   }, []);
   const readiness = useStreamReadiness(stream);
   const showVideo = Boolean(
-    (readiness.video || presentingVideo) &&
+    presentingVideo &&
       (kind === 'screen'
         ? participant.media.screenEnabled
         : participant.media.videoEnabled)

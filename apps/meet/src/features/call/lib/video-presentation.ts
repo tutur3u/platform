@@ -2,7 +2,8 @@
 export function observeVideoPresentation(
   video: HTMLVideoElement,
   stream: MediaStream,
-  onChange: (presenting: boolean) => void
+  onChange: (presenting: boolean) => void,
+  expireIdleFrames = true
 ) {
   let active = true;
   let presenting = false;
@@ -52,7 +53,11 @@ export function observeVideoPresentation(
     video.addEventListener(event, reset);
   for (const track of tracks) track.addEventListener('ended', reset);
   const timer = setInterval(() => {
-    if (!current() || performance.now() - lastFrame > 3000) update(false);
+    if (
+      !current() ||
+      (expireIdleFrames && performance.now() - lastFrame > 3000)
+    )
+      update(false);
   }, 1000);
   return () => {
     active = false;

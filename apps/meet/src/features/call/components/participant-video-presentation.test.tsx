@@ -142,3 +142,61 @@ it('cancels frame observation on unmount', () => {
   expect(frames.size).toBe(0);
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it('supports browsers without frame callbacks', () => {
+  Reflect.deleteProperty(
+    HTMLVideoElement.prototype,
+    'requestVideoFrameCallback'
+  );
+  const { container } = render(tile(makeStream()));
+  const video = container.querySelector('video')!;
+  Object.defineProperties(video, {
+    paused: { value: false },
+    readyState: { value: 2 },
+    videoWidth: { value: 640 },
+  });
+  act(() => video.dispatchEvent(new Event('timeupdate')));
+  expect(screen.queryByText('P')).toBeNull();
+});
+it('clears stale evidence across camera off and on', () => {
+  const stream = makeStream();
+  const { rerender } = render(tile(stream));
+  presentFrame();
+  rerender(tile(stream, false));
+  rerender(tile(stream, true));
+  expect(screen.getByText('P')).toBeTruthy();
+  presentFrame();
+  expect(screen.queryByText('P')).toBeNull();
+});
+it('expires camera presentation even if the receiver stays unmuted', () => {
+  const stream = makeStream();
+  Object.defineProperty(stream.getVideoTracks()[0], 'muted', { value: false });
+  render(tile(stream));
+  presentFrame();
+  act(() => vi.advanceTimersByTime(4000));
+  expect(
+    screen.getByRole('button', { name: 'Reconnect incoming video' })
+  ).toBeTruthy();
+});
+it('retains a presented static screen without inventing a camera stall', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantTile
+        participant={{
+          ...participant,
+          media: { ...participant.media, screenEnabled: true },
+        }}
+        kind="screen"
+        stream={makeStream()}
+        resumePlaybackLabel="Play audio"
+        onRetry={() => undefined}
+      />
+    </NextIntlClientProvider>
+  );
+  presentFrame();
+  act(() => vi.advanceTimersByTime(10000));
+  expect(screen.queryByText('P')).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'Reconnect incoming video' })
+  ).toBeNull();
+});
