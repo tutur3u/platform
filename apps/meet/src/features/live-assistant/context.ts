@@ -20,6 +20,14 @@ export const EMPTY_LIVE_JOURNAL: LiveContextJournal = {
   checkpoints: [],
 };
 
+/** Bound serialized data, including escaping overhead, without emitting broken JSON. */
+export function serializeLiveContext(items: unknown[], maxCharacters: number) {
+  const bounded = [...items];
+  while (bounded.length && JSON.stringify(bounded).length > maxCharacters)
+    bounded.shift();
+  return JSON.stringify(bounded);
+}
+
 /** Context routing is enforced here, before any provider request. */
 export function buildLiveInstructions(input: {
   mode: LiveAudience;
@@ -32,6 +40,21 @@ export function buildLiveInstructions(input: {
 }) {
   const privateMemory =
     input.mode === 'personal' && input.memoryEnabled ? input.memories : [];
+  const memories = privateMemory
+    .map(({ content, category }) => ({
+      content: content.slice(0, 500),
+      category,
+    }))
+    .slice(0, 20);
+  const checkpoints = input.journal.checkpoints.slice(-4).map((checkpoint) => ({
+    summary: checkpoint.summary.slice(0, 2000),
+    decisions: checkpoint.decisions
+      .slice(0, 10)
+      .map((value) => value.slice(0, 200)),
+    openQuestions: checkpoint.openQuestions
+      .slice(0, 10)
+      .map((value) => value.slice(0, 200)),
+  }));
   return [
     'You are Mira, the Tuturuuu meeting assistant. Be helpful, concise, and respond in the user’s language.',
     `Current time: ${input.now}. User timezone: ${input.timezone}.`,
@@ -42,13 +65,13 @@ export function buildLiveInstructions(input: {
     input.memoryEnabled && input.mode === 'personal'
       ? 'You may propose a useful, non-sensitive memory using remember. The user must approve it. Do not store secrets, passwords, medical details, or facts about other participants.'
       : 'Personal memory is disabled. Do not store or request personal memories.',
-    `Shared meeting context: ${input.sharedContext.slice(0, 24000)}`,
+    `Shared meeting context: ${input.sharedContext.slice(0, 12000)}`,
     ...(privateMemory.length
       ? [
-          `Private user-approved memories: ${JSON.stringify(privateMemory.map(({ content, category }) => ({ content, category })))}`,
+          `Private user-approved memories: ${serializeLiveContext(memories, 8000)}`,
         ]
       : []),
-    `Earlier context checkpoints: ${JSON.stringify(input.journal.checkpoints.slice(-8))}`,
+    `Earlier context checkpoints: ${serializeLiveContext(checkpoints, 12000)}`,
   ].join('\n\n');
 }
 

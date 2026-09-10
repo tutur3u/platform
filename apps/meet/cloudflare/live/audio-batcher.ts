@@ -61,6 +61,7 @@ export class LiveAudioBatcher {
   }
   clear() {
     this.generation++;
+    this.chain = Promise.resolve();
     clearTimeout(this.timer);
     this.timer = undefined;
     this.chunks = [];

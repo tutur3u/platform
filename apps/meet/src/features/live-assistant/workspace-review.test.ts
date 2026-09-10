@@ -1,6 +1,9 @@
 import { expect, it, vi } from 'vitest';
 import type { SavedSession } from '../../../cloudflare/live/session-state';
-import { controlWorkspaceReview } from '../../../cloudflare/live/workspace-review';
+import {
+  controlWorkspaceReview,
+  expireWorkspaceReviews,
+} from '../../../cloudflare/live/workspace-review';
 
 function fixture() {
   const saved = {
@@ -64,4 +67,15 @@ it('does not return private results after the session ends', async () => {
   f.saved.ended = true;
   expect((await f.command('finish')).status).toBe(403);
   expect(f.respond).not.toHaveBeenCalled();
+});
+
+it('expires an abandoned claim without making the mutation retryable', async () => {
+  const f = fixture();
+  await f.command('claim');
+  f.saved.reviews[0]!.processingAt = Date.now() - 120001;
+  await expireWorkspaceReviews(f.saved, undefined, f.persist, vi.fn());
+  expect(f.saved.reviews[0]?.status).toBe('failed');
+  expect((await f.command('claim')).status).toBe(409);
+  expect((await f.command('finish')).status).toBe(409);
+  expect(f.saved.toolResponses?.[0]?.response.error).toContain('Do not retry');
 });

@@ -9,7 +9,7 @@ export async function readLiveRequestBody(request: Request, maxBytes: number) {
       if (done) break;
       size += value.byteLength;
       if (size > maxBytes) {
-        await reader.cancel();
+        await reader.cancel().catch(() => undefined);
         return { ok: false as const, status: 413 };
       }
       chunks.push(value);

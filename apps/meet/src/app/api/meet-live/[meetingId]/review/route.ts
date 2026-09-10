@@ -2,7 +2,10 @@ import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { z } from 'zod';
 import { MeetCallAccessError } from '@/features/call/lib/call-access';
-import { roomRoute } from '@/features/call/server/room-service';
+import {
+  callRoomService,
+  roomRoute,
+} from '@/features/call/server/room-service';
 import { readLiveRequestBody } from '@/features/live-assistant/request-body';
 import { liveWorkspaceTools } from '@/features/live-assistant/workspace-tools';
 
@@ -36,6 +39,8 @@ export async function POST(
           ...extra,
         }),
       });
+    if (parsed.data.approved)
+      await callRoomService(access, { action: 'live.context' });
     const claim = await command(parsed.data.approved ? 'claim' : 'deny');
     if (!claim.ok)
       throw new MeetCallAccessError(claim.status, 'Review unavailable');

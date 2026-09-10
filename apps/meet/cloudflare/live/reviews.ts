@@ -10,6 +10,8 @@ export const proposalSchema = z.object({
   callId: z.string(),
   name: z.enum(['remember', 'propose_room_reply', 'workspace_tool']),
   toolName: z.string().optional(),
+  timezone: z.string().optional(),
+  processingAt: z.number().optional(),
   args: z.record(z.string(), z.unknown()).optional(),
   text: z.string().trim().min(1).max(4000),
   category: z.enum(['preference', 'fact', 'project']).optional(),
@@ -47,6 +49,7 @@ export function liveReviewEvent(review: LiveProposal): LiveAssistantEvent {
           ? 'remember'
           : 'share',
     toolName: review.toolName,
+    timezone: review.timezone ?? 'UTC',
     args: review.args,
     text: review.text,
     status: review.status,

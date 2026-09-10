@@ -39,6 +39,7 @@ export async function executeLiveTool(
     }
     const review: LiveProposal = {
       id: crypto.randomUUID(),
+      timezone: saved.timezone,
       callId,
       name: 'workspace_tool',
       toolName: name,
@@ -115,6 +116,7 @@ export async function executeLiveTool(
     }
     const proposal: LiveProposal = {
       id: crypto.randomUUID(),
+      timezone: saved.timezone,
       callId,
       name: name as LiveProposal['name'],
       text: args.text.slice(0, name === 'remember' ? 1000 : 4000),

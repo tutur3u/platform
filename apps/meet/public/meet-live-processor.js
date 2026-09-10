@@ -4,6 +4,15 @@ class MeetLiveProcessor extends AudioWorkletProcessor {
     this.samples = new Int16Array(1600);
     this.offset = 0;
     this.position = 0;
+    this.port.onmessage = (event) => {
+      if (event.data !== 'flush') return;
+      if (this.offset) {
+        const tail = this.samples.slice(0, this.offset);
+        this.port.postMessage(tail.buffer, [tail.buffer]);
+        this.offset = 0;
+      }
+      this.port.postMessage('flushed');
+    };
   }
   process(inputs) {
     const channel = inputs[0]?.[0];

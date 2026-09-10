@@ -15,11 +15,13 @@ export type LiveBillingState = {
   previousCostUsd?: number;
   openedAt?: number;
   pendingSettlement?: boolean;
+  pendingShareFinish?: string;
 };
 export async function beginLiveBilling(
   env: LiveEnvironment,
   claims: LiveSessionClaims,
-  previousCostUsd = 0
+  previousCostUsd = 0,
+  accessWorkspaceId = claims.billingWorkspaceId
 ): Promise<LiveBillingState> {
   const rows = await liveDatabase<
     Array<{ success: boolean; live_session_id?: string; error_code?: string }>
@@ -27,9 +29,9 @@ export async function beginLiveBilling(
     method: 'POST',
     schema: 'private',
     body: {
-      p_access_ws_id: claims.billingWorkspaceId,
+      p_access_ws_id: accessWorkspaceId,
       p_billing_ws_id: claims.billingWorkspaceId,
-      p_expires_at: new Date(Date.now() + 60 * 60_000).toISOString(),
+      p_expires_at: new Date(Date.now() + 9 * 60_000).toISOString(),
       p_model_id: MEET_LIVE_MODEL,
       p_user_id: claims.ownerId,
     },
@@ -84,6 +86,6 @@ export async function settleLiveBilling(
     exhausted: Number(row.remaining_reserved_credits ?? 0) <= 0,
     renew:
       Number(row.remaining_reserved_credits ?? 0) <= 300 ||
-      Date.now() - (state.openedAt ?? 0) >= 50 * 60_000,
+      Date.now() - (state.openedAt ?? 0) >= 8 * 60_000,
   };
 }

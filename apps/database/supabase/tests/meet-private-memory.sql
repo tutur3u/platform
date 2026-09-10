@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(7);
+select plan(19);
 insert into public.users(id) values ('00000000-0000-4000-8000-000000009751'), ('00000000-0000-4000-8000-000000009752');
 select throws_ok($$select public.save_meet_ai_memory('00000000-0000-4000-8000-000000009751', 'Prefers concise answers', 'preference')$$, 'P0001', 'Memory is disabled', 'memory is off without a preference row');
 insert into public.meet_ai_user_preferences(user_id) values ('00000000-0000-4000-8000-000000009751');
@@ -11,6 +11,18 @@ select lives_ok($$select public.save_meet_ai_memory('00000000-0000-4000-8000-000
 select public.save_meet_ai_memory('00000000-0000-4000-8000-000000009751', 'Prefers concise answers', 'preference');
 select is((select count(*) from public.meet_ai_memories), 1::bigint, 'repeated saves are idempotent');
 select ok(not has_function_privilege('authenticated', 'public.save_meet_ai_memory(uuid, text, text)', 'EXECUTE'), 'direct clients cannot select a different owner');
+select ok(not has_table_privilege('authenticated', 'public.meet_ai_memories', 'INSERT'), 'authenticated cannot directly insert meet_ai_memories');
+select ok(not has_table_privilege('authenticated', 'public.meet_ai_memories', 'UPDATE'), 'authenticated cannot directly update meet_ai_memories');
+select ok(not has_table_privilege('authenticated', 'public.meet_ai_memories', 'DELETE'), 'authenticated cannot directly delete meet_ai_memories');
+select ok(not has_table_privilege('authenticated', 'public.meet_ai_user_preferences', 'INSERT'), 'authenticated cannot directly insert meet_ai_user_preferences');
+select ok(not has_table_privilege('authenticated', 'public.meet_ai_user_preferences', 'UPDATE'), 'authenticated cannot directly update meet_ai_user_preferences');
+select ok(not has_table_privilege('authenticated', 'public.meet_ai_user_preferences', 'DELETE'), 'authenticated cannot directly delete meet_ai_user_preferences');
+select ok(not has_table_privilege('anon', 'public.meet_ai_memories', 'INSERT'), 'anon cannot directly insert meet_ai_memories');
+select ok(not has_table_privilege('anon', 'public.meet_ai_memories', 'UPDATE'), 'anon cannot directly update meet_ai_memories');
+select ok(not has_table_privilege('anon', 'public.meet_ai_memories', 'DELETE'), 'anon cannot directly delete meet_ai_memories');
+select ok(not has_table_privilege('anon', 'public.meet_ai_user_preferences', 'INSERT'), 'anon cannot directly insert meet_ai_user_preferences');
+select ok(not has_table_privilege('anon', 'public.meet_ai_user_preferences', 'UPDATE'), 'anon cannot directly update meet_ai_user_preferences');
+select ok(not has_table_privilege('anon', 'public.meet_ai_user_preferences', 'DELETE'), 'anon cannot directly delete meet_ai_user_preferences');
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000009752","role":"authenticated"}', true);
 select is((select count(*) from public.meet_ai_memories), 0::bigint, 'another user cannot inspect private memories');

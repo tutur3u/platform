@@ -43,3 +43,22 @@ it('preserves a coverage gap across later successful usage events', () => {
   } as LiveServerMessage);
   expect(state.billing?.incomplete).toBe(true);
 });
+
+it('keeps a known search lower bound and flags missing grounding query counts', () => {
+  const state = saved();
+  observeSessionUsage(state, {
+    serverContent: { groundingMetadata: {} },
+  } as LiveServerMessage);
+  expect(state.billing?.usage.searchQueries).toBe(1);
+  expect(state.billing?.incomplete).toBe(true);
+});
+
+it('marks an interrupted output-transcription-only response incomplete', () => {
+  const state = saved();
+  state.billing!.incomplete = false;
+  observeSessionUsage(state, {
+    serverContent: { outputTranscription: { text: 'Hello' } },
+  } as LiveServerMessage);
+  markInterruptedUsage(state);
+  expect(state.billing?.incomplete).toBe(true);
+});

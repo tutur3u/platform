@@ -1,6 +1,7 @@
 import type { DurableObjectStorage } from '@cloudflare/workers-types';
 import { settleLiveBilling } from './billing';
 import { eraseEndedLiveContext } from './erase-context';
+import { liveRoomCommand } from './room';
 import type { SavedSession } from './session-state';
 import type { LiveEnvironment } from './storage';
 import { reportLiveUsage } from './usage-report';
@@ -50,6 +51,14 @@ export async function settlePublicBillings(
       const final = await settleLiveBilling(env, saved.claims, billing, true);
       saved.publicBillings![id] = final;
       await persist();
+      if (final.pendingShareFinish) {
+        await liveRoomCommand(env, saved.claims, saved.identity, {
+          action: 'live.share.finish',
+          id: final.pendingShareFinish,
+        });
+        final.pendingShareFinish = undefined;
+        await persist();
+      }
       await reportLiveUsage(env, saved.claims, saved.identity, final);
       delete saved.publicBillings![id];
     } catch {

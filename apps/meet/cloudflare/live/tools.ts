@@ -15,7 +15,7 @@ export function liveTools(
     {
       name: 'recall_conversation',
       description:
-        'Search earlier turns in this assistant session. Follow nextCursor to search older pages.',
+        "Search earlier turns in this assistant session. Pass the previous result's nextCursor as before to search older pages.",
       parameters: {
         type: Type.OBJECT,
         properties: {

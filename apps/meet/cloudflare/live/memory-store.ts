@@ -10,7 +10,7 @@ export async function applyMemoryCommand(
   if (command.action === 'settings') {
     await liveDatabase(env, 'meet_ai_user_preferences?on_conflict=user_id', {
       method: 'POST',
-      prefer: 'resolution=merge-duplicates',
+      prefer: 'resolution=merge-duplicates,return=representation',
       body: {
         user_id: ownerId,
         memory_enabled: command.enabled,

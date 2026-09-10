@@ -10,6 +10,7 @@ export async function eraseEndedLiveContext(
 ) {
   if (!saved.ended || saved.contextErased) return;
   saved.handle = undefined;
+  saved.toolResponses = [];
   saved.sharedContext = '';
   saved.journal = structuredClone(EMPTY_LIVE_JOURNAL);
   saved.reviews = [];

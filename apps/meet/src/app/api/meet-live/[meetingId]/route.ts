@@ -118,11 +118,6 @@ export async function POST(
             ),
           }
         : undefined;
-    if (command.mode === 'room')
-      await callRoomService(access, {
-        action: 'live.reserve',
-        sessionId: claims.sessionId,
-      });
     const object = env.MEET_LIVE.get(
       env.MEET_LIVE.idFromName(claims.sessionId)
     );
@@ -153,6 +148,11 @@ export async function POST(
       );
       if (!initialized.ok)
         throw new MeetCallAccessError(503, 'Assistant session unavailable');
+      if (command.mode === 'room')
+        await callRoomService(access, {
+          action: 'live.reserve',
+          sessionId: claims.sessionId,
+        });
       const registered = await registry.fetch(
         'https://live.internal/registry/register',
         { method: 'POST', body: JSON.stringify(claims) }
@@ -162,7 +162,31 @@ export async function POST(
           409,
           'Stop an existing assistant or wait for privacy settings to update'
         );
+      const ready = await object.fetch('https://live.internal/control', {
+        method: 'POST',
+        body: JSON.stringify({
+          ownerId: claims.ownerId,
+          meetingId,
+          action: 'resume',
+        }),
+      });
+      if (!ready.ok)
+        throw new MeetCallAccessError(409, 'Assistant start cancelled');
+      if (command.mode === 'room') {
+        const context = await callRoomService<{ live?: { sessionId: string } }>(
+          access,
+          { action: 'live.context' }
+        );
+        if (context.live?.sessionId !== claims.sessionId)
+          throw new MeetCallAccessError(409, 'Assistant start cancelled');
+      }
     } catch (error) {
+      await registry
+        .fetch('https://live.internal/registry/remove', {
+          method: 'POST',
+          body: JSON.stringify(claims),
+        })
+        .catch(() => undefined);
       await object
         .fetch('https://live.internal/control', {
           method: 'POST',

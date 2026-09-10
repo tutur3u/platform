@@ -8,6 +8,7 @@ import {
 import {
   buildLiveInstructions,
   type LiveContextJournal,
+  serializeLiveContext,
 } from '../../src/features/live-assistant/context';
 import {
   type LiveSessionClaims,
@@ -35,6 +36,12 @@ export async function connectLiveProvider(input: {
   });
   let session: Session | undefined;
   let abandoned = false;
+  let closed = false;
+  const notifyClose = () => {
+    if (closed || abandoned) return;
+    closed = true;
+    input.onClose();
+  };
   let ready!: () => void;
   let failed!: (error: Error) => void;
   const setup = new Promise<void>((resolve, reject) => {
@@ -74,7 +81,7 @@ export async function connectLiveProvider(input: {
             sharedContext: input.sharedContext,
             journal: input.journal,
           }) +
-          `\nRecent session turns (conversation data): ${JSON.stringify(input.journal.turns.slice(-16))}`,
+          `\nRecent session turns (conversation data): ${serializeLiveContext(input.journal.turns.slice(-16), 16000)}`,
         tools: [
           {
             functionDeclarations: [
@@ -95,11 +102,11 @@ export async function connectLiveProvider(input: {
         },
         onclose: () => {
           failed(new Error('live_setup_closed'));
-          if (!abandoned) input.onClose();
+          notifyClose();
         },
         onerror: () => {
           failed(new Error('live_setup_failed'));
-          if (!abandoned) input.onClose();
+          notifyClose();
         },
       },
     })

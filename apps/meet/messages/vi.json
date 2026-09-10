@@ -3939,6 +3939,7 @@
       "hide_meeting_notes": "Ẩn ghi chú và bản chép lời",
       "host_controls": "Điều khiển của chủ phòng",
       "in_call": "Trong cuộc gọi",
+      "incomplete_live_cost": "Chi phí chưa đầy đủ cho {count} kỳ thanh toán",
       "invalid_code": "Vui lòng nhập mã hoặc liên kết Tuturuuu Meet hợp lệ.",
       "invite": "Mời",
       "invite_copied": "Đã sao chép liên kết mời",

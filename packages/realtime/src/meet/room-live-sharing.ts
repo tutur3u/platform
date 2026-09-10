@@ -33,6 +33,25 @@ export function applyLiveSharing(
     body: { error },
     status,
   });
+  const message = parsed.data;
+  if (message.action === 'live.share.finish') {
+    if (!token.scopes.includes('meet:live-server')) return fail('Forbidden');
+    const grant = snapshot.liveShares?.[message.id];
+    if (grant && grant.ownerId !== ownerId) return fail('Forbidden');
+    const shares = { ...snapshot.liveShares };
+    delete shares[message.id];
+    return {
+      state: { ...snapshot, liveShares: shares },
+      body: { ok: true },
+      messages: [
+        {
+          type: 'assistant.share' as const,
+          sessionId: message.id,
+          active: false,
+        },
+      ],
+    };
+  }
   if (
     !token.scopes.includes('meet:live-server') ||
     snapshot.ended ||
@@ -41,7 +60,6 @@ export function applyLiveSharing(
     )
   )
     return fail('Forbidden');
-  const message = parsed.data;
   const shares = Object.fromEntries(
     Object.entries(snapshot.liveShares ?? {}).filter(
       ([, entry]) => entry.expiresAt > now
@@ -74,16 +92,19 @@ export function applyLiveSharing(
         chat: retainRoomChat([...(snapshot.chat ?? []), entry]),
       },
       body: { ok: true },
-      messages: [entry],
+      messages: [
+        entry,
+        {
+          type: 'assistant.share' as const,
+          sessionId: message.id,
+          active: true,
+        },
+      ],
     };
   }
   const grant = shares[message.id];
   if (!grant || grant.ownerId !== ownerId)
     return fail('Shared reply expired', 409);
-  if (message.action === 'live.share.finish') {
-    delete shares[message.id];
-    return { state: { ...snapshot, liveShares: shares }, body: { ok: true } };
-  }
   if (Math.abs(now - message.at) > 5000 || message.sequence <= grant.sequence)
     return { state: snapshot, body: { ok: true } };
   return {

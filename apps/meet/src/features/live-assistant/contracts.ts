@@ -71,6 +71,7 @@ export type LiveAssistantEvent =
       id: string;
       action: 'share' | 'remember' | 'workspace';
       toolName?: string;
+      timezone?: string;
       args?: Record<string, unknown>;
       text: string;
       status: 'pending' | 'processing' | 'approved' | 'denied' | 'failed';

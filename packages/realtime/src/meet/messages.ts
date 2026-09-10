@@ -174,6 +174,7 @@ export type MeetRealtimeServerMessage =
       active: boolean;
       ownerId: string;
     }
+  | { type: 'assistant.share'; sessionId: string; active: boolean }
   | {
       type: 'assistant.interrupted';
       sessionId: string;

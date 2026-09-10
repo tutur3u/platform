@@ -33,27 +33,39 @@ export function updateMeetPrivateMemory(
   );
 }
 
+export type MeetLiveVoice = 'Aoede' | 'Kore' | 'Puck' | 'Charon' | 'Fenrir';
+type LiveStart = {
+  action: 'start';
+  mode: 'personal' | 'room';
+  timezone: string;
+  workspaceId?: string;
+  voice?: MeetLiveVoice;
+};
+type LiveConnection = {
+  sessionId: string;
+  token: string;
+  mode: 'personal' | 'room';
+};
 export function controlMeetLive(
   meetingId: string,
-  command:
-    | {
-        action: 'start';
-        mode: 'personal' | 'room';
-        timezone: string;
-        workspaceId?: string;
-        voice?: string;
-      }
-    | { action: 'resume' | 'stop'; sessionId: string }
+  command: LiveStart | { action: 'resume'; sessionId: string }
+): Promise<LiveConnection>;
+export function controlMeetLive(
+  meetingId: string,
+  command: { action: 'stop'; sessionId: string }
+): Promise<{ ok: boolean }>;
+export function controlMeetLive(
+  meetingId: string,
+  command: LiveStart | { action: 'resume' | 'stop'; sessionId: string }
 ) {
-  return getInternalApiClient().json<{
-    sessionId: string;
-    token: string;
-    mode: 'personal' | 'room';
-  }>(`/api/meet-live/${encodeURIComponent(meetingId)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(command),
-  });
+  return getInternalApiClient().json<LiveConnection | { ok: boolean }>(
+    `/api/meet-live/${encodeURIComponent(meetingId)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(command),
+    }
+  );
 }
 
 export function reviewMeetLiveTool(

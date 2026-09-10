@@ -75,7 +75,7 @@ the service cannot be reconstructed after an outage.
 
 Live reservations and settlement use the platform's existing AI credit ledger
 and charge the initiating user's personal workspace. Usage is accumulated from
-provider events by modality. Reservations renew before exhaustion; failed
+provider events by modality. Reservations use nine-minute holds and renew after eight minutes or before exhaustion; failed
 settlements remain durable and retry after the session ends. Final provider usage
 is collected during shutdown. Interrupted turns without a final usage receipt
 remain marked incomplete even if subsequent turns succeed.
@@ -112,3 +112,24 @@ room guests cannot mint an assistant stream, memory changes cancel personal
 sessions, explicit share approvals publish only the previewed content, and quota
 settlement remains accurate after reconnects. Use synthetic conversation content
 and isolated test rooms. Do not end an employee's active meeting during checks.
+
+
+### Voice recovery and review outcomes
+
+Microphone capture uses the browser's 16 kHz resampler and flushes its final
+partial frame when stopped. A disconnected personal microphone pauses Live input;
+select a working microphone in settings before resuming. Starting personal voice
+mutes the meeting microphone; a failed startup restores its previous enabled state.
+Room playback requires the listener to enable audio, with at most three seconds of
+recent audio buffered while the browser awaits that gesture.
+
+Approved tool outcomes are saved before provider delivery. After a reconnect they
+are supplied as completed results, never automatically executed again. A workspace
+operation with no completion acknowledgement after two minutes becomes an unknown
+outcome for the requester to inspect. Permission checks and approval are required
+for every private workspace operation. Task metadata tools without a matching
+permission gate are not exposed.
+
+Deployment checks require `GOOGLE_GENERATIVE_AI_API_KEY` on the Meet Worker.
+Missing provider token allocation or search grounding usage remains marked as
+incomplete cost coverage instead of being counted as free.

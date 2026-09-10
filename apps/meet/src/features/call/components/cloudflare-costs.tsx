@@ -85,7 +85,7 @@ export function CloudflareCosts({ meetingId }: { meetingId: string }) {
             count: data.live.sessions,
           })}
           {data.live.incomplete > 0
-            ? ` · ${t('unpriced_requests', { count: data.live.incomplete })}`
+            ? ` · ${t('incomplete_live_cost', { count: data.live.incomplete })}`
             : ''}
         </p>
       )}

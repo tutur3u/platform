@@ -34,3 +34,17 @@ it('does not replay queued audio after an interruption', async () => {
   await batcher.drain();
   expect(deliver).toHaveBeenCalledOnce();
 });
+
+it('does not let a hung delivery block speech after interruption', async () => {
+  const deliver = vi
+    .fn()
+    .mockImplementationOnce(() => new Promise(() => {}))
+    .mockResolvedValue(undefined);
+  const batcher = new LiveAudioBatcher(deliver, vi.fn());
+  batcher.push(btoa('\0'.repeat(24000)));
+  await Promise.resolve();
+  batcher.clear();
+  batcher.push(btoa('\u0001'.repeat(24000)));
+  await batcher.drain();
+  expect(deliver).toHaveBeenCalledTimes(2);
+});

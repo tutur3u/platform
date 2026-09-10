@@ -3,6 +3,8 @@ export class LiveAudioPlayer {
   private context?: AudioContext;
   private nextTime = 0;
   private sources = new Set<AudioBufferSourceNode>();
+  private pending: Array<{ data: string; sampleRate: number; at: number }> = [];
+  private pendingBytes = 0;
   async unlock(outputDeviceId?: string) {
     this.context ??= new AudioContext({ sampleRate: 24000 });
     if ('setSinkId' in this.context)
@@ -12,10 +14,22 @@ export class LiveAudioPlayer {
         }
       ).setSinkId(outputDeviceId || '');
     await this.context.resume();
+    const pending = this.pending;
+    this.pending = [];
+    this.pendingBytes = 0;
+    for (const item of pending)
+      if (Date.now() - item.at < 3000) this.play(item.data, item.sampleRate);
   }
   play(data: string, sampleRate = 24000) {
     const context = this.context;
-    if (context?.state !== 'running') return;
+    if (context?.state !== 'running') {
+      if (data.length > 128000) return;
+      this.pending.push({ data, sampleRate, at: Date.now() });
+      this.pendingBytes += data.length;
+      while (this.pendingBytes > 192000 && this.pending.length)
+        this.pendingBytes -= this.pending.shift()!.data.length;
+      return;
+    }
     const bytes = Uint8Array.from(atob(data), (value) => value.charCodeAt(0));
     if (bytes.length % 2 || bytes.length > 96000) return;
     const pcm = new DataView(bytes.buffer);
@@ -35,6 +49,8 @@ export class LiveAudioPlayer {
     this.nextTime += buffer.duration;
   }
   interrupt() {
+    this.pending = [];
+    this.pendingBytes = 0;
     for (const source of this.sources) {
       try {
         source.stop();
@@ -51,20 +67,32 @@ export class LiveAudioPlayer {
 }
 export async function captureLiveAudio(
   streams: MediaStream[],
-  onAudio: (data: string) => void
+  onAudio: (data: string) => void,
+  onInputEnded?: () => void
 ) {
-  const context = new AudioContext();
+  const context = new AudioContext({ sampleRate: 16000 });
   try {
+    if (context.sampleRate !== 16000)
+      throw new Error('Unsupported input sample rate');
     await context.audioWorklet.addModule('/meet-live-processor.js');
     const processor = new AudioWorkletNode(context, 'meet-live-pcm');
     const mute = context.createGain();
     mute.gain.value = 0;
     const sources = new Map<MediaStreamTrack, MediaStreamAudioSourceNode>();
+    const ended = () => {
+      update(
+        [...sources.keys()]
+          .filter((track) => track.readyState === 'live')
+          .map((track) => new MediaStream([track]))
+      );
+      if (!sources.size) onInputEnded?.();
+    };
     const update = (next: MediaStream[]) => {
       const tracks = new Set(next.flatMap((stream) => stream.getAudioTracks()));
       for (const [track, source] of sources) {
         if (!tracks.has(track) || track.readyState === 'ended') {
           source.disconnect();
+          track.removeEventListener('ended', ended);
           sources.delete(track);
         }
       }
@@ -75,23 +103,43 @@ export async function captureLiveAudio(
         );
         source.connect(processor);
         sources.set(track, source);
+        track.addEventListener('ended', ended);
       }
     };
     update(streams);
     processor.connect(mute).connect(context.destination);
-    processor.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+    let acknowledge: (() => void) | undefined;
+    processor.port.onmessage = (event: MessageEvent<ArrayBuffer | string>) => {
+      if (event.data === 'flushed') {
+        acknowledge?.();
+        return;
+      }
+      if (typeof event.data === 'string') return;
       const bytes = new Uint8Array(event.data);
       let binary = '';
       for (const byte of bytes) binary += String.fromCharCode(byte);
       onAudio(btoa(binary));
     };
     await context.resume();
-    const dispose = () => {
-      processor.port.onmessage = null;
-      for (const source of sources.values()) source.disconnect();
-      processor.disconnect();
-      void context.close();
-    };
+    let disposed: Promise<void> | undefined;
+    const dispose = () =>
+      (disposed ??= (async () => {
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 250);
+          acknowledge = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          processor.port.postMessage('flush');
+        });
+        processor.port.onmessage = null;
+        for (const [track, source] of sources) {
+          track.removeEventListener('ended', ended);
+          source.disconnect();
+        }
+        processor.disconnect();
+        await context.close();
+      })());
     return { dispose, update };
   } catch (error) {
     await context.close();

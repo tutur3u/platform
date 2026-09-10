@@ -10,23 +10,39 @@ import { MiraAvatar } from '../call/components/mira-profile';
 import { LiveAudioPlayer } from './audio';
 
 const EVENT = 'meet:assistant-audio';
+type Announcement = Extract<
+  MeetRealtimeServerMessage,
+  { type: 'assistant.live' | 'assistant.share' }
+>;
+const announcements = new Map<string, Map<string, Announcement>>();
 export function deliverRoomAssistantAudio(
   meetingId: string,
   message: MeetRealtimeServerMessage
 ) {
+  if (message.type === 'admission.approved' || message.type === 'room.ended')
+    announcements.delete(meetingId);
+  if (message.type === 'assistant.live' || message.type === 'assistant.share') {
+    const current =
+      announcements.get(meetingId) ?? new Map<string, Announcement>();
+    if (message.active) current.set(message.sessionId, message);
+    else current.delete(message.sessionId);
+    announcements.set(meetingId, current);
+  }
   if (
     ![
       'assistant.audio',
       'assistant.live',
+      'assistant.share',
       'assistant.interrupted',
       'room.ended',
+      'admission.approved',
     ].includes(message.type)
   )
     return false;
   window.dispatchEvent(
     new CustomEvent(EVENT, { detail: { meetingId, message } })
   );
-  return message.type !== 'room.ended';
+  return message.type !== 'room.ended' && message.type !== 'admission.approved';
 }
 export function RoomAssistantAudio({
   meetingId,
@@ -47,6 +63,12 @@ export function RoomAssistantAudio({
     const audio = new LiveAudioPlayer();
     player.current = audio;
     const sequences = new Map<string, number>();
+    const initial = [...(announcements.get(meetingId)?.values() ?? [])];
+    const liveSessions = new Set(initial.map((item) => item.sessionId));
+    setAvailable(liveSessions.size > 0);
+    setSessionId(
+      initial.find((item) => item.type === 'assistant.live')?.sessionId
+    );
     const listener = (event: Event) => {
       const { meetingId: id, message } = (
         event as CustomEvent<{
@@ -57,14 +79,20 @@ export function RoomAssistantAudio({
               type:
                 | 'assistant.audio'
                 | 'assistant.live'
+                | 'assistant.share'
                 | 'assistant.interrupted'
-                | 'room.ended';
+                | 'room.ended'
+                | 'admission.approved';
             }
           >;
         }>
       ).detail;
       if (id !== meetingId) return;
-      if (message.type === 'room.ended') {
+      if (
+        message.type === 'room.ended' ||
+        message.type === 'admission.approved'
+      ) {
+        liveSessions.clear();
         audio.interrupt();
         setAvailable(false);
         setSessionId(undefined);
@@ -74,9 +102,15 @@ export function RoomAssistantAudio({
         audio.interrupt();
         return;
       }
-      if (message.type === 'assistant.live') {
-        setSessionId(message.active ? message.sessionId : undefined);
-        setAvailable(message.active);
+      if (
+        message.type === 'assistant.live' ||
+        message.type === 'assistant.share'
+      ) {
+        if (message.active) liveSessions.add(message.sessionId);
+        else liveSessions.delete(message.sessionId);
+        if (message.type === 'assistant.live')
+          setSessionId(message.active ? message.sessionId : undefined);
+        setAvailable(liveSessions.size > 0);
         if (!message.active) audio.interrupt();
         return;
       }
@@ -87,13 +121,14 @@ export function RoomAssistantAudio({
       )
         return;
       sequences.set(message.sessionId, message.sequence);
-      setAvailable(true);
+      if (!liveSessions.has(message.sessionId)) return;
       audio.play(message.data);
     };
     window.addEventListener(EVENT, listener);
     return () => {
       window.removeEventListener(EVENT, listener);
       audio.close();
+      announcements.delete(meetingId);
     };
   }, [meetingId]);
   useEffect(() => {

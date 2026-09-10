@@ -11,6 +11,7 @@ import {
   Square,
   Users,
 } from '@tuturuuu/icons';
+import type { MeetLiveVoice } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -31,7 +32,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AssistantWorkspacePicker } from '../call/components/assistant-workspace-picker';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
@@ -66,7 +67,7 @@ export function MeetLivePanel({
   );
   const [draft, setDraft] = useState('');
   const [workspace, setWorkspace] = useState('personal');
-  const [voice, setVoice] = useState('Aoede');
+  const [voice, setVoice] = useState<MeetLiveVoice>('Aoede');
   const active = !['idle', 'error', 'ended'].includes(live.status);
   const ready = ['listening', 'paused'].includes(live.status);
   // If the user unmutes the meeting, stop personal capture before any further audio is sent.
@@ -74,16 +75,24 @@ export function MeetLivePanel({
     if (active && live.mode === 'personal' && room.media.audioEnabled)
       live.send({ type: 'pause', paused: true });
   }, [active, live.mode, room.media.audioEnabled, live.send]);
+  const currentRoom = useRef(room);
+  currentRoom.current = room;
   const start = async (mode: 'personal' | 'room') => {
-    if (mode === 'personal' && room.media.audioEnabled)
-      await room.toggleMicrophone();
-    await live.start(
+    const restoreMicrophone = mode === 'personal' && room.media.audioEnabled;
+    if (restoreMicrophone) await room.toggleMicrophone();
+    const started = await live.start(
       mode,
       streams,
       room.getSelectedDevices().audio,
       workspace === 'personal' ? undefined : workspace,
       voice
     );
+    if (
+      !started &&
+      restoreMicrophone &&
+      !currentRoom.current.media.audioEnabled
+    )
+      await currentRoom.current.toggleMicrophone();
   };
   return (
     <Dialog>
@@ -118,7 +127,12 @@ export function MeetLivePanel({
           {!active && (
             <div className="space-y-2">
               <Label>{t('voice')}</Label>
-              <Select value={voice} onValueChange={setVoice}>
+              <Select
+                value={voice}
+                onValueChange={(value) =>
+                  setVoice(liveVoiceSchema.parse(value))
+                }
+              >
                 <SelectTrigger aria-label={t('voice')}>
                   <SelectValue />
                 </SelectTrigger>

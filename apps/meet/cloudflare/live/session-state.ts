@@ -17,6 +17,7 @@ export type SavedSession = {
   };
   journal: LiveContextJournal;
   handle?: string;
+  toolResponses?: import('./tool-responses').LiveToolResponse[];
   billing?: LiveBillingState;
   billingFinalized?: boolean;
   coverageGap?: boolean;
@@ -25,6 +26,7 @@ export type SavedSession = {
   ended?: boolean;
   contextErased?: boolean;
   startedAt: number;
+  registryUpdatedAt?: number;
   reviews: LiveProposal[];
 };
 export const checkpointSchema = z.object({

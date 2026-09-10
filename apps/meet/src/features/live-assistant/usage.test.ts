@@ -31,3 +31,25 @@ it('marks missing modality pricing as incomplete', () => {
     }).incomplete
   ).toBe(true);
 });
+
+it('marks missing tool usage allocation incomplete even when ordinary prompt tokens are covered', () => {
+  expect(
+    accumulateLiveUsage(EMPTY_GEMINI_LIVE_USAGE, {
+      promptTokenCount: 10,
+      promptTokensDetails: [{ modality: MediaModality.TEXT, tokenCount: 10 }],
+      toolUsePromptTokenCount: 20,
+    }).incomplete
+  ).toBe(true);
+});
+
+it('includes each tool modality without masking missing ordinary prompt usage', () => {
+  const result = accumulateLiveUsage(EMPTY_GEMINI_LIVE_USAGE, {
+    promptTokenCount: 10,
+    toolUsePromptTokenCount: 20,
+    toolUsePromptTokensDetails: [
+      { modality: MediaModality.AUDIO, tokenCount: 20 },
+    ],
+  });
+  expect(result.usage.inputAudioTokens).toBe(20);
+  expect(result.incomplete).toBe(true);
+});

@@ -164,3 +164,22 @@ export function expireRoomLive(snapshot: RoomServiceState, now = Date.now()) {
     ],
   };
 }
+
+export function liveRoomAnnouncements(
+  snapshot: RoomServiceState,
+  now = Date.now()
+) {
+  const messages: import('./messages').MeetRealtimeServerMessage[] = [];
+  if (snapshot.ended) return messages;
+  if (snapshot.liveAssistant && snapshot.liveAssistant.expiresAt > now)
+    messages.push({
+      type: 'assistant.live',
+      sessionId: snapshot.liveAssistant.sessionId,
+      ownerId: snapshot.liveAssistant.ownerId,
+      active: true,
+    });
+  for (const [sessionId, share] of Object.entries(snapshot.liveShares ?? {}))
+    if (share.expiresAt > now)
+      messages.push({ type: 'assistant.share', sessionId, active: true });
+  return messages;
+}

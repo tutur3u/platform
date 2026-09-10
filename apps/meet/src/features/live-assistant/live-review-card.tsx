@@ -50,7 +50,7 @@ export function LiveReviewCard({
       {review.action === 'workspace' && (
         <AssistantToolPreview
           input={review.args}
-          timezone={Intl.DateTimeFormat().resolvedOptions().timeZone}
+          timezone={review.timezone ?? 'UTC'}
         />
       )}
       {review.status === 'pending' ? (

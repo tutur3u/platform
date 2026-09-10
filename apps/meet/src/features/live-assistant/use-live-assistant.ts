@@ -1,5 +1,9 @@
 'use client';
-import { controlMeetLive, reviewMeetLiveTool } from '@tuturuuu/internal-api';
+import {
+  controlMeetLive,
+  type MeetLiveVoice,
+  reviewMeetLiveTool,
+} from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { captureLiveAudio, LiveAudioPlayer } from './audio';
 import type {
@@ -12,7 +16,7 @@ type ActiveSession = {
   sessionId: string;
   socket?: WebSocket;
   player: LiveAudioPlayer;
-  disposeCapture?: () => void;
+  disposeCapture?: () => Promise<void>;
   updateCapture?: (streams: MediaStream[]) => void;
   mode: LiveAudience;
   paused: boolean;
@@ -69,10 +73,11 @@ export function useLiveAssistant(
     setStatus('idle');
     const current = active.current;
     if (!current) return;
+    await current.disposeCapture?.();
     current.stopped = true;
     clearTimeout(current.reconnect);
     clearTimeout(current.timeout);
-    current.disposeCapture?.();
+    void current.disposeCapture?.();
     current.microphone?.getTracks().forEach((track) => {
       track.stop();
     });
@@ -200,9 +205,9 @@ export function useLiveAssistant(
     streams: MediaStream[],
     inputDeviceId: string,
     workspaceId?: string,
-    voice = 'Aoede'
+    voice: MeetLiveVoice = 'Aoede'
   ) => {
-    if (active.current || starting.current) return;
+    if (active.current || starting.current) return false;
     starting.current = true;
     const generation = ++startGeneration.current;
     const cancelled = () => generation !== startGeneration.current;
@@ -259,13 +264,25 @@ export function useLiveAssistant(
         (data) => {
           if (active.current === current && !current.stopped)
             send({ type: 'audio', data });
+        },
+        () => {
+          if (
+            audience === 'personal' &&
+            active.current === current &&
+            !current.stopped
+          ) {
+            send({ type: 'pause', paused: true });
+            setError('input_unavailable');
+          }
         }
       );
-      if (current.stopped) capture.dispose();
+      if (current.stopped) await capture.dispose();
       else {
         current.disposeCapture = capture.dispose;
         current.updateCapture = capture.update;
+        if (current.microphone) capture.update([current.microphone]);
       }
+      return !current.stopped;
     } catch {
       player.close();
       microphone?.getTracks().forEach((track) => {
@@ -276,6 +293,7 @@ export function useLiveAssistant(
         await stop();
         setStatus('error');
       }
+      return false;
     } finally {
       if (!cancelled()) starting.current = false;
     }
@@ -335,7 +353,7 @@ export function useLiveAssistant(
       current.stopped = true;
       clearTimeout(current.reconnect);
       clearTimeout(current.timeout);
-      current.disposeCapture?.();
+      void current.disposeCapture?.();
       current.microphone?.getTracks().forEach((track) => {
         track.stop();
       });
@@ -363,6 +381,13 @@ export function useLiveAssistant(
         approved,
       });
     } catch {
+      setReviews((items) =>
+        items.map((item) =>
+          item.id === review.id && item.status === 'processing'
+            ? { ...item, status: 'failed' }
+            : item
+        )
+      );
       setError('review_failed');
     }
   };

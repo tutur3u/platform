@@ -3939,6 +3939,7 @@
       "hide_meeting_notes": "Hide notes & transcript",
       "host_controls": "Host controls",
       "in_call": "In this call",
+      "incomplete_live_cost": "Incomplete cost coverage for {count} billing periods",
       "invalid_code": "Enter a valid Tuturuuu Meet code or link.",
       "invite": "Invite",
       "invite_copied": "Invite link copied",

@@ -13,11 +13,6 @@ import { executeMeetWorkspaceTool } from './workspace-tool-handlers';
 // permission. Session/goal executors scope records to ctx.userId; categories
 // follow the platform's workspace-member policy. New unannotated tools fail closed.
 const memberTools = new Set([
-  'get_my_tasks',
-  'list_boards',
-  'list_task_lists',
-  'list_task_labels',
-  'list_projects',
   'start_timer',
   'stop_timer',
   'list_time_tracking_sessions',

@@ -17,7 +17,11 @@ vi.mock('../../../cloudflare/live/storage', () => ({
 import { connectLiveProvider } from '../../../cloudflare/live/provider';
 import { EMPTY_LIVE_JOURNAL } from './context';
 
-type Callbacks = { onmessage: (message: LiveServerMessage) => void };
+type Callbacks = {
+  onmessage: (message: LiveServerMessage) => void;
+  onerror: () => void;
+  onclose: () => void;
+};
 const input = () => ({
   env: {} as Parameters<typeof connectLiveProvider>[0]['env'],
   claims: { mode: 'personal' } as Parameters<
@@ -51,6 +55,23 @@ it('does not expose a connected provider before setupComplete', async () => {
   expect(ready).toBe(false);
   callbacks.onmessage({ setupComplete: {} } as LiveServerMessage);
   expect(await connection).toBe(session);
+});
+
+it('reports an error followed by close as one disconnected generation', async () => {
+  let callbacks!: Callbacks;
+  const session = { close: vi.fn() } as unknown as Session;
+  mocks.connect.mockImplementation((options: { callbacks: Callbacks }) => {
+    callbacks = options.callbacks;
+    return Promise.resolve(session);
+  });
+  const options = input();
+  const connection = connectLiveProvider(options);
+  await vi.advanceTimersByTimeAsync(1);
+  callbacks.onmessage({ setupComplete: {} } as LiveServerMessage);
+  await connection;
+  callbacks.onerror();
+  callbacks.onclose();
+  expect(options.onClose).toHaveBeenCalledOnce();
 });
 it('closes a connection that arrives after the setup deadline', async () => {
   let resolve!: (session: Session) => void;

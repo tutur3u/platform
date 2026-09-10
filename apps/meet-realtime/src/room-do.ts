@@ -15,7 +15,10 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
-import { expireRoomLive } from '../../../packages/realtime/src/meet/room-live';
+import {
+  expireRoomLive,
+  liveRoomAnnouncements,
+} from '../../../packages/realtime/src/meet/room-live';
 import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { personalReceiptStorage } from './personal-receipt-storage';
@@ -121,6 +124,9 @@ export class MeetRoomDurableObject implements DurableObject {
   private sendTo(socket: WebSocket, message: MeetRealtimeServerMessage) {
     try {
       socket.send(JSON.stringify(message));
+      if (message.type === 'admission.approved')
+        for (const active of liveRoomAnnouncements(this.snapshot))
+          socket.send(JSON.stringify(active));
     } catch {
       // A closing socket is not an error worth surfacing to the room.
     }
@@ -261,7 +267,12 @@ export class MeetRoomDurableObject implements DurableObject {
         )
           await this.persist();
         this.broadcast(result.messages ?? []);
-        if (this.snapshot.liveAssistant)
+        if (
+          this.snapshot.liveAssistant &&
+          ['live.reserve', 'live.heartbeat'].includes(
+            String((body as { action?: string } | null)?.action)
+          )
+        )
           await this.scheduleSweep(this.snapshot.liveAssistant.expiresAt);
       }
       return Response.json(result.body, {
@@ -370,18 +381,6 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.persist();
 
     for (const message of outcome.reply) this.sendTo(server, message);
-    if (
-      this.snapshot.liveAssistant &&
-      this.snapshot.liveAssistant.expiresAt > Date.now() &&
-      this.snapshot.presence[token.userId]
-    ) {
-      this.sendTo(server, {
-        type: 'assistant.live',
-        sessionId: this.snapshot.liveAssistant.sessionId,
-        ownerId: this.snapshot.liveAssistant.ownerId,
-        active: true,
-      });
-    }
     this.broadcast(outcome.broadcast);
     this.sendToManagers(outcome.toManagers);
 

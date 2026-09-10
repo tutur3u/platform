@@ -34,11 +34,14 @@ export function normalizeGeminiLiveUsage(
     | undefined;
 
   return {
-    inputAudioTokens: tokensFor(promptDetails, 'AUDIO'),
-    inputImageTokens: tokensFor(promptDetails, 'IMAGE'),
+    inputAudioTokens:
+      tokensFor(promptDetails, 'AUDIO') + tokensFor(toolDetails, 'AUDIO'),
+    inputImageTokens:
+      tokensFor(promptDetails, 'IMAGE') + tokensFor(toolDetails, 'IMAGE'),
     inputTextTokens:
       tokensFor(promptDetails, 'TEXT') + tokensFor(toolDetails, 'TEXT'),
-    inputVideoTokens: tokensFor(promptDetails, 'VIDEO'),
+    inputVideoTokens:
+      tokensFor(promptDetails, 'VIDEO') + tokensFor(toolDetails, 'VIDEO'),
     outputAudioTokens: tokensFor(responseDetails, 'AUDIO'),
     outputTextTokens: tokensFor(responseDetails, 'TEXT'),
     searchQueries: Math.max(0, searchQueries),
@@ -73,8 +76,14 @@ export function accumulateLiveUsage(
     next.inputVideoTokens +
     next.inputTextTokens;
   const outputKnown = next.outputAudioTokens + next.outputTextTokens;
+  const toolKnown =
+    tokensFor(metadata.toolUsePromptTokensDetails, 'TEXT') +
+    tokensFor(metadata.toolUsePromptTokensDetails, 'AUDIO') +
+    tokensFor(metadata.toolUsePromptTokensDetails, 'IMAGE') +
+    tokensFor(metadata.toolUsePromptTokensDetails, 'VIDEO');
   const incomplete =
-    inputKnown < (metadata.promptTokenCount ?? 0) ||
+    toolKnown < (metadata.toolUsePromptTokenCount ?? 0) ||
+    inputKnown - toolKnown < (metadata.promptTokenCount ?? 0) ||
     outputKnown < (metadata.responseTokenCount ?? 0);
   return { usage, incomplete };
 }

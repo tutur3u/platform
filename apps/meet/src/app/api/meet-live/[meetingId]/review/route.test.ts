@@ -29,6 +29,7 @@ vi.mock('@opennextjs/cloudflare', () => ({
   }),
 }));
 vi.mock('@/features/call/server/room-service', () => ({
+  callRoomService: vi.fn(async () => ({})),
   roomRoute: async (
     _request: Request,
     _id: string,

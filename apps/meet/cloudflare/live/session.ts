@@ -12,26 +12,26 @@ import { verifyLiveSession } from '../../src/features/live-assistant/token';
 import { LiveActions } from './actions';
 import { LiveAudioBatcher } from './audio-batcher';
 import { beginLiveBilling, settleLiveBilling } from './billing';
+import { executeLiveDecision } from './decision';
 import {
   finalizeSessionBilling,
   settlePublicBillings,
 } from './finalize-billing';
 import { connectLiveProvider, drainLiveProvider } from './provider';
-import { speakApprovedText } from './public-speech';
 import { LiveRegistryQueue } from './registry';
-import { refreshLiveRegistry } from './registry-heartbeat';
-import {
-  approveLiveMemory,
-  type LiveProposal,
-  liveReviewEvent,
-} from './reviews';
+import { maintainLiveRegistry } from './registry-heartbeat';
+import { type LiveProposal, liveReviewEvent, proposalSchema } from './reviews';
 import { liveRoomCommand } from './room';
 import type { SavedSession } from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
+import { replayLiveToolResponses } from './tool-responses';
 import { reportLiveUsage } from './usage-report';
-import { controlWorkspaceReview } from './workspace-review';
+import {
+  controlWorkspaceReview,
+  expireWorkspaceReviews,
+} from './workspace-review';
 
 export class MeetLiveDurableObject {
   private saved?: SavedSession;
@@ -48,10 +48,10 @@ export class MeetLiveDurableObject {
   private archive: LiveTurnArchive;
   private audioBatcher?: LiveAudioBatcher;
   private lastPersistAt = 0;
-  private lastRegistryAt = 0;
   private lastCheckpointRequestAt = 0;
   private inputWindow = { start: 0, bytes: 0 };
   private actions = new LiveActions();
+  private incoming = new LiveActions();
   private registryQueue: LiveRegistryQueue;
   constructor(
     private readonly state: DurableObjectState,
@@ -62,6 +62,10 @@ export class MeetLiveDurableObject {
     this.registryQueue = new LiveRegistryQueue(state.storage, env);
     state.blockConcurrencyWhile(async () => {
       this.saved = await state.storage.get<SavedSession>('session');
+      if (this.saved)
+        this.saved.reviews = this.saved.reviews.map((review) =>
+          proposalSchema.parse(review)
+        );
       if (this.saved && !this.saved.ended && this.saved.billing) {
         this.saved.coverageGap = true;
         this.saved.billing.incomplete = true;
@@ -69,8 +73,18 @@ export class MeetLiveDurableObject {
       if (
         this.saved?.reviews.some((review) => review.status === 'processing')
       ) {
+        await expireWorkspaceReviews(
+          this.saved,
+          this.provider,
+          () => this.persist(),
+          (event) => this.emit(event)
+        );
         for (const review of this.saved.reviews)
-          if (review.status === 'processing') review.status = 'failed';
+          if (
+            review.status === 'processing' &&
+            review.name !== 'workspace_tool'
+          )
+            review.status = 'failed';
         // Never replay an interrupted action from a resumed tool call.
         this.saved.handle = undefined;
         await this.persist();
@@ -233,7 +247,12 @@ export class MeetLiveDurableObject {
     const generation = ++this.generation;
     try {
       if (!saved.billing) {
-        saved.billing = await beginLiveBilling(this.env, saved.claims);
+        saved.billing = await beginLiveBilling(
+          this.env,
+          saved.claims,
+          0,
+          saved.identity.workspaceId
+        );
         await this.persist();
       }
       await reportLiveUsage(
@@ -250,13 +269,17 @@ export class MeetLiveDurableObject {
         sharedContext: saved.sharedContext,
         journal: saved.journal,
         workspaceTools: saved.workspace?.tools,
-        handle: saved.handle,
+        handle: saved.toolResponses?.length ? undefined : saved.handle,
         onMessage: (message) => {
           if (generation !== this.generation) return;
           observeSessionUsage(saved, message);
+          if (message.serverContent?.turnComplete)
+            saved.toolResponses = saved.toolResponses?.filter(
+              (item) => !item.deliveredAt
+            );
           if (!this.stopping)
             this.queue = this.queue
-              .then(() => this.message(message))
+              .then(() => this.incoming.run(() => this.message(message)))
               .catch(() => this.stop('processing_failed'));
         },
         onClose: () => {
@@ -275,6 +298,7 @@ export class MeetLiveDurableObject {
         return;
       }
       this.provider = provider;
+      replayLiveToolResponses(saved, provider);
       this.retry = 0;
       this.emit({ type: 'state', state: this.paused ? 'paused' : 'listening' });
       await this.state.storage.setAlarm(Date.now() + 20_000);
@@ -449,6 +473,7 @@ export class MeetLiveDurableObject {
       );
     if (
       message.usageMetadata ||
+      message.sessionResumptionUpdate?.newHandle ||
       content?.turnComplete ||
       Date.now() - this.lastPersistAt > 10000
     ) {
@@ -494,52 +519,16 @@ export class MeetLiveDurableObject {
     );
   }
   private async executeDecision(review: LiveProposal, approved: boolean) {
-    const saved = this.saved!;
-    try {
-      if (approved && review.name === 'remember')
-        await approveLiveMemory(this.env, saved.claims, review);
-      if (approved && review.name === 'propose_room_reply')
-        await speakApprovedText(
-          this.env,
-          saved.claims,
-          saved.identity,
-          review.id,
-          review.text,
-          this.actions.signal,
-          async (billing, finalized) => {
-            saved.publicBillings ??= {};
-            if (finalized) delete saved.publicBillings[review.id];
-            else saved.publicBillings[review.id] = billing;
-            await this.persist();
-            await this.state.storage.setAlarm(Date.now() + 20000);
-          }
-        );
-      review.status = approved ? 'approved' : 'denied';
-      this.provider?.sendToolResponse({
-        functionResponses: [
-          {
-            id: review.callId,
-            name: review.name,
-            response: { approved, completed: approved },
-          },
-        ],
-      });
-    } catch {
-      review.status = 'failed';
-      this.provider?.sendToolResponse({
-        functionResponses: [
-          {
-            id: review.callId,
-            name: review.name,
-            response: {
-              error:
-                'Approved action could not be completed. Do not claim success or retry without another request.',
-            },
-          },
-        ],
-      });
-    }
-    await this.persist();
+    await executeLiveDecision(
+      this.saved!,
+      this.env,
+      review,
+      approved,
+      this.actions.signal,
+      () => this.provider,
+      () => this.persist(),
+      () => this.state.storage.setAlarm(Date.now() + 20000)
+    );
     this.emitReview(review);
   }
   alarm() {
@@ -564,6 +553,12 @@ export class MeetLiveDurableObject {
       () => this.persist(),
       () => this.state.storage.setAlarm(Date.now() + 20000)
     );
+    await expireWorkspaceReviews(
+      this.saved,
+      this.provider,
+      () => this.persist(),
+      (event) => this.emit(event)
+    );
     for (const review of this.saved.reviews)
       if (review.status === 'pending' && review.expiresAt <= Date.now()) {
         if (review.name === 'workspace_tool')
@@ -582,11 +577,8 @@ export class MeetLiveDurableObject {
         else await this.decide(review.id, false);
       }
     try {
-      if (Date.now() - this.lastRegistryAt > 12 * 60 * 60_000) {
-        await refreshLiveRegistry(this.env, this.saved.claims);
-        this.lastRegistryAt = Date.now();
-        if (this.saved.ended) return;
-      }
+      await maintainLiveRegistry(this.env, this.saved);
+      if (this.saved.ended) return;
       await liveRoomCommand(this.env, this.saved.claims, this.saved.identity, {
         action:
           this.saved.claims.mode === 'room' ? 'live.heartbeat' : 'live.context',
@@ -635,7 +627,8 @@ export class MeetLiveDurableObject {
           this.saved.billing = await beginLiveBilling(
             this.env,
             this.saved.claims,
-            this.saved.billing.costUsd
+            this.saved.billing.costUsd,
+            this.saved.identity.workspaceId
           );
           this.saved.billingFinalized = false;
           await this.persist();
@@ -646,6 +639,11 @@ export class MeetLiveDurableObject {
             this.saved.billing
           );
         }
+      }
+      if (this.saved.toolResponses?.some((item) => !item.deliveredAt)) {
+        this.provider?.close();
+        this.provider = undefined;
+        this.saved.handle = undefined;
       }
       if (!this.provider) await this.connect();
       await this.state.storage.setAlarm(Date.now() + 20_000);
@@ -658,12 +656,14 @@ export class MeetLiveDurableObject {
     this.stopping = true;
     this.paused = true;
     const actionsSettled = this.actions.cancel();
+    const messagesSettled = this.incoming.cancel();
     this.audioBatcher?.clear();
     await drainLiveProvider(this.provider);
     markInterruptedUsage(this.saved);
     ++this.generation;
     this.provider = undefined;
     await actionsSettled;
+    await messagesSettled;
     this.saved.ended = true;
     await this.persist();
     this.state.waitUntil(
