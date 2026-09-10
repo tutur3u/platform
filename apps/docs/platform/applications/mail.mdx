@@ -1,6 +1,6 @@
 ---
 title: Tuturuuu Mail
-updated: '2026-09-09'
+updated: '2026-09-10'
 description: Multi-mailbox client with permanent SES and Cloudflare transports.
 ---
 
@@ -628,3 +628,20 @@ and closes. Focus moves to recipients for a new draft or the body for a reply,
 and returns to the opener after closing. Mailbox shortcuts pause during typing,
 IME composition, composing, and dialogs. Same-origin email-frame key listeners
 retain the script-disabled sandbox.
+
+## Address decoding and similar deliveries
+
+Mail recovers damaged display names from the matching original RFC 2047 address
+header when available, including Latin-1 encoded words incorrectly labeled UTF-8.
+Already-lost replacement characters cannot be reconstructed; the reader displays
+the address instead. New inbound records use the same decoder. This requires no
+production backfill and does not alter stored raw headers.
+
+The loaded list groups single-message catch-all deliveries with distinct original
+recipients when sender, subject, preview, attachment presence, mailbox and a
+10-minute time window match. These are labeled **similar deliveries**, since
+previews do not prove identical bodies. Groups are presentation-only: records,
+message counts, search, permissions and per-delivery actions remain independent.
+Expanding a group exposes recipient rows; keyboard navigation opens a collapsed
+group as focus reaches those rows. Filtering and loading additional pages may
+change group membership. No grouping occurs across mailbox access boundaries.

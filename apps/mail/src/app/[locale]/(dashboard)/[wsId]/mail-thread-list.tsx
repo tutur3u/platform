@@ -128,6 +128,14 @@ export function MailThreadRow({
         <p className="line-clamp-2 break-words text-[0.8125rem] text-muted-foreground leading-5">
           {thread.latestSnippet}
         </p>
+        {thread.deliveryRecipient ? (
+          <p
+            title={thread.deliveryRecipient}
+            className="mt-1 truncate text-muted-foreground text-xs"
+          >
+            {t('to')}: {thread.deliveryRecipient}
+          </p>
+        ) : null}
         {labels.length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-1">
             {labels.slice(0, 3).map((label) => (

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { mailDisplayName } from '../address-names';
 import { resolveForwardingMailbox } from '../automation/forwarding';
 import { autoLabelMessage } from '../automation/labels';
 import { deliverGroupMessage } from '../groups/delivery';
@@ -333,7 +334,13 @@ async function persistInboundMessage({
       envelope_from: delivery?.envelopeFrom ?? parsed.from?.address ?? null,
       envelope_to: delivery?.envelopeTo ?? null,
       from_address: parsed.from?.address ?? 'unknown@example.invalid',
-      from_name: parsed.from?.displayName,
+      from_name: parsed.from
+        ? mailDisplayName(
+            parsed.from.displayName,
+            parsed.from.address,
+            parsed.headers.from
+          )
+        : null,
       has_attachments: parsed.attachments.length > 0,
       in_reply_to: parsed.inReplyTo,
       ingress_domain_id: delivery?.ingressDomainId ?? null,
@@ -372,7 +379,11 @@ async function persistInboundMessage({
     })),
   ].map((recipient) => ({
     address: recipient.address,
-    display_name: recipient.displayName,
+    display_name: mailDisplayName(
+      recipient.displayName,
+      recipient.address,
+      parsed.headers[recipient.kind]
+    ),
     kind: recipient.kind,
     message_id: recipient.message_id,
   }));

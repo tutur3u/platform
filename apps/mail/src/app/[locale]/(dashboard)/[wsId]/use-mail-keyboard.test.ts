@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   MailThreadDetail,
@@ -6,6 +7,7 @@ import type {
 } from '@tuturuuu/internal-api';
 import { createElement as h, useState } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { MAIL_EXPAND_DELIVERIES_EVENT } from './mail-delivery-events';
 import { type MailKeyboardOptions, useMailKeyboard } from './use-mail-keyboard';
 
 const threads = [
@@ -226,4 +228,24 @@ it('preserves native checkbox navigation', () => {
   key(checkbox, 'End');
   expect(document.activeElement).toBe(checkbox);
   expect(actions.openThread).not.toHaveBeenCalled();
+});
+
+it('opens a collapsed delivery group before focusing its recipient row', () => {
+  setup({ threadId: null });
+  const first = screen.getByRole('button', { name: 'a' });
+  const second = screen.getByRole('button', { name: 'b' });
+  const wrapper = second.parentElement!;
+  const details = document.createElement('details');
+  wrapper.before(details);
+  details.append(wrapper);
+  details.addEventListener(MAIL_EXPAND_DELIVERIES_EVENT, () => {
+    details.open = true;
+  });
+  Object.defineProperty(second, 'getClientRects', {
+    value: () => (details.open ? [{}] : []) as unknown as DOMRectList,
+  });
+  first.focus();
+  key(first, 'ArrowDown');
+  expect(details.open).toBe(true);
+  expect(document.activeElement).toBe(second);
 });
