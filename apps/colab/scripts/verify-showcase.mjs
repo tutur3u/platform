@@ -152,6 +152,31 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await host
       .getByRole('link', { name: 'Host controls', exact: true })
       .click();
+    await expect(
+      host.getByRole('heading', { name: 'Workshop activity', exact: true })
+    ).toBeVisible();
+    await expect(
+      host.getByText('No practice runs yet', { exact: true }).first()
+    ).toBeVisible();
+    await host.getByRole('tab', { name: 'AI limits', exact: true }).click();
+    await expect(
+      host.getByRole('button', { name: 'Extended', exact: true }).first()
+    ).toBeVisible();
+    await host
+      .getByRole('button', { name: 'Deep dive', exact: true })
+      .first()
+      .click();
+    const roomLimitCard = host.locator('.limit-scope-card').first();
+    await expect(
+      roomLimitCard.locator('input[name="agentTurnLimit"]')
+    ).toHaveValue('32');
+    await expect(
+      roomLimitCard.locator('input[name="toolCallLimit"]')
+    ).toHaveValue('24');
+    await host.screenshot({
+      path: '/private/tmp/colab-observability-limits.png',
+      fullPage: true,
+    });
     await host.getByRole('tab', { name: 'Showcase', exact: true }).click();
     const toggle = host.getByRole('switch', { name: 'Live showcase' });
     await expect(toggle.locator('..')).toHaveCSS('display', 'flex');
@@ -271,6 +296,24 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(
       viewer.getByText('Live demo agent result', { exact: true }).first()
     ).toBeVisible();
+    const latestRun = viewer.locator('.run-report').first();
+    await expect(
+      latestRun.getByText('Run complete', { exact: true }).first()
+    ).toBeVisible();
+    await expect(
+      latestRun.getByText('Practice changes', { exact: true })
+    ).toBeVisible();
+    await expect(latestRun.locator('.step-list > li')).toHaveCount(1);
+    await expect(
+      latestRun.getByText('Created practice data in Drive', { exact: true })
+    ).toBeVisible();
+    await expect(
+      latestRun.getByText('View technical details', { exact: true })
+    ).toBeVisible();
+    await viewer.screenshot({
+      path: '/private/tmp/colab-run-observability.png',
+      fullPage: true,
+    });
     await viewer
       .getByRole('link', { name: 'Practice apps', exact: true })
       .click();

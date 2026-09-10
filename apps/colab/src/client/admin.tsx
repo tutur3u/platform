@@ -21,6 +21,7 @@ import { AdminShowcase } from './admin-showcase';
 import { AdminTeamManagement } from './admin-team-management';
 import { useCopy } from './i18n';
 import { LimitsPanel } from './limits-panel';
+import { WorkshopObservability } from './workshop-observability';
 
 export function Admin({
   room,
@@ -123,6 +124,7 @@ export function Admin({
                 <Progress value={usage} />
                 <p className="fine-print">{c.overviewNextStep}</p>
               </section>
+              <WorkshopObservability room={room} />
             </div>
           </TabsContent>
           <TabsContent value="teams" className="mt-0">

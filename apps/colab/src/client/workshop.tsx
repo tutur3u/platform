@@ -331,13 +331,21 @@ export function Workshop({
         </div>
       )}
       <div className="workshop-budget" role="status">
-        <span>{c.roomBudget}</span>
-        <strong>
-          {room.aiCalls} / {room.limits.aiCallLimit} {c.aiOperationsShort}
-        </strong>
-        <span>
-          {room.limits.agentTurnLimit} {c.turnsShort} ·{' '}
-          {room.limits.toolCallLimit} {c.toolCallsShort} {c.perRun}
+        <span className="workshop-budget-label">{c.workshopCapacity}</span>
+        <span className="workshop-budget-count">
+          <strong>
+            {Math.max(room.limits.aiCallLimit - room.aiCalls, 0)} {c.remaining}
+          </strong>
+          <small className="capacity-detail">
+            {room.aiCalls} / {room.limits.aiCallLimit} {c.aiOperationsShort}
+          </small>
+        </span>
+        <span className="workshop-budget-run-depth">
+          <strong>{c.runDepth}</strong>
+          <small className="capacity-detail">
+            {room.limits.agentTurnLimit} {c.turnsShort} ·{' '}
+            {room.limits.toolCallLimit} {c.appActionsShort} {c.perRun}
+          </small>
         </span>
       </div>
     </div>

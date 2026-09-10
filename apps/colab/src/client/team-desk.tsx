@@ -252,8 +252,15 @@ export function TeamDesk({
           </div>
           {writable && (
             <div className="run-action">
-              <span>
-                {team.aiCalls}/{team.limits.aiCallLimit} {c.aiOperationsShort}
+              <span className="run-capacity">
+                <strong>
+                  {Math.max(team.limits.aiCallLimit - team.aiCalls, 0)}{' '}
+                  {c.remaining}
+                </strong>
+                <small className="capacity-detail">
+                  {team.limits.agentTurnLimit} {c.turnsShort} ·{' '}
+                  {team.limits.toolCallLimit} {c.appActionsShort} {c.perRun}
+                </small>
               </span>
               <Button
                 type="button"

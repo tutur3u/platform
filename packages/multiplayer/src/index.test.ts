@@ -154,7 +154,7 @@ describe('server-authoritative room policy', () => {
       ];
     }
     normalizeRoom(legacy);
-    expect(legacy.limits.aiCallLimit).toBe(200);
+    expect(legacy.limits.aiCallLimit).toBe(500);
     expect(legacy.showcaseTeamId).toBe('team-1');
     expect(legacy.members[0]?.teamIds).toEqual(['team-1']);
     expect(legacy.scenarios.length).toBeGreaterThan(1);
@@ -164,7 +164,7 @@ describe('server-authoritative room policy', () => {
         (scenario) => scenario.title === legacy.scenario.title
       )
     ).toHaveLength(1);
-    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
+    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(10);
     expect(legacy.teams[0]?.records).toHaveLength(192);
     expect(legacy.teams[0]?.records[0]?.title).toBe('Team-edited launch brief');
     mutateRoom(
@@ -240,6 +240,37 @@ describe('server-authoritative room policy', () => {
           aiCallLimit: 20,
           agentTurnLimit: 4,
           toolCallLimit: 3,
+        },
+        now
+      )
+    ).toThrow('invalid_input');
+    mutateRoom(
+      legacy,
+      owner,
+      {
+        action: 'limits',
+        scope: 'room',
+        aiCallLimit: 5000,
+        agentTurnLimit: 40,
+        toolCallLimit: 30,
+      },
+      now
+    );
+    expect(legacy.limits).toEqual({
+      aiCallLimit: 5000,
+      agentTurnLimit: 40,
+      toolCallLimit: 30,
+    });
+    expect(() =>
+      mutateRoom(
+        legacy,
+        owner,
+        {
+          action: 'limits',
+          scope: 'room',
+          aiCallLimit: 500,
+          agentTurnLimit: 12,
+          toolCallLimit: 12,
         },
         now
       )
