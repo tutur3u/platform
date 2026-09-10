@@ -191,15 +191,24 @@ try {
       'chat.message',
       (message) => message.type === 'chat.message' && message.body === probeBody
     );
-    const latest = host.received
-      .filter((message) => message.type === 'presence')
-      .at(-1);
-    check(
-      'connected participants survive delayed browser heartbeats',
-      Boolean(probe) &&
-        latest?.presence.some((entry) => entry.userId === HOST_ID) === true &&
-        latest.presence.some((entry) => entry.userId === GUEST_ID)
-    );
+    const observer = new TestClient();
+    try {
+      // A new observer requests fresh room state without refreshing either
+      // original participant, so silently pruned presence cannot be hidden.
+      const observerId = crypto.randomUUID();
+      await observer.connect(
+        mintToken('speaker', observerId, 'open', 'Observer')
+      );
+      const latest = await observer.waitFor('presence');
+      check(
+        'connected participants survive delayed browser heartbeats',
+        Boolean(probe) &&
+          latest?.presence.some((entry) => entry.userId === HOST_ID) === true &&
+          latest.presence.some((entry) => entry.userId === GUEST_ID)
+      );
+    } finally {
+      observer.close();
+    }
   }
 
   // --- Cloudflare SFU ----------------------------------------------------
