@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
   CalendarDays,
@@ -7,6 +7,7 @@ import {
   History,
   Layers,
   PanelLeftOpen,
+  Presentation,
   Settings,
   Users,
 } from '@tuturuuu/icons';
@@ -56,7 +57,7 @@ export function Structure({
   // Subscribe to the room cache so admin navigation follows realtime role changes.
   const { data: room } = useQuery<RoomView>({
     queryKey: ['room', roomId],
-    enabled: false,
+    queryFn: skipToken,
   });
   const t = useShellCopy();
   const sidebar = useSidebar();
@@ -119,6 +120,11 @@ export function Structure({
               title: c.studio.results,
               href: '#practice-journal',
               icon: <BookOpen className="size-4" />,
+            },
+            {
+              title: c.liveShowcase,
+              href: '#showcase',
+              icon: <Presentation className="size-4" />,
             },
             {
               title: c.studio.audit,

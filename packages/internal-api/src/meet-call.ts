@@ -193,3 +193,23 @@ export function respondMeetAssistantReview(
     { method: 'POST', body: JSON.stringify({ messageId, revision, action }) }
   );
 }
+
+export function askPersonalMeetAssistant(
+  meetingId: string,
+  input: {
+    requestId: string;
+    startedAt: number;
+    question: string;
+    timezone: string;
+    history: Array<{ body: string; assistant: boolean }>;
+  }
+) {
+  return getInternalApiClient().json<{ text: string }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/assistant/personal`,
+    {
+      method: 'POST',
+      body: JSON.stringify(input),
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+}

@@ -37,6 +37,12 @@ export function applySfuCommand(
   }
 
   if (message.type === 'sfu.tracks.publish') {
+    if (
+      state.retiredSessions?.[
+        `${encodeURIComponent(token.userId)}:${encodeURIComponent(message.sessionId)}`
+      ]
+    )
+      return denied(state, 'stale_publication', message.requestId);
     const published = message.tracks.map((track) => ({
       ...track,
       sessionId: message.sessionId,

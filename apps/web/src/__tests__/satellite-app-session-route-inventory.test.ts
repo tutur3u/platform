@@ -103,6 +103,8 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/state/route.ts',
   // Meet room services use app-session auth plus the signed Durable Object admission/admin policy.
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/route.ts',
+  // Requester-only AI: no room history or room publication.
+  'apps/meet/src/app/api/meet-call/[meetingId]/assistant/personal/route.ts',
   // Owner-only review of server-held Mira continuations on the Meet Worker.
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/review/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/costs/route.ts',

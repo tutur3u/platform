@@ -7,6 +7,14 @@
 @source "./";
 
 @layer components {
+  .colab-content .studio-panel.skills-panel,
+  .colab-content .studio-panel.mock-panel {
+    display: grid;
+    gap: 32px;
+  }
+  .colab-content .mock-toolbar {
+    margin-bottom: 8px;
+  }
   :root {
     color: var(--foreground);
     background: var(--background);
@@ -263,6 +271,7 @@
 
 @layer components {
   .colab-content .studio-panel {
+    display: grid;
     gap: 24px;
     padding: 24px;
     box-shadow: none;
@@ -335,11 +344,347 @@
   .colab-content .admin-panel > p {
     margin: 0;
   }
+  .admin-command-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, var(--card), var(--muted));
+  }
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-command-header h2 {
+    margin: 6px 0;
+    font-size: 22px;
+  }
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-command-header p,
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-tab-heading p,
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .danger-card p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .admin-tabs {
+    display: grid;
+    grid-template-columns: 210px minmax(0, 1fr);
+    min-height: 520px;
+  }
+  .admin-tabs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-radius: 0;
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    background: var(--muted);
+  }
+  .admin-tabs-list [data-slot="tabs-trigger"] {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .admin-tab-content {
+    display: grid;
+    gap: 24px;
+    padding: 24px;
+  }
+  .admin-tab-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  /* biome-ignore lint/style/noDescendingSpecificity: The admin command center is an isolated component surface. */
+  .admin-tab-heading h3,
+  .danger-card h4,
+  .subsection-heading h4 {
+    margin: 0 0 6px;
+    font-size: 16px;
+  }
+  .admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .admin-stat-grid > div {
+    display: grid;
+    gap: 8px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+  }
+  .admin-stat-grid span {
+    color: var(--muted-foreground);
+    font-size: 11px;
+  }
+  .admin-stat-grid strong {
+    font-size: 18px;
+  }
+  .admin-subsection {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .subsection-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .subsection-heading h4 {
+    margin: 0;
+  }
+  .member-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .member-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .member-actions select {
+    min-width: 150px;
+  }
+  .team-management-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .team-management-card {
+    display: grid;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .team-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--muted);
+  }
+  .invite-chips {
+    display: grid;
+    gap: 8px;
+  }
+  .invite-chips > span {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--muted);
+    overflow-wrap: anywhere;
+    font-size: 13px;
+  }
+  .compact-empty {
+    padding: 18px;
+  }
+  .danger-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px;
+    border: 1px solid color-mix(in srgb, var(--destructive) 35%, var(--border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--destructive) 5%, var(--card));
+  }
   .colab-content .compile-row {
     padding: 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--muted);
+  }
+  .showcase-switch-row,
+  .showcase-now-card,
+  .showcase-team-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .showcase-switch-row {
+    justify-content: space-between;
+    background: var(--muted);
+  }
+  .colab-content .showcase-switch-row p,
+  .colab-content .showcase-now-card p,
+  .colab-content .showcase-team-row p {
+    margin: 4px 0 0;
+    font-size: 12px;
+  }
+  .colab-content .showcase-team-row p {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .showcase-now-card {
+    background: color-mix(in srgb, var(--primary) 6%, var(--card));
+  }
+  .showcase-now-icon,
+  .showcase-order {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .showcase-now-card span:not([data-slot]),
+  .live-showcase-kicker {
+    color: var(--muted-foreground);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .showcase-now-card h4 {
+    margin: 4px 0 0;
+    font-size: 18px;
+  }
+  .showcase-team-list {
+    display: grid;
+    gap: 10px;
+  }
+  .live-showcase-banner {
+    display: grid;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  }
+  .showcase-workspace {
+    display: grid;
+    gap: 24px;
+  }
+  .showcase-empty {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+    min-height: 180px;
+  }
+  .showcase-empty-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--muted);
+  }
+  .showcase-panel-title {
+    margin: 0;
+  }
+  .colab-content .showcase-empty p,
+  .colab-content .showcase-context-card p,
+  .colab-content .showcase-skill-card p {
+    margin: 6px 0 0;
+  }
+  .showcase-context-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .showcase-context-card,
+  .showcase-section {
+    display: grid;
+    gap: 18px;
+    padding: 20px;
+  }
+  .showcase-card-heading,
+  .showcase-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .showcase-card-heading {
+    justify-content: flex-start;
+  }
+  .showcase-prompt {
+    max-height: 220px;
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+    white-space: pre-wrap;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .showcase-skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .showcase-skill-card {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+  }
+  .live-showcase-kicker,
+  .live-showcase-main,
+  .live-showcase-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .live-showcase-main {
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .colab-content .showcase-title {
+    margin: 0 0 6px;
+    font-size: 22px;
+  }
+  .colab-content .showcase-copy {
+    margin: 0;
+  }
+  .showcase-progress {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(28px, 1fr));
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .colab-content .showcase-progress-step {
+    height: 6px;
+    min-height: 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--border);
+  }
+  .colab-content .showcase-progress-step.is-active {
+    background: var(--primary);
   }
   .colab-content .team-toolbar {
     flex-wrap: wrap;
@@ -511,6 +856,51 @@
     border: 1px solid var(--border);
     border-radius: 12px;
   }
+  @media (max-width: 900px) {
+    .admin-tabs {
+      grid-template-columns: 1fr;
+    }
+    .admin-tabs-list {
+      flex-direction: row;
+      overflow-x: auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-tabs-list [data-slot="tabs-trigger"] {
+      width: auto;
+      white-space: nowrap;
+    }
+    .admin-stat-grid,
+    .team-management-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .member-card {
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .member-actions {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+  }
+  @media (max-width: 620px) {
+    .admin-command-header,
+    .admin-tab-heading,
+    .danger-card {
+      flex-direction: column;
+    }
+    .admin-tab-content,
+    .admin-command-header {
+      padding: 18px;
+    }
+    .admin-stat-grid,
+    .team-management-grid {
+      grid-template-columns: 1fr;
+    }
+    .member-actions select {
+      min-width: min(100%, 220px);
+    }
+  }
   .run-report + .run-report {
     margin-top: 12px;
   }
@@ -631,6 +1021,27 @@
     .colab-content .team-toolbar {
       flex-direction: column;
       align-items: stretch;
+    }
+    .showcase-now-card,
+    .showcase-team-row,
+    .live-showcase-main {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .live-showcase-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .live-showcase-actions > button,
+    .showcase-team-row > button {
+      width: 100%;
+    }
+    .showcase-context-grid {
+      grid-template-columns: 1fr;
+    }
+    .showcase-empty {
+      grid-template-columns: 1fr;
+      align-items: start;
     }
     .limit-fields {
       grid-template-columns: 1fr;

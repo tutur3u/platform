@@ -5,6 +5,7 @@ import {
   type Identity,
   joinRoom,
   memberOf,
+  memberTeamIds,
   mutateRoom,
   normalizeRoom,
   projectRoom,
@@ -79,6 +80,12 @@ export class ColabRoom extends DurableObject<Env> {
       .toArray()
       .map((row) => row.id);
   }
+  forgetRoom(id: string) {
+    this.ctx.storage.sql.exec(
+      'CREATE TABLE IF NOT EXISTS directory (id TEXT PRIMARY KEY, visited INTEGER NOT NULL)'
+    );
+    this.ctx.storage.sql.exec('DELETE FROM directory WHERE id = ?', id);
+  }
   summary(identity: Identity): WorkshopSummary {
     const room = this.read();
     const self = memberOf(room, identity);
@@ -88,7 +95,9 @@ export class ColabRoom extends DurableObject<Env> {
       startsAt: room.startsAt,
       endsAt: room.endsAt,
       mode:
-        Date.now() >= room.endsAt && room.mode === 'open'
+        room.endsAt !== null &&
+        Date.now() >= room.endsAt &&
+        room.mode === 'open'
           ? 'readonly'
           : room.mode,
       showcase: room.showcase,
@@ -102,7 +111,8 @@ export class ColabRoom extends DurableObject<Env> {
     room: Room,
     action: string,
     identity?: Identity,
-    adminOnly = false
+    adminOnly = false,
+    teamId?: string
   ) {
     const member = room.members.find((m) => m.id === identity?.id);
     room.audit = [
@@ -114,7 +124,7 @@ export class ColabRoom extends DurableObject<Env> {
         action,
         adminOnly,
         teamId: ['prompt', 'compile', 'run', 'limits'].includes(action)
-          ? member?.teamId
+          ? (teamId ?? member?.teamId)
           : undefined,
       },
     ].slice(-200);
@@ -141,7 +151,7 @@ export class ColabRoom extends DurableObject<Env> {
     );
     const room = createRoom(id, identity, body);
     // Schedule before writing, then recheck after the await to prevent duplicate initialization.
-    await this.ctx.storage.setAlarm(room.endsAt);
+    if (room.endsAt !== null) await this.ctx.storage.setAlarm(room.endsAt);
     requireRule(
       !this.ctx.storage.sql.exec('SELECT id FROM state WHERE id = 1').toArray()
         .length,
@@ -154,6 +164,25 @@ export class ColabRoom extends DurableObject<Env> {
   }
   view(identity: Identity) {
     return projectRoom(this.read(), identity, this.online());
+  }
+  async delete(identity: Identity) {
+    const room = this.read();
+    const member = memberOf(room, identity);
+    requireRule(member.id === room.ownerId, 'owner_only', 403);
+    for (const ws of this.ctx.getWebSockets()) {
+      try {
+        ws.send(JSON.stringify({ type: 'room_deleted' }));
+        ws.close(1000, 'room_deleted');
+      } catch {
+        // A stale socket must not prevent the owner from deleting the workshop.
+      }
+    }
+    await this.ctx.storage.deleteAlarm();
+    this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec('DELETE FROM state');
+      this.ctx.storage.sql.exec('DELETE FROM limits');
+    });
+    return room.directoryMemberIds;
   }
   async join(
     identity: Identity,
@@ -183,7 +212,17 @@ export class ColabRoom extends DurableObject<Env> {
     await this.limit(`action:${identity.id}`, 90, 60_000);
     const room = this.read();
     mutateRoom(room, identity, body);
-    this.record(room, String(body.action), identity, body.action !== 'prompt');
+    if (body.action === 'schedule') {
+      if (room.endsAt === null) await this.ctx.storage.deleteAlarm();
+      else await this.ctx.storage.setAlarm(room.endsAt);
+    }
+    this.record(
+      room,
+      String(body.action),
+      identity,
+      body.action !== 'prompt',
+      typeof body.teamId === 'string' ? body.teamId : undefined
+    );
     this.save(room);
     return projectRoom(room, identity, this.online());
   }
@@ -194,23 +233,15 @@ export class ColabRoom extends DurableObject<Env> {
       Number.isInteger(minutes) && minutes >= 1 && minutes <= 480,
       'invalid_input'
     );
-    requireRule(
-      room.mode === 'open' && Date.now() < room.endsAt,
-      'room_not_open',
-      403
-    );
     const password = randomToken().slice(0, 24);
     const digest = await hash(password);
     room = this.read();
     requireRule(memberOf(room, identity).admin, 'admin_only', 403);
-    requireRule(
-      room.mode === 'open' && Date.now() < room.endsAt,
-      'room_not_open',
-      403
-    );
     room.guestVersion++;
     room.passwordHash = digest;
-    room.passwordExpires = Math.min(Date.now() + minutes * 60_000, room.endsAt);
+    room.passwordExpires = room.endsAt
+      ? Math.min(Date.now() + minutes * 60_000, room.endsAt)
+      : Date.now() + minutes * 60_000;
     room.members = room.members.filter((m) => m.guestVersion === undefined);
     this.record(room, 'password', identity, true);
     this.save(room);
@@ -228,7 +259,16 @@ export class ColabRoom extends DurableObject<Env> {
     );
     if (body.action === 'scenario')
       requireRule(member.admin, 'admin_only', 403);
-    const team = room.teams.find((t) => t.id === member.teamId);
+    const requestedTeamId =
+      typeof body.teamId === 'string' ? body.teamId : member.teamId;
+    requireRule(
+      body.action === 'scenario' ||
+        member.admin ||
+        memberTeamIds(member).includes(requestedTeamId),
+      'invalid_team',
+      403
+    );
+    const team = room.teams.find((t) => t.id === requestedTeamId);
     requireRule(team, 'invalid_team');
     requireRule(
       body.action === 'scenario' || team.prompt.length >= 10,
@@ -267,7 +307,11 @@ export class ColabRoom extends DurableObject<Env> {
           : undefined;
       const scenario =
         body.action === 'scenario'
-          ? await makeScenario(this.env, text(body.steering, 2000, 0))
+          ? await makeScenario(
+              this.env,
+              text(body.steering, 2000, 0),
+              body.random === true
+            )
           : undefined;
       const result =
         body.action === 'run'
@@ -284,11 +328,17 @@ export class ColabRoom extends DurableObject<Env> {
           : undefined;
       room = this.read();
       const actor = memberOf(room, identity);
-      requireRule(actor.teamId === member.teamId, 'room_changed', 409);
+      requireRule(
+        body.action === 'scenario' ||
+          actor.admin ||
+          memberTeamIds(actor).includes(requestedTeamId),
+        'room_changed',
+        409
+      );
       if (body.action === 'scenario')
         requireRule(actor.admin, 'admin_only', 403);
       editable(room);
-      const current = room.teams.find((t) => t.id === member.teamId);
+      const current = room.teams.find((t) => t.id === requestedTeamId);
       requireRule(current, 'invalid_team');
       requireRule(
         Date.now() < job &&
@@ -314,7 +364,8 @@ export class ColabRoom extends DurableObject<Env> {
         room,
         String(body.action),
         identity,
-        body.action === 'scenario'
+        body.action === 'scenario',
+        body.action === 'scenario' ? undefined : requestedTeamId
       );
       this.save(room);
       return projectRoom(room, identity, this.online());
@@ -397,6 +448,7 @@ export class ColabRoom extends DurableObject<Env> {
   }
   async alarm() {
     const room = this.read();
+    if (room.endsAt === null) return;
     if (room.endsAt > Date.now()) {
       await this.ctx.storage.setAlarm(room.endsAt);
       return;

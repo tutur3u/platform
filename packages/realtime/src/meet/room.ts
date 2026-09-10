@@ -5,6 +5,7 @@ import {
   rememberAdmission,
   roomSettingsMessage,
 } from './room-controls';
+import { retireIdlePublication } from './room-idle';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { denied, outcome } from './room-outcome';
 import {
@@ -46,6 +47,7 @@ import {
 } from './primitives';
 
 export const MEET_PRESENCE_TTL_MS = 30_000;
+// Historical boundary retained for regression tests; open sockets no longer expire.
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
@@ -56,6 +58,7 @@ export interface MeetRoomSnapshot {
   ended?: boolean;
   lastReactionAt?: Record<string, number>;
   retiredTracks?: Record<string, true>;
+  retiredSessions?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
   recordings?: RoomRecording[];
   chat?: Extract<MeetRealtimeServerMessage, { type: 'chat.message' }>[];
@@ -152,8 +155,9 @@ export function pruneMeetPresence(
   let changed = false;
 
   for (const [userId, entry] of Object.entries(state.presence)) {
+    // Open sockets are authoritative; hibernating clients need no presence writes.
     const ttl = connectedUserIds?.has(userId)
-      ? MEET_CONNECTED_PRESENCE_TTL_MS
+      ? Number.POSITIVE_INFINITY
       : MEET_PRESENCE_TTL_MS;
     if (Date.parse(entry.lastSeenAt) + ttl < nowMs) {
       changed = true;
@@ -244,7 +248,7 @@ export function admitOrHold(
       { ...buildReady(next, token, 'admitted'), resumed: !!previous },
       roomSettingsMessage(next),
       recordingMessage(next),
-      ...(next.chat ?? []),
+      ...(next.chat ?? []).map((entry) => ({ ...entry, replayed: true })),
       ...(token.role === 'host' ? [approvedParticipantsMessage(next)] : []),
       ...(canMeetRealtimeManageParticipants(token)
         ? [meetAdmissionPendingMessage(next)]
@@ -293,6 +297,11 @@ export function releaseParticipant(
       ? failActiveRecording(state)
       : state),
     lastReactionAt,
+    retiredSessions: Object.fromEntries(
+      Object.entries(state.retiredSessions ?? {}).filter(
+        ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
+      )
+    ),
     retiredTracks: Object.fromEntries(
       Object.entries(state.retiredTracks ?? {}).filter(
         ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
@@ -534,7 +543,7 @@ export function applyMeetRoomCommand(
           { userId: message.userId, message: recordingMessage(next) },
           ...(next.chat ?? []).map((entry) => ({
             userId: message.userId,
-            message: entry,
+            message: { ...entry, replayed: true },
           })),
           ...remoteMeetTracks(next, message.userId).map((track) => ({
             userId: message.userId,
@@ -629,6 +638,9 @@ export function applyMeetRoomCommand(
         disconnect: [message.userId],
       };
     }
+
+    case 'media.idle':
+      return retireIdlePublication(state, token.userId, message.sessionId);
 
     case 'recording.state':
       return applyRecording(state, message, token, now);

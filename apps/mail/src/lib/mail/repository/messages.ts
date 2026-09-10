@@ -1,7 +1,9 @@
+import { mailDisplayName } from '../address-names';
 import type {
   ListMailMessagesParams,
   MailLabel,
   MailMessageDetail,
+  MailRecipient,
   MailRouteContext,
 } from '../types';
 import { requireMailboxAccess } from './bootstrap';
@@ -98,7 +100,7 @@ export function rowToSummary({
     bodyText: row.body_text ?? null,
     createdAt: row.created_at,
     fromAddress: row.from_address,
-    fromName: row.from_name ?? null,
+    fromName: mailDisplayName(row.from_name, row.from_address),
     hasAttachments: row.has_attachments,
     id: row.id,
     labels,
@@ -200,12 +202,13 @@ export async function hydrateMailMessage({
   const messageId = row.id as string;
   const mailboxId = row.mailbox_id as string;
 
-  const [states, labelsByMessageId, recipients, attachments] =
+  const [states, labelsByMessageId, recipients, attachments, safeHeaders] =
     await Promise.all([
       getStatesByMessageId(admin, [messageId], ctx.user.id),
       getLabelsByMessageId(admin, [messageId]),
       listRecipients(admin, messageId),
       listAttachments(admin, ctx.normalizedWsId, mailboxId, messageId),
+      getSafeHeaders(admin, row.raw_message_id),
     ]);
 
   const summary = rowToSummary({
@@ -224,9 +227,21 @@ export async function hydrateMailMessage({
     inReplyTo: row.in_reply_to ?? null,
     internetMessageId: row.internet_message_id ?? null,
     observedRecipient: row.observed_recipient ?? null,
-    recipients,
+    fromName: mailDisplayName(
+      row.from_name,
+      row.from_address,
+      safeHeaders.from
+    ),
+    recipients: recipients.map((recipient) => ({
+      ...recipient,
+      displayName: mailDisplayName(
+        recipient.displayName,
+        recipient.address,
+        safeHeaders[recipient.kind === 'reply_to' ? 'reply-to' : recipient.kind]
+      ),
+    })),
     references: row.references_headers ?? [],
-    safeHeaders: await getSafeHeaders(admin, row.raw_message_id),
+    safeHeaders,
     sanitizedHtml: row.sanitized_html ?? null,
   };
 }
@@ -241,6 +256,7 @@ async function getSafeHeaders(admin: AnyRecord, rawMessageId?: string | null) {
     throw new Error(`Failed to load message headers: ${error.message}`);
   const headers = (data?.raw_headers ?? {}) as Record<string, unknown>;
   const allowed = new Set([
+    'cc',
     'date',
     'from',
     'in-reply-to',
@@ -255,11 +271,14 @@ async function getSafeHeaders(admin: AnyRecord, rawMessageId?: string | null) {
         ([key, value]) =>
           allowed.has(key.toLowerCase()) && typeof value === 'string'
       )
-      .map(([key, value]) => [key, value as string])
+      .map(([key, value]) => [key.toLowerCase(), value as string])
   );
 }
 
-async function listRecipients(admin: AnyRecord, messageId: string) {
+async function listRecipients(
+  admin: AnyRecord,
+  messageId: string
+): Promise<MailRecipient[]> {
   const { data, error } = await privateTable(admin, 'mail_recipients')
     .select('*')
     .eq('message_id', messageId)

@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { MAIL_EXPAND_DELIVERIES_EVENT } from './mail-delivery-events';
 import type { MailFolder } from './mail-folders';
 import {
   MAIL_FOLDER_SHORTCUTS,
@@ -58,11 +59,13 @@ export function useMailKeyboard(options: MailKeyboardOptions) {
     const rows = rootRef.current?.querySelectorAll<HTMLButtonElement>(
       '[data-mail-thread-open]'
     );
-    const row = Array.from(rows ?? []).find(
-      (element) =>
-        element.dataset.mailThreadOpen === id &&
-        element.getClientRects().length > 0
-    );
+    const row = Array.from(rows ?? []).find((element) => {
+      if (element.dataset.mailThreadOpen !== id) return false;
+      const group = element.closest('details');
+      if (group && !group.open && group.getClientRects().length > 0)
+        group.dispatchEvent(new Event(MAIL_EXPAND_DELIVERIES_EVENT));
+      return element.getClientRects().length > 0;
+    });
     row?.focus();
     row?.scrollIntoView?.({ block: 'nearest' });
   };

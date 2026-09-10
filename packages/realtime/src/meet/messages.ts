@@ -103,6 +103,11 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     type: z.literal('recording.state'),
   }),
   z.object({
+    type: z.literal('media.idle'),
+    requestId,
+    sessionId: z.string().trim().min(1).max(180),
+  }),
+  z.object({
     requestId,
     sessionDescription: cloudflareSfuSessionDescriptionSchema.optional(),
     type: z.literal('sfu.session.create'),
@@ -215,6 +220,7 @@ export type MeetRealtimeServerMessage =
       id: string;
       requestId?: string;
       type: 'chat.message';
+      replayed?: boolean;
       clientMessageId?: string;
       retained?: boolean;
       userId: string;

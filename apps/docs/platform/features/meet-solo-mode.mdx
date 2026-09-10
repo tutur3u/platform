@@ -1,0 +1,72 @@
+---
+updated: '2026-09-10'
+title: "Meet solo mode and recovery"
+description: "Idle transport costs, private Mira conversations, and reconnect verification."
+---
+
+## Solo meetings
+
+With one connected device, camera and microphone capture remain local. Meet does
+not create a publishing SFU session until another device joins. When the last
+other device leaves, Meet retires its publishing and receiving peer connections
+without stopping local capture. The serialized `media.idle` command removes only
+that device's retired session from room discovery; it does not wait for an
+already-disconnected upstream session to close. AI still requires an internet connection and
+uses the requester's normal quota; solo mode is not an offline AI model.
+
+An idle signaling socket stays open so join requests and new participants arrive
+immediately. Cloudflare answers the `meet:ping` / `meet:pong` keepalive through
+WebSocket auto-response without waking the room. Presence is broadcast on change,
+not every ten seconds. Grace-period alarms run only for disconnected participants.
+Open sockets are not expired merely because a tab is backgrounded; keepalive
+failure causes client reconnection. Usage reports skip unchanged byte counters
+and resend after a signaling reconnect.
+
+## Private Mira and room chat
+
+The conversation panel opens Private Mira by default when alone. This context
+stays private when someone joins. It does not import room chat, send prompts to
+room services, or broadcast responses. The server charges the requester and
+returns the answer only in their authenticated response. Search queries must not
+include private history. The conversation view is kept in the panel's memory and clears when it closes or
+the user leaves. A bounded requester-only receipt cache, stored separately from shared room
+snapshots to avoid rewriting it on media/presence events, retains generated replies
+for retry recovery for up to one hour of access (expired entries are pruned on
+the next private request). Receipts are never returned by room/admin reads or
+broadcast as messages. This is transient delivery recovery, not AI memory.
+A request with uncertain generation/settlement is not generated or charged again.
+Private generation reserves quota atomically before provider calls; search
+reserves additional quota only when used.
+
+The Everyone tab remains shared even when the sender is alone. Saved room
+messages can be replayed to future admitted participants. Sharing a private Mira
+reply requires reviewing the exact text and selecting Share with everyone; only
+that text is posted under the requester's identity. Live assistant support is a
+separate feature and must preserve the same private-to-room approval boundary.
+
+## Recovery verification
+
+Chat transport retries and manual retries after uncertain delivery use one client
+message ID. Server replay is marked as history, deduplicated without moving the
+newest message, and does not produce new-message notifications or unread counts.
+Do not deduplicate by message body: intentionally repeated messages are valid.
+
+Use the real call-controller harness in `apps/meet-realtime/src/media-check.ts`
+with synthetic media. Verify zero publisher sessions while solo; then join a
+second peer and verify both audio/video directions. Leave that peer, verify the
+publisher closes without ending capture, and rejoin. Repeat with signaling
+interruptions, screen audio, and TURN/TLS. Use an isolated room and never interrupt
+an employee meeting for verification.
+
+Partial SFU subscription responses must preserve the returned SDP even if an
+individual track is unavailable. Discarding that offer can leave Cloudflare
+waiting for an answer while the browser retries new subscriptions, leading to
+406 and 410 errors. Failed or uncertain subscription negotiations rebuild the
+receiving peer; publishing and receiving remain separate.
+
+Retired publishing sessions keep bounded tombstones until the participant leaves,
+so a late publish cannot revive them. A small client outbox repeats idle notices
+on signaling reconnection; both publication and subscription work stop while solo.
+Private search reserves multi-query planning headroom, then charges actual usage.
+The unit-test CI job allows 20 minutes: a measured full-suite run passed all 52
+tasks in 14m22s but its setup and cleanup exceeded the previous 15-minute job limit.

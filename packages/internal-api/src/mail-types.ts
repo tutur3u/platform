@@ -180,6 +180,8 @@ export interface MailThread {
 }
 
 export interface MailThreadSummary extends MailThread {
+  /** Original catch-all delivery address; absent for ordinary conversations. */
+  deliveryRecipient?: string | null;
   hasAttachments: boolean;
   labels: MailLabel[];
   latestMessageId: string | null;

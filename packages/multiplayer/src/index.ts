@@ -17,6 +17,7 @@ export type Member = {
   name: string;
   email: string | null;
   teamId: string;
+  teamIds: string[];
   admin: boolean;
   guestVersion?: number;
 };
@@ -55,7 +56,12 @@ export type Team = {
   aiCalls: number;
   limits: TeamLimits;
 };
-export type Scenario = { title: string; brief: string; criteria: string[] };
+export type Scenario = {
+  id: string;
+  title: string;
+  brief: string;
+  criteria: string[];
+};
 export type AuditEntry = {
   id: string;
   at: number;
@@ -73,16 +79,18 @@ export type Room = {
   id: string;
   title: string;
   ownerId: string;
-  startsAt: number;
-  endsAt: number;
+  startsAt: number | null;
+  endsAt: number | null;
   maxUsers: number;
   mode: RoomMode;
   showcase: boolean;
+  showcaseTeamId: string | null;
   members: Member[];
   invites: string[];
   passwordHash: string | null;
   passwordExpires: number;
   guestVersion: number;
+  directoryMemberIds: string[];
   teams: Team[];
   scenario: Scenario;
   scenarios: Scenario[];
@@ -110,23 +118,82 @@ export type WorkshopScheduleError =
   | 'end_too_late';
 
 export function workshopScheduleError(
-  startsAt: number,
-  endsAt: number,
-  now = Date.now()
+  startsAt: number | null,
+  endsAt: number | null,
+  now = Date.now(),
+  allowPastStart = false
 ): WorkshopScheduleError | null {
-  if (!Number.isSafeInteger(startsAt) || !Number.isSafeInteger(endsAt))
+  if (
+    (startsAt !== null && !Number.isSafeInteger(startsAt)) ||
+    (endsAt !== null && !Number.isSafeInteger(endsAt))
+  )
     return 'invalid';
-  if (startsAt < now - 5 * 60_000) return 'start_too_old';
-  if (startsAt > now + 30 * 86400_000) return 'start_too_far';
-  if (endsAt < Math.max(startsAt + 300_000, now + 60_000))
+  if (!allowPastStart && startsAt !== null && startsAt < now - 5 * 60_000)
+    return 'start_too_old';
+  if (startsAt !== null && startsAt > now + 30 * 86400_000)
+    return 'start_too_far';
+  if (
+    endsAt !== null &&
+    endsAt < Math.max((startsAt ?? now) + 300_000, now + 60_000)
+  )
     return 'end_too_soon';
-  if (endsAt > startsAt + 8 * 3600_000) return 'end_too_late';
+  if (endsAt !== null && endsAt > (startsAt ?? now) + 8 * 3600_000)
+    return 'end_too_late';
   return null;
 }
 
 export function normalizeRoom(room: Room): Room {
   room.aiCalls ??= 0;
   room.limits = { ...defaultWorkshopLimits, ...room.limits };
+  room.directoryMemberIds ??= room.members
+    .filter((member) => member.email)
+    .map((member) => member.id);
+  const validTeamIds = new Set(room.teams.map((team) => team.id));
+  room.members = room.members.map((member) => {
+    const storedTeamIds = (member as Member & { teamIds?: string[] }).teamIds;
+    const teamIds = [
+      ...new Set(
+        (storedTeamIds?.length ? storedTeamIds : [member.teamId]).filter(
+          (teamId) => validTeamIds.has(teamId)
+        )
+      ),
+    ];
+    const fallbackTeamId = room.teams[0]?.id;
+    if (!teamIds.length && fallbackTeamId) teamIds.push(fallbackTeamId);
+    const teamId = teamIds.includes(member.teamId)
+      ? member.teamId
+      : (teamIds[0] ?? member.teamId);
+    return { ...member, teamId, teamIds };
+  });
+  room.showcaseTeamId = room.teams.some(
+    (team) => team.id === room.showcaseTeamId
+  )
+    ? room.showcaseTeamId
+    : (room.teams[0]?.id ?? null);
+  const storedScenario = room.scenario as Scenario & { id?: string };
+  const storedScenarios = (room as Room & { scenarios?: Scenario[] }).scenarios;
+  const scenarioSource = storedScenarios?.length
+    ? storedScenarios
+    : [...starterScenarios(), storedScenario].filter(
+        (scenario, index, candidates) =>
+          candidates.findIndex(
+            (candidate) =>
+              candidate.title === scenario.title &&
+              candidate.brief === scenario.brief
+          ) === index
+      );
+  const scenarios = scenarioSource.map((scenario, index) => ({
+    ...scenario,
+    id: scenario.id ?? `legacy-scenario-${index + 1}`,
+  }));
+  const selected = scenarios.find(
+    (scenario) =>
+      (storedScenario.id && scenario.id === storedScenario.id) ||
+      (scenario.title === storedScenario.title &&
+        scenario.brief === storedScenario.brief)
+  );
+  room.scenarios = scenarios;
+  room.scenario = selected ?? scenarios[0]!;
   const catalog = seedRecords();
   room.teams = room.teams.map((team) => {
     const present = new Set(team.records.map((record) => record.id));
@@ -146,7 +213,7 @@ export function normalizeRoom(room: Room): Room {
 }
 export type RoomView = Omit<
   Room,
-  'passwordHash' | 'invites' | 'guestVersion'
+  'passwordHash' | 'invites' | 'guestVersion' | 'directoryMemberIds'
 > & { invites?: string[]; self: Member; online: string[] };
 export class RoomError extends Error {
   constructor(
@@ -207,7 +274,9 @@ export function memberOf(
 }
 export function editable(room: Room, now = Date.now()) {
   requireRule(
-    room.mode === 'open' && now >= room.startsAt && now < room.endsAt,
+    room.mode === 'open' &&
+      (room.startsAt === null || now >= room.startsAt) &&
+      (room.endsAt === null || now < room.endsAt),
     'room_not_open',
     403
   );
@@ -219,10 +288,12 @@ export function projectRoom(
   now = Date.now()
 ): RoomView {
   const self = memberOf(room, identity, now);
+  const selfTeamIds = memberTeamIds(self);
   const {
     passwordHash: _hash,
     invites,
     guestVersion: _version,
+    directoryMemberIds: _directoryMemberIds,
     ...safe
   } = room;
   return {
@@ -231,59 +302,88 @@ export function projectRoom(
       (entry) =>
         self.admin ||
         (!entry.adminOnly &&
-          (!entry.teamId || room.showcase || entry.teamId === self.teamId))
+          (!entry.teamId ||
+            room.showcase ||
+            selfTeamIds.includes(entry.teamId)))
     ),
-    mode: now >= room.endsAt && room.mode === 'open' ? 'readonly' : room.mode,
+    mode:
+      room.endsAt !== null && now >= room.endsAt && room.mode === 'open'
+        ? 'readonly'
+        : room.mode,
     invites: self.admin ? invites : undefined,
     members: room.members
-      .filter((m) => self.admin || room.showcase || m.teamId === self.teamId)
+      .filter(
+        (m) =>
+          self.admin ||
+          room.showcase ||
+          memberTeamIds(m).some((teamId) => selfTeamIds.includes(teamId))
+      )
       .map((m) => ({
         ...m,
         email: self.admin || m.id === self.id ? m.email : null,
       })),
     teams: room.teams.filter(
-      (t) => self.admin || room.showcase || t.id === self.teamId
+      (t) => self.admin || room.showcase || selfTeamIds.includes(t.id)
     ),
     self,
     online: online.filter((id) =>
       room.members.some(
         (m) =>
           m.id === id &&
-          (self.admin || room.showcase || m.teamId === self.teamId)
+          (self.admin ||
+            room.showcase ||
+            memberTeamIds(m).some((teamId) => selfTeamIds.includes(teamId)))
       )
     ),
   };
 }
+export function memberTeamIds(member: Pick<Member, 'teamId' | 'teamIds'>) {
+  return member.teamIds?.length ? member.teamIds : [member.teamId];
+}
 export function starterScenarios(): Scenario[] {
   return [
     {
-      title: 'Launch day, together',
+      id: 'rise-pathways',
+      title: 'Find your place at RISE',
       brief:
-        'Prepare an accurate launch update using the sandbox apps. Verify the facts, identify uncertainty, and ask for approval before sending.',
+        'Help RISE introduce its four pathways to innovation: Marketing & Growth, Product & Development, External Relations, and People & Culture. Use the practice apps to turn the bilingual campaign brief into a clear recruitment plan without inventing dates, approvals, or student information.',
       criteria: [
-        'Uses evidence from the launch brief',
-        'Checks for conflicting information',
-        'Requests approval before external communication',
+        'Adapts the message to each RISE department and audience',
+        'Separates verified facts from assumptions or missing details',
+        'Drafts useful next steps and asks for approval before publishing',
       ],
     },
     {
-      title: 'A meeting that works for everyone',
+      id: 'rise-induction-day',
+      title: 'Induction Day, without the busywork',
       brief:
-        'Coordinate a launch review for Mai and Alex. Inspect the calendar and unresolved Jira work. Propose a plan without booking a conflicting meeting or claiming unfinished work is complete.',
+        'Coordinate RISE Induction Day and the Start Up Showcase across the four departments. Review calendars, task boards, registrations, and venue notes; then propose owners, a run sheet, and two conflict-free check-in options.',
       criteria: [
-        'Reads existing calendar commitments',
-        'Identifies unfinished QA and approval work',
-        'Proposes a clear plan and asks before scheduling',
+        'Checks availability and unresolved dependencies',
+        'Assigns work to the most relevant department',
+        'Proposes a realistic plan without scheduling anything automatically',
       ],
     },
     {
-      title: 'Helpful without oversharing',
+      id: 'rise-study-workflow',
+      title: 'Study smarter, contribute better',
       brief:
-        'Respond to the customer questions in Messenger and prepare a Vietnamese update for Zalo. Use the approved audience and team handbook. Be helpful while protecting private customer details.',
+        'Create a weekly plan for a RISE member balancing classes, a group assignment, and club responsibilities. Summarize course notes, identify deadlines, break work into focused tasks, and draft a respectful message when priorities conflict.',
       criteria: [
-        'Uses the approved audience record',
-        'Does not share private customer information',
-        'Drafts a helpful response and asks for approval',
+        'Uses course and club records without exposing personal information',
+        'Prioritizes by deadline, effort, and team impact',
+        'Keeps the student in control of messages and final submissions',
+      ],
+    },
+    {
+      id: 'rise-partnership-outreach',
+      title: 'Partnership outreach with purpose',
+      brief:
+        'Support External Relations in researching a potential ecosystem partner and drafting a concise outreach note. Connect the partnership to RISE’s mission of sustainable, real-world impact while clearly marking facts that still need verification.',
+      criteria: [
+        'Connects the partner opportunity to a concrete RISE initiative',
+        'Flags unverified claims and missing contact context',
+        'Produces a personalized draft for human review rather than sending it',
       ],
     },
   ];
@@ -295,15 +395,27 @@ export function createRoom(
   now = Date.now()
 ): Room {
   requireRule(staff(identity) && identity.expires > now, 'staff_only', 403);
-  const startsAt = number(body.startsAt, 0, Number.MAX_SAFE_INTEGER);
-  const endsAt = number(body.endsAt, 0, Number.MAX_SAFE_INTEGER);
+  const startsAt =
+    body.startsAt === null
+      ? null
+      : number(body.startsAt, 0, Number.MAX_SAFE_INTEGER);
+  const endsAt =
+    body.endsAt === null
+      ? null
+      : number(body.endsAt, 0, Number.MAX_SAFE_INTEGER);
   requireRule(!workshopScheduleError(startsAt, endsAt, now), 'invalid_input');
   const count = number(body.teamCount, 1, 12);
+  const riseTeams = [
+    'Marketing & Growth',
+    'Product & Development',
+    'External Relations',
+    'People & Culture',
+  ];
   const teams = Array.from(
     { length: count },
     (_, i): Team => ({
       id: `team-${i + 1}`,
-      name: `Team ${i + 1}`,
+      name: riseTeams[i] ?? `Team ${i + 1}`,
       prompt: '',
       revision: 0,
       skills: [],
@@ -322,6 +434,7 @@ export function createRoom(
     maxUsers: number(body.maxUsers, 2, 100),
     mode: 'open',
     showcase: true,
+    showcaseTeamId: teams[0]?.id ?? null,
     members: [
       {
         id: identity.id,
@@ -329,23 +442,16 @@ export function createRoom(
         name: identity.name,
         admin: true,
         teamId: 'team-1',
+        teamIds: ['team-1'],
       },
     ],
     invites: [],
     passwordHash: null,
     passwordExpires: 0,
     guestVersion: 0,
+    directoryMemberIds: [identity.id],
     teams,
-    scenario: {
-      title: 'Launch day, together',
-      brief:
-        'Prepare an accurate launch update using the sandbox apps. Verify the facts, identify uncertainty, and ask for approval before sending.',
-      criteria: [
-        'Uses evidence from the launch brief',
-        'Checks for conflicting information',
-        'Requests approval before external communication',
-      ],
-    },
+    scenario: starterScenarios()[0]!,
     aiCalls: 0,
     limits: { ...defaultWorkshopLimits },
     scenarios: starterScenarios(),
@@ -365,7 +471,7 @@ export function joinRoom(
     memberOf(room, identity, now);
     return;
   }
-  requireRule(room.mode === 'open' && now < room.endsAt, 'room_not_open', 403);
+  requireRule(room.mode !== 'private', 'private_room', 403);
   requireRule(room.members.length < room.maxUsers, 'room_full', 409);
   requireRule(
     room.teams.some((t) => t.id === teamId),
@@ -383,9 +489,12 @@ export function joinRoom(
     name: identity.name,
     email: identity.email,
     teamId,
+    teamIds: [teamId],
     admin: false,
     ...(identity.email ? {} : { guestVersion: room.guestVersion }),
   });
+  if (identity.email && !room.directoryMemberIds.includes(identity.id))
+    room.directoryMemberIds.push(identity.id);
 }
 export function mutateRoom(
   room: Room,
@@ -397,7 +506,13 @@ export function mutateRoom(
   const action = body.action;
   if (action === 'prompt') {
     editable(room, now);
-    const team = room.teams.find((t) => t.id === member.teamId);
+    const requestedTeamId = String(body.teamId ?? member.teamId);
+    requireRule(
+      member.admin || memberTeamIds(member).includes(requestedTeamId),
+      'invalid_team',
+      403
+    );
+    const team = room.teams.find((t) => t.id === requestedTeamId);
     requireRule(team, 'invalid_team');
     requireRule(body.revision === team.revision, 'edit_conflict', 409);
     team.prompt = text(body.prompt, 12000, 0);
@@ -411,11 +526,33 @@ export function mutateRoom(
       ['open', 'readonly', 'private'].includes(String(body.mode)),
       'invalid_input'
     );
-    requireRule(body.mode !== 'open' || now < room.endsAt, 'room_ended');
+    requireRule(
+      body.mode !== 'open' || room.endsAt === null || now < room.endsAt,
+      'room_ended'
+    );
     room.mode = body.mode as RoomMode;
   } else if (action === 'showcase') {
     requireRule(typeof body.enabled === 'boolean', 'invalid_input');
     room.showcase = body.enabled;
+  } else if (action === 'showcaseTeam') {
+    const team = room.teams.find((item) => item.id === body.teamId);
+    requireRule(team, 'invalid_team');
+    room.showcaseTeamId = team.id;
+  } else if (action === 'schedule') {
+    const startsAt =
+      body.startsAt === null
+        ? null
+        : number(body.startsAt, 0, Number.MAX_SAFE_INTEGER);
+    const endsAt =
+      body.endsAt === null
+        ? null
+        : number(body.endsAt, 0, Number.MAX_SAFE_INTEGER);
+    requireRule(
+      !workshopScheduleError(startsAt, endsAt, now, true),
+      'invalid_input'
+    );
+    room.startsAt = startsAt;
+    room.endsAt = endsAt;
   } else if (action === 'invite') {
     const email = text(body.email, 254).toLowerCase();
     requireRule(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email), 'invalid_input');
@@ -443,6 +580,76 @@ export function mutateRoom(
       'invalid_team'
     );
     target.teamId = String(body.teamId);
+    if (!memberTeamIds(target).includes(target.teamId))
+      target.teamIds = [...memberTeamIds(target), target.teamId];
+  } else if (action === 'membership') {
+    const target = room.members.find((m) => m.id === body.memberId);
+    const team = room.teams.find((item) => item.id === body.teamId);
+    requireRule(
+      target && team && typeof body.enabled === 'boolean',
+      'invalid_team'
+    );
+    const memberships = memberTeamIds(target);
+    if (body.enabled) {
+      target.teamIds = [...new Set([...memberships, team.id])];
+    } else {
+      requireRule(memberships.length > 1, 'last_membership', 409);
+      target.teamIds = memberships.filter((teamId) => teamId !== team.id);
+      if (target.teamId === team.id) target.teamId = target.teamIds[0]!;
+    }
+  } else if (action === 'teamCreate') {
+    requireRule(room.teams.length < 12, 'team_limit', 409);
+    room.teams.push({
+      id: `team-${crypto.randomUUID().slice(0, 8)}`,
+      name: text(body.name, 60),
+      prompt: '',
+      revision: 0,
+      skills: [],
+      records: seedRecords(),
+      runs: [],
+      aiCalls: 0,
+      limits: {
+        aiCallLimit: Math.min(
+          defaultTeamLimits.aiCallLimit,
+          room.limits.aiCallLimit
+        ),
+        agentTurnLimit: Math.min(
+          defaultTeamLimits.agentTurnLimit,
+          room.limits.agentTurnLimit
+        ),
+        toolCallLimit: Math.min(
+          defaultTeamLimits.toolCallLimit,
+          room.limits.toolCallLimit
+        ),
+      },
+    });
+  } else if (action === 'teamRename') {
+    const team = room.teams.find((item) => item.id === body.teamId);
+    requireRule(team, 'invalid_team');
+    team.name = text(body.name, 60);
+  } else if (action === 'teamDelete') {
+    requireRule(room.teams.length > 1, 'last_team', 409);
+    const team = room.teams.find((item) => item.id === body.teamId);
+    requireRule(team, 'invalid_team');
+    const fallback = room.teams.find((item) => item.id !== team.id)!;
+    for (const target of room.members) {
+      target.teamIds = memberTeamIds(target).filter(
+        (teamId) => teamId !== team.id
+      );
+      if (!target.teamIds.length) target.teamIds = [fallback.id];
+      if (target.teamId === team.id) target.teamId = target.teamIds[0]!;
+    }
+    room.teams = room.teams.filter((item) => item.id !== team.id);
+    if (room.showcaseTeamId === team.id) room.showcaseTeamId = fallback.id;
+  } else if (action === 'memberRemove') {
+    const target = room.members.find((item) => item.id === body.memberId);
+    requireRule(target, 'invalid_input');
+    requireRule(target.id !== room.ownerId, 'owner_protected', 403);
+    room.members = room.members.filter((item) => item.id !== target.id);
+    if (target.email)
+      room.invites = room.invites.filter(
+        (email) => email !== target.email?.toLowerCase()
+      );
   } else if (action === 'limits') {
     const scope = body.scope;
     requireRule(scope === 'room' || scope === 'team', 'invalid_input');
@@ -486,7 +693,8 @@ export function mutateRoom(
     team.records = seedRecords();
   } else if (action === 'selectScenario') {
     editable(room, now);
-    const index = number(body.index, 0, room.scenarios.length - 1);
-    room.scenario = room.scenarios[index]!;
+    const scenario = room.scenarios.find((item) => item.id === body.scenarioId);
+    requireRule(scenario, 'invalid_input');
+    room.scenario = scenario;
   } else throw new RoomError('unknown_action');
 }

@@ -3,6 +3,7 @@ import type {
   ListMailThreadsParams,
   UpdateMailMessageStatePayload,
 } from '@tuturuuu/internal-api';
+import { mailDisplayName } from '../address-names';
 import { resolveMailThreadSubject } from '../thread-subject';
 import type {
   MailRouteContext,
@@ -10,6 +11,7 @@ import type {
   MailThreadDetail,
   MailThreadSummary,
 } from '../types';
+import { loadDamagedAddressHeaders } from './address-headers';
 import { requireMailboxAccess } from './bootstrap';
 import {
   getLabelsByMessageId,
@@ -21,7 +23,7 @@ import { loadAllRows, queryMailMessageRows } from './search';
 import { type AnyRecord, mailMessageTable, privateTable } from './shared';
 
 const THREAD_PARTICIPANT_COLUMNS =
-  'direction,from_address,from_name,has_attachments,id,thread_id';
+  'direction,from_address,from_name,has_attachments,id,raw_message_id,thread_id';
 const MAX_THREAD_PAGE = 25;
 
 export function normalizeThreadPagination({
@@ -180,6 +182,11 @@ export async function listMailThreads({
     current.push(recipient);
     recipientsByMessage.set(recipient.message_id, current);
   }
+  const addressHeaders = await loadDamagedAddressHeaders(
+    access.admin,
+    visibleMessageRows,
+    recipientsByMessage
+  );
   const participantsByThread = new Map<
     string,
     Map<string, { address: string; displayName: string | null }>
@@ -192,16 +199,25 @@ export async function listMailThreads({
     const participants =
       participantsByThread.get(rowThreadId) ??
       new Map<string, { address: string; displayName: string | null }>();
+    const headers = addressHeaders.get(row.raw_message_id);
     const candidates =
       row.direction === 'outbound'
         ? (recipientsByMessage.get(row.id) ?? []).map((recipient) => ({
             address: String(recipient.address ?? '').toLowerCase(),
-            displayName: recipient.display_name ?? null,
+            displayName: mailDisplayName(
+              recipient.display_name,
+              recipient.address ?? '',
+              headers?.[recipient.kind]
+            ),
           }))
         : [
             {
               address: String(row.from_address ?? '').toLowerCase(),
-              displayName: row.from_name ?? null,
+              displayName: mailDisplayName(
+                row.from_name,
+                row.from_address ?? '',
+                headers?.from
+              ),
             },
           ];
     for (const candidate of candidates) {
@@ -223,6 +239,11 @@ export async function listMailThreads({
     return [
       {
         ...toThread(thread),
+        deliveryRecipient:
+          message.delivery_route === 'catch_all' &&
+          message.direction === 'inbound'
+            ? message.observed_recipient || message.envelope_to || null
+            : null,
         hasAttachments: attachmentThreads.has(threadId),
         labels: labels.get(message.id) ?? [],
         latestMessageId: message.id,

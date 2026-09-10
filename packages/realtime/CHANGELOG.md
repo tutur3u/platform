@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/realtime-v0.5.0...realtime-v0.6.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add grounded Mira tools with private approvals ([1ae6826](https://github.com/tutur3u/platform/commit/1ae6826ea9ee5e47329b53f2c6c1a0bc5d68a5f9))
+* **meet:** give Mira a distinct identity and refine call panels ([#5269](https://github.com/tutur3u/platform/issues/5269)) ([6ba3f1c](https://github.com/tutur3u/platform/commit/6ba3f1c5e2408ae0a564c97177282978f38b4ce8))
+* **meet:** give Mira live tools and private workspace approvals ([#5275](https://github.com/tutur3u/platform/issues/5275)) ([4f53e8a](https://github.com/tutur3u/platform/commit/4f53e8aa4e3f386b1f4e83cb9fbad6fec7878c00))
+
+
+### Bug Fixes
+
+* **meet:** bound stalled recovery and preserve retry accounting ([49665ab](https://github.com/tutur3u/platform/commit/49665ab53cbd2db14a015320ba5aaf73bd5cf500))
+* **meet:** harden private assistant reviews and search boundaries ([0a536d5](https://github.com/tutur3u/platform/commit/0a536d582c68e48d279e93ada064240010778791))
+* **meet:** preserve retained chat and safe reconnect state ([01f744c](https://github.com/tutur3u/platform/commit/01f744cb9b7083ed6976d1f20615c64b7b5c44c2))
+* **meet:** recover invitations transcription and signaling ([94668ce](https://github.com/tutur3u/platform/commit/94668cef9b452eb67cbad63ff618307c1a4b306a))
+* **meet:** recover invitations, transcription, and reconnects ([#5284](https://github.com/tutur3u/platform/issues/5284)) ([b65d3c0](https://github.com/tutur3u/platform/commit/b65d3c02dbdd1ad2477c400924fdad0a3b83347e))
+* **meet:** recover malformed reviews and preserve shared chat history ([331387c](https://github.com/tutur3u/platform/commit/331387ce90ef02cd9b99b44a65e50bd694ad1218))
+* **meet:** retain reconnect state and cancel abandoned recovery ([9acbe9f](https://github.com/tutur3u/platform/commit/9acbe9fe3b1053018c4ebbbadb2260753dd2ee37))
+* **meet:** validate private continuations and incomplete search usage ([0a19050](https://github.com/tutur3u/platform/commit/0a190506d5e51408e8a55cbfe4633ebee3f30348))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/realtime-v0.4.0...realtime-v0.5.0) (2026-09-09)
 
 
