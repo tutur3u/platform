@@ -173,6 +173,18 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(
       roomLimitCard.locator('input[name="toolCallLimit"]')
     ).toHaveValue('24');
+    await host
+      .getByRole('button', { name: 'Save workshop limits', exact: true })
+      .click();
+    await expect
+      .poll(async () => {
+        const latestRoom = await (await request(path, owner)).json();
+        return [
+          latestRoom.limits.agentTurnLimit,
+          latestRoom.limits.toolCallLimit,
+        ];
+      })
+      .toEqual([32, 24]);
     await host.screenshot({
       path: '/private/tmp/colab-observability-limits.png',
       fullPage: true,
@@ -305,7 +317,9 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     ).toBeVisible();
     await expect(latestRun.locator('.step-list > li')).toHaveCount(1);
     await expect(
-      latestRun.getByText('Created practice data in Drive', { exact: true })
+      latestRun.getByText('Created practice data in Google Drive', {
+        exact: true,
+      })
     ).toBeVisible();
     await expect(
       latestRun.getByText('View technical details', { exact: true })

@@ -68,7 +68,7 @@ export function LimitsPanel({
           <p>{c.usageLimitsHelp}</p>
         </div>
       </div>
-      <Card className="limit-scope-card gap-5 p-5 shadow-none">
+      <Card className="limit-scope-card grid gap-5 p-5 shadow-none">
         <div className="limit-scope-heading">
           <div>
             <Badge variant="outline">{c.roomBudget}</Badge>

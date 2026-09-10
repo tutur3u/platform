@@ -261,6 +261,23 @@ describe('server-authoritative room policy', () => {
       agentTurnLimit: 40,
       toolCallLimit: 30,
     });
+    mutateRoom(
+      legacy,
+      owner,
+      {
+        action: 'limits',
+        scope: 'room',
+        aiCallLimit: 500,
+        agentTurnLimit: 12,
+        toolCallLimit: 10,
+      },
+      now
+    );
+    expect(legacy.limits).toEqual({
+      aiCallLimit: 500,
+      agentTurnLimit: 12,
+      toolCallLimit: 10,
+    });
     expect(() =>
       mutateRoom(
         legacy,
@@ -275,6 +292,22 @@ describe('server-authoritative room policy', () => {
         now
       )
     ).toThrow('invalid_input');
+  });
+  it('reserves a final-answer turn when normalizing legacy equal limits', () => {
+    const legacy = room();
+    legacy.limits = {
+      aiCallLimit: 200,
+      agentTurnLimit: 8,
+      toolCallLimit: 8,
+    };
+    legacy.teams[0]!.limits = {
+      aiCallLimit: 50,
+      agentTurnLimit: 6,
+      toolCallLimit: 6,
+    };
+    normalizeRoom(legacy);
+    expect(legacy.limits.toolCallLimit).toBe(7);
+    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
   });
   it('requires invitations, preserves capacity, and allows idempotent rejoin', () => {
     const r = room();

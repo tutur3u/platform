@@ -78,6 +78,9 @@
     font-size: 12px;
     line-height: 1.5;
   }
+  .run-stop-reason {
+    margin-top: 8px;
+  }
   .run-health-icon,
   .run-step-icon {
     display: grid;

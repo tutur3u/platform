@@ -82,6 +82,14 @@ export function WorkshopObservability({ room }: { room: RoomView }) {
               <span
                 className="team-health-status"
                 data-status={latestInsight?.status}
+                role="img"
+                aria-label={
+                  latestInsight
+                    ? latestInsight.status === 'complete'
+                      ? c.allRunsHealthy
+                      : c.toReview
+                    : c.noRunsYet
+                }
               />
               <div>
                 <strong>{team.name}</strong>

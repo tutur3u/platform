@@ -64,8 +64,9 @@ function legacyStopReason(run: Run): RunStopReason {
 }
 
 export function runInsights(run: Run, limits: TeamLimits) {
+  const inferredStopReason = legacyStopReason(run);
   const usage = run.usage ?? {
-    turns: run.trace.length + 1,
+    turns: run.trace.length + (inferredStopReason === 'turn_limit' ? 0 : 1),
     toolCalls: run.trace.length,
     turnLimit: limits.agentTurnLimit,
     toolCallLimit: limits.toolCallLimit,
@@ -83,7 +84,7 @@ export function runInsights(run: Run, limits: TeamLimits) {
       step.status === 'success' &&
       (step.action === 'search' || step.action === 'read')
   ).length;
-  const stopReason = usage.stopReason ?? legacyStopReason(run);
+  const stopReason = usage.stopReason ?? inferredStopReason;
   const status =
     stopReason !== 'answered'
       ? 'limited'

@@ -6,7 +6,7 @@ import {
   Search,
   SquareTerminal,
 } from '@tuturuuu/icons';
-import type { Trace } from '@tuturuuu/multiplayer';
+import { mockAppCatalog, type Trace } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useCopy } from './i18n';
 import { traceInsight } from './run-insights';
@@ -20,6 +20,8 @@ function pretty(value: string) {
 }
 
 function appName(value: string) {
+  const knownApp = mockAppCatalog.find((app) => app.id === value);
+  if (knownApp) return knownApp.name;
   return value
     .split(/[-_]/)
     .filter(Boolean)

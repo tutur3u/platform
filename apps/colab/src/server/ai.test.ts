@@ -215,7 +215,10 @@ describe('AI output boundaries', () => {
         toolCallLimit: 5,
       },
     };
-    const result = await runAgent(env, team, starterScenarios()[0]!);
+    const result = await runAgent(env, team, starterScenarios()[0]!, {
+      agentTurnLimit: team.limits.agentTurnLimit,
+      toolCallLimit: team.limits.toolCallLimit,
+    });
     expect(run).toHaveBeenCalledTimes(4);
     expect(result.run.trace.map((t) => t.tool)).toEqual([
       'drive.read',
@@ -228,8 +231,8 @@ describe('AI output boundaries', () => {
     expect(result.run.usage).toEqual({
       turns: 3,
       toolCalls: 2,
-      turnLimit: 12,
-      toolCallLimit: 10,
+      turnLimit: 6,
+      toolCallLimit: 5,
       successfulToolCalls: 2,
       failedToolCalls: 0,
       writeToolCalls: 1,

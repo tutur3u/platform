@@ -23,6 +23,27 @@ export function LimitFields({
   const [turns, setTurns] = useState(limits.agentTurnLimit);
   const [tools, setTools] = useState(limits.toolCallLimit);
   const toolMaximum = Math.min(Math.max(turns - 1, 0), maximum.toolCallLimit);
+  const effectivePresets = presets
+    .map((preset) => {
+      const presetTurns = Math.min(preset.turns, maximum.agentTurnLimit);
+      return {
+        ...preset,
+        effectiveTurns: presetTurns,
+        effectiveTools: Math.min(
+          preset.tools,
+          maximum.toolCallLimit,
+          presetTurns - 1
+        ),
+      };
+    })
+    .filter(
+      (preset, index, candidates) =>
+        candidates.findIndex(
+          (candidate) =>
+            candidate.effectiveTurns === preset.effectiveTurns &&
+            candidate.effectiveTools === preset.effectiveTools
+        ) === index
+    );
   const choosePreset = (nextTurns: number, nextTools: number) => {
     const boundedTurns = Math.min(nextTurns, maximum.agentTurnLimit);
     setTurns(boundedTurns);
@@ -38,20 +59,17 @@ export function LimitFields({
           <span>{c.runDepthHelp}</span>
         </div>
         <div className="limit-preset-actions">
-          {presets.map((preset) => {
-            const presetTurns = Math.min(preset.turns, maximum.agentTurnLimit);
-            const presetTools = Math.min(
-              preset.tools,
-              maximum.toolCallLimit,
-              presetTurns - 1
-            );
+          {effectivePresets.map((preset) => {
             return (
               <Button
                 key={preset.id}
                 type="button"
                 size="sm"
                 variant="outline"
-                aria-pressed={turns === presetTurns && tools === presetTools}
+                aria-pressed={
+                  turns === preset.effectiveTurns &&
+                  tools === preset.effectiveTools
+                }
                 onClick={() => choosePreset(preset.turns, preset.tools)}
               >
                 {c[`${preset.id}Preset`]}

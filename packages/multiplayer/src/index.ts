@@ -2,18 +2,15 @@ import {
   defaultTeamLimits,
   defaultWorkshopLimits,
   maximumWorkshopLimits,
+  normalizeStoredLimits,
   type TeamLimits,
   type WorkshopLimits,
+  type WorkshopScheduleError,
 } from './limits';
 import { type MockRecord, seedRecords } from './mock-catalog';
 import type { Run } from './run';
 
-export type { TeamLimits, WorkshopLimits } from './limits';
-export {
-  defaultTeamLimits,
-  defaultWorkshopLimits,
-  maximumWorkshopLimits,
-} from './limits';
+export * from './limits';
 export type { MockApp, MockAppKind, MockRecord } from './mock-catalog';
 export { mockAppCatalog, mockApps, seedRecords } from './mock-catalog';
 export type {
@@ -97,13 +94,6 @@ export type Room = {
   revision: number;
 };
 
-export type WorkshopScheduleError =
-  | 'invalid'
-  | 'start_too_old'
-  | 'start_too_far'
-  | 'end_too_soon'
-  | 'end_too_late';
-
 export function workshopScheduleError(
   startsAt: number | null,
   endsAt: number | null,
@@ -131,7 +121,7 @@ export function workshopScheduleError(
 
 export function normalizeRoom(room: Room): Room {
   room.aiCalls ??= 0;
-  room.limits = { ...defaultWorkshopLimits, ...room.limits };
+  room.limits = normalizeStoredLimits(room.limits, defaultWorkshopLimits);
   room.directoryMemberIds ??= room.members
     .filter((member) => member.email)
     .map((member) => member.id);
@@ -184,6 +174,11 @@ export function normalizeRoom(room: Room): Room {
   const catalog = seedRecords();
   room.teams = room.teams.map((team) => {
     const present = new Set(team.records.map((record) => record.id));
+    const limits = normalizeStoredLimits(
+      team.limits,
+      defaultTeamLimits,
+      room.limits
+    );
     return {
       ...team,
       records: [
@@ -193,7 +188,7 @@ export function normalizeRoom(room: Room): Room {
           .map((record) => ({ ...record })),
       ],
       aiCalls: team.aiCalls ?? 0,
-      limits: { ...defaultTeamLimits, ...team.limits },
+      limits,
     };
   });
   return room;

@@ -90,6 +90,9 @@ export function RunReport({
             <div>
               <strong>{statusCopy[0]}</strong>
               <p>{statusCopy[1]}</p>
+              <Badge variant="outline" className="run-stop-reason">
+                {c[`stop_${insight.stopReason}`]}
+              </Badge>
             </div>
           </div>
           <div className="run-signal-grid">
