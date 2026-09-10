@@ -346,3 +346,22 @@ it('replays personal responses only to their requester, never through room/admin
     }).status
   ).toBe(410);
 });
+
+it('distinguishes a confirmed failed personal receipt from an uncertain pending attempt', () => {
+  const begin = {
+    action: 'personal.begin',
+    id: account,
+    startedAt: Date.now(),
+    fingerprint: 'a'.repeat(64),
+  };
+  const claimed = roomService(initial(), token, begin);
+  expect(roomService(claimed.state, token, begin).status).toBe(409);
+  const failed = roomService(claimed.state, token, {
+    action: 'personal.finish',
+    id: account,
+  });
+  expect(roomService(failed.state, token, begin).status).toBe(422);
+  expect(
+    roomService(failed.state, token, { ...begin, id: crypto.randomUUID() }).body
+  ).toEqual({ started: true });
+});

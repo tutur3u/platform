@@ -32,7 +32,10 @@ vi.mock('./room-service', () => ({
   callRoomService: mocks.service,
 }));
 vi.mock('./chat-model', () => ({
-  getMeetChatModel: async () => ({ id: 'google/test' }),
+  getMeetChatModel: async () => ({
+    id: 'google/test',
+    providerModelId: 'gemini-3.1-flash-lite',
+  }),
 }));
 vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
   checkAiCredits: mocks.check,
@@ -80,7 +83,7 @@ it('returns only private context, charges the requester and never publishes to t
     [],
     1024,
     'My private question',
-    { id: 'google/test' },
+    { id: 'google/test', providerModelId: 'gemini-3.1-flash-lite' },
     expect.objectContaining({
       participants: [],
       title: 'Personal conversation',

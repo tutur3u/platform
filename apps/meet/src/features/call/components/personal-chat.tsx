@@ -1,7 +1,10 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
 import { LockKeyhole, Send, Share2 } from '@tuturuuu/icons';
-import { askPersonalMeetAssistant } from '@tuturuuu/internal-api';
+import {
+  askPersonalMeetAssistant,
+  InternalApiError,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -35,6 +38,11 @@ export function PersonalChat({
     startedAt: number;
   } | null>(null);
   const ask = useMutation({
+    onError: (error) => {
+      // Only a confirmed terminal receipt can safely use a new request ID.
+      if (error instanceof InternalApiError && error.status === 422)
+        retry.current = null;
+    },
     mutationFn: async (question: string) => {
       if (retry.current?.question !== question)
         retry.current = {

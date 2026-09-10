@@ -54,6 +54,8 @@ export function personalChatReceipt(
     if (existing) {
       if (existing.fingerprint !== input.fingerprint)
         return result({ error: 'Request changed' }, 409);
+      if (existing.status === 'failed')
+        return result({ error: 'Request failed; start a new attempt' }, 422);
       return result(
         existing.status === 'done'
           ? { text: existing.text }

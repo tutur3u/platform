@@ -29,11 +29,14 @@ export async function requestPersonalMeetChat(access: Access, input: Input) {
   if (!receipt.started)
     throw new MeetCallAccessError(409, 'Request already attempted');
   const answer = await answerPersonalMeetChat(access.user.id, input);
-  // Persist the result before responding; a lost response can replay it without generation or billing.
+  // Attempt recovery storage before responding, but do not hide a paid answer.
+  // An uncertain receipt stays pending and cannot generate or bill again.
   await callRoomService(access, {
     action: 'personal.finish',
     id: input.requestId,
     text: answer.text,
+  }).catch(() => {
+    console.warn('Meet private answer recovery storage unavailable');
   });
   return answer;
 }

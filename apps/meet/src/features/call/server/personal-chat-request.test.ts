@@ -35,9 +35,14 @@ it('replays a stored answer after a lost response without generating or charging
     timezone: 'UTC',
     history: [],
   };
-  await expect(requestPersonalMeetChat(access, input)).rejects.toThrow(
-    'response lost'
+  const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  await expect(requestPersonalMeetChat(access, input)).resolves.toEqual({
+    text: 'Private',
+  });
+  expect(warning).toHaveBeenCalledWith(
+    'Meet private answer recovery storage unavailable'
   );
+  warning.mockRestore();
   expect(await requestPersonalMeetChat(access, input)).toEqual({
     text: 'Private',
   });

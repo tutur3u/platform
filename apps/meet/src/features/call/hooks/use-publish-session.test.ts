@@ -1,6 +1,7 @@
+// @vitest-environment jsdom
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 
-vi.mock('react', () => ({ useCallback: (fn: unknown) => fn }));
 vi.mock('../lib/peer-recovery', () => ({ watchPeerRecovery: vi.fn() }));
 vi.mock('../lib/peer-connection', () => ({
   PEER_CONFIG: {},
@@ -10,9 +11,14 @@ vi.mock('../lib/peer-connection', () => ({
 import type { MeetSignaling } from '../lib/signaling';
 import { usePublishSession } from './use-publish-session';
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 it('closes a failed publisher before a later attempt creates another peer', async () => {
+  vi.useFakeTimers();
   const close = vi.fn();
+  const recovered = vi.fn();
   vi.stubGlobal(
     'RTCPeerConnection',
     class {
@@ -25,18 +31,26 @@ it('closes a failed publisher before a later attempt creates another peer', asyn
     .fn()
     .mockRejectedValueOnce(new Error('timeout'))
     .mockResolvedValue({ sessionId: 'new' });
-  const ensure = usePublishSession(
-    peer,
-    session,
-    { current: { request } as unknown as MeetSignaling },
-    () => {
-      peer.current?.close();
-      peer.current = null;
-      session.current = null;
-    }
+  const hook = renderHook(() =>
+    usePublishSession(
+      peer,
+      session,
+      { current: { request } as unknown as MeetSignaling },
+      (recover) => {
+        if (recover) recovered();
+        peer.current?.close();
+        peer.current = null;
+        session.current = null;
+      }
+    )
   );
+  const ensure = hook.result.current;
   await expect(ensure()).rejects.toThrow('timeout');
   expect(close).toHaveBeenCalledOnce();
   expect(peer.current).toBeNull();
+  expect(recovered).not.toHaveBeenCalled();
+  await act(() => vi.advanceTimersByTimeAsync(1500));
+  expect(recovered).toHaveBeenCalledOnce();
   expect(await ensure()).toHaveProperty('sessionId', 'new');
+  hook.unmount();
 });
