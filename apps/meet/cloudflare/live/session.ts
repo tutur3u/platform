@@ -204,10 +204,13 @@ export class MeetLiveDurableObject {
       type: 'state',
       state: this.provider ? 'listening' : 'connecting',
     });
-    this.emit({
-      type: 'history',
-      turns: await this.archive.recent(this.userText, this.modelText),
+    this.queue = this.queue.then(async () => {
+      this.emit({
+        type: 'history',
+        turns: await this.archive.recent(this.userText, this.modelText),
+      });
     });
+    await this.queue;
     for (const review of saved.reviews) this.emitReview(review);
     this.state.waitUntil(this.connect());
     return new Response(null, {
