@@ -57,3 +57,22 @@ it('mute wins over a pending unlock and later sessions remain muted', async () =
   expect(mocks.players.at(-1)!.close).toHaveBeenCalledOnce();
   expect(mocks.players.at(-1)!.unlock).not.toHaveBeenCalled();
 });
+
+it('ignores a removed speaker failing during a pending unlock', async () => {
+  const room = new RoomAudioPlayers(vi.fn());
+  room.activate('removed');
+  let reject!: (error: Error) => void;
+  mocks.players.at(-1)!.unlock.mockImplementation(
+    () =>
+      new Promise<void>((_, fail) => {
+        reject = fail;
+      })
+  );
+  room.activate('remaining');
+  const remaining = mocks.players.at(-1)!;
+  const unlocking = room.unlock('speaker');
+  room.deactivate('removed');
+  reject(new Error('context closed'));
+  expect(await unlocking).toBe(true);
+  expect(remaining.close).not.toHaveBeenCalled();
+});

@@ -8,7 +8,7 @@ export class LiveAudioPlayer {
   private sources = new Set<AudioBufferSourceNode>();
   private pending: Array<{ data: string; sampleRate: number; at: number }> = [];
   private pendingBytes = 0;
-  unlock(outputDeviceId?: string) {
+  async unlock(outputDeviceId?: string) {
     const generation = ++this.generation;
     this.closed = false;
     this.context ??= new AudioContext({ sampleRate: 24000 });

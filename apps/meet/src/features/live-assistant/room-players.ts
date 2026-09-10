@@ -14,7 +14,22 @@ export class RoomAudioPlayers {
     this.players.set(id, player);
     if (this.muted) player.close();
     else if (this.enabled)
-      void player.unlock(this.outputDeviceId).catch(this.onError);
+      void this.open(id, player, this.outputDeviceId, this.generation).catch(
+        this.onError
+      );
+  }
+  private async open(
+    id: string,
+    player: LiveAudioPlayer,
+    outputDeviceId: string,
+    generation: number
+  ) {
+    try {
+      await player.unlock(outputDeviceId);
+    } catch (error) {
+      if (generation === this.generation && this.players.get(id) === player)
+        throw error;
+    }
   }
   deactivate(id: string) {
     this.players.get(id)?.close();
@@ -33,8 +48,8 @@ export class RoomAudioPlayers {
     this.muted = false;
     try {
       await Promise.all(
-        [...this.players.values()].map((player) =>
-          player.unlock(outputDeviceId)
+        [...this.players.entries()].map(([id, player]) =>
+          this.open(id, player, outputDeviceId, generation)
         )
       );
       return generation === this.generation && this.enabled;
