@@ -83,3 +83,45 @@ it('an old replay cannot evict a newer message at the retention limit', () => {
     chat.map((entry) => entry.id)
   );
 });
+
+it('an old overlapping receipt cannot erase a newer failed-send identity', async () => {
+  vi.useFakeTimers();
+  try {
+    let first!: (value: unknown) => void, second!: (value: unknown) => void;
+    const request = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            first = r;
+          })
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            second = r;
+          })
+      )
+      .mockRejectedValue(new Error('signaling_timeout'));
+    const actions = createRoomActions({
+      current: { request, isClosed: false } as unknown as MeetSignaling,
+    });
+    const a = actions.sendChat('Hello'),
+      b = actions.sendChat('Hello');
+    first({ id: 'saved' });
+    await a;
+    const failed = expect(actions.sendChat('Hello')).rejects.toThrow(
+      'signaling_timeout'
+    );
+    const nextId = request.mock.calls[2]![0].clientMessageId;
+    second({ id: 'saved' });
+    await b;
+    await vi.runAllTimersAsync();
+    await failed;
+    request.mockResolvedValue({ id: 'second' });
+    await actions.sendChat('Hello');
+    expect(request.mock.calls.at(-1)![0].clientMessageId).toBe(nextId);
+  } finally {
+    vi.useRealTimers();
+  }
+});

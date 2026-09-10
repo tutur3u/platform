@@ -47,7 +47,7 @@ export function createRoomActions(signaling: {
         undefined,
         id
       );
-      pendingChat.delete(key);
+      if (pendingChat.get(key) === id) pendingChat.delete(key);
       return result;
     },
     raiseHand: (raised: boolean) =>

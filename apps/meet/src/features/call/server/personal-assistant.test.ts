@@ -13,6 +13,18 @@ const mocks = vi.hoisted(() => ({
   })),
   deduct: vi.fn(async () => ({ success: true })),
   service: vi.fn(),
+  reserve: vi.fn(),
+  release: vi.fn(async () => ({ success: true })),
+}));
+vi.mock('@tuturuuu/ai/credits/reservations', () => ({
+  reserveFixedAiCredits: mocks.reserve,
+  releaseFixedAiCreditReservation: mocks.release,
+}));
+vi.mock('@tuturuuu/ai/studio/metering', () => ({
+  calculateAiStudioUsageCost: async () => ({
+    billedCredits: 30,
+    providerCostUsd: 0.003,
+  }),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('./room-service', () => ({
@@ -48,6 +60,7 @@ import { answerPersonalMeetChat } from './personal-assistant';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.reserve.mockResolvedValue({ success: true, reservationId: 'hold' });
   mocks.check.mockResolvedValue({
     allowed: true,
     remainingCredits: 100,
@@ -72,7 +85,7 @@ it('returns only private context, charges the requester and never publishes to t
       participants: [],
       title: 'Personal conversation',
     }),
-    { audience: 'private' },
+    { audience: 'private', beforeSearch: expect.any(Function) },
   ]);
   expect(mocks.deduct).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -96,4 +109,46 @@ it('does not call the provider when the requester has no quota', async () => {
     })
   ).rejects.toThrow('AI quota');
   expect(mocks.answer).not.toHaveBeenCalled();
+});
+
+it('holds quota until actual usage is deducted, then releases the hold', async () => {
+  await answerPersonalMeetChat('requester', {
+    question: 'Hello',
+    timezone: 'UTC',
+    history: [],
+  });
+  expect(mocks.reserve.mock.invocationCallOrder[0]).toBeLessThan(
+    mocks.answer.mock.invocationCallOrder[0]!
+  );
+  expect(mocks.deduct.mock.invocationCallOrder[0]).toBeLessThan(
+    mocks.release.mock.invocationCallOrder[0]!
+  );
+});
+it('rejects a concurrent request when the atomic reservation has consumed the available quota', async () => {
+  mocks.reserve
+    .mockResolvedValueOnce({ success: true, reservationId: 'hold' })
+    .mockResolvedValueOnce({ success: false });
+  const input = { question: 'Hello', timezone: 'UTC', history: [] };
+  const results = await Promise.allSettled([
+    answerPersonalMeetChat('requester', input),
+    answerPersonalMeetChat('requester', input),
+  ]);
+  expect(results.map((r) => r.status).sort()).toEqual([
+    'fulfilled',
+    'rejected',
+  ]);
+  expect(mocks.answer).toHaveBeenCalledOnce();
+  expect(mocks.release).toHaveBeenCalledOnce();
+});
+it('releases the hold on provider failure without inventing usage', async () => {
+  mocks.answer.mockRejectedValueOnce(new Error('provider unavailable'));
+  await expect(
+    answerPersonalMeetChat('requester', {
+      question: 'Hello',
+      timezone: 'UTC',
+      history: [],
+    })
+  ).rejects.toThrow('provider unavailable');
+  expect(mocks.release).toHaveBeenCalledOnce();
+  expect(mocks.deduct).not.toHaveBeenCalled();
 });

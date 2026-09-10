@@ -20,6 +20,7 @@ export async function answerMeetChat(
     workspaceTools?: ToolSet;
     messages?: ModelMessage[];
     audience?: 'private';
+    beforeSearch?: () => Promise<void>;
   } = {}
 ) {
   const response = await Effect.runPromise(
@@ -70,7 +71,8 @@ export async function answerMeetChat(
             [
               context.title,
               ...context.participants.map((person) => person.displayName),
-            ]
+            ],
+            options.beforeSearch
           );
           if (!options.messages) publicTools.google_search = search.tool;
           const hasWorkspaceTools =

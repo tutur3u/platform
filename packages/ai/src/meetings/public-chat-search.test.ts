@@ -9,6 +9,27 @@ vi.mock('ai', async (original) => ({
 import { measureMeetGeneration } from './chat-generation-usage';
 import { publicMeetSearch } from './public-chat-search';
 
+it('does not call the search provider when its quota reservation is denied', async () => {
+  generate.mockClear();
+  const reserve = vi.fn().mockRejectedValue(new Error('Quota exhausted'));
+  const search = publicMeetSearch(
+    'google/gemini-3.1-flash-lite',
+    256,
+    AbortSignal.timeout(1000),
+    'RMIT',
+    [],
+    reserve
+  );
+  await expect(
+    search.tool.execute!(
+      {},
+      { toolCallId: 'search', messages: [], context: {} }
+    )
+  ).rejects.toThrow('Quota exhausted');
+  expect(reserve).toHaveBeenCalledOnce();
+  expect(generate).not.toHaveBeenCalled();
+});
+
 it('isolates native search from room history and records nested usage without repeating requests', async () => {
   const steps = [
     {

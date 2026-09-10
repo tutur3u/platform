@@ -14,7 +14,8 @@ export function publicMeetSearch(
   maxOutputTokens: number,
   signal: AbortSignal,
   question: string,
-  privateTerms: string[] = []
+  privateTerms: string[] = [],
+  beforeSearch?: () => Promise<void>
 ) {
   const steps: MeetGenerationStep[] = [];
   const sources: MeetCitationSource[] = [];
@@ -58,6 +59,7 @@ export function publicMeetSearch(
             error:
               'The search attempt for this answer has already been used. Ask a follow-up to try again.',
           };
+        await beforeSearch?.();
         searched = true;
         steps.push({}); // A failed provider attempt has unknown usage, never zero cost.
         const result = await generateText({

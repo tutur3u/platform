@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { MeetCallAccessError } from '@/features/call/lib/call-access';
 import { answerPersonalMeetChat } from '@/features/call/server/personal-assistant';
+import { readPersonalChatBody } from '@/features/call/server/personal-chat-body';
 import { roomRoute } from '@/features/call/server/room-service';
 
 const inputSchema = z.object({
@@ -21,15 +22,7 @@ export async function POST(
 ) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
-    const raw = await request.text();
-    if (raw.length > 40000)
-      throw new MeetCallAccessError(413, 'Message too large');
-    let json: unknown;
-    try {
-      json = JSON.parse(raw);
-    } catch {
-      throw new MeetCallAccessError(400, 'Invalid message');
-    }
+    const json = await readPersonalChatBody(request);
     const input = inputSchema.safeParse(json);
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid message');
     return answerPersonalMeetChat(access.user.id, input.data);

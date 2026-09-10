@@ -116,7 +116,12 @@ export function createMeetRealtimeServer(
 
   setInterval(() => {
     for (const [roomId, room] of rooms.entries()) {
-      room.snapshot = pruneMeetPresence(room.snapshot, Date.now());
+      const connected = new Set(
+        [...room.clients]
+          .filter((socket) => socket.readyState === 1)
+          .map((socket) => socket.data.token.userId)
+      );
+      room.snapshot = pruneMeetPresence(room.snapshot, Date.now(), connected);
       broadcast(roomId, [meetPresenceMessage(room.snapshot, roomId)]);
     }
   }, PRESENCE_SWEEP_MS);
