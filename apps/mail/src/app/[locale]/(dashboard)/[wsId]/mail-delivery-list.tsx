@@ -2,6 +2,7 @@
 
 import type { MailThreadSummary } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
+import { MailDeliveryDisclosure } from './mail-delivery-disclosure';
 import { groupMailDeliveries } from './mail-delivery-groups';
 import type { MailFolder } from './mail-folders';
 import { MailThreadRow } from './mail-thread-list';
@@ -44,14 +45,10 @@ export function MailDeliveryList({
     return (
       <div key={first.id} className="rounded-xl bg-muted/25">
         {row(first)}
-        <details
-          open={
-            others.some(
-              (thread) =>
-                thread.id === threadId || selectedThreads.has(thread.id)
-            ) || undefined
-          }
-          className="group/deliveries"
+        <MailDeliveryDisclosure
+          reveal={others.some(
+            (thread) => thread.id === threadId || selectedThreads.has(thread.id)
+          )}
         >
           <summary className="cursor-pointer rounded-md px-4 py-2 text-muted-foreground text-xs hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             {t('similar_deliveries', { count: group.length })}
@@ -70,7 +67,7 @@ export function MailDeliveryList({
           <div className="space-y-1 border-dynamic border-l-2 pl-2">
             {others.map(row)}
           </div>
-        </details>
+        </MailDeliveryDisclosure>
       </div>
     );
   });

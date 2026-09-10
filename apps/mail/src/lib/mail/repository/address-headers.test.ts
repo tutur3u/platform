@@ -56,3 +56,22 @@ it('also recovers damaged outbound recipient names', async () => {
   );
   expect(query.in).toHaveBeenCalledWith('id', ['raw']);
 });
+
+it('recovers null names and bounds raw-header requests', async () => {
+  const query = {
+    select: vi.fn().mockReturnThis(),
+    in: vi.fn().mockResolvedValue({ data: [], error: null }),
+  };
+  await loadDamagedAddressHeaders(
+    { schema: () => ({ from: () => query }) },
+    Array.from({ length: 201 }, (_, index) => ({
+      id: `${index}`,
+      from_name: null,
+      raw_message_id: `raw-${index}`,
+    })),
+    new Map()
+  );
+  expect(query.in.mock.calls.map((call) => call[1].length)).toEqual([
+    100, 100, 1,
+  ]);
+});

@@ -62,7 +62,7 @@ export function useMailKeyboard(options: MailKeyboardOptions) {
       if (element.dataset.mailThreadOpen !== id) return false;
       const group = element.closest('details');
       if (group && !group.open && group.getClientRects().length > 0)
-        group.open = true;
+        group.dispatchEvent(new Event('mail-expand-deliveries'));
       return element.getClientRects().length > 0;
     });
     row?.focus();

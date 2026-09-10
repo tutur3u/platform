@@ -49,3 +49,23 @@ it('collapses similar deliveries and preserves recipient-specific open actions',
   expect(onOpen).toHaveBeenCalledWith(threads[1]);
   expect(screen.getByText('to: b@example.com')).toBeTruthy();
 });
+
+it('retains keyboard expansion through selection and unrelated rerenders', () => {
+  const props = {
+    threads,
+    folder: 'inbox' as const,
+    threadId: null,
+    selectedThreads: new Set<string>(),
+    onOpen: () => {},
+    onPrefetch: () => {},
+    onSelect: () => {},
+  };
+  const { container, rerender } = render(h(MailDeliveryList, props));
+  const details = container.querySelector('details')!;
+  fireEvent(details, new Event('mail-expand-deliveries'));
+  expect(details.open).toBe(true);
+  rerender(h(MailDeliveryList, { ...props, selectedThreads: new Set(['b']) }));
+  rerender(h(MailDeliveryList, props));
+  expect(details.open).toBe(true);
+  expect(container.querySelector('details')).toBe(details);
+});

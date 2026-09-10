@@ -236,6 +236,9 @@ it('opens a collapsed delivery group before focusing its recipient row', () => {
   const details = document.createElement('details');
   wrapper.before(details);
   details.append(wrapper);
+  details.addEventListener('mail-expand-deliveries', () => {
+    details.open = true;
+  });
   Object.defineProperty(second, 'getClientRects', {
     value: () => (details.open ? [{}] : []) as unknown as DOMRectList,
   });
