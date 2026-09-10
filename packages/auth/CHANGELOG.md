@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.4](https://github.com/tutur3u/platform/compare/auth-v0.3.3...auth-v0.3.4) (2026-09-09)
+
+
+### Bug Fixes
+
+* **meet:** persist participant releases before notifying clients ([ac6989c](https://github.com/tutur3u/platform/commit/ac6989c78edbca1b28cadbafade54d7eb1f4e529))
+* **meet:** preserve retained chat and safe reconnect state ([01f744c](https://github.com/tutur3u/platform/commit/01f744cb9b7083ed6976d1f20615c64b7b5c44c2))
+* **meet:** recover invitations transcription and signaling ([94668ce](https://github.com/tutur3u/platform/commit/94668cef9b452eb67cbad63ff618307c1a4b306a))
+* **meet:** recover invitations, transcription, and reconnects ([#5284](https://github.com/tutur3u/platform/issues/5284)) ([b65d3c0](https://github.com/tutur3u/platform/commit/b65d3c02dbdd1ad2477c400924fdad0a3b83347e))
+* **meet:** retain reconnect state and cancel abandoned recovery ([9acbe9f](https://github.com/tutur3u/platform/commit/9acbe9fe3b1053018c4ebbbadb2260753dd2ee37))
+
 ## [0.3.3](https://github.com/tutur3u/platform/compare/auth-v0.3.2...auth-v0.3.3) (2026-09-04)
 
 

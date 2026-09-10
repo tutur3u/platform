@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/types-v0.29.0...types-v0.29.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **meet:** bound stalled recovery and preserve retry accounting ([49665ab](https://github.com/tutur3u/platform/commit/49665ab53cbd2db14a015320ba5aaf73bd5cf500))
+* **meet:** recover invitations transcription and signaling ([94668ce](https://github.com/tutur3u/platform/commit/94668cef9b452eb67cbad63ff618307c1a4b306a))
+* **meet:** recover invitations, transcription, and reconnects ([#5284](https://github.com/tutur3u/platform/issues/5284)) ([b65d3c0](https://github.com/tutur3u/platform/commit/b65d3c02dbdd1ad2477c400924fdad0a3b83347e))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/types-v0.28.0...types-v0.29.0) (2026-09-07)
 
 

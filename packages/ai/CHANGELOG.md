@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/ai-v0.10.0...ai-v0.11.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** add grounded Mira tools with private approvals ([1ae6826](https://github.com/tutur3u/platform/commit/1ae6826ea9ee5e47329b53f2c6c1a0bc5d68a5f9))
+* **meet:** give Mira live tools and private workspace approvals ([#5275](https://github.com/tutur3u/platform/issues/5275)) ([4f53e8a](https://github.com/tutur3u/platform/commit/4f53e8aa4e3f386b1f4e83cb9fbad6fec7878c00))
+
+
+### Bug Fixes
+
+* **meet:** allow final-step workspace approval requests ([86b4975](https://github.com/tutur3u/platform/commit/86b49755fa83bcc73361d933bcb94b484ca53fac))
+* **meet:** bound complete citation footers ([510e156](https://github.com/tutur3u/platform/commit/510e156770e5577d15a2202a2cbe208d729d9a56))
+* **meet:** clarify citations and inline private reviews ([78f146a](https://github.com/tutur3u/platform/commit/78f146a0d47558ab60092fb112512c14fa1187c9))
+* **meet:** clarify citations and inline private reviews ([#5279](https://github.com/tutur3u/platform/issues/5279)) ([21be6a3](https://github.com/tutur3u/platform/commit/21be6a3e541669e630a991298bc0aef880db955f))
+* **meet:** harden private assistant reviews and search boundaries ([0a536d5](https://github.com/tutur3u/platform/commit/0a536d582c68e48d279e93ada064240010778791))
+* **meet:** preserve markdown and review edge states ([4a766cc](https://github.com/tutur3u/platform/commit/4a766ccf7a26f7db080edd9c1ef5df85c5f08ed5))
+* **meet:** preserve verified search and private delivery outcomes ([6598047](https://github.com/tutur3u/platform/commit/65980470c547529039c2cdace9b30df497072402))
+* **meet:** recover malformed reviews and preserve shared chat history ([331387c](https://github.com/tutur3u/platform/commit/331387ce90ef02cd9b99b44a65e50bd694ad1218))
+* **meet:** retain readable oversized answer previews ([e6fde0e](https://github.com/tutur3u/platform/commit/e6fde0e32e5e3c992cbd30102caa6ccb8f907f54))
+* **meet:** use owned assistant message type export ([787ec04](https://github.com/tutur3u/platform/commit/787ec04be18add04fbabb03ce6870f5104b3c170))
+* **meet:** validate private continuations and incomplete search usage ([0a19050](https://github.com/tutur3u/platform/commit/0a190506d5e51408e8a55cbfe4633ebee3f30348))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/ai-v0.9.0...ai-v0.10.0) (2026-09-09)
 
 

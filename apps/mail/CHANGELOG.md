@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/mail-v0.20.2...mail-v0.21.0) (2026-09-09)
+
+
+### Features
+
+* **mail:** add keyboard navigation and shortcuts ([0db69e8](https://github.com/tutur3u/platform/commit/0db69e8820c3ba72598e566fd4463344bb547001))
+* **mail:** add keyboard navigation and shortcuts ([#5283](https://github.com/tutur3u/platform/issues/5283)) ([44a90e1](https://github.com/tutur3u/platform/commit/44a90e15db2b5aea68aad00ef50e9a3a80f58759))
+* **mail:** improve composer editing and draft recovery ([67c5db0](https://github.com/tutur3u/platform/commit/67c5db0907444b586f63eb5c643e4520e3f55cdc))
+* **mail:** improve composer editing and draft recovery ([#5276](https://github.com/tutur3u/platform/issues/5276)) ([4b94d04](https://github.com/tutur3u/platform/commit/4b94d0442add07cdf1e990a8cb12fcb5c88e4dea))
+
+
+### Bug Fixes
+
+* **mail:** address reader and bootstrap review edge cases ([6baab82](https://github.com/tutur3u/platform/commit/6baab822f340f7f69704706c2fb4983bf6253e25))
+* **mail:** compact message headers and collapse reply history ([1199737](https://github.com/tutur3u/platform/commit/11997374912d854a7e6943889077d8cab480fe8e))
+* **mail:** compact message headers and collapse reply history ([#5273](https://github.com/tutur3u/platform/issues/5273)) ([c984f98](https://github.com/tutur3u/platform/commit/c984f98c892cd0746016a5b26449d26bdfc2bbeb))
+* **mail:** consolidate synchronization controls and clarify counts ([05f048f](https://github.com/tutur3u/platform/commit/05f048f99b56b54ae509ee85e2e0ea52cef478f2))
+* **mail:** consolidate synchronization controls and clarify counts ([#5282](https://github.com/tutur3u/platform/issues/5282)) ([e77760f](https://github.com/tutur3u/platform/commit/e77760f0ab0bcde25b1b6e828878335f602ca183))
+* **mail:** deduplicate refresh requests ([370a7eb](https://github.com/tutur3u/platform/commit/370a7eb5073f2ffbb2af8a01658f70672e889591))
+* **mail:** guard mailbox transitions and normalize sender details ([0d2c85b](https://github.com/tutur3u/platform/commit/0d2c85bc196deb5b8efe021417dc865a965ba2b0))
+* **mail:** handle composer recovery and review edge cases ([63375b8](https://github.com/tutur3u/platform/commit/63375b82c998e7234cfc2380424a822275e97f9c))
+* **mail:** harden keyboard focus and reply behavior ([08a75dc](https://github.com/tutur3u/platform/commit/08a75dcf055fc4261ddea48fa9ea336e0423c1eb))
+* **mail:** keep complete quote-only chains visible ([bec606c](https://github.com/tutur3u/platform/commit/bec606c6993cda0416ac937e0c1a19daac402534))
+* **mail:** keep synchronization feedback consistent and accessible ([e3aa0ec](https://github.com/tutur3u/platform/commit/e3aa0ecd6962401f4d3507b949828e1b4c8193ba))
+* **mail:** parse Outlook history without repeated tree cloning ([6ecf30c](https://github.com/tutur3u/platform/commit/6ecf30cd763e49cc6bd6ce2106943a32982f54f9))
+* **mail:** preserve copied inline images and draft freshness ([77bea6b](https://github.com/tutur3u/platform/commit/77bea6bba7c5390cbac2271eaba51d8473280cb6))
+* **mail:** preserve plain text when editing HTML drafts ([59fab42](https://github.com/tutur3u/platform/commit/59fab42d384cba8a52686a626108f702b9e711e1))
+* **mail:** preserve table and blockquote reply layouts ([c9baa74](https://github.com/tutur3u/platform/commit/c9baa7479cdf6d1905dd5724b7c45fcbd5abf5ca))
+* **mail:** preserve visible replies and accessible participant details ([20fbaa5](https://github.com/tutur3u/platform/commit/20fbaa51e2b4feaa059457265dee9a8724274af4))
+* **mail:** report failed refreshes ([18d1e09](https://github.com/tutur3u/platform/commit/18d1e0970a89d6afc9630217d740d735b74dcc86))
+* **mail:** retain actions while the next email loads ([ffb5249](https://github.com/tutur3u/platform/commit/ffb5249c6a2ca6fefb4632ad483933d5bc21b116))
+* **mail:** speed inbox loading and independent archive actions ([103b747](https://github.com/tutur3u/platform/commit/103b7473ca479465d8b74dcd45730d2845c4c62f))
+* **mail:** speed inbox loading and independent archive actions ([#5270](https://github.com/tutur3u/platform/issues/5270)) ([4c010c0](https://github.com/tutur3u/platform/commit/4c010c0da8877215ee0fdc8c5e6934eb9bba8503))
+* **mail:** tolerate malformed copied attachment IDs ([bb9961a](https://github.com/tutur3u/platform/commit/bb9961aebe1b682d19c0dec11b3c8b15dbc25cb4))
+
 ## [0.20.2](https://github.com/tutur3u/platform/compare/mail-v0.20.1...mail-v0.20.2) (2026-09-09)
 
 

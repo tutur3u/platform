@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/ui-v0.31.0...ui-v0.32.0) (2026-09-09)
+
+
+### Features
+
+* **meet:** give Mira a distinct identity and refine call panels ([#5269](https://github.com/tutur3u/platform/issues/5269)) ([6ba3f1c](https://github.com/tutur3u/platform/commit/6ba3f1c5e2408ae0a564c97177282978f38b4ce8))
+* **meet:** polish assistant identity and call panels ([2d2098b](https://github.com/tutur3u/platform/commit/2d2098b8923d58f6c094fe02cf1de142178b5433))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/ui-v0.30.2...ui-v0.31.0) (2026-09-07)
 
 
