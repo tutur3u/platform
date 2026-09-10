@@ -111,7 +111,9 @@ export function useMeetRoom({
   const mediaRef = useRef(media);
   mediaRef.current = media;
   const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
+  const publishEpoch = useRef(0);
   const resetPublisher = useCallback((recover = false) => {
+    publishEpoch.current++;
     publishPcRef.current?.close();
     publishPcRef.current = null;
     publishSessionRef.current = null;
@@ -131,13 +133,11 @@ export function useMeetRoom({
   useEffect(() => {
     activeRef.current = true;
     let usedInitialToken = false;
-    // Reconnects fetch fresh tokens because calls can outlast token expiry.
     const resolveUrl = async () => {
       if (!usedInitialToken) {
         usedInitialToken = true;
         return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
       }
-      // Reauthorize invite access on Meet, including guests outside the workspace.
       const refreshed = await createMeetCallRealtimeToken(
         meetingId,
         undefined,
@@ -308,7 +308,8 @@ export function useMeetRoom({
           ?.getAudioTracks()
           .some((track) => track.readyState === 'live')
       );
-      const previousPc = publishPcRef.current;
+      const previousPc = publishPcRef.current,
+        epoch = publishEpoch.current;
       const published = await syncPublishedSenders({
         published: publishedRef.current,
         desired,
@@ -322,7 +323,8 @@ export function useMeetRoom({
         closeTrack: (sessionId, track) =>
           closePublishedTrack(signalingRef.current, sessionId, track),
       });
-      if (publishPcRef.current !== previousPc) return;
+      if (publishPcRef.current !== previousPc || publishEpoch.current !== epoch)
+        return;
       publishedRef.current = published;
       const { publish } = diffLocalTracks(published, desired);
       if (publish.length) {

@@ -1,4 +1,5 @@
 ---
+updated: '2026-09-10'
 title: "Meet solo mode and recovery"
 description: "Idle transport costs, private Mira conversations, and reconnect verification."
 ---
@@ -27,8 +28,14 @@ The conversation panel opens Private Mira by default when alone. This context
 stays private when someone joins. It does not import room chat, send prompts to
 room services, or broadcast responses. The server charges the requester and
 returns the answer only in their authenticated response. Search queries must not
-include private history. Personal conversation state is kept in the panel's
-memory and clears when the panel closes or the user leaves.
+include private history. The conversation view is kept in the panel's memory and clears when it closes or
+the user leaves. A bounded requester-only receipt cache retains generated replies
+for retry recovery for up to one hour of access (expired entries are pruned on
+the next private request). Receipts are never returned by room/admin reads or
+broadcast as messages. This is transient delivery recovery, not AI memory.
+A request with uncertain generation/settlement is not generated or charged again.
+Private generation reserves quota atomically before provider calls; search
+reserves additional quota only when used.
 
 The Everyone tab remains shared even when the sender is alone. Saved room
 messages can be replayed to future admitted participants. Sharing a private Mira

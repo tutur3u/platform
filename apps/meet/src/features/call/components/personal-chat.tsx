@@ -13,7 +13,7 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChatMessageBody } from './chat-message-body';
 import { MiraProfile } from './mira-profile';
 
@@ -29,10 +29,21 @@ export function PersonalChat({
   const [history, setHistory] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [share, setShare] = useState<string | null>(null);
+  const retry = useRef<{
+    question: string;
+    requestId: string;
+    startedAt: number;
+  } | null>(null);
   const ask = useMutation({
     mutationFn: async (question: string) => {
+      if (retry.current?.question !== question)
+        retry.current = {
+          question,
+          requestId: crypto.randomUUID(),
+          startedAt: Date.now(),
+        };
       const result = await askPersonalMeetAssistant(meetingId, {
-        question,
+        ...retry.current,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         history: history.slice(-12).map(({ body, assistant }) => ({
           body: body.slice(0, 2000),
@@ -46,6 +57,7 @@ export function PersonalChat({
           { id: crypto.randomUUID(), body: result.text, assistant: true },
         ].slice(-40)
       );
+      retry.current = null;
       setDraft('');
     },
   });

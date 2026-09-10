@@ -108,6 +108,9 @@ it('an old overlapping receipt cannot erase a newer failed-send identity', async
     });
     const a = actions.sendChat('Hello'),
       b = actions.sendChat('Hello');
+    expect(request.mock.calls[0]![0].clientMessageId).not.toBe(
+      request.mock.calls[1]![0].clientMessageId
+    );
     first({ id: 'saved' });
     await a;
     const failed = expect(actions.sendChat('Hello')).rejects.toThrow(
@@ -124,4 +127,21 @@ it('an old overlapping receipt cannot erase a newer failed-send identity', async
   } finally {
     vi.useRealTimers();
   }
+});
+
+it('a late receipt keeps the replayed copy read', () => {
+  const message = {
+    type: 'chat.message' as const,
+    id: 'once',
+    userId: 'other',
+    displayName: 'Guest',
+    body: 'Hello',
+    createdAt: '2026-09-10T00:00:00Z',
+  };
+  const restored = reduceCallState(INITIAL_CALL_STATE, {
+    ...message,
+    replayed: true,
+  });
+  expect(reduceCallState(restored, message)).toBe(restored);
+  expect(countUnreadChatMessages(restored.chat, null)).toBe(0);
 });

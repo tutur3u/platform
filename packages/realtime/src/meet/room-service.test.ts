@@ -304,3 +304,45 @@ it.each(['[@ttr](https://example.com)', '`@tuturuuu`'])(
     expect(result.state.aiRequests).toEqual(state.aiRequests);
   }
 );
+
+it('replays personal responses only to their requester, never through room/admin reads', () => {
+  const begin = {
+    action: 'personal.begin',
+    id: account,
+    startedAt: Date.now(),
+    fingerprint: 'a'.repeat(64),
+  };
+  const claimed = roomService(initial(), token, begin);
+  expect(claimed.body).toEqual({ started: true });
+  expect(claimed.messages).toBeUndefined();
+  expect(roomService(claimed.state, token, begin).status).toBe(409);
+  const done = roomService(claimed.state, token, {
+    action: 'personal.finish',
+    id: account,
+    text: 'Private answer',
+  });
+  expect(roomService(done.state, token, begin).body).toEqual({
+    text: 'Private answer',
+  });
+  expect(
+    JSON.stringify(
+      roomService(done.state, { ...token, role: 'host' }, { action: 'read' })
+        .body
+    )
+  ).not.toContain('Private answer');
+  const other = { ...token, accountId: 'another', userId: 'another' };
+  expect(roomService(done.state, other, begin).body).toEqual({ started: true });
+  expect(roomService(done.state, { ...token, scopes: [] }, begin).status).toBe(
+    403
+  );
+  expect(
+    roomService(done.state, token, { ...begin, fingerprint: 'b'.repeat(64) })
+      .status
+  ).toBe(409);
+  expect(
+    roomService(done.state, token, {
+      ...begin,
+      startedAt: Date.now() - 3_600_001,
+    }).status
+  ).toBe(410);
+});

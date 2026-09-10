@@ -37,18 +37,22 @@ export function createRoomActions(signaling: {
       if (!signaling.current) throw new Error('signaling_closed');
       const key = JSON.stringify([text, attachmentIds ?? []]);
       const id = pendingChat.get(key) ?? crypto.randomUUID();
-      pendingChat.set(key, id);
-      if (pendingChat.size > 20)
-        pendingChat.delete(pendingChat.keys().next().value!);
-      const result = await sendRecoverableChat(
-        signaling.current,
-        text,
-        attachmentIds,
-        undefined,
-        id
-      );
-      if (pendingChat.get(key) === id) pendingChat.delete(key);
-      return result;
+      // A failed attempt can be retried once; concurrent new sends stay distinct.
+      pendingChat.delete(key);
+      try {
+        return await sendRecoverableChat(
+          signaling.current,
+          text,
+          attachmentIds,
+          undefined,
+          id
+        );
+      } catch (error) {
+        pendingChat.set(key, id);
+        if (pendingChat.size > 20)
+          pendingChat.delete(pendingChat.keys().next().value!);
+        throw error;
+      }
     },
     raiseHand: (raised: boolean) =>
       signaling.current?.send({ type: 'hand.raise', raised }),

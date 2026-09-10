@@ -133,11 +133,7 @@ export function reduceCallState(
       return { ...state, stage: message.stage };
 
     case 'chat.message':
-      if (
-        message.replayed &&
-        state.chat.some((entry) => entry.id === message.id)
-      )
-        return state;
+      if (state.chat.some((entry) => entry.id === message.id)) return state;
       return {
         ...state,
         chat: retainRoomChat(

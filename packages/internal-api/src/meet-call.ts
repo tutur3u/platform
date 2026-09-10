@@ -196,6 +196,8 @@ export function respondMeetAssistantReview(
 export function askPersonalMeetAssistant(
   meetingId: string,
   input: {
+    requestId: string;
+    startedAt: number;
     question: string;
     timezone: string;
     history: Array<{ body: string; assistant: boolean }>;
