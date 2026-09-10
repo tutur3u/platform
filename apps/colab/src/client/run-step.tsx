@@ -63,7 +63,9 @@ export function RunStep({ index, trace }: { index: number; trace: Trace }) {
           </span>
           <div>
             <strong>
-              {actionLabels[insight.action] ?? c.attemptedIn}{' '}
+              {insight.status === 'error'
+                ? c.attemptedIn
+                : (actionLabels[insight.action] ?? c.attemptedIn)}{' '}
               {appName(insight.app)}
             </strong>
             {insight.detail && <p>{insight.detail}</p>}

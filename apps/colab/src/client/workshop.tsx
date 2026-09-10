@@ -298,7 +298,10 @@ export function Workshop({
                 action={(body, route) =>
                   action({ ...body, teamId: team.id }, route)
                 }
-                roomAiAvailable={room.aiCalls < room.limits.aiCallLimit}
+                roomAiRemaining={Math.max(
+                  room.limits.aiCallLimit - room.aiCalls,
+                  0
+                )}
               />
             </div>
           )}

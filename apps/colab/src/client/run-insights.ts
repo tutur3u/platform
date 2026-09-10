@@ -91,7 +91,9 @@ export function runInsights(run: Run, limits: TeamLimits) {
         ? 'attention'
         : 'complete';
   return {
-    apps: new Set(steps.map((step) => step.app)).size,
+    apps: new Set(
+      steps.filter((step) => step.status === 'success').map((step) => step.app)
+    ).size,
     failed,
     reads,
     status,

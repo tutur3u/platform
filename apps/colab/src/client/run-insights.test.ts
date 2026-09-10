@@ -84,6 +84,7 @@ describe('run observability', () => {
     );
     expect(insights.status).toBe('limited');
     expect(insights.failed).toBe(1);
+    expect(insights.apps).toBe(0);
     expect(insights.stopReason).toBe('tool_limit');
     expect(insights.steps[0]).toMatchObject({
       action: 'notion',
