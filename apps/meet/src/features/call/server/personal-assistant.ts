@@ -35,7 +35,8 @@ export async function answerPersonalMeetChat(
   ).byteLength;
   // Reserve repeated context across the bounded tool loop, not a flat maximum
   // for every short question. Output and tool-result headroom remain bounded.
-  const inputBudget = 3 * (contextBytes + 6000) + 8192;
+  const estimatedContextTokens = Math.ceil(contextBytes / 3);
+  const inputBudget = 3 * (estimatedContextTokens + 6000) + 8192;
   const wsId = await personalWorkspace(userId);
   const model = await getMeetChatModel(wsId);
   const allowance = await checkAiCredits(wsId, model.id, 'chat', {
@@ -140,7 +141,7 @@ export async function answerPersonalMeetChat(
         id,
         { wsId, userId, source: 'meet_mira_personal' },
         db
-      );
+      ).catch(() => ({ success: false }));
       if (!released.success)
         console.warn('Meet private AI reservation release pending');
     }

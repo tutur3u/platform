@@ -1,6 +1,7 @@
 import { MeetCallAccessError } from '../lib/call-access';
 
-const LIMIT = 40000;
+// Twelve 2000-code-unit turns plus a question fit even with JSON escaping.
+const LIMIT = 160000;
 /** Bound streamed bytes before allocating or parsing the full JSON body. */
 export async function readPersonalChatBody(request: Request): Promise<unknown> {
   const reader = request.body?.getReader();
@@ -32,7 +33,7 @@ export async function readPersonalChatBody(request: Request): Promise<unknown> {
     offset += chunk.byteLength;
   }
   try {
-    return JSON.parse(new TextDecoder().decode(bytes));
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   } catch {
     throw new MeetCallAccessError(400, 'Invalid message');
   }

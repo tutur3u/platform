@@ -152,3 +152,21 @@ it('releases the hold on provider failure without inventing usage', async () => 
   expect(mocks.release).toHaveBeenCalledOnce();
   expect(mocks.deduct).not.toHaveBeenCalled();
 });
+
+it('returns the paid answer even when releasing its temporary hold throws', async () => {
+  mocks.release.mockRejectedValueOnce(new Error('network lost'));
+  const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  try {
+    expect(
+      await answerPersonalMeetChat('requester', {
+        question: 'Hello',
+        timezone: 'UTC',
+        history: [],
+      })
+    ).toHaveProperty('text');
+    expect(mocks.deduct).toHaveBeenCalledOnce();
+    expect(warning).toHaveBeenCalledOnce();
+  } finally {
+    warning.mockRestore();
+  }
+});
