@@ -1,4 +1,5 @@
 import 'server-only';
+import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { MeetCallAccessError } from '../lib/call-access';
 import { answerPersonalMeetChat } from './personal-assistant';
 import { callRoomService } from './room-service';
@@ -31,12 +32,23 @@ export async function requestPersonalMeetChat(access: Access, input: Input) {
   const answer = await answerPersonalMeetChat(access.user.id, input);
   // Attempt recovery storage before responding, but do not hide a paid answer.
   // An uncertain receipt stays pending and cannot generate or bill again.
-  await callRoomService(access, {
+  const finish = {
     action: 'personal.finish',
     id: input.requestId,
     text: answer.text,
-  }).catch(() => {
-    console.warn('Meet private answer recovery storage unavailable');
-  });
+  };
+  await Effect.runPromise(
+    Effect.tryPromise({
+      try: () => callRoomService(access, finish),
+      catch: (error) => error,
+    }).pipe(
+      Effect.retry({ times: 2, schedule: Schedule.exponential('100 millis') }),
+      Effect.catchAll(() =>
+        Effect.sync(() => {
+          console.warn('Meet private answer recovery storage unavailable');
+        })
+      )
+    )
+  );
   return answer;
 }
