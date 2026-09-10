@@ -89,6 +89,25 @@ export class LiveTurnArchive {
       await txn.put('archive:sequence', sequence);
     });
   }
+  async recent(userText = '', modelText = '') {
+    const page = await this.storage.list<LiveContextTurn>({
+      prefix: 'turn:',
+      reverse: true,
+      limit: 40,
+    });
+    const turns = [...page.values()].reverse();
+    for (const [role, text] of [
+      ['user', userText],
+      ['assistant', modelText],
+    ] as const)
+      if (text.trim())
+        turns.push({
+          role,
+          text: text.slice(-8000),
+          at: new Date().toISOString(),
+        });
+    return turns.slice(-40);
+  }
   async search(query: string, before?: string) {
     const terms = query
       .toLocaleLowerCase()

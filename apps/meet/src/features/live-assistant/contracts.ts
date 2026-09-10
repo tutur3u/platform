@@ -55,6 +55,10 @@ export type LiveAssistantEvent =
         | 'error';
       detail?: string;
     }
+  | {
+      type: 'history';
+      turns: Array<{ role: 'user' | 'assistant'; text: string; at: string }>;
+    }
   | { type: 'audio'; data: string; sampleRate: number }
   | {
       type: 'transcript';

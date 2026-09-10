@@ -101,3 +101,22 @@ export async function liveRegistry(
   }
   return new Response('Not found', { status: 404 });
 }
+
+/** Privacy mutations remain serialized independently of individual session commands. */
+export class LiveRegistryQueue {
+  private queue = Promise.resolve();
+  constructor(
+    private storage: DurableObjectStorage,
+    private env: LiveEnvironment
+  ) {}
+  fetch(request: Request) {
+    const result = this.queue.then(() =>
+      liveRegistry(request, this.storage, this.env)
+    );
+    this.queue = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
+  }
+}

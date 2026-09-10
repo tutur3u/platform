@@ -127,3 +127,24 @@ it('switches a personal microphone without replacing its private session', async
   expect(stopOld).toHaveBeenCalledOnce();
   expect(Socket.current).toBe(socket);
 });
+
+it('replaces the reconnect transcript snapshot instead of duplicating existing turns', async () => {
+  vi.stubGlobal('WebSocket', Socket);
+  vi.stubGlobal('navigator', {
+    mediaDevices: { getUserMedia: async () => ({ getTracks: () => [] }) },
+  });
+  const { result } = renderHook(() =>
+    useLiveAssistant('meeting', '', { streams: [], microphoneEnabled: false })
+  );
+  await act(() => result.current.start('personal', [], ''));
+  const history = {
+    type: 'history',
+    turns: [{ role: 'assistant', text: 'Recovered reply', at: '2026-09-10' }],
+  };
+  act(() => {
+    Socket.current.receive(history);
+    Socket.current.receive(history);
+  });
+  expect(result.current.transcript).toHaveLength(1);
+  expect(result.current.transcript[0]?.text).toBe('Recovered reply');
+});

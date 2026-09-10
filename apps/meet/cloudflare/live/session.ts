@@ -18,7 +18,7 @@ import {
 } from './finalize-billing';
 import { connectLiveProvider, drainLiveProvider } from './provider';
 import { speakApprovedText } from './public-speech';
-import { liveRegistry } from './registry';
+import { LiveRegistryQueue } from './registry';
 import { refreshLiveRegistry } from './registry-heartbeat';
 import {
   approveLiveMemory,
@@ -52,13 +52,14 @@ export class MeetLiveDurableObject {
   private lastCheckpointRequestAt = 0;
   private inputWindow = { start: 0, bytes: 0 };
   private actions = new LiveActions();
-  private registryQueue = Promise.resolve();
+  private registryQueue: LiveRegistryQueue;
   constructor(
     private readonly state: DurableObjectState,
     private readonly env: LiveEnvironment,
     private readonly providerFactory = connectLiveProvider
   ) {
     this.archive = new LiveTurnArchive(state.storage);
+    this.registryQueue = new LiveRegistryQueue(state.storage, env);
     state.blockConcurrencyWhile(async () => {
       this.saved = await state.storage.get<SavedSession>('session');
       if (this.saved && !this.saved.ended && this.saved.billing) {
@@ -85,16 +86,8 @@ export class MeetLiveDurableObject {
   }
   async fetch(request: Request): Promise<Response> {
     const path = new URL(request.url).pathname;
-    if (path.startsWith('/registry/') && request.method === 'POST') {
-      const result = this.registryQueue.then(() =>
-        liveRegistry(request, this.state.storage, this.env)
-      );
-      this.registryQueue = result.then(
-        () => undefined,
-        () => undefined
-      );
-      return result;
-    }
+    if (path.startsWith('/registry/') && request.method === 'POST')
+      return this.registryQueue.fetch(request);
     if (path === '/workspace-review' && request.method === 'POST') {
       const input = (await request.json()) as Parameters<
         typeof controlWorkspaceReview
@@ -210,6 +203,10 @@ export class MeetLiveDurableObject {
     this.emit({
       type: 'state',
       state: this.provider ? 'listening' : 'connecting',
+    });
+    this.emit({
+      type: 'history',
+      turns: await this.archive.recent(this.userText, this.modelText),
     });
     for (const review of saved.reviews) this.emitReview(review);
     this.state.waitUntil(this.connect());
@@ -456,6 +453,7 @@ export class MeetLiveDurableObject {
       this.lastPersistAt = Date.now();
     }
     if (message.goAway) {
+      markInterruptedUsage(saved);
       ++this.generation;
       this.provider?.close();
       this.provider = undefined;

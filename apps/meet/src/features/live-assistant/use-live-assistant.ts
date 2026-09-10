@@ -124,6 +124,7 @@ export function useLiveAssistant(
         !(current.mode === 'personal' && roomAudioRef.current.microphoneEnabled)
       )
         current.player.play(message.data, message.sampleRate);
+      if (message.type === 'history') setTranscript(message.turns.slice(-40));
       if (message.type === 'interrupt') current.player.interrupt();
       if (message.type === 'usage') setUsage(message);
       if (message.type === 'context') setOrganized(message.compressed);
