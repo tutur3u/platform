@@ -45,7 +45,10 @@ export function useLiveAssistant(
   const send = useCallback((message: LiveClientCommand) => {
     const current = active.current;
     if (!current) return;
-    if (message.type === 'pause') current.paused = message.paused;
+    if (message.type === 'pause') {
+      current.paused = message.paused;
+      if (message.paused) current.player.interrupt();
+    }
     if (
       message.type === 'audio' &&
       (!current.ready ||
@@ -103,7 +106,11 @@ export function useLiveAssistant(
         setStatus(message.state);
         if (message.detail) setError(message.detail);
       }
-      if (message.type === 'audio')
+      if (
+        message.type === 'audio' &&
+        !current.paused &&
+        !(current.mode === 'personal' && roomAudioRef.current.microphoneEnabled)
+      )
         current.player.play(message.data, message.sampleRate);
       if (message.type === 'interrupt') current.player.interrupt();
       if (message.type === 'usage') setUsage(message);
