@@ -39,7 +39,9 @@ export async function liveRoomCommand<T>(
   url.search = '';
   const response = await fetch(url, {
     method: 'POST',
-    redirect: 'error',
+    // workerd does not support redirect: 'error'. Never forward this token
+    // to a redirect target; the non-2xx check below rejects redirects.
+    redirect: 'manual',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',

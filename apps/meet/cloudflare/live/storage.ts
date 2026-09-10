@@ -40,7 +40,9 @@ export async function liveDatabase<T>(
   if (url.protocol !== 'https:' && !(local && url.protocol === 'http:'))
     throw new Error('live_database_tls_required');
   const response = await fetch(url, {
-    redirect: 'error',
+    // Reject redirects through the status check without forwarding credentials.
+    // workerd supports manual/follow, but throws for redirect: 'error'.
+    redirect: 'manual',
     method: init?.method ?? 'GET',
     headers: {
       apikey: env.SUPABASE_SECRET_KEY,

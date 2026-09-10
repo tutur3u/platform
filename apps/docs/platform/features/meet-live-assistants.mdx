@@ -133,3 +133,10 @@ permission gate are not exposed.
 Deployment checks require `GOOGLE_GENERATIVE_AI_API_KEY` on the Meet Worker.
 Missing provider token allocation or search grounding usage remains marked as
 incomplete cost coverage instead of being counted as free.
+
+Server requests carrying room tokens or database credentials use `redirect: 'manual'`
+and reject non-success statuses. Cloudflare's workerd runtime does not implement
+`redirect: 'error'`; using it throws before the request reaches the upstream and
+can fail the Live WebSocket upgrade. Do not replace this with `follow`, which
+could forward credentials to a redirect target. Verify the deployed upgrade in
+addition to the Next.js start-session route and provider-only tests.
