@@ -8,7 +8,9 @@ import { compileSkills, makeScenario, runAgent } from './ai';
 import type { Env } from './env';
 
 function model(...values: unknown[]) {
-  const run = vi.fn(async () => ({ response: JSON.stringify(values.shift()) }));
+  const run = vi.fn(async (..._args: unknown[]) => ({
+    response: JSON.stringify(values.shift()),
+  }));
   return { env: { AI: { run } } as unknown as Env, run };
 }
 describe('AI output boundaries', () => {
@@ -48,6 +50,18 @@ describe('AI output boundaries', () => {
     );
     expect(skills[0]?.markdown).toContain('# Steps');
   });
+  it('recovers valid skills from fenced model prose and alternate field names', async () => {
+    const run = vi.fn(async () => ({
+      response:
+        'Here is the requested skill:\n```json\n{"skill":{"title":"Event Planning Helper","summary":"Plan events with evidence","markdown":"# Workflow\\n\\nCheck dates before proposing a plan."}}\n```',
+    }));
+    const env = { AI: { run } } as unknown as Env;
+    const skills = await compileSkills(env, 'Plan our induction day', false);
+    expect(skills).toHaveLength(1);
+    expect(skills[0]?.name).toBe('event-planning-helper');
+    expect(skills[0]?.description).toBe('Plan events with evidence');
+    expect(skills[0]?.markdown).toContain('Check dates before proposing');
+  });
   it('rejects path traversal, duplicate names and excess skills', async () => {
     for (const skills of [
       [{ name: '../secrets', description: 'x', body: 'x' }],
@@ -75,6 +89,21 @@ describe('AI output boundaries', () => {
     await expect(makeScenario(env, 'steering')).rejects.toThrow(
       'ai_invalid_output'
     );
+  });
+  it('adds a creative seed only for surprise scenarios', async () => {
+    const { env, run } = model({
+      title: 'Scenario',
+      brief: 'A realistic RISE challenge.',
+      criteria: ['Check evidence', 'Protect privacy', 'Ask for approval'],
+    });
+    await makeScenario(env, '', true);
+    const request = run.mock.calls[0]?.[1] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const userInput = JSON.parse(request.messages[1]!.content) as {
+      creativeSeed?: string;
+    };
+    expect(userInput.creativeSeed).toBeTruthy();
   });
   it('executes only the actual mock actions and snapshots the run', async () => {
     const { env, run } = model(

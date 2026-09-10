@@ -9,10 +9,11 @@
 @layer components {
   .colab-content .studio-panel.skills-panel,
   .colab-content .studio-panel.mock-panel {
-    gap: 28px;
+    display: grid;
+    gap: 32px;
   }
   .colab-content .mock-toolbar {
-    margin-bottom: 4px;
+    margin-bottom: 8px;
   }
   :root {
     color: var(--foreground);
@@ -270,6 +271,7 @@
 
 @layer components {
   .colab-content .studio-panel {
+    display: grid;
     gap: 24px;
     padding: 24px;
     box-shadow: none;
@@ -509,6 +511,109 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--muted);
+  }
+  .showcase-switch-row,
+  .showcase-now-card,
+  .showcase-team-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .showcase-switch-row {
+    justify-content: space-between;
+    background: var(--muted);
+  }
+  .colab-content .showcase-switch-row p,
+  .colab-content .showcase-now-card p,
+  .colab-content .showcase-team-row p {
+    margin: 4px 0 0;
+    font-size: 12px;
+  }
+  .colab-content .showcase-team-row p {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .showcase-now-card {
+    background: color-mix(in srgb, var(--primary) 6%, var(--card));
+  }
+  .showcase-now-icon,
+  .showcase-order {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .showcase-now-card span:not([data-slot]),
+  .live-showcase-kicker {
+    color: var(--muted-foreground);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .showcase-now-card h4 {
+    margin: 4px 0 0;
+    font-size: 18px;
+  }
+  .showcase-team-list {
+    display: grid;
+    gap: 10px;
+  }
+  .live-showcase-banner {
+    display: grid;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  }
+  .live-showcase-kicker,
+  .live-showcase-main,
+  .live-showcase-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .live-showcase-main {
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .colab-content .showcase-title {
+    margin: 0 0 6px;
+    font-size: 22px;
+  }
+  .colab-content .showcase-copy {
+    margin: 0;
+  }
+  .showcase-progress {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(28px, 1fr));
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  .colab-content .showcase-progress-step {
+    height: 6px;
+    min-height: 6px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--border);
+  }
+  .colab-content .showcase-progress-step.is-active {
+    background: var(--primary);
   }
   .colab-content .team-toolbar {
     flex-wrap: wrap;
@@ -845,6 +950,16 @@
     .colab-content .team-toolbar {
       flex-direction: column;
       align-items: stretch;
+    }
+    .showcase-now-card,
+    .showcase-team-row,
+    .live-showcase-main {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .live-showcase-actions > button,
+    .showcase-team-row > button {
+      width: 100%;
     }
     .limit-fields {
       grid-template-columns: 1fr;

@@ -5,6 +5,7 @@ import {
   type Identity,
   joinRoom,
   memberOf,
+  memberTeamIds,
   mutateRoom,
   normalizeRoom,
   projectRoom,
@@ -110,7 +111,8 @@ export class ColabRoom extends DurableObject<Env> {
     room: Room,
     action: string,
     identity?: Identity,
-    adminOnly = false
+    adminOnly = false,
+    teamId?: string
   ) {
     const member = room.members.find((m) => m.id === identity?.id);
     room.audit = [
@@ -122,7 +124,7 @@ export class ColabRoom extends DurableObject<Env> {
         action,
         adminOnly,
         teamId: ['prompt', 'compile', 'run', 'limits'].includes(action)
-          ? member?.teamId
+          ? (teamId ?? member?.teamId)
           : undefined,
       },
     ].slice(-200);
@@ -214,7 +216,13 @@ export class ColabRoom extends DurableObject<Env> {
       if (room.endsAt === null) await this.ctx.storage.deleteAlarm();
       else await this.ctx.storage.setAlarm(room.endsAt);
     }
-    this.record(room, String(body.action), identity, body.action !== 'prompt');
+    this.record(
+      room,
+      String(body.action),
+      identity,
+      body.action !== 'prompt',
+      typeof body.teamId === 'string' ? body.teamId : undefined
+    );
     this.save(room);
     return projectRoom(room, identity, this.online());
   }
@@ -251,7 +259,16 @@ export class ColabRoom extends DurableObject<Env> {
     );
     if (body.action === 'scenario')
       requireRule(member.admin, 'admin_only', 403);
-    const team = room.teams.find((t) => t.id === member.teamId);
+    const requestedTeamId =
+      typeof body.teamId === 'string' ? body.teamId : member.teamId;
+    requireRule(
+      body.action === 'scenario' ||
+        member.admin ||
+        memberTeamIds(member).includes(requestedTeamId),
+      'invalid_team',
+      403
+    );
+    const team = room.teams.find((t) => t.id === requestedTeamId);
     requireRule(team, 'invalid_team');
     requireRule(
       body.action === 'scenario' || team.prompt.length >= 10,
@@ -290,7 +307,11 @@ export class ColabRoom extends DurableObject<Env> {
           : undefined;
       const scenario =
         body.action === 'scenario'
-          ? await makeScenario(this.env, text(body.steering, 2000, 0))
+          ? await makeScenario(
+              this.env,
+              text(body.steering, 2000, 0),
+              body.random === true
+            )
           : undefined;
       const result =
         body.action === 'run'
@@ -307,11 +328,17 @@ export class ColabRoom extends DurableObject<Env> {
           : undefined;
       room = this.read();
       const actor = memberOf(room, identity);
-      requireRule(actor.teamId === member.teamId, 'room_changed', 409);
+      requireRule(
+        body.action === 'scenario' ||
+          actor.admin ||
+          memberTeamIds(actor).includes(requestedTeamId),
+        'room_changed',
+        409
+      );
       if (body.action === 'scenario')
         requireRule(actor.admin, 'admin_only', 403);
       editable(room);
-      const current = room.teams.find((t) => t.id === member.teamId);
+      const current = room.teams.find((t) => t.id === requestedTeamId);
       requireRule(current, 'invalid_team');
       requireRule(
         Date.now() < job &&
@@ -337,7 +364,8 @@ export class ColabRoom extends DurableObject<Env> {
         room,
         String(body.action),
         identity,
-        body.action === 'scenario'
+        body.action === 'scenario',
+        body.action === 'scenario' ? undefined : requestedTeamId
       );
       this.save(room);
       return projectRoom(room, identity, this.online());

@@ -5,6 +5,7 @@ import {
   type Identity,
   joinRoom,
   memberOf,
+  memberTeamIds,
   mutateRoom,
   normalizeRoom,
   projectRoom,
@@ -141,7 +142,10 @@ describe('server-authoritative room policy', () => {
     const legacy = room();
     delete (legacy as Partial<Room>).limits;
     delete (legacy as Partial<Room>).scenarios;
+    delete (legacy as Partial<Room>).showcaseTeamId;
     delete (legacy.scenario as Partial<Room['scenario']>).id;
+    for (const member of legacy.members)
+      delete (member as Partial<(typeof legacy.members)[number]>).teamIds;
     for (const team of legacy.teams) {
       delete (team as Partial<(typeof legacy.teams)[number]>).limits;
       delete (team as Partial<(typeof legacy.teams)[number]>).aiCalls;
@@ -151,6 +155,8 @@ describe('server-authoritative room policy', () => {
     }
     normalizeRoom(legacy);
     expect(legacy.limits.aiCallLimit).toBe(200);
+    expect(legacy.showcaseTeamId).toBe('team-1');
+    expect(legacy.members[0]?.teamIds).toEqual(['team-1']);
     expect(legacy.scenarios.length).toBeGreaterThan(1);
     expect(legacy.scenario.id).toBe('rise-pathways');
     expect(
@@ -284,9 +290,32 @@ describe('server-authoritative room policy', () => {
       now
     );
     expect(created.name).toBe('Product Lab');
+    mutateRoom(
+      r,
+      owner,
+      {
+        action: 'membership',
+        memberId: alice.id,
+        teamId: created.id,
+        enabled: true,
+      },
+      now
+    );
+    expect(
+      memberTeamIds(r.members.find((member) => member.id === alice.id)!)
+    ).toEqual(['team-2', created.id]);
+    mutateRoom(
+      r,
+      owner,
+      { action: 'assign', memberId: alice.id, teamId: created.id },
+      now
+    );
+    expect(r.members.find((member) => member.id === alice.id)?.teamId).toBe(
+      created.id
+    );
     mutateRoom(r, owner, { action: 'teamDelete', teamId: 'team-2' }, now);
     expect(r.members.find((member) => member.id === alice.id)?.teamId).toBe(
-      'team-1'
+      created.id
     );
     mutateRoom(r, owner, { action: 'memberRemove', memberId: alice.id }, now);
     expect(r.members.some((member) => member.id === alice.id)).toBe(false);
@@ -295,6 +324,50 @@ describe('server-authoritative room policy', () => {
     expect(() =>
       mutateRoom(r, owner, { action: 'memberRemove', memberId: owner.id }, now)
     ).toThrow('owner_protected');
+  });
+  it('supports multiple memberships while preserving one primary team', () => {
+    const r = room();
+    joinRoom(r, alice, 'team-1', false, now);
+    mutateRoom(
+      r,
+      owner,
+      {
+        action: 'membership',
+        memberId: alice.id,
+        teamId: 'team-2',
+        enabled: true,
+      },
+      now
+    );
+    const member = r.members.find((candidate) => candidate.id === alice.id)!;
+    expect(member.teamId).toBe('team-1');
+    expect(memberTeamIds(member)).toEqual(['team-1', 'team-2']);
+    mutateRoom(
+      r,
+      owner,
+      {
+        action: 'membership',
+        memberId: alice.id,
+        teamId: 'team-1',
+        enabled: false,
+      },
+      now
+    );
+    expect(member.teamId).toBe('team-2');
+    expect(memberTeamIds(member)).toEqual(['team-2']);
+    expect(() =>
+      mutateRoom(
+        r,
+        owner,
+        {
+          action: 'membership',
+          memberId: alice.id,
+          teamId: 'team-2',
+          enabled: false,
+        },
+        now
+      )
+    ).toThrow('last_membership');
   });
   it('selects scenarios by stable id when titles are repeated', () => {
     const r = room();
@@ -336,8 +409,39 @@ describe('server-authoritative room policy', () => {
         { action: 'prompt', prompt: 'change', revision: 0, teamId: 'team-2' },
         now
       )
-    ).not.toThrow();
-    expect(r.teams[1]!.prompt).toBe('Secret team draft');
+    ).toThrow('invalid_team');
+    mutateRoom(
+      r,
+      owner,
+      {
+        action: 'membership',
+        memberId: alice.id,
+        teamId: 'team-2',
+        enabled: true,
+      },
+      now
+    );
+    mutateRoom(
+      r,
+      alice,
+      { action: 'prompt', prompt: 'change', revision: 0, teamId: 'team-2' },
+      now
+    );
+    expect(r.teams[1]!.prompt).toBe('change');
+    mutateRoom(r, owner, { action: 'showcase', enabled: false }, now);
+    const multiTeamView = projectRoom(r, alice, [], now);
+    expect(multiTeamView.teams).toHaveLength(2);
+    expect(multiTeamView.members.some((m) => m.id === 'bob')).toBe(true);
+  });
+  it('moves the live showcase between teams and recovers after deletion', () => {
+    const r = room();
+    mutateRoom(r, owner, { action: 'showcaseTeam', teamId: 'team-2' }, now);
+    expect(r.showcaseTeamId).toBe('team-2');
+    expect(() =>
+      mutateRoom(r, owner, { action: 'showcaseTeam', teamId: 'missing' }, now)
+    ).toThrow('invalid_team');
+    mutateRoom(r, owner, { action: 'teamDelete', teamId: 'team-2' }, now);
+    expect(r.showcaseTeamId).toBe('team-1');
   });
   it('checks delegation, owner protection, read-only and private access', () => {
     const r = room();
