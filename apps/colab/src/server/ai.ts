@@ -29,22 +29,19 @@ function parseModelJson(value: unknown): unknown {
     .replace(/\s*```$/, '');
   const objectStart = unfenced.indexOf('{');
   const arrayStart = unfenced.indexOf('[');
-  const start =
-    objectStart < 0
-      ? arrayStart
-      : arrayStart < 0
-        ? objectStart
-        : Math.min(objectStart, arrayStart);
-  const end =
-    start === arrayStart
-      ? unfenced.lastIndexOf(']')
-      : unfenced.lastIndexOf('}');
-  requireRule(start >= 0 && end > start, 'ai_invalid_output', 502);
-  try {
-    return parseModelJson(JSON.parse(unfenced.slice(start, end + 1)));
-  } catch {
-    throw new RoomError('ai_invalid_output', 502);
+  const candidates = [
+    { start: objectStart, end: unfenced.lastIndexOf('}') },
+    { start: arrayStart, end: unfenced.lastIndexOf(']') },
+  ].sort((left, right) => left.start - right.start);
+  for (const candidate of candidates) {
+    if (candidate.start < 0 || candidate.end <= candidate.start) continue;
+    try {
+      return parseModelJson(
+        JSON.parse(unfenced.slice(candidate.start, candidate.end + 1))
+      );
+    } catch {}
   }
+  throw new RoomError('ai_invalid_output', 502);
 }
 
 function skillName(value: unknown, index: number) {

@@ -55,7 +55,11 @@ export function ShowcaseStage({
     room.aiCalls < room.limits.aiCallLimit &&
     stageTeam.aiCalls < stageTeam.limits.aiCallLimit;
   const readyToTest =
-    roomWritable && canTest && budgetAvailable && stageTeam.skills.length > 0;
+    roomWritable &&
+    canTest &&
+    budgetAvailable &&
+    stageTeam.prompt.length >= 10 &&
+    stageTeam.skills.length > 0;
 
   return (
     <div className="showcase-workspace">

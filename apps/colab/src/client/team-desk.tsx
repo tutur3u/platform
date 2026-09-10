@@ -12,7 +12,7 @@ import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCopy } from './i18n';
 import { MockDesk } from './mock-desk';
 import { RunReport } from './run-report';
@@ -47,6 +47,24 @@ export function TeamDesk({
       ...current,
       [team.id]: { value, revision: nextRevision },
     }));
+  useEffect(() => {
+    if (
+      savedDraft?.value !== team.prompt ||
+      savedDraft.revision !== team.revision
+    )
+      return;
+    setDrafts((current) => {
+      const currentDraft = current[team.id];
+      if (
+        currentDraft?.value !== team.prompt ||
+        currentDraft.revision !== team.revision
+      )
+        return current;
+      const next = { ...current };
+      delete next[team.id];
+      return next;
+    });
+  }, [savedDraft, team.id, team.prompt, team.revision]);
   const changed = draft !== team.prompt;
   const stale = revision !== team.revision;
   const invoke = (body: Record<string, unknown>, route?: string) => {
@@ -121,7 +139,13 @@ export function TeamDesk({
                 onClick={async () => {
                   try {
                     await action({ action: 'prompt', prompt: draft, revision });
-                    setTeamDraft(draft, revision + 1);
+                    setDrafts((current) => ({
+                      ...current,
+                      [team.id]: {
+                        value: current[team.id]?.value ?? draft,
+                        revision: revision + 1,
+                      },
+                    }));
                   } catch {}
                 }}
               >

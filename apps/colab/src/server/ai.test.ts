@@ -84,6 +84,16 @@ describe('AI output boundaries', () => {
     expect(skills[0]?.description).toBe('Plan events with evidence');
     expect(skills[0]?.markdown).toContain('Check dates before proposing');
   });
+  it('ignores bracketed prose before a valid JSON object', async () => {
+    const run = vi.fn(async () => ({
+      response:
+        '[Draft complete] {"skills":[{"name":"evidence-checker","body":"Check evidence before acting."}]}',
+    }));
+    const env = { AI: { run } } as unknown as Env;
+    const skills = await compileSkills(env, 'Check evidence first.', false);
+    expect(skills).toHaveLength(1);
+    expect(skills[0]?.name).toBe('evidence-checker');
+  });
   it('accepts a top-level array and safely normalizes names', async () => {
     const { env } = model([
       { name: '../Event / Planning', body: ['Check evidence.', 'Ask first.'] },
