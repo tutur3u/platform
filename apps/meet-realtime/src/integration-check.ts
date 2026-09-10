@@ -182,15 +182,22 @@ try {
 
   if (REMOTE_URL) {
     // Background browser tabs can delay timers beyond the heartbeat TTL.
-    const start = host.received.length;
     await Bun.sleep(40_000);
+    // Idle rooms do not broadcast periodically. Probe the still-open room with
+    // real delivery instead of requiring a heartbeat-triggered presence event.
+    const probeBody = `Idle survival probe ${MEETING_ID}`;
+    host.send({ type: 'chat.message', body: probeBody });
+    const probe = await guest.waitFor(
+      'chat.message',
+      (message) => message.type === 'chat.message' && message.body === probeBody
+    );
     const latest = host.received
-      .slice(start)
       .filter((message) => message.type === 'presence')
       .at(-1);
     check(
       'connected participants survive delayed browser heartbeats',
-      latest?.presence.some((entry) => entry.userId === HOST_ID) === true &&
+      Boolean(probe) &&
+        latest?.presence.some((entry) => entry.userId === HOST_ID) === true &&
         latest.presence.some((entry) => entry.userId === GUEST_ID)
     );
   }
