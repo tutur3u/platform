@@ -34,6 +34,28 @@ describe('AI output boundaries', () => {
       'draft'
     );
   });
+  it('unwraps Workers AI responses that include usage metadata', async () => {
+    const env = {
+      AI: {
+        run: async () => ({
+          response: JSON.stringify({
+            skills: [
+              {
+                name: 'study-planner',
+                description: 'Plan study work',
+                body: 'Check deadlines and capacity.',
+              },
+            ],
+          }),
+          usage: { prompt_tokens: 120, completion_tokens: 80 },
+          tool_calls: [],
+        }),
+      },
+    } as unknown as Env;
+    expect((await compileSkills(env, 'Plan study work', false))[0]?.name).toBe(
+      'study-planner'
+    );
+  });
   it('creates valid skill frontmatter and preserves markdown as text', async () => {
     const { env } = model({
       skills: [
@@ -62,30 +84,69 @@ describe('AI output boundaries', () => {
     expect(skills[0]?.description).toBe('Plan events with evidence');
     expect(skills[0]?.markdown).toContain('Check dates before proposing');
   });
-  it('rejects path traversal, duplicate names and excess skills', async () => {
-    for (const skills of [
-      [{ name: '../secrets', description: 'x', body: 'x' }],
-      Array.from({ length: 2 }, () => ({
-        name: 'duplicate',
-        description: 'x',
-        body: 'x',
-      })),
-      Array.from({ length: 5 }, (_, i) => ({
-        name: `skill-${i}`,
-        description: 'x',
-        body: 'x',
-      })),
-    ]) {
-      const { env } = model({ skills });
-      await expect(compileSkills(env, 'prompt', true)).rejects.toThrow();
-    }
+  it('ignores bracketed prose before a valid JSON object', async () => {
+    const run = vi.fn(async () => ({
+      response:
+        '[Draft complete] {"skills":[{"name":"evidence-checker","body":"Check evidence before acting."}]}',
+    }));
+    const env = { AI: { run } } as unknown as Env;
+    const skills = await compileSkills(env, 'Check evidence first.', false);
+    expect(skills).toHaveLength(1);
+    expect(skills[0]?.name).toBe('evidence-checker');
   });
-  it('labels missing model skill fields as invalid AI output', async () => {
-    const { env } = model({ skills: [{ name: 'incomplete' }] });
-    await expect(compileSkills(env, 'prompt', false)).rejects.toMatchObject({
-      code: 'ai_invalid_output',
-      status: 502,
+  it('accepts a top-level array and safely normalizes names', async () => {
+    const { env } = model([
+      { name: '../Event / Planning', body: ['Check evidence.', 'Ask first.'] },
+    ]);
+    const skills = await compileSkills(env, 'Plan our event safely.', true);
+    expect(skills[0]?.name).toBe('event-planning');
+    expect(skills[0]?.description).toContain('event planning');
+    expect(skills[0]?.markdown).toContain('Check evidence.\n\nAsk first.');
+  });
+  it('repairs duplicate names, missing fields, and excess skills', async () => {
+    const { env } = model({
+      generatedSkills: Array.from({ length: 5 }, () => ({
+        title: 'Campaign helper',
+      })),
     });
+    const skills = await compileSkills(
+      env,
+      'Use verified campaign facts and ask before publishing.',
+      true
+    );
+    expect(skills.map((skill) => skill.name)).toEqual([
+      'campaign-helper',
+      'campaign-helper-2',
+      'campaign-helper-3',
+      'campaign-helper-4',
+    ]);
+    expect(skills[0]?.markdown).toContain('Use verified campaign facts');
+  });
+  it('retries incomplete model output before compiling skills', async () => {
+    const { env, run } = model('not json', {
+      skills: [
+        {
+          name: 'evidence-checker',
+          description: 'Check evidence',
+          body: 'Verify facts before drafting.',
+        },
+      ],
+    });
+    const skills = await compileSkills(env, 'Check evidence first.', false);
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(skills[0]?.name).toBe('evidence-checker');
+  });
+  it('returns a safe prompt-based skill when both AI responses are unusable', async () => {
+    const { env, run } = model('not json', 'still not json');
+    const skills = await compileSkills(
+      env,
+      'Protect student privacy and ask before outreach.',
+      true
+    );
+    expect(run).toHaveBeenCalledTimes(2);
+    expect(skills).toHaveLength(1);
+    expect(skills[0]?.name).toBe('team-working-guide');
+    expect(skills[0]?.markdown).toContain('Protect student privacy');
   });
   it('validates scenario criteria and rejects malformed model output', async () => {
     const { env } = model({

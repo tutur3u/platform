@@ -12,7 +12,7 @@ import { Card } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCopy } from './i18n';
 import { MockDesk } from './mock-desk';
 import { RunReport } from './run-report';
@@ -35,9 +35,36 @@ export function TeamDesk({
   roomAiAvailable?: boolean;
 }) {
   const c = useCopy();
-  const [draft, setDraft] = useState(team.prompt);
-  const [revision, setRevision] = useState(team.revision);
+  const [drafts, setDrafts] = useState<
+    Record<string, { value: string; revision: number }>
+  >({});
   const [multiple, setMultiple] = useState(true);
+  const savedDraft = drafts[team.id];
+  const draft = savedDraft?.value ?? team.prompt;
+  const revision = savedDraft?.revision ?? team.revision;
+  const setTeamDraft = (value: string, nextRevision = revision) =>
+    setDrafts((current) => ({
+      ...current,
+      [team.id]: { value, revision: nextRevision },
+    }));
+  useEffect(() => {
+    if (
+      savedDraft?.value !== team.prompt ||
+      savedDraft.revision !== team.revision
+    )
+      return;
+    setDrafts((current) => {
+      const currentDraft = current[team.id];
+      if (
+        currentDraft?.value !== team.prompt ||
+        currentDraft.revision !== team.revision
+      )
+        return current;
+      const next = { ...current };
+      delete next[team.id];
+      return next;
+    });
+  }, [savedDraft, team.id, team.prompt, team.revision]);
   const changed = draft !== team.prompt;
   const stale = revision !== team.revision;
   const invoke = (body: Record<string, unknown>, route?: string) => {
@@ -75,7 +102,7 @@ export function TeamDesk({
               className="prompt-editor min-h-64"
               maxLength={12000}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => setTeamDraft(e.target.value)}
               placeholder={c.starterText}
             />
             <div className="editor-meta">
@@ -90,8 +117,7 @@ export function TeamDesk({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setDraft(team.prompt);
-                    setRevision(team.revision);
+                    setTeamDraft(team.prompt, team.revision);
                   }}
                 >
                   {c.reload}
@@ -103,7 +129,7 @@ export function TeamDesk({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setDraft(c.starterText)}
+                onClick={() => setTeamDraft(c.starterText)}
               >
                 {c.starter}
               </Button>
@@ -113,7 +139,13 @@ export function TeamDesk({
                 onClick={async () => {
                   try {
                     await action({ action: 'prompt', prompt: draft, revision });
-                    setRevision(revision + 1);
+                    setDrafts((current) => ({
+                      ...current,
+                      [team.id]: {
+                        value: current[team.id]?.value ?? draft,
+                        revision: revision + 1,
+                      },
+                    }));
                   } catch {}
                 }}
               >

@@ -7,6 +7,7 @@ import {
   History,
   Layers,
   PanelLeftOpen,
+  Presentation,
   Settings,
   Users,
 } from '@tuturuuu/icons';
@@ -119,6 +120,11 @@ export function Structure({
               title: c.studio.results,
               href: '#practice-journal',
               icon: <BookOpen className="size-4" />,
+            },
+            {
+              title: c.liveShowcase,
+              href: '#showcase',
+              icon: <Presentation className="size-4" />,
             },
             {
               title: c.studio.audit,
