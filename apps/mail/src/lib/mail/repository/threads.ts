@@ -3,6 +3,7 @@ import type {
   ListMailThreadsParams,
   UpdateMailMessageStatePayload,
 } from '@tuturuuu/internal-api';
+import { mailDisplayName } from '../address-names';
 import { resolveMailThreadSubject } from '../thread-subject';
 import type {
   MailRouteContext,
@@ -196,12 +197,18 @@ export async function listMailThreads({
       row.direction === 'outbound'
         ? (recipientsByMessage.get(row.id) ?? []).map((recipient) => ({
             address: String(recipient.address ?? '').toLowerCase(),
-            displayName: recipient.display_name ?? null,
+            displayName: mailDisplayName(
+              recipient.display_name,
+              recipient.address ?? ''
+            ),
           }))
         : [
             {
               address: String(row.from_address ?? '').toLowerCase(),
-              displayName: row.from_name ?? null,
+              displayName: mailDisplayName(
+                row.from_name,
+                row.from_address ?? ''
+              ),
             },
           ];
     for (const candidate of candidates) {
@@ -223,6 +230,11 @@ export async function listMailThreads({
     return [
       {
         ...toThread(thread),
+        deliveryRecipient:
+          message.delivery_route === 'catch_all' &&
+          message.direction === 'inbound'
+            ? message.observed_recipient || message.envelope_to || null
+            : null,
         hasAttachments: attachmentThreads.has(threadId),
         labels: labels.get(message.id) ?? [],
         latestMessageId: message.id,

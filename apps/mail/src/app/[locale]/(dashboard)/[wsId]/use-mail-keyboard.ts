@@ -58,11 +58,13 @@ export function useMailKeyboard(options: MailKeyboardOptions) {
     const rows = rootRef.current?.querySelectorAll<HTMLButtonElement>(
       '[data-mail-thread-open]'
     );
-    const row = Array.from(rows ?? []).find(
-      (element) =>
-        element.dataset.mailThreadOpen === id &&
-        element.getClientRects().length > 0
-    );
+    const row = Array.from(rows ?? []).find((element) => {
+      if (element.dataset.mailThreadOpen !== id) return false;
+      const group = element.closest('details');
+      if (group && !group.open && group.getClientRects().length > 0)
+        group.open = true;
+      return element.getClientRects().length > 0;
+    });
     row?.focus();
     row?.scrollIntoView?.({ block: 'nearest' });
   };

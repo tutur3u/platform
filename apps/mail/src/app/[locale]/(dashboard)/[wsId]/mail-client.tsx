@@ -45,6 +45,7 @@ import type {
 } from './mail-composer-types';
 import { toComposeInitialDraft } from './mail-composer-utils';
 import { MailContentState } from './mail-content-state';
+import { MailDeliveryList } from './mail-delivery-list';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
 import { MailKeyboardHelp } from './mail-keyboard-help';
@@ -57,7 +58,6 @@ import {
 import { MailQuickFilters } from './mail-quick-filters';
 import { createMailReplyActions } from './mail-reply-actions';
 import { MailSyncStatus } from './mail-sync-status';
-import { MailThreadRow } from './mail-thread-list';
 import {
   getMailThreadsQueryKey,
   getNextMailThreadPage,
@@ -520,25 +520,22 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           <MailContentState kind="no_mailbox" />
         ) : threads.length ? (
           <div className="space-y-1 p-2">
-            {threads.map((thread) => (
-              <MailThreadRow
-                folder={folder}
-                active={thread.id === threadId}
-                key={thread.id}
-                onClick={() => openThread(thread)}
-                onPrefetch={() => prefetchThread(thread.id)}
-                onSelect={(selected) =>
-                  setSelectedThreads((current) => {
-                    const next = new Set(current);
-                    if (selected) next.add(thread.id);
-                    else next.delete(thread.id);
-                    return next;
-                  })
-                }
-                selected={selectedThreads.has(thread.id)}
-                thread={thread}
-              />
-            ))}
+            <MailDeliveryList
+              threads={threads}
+              folder={folder}
+              threadId={threadId}
+              selectedThreads={selectedThreads}
+              onOpen={openThread}
+              onPrefetch={prefetchThread}
+              onSelect={(id, selected) =>
+                setSelectedThreads((current) => {
+                  const next = new Set(current);
+                  if (selected) next.add(id);
+                  else next.delete(id);
+                  return next;
+                })
+              }
+            />
             {threadsQuery.hasNextPage ? (
               <div className="flex justify-center p-3">
                 <Button

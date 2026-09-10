@@ -227,3 +227,20 @@ it('preserves native checkbox navigation', () => {
   expect(document.activeElement).toBe(checkbox);
   expect(actions.openThread).not.toHaveBeenCalled();
 });
+
+it('opens a collapsed delivery group before focusing its recipient row', () => {
+  setup({ threadId: null });
+  const first = screen.getByRole('button', { name: 'a' });
+  const second = screen.getByRole('button', { name: 'b' });
+  const wrapper = second.parentElement!;
+  const details = document.createElement('details');
+  wrapper.before(details);
+  details.append(wrapper);
+  Object.defineProperty(second, 'getClientRects', {
+    value: () => (details.open ? [{}] : []) as unknown as DOMRectList,
+  });
+  first.focus();
+  key(first, 'ArrowDown');
+  expect(details.open).toBe(true);
+  expect(document.activeElement).toBe(second);
+});
