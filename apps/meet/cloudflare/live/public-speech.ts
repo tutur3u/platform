@@ -27,6 +27,9 @@ export async function speakApprovedText(
   await persist(billing, false);
   let provider: Session | undefined;
   let finished = false;
+  let completed = false;
+  let pendingUsage = false;
+  let coverageGap = false;
   let setup = false;
   let sent = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -63,7 +66,7 @@ export async function speakApprovedText(
     signal.throwIfAborted();
     const client = new GoogleGenAI({
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
-      httpOptions: { apiVersion: 'v1alpha' },
+      httpOptions: { apiVersion: 'v1beta' },
     });
     await new Promise<void>((resolve, reject) => {
       fail = reject;
@@ -87,7 +90,13 @@ export async function speakApprovedText(
           },
           callbacks: {
             onmessage: (message) => {
-              if (finished || signal.aborted) return;
+              if (finished) return;
+              if (
+                message.serverContent?.modelTurn?.parts?.some(
+                  (part) => part.inlineData?.data
+                )
+              )
+                pendingUsage = true;
               if (message.setupComplete) {
                 setup = true;
                 sendText();
@@ -98,9 +107,12 @@ export async function speakApprovedText(
                   message.usageMetadata
                 );
                 billing.usage = result.usage;
-                billing.incomplete = result.incomplete;
+                coverageGap ||= result.incomplete;
+                billing.incomplete = coverageGap;
+                pendingUsage = false;
                 void persist(billing, false).catch(reject);
               }
+              if (signal.aborted) return;
               for (const part of message.serverContent?.modelTurn?.parts ?? [])
                 if (
                   part.inlineData?.data &&
@@ -124,13 +136,17 @@ export async function speakApprovedText(
           else sendText();
         }, reject);
     });
+    completed = true;
   } finally {
-    finished = true;
     clearTimeout(timer);
     clearTimeout(completion);
     signal.removeEventListener('abort', abort);
     batcher.clear();
     provider?.close();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    finished = true;
+    billing.incomplete ||= pendingUsage || !completed;
+    billing.pendingSettlement = true;
     await liveRoomCommand(env, claims, identity, {
       action: 'live.share.finish',
       id,

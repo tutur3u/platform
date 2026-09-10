@@ -116,6 +116,7 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-ai/[wsId]/[meetingId]/chunks/route.ts',
   // Live provider sessions are owned by the Meet Worker; private memory is owner-scoped.
   'apps/meet/src/app/api/meet-live/[meetingId]/route.ts',
+  'apps/meet/src/app/api/meet-live/[meetingId]/review/route.ts',
   'apps/meet/src/app/api/meet-live/memory/route.ts',
   'apps/learn/src/app/api/auth/logout/route.ts',
   'apps/learn/src/app/api/auth/refresh-app-session/route.ts',

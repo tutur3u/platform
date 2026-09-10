@@ -8,7 +8,9 @@ import { type LiveEnvironment, liveDatabase, readLiveMemory } from './storage';
 export const proposalSchema = z.object({
   id: z.uuid(),
   callId: z.string(),
-  name: z.enum(['remember', 'propose_room_reply']),
+  name: z.enum(['remember', 'propose_room_reply', 'workspace_tool']),
+  toolName: z.string().optional(),
+  args: z.record(z.string(), z.unknown()).optional(),
   text: z.string().trim().min(1).max(4000),
   category: z.enum(['preference', 'fact', 'project']).optional(),
   status: z.enum(['pending', 'processing', 'approved', 'denied', 'failed']),
@@ -38,7 +40,14 @@ export function liveReviewEvent(review: LiveProposal): LiveAssistantEvent {
   return {
     type: 'review',
     id: review.id,
-    action: review.name === 'remember' ? 'remember' : 'share',
+    action:
+      review.name === 'workspace_tool'
+        ? 'workspace'
+        : review.name === 'remember'
+          ? 'remember'
+          : 'share',
+    toolName: review.toolName,
+    args: review.args,
     text: review.text,
     status: review.status,
   };

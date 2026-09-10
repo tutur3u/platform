@@ -4133,6 +4133,8 @@
       "retry": "Try again",
       "review_memory": "Review a proposed memory",
       "review_share": "Review before sharing with everyone",
+      "review_text": "Review and edit the exact text",
+      "review_workspace": "Review workspace access or changes",
       "room": "Invite to the room",
       "room_audio_enable": "Listen to Mira",
       "room_audio_on": "Mira audio on",
@@ -4146,7 +4148,9 @@
       "state_paused": "Microphone paused",
       "state_recovering": "Reconnecting",
       "stop": "Stop assistant",
+      "stop_room": "Stop room assistant",
       "title": "Mira Live",
+      "voice": "Mira’s voice",
       "you": "You"
     },
     "meetings": {

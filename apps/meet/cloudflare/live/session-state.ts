@@ -9,12 +9,18 @@ export type SavedSession = {
   claims: LiveSessionClaims;
   identity: LiveRoomIdentity;
   timezone: string;
+  voice?: string;
   sharedContext: string;
+  workspace?: {
+    id: string;
+    tools: import('@google/genai/web').FunctionDeclaration[];
+  };
   journal: LiveContextJournal;
   handle?: string;
   billing?: LiveBillingState;
   billingFinalized?: boolean;
   coverageGap?: boolean;
+  pendingUsage?: boolean;
   publicBillings?: Record<string, LiveBillingState>;
   ended?: boolean;
   contextErased?: boolean;

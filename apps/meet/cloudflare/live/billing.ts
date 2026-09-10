@@ -14,6 +14,7 @@ export type LiveBillingState = {
   incomplete: boolean;
   previousCostUsd?: number;
   openedAt?: number;
+  pendingSettlement?: boolean;
 };
 export async function beginLiveBilling(
   env: LiveEnvironment,

@@ -5,12 +5,12 @@ export class LiveAudioPlayer {
   private sources = new Set<AudioBufferSourceNode>();
   async unlock(outputDeviceId?: string) {
     this.context ??= new AudioContext({ sampleRate: 24000 });
-    if (outputDeviceId && 'setSinkId' in this.context)
+    if ('setSinkId' in this.context)
       await (
         this.context as AudioContext & {
           setSinkId: (id: string) => Promise<void>;
         }
-      ).setSinkId(outputDeviceId);
+      ).setSinkId(outputDeviceId || '');
     await this.context.resume();
   }
   play(data: string, sampleRate = 24000) {

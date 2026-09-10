@@ -4133,6 +4133,8 @@
       "retry": "Thử lại",
       "review_memory": "Xem xét thông tin ghi nhớ",
       "review_share": "Xem xét trước khi chia sẻ với mọi người",
+      "review_text": "Xem lại và chỉnh sửa nội dung chính xác",
+      "review_workspace": "Xem lại quyền truy cập hoặc thay đổi không gian làm việc",
       "room": "Mời vào phòng",
       "room_audio_enable": "Nghe Mira",
       "room_audio_on": "Âm thanh Mira đang bật",
@@ -4146,7 +4148,9 @@
       "state_paused": "Đã tạm dừng micrô",
       "state_recovering": "Đang kết nối lại",
       "stop": "Dừng trợ lý",
+      "stop_room": "Dừng trợ lý của phòng",
       "title": "Mira trực tiếp",
+      "voice": "Giọng nói của Mira",
       "you": "Bạn"
     },
     "meetings": {

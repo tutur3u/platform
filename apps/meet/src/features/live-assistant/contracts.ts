@@ -1,6 +1,13 @@
 import { z } from 'zod';
 
 export const MEET_LIVE_MODEL = 'gemini-3.1-flash-live-preview';
+export const liveVoiceSchema = z.enum([
+  'Aoede',
+  'Kore',
+  'Puck',
+  'Charon',
+  'Fenrir',
+]);
 export const liveAudienceSchema = z.enum(['personal', 'room']);
 export type LiveAudience = z.infer<typeof liveAudienceSchema>;
 export const liveSessionClaimsSchema = z.object({
@@ -29,6 +36,7 @@ export const liveClientCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('pause'), paused: z.boolean() }),
   z.object({
     type: z.literal('decision'),
+    text: z.string().trim().min(1).max(4000).optional(),
     id: z.uuid(),
     approved: z.boolean(),
   }),
@@ -58,6 +66,8 @@ export type LiveAssistantEvent =
       type: 'review';
       id: string;
       action: 'share' | 'remember' | 'workspace';
+      toolName?: string;
+      args?: Record<string, unknown>;
       text: string;
       status: 'pending' | 'processing' | 'approved' | 'denied' | 'failed';
     }

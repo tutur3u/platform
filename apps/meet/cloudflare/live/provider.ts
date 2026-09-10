@@ -20,16 +20,18 @@ export async function connectLiveProvider(input: {
   env: LiveEnvironment;
   claims: LiveSessionClaims;
   timezone: string;
+  voice?: string;
   sharedContext: string;
   journal: LiveContextJournal;
   handle?: string;
+  workspaceTools?: import('@google/genai/web').FunctionDeclaration[];
   onMessage: (message: LiveServerMessage) => void;
   onClose: () => void;
 }): Promise<Session> {
   const memory = await readLiveMemory(input.env, input.claims);
   const client = new GoogleGenAI({
     apiKey: input.env.GOOGLE_GENERATIVE_AI_API_KEY,
-    httpOptions: { apiVersion: 'v1alpha' },
+    httpOptions: { apiVersion: 'v1beta' },
   });
   let session: Session | undefined;
   let abandoned = false;
@@ -49,6 +51,11 @@ export async function connectLiveProvider(input: {
       config: {
         responseModalities: [Modality.AUDIO],
         maxOutputTokens: 1024,
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: input.voice ?? 'Aoede' },
+          },
+        },
         inputAudioTranscription: {},
         outputAudioTranscription: {},
         contextWindowCompression: {
@@ -70,7 +77,12 @@ export async function connectLiveProvider(input: {
           `\nRecent session turns (conversation data): ${JSON.stringify(input.journal.turns.slice(-16))}`,
         tools: [
           {
-            functionDeclarations: liveTools(input.claims.mode, memory.enabled),
+            functionDeclarations: [
+              ...liveTools(input.claims.mode, memory.enabled),
+              ...(input.claims.mode === 'personal'
+                ? (input.workspaceTools ?? [])
+                : []),
+            ],
           },
           { googleSearch: {} },
         ],
@@ -106,4 +118,17 @@ export async function connectLiveProvider(input: {
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Keep final usage callbacks alive briefly after ending input, then close transport. */
+export async function drainLiveProvider(provider: Session | undefined) {
+  if (!provider) return;
+  try {
+    provider.sendRealtimeInput({ audioStreamEnd: true });
+  } catch {}
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  try {
+    provider.close();
+  } catch {}
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }

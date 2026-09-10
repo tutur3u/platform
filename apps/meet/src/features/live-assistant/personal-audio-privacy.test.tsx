@@ -7,9 +7,12 @@ const calls = vi.hoisted(() => ({
   play: vi.fn(),
   interrupt: vi.fn(),
   close: vi.fn(),
+  control: vi.fn(async () => ({ sessionId: 'session', token: 'test' })),
+  update: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
-  controlMeetLive: async () => ({ sessionId: 'session', token: 'test' }),
+  controlMeetLive: calls.control,
+  reviewMeetLiveTool: vi.fn(),
 }));
 vi.mock('./audio', () => ({
   LiveAudioPlayer: class {
@@ -18,13 +21,14 @@ vi.mock('./audio', () => ({
     interrupt = calls.interrupt;
     close = calls.close;
   },
-  captureLiveAudio: async () => ({ dispose: vi.fn(), update: vi.fn() }),
+  captureLiveAudio: async () => ({ dispose: vi.fn(), update: calls.update }),
 }));
 class Socket {
   static OPEN = 1;
   static current: Socket;
   readyState = 1;
   bufferedAmount = 0;
+  onclose?: (event: { code: number }) => void;
   onmessage?: (event: { data: string }) => void;
   send = vi.fn();
   close = vi.fn();
@@ -38,6 +42,7 @@ class Socket {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 it('stops queued personal speech on pause and blocks new speech while the room microphone is on', async () => {
@@ -68,4 +73,57 @@ it('stops queued personal speech on pause and blocks new speech while the room m
     Socket.current.receive({ type: 'audio', data: 'AAAA', sampleRate: 24000 });
   });
   expect(calls.play).toHaveBeenCalledOnce();
+});
+
+it('retries a temporary resume API failure and stops reconnecting after leaving', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('WebSocket', Socket);
+  vi.stubGlobal('navigator', {
+    mediaDevices: { getUserMedia: async () => ({ getTracks: () => [] }) },
+  });
+  const { result } = renderHook(() =>
+    useLiveAssistant('meeting', '', { streams: [], microphoneEnabled: false })
+  );
+  await act(() => result.current.start('personal', [], ''));
+  act(() => Socket.current.receive({ type: 'state', state: 'listening' }));
+  const oldSocket = Socket.current;
+  calls.control.mockRejectedValueOnce(new Error('Temporary outage'));
+  act(() => oldSocket.onclose?.({ code: 1006 }));
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  expect(result.current.status).toBe('recovering');
+  await act(() => vi.advanceTimersByTimeAsync(4000));
+  expect(Socket.current).not.toBe(oldSocket);
+  act(() => Socket.current.receive({ type: 'state', state: 'listening' }));
+  expect(result.current.status).toBe('listening');
+  await act(() => result.current.stop());
+  const count = calls.control.mock.calls.length;
+  await act(() => vi.advanceTimersByTimeAsync(60000));
+  expect(calls.control).toHaveBeenCalledTimes(count);
+});
+it('switches a personal microphone without replacing its private session', async () => {
+  vi.stubGlobal('WebSocket', Socket);
+  const stopOld = vi.fn();
+  const old = { getTracks: () => [{ stop: stopOld }] };
+  const next = { getTracks: () => [] };
+  const getUserMedia = vi
+    .fn()
+    .mockResolvedValueOnce(old)
+    .mockResolvedValueOnce(next);
+  vi.stubGlobal('navigator', { mediaDevices: { getUserMedia } });
+  const { result, rerender } = renderHook(
+    ({ device }) =>
+      useLiveAssistant(
+        'meeting',
+        '',
+        { streams: [], microphoneEnabled: false },
+        device
+      ),
+    { initialProps: { device: 'first' } }
+  );
+  await act(() => result.current.start('personal', [], 'first'));
+  const socket = Socket.current;
+  await act(() => rerender({ device: 'second' }));
+  expect(calls.update).toHaveBeenCalledWith([next]);
+  expect(stopOld).toHaveBeenCalledOnce();
+  expect(Socket.current).toBe(socket);
 });

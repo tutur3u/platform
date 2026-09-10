@@ -175,6 +175,10 @@ export type MeetRealtimeServerMessage =
       ownerId: string;
     }
   | {
+      type: 'assistant.interrupted';
+      sessionId: string;
+    }
+  | {
       type: 'assistant.audio';
       sessionId: string;
       sequence: number;

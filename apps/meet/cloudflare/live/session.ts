@@ -1,7 +1,6 @@
 import type { LiveServerMessage, Session } from '@google/genai/web';
 import {
   appendLiveTurn,
-  applyLiveCheckpoint,
   EMPTY_LIVE_JOURNAL,
   needsLiveCheckpoint,
 } from '../../src/features/live-assistant/context';
@@ -13,8 +12,11 @@ import { verifyLiveSession } from '../../src/features/live-assistant/token';
 import { LiveActions } from './actions';
 import { LiveAudioBatcher } from './audio-batcher';
 import { beginLiveBilling, settleLiveBilling } from './billing';
-import { finalizeSessionBilling } from './finalize-billing';
-import { connectLiveProvider } from './provider';
+import {
+  finalizeSessionBilling,
+  settlePublicBillings,
+} from './finalize-billing';
+import { connectLiveProvider, drainLiveProvider } from './provider';
 import { speakApprovedText } from './public-speech';
 import { liveRegistry } from './registry';
 import { refreshLiveRegistry } from './registry-heartbeat';
@@ -24,16 +26,19 @@ import {
   liveReviewEvent,
 } from './reviews';
 import { liveRoomCommand } from './room';
-import { checkpointSchema, type SavedSession } from './session-state';
+import type { SavedSession } from './session-state';
+import { executeLiveTool } from './session-tools';
+import { markInterruptedUsage, observeSessionUsage } from './session-usage';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
-import { accumulateLiveUsage } from './usage';
 import { reportLiveUsage } from './usage-report';
+import { controlWorkspaceReview } from './workspace-review';
 
 export class MeetLiveDurableObject {
   private saved?: SavedSession;
   private socket?: WebSocket;
   private provider?: Session;
   private connecting = false;
+  private stopping = false;
   private paused = false;
   private generation = 0;
   private retry = 0;
@@ -50,11 +55,16 @@ export class MeetLiveDurableObject {
   private registryQueue = Promise.resolve();
   constructor(
     private readonly state: DurableObjectState,
-    private readonly env: LiveEnvironment
+    private readonly env: LiveEnvironment,
+    private readonly providerFactory = connectLiveProvider
   ) {
     this.archive = new LiveTurnArchive(state.storage);
     state.blockConcurrencyWhile(async () => {
       this.saved = await state.storage.get<SavedSession>('session');
+      if (this.saved && !this.saved.ended && this.saved.billing) {
+        this.saved.coverageGap = true;
+        this.saved.billing.incomplete = true;
+      }
       if (
         this.saved?.reviews.some((review) => review.status === 'processing')
       ) {
@@ -85,12 +95,36 @@ export class MeetLiveDurableObject {
       );
       return result;
     }
+    if (path === '/workspace-review' && request.method === 'POST') {
+      const input = (await request.json()) as Parameters<
+        typeof controlWorkspaceReview
+      >[0];
+      const result = this.queue.then(() =>
+        controlWorkspaceReview(
+          input,
+          this.saved,
+          this.provider,
+          () => this.persist(),
+          (event) => this.emit(event)
+        )
+      );
+      this.queue = result.then(
+        () => undefined,
+        () => undefined
+      );
+      return result;
+    }
     if (path === '/initialize' && request.method === 'POST') {
       if (this.saved)
         return new Response('Already initialized', { status: 409 });
       const input = (await request.json()) as Pick<
         SavedSession,
-        'claims' | 'identity' | 'timezone' | 'sharedContext'
+        | 'claims'
+        | 'identity'
+        | 'timezone'
+        | 'sharedContext'
+        | 'workspace'
+        | 'voice'
       >;
       this.saved = {
         ...input,
@@ -208,21 +242,26 @@ export class MeetLiveDurableObject {
         saved.identity,
         saved.billing
       );
-      const provider = await connectLiveProvider({
+      const provider = await this.providerFactory({
         env: this.env,
         claims: saved.claims,
         timezone: saved.timezone,
+        voice: saved.voice,
         sharedContext: saved.sharedContext,
         journal: saved.journal,
+        workspaceTools: saved.workspace?.tools,
         handle: saved.handle,
         onMessage: (message) => {
-          if (generation === this.generation)
+          if (generation !== this.generation) return;
+          observeSessionUsage(saved, message);
+          if (!this.stopping)
             this.queue = this.queue
               .then(() => this.message(message))
               .catch(() => this.stop('processing_failed'));
         },
         onClose: () => {
-          if (generation === this.generation) {
+          if (generation === this.generation && !this.stopping) {
+            markInterruptedUsage(saved);
             this.provider = undefined;
             this.emit({ type: 'state', state: 'recovering' });
             void this.state.storage.setAlarm(
@@ -270,13 +309,15 @@ export class MeetLiveDurableObject {
       return;
     }
     if (message.type === 'decision') {
-      await this.decide(message.id, message.approved);
+      await this.decide(message.id, message.approved, message.text);
       return;
     }
     if (message.type === 'pause') {
       this.paused = message.paused;
-      if (this.paused)
+      if (this.paused) {
         this.provider?.sendRealtimeInput({ audioStreamEnd: true });
+        await this.interruptAudio();
+      }
       this.emit({ type: 'state', state: this.paused ? 'paused' : 'listening' });
       return;
     }
@@ -303,25 +344,17 @@ export class MeetLiveDurableObject {
       message.sessionResumptionUpdate.newHandle
     )
       saved.handle = message.sessionResumptionUpdate.newHandle;
-    if (message.usageMetadata && saved.billing) {
-      const result = accumulateLiveUsage(
-        saved.billing.usage,
-        message.usageMetadata
-      );
-      saved.billing.usage = result.usage;
-      saved.billing.incomplete =
-        Boolean(saved.coverageGap) || result.incomplete;
-      if (result.incomplete) {
-        await this.stop('usage_unavailable');
-        return;
+    const cancelledIds = message.toolCallCancellation?.ids ?? [];
+    for (const review of saved.reviews) {
+      if (review.status === 'pending' && cancelledIds.includes(review.callId)) {
+        review.status = 'denied';
+        this.emitReview(review);
       }
     }
+    if (cancelledIds.length) await this.persist();
     const content = message.serverContent;
-    const searches = content?.groundingMetadata?.webSearchQueries?.length ?? 0;
-    if (saved.billing) saved.billing.usage.searchQueries += searches;
     if (content?.interrupted) {
-      this.audioBatcher?.clear();
-      this.emit({ type: 'interrupt' });
+      await this.interruptAudio();
     }
     if (content?.inputTranscription?.text) {
       this.userText = (this.userText + content.inputTranscription.text).slice(
@@ -345,6 +378,7 @@ export class MeetLiveDurableObject {
     }
     for (const part of content?.modelTurn?.parts ?? []) {
       if (
+        !this.paused &&
         part.inlineData?.data &&
         part.inlineData.mimeType?.startsWith('audio/pcm')
       ) {
@@ -399,8 +433,25 @@ export class MeetLiveDurableObject {
       }
     }
     for (const call of message.toolCall?.functionCalls ?? [])
-      await this.tool(call.id ?? '', call.name ?? '', call.args ?? {});
-    if (content?.turnComplete || Date.now() - this.lastPersistAt > 10000) {
+      await executeLiveTool(
+        {
+          saved,
+          provider: this.provider,
+          env: this.env,
+          archive: this.archive,
+          persist: () => this.persist(),
+          emit: (event) => this.emit(event),
+          emitReview: (review) => this.emitReview(review),
+        },
+        call.id ?? '',
+        call.name ?? '',
+        call.args ?? {}
+      );
+    if (
+      message.usageMetadata ||
+      content?.turnComplete ||
+      Date.now() - this.lastPersistAt > 10000
+    ) {
       await this.persist();
       this.lastPersistAt = Date.now();
     }
@@ -412,103 +463,28 @@ export class MeetLiveDurableObject {
       await this.connect();
     }
   }
-  private async tool(
-    callId: string,
-    name: string,
-    args: Record<string, unknown>
-  ) {
-    const saved = this.saved!;
-    const respond = (response: Record<string, unknown>) =>
-      this.provider?.sendToolResponse({
-        functionResponses: [{ id: callId, name, response }],
-      });
-    if (name === 'current_time') {
-      respond({ now: new Date().toISOString(), timezone: saved.timezone });
-      return;
-    }
-    if (name === 'meeting_context') {
-      respond(
-        await liveRoomCommand<Record<string, unknown>>(
-          this.env,
-          saved.claims,
-          saved.identity,
-          { action: 'live.context' }
-        )
-      );
-      return;
-    }
-    if (name === 'recall_conversation') {
-      respond(
-        await this.archive.search(
-          String(args.query ?? '').slice(0, 200),
-          typeof args.before === 'string' && /^turn:\d{12}$/.test(args.before)
-            ? args.before
-            : undefined
-        )
-      );
-      return;
-    }
-    if (name === 'organize_context') {
-      const parsed = checkpointSchema.safeParse(args);
-      if (!parsed.success) {
-        respond({ error: 'Invalid checkpoint' });
-        return;
-      }
-      const through =
-        saved.journal.turns.at(-9)?.at ??
-        saved.journal.turns.at(-1)?.at ??
-        new Date().toISOString();
-      saved.journal = applyLiveCheckpoint(
-        saved.journal,
-        { ...parsed.data, through },
-        through
-      );
-      await this.persist();
-      respond({ saved: true });
-      this.emit({
-        type: 'context',
-        checkpoints: saved.journal.checkpoints.length,
-        retainedTurns: saved.journal.turns.length,
-        compressed: true,
-      });
-      return;
-    }
-    if (
-      saved.claims.mode === 'personal' &&
-      ['remember', 'propose_room_reply'].includes(name) &&
-      typeof args.text === 'string' &&
-      args.text.trim()
-    ) {
-      if (saved.reviews.some((review) => review.status === 'pending')) {
-        respond({ error: 'Resolve the pending review first' });
-        return;
-      }
-      const proposal: LiveProposal = {
-        id: crypto.randomUUID(),
-        callId,
-        name: name as LiveProposal['name'],
-        text: args.text.slice(0, name === 'remember' ? 1000 : 4000),
-        category: ['fact', 'project'].includes(String(args.category))
-          ? (args.category as 'fact' | 'project')
-          : 'preference',
-        status: 'pending',
-        expiresAt: Date.now() + 5 * 60_000,
-      };
-      saved.reviews = [...saved.reviews.slice(-19), proposal];
-      await this.persist();
-      this.emitReview(proposal);
-      return;
-    }
-    respond({ error: 'Tool unavailable' });
+  private async interruptAudio() {
+    this.audioBatcher?.clear();
+    this.emit({ type: 'interrupt' });
+    if (this.saved?.claims.mode === 'room')
+      await liveRoomCommand(this.env, this.saved.claims, this.saved.identity, {
+        action: 'live.interrupt',
+        sessionId: this.saved.claims.sessionId,
+      }).catch(() => undefined);
   }
   private emitReview(review: LiveProposal) {
     this.emit(liveReviewEvent(review));
   }
-  private async decide(id: string, approved: boolean) {
+  private async decide(id: string, approved: boolean, text?: string) {
     const saved = this.saved!;
     const review = saved.reviews.find((item) => item.id === id);
-    if (review?.status !== 'pending') return;
+    if (review?.status !== 'pending' || review.name === 'workspace_tool')
+      return;
     if (review.expiresAt < Date.now()) approved = false;
+    if (approved && text?.trim())
+      review.text = text
+        .trim()
+        .slice(0, review.name === 'remember' ? 1000 : 4000);
     review.status = approved ? 'processing' : 'denied';
     await this.persist();
     this.emitReview(review);
@@ -581,9 +557,29 @@ export class MeetLiveDurableObject {
       await this.stop();
       return;
     }
+    await settlePublicBillings(
+      this.env,
+      this.saved,
+      () => this.persist(),
+      () => this.state.storage.setAlarm(Date.now() + 20000)
+    );
     for (const review of this.saved.reviews)
-      if (review.status === 'pending' && review.expiresAt <= Date.now())
-        await this.decide(review.id, false);
+      if (review.status === 'pending' && review.expiresAt <= Date.now()) {
+        if (review.name === 'workspace_tool')
+          await controlWorkspaceReview(
+            {
+              ownerId: this.saved.claims.ownerId,
+              meetingId: this.saved.claims.meetingId,
+              reviewId: review.id,
+              action: 'deny',
+            },
+            this.saved,
+            this.provider,
+            () => this.persist(),
+            (event) => this.emit(event)
+          );
+        else await this.decide(review.id, false);
+      }
     try {
       if (Date.now() - this.lastRegistryAt > 12 * 60 * 60_000) {
         await refreshLiveRegistry(this.env, this.saved.claims);
@@ -657,12 +653,15 @@ export class MeetLiveDurableObject {
     }
   }
   private async stop(detail?: string) {
-    if (!this.saved) return;
+    if (!this.saved || this.stopping) return;
+    this.stopping = true;
+    this.paused = true;
     const actionsSettled = this.actions.cancel();
-    ++this.generation;
-    this.provider?.close();
-    this.provider = undefined;
     this.audioBatcher?.clear();
+    await drainLiveProvider(this.provider);
+    markInterruptedUsage(this.saved);
+    ++this.generation;
+    this.provider = undefined;
     await actionsSettled;
     this.saved.ended = true;
     await this.persist();

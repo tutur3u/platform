@@ -1,7 +1,6 @@
 'use client';
 import {
   Brain,
-  Check,
   Headphones,
   LockKeyhole,
   Mic,
@@ -11,7 +10,6 @@ import {
   ShieldCheck,
   Square,
   Users,
-  X,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,11 +21,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
+import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { AssistantWorkspacePicker } from '../call/components/assistant-workspace-picker';
 import { MiraAvatar } from '../call/components/mira-profile';
 import type { MeetRoomController } from '../call/lib/room-controller';
+import { liveVoiceSchema } from './contracts';
+import { LiveReviewCard } from './live-review-card';
 import { useLiveAssistant } from './use-live-assistant';
 
 export function MeetLivePanel({
@@ -46,11 +55,18 @@ export function MeetLivePanel({
     room.localStream,
     ...Object.values(room.remoteStreams),
   ].filter((stream): stream is MediaStream => !!stream);
-  const live = useLiveAssistant(meetingId, outputDeviceId, {
-    streams,
-    microphoneEnabled: room.media.audioEnabled,
-  });
+  const live = useLiveAssistant(
+    meetingId,
+    outputDeviceId,
+    {
+      streams,
+      microphoneEnabled: room.media.audioEnabled,
+    },
+    room.getSelectedDevices().audio
+  );
   const [draft, setDraft] = useState('');
+  const [workspace, setWorkspace] = useState('personal');
+  const [voice, setVoice] = useState('Aoede');
   const active = !['idle', 'error', 'ended'].includes(live.status);
   const ready = ['listening', 'paused'].includes(live.status);
   // If the user unmutes the meeting, stop personal capture before any further audio is sent.
@@ -61,7 +77,13 @@ export function MeetLivePanel({
   const start = async (mode: 'personal' | 'room') => {
     if (mode === 'personal' && room.media.audioEnabled)
       await room.toggleMicrophone();
-    await live.start(mode, streams, room.getSelectedDevices().audio);
+    await live.start(
+      mode,
+      streams,
+      room.getSelectedDevices().audio,
+      workspace === 'personal' ? undefined : workspace,
+      voice
+    );
   };
   return (
     <Dialog>
@@ -86,6 +108,30 @@ export function MeetLivePanel({
           <DialogDescription>{t('hint')}</DialogDescription>
         </DialogHeader>
         <div className="min-h-0 space-y-4 overflow-y-auto">
+          {!active && (
+            <AssistantWorkspacePicker
+              selfUserId={room.state.selfUserId}
+              value={workspace}
+              onChange={setWorkspace}
+            />
+          )}
+          {!active && (
+            <div className="space-y-2">
+              <Label>{t('voice')}</Label>
+              <Select value={voice} onValueChange={setVoice}>
+                <SelectTrigger aria-label={t('voice')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {liveVoiceSchema.options.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {!active ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <button
@@ -159,55 +205,12 @@ export function MeetLivePanel({
                 ))}
               </div>
               {live.reviews.map((review) => (
-                <section
+                <LiveReviewCard
                   key={review.id}
-                  className="space-y-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4"
-                >
-                  <div className="flex items-center gap-2 font-medium">
-                    <ShieldCheck className="size-5" />
-                    {t(
-                      review.action === 'remember'
-                        ? 'review_memory'
-                        : 'review_share'
-                    )}
-                  </div>
-                  <p className="whitespace-pre-wrap rounded-lg bg-background p-3 text-sm">
-                    {review.text}
-                  </p>
-                  {review.status === 'pending' ? (
-                    <div className="flex gap-2">
-                      <Button
-                        disabled={!ready}
-                        onClick={() =>
-                          live.send({
-                            type: 'decision',
-                            id: review.id,
-                            approved: true,
-                          })
-                        }
-                      >
-                        <Check className="size-4" />
-                        {t('approve')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        disabled={!ready}
-                        onClick={() =>
-                          live.send({
-                            type: 'decision',
-                            id: review.id,
-                            approved: false,
-                          })
-                        }
-                      >
-                        <X className="size-4" />
-                        {t('deny')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <Badge variant="secondary">{t(review.status)}</Badge>
-                  )}
-                </section>
+                  review={review}
+                  ready={ready}
+                  decide={live.decide}
+                />
               ))}
               <div className="flex items-end gap-2">
                 <Textarea

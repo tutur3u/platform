@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { meetRealtimeTokenPayloadSchema } from './primitives';
 import { admitOrHold, createMeetRoomSnapshot } from './room';
+import { expireRoomLive } from './room-live';
 import { roomService } from './room-service';
 
 const ownerId = '00000000-0000-4000-8000-000000000001';
@@ -105,4 +106,33 @@ describe('room Live authority', () => {
       'assistant.audio'
     );
   });
+});
+
+it('expires an abandoned room assistant and emits a single removal event', () => {
+  const first = roomService(initial(), token, {
+    action: 'live.reserve',
+    sessionId,
+  });
+  const expiry = first.state.liveAssistant!.expiresAt;
+  expect(expireRoomLive(first.state, expiry - 1)).toBeNull();
+  const expired = expireRoomLive(first.state, expiry)!;
+  expect(expired.messages).toEqual([
+    { type: 'assistant.live', sessionId, ownerId, active: false },
+  ]);
+  expect(expireRoomLive(expired.state, expiry)).toBeNull();
+});
+it('allows authenticated server interruptions but rejects browser impersonation', () => {
+  const first = roomService(initial(), token, {
+    action: 'live.reserve',
+    sessionId,
+  });
+  const command = { action: 'live.interrupt', sessionId };
+  expect(roomService(first.state, token, command).status).toBe(403);
+  expect(
+    roomService(
+      first.state,
+      { ...token, scopes: ['meet:server', 'meet:live-server'] },
+      command
+    ).messages
+  ).toEqual([{ type: 'assistant.interrupted', sessionId }]);
 });

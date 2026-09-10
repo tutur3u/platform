@@ -18,17 +18,7 @@ export async function finalizeSessionBilling(
   } catch {
     await retry();
   }
-  for (const [id, billing] of Object.entries(saved.publicBillings ?? {})) {
-    try {
-      const final = await settleLiveBilling(env, saved.claims, billing, true);
-      saved.publicBillings![id] = final;
-      await persist();
-      await reportLiveUsage(env, saved.claims, saved.identity, final);
-      delete saved.publicBillings![id];
-    } catch {
-      await retry();
-    }
-  }
+  await settlePublicBillings(env, saved, persist, retry, true);
   if (saved.billing && !saved.billingFinalized) {
     try {
       saved.billing = await settleLiveBilling(
@@ -40,6 +30,28 @@ export async function finalizeSessionBilling(
       await persist();
       await reportLiveUsage(env, saved.claims, saved.identity, saved.billing);
       saved.billingFinalized = true;
+    } catch {
+      await retry();
+    }
+  }
+  await persist();
+}
+
+export async function settlePublicBillings(
+  env: LiveEnvironment,
+  saved: SavedSession,
+  persist: () => Promise<void>,
+  retry: () => Promise<void>,
+  all = false
+) {
+  for (const [id, billing] of Object.entries(saved.publicBillings ?? {})) {
+    if (!all && !billing.pendingSettlement) continue;
+    try {
+      const final = await settleLiveBilling(env, saved.claims, billing, true);
+      saved.publicBillings![id] = final;
+      await persist();
+      await reportLiveUsage(env, saved.claims, saved.identity, final);
+      delete saved.publicBillings![id];
     } catch {
       await retry();
     }

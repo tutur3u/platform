@@ -197,7 +197,6 @@ export function useMeetRoom({
         setState((current) => reduceCallState(current, message));
       },
       onReconnected: () => {
-        // The ready message decides whether the server retained our media.
         signalingRef.current?.send({
           media: mediaRef.current,
           type: 'presence.join',
@@ -447,7 +446,6 @@ export function useMeetRoom({
     ).catch(() => undefined);
   }, [connectionGeneration, queueLocalTracks, state.admission]);
 
-  // Serialize SDP exchanges across track broadcasts.
   useEffect(() => {
     if (state.admission !== 'admitted') return;
     const pull = async () => {

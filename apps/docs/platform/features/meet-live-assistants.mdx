@@ -27,13 +27,19 @@ cannot impersonate Mira's audio.
 
 The model can inspect current public meeting context, recall earlier session
 turns, and organize its context. Personal memory is not included in room mode.
-Private workspace tools in text chat retain their separate requester review
-flow; the voice session does not automatically inherit workspace credentials.
+Personal sessions can use the selected workspace through the same permission-checked
+tools as text chat. Every workspace read or change requires an inline private
+approval before execution. Membership, current permissions, and arguments are
+validated again at execution time. Room sessions never receive these tools.
+A room admin can stop the shared assistant even when another admin invited it.
+The room presence expires automatically if its initiating session disappears.
 
 ## Explicit approvals
 
 A personal assistant may propose remembering a fact or sharing an exact reply
-with the room. The owner sees the proposed text and can approve or deny it.
+with the room. The owner sees the proposed text, can edit it, and can approve or deny it.
+Workspace requests show their exact arguments. Approval claims each operation
+once before execution; an uncertain result is not automatically retried.
 Pending proposals expire after five minutes. No timeout implies approval.
 Interrupted actions are marked failed and are never silently replayed.
 
@@ -56,7 +62,13 @@ The active journal keeps bounded recent turns and rolling checkpoints; a private
 Durable Object archive supports searching earlier turns in that session. Model
 summaries can omit details. Ending the session clears its journal, private review
 text, resumption handle, and archive in bounded batches; approved user memories
-and billing receipts remain separate. Audio is not archived, and audio never received by
+and billing receipts remain separate. The client retries interrupted connections, including temporary token-refresh failures.
+Provider GoAway events use resumable sessions; bounded checkpoints are the fallback
+when a handle is no longer valid. Choose a voice before starting. Microphone and
+speaker changes in meeting settings also apply to the active personal assistant.
+Pausing or interrupting speech clears queued playback on the receiving devices.
+
+Audio is not archived, and audio never received by
 the service cannot be reconstructed after an outage.
 
 ## Usage and costs
@@ -64,7 +76,9 @@ the service cannot be reconstructed after an outage.
 Live reservations and settlement use the platform's existing AI credit ledger
 and charge the initiating user's personal workspace. Usage is accumulated from
 provider events by modality. Reservations renew before exhaustion; failed
-settlements remain durable and retry after the session ends.
+settlements remain durable and retry after the session ends. Final provider usage
+is collected during shutdown. Interrupted turns without a final usage receipt
+remain marked incomplete even if subsequent turns succeed.
 
 Room admins can see aggregated Live provider costs in meeting settings.
 The count represents billing periods, including renewed reservations and

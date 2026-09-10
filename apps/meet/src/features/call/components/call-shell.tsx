@@ -297,6 +297,7 @@ export function ConnectedCallShell({
           </span>
         )}
         <RoomAssistantAudio
+          canManage={canManage}
           meetingId={meetingId}
           outputDeviceId={outputDeviceId}
         />

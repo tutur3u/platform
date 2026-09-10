@@ -6,6 +6,7 @@ export const roomLiveCommand = z.discriminatedUnion('action', [
   z.object({ action: z.literal('live.reserve'), sessionId: z.uuid() }),
   z.object({ action: z.literal('live.stop'), sessionId: z.uuid() }),
   z.object({ action: z.literal('live.heartbeat'), sessionId: z.uuid() }),
+  z.object({ action: z.literal('live.interrupt'), sessionId: z.uuid() }),
   z.object({
     action: z.literal('live.audio'),
     sessionId: z.uuid(),
@@ -108,6 +109,17 @@ export function applyRoomLive(
   // A browser token, including a host token, never has this scope.
   if (!token.scopes.includes('meet:live-server') || ownerId !== current.ownerId)
     return fail('Forbidden');
+  if (message.action === 'live.interrupt')
+    return {
+      state: snapshot,
+      body: { ok: true },
+      messages: [
+        {
+          type: 'assistant.interrupted' as const,
+          sessionId: current.sessionId,
+        },
+      ],
+    };
   if (message.action === 'live.heartbeat')
     return {
       state: {
@@ -131,6 +143,23 @@ export function applyRoomLive(
         sequence: message.sequence,
         data: message.data,
         at: message.at,
+      },
+    ],
+  };
+}
+
+/** Expired assistants must disappear even when every browser remains idle. */
+export function expireRoomLive(snapshot: RoomServiceState, now = Date.now()) {
+  const live = snapshot.liveAssistant;
+  if (!live || (!snapshot.ended && live.expiresAt > now)) return null;
+  return {
+    state: { ...snapshot, liveAssistant: undefined },
+    messages: [
+      {
+        type: 'assistant.live' as const,
+        sessionId: live.sessionId,
+        ownerId: live.ownerId,
+        active: false,
       },
     ],
   };

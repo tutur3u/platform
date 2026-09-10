@@ -1,5 +1,5 @@
 'use client';
-import { controlMeetLive } from '@tuturuuu/internal-api';
+import { controlMeetLive, reviewMeetLiveTool } from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { captureLiveAudio, LiveAudioPlayer } from './audio';
 import type {
@@ -21,12 +21,15 @@ type ActiveSession = {
   stopped: boolean;
   reconnect?: ReturnType<typeof setTimeout>;
   retries: number;
+  inputDeviceId?: string;
+  timeout?: ReturnType<typeof setTimeout>;
 };
 type Review = Extract<LiveAssistantEvent, { type: 'review' }>;
 export function useLiveAssistant(
   meetingId: string,
   outputDeviceId: string,
-  roomAudio: { streams: MediaStream[]; microphoneEnabled: boolean }
+  roomAudio: { streams: MediaStream[]; microphoneEnabled: boolean },
+  inputDeviceId = ''
 ) {
   const [status, setStatus] = useState('idle');
   const [mode, setMode] = useState<LiveAudience>('personal');
@@ -68,6 +71,7 @@ export function useLiveAssistant(
     if (!current) return;
     current.stopped = true;
     clearTimeout(current.reconnect);
+    clearTimeout(current.timeout);
     current.disposeCapture?.();
     current.microphone?.getTracks().forEach((track) => {
       track.stop();
@@ -90,6 +94,10 @@ export function useLiveAssistant(
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(url, ['meet-live', `auth.${token}`]);
     current.socket = socket;
+    clearTimeout(current.timeout);
+    current.timeout = setTimeout(() => {
+      if (current.socket === socket && !current.ready) socket.close();
+    }, 30000);
     socket.onmessage = (event) => {
       if (
         active.current !== current ||
@@ -103,6 +111,10 @@ export function useLiveAssistant(
         current.ready = ['listening', 'paused'].includes(message.state);
         if (!wasReady && current.ready && current.paused)
           socket.send(JSON.stringify({ type: 'pause', paused: true }));
+        if (current.ready) {
+          current.retries = 0;
+          clearTimeout(current.timeout);
+        }
         setStatus(message.state);
         if (message.detail) setError(message.detail);
       }
@@ -137,7 +149,6 @@ export function useLiveAssistant(
     };
     socket.onopen = () => {
       if (active.current !== current || current.socket !== socket) return;
-      current.retries = 0;
       setError(undefined);
     };
     socket.onclose = (event) => {
@@ -147,42 +158,48 @@ export function useLiveAssistant(
         current.socket !== socket
       )
         return;
+      clearTimeout(current.timeout);
       current.ready = false;
       if (event.code === 1000 || event.code === 4001) {
         // A moved session belongs to the replacement device now.
         void stop(false);
         return;
       }
-      if (++current.retries > 8) {
-        void stop();
-        return;
-      }
-      setStatus('recovering');
-      current.player.interrupt();
-      current.reconnect = setTimeout(
-        async () => {
-          try {
-            const next = await controlMeetLive(meetingId, {
-              action: 'resume',
-              sessionId: current.sessionId,
-            });
-            if (active.current === current && !current.stopped)
-              await connect(next.token);
-          } catch {
-            if (active.current === current && !current.stopped) {
-              setError('reconnect_failed');
-              void stop();
-            }
-          }
-        },
-        Math.min(1000 * 2 ** current.retries, 15000)
-      );
+      scheduleReconnect(current);
     };
+  };
+  const scheduleReconnect = (current: ActiveSession) => {
+    if (++current.retries > 8) {
+      void stop();
+      return;
+    }
+    setStatus('recovering');
+    current.player.interrupt();
+    current.reconnect = setTimeout(
+      async () => {
+        try {
+          const next = await controlMeetLive(meetingId, {
+            action: 'resume',
+            sessionId: current.sessionId,
+          });
+          if (active.current === current && !current.stopped)
+            await connect(next.token);
+        } catch {
+          if (active.current === current && !current.stopped) {
+            setError('reconnect_failed');
+            scheduleReconnect(current);
+          }
+        }
+      },
+      Math.min(1000 * 2 ** current.retries, 15000)
+    );
   };
   const start = async (
     audience: LiveAudience,
     streams: MediaStream[],
-    inputDeviceId: string
+    inputDeviceId: string,
+    workspaceId?: string,
+    voice = 'Aoede'
   ) => {
     if (active.current || starting.current) return;
     starting.current = true;
@@ -193,6 +210,8 @@ export function useLiveAssistant(
     setMode(audience);
     setTranscript([]);
     setReviews([]);
+    setUsage({ costUsd: 0, incomplete: true });
+    setOrganized(false);
     const player = new LiveAudioPlayer();
     let microphone: MediaStream | undefined;
     try {
@@ -211,6 +230,8 @@ export function useLiveAssistant(
         action: 'start',
         mode: audience,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        workspaceId,
+        voice,
       });
       if (cancelled()) {
         await controlMeetLive(meetingId, {
@@ -223,6 +244,7 @@ export function useLiveAssistant(
         sessionId: session.sessionId,
         player,
         microphone,
+        inputDeviceId,
         stopped: false,
         retries: 0,
         mode: audience,
@@ -258,6 +280,48 @@ export function useLiveAssistant(
     }
   };
   useEffect(() => {
+    const current = active.current;
+    if (current?.mode !== 'personal' || current.inputDeviceId === inputDeviceId)
+      return;
+    let cancelled = false;
+    void navigator.mediaDevices
+      .getUserMedia({
+        audio: {
+          deviceId: inputDeviceId ? { exact: inputDeviceId } : undefined,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+        video: false,
+      })
+      .then((microphone) => {
+        if (cancelled || current.stopped || active.current !== current) {
+          microphone.getTracks().forEach((track) => {
+            track.stop();
+          });
+          return;
+        }
+        current.updateCapture?.([microphone]);
+        current.microphone?.getTracks().forEach((track) => {
+          track.stop();
+        });
+        current.microphone = microphone;
+        current.inputDeviceId = inputDeviceId;
+      })
+      .catch(() => {
+        if (!cancelled) setError('input_unavailable');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [inputDeviceId]);
+  useEffect(() => {
+    const player = active.current?.player;
+    if (player)
+      void player
+        .unlock(outputDeviceId)
+        .catch(() => setError('output_unavailable'));
+  }, [outputDeviceId]);
+  useEffect(() => {
     if (active.current?.mode === 'room')
       active.current.updateCapture?.(roomAudio.streams);
   }, [roomAudio.streams]);
@@ -269,6 +333,7 @@ export function useLiveAssistant(
       if (!current) return;
       current.stopped = true;
       clearTimeout(current.reconnect);
+      clearTimeout(current.timeout);
       current.disposeCapture?.();
       current.microphone?.getTracks().forEach((track) => {
         track.stop();
@@ -278,7 +343,30 @@ export function useLiveAssistant(
     },
     []
   );
+  const decide = async (review: Review, approved: boolean, text?: string) => {
+    const current = active.current;
+    if (!current || review.status !== 'pending') return;
+    if (review.action !== 'workspace') {
+      send({ type: 'decision', id: review.id, approved, text });
+      return;
+    }
+    setReviews((items) =>
+      items.map((item) =>
+        item.id === review.id ? { ...item, status: 'processing' } : item
+      )
+    );
+    try {
+      await reviewMeetLiveTool(meetingId, {
+        sessionId: current.sessionId,
+        reviewId: review.id,
+        approved,
+      });
+    } catch {
+      setError('review_failed');
+    }
+  };
   return {
+    decide,
     status,
     mode,
     transcript,

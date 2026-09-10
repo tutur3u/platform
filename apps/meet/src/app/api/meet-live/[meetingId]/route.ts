@@ -10,15 +10,19 @@ import {
 import {
   type LiveSessionClaims,
   liveAudienceSchema,
+  liveVoiceSchema,
 } from '@/features/live-assistant/contracts';
 import { readLiveRequestBody } from '@/features/live-assistant/request-body';
 import { signLiveSession } from '@/features/live-assistant/token';
+import { liveWorkspaceCatalog } from '@/features/live-assistant/workspace-tools';
 
 const schema = z.discriminatedUnion('action', [
   z.object({
     action: z.literal('start'),
     mode: liveAudienceSchema,
     timezone: z.string().max(100),
+    workspaceId: z.uuid().optional(),
+    voice: liveVoiceSchema.default('Aoede'),
   }),
   z.object({ action: z.literal('resume'), sessionId: z.uuid() }),
   z.object({ action: z.literal('stop'), sessionId: z.uuid() }),
@@ -43,17 +47,31 @@ export async function POST(
     if (!env.MEET_LIVE || !env.GOOGLE_GENERATIVE_AI_API_KEY)
       throw new MeetCallAccessError(503, 'Live assistant is unavailable');
     const command = input.data;
-    const sharedContext = await callRoomService(access, {
-      action: 'live.context',
-    });
+    const sharedContext =
+      command.action === 'stop'
+        ? undefined
+        : await callRoomService(access, { action: 'live.context' });
     if (command.action !== 'start') {
       const object = env.MEET_LIVE.get(
         env.MEET_LIVE.idFromName(command.sessionId)
       );
+      let ownerId = access.user.id;
+      if (command.action === 'stop' && access.isHost) {
+        const context = await callRoomService<{
+          live?: { sessionId: string; ownerId: string };
+        }>(access, { action: 'live.context' }).catch(() => undefined);
+        if (context?.live?.sessionId === command.sessionId) {
+          ownerId = context.live.ownerId;
+          await callRoomService(access, {
+            action: 'live.stop',
+            sessionId: command.sessionId,
+          });
+        }
+      }
       const response = await object.fetch('https://live.internal/control', {
         method: 'POST',
         body: JSON.stringify({
-          ownerId: access.user.id,
+          ownerId,
           meetingId,
           action: command.action,
         }),
@@ -88,6 +106,18 @@ export async function POST(
       mode: command.mode,
       expiresAt: Date.now() + 120000,
     };
+    const workspaceId = command.workspaceId ?? claims.billingWorkspaceId;
+    const workspace =
+      command.mode === 'personal'
+        ? {
+            id: workspaceId,
+            tools: await liveWorkspaceCatalog(
+              access,
+              workspaceId,
+              command.timezone
+            ),
+          }
+        : undefined;
     if (command.mode === 'room')
       await callRoomService(access, {
         action: 'live.reserve',
@@ -106,6 +136,8 @@ export async function POST(
           method: 'POST',
           body: JSON.stringify({
             claims,
+            workspace,
+            voice: command.voice,
             identity: {
               workspaceId: access.meeting.ws_id,
               isHost: access.isHost,

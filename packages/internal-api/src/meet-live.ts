@@ -36,7 +36,13 @@ export function updateMeetPrivateMemory(
 export function controlMeetLive(
   meetingId: string,
   command:
-    | { action: 'start'; mode: 'personal' | 'room'; timezone: string }
+    | {
+        action: 'start';
+        mode: 'personal' | 'room';
+        timezone: string;
+        workspaceId?: string;
+        voice?: string;
+      }
     | { action: 'resume' | 'stop'; sessionId: string }
 ) {
   return getInternalApiClient().json<{
@@ -48,4 +54,18 @@ export function controlMeetLive(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(command),
   });
+}
+
+export function reviewMeetLiveTool(
+  meetingId: string,
+  payload: { sessionId: string; reviewId: string; approved: boolean }
+) {
+  return getInternalApiClient().json<{ ok: boolean }>(
+    `/api/meet-live/${encodeURIComponent(meetingId)}/review`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
 }
