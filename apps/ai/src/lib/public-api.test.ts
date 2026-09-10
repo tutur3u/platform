@@ -32,6 +32,30 @@ import {
 } from './public-api';
 
 describe('AI Studio billing policy', () => {
+  it('does not settle unknown sponsored pricing as zero credits', async () => {
+    mocks.calculateAiStudioUsageCost.mockRejectedValueOnce(
+      new Error('pricing unavailable')
+    );
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            actorId: 'actor',
+            apiKey: { id: 'key' },
+            kind: 'api-key',
+            workspaceId: 'workspace',
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'run',
+          startedAt: Date.now(),
+          requirePricedUsage: true,
+        },
+        { status: 'succeeded', usage: { inputTokens: 100, outputTokens: 80 } }
+      )
+    ).rejects.toThrow('pricing unavailable');
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.calculateAiStudioUsageCost.mockResolvedValue({

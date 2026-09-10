@@ -30,6 +30,7 @@ export type MeteredUsage = {
 };
 
 export type MeteredExecutionContext = {
+  requirePricedUsage?: boolean;
   credential: PublicAiCredential;
   modelId: string;
   requestId: string;
@@ -254,7 +255,7 @@ export async function settleMeteredExecution(
     status: 'aborted' | 'failed' | 'succeeded';
     usage: MeteredUsage;
   }
-): Promise<void> {
+): Promise<{ billedCredits: number; providerCostUsd: number }> {
   const cost = await calculateAiStudioUsageCost({
     imageCount: usage.imageUnits,
     inputTokens: usage.inputTokens,
@@ -267,7 +268,10 @@ export async function settleMeteredExecution(
         : Math.max(0, usage.outputTokens - (usage.reasoningTokens ?? 0)),
     reasoningTokens: usage.reasoningTokens,
     workspaceId: context.credential.workspaceId,
-  }).catch(() => ({ billedCredits: 0, providerCostUsd: 0 }));
+  }).catch((error) => {
+    if (context.requirePricedUsage) throw error;
+    return { billedCredits: 0, providerCostUsd: 0 };
+  });
 
   const settlement = {
     embeddingUnits: usage.embeddingUnits,
@@ -299,6 +303,7 @@ export async function settleMeteredExecution(
       actualCredits: cost.billedCredits,
     });
   }
+  return cost;
 }
 
 export async function recordMeteredExecutionStep(
