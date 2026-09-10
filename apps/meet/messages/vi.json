@@ -3996,7 +3996,7 @@
       "participants": "Người tham gia ({count})",
       "personal_chat": "Mira riêng tư",
       "personal_chat_empty": "Hỏi Mira riêng tư",
-      "personal_chat_hint": "Chỉ bạn và Mira. Không tự động gửi vào trò chuyện phòng. Cuộc trò chuyện được xóa khi đóng bảng hoặc rời cuộc họp.",
+      "personal_chat_hint": "Chỉ bạn và Mira. Không tự động gửi vào trò chuyện phòng.",
       "personal_share": "Xem lại trước khi chia sẻ",
       "personal_share_confirm": "Chia sẻ với mọi người",
       "personal_share_hint": "Chỉ nội dung bên dưới được gửi dưới tên bạn tới mọi người trong phòng. Người tham gia sau có thể đọc tin nhắn đã lưu.",
