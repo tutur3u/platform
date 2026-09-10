@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CalendarClock } from '@tuturuuu/icons';
 import { ColabRequestError, colabRequest } from '@tuturuuu/internal-api/colab';
-import type { Identity, RoomView } from '@tuturuuu/multiplayer';
+import {
+  type Identity,
+  memberTeamIds,
+  type RoomView,
+} from '@tuturuuu/multiplayer';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Avatar, AvatarFallback } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -16,6 +20,7 @@ import { MissionBrief } from './mission-brief';
 import { useWorkspaceLocation } from './navigation';
 import { newestRoomView } from './room-cache';
 import { SelectField } from './select-field';
+import { ShowcaseStage } from './showcase-stage';
 import { TeamDesk } from './team-desk';
 
 export function Workshop({
@@ -185,10 +190,15 @@ export function Workshop({
     room.teams.find((t) => t.id === (selected || room.self.teamId)) ??
     ownTeam ??
     room.teams[0];
-  const writable =
+  const roomWritable =
     room.mode === 'open' &&
     (room.startsAt === null || now >= room.startsAt) &&
     (room.endsAt === null || now < room.endsAt);
+  const writable =
+    roomWritable &&
+    Boolean(
+      team && (room.self.admin || memberTeamIds(room.self).includes(team.id))
+    );
   const phase =
     room.mode !== 'open'
       ? c[room.mode]
@@ -246,6 +256,16 @@ export function Workshop({
           className="team-area"
           hidden={['mission', 'activity', 'controls'].includes(section)}
         >
+          <ShowcaseStage
+            room={room}
+            selectedTeam={team}
+            busy={mutate.isPending}
+            onSelect={setSelected}
+            onPresent={async (teamId) => {
+              await action({ action: 'showcaseTeam', teamId });
+              setSelected(teamId);
+            }}
+          />
           <div className="team-toolbar">
             <label>
               {c.teamWork}
@@ -269,35 +289,26 @@ export function Workshop({
               {room.showcase ? c.showcaseOn : c.showcaseOff}
             </Badge>
           </div>
-          {!writable && (
+          {!roomWritable && (
             <Alert>
               <AlertDescription>{c.readOnlyHelp}</AlertDescription>
             </Alert>
           )}
-          {ownTeam && (
-            <div className="own-team-desk" hidden={team?.id !== ownTeam.id}>
+          {team && (
+            <div className="own-team-desk">
               <TeamDesk
-                key={ownTeam.id}
-                team={ownTeam}
+                key={team.id}
+                team={team}
                 section={section}
-                active={team?.id === ownTeam.id}
+                active
                 writable={writable}
                 busy={mutate.isPending}
-                action={action}
+                action={(body, route) =>
+                  action({ ...body, teamId: team.id }, route)
+                }
                 roomAiAvailable={room.aiCalls < room.limits.aiCallLimit}
               />
             </div>
-          )}
-          {team && team.id !== ownTeam?.id && (
-            <TeamDesk
-              key={team.id}
-              team={team}
-              section={section}
-              writable={false}
-              busy={mutate.isPending}
-              action={action}
-              roomAiAvailable={room.aiCalls < room.limits.aiCallLimit}
-            />
           )}
         </section>
       </div>

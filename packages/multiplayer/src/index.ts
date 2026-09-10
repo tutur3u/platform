@@ -17,6 +17,7 @@ export type Member = {
   name: string;
   email: string | null;
   teamId: string;
+  teamIds: string[];
   admin: boolean;
   guestVersion?: number;
 };
@@ -83,6 +84,7 @@ export type Room = {
   maxUsers: number;
   mode: RoomMode;
   showcase: boolean;
+  showcaseTeamId: string | null;
   members: Member[];
   invites: string[];
   passwordHash: string | null;
@@ -146,6 +148,28 @@ export function normalizeRoom(room: Room): Room {
   room.directoryMemberIds ??= room.members
     .filter((member) => member.email)
     .map((member) => member.id);
+  const validTeamIds = new Set(room.teams.map((team) => team.id));
+  room.members = room.members.map((member) => {
+    const storedTeamIds = (member as Member & { teamIds?: string[] }).teamIds;
+    const teamIds = [
+      ...new Set(
+        (storedTeamIds?.length ? storedTeamIds : [member.teamId]).filter(
+          (teamId) => validTeamIds.has(teamId)
+        )
+      ),
+    ];
+    const fallbackTeamId = room.teams[0]?.id;
+    if (!teamIds.length && fallbackTeamId) teamIds.push(fallbackTeamId);
+    const teamId = teamIds.includes(member.teamId)
+      ? member.teamId
+      : (teamIds[0] ?? member.teamId);
+    return { ...member, teamId, teamIds };
+  });
+  room.showcaseTeamId = room.teams.some(
+    (team) => team.id === room.showcaseTeamId
+  )
+    ? room.showcaseTeamId
+    : (room.teams[0]?.id ?? null);
   const storedScenario = room.scenario as Scenario & { id?: string };
   const storedScenarios = (room as Room & { scenarios?: Scenario[] }).scenarios;
   const scenarioSource = storedScenarios?.length
@@ -264,6 +288,7 @@ export function projectRoom(
   now = Date.now()
 ): RoomView {
   const self = memberOf(room, identity, now);
+  const selfTeamIds = memberTeamIds(self);
   const {
     passwordHash: _hash,
     invites,
@@ -277,7 +302,9 @@ export function projectRoom(
       (entry) =>
         self.admin ||
         (!entry.adminOnly &&
-          (!entry.teamId || room.showcase || entry.teamId === self.teamId))
+          (!entry.teamId ||
+            room.showcase ||
+            selfTeamIds.includes(entry.teamId)))
     ),
     mode:
       room.endsAt !== null && now >= room.endsAt && room.mode === 'open'
@@ -285,23 +312,33 @@ export function projectRoom(
         : room.mode,
     invites: self.admin ? invites : undefined,
     members: room.members
-      .filter((m) => self.admin || room.showcase || m.teamId === self.teamId)
+      .filter(
+        (m) =>
+          self.admin ||
+          room.showcase ||
+          memberTeamIds(m).some((teamId) => selfTeamIds.includes(teamId))
+      )
       .map((m) => ({
         ...m,
         email: self.admin || m.id === self.id ? m.email : null,
       })),
     teams: room.teams.filter(
-      (t) => self.admin || room.showcase || t.id === self.teamId
+      (t) => self.admin || room.showcase || selfTeamIds.includes(t.id)
     ),
     self,
     online: online.filter((id) =>
       room.members.some(
         (m) =>
           m.id === id &&
-          (self.admin || room.showcase || m.teamId === self.teamId)
+          (self.admin ||
+            room.showcase ||
+            memberTeamIds(m).some((teamId) => selfTeamIds.includes(teamId)))
       )
     ),
   };
+}
+export function memberTeamIds(member: Pick<Member, 'teamId' | 'teamIds'>) {
+  return member.teamIds?.length ? member.teamIds : [member.teamId];
 }
 export function starterScenarios(): Scenario[] {
   return [
@@ -397,6 +434,7 @@ export function createRoom(
     maxUsers: number(body.maxUsers, 2, 100),
     mode: 'open',
     showcase: true,
+    showcaseTeamId: teams[0]?.id ?? null,
     members: [
       {
         id: identity.id,
@@ -404,6 +442,7 @@ export function createRoom(
         name: identity.name,
         admin: true,
         teamId: 'team-1',
+        teamIds: ['team-1'],
       },
     ],
     invites: [],
@@ -450,6 +489,7 @@ export function joinRoom(
     name: identity.name,
     email: identity.email,
     teamId,
+    teamIds: [teamId],
     admin: false,
     ...(identity.email ? {} : { guestVersion: room.guestVersion }),
   });
@@ -466,7 +506,13 @@ export function mutateRoom(
   const action = body.action;
   if (action === 'prompt') {
     editable(room, now);
-    const team = room.teams.find((t) => t.id === member.teamId);
+    const requestedTeamId = String(body.teamId ?? member.teamId);
+    requireRule(
+      member.admin || memberTeamIds(member).includes(requestedTeamId),
+      'invalid_team',
+      403
+    );
+    const team = room.teams.find((t) => t.id === requestedTeamId);
     requireRule(team, 'invalid_team');
     requireRule(body.revision === team.revision, 'edit_conflict', 409);
     team.prompt = text(body.prompt, 12000, 0);
@@ -488,6 +534,10 @@ export function mutateRoom(
   } else if (action === 'showcase') {
     requireRule(typeof body.enabled === 'boolean', 'invalid_input');
     room.showcase = body.enabled;
+  } else if (action === 'showcaseTeam') {
+    const team = room.teams.find((item) => item.id === body.teamId);
+    requireRule(team, 'invalid_team');
+    room.showcaseTeamId = team.id;
   } else if (action === 'schedule') {
     const startsAt =
       body.startsAt === null
@@ -530,6 +580,23 @@ export function mutateRoom(
       'invalid_team'
     );
     target.teamId = String(body.teamId);
+    if (!memberTeamIds(target).includes(target.teamId))
+      target.teamIds = [...memberTeamIds(target), target.teamId];
+  } else if (action === 'membership') {
+    const target = room.members.find((m) => m.id === body.memberId);
+    const team = room.teams.find((item) => item.id === body.teamId);
+    requireRule(
+      target && team && typeof body.enabled === 'boolean',
+      'invalid_team'
+    );
+    const memberships = memberTeamIds(target);
+    if (body.enabled) {
+      target.teamIds = [...new Set([...memberships, team.id])];
+    } else {
+      requireRule(memberships.length > 1, 'last_membership', 409);
+      target.teamIds = memberships.filter((teamId) => teamId !== team.id);
+      if (target.teamId === team.id) target.teamId = target.teamIds[0]!;
+    }
   } else if (action === 'teamCreate') {
     requireRule(room.teams.length < 12, 'team_limit', 409);
     room.teams.push({
@@ -565,9 +632,15 @@ export function mutateRoom(
     const team = room.teams.find((item) => item.id === body.teamId);
     requireRule(team, 'invalid_team');
     const fallback = room.teams.find((item) => item.id !== team.id)!;
-    for (const target of room.members)
-      if (target.teamId === team.id) target.teamId = fallback.id;
+    for (const target of room.members) {
+      target.teamIds = memberTeamIds(target).filter(
+        (teamId) => teamId !== team.id
+      );
+      if (!target.teamIds.length) target.teamIds = [fallback.id];
+      if (target.teamId === team.id) target.teamId = target.teamIds[0]!;
+    }
     room.teams = room.teams.filter((item) => item.id !== team.id);
+    if (room.showcaseTeamId === team.id) room.showcaseTeamId = fallback.id;
   } else if (action === 'memberRemove') {
     const target = room.members.find((item) => item.id === body.memberId);
     requireRule(target, 'invalid_input');

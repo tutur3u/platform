@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
   CalendarDays,
@@ -56,7 +56,7 @@ export function Structure({
   // Subscribe to the room cache so admin navigation follows realtime role changes.
   const { data: room } = useQuery<RoomView>({
     queryKey: ['room', roomId],
-    enabled: false,
+    queryFn: skipToken,
   });
   const t = useShellCopy();
   const sidebar = useSidebar();

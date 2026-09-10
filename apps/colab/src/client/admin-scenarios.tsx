@@ -1,8 +1,9 @@
-import { Sparkles } from '@tuturuuu/icons';
+import { Dices, Sparkles } from '@tuturuuu/icons';
 import type { RoomView } from '@tuturuuu/multiplayer';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useState } from 'react';
 import { useCopy } from './i18n';
 import { SelectField } from './select-field';
 
@@ -16,6 +17,11 @@ export function AdminScenarios({
   busy: boolean;
 }) {
   const c = useCopy();
+  const [steering, setSteering] = useState('');
+  const generate = async (random: boolean) => {
+    await action({ action: 'scenario', steering, random }, 'ai');
+    if (!random) setSteering('');
+  };
   return (
     <div className="admin-tab-content">
       <div className="admin-tab-heading">
@@ -55,13 +61,7 @@ export function AdminScenarios({
         className="grid gap-3"
         onSubmit={(event) => {
           event.preventDefault();
-          void action(
-            {
-              action: 'scenario',
-              steering: new FormData(event.currentTarget).get('steering'),
-            },
-            'ai'
-          ).catch(() => {});
+          void generate(false).catch(() => {});
         }}
       >
         <Label htmlFor="steering">{c.steer}</Label>
@@ -69,12 +69,26 @@ export function AdminScenarios({
           id="steering"
           name="steering"
           maxLength={2000}
+          disabled={busy}
+          value={steering}
+          onChange={(event) => setSteering(event.target.value)}
           placeholder={c.steerPlaceholder}
         />
-        <Button type="submit" disabled={busy} className="sm:justify-self-start">
-          <Sparkles className="size-4" aria-hidden="true" />
-          {busy ? c.working : c.newScenario}
-        </Button>
+        <div className="flex flex-wrap gap-2 sm:justify-self-start">
+          <Button type="submit" disabled={busy || !steering.trim()}>
+            <Sparkles className="size-4" aria-hidden="true" />
+            {busy ? c.working : c.newScenario}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => void generate(true).catch(() => {})}
+          >
+            <Dices className="size-4" aria-hidden="true" />
+            {c.surpriseScenario}
+          </Button>
+        </div>
       </form>
     </div>
   );

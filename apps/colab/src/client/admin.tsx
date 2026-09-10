@@ -3,6 +3,7 @@ import {
   Gauge,
   LayoutDashboard,
   Lock,
+  Presentation,
   Sparkles,
   Trash2,
   Users,
@@ -16,6 +17,7 @@ import { AdminAccess } from './admin-access';
 import { AdminDangerZone } from './admin-danger-zone';
 import { AdminScenarios } from './admin-scenarios';
 import { AdminSchedule } from './admin-schedule';
+import { AdminShowcase } from './admin-showcase';
 import { AdminTeamManagement } from './admin-team-management';
 import { useCopy } from './i18n';
 import { LimitsPanel } from './limits-panel';
@@ -56,6 +58,10 @@ export function Admin({
           <TabsTrigger value="teams">
             <Users className="size-4" aria-hidden="true" />
             {c.teamTab}
+          </TabsTrigger>
+          <TabsTrigger value="showcase">
+            <Presentation className="size-4" aria-hidden="true" />
+            {c.showcaseTab}
           </TabsTrigger>
           <TabsTrigger value="schedule">
             <CalendarClock className="size-4" aria-hidden="true" />
@@ -121,6 +127,9 @@ export function Admin({
           </TabsContent>
           <TabsContent value="teams" className="mt-0">
             <AdminTeamManagement room={room} action={action} busy={busy} />
+          </TabsContent>
+          <TabsContent value="showcase" className="mt-0">
+            <AdminShowcase room={room} action={action} busy={busy} />
           </TabsContent>
           <TabsContent value="schedule" className="mt-0">
             <AdminSchedule
