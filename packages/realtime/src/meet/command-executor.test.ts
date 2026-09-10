@@ -242,3 +242,17 @@ it('retires only the closing device session without calling a disconnected SFU',
     sessionId: 'old',
   });
 });
+
+it('rejects a late publish even when idle arrived before any tracks were registered', async () => {
+  const f = fixture();
+  await f.run({ type: 'media.idle', sessionId: 'old' });
+  await f.run(publish('old'));
+  expect(f.options.runSfu).not.toHaveBeenCalled();
+  expect(f.state.tracks).toEqual({});
+  expect(f.results.at(-1)?.reply[0]).toMatchObject({
+    error: 'stale_publication',
+  });
+  await f.run(publish('fresh'));
+  expect(f.options.runSfu).toHaveBeenCalledOnce();
+  expect(f.state.tracks['fresh:audio']).toBeDefined();
+});

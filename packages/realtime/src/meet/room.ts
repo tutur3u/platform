@@ -58,6 +58,7 @@ export interface MeetRoomSnapshot {
   ended?: boolean;
   lastReactionAt?: Record<string, number>;
   retiredTracks?: Record<string, true>;
+  retiredSessions?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
   recordings?: RoomRecording[];
   chat?: Extract<MeetRealtimeServerMessage, { type: 'chat.message' }>[];
@@ -296,6 +297,11 @@ export function releaseParticipant(
       ? failActiveRecording(state)
       : state),
     lastReactionAt,
+    retiredSessions: Object.fromEntries(
+      Object.entries(state.retiredSessions ?? {}).filter(
+        ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)
+      )
+    ),
     retiredTracks: Object.fromEntries(
       Object.entries(state.retiredTracks ?? {}).filter(
         ([key]) => !key.startsWith(`${encodeURIComponent(userId)}:`)

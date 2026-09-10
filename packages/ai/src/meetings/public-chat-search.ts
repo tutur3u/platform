@@ -59,8 +59,8 @@ export function publicMeetSearch(
             error:
               'The search attempt for this answer has already been used. Ask a follow-up to try again.',
           };
-        await beforeSearch?.();
         searched = true;
+        await beforeSearch?.();
         steps.push({}); // A failed provider attempt has unknown usage, never zero cost.
         const result = await generateText({
           model,

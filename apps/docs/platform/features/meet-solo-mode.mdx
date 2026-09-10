@@ -63,3 +63,10 @@ individual track is unavailable. Discarding that offer can leave Cloudflare
 waiting for an answer while the browser retries new subscriptions, leading to
 406 and 410 errors. Failed or uncertain subscription negotiations rebuild the
 receiving peer; publishing and receiving remain separate.
+
+Retired publishing sessions keep bounded tombstones until the participant leaves,
+so a late publish cannot revive them. A small client outbox repeats idle notices
+on signaling reconnection; both publication and subscription work stop while solo.
+Private search reserves multi-query planning headroom, then charges actual usage.
+The unit-test CI job allows 20 minutes: a measured full-suite run passed all 52
+tasks in 14m22s but its setup and cleanup exceeded the previous 15-minute job limit.

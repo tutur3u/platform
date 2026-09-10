@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
   deduct: vi.fn(async () => ({ success: true })),
   service: vi.fn(),
   reserve: vi.fn(),
-  release: vi.fn(async () => ({ success: true })),
+  release: vi.fn(async (_id: string) => ({ success: true })),
 }));
 vi.mock('@tuturuuu/ai/credits/reservations', () => ({
   reserveFixedAiCredits: mocks.reserve,
@@ -169,4 +169,34 @@ it('returns the paid answer even when releasing its temporary hold throws', asyn
   } finally {
     warning.mockRestore();
   }
+});
+
+it('reserves search separately, charges multiple actual queries and releases both holds', async () => {
+  mocks.reserve
+    .mockResolvedValueOnce({ success: true, reservationId: 'tokens' })
+    .mockResolvedValueOnce({ success: true, reservationId: 'search' });
+  mocks.answer.mockImplementationOnce(async (...args: unknown[]) => {
+    await (args.at(-1) as { beforeSearch: () => Promise<void> }).beforeSearch();
+    return {
+      text: 'Grounded reply',
+      searchCount: 3,
+      usage: { available: true, inputTokens: 10, outputTokens: 20 },
+    };
+  });
+  await answerPersonalMeetChat('requester', {
+    question: 'RMIT',
+    timezone: 'UTC',
+    history: [],
+  });
+  expect(mocks.reserve).toHaveBeenCalledTimes(2);
+  expect(mocks.reserve.mock.calls[1]![0].metadata.source).toBe(
+    'meet_mira_personal_search'
+  );
+  expect(mocks.deduct).toHaveBeenCalledWith(
+    expect.objectContaining({ searchCount: 3 })
+  );
+  expect(mocks.release.mock.calls.map(([id]) => id)).toEqual([
+    'tokens',
+    'search',
+  ]);
 });

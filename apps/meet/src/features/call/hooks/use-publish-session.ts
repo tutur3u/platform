@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { configurePeerIce, PEER_CONFIG } from '../lib/peer-connection';
+import { openPeerSession } from '../lib/open-peer-session';
+import { PEER_CONFIG } from '../lib/peer-connection';
 import { watchPeerRecovery } from '../lib/peer-recovery';
-import type { SfuSessionResponse } from '../lib/sfu-response';
 import type { MeetSignaling } from '../lib/signaling';
 
 type Ref<T> = { current: T };
@@ -22,19 +22,6 @@ export function usePublishSession(
       () => peer.current === pc,
       () => reset(true)
     );
-    try {
-      const result = await signaling.current?.request<SfuSessionResponse>({
-        type: 'sfu.session.create',
-      });
-      if (!result?.sessionId) throw new Error('sfu_session_failed');
-      if (peer.current !== pc) throw new Error('sfu_session_replaced');
-      configurePeerIce(pc, result.iceServers);
-      session.current = result.sessionId;
-      return { pc, sessionId: result.sessionId };
-    } catch (error) {
-      if (peer.current === pc) reset();
-      else pc.close();
-      throw error;
-    }
+    return openPeerSession(pc, peer, session, signaling, reset);
   }, [peer, session, signaling, reset]);
 }

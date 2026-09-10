@@ -57,8 +57,8 @@ export async function answerPersonalMeetChat(
     workspaceId: wsId,
     modelId: model.id,
     inputTokens: inputBudget,
-    outputTokens: cap,
-    reasoningTokens: cap,
+    outputTokens: 4 * cap,
+    reasoningTokens: 4 * cap,
     searchCount: 0,
   });
   const reservation = await reserveFixedAiCredits(
@@ -80,7 +80,8 @@ export async function answerPersonalMeetChat(
     const cost = await calculateAiStudioUsageCost({
       workspaceId: wsId,
       modelId: model.id,
-      searchCount: 1,
+      // Native grounding can bill several queries from one tool invocation.
+      searchCount: 10,
     });
     if (cost.billedCredits <= 0) return;
     const hold = await reserveFixedAiCredits(

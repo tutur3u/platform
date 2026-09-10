@@ -15,6 +15,7 @@ import {
 import { CameraEffects } from '../lib/camera-effects';
 import { createLocalMediaControls } from '../lib/local-media-controls';
 import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
+import { openPeerSession } from '../lib/open-peer-session';
 import { createRoomActions } from '../lib/room-actions';
 import type {
   MeetRoomController,
@@ -43,7 +44,6 @@ import {
   planRemoteSubscriptions,
 } from '../lib/negotiation';
 import {
-  configurePeerIce,
   PEER_CONFIG,
   preparePeerSession,
   waitForPeerConnection,
@@ -65,10 +65,7 @@ import {
   createRemoteStreamCache,
   type RemoteMedia,
 } from '../lib/remote-streams';
-import type {
-  SfuSessionResponse,
-  SfuTracksResponse,
-} from '../lib/sfu-response';
+import type { SfuTracksResponse } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
 /** One signaling socket and separate publishing/subscribing SFU connections. */
 export function useMeetRoom({
@@ -282,14 +279,13 @@ export function useMeetRoom({
       () => subscribePcRef.current === pc,
       setRemoteMedia
     );
-    const result = await signalingRef.current?.request<SfuSessionResponse>({
-      type: 'sfu.session.create',
-    });
-    if (!result?.sessionId) throw new Error('sfu_session_failed');
-    if (subscribePcRef.current !== pc) throw new Error('sfu_session_replaced');
-    configurePeerIce(pc, result.iceServers);
-    subscribeSessionRef.current = result.sessionId;
-    return { pc, sessionId: result.sessionId };
+    return openPeerSession(
+      pc,
+      subscribePcRef,
+      subscribeSessionRef,
+      signalingRef,
+      resetSubscriber
+    );
   }, [resetSubscriber]);
   /** Pushes newly enabled local tracks to the SFU. */
   const syncLocalTracks = useCallback(
@@ -423,6 +419,7 @@ export function useMeetRoom({
   useSoloTransport(
     Math.max(0, Object.keys(state.participants).length - 1),
     state.admission === 'admitted',
+    connectionStatus,
     {
       session: publishSessionRef,
       signaling: signalingRef,
@@ -452,7 +449,11 @@ export function useMeetRoom({
   useEffect(() => {
     if (state.admission !== 'admitted') return;
     const pull = async () => {
-      if (!activeRef.current) return;
+      if (
+        !activeRef.current ||
+        Object.keys(stateRef.current.participants).length < 2
+      )
+        return;
       pruneObsoleteReceivers(
         stateRef.current.remoteTracks,
         trackOwnersRef.current,

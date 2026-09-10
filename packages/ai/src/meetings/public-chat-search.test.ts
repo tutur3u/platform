@@ -209,3 +209,36 @@ it('retains unknown usage when a provider attempt fails and does not issue a dup
   ).toHaveProperty('error');
   expect(generate).toHaveBeenCalledOnce();
 });
+
+it('claims one search before an asynchronous reservation permits concurrent tool calls', async () => {
+  generate.mockClear();
+  generate.mockResolvedValue({ text: 'Result', sources: [], steps: [] });
+  let release!: () => void;
+  const reserve = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      })
+  );
+  const search = publicMeetSearch(
+    'google/gemini-3.1-flash-lite',
+    256,
+    AbortSignal.timeout(1000),
+    'RMIT',
+    [],
+    reserve
+  );
+  const first = search.tool.execute!(
+    {},
+    { toolCallId: 'first', messages: [], context: {} }
+  );
+  const second = await search.tool.execute!(
+    {},
+    { toolCallId: 'second', messages: [], context: {} }
+  );
+  expect(second).toHaveProperty('error');
+  expect(reserve).toHaveBeenCalledOnce();
+  release();
+  await first;
+  expect(generate).toHaveBeenCalledOnce();
+});
