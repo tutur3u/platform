@@ -10,7 +10,12 @@ class Socket extends EventTarget {
     super();
     Socket.instances.push(this);
   }
+  pings = 0;
   send(raw: string) {
+    if (raw === 'meet:ping') {
+      this.pings++;
+      return;
+    }
     this.sent.push(JSON.parse(raw));
   }
   open() {
@@ -161,6 +166,23 @@ it('continues recovery when another participant was removed', async () => {
     );
   socket.close();
   await vi.advanceTimersByTimeAsync(7000);
+  expect(Socket.instances).toHaveLength(2);
+  signaling.close();
+});
+
+it('keeps idle sockets alive without presence writes and recovers a missing pong', async () => {
+  const { signaling, options } = fixture();
+  await Promise.resolve();
+  const socket = Socket.instances[0]!;
+  socket.open();
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(socket.pings).toBe(1);
+  expect(socket.sent).toEqual([]);
+  socket.dispatchEvent(new MessageEvent('message', { data: 'meet:pong' }));
+  expect(options.onMessage).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(socket.pings).toBe(2);
+  await vi.advanceTimersByTimeAsync(61_000);
   expect(Socket.instances).toHaveLength(2);
   signaling.close();
 });

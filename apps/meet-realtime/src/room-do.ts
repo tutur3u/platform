@@ -9,7 +9,6 @@ import {
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
   type MeetSfuIntent,
-  meetAdmissionPendingMessage,
   meetPresenceMessage,
   meetRealtimeClientMessageSchema,
   pruneMeetPresence,
@@ -56,6 +55,9 @@ export class MeetRoomDurableObject implements DurableObject {
   constructor(state: DurableObjectState, env: MeetRoomEnv) {
     this.env = env;
     this.state = state;
+    state.setWebSocketAutoResponse(
+      new WebSocketRequestResponsePair('meet:ping', 'meet:pong')
+    );
   }
 
   private load() {
@@ -359,7 +361,6 @@ export class MeetRoomDurableObject implements DurableObject {
     }
 
     this.disconnect(outcome.disconnect);
-    void this.scheduleSweep();
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -519,18 +520,13 @@ export class MeetRoomDurableObject implements DurableObject {
       }
     }
 
+    // Only disconnected participants need a grace-period alarm. Idle open
+    // sockets can hibernate; joins and media changes already broadcast presence.
     if (
-      sockets.length === 0 &&
-      Object.keys(this.snapshot.presence).length === 0
+      Object.keys(this.snapshot.presence).some(
+        (id) => !connectedUserIds.has(id)
+      )
     )
-      return;
-
-    const roomId = sockets[0] ? this.tokenOf(sockets[0])?.roomId : undefined;
-    if (roomId) {
-      this.broadcast([meetPresenceMessage(this.snapshot, roomId)]);
-    }
-    this.sendToManagers([meetAdmissionPendingMessage(this.snapshot)]);
-
-    await this.state.storage.setAlarm(Date.now() + PRESENCE_SWEEP_MS);
+      await this.scheduleSweep();
   }
 }

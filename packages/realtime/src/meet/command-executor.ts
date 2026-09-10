@@ -13,7 +13,7 @@ type CommandOptions = {
   commit: (result: MeetRoomOutcome) => void | Promise<void>;
   runSfu: (intent: MeetSfuIntent) => Promise<unknown>;
 };
-function assertSfuSuccess(result: unknown) {
+function assertSfuSuccess(result: unknown, allowPartialTracks: boolean) {
   const response = result as {
     errorCode?: string;
     tracks?: Array<{ errorCode?: string }>;
@@ -21,7 +21,7 @@ function assertSfuSuccess(result: unknown) {
   if (
     !response ||
     response.errorCode ||
-    response.tracks?.some((track) => track.errorCode)
+    (!allowPartialTracks && response.tracks?.some((track) => track.errorCode))
   )
     throw new Error('sfu_operation_failed');
 }
@@ -29,7 +29,10 @@ function assertSfuSuccess(result: unknown) {
 export class MeetCommandExecutor {
   private pending = new Map<string, Promise<void>>();
   run(command: MeetRoomCommand, options: CommandOptions): Promise<void> {
-    if (!command.message.type.startsWith('sfu.')) {
+    if (
+      !command.message.type.startsWith('sfu.') &&
+      command.message.type !== 'media.idle'
+    ) {
       return Promise.resolve(
         options.commit(applyMeetRoomCommand(options.read(), command))
       );
@@ -57,7 +60,9 @@ export class MeetCommandExecutor {
       if (!options.read().presence[command.token.userId])
         throw new Error('participant_left');
       result = await options.runSfu(planned.sfu);
-      assertSfuSuccess(result);
+      // A partial pull may already have moved the SFU into have-local-offer.
+      // Forward its SDP and per-track errors so the browser can finish negotiation.
+      assertSfuSuccess(result, command.message.type === 'sfu.tracks.subscribe');
       if (
         options.read().ended ||
         !options.read().presence[command.token.userId]

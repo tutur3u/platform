@@ -201,3 +201,44 @@ it('does not translate a persistence failure into an SFU failure and lets the ne
   await f.executor.run({ message: publish('next'), token, now }, options);
   expect(f.options.runSfu).toHaveBeenCalledTimes(2);
 });
+
+it('forwards partial subscription offers so failed tracks cannot strand negotiation', async () => {
+  const f = fixture();
+  const response = {
+    requiresImmediateRenegotiation: true,
+    sessionDescription: { type: 'offer', sdp: 'partial-offer' },
+    tracks: [
+      { trackName: 'audio', mid: '0' },
+      { trackName: 'video', errorCode: 'not_found_track_error' },
+    ],
+  };
+  f.options.runSfu.mockResolvedValue(response);
+  await f.run({
+    type: 'sfu.tracks.subscribe',
+    sessionId: 'sub',
+    requestId: 'pull',
+    tracks: [],
+  });
+  expect(f.results.at(-1)?.reply).toContainEqual({
+    type: 'sfu.response',
+    action: 'sfu.tracks.subscribe',
+    requestId: 'pull',
+    result: response,
+  });
+  expect(f.results.at(-1)?.broadcast).toEqual([]);
+});
+
+it('retires only the closing device session without calling a disconnected SFU', async () => {
+  const f = fixture();
+  await f.run(publish('old'));
+  const calls = f.options.runSfu.mock.calls.length;
+  await f.run({ type: 'media.idle', sessionId: 'someone-else' });
+  expect(f.state.tracks['old:audio']).toBeDefined();
+  await f.run({ type: 'media.idle', sessionId: 'old' });
+  expect(f.state.tracks).toEqual({});
+  expect(f.options.runSfu).toHaveBeenCalledTimes(calls);
+  expect(f.results.at(-1)?.broadcast[0]).toMatchObject({
+    type: 'track.closed',
+    sessionId: 'old',
+  });
+});

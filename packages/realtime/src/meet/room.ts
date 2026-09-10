@@ -5,6 +5,7 @@ import {
   rememberAdmission,
   roomSettingsMessage,
 } from './room-controls';
+import { retireIdlePublication } from './room-idle';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { denied, outcome } from './room-outcome';
 import {
@@ -152,8 +153,9 @@ export function pruneMeetPresence(
   let changed = false;
 
   for (const [userId, entry] of Object.entries(state.presence)) {
+    // Open sockets are authoritative; hibernating clients need no presence writes.
     const ttl = connectedUserIds?.has(userId)
-      ? MEET_CONNECTED_PRESENCE_TTL_MS
+      ? Number.POSITIVE_INFINITY
       : MEET_PRESENCE_TTL_MS;
     if (Date.parse(entry.lastSeenAt) + ttl < nowMs) {
       changed = true;
@@ -244,7 +246,7 @@ export function admitOrHold(
       { ...buildReady(next, token, 'admitted'), resumed: !!previous },
       roomSettingsMessage(next),
       recordingMessage(next),
-      ...(next.chat ?? []),
+      ...(next.chat ?? []).map((entry) => ({ ...entry, replayed: true })),
       ...(token.role === 'host' ? [approvedParticipantsMessage(next)] : []),
       ...(canMeetRealtimeManageParticipants(token)
         ? [meetAdmissionPendingMessage(next)]
@@ -534,7 +536,7 @@ export function applyMeetRoomCommand(
           { userId: message.userId, message: recordingMessage(next) },
           ...(next.chat ?? []).map((entry) => ({
             userId: message.userId,
-            message: entry,
+            message: { ...entry, replayed: true },
           })),
           ...remoteMeetTracks(next, message.userId).map((track) => ({
             userId: message.userId,
@@ -629,6 +631,9 @@ export function applyMeetRoomCommand(
         disconnect: [message.userId],
       };
     }
+
+    case 'media.idle':
+      return retireIdlePublication(state, token.userId, message.sessionId);
 
     case 'recording.state':
       return applyRecording(state, message, token, now);

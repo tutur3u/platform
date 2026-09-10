@@ -19,6 +19,8 @@ const token = meetRealtimeTokenPayloadSchema.parse({
   userId: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691',
   wsId: '0f1a64f7-780f-4d30-9d72-5530f204e95c',
 });
+globalThis.WebSocketRequestResponsePair =
+  class {} as typeof WebSocketRequestResponsePair;
 function fixture() {
   const snapshot = admitOrHold(
     createMeetRoomSnapshot(),
@@ -36,6 +38,7 @@ function fixture() {
   };
   const state = {
     storage,
+    setWebSocketAutoResponse: () => {},
     getWebSockets: () => [],
     blockConcurrencyWhile: (run: () => Promise<void>) => run(),
   } as unknown as DurableObjectState;
@@ -107,4 +110,25 @@ test('messages marked unsaved never enter durable snapshots', async () => {
   ];
   await room.webSocketClose(socket, 1006);
   assert.deepEqual((values.get('snapshot') as typeof snapshot).chat, []);
+});
+
+test('an idle connected room does not reschedule alarms or broadcast presence', async () => {
+  const { room, socket, storage } = fixture();
+  Object.assign(socket, { readyState: WebSocket.OPEN });
+  const internals = room as unknown as {
+    sockets: () => WebSocket[];
+    broadcast: () => void;
+  };
+  internals.sockets = () => [socket];
+  let alarms = 0,
+    broadcasts = 0;
+  storage.setAlarm = async () => {
+    alarms++;
+  };
+  internals.broadcast = () => {
+    broadcasts++;
+  };
+  await room.alarm();
+  assert.equal(alarms, 0);
+  assert.equal(broadcasts, 0);
 });

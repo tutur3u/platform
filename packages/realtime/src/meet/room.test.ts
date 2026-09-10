@@ -520,12 +520,10 @@ describe('meet room lifecycle', () => {
     expect(pruneMeetPresence(joined, expired, new Set()).presence).toEqual({});
   });
 
-  it('expires ghost presence even when the transport still reports an open socket', () => {
+  it('retains hibernating open sockets beyond the former heartbeat expiry', () => {
     const joined = admitOrHold(createMeetRoomSnapshot(), token(), NOW).state;
     const expired = Date.parse(NOW) + MEET_CONNECTED_PRESENCE_TTL_MS + 1;
-    expect(
-      pruneMeetPresence(joined, expired, new Set([HOST_ID])).presence
-    ).toEqual({});
+    expect(pruneMeetPresence(joined, expired, new Set([HOST_ID]))).toBe(joined);
   });
 
   it('tracks recording state for the whole room', () => {

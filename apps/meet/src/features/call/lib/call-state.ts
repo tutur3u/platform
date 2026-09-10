@@ -17,6 +17,8 @@ export type CallAdmission = 'connecting' | 'waiting' | 'admitted' | 'denied';
 
 export interface CallChatMessage {
   retained?: boolean;
+  replayed?: boolean;
+  clientMessageId?: string;
   accountId?: string;
   avatarUrl?: string;
   assistant?: boolean;
@@ -131,23 +133,35 @@ export function reduceCallState(
       return { ...state, stage: message.stage };
 
     case 'chat.message':
+      if (
+        message.replayed &&
+        state.chat.some((entry) => entry.id === message.id)
+      )
+        return state;
       return {
         ...state,
-        chat: retainRoomChat([
-          ...state.chat,
-          {
-            accountId: message.accountId,
-            avatarUrl: message.avatarUrl,
-            assistant: message.assistant,
-            attachmentIds: message.attachmentIds,
-            body: message.body,
-            createdAt: message.createdAt,
-            displayName: message.displayName,
-            id: message.id,
-            userId: message.userId,
-            retained: message.retained,
-          },
-        ]),
+        chat: retainRoomChat(
+          [
+            ...state.chat,
+            {
+              replayed: message.replayed,
+              clientMessageId: message.clientMessageId,
+              accountId: message.accountId,
+              avatarUrl: message.avatarUrl,
+              assistant: message.assistant,
+              attachmentIds: message.attachmentIds,
+              body: message.body,
+              createdAt: message.createdAt,
+              displayName: message.displayName,
+              id: message.id,
+              userId: message.userId,
+              retained: message.retained,
+            },
+          ].sort(
+            (a, b) =>
+              a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
+          )
+        ),
       };
 
     case 'admission.pending':
@@ -280,7 +294,9 @@ export function countUnreadChatMessages(
   chat: CallChatMessage[],
   lastReadId: string | null
 ) {
-  if (!lastReadId) return chat.length;
+  if (!lastReadId) return chat.filter((entry) => !entry.replayed).length;
   const index = chat.findIndex((message) => message.id === lastReadId);
-  return index < 0 ? chat.length : chat.length - index - 1;
+  return chat
+    .slice(index < 0 ? 0 : index + 1)
+    .filter((entry) => !entry.replayed).length;
 }

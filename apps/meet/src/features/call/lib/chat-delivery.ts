@@ -5,11 +5,12 @@ export async function sendRecoverableChat(
   signaling: Pick<MeetSignaling, 'request' | 'isClosed'>,
   body: string,
   attachmentIds?: string[],
-  wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+  wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms)),
+  clientMessageId = crypto.randomUUID()
 ) {
   const message = {
     type: 'chat.message' as const,
-    clientMessageId: crypto.randomUUID(),
+    clientMessageId,
     body,
     attachmentIds,
   };

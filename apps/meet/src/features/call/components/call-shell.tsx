@@ -1,6 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { Circle, WifiOff } from '@tuturuuu/icons';
+import { Circle, Leaf, WifiOff } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
@@ -104,19 +104,28 @@ export function ConnectedCallShell({
     ],
     [room.localStream, room.screenStream, room.remoteStreams]
   );
-  const ai = useMeetingAi(wsId, meetingId, audioStreams, !left, canReadNotes);
+  const ai = useMeetingAi(
+    wsId,
+    meetingId,
+    audioStreams,
+    !left && Object.keys(state.participants).length > 1,
+    canReadNotes
+  );
   const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({
     queryKey: ['meet-media-health', meetingId],
     queryFn: room.getMediaDiagnostics,
     enabled: joined && !left,
-    refetchInterval: 2000,
+    refetchInterval: Object.keys(state.participants).length > 1 ? 2000 : 15000,
     retry: false,
     gcTime: 0,
   });
   const flushUsage = useRoomUsage(
     telemetry.data,
-    joined && !left && state.admission === 'admitted',
+    joined &&
+      !left &&
+      state.admission === 'admitted' &&
+      room.connectionStatus === 'open',
     room.reportUsage
   );
   const [lastReadChatId, setLastReadChatId] = useState<string | null>(null);
@@ -245,6 +254,16 @@ export function ConnectedCallShell({
           canManage={canManage}
           onSaved={room.renameMeeting}
         />
+        {participants.length === 1 && (
+          <span
+            role="status"
+            className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
+            title={t('solo_hint')}
+          >
+            <Leaf className="size-3.5" />
+            {t('solo_mode')}
+          </span>
+        )}
         {canReadNotes && (
           <Button
             variant="outline"

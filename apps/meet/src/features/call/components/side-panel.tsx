@@ -9,8 +9,8 @@ import type {
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import type { CallChatMessage } from '../lib/call-state';
-import { ChatPanel } from './chat-panel';
 import type { CallPanel } from './control-bar';
+import { ConversationPanel } from './conversation-panel';
 import { ParticipantsPanel } from './participants-panel';
 import { ResizableCallPanel } from './resizable-call-panel';
 
@@ -80,7 +80,8 @@ export function SidePanel({
       </header>
 
       {panel === 'chat' ? (
-        <ChatPanel
+        <ConversationPanel
+          solo={participants.length === 1}
           meetingId={meetingId}
           chat={chat}
           onSendChat={onSendChat}

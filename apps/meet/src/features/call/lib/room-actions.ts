@@ -9,6 +9,7 @@ import type { MeetSignaling } from './signaling';
 export function createRoomActions(signaling: {
   current: MeetSignaling | null;
 }) {
+  const pendingChat = new Map<string, string>();
   return {
     reportUsage: (reportId: string, bytesReceived: number) =>
       signaling.current?.send({
@@ -34,7 +35,20 @@ export function createRoomActions(signaling: {
       const text = body.trim();
       if (!text) throw new Error('empty_message');
       if (!signaling.current) throw new Error('signaling_closed');
-      return sendRecoverableChat(signaling.current, text, attachmentIds);
+      const key = JSON.stringify([text, attachmentIds ?? []]);
+      const id = pendingChat.get(key) ?? crypto.randomUUID();
+      pendingChat.set(key, id);
+      if (pendingChat.size > 20)
+        pendingChat.delete(pendingChat.keys().next().value!);
+      const result = await sendRecoverableChat(
+        signaling.current,
+        text,
+        attachmentIds,
+        undefined,
+        id
+      );
+      pendingChat.delete(key);
+      return result;
     },
     raiseHand: (raised: boolean) =>
       signaling.current?.send({ type: 'hand.raise', raised }),

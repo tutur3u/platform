@@ -41,7 +41,11 @@ export function collectCallNotices(
     }
   const oldMessages = new Set(previous.chat.map((message) => message.id));
   for (const message of next.chat) {
-    if (message.userId !== next.selfUserId && !oldMessages.has(message.id))
+    if (
+      !message.replayed &&
+      message.userId !== next.selfUserId &&
+      !oldMessages.has(message.id)
+    )
       notices.push({
         id: `chat:${message.id}`,
         kind: 'chat',
