@@ -43,7 +43,8 @@ export function observeSessionUsage(
       billing.incomplete = true;
     }
   }
-  if (content?.turnComplete) saved.searchTurn = undefined;
+  if (content?.turnComplete || content?.interrupted)
+    saved.searchTurn = undefined;
 }
 
 export function markInterruptedUsage(saved: SavedSession) {

@@ -90,3 +90,29 @@ it('retains a failed operation and refuses registration until recovery succeeds'
   expect(f.values.has('pending-memory')).toBe(true);
   expect(f.values.has('active')).toBe(false);
 });
+
+it('stops expired personal sessions before a privacy reset', async () => {
+  const f = fixture();
+  f.values.set('active', [
+    { ownerId, meetingId, sessionId, mode: 'personal', expiresAt: 1 },
+  ]);
+  mocks.apply.mockImplementation(async () => {
+    expect(f.stop).toHaveBeenCalledOnce();
+    return { ok: true };
+  });
+  await f.call('memory', { command: { action: 'settings', enabled: false } });
+  expect(f.values.get('active')).toEqual([]);
+});
+it('does not forget expired sessions when stopping them fails during registration', async () => {
+  const f = fixture();
+  f.values.set('active', [
+    { ownerId, meetingId, sessionId, mode: 'personal', expiresAt: 1 },
+  ]);
+  f.stop.mockResolvedValue(new Response(null, { status: 503 }));
+  await expect(
+    f.call('register', { meetingId, sessionId: meetingId })
+  ).rejects.toThrow('Live privacy reset failed');
+  expect(f.values.get('active')).toEqual([
+    expect.objectContaining({ sessionId }),
+  ]);
+});

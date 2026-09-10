@@ -33,9 +33,17 @@ export async function liveRegistry(
   const parsed = identitySchema.safeParse(await request.json());
   if (!parsed.success) return new Response('Invalid request', { status: 400 });
   const input = parsed.data;
-  let entries = ((await storage.get<Entry[]>('active')) ?? []).filter(
-    (entry) => entry.expiresAt > Date.now()
-  );
+  let entries = (await storage.get<Entry[]>('active')) ?? [];
+  const stopEntry = async (entry: Entry) => {
+    const response = await env.MEET_LIVE.get(
+      env.MEET_LIVE.idFromName(entry.sessionId)
+    ).fetch('https://live.internal/control', {
+      method: 'POST',
+      body: JSON.stringify({ ...entry, action: 'stop' }),
+    });
+    if (!response.ok && response.status !== 410)
+      throw new Error('Live privacy reset failed');
+  };
   if (path === '/registry/remove') {
     await storage.put(
       'active',
@@ -47,14 +55,7 @@ export async function liveRegistry(
     if (pending.ownerId !== input.ownerId)
       throw new Error('Memory owner mismatch');
     for (const entry of entries.filter((entry) => entry.mode !== 'room')) {
-      const response = await env.MEET_LIVE.get(
-        env.MEET_LIVE.idFromName(entry.sessionId)
-      ).fetch('https://live.internal/control', {
-        method: 'POST',
-        body: JSON.stringify({ ...entry, action: 'stop' }),
-      });
-      if (!response.ok && response.status !== 410)
-        throw new Error('Live privacy reset failed');
+      await stopEntry(entry);
     }
     let result: { ok: boolean };
     try {
@@ -79,8 +80,11 @@ export async function liveRegistry(
     await storage.put('pending-memory', operation);
     return Response.json(await finishMemory(operation));
   }
-  const current = entries.filter((entry) => entry.expiresAt > Date.now());
   if (path === '/registry/register' && input.meetingId && input.sessionId) {
+    const now = Date.now();
+    for (const entry of entries.filter((entry) => entry.expiresAt <= now))
+      await stopEntry(entry);
+    const current = entries.filter((entry) => entry.expiresAt > now);
     const existing = current.find(
       (entry) => entry.sessionId === input.sessionId
     );

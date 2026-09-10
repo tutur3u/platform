@@ -267,6 +267,8 @@ export class MeetLiveDurableObject {
         saved.identity,
         saved.billing
       );
+      const handle = saved.toolResponses?.length ? undefined : saved.handle;
+      if (!handle) saved.searchTurn = undefined;
       const provider = await this.providerFactory({
         env: this.env,
         claims: saved.claims,
@@ -275,7 +277,7 @@ export class MeetLiveDurableObject {
         sharedContext: saved.sharedContext,
         journal: saved.journal,
         workspaceTools: saved.workspace?.tools,
-        handle: saved.toolResponses?.length ? undefined : saved.handle,
+        handle,
         onMessage: (message) => {
           if (generation !== this.generation) return;
           observeSessionUsage(saved, message);

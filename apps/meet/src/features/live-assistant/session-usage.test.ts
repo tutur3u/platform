@@ -77,3 +77,16 @@ it('counts repeated grounding query metadata once per turn', () => {
   observeSessionUsage(state, event);
   expect(state.billing?.usage.searchQueries).toBe(2);
 });
+
+it('counts a repeated search in a new turn after interruption', () => {
+  const state = saved();
+  const event = {
+    serverContent: { groundingMetadata: { webSearchQueries: ['query'] } },
+  } as LiveServerMessage;
+  observeSessionUsage(state, event);
+  observeSessionUsage(state, {
+    serverContent: { interrupted: true },
+  } as LiveServerMessage);
+  observeSessionUsage(state, event);
+  expect(state.billing?.usage.searchQueries).toBe(2);
+});

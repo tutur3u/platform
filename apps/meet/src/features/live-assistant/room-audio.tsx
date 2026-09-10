@@ -126,8 +126,10 @@ export function RoomAssistantAudio({
         if (!message.active && !liveSessions.size) audio.interrupt();
         return;
       }
-      const offset =
-        clockOffsets.get(message.sessionId) ?? Date.now() - message.at;
+      const offset = Math.min(
+        clockOffsets.get(message.sessionId) ?? Infinity,
+        Date.now() - message.at
+      );
       clockOffsets.set(message.sessionId, offset);
       if (
         Math.abs(Date.now() - message.at - offset) > 5000 ||
