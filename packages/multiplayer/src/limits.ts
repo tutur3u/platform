@@ -36,7 +36,15 @@ export function normalizeStoredLimits(
   fallback: TeamLimits,
   maximum = maximumWorkshopLimits
 ): TeamLimits {
-  const limits = { ...fallback, ...stored };
+  const valid = (value: unknown, minimum: number, defaultValue: number) =>
+    typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum
+      ? value
+      : defaultValue;
+  const limits = {
+    aiCallLimit: valid(stored?.aiCallLimit, 1, fallback.aiCallLimit),
+    agentTurnLimit: valid(stored?.agentTurnLimit, 2, fallback.agentTurnLimit),
+    toolCallLimit: valid(stored?.toolCallLimit, 0, fallback.toolCallLimit),
+  };
   const agentTurnLimit = Math.min(
     limits.agentTurnLimit,
     maximum.agentTurnLimit

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   createRoom,
+  defaultTeamLimits,
+  defaultWorkshopLimits,
   editable,
   type Identity,
   joinRoom,
@@ -308,6 +310,25 @@ describe('server-authoritative room policy', () => {
     normalizeRoom(legacy);
     expect(legacy.limits.toolCallLimit).toBe(7);
     expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
+  });
+  it('repairs malformed persisted limits with safe defaults', () => {
+    const legacy = room();
+    Object.assign(legacy.limits as unknown as Record<string, unknown>, {
+      aiCallLimit: null,
+      agentTurnLimit: 3.5,
+      toolCallLimit: -1,
+    });
+    Object.assign(
+      legacy.teams[0]!.limits as unknown as Record<string, unknown>,
+      {
+        aiCallLimit: -20,
+        agentTurnLimit: null,
+        toolCallLimit: 2.5,
+      }
+    );
+    normalizeRoom(legacy);
+    expect(legacy.limits).toEqual(defaultWorkshopLimits);
+    expect(legacy.teams[0]?.limits).toEqual(defaultTeamLimits);
   });
   it('requires invitations, preserves capacity, and allows idempotent rejoin', () => {
     const r = room();
