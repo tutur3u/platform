@@ -1,0 +1,135 @@
+---
+title: Meet Live assistants
+updated: '2026-09-10'
+description: Operate personal and room-wide Mira voice sessions with private context, explicit approvals, and metered usage.
+---
+
+Meet Live uses `gemini-3.1-flash-live-preview` through a Durable Object in the
+existing `tuturuuu-meet` Worker. It does not require a self-hosted process.
+The Worker holds the Gemini API key; browsers receive short-lived,
+purpose-bound session tokens and connect through `/live-connect`.
+
+## Audience and permissions
+
+A personal session captures only its owner's microphone and plays replies only
+on that device. Starting it mutes the meeting microphone. If the user unmutes
+the meeting, personal capture and reply playback pause. Pausing also clears
+queued speech; incoming private audio is blocked while the room microphone is on. Use headphones:
+speaker audio can otherwise be picked up by an open physical microphone.
+
+Only a room admin can invite the room assistant. One room assistant can be
+active at a time. Its initiating device captures the meeting audio available to
+that device, including remote participants. Audio unavailable to that device
+cannot be transcribed or understood. Participants see the assistant's presence
+and may need to enable playback once because of browser autoplay restrictions.
+Room output is published through server-authenticated events. Browser tokens
+cannot impersonate Mira's audio.
+
+The model can inspect current public meeting context, recall earlier session
+turns, and organize its context. Personal memory is not included in room mode.
+Personal sessions can use the selected workspace through the same permission-checked
+tools as text chat. Every workspace read or change requires an inline private
+approval before execution. Membership, current permissions, and arguments are
+validated again at execution time. Room sessions never receive these tools.
+A room admin can stop the shared assistant even when another admin invited it.
+The room presence expires automatically if its initiating session disappears.
+
+## Explicit approvals
+
+A personal assistant may propose remembering a fact or sharing an exact reply
+with the room. The owner sees the proposed text, can edit it, and can approve or deny it.
+Workspace requests show their exact arguments. Approval claims each operation
+once before execution; an uncertain result is not automatically retried.
+Pending proposals expire after five minutes. No timeout implies approval.
+Interrupted actions are marked failed and are never silently replayed.
+
+Approved public replies use a fresh speech session containing only the approved
+text. The private session's audio, memory, context, and resumption handle are
+never forwarded to the room. If speech delivery fails after the text was posted,
+the text remains in room chat; inspect the result before approving a retry.
+
+## Memory and context
+
+Memory is disabled by default. Owners can enable it and inspect, edit, or delete
+saved entries in meeting settings. Database policies restrict reads to the owner.
+Memory changes first stop the owner's active personal sessions so cached private
+context cannot continue speaking after a deletion. A durable pending command
+blocks new personal sessions until an interrupted mutation has recovered.
+
+Context compression and session resumption support long conversations within
+available quota. They do not create a literally infinite model context window.
+The active journal keeps bounded recent turns and rolling checkpoints; a private
+Durable Object archive supports searching earlier turns in that session. Model
+summaries can omit details. Ending the session clears its journal, private review
+text, resumption handle, and archive in bounded batches; approved user memories
+and billing receipts remain separate. The client retries interrupted connections, including temporary token-refresh failures.
+Provider GoAway events use resumable sessions; bounded checkpoints are the fallback
+when a handle is no longer valid. Choose a voice before starting. Microphone and
+speaker changes in meeting settings also apply to the active personal assistant.
+Pausing or interrupting speech clears queued playback on the receiving devices.
+
+Audio is not archived, and audio never received by
+the service cannot be reconstructed after an outage.
+
+## Usage and costs
+
+Live reservations and settlement use the platform's existing AI credit ledger
+and charge the initiating user's personal workspace. Usage is accumulated from
+provider events by modality. Reservations use nine-minute holds and renew after eight minutes or before exhaustion; failed
+settlements remain durable and retry after the session ends. Final provider usage
+is collected during shutdown. Interrupted turns without a final usage receipt
+remain marked incomplete even if subsequent turns succeed.
+
+Room admins can see aggregated Live provider costs in meeting settings.
+The count represents billing periods, including renewed reservations and
+separate approved speech requests, rather than unique people. Updates are
+sequence-checked so retries do not count the same period twice. Personal
+transcripts and memories are not included in the cost response.
+
+Prices come from the existing model catalog and
+[Google's Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-live-preview).
+The published paid rates verified on 2026-09-10 are $0.75 per million text input
+tokens, $3 audio input, $1 image/video input, $4.50 text output, and $12 audio
+output. Google Search is $14 per thousand queries after shared allowances.
+Project-wide free allowances and Cloudflare Live Worker duration, storage, and
+requests are not fully allocated to individual meetings. Missing usage stays
+marked incomplete; these estimates do not replace provider invoices.
+
+## Deployment and verification
+
+Apply the additive `meet_private_ai_memory` migration through the repository's
+normal migration pipeline. The Worker needs its existing Supabase configuration,
+`MEET_REALTIME_TOKEN_SECRET`, and `GOOGLE_GENERATIVE_AI_API_KEY`; no key is sent
+to another Worker or to the browser. Wrangler's `meet-live-v1` migration creates
+the SQLite Durable Object binding `MEET_LIVE`.
+
+Build the Cloudflare artifact, not only the Next application. The custom wrapper
+re-exports OpenNext's cache Durable Objects and delegates every unrelated route.
+Verify the final uploaded bundle against the Workers size limit.
+
+Before release, verify two devices can distinguish private and room audio,
+room guests cannot mint an assistant stream, memory changes cancel personal
+sessions, explicit share approvals publish only the previewed content, and quota
+settlement remains accurate after reconnects. Use synthetic conversation content
+and isolated test rooms. Do not end an employee's active meeting during checks.
+
+
+### Voice recovery and review outcomes
+
+Microphone capture uses the browser's 16 kHz resampler and flushes its final
+partial frame when stopped. A disconnected personal microphone pauses Live input;
+select a working microphone in settings before resuming. Starting personal voice
+mutes the meeting microphone; a failed startup restores its previous enabled state.
+Room playback requires the listener to enable audio, with at most three seconds of
+recent audio buffered while the browser awaits that gesture.
+
+Approved tool outcomes are saved before provider delivery. After a reconnect they
+are supplied as completed results, never automatically executed again. A workspace
+operation with no completion acknowledgement after two minutes becomes an unknown
+outcome for the requester to inspect and discard; discarding never retries the action. Permission checks and approval are required
+for every private workspace operation. Task metadata tools without a matching
+permission gate are not exposed.
+
+Deployment checks require `GOOGLE_GENERATIVE_AI_API_KEY` on the Meet Worker.
+Missing provider token allocation or search grounding usage remains marked as
+incomplete cost coverage instead of being counted as free.

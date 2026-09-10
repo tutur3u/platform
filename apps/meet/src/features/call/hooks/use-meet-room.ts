@@ -5,6 +5,7 @@ import type {
   MeetMediaState,
 } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { deliverRoomAssistantAudio } from '@/features/live-assistant/room-audio';
 import { encodingBudget } from '../lib/bandwidth';
 import {
   type CallState,
@@ -146,6 +147,7 @@ export function useMeetRoom({
     };
     const signaling = new MeetSignaling({
       onMessage: (message) => {
+        if (deliverRoomAssistantAudio(meetingId, message)) return;
         if (
           message.type === 'ready' &&
           message.admission === 'admitted' &&
@@ -195,7 +197,6 @@ export function useMeetRoom({
         setState((current) => reduceCallState(current, message));
       },
       onReconnected: () => {
-        // The ready message decides whether the server retained our media.
         signalingRef.current?.send({
           media: mediaRef.current,
           type: 'presence.join',
@@ -445,7 +446,6 @@ export function useMeetRoom({
     ).catch(() => undefined);
   }, [connectionGeneration, queueLocalTracks, state.admission]);
 
-  // Serialize SDP exchanges across track broadcasts.
   useEffect(() => {
     if (state.admission !== 'admitted') return;
     const pull = async () => {

@@ -1,0 +1,201 @@
+import { z } from 'zod';
+import type { MeetRealtimeTokenPayload } from './primitives';
+import type { RoomServiceState } from './room-service';
+
+export const roomLiveCommand = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('live.reserve'), sessionId: z.uuid() }),
+  z.object({ action: z.literal('live.stop'), sessionId: z.uuid() }),
+  z.object({ action: z.literal('live.heartbeat'), sessionId: z.uuid() }),
+  z.object({
+    action: z.literal('live.interrupt'),
+    sessionId: z.uuid(),
+    sequence: z.number().int().nonnegative().optional(),
+  }),
+  z.object({
+    action: z.literal('live.audio'),
+    sessionId: z.uuid(),
+    sequence: z.number().int().nonnegative(),
+    data: z.string().min(1).max(48000),
+    at: z.number(),
+  }),
+  z.object({ action: z.literal('live.context') }),
+]);
+export type RoomLiveState = {
+  sessionId: string;
+  ownerId: string;
+  expiresAt: number;
+  sequence: number;
+};
+export function applyRoomLive(
+  snapshot: RoomServiceState,
+  token: MeetRealtimeTokenPayload,
+  input: unknown,
+  now = Date.now()
+) {
+  const parsed = roomLiveCommand.safeParse(input);
+  if (!parsed.success) return null;
+  const message = parsed.data;
+  const ownerId = token.accountId ?? token.userId;
+  const admitted = Object.values(snapshot.presence).some(
+    (p) => (p.accountId ?? p.userId) === ownerId
+  );
+  const fail = (error: string, status = 403) => ({
+    state: snapshot,
+    body: { error },
+    status,
+  });
+  if (message.action === 'live.stop') {
+    const current = snapshot.liveAssistant;
+    if (!current || current.sessionId !== message.sessionId)
+      return { state: snapshot, body: { ok: true } };
+    if (token.role !== 'host' && ownerId !== current.ownerId)
+      return fail('Forbidden');
+    return {
+      state: { ...snapshot, liveAssistant: undefined },
+      body: { ok: true },
+      messages: [
+        {
+          type: 'assistant.live' as const,
+          sessionId: message.sessionId,
+          ownerId: current.ownerId,
+          active: false,
+        },
+      ],
+    };
+  }
+  if (!admitted || snapshot.ended) return fail('Join an active meeting first');
+  if (message.action === 'live.context')
+    return {
+      state: snapshot,
+      body: {
+        participants: Object.values(snapshot.presence).map(
+          ({ displayName, role }) => ({ displayName, role })
+        ),
+        chat: (snapshot.chat ?? [])
+          .slice(-40)
+          .map(({ displayName, body }) => ({ displayName, body })),
+        live: snapshot.liveAssistant,
+      },
+    };
+  if (message.action === 'live.reserve') {
+    if (token.role !== 'host')
+      return fail('Only a room admin can invite the room assistant');
+    const current = snapshot.liveAssistant;
+    if (
+      current &&
+      current.expiresAt > now &&
+      current.sessionId !== message.sessionId
+    )
+      return fail('A room assistant is already active', 409);
+    const liveAssistant = {
+      sessionId: message.sessionId,
+      ownerId,
+      expiresAt: now + 90_000,
+      sequence: -1,
+    };
+    return {
+      state: { ...snapshot, liveAssistant },
+      body: { ok: true },
+      messages: [
+        {
+          type: 'assistant.live' as const,
+          sessionId: message.sessionId,
+          ownerId,
+          active: true,
+        },
+      ],
+    };
+  }
+  const current = snapshot.liveAssistant;
+  if (
+    !current ||
+    current.sessionId !== message.sessionId ||
+    current.expiresAt <= now
+  )
+    return fail('Room assistant session expired', 409);
+  // A browser token, including a host token, never has this scope.
+  if (!token.scopes.includes('meet:live-server') || ownerId !== current.ownerId)
+    return fail('Forbidden');
+  if (message.action === 'live.interrupt')
+    return {
+      state: {
+        ...snapshot,
+        liveAssistant: {
+          ...current,
+          sequence: Math.max(
+            current.sequence,
+            message.sequence ?? current.sequence
+          ),
+        },
+      },
+      body: { ok: true },
+      messages: [
+        {
+          type: 'assistant.interrupted' as const,
+          sessionId: current.sessionId,
+        },
+      ],
+    };
+  if (message.action === 'live.heartbeat')
+    return {
+      state: {
+        ...snapshot,
+        liveAssistant: { ...current, expiresAt: now + 90_000 },
+      },
+      body: { ok: true },
+    };
+  if (Math.abs(now - message.at) > 5000 || message.sequence <= current.sequence)
+    return { state: snapshot, body: { ok: true, forwarded: false } };
+  return {
+    state: {
+      ...snapshot,
+      liveAssistant: { ...current, sequence: message.sequence },
+    },
+    body: { ok: true, forwarded: true },
+    messages: [
+      {
+        type: 'assistant.audio' as const,
+        sessionId: current.sessionId,
+        sequence: message.sequence,
+        data: message.data,
+        at: message.at,
+      },
+    ],
+  };
+}
+
+/** Expired assistants must disappear even when every browser remains idle. */
+export function expireRoomLive(snapshot: RoomServiceState, now = Date.now()) {
+  const live = snapshot.liveAssistant;
+  if (!live || (!snapshot.ended && live.expiresAt > now)) return null;
+  return {
+    state: { ...snapshot, liveAssistant: undefined },
+    messages: [
+      {
+        type: 'assistant.live' as const,
+        sessionId: live.sessionId,
+        ownerId: live.ownerId,
+        active: false,
+      },
+    ],
+  };
+}
+
+export function liveRoomAnnouncements(
+  snapshot: RoomServiceState,
+  now = Date.now()
+) {
+  const messages: import('./messages').MeetRealtimeServerMessage[] = [];
+  if (snapshot.ended) return messages;
+  if (snapshot.liveAssistant && snapshot.liveAssistant.expiresAt > now)
+    messages.push({
+      type: 'assistant.live',
+      sessionId: snapshot.liveAssistant.sessionId,
+      ownerId: snapshot.liveAssistant.ownerId,
+      active: true,
+    });
+  for (const [sessionId, share] of Object.entries(snapshot.liveShares ?? {}))
+    if (share.expiresAt > now)
+      messages.push({ type: 'assistant.share', sessionId, active: true });
+  return messages;
+}

@@ -15,6 +15,10 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
+import {
+  expireRoomLive,
+  liveRoomAnnouncements,
+} from '../../../packages/realtime/src/meet/room-live';
 import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { personalReceiptStorage } from './personal-receipt-storage';
@@ -120,6 +124,12 @@ export class MeetRoomDurableObject implements DurableObject {
   private sendTo(socket: WebSocket, message: MeetRealtimeServerMessage) {
     try {
       socket.send(JSON.stringify(message));
+      if (
+        message.type === 'admission.approved' ||
+        (message.type === 'ready' && message.admission === 'admitted')
+      )
+        for (const active of liveRoomAnnouncements(this.snapshot))
+          socket.send(JSON.stringify(active));
     } catch {
       // A closing socket is not an error worth surfacing to the room.
     }
@@ -252,8 +262,21 @@ export class MeetRoomDurableObject implements DurableObject {
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;
       if (!result.status) {
-        if (changed) await this.persist();
+        if (
+          changed &&
+          !['live.audio', 'live.share.audio'].includes(
+            (body as { action?: string } | null)?.action ?? ''
+          )
+        )
+          await this.persist();
         this.broadcast(result.messages ?? []);
+        if (
+          this.snapshot.liveAssistant &&
+          ['live.reserve', 'live.heartbeat'].includes(
+            String((body as { action?: string } | null)?.action)
+          )
+        )
+          await this.scheduleSweep(this.snapshot.liveAssistant.expiresAt);
       }
       return Response.json(result.body, {
         status: result.status ?? 200,
@@ -481,15 +504,21 @@ export class MeetRoomDurableObject implements DurableObject {
     this.sendToManagers(outcome.toManagers);
   }
 
-  private async scheduleSweep() {
+  private async scheduleSweep(deadline = Date.now() + PRESENCE_SWEEP_MS) {
     const existing = await this.state.storage.getAlarm();
-    if (existing === null) {
-      await this.state.storage.setAlarm(Date.now() + PRESENCE_SWEEP_MS);
+    if (existing === null || existing > deadline) {
+      await this.state.storage.setAlarm(deadline);
     }
   }
 
   async alarm() {
     await this.load();
+    const expiredLive = expireRoomLive(this.snapshot);
+    if (expiredLive) {
+      this.snapshot = expiredLive.state;
+      await this.persist();
+      this.broadcast(expiredLive.messages);
+    }
 
     const sockets = this.sockets();
     const connectedUserIds = new Set(
@@ -546,5 +575,7 @@ export class MeetRoomDurableObject implements DurableObject {
       )
     )
       await this.scheduleSweep();
+    if (this.snapshot.liveAssistant)
+      await this.scheduleSweep(this.snapshot.liveAssistant.expiresAt);
   }
 }

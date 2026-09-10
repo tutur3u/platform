@@ -6,6 +6,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MeetLivePanel } from '@/features/live-assistant/live-panel';
+import { RoomAssistantAudio } from '@/features/live-assistant/room-audio';
 import { MeetingAiPanel } from '@/features/meeting-ai/meeting-ai-panel';
 import { NotesSharingControl } from '@/features/meeting-ai/notes-sharing-control';
 import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
@@ -294,6 +296,17 @@ export function ConnectedCallShell({
             {t('reconnecting')}
           </span>
         )}
+        <RoomAssistantAudio
+          canManage={canManage}
+          meetingId={meetingId}
+          outputDeviceId={outputDeviceId}
+        />
+        <MeetLivePanel
+          room={room}
+          meetingId={meetingId}
+          outputDeviceId={outputDeviceId}
+          canManage={canManage}
+        />
         <CallSettings
           meetingId={meetingId}
           room={room}

@@ -122,7 +122,7 @@ jobs:
           test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
           bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
           bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
-          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
       - name: Deploy signaling before the frontend
         run: |

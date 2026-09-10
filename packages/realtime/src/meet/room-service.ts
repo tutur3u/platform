@@ -18,6 +18,13 @@ import {
   personalChatReceiptCommand,
 } from './personal-chat-receipts';
 import { retainRoomChat } from './room-chat';
+import { applyRoomLive, type RoomLiveState } from './room-live';
+import { applyLiveSharing } from './room-live-sharing';
+import {
+  applyLiveUsage,
+  type RoomLiveUsage,
+  summarizeLiveUsage,
+} from './room-live-usage';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 
@@ -41,6 +48,12 @@ export type RoomChatMessage = Extract<
 export type RoomServiceState = MeetRoomSnapshot & {
   personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];
+  liveAssistant?: RoomLiveState;
+  liveUsage?: Record<string, RoomLiveUsage>;
+  liveShares?: Record<
+    string,
+    { ownerId: string; expiresAt: number; sequence: number }
+  >;
   attachments?: Record<string, RoomAttachment>;
   aiRequests?: Record<
     string,
@@ -101,6 +114,11 @@ export function roomService(
     status,
   });
   if (!token.scopes.includes('meet:server')) return fail('Forbidden');
+  const live =
+    applyLiveUsage(snapshot, token, input) ??
+    applyRoomLive(snapshot, token, input) ??
+    applyLiveSharing(snapshot, token, input);
+  if (live) return live;
   const parsed = command.safeParse(input);
   if (!parsed.success) return fail('Invalid request', 400);
   const accountId = token.accountId ?? token.userId;
@@ -204,6 +222,7 @@ export function roomService(
       state: snapshot,
       body: {
         cloudflare: summarizeRoomUsage(snapshot.usage),
+        live: summarizeLiveUsage(snapshot.liveUsage),
         miraRequests: Object.values(snapshot.aiRequests ?? {}).length,
         miraCostUsd: Object.values(snapshot.aiRequests ?? {}).reduce(
           (sum, r) => sum + (r.costUsd ?? 0),

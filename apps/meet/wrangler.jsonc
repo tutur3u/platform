@@ -2,7 +2,7 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "tuturuuu-meet",
   "account_id": "e8912e2867beecc673d171907bf09649",
-  "main": ".open-next/worker.js",
+  "main": "cloudflare/worker.ts",
   "compatibility_date": "2026-09-06",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "placement": {
@@ -43,12 +43,27 @@
       "MEET_REALTIME_TOKEN_SECRET",
       "NEXT_PUBLIC_SUPABASE_URL",
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-      "SUPABASE_SECRET_KEY"
+      "SUPABASE_SECRET_KEY",
+      "GOOGLE_GENERATIVE_AI_API_KEY"
     ]
   },
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://meet.tuturuuu.com",
     "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
     "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime"
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MEET_LIVE",
+        "class_name": "MeetLiveDurableObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "meet-live-v1",
+      "new_sqlite_classes": ["MeetLiveDurableObject"]
+    }
+  ]
 }

@@ -19,7 +19,11 @@ export interface UseMeetRoomOptions {
 
 export interface MeetRoomController
   extends ReturnType<typeof createRoomActions> {
-  getSelectedDevices: () => { audio: string; video: string };
+  getSelectedDevices: () => {
+    audio: string;
+    video: string;
+    microphoneRevision: number;
+  };
   getBandwidthMode: () => import('./bandwidth').BandwidthMode;
   selectDevice: (kind: 'audio' | 'video', deviceId: string) => Promise<void>;
   setBandwidthMode: (mode: import('./bandwidth').BandwidthMode) => void;

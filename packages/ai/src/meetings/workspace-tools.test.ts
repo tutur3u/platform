@@ -20,7 +20,14 @@ it('gates permissioned tools and fails closed for new unannotated workspace oper
   expect(denied).not.toHaveProperty('create_event');
   expect(denied).not.toHaveProperty('create_wallet');
   expect(denied).not.toHaveProperty('future_workspace_mutation');
-  expect(denied).toHaveProperty('get_my_tasks');
+  for (const name of [
+    'get_my_tasks',
+    'list_boards',
+    'list_task_lists',
+    'list_task_labels',
+    'list_projects',
+  ])
+    expect(denied).not.toHaveProperty(name);
   expect(denied).toHaveProperty('list_time_tracking_sessions');
   const allowed = createMeetWorkspaceTools({} as never, () => false);
   expect(allowed).toHaveProperty('create_task');

@@ -28,6 +28,7 @@ export function createLocalMediaControls({
   ) => Promise<void>;
 }) {
   const deviceIds = { audio: '', video: '' };
+  let microphoneRevision = 0;
   const selectDevice = async (kind: 'audio' | 'video', deviceId: string) => {
     const old = localStreamRef.current;
     const enabled =
@@ -104,6 +105,7 @@ export function createLocalMediaControls({
     }
   };
   const toggleMicrophone = async () => {
+    microphoneRevision++;
     let stream = localStreamRef.current;
     if (
       !stream?.getAudioTracks().some((track) => track.readyState === 'live')
@@ -252,6 +254,6 @@ export function createLocalMediaControls({
     toggleCamera,
     toggleScreenShare,
     selectDevice,
-    getSelectedDevices: () => ({ ...deviceIds }),
+    getSelectedDevices: () => ({ ...deviceIds, microphoneRevision }),
   };
 }

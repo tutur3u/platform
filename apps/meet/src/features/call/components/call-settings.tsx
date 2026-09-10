@@ -13,6 +13,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { MeetMemorySettings } from '@/features/live-assistant/memory-settings';
 import type { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
 import type { MeetRoomController } from '../lib/room-controller';
@@ -46,6 +47,9 @@ export function CallSettings({
 }) {
   const t = useTranslations('meet.call');
   const data = ai.data;
+  const accountId = room.state.selfUserId
+    ? room.state.participants[room.state.selfUserId]?.accountId
+    : undefined;
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -117,6 +121,7 @@ export function CallSettings({
                 onCheckedChange={onSound}
               />
             </div>
+            {accountId && <MeetMemorySettings userId={accountId} />}
             <ChatSettings room={room} canManage={canManage} />
             <RecordingSettings
               room={room}

@@ -169,6 +169,24 @@ export type MeetRealtimeRoomTrack = {
 
 export type MeetRealtimeServerMessage =
   | {
+      type: 'assistant.live';
+      sessionId: string;
+      active: boolean;
+      ownerId: string;
+    }
+  | { type: 'assistant.share'; sessionId: string; active: boolean }
+  | {
+      type: 'assistant.interrupted';
+      sessionId: string;
+    }
+  | {
+      type: 'assistant.audio';
+      sessionId: string;
+      sequence: number;
+      data: string;
+      at: number;
+    }
+  | {
       type: 'reaction';
       reaction: MeetReaction;
       userId: string;
