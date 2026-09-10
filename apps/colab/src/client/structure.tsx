@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
   CalendarDays,
@@ -10,7 +10,6 @@ import {
   Settings,
   Users,
 } from '@tuturuuu/icons';
-import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity, RoomView } from '@tuturuuu/multiplayer';
 import { AppsLauncherCoreDialog } from '@tuturuuu/satellite/apps-launcher-core';
 import { Button } from '@tuturuuu/ui/button';
@@ -57,8 +56,7 @@ export function Structure({
   // Subscribe to the room cache so admin navigation follows realtime role changes.
   const { data: room } = useQuery<RoomView>({
     queryKey: ['room', roomId],
-    queryFn: () => colabRequest<RoomView>(`/rooms/${roomId}`),
-    enabled: false,
+    queryFn: skipToken,
   });
   const t = useShellCopy();
   const sidebar = useSidebar();

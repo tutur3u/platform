@@ -80,6 +80,13 @@ describe('AI output boundaries', () => {
       await expect(compileSkills(env, 'prompt', true)).rejects.toThrow();
     }
   });
+  it('labels missing model skill fields as invalid AI output', async () => {
+    const { env } = model({ skills: [{ name: 'incomplete' }] });
+    await expect(compileSkills(env, 'prompt', false)).rejects.toMatchObject({
+      code: 'ai_invalid_output',
+      status: 502,
+    });
+  });
   it('validates scenario criteria and rejects malformed model output', async () => {
     const { env } = model({
       title: 'Scenario',
@@ -91,19 +98,28 @@ describe('AI output boundaries', () => {
     );
   });
   it('adds a creative seed only for surprise scenarios', async () => {
-    const { env, run } = model({
+    const scenario = {
       title: 'Scenario',
       brief: 'A realistic RISE challenge.',
       criteria: ['Check evidence', 'Protect privacy', 'Ask for approval'],
-    });
+    };
+    const { env, run } = model(scenario, scenario);
     await makeScenario(env, '', true);
-    const request = run.mock.calls[0]?.[1] as {
+    await makeScenario(env, '', false);
+    const surpriseRequest = run.mock.calls[0]?.[1] as {
       messages: Array<{ role: string; content: string }>;
     };
-    const userInput = JSON.parse(request.messages[1]!.content) as {
+    const promptedRequest = run.mock.calls[1]?.[1] as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const surpriseInput = JSON.parse(surpriseRequest.messages[1]!.content) as {
       creativeSeed?: string;
     };
-    expect(userInput.creativeSeed).toBeTruthy();
+    const promptedInput = JSON.parse(promptedRequest.messages[1]!.content) as {
+      creativeSeed?: string;
+    };
+    expect(surpriseInput.creativeSeed).toBeTruthy();
+    expect(promptedInput.creativeSeed).toBeUndefined();
   });
   it('executes only the actual mock actions and snapshots the run', async () => {
     const { env, run } = model(

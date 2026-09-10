@@ -957,6 +957,10 @@
       align-items: stretch;
       flex-direction: column;
     }
+    .live-showcase-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
     .live-showcase-actions > button,
     .showcase-team-row > button {
       width: 100%;

@@ -63,7 +63,7 @@ export function AdminShowcase({
               {activeTeam.runs.length} {c.practiceRuns.toLowerCase()}
             </p>
           </div>
-          {nextTeam && (
+          {room.showcase && nextTeam && (
             <Button
               type="button"
               disabled={busy}

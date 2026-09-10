@@ -69,6 +69,7 @@ export function AdminScenarios({
           id="steering"
           name="steering"
           maxLength={2000}
+          disabled={busy}
           value={steering}
           onChange={(event) => setSteering(event.target.value)}
           placeholder={c.steerPlaceholder}

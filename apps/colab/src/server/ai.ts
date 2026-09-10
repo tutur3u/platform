@@ -50,6 +50,15 @@ function skillName(value: unknown, index: number) {
   return normalized || `skill-${index + 1}`;
 }
 
+function modelText(value: unknown, max: number) {
+  requireRule(
+    typeof value === 'string' && value.trim().length > 0 && value.length <= max,
+    'ai_invalid_output',
+    502
+  );
+  return value.trim();
+}
+
 async function generate(
   env: Env,
   system: string,
@@ -109,8 +118,8 @@ export async function compileSkills(
       502
     );
     names.add(name);
-    const description = text(value.description ?? value.summary, 500);
-    const body = text(
+    const description = modelText(value.description ?? value.summary, 500);
+    const body = modelText(
       value.body ?? value.markdown ?? value.instructions ?? value.content,
       15000
     );
@@ -151,9 +160,9 @@ export async function makeScenario(
   );
   return {
     id: crypto.randomUUID(),
-    title: text(result.title, 150),
-    brief: text(result.brief, 3500),
-    criteria: result.criteria.map((v) => text(v, 300)),
+    title: modelText(result.title, 150),
+    brief: modelText(result.brief, 3500),
+    criteria: result.criteria.map((v) => modelText(v, 300)),
   };
 }
 export function executeMockTool(
