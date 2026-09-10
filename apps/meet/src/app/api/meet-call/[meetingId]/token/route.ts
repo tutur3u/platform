@@ -54,8 +54,24 @@ export async function POST(
         },
         body: JSON.stringify({ mode: joinMode }),
         signal: AbortSignal.timeout(5000),
+      }).catch((error: unknown) => {
+        console.warn('Meet device connection check unavailable', {
+          kind: error instanceof Error ? error.name : 'unknown',
+        });
+        return null;
       });
-      if (!result.ok) throw new Error('Device check failed');
+      if (!result?.ok) {
+        console.warn('Meet device connection check failed', {
+          status: result?.status,
+        });
+        return Response.json(
+          {
+            error: 'Meeting connection unavailable',
+            code: 'MEET_REALTIME_UNAVAILABLE',
+          },
+          { status: 503, headers: { ...headers, 'Retry-After': '2' } }
+        );
+      }
       const policy = (await result.json()) as { otherDeviceCount: number };
       if (!joinMode && policy.otherDeviceCount)
         return Response.json(

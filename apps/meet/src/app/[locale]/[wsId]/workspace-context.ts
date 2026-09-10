@@ -2,8 +2,9 @@ import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 
-export async function getMeetWorkspaceContext(id: string) {
+export const getMeetWorkspaceContext = cache(async (id: string) => {
   const user = await getSatelliteAppSessionUser('meet');
 
   if (!user?.id) redirect('/');
@@ -24,4 +25,4 @@ export async function getMeetWorkspaceContext(id: string) {
     workspaceSlug,
     wsId,
   };
-}
+});

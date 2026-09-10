@@ -52,7 +52,10 @@ beforeEach(() => {
     workspaceSlug: 'workspace',
   });
 });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 it('refreshes an external guest as a lobby speaker for this meeting only', async () => {
   const response = await POST(request(), context);
@@ -106,3 +109,33 @@ it('preserves the Vietnamese fallback locale during refresh', async () => {
   await POST(request(), context);
   expect(mocks.access).toHaveBeenCalledWith(id, 'Khách');
 });
+
+it.each([false, true])(
+  'reports a retryable outage without granting a device session (timeout: %s)',
+  async (timeout) => {
+    vi.stubGlobal(
+      'fetch',
+      timeout
+        ? vi.fn().mockRejectedValue(new DOMException('timeout', 'TimeoutError'))
+        : vi.fn().mockResolvedValue(new Response('blocked', { status: 403 }))
+    );
+    const req = new Request(
+      `https://meet.tuturuuu.com/api/meet-call/${id}/token`,
+      {
+        method: 'POST',
+        headers: {
+          origin: 'https://meet.tuturuuu.com',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ deviceId: id }),
+      }
+    );
+    const response = await POST(req, context);
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('2');
+    expect(await response.json()).toEqual({
+      error: 'Meeting connection unavailable',
+      code: 'MEET_REALTIME_UNAVAILABLE',
+    });
+  }
+);

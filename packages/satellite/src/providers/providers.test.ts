@@ -6,7 +6,7 @@ const source = readFileSync('src/providers/providers.tsx', 'utf8');
 describe('satellite providers', () => {
   it('keeps runtime i18n resolution inside suspense and theme setup outside', () => {
     const themeProvider = source.indexOf('<ThemeProvider');
-    const suspense = source.indexOf('<Suspense fallback={null}>');
+    const suspense = source.indexOf('<Suspense ');
     const intlProvider = source.indexOf('<NextIntlClientProvider>');
     const intlProviderEnd = source.indexOf('</NextIntlClientProvider>');
     const suspenseEnd = source.lastIndexOf('</Suspense>');

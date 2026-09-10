@@ -124,8 +124,14 @@ export class MeetSignaling {
   private watchClosingSocket(socket: WebSocket) {
     this.clearSocketWatch();
     let closingSince: number | null = null;
+    const connectingSince = Date.now();
     this.socketWatch = setInterval(() => {
       if (this.closedByUs || this.socket !== socket) return;
+      if (socket.readyState === 0 && Date.now() - connectingSince >= 10_000) {
+        this.finishSocket(socket);
+        socket.close();
+        return;
+      }
       if (
         socket.readyState === WebSocket.OPEN &&
         Date.now() - this.lastPing >= 60_000

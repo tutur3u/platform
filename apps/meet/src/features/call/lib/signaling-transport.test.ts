@@ -186,3 +186,22 @@ it('keeps idle sockets alive without presence writes and recovers a missing pong
   expect(Socket.instances).toHaveLength(2);
   signaling.close();
 });
+
+it('replaces a stalled initial handshake and ignores late open events', async () => {
+  const { signaling, options } = fixture();
+  await Promise.resolve();
+  const first = Socket.instances[0]!;
+  await vi.advanceTimersByTimeAsync(9999);
+  expect(Socket.instances).toHaveLength(1);
+  await vi.advanceTimersByTimeAsync(1001);
+  expect(Socket.instances).toHaveLength(2);
+  const next = Socket.instances[1]!;
+  next.open();
+  first.open();
+  first.closed(1006);
+  expect(options.onReconnected).not.toHaveBeenCalled();
+  expect(options.onStatusChange).toHaveBeenLastCalledWith('open');
+  signaling.close();
+  await vi.advanceTimersByTimeAsync(30_000);
+  expect(Socket.instances).toHaveLength(2);
+});

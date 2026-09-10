@@ -9,7 +9,8 @@ import { type SignedUploadPayload, uploadFileWithSignedUrl } from './storage';
 export function createMeetCallRealtimeToken(
   meetingId: string,
   options?: InternalApiClientOptions,
-  device?: { deviceId: string; joinMode?: 'switch' | 'additional' }
+  device?: { deviceId: string; joinMode?: 'switch' | 'additional' },
+  signal?: AbortSignal
 ) {
   return getInternalApiClient(options).json<
     | {
@@ -21,6 +22,7 @@ export function createMeetCallRealtimeToken(
     | { requiresDeviceChoice?: false; token: string; realtimeUrl: string }
   >(`/api/meet-call/${encodePathSegment(meetingId)}/token`, {
     method: 'POST',
+    signal,
     body: device ? JSON.stringify(device) : undefined,
   });
 }

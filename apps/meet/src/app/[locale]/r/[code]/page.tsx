@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CallEnded } from '@/features/call/components/call-ended';
-import { CallShell } from '@/features/call/components/call-shell';
+import { CallShell } from '@/features/call/components/device-session-gate';
 import { ParticipantNameForm } from '@/features/call/components/participant-name-form';
 import {
   getMeetCallAccess,

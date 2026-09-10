@@ -64,7 +64,27 @@ export default async function RootLayout({ children }: Props) {
         )}
       >
         <NuqsAdapter>
-          <Providers appName={siteConfig.name}>{children}</Providers>
+          <Providers
+            appName={siteConfig.name}
+            loadingFallback={
+              <div
+                className="flex min-h-dvh items-center justify-center bg-background"
+                role="progressbar"
+                aria-label="Tuturuuu Meet"
+              >
+                <div className="flex flex-col items-center gap-5">
+                  <span className="font-semibold text-xl tracking-tight">
+                    Tuturuuu Meet
+                  </span>
+                  <span className="h-1 w-24 overflow-hidden rounded-full bg-muted">
+                    <span className="block h-full w-1/2 rounded-full bg-foreground/30 motion-safe:animate-pulse" />
+                  </span>
+                </div>
+              </div>
+            }
+          >
+            {children}
+          </Providers>
         </NuqsAdapter>
         <TailwindIndicator />
         <ProductionIndicator />

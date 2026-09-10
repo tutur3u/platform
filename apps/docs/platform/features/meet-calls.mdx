@@ -744,6 +744,32 @@ account billing before using these estimates as a complete budget. Unknown AI co
 are shown as missing coverage rather than zero-cost requests. Merely reading a cost
 panel does not force a Durable Object snapshot write.
 
+### Diagnosing call preparation
+
+The centered **Preparing your call** screen checks the account's device session
+before opening the lobby. Its request is `POST /api/meet-call/<meetingId>/token`;
+a failure here is distinct from a media or WebSocket connection failure inside
+the call. The browser bounds each preparation request to 12 seconds and retries
+transient failures twice. Switching an existing device is not automatically
+retried, because it can disconnect that device.
+
+The token handler checks the realtime Worker's `/room-device` endpoint with a
+five-second timeout. An unavailable upstream returns HTTP 503 with
+`MEET_REALTIME_UNAVAILABLE` and `Retry-After: 2`, without bypassing device policy.
+Use the request status and Cloudflare Ray ID to distinguish an edge block from
+an unavailable Worker; a successful `/health` check alone does not prove the
+authenticated device endpoint works. Never collect cookies or bearer tokens.
+
+Cloudflare's Meet-only managed-rule exception skips cookie-character checks
+942420 and 942421 for GET and POST requests to `meet.tuturuuu.com`. Other rules
+and request-body inspection remain active, and exception matches are logged.
+Inspect the contributing rules before changing this scope; do not disable an
+entire ruleset to resolve a preparation failure.
+
+After the lobby opens, a WebSocket that remains in its initial connecting state
+for ten seconds is replaced through the normal bounded reconnect policy. Late
+events from the abandoned socket cannot replace the current connection.
+
 ### Room policy verification
 
 `bun apps/meet-realtime/src/room-controls-check.ts` verifies lobby chat privacy,
