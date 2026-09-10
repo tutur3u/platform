@@ -145,13 +145,13 @@ export function applyRoomLive(
       body: { ok: true },
     };
   if (Math.abs(now - message.at) > 5000 || message.sequence <= current.sequence)
-    return { state: snapshot, body: { ok: true } };
+    return { state: snapshot, body: { ok: true, forwarded: false } };
   return {
     state: {
       ...snapshot,
       liveAssistant: { ...current, sequence: message.sequence },
     },
-    body: { ok: true },
+    body: { ok: true, forwarded: true },
     messages: [
       {
         type: 'assistant.audio' as const,

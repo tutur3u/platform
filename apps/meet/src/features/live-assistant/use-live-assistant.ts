@@ -382,7 +382,7 @@ export function useLiveAssistant(
     if (
       review.status === 'failed' &&
       !approved &&
-      (!current || ['ended', 'error'].includes(status))
+      (!current || status === 'ended')
     ) {
       setReviews((items) => items.filter((item) => item.id !== review.id));
       return;

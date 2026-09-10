@@ -93,3 +93,19 @@ it('allows only failed-review dismissal after the session ends', async () => {
   expect(f.saved.reviews).toHaveLength(0);
   expect(f.respond).not.toHaveBeenCalled();
 });
+
+it('returns forbidden when no saved session exists', async () => {
+  const result = await controlWorkspaceReview(
+    {
+      ownerId: 'owner',
+      meetingId: 'room',
+      reviewId: 'review',
+      action: 'claim',
+    },
+    undefined,
+    undefined,
+    vi.fn(),
+    vi.fn()
+  );
+  expect(result.status).toBe(403);
+});

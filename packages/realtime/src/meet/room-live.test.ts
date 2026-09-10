@@ -67,6 +67,14 @@ describe('room Live authority', () => {
       command
     );
     expect(result.messages?.[0]?.type).toBe('assistant.audio');
+    expect(result.body).toMatchObject({ forwarded: true });
+    expect(
+      roomService(
+        result.state,
+        { ...token, scopes: ['meet:server', 'meet:live-server'] },
+        command
+      ).body
+    ).toMatchObject({ forwarded: false });
     expect(
       roomService(
         result.state,

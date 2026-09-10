@@ -126,7 +126,10 @@ it('renews the registering session without stopping it after lease expiry', asyn
     (await f.call('register', { meetingId, sessionId, mode: 'personal' })).ok
   ).toBe(true);
   expect(f.stop).not.toHaveBeenCalled();
-  expect(f.values.get('active')).toEqual([
-    expect.objectContaining({ sessionId, expiresAt: expect.any(Number) }),
-  ]);
+  const [entry] = f.values.get('active') as Array<{
+    sessionId: string;
+    expiresAt: number;
+  }>;
+  expect(entry?.sessionId).toBe(sessionId);
+  expect(entry!.expiresAt).toBeGreaterThan(Date.now());
 });

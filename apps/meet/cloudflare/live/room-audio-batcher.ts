@@ -12,7 +12,7 @@ export function createRoomLiveAudioBatcher(
   let interrupted = false;
   return new LiveAudioBatcher(
     async (data, sequence, at, signal) => {
-      await liveRoomCommand(
+      const result = await liveRoomCommand<{ forwarded?: boolean }>(
         env,
         saved.claims,
         saved.identity,
@@ -25,7 +25,7 @@ export function createRoomLiveAudioBatcher(
         },
         signal
       );
-      if (interrupted && !saved.ended && !signal?.aborted) {
+      if (interrupted && result.forwarded && !saved.ended && !signal?.aborted) {
         interrupted = false;
         emit({ type: 'state', state: currentState() });
       }
