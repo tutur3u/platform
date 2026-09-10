@@ -19,7 +19,11 @@ export function deliverRoomAssistantAudio(
   meetingId: string,
   message: MeetRealtimeServerMessage
 ) {
-  if (message.type === 'admission.approved' || message.type === 'room.ended')
+  if (
+    message.type === 'admission.approved' ||
+    message.type === 'room.ended' ||
+    (message.type === 'ready' && message.admission === 'admitted')
+  )
     announcements.delete(meetingId);
   if (message.type === 'assistant.live' || message.type === 'assistant.share') {
     const current =
@@ -36,13 +40,18 @@ export function deliverRoomAssistantAudio(
       'assistant.interrupted',
       'room.ended',
       'admission.approved',
+      'ready',
     ].includes(message.type)
   )
     return false;
   window.dispatchEvent(
     new CustomEvent(EVENT, { detail: { meetingId, message } })
   );
-  return message.type !== 'room.ended' && message.type !== 'admission.approved';
+  return (
+    message.type !== 'room.ended' &&
+    message.type !== 'admission.approved' &&
+    message.type !== 'ready'
+  );
 }
 export function RoomAssistantAudio({
   meetingId,
@@ -83,7 +92,8 @@ export function RoomAssistantAudio({
                 | 'assistant.share'
                 | 'assistant.interrupted'
                 | 'room.ended'
-                | 'admission.approved';
+                | 'admission.approved'
+                | 'ready';
             }
           >;
         }>
@@ -91,7 +101,8 @@ export function RoomAssistantAudio({
       if (id !== meetingId) return;
       if (
         message.type === 'room.ended' ||
-        message.type === 'admission.approved'
+        message.type === 'admission.approved' ||
+        message.type === 'ready'
       ) {
         liveSessions.clear();
         audio.interrupt();
@@ -112,7 +123,7 @@ export function RoomAssistantAudio({
         if (message.type === 'assistant.live')
           setSessionId(message.active ? message.sessionId : undefined);
         setAvailable(liveSessions.size > 0);
-        if (!message.active) audio.interrupt();
+        if (!message.active && !liveSessions.size) audio.interrupt();
         return;
       }
       const offset =

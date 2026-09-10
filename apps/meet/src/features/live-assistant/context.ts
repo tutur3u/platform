@@ -46,7 +46,7 @@ export function buildLiveInstructions(input: {
       content: content.slice(0, 500),
       category,
     }))
-    .slice(0, 20);
+    .slice(-20);
   const checkpoints = input.journal.checkpoints.slice(-4).map((checkpoint) => ({
     summary: checkpoint.summary.slice(0, 2000),
     decisions: checkpoint.decisions

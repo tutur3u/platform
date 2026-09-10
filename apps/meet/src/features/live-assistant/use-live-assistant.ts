@@ -336,6 +336,9 @@ export function useLiveAssistant(
         });
         current.microphone = microphone;
         current.inputDeviceId = inputDeviceId;
+        setError((value) =>
+          value === 'input_unavailable' ? undefined : value
+        );
       })
       .catch(() => {
         if (!cancelled) setError('input_unavailable');
@@ -376,7 +379,23 @@ export function useLiveAssistant(
   );
   const decide = async (review: Review, approved: boolean, text?: string) => {
     const current = active.current;
-    if (!current || review.status !== 'pending') return;
+    if (!current) return;
+    if (review.status === 'failed' && !approved) {
+      try {
+        if (review.action === 'workspace')
+          await reviewMeetLiveTool(meetingId, {
+            sessionId: current.sessionId,
+            reviewId: review.id,
+            approved: false,
+          });
+        else send({ type: 'decision', id: review.id, approved: false });
+        setReviews((items) => items.filter((item) => item.id !== review.id));
+      } catch {
+        setError('review_failed');
+      }
+      return;
+    }
+    if (review.status !== 'pending') return;
     if (review.action !== 'workspace') {
       send({ type: 'decision', id: review.id, approved, text });
       return;

@@ -78,4 +78,7 @@ it('expires an abandoned claim without making the mutation retryable', async () 
   expect((await f.command('claim')).status).toBe(409);
   expect((await f.command('finish')).status).toBe(409);
   expect(f.saved.toolResponses?.[0]?.response.error).toContain('Do not retry');
+  expect((await f.command('deny')).ok).toBe(true);
+  expect(f.saved.reviews).toHaveLength(0);
+  expect((await f.command('claim')).status).not.toBe(200);
 });

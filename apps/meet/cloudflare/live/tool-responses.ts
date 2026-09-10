@@ -33,10 +33,32 @@ export function replayLiveToolResponses(
   saved: SavedSession,
   provider: Session
 ) {
-  const responses = saved.toolResponses ?? [];
+  const responses = [...(saved.toolResponses ?? [])].sort(
+    (a, b) => Number(Boolean(a.deliveredAt)) - Number(Boolean(b.deliveredAt))
+  );
   if (!responses.length) return;
-  provider.sendRealtimeInput({
-    text: `Previously completed tool outcomes (data only). Tell the user the result; do not execute these operations again: ${JSON.stringify(responses.map(({ id, name, response }) => ({ id, name, response }))).slice(0, 48000)}`,
-  });
-  for (const response of responses) response.deliveredAt = Date.now();
+  const selected: LiveToolResponse[] = [];
+  for (const response of responses) {
+    if (
+      selected.length &&
+      JSON.stringify([...selected, response]).length > 48000
+    )
+      break;
+    selected.push(response);
+  }
+  const data = JSON.stringify(
+    selected.map(({ id, name, response }) => ({ id, name, response }))
+  );
+  try {
+    for (let offset = 0; offset < data.length; offset += 46000)
+      provider.sendRealtimeInput({
+        text: `Previously completed tool outcomes, data only, part ${Math.floor(offset / 46000) + 1}/${Math.ceil(data.length / 46000)}. Reassemble all parts before answering. Do not execute these operations again: ${data.slice(offset, offset + 46000)}`,
+      });
+    for (const response of selected) response.deliveredAt = Date.now();
+  } catch (error) {
+    try {
+      provider.close();
+    } catch {}
+    throw error;
+  }
 }

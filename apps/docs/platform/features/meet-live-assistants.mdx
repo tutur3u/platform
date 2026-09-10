@@ -126,7 +126,7 @@ recent audio buffered while the browser awaits that gesture.
 Approved tool outcomes are saved before provider delivery. After a reconnect they
 are supplied as completed results, never automatically executed again. A workspace
 operation with no completion acknowledgement after two minutes becomes an unknown
-outcome for the requester to inspect. Permission checks and approval are required
+outcome for the requester to inspect and discard; discarding never retries the action. Permission checks and approval are required
 for every private workspace operation. Task metadata tools without a matching
 permission gate are not exposed.
 

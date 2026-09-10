@@ -48,3 +48,21 @@ it('does not let a hung delivery block speech after interruption', async () => {
   await batcher.drain();
   expect(deliver).toHaveBeenCalledTimes(2);
 });
+
+it('cancels in-flight transport and returns a sequence fence before replacement speech', async () => {
+  let signal: AbortSignal | undefined;
+  const deliver = vi.fn(
+    async (_data, _sequence, _at, nextSignal: AbortSignal) => {
+      signal = nextSignal;
+    }
+  );
+  const batcher = new LiveAudioBatcher(deliver, vi.fn(), 0);
+  batcher.push(btoa('\0'.repeat(24000)));
+  await batcher.drain();
+  const fence = batcher.clear();
+  expect(signal?.aborted).toBe(true);
+  batcher.push(btoa('\0'.repeat(24000)));
+  await batcher.drain();
+  expect(deliver.mock.calls[0]?.[1]).toBeLessThan(fence);
+  expect(deliver.mock.calls[1]?.[1]).toBeGreaterThan(fence);
+});

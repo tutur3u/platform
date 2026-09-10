@@ -2,10 +2,12 @@
 export class LiveAudioPlayer {
   private context?: AudioContext;
   private nextTime = 0;
+  private closed = false;
   private sources = new Set<AudioBufferSourceNode>();
   private pending: Array<{ data: string; sampleRate: number; at: number }> = [];
   private pendingBytes = 0;
   async unlock(outputDeviceId?: string) {
+    this.closed = false;
     this.context ??= new AudioContext({ sampleRate: 24000 });
     if ('setSinkId' in this.context)
       await (
@@ -21,6 +23,7 @@ export class LiveAudioPlayer {
       if (Date.now() - item.at < 3000) this.play(item.data, item.sampleRate);
   }
   play(data: string, sampleRate = 24000) {
+    if (this.closed) return;
     const context = this.context;
     if (context?.state !== 'running') {
       if (data.length > 128000) return;
@@ -65,6 +68,7 @@ export class LiveAudioPlayer {
     this.nextTime = 0;
   }
   close() {
+    this.closed = true;
     this.interrupt();
     void this.context?.close();
     this.context = undefined;

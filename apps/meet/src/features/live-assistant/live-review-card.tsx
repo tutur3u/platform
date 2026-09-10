@@ -72,7 +72,19 @@ export function LiveReviewCard({
           </Button>
         </div>
       ) : (
-        <Badge variant="secondary">{t(review.status)}</Badge>
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="secondary">{t(review.status)}</Badge>
+          {review.status === 'failed' && (
+            <Button
+              variant="outline"
+              disabled={!ready}
+              onClick={() => void decide(review, false)}
+            >
+              <X className="size-4" />
+              {t('discard')}
+            </Button>
+          )}
+        </div>
       )}
     </section>
   );

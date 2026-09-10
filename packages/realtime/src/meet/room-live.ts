@@ -6,7 +6,11 @@ export const roomLiveCommand = z.discriminatedUnion('action', [
   z.object({ action: z.literal('live.reserve'), sessionId: z.uuid() }),
   z.object({ action: z.literal('live.stop'), sessionId: z.uuid() }),
   z.object({ action: z.literal('live.heartbeat'), sessionId: z.uuid() }),
-  z.object({ action: z.literal('live.interrupt'), sessionId: z.uuid() }),
+  z.object({
+    action: z.literal('live.interrupt'),
+    sessionId: z.uuid(),
+    sequence: z.number().int().nonnegative().optional(),
+  }),
   z.object({
     action: z.literal('live.audio'),
     sessionId: z.uuid(),
@@ -111,7 +115,16 @@ export function applyRoomLive(
     return fail('Forbidden');
   if (message.action === 'live.interrupt')
     return {
-      state: snapshot,
+      state: {
+        ...snapshot,
+        liveAssistant: {
+          ...current,
+          sequence: Math.max(
+            current.sequence,
+            message.sequence ?? current.sequence
+          ),
+        },
+      },
       body: { ok: true },
       messages: [
         {

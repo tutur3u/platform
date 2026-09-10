@@ -73,11 +73,11 @@ export async function readLiveMemory(
     return { enabled: false, memories: [] as LiveMemory[] };
   const memories = await liveDatabase<unknown[]>(
     env,
-    `meet_ai_memories?user_id=eq.${claims.ownerId}&select=id,content,category,created_at&limit=100`
+    `meet_ai_memories?user_id=eq.${claims.ownerId}&select=id,content,category,created_at&order=created_at.desc,id.desc&limit=100`
   );
   return {
     enabled: true,
-    memories: memories.map((item) => liveMemorySchema.parse(item)),
+    memories: memories.map((item) => liveMemorySchema.parse(item)).reverse(),
   };
 }
 

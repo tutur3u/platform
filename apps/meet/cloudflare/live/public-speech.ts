@@ -39,15 +39,21 @@ export async function speakApprovedText(
   let fail: (error: Error) => void = () => {};
   const abort = () => fail(new Error('public_speech_cancelled'));
   const batcher = new LiveAudioBatcher(
-    (data, sequence, at) => {
+    (data, sequence, at, signal) => {
       signal.throwIfAborted();
-      return liveRoomCommand(env, claims, identity, {
-        action: 'live.share.audio',
-        id,
-        sequence,
-        data,
-        at,
-      });
+      return liveRoomCommand(
+        env,
+        claims,
+        identity,
+        {
+          action: 'live.share.audio',
+          id,
+          sequence,
+          data,
+          at,
+        },
+        signal
+      );
     },
     () => fail(new Error('public_speech_transport_failed'))
   );

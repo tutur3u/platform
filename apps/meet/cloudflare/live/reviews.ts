@@ -55,3 +55,20 @@ export function liveReviewEvent(review: LiveProposal): LiveAssistantEvent {
     status: review.status,
   };
 }
+
+/** Discarding an uncertain review never makes its underlying action retryable. */
+export async function dismissFailedLiveReview(
+  saved: import('./session-state').SavedSession,
+  id: string,
+  persist: () => Promise<void>
+) {
+  if (
+    !saved.reviews.some(
+      (review) => review.id === id && review.status === 'failed'
+    )
+  )
+    return false;
+  saved.reviews = saved.reviews.filter((review) => review.id !== id);
+  await persist();
+  return true;
+}

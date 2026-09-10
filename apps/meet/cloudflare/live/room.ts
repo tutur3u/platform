@@ -12,7 +12,8 @@ export async function liveRoomCommand<T>(
   env: LiveEnvironment,
   claims: LiveSessionClaims,
   identity: LiveRoomIdentity,
-  command: unknown
+  command: unknown,
+  signal?: AbortSignal
 ): Promise<T> {
   const token = signMeetRealtimeToken(
     meetRealtimeTokenPayloadSchema.parse({
@@ -44,7 +45,9 @@ export async function liveRoomCommand<T>(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(command),
-    signal: AbortSignal.timeout(8000),
+    signal: signal
+      ? AbortSignal.any([signal, AbortSignal.timeout(8000)])
+      : AbortSignal.timeout(8000),
   });
   if (!response.ok) throw new Error(`live_room_${response.status}`);
   return (await response.json()) as T;

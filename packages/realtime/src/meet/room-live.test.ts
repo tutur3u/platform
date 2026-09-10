@@ -136,3 +136,34 @@ it('allows authenticated server interruptions but rejects browser impersonation'
     ).messages
   ).toEqual([{ type: 'assistant.interrupted', sessionId }]);
 });
+
+it('rejects a pre-interruption packet that arrives after the server sequence fence', () => {
+  const reserved = roomService(initial(), token, {
+    action: 'live.reserve',
+    sessionId,
+  });
+  const service = { ...token, scopes: ['meet:server', 'meet:live-server'] };
+  const interrupted = roomService(reserved.state, service, {
+    action: 'live.interrupt',
+    sessionId,
+    sequence: 10,
+  });
+  const stale = roomService(interrupted.state, service, {
+    action: 'live.audio',
+    sessionId,
+    sequence: 9,
+    at: Date.now(),
+    data: 'AAAA',
+  });
+  expect(
+    stale.messages?.some((message) => message.type === 'assistant.audio')
+  ).not.toBe(true);
+  const fresh = roomService(interrupted.state, service, {
+    action: 'live.audio',
+    sessionId,
+    sequence: 11,
+    at: Date.now(),
+    data: 'AAAA',
+  });
+  expect(fresh.messages?.[0]?.type).toBe('assistant.audio');
+});

@@ -1,6 +1,6 @@
 import type { Session } from '@google/genai/web';
 import type { LiveAssistantEvent } from '../../src/features/live-assistant/contracts';
-import { liveReviewEvent } from './reviews';
+import { dismissFailedLiveReview, liveReviewEvent } from './reviews';
 import type { SavedSession } from './session-state';
 import { queueLiveToolResponse } from './tool-responses';
 
@@ -32,6 +32,11 @@ export async function controlWorkspaceReview(
   );
   if (!review || !saved.workspace)
     return new Response('Review unavailable', { status: 404 });
+  if (
+    input.action === 'deny' &&
+    (await dismissFailedLiveReview(saved, input.reviewId, persist))
+  )
+    return Response.json({ ok: true });
   if (input.action === 'finish') {
     if (review.status !== 'processing')
       return new Response('Review already handled', { status: 409 });

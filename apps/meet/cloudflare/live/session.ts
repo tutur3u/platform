@@ -10,7 +10,7 @@ import {
 } from '../../src/features/live-assistant/contracts';
 import { verifyLiveSession } from '../../src/features/live-assistant/token';
 import { LiveActions } from './actions';
-import { LiveAudioBatcher } from './audio-batcher';
+import type { LiveAudioBatcher } from './audio-batcher';
 import { beginLiveBilling, settleLiveBilling } from './billing';
 import { executeLiveDecision } from './decision';
 import {
@@ -19,9 +19,15 @@ import {
 } from './finalize-billing';
 import { connectLiveProvider, drainLiveProvider } from './provider';
 import { LiveRegistryQueue } from './registry';
-import { maintainLiveRegistry } from './registry-heartbeat';
-import { type LiveProposal, liveReviewEvent, proposalSchema } from './reviews';
+import { maintainLiveRegistry, removeLiveRegistry } from './registry-heartbeat';
+import {
+  dismissFailedLiveReview,
+  type LiveProposal,
+  liveReviewEvent,
+  proposalSchema,
+} from './reviews';
 import { liveRoomCommand } from './room';
+import { createRoomLiveAudioBatcher } from './room-audio-batcher';
 import type { SavedSession } from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
@@ -297,8 +303,8 @@ export class MeetLiveDurableObject {
         provider.close();
         return;
       }
-      this.provider = provider;
       replayLiveToolResponses(saved, provider);
+      this.provider = provider;
       this.retry = 0;
       this.emit({ type: 'state', state: this.paused ? 'paused' : 'listening' });
       await this.state.storage.setAlarm(Date.now() + 20_000);
@@ -413,21 +419,10 @@ export class MeetLiveDurableObject {
             sampleRate: 24000,
           });
         else {
-          this.audioBatcher ??= new LiveAudioBatcher(
-            (data, sequence, at) =>
-              liveRoomCommand(this.env, saved.claims, saved.identity, {
-                action: 'live.audio',
-                sessionId: saved.claims.sessionId,
-                data,
-                sequence,
-                at,
-              }),
-            () =>
-              this.emit({
-                type: 'state',
-                state: 'recovering',
-                detail: 'audio_delivery_interrupted',
-              })
+          this.audioBatcher ??= createRoomLiveAudioBatcher(
+            this.env,
+            saved,
+            (event) => this.emit(event)
           );
           this.audioBatcher.push(part.inlineData.data);
         }
@@ -490,11 +485,12 @@ export class MeetLiveDurableObject {
     }
   }
   private async interruptAudio() {
-    this.audioBatcher?.clear();
+    const sequence = this.audioBatcher?.clear();
     this.emit({ type: 'interrupt' });
     if (this.saved?.claims.mode === 'room')
       await liveRoomCommand(this.env, this.saved.claims, this.saved.identity, {
         action: 'live.interrupt',
+        sequence,
         sessionId: this.saved.claims.sessionId,
       }).catch(() => undefined);
   }
@@ -503,6 +499,11 @@ export class MeetLiveDurableObject {
   }
   private async decide(id: string, approved: boolean, text?: string) {
     const saved = this.saved!;
+    if (
+      !approved &&
+      (await dismissFailedLiveReview(saved, id, () => this.persist()))
+    )
+      return;
     const review = saved.reviews.find((item) => item.id === id);
     if (review?.status !== 'pending' || review.name === 'workspace_tool')
       return;
@@ -668,14 +669,7 @@ export class MeetLiveDurableObject {
     this.saved.ended = true;
     await this.persist();
     this.state.waitUntil(
-      this.env.MEET_LIVE.get(
-        this.env.MEET_LIVE.idFromName(`owner:${this.saved.claims.ownerId}`)
-      )
-        .fetch('https://live.internal/registry/remove', {
-          method: 'POST',
-          body: JSON.stringify(this.saved.claims),
-        })
-        .catch(() => undefined)
+      removeLiveRegistry(this.env, this.saved.claims).catch(() => undefined)
     );
     if (this.saved.claims.mode === 'room')
       await liveRoomCommand(this.env, this.saved.claims, this.saved.identity, {

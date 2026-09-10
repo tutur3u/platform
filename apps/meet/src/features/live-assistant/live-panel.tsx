@@ -79,6 +79,7 @@ export function MeetLivePanel({
   currentRoom.current = room;
   const start = async (mode: 'personal' | 'room') => {
     const restoreMicrophone = mode === 'personal' && room.media.audioEnabled;
+    const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
     if (restoreMicrophone) await room.toggleMicrophone();
     const started = await live.start(
       mode,
@@ -90,7 +91,9 @@ export function MeetLivePanel({
     if (
       !started &&
       restoreMicrophone &&
-      !currentRoom.current.media.audioEnabled
+      !currentRoom.current.media.audioEnabled &&
+      currentRoom.current.getSelectedDevices().microphoneRevision ===
+        muteRevision
     )
       await currentRoom.current.toggleMicrophone();
   };

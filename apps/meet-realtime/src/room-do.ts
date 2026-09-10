@@ -124,7 +124,10 @@ export class MeetRoomDurableObject implements DurableObject {
   private sendTo(socket: WebSocket, message: MeetRealtimeServerMessage) {
     try {
       socket.send(JSON.stringify(message));
-      if (message.type === 'admission.approved')
+      if (
+        message.type === 'admission.approved' ||
+        (message.type === 'ready' && message.admission === 'admitted')
+      )
         for (const active of liveRoomAnnouncements(this.snapshot))
           socket.send(JSON.stringify(active));
     } catch {

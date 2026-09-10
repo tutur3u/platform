@@ -6,11 +6,13 @@ export class LiveAudioBatcher {
   private chain = Promise.resolve();
   private sequence = 0;
   private generation = 0;
+  private controller = new AbortController();
   constructor(
     private readonly deliver: (
       data: string,
       sequence: number,
-      at: number
+      at: number,
+      signal: AbortSignal
     ) => Promise<unknown>,
     private readonly failed: () => void,
     initialSequence = Date.now() * 1000
@@ -41,6 +43,7 @@ export class LiveAudioBatcher {
     this.bytes = 0;
     const at = Date.now();
     const generation = this.generation;
+    const signal = this.controller.signal;
     for (let start = 0; start < bytes.length; start += 24000) {
       let binary = '';
       for (const byte of bytes.subarray(start, start + 24000))
@@ -50,9 +53,11 @@ export class LiveAudioBatcher {
       this.chain = this.chain
         .then(async () => {
           if (generation === this.generation && Date.now() - at < 2000)
-            await this.deliver(data, sequence, at);
+            await this.deliver(data, sequence, at, signal);
         })
-        .catch(() => this.failed());
+        .catch(() => {
+          if (!signal.aborted) this.failed();
+        });
     }
   }
   async drain() {
@@ -61,10 +66,13 @@ export class LiveAudioBatcher {
   }
   clear() {
     this.generation++;
+    this.controller.abort();
+    this.controller = new AbortController();
     this.chain = Promise.resolve();
     clearTimeout(this.timer);
     this.timer = undefined;
     this.chunks = [];
     this.bytes = 0;
+    return this.sequence++;
   }
 }

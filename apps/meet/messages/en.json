@@ -4110,6 +4110,7 @@
       "delete_memory_confirm": "Delete this saved memory? This cannot be undone.",
       "denied": "Declined",
       "deny": "Decline",
+      "discard": "Discard",
       "edit_memory": "Edit memory",
       "everyone": "Everyone in the room",
       "failed": "Could not complete — nothing will be retried automatically",
