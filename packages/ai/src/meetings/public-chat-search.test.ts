@@ -9,6 +9,27 @@ vi.mock('ai', async (original) => ({
 import { measureMeetGeneration } from './chat-generation-usage';
 import { publicMeetSearch } from './public-chat-search';
 
+it('does not call the search provider when its quota reservation is denied', async () => {
+  generate.mockClear();
+  const reserve = vi.fn().mockRejectedValue(new Error('Quota exhausted'));
+  const search = publicMeetSearch(
+    'google/gemini-3.1-flash-lite',
+    256,
+    AbortSignal.timeout(1000),
+    'RMIT',
+    [],
+    reserve
+  );
+  await expect(
+    search.tool.execute!(
+      {},
+      { toolCallId: 'search', messages: [], context: {} }
+    )
+  ).rejects.toThrow('Quota exhausted');
+  expect(reserve).toHaveBeenCalledOnce();
+  expect(generate).not.toHaveBeenCalled();
+});
+
 it('isolates native search from room history and records nested usage without repeating requests', async () => {
   const steps = [
     {
@@ -186,5 +207,38 @@ it('retains unknown usage when a provider attempt fails and does not issue a dup
       { toolCallId: 'retry', messages: [], context: {} }
     )
   ).toHaveProperty('error');
+  expect(generate).toHaveBeenCalledOnce();
+});
+
+it('claims one search before an asynchronous reservation permits concurrent tool calls', async () => {
+  generate.mockClear();
+  generate.mockResolvedValue({ text: 'Result', sources: [], steps: [] });
+  let release!: () => void;
+  const reserve = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      })
+  );
+  const search = publicMeetSearch(
+    'google/gemini-3.1-flash-lite',
+    256,
+    AbortSignal.timeout(1000),
+    'RMIT',
+    [],
+    reserve
+  );
+  const first = search.tool.execute!(
+    {},
+    { toolCallId: 'first', messages: [], context: {} }
+  );
+  const second = await search.tool.execute!(
+    {},
+    { toolCallId: 'second', messages: [], context: {} }
+  );
+  expect(second).toHaveProperty('error');
+  expect(reserve).toHaveBeenCalledOnce();
+  release();
+  await first;
   expect(generate).toHaveBeenCalledOnce();
 });

@@ -153,3 +153,24 @@ it('does not publish an outer-model answer when its search returned no grounded 
   expect(answer.usage.available).toBe(true);
   expect(answer.usage.inputTokens).toBe(200);
 });
+
+it('keeps private audience rules explicit and permits searches containing synthetic title words', async () => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic');
+  mocks.generate.mockResolvedValue(result());
+  await answerMeetChat(
+    [],
+    900,
+    'what is a personal loan?',
+    model,
+    { ...context, title: 'Personal conversation' },
+    { audience: 'private' }
+  );
+  const input = mocks.generate.mock.calls[0]![0];
+  expect(input.system).toContain('Never publish to room chat');
+  expect(input.tools).not.toHaveProperty('get_meeting_context');
+  await input.tools.google_search.execute(
+    {},
+    { toolCallId: 'search', messages: [] }
+  );
+  expect(mocks.generate).toHaveBeenCalledTimes(2);
+});

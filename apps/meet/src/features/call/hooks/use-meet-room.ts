@@ -1,5 +1,4 @@
 'use client';
-
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 import type {
   CloudflareSfuTrack,
@@ -16,6 +15,7 @@ import {
 import { CameraEffects } from '../lib/camera-effects';
 import { createLocalMediaControls } from '../lib/local-media-controls';
 import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
+import { openPeerSession } from '../lib/open-peer-session';
 import { createRoomActions } from '../lib/room-actions';
 import type {
   MeetRoomController,
@@ -26,7 +26,9 @@ import {
   pruneObsoleteReceivers,
 } from '../lib/subscribe-response';
 import { useCameraControls } from './use-camera-controls';
+import { usePublishSession } from './use-publish-session';
 import { useSenderBandwidth } from './use-sender-bandwidth';
+import { useSoloTransport } from './use-solo-transport';
 
 export type {
   MeetRoomController,
@@ -42,7 +44,6 @@ import {
   planRemoteSubscriptions,
 } from '../lib/negotiation';
 import {
-  configurePeerIce,
   PEER_CONFIG,
   preparePeerSession,
   waitForPeerConnection,
@@ -64,10 +65,7 @@ import {
   createRemoteStreamCache,
   type RemoteMedia,
 } from '../lib/remote-streams';
-import type {
-  SfuSessionResponse,
-  SfuTracksResponse,
-} from '../lib/sfu-response';
+import type { SfuTracksResponse } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
 /** One signaling socket and separate publishing/subscribing SFU connections. */
 export function useMeetRoom({
@@ -79,9 +77,6 @@ export function useMeetRoom({
   const diagnostics = useMemo(() => createMediaDiagnosticsReader(), []);
   const effects = useMemo(() => new CameraEffects(), []);
   const activeRef = useRef(true);
-  const heartbeatRef = useRef<ReturnType<typeof setInterval> | undefined>(
-    undefined
-  );
   const [state, setState] = useState<CallState>(INITIAL_CALL_STATE);
   const [connectionStatus, setConnectionStatus] =
     useState<MeetSignalingStatus>('connecting');
@@ -113,7 +108,9 @@ export function useMeetRoom({
   const mediaRef = useRef(media);
   mediaRef.current = media;
   const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
+  const publishEpoch = useRef(0);
   const resetPublisher = useCallback((recover = false) => {
+    publishEpoch.current++;
     publishPcRef.current?.close();
     publishPcRef.current = null;
     publishSessionRef.current = null;
@@ -133,13 +130,11 @@ export function useMeetRoom({
   useEffect(() => {
     activeRef.current = true;
     let usedInitialToken = false;
-    // Reconnects fetch fresh tokens because calls can outlast token expiry.
     const resolveUrl = async () => {
       if (!usedInitialToken) {
         usedInitialToken = true;
         return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
       }
-      // Reauthorize invite access on Meet, including guests outside the workspace.
       const refreshed = await createMeetCallRealtimeToken(
         meetingId,
         undefined,
@@ -211,14 +206,9 @@ export function useMeetRoom({
     });
     signalingRef.current = signaling;
     signaling.connect();
-    const heartbeat = setInterval(() => {
-      signaling.send({ type: 'presence.update', media: mediaRef.current });
-    }, 10_000);
-    heartbeatRef.current = heartbeat;
     return () => {
       activeRef.current = false;
       effects.dispose();
-      clearInterval(heartbeat);
       signaling.close();
       for (const track of localStreamRef.current?.getTracks() ?? [])
         track.stop();
@@ -253,33 +243,12 @@ export function useMeetRoom({
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });
   }, []);
-
-  const ensurePublishSession = useCallback(async () => {
-    if (publishSessionRef.current && publishPcRef.current) {
-      return {
-        pc: publishPcRef.current,
-        sessionId: publishSessionRef.current,
-      };
-    }
-
-    const pc = new RTCPeerConnection(PEER_CONFIG);
-    publishPcRef.current = pc;
-    watchPeerRecovery(
-      pc,
-      () => publishPcRef.current === pc,
-      () => resetPublisher(true)
-    );
-    const result = await signalingRef.current?.request<SfuSessionResponse>({
-      type: 'sfu.session.create',
-    });
-    if (!result?.sessionId) throw new Error('sfu_session_failed');
-
-    if (publishPcRef.current !== pc) throw new Error('sfu_session_replaced');
-    configurePeerIce(pc, result.iceServers);
-    publishSessionRef.current = result.sessionId;
-    return { pc, sessionId: result.sessionId };
-  }, [resetPublisher]);
-
+  const ensurePublishSession = usePublishSession(
+    publishPcRef,
+    publishSessionRef,
+    signalingRef,
+    resetPublisher
+  );
   const ensureSubscribeSession = useCallback(async () => {
     if (subscribeSessionRef.current && subscribePcRef.current) {
       return {
@@ -287,7 +256,6 @@ export function useMeetRoom({
         sessionId: subscribeSessionRef.current,
       };
     }
-
     const pc = new RTCPeerConnection(PEER_CONFIG);
     subscribePcRef.current = pc;
     watchPeerRecovery(pc, () => subscribePcRef.current === pc, resetSubscriber);
@@ -304,7 +272,6 @@ export function useMeetRoom({
         resetSubscriber();
       }
     );
-
     listenRemotePlayback(
       pc,
       trackOwnersRef.current,
@@ -312,24 +279,24 @@ export function useMeetRoom({
       () => subscribePcRef.current === pc,
       setRemoteMedia
     );
-    const result = await signalingRef.current?.request<SfuSessionResponse>({
-      type: 'sfu.session.create',
-    });
-    if (!result?.sessionId) throw new Error('sfu_session_failed');
-
-    if (subscribePcRef.current !== pc) throw new Error('sfu_session_replaced');
-    configurePeerIce(pc, result.iceServers);
-    subscribeSessionRef.current = result.sessionId;
-    return { pc, sessionId: result.sessionId };
+    return openPeerSession(
+      pc,
+      subscribePcRef,
+      subscribeSessionRef,
+      signalingRef,
+      resetSubscriber
+    );
   }, [resetSubscriber]);
-
   /** Pushes newly enabled local tracks to the SFU. */
   const syncLocalTracks = useCallback(
     async (stream: MediaStream, next: MeetMediaState) => {
-      if (!activeRef.current) return;
+      if (
+        !activeRef.current ||
+        Object.keys(stateRef.current.participants).length < 2
+      )
+        return;
       const selfUserId = stateRef.current.selfUserId;
       if (!selfUserId) return;
-
       const desired = planLocalTracks(
         selfUserId,
         next,
@@ -337,7 +304,8 @@ export function useMeetRoom({
           ?.getAudioTracks()
           .some((track) => track.readyState === 'live')
       );
-      const previousPc = publishPcRef.current;
+      const previousPc = publishPcRef.current,
+        epoch = publishEpoch.current;
       const published = await syncPublishedSenders({
         published: publishedRef.current,
         desired,
@@ -351,10 +319,10 @@ export function useMeetRoom({
         closeTrack: (sessionId, track) =>
           closePublishedTrack(signalingRef.current, sessionId, track),
       });
-      if (publishPcRef.current !== previousPc) return;
+      if (publishPcRef.current !== previousPc || publishEpoch.current !== epoch)
+        return;
       publishedRef.current = published;
       const { publish } = diffLocalTracks(published, desired);
-
       if (publish.length) {
         const { pc, sessionId } = await ensurePublishSession();
         await preparePeerSession(
@@ -367,7 +335,6 @@ export function useMeetRoom({
           plan: LocalTrackPlan;
           transceiver: RTCRtpTransceiver;
         }> = [];
-
         for (const plan of publish) {
           const source = localTrackSource(
             plan.kind,
@@ -443,6 +410,25 @@ export function useMeetRoom({
     [syncLocalTracks]
   );
 
+  const resumeLocalMedia = useCallback(() => {
+    void queueLocalTracks(
+      localStreamRef.current ?? new MediaStream(),
+      mediaRef.current
+    ).catch(() => undefined);
+  }, [queueLocalTracks]);
+  useSoloTransport(
+    Math.max(0, Object.keys(state.participants).length - 1),
+    state.admission === 'admitted',
+    connectionStatus,
+    {
+      session: publishSessionRef,
+      signaling: signalingRef,
+    },
+    resetPublisher,
+    resetSubscriber,
+    resumeLocalMedia
+  );
+
   syncForcedMediaRef.current = (next) => {
     publishPresence(next);
     void queueLocalTracks(
@@ -463,7 +449,11 @@ export function useMeetRoom({
   useEffect(() => {
     if (state.admission !== 'admitted') return;
     const pull = async () => {
-      if (!activeRef.current) return;
+      if (
+        !activeRef.current ||
+        Object.keys(stateRef.current.participants).length < 2
+      )
+        return;
       pruneObsoleteReceivers(
         stateRef.current.remoteTracks,
         trackOwnersRef.current,
@@ -482,8 +472,10 @@ export function useMeetRoom({
             `${encodeURIComponent(track.sessionId ?? '')}:${encodeURIComponent(track.trackName ?? '')}`
         )
       );
+      let requestedPeer: RTCPeerConnection | null = null;
       try {
         const { pc, sessionId } = await ensureSubscribeSession();
+        requestedPeer = pc;
         await preparePeerSession(
           pc,
           () => subscribePcRef.current === pc,
@@ -525,20 +517,31 @@ export function useMeetRoom({
           () => subscribePcRef.current === pc,
           setRemoteMedia
         );
+      } catch (error) {
+        if (requestedPeer && subscribePcRef.current === requestedPeer)
+          resetSubscriber();
+        throw error;
       } finally {
         pendingSubscriptionsRef.current.clear();
       }
     };
     let active = true;
-    let scheduled = false;
+    let scheduled = false,
+      failures = 0,
+      retryAfter = 0;
     const schedule = () => {
-      if (scheduled) return;
+      if (scheduled || Date.now() < retryAfter) return;
       scheduled = true;
       subscribeQueue.current = subscribeQueue.current
         .then(async () => {
           if (active) await pull();
+          failures = 0;
         })
-        .catch((error) => console.warn('Meet track subscription failed', error))
+        .catch((error) => {
+          retryAfter =
+            Date.now() + Math.min(15000, 1500 * 2 ** Math.min(failures++, 4));
+          console.warn('Meet track subscription failed', error);
+        })
         .finally(() => {
           scheduled = false;
         });
@@ -639,7 +642,6 @@ export function useMeetRoom({
   const actions = useMemo(() => createRoomActions(signalingRef), []);
   const leave = useCallback(() => {
     activeRef.current = false;
-    clearInterval(heartbeatRef.current);
     signalingRef.current?.close();
     resetPublisher();
     resetSubscriber();

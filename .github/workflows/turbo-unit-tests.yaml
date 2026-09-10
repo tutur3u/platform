@@ -13,7 +13,7 @@ jobs:
     name: Unit Tests
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
       matrix:

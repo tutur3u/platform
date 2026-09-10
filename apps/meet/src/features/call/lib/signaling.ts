@@ -54,6 +54,8 @@ export class MeetSignaling {
   private attempt = 0;
   private hasConnected = false;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastPing = 0;
+  private pingPending = false;
   private socketWatch: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: MeetSignalingOptions) {
@@ -84,6 +86,8 @@ export class MeetSignaling {
         const reconnected = this.hasConnected;
         this.attempt = 0;
         this.hasConnected = true;
+        this.lastPing = Date.now();
+        this.pingPending = false;
         this.options.onStatusChange?.('open');
         if (reconnected) this.options.onReconnected?.();
         this.flushTitle();
@@ -122,6 +126,19 @@ export class MeetSignaling {
     let closingSince: number | null = null;
     this.socketWatch = setInterval(() => {
       if (this.closedByUs || this.socket !== socket) return;
+      if (
+        socket.readyState === WebSocket.OPEN &&
+        Date.now() - this.lastPing >= 60_000
+      ) {
+        if (this.pingPending) {
+          socket.close(4000, 'keepalive_timeout');
+          this.finishSocket(socket);
+          return;
+        }
+        this.pingPending = true;
+        this.lastPing = Date.now();
+        socket.send('meet:ping');
+      }
       // Chrome may remain CLOSING for a minute before delivering a close event.
       if (socket.readyState === 2) {
         closingSince ??= Date.now();
@@ -147,6 +164,10 @@ export class MeetSignaling {
   }
 
   private handleMessage(raw: string) {
+    if (raw === 'meet:pong') {
+      this.pingPending = false;
+      return;
+    }
     let message: MeetRealtimeServerMessage;
     try {
       message = JSON.parse(raw) as MeetRealtimeServerMessage;

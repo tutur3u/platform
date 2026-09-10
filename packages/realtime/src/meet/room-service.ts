@@ -12,6 +12,11 @@ import type {
   MeetRealtimeTokenPayload,
   MeetRoomSnapshot,
 } from './index';
+import {
+  type PersonalChatReceipts,
+  personalChatReceipt,
+  personalChatReceiptCommand,
+} from './personal-chat-receipts';
 import { retainRoomChat } from './room-chat';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
@@ -34,6 +39,7 @@ export type RoomChatMessage = Extract<
   { type: 'chat.message' }
 >;
 export type RoomServiceState = MeetRoomSnapshot & {
+  personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];
   attachments?: Record<string, RoomAttachment>;
   aiRequests?: Record<
@@ -49,6 +55,7 @@ export type RoomServiceState = MeetRoomSnapshot & {
 };
 const command = z.union([
   assistantReviewCommand,
+  personalChatReceiptCommand,
   z.discriminatedUnion('action', [
     z.object({ action: z.literal('read') }),
     z.object({ action: z.literal('ai.review.list') }),
@@ -106,6 +113,21 @@ export function roomService(
     token.scopes.includes('meet:workspace-member');
   const admin = token.role === 'host';
   const message = parsed.data;
+  if (
+    message.action === 'personal.begin' ||
+    message.action === 'personal.finish'
+  ) {
+    const result = personalChatReceipt(
+      snapshot.personalChatReceipts,
+      accountId,
+      message
+    );
+    return {
+      state: { ...snapshot, personalChatReceipts: result.receipts },
+      body: result.body,
+      status: result.status,
+    };
+  }
   if (message.action === 'ai.review.list')
     return {
       state: snapshot,
