@@ -218,12 +218,19 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(
       viewer.getByRole('button', { name: 'Run live test', exact: true })
     ).toHaveCount(0);
+    const beforeLiveTest = await (await request(path, owner)).json();
+    const beforeLiveRunCount = beforeLiveTest.teams.find(
+      (team) => team.id === 'team-2'
+    ).runs.length;
     await writer
       .getByRole('button', { name: 'Run live test', exact: true })
       .click();
     await expect
-      .poll(async () => (await (await request(path, owner)).json()).aiCalls)
-      .toBeGreaterThan(beforeCompile.aiCalls + 2);
+      .poll(async () => {
+        const room = await (await request(path, owner)).json();
+        return room.teams.find((team) => team.id === 'team-2').runs.length;
+      })
+      .toBeGreaterThan(beforeLiveRunCount);
     await host.getByRole('button', { name: 'Next team', exact: true }).click();
     await expect(
       viewer.getByRole('heading', { name: team1Name, exact: true })
