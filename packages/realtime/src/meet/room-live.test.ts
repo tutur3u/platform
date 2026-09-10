@@ -167,3 +167,30 @@ it('rejects a pre-interruption packet that arrives after the server sequence fen
   });
   expect(fresh.messages?.[0]?.type).toBe('assistant.audio');
 });
+
+it('acknowledges cleanup after expiry, departure, or room end without affecting a newer session', () => {
+  const reserved = roomService(initial(), token, {
+    action: 'live.reserve',
+    sessionId,
+  });
+  const ended = {
+    ...reserved.state,
+    ended: true,
+    presence: {},
+    liveAssistant: { ...reserved.state.liveAssistant!, expiresAt: 1 },
+  };
+  const stopped = roomService(ended, token, { action: 'live.stop', sessionId });
+  expect(stopped.status).toBeUndefined();
+  expect(stopped.state.liveAssistant).toBeUndefined();
+  expect(
+    roomService(stopped.state, token, { action: 'live.stop', sessionId }).status
+  ).toBeUndefined();
+  const newer = roomService(initial(), token, {
+    action: 'live.reserve',
+    sessionId: crypto.randomUUID(),
+  });
+  expect(
+    roomService(newer.state, token, { action: 'live.stop', sessionId }).state
+      .liveAssistant
+  ).toEqual(newer.state.liveAssistant);
+});

@@ -44,6 +44,25 @@ export function applyRoomLive(
     body: { error },
     status,
   });
+  if (message.action === 'live.stop') {
+    const current = snapshot.liveAssistant;
+    if (!current || current.sessionId !== message.sessionId)
+      return { state: snapshot, body: { ok: true } };
+    if (token.role !== 'host' && ownerId !== current.ownerId)
+      return fail('Forbidden');
+    return {
+      state: { ...snapshot, liveAssistant: undefined },
+      body: { ok: true },
+      messages: [
+        {
+          type: 'assistant.live' as const,
+          sessionId: message.sessionId,
+          ownerId: current.ownerId,
+          active: false,
+        },
+      ],
+    };
+  }
   if (!admitted || snapshot.ended) return fail('Join an active meeting first');
   if (message.action === 'live.context')
     return {
@@ -94,22 +113,6 @@ export function applyRoomLive(
     current.expiresAt <= now
   )
     return fail('Room assistant session expired', 409);
-  if (message.action === 'live.stop') {
-    if (token.role !== 'host' && ownerId !== current.ownerId)
-      return fail('Forbidden');
-    return {
-      state: { ...snapshot, liveAssistant: undefined },
-      body: { ok: true },
-      messages: [
-        {
-          type: 'assistant.live' as const,
-          sessionId: message.sessionId,
-          ownerId: current.ownerId,
-          active: false,
-        },
-      ],
-    };
-  }
   // A browser token, including a host token, never has this scope.
   if (!token.scopes.includes('meet:live-server') || ownerId !== current.ownerId)
     return fail('Forbidden');

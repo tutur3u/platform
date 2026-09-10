@@ -3,24 +3,38 @@ export class LiveAudioPlayer {
   private context?: AudioContext;
   private nextTime = 0;
   private closed = false;
+  private generation = 0;
+  private opening: Promise<void> = Promise.resolve();
   private sources = new Set<AudioBufferSourceNode>();
   private pending: Array<{ data: string; sampleRate: number; at: number }> = [];
   private pendingBytes = 0;
-  async unlock(outputDeviceId?: string) {
+  unlock(outputDeviceId?: string) {
+    const generation = ++this.generation;
     this.closed = false;
     this.context ??= new AudioContext({ sampleRate: 24000 });
-    if ('setSinkId' in this.context)
-      await (
-        this.context as AudioContext & {
-          setSinkId: (id: string) => Promise<void>;
-        }
-      ).setSinkId(outputDeviceId || '');
-    await this.context.resume();
-    const pending = this.pending;
-    this.pending = [];
-    this.pendingBytes = 0;
-    for (const item of pending)
-      if (Date.now() - item.at < 3000) this.play(item.data, item.sampleRate);
+    const context = this.context;
+    const opening = this.opening
+      .catch(() => {})
+      .then(async () => {
+        if (generation !== this.generation || this.closed) return;
+        if ('setSinkId' in context)
+          await (
+            context as AudioContext & {
+              setSinkId: (id: string) => Promise<void>;
+            }
+          ).setSinkId(outputDeviceId || '');
+        if (generation !== this.generation || this.closed) return;
+        await context.resume();
+        if (generation !== this.generation || this.closed) return;
+        const pending = this.pending;
+        this.pending = [];
+        this.pendingBytes = 0;
+        for (const item of pending)
+          if (Date.now() - item.at < 3000)
+            this.play(item.data, item.sampleRate);
+      });
+    this.opening = opening;
+    return opening;
   }
   play(data: string, sampleRate = 24000) {
     if (this.closed) return;
@@ -68,6 +82,7 @@ export class LiveAudioPlayer {
     this.nextTime = 0;
   }
   close() {
+    ++this.generation;
     this.closed = true;
     this.interrupt();
     void this.context?.close();

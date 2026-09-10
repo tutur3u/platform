@@ -6,6 +6,7 @@ export class RoomAudioPlayers {
   private enabled = false;
   private muted = false;
   private outputDeviceId = '';
+  private generation = 0;
   constructor(private onError: () => void) {}
   activate(id: string) {
     if (this.players.has(id)) return;
@@ -26,19 +27,31 @@ export class RoomAudioPlayers {
     this.players.get(id)?.interrupt();
   }
   async unlock(outputDeviceId: string) {
+    const generation = ++this.generation;
     this.outputDeviceId = outputDeviceId;
-    await Promise.all(
-      [...this.players.values()].map((player) => player.unlock(outputDeviceId))
-    );
     this.enabled = true;
     this.muted = false;
+    try {
+      await Promise.all(
+        [...this.players.values()].map((player) =>
+          player.unlock(outputDeviceId)
+        )
+      );
+      return generation === this.generation && this.enabled;
+    } catch (error) {
+      if (generation !== this.generation) return false;
+      this.mute();
+      throw error;
+    }
   }
   mute() {
+    ++this.generation;
     this.enabled = false;
     this.muted = true;
     for (const player of this.players.values()) player.close();
   }
   clear() {
+    this.mute();
     for (const player of this.players.values()) player.close();
     this.players.clear();
   }

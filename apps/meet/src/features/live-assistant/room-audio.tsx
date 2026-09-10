@@ -69,8 +69,13 @@ export function RoomAssistantAudio({
   const [stopping, setStopping] = useState(false);
   const player = useRef<RoomAudioPlayers | null>(null);
   useEffect(() => {
-    const audio = new RoomAudioPlayers(() => toast.error(t('session_error')));
+    const audio = new RoomAudioPlayers(() => {
+      audio.mute();
+      setEnabled(false);
+      toast.error(t('session_error'));
+    });
     player.current = audio;
+    setEnabled(false);
     const sequences = new Map<string, number>();
     const clockOffsets = new Map<string, number>();
     const initial = [...(announcements.get(meetingId)?.values() ?? [])];
@@ -107,6 +112,7 @@ export function RoomAssistantAudio({
       ) {
         liveSessions.clear();
         audio.clear();
+        setEnabled(false);
         setAvailable(false);
         setSessionId(undefined);
         return;
@@ -153,9 +159,10 @@ export function RoomAssistantAudio({
   }, [meetingId, t]);
   useEffect(() => {
     if (enabled)
-      void player.current
-        ?.unlock(outputDeviceId)
-        .catch(() => toast.error(t('session_error')));
+      void player.current?.unlock(outputDeviceId).catch(() => {
+        setEnabled(false);
+        toast.error(t('session_error'));
+      });
   }, [enabled, outputDeviceId, t]);
   if (!available) return null;
   return (
@@ -170,8 +177,8 @@ export function RoomAssistantAudio({
             setEnabled(false);
           } else {
             try {
-              await player.current?.unlock(outputDeviceId);
-              setEnabled(true);
+              if (await player.current?.unlock(outputDeviceId))
+                setEnabled(true);
             } catch {
               toast.error(t('session_error'));
             }

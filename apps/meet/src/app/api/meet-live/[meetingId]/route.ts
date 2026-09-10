@@ -191,6 +191,20 @@ export async function POST(
           }),
         })
         .catch(() => undefined);
+      await Promise.allSettled([
+        registry.fetch('https://live.internal/registry/remove', {
+          method: 'POST',
+          body: JSON.stringify(claims),
+        }),
+        ...(command.mode === 'room'
+          ? [
+              callRoomService(access, {
+                action: 'live.stop',
+                sessionId: claims.sessionId,
+              }),
+            ]
+          : []),
+      ]);
       // Initialization arms a durable alarm. If this immediate stop fails,
       // that alarm closes the unconnected session and retries both cleanups.
       throw error;

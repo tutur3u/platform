@@ -38,3 +38,22 @@ it('isolates speaker interruption and removal while keeping other playback activ
   room.activate('c');
   expect(mocks.players[2]!.close).toHaveBeenCalledOnce();
 });
+
+it('mute wins over a pending unlock and later sessions remain muted', async () => {
+  const room = new RoomAudioPlayers(vi.fn());
+  room.activate('delayed');
+  let finish!: () => void;
+  mocks.players.at(-1)!.unlock.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      })
+  );
+  const unlocking = room.unlock('speaker');
+  room.mute();
+  finish();
+  expect(await unlocking).toBe(false);
+  room.activate('next');
+  expect(mocks.players.at(-1)!.close).toHaveBeenCalledOnce();
+  expect(mocks.players.at(-1)!.unlock).not.toHaveBeenCalled();
+});
