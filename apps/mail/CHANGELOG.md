@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.21.1](https://github.com/tutur3u/platform/compare/mail-v0.21.0...mail-v0.21.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **mail:** limit address recovery to visible participants ([5d5c351](https://github.com/tutur3u/platform/commit/5d5c351cfda366f1b1572b5d09e44c7be0723879))
+* **mail:** recover accented names and group similar deliveries ([#5291](https://github.com/tutur3u/platform/issues/5291)) ([23375e0](https://github.com/tutur3u/platform/commit/23375e05450ff5aa971be0de907433e30818866c))
+* **mail:** recover address names and group similar deliveries ([bbe9e37](https://github.com/tutur3u/platform/commit/bbe9e37ae9c4c6c956528fcffadf66bbd2f4999c))
+* **mail:** recover existing participant names in lists ([9b2c1f9](https://github.com/tutur3u/platform/commit/9b2c1f994f37e5ce46261a951634c89b31749b74))
+* **mail:** retain delivery expansion and recover missing names ([8e9a724](https://github.com/tutur3u/platform/commit/8e9a724c9783c4e18ac82d276443746b53311dc8))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/mail-v0.20.2...mail-v0.21.0) (2026-09-09)
 
 

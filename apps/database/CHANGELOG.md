@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.32.0](https://github.com/tutur3u/platform/compare/database-v1.31.1...database-v1.32.0) (2026-09-10)
+
+
+### Features
+
+* **meet:** add private and room-wide Gemini Live voice ([#5293](https://github.com/tutur3u/platform/issues/5293)) ([f39119a](https://github.com/tutur3u/platform/commit/f39119aab3fc76946955a6e1de8e8165336a1ab6))
+
+
+### Bug Fixes
+
+* **meet:** harden live voice recovery and private approvals ([a2c5950](https://github.com/tutur3u/platform/commit/a2c595016b67c904cb7147b1cf4c4898499d4a4a))
+
 ## [1.31.1](https://github.com/tutur3u/platform/compare/database-v1.31.0...database-v1.31.1) (2026-09-09)
 
 

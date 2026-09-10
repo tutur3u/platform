@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.50.0](https://github.com/tutur3u/platform/compare/platform-v0.49.0...platform-v0.50.0) (2026-09-10)
+
+
+### Features
+
+* **colab:** add team showcase and resilient skills ([2f8e02b](https://github.com/tutur3u/platform/commit/2f8e02bfc5772adf82b7c075dcd4cddc5cdc2c92))
+* **colab:** add team showcase and resilient skills ([#5287](https://github.com/tutur3u/platform/issues/5287)) ([f554628](https://github.com/tutur3u/platform/commit/f55462851daf92a3d97383e9a8944ef3509fc3fe))
+* **colab:** improve agent run observability ([c60d411](https://github.com/tutur3u/platform/commit/c60d4119a07bbb780dacd3d4cdce3d1fb13dc5f0))
+* **colab:** improve agent run observability ([#5292](https://github.com/tutur3u/platform/issues/5292)) ([12d2978](https://github.com/tutur3u/platform/commit/12d297860e3416f13c86badf7e395c4552421cd1))
+* **meet:** add private and room-wide Gemini Live voice ([#5293](https://github.com/tutur3u/platform/issues/5293)) ([f39119a](https://github.com/tutur3u/platform/commit/f39119aab3fc76946955a6e1de8e8165336a1ab6))
+* **meet:** add private solo mode and reliable media recovery ([8aec940](https://github.com/tutur3u/platform/commit/8aec940c63185e815ce6253d9483f1251a7ab052))
+* **meet:** complete Gemini Live voice and private tool controls ([6e327c7](https://github.com/tutur3u/platform/commit/6e327c711ddfb66b18d289d6c6d9251296055e6f))
+* **meet:** private solo mode and reliable reconnect recovery ([#5286](https://github.com/tutur3u/platform/issues/5286)) ([e3c6b03](https://github.com/tutur3u/platform/commit/e3c6b03b0e319ea7b9a528e285b801a11ca62459))
+
+
+### Bug Fixes
+
+* **colab:** address observability review ([ad42ffb](https://github.com/tutur3u/platform/commit/ad42ffb1941b8388fe130dc84dbbd292c6dcfe23))
+* **colab:** address showcase review feedback ([9b1de73](https://github.com/tutur3u/platform/commit/9b1de738992fa19f862a0fc19420f55b0a1b3761))
+* **colab:** address showcase review feedback ([e7a1398](https://github.com/tutur3u/platform/commit/e7a1398cacc38705cfac636e57f66e1b59d7869c))
+* **colab:** clarify effective run activity ([b4273dd](https://github.com/tutur3u/platform/commit/b4273dd659cf2524a757b04f811745538ada5ee7))
+* **colab:** make showcase and skills reliable ([88fd279](https://github.com/tutur3u/platform/commit/88fd27956cf9403ce70c8eb1051e842040db0122))
+* **colab:** make showcase and skills reliable ([#5289](https://github.com/tutur3u/platform/issues/5289)) ([4f428e8](https://github.com/tutur3u/platform/commit/4f428e875f747649c9f2d041809dafca54bf4fe5))
+* **colab:** sanitize persisted limits ([0ca45d3](https://github.com/tutur3u/platform/commit/0ca45d3e3f67c8b485ad6761ac1241fd51e40f09))
+* **mail:** limit address recovery to visible participants ([5d5c351](https://github.com/tutur3u/platform/commit/5d5c351cfda366f1b1572b5d09e44c7be0723879))
+* **mail:** recover accented names and group similar deliveries ([#5291](https://github.com/tutur3u/platform/issues/5291)) ([23375e0](https://github.com/tutur3u/platform/commit/23375e05450ff5aa971be0de907433e30818866c))
+* **mail:** recover address names and group similar deliveries ([bbe9e37](https://github.com/tutur3u/platform/commit/bbe9e37ae9c4c6c956528fcffadf66bbd2f4999c))
+* **mail:** recover existing participant names in lists ([9b2c1f9](https://github.com/tutur3u/platform/commit/9b2c1f994f37e5ce46261a951634c89b31749b74))
+* **mail:** retain delivery expansion and recover missing names ([8e9a724](https://github.com/tutur3u/platform/commit/8e9a724c9783c4e18ac82d276443746b53311dc8))
+* **meet:** clarify private conversation copy ([9132765](https://github.com/tutur3u/platform/commit/9132765968b319826b7ba1380d8870b6210c5d7b))
+* **meet:** close expired private sessions and recover audio timing ([9bc0b3b](https://github.com/tutur3u/platform/commit/9bc0b3b9895ac94d2635e2bb64da0a3bb567f2dc))
+* **meet:** confirm live audio forwarding before reporting recovery ([a0f5baa](https://github.com/tutur3u/platform/commit/a0f5baaf2f3b175a0b6ed961772884f33e2b678c))
+* **meet:** handle multilingual private chats and quota cleanup ([afc025a](https://github.com/tutur3u/platform/commit/afc025ad8e119d557d31beb880f6b1c4e15fe360))
+* **meet:** harden live audio cancellation and tool replay ([613def7](https://github.com/tutur3u/platform/commit/613def78b74c42d86915306a28a90a2522288f2d))
+* **meet:** harden live voice recovery and private approvals ([a2c5950](https://github.com/tutur3u/platform/commit/a2c595016b67c904cb7147b1cf4c4898499d4a4a))
+* **meet:** harden solo quota and reconnect races ([57639df](https://github.com/tutur3u/platform/commit/57639df94b8bde21237c2933caf3237a32d68608))
+* **meet:** isolate removed speaker and audio setup failures ([2d0a89a](https://github.com/tutur3u/platform/commit/2d0a89a062c299b2bbc919f281c42167d1a9d879))
+* **meet:** keep mute authoritative and release ended room sessions ([3f11a2a](https://github.com/tutur3u/platform/commit/3f11a2a2c4f724d13fa4b6e13240f5a1df439bda))
+* **meet:** pause private Live playback with the room microphone ([a9febef](https://github.com/tutur3u/platform/commit/a9febef5fdf76aa019db6497c47cb32b42ad1b63))
+* **meet:** preserve live accounting and reconnect state ([d59fd76](https://github.com/tutur3u/platform/commit/d59fd7668adaddd777af320109b8c6687f7bfab5))
+* **meet:** preserve private receipts and cancel stale media work ([e5b33bc](https://github.com/tutur3u/platform/commit/e5b33bc3ff3f07c30271727daa5232089eb1899d))
+* **meet:** probe idle room delivery in production checks ([9f9652f](https://github.com/tutur3u/platform/commit/9f9652fd5812fa6cf28090044aa82bfe4bddf35d))
+* **meet:** recover live leases and replay complete tool outcomes ([0fe4f3e](https://github.com/tutur3u/platform/commit/0fe4f3ec50826f8a445219d639274d4bada53409))
+* **meet:** recover personal replies and publisher startup ([6c4352d](https://github.com/tutur3u/platform/commit/6c4352d27d1c672ff7122da64de8bf88394d3b91))
+* **meet:** require fresh idle presence evidence ([4b9d7cf](https://github.com/tutur3u/platform/commit/4b9d7cf067b61d9b3be5b1b32c8f9eb186a638a5))
+* **meet:** restore Live transcripts after reconnects ([7b56f0e](https://github.com/tutur3u/platform/commit/7b56f0e92709e797c47f92facc760e372743256e))
+* **meet:** retire stale media sessions across reconnects ([0d3f582](https://github.com/tutur3u/platform/commit/0d3f582cf617cafc0659504677d2d68c88b17a25))
+* **meet:** retry live cleanup and isolate assistant playback ([e188f79](https://github.com/tutur3u/platform/commit/e188f79005cdcb7bea1637cdbf194ec9b38d41d2))
+* **meet:** retry private answer receipt persistence ([74cf08f](https://github.com/tutur3u/platform/commit/74cf08f3f6cd9273458bfbadd884944434f0211b))
+* **meet:** serialize Live transcript recovery ([e2fb22d](https://github.com/tutur3u/platform/commit/e2fb22d93a1df0b5dad8cbffda626f00e84d33fe))
+* **meet:** verify idle delivery without periodic presence broadcasts ([#5290](https://github.com/tutur3u/platform/issues/5290)) ([d2ecf0e](https://github.com/tutur3u/platform/commit/d2ecf0e08b49b0dce70ffc54a61f47ab3373a288))
+
+
+### Performance Improvements
+
+* **meet:** isolate private retry storage from room snapshots ([5a8a914](https://github.com/tutur3u/platform/commit/5a8a91470adde2d11a24b944fdc8765ce0a195be))
+
 ## [0.49.0](https://github.com/tutur3u/platform/compare/platform-v0.48.0...platform-v0.49.0) (2026-09-09)
 
 

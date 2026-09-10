@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/internal-api-v0.37.0...internal-api-v0.38.0) (2026-09-10)
+
+
+### Features
+
+* **meet:** add private and room-wide Gemini Live voice ([#5293](https://github.com/tutur3u/platform/issues/5293)) ([f39119a](https://github.com/tutur3u/platform/commit/f39119aab3fc76946955a6e1de8e8165336a1ab6))
+* **meet:** add private solo mode and reliable media recovery ([8aec940](https://github.com/tutur3u/platform/commit/8aec940c63185e815ce6253d9483f1251a7ab052))
+* **meet:** complete Gemini Live voice and private tool controls ([6e327c7](https://github.com/tutur3u/platform/commit/6e327c711ddfb66b18d289d6c6d9251296055e6f))
+* **meet:** private solo mode and reliable reconnect recovery ([#5286](https://github.com/tutur3u/platform/issues/5286)) ([e3c6b03](https://github.com/tutur3u/platform/commit/e3c6b03b0e319ea7b9a528e285b801a11ca62459))
+
+
+### Bug Fixes
+
+* **mail:** recover accented names and group similar deliveries ([#5291](https://github.com/tutur3u/platform/issues/5291)) ([23375e0](https://github.com/tutur3u/platform/commit/23375e05450ff5aa971be0de907433e30818866c))
+* **mail:** recover address names and group similar deliveries ([bbe9e37](https://github.com/tutur3u/platform/commit/bbe9e37ae9c4c6c956528fcffadf66bbd2f4999c))
+* **meet:** harden live voice recovery and private approvals ([a2c5950](https://github.com/tutur3u/platform/commit/a2c595016b67c904cb7147b1cf4c4898499d4a4a))
+* **meet:** preserve private receipts and cancel stale media work ([e5b33bc](https://github.com/tutur3u/platform/commit/e5b33bc3ff3f07c30271727daa5232089eb1899d))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/internal-api-v0.36.0...internal-api-v0.37.0) (2026-09-09)
 
 
