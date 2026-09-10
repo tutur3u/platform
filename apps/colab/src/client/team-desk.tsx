@@ -24,7 +24,7 @@ export function TeamDesk({
   action,
   active = true,
   section = 'team-prompt',
-  roomAiAvailable = true,
+  roomAiRemaining = Number.POSITIVE_INFINITY,
 }: {
   team: Team;
   writable: boolean;
@@ -32,7 +32,7 @@ export function TeamDesk({
   action: (body: Record<string, unknown>, route?: string) => Promise<void>;
   active?: boolean;
   section?: string;
-  roomAiAvailable?: boolean;
+  roomAiRemaining?: number;
 }) {
   const c = useCopy();
   const [drafts, setDrafts] = useState<
@@ -188,7 +188,7 @@ export function TeamDesk({
                 busy ||
                 changed ||
                 team.prompt.length < 10 ||
-                !roomAiAvailable ||
+                roomAiRemaining <= 0 ||
                 team.aiCalls >= team.limits.aiCallLimit
               }
               onClick={() => invoke({ action: 'compile', multiple }, 'ai')}
@@ -252,8 +252,18 @@ export function TeamDesk({
           </div>
           {writable && (
             <div className="run-action">
-              <span>
-                {team.aiCalls}/{team.limits.aiCallLimit} {c.aiOperationsShort}
+              <span className="run-capacity">
+                <strong>
+                  {Math.min(
+                    Math.max(team.limits.aiCallLimit - team.aiCalls, 0),
+                    roomAiRemaining
+                  )}{' '}
+                  {c.remaining}
+                </strong>
+                <small className="capacity-detail">
+                  {team.limits.agentTurnLimit} {c.turnsShort} ·{' '}
+                  {team.limits.toolCallLimit} {c.appActionsShort} {c.perRun}
+                </small>
               </span>
               <Button
                 type="button"
@@ -262,7 +272,7 @@ export function TeamDesk({
                   busy ||
                   changed ||
                   !team.skills.length ||
-                  !roomAiAvailable ||
+                  roomAiRemaining <= 0 ||
                   team.aiCalls >= team.limits.aiCallLimit
                 }
                 onClick={() => invoke({ action: 'run' }, 'ai')}

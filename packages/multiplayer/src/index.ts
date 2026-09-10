@@ -1,7 +1,25 @@
+import {
+  defaultTeamLimits,
+  defaultWorkshopLimits,
+  maximumWorkshopLimits,
+  normalizeStoredLimits,
+  type TeamLimits,
+  type WorkshopLimits,
+  type WorkshopScheduleError,
+} from './limits';
 import { type MockRecord, seedRecords } from './mock-catalog';
+import type { Run } from './run';
 
+export * from './limits';
 export type { MockApp, MockAppKind, MockRecord } from './mock-catalog';
 export { mockAppCatalog, mockApps, seedRecords } from './mock-catalog';
+export type {
+  Run,
+  RunStopReason,
+  RunUsage,
+  Trace,
+  TraceStatus,
+} from './run';
 
 export type RoomMode = 'open' | 'readonly' | 'private';
 export type Identity = {
@@ -22,29 +40,6 @@ export type Member = {
   guestVersion?: number;
 };
 export type Skill = { name: string; description: string; markdown: string };
-export type Trace = { tool: string; input: string; output: string };
-export type RunUsage = {
-  turns: number;
-  toolCalls: number;
-  turnLimit: number;
-  toolCallLimit: number;
-};
-export type Run = {
-  id: string;
-  at: number;
-  prompt: string;
-  scenario: string;
-  answer: string;
-  trace: Trace[];
-  feedback: string;
-  usage?: RunUsage;
-};
-export type TeamLimits = {
-  aiCallLimit: number;
-  agentTurnLimit: number;
-  toolCallLimit: number;
-};
-export type WorkshopLimits = TeamLimits;
 export type Team = {
   id: string;
   name: string;
@@ -99,24 +94,6 @@ export type Room = {
   revision: number;
 };
 
-export const defaultWorkshopLimits: WorkshopLimits = {
-  aiCallLimit: 200,
-  agentTurnLimit: 8,
-  toolCallLimit: 6,
-};
-export const defaultTeamLimits: TeamLimits = {
-  aiCallLimit: 50,
-  agentTurnLimit: 6,
-  toolCallLimit: 5,
-};
-
-export type WorkshopScheduleError =
-  | 'invalid'
-  | 'start_too_old'
-  | 'start_too_far'
-  | 'end_too_soon'
-  | 'end_too_late';
-
 export function workshopScheduleError(
   startsAt: number | null,
   endsAt: number | null,
@@ -144,7 +121,7 @@ export function workshopScheduleError(
 
 export function normalizeRoom(room: Room): Room {
   room.aiCalls ??= 0;
-  room.limits = { ...defaultWorkshopLimits, ...room.limits };
+  room.limits = normalizeStoredLimits(room.limits, defaultWorkshopLimits);
   room.directoryMemberIds ??= room.members
     .filter((member) => member.email)
     .map((member) => member.id);
@@ -197,6 +174,11 @@ export function normalizeRoom(room: Room): Room {
   const catalog = seedRecords();
   room.teams = room.teams.map((team) => {
     const present = new Set(team.records.map((record) => record.id));
+    const limits = normalizeStoredLimits(
+      team.limits,
+      defaultTeamLimits,
+      room.limits
+    );
     return {
       ...team,
       records: [
@@ -206,7 +188,7 @@ export function normalizeRoom(room: Room): Room {
           .map((record) => ({ ...record })),
       ],
       aiCalls: team.aiCalls ?? 0,
-      limits: { ...defaultTeamLimits, ...team.limits },
+      limits,
     };
   });
   return room;
@@ -654,11 +636,23 @@ export function mutateRoom(
     const scope = body.scope;
     requireRule(scope === 'room' || scope === 'team', 'invalid_input');
     const limits = {
-      aiCallLimit: number(body.aiCallLimit, 1, 2000),
-      agentTurnLimit: number(body.agentTurnLimit, 1, 20),
-      toolCallLimit: number(body.toolCallLimit, 0, 20),
+      aiCallLimit: number(
+        body.aiCallLimit,
+        1,
+        maximumWorkshopLimits.aiCallLimit
+      ),
+      agentTurnLimit: number(
+        body.agentTurnLimit,
+        2,
+        maximumWorkshopLimits.agentTurnLimit
+      ),
+      toolCallLimit: number(
+        body.toolCallLimit,
+        0,
+        maximumWorkshopLimits.toolCallLimit
+      ),
     };
-    requireRule(limits.toolCallLimit <= limits.agentTurnLimit, 'invalid_input');
+    requireRule(limits.toolCallLimit < limits.agentTurnLimit, 'invalid_input');
     if (scope === 'room') {
       room.limits = limits;
       for (const team of room.teams) {

@@ -40,7 +40,12 @@ stay mounted between pages.
    prompt-based working guide so a learner is never blocked by model formatting.
 5. Test the generated skills against the room scenario. The journal records the
    prompt snapshot, scenario, actual sandbox tool inputs/results, final answer
-   and AI coaching. Coaching is advisory, not proof of agent correctness.
+   and AI coaching. Each run starts with a plain-language health summary: its
+   completion reason, evidence actions, successful practice-data changes, action
+   failures, and apps used. The timeline makes failed actions visually distinct
+   and offers a recovery hint; raw JSON and prompt diagnostics stay collapsed
+   for facilitators who need them. Coaching is advisory, not proof of agent
+   correctness.
 6. New rooms share team work live by default. The dedicated Live showcase tab
    follows the team on stage and presents its challenge, system prompt, reusable
    skills, and latest test result in one audience-facing view. Authorized team
@@ -67,8 +72,13 @@ records. Admins can reset those records to the same seeded Project Lotus dataset
 
 Workers AI generates skills, scenarios, agent decisions and feedback using
 `@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Agent execution uses a bounded JSON tool
-protocol with an allowlist and runtime validation. Each run allows six decisions
-and a coaching call. A room allows 200 AI operations and one concurrent AI job.
+protocol with an allowlist and runtime validation. New workshops allow 500 AI
+operations, 16 turns, and 12 app actions per run; new teams begin with 150 AI
+operations, 12 turns, and 10 app actions. Hosts can use Guided, Extended, or Deep
+dive presets or set exact room and team limits, up to 5,000 AI operations, 40
+turns, and 30 app actions. An app-action limit must stay below the turn limit so
+the agent retains a final answer turn. Existing rooms are normalized to the new
+defaults only when a value was never stored. A room allows one concurrent AI job.
 If room state changes while inference is running, the stale result is discarded.
 The system prompt, scenario, mock records and traces are sent to Workers AI;
 participants should use workshop examples rather than confidential real data.

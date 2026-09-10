@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   createRoom,
+  defaultTeamLimits,
+  defaultWorkshopLimits,
   editable,
   type Identity,
   joinRoom,
@@ -154,7 +156,7 @@ describe('server-authoritative room policy', () => {
       ];
     }
     normalizeRoom(legacy);
-    expect(legacy.limits.aiCallLimit).toBe(200);
+    expect(legacy.limits.aiCallLimit).toBe(500);
     expect(legacy.showcaseTeamId).toBe('team-1');
     expect(legacy.members[0]?.teamIds).toEqual(['team-1']);
     expect(legacy.scenarios.length).toBeGreaterThan(1);
@@ -164,7 +166,7 @@ describe('server-authoritative room policy', () => {
         (scenario) => scenario.title === legacy.scenario.title
       )
     ).toHaveLength(1);
-    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
+    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(10);
     expect(legacy.teams[0]?.records).toHaveLength(192);
     expect(legacy.teams[0]?.records[0]?.title).toBe('Team-edited launch brief');
     mutateRoom(
@@ -244,6 +246,89 @@ describe('server-authoritative room policy', () => {
         now
       )
     ).toThrow('invalid_input');
+    mutateRoom(
+      legacy,
+      owner,
+      {
+        action: 'limits',
+        scope: 'room',
+        aiCallLimit: 5000,
+        agentTurnLimit: 40,
+        toolCallLimit: 30,
+      },
+      now
+    );
+    expect(legacy.limits).toEqual({
+      aiCallLimit: 5000,
+      agentTurnLimit: 40,
+      toolCallLimit: 30,
+    });
+    mutateRoom(
+      legacy,
+      owner,
+      {
+        action: 'limits',
+        scope: 'room',
+        aiCallLimit: 500,
+        agentTurnLimit: 12,
+        toolCallLimit: 10,
+      },
+      now
+    );
+    expect(legacy.limits).toEqual({
+      aiCallLimit: 500,
+      agentTurnLimit: 12,
+      toolCallLimit: 10,
+    });
+    expect(() =>
+      mutateRoom(
+        legacy,
+        owner,
+        {
+          action: 'limits',
+          scope: 'room',
+          aiCallLimit: 500,
+          agentTurnLimit: 12,
+          toolCallLimit: 12,
+        },
+        now
+      )
+    ).toThrow('invalid_input');
+  });
+  it('reserves a final-answer turn when normalizing legacy equal limits', () => {
+    const legacy = room();
+    legacy.limits = {
+      aiCallLimit: 200,
+      agentTurnLimit: 8,
+      toolCallLimit: 8,
+    };
+    legacy.teams[0]!.limits = {
+      aiCallLimit: 50,
+      agentTurnLimit: 6,
+      toolCallLimit: 6,
+    };
+    normalizeRoom(legacy);
+    expect(legacy.limits.toolCallLimit).toBe(7);
+    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(5);
+  });
+  it('repairs malformed persisted limits with safe defaults', () => {
+    const legacy = room();
+    Object.assign(legacy.limits as unknown as Record<string, unknown>, {
+      aiCallLimit: null,
+      agentTurnLimit: 3.5,
+      toolCallLimit: -1,
+    });
+    Object.assign(
+      legacy.teams[0]!.limits as unknown as Record<string, unknown>,
+      {
+        aiCallLimit: -20,
+        agentTurnLimit: null,
+        toolCallLimit: 2.5,
+      }
+    );
+    normalizeRoom(legacy);
+    expect(legacy.limits).toEqual(defaultWorkshopLimits);
+    expect(legacy.teams[0]?.limits).toEqual(defaultTeamLimits);
   });
   it('requires invitations, preserves capacity, and allows idempotent rejoin', () => {
     const r = room();

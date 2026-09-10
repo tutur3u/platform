@@ -215,7 +215,10 @@ describe('AI output boundaries', () => {
         toolCallLimit: 5,
       },
     };
-    const result = await runAgent(env, team, starterScenarios()[0]!);
+    const result = await runAgent(env, team, starterScenarios()[0]!, {
+      agentTurnLimit: team.limits.agentTurnLimit,
+      toolCallLimit: team.limits.toolCallLimit,
+    });
     expect(run).toHaveBeenCalledTimes(4);
     expect(result.run.trace.map((t) => t.tool)).toEqual([
       'drive.read',
@@ -230,6 +233,54 @@ describe('AI output boundaries', () => {
       toolCalls: 2,
       turnLimit: 6,
       toolCallLimit: 5,
+      successfulToolCalls: 2,
+      failedToolCalls: 0,
+      writeToolCalls: 1,
+      stopReason: 'answered',
+    });
+  });
+  it('records recoverable action errors separately from successful changes', async () => {
+    const { env } = model(
+      { tool: 'notion', app: 'drive', id: 'missing' },
+      { tool: 'search', app: 'drive', query: 'RISE' },
+      { answer: 'I recovered by searching the available practice data.' },
+      { feedback: 'Good recovery. Use only the supported action names.' }
+    );
+    const team: Team = {
+      id: 'team-1',
+      name: 'Marketing & Growth',
+      prompt: 'Use evidence before drafting.',
+      revision: 0,
+      skills: [
+        {
+          name: 'evidence-first',
+          description: 'Use evidence first',
+          markdown: 'Search before making a claim.',
+        },
+      ],
+      records: seedRecords(),
+      runs: [],
+      aiCalls: 0,
+      limits: {
+        aiCallLimit: 150,
+        agentTurnLimit: 12,
+        toolCallLimit: 10,
+      },
+    };
+    const result = await runAgent(env, team, starterScenarios()[0]!);
+    expect(result.run.trace[0]).toMatchObject({
+      tool: 'drive.notion',
+      status: 'error',
+    });
+    expect(JSON.parse(result.run.trace[0]!.output)).toEqual({
+      error: 'unknown_tool',
+      hint: 'Use search, read, create, or update in the tool field.',
+    });
+    expect(result.run.usage).toMatchObject({
+      successfulToolCalls: 1,
+      failedToolCalls: 1,
+      writeToolCalls: 0,
+      stopReason: 'answered',
     });
   });
 });
