@@ -82,3 +82,14 @@ it('expires an abandoned claim without making the mutation retryable', async () 
   expect(f.saved.reviews).toHaveLength(0);
   expect((await f.command('claim')).status).not.toBe(200);
 });
+
+it('allows only failed-review dismissal after the session ends', async () => {
+  const f = fixture();
+  f.saved.ended = true;
+  f.saved.reviews[0]!.status = 'failed';
+  expect((await f.command('claim')).status).toBe(403);
+  expect((await f.command('deny', 'guest')).status).toBe(403);
+  expect((await f.command('deny')).ok).toBe(true);
+  expect(f.saved.reviews).toHaveLength(0);
+  expect(f.respond).not.toHaveBeenCalled();
+});

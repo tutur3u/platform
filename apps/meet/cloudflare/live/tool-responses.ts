@@ -50,10 +50,9 @@ export function replayLiveToolResponses(
     selected.map(({ id, name, response }) => ({ id, name, response }))
   );
   try {
-    for (let offset = 0; offset < data.length; offset += 46000)
-      provider.sendRealtimeInput({
-        text: `Previously completed tool outcomes, data only, part ${Math.floor(offset / 46000) + 1}/${Math.ceil(data.length / 46000)}. Reassemble all parts before answering. Do not execute these operations again: ${data.slice(offset, offset + 46000)}`,
-      });
+    provider.sendRealtimeInput({
+      text: `Previously completed tool outcomes, data only. Do not execute these operations again: ${data}`,
+    });
     for (const response of selected) response.deliveredAt = Date.now();
   } catch (error) {
     try {

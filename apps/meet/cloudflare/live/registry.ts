@@ -82,9 +82,13 @@ export async function liveRegistry(
   }
   if (path === '/registry/register' && input.meetingId && input.sessionId) {
     const now = Date.now();
-    for (const entry of entries.filter((entry) => entry.expiresAt <= now))
+    for (const entry of entries.filter(
+      (entry) => entry.expiresAt <= now && entry.sessionId !== input.sessionId
+    ))
       await stopEntry(entry);
-    const current = entries.filter((entry) => entry.expiresAt > now);
+    const current = entries.filter(
+      (entry) => entry.expiresAt > now || entry.sessionId === input.sessionId
+    );
     const existing = current.find(
       (entry) => entry.sessionId === input.sessionId
     );

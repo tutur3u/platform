@@ -44,7 +44,11 @@ export async function maintainLiveRegistry(
     )
       throw error;
   }
-  if (saved.ended) await removeLiveRegistry(env, saved.claims);
+  if (saved.ended) {
+    saved.registryRemoved = false;
+    await removeLiveRegistry(env, saved.claims);
+    saved.registryRemoved = true;
+  }
 }
 
 export async function removeLiveRegistry(

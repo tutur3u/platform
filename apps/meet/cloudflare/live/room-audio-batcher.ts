@@ -6,11 +6,13 @@ import type { LiveEnvironment } from './storage';
 export function createRoomLiveAudioBatcher(
   env: LiveEnvironment,
   saved: SavedSession,
-  emit: (event: LiveAssistantEvent) => void
+  emit: (event: LiveAssistantEvent) => void,
+  currentState: () => 'paused' | 'listening' | 'recovering'
 ) {
+  let interrupted = false;
   return new LiveAudioBatcher(
-    (data, sequence, at, signal) =>
-      liveRoomCommand(
+    async (data, sequence, at, signal) => {
+      await liveRoomCommand(
         env,
         saved.claims,
         saved.identity,
@@ -22,12 +24,19 @@ export function createRoomLiveAudioBatcher(
           at,
         },
         signal
-      ),
-    () =>
+      );
+      if (interrupted && !saved.ended && !signal?.aborted) {
+        interrupted = false;
+        emit({ type: 'state', state: currentState() });
+      }
+    },
+    () => {
+      interrupted = true;
       emit({
         type: 'state',
         state: 'recovering',
         detail: 'audio_delivery_interrupted',
-      })
+      });
+    }
   );
 }

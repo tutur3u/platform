@@ -379,6 +379,14 @@ export function useLiveAssistant(
   );
   const decide = async (review: Review, approved: boolean, text?: string) => {
     const current = active.current;
+    if (
+      review.status === 'failed' &&
+      !approved &&
+      (!current || ['ended', 'error'].includes(status))
+    ) {
+      setReviews((items) => items.filter((item) => item.id !== review.id));
+      return;
+    }
     if (!current) return;
     if (review.status === 'failed' && !approved) {
       try {

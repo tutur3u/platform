@@ -20,9 +20,7 @@ export async function controlWorkspaceReview(
   emit: (event: LiveAssistantEvent) => void
 ) {
   if (
-    !saved ||
-    saved.ended ||
-    saved.claims.mode !== 'personal' ||
+    saved?.claims.mode !== 'personal' ||
     input.ownerId !== saved.claims.ownerId ||
     input.meetingId !== saved.claims.meetingId
   )
@@ -30,13 +28,14 @@ export async function controlWorkspaceReview(
   const review = saved.reviews.find(
     (item) => item.id === input.reviewId && item.name === 'workspace_tool'
   );
-  if (!review || !saved.workspace)
-    return new Response('Review unavailable', { status: 404 });
   if (
     input.action === 'deny' &&
     (await dismissFailedLiveReview(saved, input.reviewId, persist))
   )
     return Response.json({ ok: true });
+  if (saved.ended) return new Response('Forbidden', { status: 403 });
+  if (!review || !saved.workspace)
+    return new Response('Review unavailable', { status: 404 });
   if (input.action === 'finish') {
     if (review.status !== 'processing')
       return new Response('Review already handled', { status: 409 });

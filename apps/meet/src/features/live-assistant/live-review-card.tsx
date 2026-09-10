@@ -77,7 +77,6 @@ export function LiveReviewCard({
           {review.status === 'failed' && (
             <Button
               variant="outline"
-              disabled={!ready}
               onClick={() => void decide(review, false)}
             >
               <X className="size-4" />

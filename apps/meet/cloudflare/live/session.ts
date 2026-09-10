@@ -24,12 +24,11 @@ import {
   dismissFailedLiveReview,
   type LiveProposal,
   liveReviewEvent,
-  proposalSchema,
 } from './reviews';
 import { liveRoomCommand } from './room';
 import { createRoomLiveAudioBatcher } from './room-audio-batcher';
 import { cleanupEndedLiveSession } from './session-cleanup';
-import type { SavedSession } from './session-state';
+import { normalizeSavedLiveSession, type SavedSession } from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
@@ -69,15 +68,7 @@ export class MeetLiveDurableObject {
     this.registryQueue = new LiveRegistryQueue(state.storage, env);
     state.blockConcurrencyWhile(async () => {
       this.saved = await state.storage.get<SavedSession>('session');
-      if (this.saved)
-        this.saved.reviews = (this.saved.reviews ?? []).flatMap((review) => {
-          const parsed = proposalSchema.safeParse(review);
-          return parsed.success ? [parsed.data] : [];
-        });
-      if (this.saved && !this.saved.ended && this.saved.billing) {
-        this.saved.coverageGap = true;
-        this.saved.billing.incomplete = true;
-      }
+      normalizeSavedLiveSession(this.saved);
       if (
         this.saved?.reviews.some((review) => review.status === 'processing')
       ) {
@@ -426,7 +417,8 @@ export class MeetLiveDurableObject {
           this.audioBatcher ??= createRoomLiveAudioBatcher(
             this.env,
             saved,
-            (event) => this.emit(event)
+            (event) => this.emit(event),
+            () => this.playbackState()
           );
           this.audioBatcher.push(part.inlineData.data);
         }
@@ -487,6 +479,10 @@ export class MeetLiveDurableObject {
       this.emit({ type: 'state', state: 'recovering' });
       await this.connect();
     }
+  }
+  private playbackState() {
+    if (!this.provider) return 'recovering';
+    return this.paused ? 'paused' : 'listening';
   }
   private async interruptAudio() {
     const sequence = this.audioBatcher?.clear();
@@ -654,7 +650,8 @@ export class MeetLiveDurableObject {
       if (!this.provider) await this.connect();
       await this.state.storage.setAlarm(Date.now() + 20_000);
     } catch {
-      await this.stop('session_unavailable');
+      if (this.saved.ended) await this.finalizeBilling();
+      else await this.stop('session_unavailable');
     }
   }
   private async stop(detail?: string) {

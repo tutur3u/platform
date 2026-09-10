@@ -116,3 +116,17 @@ it('does not forget expired sessions when stopping them fails during registratio
     expect.objectContaining({ sessionId }),
   ]);
 });
+
+it('renews the registering session without stopping it after lease expiry', async () => {
+  const f = fixture();
+  f.values.set('active', [
+    { ownerId, meetingId, sessionId, mode: 'personal', expiresAt: 1 },
+  ]);
+  expect(
+    (await f.call('register', { meetingId, sessionId, mode: 'personal' })).ok
+  ).toBe(true);
+  expect(f.stop).not.toHaveBeenCalled();
+  expect(f.values.get('active')).toEqual([
+    expect.objectContaining({ sessionId, expiresAt: expect.any(Number) }),
+  ]);
+});

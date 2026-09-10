@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { LiveContextJournal } from '../../src/features/live-assistant/context';
 import type { LiveSessionClaims } from '../../src/features/live-assistant/contracts';
 import type { LiveBillingState } from './billing';
-import type { LiveProposal } from './reviews';
+import { type LiveProposal, proposalSchema } from './reviews';
 import type { LiveRoomIdentity } from './room';
 
 export type SavedSession = {
@@ -37,3 +37,17 @@ export const checkpointSchema = z.object({
   decisions: z.array(z.string().max(500)).max(30),
   openQuestions: z.array(z.string().max(500)).max(30),
 });
+
+export function normalizeSavedLiveSession(saved: SavedSession | undefined) {
+  if (!saved) return;
+  saved.reviews = (Array.isArray(saved.reviews) ? saved.reviews : []).flatMap(
+    (review) => {
+      const parsed = proposalSchema.safeParse(review);
+      return parsed.success ? [parsed.data] : [];
+    }
+  );
+  if (!saved.ended && saved.billing) {
+    saved.coverageGap = true;
+    saved.billing.incomplete = true;
+  }
+}

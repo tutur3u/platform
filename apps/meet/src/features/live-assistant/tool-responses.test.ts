@@ -91,3 +91,16 @@ it('closes a failed replay transport and retains the undelivered outcome', () =>
   expect(close).toHaveBeenCalledOnce();
   expect(saved.toolResponses?.[0]?.deliveredAt).toBeUndefined();
 });
+
+it('sends a large completed outcome as one complete input', () => {
+  const result = 'a'.repeat(48000);
+  const saved = {
+    toolResponses: [
+      { id: 'large', name: 'workspace_tool', response: { result } },
+    ],
+  } as unknown as SavedSession;
+  const sendRealtimeInput = vi.fn();
+  replayLiveToolResponses(saved, { sendRealtimeInput } as unknown as Session);
+  expect(sendRealtimeInput).toHaveBeenCalledOnce();
+  expect(sendRealtimeInput.mock.calls[0]![0].text).toContain(result);
+});
