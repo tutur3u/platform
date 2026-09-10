@@ -181,12 +181,6 @@ export async function POST(
           throw new MeetCallAccessError(409, 'Assistant start cancelled');
       }
     } catch (error) {
-      await registry
-        .fetch('https://live.internal/registry/remove', {
-          method: 'POST',
-          body: JSON.stringify(claims),
-        })
-        .catch(() => undefined);
       await object
         .fetch('https://live.internal/control', {
           method: 'POST',
@@ -197,11 +191,8 @@ export async function POST(
           }),
         })
         .catch(() => undefined);
-      if (command.mode === 'room')
-        await callRoomService(access, {
-          action: 'live.stop',
-          sessionId: claims.sessionId,
-        }).catch(() => undefined);
+      // Initialization arms a durable alarm. If this immediate stop fails,
+      // that alarm closes the unconnected session and retries both cleanups.
       throw error;
     }
     return {

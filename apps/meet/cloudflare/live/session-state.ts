@@ -25,6 +25,8 @@ export type SavedSession = {
   searchTurn?: { queries: string[]; counted: number };
   publicBillings?: Record<string, LiveBillingState>;
   ended?: boolean;
+  registryRemoved?: boolean;
+  roomReleased?: boolean;
   contextErased?: boolean;
   startedAt: number;
   registryUpdatedAt?: number;

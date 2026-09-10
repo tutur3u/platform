@@ -7,7 +7,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MiraAvatar } from '../call/components/mira-profile';
-import { LiveAudioPlayer } from './audio';
+import { RoomAudioPlayers } from './room-players';
 
 const EVENT = 'meet:assistant-audio';
 type Announcement = Extract<
@@ -67,14 +67,15 @@ export function RoomAssistantAudio({
   const [enabled, setEnabled] = useState(false);
   const [sessionId, setSessionId] = useState<string>();
   const [stopping, setStopping] = useState(false);
-  const player = useRef<LiveAudioPlayer | null>(null);
+  const player = useRef<RoomAudioPlayers | null>(null);
   useEffect(() => {
-    const audio = new LiveAudioPlayer();
+    const audio = new RoomAudioPlayers(() => toast.error(t('session_error')));
     player.current = audio;
     const sequences = new Map<string, number>();
     const clockOffsets = new Map<string, number>();
     const initial = [...(announcements.get(meetingId)?.values() ?? [])];
     const liveSessions = new Set(initial.map((item) => item.sessionId));
+    for (const id of liveSessions) audio.activate(id);
     setAvailable(liveSessions.size > 0);
     setSessionId(
       initial.find((item) => item.type === 'assistant.live')?.sessionId
@@ -105,25 +106,29 @@ export function RoomAssistantAudio({
         message.type === 'ready'
       ) {
         liveSessions.clear();
-        audio.interrupt();
+        audio.clear();
         setAvailable(false);
         setSessionId(undefined);
         return;
       }
       if (message.type === 'assistant.interrupted') {
-        audio.interrupt();
+        audio.interrupt(message.sessionId);
         return;
       }
       if (
         message.type === 'assistant.live' ||
         message.type === 'assistant.share'
       ) {
-        if (message.active) liveSessions.add(message.sessionId);
-        else liveSessions.delete(message.sessionId);
+        if (message.active) {
+          liveSessions.add(message.sessionId);
+          audio.activate(message.sessionId);
+        } else {
+          liveSessions.delete(message.sessionId);
+          audio.deactivate(message.sessionId);
+        }
         if (message.type === 'assistant.live')
           setSessionId(message.active ? message.sessionId : undefined);
         setAvailable(liveSessions.size > 0);
-        if (!message.active && !liveSessions.size) audio.interrupt();
         return;
       }
       const offset = Math.min(
@@ -138,15 +143,14 @@ export function RoomAssistantAudio({
         return;
       sequences.set(message.sessionId, message.sequence);
       if (!liveSessions.has(message.sessionId)) return;
-      audio.play(message.data);
+      audio.play(message.sessionId, message.data);
     };
     window.addEventListener(EVENT, listener);
     return () => {
       window.removeEventListener(EVENT, listener);
-      audio.close();
-      announcements.delete(meetingId);
+      audio.clear();
     };
-  }, [meetingId]);
+  }, [meetingId, t]);
   useEffect(() => {
     if (enabled)
       void player.current
@@ -162,7 +166,7 @@ export function RoomAssistantAudio({
         className="gap-2 rounded-full"
         onClick={async () => {
           if (enabled) {
-            player.current?.close();
+            player.current?.mute();
             setEnabled(false);
           } else {
             try {
@@ -188,8 +192,7 @@ export function RoomAssistantAudio({
             setStopping(true);
             try {
               await controlMeetLive(meetingId, { action: 'stop', sessionId });
-              player.current?.interrupt();
-              setAvailable(false);
+              player.current?.deactivate(sessionId);
             } catch {
               toast.error(t('session_error'));
             } finally {

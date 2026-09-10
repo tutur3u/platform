@@ -27,18 +27,12 @@ export async function maintainLiveRegistry(
   env: LiveEnvironment,
   saved: SavedSession
 ) {
+  if (saved.ended) return removeLiveRegistry(env, saved.claims);
   const last = saved.registryUpdatedAt ?? saved.startedAt;
   if (Date.now() - last < 12 * 60 * 60_000) return;
   try {
     await refreshLiveRegistry(env, saved.claims);
     saved.registryUpdatedAt = Date.now();
-    if (saved.ended)
-      await env.MEET_LIVE.get(
-        env.MEET_LIVE.idFromName(`owner:${saved.claims.ownerId}`)
-      ).fetch('https://live.internal/registry/remove', {
-        method: 'POST',
-        body: JSON.stringify(saved.claims),
-      });
   } catch (error) {
     // Stop before the 24-hour registry lease expires: memory revocations must
     // always be able to find every session that can still use private context.
@@ -50,6 +44,7 @@ export async function maintainLiveRegistry(
     )
       throw error;
   }
+  if (saved.ended) await removeLiveRegistry(env, saved.claims);
 }
 
 export async function removeLiveRegistry(

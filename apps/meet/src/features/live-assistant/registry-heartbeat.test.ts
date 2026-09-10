@@ -34,3 +34,23 @@ it('fails closed when the registry permanently rejects an undiscoverable session
     } as SavedSession)
   ).rejects.toThrow('registry unavailable');
 });
+
+it('does not suppress failed removal after a concurrent session stop', async () => {
+  const saved = {
+    claims: { ownerId: 'owner' },
+    startedAt: Date.now() - 13 * 3600000,
+  } as SavedSession;
+  const fetch = vi.fn(async (url: string) => {
+    if (url.endsWith('/register')) {
+      saved.ended = true;
+      return new Response(null);
+    }
+    return new Response(null, { status: 503 });
+  });
+  const env = {
+    MEET_LIVE: { idFromName: (v: string) => v, get: () => ({ fetch }) },
+  } as unknown as LiveEnvironment;
+  await expect(maintainLiveRegistry(env, saved)).rejects.toThrow(
+    'registry unavailable'
+  );
+});

@@ -19,7 +19,7 @@ import {
 } from './finalize-billing';
 import { connectLiveProvider, drainLiveProvider } from './provider';
 import { LiveRegistryQueue } from './registry';
-import { maintainLiveRegistry, removeLiveRegistry } from './registry-heartbeat';
+import { maintainLiveRegistry } from './registry-heartbeat';
 import {
   dismissFailedLiveReview,
   type LiveProposal,
@@ -28,6 +28,7 @@ import {
 } from './reviews';
 import { liveRoomCommand } from './room';
 import { createRoomLiveAudioBatcher } from './room-audio-batcher';
+import { cleanupEndedLiveSession } from './session-cleanup';
 import type { SavedSession } from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
@@ -69,9 +70,10 @@ export class MeetLiveDurableObject {
     state.blockConcurrencyWhile(async () => {
       this.saved = await state.storage.get<SavedSession>('session');
       if (this.saved)
-        this.saved.reviews = this.saved.reviews.map((review) =>
-          proposalSchema.parse(review)
-        );
+        this.saved.reviews = (this.saved.reviews ?? []).flatMap((review) => {
+          const parsed = proposalSchema.safeParse(review);
+          return parsed.success ? [parsed.data] : [];
+        });
       if (this.saved && !this.saved.ended && this.saved.billing) {
         this.saved.coverageGap = true;
         this.saved.billing.incomplete = true;
@@ -670,14 +672,6 @@ export class MeetLiveDurableObject {
     await messagesSettled;
     this.saved.ended = true;
     await this.persist();
-    this.state.waitUntil(
-      removeLiveRegistry(this.env, this.saved.claims).catch(() => undefined)
-    );
-    if (this.saved.claims.mode === 'room')
-      await liveRoomCommand(this.env, this.saved.claims, this.saved.identity, {
-        action: 'live.stop',
-        sessionId: this.saved.claims.sessionId,
-      }).catch(() => undefined);
     await this.finalizeBilling();
     this.emit({ type: 'state', state: detail ? 'error' : 'ended', detail });
     this.socket?.close(1000, 'Session ended');
@@ -685,6 +679,14 @@ export class MeetLiveDurableObject {
   }
   private async finalizeBilling() {
     if (!this.saved) return;
+    this.state.waitUntil(
+      cleanupEndedLiveSession(
+        this.env,
+        this.saved,
+        () => this.persist(),
+        () => this.state.storage.setAlarm(Date.now() + 60000)
+      )
+    );
     await finalizeSessionBilling(
       this.env,
       this.saved,
