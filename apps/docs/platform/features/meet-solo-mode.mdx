@@ -29,7 +29,8 @@ stays private when someone joins. It does not import room chat, send prompts to
 room services, or broadcast responses. The server charges the requester and
 returns the answer only in their authenticated response. Search queries must not
 include private history. The conversation view is kept in the panel's memory and clears when it closes or
-the user leaves. A bounded requester-only receipt cache retains generated replies
+the user leaves. A bounded requester-only receipt cache, stored separately from shared room
+snapshots to avoid rewriting it on media/presence events, retains generated replies
 for retry recovery for up to one hour of access (expired entries are pruned on
 the next private request). Receipts are never returned by room/admin reads or
 broadcast as messages. This is transient delivery recovery, not AI memory.

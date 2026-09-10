@@ -17,6 +17,7 @@ import {
 } from '../../../packages/realtime/src/meet';
 import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
+import { personalReceiptStorage } from './personal-receipt-storage';
 import { type RoomServiceState, roomService } from './room-service';
 
 import { getSessionIceServers, type TurnEnv } from './turn-credentials';
@@ -230,6 +231,23 @@ export class MeetRoomDurableObject implements DurableObject {
 
     if (new URL(request.url).pathname === '/room-service') {
       const body = await request.json().catch(() => null);
+      const personal = await personalReceiptStorage(
+        this.state.storage,
+        token,
+        body
+      );
+      if (personal) {
+        if (personal.status !== 403) {
+          // Account for the private write and its small durable usage-counter write.
+          this.snapshot.usage!.httpCounterWrites =
+            (this.snapshot.usage!.httpCounterWrites ?? 0) + 2;
+          await this.state.storage.put('usage-http-requests', {
+            requests: this.snapshot.usage!.httpRequests,
+            writes: this.snapshot.usage!.httpCounterWrites,
+          });
+        }
+        return personal;
+      }
       const result = roomService(this.snapshot, token, body);
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;
