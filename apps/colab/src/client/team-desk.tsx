@@ -35,9 +35,18 @@ export function TeamDesk({
   roomAiAvailable?: boolean;
 }) {
   const c = useCopy();
-  const [draft, setDraft] = useState(team.prompt);
-  const [revision, setRevision] = useState(team.revision);
+  const [drafts, setDrafts] = useState<
+    Record<string, { value: string; revision: number }>
+  >({});
   const [multiple, setMultiple] = useState(true);
+  const savedDraft = drafts[team.id];
+  const draft = savedDraft?.value ?? team.prompt;
+  const revision = savedDraft?.revision ?? team.revision;
+  const setTeamDraft = (value: string, nextRevision = revision) =>
+    setDrafts((current) => ({
+      ...current,
+      [team.id]: { value, revision: nextRevision },
+    }));
   const changed = draft !== team.prompt;
   const stale = revision !== team.revision;
   const invoke = (body: Record<string, unknown>, route?: string) => {
@@ -75,7 +84,7 @@ export function TeamDesk({
               className="prompt-editor min-h-64"
               maxLength={12000}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => setTeamDraft(e.target.value)}
               placeholder={c.starterText}
             />
             <div className="editor-meta">
@@ -90,8 +99,7 @@ export function TeamDesk({
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setDraft(team.prompt);
-                    setRevision(team.revision);
+                    setTeamDraft(team.prompt, team.revision);
                   }}
                 >
                   {c.reload}
@@ -103,7 +111,7 @@ export function TeamDesk({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setDraft(c.starterText)}
+                onClick={() => setTeamDraft(c.starterText)}
               >
                 {c.starter}
               </Button>
@@ -113,7 +121,7 @@ export function TeamDesk({
                 onClick={async () => {
                   try {
                     await action({ action: 'prompt', prompt: draft, revision });
-                    setRevision(revision + 1);
+                    setTeamDraft(draft, revision + 1);
                   } catch {}
                 }}
               >

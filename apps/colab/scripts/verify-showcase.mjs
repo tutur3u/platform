@@ -12,7 +12,36 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
   assert.equal(created.status, 201);
   const room = await created.json();
   const path = `/rooms/${room.id}`;
+  const team1Name = room.teams.find((team) => team.id === 'team-1').name;
+  const team2Name = room.teams.find((team) => team.id === 'team-2').name;
   assert.equal(room.showcase, true);
+  let response = await request(`${path}/action`, owner, {
+    action: 'prompt',
+    prompt: '[malformed-once] Build a careful event planning assistant.',
+    revision: 0,
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  response = await request(`${path}/ai`, owner, {
+    action: 'compile',
+    multiple: true,
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await response.json()).teams[0].skills[0].name, 'demo-skill');
+  response = await request(`${path}/action`, owner, {
+    action: 'prompt',
+    prompt: '[always-malformed] Protect privacy and ask before publishing.',
+    revision: 1,
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  response = await request(`${path}/ai`, owner, {
+    action: 'compile',
+    multiple: true,
+  });
+  assert.equal(response.status, 200, await response.clone().text());
+  assert.equal(
+    (await response.json()).teams[0].skills[0].name,
+    'team-working-guide'
+  );
   for (const [email, who, teamId] of [
     ['alice@example.com', alice, 'team-1'],
     ['bob@example.com', bob, 'team-2'],
@@ -86,7 +115,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       page.getByRole('combobox', { name: 'Team work' });
     const chooseTeam = async (page) => {
       await teamSelect(page).click();
-      await page.getByRole('option', { name: 'Team 2', exact: true }).click();
+      await page.getByRole('option', { name: team2Name, exact: true }).click();
     };
     const teamCount = async (page, count) => {
       await teamSelect(page).click();
@@ -117,13 +146,14 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       .getByRole('link', { name: 'Activity log', exact: true })
       .click();
     await expect(
-      viewer.getByText('Saved a team prompt', { exact: true })
+      viewer.getByText('Saved a team prompt', { exact: true }).last()
     ).toBeVisible();
     await viewer.getByRole('link', { name: 'Prompt', exact: true }).click();
     await host
       .getByRole('link', { name: 'Host controls', exact: true })
       .click();
-    const toggle = host.getByRole('checkbox', { name: 'Share team work live' });
+    await host.getByRole('tab', { name: 'Showcase', exact: true }).click();
+    const toggle = host.getByRole('switch', { name: 'Live showcase' });
     await expect(toggle.locator('..')).toHaveCSS('display', 'flex');
     await expect(toggle.locator('..')).toHaveCSS('flex-direction', 'row');
     await host.screenshot({
@@ -162,24 +192,88 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
       });
       assert.equal(response.status, 200, await response.clone().text());
     }
+    assert.equal(
+      (
+        await request(`${path}/action`, owner, {
+          action: 'showcaseTeam',
+          teamId: 'team-2',
+        })
+      ).status,
+      200
+    );
+    for (const page of [host, viewer, writer]) {
+      await page
+        .getByRole('link', { name: 'Live showcase', exact: true })
+        .click();
+      await expect(
+        page.getByRole('heading', { name: team2Name, exact: true })
+      ).toBeVisible();
+      await expect(page.getByText('demo-skill', { exact: true })).toBeVisible();
+      await expect(
+        page
+          .locator('.showcase-workspace')
+          .getByText('Live demo agent result', { exact: true })
+      ).toBeVisible();
+    }
+    await expect(
+      viewer.getByRole('button', { name: 'Run live test', exact: true })
+    ).toHaveCount(0);
+    await writer
+      .getByRole('button', { name: 'Run live test', exact: true })
+      .click();
+    await expect
+      .poll(async () => (await (await request(path, owner)).json()).aiCalls)
+      .toBeGreaterThan(beforeCompile.aiCalls + 2);
+    await host.getByRole('button', { name: 'Next team', exact: true }).click();
+    await expect(
+      viewer.getByRole('heading', { name: team1Name, exact: true })
+    ).toBeVisible();
+    await host.screenshot({
+      path: '/private/tmp/colab-showcase-tab-desktop.png',
+      fullPage: true,
+    });
+    await host.setViewportSize({ width: 390, height: 844 });
+    const closeNavigation = host
+      .locator('aside')
+      .getByRole('button', { name: 'Collapse navigation', exact: true })
+      .filter({ visible: true });
+    if (await closeNavigation.count()) await closeNavigation.first().click();
+    await host.waitForFunction(
+      () => document.querySelector('aside')?.getBoundingClientRect().width <= 1
+    );
+    assert.ok(
+      await host.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth
+      ),
+      'showcase mobile horizontal overflow'
+    );
+    await host.screenshot({
+      path: '/private/tmp/colab-live-showcase-mobile.png',
+      fullPage: true,
+    });
+    await host.setViewportSize({ width: 1440, height: 1000 });
+    await host
+      .getByRole('link', { name: 'Host controls', exact: true })
+      .click();
+    await host.getByRole('tab', { name: 'Showcase', exact: true }).click();
     await viewer.getByRole('link', { name: 'Skills', exact: true }).click();
     await expect(
       viewer.getByText('demo-skill/SKILL.md', { exact: true })
     ).toBeVisible();
     await viewer.getByRole('link', { name: 'Results', exact: true }).click();
     await expect(
-      viewer.getByText('Live demo agent result', { exact: true })
+      viewer.getByText('Live demo agent result', { exact: true }).first()
     ).toBeVisible();
     await viewer
       .getByRole('link', { name: 'Practice apps', exact: true })
       .click();
     await expect(
-      viewer.getByText('Live demo document', { exact: true })
+      viewer.getByText('Live demo document', { exact: true }).first()
     ).toBeVisible();
     await viewer.getByRole('link', { name: 'Prompt', exact: true }).click();
     await toggle.click();
     await expect(toggle).not.toBeChecked();
-    await expect(teamSelect(viewer)).toContainText('Team 1');
+    await expect(teamSelect(viewer)).toContainText(team1Name);
     await teamCount(viewer, 1);
     await expect(viewer.locator('#prompt')).toHaveValue(
       'Keep my unsaved team draft'
@@ -190,10 +284,11 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(
       viewer.getByText('Live demo document', { exact: true })
     ).toHaveCount(0);
+    await writer.getByRole('link', { name: 'Prompt', exact: true }).click();
     await teamCount(writer, 1);
     await writer.getByRole('link', { name: 'Results', exact: true }).click();
     await expect(
-      writer.getByText('Live demo agent result', { exact: true })
+      writer.getByText('Live demo agent result', { exact: true }).first()
     ).toBeVisible();
     assert.equal(
       (
@@ -218,7 +313,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await toggle.click();
     await expect(toggle).toBeChecked();
     await teamCount(viewer, 2);
-    await expect(teamSelect(viewer)).toContainText('Team 1');
+    await expect(teamSelect(viewer)).toContainText(team1Name);
     await chooseTeam(viewer);
     await expect(viewer.locator('.readonly-prompt:visible')).toHaveText(
       'Updated while sharing is off'
@@ -246,9 +341,8 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await viewer
       .getByRole('link', { name: 'Host controls', exact: true })
       .click();
-    await viewer
-      .getByRole('checkbox', { name: 'Share team work live' })
-      .click();
+    await viewer.getByRole('tab', { name: 'Showcase', exact: true }).click();
+    await viewer.getByRole('switch', { name: 'Live showcase' }).click();
     await expect(toggle).toBeChecked();
     await teamCount(writer, 2);
     const beforeConflict = await (await request(path, owner)).json();

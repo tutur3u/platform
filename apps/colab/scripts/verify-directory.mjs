@@ -49,22 +49,22 @@ export async function verifyDirectory({ request, owner, alice, browser }) {
     const page = await context.newPage();
     await page.goto('http://127.0.0.1:8795/workshops');
     await expect(
-      page.getByRole('button', { name: room.title, exact: true })
+      page.getByRole('link', { name: room.title, exact: true })
     ).toBeVisible();
     await page.evaluate(() => {
       window.__directoryDocument = document;
     });
     await page
-      .getByRole('textbox', { name: 'Search workshops…' })
+      .getByRole('searchbox', { name: 'Search workshops…' })
       .fill('no-matching-workshop');
     await expect(
       page.getByText('No matching workshops', { exact: true })
     ).toBeVisible();
-    await page.getByRole('textbox', { name: 'Search workshops…' }).fill('');
+    await page.getByRole('searchbox', { name: 'Search workshops…' }).fill('');
     await page.clock.setFixedTime(new Date(Date.now() + 7200000));
     await page.getByRole('tab', { name: /Past workshops/ }).click();
     await expect(
-      page.getByRole('button', { name: room.title, exact: true })
+      page.getByRole('link', { name: room.title, exact: true })
     ).toBeVisible();
     await expect(
       page.getByText('Ended', { exact: true }).first()

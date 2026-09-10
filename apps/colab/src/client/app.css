@@ -577,6 +577,77 @@
     border-radius: 14px;
     background: color-mix(in srgb, var(--primary) 5%, var(--card));
   }
+  .showcase-workspace {
+    display: grid;
+    gap: 24px;
+  }
+  .showcase-empty {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+    min-height: 180px;
+  }
+  .showcase-empty-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--muted);
+  }
+  .showcase-panel-title {
+    margin: 0;
+  }
+  .colab-content .showcase-empty p,
+  .colab-content .showcase-context-card p,
+  .colab-content .showcase-skill-card p {
+    margin: 6px 0 0;
+  }
+  .showcase-context-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .showcase-context-card,
+  .showcase-section {
+    display: grid;
+    gap: 18px;
+    padding: 20px;
+  }
+  .showcase-card-heading,
+  .showcase-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .showcase-card-heading {
+    justify-content: flex-start;
+  }
+  .showcase-prompt {
+    max-height: 220px;
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+    white-space: pre-wrap;
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .showcase-skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .showcase-skill-card {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--muted);
+  }
   .live-showcase-kicker,
   .live-showcase-main,
   .live-showcase-actions {
@@ -964,6 +1035,13 @@
     .live-showcase-actions > button,
     .showcase-team-row > button {
       width: 100%;
+    }
+    .showcase-context-grid {
+      grid-template-columns: 1fr;
+    }
+    .showcase-empty {
+      grid-template-columns: 1fr;
+      align-items: start;
     }
     .limit-fields {
       grid-template-columns: 1fr;

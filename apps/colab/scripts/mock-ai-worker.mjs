@@ -7,6 +7,13 @@ export default class MockAI extends WorkerEntrypoint {
     const input = JSON.parse(options.messages[1].content);
     let result;
     if (system.startsWith('Convert')) {
+      if (input.prompt.includes('[always-malformed]'))
+        return { response: 'The response could not be completed.' };
+      if (
+        input.prompt.includes('[malformed-once]') &&
+        !system.includes('previous response was incomplete')
+      )
+        return { response: 'The response could not be completed.' };
       await new Promise((resolve) => setTimeout(resolve, 3000));
       result = {
         skills: [

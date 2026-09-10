@@ -179,6 +179,7 @@ export function Workshop({
     'team-skills',
     'sandbox-desk',
     'practice-journal',
+    'showcase',
     'activity',
     ...(room.self.admin ? ['controls'] : []),
   ];
@@ -254,18 +255,10 @@ export function Workshop({
         </div>
         <section
           className="team-area"
-          hidden={['mission', 'activity', 'controls'].includes(section)}
+          hidden={['mission', 'showcase', 'activity', 'controls'].includes(
+            section
+          )}
         >
-          <ShowcaseStage
-            room={room}
-            selectedTeam={team}
-            busy={mutate.isPending}
-            onSelect={setSelected}
-            onPresent={async (teamId) => {
-              await action({ action: 'showcaseTeam', teamId });
-              setSelected(teamId);
-            }}
-          />
           <div className="team-toolbar">
             <label>
               {c.teamWork}
@@ -297,7 +290,6 @@ export function Workshop({
           {team && (
             <div className="own-team-desk">
               <TeamDesk
-                key={team.id}
                 team={team}
                 section={section}
                 active
@@ -312,6 +304,19 @@ export function Workshop({
           )}
         </section>
       </div>
+      {section === 'showcase' && (
+        <ShowcaseStage
+          room={room}
+          busy={mutate.isPending}
+          roomWritable={roomWritable}
+          onRun={async (teamId) => {
+            await action({ action: 'run', teamId }, 'ai');
+          }}
+          onPresent={async (teamId) => {
+            await action({ action: 'showcaseTeam', teamId });
+          }}
+        />
+      )}
       {section === 'activity' && <ActivityLog room={room} />}
       {room.self.admin && (
         <div hidden={section !== 'controls'}>

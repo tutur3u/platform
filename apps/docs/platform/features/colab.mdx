@@ -35,16 +35,22 @@ stay mounted between pages.
 4. Generate a single skill or let the model split the instructions into up to
    four focused skills. Each download contains YAML frontmatter and readable
    Markdown instructions. Place it in `<skill-name>/SKILL.md` in a compatible
-   agent environment after reviewing it.
+   agent environment after reviewing it. If Workers AI returns incomplete or
+   differently shaped JSON, Colab retries once and then produces a conservative
+   prompt-based working guide so a learner is never blocked by model formatting.
 5. Test the generated skills against the room scenario. The journal records the
    prompt snapshot, scenario, actual sandbox tool inputs/results, final answer
    and AI coaching. Coaching is advisory, not proof of agent correctness.
-6. New rooms share team work live by default. Saved prompts, generated skills,
-   sandbox records, and run journals update for viewers without reloading. Unsaved
-   editor drafts stay local. Room admins can turn showcase off or on immediately;
-   disabling it removes other teams from participant views and server payloads.
-   Existing rooms retain their saved setting. Admins can always inspect all teams.
-   Only staff admins can promote other signed-in accounts to room admin.
+6. New rooms share team work live by default. The dedicated Live showcase tab
+   follows the team on stage and presents its challenge, system prompt, reusable
+   skills, and latest test result in one audience-facing view. Authorized team
+   members can run the live test there, while facilitators advance teams in order.
+   Saved prompts, generated skills, sandbox records, and run journals update for
+   viewers without reloading. Unsaved editor drafts stay local. Room admins can
+   turn showcase off or on immediately; disabling it removes other teams from
+   participant views and server payloads. Existing rooms retain their saved
+   setting. Admins can always inspect all teams. Only staff admins can promote
+   other signed-in accounts to room admin.
 7. Close to read-only, or set private mode to restrict access to admins. At the
    scheduled end the room becomes read-only. Every mutation checks the clock;
    the Durable Object alarm also updates connected clients. Private mode and
