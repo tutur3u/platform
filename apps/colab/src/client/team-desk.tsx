@@ -15,6 +15,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useEffect, useState } from 'react';
 import { useCopy } from './i18n';
 import { MockDesk } from './mock-desk';
+import { PromptAnalysis } from './prompt-analysis';
+import { PromptCoach } from './prompt-coach';
 import { RunReport } from './run-report';
 
 export function TeamDesk({
@@ -156,6 +158,27 @@ export function TeamDesk({
         ) : (
           <pre className="readonly-prompt">{team.prompt || c.emptyPrompt}</pre>
         )}
+        <PromptAnalysis
+          prompt={draft}
+          onAdd={
+            writable
+              ? (text) => setTeamDraft(`${draft.trim()}\n\n${text}`.trim())
+              : undefined
+          }
+        />
+        <PromptCoach
+          team={team}
+          writable={writable}
+          changed={changed}
+          disabled={
+            busy ||
+            stale ||
+            roomAiRemaining <= 0 ||
+            team.aiCalls >= team.limits.aiCallLimit
+          }
+          action={action}
+          onAdd={(text) => setTeamDraft(`${draft.trim()}\n\n${text}`.trim())}
+        />
       </Card>
       <Card
         id={active ? 'team-skills' : undefined}

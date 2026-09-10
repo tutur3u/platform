@@ -8,11 +8,22 @@ import {
   type WorkshopScheduleError,
 } from './limits';
 import { type MockRecord, seedRecords } from './mock-catalog';
+import type { PromptReview } from './prompt-review';
 import type { Run } from './run';
+
+export {
+  type PromptFramework,
+  type PromptReview,
+  promptFrameworks,
+} from './prompt-review';
+
+import { riseInductionScenario } from './rise-induction';
+import { starterScenarios } from './rise-scenarios';
 
 export * from './limits';
 export type { MockApp, MockAppKind, MockRecord } from './mock-catalog';
 export { mockAppCatalog, mockApps, seedRecords } from './mock-catalog';
+export { starterScenarios } from './rise-scenarios';
 export type {
   Run,
   RunStopReason,
@@ -41,6 +52,7 @@ export type Member = {
 };
 export type Skill = { name: string; description: string; markdown: string };
 export type Team = {
+  promptReview?: PromptReview;
   id: string;
   name: string;
   prompt: string;
@@ -70,6 +82,18 @@ export type WorkshopSummary = Pick<
   'id' | 'title' | 'startsAt' | 'endsAt' | 'mode' | 'showcase' | 'maxUsers'
 > & { memberCount: number; teamCount: number; admin: boolean };
 export type Room = {
+  sponsorship?: {
+    credits: number;
+    calls: number;
+    receipts: {
+      requestId: string;
+      runId: string;
+      credits: number;
+      operation: string;
+      teamId: string;
+      at: number;
+    }[];
+  };
   audit?: AuditEntry[];
   id: string;
   title: string;
@@ -140,7 +164,7 @@ export function normalizeRoom(room: Room): Room {
     const teamId = teamIds.includes(member.teamId)
       ? member.teamId
       : (teamIds[0] ?? member.teamId);
-    return { ...member, teamId, teamIds };
+    return { ...member, teamId, teamIds, admin: member.admin && staff(member) };
   });
   room.showcaseTeamId = room.teams.some(
     (team) => team.id === room.showcaseTeamId
@@ -159,7 +183,12 @@ export function normalizeRoom(room: Room): Room {
               candidate.brief === scenario.brief
           ) === index
       );
-  const scenarios = scenarioSource.map((scenario, index) => ({
+  const availableScenarios = scenarioSource.some(
+    (scenario) => scenario.id === riseInductionScenario.id
+  )
+    ? scenarioSource
+    : [...scenarioSource, structuredClone(riseInductionScenario)];
+  const scenarios = availableScenarios.map((scenario, index) => ({
     ...scenario,
     id: scenario.id ?? `legacy-scenario-${index + 1}`,
   }));
@@ -251,8 +280,9 @@ export function memberOf(
     'not_invited',
     403
   );
-  requireRule(room.mode !== 'private' || member.admin, 'private_room', 403);
-  return member;
+  const effective = { ...member, admin: member.admin && staff(identity) };
+  requireRule(room.mode !== 'private' || effective.admin, 'private_room', 403);
+  return effective;
 }
 export function editable(room: Room, now = Date.now()) {
   requireRule(
@@ -280,6 +310,12 @@ export function projectRoom(
   } = room;
   return {
     ...safe,
+    sponsorship: room.sponsorship
+      ? {
+          ...room.sponsorship,
+          receipts: self.admin ? room.sponsorship.receipts : [],
+        }
+      : undefined,
     audit: (room.audit ?? []).filter(
       (entry) =>
         self.admin ||
@@ -321,54 +357,6 @@ export function projectRoom(
 }
 export function memberTeamIds(member: Pick<Member, 'teamId' | 'teamIds'>) {
   return member.teamIds?.length ? member.teamIds : [member.teamId];
-}
-export function starterScenarios(): Scenario[] {
-  return [
-    {
-      id: 'rise-pathways',
-      title: 'Find your place at RISE',
-      brief:
-        'Help RISE introduce its four pathways to innovation: Marketing & Growth, Product & Development, External Relations, and People & Culture. Use the practice apps to turn the bilingual campaign brief into a clear recruitment plan without inventing dates, approvals, or student information.',
-      criteria: [
-        'Adapts the message to each RISE department and audience',
-        'Separates verified facts from assumptions or missing details',
-        'Drafts useful next steps and asks for approval before publishing',
-      ],
-    },
-    {
-      id: 'rise-induction-day',
-      title: 'Induction Day, without the busywork',
-      brief:
-        'Coordinate RISE Induction Day and the Start Up Showcase across the four departments. Review calendars, task boards, registrations, and venue notes; then propose owners, a run sheet, and two conflict-free check-in options.',
-      criteria: [
-        'Checks availability and unresolved dependencies',
-        'Assigns work to the most relevant department',
-        'Proposes a realistic plan without scheduling anything automatically',
-      ],
-    },
-    {
-      id: 'rise-study-workflow',
-      title: 'Study smarter, contribute better',
-      brief:
-        'Create a weekly plan for a RISE member balancing classes, a group assignment, and club responsibilities. Summarize course notes, identify deadlines, break work into focused tasks, and draft a respectful message when priorities conflict.',
-      criteria: [
-        'Uses course and club records without exposing personal information',
-        'Prioritizes by deadline, effort, and team impact',
-        'Keeps the student in control of messages and final submissions',
-      ],
-    },
-    {
-      id: 'rise-partnership-outreach',
-      title: 'Partnership outreach with purpose',
-      brief:
-        'Support External Relations in researching a potential ecosystem partner and drafting a concise outreach note. Connect the partnership to RISE’s mission of sustainable, real-world impact while clearly marking facts that still need verification.',
-      criteria: [
-        'Connects the partner opportunity to a concrete RISE initiative',
-        'Flags unverified claims and missing contact context',
-        'Produces a personalized draft for human review rather than sending it',
-      ],
-    },
-  ];
 }
 export function createRoom(
   id: string,
@@ -554,6 +542,7 @@ export function mutateRoom(
       'invalid_input'
     );
     requireRule(target.id !== room.ownerId, 'owner_protected', 403);
+    requireRule(body.enabled !== true || staff(target), 'staff_only', 403);
     target.admin = body.enabled;
   } else if (action === 'assign') {
     const target = room.members.find((m) => m.id === body.memberId);

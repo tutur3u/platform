@@ -253,6 +253,57 @@ and reopens its room WebSocket when renewed credentials change. Temporary
 identity-service failures retain the current workspace and can be retried;
 explicit sign-out, account revocation, and private-room access denial still apply.
 
+## RISE learning and sponsored workshops
+
+New workshops start with the RISE Induction Day publishing mission. Teams build a
+reusable system prompt, generate skills, gather evidence across practice apps, and
+produce a bilingual Facebook draft plus artwork guidance and a publishing
+checklist. The catalog has 202 records across 24 apps, including ten connected
+Induction Day sources. Conflicting schedules and unconfirmed partner claims are
+deliberate research exercises. Dates, venue and registration links are rehearsal
+data: replace them with verified event details and obtain human approval before
+publishing. Colab does not publish to Facebook.
+
+Existing rooms receive the new scenario as an additional choice without changing
+their selected scenario, edited prompts or records. Learning is available from
+the workspace guide and as a dedicated workshop destination. It includes six
+lessons, an editable Markdown preview, a source map, and interactive RISE and
+CRAFT framework examples. Explored lessons are remembered on the device.
+
+The prompt editor provides an immediate, explicitly heuristic structure check.
+Ask AI to review performs a sponsored model call, maps exact prompt excerpts to
+framework sections, and explains suggested improvements. Reviews are shared with
+the team and marked outdated after prompt edits. Suggestions never replace a
+prompt automatically. A structure match is not a quality or safety guarantee.
+
+Only accounts with a centrally verified `@tuturuuu.com` email can create or manage
+workshops. Hosts may promote only other eligible Tuturuuu accounts. External
+members retain attendee, multi-team collaboration, learning and showcase access;
+legacy external admin flags are removed during room normalization.
+
+Production AI requires `COLAB_AI_API_KEY`, an **unbound AI Studio API key owned by
+Tuturuuu's root workspace**, and `COLAB_REQUIRE_SPONSORSHIP=true`. App-bound keys
+are rejected because their usage is not deducted from workspace credits. Configure
+the secret through Wrangler's secure input before deploying; do not commit it.
+`COLAB_AI_MODEL` selects an enabled, priced model permitted by that key. Deploy the
+AI Studio `/v1/colab/responses` endpoint before enabling sponsored Colab traffic.
+Missing configuration or insufficient credits fails closed with a readable error.
+The direct Cloudflare AI binding remains available only for local/legacy setups
+that do not require sponsorship; local verification uses deterministic responses.
+
+The dedicated endpoint checks root workspace ownership, reserves and settles
+credits through AI Studio, and records workshop, host, team, participant, scenario,
+operation, generation phase, job and request identifiers with a human-readable
+sponsorship description. Retries are separate metered calls. Unknown pricing must
+not be reported as free usage. Hosts can export the latest 100 confirmed receipts;
+attendees receive totals, not receipt identifiers. Workshop totals cover confirmed
+responses only; AI Studio remains authoritative for failed or interrupted calls.
+
+The finite browser verifier exercises learning interactions, shared prompt
+reviews, skill generation, multi-account showcase runs and reconnection with
+isolated Durable Objects. It does not establish real provider output quality or
+production credit settlement: verify those separately after secret provisioning.
+
 ## Workshop directory and activity log
 
 Workshops is the default signed-in screen and is also available at `/workshops`.

@@ -1,4 +1,5 @@
 import type { ColabRoom } from './room';
+import type { SponsorshipContext } from './sponsored-ai';
 export interface Env {
   ROOMS: DurableObjectNamespace<ColabRoom>;
   AI: Ai;
@@ -6,4 +7,8 @@ export interface Env {
   COLAB_SESSION_SECRET: string;
   APP_ORIGIN: string;
   AUTH_ORIGIN: string;
+  COLAB_AI_API_KEY?: string;
+  COLAB_AI_MODEL?: string;
+  COLAB_REQUIRE_SPONSORSHIP?: string;
+  sponsorship?: SponsorshipContext;
 }

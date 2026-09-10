@@ -160,14 +160,14 @@ describe('server-authoritative room policy', () => {
     expect(legacy.showcaseTeamId).toBe('team-1');
     expect(legacy.members[0]?.teamIds).toEqual(['team-1']);
     expect(legacy.scenarios.length).toBeGreaterThan(1);
-    expect(legacy.scenario.id).toBe('rise-pathways');
+    expect(legacy.scenario.id).toBe('rise-induction-post');
     expect(
       legacy.scenarios.filter(
         (scenario) => scenario.title === legacy.scenario.title
       )
     ).toHaveLength(1);
     expect(legacy.teams[0]?.limits.toolCallLimit).toBe(10);
-    expect(legacy.teams[0]?.records).toHaveLength(192);
+    expect(legacy.teams[0]?.records).toHaveLength(202);
     expect(legacy.teams[0]?.records[0]?.title).toBe('Team-edited launch brief');
     mutateRoom(
       legacy,
@@ -530,7 +530,9 @@ describe('server-authoritative room policy', () => {
   });
   it('checks delegation, owner protection, read-only and private access', () => {
     const r = room();
-    joinRoom(r, alice, 'team-1', false, now);
+    const colleague = { ...alice, email: 'colleague@tuturuuu.com' };
+    r.invites.push(colleague.email);
+    joinRoom(r, colleague, 'team-1', false, now);
     joinRoom(r, bob, 'team-2', false, now);
     expect(() =>
       mutateRoom(r, alice, { action: 'showcase', enabled: true }, now)
@@ -544,7 +546,7 @@ describe('server-authoritative room policy', () => {
     expect(() =>
       mutateRoom(
         r,
-        alice,
+        colleague,
         { action: 'admin', memberId: bob.id, enabled: true },
         now
       )
@@ -557,13 +559,13 @@ describe('server-authoritative room policy', () => {
         now
       )
     ).toThrow('owner_protected');
-    mutateRoom(r, alice, { action: 'mode', mode: 'readonly' }, now);
+    mutateRoom(r, colleague, { action: 'mode', mode: 'readonly' }, now);
     expect(() =>
       mutateRoom(r, bob, { action: 'prompt', prompt: 'x', revision: 0 }, now)
     ).toThrow('room_not_open');
-    mutateRoom(r, alice, { action: 'mode', mode: 'private' }, now);
+    mutateRoom(r, colleague, { action: 'mode', mode: 'private' }, now);
     expect(() => projectRoom(r, bob, [], now)).toThrow('private_room');
-    expect(projectRoom(r, alice, [], now).self.admin).toBe(true);
+    expect(projectRoom(r, colleague, [], now).self.admin).toBe(true);
   });
   it('revokes members immediately and detects stale edits', () => {
     const r = room();

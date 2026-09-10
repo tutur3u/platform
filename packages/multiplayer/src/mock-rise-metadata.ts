@@ -19,7 +19,7 @@ export function riseMetadata(
     status: `“${primaryTitle}” is active; its next decision still needs a named human owner.`,
     access: `${appName} contains practice club data only; personal and assessed student work stays private.`,
     risk: `Details in “${followupTitle}” may be proposals; verify them before outreach, scheduling, or publishing.`,
-    metric: `192 practice records per team · 8 in ${appName} · human review required.`,
+    metric: `Core ${appName} records plus the shared Induction Day evidence pack · human review required.`,
     next: `Review “${followupTitle}” in ${appName} and propose one practical next step for ${department}.`,
   };
 }

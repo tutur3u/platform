@@ -225,7 +225,7 @@ describe('AI output boundaries', () => {
       'zalo.create',
     ]);
     expect(result.records).toHaveLength(team.records.length + 1);
-    expect(team.records).toHaveLength(192);
+    expect(team.records).toHaveLength(202);
     expect(result.run.prompt).toBe(team.prompt);
     expect(result.run.scenario).toBe(starterScenarios()[0]!.brief);
     expect(result.run.usage).toEqual({

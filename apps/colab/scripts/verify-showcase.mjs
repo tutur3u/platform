@@ -391,7 +391,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await teamCount(viewer, 1);
     await viewer.reload();
     await teamCount(viewer, 1);
-    // Promoted room admins can control sharing too, regardless of email domain.
+    // External attendees cannot be promoted or gain workshop controls.
     assert.equal(
       (
         await request(`${path}/action`, owner, {
@@ -400,13 +400,12 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
           enabled: true,
         })
       ).status,
-      200
+      403
     );
-    await viewer
-      .getByRole('link', { name: 'Host controls', exact: true })
-      .click();
-    await viewer.getByRole('tab', { name: 'Showcase', exact: true }).click();
-    await viewer.getByRole('switch', { name: 'Live showcase' }).click();
+    await expect(
+      viewer.getByRole('link', { name: 'Host controls', exact: true })
+    ).toHaveCount(0);
+    await toggle.click();
     await expect(toggle).toBeChecked();
     await teamCount(writer, 2);
     const beforeConflict = await (await request(path, owner)).json();

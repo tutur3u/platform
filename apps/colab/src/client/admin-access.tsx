@@ -40,6 +40,7 @@ export function AdminAccess({
         <div>
           <h3>{c.accessAndInvites}</h3>
           <p>{c.accessAndInvitesHelp}</p>
+          <p>{c.coaching.hostPolicy}</p>
         </div>
         <Lock className="size-5 text-muted-foreground" aria-hidden="true" />
       </div>

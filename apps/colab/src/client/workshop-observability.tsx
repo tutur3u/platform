@@ -8,6 +8,7 @@ import type { RoomView } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useCopy } from './i18n';
 import { runInsights } from './run-insights';
+import { Sponsorship } from './sponsorship';
 
 export function WorkshopObservability({ room }: { room: RoomView }) {
   const c = useCopy();
@@ -106,6 +107,7 @@ export function WorkshopObservability({ room }: { room: RoomView }) {
           );
         })}
       </div>
+      <Sponsorship room={room} />
     </section>
   );
 }

@@ -24,6 +24,32 @@ export default class MockAI extends WorkerEntrypoint {
           },
         ],
       };
+    } else if (system.startsWith('Design')) {
+      result = {
+        title: 'Induction Day: registration link missing',
+        brief:
+          'Prepare the RISE invitation, but the registration link is missing. Ask the event lead to confirm it before calling the post ready.',
+        criteria: [
+          'Checks the approved event brief',
+          'Flags the missing link',
+          'Keeps publishing under human review',
+        ],
+      };
+    } else if (system.includes('Analyze the supplied prompt')) {
+      const framework = system.includes('framework craft:')
+        ? ['context', 'role', 'action', 'format', 'tone']
+        : ['role', 'inputs', 'steps', 'output'];
+      result = {
+        summary:
+          'Your assistant has a clear starting point. Add an explicit source and review rule.',
+        sections: framework.map((id) => ({
+          id,
+          quote: input.prompt.slice(0, 100),
+          explanation: 'This instruction helps define the assistant’s work.',
+          improvement:
+            'Check the approved Induction Day brief before drafting, and ask about missing facts.',
+        })),
+      };
     } else if (system.startsWith('Coach')) {
       result = { feedback: 'Demo coaching: check approvals.' };
     } else if (!input.previousActions.length) {

@@ -18,6 +18,7 @@ import {
 import { compileSkills, makeScenario, runAgent } from './ai';
 import { hash, randomToken } from './auth';
 import type { Env } from './env';
+import { reviewPrompt } from './prompt-review';
 
 export class ColabRoom extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
@@ -250,9 +251,16 @@ export class ColabRoom extends DurableObject<Env> {
   async ai(identity: Identity, body: Record<string, unknown>) {
     let room = this.read();
     const member = memberOf(room, identity);
+    requireRule(
+      this.env.COLAB_REQUIRE_SPONSORSHIP !== 'true' ||
+        this.env.COLAB_AI_API_KEY,
+      'sponsorship_unavailable',
+      503
+    );
     editable(room);
     requireRule(
       body.action === 'compile' ||
+        body.action === 'analyze' ||
         body.action === 'run' ||
         body.action === 'scenario',
       'unknown_action'
@@ -290,7 +298,12 @@ export class ColabRoom extends DurableObject<Env> {
       )
       .toArray()[0];
     requireRule(!busy || busy.expires <= now, 'ai_busy', 409);
-    const job = now + 180_000;
+    const job =
+      now +
+      (body.action === 'run'
+        ? Math.min(room.limits.agentTurnLimit, team.limits.agentTurnLimit) + 2
+        : 3) *
+        60_000;
     this.ctx.storage.sql.exec(
       'INSERT OR REPLACE INTO limits(key,count,expires) VALUES(?,1,?)',
       'ai-job',
@@ -300,22 +313,48 @@ export class ColabRoom extends DurableObject<Env> {
     if (body.action !== 'scenario') team.aiCalls++;
     this.save(room);
     const snapshot = room;
+    const aiEnv: Env = {
+      ...this.env,
+      sponsorship: {
+        workshopId: room.id,
+        workshopTitle: room.title,
+        hostId: room.ownerId,
+        teamId: team.id,
+        teamName: team.name,
+        participantId: identity.id,
+        operation: body.action as 'compile' | 'analyze' | 'run' | 'scenario',
+        scenarioId: room.scenario.id,
+        jobId: crypto.randomUUID(),
+        sequence: 0,
+        receipts: [],
+      },
+    };
     try {
+      const review =
+        body.action === 'analyze'
+          ? await reviewPrompt(
+              aiEnv,
+              team.prompt,
+              team.revision,
+              body.framework === 'craft' ? 'craft' : 'rise',
+              body.locale === 'vi' ? 'vi' : 'en'
+            )
+          : undefined;
       const skills =
         body.action === 'compile'
-          ? await compileSkills(this.env, team.prompt, body.multiple === true)
+          ? await compileSkills(aiEnv, team.prompt, body.multiple === true)
           : undefined;
       const scenario =
         body.action === 'scenario'
           ? await makeScenario(
-              this.env,
+              aiEnv,
               text(body.steering, 2000, 0),
               body.random === true
             )
           : undefined;
       const result =
         body.action === 'run'
-          ? await runAgent(this.env, team, room.scenario, {
+          ? await runAgent(aiEnv, team, room.scenario, {
               agentTurnLimit: Math.min(
                 room.limits.agentTurnLimit,
                 team.limits.agentTurnLimit
@@ -352,6 +391,7 @@ export class ColabRoom extends DurableObject<Env> {
         409
       );
       if (skills) current.skills = skills;
+      if (review) current.promptReview = review;
       if (scenario) {
         room.scenario = scenario;
         room.scenarios = [...room.scenarios, scenario].slice(-12);
@@ -368,14 +408,39 @@ export class ColabRoom extends DurableObject<Env> {
         body.action === 'scenario' ? undefined : requestedTeamId
       );
       this.save(room);
-      return projectRoom(room, identity, this.online());
     } finally {
-      this.ctx.storage.sql.exec(
-        'DELETE FROM limits WHERE key = ? AND expires = ?',
-        'ai-job',
-        job
-      );
+      try {
+        if (aiEnv.sponsorship?.receipts.length) {
+          const latest = this.read();
+          const previous = latest.sponsorship ?? {
+            credits: 0,
+            calls: 0,
+            receipts: [],
+          };
+          const receipts = aiEnv.sponsorship.receipts.map((receipt) => ({
+            ...receipt,
+            operation: String(body.action),
+            teamId: team.id,
+            at: Date.now(),
+          }));
+          latest.sponsorship = {
+            credits:
+              previous.credits +
+              receipts.reduce((sum, receipt) => sum + receipt.credits, 0),
+            calls: previous.calls + receipts.length,
+            receipts: [...previous.receipts, ...receipts].slice(-100),
+          };
+          this.save(latest);
+        }
+      } finally {
+        this.ctx.storage.sql.exec(
+          'DELETE FROM limits WHERE key = ? AND expires = ?',
+          'ai-job',
+          job
+        );
+      }
     }
+    return projectRoom(this.read(), identity, this.online());
   }
   private online() {
     return [

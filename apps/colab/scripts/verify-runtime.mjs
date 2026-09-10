@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { Miniflare } from 'miniflare';
 import { verifyDirectory } from './verify-directory.mjs';
+import { verifyLearning } from './verify-learning.mjs';
 import { verifyShowcase } from './verify-showcase.mjs';
 
 const workerDir =
@@ -473,13 +474,22 @@ try {
   await page.keyboard.press('Escape');
   await hostDialog.waitFor({ state: 'hidden' });
   await nav('Practice guide').click();
-  await page.getByRole('button', { name: 'Add a little clarity' }).click();
-  await page.getByText('Ready for your review', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Markdown', exact: true }).click();
+  await page
+    .getByRole('textbox', { name: 'Edit the Markdown example' })
+    .fill('# My workshop notes');
+  await page
+    .locator('.learning-markdown')
+    .getByRole('heading', { name: 'My workshop notes' })
+    .waitFor();
   await nav('Join a room').click();
   await joinDialog.waitFor();
   await page.goBack();
   await joinDialog.waitFor({ state: 'hidden' });
-  await page.getByText('Ready for your review', { exact: true }).waitFor();
+  await page
+    .locator('.learning-markdown')
+    .getByRole('heading', { name: 'My workshop notes' })
+    .waitFor();
   await page.goForward();
   await joinDialog.waitFor();
   await page.keyboard.press('Escape');
@@ -667,6 +677,7 @@ try {
   assert.deepEqual(errors, []);
   await verifyDirectory({ request, owner, alice, browser });
   await verifyShowcase({ browser, request, owner, alice, bob });
+  await verifyLearning({ browser, request, owner, alice, bob });
   console.log(
     'PASS: runtime auth, CSRF, invitations, team isolation, showcase broadcast, concurrent edits, guest rotation, read-only, private revocation, desktop/mobile and Vietnamese UI.'
   );

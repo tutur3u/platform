@@ -102,6 +102,11 @@ export function Structure({
               icon: <BookOpen className="size-4" />,
             },
             {
+              title: c.learning.title,
+              href: '#learning',
+              icon: <BookOpen className="size-4" />,
+            },
+            {
               title: c.studio.editor,
               href: '#team-prompt',
               icon: <Users className="size-4" />,
