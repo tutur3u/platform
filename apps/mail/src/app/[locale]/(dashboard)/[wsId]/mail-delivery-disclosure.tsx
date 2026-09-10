@@ -2,6 +2,7 @@
 
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { MAIL_EXPAND_DELIVERIES_EVENT } from './mail-delivery-events';
 
 export function MailDeliveryDisclosure({
   reveal,
@@ -19,8 +20,9 @@ export function MailDeliveryDisclosure({
     const element = ref.current;
     // Keyboard navigation needs the row visible before it can move focus.
     const expand = () => flushSync(() => setExpanded(true));
-    element?.addEventListener('mail-expand-deliveries', expand);
-    return () => element?.removeEventListener('mail-expand-deliveries', expand);
+    element?.addEventListener(MAIL_EXPAND_DELIVERIES_EVENT, expand);
+    return () =>
+      element?.removeEventListener(MAIL_EXPAND_DELIVERIES_EVENT, expand);
   }, []);
   return (
     <details

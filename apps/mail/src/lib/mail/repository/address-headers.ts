@@ -17,10 +17,11 @@ export async function loadDamagedAddressHeaders(
         .filter(
           (row) =>
             row.raw_message_id &&
-            (damaged(row.from_name) ||
-              (recipientsByMessage.get(row.id) ?? []).some((recipient) =>
-                damaged(recipient.display_name)
-              ))
+            (row.direction === 'outbound'
+              ? (recipientsByMessage.get(row.id) ?? []).some((recipient) =>
+                  damaged(recipient.display_name)
+                )
+              : damaged(row.from_name))
         )
         .map((row) => row.raw_message_id as string)
     ),

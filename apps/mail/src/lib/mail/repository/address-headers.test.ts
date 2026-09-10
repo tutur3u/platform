@@ -51,7 +51,14 @@ it('also recovers damaged outbound recipient names', async () => {
   };
   await loadDamagedAddressHeaders(
     { schema: () => ({ from: () => query }) },
-    [{ id: 'sent', from_name: 'Sender', raw_message_id: 'raw' }],
+    [
+      {
+        id: 'sent',
+        direction: 'outbound',
+        from_name: 'Sender',
+        raw_message_id: 'raw',
+      },
+    ],
     new Map([['sent', [{ display_name: 'Kh�nh H�' }]]])
   );
   expect(query.in).toHaveBeenCalledWith('id', ['raw']);
@@ -74,4 +81,21 @@ it('recovers null names and bounds raw-header requests', async () => {
   expect(query.in.mock.calls.map((call) => call[1].length)).toEqual([
     100, 100, 1,
   ]);
+});
+
+it('skips unused damaged sender headers on outbound messages', async () => {
+  const admin = { schema: vi.fn() };
+  await loadDamagedAddressHeaders(
+    admin,
+    [
+      {
+        id: 'sent',
+        direction: 'outbound',
+        from_name: null,
+        raw_message_id: 'raw',
+      },
+    ],
+    new Map([['sent', [{ display_name: 'Recipient' }]]])
+  );
+  expect(admin.schema).not.toHaveBeenCalled();
 });

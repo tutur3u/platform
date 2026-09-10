@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { MailThreadSummary } from '@tuturuuu/internal-api';
 import { createElement as h } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
+import { MAIL_EXPAND_DELIVERIES_EVENT } from './mail-delivery-events';
 import { MailDeliveryList } from './mail-delivery-list';
 
 vi.mock('next-intl', () => ({
@@ -62,7 +63,7 @@ it('retains keyboard expansion through selection and unrelated rerenders', () =>
   };
   const { container, rerender } = render(h(MailDeliveryList, props));
   const details = container.querySelector('details')!;
-  fireEvent(details, new Event('mail-expand-deliveries'));
+  fireEvent(details, new Event(MAIL_EXPAND_DELIVERIES_EVENT));
   expect(details.open).toBe(true);
   rerender(h(MailDeliveryList, { ...props, selectedThreads: new Set(['b']) }));
   rerender(h(MailDeliveryList, props));

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   MailThreadDetail,
@@ -6,6 +7,7 @@ import type {
 } from '@tuturuuu/internal-api';
 import { createElement as h, useState } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { MAIL_EXPAND_DELIVERIES_EVENT } from './mail-delivery-events';
 import { type MailKeyboardOptions, useMailKeyboard } from './use-mail-keyboard';
 
 const threads = [
@@ -236,7 +238,7 @@ it('opens a collapsed delivery group before focusing its recipient row', () => {
   const details = document.createElement('details');
   wrapper.before(details);
   details.append(wrapper);
-  details.addEventListener('mail-expand-deliveries', () => {
+  details.addEventListener(MAIL_EXPAND_DELIVERIES_EVENT, () => {
     details.open = true;
   });
   Object.defineProperty(second, 'getClientRects', {
