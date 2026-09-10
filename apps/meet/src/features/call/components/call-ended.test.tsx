@@ -59,6 +59,7 @@ it('refreshes stale personal and workspace meeting caches when returning from a 
     <QueryClientProvider client={client}>
       <NextIntlClientProvider locale="en" messages={messages}>
         <CallEnded
+          accountId="test-account"
           canManage={false}
           canReadNotes={false}
           wsId="workspace-id"

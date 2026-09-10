@@ -74,6 +74,7 @@ export default async function RoomPage({
   if (policy.ended)
     return (
       <CallEnded
+        accountId={user.id}
         initialShowNotes={(await searchParams)?.notes === '1'}
         canManage={isHost}
         canReadNotes={policy.canReadNotes}
@@ -95,6 +96,7 @@ export default async function RoomPage({
 
   return (
     <CallShell
+      accountId={user.id}
       defaultDisplayName={displayName}
       defaultAvatarUrl={avatarUrl}
       leaveHref={leaveHref}

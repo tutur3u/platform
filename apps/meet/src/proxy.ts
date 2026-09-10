@@ -98,7 +98,8 @@ function getLegacyPathRedirect(pathname: string): string | null {
   const prefix = locale ? `/${locale}` : '';
 
   if (rest[0] === 'workspace' && rest.length > 1) {
-    return `${prefix}/${rest.slice(1).join('/')}`;
+    const path = `${prefix}/${rest.slice(1).join('/')}`;
+    return rest.length === 2 ? `${path}/meetings` : path;
   }
   // /call/<wsId>/<meetingId> and /join/<code> both became /r/<code>.
   if (rest[0] === 'call' && rest.length === 3) {

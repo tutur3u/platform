@@ -4181,6 +4181,8 @@
       "name_placeholder": "Họp hàng tuần",
       "name_required": "Vui lòng nhập tên cuộc họp.",
       "open_calendar": "Mở Lịch",
+      "refresh_failed": "Đang hiển thị kết quả đã lưu. Tải lại để thử lại.",
+      "refreshing": "Đang cập nhật cuộc họp…",
       "schedule": "Lên lịch cuộc họp",
       "schedule_description": "Chọn tên và thời gian. Cuộc họp sẽ xuất hiện trong Lịch Tuturuuu.",
       "schedule_failed": "Không thể thêm cuộc họp này vào Lịch. Vui lòng thử lại.",

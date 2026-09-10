@@ -4181,6 +4181,8 @@
       "name_placeholder": "Weekly sync",
       "name_required": "Enter a meeting name.",
       "open_calendar": "Open Calendar",
+      "refresh_failed": "Showing saved results. Refresh to try again.",
+      "refreshing": "Updating meetings…",
       "schedule": "Schedule meeting",
       "schedule_description": "Choose a name and time. The meeting will appear on your Tuturuuu Calendar.",
       "schedule_failed": "Could not add this meeting to Calendar. Please try again.",

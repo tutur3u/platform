@@ -5,28 +5,43 @@ import { getMeetCallRoomState } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useEndedRoom } from '../hooks/use-ended-room';
+import { rememberEndedRoom } from '../lib/ended-room-cache';
 import { encodeRoomCode } from '../lib/room-code';
 
-export function MeetingRoomAction({ meetingId }: { meetingId: string }) {
+export function MeetingRoomAction({
+  meetingId,
+  accountId,
+}: {
+  meetingId: string;
+  accountId: string;
+}) {
   const t = useTranslations('meet.call');
+  const knownEnded = useEndedRoom(accountId, meetingId);
   const { data } = useQuery({
-    queryKey: ['meet-room-state', meetingId],
-    queryFn: () => getMeetCallRoomState(meetingId),
+    queryKey: ['meet-room-state', meetingId, accountId],
+    queryFn: async () => {
+      const state = await getMeetCallRoomState(meetingId);
+      if (state.ended) rememberEndedRoom(accountId, meetingId);
+      return state;
+    },
+    enabled: !knownEnded,
     staleTime: 15000,
     refetchInterval: 60000,
     refetchIntervalInBackground: false,
     retry: false,
   });
-  const notes = data?.ended && data.canReadNotes;
+  const ended = knownEnded || data?.ended;
+  const notes = ended && data?.canReadNotes;
   return (
     <Button
       asChild
       size="sm"
       className="flex-1"
-      variant={data?.ended ? 'secondary' : 'default'}
+      variant={ended ? 'secondary' : 'default'}
     >
       <Link href={`/r/${encodeRoomCode(meetingId)}${notes ? '?notes=1' : ''}`}>
-        {data?.ended ? (
+        {ended ? (
           <FileText className="size-3.5" />
         ) : (
           <Video className="size-3.5" />
@@ -34,7 +49,7 @@ export function MeetingRoomAction({ meetingId }: { meetingId: string }) {
         {t(
           notes
             ? 'view_meeting_notes'
-            : data?.ended
+            : ended
               ? 'call_ended_title'
               : data
                 ? 'join_call'

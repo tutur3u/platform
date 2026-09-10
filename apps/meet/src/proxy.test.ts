@@ -263,4 +263,23 @@ describe('Meet proxy auth handoff', () => {
       '/'
     );
   });
+  it.each([
+    [
+      '/workspace/personal?source=sidebar-apps',
+      '/personal/meetings?source=sidebar-apps',
+    ],
+    ['/vi/workspace/team', '/vi/team/meetings'],
+    ['/workspace/personal/plans', '/personal/plans'],
+  ])(
+    'avoids an extra workspace landing redirect for %s',
+    async (path, target) => {
+      const response = await proxy(
+        new NextRequest(`https://meet.tuturuuu.localhost${path}`)
+      );
+      expect(response.status).toBe(308);
+      expect(response.headers.get('Location')).toBe(
+        `https://meet.tuturuuu.localhost${target}`
+      );
+    }
+  );
 });

@@ -7,9 +7,11 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
 import { NotesSharingControl } from '@/features/meeting-ai/notes-sharing-control';
+import { useEndedRoom } from '../hooks/use-ended-room';
 import { EndedMeetingSettings } from './ended-meeting-settings';
 
 export function CallEnded({
+  accountId,
   ended = true,
   initialShowNotes = false,
   canManage,
@@ -21,6 +23,7 @@ export function CallEnded({
   backHref,
   saving = false,
 }: {
+  accountId: string;
   ended?: boolean;
   initialShowNotes?: boolean;
   canManage: boolean;
@@ -32,6 +35,7 @@ export function CallEnded({
   backHref: string;
   saving?: boolean;
 }) {
+  useEndedRoom(accountId, meetingId, ended);
   const queryClient = useQueryClient();
   const t = useTranslations('meet.call');
   const [showNotes, setShowNotes] = useState(initialShowNotes);
