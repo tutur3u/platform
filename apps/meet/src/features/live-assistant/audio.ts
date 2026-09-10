@@ -30,8 +30,13 @@ export class LiveAudioPlayer {
         this.pendingBytes -= this.pending.shift()!.data.length;
       return;
     }
-    const bytes = Uint8Array.from(atob(data), (value) => value.charCodeAt(0));
-    if (bytes.length % 2 || bytes.length > 96000) return;
+    let bytes: Uint8Array;
+    try {
+      bytes = Uint8Array.from(atob(data), (value) => value.charCodeAt(0));
+    } catch {
+      return;
+    }
+    if (!bytes.length || bytes.length % 2 || bytes.length > 96000) return;
     const pcm = new DataView(bytes.buffer);
     const buffer = context.createBuffer(1, bytes.length / 2, sampleRate);
     const channel = buffer.getChannelData(0);

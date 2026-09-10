@@ -62,3 +62,18 @@ it('marks an interrupted output-transcription-only response incomplete', () => {
   markInterruptedUsage(state);
   expect(state.billing?.incomplete).toBe(true);
 });
+
+it('counts repeated grounding query metadata once per turn', () => {
+  const state = saved();
+  const event = {
+    serverContent: { groundingMetadata: { webSearchQueries: ['query', ' '] } },
+  } as LiveServerMessage;
+  observeSessionUsage(state, event);
+  observeSessionUsage(state, event);
+  expect(state.billing?.usage.searchQueries).toBe(1);
+  observeSessionUsage(state, {
+    serverContent: { turnComplete: true },
+  } as LiveServerMessage);
+  observeSessionUsage(state, event);
+  expect(state.billing?.usage.searchQueries).toBe(2);
+});

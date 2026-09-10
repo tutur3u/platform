@@ -34,6 +34,7 @@ class Socket {
   close = vi.fn();
   constructor() {
     Socket.current = this;
+    queueMicrotask(() => this.receive({ type: 'state', state: 'listening' }));
   }
   receive(message: unknown) {
     this.onmessage?.({ data: JSON.stringify(message) });

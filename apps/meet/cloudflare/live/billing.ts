@@ -15,6 +15,7 @@ export type LiveBillingState = {
   previousCostUsd?: number;
   openedAt?: number;
   pendingSettlement?: boolean;
+  settlementComplete?: boolean;
   pendingShareFinish?: string;
 };
 export async function beginLiveBilling(
@@ -83,6 +84,7 @@ export async function settleLiveBilling(
         ? state.costUsd
         : (state.previousCostUsd ?? 0) + Number(row.provider_cost_usd),
     closed: row.closed === true,
+    settlementComplete: row.closed === true,
     exhausted: Number(row.remaining_reserved_credits ?? 0) <= 0,
     renew:
       Number(row.remaining_reserved_credits ?? 0) <= 300 ||

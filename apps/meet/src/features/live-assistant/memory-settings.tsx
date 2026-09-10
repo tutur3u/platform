@@ -134,7 +134,10 @@ export function MeetMemorySettings({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => setEditing(null)}
+                    onClick={() => {
+                      setEditing(null);
+                      setDraft('');
+                    }}
                   >
                     {t('cancel')}
                   </Button>

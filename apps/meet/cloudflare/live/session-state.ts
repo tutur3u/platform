@@ -22,6 +22,7 @@ export type SavedSession = {
   billingFinalized?: boolean;
   coverageGap?: boolean;
   pendingUsage?: boolean;
+  searchTurn?: { queries: string[]; counted: number };
   publicBillings?: Record<string, LiveBillingState>;
   ended?: boolean;
   contextErased?: boolean;

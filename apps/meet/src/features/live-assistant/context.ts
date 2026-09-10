@@ -4,6 +4,7 @@ export type LiveContextTurn = {
   role: 'user' | 'assistant';
   text: string;
   at: string;
+  sequence?: number;
 };
 export type LiveContextCheckpoint = {
   summary: string;
@@ -97,10 +98,14 @@ export function needsLiveCheckpoint(journal: LiveContextJournal) {
 export function applyLiveCheckpoint(
   journal: LiveContextJournal,
   checkpoint: LiveContextCheckpoint,
-  summarizedThrough: string
+  summarizedThrough: string | number
 ) {
   return {
     checkpoints: [...journal.checkpoints, checkpoint].slice(-8),
-    turns: journal.turns.filter((turn) => turn.at > summarizedThrough),
+    turns: journal.turns.filter((turn) =>
+      typeof summarizedThrough === 'number'
+        ? turn.sequence === undefined || turn.sequence > summarizedThrough
+        : turn.at >= summarizedThrough
+    ),
   };
 }

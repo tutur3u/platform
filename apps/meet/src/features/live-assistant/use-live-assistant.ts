@@ -27,6 +27,7 @@ type ActiveSession = {
   retries: number;
   inputDeviceId?: string;
   timeout?: ReturnType<typeof setTimeout>;
+  startup?: (ready: boolean) => void;
 };
 type Review = Extract<LiveAssistantEvent, { type: 'review' }>;
 export function useLiveAssistant(
@@ -75,6 +76,7 @@ export function useLiveAssistant(
     if (!current) return;
     await current.disposeCapture?.();
     current.stopped = true;
+    current.startup?.(false);
     clearTimeout(current.reconnect);
     clearTimeout(current.timeout);
     void current.disposeCapture?.();
@@ -117,6 +119,7 @@ export function useLiveAssistant(
         if (!wasReady && current.ready && current.paused)
           socket.send(JSON.stringify({ type: 'pause', paused: true }));
         if (current.ready) {
+          current.startup?.(true);
           current.retries = 0;
           clearTimeout(current.timeout);
         }
@@ -257,6 +260,13 @@ export function useLiveAssistant(
         paused: false,
         ready: false,
       } as ActiveSession;
+      const ready = new Promise<boolean>((resolve) => {
+        const timeout = setTimeout(() => resolve(false), 30000);
+        current.startup = (value) => {
+          clearTimeout(timeout);
+          resolve(value);
+        };
+      });
       active.current = current;
       await connect(session.token);
       const capture = await captureLiveAudio(
@@ -282,6 +292,7 @@ export function useLiveAssistant(
         current.updateCapture = capture.update;
         if (current.microphone) capture.update([current.microphone]);
       }
+      if (!(await ready)) throw new Error('Live startup failed');
       return !current.stopped;
     } catch {
       player.close();
@@ -351,6 +362,7 @@ export function useLiveAssistant(
       const current = active.current;
       if (!current) return;
       current.stopped = true;
+      current.startup?.(false);
       clearTimeout(current.reconnect);
       clearTimeout(current.timeout);
       void current.disposeCapture?.();

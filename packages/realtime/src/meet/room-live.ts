@@ -100,7 +100,7 @@ export function applyRoomLive(
         {
           type: 'assistant.live' as const,
           sessionId: message.sessionId,
-          ownerId,
+          ownerId: current.ownerId,
           active: false,
         },
       ],

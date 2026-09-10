@@ -35,22 +35,24 @@ export async function liveDatabase<T>(
     prefer?: string;
   }
 ): Promise<T> {
-  const response = await fetch(
-    new URL(`/rest/v1/${path}`, env.NEXT_PUBLIC_SUPABASE_URL),
-    {
-      method: init?.method ?? 'GET',
-      headers: {
-        apikey: env.SUPABASE_SECRET_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-        'Content-Profile': init?.schema ?? 'public',
-        'Accept-Profile': init?.schema ?? 'public',
-        ...(init?.prefer ? { Prefer: init.prefer } : {}),
-      },
-      body: init?.body ? JSON.stringify(init.body) : undefined,
-      signal: AbortSignal.timeout(10000),
-    }
-  );
+  const url = new URL(`/rest/v1/${path}`, env.NEXT_PUBLIC_SUPABASE_URL);
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  if (url.protocol !== 'https:' && !(local && url.protocol === 'http:'))
+    throw new Error('live_database_tls_required');
+  const response = await fetch(url, {
+    redirect: 'error',
+    method: init?.method ?? 'GET',
+    headers: {
+      apikey: env.SUPABASE_SECRET_KEY,
+      Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+      'Content-Type': 'application/json',
+      'Content-Profile': init?.schema ?? 'public',
+      'Accept-Profile': init?.schema ?? 'public',
+      ...(init?.prefer ? { Prefer: init.prefer } : {}),
+    },
+    body: init?.body ? JSON.stringify(init.body) : undefined,
+    signal: AbortSignal.timeout(10000),
+  });
   if (!response.ok) throw new LiveDatabaseError(response.status);
   return response.status === 204
     ? (undefined as T)
@@ -83,10 +85,14 @@ export async function readLiveMemory(
 export class LiveTurnArchive {
   constructor(private readonly storage: DurableObjectStorage) {}
   async append(turn: LiveContextTurn) {
-    await this.storage.transaction(async (txn) => {
+    return this.storage.transaction(async (txn) => {
       const sequence = ((await txn.get<number>('archive:sequence')) ?? 0) + 1;
-      await txn.put(`turn:${String(sequence).padStart(12, '0')}`, turn);
+      await txn.put(`turn:${String(sequence).padStart(12, '0')}`, {
+        ...turn,
+        sequence,
+      });
       await txn.put('archive:sequence', sequence);
+      return sequence;
     });
   }
   async recent(userText = '', modelText = '') {

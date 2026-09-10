@@ -63,6 +63,7 @@ export function RoomAssistantAudio({
     const audio = new LiveAudioPlayer();
     player.current = audio;
     const sequences = new Map<string, number>();
+    const clockOffsets = new Map<string, number>();
     const initial = [...(announcements.get(meetingId)?.values() ?? [])];
     const liveSessions = new Set(initial.map((item) => item.sessionId));
     setAvailable(liveSessions.size > 0);
@@ -114,9 +115,11 @@ export function RoomAssistantAudio({
         if (!message.active) audio.interrupt();
         return;
       }
+      const offset =
+        clockOffsets.get(message.sessionId) ?? Date.now() - message.at;
+      clockOffsets.set(message.sessionId, offset);
       if (
-        id !== meetingId ||
-        Math.abs(Date.now() - message.at) > 5000 ||
+        Math.abs(Date.now() - message.at - offset) > 5000 ||
         message.sequence <= (sequences.get(message.sessionId) ?? -1)
       )
         return;

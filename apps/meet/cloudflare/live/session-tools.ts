@@ -85,13 +85,12 @@ export async function executeLiveTool(
       respond({ error: 'Invalid checkpoint' });
       return;
     }
+    const boundary = saved.journal.turns.at(-9) ?? saved.journal.turns.at(-1);
     const through =
-      saved.journal.turns.at(-9)?.at ??
-      saved.journal.turns.at(-1)?.at ??
-      new Date().toISOString();
+      boundary?.sequence ?? boundary?.at ?? new Date().toISOString();
     saved.journal = applyLiveCheckpoint(
       saved.journal,
-      { ...parsed.data, through },
+      { ...parsed.data, through: String(through) },
       through
     );
     await persist();

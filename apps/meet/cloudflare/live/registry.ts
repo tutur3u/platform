@@ -33,7 +33,9 @@ export async function liveRegistry(
   const parsed = identitySchema.safeParse(await request.json());
   if (!parsed.success) return new Response('Invalid request', { status: 400 });
   const input = parsed.data;
-  let entries = (await storage.get<Entry[]>('active')) ?? [];
+  let entries = ((await storage.get<Entry[]>('active')) ?? []).filter(
+    (entry) => entry.expiresAt > Date.now()
+  );
   if (path === '/registry/remove') {
     await storage.put(
       'active',

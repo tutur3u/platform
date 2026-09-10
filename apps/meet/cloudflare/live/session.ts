@@ -85,7 +85,6 @@ export class MeetLiveDurableObject {
             review.name !== 'workspace_tool'
           )
             review.status = 'failed';
-        // Never replay an interrupted action from a resumed tool call.
         this.saved.handle = undefined;
         await this.persist();
       }
@@ -149,8 +148,8 @@ export class MeetLiveDurableObject {
         meetingId: string;
         action: string;
       };
+      if (!this.saved) return new Response('Session absent', { status: 410 });
       if (
-        !this.saved ||
         input.ownerId !== this.saved.claims.ownerId ||
         input.meetingId !== this.saved.claims.meetingId
       )
@@ -218,13 +217,14 @@ export class MeetLiveDurableObject {
       type: 'state',
       state: this.provider ? 'listening' : 'connecting',
     });
-    this.queue = this.queue.then(async () => {
+    const history = this.queue.then(async () => {
       this.emit({
         type: 'history',
         turns: await this.archive.recent(this.userText, this.modelText),
       });
     });
-    await this.queue;
+    this.queue = history.catch(() => undefined);
+    await history;
     for (const review of saved.reviews) this.emitReview(review);
     this.state.waitUntil(this.connect());
     return new Response(null, {
@@ -440,8 +440,8 @@ export class MeetLiveDurableObject {
       ] as const) {
         if (!text.trim()) continue;
         const turn = { role, text, at: new Date().toISOString() };
-        await this.archive.append(turn);
-        saved.journal = appendLiveTurn(saved.journal, turn);
+        const sequence = await this.archive.append(turn);
+        saved.journal = appendLiveTurn(saved.journal, { ...turn, sequence });
         this.emit({ type: 'transcript', role, text: '', finished: true });
       }
       this.userText = '';
@@ -630,6 +630,7 @@ export class MeetLiveDurableObject {
             this.saved.billing.costUsd,
             this.saved.identity.workspaceId
           );
+          this.saved.coverageGap = false;
           this.saved.billingFinalized = false;
           await this.persist();
           await reportLiveUsage(

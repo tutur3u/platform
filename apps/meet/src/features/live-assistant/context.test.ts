@@ -1,5 +1,10 @@
 import { expect, it } from 'vitest';
-import { buildLiveInstructions, EMPTY_LIVE_JOURNAL } from './context';
+import {
+  applyLiveCheckpoint,
+  buildLiveInstructions,
+  EMPTY_LIVE_JOURNAL,
+  serializeLiveContext,
+} from './context';
 
 const input = {
   now: '2026-09-09T16:00:00Z',
@@ -28,4 +33,25 @@ it('requires explicit opt-in before adding memory to personal context', () => {
   expect(buildLiveInstructions({ ...input, mode: 'personal' })).toContain(
     'Blue Finch'
   );
+});
+
+it('retains later turns that share a checkpoint timestamp', () => {
+  const turns = [1, 2, 3].map((sequence) => ({
+    role: 'user' as const,
+    text: String(sequence),
+    at: 'same-time',
+    sequence,
+  }));
+  const journal = applyLiveCheckpoint(
+    { turns, checkpoints: [] },
+    { summary: 'first two', decisions: [], openQuestions: [], through: '2' },
+    2
+  );
+  expect(journal.turns.map((turn) => turn.sequence)).toEqual([3]);
+});
+
+it('bounds serialized context even when escaping expands its character count', () => {
+  const result = serializeLiveContext(['\0'.repeat(1000), 'recent'], 100);
+  expect(result.length).toBeLessThanOrEqual(100);
+  expect(JSON.parse(result)).toEqual(['recent']);
 });

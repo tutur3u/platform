@@ -32,11 +32,13 @@ export async function liveRoomCommand<T>(
     env.MEET_REALTIME_TOKEN_SECRET
   );
   const url = new URL(env.MEET_REALTIME_URL);
-  url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+  url.protocol =
+    url.protocol === 'ws:' || url.protocol === 'http:' ? 'http:' : 'https:';
   url.pathname = '/room-service';
   url.search = '';
   const response = await fetch(url, {
     method: 'POST',
+    redirect: 'error',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',

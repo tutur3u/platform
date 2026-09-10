@@ -23,18 +23,27 @@ export function observeSessionUsage(
     billing.incomplete = Boolean(saved.coverageGap);
     saved.pendingUsage = false;
   }
-  if (
-    content?.groundingMetadata &&
-    !content.groundingMetadata.webSearchQueries?.length
-  ) {
-    saved.coverageGap = true;
-    billing.incomplete = true;
-    // Grounding proves at least one native search invocation, but not its
-    // full query count. Preserve that known lower bound and the coverage gap.
-    billing.usage.searchQueries += 1;
+  const grounding = content?.groundingMetadata;
+  if (grounding) {
+    saved.searchTurn ??= { queries: [], counted: 0 };
+    const turn = saved.searchTurn;
+    turn.queries = [
+      ...new Set([
+        ...turn.queries,
+        ...(grounding.webSearchQueries ?? [])
+          .map((query) => query.trim())
+          .filter(Boolean),
+      ]),
+    ].slice(0, 1000);
+    const known = Math.max(1, turn.queries.length);
+    billing.usage.searchQueries += Math.max(0, known - turn.counted);
+    turn.counted = known;
+    if (!turn.queries.length) {
+      saved.coverageGap = true;
+      billing.incomplete = true;
+    }
   }
-  billing.usage.searchQueries +=
-    content?.groundingMetadata?.webSearchQueries?.length ?? 0;
+  if (content?.turnComplete) saved.searchTurn = undefined;
 }
 
 export function markInterruptedUsage(saved: SavedSession) {

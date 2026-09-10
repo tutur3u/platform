@@ -22,12 +22,13 @@ export async function finalizeSessionBilling(
   await settlePublicBillings(env, saved, persist, retry, true);
   if (saved.billing && !saved.billingFinalized) {
     try {
-      saved.billing = await settleLiveBilling(
-        env,
-        saved.claims,
-        saved.billing,
-        true
-      );
+      if (!saved.billing.settlementComplete)
+        saved.billing = await settleLiveBilling(
+          env,
+          saved.claims,
+          saved.billing,
+          true
+        );
       await persist();
       await reportLiveUsage(env, saved.claims, saved.identity, saved.billing);
       saved.billingFinalized = true;
@@ -48,7 +49,9 @@ export async function settlePublicBillings(
   for (const [id, billing] of Object.entries(saved.publicBillings ?? {})) {
     if (!all && !billing.pendingSettlement) continue;
     try {
-      const final = await settleLiveBilling(env, saved.claims, billing, true);
+      const final = billing.settlementComplete
+        ? billing
+        : await settleLiveBilling(env, saved.claims, billing, true);
       saved.publicBillings![id] = final;
       await persist();
       if (final.pendingShareFinish) {
