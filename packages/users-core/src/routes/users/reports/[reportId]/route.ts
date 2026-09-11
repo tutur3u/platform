@@ -12,6 +12,10 @@ import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '../../../../lib/user-groups/route-helpers';
+import {
+  isReportDeliveryLocked,
+  REPORT_DELIVERY_LOCKED_MESSAGE,
+} from '../../../../reports/delivery-lock';
 import { resolveReportReviewTransition } from '../report-review-transition';
 
 const UpdateReportSchema = z.object({
@@ -217,6 +221,11 @@ export async function PUT(request: Request, context: Params) {
     if (result.error) throw result.error;
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (isReportDeliveryLocked(error))
+      return NextResponse.json(
+        { message: REPORT_DELIVERY_LOCKED_MESSAGE },
+        { status: 409 }
+      );
     console.error('Error in report PUT:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
@@ -258,6 +267,11 @@ export async function DELETE(request: Request, context: Params) {
     if (result.error) throw result.error;
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (isReportDeliveryLocked(error))
+      return NextResponse.json(
+        { message: REPORT_DELIVERY_LOCKED_MESSAGE },
+        { status: 409 }
+      );
     console.error('Error in report DELETE:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

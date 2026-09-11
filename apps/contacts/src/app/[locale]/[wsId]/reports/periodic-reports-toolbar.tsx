@@ -44,6 +44,7 @@ export type PeriodicSortDirection = 'asc' | 'desc';
 
 export function PeriodicReportsToolbar({
   approvalStatus,
+  generationStatus = 'all',
   cadence,
   deliveryStatus,
   onApprovalStatusChange,
@@ -59,6 +60,7 @@ export function PeriodicReportsToolbar({
   sortDirection,
 }: {
   approvalStatus: PeriodicApprovalFilter;
+  generationStatus?: 'all' | 'draft';
   cadence: PeriodicReportCadence;
   deliveryStatus: PeriodicDeliveryFilter;
   onApprovalStatusChange: (value: PeriodicApprovalFilter) => void;
@@ -79,6 +81,7 @@ export function PeriodicReportsToolbar({
   const t = useTranslations();
   const reportsT = useTranslations('reports-hub');
   const activeFilterCount = [
+    generationStatus !== 'all',
     approvalStatus !== 'all',
     deliveryStatus !== 'all',
   ].filter(Boolean).length;
@@ -136,6 +139,11 @@ export function PeriodicReportsToolbar({
                 </Button>
               ) : null}
             </div>
+            {generationStatus === 'draft' && (
+              <p className="rounded-md bg-muted px-2 py-1 text-xs">
+                {reportsT('drafts')}
+              </p>
+            )}
             <FilterSelect
               label={t('post-email-data-table.approval_status')}
               value={approvalStatus}

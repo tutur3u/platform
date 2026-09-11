@@ -44,6 +44,9 @@ const CreateReportSchema = z.object({
 });
 
 const ListReportsSchema = z.object({
+  generationStatus: z
+    .enum(['draft', 'generating', 'ready', 'failed'])
+    .optional(),
   approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
   cadence: z
     .enum(['weekly', 'monthly', 'quarterly', 'yearly'])
@@ -169,6 +172,9 @@ export async function GET(request: Request, { params }: Params) {
       }
       if (parsed.data.approvalStatus) {
         query = query.eq('report_approval_status', parsed.data.approvalStatus);
+      }
+      if (parsed.data.generationStatus) {
+        query = query.eq('generation_status', parsed.data.generationStatus);
       }
       if (parsed.data.deliveryStatus) {
         query = query.eq('delivery_status', parsed.data.deliveryStatus);

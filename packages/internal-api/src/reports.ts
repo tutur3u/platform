@@ -146,6 +146,7 @@ export interface PeriodicReportCounts {
 }
 
 export interface ListPeriodicReportsParams {
+  generationStatus?: 'draft' | 'generating' | 'ready' | 'failed';
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   cadence?: PeriodicReportCadence;
   deliveryStatus?: PeriodicReportDeliveryStatus;
@@ -366,6 +367,7 @@ export async function listPeriodicReports(
       query: {
         approvalStatus: params.approvalStatus,
         cadence: params.cadence,
+        generationStatus: params.generationStatus,
         deliveryStatus: params.deliveryStatus,
         page: params.page,
         pageSize: params.pageSize,
@@ -437,6 +439,7 @@ export async function requestPeriodicReportDelivery(
   return client.json<{
     message: string;
     preview?: {
+      html: string;
       content: string;
       feedback: string;
       recipient: string | null;
@@ -534,4 +537,29 @@ export function getPeriodicReportDeliveryDiagnostics(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/${encodePathSegment(reportId)}/delivery`,
     { cache: 'no-store' }
   );
+}
+
+export interface PeriodicReportEmailPreview {
+  html: string;
+  title: string;
+  content: string;
+  feedback: string;
+  recipient: string | null;
+}
+
+export async function getPeriodicReportEmailPreview(
+  wsId: string,
+  reportId: string,
+  options?: InternalApiClientOptions
+) {
+  const preview = await getInternalApiClient(
+    options
+  ).json<PeriodicReportEmailPreview>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/users/reports/${encodePathSegment(reportId)}/delivery?preview=true`,
+    { cache: 'no-store' }
+  );
+  if (typeof preview.html !== 'string' || !preview.html.trim()) {
+    throw new Error('Email preview is not available yet.');
+  }
+  return preview;
 }
