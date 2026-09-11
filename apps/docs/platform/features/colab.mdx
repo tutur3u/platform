@@ -69,19 +69,19 @@ Google Calendar, Jira and Trello. They simulate searchable records and
 create/update actions. They are educational mockups, not replicas of the full
 products. No third-party app credentials, network fetch tools or real messaging
 connectors are available to the agent. Each team's writes affect only its own
-records. Admins can reset those records to the same seeded Project Lotus dataset.
+records. Admins can reset those records to the seeded RISE dataset.
 
-Workers AI generates skills, scenarios, agent decisions and feedback using
-`@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Agent execution uses a bounded JSON tool
+AI Studio sponsors skills, scenarios, agent decisions and feedback using the
+configured `COLAB_AI_MODEL`. Agent execution uses a bounded JSON tool
 protocol with an allowlist and runtime validation. New workshops allow 500 AI
-operations, 16 turns, and 12 app actions per run; new teams begin with 150 AI
-operations, 12 turns, and 10 app actions. Hosts can use Guided, Extended, or Deep
-dive presets or set exact room and team limits, up to 5,000 AI operations, 40
-turns, and 30 app actions. An app-action limit must stay below the turn limit so
+operations, 60 turns, and 50 app actions per run; new teams begin with 150 AI
+operations, 60 turns, and 50 app actions. Hosts can use Guided, Extended, or Deep
+dive presets or set exact room and team limits, up to 5,000 AI operations, 100
+turns, and 80 app actions. An app-action limit must stay below the turn limit so
 the agent retains a final answer turn. Existing rooms are normalized to the new
 defaults only when a value was never stored. A room allows one concurrent AI job.
 If room state changes while inference is running, the stale result is discarded.
-The system prompt, scenario, mock records and traces are sent to Workers AI;
+The system prompt, scenario, practice records and traces are sent to the AI provider;
 participants should use workshop examples rather than confidential real data.
 
 ## Authentication and deployment
@@ -320,6 +320,53 @@ production credit settlement: verify those separately after deployment.
 `node scripts/verify-sponsorship.mjs` additionally exercises keyless generation,
 body tampering, concurrent replay rejection and receipts using isolated Durable
 Objects and mocked AI Studio responses. It does not spend production credits.
+
+## Reliable practice runs
+
+New workshops and teams default to 60 agent turns and 50 tool calls. Existing
+custom limits are preserved; hosts can choose the Deep dive preset for both the
+workshop and its teams. The catalog contains 250 linked RISE practice records
+across 24 apps, including review workflows, study support, capacity planning,
+and the Induction Day evidence pack.
+
+The agent can use `draft` to save a reviewable record without sending or
+publishing anything. `generate_image` calls AI Studio using the same one-use
+first-party grant and root-workspace billing as text. It requires an enabled,
+priced image model in the root workspace; it does not bypass model policy.
+Each call generates one image, with at most 50 retained images per workshop.
+Unavailable image generation is reported in the action trace with setup guidance,
+and the agent can continue with an artwork brief.
+
+Gemini Flash artwork supports `google/gemini-3.1-flash-image` through
+Google's multimodal language API using `GOOGLE_GENERATIVE_AI_API_KEY`, even though the catalog classifies it as
+`language`. Colab requests one 1K image without search or publishing tools.
+Enable the model in the catalog, global access policy, and sponsor plan before
+using it. The reservation is conservative; settlement uses Google's actual
+modality token counts ($0.50/M input, $3/M text/thinking, $60/M image output), then applies the sponsor plan's
+markup. Root AI Studio runs retain provider response IDs, token counts, image
+counts, and workshop sponsorship descriptions. Missing modality data fails closed and
+mark measured usage for reconciliation instead of treating artwork as free.
+Do not select the retired `-preview` alias; Google lists its shutdown on June 25, 2026.
+
+Generated PNG/JPEG/WebP assets are stored separately from realtime room JSON in
+bounded SQLite chunks. Image requests re-check room membership and team visibility,
+including showcase access, and return private no-store responses. Workshop
+deletion removes its images. Captions, tables, checklists, code, and image outputs
+use safe Markdown rendering; structured bilingual answers have separate copy buttons.
+
+Practice actions accept `search`, `read`, `create`, `draft`, `update`, and `generate_image`, including exact
+namespaced forms such as `drive.search`. A namespace must match the selected app;
+unsupported actions such as publishing or deleting remain rejected. Record IDs
+are always checked within the selected app. Normalized actions appear in the trace.
+The agent reserves its last available turn for an answer and cannot execute another
+tool after exhausting its action budget. Coaching is a secondary step: if it fails,
+the answer and actual tool trace remain available with an explicit unavailable notice.
+
+Results containing a JSON object are displayed as readable, separately copyable
+sections, including bilingual captions, source notes and review checklists. Plain
+Markdown and incomplete responses remain readable without silently dropping text.
+The local showcase verifier exercises this output and namespaced actions through
+the real room, persistence and multi-browser broadcast path using deterministic AI.
 
 ## Workshop directory and activity log
 

@@ -12,4 +12,8 @@ export interface Env {
   COLAB_AI_MODEL?: string;
   COLAB_REQUIRE_SPONSORSHIP?: string;
   sponsorship?: SponsorshipContext;
+  storeGeneratedImage?: (image: {
+    base64: string;
+    mimeType: string;
+  }) => Promise<string>;
 }

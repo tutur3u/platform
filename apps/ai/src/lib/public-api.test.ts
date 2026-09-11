@@ -119,6 +119,39 @@ describe('AI Studio billing policy', () => {
       })
     );
   });
+  it('fails closed for custom image pricing even without the sponsored flag', async () => {
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            kind: 'api-key',
+            workspaceId: 'workspace',
+            apiKey: { id: 'key' },
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'run',
+          startedAt: Date.now(),
+          calculateCost: async () => {
+            throw new Error('missing modality receipt');
+          },
+        },
+        {
+          status: 'succeeded',
+          usage: { imageUnits: 1, inputTokens: 100, outputTokens: 1120 },
+        }
+      )
+    ).rejects.toThrow('missing modality receipt');
+    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        imageUnits: 1,
+        inputTokens: 100,
+        outputTokens: 1120,
+        metadata: expect.objectContaining({ reconciliation_required: true }),
+      })
+    );
+  });
   it('rejects unknown zero model pricing before reserving credits', async () => {
     mocks.calculateAiStudioUsageCost.mockResolvedValueOnce({
       billedCredits: 0,
@@ -325,6 +358,37 @@ describe('AI Studio billing policy', () => {
         outputTokens: 9,
         providerCostUsd: 0.0025,
         runId: 'external-run',
+      })
+    );
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
+  it('reconciles external image pricing failures through the unmetered ledger', async () => {
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            actorId: 'actor',
+            appId: 'cybershield35',
+            kind: 'external-app',
+            scopes: ['ai:use'],
+            workspaceId: 'workspace',
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'external-run',
+          startedAt: Date.now(),
+          calculateCost: async () => {
+            throw new Error('missing image receipt');
+          },
+        },
+        { status: 'succeeded', usage: { imageUnits: 1 } }
+      )
+    ).rejects.toThrow('missing image receipt');
+    expect(mocks.settleExternalAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        imageUnits: 1,
+        unmeteredCredits: 0,
       })
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();

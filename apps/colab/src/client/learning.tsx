@@ -9,12 +9,12 @@ import {
   Users,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useState } from 'react';
 import { useCopy } from './i18n';
 import { WorkspaceLink } from './navigation';
 import { PromptAnalysis } from './prompt-analysis';
+import { ReadableMarkdown } from './readable-markdown';
 import './learning.css';
 
 const icons = [Sparkles, FileText, Users, Layers, Search, Check];
@@ -128,9 +128,7 @@ export function Learning({ inRoom = false }: { inRoom?: boolean }) {
                 <div>
                   <h5>{c.preview}</h5>
                   <div className="learning-markdown">
-                    <MemoizedReactMarkdown>
-                      {markdown ?? c.markdownSample}
-                    </MemoizedReactMarkdown>
+                    <ReadableMarkdown text={markdown ?? c.markdownSample} />
                   </div>
                 </div>
               </div>

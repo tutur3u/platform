@@ -1,5 +1,6 @@
 import { riseMetadata } from './mock-rise-metadata';
 import { riseInductionRecords } from './rise-induction';
+import { riseOperationRecords } from './rise-operations';
 
 export const mockAppCatalog = [
   { id: 'drive', name: 'Google Drive', kind: 'documents' },
@@ -249,5 +250,6 @@ export function seedRecords(): MockRecord[] {
       }));
     }),
     ...structuredClone(riseInductionRecords),
+    ...structuredClone(riseOperationRecords),
   ];
 }

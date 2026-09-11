@@ -21,6 +21,30 @@ export async function sponsoredGeneration(
   input: unknown,
   phase: 'generation' | 'prompt_review' | 'agent_step' | 'result_coaching'
 ) {
+  const result = await sponsoredRequest(
+    env,
+    {
+      model: env.COLAB_AI_MODEL || 'google/gemini-3.5-flash-lite',
+      instructions: system,
+      prompt: JSON.stringify(input),
+    },
+    phase
+  );
+  return result.choices?.[0]?.message?.content;
+}
+
+export async function sponsoredImage(env: Env, prompt: string) {
+  const result = await sponsoredRequest(env, { prompt }, 'image_generation');
+  const image = result.data?.[0];
+  requireRule(image?.b64_json && image.media_type, 'image_invalid_output', 502);
+  return { base64: image.b64_json, mimeType: image.media_type };
+}
+
+async function sponsoredRequest(
+  env: Env,
+  input: Record<string, unknown>,
+  phase: string
+) {
   const context = env.sponsorship;
   requireRule(
     context && (env.authorizeSponsorship || env.COLAB_AI_API_KEY),
@@ -29,9 +53,7 @@ export async function sponsoredGeneration(
   );
   const sequence = ++context.sequence;
   const body = JSON.stringify({
-    model: env.COLAB_AI_MODEL || 'google/gemini-3.5-flash-lite',
-    instructions: system,
-    prompt: JSON.stringify(input),
+    ...input,
     sponsorship: {
       workshopId: context.workshopId,
       workshopTitle: context.workshopTitle,
@@ -66,6 +88,27 @@ export async function sponsoredGeneration(
     requireRule(false, 'sponsorship_unavailable', 503);
   });
   requireRule(response, 'sponsorship_unavailable', 503);
+  if (!response.ok) {
+    console.warn('colab_sponsored_request_failed', {
+      requestId:
+        response.headers.get('x-request-id') ?? `${context.jobId}:${sequence}`,
+      phase,
+      status: response.status,
+    });
+    // A provider response/format failure is not a missing sponsor connection.
+    requireRule(response.status !== 502, 'ai_invalid_output', 502);
+  }
+  if (!response.ok && phase === 'image_generation') {
+    const failure = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as { error?: { code?: string } } | null;
+    requireRule(
+      failure?.error?.code !== 'model_not_found',
+      'image_unavailable',
+      503
+    );
+  }
   requireRule(
     response.ok,
     response.status === 402
@@ -84,6 +127,7 @@ export async function sponsoredGeneration(
   })) as {
     id?: string;
     choices?: { message?: { content?: unknown } }[];
+    data?: { b64_json?: string; media_type?: string }[];
     tuturuuu?: { run_id?: string; billing?: { billedCredits?: number } };
   };
   requireRule(
@@ -103,5 +147,5 @@ export async function sponsoredGeneration(
     503
   );
   context.receipts.push({ requestId, runId: result.tuturuuu.run_id, credits });
-  return result.choices?.[0]?.message?.content;
+  return result;
 }

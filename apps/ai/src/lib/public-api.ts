@@ -30,6 +30,7 @@ export type MeteredUsage = {
 };
 
 export type MeteredExecutionContext = {
+  calculateCost?: UsageCostCalculator;
   requirePricedUsage?: boolean;
   pricingFailureFinalized?: boolean;
   credential: PublicAiCredential;
@@ -48,6 +49,7 @@ type ErrorDetails = {
 };
 
 type PrepareMeteredExecutionInput = {
+  calculateCost?: UsageCostCalculator;
   requirePricedUsage?: boolean;
   feature: string;
   maxUsage: MeteredUsage;
@@ -58,6 +60,12 @@ type PrepareMeteredExecutionInput = {
   requiredModelType?: string;
   requiredExternalScope?: string;
 };
+
+/** Server-owned pricing strategy for multimodal provider receipts. Never read from request JSON. */
+export type UsageCostCalculator = (
+  usage: MeteredUsage,
+  workspaceId: string
+) => Promise<{ billedCredits: number; providerCostUsd: number }>;
 
 /**
  * Decides whether a request belongs to a registered external app.
@@ -149,6 +157,7 @@ export function approximateTokenCount(value: unknown): number {
 }
 
 export async function prepareMeteredExecution({
+  calculateCost,
   credential: providedCredential,
   feature,
   maxUsage,
@@ -166,14 +175,16 @@ export async function prepareMeteredExecution({
     await assertAiStudioModelType(modelId, requiredModelType);
   }
   const requestId = getAiStudioRequestId(request);
-  const estimatedCost = await calculateAiStudioUsageCost({
-    imageCount: maxUsage.imageUnits,
-    inputTokens: maxUsage.inputTokens,
-    modelId,
-    outputTokens: maxUsage.outputTokens,
-    reasoningTokens: maxUsage.reasoningTokens,
-    workspaceId: credential.workspaceId,
-  });
+  const estimatedCost = await (calculateCost
+    ? calculateCost(maxUsage, credential.workspaceId)
+    : calculateAiStudioUsageCost({
+        imageCount: maxUsage.imageUnits,
+        inputTokens: maxUsage.inputTokens,
+        modelId,
+        outputTokens: maxUsage.outputTokens,
+        reasoningTokens: maxUsage.reasoningTokens,
+        workspaceId: credential.workspaceId,
+      }));
 
   const idempotencyKey = getIdempotencyKey(request);
   if (
@@ -221,6 +232,7 @@ export async function prepareMeteredExecution({
       });
 
   return {
+    calculateCost,
     requirePricedUsage,
     credential,
     modelId,
@@ -286,19 +298,22 @@ export async function settleMeteredExecution(
       }
     );
   }
-  const cost = await calculateAiStudioUsageCost({
-    imageCount: usage.imageUnits,
-    inputTokens: usage.inputTokens,
-    modelId: context.modelId,
-    // AI SDK outputTokens already includes reasoning; the cost RPC adds its
-    // reasoning argument separately. Keep the audit total inclusive below.
-    outputTokens:
-      usage.outputTokens === undefined
-        ? undefined
-        : Math.max(0, usage.outputTokens - (usage.reasoningTokens ?? 0)),
-    reasoningTokens: usage.reasoningTokens,
-    workspaceId: context.credential.workspaceId,
-  })
+  const cost = await (context.calculateCost
+    ? context.calculateCost(usage, context.credential.workspaceId)
+    : calculateAiStudioUsageCost({
+        imageCount: usage.imageUnits,
+        inputTokens: usage.inputTokens,
+        modelId: context.modelId,
+        // AI SDK outputTokens already includes reasoning; the cost RPC adds its
+        // reasoning argument separately. Keep the audit total inclusive below.
+        outputTokens:
+          usage.outputTokens === undefined
+            ? undefined
+            : Math.max(0, usage.outputTokens - (usage.reasoningTokens ?? 0)),
+        reasoningTokens: usage.reasoningTokens,
+        workspaceId: context.credential.workspaceId,
+      })
+  )
     .then((cost) => {
       if (
         context.requirePricedUsage &&
@@ -311,13 +326,13 @@ export async function settleMeteredExecution(
       return cost;
     })
     .catch(async (pricingError) => {
-      if (context.requirePricedUsage) {
+      if (context.requirePricedUsage || context.calculateCost) {
         // Release the hold without claiming a successful zero-cost generation.
         // Preserve measured usage for reconciliation once pricing recovers.
-        await settleAiStudioRun({
+        const failureSettlement = {
           runId: context.runId,
-          status: 'failed',
-          actualCredits: 0,
+          status: 'failed' as const,
+          imageUnits: usage.imageUnits,
           inputTokens: usage.inputTokens,
           outputTokens: usage.outputTokens,
           reasoningTokens: usage.reasoningTokens,
@@ -333,7 +348,15 @@ export async function settleMeteredExecution(
             pricing_status: 'unavailable',
             reconciliation_required: true,
           },
-        });
+        };
+        if (externalAppAttribution(context.credential)) {
+          await settleExternalAiStudioRun({
+            ...failureSettlement,
+            unmeteredCredits: 0,
+          });
+        } else {
+          await settleAiStudioRun({ ...failureSettlement, actualCredits: 0 });
+        }
         context.pricingFailureFinalized = true;
         throw pricingError;
       }
@@ -481,7 +504,9 @@ export async function listAllowedModels(credential: PublicAiCredential) {
   const { data: models, error } = await sbAdmin
     .schema('private')
     .from('ai_gateway_models')
-    .select('id, name, provider, type, context_window, max_tokens, tags')
+    .select(
+      'id, name, provider, type, context_window, max_tokens, tags, image_gen_price'
+    )
     .eq('is_enabled', true)
     .order('name');
 

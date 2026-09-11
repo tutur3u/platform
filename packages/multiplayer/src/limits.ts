@@ -15,20 +15,20 @@ export type WorkshopScheduleError =
 
 export const defaultWorkshopLimits: WorkshopLimits = {
   aiCallLimit: 500,
-  agentTurnLimit: 16,
-  toolCallLimit: 12,
+  agentTurnLimit: 60,
+  toolCallLimit: 50,
 };
 
 export const defaultTeamLimits: TeamLimits = {
   aiCallLimit: 150,
-  agentTurnLimit: 12,
-  toolCallLimit: 10,
+  agentTurnLimit: 60,
+  toolCallLimit: 50,
 };
 
 export const maximumWorkshopLimits: WorkshopLimits = {
   aiCallLimit: 5000,
-  agentTurnLimit: 40,
-  toolCallLimit: 30,
+  agentTurnLimit: 100,
+  toolCallLimit: 80,
 };
 
 export function normalizeStoredLimits(

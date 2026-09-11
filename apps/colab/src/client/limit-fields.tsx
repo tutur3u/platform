@@ -8,7 +8,7 @@ import { useCopy } from './i18n';
 const presets = [
   { id: 'guided', turns: 8, tools: 6 },
   { id: 'extended', turns: 16, tools: 12 },
-  { id: 'deep', turns: 32, tools: 24 },
+  { id: 'deep', turns: 60, tools: 50 },
 ] as const;
 
 export function LimitFields({
@@ -107,7 +107,7 @@ export function LimitFields({
               setTurns(value);
               setTools((current) => Math.min(current, Math.max(value - 1, 0)));
             }}
-            placeholder="12"
+            placeholder="60"
             required
           />
         </Label>
@@ -121,7 +121,7 @@ export function LimitFields({
             max={toolMaximum}
             value={tools}
             onChange={(event) => setTools(Number(event.currentTarget.value))}
-            placeholder="10"
+            placeholder="50"
             required
           />
         </Label>

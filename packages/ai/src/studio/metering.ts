@@ -50,7 +50,11 @@ export async function recordAiStudioRunStep(
         error_class: input.errorClass ?? null,
         input_tokens: input.inputTokens ?? 0,
         kind: input.kind,
-        latency_ms: input.latencyMs ?? null,
+        // SDK performance timings are fractional; PostgreSQL stores INTEGER ms.
+        latency_ms:
+          input.latencyMs != null && Number.isFinite(input.latencyMs)
+            ? Math.min(2_147_483_647, Math.max(0, Math.round(input.latencyMs)))
+            : null,
         metadata: input.metadata ?? {},
         model_id: input.modelId ?? null,
         name: input.name,

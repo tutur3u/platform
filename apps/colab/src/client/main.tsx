@@ -32,6 +32,7 @@ import { Structure } from './structure';
 import { Workshop } from './workshop';
 import { WorkspacePages } from './workspace-pages';
 import './app.css';
+import './markdown.css';
 import './workspace.css';
 
 const queryClient = new QueryClient({
