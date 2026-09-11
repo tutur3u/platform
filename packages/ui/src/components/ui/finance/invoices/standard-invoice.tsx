@@ -23,6 +23,7 @@ import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
 import { InvoiceCustomerSelectCard } from './components/invoice-customer-select-card';
+import { InvoiceDataState } from './components/invoice-data-state';
 import { InvoicePaymentSettings } from './components/invoice-payment-settings';
 import {
   InvoiceProductsPermissionWarning,
@@ -106,6 +107,7 @@ export function StandardInvoice({
     selectedUser,
     isLoading: usersLoading,
     error: usersError,
+    refetch: refetchUsers,
     hasNextPage: hasMoreCustomers,
     fetchNextPage: fetchMoreCustomers,
     isFetching: isFetchingCustomers,
@@ -114,6 +116,7 @@ export function StandardInvoice({
   const {
     data: products = [],
     error: productsError,
+    refetch: refetchProducts,
     isLoading: productsLoading,
   } = useProducts(wsId, { enabled: canReadInvoiceProducts });
   const { data: availablePromotions = [] } = useAvailablePromotions(
@@ -147,10 +150,12 @@ export function StandardInvoice({
   const { data: blockedGroupIds = [] } = useInvoiceBlockedGroups(wsId, {
     enabled: !!selectedUserId,
   });
-  const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
-    wsId,
-    selectedUserId
-  );
+  const {
+    data: userGroups = [],
+    isLoading: userGroupsLoading,
+    error: userGroupsError,
+    refetch: refetchUserGroups,
+  } = useUserGroups(wsId, selectedUserId);
 
   const isBlocked = useMemo(() => {
     if (
@@ -443,16 +448,25 @@ export function StandardInvoice({
     }
   };
 
-  if (isLoadingData) {
+  if (
+    isLoadingData ||
+    usersError ||
+    (canReadInvoiceProducts &&
+      productsError &&
+      !isPermissionRequestError(productsError)) ||
+    userGroupsError
+  ) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <p className="text-muted-foreground text-sm">
-            {t('ws-invoices.loading')}
-          </p>
-        </div>
-      </div>
+      <InvoiceDataState
+        loading={isLoadingData}
+        onRetry={() =>
+          void Promise.all([
+            refetchUsers(),
+            ...(canReadInvoiceProducts ? [refetchProducts()] : []),
+            ...(selectedUserId ? [refetchUserGroups()] : []),
+          ])
+        }
+      />
     );
   }
 
@@ -475,9 +489,6 @@ export function StandardInvoice({
           isFetchingNextPage={isFetchingMoreCustomers}
           hasNextPage={hasMoreCustomers}
           onLoadMore={() => void fetchMoreCustomers()}
-          errorMessage={
-            usersError instanceof Error ? usersError.message : undefined
-          }
           emptyMessage={t('ws-invoices.no_customers_found')}
           searchValue={customerSearch}
           onSearchChange={setCustomerSearch}

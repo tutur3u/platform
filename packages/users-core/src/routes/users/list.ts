@@ -39,7 +39,8 @@ function buildWorkspaceUsersRpcQuery(
       { count: 'exact' }
     )
     .order('full_name', { ascending: true, nullsFirst: false })
-    .order('display_name', { ascending: true, nullsFirst: false });
+    .order('display_name', { ascending: true, nullsFirst: false })
+    .order('id', { ascending: true });
 }
 
 function applyPagination({

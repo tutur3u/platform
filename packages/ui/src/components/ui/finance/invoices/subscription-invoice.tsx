@@ -21,15 +21,13 @@ import {
 } from 'react';
 import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
-import {
-  type FinancePermissionRequestUser,
-  FinancePermissionWarningDialog,
-} from '../shared/finance-permission-warning-dialog';
+import { FinancePermissionWarningDialog } from '../shared/finance-permission-warning-dialog';
 import { useFinanceConfidentialVisibility } from '../shared/use-finance-confidential-visibility';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
 import { InvoiceCustomerSelectCard } from './components/invoice-customer-select-card';
+import { InvoiceDataState } from './components/invoice-data-state';
 import { InvoicePaymentSettings } from './components/invoice-payment-settings';
 import {
   InvoiceProductsPermissionWarning,
@@ -63,6 +61,7 @@ import { useSubscriptionInvoiceContent } from './hooks/use-subscription-invoice-
 import { createSubscriptionInvoiceWithInternalApi } from './internal-api';
 import { formatInvoiceRecalculationDescription } from './invoice-visibility-format';
 import { ProductSelection } from './product-selection';
+import type { SubscriptionInvoiceProps } from './subscription-invoice-props';
 import type { SelectedProductItem } from './types';
 import {
   formatCoverageRangeLabel,
@@ -82,25 +81,6 @@ import {
   resolveSubscriptionInvoiceCategoryId,
 } from './utils';
 
-interface Props {
-  wsId: string;
-  prefillQuantity?: number | null;
-  suggestedTotal?: number | null;
-  createMultipleInvoices: boolean;
-  printAfterCreate?: boolean;
-  downloadImageAfterCreate?: boolean;
-  defaultWalletId?: string;
-  defaultCategoryId?: string;
-  defaultCurrency?: string;
-  workspaceTimezone?: string | null;
-  canChangeFinanceWallets?: boolean;
-  canSetFinanceWalletsOnCreate?: boolean;
-  canReadInvoiceProducts?: boolean;
-  canReadInvoiceProductStock?: boolean;
-  canReadGroupLinkedProducts?: boolean;
-  permissionRequestUser?: FinancePermissionRequestUser | null;
-}
-
 export function SubscriptionInvoice({
   wsId,
   prefillQuantity,
@@ -118,7 +98,7 @@ export function SubscriptionInvoice({
   canReadInvoiceProductStock = true,
   canReadGroupLinkedProducts = true,
   permissionRequestUser,
-}: Props) {
+}: SubscriptionInvoiceProps) {
   const t = useTranslations();
   const locale = useLocale();
   const defaultCurrency = resolveSupportedCurrency(rawDefaultCurrency);
@@ -128,7 +108,6 @@ export function SubscriptionInvoice({
   const queryClient = useQueryClient();
   const financeHref = useFinanceHref();
 
-  // URL state using nuqs
   const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
     defaultValue: '',
     shallow: false,
@@ -170,12 +149,12 @@ export function SubscriptionInvoice({
     [selectedGroupIds]
   );
 
-  // Data queries
   const {
     customers: users,
     selectedUser,
     isLoading: usersLoading,
     error: usersError,
+    refetch: refetchUsers,
     hasNextPage: hasMoreCustomers,
     fetchNextPage: fetchMoreCustomers,
     isFetching: isFetchingCustomers,
@@ -184,6 +163,7 @@ export function SubscriptionInvoice({
   const {
     data: products = [],
     error: productsError,
+    refetch: refetchProducts,
     isLoading: productsLoading,
   } = useProducts(wsId, {
     enabled: canReadInvoiceProducts && hasSelectedGroups,
@@ -222,7 +202,6 @@ export function SubscriptionInvoice({
     [selectedGroupIds, blockedGroupIds]
   );
 
-  // State management
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
     defaultWalletId || ''
   );
@@ -268,14 +247,16 @@ export function SubscriptionInvoice({
   // Track previous user ID to detect user changes (skip initial mount for reset)
   const prevUserIdRef = useRef<string | null>(null);
 
-  // Subscription-specific queries
-  const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
-    wsId,
-    selectedUserId
-  );
+  const {
+    data: userGroups = [],
+    isLoading: userGroupsLoading,
+    error: userGroupsError,
+    refetch: refetchUserGroups,
+  } = useUserGroups(wsId, selectedUserId);
   const {
     data: groupProducts = [],
     error: groupProductsError,
+    refetch: refetchGroupProducts,
     isLoading: groupProductsLoading,
   } = useMultiGroupProducts(wsId, selectedGroupIds, {
     enabled: canReadGroupLinkedProducts,
@@ -341,6 +322,7 @@ export function SubscriptionInvoice({
     data: subscriptionInvoiceContext,
     isLoading: subscriptionInvoiceContextLoading,
     error: subscriptionInvoiceContextError,
+    refetch: refetchSubscriptionContext,
   } = useSubscriptionInvoiceContext(
     wsId,
     selectedUserId,
@@ -547,7 +529,6 @@ export function SubscriptionInvoice({
     return map;
   }, [referralDiscountRows]);
 
-  // Use hooks for logic
   useSubscriptionAutoSelection({
     enabled: true,
     selectedGroupIds,
@@ -897,16 +878,37 @@ export function SubscriptionInvoice({
     }
   };
 
-  if (isLoadingData) {
+  if (
+    isLoadingData ||
+    usersError ||
+    (selectedUserId && userGroupsError) ||
+    (hasSelectedGroups &&
+      canReadGroupLinkedProducts &&
+      groupProductsError &&
+      !isPermissionRequestError(groupProductsError)) ||
+    (selectedUserId &&
+      hasSelectedGroups &&
+      subscriptionInvoiceContextError &&
+      !isPermissionRequestError(subscriptionInvoiceContextError)) ||
+    (canReadInvoiceProducts &&
+      hasSelectedGroups &&
+      productsError &&
+      !isPermissionRequestError(productsError))
+  ) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <p className="text-muted-foreground text-sm">
-            {t('ws-invoices.loading')}
-          </p>
-        </div>
-      </div>
+      <InvoiceDataState
+        loading={isLoadingData || isLoadingSubscriptionData}
+        onRetry={() => {
+          void refetchUsers();
+          if (selectedUserId) void refetchUserGroups();
+          if (selectedUserId && hasSelectedGroups)
+            void refetchSubscriptionContext();
+          if (hasSelectedGroups && canReadGroupLinkedProducts)
+            void refetchGroupProducts();
+          if (canReadInvoiceProducts && hasSelectedGroups)
+            void refetchProducts();
+        }}
+      />
     );
   }
 
@@ -929,9 +931,6 @@ export function SubscriptionInvoice({
           isFetchingNextPage={isFetchingMoreCustomers}
           hasNextPage={hasMoreCustomers}
           onLoadMore={() => void fetchMoreCustomers()}
-          errorMessage={
-            usersError instanceof Error ? usersError.message : undefined
-          }
           emptyMessage={t('ws-invoices.no_customers_found')}
           searchValue={customerSearch}
           onSearchChange={setCustomerSearch}

@@ -203,6 +203,7 @@ export async function listWorkspaceUsersWithInternalApi(
     WorkspaceUser[] | { data?: WorkspaceUser[]; count?: number }
   >(`/api/v1/workspaces/${encodePathSegment(workspaceId)}/users`, {
     cache: 'no-store',
+    signal: AbortSignal.timeout(15_000),
     query: {
       from: query.from,
       limit: query.limit,
@@ -233,6 +234,7 @@ export async function getWorkspaceUserWithInternalApi(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}`,
     {
       cache: 'no-store',
+      signal: AbortSignal.timeout(15_000),
     }
   );
 
@@ -246,6 +248,8 @@ export async function getWorkspaceUserWithInternalApi(
 export async function listInvoiceProductsWithInternalApi(workspaceId: string) {
   const client = getInternalApiClient();
   const products: Product[] = [];
+  const productIds = new Set<string>();
+  const signal = AbortSignal.timeout(15_000);
   const pageSize = 500;
   let page = 1;
   let count = 0;
@@ -255,6 +259,7 @@ export async function listInvoiceProductsWithInternalApi(workspaceId: string) {
       `/api/v1/workspaces/${encodePathSegment(workspaceId)}/inventory/products`,
       {
         cache: 'no-store',
+        signal,
         query: {
           page,
           pageSize,
@@ -262,7 +267,18 @@ export async function listInvoiceProductsWithInternalApi(workspaceId: string) {
       }
     );
 
-    products.push(...(payload.data ?? []));
+    const pageProducts = payload.data ?? [];
+    const newProducts = pageProducts.filter(
+      (product) => !productIds.has(product.id)
+    );
+    if (pageProducts.length === 0 || newProducts.length === 0) {
+      if (products.length < (payload.count ?? 0)) {
+        throw new Error('Invoice product pagination stopped making progress');
+      }
+      break;
+    }
+    for (const product of newProducts) productIds.add(product.id);
+    products.push(...newProducts);
     count = payload.count ?? products.length;
     page += 1;
   } while (products.length < count);
@@ -326,6 +342,7 @@ export function listUserGroupsWithInternalApi(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/user-groups`,
     {
       cache: 'no-store',
+      signal: AbortSignal.timeout(15_000),
     }
   );
 }
@@ -384,6 +401,7 @@ export function listMultiGroupProductsWithInternalApi(
       `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/linked-products?${searchParams.toString()}`,
       {
         cache: 'no-store',
+        signal: AbortSignal.timeout(15_000),
       }
     )
     .then((payload) => payload.items ?? []);
