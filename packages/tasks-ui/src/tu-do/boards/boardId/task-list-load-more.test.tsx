@@ -90,10 +90,14 @@ describe('task list pagination recovery', () => {
     const { container, rerender, unmount } = render(
       <VirtualizedTaskList {...props} />
     );
-    expect(observers).toHaveLength(1);
+    expect(observers).toHaveLength(2);
     expect(observers[0]?.root).toBe(container.firstElementChild);
     expect(observers[0]?.margin).toBe('200px 0px');
+    // Vertical proximity alone must not fetch a horizontally hidden column.
+    act(() => observers[0]?.notify(true));
+    expect(onLoadMore).not.toHaveBeenCalled();
     act(() => observers[0]?.notify(false));
+    act(() => observers[1]?.notify(true));
     expect(onLoadMore).not.toHaveBeenCalled();
     act(() => {
       observers[0]?.notify(true);
@@ -103,21 +107,24 @@ describe('task list pagination recovery', () => {
     expect(observers[0]?.disconnect).toHaveBeenCalled();
 
     rerender(<VirtualizedTaskList {...props} isLoadingMore />);
-    expect(observers).toHaveLength(1);
+    expect(observers).toHaveLength(2);
     act(() => observers[0]?.notify(true));
     expect(onLoadMore).toHaveBeenCalledTimes(1);
     // A short column can still fit another page: re-observe after loading.
     rerender(<VirtualizedTaskList {...props} isLoadingMore={false} />);
-    expect(observers).toHaveLength(2);
-    act(() => observers[1]?.notify(true));
+    expect(observers).toHaveLength(4);
+    act(() => observers[2]?.notify(true));
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
+    act(() => observers[3]?.notify(true));
     expect(onLoadMore).toHaveBeenCalledTimes(2);
     rerender(<VirtualizedTaskList {...props} hasMore={false} />);
     expect(
       screen.queryByRole('button', { name: 'load_more' })
     ).not.toBeInTheDocument();
-    expect(observers[1]?.disconnect).toHaveBeenCalled();
+    expect(observers[2]?.disconnect).toHaveBeenCalled();
+    expect(observers[3]?.disconnect).toHaveBeenCalled();
     unmount();
-    act(() => observers[1]?.notify(true));
+    act(() => observers[2]?.notify(true));
     expect(onLoadMore).toHaveBeenCalledTimes(2);
   });
 });

@@ -177,7 +177,7 @@ describe('BoardClient', () => {
     );
   });
 
-  it('refreshes loaded lists without replacing the board with a limited page', async () => {
+  it('refreshes loaded lists without issuing a board-wide fetch', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -207,9 +207,6 @@ describe('BoardClient', () => {
       name: `Saved task ${index}`,
     }));
     queryClient.setQueryData(['tasks', 'board-1'], savedTasks);
-    listWorkspaceTasksMock.mockResolvedValue({
-      tasks: savedTasks.slice(0, 100),
-    });
 
     await act(async () => {
       await getActiveBoardRefresh()?.();

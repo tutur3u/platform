@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { confirmMissingBoardTasks } from './confirm-missing-board-tasks';
 import type {
   ListPaginationState,
   ProgressiveLoaderValue,
@@ -263,6 +264,23 @@ export function useProgressiveBoardLoader(
           ? loadedThrough < exactCount
           : lastPageTasks.length === PAGE_SIZE;
 
+      const refreshedIds = new Set(mergedListTasks.map((task) => task.id));
+      const confirmedAbsent =
+        hasAuthoritativeCount && hasMore
+          ? await confirmMissingBoardTasks(
+              wsId,
+              listId,
+              (
+                queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? []
+              ).filter(
+                (task) =>
+                  task.list_id === listId &&
+                  !refreshedIds.has(task.id) &&
+                  !hasFreshLocalMutation(task)
+              )
+            )
+          : new Set<string>();
+
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
@@ -304,7 +322,7 @@ export function useProgressiveBoardLoader(
             // Tasks appended by creation/search may live beyond the loaded pages.
             if (
               !hasAuthoritativeCount ||
-              hasMore ||
+              (hasMore && !confirmedAbsent.has(task.id)) ||
               hasFreshLocalMutation(task)
             ) {
               merged.push(task);
