@@ -32,7 +32,8 @@ export function MeetingRoomAction({
     retry: false,
   });
   const ended = knownEnded || data?.ended;
-  const notes = ended && data?.canReadNotes;
+  // A cached terminal hint cannot decide permissions; the destination checks them.
+  const notes = ended && data?.canReadNotes !== false;
   return (
     <Button
       asChild

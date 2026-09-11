@@ -47,17 +47,30 @@ export function rememberEndedRoom(accountId: string, meetingId: string) {
         .slice(0, MAX_ROOMS)
     );
     localStorage.setItem(PREFIX + accountId, JSON.stringify(latest));
-    window.dispatchEvent(new Event(ENDED_ROOM_EVENT));
+    window.dispatchEvent(
+      new CustomEvent(ENDED_ROOM_EVENT, { detail: accountId })
+    );
   } catch {
     /* Storage restrictions must never prevent joining or leaving. */
   }
 }
 
-export function subscribeEndedRooms(notify: () => void) {
-  window.addEventListener('storage', notify);
-  window.addEventListener(ENDED_ROOM_EVENT, notify);
+export function subscribeEndedRooms(accountId: string, notify: () => void) {
+  const onStorage = (event: StorageEvent) => {
+    if (
+      event.storageArea === localStorage &&
+      (event.key === null ||
+        (event.key === PREFIX + accountId && event.oldValue !== event.newValue))
+    )
+      notify();
+  };
+  const onLocal = (event: Event) => {
+    if ((event as CustomEvent<string>).detail === accountId) notify();
+  };
+  window.addEventListener('storage', onStorage);
+  window.addEventListener(ENDED_ROOM_EVENT, onLocal);
   return () => {
-    window.removeEventListener('storage', notify);
-    window.removeEventListener(ENDED_ROOM_EVENT, notify);
+    window.removeEventListener('storage', onStorage);
+    window.removeEventListener(ENDED_ROOM_EVENT, onLocal);
   };
 }

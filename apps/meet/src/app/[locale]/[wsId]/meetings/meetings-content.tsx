@@ -86,6 +86,7 @@ export function MeetingsContent({
 }: MeetingsContentProps) {
   const t = useTranslations('meet.call');
   const meetingsT = useTranslations('meet.meetings');
+  const commonT = useTranslations('common');
   const [searchTerm, setSearchTerm] = useState(search);
   const [currentPage, setCurrentPage] = useState(page);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -235,7 +236,14 @@ export function MeetingsContent({
               {meetingsT('refreshing')}
             </>
           )}
-          {error && data && meetingsT('refresh_failed')}
+          {error && data && !isFetching && (
+            <>
+              {meetingsT('refresh_failed')}
+              <Button variant="ghost" size="sm" onClick={() => void refetch()}>
+                {commonT('refresh')}
+              </Button>
+            </>
+          )}
         </div>
         {/* Meetings Grid */}
         {isLoading ? (

@@ -29,7 +29,7 @@ it('expires old hints and ignores malformed storage', () => {
 });
 it('notifies mounted meeting cards once and tolerates unavailable storage', () => {
   const notify = vi.fn();
-  const unsubscribe = subscribeEndedRooms(notify);
+  const unsubscribe = subscribeEndedRooms('account-a', notify);
   rememberEndedRoom('account-a', 'meeting-1');
   rememberEndedRoom('account-a', 'meeting-1');
   expect(notify).toHaveBeenCalledOnce();
@@ -38,4 +38,27 @@ it('notifies mounted meeting cards once and tolerates unavailable storage', () =
     throw new Error('blocked');
   });
   expect(() => rememberEndedRoom('account-a', 'meeting-2')).not.toThrow();
+});
+
+it('ignores unrelated account and storage changes', () => {
+  const notify = vi.fn();
+  const unsubscribe = subscribeEndedRooms('account-a', notify);
+  rememberEndedRoom('account-b', 'meeting-1');
+  window.dispatchEvent(
+    new StorageEvent('storage', {
+      key: 'unrelated',
+      newValue: '1',
+      storageArea: localStorage,
+    })
+  );
+  expect(notify).not.toHaveBeenCalled();
+  window.dispatchEvent(
+    new StorageEvent('storage', {
+      key: 'meet-ended-v1:account-a',
+      newValue: '{}',
+      storageArea: localStorage,
+    })
+  );
+  expect(notify).toHaveBeenCalledOnce();
+  unsubscribe();
 });

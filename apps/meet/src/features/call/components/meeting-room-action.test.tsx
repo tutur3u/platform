@@ -32,16 +32,15 @@ function mount(accountId: string) {
     </QueryClientProvider>
   );
 }
-it('shows a cached ended card immediately without fetching permissions or room state', () => {
+it('keeps the server-checked notes entry available for cached ended rooms', () => {
   rememberEndedRoom('account-a', meetingId);
   mount('account-a');
   expect(
-    screen.getByRole('link', { name: 'This meeting has ended' })
-  ).toBeTruthy();
+    screen
+      .getByRole('link', { name: 'View notes & transcript' })
+      .getAttribute('href')
+  ).toContain('?notes=1');
   expect(mocks.state).not.toHaveBeenCalled();
-  expect(
-    screen.queryByRole('link', { name: 'View notes & transcript' })
-  ).toBeNull();
 });
 it('fetches independently for another account and remembers only an observed terminal state', async () => {
   rememberEndedRoom('account-a', meetingId);
@@ -54,4 +53,10 @@ it('fetches independently for another account and remembers only an observed ter
   );
   expect(mocks.state).toHaveBeenCalledOnce();
   expect(mocks.state).toHaveBeenCalledWith(meetingId);
+  cleanup();
+  mount('account-b');
+  expect(
+    screen.getByRole('link', { name: 'View notes & transcript' })
+  ).toBeTruthy();
+  expect(mocks.state).toHaveBeenCalledOnce();
 });

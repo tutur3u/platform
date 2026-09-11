@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import {
   isKnownEndedRoom,
   rememberEndedRoom,
@@ -12,7 +12,10 @@ export function useEndedRoom(
   confirmedEnded = false
 ) {
   const cached = useSyncExternalStore(
-    subscribeEndedRooms,
+    useCallback(
+      (notify: () => void) => subscribeEndedRooms(accountId, notify),
+      [accountId]
+    ),
     () => isKnownEndedRoom(accountId, meetingId),
     () => false
   );
