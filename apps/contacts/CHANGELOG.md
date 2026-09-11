@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.2](https://github.com/tutur3u/platform/compare/contacts-v0.19.1...contacts-v0.19.2) (2026-09-11)
+
+
+### Bug Fixes
+
+* **contacts:** address schedule selector review feedback ([d5edf34](https://github.com/tutur3u/platform/commit/d5edf34fb404c24f695419e67a58b593107c8dca))
+* **contacts:** clarify preserved selection on empty searches ([9be930f](https://github.com/tutur3u/platform/commit/9be930ff8e7a88221f0455030da715f745f52bbe))
+* **contacts:** restore group selection in schedule setup ([4e0cb84](https://github.com/tutur3u/platform/commit/4e0cb843e3c85f92b41f907cad537f940921c813))
+* **contacts:** restore group selection in schedule setup ([#5299](https://github.com/tutur3u/platform/issues/5299)) ([c5df0b9](https://github.com/tutur3u/platform/commit/c5df0b9508ec8e565d6f1585e479e12edef2d59c))
+
 ## [0.19.1](https://github.com/tutur3u/platform/compare/contacts-v0.19.0...contacts-v0.19.1) (2026-09-08)
 
 

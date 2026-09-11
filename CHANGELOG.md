@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.51.1](https://github.com/tutur3u/platform/compare/platform-v0.51.0...platform-v0.51.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **cli:** keep resource launchers valid after package upgrades ([e469641](https://github.com/tutur3u/platform/commit/e46964128af106a251fc2c2d5f61a98f11e4b33a))
+
 ## [0.51.0](https://github.com/tutur3u/platform/compare/platform-v0.50.0...platform-v0.51.0) (2026-09-11)
 
 
