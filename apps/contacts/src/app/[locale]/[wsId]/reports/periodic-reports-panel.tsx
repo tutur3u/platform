@@ -70,6 +70,7 @@ export default function PeriodicReportsPanel({
   const queryClient = useQueryClient();
   const [cadence, setCadence] = useState<PeriodicReportCadence>('monthly');
   const [query, setQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [approvalStatus, setApprovalStatus] =
     useState<PeriodicApprovalFilter>('all');
   const [deliveryStatus, setDeliveryStatus] =
@@ -207,11 +208,18 @@ export default function PeriodicReportsPanel({
         <Button
           size="sm"
           variant="ghost"
-          disabled={reportsQuery.isFetching}
-          onClick={() => void reportsQuery.refetch()}
+          disabled={isRefreshing}
+          onClick={async () => {
+            setIsRefreshing(true);
+            try {
+              await reportsQuery.refetch();
+            } finally {
+              setIsRefreshing(false);
+            }
+          }}
         >
           <RefreshCw
-            className={`size-3.5 ${reportsQuery.isFetching ? 'animate-spin' : ''}`}
+            className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
           />
           {t('refresh')}
         </Button>
