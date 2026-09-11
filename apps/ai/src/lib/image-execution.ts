@@ -100,7 +100,12 @@ export async function executeImageRequest(
             code: 'invalid_request_error',
             status: 400,
           })
-        : error,
+        : error instanceof Error && error.name === 'GatewayModelNotFoundError'
+          ? new AiStudioError('The selected image model is unavailable.', {
+              code: 'model_not_found',
+              status: 404,
+            })
+          : error,
       context?.requestId
     );
   }

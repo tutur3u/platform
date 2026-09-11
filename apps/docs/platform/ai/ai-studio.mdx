@@ -8,6 +8,15 @@ AI Studio is the workspace-scoped development surface at
 workspace session, permissions, settings, and billing context as other Tuturuuu
 apps.
 
+## Provider availability and step timing
+
+Check model availability with the provider, not only the internal catalog: retired
+image models can remain listed. A gateway model-not-found response is exposed as
+`model_not_found` so clients can stop retrying artwork without treating it as a
+broken sponsorship connection. Step timings are rounded to whole milliseconds at
+persistence; fractional SDK timings must not be sent to the integer `latency_ms`
+column. Credit and cost precision is preserved.
+
 ## Workspace sections
 
 Each section is its own route under `/<wsId>`; there is no catch-all section

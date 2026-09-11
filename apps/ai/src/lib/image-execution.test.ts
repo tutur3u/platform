@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   settle: vi.fn(),
   capture: vi.fn(),
   generate: vi.fn(),
+  error: vi.fn(),
 }));
 vi.mock('ai', () => ({
   gateway: { image: (id: string) => id },
@@ -14,7 +15,7 @@ vi.mock('./public-api', () => ({
   prepareMeteredExecution: mocks.prepare,
   settleMeteredExecution: mocks.settle,
   captureAiStudioContent: mocks.capture,
-  publicApiError: () => Response.json({ error: 'failed' }, { status: 503 }),
+  publicApiError: mocks.error,
 }));
 
 import { executeImageRequest, imageRequestSchema } from './image-execution';
@@ -24,6 +25,9 @@ beforeEach(() => {
   mocks.prepare.mockResolvedValue({ requestId: 'request', runId: 'ledger' });
   mocks.settle.mockResolvedValue({ billedCredits: 4, providerCostUsd: 0.04 });
   mocks.capture.mockResolvedValue(undefined);
+  mocks.error.mockImplementation(() =>
+    Response.json({ error: 'failed' }, { status: 503 })
+  );
   mocks.generate.mockResolvedValue({
     image: { base64: 'AAAA', mediaType: 'image/png' },
   });
@@ -62,6 +66,22 @@ it('returns image bytes and confirmed billing while preserving first-party spons
     data: [{ b64_json: 'AAAA', media_type: 'image/png' }],
     tuturuuu: { run_id: 'ledger', billing: { billedCredits: 4 } },
   });
+});
+it('classifies retired gateway models so Colab can stop retrying artwork', async () => {
+  const error = new Error('Unavailable model');
+  error.name = 'GatewayModelNotFoundError';
+  mocks.generate.mockRejectedValue(error);
+  await executeImageRequest(
+    new Request('https://ai.test'),
+    imageRequestSchema.parse({
+      model: 'retired-image-model',
+      prompt: 'Artwork',
+    })
+  );
+  expect(mocks.error).toHaveBeenCalledWith(
+    expect.objectContaining({ code: 'model_not_found', status: 404 }),
+    'request'
+  );
 });
 it('does not invent a successful asset or receipt after a provider failure', async () => {
   mocks.generate.mockRejectedValue(new Error('provider unavailable'));
