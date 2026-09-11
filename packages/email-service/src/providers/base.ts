@@ -12,7 +12,15 @@ import type {
   ProviderSendResult,
 } from '../types';
 
-const NON_CONTENT_TAGS = ['script', 'style', 'textarea', 'option', 'title'];
+// Keep sanitize-html's default non-text exclusions, plus document titles.
+const NON_CONTENT_TAGS = [
+  'script',
+  'style',
+  'textarea',
+  'option',
+  'xmp',
+  'title',
+];
 
 /**
  * Abstract base class for email providers.

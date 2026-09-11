@@ -78,6 +78,14 @@ describe('email provider document conversion', () => {
     expect(html).toContain('Open');
   });
 
+  it('discards raw xmp markup before the CSS inliner reparses it', async () => {
+    const input =
+      '<xmp><img src="x" onerror="unsafe()">Hidden raw text</xmp><h1>Monthly report</h1>';
+    const html = await provider.html(input);
+    expect(html).not.toMatch(/onerror|unsafe|Hidden raw text/);
+    expect(provider.plainText(input)).toBe('Monthly report');
+  });
+
   it('omits head metadata from the plain-text alternative', () => {
     const result = provider.plainText(report);
     expect(result).not.toContain('Hidden document title');
@@ -100,7 +108,7 @@ describe('email provider document conversion', () => {
     ).toBe('Visible headingBody');
   });
 
-  it.each(['textarea', 'option'])(
+  it.each(['textarea', 'option', 'xmp'])(
     'discards %s contents in both alternatives',
     async (tag) => {
       const fragment = `<${tag}>Hidden control text</${tag}><h1>Monthly report</h1>`;
