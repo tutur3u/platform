@@ -4,7 +4,8 @@ import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
 import { authenticateColabGrant } from '@/lib/colab-first-party';
-import { publicApiError } from '@/lib/public-api';
+import { executeImageRequest, imageRequestSchema } from '@/lib/image-execution';
+import { listAllowedModels, publicApiError } from '@/lib/public-api';
 import { executeTextRequest, parseTextRequest } from '@/lib/text-execution';
 
 const sponsorshipSchema = z
@@ -21,10 +22,11 @@ const sponsorshipSchema = z
       'prompt_review',
       'agent_step',
       'result_coaching',
+      'image_generation',
     ]),
     scenarioId: z.string().min(1).max(128),
     jobId: z.uuid(),
-    sequence: z.number().int().min(1).max(50),
+    sequence: z.number().int().min(1).max(256),
   })
   .strict();
 
@@ -82,26 +84,60 @@ export async function POST(request: Request) {
       product: 'colab',
       description: `Tuturuuu sponsors ${sponsor.operation} / ${sponsor.phase} for workshop "${sponsor.workshopTitle}", team "${sponsor.teamName}" (step ${sponsor.sequence}). Attendee personal credits are not charged.`,
     };
-    const response = await executeTextRequest(
-      executionRequest,
-      parseTextRequest({
-        instructions: body.instructions,
-        prompt: body.prompt,
-        model: body.model,
-        max_output_tokens: 4096,
-        max_steps: 1,
-        response_format: { type: 'json_object' },
-        stream: false,
-        tools: [],
-      }),
-      {
-        credential,
-        feature: `colab_${sponsor.operation}`,
-        responseShape: 'chat',
-        metadata,
-        requirePricedUsage: true,
-      }
-    );
+    let response: Response;
+    if (sponsor.phase === 'image_generation') {
+      if (sponsor.operation !== 'run')
+        throw new AiStudioError(
+          'Images are available inside agent runs only.',
+          { code: 'invalid_request_error', status: 400 }
+        );
+      const models = (await listAllowedModels(credential)).filter(
+        (model) => model.type === 'image'
+      );
+      const model =
+        models.find(
+          (model) => model.id === 'google/imagen-4.0-fast-generate-001'
+        ) ?? models[0];
+      if (!model)
+        throw new AiStudioError(
+          'A priced image model must be enabled in the sponsor workspace.',
+          { code: 'model_not_found', status: 503 }
+        );
+      response = await executeImageRequest(
+        executionRequest,
+        imageRequestSchema.parse({
+          model: model.id,
+          prompt: body.prompt,
+          n: 1,
+        }),
+        {
+          credential,
+          metadata,
+          feature: 'colab_run_image',
+          requirePricedUsage: true,
+        }
+      );
+    } else
+      response = await executeTextRequest(
+        executionRequest,
+        parseTextRequest({
+          instructions: body.instructions,
+          prompt: body.prompt,
+          model: body.model,
+          max_output_tokens: 4096,
+          max_steps: 1,
+          response_format: { type: 'json_object' },
+          stream: false,
+          tools: [],
+        }),
+        {
+          credential,
+          feature: `colab_${sponsor.operation}`,
+          responseShape: 'chat',
+          metadata,
+          requirePricedUsage: true,
+        }
+      );
     if (response.ok)
       response.headers.set('x-colab-sponsor-workspace', ROOT_WORKSPACE_ID);
     return response;

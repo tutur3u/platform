@@ -225,7 +225,7 @@ describe('AI output boundaries', () => {
       'zalo.create',
     ]);
     expect(result.records).toHaveLength(team.records.length + 1);
-    expect(team.records).toHaveLength(202);
+    expect(team.records).toHaveLength(250);
     expect(result.run.prompt).toBe(team.prompt);
     expect(result.run.scenario).toBe(starterScenarios()[0]!.brief);
     expect(result.run.usage).toEqual({
@@ -274,7 +274,7 @@ describe('AI output boundaries', () => {
     });
     expect(JSON.parse(result.run.trace[0]!.output)).toEqual({
       error: 'unknown_tool',
-      hint: 'Use search, read, create, or update in the tool field.',
+      hint: 'Use search, read, create, draft, update, or generate_image in the tool field.',
     });
     expect(result.run.usage).toMatchObject({
       successfulToolCalls: 1,

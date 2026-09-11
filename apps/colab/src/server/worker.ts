@@ -185,6 +185,14 @@ async function handle(
     await env.ROOMS.getByName(`directory:${identity.id}`).rememberRoom(id);
     return Response.json(view, { status: 201 });
   }
+  const imageMatch =
+    /^\/api\/rooms\/([a-f0-9-]{36})\/images\/([a-f0-9-]{36})$/.exec(
+      url.pathname
+    );
+  if (imageMatch && request.method === 'GET') {
+    requireRule(identity, 'sign_in_required', 401);
+    return env.ROOMS.getByName(imageMatch[1]!).image(identity, imageMatch[2]!);
+  }
   const match =
     /^\/api\/rooms\/([a-f0-9-]{36})(?:\/(join|action|password|ai|live))?$/.exec(
       url.pathname

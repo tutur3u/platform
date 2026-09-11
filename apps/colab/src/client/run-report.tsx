@@ -7,9 +7,10 @@ import {
 } from '@tuturuuu/icons';
 import type { Run, TeamLimits } from '@tuturuuu/multiplayer';
 import { Badge } from '@tuturuuu/ui/badge';
-import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Component, type ReactNode } from 'react';
+import { AgentAnswer } from './agent-answer';
 import { useCopy } from './i18n';
+import { ReadableMarkdown as Markdown } from './readable-markdown';
 import { runInsights } from './run-insights';
 import { RunStep } from './run-step';
 
@@ -31,7 +32,7 @@ class MarkdownFallbackBoundary extends Component<
 function ReadableMarkdown({ text }: { text: string }) {
   return (
     <MarkdownFallbackBoundary fallback={<p>{text}</p>}>
-      <MemoizedReactMarkdown>{text}</MemoizedReactMarkdown>
+      <Markdown text={text} />
     </MarkdownFallbackBoundary>
   );
 }
@@ -120,15 +121,21 @@ export function RunReport({
         </section>
         <div className="run-narrative-grid">
           <section className="run-outcome">
-            <p className="run-label">{c.agentAnswer}</p>
-            <div className="readable-output">
-              <ReadableMarkdown text={run.answer} />
-            </div>
+            <AgentAnswer
+              answer={run.answer}
+              renderText={(text) => <ReadableMarkdown text={text} />}
+            />
           </section>
           <section className="coach-card">
             <p className="run-label">{c.coachNotes}</p>
             <div className="readable-output">
-              <ReadableMarkdown text={run.feedback} />
+              <ReadableMarkdown
+                text={
+                  run.feedback === '[colab:coaching-unavailable]'
+                    ? c.coachingUnavailable
+                    : run.feedback
+                }
+              />
             </div>
           </section>
         </div>

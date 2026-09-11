@@ -166,8 +166,8 @@ describe('server-authoritative room policy', () => {
         (scenario) => scenario.title === legacy.scenario.title
       )
     ).toHaveLength(1);
-    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(10);
-    expect(legacy.teams[0]?.records).toHaveLength(202);
+    expect(legacy.teams[0]?.limits.toolCallLimit).toBe(50);
+    expect(legacy.teams[0]?.records).toHaveLength(250);
     expect(legacy.teams[0]?.records[0]?.title).toBe('Team-edited launch brief');
     mutateRoom(
       legacy,

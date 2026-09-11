@@ -54,13 +54,21 @@ export default class MockAI extends WorkerEntrypoint {
       result = { feedback: 'Demo coaching: check approvals.' };
     } else if (!input.previousActions.length) {
       result = {
-        tool: 'create',
+        tool: 'drive.create',
         app: 'drive',
         title: 'Live demo document',
         content: 'A controlled demo output.',
       };
     } else {
-      result = { answer: 'Live demo agent result' };
+      result = {
+        answer: {
+          english_caption: 'Live demo agent result',
+          vietnamese_caption:
+            'Bản nháp RISE: cần thành viên duyệt trước khi đăng.',
+          source_notes: ['Controlled practice data'],
+          readiness_checklist: { approval: 'Required before publishing' },
+        },
+      };
     }
     return { response: JSON.stringify(result) };
   }

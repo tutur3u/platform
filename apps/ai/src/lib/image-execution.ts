@@ -8,6 +8,7 @@ import {
   publicApiError,
   settleMeteredExecution,
 } from './public-api';
+import type { MeteredAiCredential } from './public-credential';
 
 export const imageRequestSchema = z.object({
   model: z.string().min(1),
@@ -25,15 +26,24 @@ function aspectRatio(size: z.infer<typeof imageRequestSchema>['size']) {
 
 export async function executeImageRequest(
   request: Request,
-  input: z.infer<typeof imageRequestSchema>
+  input: z.infer<typeof imageRequestSchema>,
+  options: {
+    credential?: MeteredAiCredential;
+    metadata?: Record<string, Json>;
+    requirePricedUsage?: boolean;
+    feature?: string;
+  } = {}
 ): Promise<Response> {
   let context: Awaited<ReturnType<typeof prepareMeteredExecution>> | undefined;
 
   try {
     context = await prepareMeteredExecution({
-      feature: 'image_generation',
+      feature: options.feature ?? 'image_generation',
+      credential: options.credential,
+      requirePricedUsage: options.requirePricedUsage,
+      requiredModelType: 'image',
       maxUsage: { imageUnits: input.n },
-      metadata: { image_count: input.n, size: input.size },
+      metadata: { ...options.metadata, image_count: input.n, size: input.size },
       modelId: input.model,
       request,
     });
@@ -44,11 +54,12 @@ export async function executeImageRequest(
           aspectRatio: aspectRatio(input.size),
           model: gateway.image(input.model),
           prompt: input.prompt,
+          maxRetries: 0,
         })
       )
     );
 
-    await Promise.all([
+    const [billing] = await Promise.all([
       settleMeteredExecution(context, {
         status: 'succeeded',
         usage: { imageUnits: generated.length },
@@ -62,8 +73,10 @@ export async function executeImageRequest(
     return Response.json(
       {
         created: Math.floor(Date.now() / 1_000),
+        tuturuuu: { run_id: context.runId, billing },
         data: generated.map(({ image }) => ({
           b64_json: image.base64,
+          media_type: image.mediaType,
         })),
       },
       {

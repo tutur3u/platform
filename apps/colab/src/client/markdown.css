@@ -1,0 +1,62 @@
+@layer components {
+  .colab-markdown {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .colab-markdown > * > * + * {
+    margin-top: 0.75rem;
+  }
+  .colab-markdown h1,
+  .colab-markdown h2,
+  .colab-markdown h3 {
+    margin-block: 1.2rem 0.65rem;
+    font-weight: 650;
+  }
+  .colab-markdown ul,
+  .colab-markdown ol {
+    padding-left: 1.4rem;
+  }
+  .colab-markdown ul {
+    list-style: disc;
+  }
+  .colab-markdown ol {
+    list-style: decimal;
+  }
+  .colab-markdown li + li {
+    margin-top: 0.35rem;
+  }
+  .colab-markdown a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .colab-markdown pre {
+    overflow-x: auto;
+    padding: 1rem;
+    border-radius: 0.65rem;
+    background: var(--muted);
+  }
+  .colab-markdown table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+  .colab-markdown th,
+  .colab-markdown td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .colab-markdown blockquote {
+    border-left: 3px solid var(--border);
+    padding-left: 1rem;
+    color: var(--muted-foreground);
+  }
+  .colab-markdown img {
+    max-width: 100%;
+    max-height: 36rem;
+    object-fit: contain;
+    border-radius: 0.75rem;
+    margin-block: 1rem;
+  }
+}

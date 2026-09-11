@@ -96,8 +96,8 @@ describe('sandbox and sessions', () => {
       ])
     );
     expect(mockApps).toHaveLength(24);
-    expect(records).toHaveLength(202);
-    expect(new Set(records.map(({ id }) => id)).size).toBe(202);
+    expect(records).toHaveLength(250);
+    expect(new Set(records.map(({ id }) => id)).size).toBe(250);
     expect(
       records.every(
         ({ title, content }) => !/lotus|lot-/i.test(`${title} ${content}`)

@@ -43,7 +43,7 @@ export function traceInsight(trace: Trace) {
   const detail = String(
     action === 'search'
       ? input.query || ''
-      : action === 'create'
+      : action === 'create' || action === 'draft'
         ? input.title || ''
         : input.id || input.title || ''
   );
@@ -52,7 +52,14 @@ export function traceInsight(trace: Trace) {
     app,
     detail,
     errorCode: typeof output.error === 'string' ? output.error : null,
-    isWrite: action === 'create' || action === 'update',
+    imageUrl:
+      typeof output.imageUrl === 'string' &&
+      /^\/api\/rooms\/[a-f0-9-]{36}\/images\/[a-f0-9-]{36}$/.test(
+        output.imageUrl
+      )
+        ? output.imageUrl
+        : null,
+    isWrite: ['create', 'update', 'draft', 'generate_image'].includes(action),
     status: traceStatus(trace),
   };
 }

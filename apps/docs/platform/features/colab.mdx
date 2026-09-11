@@ -321,6 +321,42 @@ production credit settlement: verify those separately after deployment.
 body tampering, concurrent replay rejection and receipts using isolated Durable
 Objects and mocked AI Studio responses. It does not spend production credits.
 
+## Reliable practice runs
+
+New workshops and teams default to 60 agent turns and 50 tool calls. Existing
+custom limits are preserved; hosts can choose the Deep dive preset for both the
+workshop and its teams. The catalog contains 250 linked RISE practice records
+across 24 apps, including review workflows, study support, capacity planning,
+and the Induction Day evidence pack.
+
+The agent can use `draft` to save a reviewable record without sending or
+publishing anything. `generate_image` calls AI Studio using the same one-use
+first-party grant and root-workspace billing as text. It requires an enabled,
+priced image model in the root workspace; it does not bypass model policy.
+Each call generates one image, with at most 50 retained images per workshop.
+Unavailable image generation is reported in the action trace with setup guidance,
+and the agent can continue with an artwork brief.
+
+Generated PNG/JPEG/WebP assets are stored separately from realtime room JSON in
+bounded SQLite chunks. Image requests re-check room membership and team visibility,
+including showcase access, and return private no-store responses. Workshop
+deletion removes its images. Captions, tables, checklists, code, and image outputs
+use safe Markdown rendering; structured bilingual answers have separate copy buttons.
+
+Practice actions accept `search`, `read`, `create`, and `update`, including exact
+namespaced forms such as `drive.search`. A namespace must match the selected app;
+unsupported actions such as publishing or deleting remain rejected. Record IDs
+are always checked within the selected app. Normalized actions appear in the trace.
+The agent reserves its last available turn for an answer and cannot execute another
+tool after exhausting its action budget. Coaching is a secondary step: if it fails,
+the answer and actual tool trace remain available with an explicit unavailable notice.
+
+Results containing a JSON object are displayed as readable, separately copyable
+sections, including bilingual captions, source notes and review checklists. Plain
+Markdown and incomplete responses remain readable without silently dropping text.
+The local showcase verifier exercises this output and namespaced actions through
+the real room, persistence and multi-browser broadcast path using deterministic AI.
+
 ## Workshop directory and activity log
 
 Workshops is the default signed-in screen and is also available at `/workshops`.

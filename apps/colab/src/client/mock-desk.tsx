@@ -6,6 +6,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { useEffect, useState } from 'react';
 import { appNames, useCopy } from './i18n';
+import { ReadableMarkdown } from './readable-markdown';
 import { SelectField } from './select-field';
 
 export function MockDesk({
@@ -110,7 +111,7 @@ export function MockDesk({
                   {board && <span className="board-tag">{record.id}</span>}
                   <h3>{record.title}</h3>
                 </div>
-                <p>{record.content}</p>
+                <ReadableMarkdown text={record.content} />
                 <code>{record.id}</code>
               </div>
             </article>

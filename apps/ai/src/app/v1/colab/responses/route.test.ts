@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   grant: vi.fn(),
   execute: vi.fn(),
+  image: vi.fn(),
+  models: vi.fn(),
 }));
 vi.mock('@/lib/colab-first-party', () => ({
   authenticateColabGrant: mocks.grant,
@@ -16,8 +18,13 @@ vi.mock('@/lib/text-execution', () => ({
   executeTextRequest: mocks.execute,
 }));
 vi.mock('@/lib/public-api', () => ({
+  listAllowedModels: mocks.models,
   publicApiError: (error: { status?: number }) =>
     Response.json({ error: 'rejected' }, { status: error.status ?? 500 }),
+}));
+vi.mock('@/lib/image-execution', () => ({
+  imageRequestSchema: { parse: (input: unknown) => input },
+  executeImageRequest: mocks.image,
 }));
 
 import { POST } from './route';
@@ -76,6 +83,8 @@ describe('Colab sponsorship boundary', () => {
       apiKey: { external_app_id: null },
     });
     mocks.execute.mockResolvedValue(Response.json({ choices: [] }));
+    mocks.models.mockResolvedValue([{ id: 'image-model', type: 'image' }]);
+    mocks.image.mockResolvedValue(Response.json({ data: [] }));
   });
   it('charges only root credits with complete workshop evidence and bounded execution', async () => {
     const response = await POST(
@@ -112,6 +121,72 @@ describe('Colab sponsorship boundary', () => {
       },
     });
     expect(options.metadata.description).toContain('RISE Induction Day');
+  });
+  it('supports sponsored image steps after fifty requests without caller model or count overrides', async () => {
+    const response = await POST(
+      request({
+        sponsorship: {
+          ...sponsorship,
+          operation: 'run',
+          phase: 'image_generation',
+          sequence: 102,
+        },
+        prompt: 'Abstract pathways artwork',
+        model: 'unapproved',
+        n: 99,
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.execute).not.toHaveBeenCalled();
+    const [execution, input, options] = mocks.image.mock.calls[0]!;
+    expect(execution.headers.get('idempotency-key')).toBe(
+      `colab:${sponsorship.jobId}:102`
+    );
+    expect(input).toEqual({
+      model: 'image-model',
+      prompt: 'Abstract pathways artwork',
+      n: 1,
+    });
+    expect(options).toMatchObject({
+      requirePricedUsage: true,
+      feature: 'colab_run_image',
+      credential: { workspaceId: root },
+      metadata: { phase: 'image_generation' },
+    });
+  });
+  it('does not generate images when the sponsor has no enabled image model', async () => {
+    mocks.models.mockResolvedValue([]);
+    expect(
+      (
+        await POST(
+          request({
+            sponsorship: {
+              ...sponsorship,
+              operation: 'run',
+              phase: 'image_generation',
+            },
+            prompt: 'Artwork',
+          })
+        )
+      ).status
+    ).toBe(503);
+    expect(mocks.image).not.toHaveBeenCalled();
+  });
+  it('rejects image calls outside agent runs and excessive sequences', async () => {
+    expect(
+      (
+        await POST(
+          request({
+            sponsorship: { ...sponsorship, phase: 'image_generation' },
+          })
+        )
+      ).status
+    ).toBe(400);
+    expect(
+      (await POST(request({ sponsorship: { ...sponsorship, sequence: 257 } })))
+        .status
+    ).toBe(400);
+    expect(mocks.image).not.toHaveBeenCalled();
   });
   it.each([
     { workspaceId: 'another-workspace', external_app_id: null },

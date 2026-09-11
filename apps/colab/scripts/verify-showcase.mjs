@@ -169,10 +169,10 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     const roomLimitCard = host.locator('.limit-scope-card').first();
     await expect(
       roomLimitCard.locator('input[name="agentTurnLimit"]')
-    ).toHaveValue('32');
+    ).toHaveValue('60');
     await expect(
       roomLimitCard.locator('input[name="toolCallLimit"]')
-    ).toHaveValue('24');
+    ).toHaveValue('50');
     await host
       .getByRole('button', { name: 'Save workshop limits', exact: true })
       .click();
@@ -184,7 +184,7 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
           latestRoom.limits.toolCallLimit,
         ];
       })
-      .toEqual([32, 24]);
+      .toEqual([60, 50]);
     await host.screenshot({
       path: '/private/tmp/colab-observability-limits.png',
       fullPage: true,
@@ -317,6 +317,32 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     ).toBeVisible();
     await expect(latestRun.locator('.step-list > li')).toHaveCount(1);
     await expect(
+      latestRun.getByRole('heading', { name: 'English caption', exact: true })
+    ).toBeVisible();
+    await expect(
+      latestRun.getByRole('heading', {
+        name: 'Vietnamese caption',
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(
+      latestRun.getByRole('button', { name: 'Copy text', exact: true })
+    ).toHaveCount(4);
+    await viewer
+      .context()
+      .grantPermissions(['clipboard-read', 'clipboard-write']);
+    await latestRun
+      .getByRole('button', { name: 'Copy text', exact: true })
+      .first()
+      .click();
+    await expect(
+      latestRun.getByRole('button', { name: 'Copied', exact: true })
+    ).toBeVisible();
+    assert.equal(
+      await viewer.evaluate(() => navigator.clipboard.readText()),
+      'Live demo agent result'
+    );
+    await expect(
       latestRun.getByText('Created practice data in Google Drive', {
         exact: true,
       })
@@ -324,6 +350,10 @@ export async function verifyShowcase({ browser, request, owner, alice, bob }) {
     await expect(
       latestRun.getByText('View technical details', { exact: true })
     ).toBeVisible();
+    await expect(viewer.locator('.studio-panel:visible').first()).toHaveCSS(
+      'padding',
+      '24px'
+    );
     await viewer.screenshot({
       path: '/private/tmp/colab-run-observability.png',
       fullPage: true,

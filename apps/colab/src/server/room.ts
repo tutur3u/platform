@@ -19,13 +19,16 @@ import { compileSkills, makeScenario, runAgent } from './ai';
 import { hash, randomToken } from './auth';
 import type { Env } from './env';
 import { reviewPrompt } from './prompt-review';
+import { RoomImages } from './room-images';
 import { SponsorshipGrants } from './sponsorship-grants';
 
 export class ColabRoom extends DurableObject<Env> {
   private grants: SponsorshipGrants;
+  private images: RoomImages;
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.grants = new SponsorshipGrants(ctx.storage);
+    this.images = new RoomImages(ctx.storage);
     ctx.storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY, value TEXT NOT NULL)'
     );
@@ -185,6 +188,7 @@ export class ColabRoom extends DurableObject<Env> {
     this.ctx.storage.transactionSync(() => {
       this.ctx.storage.sql.exec('DELETE FROM state');
       this.ctx.storage.sql.exec('DELETE FROM limits');
+      this.images.clear();
     });
     return room.directoryMemberIds;
   }
@@ -300,7 +304,7 @@ export class ColabRoom extends DurableObject<Env> {
       (body.action === 'run'
         ? Math.min(room.limits.agentTurnLimit, team.limits.agentTurnLimit) + 2
         : 3) *
-        60_000;
+        120_000;
     this.ctx.storage.sql.exec(
       'INSERT OR REPLACE INTO limits(key,count,expires) VALUES(?,1,?)',
       'ai-job',
@@ -312,10 +316,27 @@ export class ColabRoom extends DurableObject<Env> {
     const snapshot = room;
     const aiEnv: Env = {
       ...this.env,
+      storeGeneratedImage: async (image) => {
+        const current = this.read();
+        editable(current);
+        const actor = memberOf(current, identity);
+        requireRule(
+          actor.admin || memberTeamIds(actor).includes(team.id),
+          'invalid_team',
+          403
+        );
+        requireRule(
+          current.teams.some((entry) => entry.id === team.id),
+          'invalid_team'
+        );
+        return `/api/rooms/${current.id}/images/${this.images.store(team.id, image)}`;
+      },
       authorizeSponsorship: (payload) => {
         const current = this.read();
         editable(current);
         const actor = memberOf(current, identity);
+        if (JSON.parse(payload).sponsorship?.phase === 'image_generation')
+          this.images.canStore();
         requireRule(
           actor.admin ||
             (body.action !== 'scenario' &&
@@ -451,6 +472,13 @@ export class ColabRoom extends DurableObject<Env> {
       }
     }
     return projectRoom(this.read(), identity, this.online());
+  }
+  image(identity: Identity, id: string) {
+    const view = projectRoom(this.read(), identity);
+    return this.images.read(
+      id,
+      view.teams.map((team) => team.id)
+    );
   }
   async consumeSponsorship(token: string, digest: string) {
     editable(this.read());

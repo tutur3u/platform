@@ -34,6 +34,8 @@ export function RunStep({ index, trace }: { index: number; trace: Trace }) {
   const insight = traceInsight(trace);
   const actionLabels: Record<string, string> = {
     create: c.createdIn,
+    draft: c.draftedIn,
+    generate_image: c.imageGeneratedIn,
     read: c.openedIn,
     search: c.searchedIn,
     update: c.updatedIn,
@@ -49,11 +51,13 @@ export function RunStep({ index, trace }: { index: number; trace: Trace }) {
             ? Database
             : SquareTerminal;
   const errorHelp =
-    insight.errorCode === 'mock_record_missing'
-      ? c.recordMissingHelp
-      : insight.errorCode === 'unknown_tool'
-        ? c.unsupportedActionHelp
-        : c.actionFailedHelp;
+    insight.errorCode === 'image_unavailable'
+      ? c.imageUnavailableHelp
+      : insight.errorCode === 'mock_record_missing'
+        ? c.recordMissingHelp
+        : insight.errorCode === 'unknown_tool'
+          ? c.unsupportedActionHelp
+          : c.actionFailedHelp;
 
   return (
     <li className={insight.status === 'error' ? 'is-error' : undefined}>
@@ -83,6 +87,21 @@ export function RunStep({ index, trace }: { index: number; trace: Trace }) {
         </div>
         {insight.status === 'error' && (
           <p className="run-step-help">{errorHelp}</p>
+        )}
+        {insight.imageUrl && (
+          <a
+            className="colab-markdown"
+            href={insight.imageUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <img
+              src={insight.imageUrl}
+              alt={insight.detail || c.imageGeneratedIn}
+              loading="lazy"
+            />
+            <span>{c.viewArtwork}</span>
+          </a>
         )}
         <details className="technical-details">
           <summary>{c.viewTechnicalDetails}</summary>
