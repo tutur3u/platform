@@ -35,6 +35,31 @@ describe('email provider document conversion', () => {
     expect(result).toMatch(/color: ?#123456/);
   });
 
+  it.each(['title', 'textarea', 'option', 'script', 'style'])(
+    'keeps visible text after a comment mentioning %s',
+    (tag) => {
+      expect(
+        provider.plainText(
+          `<!-- <${tag}> is only an example --><h1>Monthly report</h1>`
+        )
+      ).toBe('Monthly report');
+    }
+  );
+
+  it('does not interpret attribute values as hidden blocks', () => {
+    expect(
+      provider.plainText('<p title="Example <textarea> tag">Visible report</p>')
+    ).toBe('Visible report');
+  });
+
+  it('preserves links and decodes escaped text once', () => {
+    expect(
+      provider.plainText(
+        '<p>A &amp; B &amp;lt;tag&amp;gt;</p><a href="https://example.com?a=1&amp;b=2">Open</a>'
+      )
+    ).toBe('A & B &lt;tag&gt;\n\nOpen (https://example.com?a=1&b=2)');
+  });
+
   it('omits head metadata from the plain-text alternative', () => {
     const result = provider.plainText(report);
     expect(result).not.toContain('Hidden document title');

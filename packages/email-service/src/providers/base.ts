@@ -136,75 +136,20 @@ export abstract class BaseEmailProvider implements EmailProvider {
   }
 
   /**
-   * Remove non-content blocks consistently with HTML sanitization.
-   * Uses a loop-based state machine to avoid ReDoS vulnerabilities
-   * and properly handle malformed/nested tags.
-   * @param html Raw HTML content
-   * @returns HTML with non-visible blocks removed
-   */
-  private removeNonContentBlocks(html: string): string {
-    const result: string[] = [];
-    let i = 0;
-    const len = html.length;
-
-    while (i < len) {
-      // Match whole tag names so similarly named elements remain intact.
-      if (html[i] === '<' && i + 1 < len) {
-        const tagName = NON_CONTENT_TAGS.find(
-          (tag) =>
-            html.slice(i, i + tag.length + 1).toLowerCase() === `<${tag}` &&
-            /[\s/>]/u.test(html[i + tag.length + 1] ?? '')
-        );
-
-        if (tagName) {
-          const closeTag = `</${tagName}`;
-
-          // Skip to end of opening tag
-          while (i < len && html[i] !== '>') {
-            i++;
-          }
-          i++; // Skip the '>'
-
-          // Find and skip the closing tag (case-insensitive)
-          while (i < len) {
-            if (html[i] === '<') {
-              const closeCheck = html
-                .slice(i, i + closeTag.length + 1)
-                .toLowerCase();
-              if (
-                closeCheck.startsWith(closeTag) &&
-                /[\s>]/u.test(html[i + closeTag.length] ?? '')
-              ) {
-                // Skip past the closing tag
-                while (i < len && html[i] !== '>') {
-                  i++;
-                }
-                i++; // Skip the '>'
-                break;
-              }
-            }
-            i++;
-          }
-          continue;
-        }
-      }
-
-      result.push(html[i]!);
-      i++;
-    }
-
-    return result.join('');
-  }
-
-  /**
    * Generate plain text from HTML for multipart emails.
    * @param html HTML content
    * @returns Plain text version
    */
   protected htmlToPlainText(html: string): string {
-    // Remove non-visible blocks using the bounded, loop-based approach
-    // This avoids ReDoS vulnerabilities and properly handles malformed tags
-    let text = this.removeNonContentBlocks(html);
+    // Parse comments, quoted attributes, and raw-text elements before converting
+    // visible markup. Scanning raw HTML can mistake examples for actual tags.
+    let text = sanitizeHtmlContent(html, {
+      allowedTags: sanitizeHtmlContent.defaults.allowedTags.filter(
+        (tag) => !NON_CONTENT_TAGS.includes(tag)
+      ),
+      allowedAttributes: { a: ['href'] },
+      nonTextTags: NON_CONTENT_TAGS,
+    });
 
     // Convert block elements to line breaks
     text = text
