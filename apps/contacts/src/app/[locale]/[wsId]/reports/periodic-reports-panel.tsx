@@ -213,9 +213,10 @@ export default function PeriodicReportsPanel({
         }}
         query={query}
         isSearching={
-          reportsQuery.isLoading ||
-          reportsQuery.isPlaceholderData ||
-          query.trim() !== debouncedQuery
+          !reportsQuery.isError &&
+          (reportsQuery.isLoading ||
+            reportsQuery.isPlaceholderData ||
+            query.trim() !== debouncedQuery)
         }
         resultCount={totalReports}
         sortBy={sortBy}

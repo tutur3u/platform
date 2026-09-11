@@ -75,7 +75,7 @@ create trigger queue_approved_periodic_report
 -- Lock the report before the queue, matching approval transitions. Worker queue
 -- claims/writes remain separate transactions and never lock reports in reverse.
 create or replace function private.request_periodic_report_delivery(
-  p_report_id uuid, p_ws_id uuid, p_action text
+  p_report_id uuid, p_ws_id uuid, p_action text, p_delivery_enabled boolean default false
 )
 returns jsonb
 language plpgsql
@@ -86,9 +86,9 @@ declare
   report private.external_user_monthly_reports%rowtype;
   queue private.user_report_email_queue%rowtype;
   subject public.workspace_users%rowtype;
-  queued_id uuid;
+  requested_kind text;
 begin
-  if p_action not in ('send', 'test', 'retry', 'cancel') then
+  if p_action is null or p_action not in ('send', 'test', 'retry', 'cancel') then
     return jsonb_build_object('code', 400, 'message', 'Invalid delivery action.');
   end if;
   select r.* into report from private.external_user_monthly_reports r
@@ -120,6 +120,16 @@ begin
   if queue.status = 'queued' or (queue.status = 'sent' and queue.delivery_kind = 'send') then
     return jsonb_build_object('code', 409, 'message', 'Delivery is already active or sent.');
   end if;
+  if p_delivery_enabled is distinct from true then
+    update private.external_user_monthly_reports set delivery_status = 'blocked',
+      last_delivery_error = 'Periodic report email delivery is disabled for this workspace.' where id = p_report_id;
+    update private.user_report_email_queue set status = 'blocked',
+      last_error = 'Periodic report email delivery is disabled for this workspace.', updated_at = now()
+      where id = queue.id and status in ('failed', 'blocked');
+    return jsonb_build_object('code', 409, 'message', 'Both workspace email gates must be enabled before periodic reports can send.');
+  end if;
+  requested_kind = case when p_action = 'test' then 'test'
+    when p_action = 'retry' then coalesce(queue.delivery_kind, 'send') else 'send' end;
   select * into subject from public.workspace_users where id = report.user_id and ws_id = p_ws_id;
   if nullif(btrim(subject.email), '') is null then
     update private.external_user_monthly_reports set delivery_status = 'blocked',
@@ -129,17 +139,17 @@ begin
   insert into private.user_report_email_queue
     (report_id, ws_id, user_id, recipient_email, delivery_kind, status)
     values (p_report_id, p_ws_id, subject.id, lower(btrim(subject.email)),
-      case when p_action = 'test' then 'test' else 'send' end, 'queued')
+      requested_kind, 'queued')
     on conflict (report_id) do update set status = 'queued',
       delivery_kind = excluded.delivery_kind, recipient_email = excluded.recipient_email,
+      user_id = excluded.user_id, ws_id = excluded.ws_id,
       attempt_count = 0, sent_at = null, provider_message_id = null,
       locked_at = null, locked_by = null, last_error = null,
-      next_attempt_at = now(), updated_at = now()
-    returning id into queued_id;
+      next_attempt_at = now(), updated_at = now();
   update private.external_user_monthly_reports set delivery_status = 'queued',
     delivery_requested_at = now(), last_delivery_error = null where id = p_report_id;
-  return jsonb_build_object('code', 200, 'message', 'Periodic report delivery queued.', 'queued', true, 'status', 'queued');
+  return jsonb_build_object('code', 200, 'message', case when requested_kind = 'test' then 'Test delivery queued for the subject profile email.' else 'Periodic report delivery queued.' end, 'queued', true, 'status', 'queued');
 end;
 $$;
-revoke all on function private.request_periodic_report_delivery(uuid, uuid, text) from public, anon, authenticated;
-grant execute on function private.request_periodic_report_delivery(uuid, uuid, text) to service_role;
+revoke all on function private.request_periodic_report_delivery(uuid, uuid, text, boolean) from public, anon, authenticated;
+grant execute on function private.request_periodic_report_delivery(uuid, uuid, text, boolean) to service_role;

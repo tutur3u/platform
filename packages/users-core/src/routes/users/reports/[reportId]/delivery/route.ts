@@ -140,6 +140,7 @@ export async function POST(request: Request, { params }: Params) {
         { status: 409 }
       );
     }
+    let deliveryEnabled = false;
     if (parsed.data.action !== 'cancel') {
       const [globalGateEnabled, periodicGateEnabled] = await Promise.all([
         verifySecret({
@@ -155,15 +156,7 @@ export async function POST(request: Request, { params }: Params) {
           wsId,
         }),
       ]);
-      if (!globalGateEnabled || !periodicGateEnabled) {
-        return NextResponse.json(
-          {
-            message:
-              'Both workspace email gates must be enabled before periodic reports can send.',
-          },
-          { status: 409 }
-        );
-      }
+      deliveryEnabled = globalGateEnabled && periodicGateEnabled;
     }
     const { data, error } = await privateDb.rpc(
       'request_periodic_report_delivery',
@@ -171,6 +164,7 @@ export async function POST(request: Request, { params }: Params) {
         p_report_id: reportId,
         p_ws_id: wsId,
         p_action: parsed.data.action,
+        p_delivery_enabled: deliveryEnabled,
       }
     );
     if (error) throw error;

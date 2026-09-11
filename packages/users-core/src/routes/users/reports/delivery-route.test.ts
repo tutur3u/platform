@@ -152,8 +152,16 @@ describe('periodic report delivery route', () => {
   it('blocks sends while either email gate is disabled', async () => {
     const calls = database();
     mocks.secret.mockResolvedValue(false);
+    mocks.rpc.mockResolvedValue({
+      data: { code: 409, message: 'Email delivery is disabled.' },
+      error: null,
+    });
     expect((await POST(request('send'), context)).status).toBe(409);
     expect(calls.some((call) => call.method === 'upsert')).toBe(false);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'request_periodic_report_delivery',
+      expect.objectContaining({ p_delivery_enabled: false })
+    );
   });
   it('returns the atomic request conflict without claiming it queued a delivery', async () => {
     database();
@@ -182,6 +190,7 @@ describe('periodic report delivery route', () => {
       p_report_id: 'report-1',
       p_ws_id: 'workspace-1',
       p_action: 'send',
+      p_delivery_enabled: true,
     });
     expect(
       calls.some((call) => call.method === 'upsert' || call.method === 'update')

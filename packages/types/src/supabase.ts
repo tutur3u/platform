@@ -18342,7 +18342,12 @@ export type Database = {
         };
       };
       request_periodic_report_delivery: {
-        Args: { p_action: string; p_report_id: string; p_ws_id: string };
+        Args: {
+          p_action: string;
+          p_delivery_enabled?: boolean;
+          p_report_id: string;
+          p_ws_id: string;
+        };
         Returns: Json;
       };
       resolve_user_groups_table_timezone: {

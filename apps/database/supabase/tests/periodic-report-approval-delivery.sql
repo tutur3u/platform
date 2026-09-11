@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(25);
+select plan(34);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -45,14 +45,14 @@ select is((select provider_message_id from private.user_report_email_queue where
 
 -- Queue lifecycle changes update report state in the same transaction.
 update private.user_report_email_queue set status = 'processing' where report_id = '40000000-0000-4000-8000-000000009105';
-select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000009102', 'retry')->>'code')::int, 409, 'request cannot overwrite a processing queue row');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 409, 'request cannot overwrite a processing queue row');
 with retried as (
  update private.user_report_email_queue set status = 'queued'
  where report_id = '40000000-0000-4000-8000-000000009105' and (status in ('failed','blocked','cancelled') or (status = 'sent' and delivery_kind = 'test')) returning id
 ) select is((select count(*)::int from retried), 0, 'manual retry cannot overwrite an existing processing queue row');
 update private.user_report_email_queue set status = 'failed' where report_id = '40000000-0000-4000-8000-000000009105';
 update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009105';
-select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000009102', 'retry')->>'code')::int, 409, 'revocation wins over a stale queue request');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 409, 'revocation wins over a stale queue request');
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009105'), 'cancelled', 'rejected stale request leaves report cancelled');
 update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009105';
 
@@ -62,7 +62,7 @@ update private.user_report_email_queue set status = 'blocked', sent_at = now(), 
 update private.external_user_monthly_reports set delivered_at = null, report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009105';
 update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009105';
 select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009105'), 'blocked', 'reapproval never requeues a provider-accepted blocked send');
-select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000009102', 'retry')->>'code')::int, 409, 'manual retry also preserves accepted delivery');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 409, 'manual retry also preserves accepted delivery');
 update private.external_user_monthly_reports set delivered_at = now(), delivery_status = 'sent'
 where id = '40000000-0000-4000-8000-000000009105';
 update private.user_report_email_queue set status = 'sent' where report_id = '40000000-0000-4000-8000-000000009105';
@@ -78,13 +78,32 @@ update private.external_user_monthly_reports set report_approval_status = 'APPRO
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'blocked', 'missing email is visibly blocked');
 select is((select count(*)::int from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 0, 'missing email never enters the queue');
 
-select ok(not has_function_privilege('authenticated', 'private.request_periodic_report_delivery(uuid,uuid,text)', 'execute'), 'direct authenticated RPC calls are forbidden');
-select ok(has_function_privilege('service_role', 'private.request_periodic_report_delivery(uuid,uuid,text)', 'execute'), 'authorized server can request delivery');
-select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000000000', 'send')->>'code')::int, 404, 'manual requests enforce workspace scope');
+select ok(not has_function_privilege('authenticated', 'private.request_periodic_report_delivery(uuid,uuid,text,boolean)', 'execute'), 'direct authenticated RPC calls are forbidden');
+select ok(has_function_privilege('service_role', 'private.request_periodic_report_delivery(uuid,uuid,text,boolean)', 'execute'), 'authorized server can request delivery');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000000000', 'send', true)->>'code')::int, 404, 'manual requests enforce workspace scope');
 update public.workspace_users set email = 'restored@example.com' where id = '40000000-0000-4000-8000-000000009103';
-select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send')->>'code')::int, 200, 'manual request queues a restored recipient');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send', true)->>'code')::int, 200, 'manual request queues a restored recipient');
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'queued', 'manual queue and report update atomically');
-select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'cancel')->>'code')::int, 200, 'manual cancellation succeeds');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'cancel', true)->>'code')::int, 200, 'manual cancellation succeeds');
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'cancelled', 'manual cancellation updates the report');
+
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', null, true)->>'code')::int, 400, 'null action never queues a send');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'test', true)->>'message'), 'Test delivery queued for the subject profile email.', 'test request identifies test delivery');
+update private.user_report_email_queue set status = 'failed' where report_id = '40000000-0000-4000-8000-000000009106';
+update private.external_user_monthly_reports set delivery_status = 'failed' where id = '40000000-0000-4000-8000-000000009106';
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 200, 'failed test can be retried');
+select is((select delivery_kind from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'test', 'retry preserves test delivery kind');
+select private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'cancel', true);
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send', false)->>'code')::int, 409, 'disabled gates reject delivery');
+select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'blocked', 'disabled gates remain visible on report');
+select matches((select last_delivery_error from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'disabled', 'disabled gate reason is retained');
+
+
+insert into public.workspace_users(id, ws_id, display_name, email) values ('40000000-0000-4000-8000-000000009107', '40000000-0000-4000-8000-000000009102', 'Updated subject', 'updated@example.com');
+update private.external_user_monthly_reports set user_id = '40000000-0000-4000-8000-000000009107' where id = '40000000-0000-4000-8000-000000009106';
+select private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send', true);
+select is((select user_id from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), '40000000-0000-4000-8000-000000009107'::uuid, 'reused queue follows the current report subject');
+select is((select recipient_email from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'updated@example.com', 'reused queue follows the current profile email');
+
 select * from finish();
 rollback;
