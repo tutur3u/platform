@@ -13,12 +13,7 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
-import {
-  getCurrentUserDefaultWorkspace,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -116,6 +111,31 @@ function getLegacyPathRedirect(pathname: string): string | null {
 }
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  // Launcher workspace context is implicit. Explicit Meet workspace links and
+  // room/plan invitations retain their destinations.
+  const entry = getPathSegmentsWithoutLocale(req.nextUrl.pathname);
+  const hasWorkspaceSlug =
+    entry[0] === 'personal' ||
+    entry[0] === 'internal' ||
+    /^[0-9a-f-]{36}$/iu.test(entry[0] ?? '');
+  const isWorkspaceEntry =
+    entry.length === 0 ||
+    (hasWorkspaceSlug &&
+      (entry.length === 1 ||
+        (entry.length === 2 && entry[1] === 'meetings'))) ||
+    (entry[0] === 'workspace' &&
+      (entry.length === 2 || (entry.length === 3 && entry[2] === 'meetings')));
+  if (
+    req.nextUrl.searchParams.get('source') === 'sidebar-apps' &&
+    isWorkspaceEntry
+  ) {
+    const url = req.nextUrl.clone();
+    const locale = getPathSegments(req.nextUrl.pathname)[0];
+    url.pathname = `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`;
+    url.searchParams.delete('source');
+    return NextResponse.redirect(url);
+  }
+
   const legacyPath = getLegacyPathRedirect(req.nextUrl.pathname);
   if (legacyPath) {
     return NextResponse.redirect(
@@ -215,23 +235,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   if (isRootPathOrLocaleRoot(req.nextUrl.pathname) && hasSatelliteSession) {
-    try {
-      const defaultWorkspace = await getCurrentUserDefaultWorkspace(
-        withForwardedInternalApiAuth(authRequestHeaders)
-      );
-      const target = defaultWorkspace?.personal
-        ? 'personal'
-        : defaultWorkspace?.id === ROOT_WORKSPACE_ID
-          ? 'internal'
-          : (defaultWorkspace?.id ?? 'personal');
-      const wsRedirect = NextResponse.redirect(
-        new URL(`/${target}/meetings`, req.nextUrl)
-      );
-      propagateAuthCookies(authRes, wsRedirect);
-      return wsRedirect;
-    } catch (error) {
-      console.error('Error handling Meet root path redirect:', error);
-    }
+    const locale = getPathSegments(req.nextUrl.pathname)[0];
+    const wsRedirect = NextResponse.redirect(
+      new URL(
+        `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`,
+        req.nextUrl
+      )
+    );
+    propagateAuthCookies(authRes, wsRedirect);
+    return wsRedirect;
   }
 
   // Continue with locale handling
