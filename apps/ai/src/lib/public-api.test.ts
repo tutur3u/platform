@@ -58,6 +58,76 @@ describe('AI Studio billing policy', () => {
     );
     expect(mocks.beginExternalAiStudioRun).not.toHaveBeenCalled();
   });
+  it('only one concurrent retry claims the reserved run', async () => {
+    let reserved = true;
+    const query = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(async () => {
+        const data = reserved ? { id: 'metered-run' } : null;
+        reserved = false;
+        return { data, error: null };
+      }),
+    };
+    mocks.createAdminClient.mockResolvedValue({
+      schema: () => ({ from: () => query }),
+    });
+    const input = {
+      credential: {
+        kind: 'api-key',
+        workspaceId: 'workspace',
+        apiKey: { id: 'key' },
+      } as never,
+      feature: 'colab_compile',
+      modelId: 'model',
+      maxUsage: { inputTokens: 10, outputTokens: 100 },
+      request: new Request('https://ai.tuturuuu.com/v1/colab/responses'),
+      requirePricedUsage: true,
+    };
+    const results = await Promise.allSettled([
+      prepareMeteredExecution(input),
+      prepareMeteredExecution(input),
+    ]);
+    expect(
+      results.filter((result) => result.status === 'fulfilled')
+    ).toHaveLength(1);
+    expect(
+      results.find((result) => result.status === 'rejected')
+    ).toMatchObject({ reason: { status: 409 } });
+    expect(query.eq).toHaveBeenCalledWith('status', 'reserved');
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
+  it('fails and releases the hold if actual pricing becomes zero', async () => {
+    mocks.calculateAiStudioUsageCost.mockResolvedValueOnce({
+      billedCredits: 0,
+      providerCostUsd: 0,
+    });
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            kind: 'api-key',
+            workspaceId: 'workspace',
+            apiKey: { id: 'key' },
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'run',
+          startedAt: Date.now(),
+          requirePricedUsage: true,
+        },
+        { status: 'succeeded', usage: { inputTokens: 100, outputTokens: 50 } }
+      )
+    ).rejects.toThrow('pricing is unavailable');
+    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        actualCredits: 0,
+        metadata: expect.objectContaining({ reconciliation_required: true }),
+      })
+    );
+  });
   it('rejects unknown zero model pricing before reserving credits', async () => {
     mocks.calculateAiStudioUsageCost.mockResolvedValueOnce({
       billedCredits: 0,

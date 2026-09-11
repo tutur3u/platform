@@ -219,6 +219,28 @@ export async function prepareMeteredExecution({
         workspaceId: credential.workspaceId,
       });
 
+  if (requirePricedUsage) {
+    // Atomically claim the reserved run: retries receive the same run ID but
+    // cannot start another provider request or settle the original request.
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { data, error } = await sbAdmin
+      .schema('private')
+      .from('ai_studio_runs')
+      .update({ status: 'running' })
+      .eq('id', reservation.runId)
+      .eq('status', 'reserved')
+      .select('id')
+      .maybeSingle();
+    if (error || !data)
+      throw new AiStudioError(
+        'This sponsored request is already running or completed.',
+        {
+          code: 'invalid_request_error',
+          status: error ? 503 : 409,
+        }
+      );
+  }
+
   return {
     requirePricedUsage,
     credential,
@@ -297,35 +319,47 @@ export async function settleMeteredExecution(
         : Math.max(0, usage.outputTokens - (usage.reasoningTokens ?? 0)),
     reasoningTokens: usage.reasoningTokens,
     workspaceId: context.credential.workspaceId,
-  }).catch(async (pricingError) => {
-    if (context.requirePricedUsage) {
-      // Release the hold without claiming a successful zero-cost generation.
-      // Preserve measured usage for reconciliation once pricing recovers.
-      await settleAiStudioRun({
-        runId: context.runId,
-        status: 'failed',
-        actualCredits: 0,
-        inputTokens: usage.inputTokens,
-        outputTokens: usage.outputTokens,
-        reasoningTokens: usage.reasoningTokens,
-        errorClass: 'PricingUnavailable',
-        errorMessage:
-          'Pricing unavailable; reservation released. Usage needs reconciliation.',
-        metadata: {
-          ...(metadata &&
-          typeof metadata === 'object' &&
-          !Array.isArray(metadata)
-            ? metadata
-            : {}),
-          pricing_status: 'unavailable',
-          reconciliation_required: true,
-        },
-      });
-      context.pricingFailureFinalized = true;
-      throw pricingError;
-    }
-    return { billedCredits: 0, providerCostUsd: 0 };
-  });
+  })
+    .then((cost) => {
+      if (
+        context.requirePricedUsage &&
+        (status === 'succeeded' ||
+          Object.values(usage).some((value) => (value ?? 0) > 0)) &&
+        !(cost.providerCostUsd > 0 && cost.billedCredits > 0)
+      ) {
+        throw new Error('Sponsored usage pricing is unavailable.');
+      }
+      return cost;
+    })
+    .catch(async (pricingError) => {
+      if (context.requirePricedUsage) {
+        // Release the hold without claiming a successful zero-cost generation.
+        // Preserve measured usage for reconciliation once pricing recovers.
+        await settleAiStudioRun({
+          runId: context.runId,
+          status: 'failed',
+          actualCredits: 0,
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          reasoningTokens: usage.reasoningTokens,
+          errorClass: 'PricingUnavailable',
+          errorMessage:
+            'Pricing unavailable; reservation released. Usage needs reconciliation.',
+          metadata: {
+            ...(metadata &&
+            typeof metadata === 'object' &&
+            !Array.isArray(metadata)
+              ? metadata
+              : {}),
+            pricing_status: 'unavailable',
+            reconciliation_required: true,
+          },
+        });
+        context.pricingFailureFinalized = true;
+        throw pricingError;
+      }
+      return { billedCredits: 0, providerCostUsd: 0 };
+    });
 
   const settlement = {
     embeddingUnits: usage.embeddingUnits,
@@ -382,10 +416,20 @@ export async function recordMeteredExecutionStep(
           modelId: context.modelId,
           outputTokens: input.outputTokens,
           workspaceId: context.credential.workspaceId,
-        }).catch((error) => {
-          if (context.requirePricedUsage) throw error;
-          return { billedCredits: 0, providerCostUsd: 0 };
         })
+          .then((cost) => {
+            if (
+              context.requirePricedUsage &&
+              ((input.inputTokens ?? 0) > 0 || (input.outputTokens ?? 0) > 0) &&
+              !(cost.providerCostUsd > 0 && cost.billedCredits > 0)
+            )
+              throw new Error('Sponsored step pricing is unavailable.');
+            return cost;
+          })
+          .catch((error) => {
+            if (context.requirePricedUsage) throw error;
+            return { billedCredits: 0, providerCostUsd: 0 };
+          })
       : { billedCredits: 0, providerCostUsd: 0 };
 
   await recordAiStudioRunStep({
