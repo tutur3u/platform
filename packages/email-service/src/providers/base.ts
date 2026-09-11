@@ -37,7 +37,7 @@ export abstract class BaseEmailProvider implements EmailProvider {
 
   /**
    * Sanitize HTML content to prevent XSS and ensure email compatibility.
-   * Uses DOMPurify for sanitization and juice for CSS inlining.
+   * Uses sanitize-html for sanitization and juice for CSS inlining.
    * @param html Raw HTML content
    * @returns Sanitized HTML with inlined CSS
    */
@@ -82,6 +82,8 @@ export abstract class BaseEmailProvider implements EmailProvider {
         'body',
         'html',
       ],
+      // Discard hidden document titles instead of unwrapping them into body text.
+      nonTextTags: ['script', 'style', 'textarea', 'option', 'title'],
       allowedAttributes: {
         '*': [
           'href',
@@ -100,6 +102,8 @@ export abstract class BaseEmailProvider implements EmailProvider {
           'cellpadding',
           'cellspacing',
         ],
+        td: ['colspan', 'rowspan'],
+        th: ['colspan', 'rowspan'],
       },
       allowedSchemes: ['http', 'https', 'mailto', 'cid'],
       allowedSchemesByTag: {
@@ -130,24 +134,28 @@ export abstract class BaseEmailProvider implements EmailProvider {
   }
 
   /**
-   * Remove script and style blocks from HTML safely.
+   * Remove non-visible title, script, and style blocks safely.
    * Uses a loop-based state machine to avoid ReDoS vulnerabilities
    * and properly handle malformed/nested tags.
    * @param html Raw HTML content
-   * @returns HTML with script and style blocks removed
+   * @returns HTML with non-visible blocks removed
    */
-  private removeScriptAndStyleBlocks(html: string): string {
+  private removeNonContentBlocks(html: string): string {
     const result: string[] = [];
     let i = 0;
     const len = html.length;
 
     while (i < len) {
-      // Check for opening <script or <style tags (case-insensitive)
+      // Match whole tag names so similarly named elements remain intact.
       if (html[i] === '<' && i + 1 < len) {
         const remaining = html.slice(i, i + 8).toLowerCase();
+        const tagName = ['script', 'style', 'title'].find(
+          (tag) =>
+            remaining.startsWith(`<${tag}`) &&
+            /[\s/>]/u.test(html[i + tag.length + 1] ?? '')
+        );
 
-        if (remaining.startsWith('<script') || remaining.startsWith('<style')) {
-          const tagName = remaining.startsWith('<script') ? 'script' : 'style';
+        if (tagName) {
           const closeTag = `</${tagName}`;
 
           // Skip to end of opening tag
@@ -162,7 +170,10 @@ export abstract class BaseEmailProvider implements EmailProvider {
               const closeCheck = html
                 .slice(i, i + closeTag.length + 1)
                 .toLowerCase();
-              if (closeCheck.startsWith(closeTag)) {
+              if (
+                closeCheck.startsWith(closeTag) &&
+                /[\s>]/u.test(html[i + closeTag.length] ?? '')
+              ) {
                 // Skip past the closing tag
                 while (i < len && html[i] !== '>') {
                   i++;
@@ -190,9 +201,9 @@ export abstract class BaseEmailProvider implements EmailProvider {
    * @returns Plain text version
    */
   protected htmlToPlainText(html: string): string {
-    // Remove script and style blocks using safe loop-based approach
+    // Remove non-visible blocks using the bounded, loop-based approach
     // This avoids ReDoS vulnerabilities and properly handles malformed tags
-    let text = this.removeScriptAndStyleBlocks(html);
+    let text = this.removeNonContentBlocks(html);
 
     // Convert block elements to line breaks
     text = text
