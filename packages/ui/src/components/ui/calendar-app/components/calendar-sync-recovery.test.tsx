@@ -110,3 +110,18 @@ it('can pause an identified calendar during the retry cooldown without deleting 
   );
   expect(value.syncMutation.mutate).not.toHaveBeenCalled();
 });
+
+it('shows neutral progress for an automatic sync instead of an attention warning', () => {
+  const value = state();
+  value.syncHealth!.state = 'syncing';
+  value.syncHealth!.currentlyRunning = true;
+  value.manualSyncDisabled = true;
+  render(<CalendarSyncRecovery state={value} />);
+  expect(screen.queryByText('sync_recovery.attention')).toBeNull();
+  expect(screen.getByRole('status')).toBeVisible();
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByText('sync_recovery.syncing_description')).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'syncing_calendars' })
+  ).toBeDisabled();
+});

@@ -3,7 +3,6 @@ import {
   getGoogleCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
   getWorkspaceCalendarSyncPreferences,
-  getWorkspaceCalendarSyncStatus,
   listCalendarAccounts,
   listProviderCalendars,
   syncWorkspaceCalendar,
@@ -25,6 +24,7 @@ import {
 } from './calendar-connections-manager-helpers';
 import type { AuthResponse } from './calendar-types';
 import { mergeProviderCalendarsByAccount } from './merge-provider-calendars';
+import { calendarSyncStatusQueryOptions } from './refresh-calendar-sync-status';
 
 export type CalendarConnectionsUnifiedVariant =
   | 'compact'
@@ -57,10 +57,12 @@ export function useCalendarConnectionsManager(wsId: string) {
     updateCalendarConnection,
     setCalendarConnections,
     syncToTuturuuu,
+    isActiveSyncOn,
     isSyncing,
   } = useCalendarSync();
 
   const syncMutation = useMutation({
+    mutationKey: ['calendar-provider-sync', wsId],
     mutationFn: () => syncWorkspaceCalendar(wsId),
     onSuccess: (result) => {
       if (!result.ok) toast.error(t('sync_recovery.partial_failure'));
@@ -116,17 +118,13 @@ export function useCalendarConnectionsManager(wsId: string) {
   const accounts = accountsQuery.data?.accounts || [];
   const isLoadingAccounts = accountsQuery.isLoading;
   const hasConnectedAccounts = accounts.length > 0;
-  const syncStatusQuery = useQuery({
-    queryKey: ['calendar-sync-status', wsId],
-    queryFn: () => getWorkspaceCalendarSyncStatus(wsId),
-    staleTime: 15_000,
-    retry: 1,
-    refetchInterval: (query) =>
-      query.state.data?.health.currentlyRunning ||
-      query.state.data?.health.retryAfterSeconds
-        ? 5_000
-        : 30_000,
-  });
+  const syncStatusQuery = useQuery(
+    calendarSyncStatusQueryOptions(
+      queryClient,
+      wsId,
+      isSyncing || !isActiveSyncOn
+    )
+  );
   const syncStatusData = syncStatusQuery.data;
 
   const { data: defaultSourceData } = useQuery({
