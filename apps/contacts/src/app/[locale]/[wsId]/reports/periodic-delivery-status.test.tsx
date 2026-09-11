@@ -60,7 +60,7 @@ describe('monthly delivery status', () => {
   it('shows the actual recipient, attempts, acceptance explanation, and sent time', async () => {
     renderStatus();
     expect(
-      await screen.findByText('preview_recipient original@example.com')
+      await screen.findByText('delivery_recipient original@example.com')
     ).toBeInTheDocument();
     expect(screen.getByText('delivery_attempt_count 2')).toBeInTheDocument();
     expect(screen.getByText('sent_explanation')).toBeInTheDocument();
@@ -68,6 +68,19 @@ describe('monthly delivery status', () => {
       screen.getByText('delivery_sent_at 2026-09-01T01:00:00.000Z')
     ).toBeInTheDocument();
     expect(load).toHaveBeenCalledWith('workspace-1', 'report-1');
+  });
+  it('shows a successful test while the real report remains not sent', async () => {
+    load.mockResolvedValue({
+      ...data,
+      report: { ...data.report, delivery_status: 'draft', delivered_at: null },
+      queue: { ...data.queue, delivery_kind: 'test' },
+    });
+    renderStatus();
+    expect(await screen.findByText('test_send')).toBeInTheDocument();
+    expect(
+      screen.getByText('delivery_sent_at 2026-09-01T01:00:00.000Z')
+    ).toBeInTheDocument();
+    expect(screen.queryByText('not_sent')).not.toBeInTheDocument();
   });
   it('shows a missing address before any delivery attempt', async () => {
     load.mockResolvedValue({
@@ -82,7 +95,7 @@ describe('monthly delivery status', () => {
     });
     renderStatus();
     expect(
-      await screen.findByText('preview_recipient missing_email')
+      await screen.findByText('delivery_recipient missing_email')
     ).toBeInTheDocument();
     expect(screen.queryByText('delivery_history')).not.toBeInTheDocument();
   });
@@ -108,7 +121,7 @@ describe('monthly delivery status', () => {
     renderStatus();
     fireEvent.click(await screen.findByRole('button', { name: 'retry' }));
     expect(
-      await screen.findByText('preview_recipient original@example.com')
+      await screen.findByText('delivery_recipient original@example.com')
     ).toBeInTheDocument();
   });
   it('labels test emails separately from normal delivery', async () => {

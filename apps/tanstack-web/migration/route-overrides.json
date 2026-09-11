@@ -2392,7 +2392,7 @@
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Per-report delivery diagnostics, send/test-send/retry/cancel actions, and atomic delivery status guards remain on the live Next.js API. Rust port pending."
+      "note": "Per-report delivery diagnostics, view-authorized GET preview=true with shared branded email HTML, send/test-send/retry/cancel actions, and atomic delivery guards remain on the live Next.js API. Preserve workspace-scoped template configuration, escaped substitutions, saved scores and no-store previews. Rust port pending."
     }
   }
 }

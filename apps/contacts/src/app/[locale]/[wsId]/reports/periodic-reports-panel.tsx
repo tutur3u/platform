@@ -6,7 +6,7 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { Sparkles } from '@tuturuuu/icons';
+import { Plus, RefreshCw } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   listPeriodicReports,
@@ -30,6 +30,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import GroupReportsSelector from '../users/reports/group-reports-selector';
 import { PeriodicDeliveryConfirmation } from './periodic-delivery-confirmation';
+import { PeriodicEmailReadiness } from './periodic-email-readiness';
 import {
   type PeriodicEmailPreview,
   PeriodicReportPreviewDialog,
@@ -49,6 +50,7 @@ import {
   type PeriodicSortBy,
   type PeriodicSortDirection,
 } from './periodic-reports-toolbar';
+import { PeriodicStatusSummary } from './periodic-status-summary';
 
 export default function PeriodicReportsPanel({
   permissions,
@@ -121,9 +123,15 @@ export default function PeriodicReportsPanel({
   const totalReports = reportsQuery.data?.pages[0]?.total ?? 0;
   const numberFormatter = new Intl.NumberFormat();
   const invalidate = () =>
-    queryClient.invalidateQueries({
-      queryKey: ['periodic-reports', wsId],
-    });
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['periodic-reports', wsId] }),
+      queryClient.invalidateQueries({
+        queryKey: ['periodic-report-delivery', wsId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['periodic-report-email-preview', wsId],
+      }),
+    ]);
 
   const generationMutation = useMutation({
     mutationFn: (reportId: string) =>
@@ -182,24 +190,31 @@ export default function PeriodicReportsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
-        {[
-          [t('total'), counts?.total ?? 0],
-          [t('drafts'), counts?.draft ?? 0],
-          [t('pending_review'), counts?.pendingReview ?? 0],
-          [t('approved'), counts?.approved ?? 0],
-          [t('delivered'), counts?.delivered ?? 0],
-          [t('failed'), counts?.failed ?? 0],
-        ].map(([label, value]) => (
-          <Card key={String(label)}>
-            <CardContent className="p-3 md:p-4">
-              <p className="text-muted-foreground text-xs">{label}</p>
-              <p className="mt-1 font-semibold text-xl">
-                {numberFormatter.format(Number(value))}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+      <PeriodicEmailReadiness wsId={wsId} />
+      <PeriodicStatusSummary
+        counts={counts}
+        approval={approvalStatus}
+        delivery={deliveryStatus}
+        onChange={(approval, delivery) => {
+          setApprovalStatus(approval);
+          setDeliveryStatus(delivery);
+        }}
+      />
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-muted-foreground text-xs">
+          {t('review_delivery_hint')}
+        </p>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={reportsQuery.isFetching}
+          onClick={() => void reportsQuery.refetch()}
+        >
+          <RefreshCw
+            className={`size-3.5 ${reportsQuery.isFetching ? 'animate-spin' : ''}`}
+          />
+          {t('refresh')}
+        </Button>
       </div>
 
       <PeriodicReportsToolbar
@@ -234,8 +249,8 @@ export default function PeriodicReportsPanel({
         <AccordionItem value="builder" className="rounded-lg border px-4">
           <AccordionTrigger>
             <span className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              {t('open_builder')}
+              <Plus className="h-4 w-4" />
+              {t('create_manage_reports')}
             </span>
           </AccordionTrigger>
           <AccordionContent className="pt-2">
@@ -244,7 +259,7 @@ export default function PeriodicReportsPanel({
         </AccordionItem>
       </Accordion>
 
-      <div className="space-y-2">
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-background">
         {reportsQuery.isError ? (
           <Card>
             <CardContent className="flex min-h-36 flex-col items-center justify-center gap-3 p-4 text-center">
@@ -327,7 +342,11 @@ export default function PeriodicReportsPanel({
       />
       <PeriodicReportPreviewDialog
         wsId={wsId}
-        report={previewSelection?.report ?? null}
+        report={
+          reports.find((item) => item.id === previewSelection?.report.id) ??
+          previewSelection?.report ??
+          null
+        }
         emailPreview={previewSelection?.emailPreview}
         onOpenChange={(open) => !open && setPreviewSelection(null)}
       />

@@ -222,3 +222,31 @@ for this local validation.
 Manual delivery requests lock the report before the queue and update both states in the same database transaction. Approval transitions use the same lock order; worker claims and stale claim recovery follow the same order. Workers check the original lease before sending; a service-only completion function checks its owner and timestamp and commits the queue and report states together. AI generation retries conditionally claim the previously observed generation state, so a report that became ready is not downgraded. Stale queue requests are rejected after approval is revoked. Provider-accepted deliveries retain their acceptance timestamp even if later tracking fails, preventing re-approval from automatically resending them. A processing lease older than 15 minutes is moved to blocked on the next worker pass, with an attempt diagnostic explaining that its outcome is unknown. Check provider logs before explicitly retrying; re-approval does not automatically resend an unknown outcome.
 
 During the app-before-migration deployment window, delivery requests return a temporary 503 with `Retry-After`, and enabling automatic sending waits until the new database function is available. Disabling automatic sending remains available throughout rollout.
+
+
+### Monthly email previews and delivery status
+
+The Reports tab uses the same approval and email badge vocabulary as daily
+reports. Click a status total to filter; use the delivery filters for queued,
+processing, failed, blocked, and cancelled messages. Approval and sending remain
+separate states: an approved report can still be **Not sent**. The compact email
+settings banner shows whether the sender, delivery gates, and automatic sending
+after approval are ready.
+
+Opening a monthly report from this tab loads the actual email HTML. Both the
+preview and the delivery worker use `loadReportEmailPreview` and
+`renderReportEmail` in `packages/users-core/src/reports`. They read the
+workspace's report template settings: logo, contact details, introduction,
+section labels, conclusion, and closing. Student, group, and teacher variables
+are escaped and resolved from the workspace-scoped report view. The score is the
+saved representative score; save editor changes before previewing or sending.
+Emails use a continuous responsive document rather than A4 page breaks. No PDF
+is attached. The full report editor remains available from the preview.
+
+`GET /api/v1/workspaces/:wsId/users/reports/:reportId/delivery?preview=true`
+requires report view permission and returns private, uncached HTML without
+queueing mail. Sending still requires send permission, approval, and enabled
+workspace gates. Template-loading failures fail delivery rather than silently
+sending a simplified report. Delivery diagnostics show the actual recipient,
+acceptance timestamp, retries, and attempt history; successful test sends remain
+explicitly labeled tests and do not mark the report as sent to its real audience.

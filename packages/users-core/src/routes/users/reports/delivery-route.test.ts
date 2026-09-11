@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  preview: vi.fn(),
   admin: vi.fn(),
   permissions: vi.fn(),
   secret: vi.fn(),
   rpc: vi.fn(),
+}));
+vi.mock('../../../reports/email-preview', () => ({
+  loadReportEmailPreview: mocks.preview,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
@@ -73,6 +77,10 @@ function request(action: string) {
 describe('periodic report delivery route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.preview.mockResolvedValue({
+      html: '<html>Branded report</html>',
+      recipient: 'user@example.com',
+    });
     mocks.permissions.mockResolvedValue({ containsPermission: () => true });
     mocks.secret.mockResolvedValue(true);
     mocks.rpc.mockResolvedValue({
@@ -113,6 +121,27 @@ describe('periodic report delivery route', () => {
   it('returns an error rather than a misleading empty delivery history', async () => {
     database({}, 'user_report_email_queue');
     expect((await GET(request('preview'), context)).status).toBe(500);
+  });
+  it('returns the shared email HTML for read-only previews without queueing', async () => {
+    mocks.permissions.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'view_user_groups_reports',
+    });
+    database();
+    const response = await GET(
+      new Request('https://example.com/delivery?preview=true'),
+      context
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      html: '<html>Branded report</html>',
+    });
+    expect(mocks.preview).toHaveBeenCalledWith(
+      expect.anything(),
+      'workspace-1',
+      'report-1'
+    );
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
   it('previews without adding a delivery', async () => {
     const calls = database();

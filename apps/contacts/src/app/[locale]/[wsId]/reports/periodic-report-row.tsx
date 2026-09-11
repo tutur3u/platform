@@ -14,7 +14,6 @@ import {
 import type { PeriodicReport } from '@tuturuuu/internal-api/reports';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,16 +22,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { PeriodicStatusBadge } from './periodic-status-badge';
 
 export type PeriodicDeliveryAction = 'test' | 'send' | 'retry' | 'cancel';
-
-function statusVariant(status: string) {
-  if (status === 'APPROVED' || status === 'sent') return 'success' as const;
-  if (status === 'REJECTED' || status === 'failed' || status === 'blocked') {
-    return 'destructive' as const;
-  }
-  return 'secondary' as const;
-}
 
 export function PeriodicReportRow({
   approvalPending,
@@ -61,36 +53,16 @@ export function PeriodicReportRow({
   wsId: string;
 }) {
   const t = useTranslations('reports-hub');
-  const approvalLabel = {
-    APPROVED: t('status_approved'),
-    PENDING: t('status_pending'),
-    REJECTED: t('status_rejected'),
-  }[report.report_approval_status];
-  const deliveryLabel = {
-    blocked: t('status_blocked'),
-    cancelled: t('status_cancelled'),
-    draft: t('status_draft'),
-    failed: t('status_failed'),
-    processing: t('status_processing'),
-    queued: t('status_queued'),
-    sent: t('status_sent'),
-  }[report.delivery_status];
   return (
-    <Card className="transition-colors hover:border-foreground/20">
-      <CardContent className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:p-4">
+    <article className="border-border/60 border-b transition-colors last:border-b-0 hover:bg-muted/30">
+      <div className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:px-4">
         <button
           type="button"
-          className="min-w-0 flex-1 text-left"
+          className="min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onPreview}
         >
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate font-medium">{report.title}</p>
-            <Badge variant={statusVariant(report.report_approval_status)}>
-              {approvalLabel}
-            </Badge>
-            <Badge variant={statusVariant(report.delivery_status)}>
-              {deliveryLabel}
-            </Badge>
+            <p className="truncate font-medium text-sm">{report.title}</p>
             {report.generation_mode === 'ai' ? (
               <Badge variant="outline">
                 <Sparkles className="mr-1 h-3 w-3" />
@@ -114,7 +86,7 @@ export function PeriodicReportRow({
           <p className="text-muted-foreground text-xs">
             {report.period_start && report.period_end
               ? `${report.period_start} – ${report.period_end}`
-              : t('legacy_unscheduled')}
+              : null}
           </p>
           {report.last_delivery_error ? (
             <p className="mt-1 line-clamp-1 text-destructive text-xs">
@@ -122,6 +94,10 @@ export function PeriodicReportRow({
             </p>
           ) : null}
         </button>
+        <div className="flex flex-wrap items-center gap-2 md:w-56 md:shrink-0">
+          <PeriodicStatusBadge approval={report.report_approval_status} />
+          <PeriodicStatusBadge delivery={report.delivery_status} />
+        </div>
         <div className="flex items-center justify-end gap-1">
           {report.generation_mode === 'ai' &&
           report.generation_status !== 'ready' ? (
@@ -158,6 +134,27 @@ export function PeriodicReportRow({
           >
             <Eye className="h-4 w-4" />
           </Button>
+          {permissions.canSendReports &&
+          report.report_approval_status === 'APPROVED' &&
+          report.user_email?.trim() &&
+          !['queued', 'processing', 'sent'].includes(report.delivery_status) ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                onDeliveryIntent(
+                  ['failed', 'blocked'].includes(report.delivery_status)
+                    ? 'retry'
+                    : 'send'
+                )
+              }
+            >
+              <Send className="size-3.5" />
+              {['failed', 'blocked'].includes(report.delivery_status)
+                ? t('retry_delivery')
+                : t('send')}
+            </Button>
+          ) : null}
           {permissions.canSendReports ? (
             <DeliveryMenu
               report={report}
@@ -174,8 +171,8 @@ export function PeriodicReportRow({
             </Link>
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </article>
   );
 }
 
@@ -195,12 +192,7 @@ function DeliveryMenu({
         <Button
           size="icon"
           className="size-8"
-          variant={
-            report.report_approval_status === 'APPROVED' &&
-            report.delivery_status !== 'sent'
-              ? 'default'
-              : 'outline'
-          }
+          variant="ghost"
           aria-label={t('delivery')}
         >
           <MoreHorizontal className="h-4 w-4" />

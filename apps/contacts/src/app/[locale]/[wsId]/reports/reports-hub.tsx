@@ -63,7 +63,7 @@ export default function ReportsHub({
         value={view}
         onValueChange={(next) => void setView(next as ReportView)}
       >
-        <TabsList className="grid h-auto w-full grid-cols-3 md:w-fit">
+        <TabsList className="inline-flex h-auto max-w-full flex-wrap">
           {canViewDaily && (
             <TabsTrigger value="daily" className="h-full gap-2">
               <CalendarDays className="h-4 w-4" />

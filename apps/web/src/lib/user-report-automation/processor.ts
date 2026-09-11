@@ -1,6 +1,7 @@
 import { EmailService } from '@tuturuuu/email-service';
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types/supabase';
+import { loadReportEmailPreview } from '@tuturuuu/users-core/reports/email-preview';
 import { isEmailBlacklisted } from '@/lib/email-blacklist';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { resolvePeriodicReportEmailAccess } from './access';
@@ -74,29 +75,6 @@ async function processWithConcurrency<T>(
     }
   );
   await Promise.all(workers);
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function reportHtml(report: {
-  content: string;
-  feedback: string;
-  title: string;
-}) {
-  return [
-    `<h1>${escapeHtml(report.title)}</h1>`,
-    `<div>${escapeHtml(report.content).replaceAll('\n', '<br />')}</div>`,
-    report.feedback
-      ? `<h2>Next steps</h2><div>${escapeHtml(report.feedback).replaceAll('\n', '<br />')}</div>`
-      : '',
-  ].join('');
 }
 
 function getRetryAt(attemptCount: number) {
@@ -447,7 +425,15 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       return;
     }
 
-    const html = reportHtml(reportResult.data);
+    const { html, approvalStatus } = await loadReportEmailPreview(
+      sbAdmin,
+      row.ws_id,
+      row.report_id
+    );
+    if (approvalStatus !== 'APPROVED') {
+      await fail('blocked', 'Report approval changed before rendering.', true);
+      return;
+    }
     const unsubscribeUrl = createEmailUnsubscribeUrl(recipient);
     const service = await EmailService.fromWorkspace(row.ws_id);
     if (!(await hasEmailLease(privateDb, row))) return;

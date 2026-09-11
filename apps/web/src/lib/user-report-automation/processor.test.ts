@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const loadEmailPreview = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/users-core/reports/email-preview', () => ({
+  loadReportEmailPreview: loadEmailPreview,
+}));
+
 const send = vi.fn();
 const fromWorkspace = vi.fn();
 const isEmailBlacklisted = vi.fn();
@@ -203,6 +208,10 @@ function writesFor(writes: Write[], table: string) {
 
 describe('periodic report email delivery', () => {
   beforeEach(() => {
+    loadEmailPreview.mockReset().mockResolvedValue({
+      html: '<html><body>Branded report preview</body></html>',
+      approvalStatus: 'APPROVED',
+    });
     send.mockReset();
     fromWorkspace.mockReset();
     isEmailBlacklisted.mockReset();
@@ -346,23 +355,28 @@ describe('periodic report email delivery', () => {
     ).toMatchObject({ delivery_status: 'sent', last_delivery_error: null });
   });
 
-  it('escapes report content so a report body cannot inject markup', async () => {
-    const { client } = createAdminClientStub({
-      external_user_monthly_reports: {
-        data: {
-          ...APPROVED_REPORT,
-          content: '<script>alert(1)</script>\nLine two',
-        },
-        error: null,
-      },
-    });
-
+  it('sends the exact shared preview HTML and stores it in the delivery audit', async () => {
+    const { client, writes } = createAdminClientStub();
     await processPeriodicReportAutomation(client as never, 'worker-1');
-
-    const html = send.mock.calls[0]?.[0].content.html as string;
-    expect(html).not.toContain('<script>');
-    expect(html).toContain('&lt;script&gt;');
-    expect(html).toContain('<br />');
+    const html = '<html><body>Branded report preview</body></html>';
+    expect(loadEmailPreview).toHaveBeenCalledWith(client, 'ws-1', 'report-1');
+    expect(send.mock.calls[0]?.[0].content.html).toBe(html);
+    expect(writesFor(writes, 'sent_emails')[0]?.payload.content).toBe(html);
+  });
+  it('blocks if approval changed while the email snapshot was loaded', async () => {
+    const { client } = createAdminClientStub();
+    loadEmailPreview.mockResolvedValueOnce({
+      html: '<html>Unapproved edits</html>',
+      approvalStatus: 'PENDING',
+    });
+    await processPeriodicReportAutomation(client as never, 'worker-1');
+    expect(send).not.toHaveBeenCalled();
+  });
+  it('does not send a simplified fallback if branded preview loading fails', async () => {
+    const { client } = createAdminClientStub();
+    loadEmailPreview.mockRejectedValueOnce(new Error('Template unavailable'));
+    await processPeriodicReportAutomation(client as never, 'worker-1');
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('blocks permanently when a workspace email gate is off', async () => {
@@ -589,6 +603,10 @@ describe('monthly AI generation recovery', () => {
     );
   }
   beforeEach(() => {
+    loadEmailPreview.mockReset().mockResolvedValue({
+      html: '<html><body>Branded report preview</body></html>',
+      approvalStatus: 'APPROVED',
+    });
     generateNarrative.mockReset();
     generateNarrative.mockResolvedValue({
       content: 'Progress',

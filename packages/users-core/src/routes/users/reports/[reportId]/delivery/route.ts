@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getUserGroupRoutePermissions } from '../../../../../lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '../../../../../lib/user-groups/route-helpers';
+import { loadReportEmailPreview } from '../../../../../reports/email-preview';
 
 import {
   deliveryMigrationPendingResponse,
@@ -42,6 +43,12 @@ export async function GET(request: Request, { params }: Params) {
         { message: 'Report not found' },
         { status: 404 }
       );
+    if (new URL(request.url).searchParams.get('preview') === 'true') {
+      return NextResponse.json(
+        await loadReportEmailPreview(admin, wsId, reportId),
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      );
+    }
     const queue = await db
       .from('user_report_email_queue')
       .select(
@@ -114,12 +121,7 @@ export async function POST(request: Request, { params }: Params) {
     if (parsed.data.action === 'preview') {
       return NextResponse.json({
         message: 'Preview ready. No email was queued.',
-        preview: {
-          content: report.content,
-          feedback: report.feedback,
-          recipient: report.user_email,
-          title: report.title,
-        },
+        preview: await loadReportEmailPreview(sbAdmin, wsId, reportId),
         queued: false,
         status: report.delivery_status,
       });
