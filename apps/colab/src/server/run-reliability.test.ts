@@ -126,6 +126,25 @@ describe('practice tool contract', () => {
 });
 
 describe('meaningful agent run', () => {
+  it('repairs a malformed final decision without repeating completed writes', async () => {
+    const { env, run } = model(
+      {
+        tool: 'notion.draft',
+        title: 'Saved draft',
+        content: 'Review this caption.',
+      },
+      'malformed final JSON',
+      { answer: '## Caption\n\nSaved for review.' },
+      { feedback: 'Reviewed.' }
+    );
+    const result = await runAgent(env, team(), starterScenarios()[0]!);
+    expect(result.run.answer).toContain('Saved for review');
+    expect(result.run.trace).toHaveLength(1);
+    expect(
+      result.records.filter((record) => record.title === 'Draft: Saved draft')
+    ).toHaveLength(1);
+    expect(run).toHaveBeenCalledTimes(4);
+  });
   it('compiles skills, gathers evidence, writes a draft and returns sections with a clean trace', async () => {
     const { env, run } = model(
       {

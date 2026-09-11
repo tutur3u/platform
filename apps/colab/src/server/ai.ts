@@ -79,7 +79,24 @@ export async function generate(
     | 'agent_step'
     | 'result_coaching' = 'generation'
 ): Promise<Record<string, unknown>> {
-  const parsed = await generateValue(env, system, input, phase);
+  let parsed: unknown;
+  try {
+    parsed = await generateValue(env, system, input, phase);
+  } catch (error) {
+    if (
+      phase !== 'agent_step' ||
+      !(error instanceof RoomError) ||
+      error.code !== 'ai_invalid_output'
+    )
+      throw error;
+    // Only regenerate the failed decision, never replay any completed app actions.
+    parsed = await generateValue(
+      env,
+      `${system}\nRESPONSE FORMAT REPAIR: Return exactly one valid JSON object. Put the complete final Markdown inside the answer string, escaping newlines and quotation marks. No text or code fences outside the JSON. Keep the answer concise.`,
+      input,
+      phase
+    );
+  }
   requireRule(
     parsed && typeof parsed === 'object' && !Array.isArray(parsed),
     'ai_invalid_output',

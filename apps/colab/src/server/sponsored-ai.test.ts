@@ -17,6 +17,24 @@ const context = (): SponsorshipContext => ({
 });
 afterEach(() => vi.unstubAllGlobals());
 describe('sponsored model transport', () => {
+  it('reports malformed provider output separately from unavailable sponsorship', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ error: { code: 'server_error' } }, { status: 502 })
+        )
+    );
+    await expect(
+      sponsoredGeneration(
+        { COLAB_AI_API_KEY: 'test-only-key', sponsorship: context() } as Env,
+        'Instructions',
+        {},
+        'agent_step'
+      )
+    ).rejects.toMatchObject({ code: 'ai_invalid_output', status: 502 });
+  });
   it.each(['transport', 'json'])(
     'maps %s failures to service unavailable',
     async (failure) => {

@@ -50,7 +50,7 @@ it('stores chunked private images, denies other teams, and deletes all assets', 
   }
 });
 
-it('persists failed cleanup across instances and recovers capacity before another image', () => {
+it('persists failed cleanup across instances and retries it before checking capacity', () => {
   const db = new DatabaseSync(':memory:');
   let failDelete = false;
   const storage = {

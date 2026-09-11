@@ -362,6 +362,37 @@ describe('AI Studio billing policy', () => {
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
   });
+  it('reconciles external image pricing failures through the unmetered ledger', async () => {
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            actorId: 'actor',
+            appId: 'cybershield35',
+            kind: 'external-app',
+            scopes: ['ai:use'],
+            workspaceId: 'workspace',
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'external-run',
+          startedAt: Date.now(),
+          calculateCost: async () => {
+            throw new Error('missing image receipt');
+          },
+        },
+        { status: 'succeeded', usage: { imageUnits: 1 } }
+      )
+    ).rejects.toThrow('missing image receipt');
+    expect(mocks.settleExternalAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        imageUnits: 1,
+        unmeteredCredits: 0,
+      })
+    );
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
 
   it('attributes an app-bound API key to the app without reserving credits', async () => {
     // CS35 background jobs have no browser session, so they authenticate with an

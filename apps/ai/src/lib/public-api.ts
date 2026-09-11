@@ -329,10 +329,9 @@ export async function settleMeteredExecution(
       if (context.requirePricedUsage || context.calculateCost) {
         // Release the hold without claiming a successful zero-cost generation.
         // Preserve measured usage for reconciliation once pricing recovers.
-        await settleAiStudioRun({
+        const failureSettlement = {
           runId: context.runId,
-          status: 'failed',
-          actualCredits: 0,
+          status: 'failed' as const,
           imageUnits: usage.imageUnits,
           inputTokens: usage.inputTokens,
           outputTokens: usage.outputTokens,
@@ -349,7 +348,15 @@ export async function settleMeteredExecution(
             pricing_status: 'unavailable',
             reconciliation_required: true,
           },
-        });
+        };
+        if (externalAppAttribution(context.credential)) {
+          await settleExternalAiStudioRun({
+            ...failureSettlement,
+            unmeteredCredits: 0,
+          });
+        } else {
+          await settleAiStudioRun({ ...failureSettlement, actualCredits: 0 });
+        }
         context.pricingFailureFinalized = true;
         throw pricingError;
       }

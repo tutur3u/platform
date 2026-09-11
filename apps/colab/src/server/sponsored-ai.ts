@@ -88,6 +88,16 @@ async function sponsoredRequest(
     requireRule(false, 'sponsorship_unavailable', 503);
   });
   requireRule(response, 'sponsorship_unavailable', 503);
+  if (!response.ok) {
+    console.warn('colab_sponsored_request_failed', {
+      requestId:
+        response.headers.get('x-request-id') ?? `${context.jobId}:${sequence}`,
+      phase,
+      status: response.status,
+    });
+    // A provider response/format failure is not a missing sponsor connection.
+    requireRule(response.status !== 502, 'ai_invalid_output', 502);
+  }
   if (!response.ok && phase === 'image_generation') {
     const failure = (await response
       .clone()
