@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarClock, CalendarDays, CalendarPlus } from '@tuturuuu/icons';
 import {
   createWorkspaceUserGroupSession,
+  listAllWorkspaceUserGroups,
   listWorkspaceUserGroupSessions,
   updateWorkspaceUserGroupSession,
   type WorkspaceUserGroupScheduleGroup,
@@ -64,7 +65,7 @@ class PartialScheduleCreationError extends Error {
 export function ScheduleSetupDialog({
   canChooseGroup,
   defaultGroupId,
-  groups,
+  groups: initialGroups,
   isPending,
   trigger,
   wsId,
@@ -73,11 +74,22 @@ export function ScheduleSetupDialog({
   const commonT = useTranslations('common');
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const fallbackGroupId = groups[0]?.id ?? '';
   const [open, setOpen] = useState(false);
+  const groupsQuery = useQuery({
+    enabled: open && canChooseGroup,
+    queryKey: ['schedule-setup-groups', wsId],
+    queryFn: () => listAllWorkspaceUserGroups(wsId),
+    staleTime: 30_000,
+  });
+  const groups = groupsQuery.data ?? initialGroups;
+  const fallbackGroupId = groups[0]?.id ?? '';
+  const preferredGroupId =
+    !canChooseGroup || groups.some((group) => group.id === defaultGroupId)
+      ? (defaultGroupId ?? fallbackGroupId)
+      : fallbackGroupId;
   const [reviewing, setReviewing] = useState(false);
   const [mode, setMode] = useState<ScheduleSetupMode>('create');
-  const [groupId, setGroupId] = useState(defaultGroupId ?? fallbackGroupId);
+  const [groupId, setGroupId] = useState(preferredGroupId);
   const [initializedGroupId, setInitializedGroupId] = useState('');
   const [seriesId, setSeriesId] = useState('');
   const [updateDraft, setUpdateDraft] = useState<FrequencyUpdateDraft | null>(
@@ -89,11 +101,11 @@ export function ScheduleSetupDialog({
 
   useEffect(() => {
     if (!open) return;
-    setGroupId(defaultGroupId ?? fallbackGroupId);
+    setGroupId(preferredGroupId);
     setInitializedGroupId('');
     setReviewing(false);
     setCreateDraft(createQuickWeeklyScheduleDraft());
-  }, [defaultGroupId, fallbackGroupId, open]);
+  }, [preferredGroupId, open]);
 
   const scheduleQuery = useQuery({
     enabled: open && !!groupId,
@@ -242,6 +254,8 @@ export function ScheduleSetupDialog({
   });
 
   const canReview =
+    (!canChooseGroup || groups.some((group) => group.id === groupId)) &&
+    (!canChooseGroup || (!groupsQuery.isLoading && !groupsQuery.isError)) &&
     !scheduleQuery.isLoading &&
     !scheduleQuery.isError &&
     (mode === 'create'
@@ -326,8 +340,11 @@ export function ScheduleSetupDialog({
               createDraft={createDraft}
               groupId={groupId}
               groups={groups}
-              isError={scheduleQuery.isError}
-              isLoading={scheduleQuery.isLoading}
+              isError={scheduleQuery.isError || groupsQuery.isError}
+              isLoading={
+                scheduleQuery.isLoading ||
+                (canChooseGroup && groupsQuery.isLoading)
+              }
               mode={mode}
               onCreateDraftChange={setCreateDraft}
               onGroupChange={(value) => {
@@ -339,7 +356,10 @@ export function ScheduleSetupDialog({
                 setMode(value);
                 setReviewing(false);
               }}
-              onRetry={() => void scheduleQuery.refetch()}
+              onRetry={() => {
+                void groupsQuery.refetch();
+                if (groupId) void scheduleQuery.refetch();
+              }}
               onSeriesChange={(value) => {
                 const option = seriesOptions.find(
                   (candidate) => candidate.id === value

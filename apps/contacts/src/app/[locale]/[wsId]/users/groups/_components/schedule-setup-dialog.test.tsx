@@ -9,11 +9,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ScheduleSetupDialog } from './schedule-setup-dialog';
 
 const listSessions = vi.fn();
+const listGroups = vi.fn();
 const createSession = vi.fn();
 const updateSession = vi.fn();
 
 vi.mock('@tuturuuu/internal-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tuturuuu/internal-api')>()),
+  listAllWorkspaceUserGroups: (...args: unknown[]) => listGroups(...args),
   createWorkspaceUserGroupSession: (...args: unknown[]) =>
     createSession(...args),
   listWorkspaceUserGroupSessions: (...args: unknown[]) => listSessions(...args),
@@ -97,14 +99,14 @@ function session(id: string, date: string): WorkspaceUserGroupSession {
   };
 }
 
-function renderDialog() {
+function renderDialog(chooseGroup = false) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   render(
     <QueryClientProvider client={client}>
       <ScheduleSetupDialog
-        canChooseGroup={false}
+        canChooseGroup={chooseGroup}
         defaultGroupId="00000000-0000-4000-8000-000000000101"
         groups={[
           { id: '00000000-0000-4000-8000-000000000101', name: 'Math A1' },
@@ -119,6 +121,10 @@ function renderDialog() {
 describe('ScheduleSetupDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listGroups.mockResolvedValue([
+      { id: '00000000-0000-4000-8000-000000000101', name: 'Math A1' },
+      { id: '00000000-0000-4000-8000-000000000102', name: 'Physics B2' },
+    ]);
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-08-15T02:00:00.000Z'));
     updateSession.mockResolvedValue({ data: [], message: 'success' });
@@ -127,6 +133,53 @@ describe('ScheduleSetupDialog', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('loads group choices independently and switches the schedule query', async () => {
+    listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });
+    renderDialog(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Manage schedule' }));
+    await screen.findByRole('option', { name: 'Physics B2' });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Group' }), {
+      target: { value: '00000000-0000-4000-8000-000000000102' },
+    });
+    await waitFor(() =>
+      expect(listSessions).toHaveBeenLastCalledWith(
+        '00000000-0000-4000-8000-000000000001',
+        expect.objectContaining({
+          groupId: '00000000-0000-4000-8000-000000000102',
+        })
+      )
+    );
+    expect(screen.getByRole('combobox', { name: 'Group' })).toHaveValue(
+      '00000000-0000-4000-8000-000000000102'
+    );
+  });
+
+  it('exposes group loading failures and retries instead of an empty dropdown', async () => {
+    listGroups.mockRejectedValueOnce(new Error('offline'));
+    listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });
+    renderDialog(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Manage schedule' }));
+    const retry = await screen.findByRole('button', {
+      name: 'schedule_setup_retry',
+    });
+    fireEvent.click(retry);
+    await screen.findByRole('option', { name: 'Physics B2' });
+  });
+
+  it('shows an empty group state and blocks scheduling when no groups exist', async () => {
+    listGroups.mockResolvedValue([]);
+    listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });
+    renderDialog(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Manage schedule' }));
+    expect(
+      await screen.findByText('schedule_groups_empty')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Group' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'Preview schedule' })
+    ).toBeDisabled();
   });
 
   it('creates distinct Saturday and Sunday timeframes that repeat forever', async () => {
