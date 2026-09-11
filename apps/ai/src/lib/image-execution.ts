@@ -2,6 +2,7 @@ import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import type { Json } from '@tuturuuu/types';
 import { gateway, generateImage } from 'ai';
 import { z } from 'zod';
+import { createGeminiImageBilling, isGeminiFlashImage } from './gemini-image';
 import {
   captureAiStudioContent,
   prepareMeteredExecution,
@@ -35,34 +36,63 @@ export async function executeImageRequest(
   } = {}
 ): Promise<Response> {
   let context: Awaited<ReturnType<typeof prepareMeteredExecution>> | undefined;
+  const gemini = isGeminiFlashImage(input.model)
+    ? createGeminiImageBilling(input.prompt, input.n)
+    : undefined;
 
   try {
     context = await prepareMeteredExecution({
       feature: options.feature ?? 'image_generation',
       credential: options.credential,
       requirePricedUsage: options.requirePricedUsage,
-      requiredModelType: 'image',
+      requiredModelType: gemini ? 'language' : 'image',
+      calculateCost: gemini?.calculateCost,
       maxUsage: { imageUnits: input.n },
-      metadata: { ...options.metadata, image_count: input.n, size: input.size },
+      metadata: {
+        ...options.metadata,
+        image_count: input.n,
+        size: input.size,
+        ...(gemini
+          ? {
+              pricing_basis: 'gateway_generation_receipt',
+              image_resolution: '1K',
+            }
+          : {}),
+      },
       modelId: input.model,
       request,
     });
-    const generated = await Promise.all(
-      Array.from({ length: input.n }, () =>
-        generateImage({
-          abortSignal: request.signal,
-          aspectRatio: aspectRatio(input.size),
-          model: gateway.image(input.model),
-          prompt: input.prompt,
-          maxRetries: 0,
-        })
-      )
-    );
+    // Gemini calls are sequential so partial successes retain their paid usage.
+    const generated: { image: { base64: string; mediaType: string } }[] = gemini
+      ? []
+      : await Promise.all(
+          Array.from({ length: input.n }, () =>
+            generateImage({
+              abortSignal: request.signal,
+              aspectRatio: aspectRatio(input.size),
+              model: gateway.image(input.model),
+              prompt: input.prompt,
+              maxRetries: 0,
+            })
+          )
+        );
+    if (gemini) {
+      for (let index = 0; index < input.n; index++) {
+        generated.push(await gemini.generate(request, aspectRatio(input.size)));
+      }
+    }
 
     const [billing] = await Promise.all([
       settleMeteredExecution(context, {
         status: 'succeeded',
-        usage: { imageUnits: generated.length },
+        usage: gemini?.usage ?? { imageUnits: generated.length },
+        metadata: gemini
+          ? {
+              gateway_generation_ids: gemini.generationIds,
+              pricing_basis: 'gateway_generation_receipt',
+              image_resolution: '1K',
+            }
+          : undefined,
       }),
       captureAiStudioContent(context, {
         output: { image_count: generated.length, size: input.size },
@@ -91,7 +121,13 @@ export async function executeImageRequest(
       await settleMeteredExecution(context, {
         error,
         status: request.signal.aborted ? 'aborted' : 'failed',
-        usage: {},
+        usage: gemini?.usage ?? {},
+        metadata: gemini
+          ? {
+              gateway_generation_ids: gemini.generationIds,
+              pricing_basis: 'gateway_generation_receipt',
+            }
+          : undefined,
       }).catch(() => undefined);
     }
     return publicApiError(

@@ -4,6 +4,7 @@ import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
 import { authenticateColabGrant } from '@/lib/colab-first-party';
+import { GEMINI_FLASH_IMAGE, isGeminiFlashImage } from '@/lib/gemini-image';
 import { executeImageRequest, imageRequestSchema } from '@/lib/image-execution';
 import { listAllowedModels, publicApiError } from '@/lib/public-api';
 import { executeTextRequest, parseTextRequest } from '@/lib/text-execution';
@@ -92,12 +93,12 @@ export async function POST(request: Request) {
           { code: 'invalid_request_error', status: 400 }
         );
       const models = (await listAllowedModels(credential)).filter(
-        (model) => model.type === 'image' && Number(model.image_gen_price) > 0
+        (model) =>
+          isGeminiFlashImage(model.id) ||
+          (model.type === 'image' && Number(model.image_gen_price) > 0)
       );
       const model =
-        models.find(
-          (model) => model.id === 'google/imagen-4.0-fast-generate-001'
-        ) ?? models[0];
+        models.find((model) => model.id === GEMINI_FLASH_IMAGE) ?? models[0];
       if (!model)
         throw new AiStudioError(
           'A priced image model must be enabled in the sponsor workspace.',
