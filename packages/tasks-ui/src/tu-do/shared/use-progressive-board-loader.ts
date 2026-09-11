@@ -95,6 +95,7 @@ export function useProgressiveBoardLoader(
       page: number = 0,
       options?: ProgressiveLoadListPageOptions
     ) => {
+      const previousState = paginationRef.current[listId];
       listOptionsRef.current[listId] = options ?? {};
 
       // Guard against duplicate in-flight requests for the same page
@@ -199,7 +200,10 @@ export function useProgressiveBoardLoader(
               totalCount: 0,
               isInitialLoad: false,
             }),
+            // A failed page was never loaded; retry it instead of skipping it.
+            page: previousState?.page ?? -1,
             isLoading: false,
+            isInitialLoad: false,
           },
         }));
         throw error;
@@ -296,7 +300,13 @@ export function useProgressiveBoardLoader(
               continue;
             }
 
-            if (!hasAuthoritativeCount || hasFreshLocalMutation(task)) {
+            // A count describes list size, not membership in this partial window.
+            // Tasks appended by creation/search may live beyond the loaded pages.
+            if (
+              !hasAuthoritativeCount ||
+              hasMore ||
+              hasFreshLocalMutation(task)
+            ) {
               merged.push(task);
             }
           }

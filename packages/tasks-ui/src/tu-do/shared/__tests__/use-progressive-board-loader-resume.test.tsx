@@ -5,9 +5,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
+import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readTaskBoardCache, writeTaskBoardCache } from '../task-board-cache';
 import { useProgressiveBoardLoader } from '../use-progressive-board-loader';
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
@@ -21,6 +23,7 @@ describe('useProgressiveBoardLoader resume reconciliation', () => {
   );
 
   beforeEach(() => {
+    localStorage.clear();
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -61,5 +64,76 @@ describe('useProgressiveBoardLoader resume reconciliation', () => {
     } as Task;
 
     expect(await loadThenRevalidate(cachedTask, 0)).toEqual([]);
+  });
+  it('retains a persisted saved task outside the refreshed page after reload and marker expiry', async () => {
+    const savedTask = {
+      id: 'saved-at-end',
+      name: 'Saved at the end of a long list',
+      list_id: 'list-1',
+      _localMutationAt: Date.now() - 60_000,
+    } as unknown as Task;
+    const firstPage = Array.from({ length: 50 }, (_, index) => ({
+      id: `task-${index}`,
+      list_id: 'list-1',
+      name: `Task ${index}`,
+    })) as Task[];
+    writeTaskBoardCache('ws-1', 'board-1', {
+      board: { id: 'board-1' } as WorkspaceTaskBoard,
+      pagination: {
+        'list-1': {
+          page: 0,
+          hasMore: true,
+          totalCount: 51,
+          isLoading: false,
+          isInitialLoad: false,
+        },
+      },
+      tasks: [...firstPage, savedTask],
+    });
+    const restored = readTaskBoardCache('ws-1', 'board-1')!;
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1', restored.pagination),
+      { wrapper }
+    );
+    queryClient.setQueryData(['tasks', 'board-1'], restored.tasks);
+    vi.mocked(listWorkspaceTasks).mockResolvedValue({
+      tasks: firstPage,
+      count: 51,
+    });
+    await act(() => result.current.revalidateLoadedLists());
+    expect(
+      queryClient.getQueryData<Task[]>(['tasks', 'board-1'])
+    ).toContainEqual(savedTask);
+    expect(result.current.pagination['list-1']?.hasMore).toBe(true);
+  });
+
+  it('retries the failed next page instead of skipping saved tasks', async () => {
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1'),
+      { wrapper }
+    );
+    vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
+      tasks: [],
+      count: 100,
+    });
+    await act(() => result.current.loadListPage('list-1', 0));
+    vi.mocked(listWorkspaceTasks).mockRejectedValueOnce(new Error('Offline'));
+    await act(async () => {
+      await expect(result.current.loadListPage('list-1', 1)).rejects.toThrow(
+        'Offline'
+      );
+    });
+    expect(result.current.pagination['list-1']).toMatchObject({
+      page: 0,
+      hasMore: true,
+      isLoading: false,
+    });
+    await act(() =>
+      result.current.loadListPage(
+        'list-1',
+        result.current.pagination['list-1']!.page + 1
+      )
+    );
+    expect(vi.mocked(listWorkspaceTasks).mock.lastCall?.[1]?.offset).toBe(50);
   });
 });
