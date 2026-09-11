@@ -42,10 +42,17 @@ export function needsCalendarSyncAttention(
   );
 }
 
+export function isCalendarSyncActive(
+  state: Pick<RecoveryState, 'syncMutation' | 'syncHealth'>
+) {
+  return !!(state.syncMutation.isPending || state.syncHealth?.currentlyRunning);
+}
+
 export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
   const { t, syncHealth, syncStatusError, providerAccountStatuses } = state;
-  if (!needsCalendarSyncAttention(state) && !state.syncMutation.isPending)
-    return null;
+  const syncing = isCalendarSyncActive(state);
+  const needsAttention = needsCalendarSyncAttention(state);
+  if (!needsAttention && !syncing) return null;
   const reconnectAccounts = state.accounts.filter(
     (account) =>
       providerAccountStatuses[account.id]?.state === 'reconnect_required'
@@ -92,15 +99,26 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
       reconnectProviders.add(provider);
   }
   return (
-    <Alert className="border-dynamic-orange/30 bg-dynamic-orange/5 text-foreground">
-      <AlertTriangle className="size-4 text-dynamic-orange" />
-      <AlertTitle>{t('sync_recovery.attention')}</AlertTitle>
+    <Alert
+      role={needsAttention ? 'alert' : 'status'}
+      className={
+        needsAttention
+          ? 'border-dynamic-orange/30 bg-dynamic-orange/5 text-foreground'
+          : 'border-border bg-muted/30 text-foreground'
+      }
+    >
+      {!needsAttention ? (
+        <RefreshCw className="size-4 animate-spin" />
+      ) : (
+        <AlertTriangle className="size-4 text-dynamic-orange" />
+      )}
+      <AlertTitle>
+        {t(needsAttention ? 'sync_recovery.attention' : 'syncing_calendars')}
+      </AlertTitle>
       <AlertDescription className="space-y-3">
         <p>
           {t(
-            state.syncMutation.isPending
-              ? 'sync_recovery.syncing_description'
-              : description
+            needsAttention ? description : 'sync_recovery.syncing_description'
           )}
         </p>
         <p className="text-muted-foreground text-xs">
@@ -163,14 +181,10 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
                 : state.syncMutation.mutate()
             }
           >
-            <RefreshCw
-              className={
-                state.syncMutation.isPending ? 'size-4 animate-spin' : 'size-4'
-              }
-            />
+            <RefreshCw className={syncing ? 'size-4 animate-spin' : 'size-4'} />
             {syncStatusError
               ? t('sync_recovery.check_again')
-              : state.syncMutation.isPending
+              : syncing
                 ? t('syncing_calendars')
                 : t('sync_now')}
           </Button>

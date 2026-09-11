@@ -5,7 +5,6 @@ import {
   type WorkspaceCalendarEventCreatePayload,
   type WorkspaceCalendarEventUpdatePayload,
 } from '@tuturuuu/internal-api';
-import { syncWorkspaceCalendar } from '@tuturuuu/internal-api/calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -16,6 +15,7 @@ import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors'
 import { createAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import moment from 'moment';
+import { runCalendarProviderSync } from './calendar-provider-sync';
 import 'moment/locale/vi';
 import {
   createContext,
@@ -1368,7 +1368,7 @@ export const CalendarProvider = ({
           });
         }
 
-        const result = await syncWorkspaceCalendar(ws.id);
+        const result = await runCalendarProviderSync(queryClient, ws.id);
         await queryClient.invalidateQueries({
           queryKey: ['databaseCalendarEvents', ws.id],
           exact: false,

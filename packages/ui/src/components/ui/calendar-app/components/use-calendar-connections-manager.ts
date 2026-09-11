@@ -3,10 +3,8 @@ import {
   getGoogleCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
   getWorkspaceCalendarSyncPreferences,
-  getWorkspaceCalendarSyncStatus,
   listCalendarAccounts,
   listProviderCalendars,
-  syncWorkspaceCalendar,
   updateCalendarConnection as updateCalendarConnectionRequest,
   updateWorkspaceCalendarDefaultSource,
   updateWorkspaceCalendarSyncPreferences,
@@ -15,6 +13,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { runCalendarProviderSync } from '../../../../hooks/calendar-provider-sync';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import { toast } from '../../sonner';
 import {
@@ -25,6 +24,7 @@ import {
 } from './calendar-connections-manager-helpers';
 import type { AuthResponse } from './calendar-types';
 import { mergeProviderCalendarsByAccount } from './merge-provider-calendars';
+import { calendarSyncStatusQueryOptions } from './refresh-calendar-sync-status';
 
 export type CalendarConnectionsUnifiedVariant =
   | 'compact'
@@ -57,11 +57,13 @@ export function useCalendarConnectionsManager(wsId: string) {
     updateCalendarConnection,
     setCalendarConnections,
     syncToTuturuuu,
+    isActiveSyncOn,
     isSyncing,
   } = useCalendarSync();
 
   const syncMutation = useMutation({
-    mutationFn: () => syncWorkspaceCalendar(wsId),
+    mutationKey: ['calendar-provider-sync', wsId],
+    mutationFn: () => runCalendarProviderSync(queryClient, wsId),
     onSuccess: (result) => {
       if (!result.ok) toast.error(t('sync_recovery.partial_failure'));
       else if (result.alreadyRunning) toast.info(t('syncing_calendars'));
@@ -116,17 +118,13 @@ export function useCalendarConnectionsManager(wsId: string) {
   const accounts = accountsQuery.data?.accounts || [];
   const isLoadingAccounts = accountsQuery.isLoading;
   const hasConnectedAccounts = accounts.length > 0;
-  const syncStatusQuery = useQuery({
-    queryKey: ['calendar-sync-status', wsId],
-    queryFn: () => getWorkspaceCalendarSyncStatus(wsId),
-    staleTime: 15_000,
-    retry: 1,
-    refetchInterval: (query) =>
-      query.state.data?.health.currentlyRunning ||
-      query.state.data?.health.retryAfterSeconds
-        ? 5_000
-        : 30_000,
-  });
+  const syncStatusQuery = useQuery(
+    calendarSyncStatusQueryOptions(
+      queryClient,
+      wsId,
+      isSyncing || !isActiveSyncOn
+    )
+  );
   const syncStatusData = syncStatusQuery.data;
 
   const { data: defaultSourceData } = useQuery({

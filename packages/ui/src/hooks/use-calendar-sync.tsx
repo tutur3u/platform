@@ -1,10 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  listWorkspaceCalendars,
-  syncWorkspaceCalendar,
-} from '@tuturuuu/internal-api/calendar';
+import { listWorkspaceCalendars } from '@tuturuuu/internal-api/calendar';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
@@ -24,6 +21,7 @@ import {
   useState,
 } from 'react';
 import { toast } from '../components/ui/sonner';
+import { runCalendarProviderSync } from './calendar-provider-sync';
 import {
   type CacheUpdate,
   type CalendarCache,
@@ -308,13 +306,7 @@ export const CalendarSyncProvider = ({
     const isCurrentWeek = includesCurrentWeek(dateRange);
     // 30 seconds for current week, 5 minutes for other weeks
     const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
-    const isStale = Date.now() - lastUpdated >= staleTime;
-
-    if (isCurrentWeek && isStale) {
-      // Current week cache is stale, forcing fresh fetch
-    }
-
-    return isStale;
+    return Date.now() - lastUpdated >= staleTime;
   };
 
   const updateCache = useCallback((cacheKey: string, update: CacheUpdate) => {
@@ -414,7 +406,12 @@ export const CalendarSyncProvider = ({
       if (
         cachedData &&
         !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
-        !isForcedRef.current
+        !isForcedRef.current &&
+        !queryClient.getQueryState([
+          'databaseCalendarEvents',
+          wsId,
+          activeCacheKey,
+        ])?.isInvalidated
       ) {
         return cachedData.dbEvents;
       }
@@ -596,7 +593,7 @@ export const CalendarSyncProvider = ({
       });
 
       try {
-        const result = await syncWorkspaceCalendar(wsId);
+        const result = await runCalendarProviderSync(queryClient, wsId);
         // Partial imports can change events even when another calendar fails.
         refresh();
         if (!result.ok) throw new Error(result.error || 'Calendar sync failed');
@@ -640,7 +637,7 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, isActiveSyncOn, refresh]
+    [wsId, isActiveSyncOn, refresh, queryClient]
   );
 
   // Trigger refetch from DB when changing views (optimized to reduce load)

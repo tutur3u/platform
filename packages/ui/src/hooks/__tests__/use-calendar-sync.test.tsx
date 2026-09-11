@@ -50,7 +50,7 @@ function renderCalendarSync({
     </QueryClientProvider>
   );
 
-  return renderHook(() => useCalendarSync(), { wrapper });
+  return { ...renderHook(() => useCalendarSync(), { wrapper }), queryClient };
 }
 
 function mockCalendarFetch(
@@ -569,4 +569,23 @@ describe('CalendarSyncProvider optimistic visible events', () => {
       ]);
     });
   });
+});
+
+it('refetches invalidated event ranges even while the local range cache is fresh', async () => {
+  const fetchMock = mockCalendarFetch([createEvent('before')]);
+  vi.stubGlobal('fetch', fetchMock);
+  const { result, queryClient } = renderCalendarSync();
+  act(() => result.current.setDates(createWeekDates('2026-06-22')));
+  await waitFor(() =>
+    expect(result.current.events.map((event) => event.id)).toEqual(['before'])
+  );
+  fetchMock.mockImplementation(mockCalendarFetch([createEvent('after')]));
+  await act(() =>
+    queryClient.invalidateQueries({
+      queryKey: ['databaseCalendarEvents', 'workspace-1'],
+    })
+  );
+  await waitFor(() =>
+    expect(result.current.events.map((event) => event.id)).toEqual(['after'])
+  );
 });

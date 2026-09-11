@@ -1,10 +1,15 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { CalendarSyncAttentionButton } from './calendar-sync-attention-button';
 import {
   CalendarSyncRecovery,
   needsCalendarSyncAttention,
 } from './calendar-sync-recovery';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
+
+vi.mock('./calendar-connections-settings-content', () => ({
+  CalendarConnectionsSettingsContent: () => <div>Settings</div>,
+}));
 
 function state(overrides: Partial<CalendarConnectionsManagerState> = {}) {
   return {
@@ -109,4 +114,56 @@ it('can pause an identified calendar during the retry cooldown without deleting 
     'broken'
   );
   expect(value.syncMutation.mutate).not.toHaveBeenCalled();
+});
+
+it('shows neutral progress for an automatic sync instead of an attention warning', () => {
+  const value = state();
+  value.syncHealth!.state = 'syncing';
+  value.syncHealth!.currentlyRunning = true;
+  value.manualSyncDisabled = true;
+  render(<CalendarSyncRecovery state={value} />);
+  expect(screen.queryByText('sync_recovery.attention')).toBeNull();
+  expect(screen.getByRole('status')).toBeVisible();
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByText('sync_recovery.syncing_description')).toBeVisible();
+  expect(
+    screen.getByRole('button', { name: 'syncing_calendars' })
+  ).toBeDisabled();
+});
+
+it('keeps an open settings dialog neutral when automatic syncing finishes', () => {
+  const value = state();
+  value.syncHealth!.currentlyRunning = true;
+  value.syncHealth!.state = 'syncing';
+  const view = render(<CalendarSyncAttentionButton state={value} />);
+  fireEvent.click(screen.getByRole('button', { name: 'syncing_calendars' }));
+  value.syncHealth!.currentlyRunning = false;
+  value.syncHealth!.state = 'healthy';
+  view.rerender(<CalendarSyncAttentionButton state={value} />);
+  expect(screen.getByRole('dialog')).toBeVisible();
+  expect(screen.queryByText('sync_recovery.attention')).toBeNull();
+  expect(screen.queryByText('syncing_calendars')).toBeNull();
+});
+
+it('keeps reconnection warnings prominent while another calendar syncs', () => {
+  const value = state({
+    providerAccountStatuses: { google: { state: 'reconnect_required' } },
+  });
+  value.syncHealth!.state = 'syncing';
+  value.syncHealth!.currentlyRunning = true;
+  render(<CalendarSyncRecovery state={value} />);
+  expect(screen.getByRole('alert')).toBeVisible();
+  expect(screen.getByText('sync_recovery.attention')).toBeVisible();
+});
+
+it('keeps the status live region mounted before syncing starts', () => {
+  const value = state();
+  value.syncHealth!.state = 'healthy';
+  const view = render(<CalendarSyncAttentionButton state={value} />);
+  const liveRegion = screen.getByRole('status');
+  expect(liveRegion).toHaveTextContent('');
+  value.syncHealth!.currentlyRunning = true;
+  view.rerender(<CalendarSyncAttentionButton state={value} />);
+  expect(screen.getByRole('status')).toBe(liveRegion);
+  expect(liveRegion).toHaveTextContent('syncing_calendars');
 });
