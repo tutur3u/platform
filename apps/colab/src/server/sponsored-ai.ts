@@ -22,35 +22,45 @@ export async function sponsoredGeneration(
   phase: 'generation' | 'prompt_review' | 'agent_step' | 'result_coaching'
 ) {
   const context = env.sponsorship;
-  requireRule(context && env.COLAB_AI_API_KEY, 'sponsorship_unavailable', 503);
+  requireRule(
+    context && (env.authorizeSponsorship || env.COLAB_AI_API_KEY),
+    'sponsorship_unavailable',
+    503
+  );
   const sequence = ++context.sequence;
+  const body = JSON.stringify({
+    model: env.COLAB_AI_MODEL || 'google/gemini-2.5-flash',
+    instructions: system,
+    prompt: JSON.stringify(input),
+    sponsorship: {
+      workshopId: context.workshopId,
+      workshopTitle: context.workshopTitle,
+      hostId: context.hostId,
+      teamId: context.teamId,
+      teamName: context.teamName,
+      participantId: context.participantId,
+      operation: context.operation,
+      scenarioId: context.scenarioId,
+      jobId: context.jobId,
+      sequence,
+      phase,
+    },
+  });
+  const grant = env.authorizeSponsorship
+    ? await env.authorizeSponsorship(body)
+    : null;
   const response = await fetch('https://ai.tuturuuu.com/v1/colab/responses', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${env.COLAB_AI_API_KEY}`,
+      ...(grant
+        ? { 'X-Colab-Grant': grant }
+        : { Authorization: `Bearer ${env.COLAB_AI_API_KEY}` }),
       'Content-Type': 'application/json',
       'Idempotency-Key': `${context.jobId}:${sequence}`,
       'X-Request-ID': `${context.jobId}:${sequence}`,
     },
-    body: JSON.stringify({
-      model: env.COLAB_AI_MODEL || 'google/gemini-2.5-flash',
-      instructions: system,
-      prompt: JSON.stringify(input),
-      sponsorship: {
-        workshopId: context.workshopId,
-        workshopTitle: context.workshopTitle,
-        hostId: context.hostId,
-        teamId: context.teamId,
-        teamName: context.teamName,
-        participantId: context.participantId,
-        operation: context.operation,
-        scenarioId: context.scenarioId,
-        jobId: context.jobId,
-        sequence,
-        phase,
-      },
-    }),
-    redirect: 'error',
+    body,
+    redirect: 'manual',
     signal: AbortSignal.timeout(60_000),
   });
   requireRule(

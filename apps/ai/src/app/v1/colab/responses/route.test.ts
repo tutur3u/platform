@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ auth: vi.fn(), execute: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  auth: vi.fn(),
+  grant: vi.fn(),
+  execute: vi.fn(),
+}));
+vi.mock('@/lib/colab-first-party', () => ({
+  authenticateColabGrant: mocks.grant,
+}));
 vi.mock('@tuturuuu/ai/studio/auth', () => ({
   authenticateAiStudioRequest: mocks.auth,
 }));
@@ -36,6 +43,31 @@ const request = (body: unknown) =>
     body: JSON.stringify(body),
   });
 describe('Colab sponsorship boundary', () => {
+  it('uses the verified first-party identity and approved job id, not caller billing headers', async () => {
+    mocks.grant.mockResolvedValue({
+      kind: 'first-party',
+      appId: 'colab',
+      actorId: 'host',
+      workspaceId: root,
+    });
+    const input = request({
+      sponsorship,
+      prompt: 'draft',
+      model: 'google/gemini-2.5-flash',
+    });
+    input.headers.set('x-colab-grant', 'a'.repeat(64));
+    input.headers.set('Idempotency-Key', 'caller-selected');
+    expect((await POST(input)).status).toBe(200);
+    expect(mocks.auth).not.toHaveBeenCalled();
+    const [meteredRequest, , options] = mocks.execute.mock.calls[0]!;
+    expect(meteredRequest.headers.get('Idempotency-Key')).toBe(
+      `colab:${sponsorship.jobId}:1`
+    );
+    expect(options.credential).toMatchObject({
+      kind: 'first-party',
+      workspaceId: root,
+    });
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.auth.mockResolvedValue({

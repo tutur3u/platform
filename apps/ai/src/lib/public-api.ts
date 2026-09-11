@@ -16,7 +16,7 @@ import type { Json } from '@tuturuuu/types';
 import {
   authenticatePublicAiRequest,
   EXTERNAL_AI_SCOPE,
-  type PublicAiCredential,
+  type MeteredAiCredential as PublicAiCredential,
 } from './public-credential';
 
 export { authenticatePublicAiRequest } from './public-credential';
@@ -70,6 +70,7 @@ export function externalAppAttribution(credential: PublicAiCredential): {
   apiKeyId: string | null;
   appId: string;
 } | null {
+  if (credential.kind === 'first-party') return null;
   if (credential.kind === 'external-app') {
     return {
       actorId: credential.actorId,
@@ -89,11 +90,13 @@ export function externalAppAttribution(credential: PublicAiCredential): {
 }
 
 /**
- * Only reached when `externalAppAttribution` returned null, which by construction
- * means an unbound API key. The guard keeps that invariant checkable rather than
- * silently substituting an empty id if the union ever gains a third member.
+ * Unbound keys and internally verified first-party capabilities spend credits.
+ * First-party reservations deliberately carry no customer API key identifier.
  */
-function apiKeyIdForMeteredRun(credential: PublicAiCredential): string {
+function apiKeyIdForMeteredRun(
+  credential: PublicAiCredential
+): string | undefined {
+  if (credential.kind === 'first-party') return undefined;
   if (credential.kind !== 'api-key') {
     throw new AiStudioError('This credential cannot start a metered run.', {
       code: 'server_error',
@@ -172,9 +175,8 @@ export async function prepareMeteredExecution({
   const idempotencyKey = getIdempotencyKey(request);
   const externalApp = externalAppAttribution(credential);
 
-  // An API key with no app binding is the only credential that spends workspace
-  // credits. Everything belonging to a registered app — a user's session token or
-  // a key bound to that app — is attributed to the app and settles unmetered.
+  // Unbound keys and verified first-party capabilities spend workspace credits.
+  // Registered external-app sessions and bound keys remain unmetered.
   const reservation = externalApp
     ? await beginExternalAiStudioRun({
         actorId: externalApp.actorId,

@@ -3,6 +3,7 @@ import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
+import { authenticateColabGrant } from '@/lib/colab-first-party';
 import { publicApiError } from '@/lib/public-api';
 import { executeTextRequest, parseTextRequest } from '@/lib/text-execution';
 
@@ -27,28 +28,48 @@ const sponsorshipSchema = z
   })
   .strict();
 
-/** Only an unbound root workspace key may fund Colab sponsorships. */
+/** Canonical one-use room approvals (or legacy root keys) fund sponsored work. */
 export async function POST(request: Request) {
   const requestId = getAiStudioRequestId(request);
   try {
-    const credential = await authenticateAiStudioRequest(request);
-    if (
-      credential.workspaceId !== ROOT_WORKSPACE_ID ||
-      credential.apiKey.external_app_id
-    ) {
-      throw new AiStudioError(
-        'Colab sponsorship requires an unbound root-workspace AI key.',
-        { code: 'invalid_api_key', status: 403, type: 'authentication_error' }
-      );
-    }
-    const body = (await request.json()) as Record<string, unknown>;
+    const raw = await request.text();
+    if (raw.length > 250_000)
+      throw new AiStudioError('Request too large.', {
+        code: 'invalid_request_error',
+        status: 413,
+      });
+    const body = JSON.parse(raw) as Record<string, unknown>;
     const parsed = sponsorshipSchema.safeParse(body?.sponsorship);
     if (!parsed.success)
       throw new AiStudioError(
         'A complete workshop sponsorship description is required.',
         { code: 'invalid_request_error', status: 400 }
       );
+    const credential = request.headers.has('x-colab-grant')
+      ? await authenticateColabGrant(request, raw, parsed.data)
+      : {
+          ...(await authenticateAiStudioRequest(request)),
+          kind: 'api-key' as const,
+        };
+    if (
+      credential.workspaceId !== ROOT_WORKSPACE_ID ||
+      (credential.kind === 'api-key' && credential.apiKey.external_app_id)
+    ) {
+      throw new AiStudioError(
+        'Colab sponsorship requires an unbound root-workspace AI key.',
+        { code: 'invalid_api_key', status: 403, type: 'authentication_error' }
+      );
+    }
     const sponsor = parsed.data;
+    if (credential.kind === 'first-party') {
+      const headers = new Headers(request.headers);
+      headers.set(
+        'Idempotency-Key',
+        `colab:${sponsor.jobId}:${sponsor.sequence}`
+      );
+      headers.set('X-Request-ID', `colab:${sponsor.jobId}:${sponsor.sequence}`);
+      request = new Request(request.url, { method: 'POST', headers });
+    }
     // These are trusted credential identity and server policy, never caller-selected billing fields.
     const metadata = {
       ...sponsor,
@@ -70,7 +91,7 @@ export async function POST(request: Request) {
         tools: [],
       }),
       {
-        credential: { ...credential, kind: 'api-key' },
+        credential,
         feature: `colab_${sponsor.operation}`,
         responseShape: 'chat',
         metadata,

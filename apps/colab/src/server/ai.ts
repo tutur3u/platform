@@ -96,7 +96,7 @@ async function generateValue(
     | 'agent_step'
     | 'result_coaching' = 'generation'
 ) {
-  if (env.COLAB_AI_API_KEY)
+  if (env.COLAB_AI_API_KEY || env.COLAB_REQUIRE_SPONSORSHIP === 'true')
     return parseModelJson(await sponsoredGeneration(env, system, input, phase));
   const output = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
     messages: [

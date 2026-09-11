@@ -32,6 +32,6 @@
     "COLAB_REQUIRE_SPONSORSHIP": "true",
     "COLAB_AI_MODEL": "google/gemini-2.5-flash"
   },
-  "secrets": { "required": ["COLAB_SESSION_SECRET", "COLAB_AI_API_KEY"] },
+  "secrets": { "required": ["COLAB_SESSION_SECRET"] },
   "observability": { "enabled": true, "head_sampling_rate": 0.05 }
 }

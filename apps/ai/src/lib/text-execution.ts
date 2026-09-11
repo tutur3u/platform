@@ -13,7 +13,7 @@ import {
   publicApiError,
   settleMeteredExecution,
 } from './public-api';
-import type { PublicAiCredential } from './public-credential';
+import type { MeteredAiCredential as PublicAiCredential } from './public-credential';
 import { responseFormatSchema } from './text-output';
 
 export const textRequestSchema = z.object({

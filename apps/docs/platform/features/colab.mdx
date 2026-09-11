@@ -281,13 +281,26 @@ workshops. Hosts may promote only other eligible Tuturuuu accounts. External
 members retain attendee, multi-team collaboration, learning and showcase access;
 legacy external admin flags are removed during room normalization.
 
-Production AI requires `COLAB_AI_API_KEY`, an **unbound AI Studio API key owned by
-Tuturuuu's root workspace**, and `COLAB_REQUIRE_SPONSORSHIP=true`. App-bound keys
-are rejected because their usage is not deducted from workspace credits. Configure
-the secret through Wrangler's secure input before deploying; do not commit it.
-`COLAB_AI_MODEL` selects an enabled, priced model permitted by that key. Deploy the
-AI Studio `/v1/colab/responses` endpoint before enabling sponsored Colab traffic.
-Missing configuration or insufficient credits fails closed with a readable error.
+Production AI uses automatic first-party authorization with
+`COLAB_REQUIRE_SPONSORSHIP=true`; no AI API key needs to be created or copied.
+The authorized room job stores a random, one-use capability bound to the SHA-256
+digest of the exact model request. AI Studio redeems it over HTTPS at the pinned
+canonical `https://colab.tuturuuu.com/api/sponsorship/verify` endpoint. Redemption
+is an atomic delete, expires after 60 seconds, and cannot be replayed concurrently.
+The capability never enters browser state, activity logs or billing metadata.
+AI Studio revalidates the host's confirmed Tuturuuu account, fixes the billing
+workspace to root, and derives request/idempotency IDs from the approved job.
+Root workspace model, rate, budget and credit policies still apply. This is metered
+first-party usage, not an unmetered external-app credential. No new database
+migration is required: the existing reservation procedure supports a null API key.
+
+Deploy the AI Studio endpoint and Colab verifier together before testing live
+generation. `COLAB_AI_MODEL` selects an enabled, priced root-workspace model.
+Canonical HTTPS reachability is required in both directions; preview deployments
+cannot approve their own root-credit requests. No shared machine secret is needed.
+`COLAB_AI_API_KEY` remains an optional legacy transport for callers without room
+approval support; app-bound keys are rejected. Invalid approval, disabled hosts,
+unavailable verification or insufficient credits fails closed.
 The direct Cloudflare AI binding remains available only for local/legacy setups
 that do not require sponsorship; local verification uses deterministic responses.
 
@@ -302,7 +315,10 @@ responses only; AI Studio remains authoritative for failed or interrupted calls.
 The finite browser verifier exercises learning interactions, shared prompt
 reviews, skill generation, multi-account showcase runs and reconnection with
 isolated Durable Objects. It does not establish real provider output quality or
-production credit settlement: verify those separately after secret provisioning.
+production credit settlement: verify those separately after deployment.
+`node scripts/verify-sponsorship.mjs` additionally exercises keyless generation,
+body tampering, concurrent replay rejection and receipts using isolated Durable
+Objects and mocked AI Studio responses. It does not spend production credits.
 
 ## Workshop directory and activity log
 

@@ -8,6 +8,7 @@ export interface Env {
   APP_ORIGIN: string;
   AUTH_ORIGIN: string;
   COLAB_AI_API_KEY?: string;
+  authorizeSponsorship?: (body: string) => Promise<string>;
   COLAB_AI_MODEL?: string;
   COLAB_REQUIRE_SPONSORSHIP?: string;
   sponsorship?: SponsorshipContext;

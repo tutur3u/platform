@@ -19,10 +19,13 @@ import { compileSkills, makeScenario, runAgent } from './ai';
 import { hash, randomToken } from './auth';
 import type { Env } from './env';
 import { reviewPrompt } from './prompt-review';
+import { SponsorshipGrants } from './sponsorship-grants';
 
 export class ColabRoom extends DurableObject<Env> {
+  private grants: SponsorshipGrants;
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
+    this.grants = new SponsorshipGrants(ctx.storage);
     ctx.storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY, value TEXT NOT NULL)'
     );
@@ -251,12 +254,6 @@ export class ColabRoom extends DurableObject<Env> {
   async ai(identity: Identity, body: Record<string, unknown>) {
     let room = this.read();
     const member = memberOf(room, identity);
-    requireRule(
-      this.env.COLAB_REQUIRE_SPONSORSHIP !== 'true' ||
-        this.env.COLAB_AI_API_KEY,
-      'sponsorship_unavailable',
-      503
-    );
     editable(room);
     requireRule(
       body.action === 'compile' ||
@@ -315,6 +312,19 @@ export class ColabRoom extends DurableObject<Env> {
     const snapshot = room;
     const aiEnv: Env = {
       ...this.env,
+      authorizeSponsorship: (payload) => {
+        const current = this.read();
+        editable(current);
+        const actor = memberOf(current, identity);
+        requireRule(
+          actor.admin ||
+            (body.action !== 'scenario' &&
+              memberTeamIds(actor).includes(team.id)),
+          'staff_only',
+          403
+        );
+        return this.grants.issue(payload);
+      },
       sponsorship: {
         workshopId: room.id,
         workshopTitle: room.title,
@@ -441,6 +451,10 @@ export class ColabRoom extends DurableObject<Env> {
       }
     }
     return projectRoom(this.read(), identity, this.online());
+  }
+  async consumeSponsorship(token: string, digest: string) {
+    editable(this.read());
+    return this.grants.consume(token, digest);
   }
   private online() {
     return [
