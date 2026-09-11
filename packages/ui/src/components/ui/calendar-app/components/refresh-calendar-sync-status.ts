@@ -4,11 +4,11 @@ import {
   type QueryClient,
   queryOptions,
 } from '@tanstack/react-query';
+import type { CalendarSyncStatusResponse } from '@tuturuuu/internal-api/calendar';
 import {
   getWorkspaceCalendarSyncStatus,
   syncWorkspaceCalendar,
 } from '@tuturuuu/internal-api/calendar';
-import type { CalendarSyncStatusResponse } from '@tuturuuu/internal-api/calendar-sync';
 
 const SYNC_INTERVAL_MS = 5 * 60_000;
 const MAX_BACKOFF_MS = 30 * 60_000;

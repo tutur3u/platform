@@ -6,11 +6,11 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
+import type { CalendarSyncStatusResponse } from '@tuturuuu/internal-api/calendar';
 import {
   getWorkspaceCalendarSyncStatus,
   syncWorkspaceCalendar,
 } from '@tuturuuu/internal-api/calendar';
-import type { CalendarSyncStatusResponse } from '@tuturuuu/internal-api/calendar-sync';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
