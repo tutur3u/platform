@@ -36,7 +36,10 @@ begin
   -- Never automatically resend a successfully delivered report.
   if new.delivered_at is not null or exists (
     select 1 from private.user_report_email_queue
-    where report_id = new.id and delivery_kind = 'send' and sent_at is not null
+    where report_id = new.id and (
+      (delivery_kind = 'send' and sent_at is not null)
+      or last_error = 'Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.'
+    )
   ) then return new; end if;
   if nullif(btrim(subject.email), '') is null then
     update private.external_user_monthly_reports
@@ -159,3 +162,73 @@ end;
 $$;
 revoke all on function private.request_periodic_report_delivery(uuid, uuid, text, boolean) from public, anon, authenticated;
 grant execute on function private.request_periodic_report_delivery(uuid, uuid, text, boolean) to service_role;
+
+-- Retain the existing fifteen-minute lease boundary. A timed-out claim needs
+-- explicit operator review/retry, never automatic redelivery.
+create or replace function private.claim_periodic_report_emails(
+  p_worker_id text,
+  p_limit integer default 10,
+  p_now timestamptz default now()
+)
+returns setof private.user_report_email_queue
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  stale_report_id uuid;
+  stale_queue private.user_report_email_queue%rowtype;
+  recovery_error constant text := 'Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.';
+begin
+  -- Recover abandoned claims without resending an email with an unknown outcome.
+  -- Match the report -> queue lock order used by approval and manual requests.
+  for stale_report_id in
+    select report.id from private.external_user_monthly_reports report
+    join private.user_report_email_queue queue on queue.report_id = report.id
+    where queue.status = 'processing'
+      and coalesce(queue.locked_at, queue.updated_at) < p_now - interval '15 minutes'
+    order by queue.updated_at, queue.id
+    limit greatest(1, least(coalesce(p_limit, 10), 50))
+    for update of report skip locked
+  loop
+    select * into stale_queue from private.user_report_email_queue
+      where report_id = stale_report_id and status = 'processing'
+        and coalesce(locked_at, updated_at) < p_now - interval '15 minutes'
+      for update skip locked;
+    if not found then continue; end if;
+    update private.user_report_email_queue set status = 'blocked',
+      last_error = recovery_error, locked_at = null, locked_by = null, updated_at = p_now
+      where id = stale_queue.id;
+    update private.external_user_monthly_reports set delivery_status = 'blocked',
+      last_delivery_error = recovery_error,
+      delivered_at = case when stale_queue.delivery_kind = 'send'
+        then coalesce(delivered_at, stale_queue.sent_at) else delivered_at end
+      where id = stale_report_id;
+    insert into private.user_report_email_attempts(queue_id, status, attempted_at, error_message, provider_message_id)
+      values (stale_queue.id, 'blocked', p_now, recovery_error, stale_queue.provider_message_id);
+  end loop;
+
+  return query
+  with candidates as (
+    select queue.id
+    from private.user_report_email_queue queue
+    where queue.status in ('queued', 'failed')
+      and queue.next_attempt_at <= p_now
+      and (queue.locked_at is null or queue.locked_at < p_now - interval '15 minutes')
+    order by queue.next_attempt_at, queue.created_at
+    for update skip locked
+    limit greatest(1, least(coalesce(p_limit, 10), 50))
+  )
+  update private.user_report_email_queue queue
+  set
+    status = 'processing',
+    locked_at = p_now,
+    locked_by = p_worker_id,
+    attempt_count = queue.attempt_count + 1,
+    updated_at = p_now
+  from candidates
+  where queue.id = candidates.id
+  returning queue.*;
+end;
+$$;
+

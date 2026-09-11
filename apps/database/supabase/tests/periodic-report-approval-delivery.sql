@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(36);
+select plan(47);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -106,6 +106,24 @@ update private.external_user_monthly_reports set user_id = '40000000-0000-4000-8
 select private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send', true);
 select is((select user_id from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), '40000000-0000-4000-8000-000000009107'::uuid, 'reused queue follows the current report subject');
 select is((select recipient_email from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'updated@example.com', 'reused queue follows the current profile email');
+
+
+-- Fresh leases remain protected; abandoned leases become visible, actionable blocks.
+select count(*) from private.claim_periodic_report_emails('first-worker');
+select is((select count(*)::int from private.claim_periodic_report_emails('second-worker')), 0, 'fresh processing leases are not reclaimed');
+select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'processing', 'active worker remains protected');
+update private.user_report_email_queue set locked_at = now() - interval '16 minutes' where report_id = '40000000-0000-4000-8000-000000009106';
+select is((select count(*)::int from private.claim_periodic_report_emails('recovery-worker')), 0, 'recovered unknown outcomes are never automatically sent');
+select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'blocked', 'stale processing queue becomes blocked');
+select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'blocked', 'stale report and queue agree');
+select is((select locked_at from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), null::timestamptz, 'abandoned lease is released');
+select is((select count(*)::int from private.user_report_email_attempts a join private.user_report_email_queue q on q.id = a.queue_id where q.report_id = '40000000-0000-4000-8000-000000009106' and a.status = 'blocked'), 1, 'recovery records an attempt diagnostic');
+select matches((select last_delivery_error from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'check provider logs', 'unknown outcome explains the required operator action');
+update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009106';
+update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009106';
+select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'blocked', 'reapproval cannot implicitly resend an unknown outcome');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 200, 'operator can explicitly retry a recovered abandoned delivery');
+select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'queued', 'explicit retry makes the recovered delivery claimable again');
 
 select * from finish();
 rollback;
