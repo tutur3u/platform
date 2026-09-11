@@ -85,6 +85,7 @@ export default async function MeetingDetailPage({
   if (policy.ended)
     return (
       <CallEnded
+        accountId={user.id}
         canManage={isHost}
         canReadNotes={policy.canReadNotes}
         shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}

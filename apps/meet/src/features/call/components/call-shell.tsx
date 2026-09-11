@@ -39,6 +39,7 @@ import { SidePanel } from './side-panel';
 type Device = 'microphone' | 'camera' | 'screen';
 
 export function ConnectedCallShell({
+  accountId,
   defaultDisplayName,
   defaultAvatarUrl,
   canReadWorkspace = true,
@@ -50,6 +51,7 @@ export function ConnectedCallShell({
   deviceId,
   wsId,
 }: {
+  accountId: string;
   defaultDisplayName: string;
   defaultAvatarUrl?: string;
   canReadWorkspace?: boolean;
@@ -190,6 +192,7 @@ export function ConnectedCallShell({
   if (left || state.ended)
     return (
       <CallEnded
+        accountId={accountId}
         ended={state.ended}
         canManage={canManage}
         canReadNotes={

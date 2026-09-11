@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CallEnded } from '@/features/call/components/call-ended';
-import { CallShell } from '@/features/call/components/call-shell';
+import { CallShell } from '@/features/call/components/device-session-gate';
 import { ParticipantNameForm } from '@/features/call/components/participant-name-form';
 import {
   getMeetCallAccess,
@@ -74,6 +74,7 @@ export default async function RoomPage({
   if (policy.ended)
     return (
       <CallEnded
+        accountId={user.id}
         initialShowNotes={(await searchParams)?.notes === '1'}
         canManage={isHost}
         canReadNotes={policy.canReadNotes}
@@ -95,6 +96,7 @@ export default async function RoomPage({
 
   return (
     <CallShell
+      accountId={user.id}
       defaultDisplayName={displayName}
       defaultAvatarUrl={avatarUrl}
       leaveHref={leaveHref}

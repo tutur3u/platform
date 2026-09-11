@@ -5,6 +5,7 @@ import {
   Calendar,
   Clock,
   ExternalLink,
+  Loader2,
   Search,
   Trash2,
   Users,
@@ -67,6 +68,7 @@ interface Meeting {
 }
 
 interface MeetingsContentProps {
+  accountId: string;
   canCreate: boolean;
   wsId: string;
   page: number;
@@ -75,6 +77,7 @@ interface MeetingsContentProps {
 }
 
 export function MeetingsContent({
+  accountId,
   canCreate,
   wsId,
   page,
@@ -83,6 +86,7 @@ export function MeetingsContent({
 }: MeetingsContentProps) {
   const t = useTranslations('meet.call');
   const meetingsT = useTranslations('meet.meetings');
+  const commonT = useTranslations('common');
   const [searchTerm, setSearchTerm] = useState(search);
   const [currentPage, setCurrentPage] = useState(page);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -96,8 +100,14 @@ export function MeetingsContent({
   const editNameRef = useRef<HTMLInputElement>(null);
   const editTimeRef = useRef<HTMLInputElement>(null);
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['meetings', wsId, currentPage, pageSize, searchTerm],
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['meetings', wsId, accountId, currentPage, pageSize, searchTerm],
+    staleTime: 30_000,
+    gcTime: 15 * 60_000,
+    placeholderData: (previous, query) =>
+      query?.queryKey[1] === wsId && query.queryKey[2] === accountId
+        ? previous
+        : undefined,
     queryFn: () =>
       getWorkspaceMeetings<{
         meetings: Meeting[];
@@ -181,7 +191,7 @@ export function MeetingsContent({
     }
   }, [editDialogOpen, editingMeeting]);
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
@@ -216,6 +226,25 @@ export function MeetingsContent({
           />
         </div>
 
+        <div
+          className="flex min-h-5 items-center text-muted-foreground text-xs"
+          role="status"
+        >
+          {isFetching && data && (
+            <>
+              <Loader2 className="mr-2 size-3 motion-safe:animate-spin" />
+              {meetingsT('refreshing')}
+            </>
+          )}
+          {error && data && !isFetching && (
+            <>
+              {meetingsT('refresh_failed')}
+              <Button variant="ghost" size="sm" onClick={() => void refetch()}>
+                {commonT('refresh')}
+              </Button>
+            </>
+          )}
+        </div>
         {/* Meetings Grid */}
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -283,7 +312,10 @@ export function MeetingsContent({
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 pt-2">
-                    <MeetingRoomAction meetingId={meeting.id} />
+                    <MeetingRoomAction
+                      meetingId={meeting.id}
+                      accountId={accountId}
+                    />
                     {meeting.calendar_event && (
                       <Button asChild size="sm" variant="outline">
                         <a

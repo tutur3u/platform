@@ -27,7 +27,7 @@ vi.mock('next-intl/server', () => ({
 vi.mock('@/features/call/components/participant-name-form', () => ({
   ParticipantNameForm: () => null,
 }));
-vi.mock('@/features/call/components/call-shell', () => ({
+vi.mock('@/features/call/components/device-session-gate', () => ({
   CallShell: () => null,
 }));
 vi.mock('@/features/call/lib/call-session', () => ({

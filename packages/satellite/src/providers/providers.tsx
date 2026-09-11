@@ -12,10 +12,12 @@ export function Providers({
   appName = 'Tuturuuu App',
   children,
   currentApp,
+  loadingFallback = null,
 }: {
   appName?: string;
   children: ReactNode;
   currentApp?: LaunchableAppSlug;
+  loadingFallback?: ReactNode;
 }) {
   const launchableApp =
     currentApp ??
@@ -43,7 +45,7 @@ export function Providers({
         subtree React re-renders it on the client. NextIntlClientProvider stays
         inside because resolving its request config can access runtime data.
       */}
-      <Suspense fallback={null}>
+      <Suspense fallback={loadingFallback}>
         <NextIntlClientProvider>
           <ClientProviders currentApp={launchableApp}>
             {children}

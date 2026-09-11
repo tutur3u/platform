@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updated: '2026-09-09'
+updated: '2026-09-11'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 ---
 
@@ -744,6 +744,32 @@ account billing before using these estimates as a complete budget. Unknown AI co
 are shown as missing coverage rather than zero-cost requests. Merely reading a cost
 panel does not force a Durable Object snapshot write.
 
+### Diagnosing call preparation
+
+The centered **Preparing your call** screen checks the account's device session
+before opening the lobby. Its request is `POST /api/meet-call/<meetingId>/token`;
+a failure here is distinct from a media or WebSocket connection failure inside
+the call. The browser bounds each preparation request to 12 seconds and retries
+transient failures twice. Switching an existing device is not automatically
+retried, because it can disconnect that device.
+
+The token handler checks the realtime Worker's `/room-device` endpoint with a
+five-second timeout. An unavailable upstream returns HTTP 503 with
+`MEET_REALTIME_UNAVAILABLE` and `Retry-After: 2`, without bypassing device policy.
+Use the request status and Cloudflare Ray ID to distinguish an edge block from
+an unavailable Worker; a successful `/health` check alone does not prove the
+authenticated device endpoint works. Never collect cookies or bearer tokens.
+
+Cloudflare's Meet-only managed-rule exception skips cookie-character checks
+942420 and 942421 for GET and POST requests to `meet.tuturuuu.com`. Other rules
+and request-body inspection remain active, and exception matches are logged.
+Inspect the contributing rules before changing this scope; do not disable an
+entire ruleset to resolve a preparation failure.
+
+After the lobby opens, a WebSocket that remains in its initial connecting state
+for ten seconds is replaced through the normal bounded reconnect policy. Late
+events from the abandoned socket cannot replace the current connection.
+
 ### Room policy verification
 
 `bun apps/meet-realtime/src/room-controls-check.ts` verifies lobby chat privacy,
@@ -808,3 +834,14 @@ Source metadata is limited to eight distinct URLs and 4,000 serialized character
 The answer reserves space for complete source links within the 16,000-character
 saved-message limit; oversized prose stops at a complete Markdown block, or uses
 a safely escaped text prefix when the first block alone exceeds the limit.
+
+### Fast return to ended meetings
+
+Meeting cards remember an observed ended state on the current browser, scoped to
+its signed-in account. Only meeting IDs and observation timestamps are retained,
+for up to 30 days and 256 rooms per account. Returning from an ended call updates
+this hint immediately, so known ended cards do not queue another room-state
+request or poll the realtime Worker. Active and unknown rooms still refresh.
+The cache is only a display hint: opening notes or transcripts always performs
+server permission checks. No room names, chat, transcripts, or access grants are
+stored in this cache, and unavailable browser storage does not block navigation.

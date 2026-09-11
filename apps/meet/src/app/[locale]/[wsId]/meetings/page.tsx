@@ -80,6 +80,7 @@ export default async function MeetingsPage({
         }
       >
         <MeetingsContent
+          accountId={user.id}
           canCreate={canCreate}
           wsId={wsId}
           page={page}
