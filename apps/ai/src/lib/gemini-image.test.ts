@@ -145,7 +145,7 @@ it('fails closed on cached or unsupported modality usage instead of guessing cha
     priceGoogleImageUsage(
       {
         promptTokenCount: 10,
-        candidatesTokenCount: 1121,
+        candidatesTokenCount: 1119,
         candidatesTokensDetails: [{ modality: 'IMAGE', tokenCount: 1120 }],
       },
       1

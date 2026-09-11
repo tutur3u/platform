@@ -54,16 +54,12 @@ const googleUsageSchema = z.object({
  */
 export function priceGoogleImageUsage(raw: unknown, imageCount: number) {
   const usage = googleUsageSchema.parse(raw);
-  const classifiedTokens = usage.candidatesTokensDetails.reduce(
-    (sum, detail) => sum + detail.tokenCount,
-    0
-  );
   const imageTokens = usage.candidatesTokensDetails
     .filter((detail) => detail.modality === 'IMAGE')
     .reduce((sum, detail) => sum + detail.tokenCount, 0);
   if (
     usage.cachedContentTokenCount > 0 ||
-    classifiedTokens !== usage.candidatesTokenCount ||
+    imageTokens > usage.candidatesTokenCount ||
     (imageCount > 0 && imageTokens === 0)
   ) {
     throw new Error('Image modality pricing requires complete uncached usage.');
