@@ -2,15 +2,12 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
-  receipt: vi.fn(),
   plan: vi.fn(),
 }));
 vi.mock('ai', () => ({
-  gateway: Object.assign((id: string) => id, {
-    getGenerationInfo: mocks.receipt,
-  }),
   generateText: mocks.generate,
 }));
+vi.mock('@ai-sdk/google', () => ({ google: (id: string) => id }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => {
     const query = { select: () => query, eq: () => query, single: mocks.plan };
@@ -23,6 +20,7 @@ import {
   creditsForProviderCost,
   GEMINI_FLASH_IMAGE,
   isGeminiFlashImage,
+  priceGoogleImageUsage,
 } from './gemini-image';
 
 beforeEach(() => {
@@ -35,12 +33,17 @@ beforeEach(() => {
       outputTokenDetails: { reasoningTokens: 80 },
     },
     files: [{ base64: 'AAAA', mediaType: 'image/png' }],
-    providerMetadata: { gateway: { generationId: 'gen_test' } },
-  });
-  mocks.receipt.mockResolvedValue({
-    model: GEMINI_FLASH_IMAGE,
-    totalCost: 0.06749,
-    isByok: false,
+    response: { id: 'google_response_test' },
+    providerMetadata: {
+      google: {
+        usageMetadata: {
+          promptTokenCount: 100,
+          candidatesTokenCount: 1120,
+          thoughtsTokenCount: 80,
+          candidatesTokensDetails: [{ modality: 'IMAGE', tokenCount: 1120 }],
+        },
+      },
+    },
   });
 });
 
@@ -51,7 +54,7 @@ it('accepts only the deliberately supported multimodal model', () => {
     false
   );
 });
-it('reserves conservatively but settles exact gateway cost including image tokens', async () => {
+it('reserves conservatively but settles modality-priced Google usage', async () => {
   const billing = createGeminiImageBilling('Artwork', 1);
   const reserve = await billing.calculateCost({ imageUnits: 1 }, 'root');
   expect(reserve.providerCostUsd).toBeGreaterThan(0.25);
@@ -61,7 +64,7 @@ it('reserves conservatively but settles exact gateway cost including image token
   });
   expect(mocks.generate).toHaveBeenCalledWith(
     expect.objectContaining({
-      model: GEMINI_FLASH_IMAGE,
+      model: 'gemini-3.1-flash-image',
       abortSignal: request.signal,
       maxRetries: 0,
       providerOptions: {
@@ -91,13 +94,15 @@ it('applies the actual plan markup and rejects invalid costs', () => {
 });
 it('preserves measured usage for reconciliation when the provider receipt is unavailable', async () => {
   const billing = createGeminiImageBilling('Artwork', 1);
-  mocks.receipt.mockRejectedValue(new Error('Receipt unavailable'));
+  const result = await mocks.generate();
+  result.providerMetadata.google.usageMetadata.candidatesTokensDetails = [];
+  mocks.generate.mockResolvedValue(result);
   await expect(
     billing.generate(new Request('https://ai.test'), '1:1')
-  ).rejects.toThrow('Receipt unavailable');
+  ).rejects.toThrow('Image modality pricing');
   expect(billing.usage.imageUnits).toBe(1);
   await expect(billing.calculateCost(billing.usage, 'root')).rejects.toThrow(
-    'Receipt unavailable'
+    'Image modality pricing'
   );
 });
 it('retains partial paid usage when a later image fails', async () => {
@@ -115,7 +120,12 @@ it('charges a measured safety refusal without inventing an image', async () => {
   mocks.generate.mockResolvedValue({
     usage: { inputTokens: 100, outputTokens: 3, outputTokenDetails: {} },
     files: [],
-    providerMetadata: { gateway: { generationId: 'gen_test' } },
+    response: { id: 'google_response_test' },
+    providerMetadata: {
+      google: {
+        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 3 },
+      },
+    },
   });
   const billing = createGeminiImageBilling('Artwork', 1);
   await expect(
@@ -125,4 +135,22 @@ it('charges a measured safety refusal without inventing an image', async () => {
   expect(
     (await billing.calculateCost(billing.usage, 'root')).providerCostUsd
   ).toBeGreaterThan(0);
+});
+it('fails closed on cached or unsupported modality usage instead of guessing charges', () => {
+  expect(() =>
+    priceGoogleImageUsage(
+      { promptTokenCount: 10, cachedContentTokenCount: 5 },
+      0
+    )
+  ).toThrow();
+  expect(() =>
+    priceGoogleImageUsage(
+      {
+        promptTokenCount: 10,
+        candidatesTokensDetails: [{ modality: 'AUDIO', tokenCount: 1 }],
+      },
+      0
+    )
+  ).toThrow();
+  expect(() => priceGoogleImageUsage(undefined, 1)).toThrow();
 });

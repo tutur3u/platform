@@ -54,7 +54,7 @@ export async function executeImageRequest(
         size: input.size,
         ...(gemini
           ? {
-              pricing_basis: 'gateway_generation_receipt',
+              pricing_basis: 'google_modality_tokens_2026_09_11',
               image_resolution: '1K',
             }
           : {}),
@@ -88,8 +88,8 @@ export async function executeImageRequest(
         usage: gemini?.usage ?? { imageUnits: generated.length },
         metadata: gemini
           ? {
-              gateway_generation_ids: gemini.generationIds,
-              pricing_basis: 'gateway_generation_receipt',
+              provider_response_ids: gemini.generationIds,
+              pricing_basis: 'google_modality_tokens_2026_09_11',
               image_resolution: '1K',
             }
           : undefined,
@@ -124,8 +124,8 @@ export async function executeImageRequest(
         usage: gemini?.usage ?? {},
         metadata: gemini
           ? {
-              gateway_generation_ids: gemini.generationIds,
-              pricing_basis: 'gateway_generation_receipt',
+              provider_response_ids: gemini.generationIds,
+              pricing_basis: 'google_modality_tokens_2026_09_11',
             }
           : undefined,
       }).catch(() => undefined);

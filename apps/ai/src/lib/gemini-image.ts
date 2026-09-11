@@ -1,6 +1,8 @@
+import { google } from '@ai-sdk/google';
 import { CREDIT_UNIT_USD } from '@tuturuuu/ai/credits/constants';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { gateway, generateText } from 'ai';
+import { generateText } from 'ai';
+import { z } from 'zod';
 import type { MeteredUsage, UsageCostCalculator } from './public-api';
 
 export const GEMINI_FLASH_IMAGE = 'google/gemini-3.1-flash-image';
@@ -30,7 +32,48 @@ export function creditsForProviderCost(
   };
 }
 
-/** Keep the gateway receipt authoritative: Gemini prices image and text output differently. */
+const tokenCount = z.number().int().nonnegative();
+const googleUsageSchema = z.object({
+  promptTokenCount: tokenCount,
+  candidatesTokenCount: tokenCount.default(0),
+  thoughtsTokenCount: tokenCount.default(0),
+  cachedContentTokenCount: tokenCount.default(0),
+  candidatesTokensDetails: z
+    .array(
+      z.object({
+        modality: z.enum(['TEXT', 'IMAGE']),
+        tokenCount,
+      })
+    )
+    .default([]),
+});
+
+/** Google standard pricing verified 2026-09-11: input $0.50/M, text/thinking $3/M, image $60/M.
+ * https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-image
+ * No search, cached-content references, audio, or image inputs are submitted here.
+ */
+export function priceGoogleImageUsage(raw: unknown, imageCount: number) {
+  const usage = googleUsageSchema.parse(raw);
+  const imageTokens = usage.candidatesTokensDetails
+    .filter((detail) => detail.modality === 'IMAGE')
+    .reduce((sum, detail) => sum + detail.tokenCount, 0);
+  if (
+    usage.cachedContentTokenCount > 0 ||
+    imageTokens > usage.candidatesTokenCount ||
+    (imageCount > 0 && imageTokens === 0)
+  ) {
+    throw new Error('Image modality pricing requires complete uncached usage.');
+  }
+  return (
+    (usage.promptTokenCount * 0.5 +
+      (usage.candidatesTokenCount - imageTokens + usage.thoughtsTokenCount) *
+        3 +
+      imageTokens * 60) /
+    1_000_000
+  );
+}
+
+/** Gemini image and text output have separate prices; never bill images at the text rate. */
 export function createGeminiImageBilling(prompt: string, count: number) {
   let actualCost: number | undefined;
   let receiptError: unknown;
@@ -60,7 +103,7 @@ export function createGeminiImageBilling(prompt: string, count: number) {
       return creditsForProviderCost(actualCost ?? 0, markup);
     }
     // Conservative reservation for 1K images, <=4096 output tokens and text-only input.
-    // Settlement uses the actual gateway receipt, never this estimate.
+    // Settlement uses actual Google modality token counts, never this estimate.
     return creditsForProviderCost(
       count * (0.25 + prompt.length * 0.0000005),
       markup
@@ -72,7 +115,7 @@ export function createGeminiImageBilling(prompt: string, count: number) {
     generationIds,
     async generate(request: Request, aspectRatio: string) {
       const result = await generateText({
-        model: gateway(GEMINI_FLASH_IMAGE),
+        model: google(GEMINI_FLASH_IMAGE.replace('google/', '')),
         prompt,
         abortSignal: request.signal,
         maxRetries: 0,
@@ -95,22 +138,13 @@ export function createGeminiImageBilling(prompt: string, count: number) {
         file.mediaType.startsWith('image/')
       );
       usage.imageUnits = (usage.imageUnits ?? 0) + images.length;
-      const id = result.providerMetadata?.gateway?.generationId;
+      const id = result.response.id;
       try {
-        if (typeof id !== 'string')
-          throw new Error('Image generation receipt is missing.');
-        generationIds.push(id);
-        const receipt = await gateway.getGenerationInfo({ id });
-        const cost = receipt.isByok
-          ? receipt.upstreamInferenceCost
-          : receipt.totalCost;
-        if (
-          receipt.model !== GEMINI_FLASH_IMAGE ||
-          !Number.isFinite(cost) ||
-          cost <= 0
-        ) {
-          throw new Error('Image generation receipt pricing is unavailable.');
-        }
+        if (id) generationIds.push(id);
+        const cost = priceGoogleImageUsage(
+          result.providerMetadata?.google?.usageMetadata,
+          images.length
+        );
         actualCost = (actualCost ?? 0) + cost;
       } catch (error) {
         receiptError = error;

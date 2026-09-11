@@ -338,13 +338,13 @@ Unavailable image generation is reported in the action trace with setup guidance
 and the agent can continue with an artwork brief.
 
 Gemini Flash artwork supports `google/gemini-3.1-flash-image` through
-AI Gateway's multimodal language API, even though the catalog classifies it as
+Google's multimodal language API using `GOOGLE_GENERATIVE_AI_API_KEY`, even though the catalog classifies it as
 `language`. Colab requests one 1K image without search or publishing tools.
 Enable the model in the catalog, global access policy, and sponsor plan before
-using it. The reservation is conservative; settlement uses the gateway's actual
-generation receipt (including image output), then applies the sponsor plan's
-markup. Root AI Studio runs retain gateway generation IDs, token counts, image
-counts, and workshop sponsorship descriptions. Missing receipts fail closed and
+using it. The reservation is conservative; settlement uses Google's actual
+modality token counts ($0.50/M input, $3/M text/thinking, $60/M image output), then applies the sponsor plan's
+markup. Root AI Studio runs retain provider response IDs, token counts, image
+counts, and workshop sponsorship descriptions. Missing modality data fails closed and
 mark measured usage for reconciliation instead of treating artwork as free.
 Do not select the retired `-preview` alias; Google lists its shutdown on June 25, 2026.
 
