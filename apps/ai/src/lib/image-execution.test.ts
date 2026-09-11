@@ -35,8 +35,9 @@ it('returns image bytes and confirmed billing while preserving first-party spons
     actorId: 'host',
     workspaceId: 'root',
   };
+  const request = new Request('https://ai.test');
   const response = await executeImageRequest(
-    new Request('https://ai.test'),
+    request,
     imageRequestSchema.parse({ model: 'image-model', prompt: 'Artwork' }),
     {
       credential,
@@ -54,8 +55,9 @@ it('returns image bytes and confirmed billing while preserving first-party spons
     })
   );
   expect(mocks.generate).toHaveBeenCalledWith(
-    expect.objectContaining({ maxRetries: 0 })
+    expect.objectContaining({ maxRetries: 0, abortSignal: request.signal })
   );
+  expect(mocks.capture).toHaveBeenCalled();
   expect(await response.json()).toMatchObject({
     data: [{ b64_json: 'AAAA', media_type: 'image/png' }],
     tuturuuu: { run_id: 'ledger', billing: { billedCredits: 4 } },
@@ -68,6 +70,7 @@ it('does not invent a successful asset or receipt after a provider failure', asy
     imageRequestSchema.parse({ model: 'image-model', prompt: 'Artwork' })
   );
   expect(response.status).toBe(503);
+  expect(mocks.capture).not.toHaveBeenCalled();
   expect(mocks.settle).toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({ status: 'failed', usage: {} })

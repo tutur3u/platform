@@ -30,6 +30,19 @@ it('stores chunked private images, denies other teams, and deletes all assets', 
     expect(() =>
       images.store('team-1', { base64: 'AAAA', mimeType: 'image/svg+xml' })
     ).toThrow('image_invalid_output');
+    expect(() =>
+      images.store('team-1', {
+        base64: 'A',
+        mimeType: 'image/png',
+      })
+    ).toThrow('image_invalid_output');
+    const abandoned = images.store('team-1', {
+      base64: btoa('discard'),
+      mimeType: 'image/png',
+    });
+    images.remove([abandoned]);
+    expect(() => images.read(abandoned, ['team-1'])).toThrow('not_found');
+    expect(await images.read(id, ['team-1']).text()).toBe(payload);
     images.clear();
     expect(() => images.read(id, ['team-1'])).toThrow('not_found');
   } finally {

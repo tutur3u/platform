@@ -34,6 +34,7 @@ export function AgentAnswer({
                   setCopied(key);
                   setFailed(false);
                 } catch {
+                  setCopied(null);
                   setFailed(true);
                 }
               }}

@@ -481,7 +481,9 @@ export async function listAllowedModels(credential: PublicAiCredential) {
   const { data: models, error } = await sbAdmin
     .schema('private')
     .from('ai_gateway_models')
-    .select('id, name, provider, type, context_window, max_tokens, tags')
+    .select(
+      'id, name, provider, type, context_window, max_tokens, tags, image_gen_price'
+    )
     .eq('is_enabled', true)
     .order('name');
 

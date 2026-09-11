@@ -314,6 +314,8 @@ export class ColabRoom extends DurableObject<Env> {
     if (body.action !== 'scenario') team.aiCalls++;
     this.save(room);
     const snapshot = room;
+    const generatedImageIds: string[] = [];
+    let committed = false;
     const aiEnv: Env = {
       ...this.env,
       storeGeneratedImage: async (image) => {
@@ -329,7 +331,9 @@ export class ColabRoom extends DurableObject<Env> {
           current.teams.some((entry) => entry.id === team.id),
           'invalid_team'
         );
-        return `/api/rooms/${current.id}/images/${this.images.store(team.id, image)}`;
+        const id = this.images.store(team.id, image);
+        generatedImageIds.push(id);
+        return `/api/rooms/${current.id}/images/${id}`;
       },
       authorizeSponsorship: (payload) => {
         const current = this.read();
@@ -439,8 +443,10 @@ export class ColabRoom extends DurableObject<Env> {
         body.action === 'scenario' ? undefined : requestedTeamId
       );
       this.save(room);
+      committed = true;
     } finally {
       try {
+        if (!committed) this.images.remove(generatedImageIds);
         if (aiEnv.sponsorship?.receipts.length) {
           const latest = this.read();
           const previous = latest.sponsorship ?? {

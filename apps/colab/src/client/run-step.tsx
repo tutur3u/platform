@@ -97,7 +97,7 @@ export function RunStep({ index, trace }: { index: number; trace: Trace }) {
           >
             <img
               src={insight.imageUrl}
-              alt={insight.detail || c.imageGeneratedIn}
+              alt={insight.imageAlt || c.agentAnswer}
               loading="lazy"
             />
             <span>{c.viewArtwork}</span>

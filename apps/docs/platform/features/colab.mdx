@@ -69,19 +69,19 @@ Google Calendar, Jira and Trello. They simulate searchable records and
 create/update actions. They are educational mockups, not replicas of the full
 products. No third-party app credentials, network fetch tools or real messaging
 connectors are available to the agent. Each team's writes affect only its own
-records. Admins can reset those records to the same seeded Project Lotus dataset.
+records. Admins can reset those records to the seeded RISE dataset.
 
-Workers AI generates skills, scenarios, agent decisions and feedback using
-`@cf/meta/llama-3.3-70b-instruct-fp8-fast`. Agent execution uses a bounded JSON tool
+AI Studio sponsors skills, scenarios, agent decisions and feedback using the
+configured `COLAB_AI_MODEL`. Agent execution uses a bounded JSON tool
 protocol with an allowlist and runtime validation. New workshops allow 500 AI
-operations, 16 turns, and 12 app actions per run; new teams begin with 150 AI
-operations, 12 turns, and 10 app actions. Hosts can use Guided, Extended, or Deep
-dive presets or set exact room and team limits, up to 5,000 AI operations, 40
-turns, and 30 app actions. An app-action limit must stay below the turn limit so
+operations, 60 turns, and 50 app actions per run; new teams begin with 150 AI
+operations, 60 turns, and 50 app actions. Hosts can use Guided, Extended, or Deep
+dive presets or set exact room and team limits, up to 5,000 AI operations, 100
+turns, and 80 app actions. An app-action limit must stay below the turn limit so
 the agent retains a final answer turn. Existing rooms are normalized to the new
 defaults only when a value was never stored. A room allows one concurrent AI job.
 If room state changes while inference is running, the stale result is discarded.
-The system prompt, scenario, mock records and traces are sent to Workers AI;
+The system prompt, scenario, practice records and traces are sent to the AI provider;
 participants should use workshop examples rather than confidential real data.
 
 ## Authentication and deployment
@@ -343,7 +343,7 @@ including showcase access, and return private no-store responses. Workshop
 deletion removes its images. Captions, tables, checklists, code, and image outputs
 use safe Markdown rendering; structured bilingual answers have separate copy buttons.
 
-Practice actions accept `search`, `read`, `create`, and `update`, including exact
+Practice actions accept `search`, `read`, `create`, `draft`, `update`, and `generate_image`, including exact
 namespaced forms such as `drive.search`. A namespace must match the selected app;
 unsupported actions such as publishing or deleting remain rejected. Record IDs
 are always checked within the selected app. Normalized actions appear in the trace.

@@ -33,6 +33,11 @@ export class RoomImages {
         /^[A-Za-z0-9+/]+={0,2}$/.test(image.base64),
       'image_invalid_output'
     );
+    try {
+      atob(image.base64);
+    } catch {
+      requireRule(false, 'image_invalid_output');
+    }
     const id = crypto.randomUUID();
     this.storage.transactionSync(() => {
       this.storage.sql.exec(
@@ -77,6 +82,14 @@ export class RoomImages {
         },
       }
     );
+  }
+  remove(ids: string[]) {
+    this.storage.transactionSync(() => {
+      for (const id of ids) {
+        this.storage.sql.exec('DELETE FROM image_chunks WHERE id = ?', id);
+        this.storage.sql.exec('DELETE FROM images WHERE id = ?', id);
+      }
+    });
   }
   clear() {
     this.storage.sql.exec('DELETE FROM image_chunks');

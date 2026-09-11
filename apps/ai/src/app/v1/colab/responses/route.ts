@@ -92,7 +92,7 @@ export async function POST(request: Request) {
           { code: 'invalid_request_error', status: 400 }
         );
       const models = (await listAllowedModels(credential)).filter(
-        (model) => model.type === 'image'
+        (model) => model.type === 'image' && Number(model.image_gen_price) > 0
       );
       const model =
         models.find(

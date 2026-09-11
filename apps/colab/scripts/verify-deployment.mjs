@@ -34,6 +34,7 @@ async function verifyDeployment() {
     return response;
   }
   const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+  const expectedShell = digest(await readFile('dist/index.html'));
   const assets = await Promise.all(
     (await readdir('dist/assets')).map(async (name) => ({
       name,
@@ -41,6 +42,11 @@ async function verifyDeployment() {
     }))
   );
   await waitForDeployment(async () => {
+    // Historical hashed assets remain retrievable after a newer deployment.
+    // Verify the actual shared-link entry shell selects this build as well.
+    const shell = await get('/?room=00000000-0000-0000-0000-000000000000');
+    if (digest(Buffer.from(await shell.arrayBuffer())) !== expectedShell)
+      throw new Error('Shared-link entry shell does not match the local build');
     const health = await (await get('/api/health')).json();
     if (health.app !== 'colab' || health.status !== 'ok' || !health.sandbox)
       throw new Error('Unexpected Colab health response');

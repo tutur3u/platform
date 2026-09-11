@@ -51,6 +51,13 @@ export function traceInsight(trace: Trace) {
     action,
     app,
     detail,
+    imageAlt:
+      typeof output.alt === 'string'
+        ? output.alt
+        : typeof (output.record as { title?: unknown } | undefined)?.title ===
+            'string'
+          ? (output.record as { title: string }).title
+          : detail,
     errorCode: typeof output.error === 'string' ? output.error : null,
     imageUrl:
       typeof output.imageUrl === 'string' &&

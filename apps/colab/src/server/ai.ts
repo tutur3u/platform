@@ -14,6 +14,7 @@ import {
 import type { Env } from './env';
 import { executeImageTool } from './image-tool';
 import { sponsoredGeneration } from './sponsored-ai';
+import { traceContext } from './trace-context';
 
 function parseModelJson(value: unknown): unknown {
   if (value && typeof value === 'object') {
@@ -353,15 +354,7 @@ export async function runAgent(
           : system,
         {
           scenario,
-          previousActions: trace.map((entry, index) =>
-            index >= trace.length - 6
-              ? entry
-              : {
-                  ...entry,
-                  input: entry.input.slice(0, 300),
-                  output: entry.output.slice(0, 600),
-                }
-          ),
+          previousActions: traceContext(trace),
           remainingTurns: limits.agentTurnLimit - step,
           remainingToolCalls: limits.toolCallLimit - trace.length,
         },

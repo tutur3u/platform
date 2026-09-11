@@ -83,7 +83,9 @@ describe('Colab sponsorship boundary', () => {
       apiKey: { external_app_id: null },
     });
     mocks.execute.mockResolvedValue(Response.json({ choices: [] }));
-    mocks.models.mockResolvedValue([{ id: 'image-model', type: 'image' }]);
+    mocks.models.mockResolvedValue([
+      { id: 'image-model', type: 'image', image_gen_price: 0.02 },
+    ]);
     mocks.image.mockResolvedValue(Response.json({ data: [] }));
   });
   it('charges only root credits with complete workshop evidence and bounded execution', async () => {
@@ -123,6 +125,14 @@ describe('Colab sponsorship boundary', () => {
     expect(options.metadata.description).toContain('RISE Induction Day');
   });
   it('supports sponsored image steps after fifty requests without caller model or count overrides', async () => {
+    mocks.models.mockResolvedValue([
+      {
+        id: 'google/imagen-4.0-fast-generate-001',
+        type: 'image',
+        image_gen_price: 0,
+      },
+      { id: 'image-model', type: 'image', image_gen_price: 0.04 },
+    ]);
     const response = await POST(
       request({
         sponsorship: {
@@ -155,7 +165,9 @@ describe('Colab sponsorship boundary', () => {
     });
   });
   it('does not generate images when the sponsor has no enabled image model', async () => {
-    mocks.models.mockResolvedValue([]);
+    mocks.models.mockResolvedValue([
+      { id: 'unpriced', type: 'image', image_gen_price: 0 },
+    ]);
     expect(
       (
         await POST(

@@ -32,5 +32,5 @@ export async function executeImageTool(
     content: `![${alt}](${url})\n\n${prompt}\n\nAI-generated artwork. Review text, visual accuracy, rights, and accessibility before publishing.`,
   };
   records.push(record);
-  return JSON.stringify({ record, imageUrl: url, generated: true });
+  return JSON.stringify({ record, imageUrl: url, alt, generated: true });
 }
