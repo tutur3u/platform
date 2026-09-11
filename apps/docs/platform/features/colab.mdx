@@ -337,7 +337,7 @@ Each call generates one image, with at most 50 retained images per workshop.
 Unavailable image generation is reported in the action trace with setup guidance,
 and the agent can continue with an artwork brief.
 
-Gemini Flash artwork supports `google/gemini-3.1-flash-image-preview` through
+Gemini Flash artwork supports `google/gemini-3.1-flash-image` through
 AI Gateway's multimodal language API, even though the catalog classifies it as
 `language`. Colab requests one 1K image without search or publishing tools.
 Enable the model in the catalog, global access policy, and sponsor plan before
@@ -346,6 +346,7 @@ generation receipt (including image output), then applies the sponsor plan's
 markup. Root AI Studio runs retain gateway generation IDs, token counts, image
 counts, and workshop sponsorship descriptions. Missing receipts fail closed and
 mark measured usage for reconciliation instead of treating artwork as free.
+Do not select the retired `-preview` alias; Google lists its shutdown on June 25, 2026.
 
 Generated PNG/JPEG/WebP assets are stored separately from realtime room JSON in
 bounded SQLite chunks. Image requests re-check room membership and team visibility,

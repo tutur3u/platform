@@ -3,7 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { gateway, generateText } from 'ai';
 import type { MeteredUsage, UsageCostCalculator } from './public-api';
 
-export const GEMINI_FLASH_IMAGE = 'google/gemini-3.1-flash-image-preview';
+export const GEMINI_FLASH_IMAGE = 'google/gemini-3.1-flash-image';
 
 export function isGeminiFlashImage(modelId: string) {
   return modelId === GEMINI_FLASH_IMAGE;

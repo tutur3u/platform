@@ -47,6 +47,9 @@ beforeEach(() => {
 it('accepts only the deliberately supported multimodal model', () => {
   expect(isGeminiFlashImage(GEMINI_FLASH_IMAGE)).toBe(true);
   expect(isGeminiFlashImage('google/gemini-3.6-flash')).toBe(false);
+  expect(isGeminiFlashImage('google/gemini-3.1-flash-image-preview')).toBe(
+    false
+  );
 });
 it('reserves conservatively but settles exact gateway cost including image tokens', async () => {
   const billing = createGeminiImageBilling('Artwork', 1);
