@@ -57,8 +57,14 @@ export function rememberEndedRoom(accountId: string, meetingId: string) {
 
 export function subscribeEndedRooms(accountId: string, notify: () => void) {
   const onStorage = (event: StorageEvent) => {
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return;
+    }
     if (
-      event.storageArea === localStorage &&
+      event.storageArea === storage &&
       (event.key === null ||
         (event.key === PREFIX + accountId && event.oldValue !== event.newValue))
     )

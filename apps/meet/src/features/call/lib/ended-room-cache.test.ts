@@ -62,3 +62,24 @@ it('ignores unrelated account and storage changes', () => {
   expect(notify).toHaveBeenCalledOnce();
   unsubscribe();
 });
+
+it('ignores storage events when the storage getter is blocked', () => {
+  const notify = vi.fn();
+  const unsubscribe = subscribeEndedRooms('account-a', notify);
+  const error = vi.fn((event: ErrorEvent) => event.preventDefault());
+  window.addEventListener('error', error);
+  const getter = vi
+    .spyOn(window, 'localStorage', 'get')
+    .mockImplementation(() => {
+      throw new DOMException('Blocked', 'SecurityError');
+    });
+  try {
+    window.dispatchEvent(new StorageEvent('storage', { key: null }));
+    expect(error).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+  } finally {
+    getter.mockRestore();
+    unsubscribe();
+    window.removeEventListener('error', error);
+  }
+});
