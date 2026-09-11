@@ -23959,6 +23959,7 @@
     "schedule_group_search": "Tìm nhóm",
     "schedule_groups_empty": "Không có nhóm đang hoạt động trong không gian làm việc này. Tạo hoặc khôi phục nhóm để quản lý lịch.",
     "schedule_groups_no_matches": "Không tìm thấy nhóm phù hợp. Thử tên khác.",
+    "schedule_groups_no_matches_selected": "Không có nhóm phù hợp. Nhóm đang chọn được giữ nguyên.",
     "schedule_no_upcoming": "Không có lịch sắp tới",
     "schedule_upcoming_count": "{count} lịch sắp tới",
     "schedule_will_run_until": "Lịch trình sẽ chạy cho đến",

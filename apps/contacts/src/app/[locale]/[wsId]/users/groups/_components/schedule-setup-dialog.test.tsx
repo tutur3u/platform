@@ -168,6 +168,26 @@ describe('ScheduleSetupDialog', () => {
     await screen.findByRole('option', { name: 'Physics B2' });
   });
 
+  it('explains that a nonmatching search preserves the selected group', async () => {
+    listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });
+    renderDialog(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Manage schedule' }));
+    await screen.findByRole('option', { name: 'Physics B2' });
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'schedule_group_search' }),
+      { target: { value: 'unmatched' } }
+    );
+    expect(
+      screen.getByText('schedule_groups_no_matches_selected')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Group' })).toHaveValue(
+      '00000000-0000-4000-8000-000000000101'
+    );
+    expect(
+      screen.queryByRole('option', { name: 'Physics B2' })
+    ).not.toBeInTheDocument();
+  });
+
   it('retries only the schedule when the group is fixed', async () => {
     listSessions.mockRejectedValueOnce(new Error('offline'));
     listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });

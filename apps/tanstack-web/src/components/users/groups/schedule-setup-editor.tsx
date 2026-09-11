@@ -97,9 +97,11 @@ export function ScheduleSetupEditor({
               <option key={group.id} value={group.id}>{group.name}</option>
             ))}
           </select>
-          {!isLoading && !isError && visibleGroups.length === 0 && (
+          {!isLoading && !isError && filteredGroups.length === 0 && (
             <p role="status" className="text-muted-foreground text-sm">
-              {t(groups.length === 0 ? 'schedule_groups_empty' : 'schedule_groups_no_matches')}
+              {t(groups.length === 0 ? 'schedule_groups_empty' : groupId
+                      ? 'schedule_groups_no_matches_selected'
+                      : 'schedule_groups_no_matches')}
             </p>
           )}
         </div>
