@@ -6,6 +6,7 @@ import { Miniflare } from 'miniflare';
 import { verifyDirectory } from './verify-directory.mjs';
 import { verifyLearning } from './verify-learning.mjs';
 import { verifyShowcase } from './verify-showcase.mjs';
+import { verifyTeamConcurrency } from './verify-team-concurrency.mjs';
 
 const workerDir =
   process.env.COLAB_TEST_WORKER_DIR ?? '/private/tmp/colab-worker';
@@ -126,6 +127,7 @@ try {
     maxUsers: 4,
     teamCount: 2,
   };
+  await verifyTeamConcurrency(request, owner);
   const denied = await request('/rooms', alice, create);
   assert.equal(denied.status, 403, await denied.text());
   assert.equal(
