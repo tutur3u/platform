@@ -52,6 +52,7 @@ import { normalizeBoardText } from './board-text-utils';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { isKanbanColumnCollapsed } from './kanban/kanban-column-collapse';
 import { ListActions } from './list-actions';
+import { observeInitialTaskColumn } from './observe-initial-task-column';
 import { statusIcons } from './status-section';
 import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
 import {
@@ -330,17 +331,7 @@ export function BoardColumn({
 
     if (!el) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          loadColumnPage(0);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '200px' } // Pre-fetch slightly before visible
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
+    return observeInitialTaskColumn(el, () => loadColumnPage(0));
   }, [listState, loadColumnPage]);
 
   useEffect(() => {

@@ -3,7 +3,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Loader2, MoveRight } from '@tuturuuu/icons';
+import { MoveRight } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useTranslations } from 'next-intl';
@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { MeasuredTaskCard } from './task';
 import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
+import { TaskListLoadMore } from './task-list-load-more';
 
 const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
 const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
@@ -194,40 +195,6 @@ function TaskListContent({
         );
       })}
     </>
-  );
-}
-
-/** Sentinel element that triggers loading more items when scrolled into view */
-function LoadMoreSentinel({
-  onLoadMore,
-  isLoading,
-}: {
-  onLoadMore: () => void;
-  isLoading: boolean;
-}) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting && !isLoading) {
-          onLoadMore();
-        }
-      },
-      { rootMargin: '200px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [onLoadMore, isLoading]);
-
-  return (
-    <div ref={sentinelRef} className="flex justify-center py-2">
-      {isLoading && (
-        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-      )}
-    </div>
   );
 }
 
@@ -416,8 +383,9 @@ function VirtualizedTaskListInner({
   // Infinite scroll sentinel (rendered after tasks)
   const loadMoreSentinel =
     hasMore && onLoadMore ? (
-      <LoadMoreSentinel
+      <TaskListLoadMore
         onLoadMore={onLoadMore}
+        scrollRootRef={scrollRef}
         isLoading={isLoadingMore ?? false}
       />
     ) : null;
@@ -495,7 +463,6 @@ function VirtualizedTaskListInner({
               />
             </div>
           </div>
-          {loadMoreSentinel}
         </SortableContext>
       ) : (
         <SortableContext
@@ -524,9 +491,9 @@ function VirtualizedTaskListInner({
             taskOrder={tasks}
             readOnly={readOnly}
           />
-          {loadMoreSentinel}
         </SortableContext>
       )}
+      {loadMoreSentinel}
     </div>
   );
 }

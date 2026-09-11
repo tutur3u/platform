@@ -177,7 +177,7 @@ describe('BoardClient', () => {
     );
   });
 
-  it('refreshes board task cache without relationship summaries', async () => {
+  it('refreshes loaded lists without issuing a board-wide fetch', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -201,16 +201,20 @@ describe('BoardClient', () => {
       expect(getActiveBoardRefresh()).toBeInstanceOf(Function);
     });
 
+    const savedTasks = Array.from({ length: 120 }, (_, index) => ({
+      id: `task-${index}`,
+      list_id: 'list-1',
+      name: `Saved task ${index}`,
+    }));
+    queryClient.setQueryData(['tasks', 'board-1'], savedTasks);
+
     await act(async () => {
-      getActiveBoardRefresh()?.();
+      await getActiveBoardRefresh()?.();
     });
 
-    await waitFor(() => {
-      expect(listWorkspaceTasksMock).toHaveBeenCalledWith('board-ws-uuid', {
-        boardId: 'board-1',
-        includeRelationshipSummary: false,
-      });
-    });
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual(savedTasks);
+    expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
+    expect(revalidateLoadedListsMock).toHaveBeenCalled();
   });
 
   it('uses the shared task board loading state while the board query resolves', () => {

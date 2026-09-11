@@ -1,16 +1,14 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  getWorkspaceTaskBoard,
-  listWorkspaceTasks,
-} from '@tuturuuu/internal-api/tasks';
+import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
 import { useBoardRealtime } from '@tuturuuu/tasks-ui/hooks/useBoardRealtime';
 import type {
   Workspace,
   WorkspaceProductTier,
   WorkspaceTaskBoard,
 } from '@tuturuuu/types';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
@@ -115,15 +113,21 @@ export function BoardClient({
     [board]
   );
 
+  // Progressive per-list loading
+  const progressiveLoader = useProgressiveBoardLoader(
+    boardWorkspaceId,
+    boardId,
+    cachedSnapshot?.pagination
+  );
+
   // Tasks start empty and are populated progressively per-list.
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: async () => {
-      const result = await listWorkspaceTasks(boardWorkspaceId, {
-        boardId,
-        includeRelationshipSummary: false,
-      });
-      return result.tasks;
+      // This cache contains multiple independently paginated lists. A board-wide
+      // request returns only one page and must never replace the accumulated data.
+      await progressiveLoader.revalidateLoadedLists();
+      return queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
     },
     gcTime: 7 * 24 * 60 * 60_000,
     initialData: cachedSnapshot?.tasks ?? [],
@@ -132,13 +136,6 @@ export function BoardClient({
     refetchOnWindowFocus: false,
     enabled: !!boardWorkspaceId,
   });
-
-  // Progressive per-list loading
-  const progressiveLoader = useProgressiveBoardLoader(
-    boardWorkspaceId,
-    boardId,
-    cachedSnapshot?.pagination
-  );
 
   useEffect(() => {
     if (!board?.id) return;
@@ -224,11 +221,13 @@ export function BoardClient({
         );
       }
 
-      refreshes.push(
-        progressiveLoader.revalidateLoadedLists().catch(() => {
-          // Best effort: direct cache broadcasts still keep the visible board moving.
-        })
-      );
+      if (!invalidateTasks) {
+        refreshes.push(
+          progressiveLoader.revalidateLoadedLists().catch(() => {
+            // Relation broadcasts remain usable while the network is unavailable.
+          })
+        );
+      }
 
       if (options?.includeLists) {
         refreshes.push(

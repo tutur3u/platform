@@ -12,6 +12,7 @@ import { useProgressiveBoardLoader } from '../use-progressive-board-loader';
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceTasks: vi.fn(),
+  getWorkspaceTask: vi.fn().mockRejectedValue(new Error('Unavailable')),
 }));
 
 const cachedPagination: Record<string, ListPaginationState> = {
