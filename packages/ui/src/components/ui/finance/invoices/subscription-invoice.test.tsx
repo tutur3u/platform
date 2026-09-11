@@ -38,6 +38,12 @@ const testState = vi.hoisted(() => {
     productSelectionInjected: false,
     products: [product],
     productsError: null as Error | null,
+    userGroupsError: null as Error | null,
+    groupProductsError: null as Error | null,
+    contextError: null as Error | null,
+    refetchUserGroups: vi.fn(),
+    refetchGroupProducts: vi.fn(),
+    refetchContext: vi.fn(),
     refetchProducts: vi.fn(),
     refetchUsers: vi.fn(),
     selectedProducts: [{ inventory, product, quantity: 1 }],
@@ -184,7 +190,8 @@ vi.mock('./hooks', () => ({
   }),
   useMultiGroupProducts: () => ({
     data: [],
-    error: null,
+    error: testState.groupProductsError,
+    refetch: testState.refetchGroupProducts,
     isLoading: false,
   }),
   useProducts: () => ({
@@ -195,11 +202,14 @@ vi.mock('./hooks', () => ({
   }),
   useSubscriptionInvoiceContext: () => ({
     data: { attendance: [], latestInvoices: [] },
-    error: null,
+    error: testState.contextError,
+    refetch: testState.refetchContext,
     isLoading: false,
   }),
   useUserGroups: () => ({
     data: testState.userGroups,
+    error: testState.userGroupsError,
+    refetch: testState.refetchUserGroups,
     isLoading: false,
   }),
   useUserLinkedPromotions: () => ({ data: [] }),
@@ -278,6 +288,12 @@ describe('SubscriptionInvoice checkout defaults', () => {
     testState.useWallets.mockClear();
     testState.productSelectionInjected = false;
     testState.productsError = null;
+    testState.userGroupsError = null;
+    testState.groupProductsError = null;
+    testState.contextError = null;
+    testState.refetchUserGroups.mockClear();
+    testState.refetchGroupProducts.mockClear();
+    testState.refetchContext.mockClear();
     testState.refetchProducts.mockClear();
     testState.refetchUsers.mockClear();
     testState.month = '2026-07';
@@ -308,6 +324,29 @@ describe('SubscriptionInvoice checkout defaults', () => {
       expect(testState.InvoicePaymentSettings).toHaveBeenCalled()
     );
   });
+
+  it.each(['userGroupsError', 'groupProductsError', 'contextError'] as const)(
+    'recovers from a failed subscription %s read',
+    async (key) => {
+      testState[key] = new Error('Timed out');
+      const { rerender } = renderSubscriptionInvoice();
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'ws-invoices.load_failed'
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+      expect(testState.refetchUserGroups).toHaveBeenCalledOnce();
+      expect(testState.refetchGroupProducts).toHaveBeenCalledOnce();
+      expect(testState.refetchContext).toHaveBeenCalledOnce();
+      testState[key] = null;
+      rerender(
+        <SubscriptionInvoice wsId="ws-1" createMultipleInvoices={false} />
+      );
+      await waitFor(() =>
+        expect(testState.InvoicePaymentSettings).toHaveBeenCalled()
+      );
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    }
+  );
 
   it('preloads payment options from defaults and keeps default IDs while options load', async () => {
     const { rerender } = renderSubscriptionInvoice();

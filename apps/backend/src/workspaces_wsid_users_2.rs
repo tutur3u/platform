@@ -59,8 +59,8 @@ const DEFAULT_PAGE_SIZE: i64 = 50;
 const MAX_PAGE_SIZE: i64 = 200;
 // PostgREST applies the `order` query string to the RPC result set. Mirrors the
 // legacy `.order('full_name', { ascending: true, nullsFirst: false })` followed
-// by `.order('display_name', { ascending: true, nullsFirst: false })`.
-const ORDER: &str = "full_name.asc.nullslast,display_name.asc.nullslast";
+// by display_name (nulls last) and id (a unique pagination tie-breaker).
+const ORDER: &str = "full_name.asc.nullslast,display_name.asc.nullslast,id.asc";
 
 pub(crate) async fn handle_workspaces_wsid_users_2_route(
     config: &BackendConfig,

@@ -401,6 +401,7 @@ export function listMultiGroupProductsWithInternalApi(
       `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/linked-products?${searchParams.toString()}`,
       {
         cache: 'no-store',
+        signal: AbortSignal.timeout(15_000),
       }
     )
     .then((payload) => payload.items ?? []);

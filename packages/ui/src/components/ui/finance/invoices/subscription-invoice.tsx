@@ -108,7 +108,6 @@ export function SubscriptionInvoice({
   const queryClient = useQueryClient();
   const financeHref = useFinanceHref();
 
-  // URL state using nuqs
   const [selectedUserId, setSelectedUserId] = useQueryState('user_id', {
     defaultValue: '',
     shallow: false,
@@ -203,7 +202,6 @@ export function SubscriptionInvoice({
     [selectedGroupIds, blockedGroupIds]
   );
 
-  // State management
   const [selectedWalletId, setSelectedWalletId] = useState<string>(
     defaultWalletId || ''
   );
@@ -249,14 +247,16 @@ export function SubscriptionInvoice({
   // Track previous user ID to detect user changes (skip initial mount for reset)
   const prevUserIdRef = useRef<string | null>(null);
 
-  // Subscription-specific queries
-  const { data: userGroups = [], isLoading: userGroupsLoading } = useUserGroups(
-    wsId,
-    selectedUserId
-  );
+  const {
+    data: userGroups = [],
+    isLoading: userGroupsLoading,
+    error: userGroupsError,
+    refetch: refetchUserGroups,
+  } = useUserGroups(wsId, selectedUserId);
   const {
     data: groupProducts = [],
     error: groupProductsError,
+    refetch: refetchGroupProducts,
     isLoading: groupProductsLoading,
   } = useMultiGroupProducts(wsId, selectedGroupIds, {
     enabled: canReadGroupLinkedProducts,
@@ -322,6 +322,7 @@ export function SubscriptionInvoice({
     data: subscriptionInvoiceContext,
     isLoading: subscriptionInvoiceContextLoading,
     error: subscriptionInvoiceContextError,
+    refetch: refetchSubscriptionContext,
   } = useSubscriptionInvoiceContext(
     wsId,
     selectedUserId,
@@ -528,7 +529,6 @@ export function SubscriptionInvoice({
     return map;
   }, [referralDiscountRows]);
 
-  // Use hooks for logic
   useSubscriptionAutoSelection({
     enabled: true,
     selectedGroupIds,
@@ -881,6 +881,15 @@ export function SubscriptionInvoice({
   if (
     isLoadingData ||
     usersError ||
+    (selectedUserId && userGroupsError) ||
+    (hasSelectedGroups &&
+      canReadGroupLinkedProducts &&
+      groupProductsError &&
+      !isPermissionRequestError(groupProductsError)) ||
+    (selectedUserId &&
+      hasSelectedGroups &&
+      subscriptionInvoiceContextError &&
+      !isPermissionRequestError(subscriptionInvoiceContextError)) ||
     (canReadInvoiceProducts &&
       hasSelectedGroups &&
       productsError &&
@@ -888,15 +897,17 @@ export function SubscriptionInvoice({
   ) {
     return (
       <InvoiceDataState
-        loading={isLoadingData}
-        onRetry={() =>
-          void Promise.all([
-            refetchUsers(),
-            ...(canReadInvoiceProducts && hasSelectedGroups
-              ? [refetchProducts()]
-              : []),
-          ])
-        }
+        loading={isLoadingData || isLoadingSubscriptionData}
+        onRetry={() => {
+          void refetchUsers();
+          if (selectedUserId) void refetchUserGroups();
+          if (selectedUserId && hasSelectedGroups)
+            void refetchSubscriptionContext();
+          if (hasSelectedGroups && canReadGroupLinkedProducts)
+            void refetchGroupProducts();
+          if (canReadInvoiceProducts && hasSelectedGroups)
+            void refetchProducts();
+        }}
       />
     );
   }

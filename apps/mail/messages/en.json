@@ -630,9 +630,6 @@
     "rejecting": "Rejecting...",
     "title": "Join {workspace}"
   },
-  "ws-invoices": {
-    "load_failed": "Invoice data could not be loaded. Please try again."
-  },
   "ws-members": {
     "assign_invitation_role": "Assign role",
     "clear_all_roles": "Clear all",

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getWorkspaceUserWithInternalApi,
   listInvoiceProductsWithInternalApi,
+  listMultiGroupProductsWithInternalApi,
   listUserGroupsWithInternalApi,
   listWorkspaceUsersWithInternalApi,
 } from './internal-api';
@@ -94,6 +95,10 @@ describe('invoice startup request deadlines', () => {
       () => getWorkspaceUserWithInternalApi('ws-1', 'user-1'),
     ],
     ['customer groups', () => listUserGroupsWithInternalApi('ws-1', 'user-1')],
+    [
+      'group products',
+      () => listMultiGroupProductsWithInternalApi('ws-1', ['group-1']),
+    ],
   ])('aborts a stalled %s read', async (_name, load) => {
     const controller = new AbortController();
     const timeout = vi

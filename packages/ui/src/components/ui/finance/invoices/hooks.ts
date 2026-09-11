@@ -435,7 +435,7 @@ export const useSubscriptionInvoiceContext = (
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 3,
+    retry: false,
   });
 };
 
@@ -572,7 +572,7 @@ export const useMultiGroupProducts = (
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
-    retry: 3,
+    retry: false,
   });
 };
 

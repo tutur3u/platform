@@ -2310,9 +2310,6 @@
     "uses": "Lượt sử dụng",
     "view-users": "Xem người dùng"
   },
-  "ws-invoices": {
-    "load_failed": "Không thể tải dữ liệu hóa đơn. Vui lòng thử lại."
-  },
   "ws-members": {
     "active_members": "Đang hoạt động",
     "admin": "Quản trị viên",
