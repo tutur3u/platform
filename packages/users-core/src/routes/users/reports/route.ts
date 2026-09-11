@@ -144,14 +144,19 @@ export async function GET(request: Request, { params }: Params) {
                   p_group_ids: string[] | null;
                   p_search: string;
                   p_ws_id: string;
-                }
+                },
+                options: { count: 'exact' }
               ) => typeof fallbackSource
-            )('search_periodic_reports', {
-              p_cadence: parsed.data.cadence,
-              p_group_ids: accessibleGroupIds,
-              p_search: parsed.data.q,
-              p_ws_id: wsId,
-            })
+            )(
+              'search_periodic_reports',
+              {
+                p_cadence: parsed.data.cadence,
+                p_group_ids: accessibleGroupIds,
+                p_search: parsed.data.q,
+                p_ws_id: wsId,
+              },
+              { count: 'exact' }
+            )
           : fallbackSource;
 
       let query = source
