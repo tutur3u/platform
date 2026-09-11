@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(56);
+select plan(59);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -122,6 +122,9 @@ select matches((select last_delivery_error from private.external_user_monthly_re
 update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009106';
 update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009106';
 select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'blocked', 'reapproval cannot implicitly resend an unknown outcome');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'retry', false)->>'code')::int, 409, 'disabled gates reject an unknown-outcome retry');
+select matches((select last_error from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'Delivery outcome is unknown', 'disabled retry preserves the queue recovery marker');
+select matches((select last_delivery_error from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'Delivery outcome is unknown', 'disabled retry preserves the report recovery warning');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send', true)->>'code')::int, 409, 'send cannot clear an unknown delivery outcome');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'test', true)->>'code')::int, 409, 'test cannot clear an unknown delivery outcome');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 200, 'operator can explicitly retry a recovered abandoned delivery');

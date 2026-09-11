@@ -135,9 +135,9 @@ begin
   end if;
   if p_delivery_enabled is distinct from true then
     update private.external_user_monthly_reports set delivery_status = 'blocked',
-      last_delivery_error = 'Periodic report email delivery is disabled for this workspace.' where id = p_report_id;
+      last_delivery_error = case when queue.last_error = 'Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.' then queue.last_error else 'Periodic report email delivery is disabled for this workspace.' end where id = p_report_id;
     update private.user_report_email_queue set status = 'blocked',
-      last_error = 'Periodic report email delivery is disabled for this workspace.', updated_at = now()
+      last_error = case when last_error = 'Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.' then last_error else 'Periodic report email delivery is disabled for this workspace.' end, updated_at = now()
       where id = queue.id and status in ('failed', 'blocked');
     return jsonb_build_object('code', 409, 'message', 'Both workspace email gates must be enabled before periodic reports can send.');
   end if;
