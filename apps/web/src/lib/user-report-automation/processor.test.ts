@@ -468,6 +468,15 @@ describe('monthly AI generation recovery', () => {
     'resumes a %s report without creating a duplicate',
     async (status) => {
       const { client, writes } = fixture(status);
+      generateNarrative.mockImplementation(async () => {
+        expect(
+          writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
+        ).toMatchObject({
+          generation_status: 'generating',
+          updated_at: expect.any(String),
+        });
+        return { content: 'Progress', feedback: 'Practice', title: 'Monthly' };
+      });
       await processPeriodicReportAutomation(client as never, 'worker');
       expect(generateNarrative).toHaveBeenCalledOnce();
       expect(

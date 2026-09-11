@@ -191,7 +191,15 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
       const userName = user.display_name ?? user.full_name ?? 'Member';
       const title = `${run.cadence[0]?.toUpperCase()}${run.cadence.slice(1)} report · ${userName}`;
       const created = existing.data
-        ? { data: existing.data, error: null }
+        ? await privateDb
+            .from('external_user_monthly_reports')
+            .update({
+              generation_status: 'generating',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.data.id)
+            .select('id')
+            .single()
         : await privateDb
             .from('external_user_monthly_reports')
             .insert({
