@@ -280,7 +280,10 @@ export function memberOf(
     'not_invited',
     403
   );
-  const effective = { ...member, admin: member.admin && staff(identity) };
+  const effective = {
+    ...member,
+    admin: (member.admin || member.id === room.ownerId) && staff(identity),
+  };
   requireRule(room.mode !== 'private' || effective.admin, 'private_room', 403);
   return effective;
 }

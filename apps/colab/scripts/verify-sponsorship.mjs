@@ -4,8 +4,7 @@ import { Miniflare } from 'miniflare';
 
 const secret = 'isolated-test-session-not-for-production';
 const workerDir =
-  process.env.COLAB_TEST_WORKER_DIR ??
-  '/private/tmp/colab-rise-learning-worker';
+  process.env.COLAB_TEST_WORKER_DIR ?? '/private/tmp/colab-worker';
 let proofs = 0;
 const mf = new Miniflare({
   modules: true,

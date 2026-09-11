@@ -20,9 +20,11 @@ export async function reviewPrompt(
     { prompt },
     'prompt_review'
   );
-  const bounded = (value: unknown, max: number) => {
+  const bounded = (value: unknown, max: number, allowEmpty = false) => {
     requireRule(
-      typeof value === 'string' && value.length <= max,
+      typeof value === 'string' &&
+        value.length <= max &&
+        (allowEmpty || value.trim().length > 0),
       'ai_invalid_output',
       502
     );
@@ -43,7 +45,7 @@ export async function reviewPrompt(
     sections: promptFrameworks[framework].map((id) => {
       const section = raw.find((item) => item && item.id === id);
       requireRule(section, 'ai_invalid_output', 502);
-      const quote = bounded(section.quote, 2000);
+      const quote = bounded(section.quote, 2000, true);
       requireRule(!quote || prompt.includes(quote), 'ai_invalid_output', 502);
       return {
         id,

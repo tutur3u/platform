@@ -17,6 +17,35 @@ const context = (): SponsorshipContext => ({
 });
 afterEach(() => vi.unstubAllGlobals());
 describe('sponsored model transport', () => {
+  it.each(['transport', 'json'])(
+    'maps %s failures to service unavailable',
+    async (failure) => {
+      vi.stubGlobal(
+        'fetch',
+        failure === 'transport'
+          ? vi.fn().mockRejectedValue(new Error('timeout'))
+          : vi.fn().mockResolvedValue(
+              new Response('{broken', {
+                headers: {
+                  'x-colab-sponsor-workspace':
+                    '00000000-0000-0000-0000-000000000000',
+                },
+              })
+            )
+      );
+      await expect(
+        sponsoredGeneration(
+          { COLAB_AI_API_KEY: 'test-only-key', sponsorship: context() } as Env,
+          'Instructions',
+          {},
+          'generation'
+        )
+      ).rejects.toMatchObject({
+        message: 'sponsorship_unavailable',
+        status: 503,
+      });
+    }
+  );
   it('records confirmed root credit receipts and sends full attribution', async () => {
     const fetcher = vi.fn().mockResolvedValue(
       Response.json(
@@ -73,7 +102,17 @@ describe('sponsored model transport', () => {
   it('rejects missing credit receipt proof', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(Response.json({ choices: [] }))
+      vi.fn().mockResolvedValue(
+        Response.json(
+          { id: 'request', choices: [] },
+          {
+            headers: {
+              'x-colab-sponsor-workspace':
+                '00000000-0000-0000-0000-000000000000',
+            },
+          }
+        )
+      )
     );
     await expect(
       sponsoredGeneration(

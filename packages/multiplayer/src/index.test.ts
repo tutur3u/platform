@@ -469,6 +469,23 @@ describe('server-authoritative room policy', () => {
     );
     expect(r.scenario.id).toBe('duplicate-title');
   });
+  it('restores a legacy staff owner from live verified identity only', () => {
+    const r = room();
+    r.members.find((member) => member.id === owner.id)!.email =
+      'stale@example.com';
+    normalizeRoom(r);
+    expect(projectRoom(r, owner, [], now).self.admin).toBe(true);
+    expect(() =>
+      mutateRoom(
+        r,
+        { ...owner, email: 'external@example.com' },
+        { action: 'showcase', enabled: true },
+        now
+      )
+    ).toThrow('admin_only');
+    mutateRoom(r, owner, { action: 'showcase', enabled: true }, now);
+    expect(r.showcase).toBe(true);
+  });
   it('shares teams by default and filters them immediately when an admin disables showcase', () => {
     const r = room();
     joinRoom(r, alice, 'team-1', false, now);
@@ -530,17 +547,21 @@ describe('server-authoritative room policy', () => {
   });
   it('checks delegation, owner protection, read-only and private access', () => {
     const r = room();
-    const colleague = { ...alice, email: 'colleague@tuturuuu.com' };
+    const colleague = {
+      ...alice,
+      id: 'colleague',
+      email: 'colleague@tuturuuu.com',
+    };
     r.invites.push(colleague.email);
     joinRoom(r, colleague, 'team-1', false, now);
     joinRoom(r, bob, 'team-2', false, now);
     expect(() =>
-      mutateRoom(r, alice, { action: 'showcase', enabled: true }, now)
+      mutateRoom(r, colleague, { action: 'showcase', enabled: true }, now)
     ).toThrow('admin_only');
     mutateRoom(
       r,
       owner,
-      { action: 'admin', memberId: alice.id, enabled: true },
+      { action: 'admin', memberId: colleague.id, enabled: true },
       now
     );
     expect(() =>

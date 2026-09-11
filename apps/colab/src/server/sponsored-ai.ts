@@ -62,7 +62,10 @@ export async function sponsoredGeneration(
     body,
     redirect: 'manual',
     signal: AbortSignal.timeout(60_000),
+  }).catch(() => {
+    requireRule(false, 'sponsorship_unavailable', 503);
   });
+  requireRule(response, 'sponsorship_unavailable', 503);
   requireRule(
     response.ok,
     response.status === 402
@@ -76,11 +79,18 @@ export async function sponsoredGeneration(
     'sponsorship_unavailable',
     503
   );
-  const result = (await response.json()) as {
+  const result = (await response.json().catch(() => {
+    requireRule(false, 'sponsorship_unavailable', 503);
+  })) as {
     id?: string;
     choices?: { message?: { content?: unknown } }[];
     tuturuuu?: { run_id?: string; billing?: { billedCredits?: number } };
   };
+  requireRule(
+    result && typeof result === 'object',
+    'sponsorship_unavailable',
+    503
+  );
   const requestId = response.headers.get('x-request-id') ?? result.id;
   const credits = result.tuturuuu?.billing?.billedCredits;
   requireRule(

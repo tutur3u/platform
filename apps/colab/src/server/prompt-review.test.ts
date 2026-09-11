@@ -15,6 +15,22 @@ const environment = (value: unknown) =>
     AI: { run: vi.fn().mockResolvedValue({ response: JSON.stringify(value) }) },
   }) as unknown as Env;
 describe('AI prompt review', () => {
+  it.each(['summary', 'explanation', 'improvement'])(
+    'rejects blank %s',
+    async (field) => {
+      const value = {
+        summary: 'Review',
+        sections: sections.map((section) => ({
+          ...section,
+          ...(field !== 'summary' ? { [field]: '   ' } : {}),
+        })),
+      };
+      if (field === 'summary') value.summary = '   ';
+      await expect(
+        reviewPrompt(environment(value), prompt, 1, 'rise', 'en')
+      ).rejects.toThrow('ai_invalid_output');
+    }
+  );
   it('returns shared, revision-bound framework explanations', async () => {
     const review = await reviewPrompt(
       environment({ summary: 'Good evidence habit.', sections }),

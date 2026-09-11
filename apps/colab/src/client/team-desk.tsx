@@ -159,7 +159,7 @@ export function TeamDesk({
           <pre className="readonly-prompt">{team.prompt || c.emptyPrompt}</pre>
         )}
         <PromptAnalysis
-          prompt={draft}
+          prompt={writable ? draft : team.prompt}
           onAdd={
             writable
               ? (text) => setTeamDraft(`${draft.trim()}\n\n${text}`.trim())
@@ -169,7 +169,8 @@ export function TeamDesk({
         <PromptCoach
           team={team}
           writable={writable}
-          changed={changed}
+          changed={writable && changed}
+          editDisabled={busy || stale}
           disabled={
             busy ||
             stale ||

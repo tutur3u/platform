@@ -8,6 +8,7 @@ import { SelectField } from './select-field';
 export function PromptCoach({
   team,
   disabled,
+  editDisabled,
   writable,
   changed,
   action,
@@ -15,6 +16,7 @@ export function PromptCoach({
 }: {
   team: Team;
   disabled: boolean;
+  editDisabled: boolean;
   writable: boolean;
   changed: boolean;
   action: (body: Record<string, unknown>, route?: string) => Promise<void>;
@@ -84,7 +86,7 @@ export function PromptCoach({
                     variant="outline"
                     size="sm"
                     disabled={
-                      disabled ||
+                      editDisabled ||
                       Boolean(stale) ||
                       team.prompt.length + section.improvement.length + 2 >
                         12000

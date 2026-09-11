@@ -5,7 +5,7 @@ import { useCopy } from './i18n';
 import { SelectField } from './select-field';
 
 const clues: Record<string, RegExp> = {
-  role: /\b(role|audience|readers|you are|act as|students)\b|vai trò|người đọc|bạn là|sinh viên/iu,
+  role: /\b(role|you are|act as)\b|vai trò|bạn là/iu,
   inputs:
     /\b(source|evidence|approved|verify|read|context)\b|nguồn|bằng chứng|đã duyệt|kiểm chứng|dữ kiện/iu,
   steps:
