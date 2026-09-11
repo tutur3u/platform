@@ -9,13 +9,8 @@ import {
 import type { WorkspaceUserGroupScheduleGroup } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+import { Input } from '@tuturuuu/ui/input';
+import { useId, useState } from 'react';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { FrequencyUpdateFields } from './frequency-update-fields';
@@ -68,25 +63,47 @@ export function ScheduleSetupEditor({
   updateDraft,
 }: ScheduleSetupEditorProps) {
   const t = useTranslations('ws-user-group-schedule');
+  const groupInputId = useId();
+  const [groupSearch, setGroupSearch] = useState('');
+  const filteredGroups = groups.filter((group) =>
+    group.name.toLocaleLowerCase().includes(groupSearch.trim().toLocaleLowerCase())
+  );
+  const filteredIds = new Set(filteredGroups.map((group) => group.id));
+  const visibleGroups = groups.filter(
+    (group) => group.id === groupId || filteredIds.has(group.id)
+  );
   const hasRecurringSchedule = seriesOptions.length > 0;
 
   return (
     <div className="space-y-5">
       {canChooseGroup && (
         <div className="space-y-2">
-          <Label>{t('group')}</Label>
-          <Select value={groupId} onValueChange={onGroupChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t('group')} />
-            </SelectTrigger>
-            <SelectContent>
-              {groups.map((group) => (
-                <SelectItem key={group.id} value={group.id}>
-                  {group.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor={groupInputId}>{t('group')}</Label>
+          <Input
+            aria-label={t('schedule_group_search')}
+            placeholder={t('schedule_group_search')}
+            value={groupSearch}
+            onChange={(event) => setGroupSearch(event.target.value)}
+          />
+          <select
+            id={groupInputId}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            value={groupId}
+            disabled={isLoading || groups.length === 0}
+            onChange={(event) => onGroupChange(event.target.value)}
+          >
+            <option value="" disabled>{t('group')}</option>
+            {visibleGroups.map((group) => (
+              <option key={group.id} value={group.id}>{group.name}</option>
+            ))}
+          </select>
+          {!isLoading && !isError && filteredGroups.length === 0 && (
+            <p role="status" className="text-muted-foreground text-sm">
+              {t(groups.length === 0 ? 'schedule_groups_empty' : groupId
+                      ? 'schedule_groups_no_matches_selected'
+                      : 'schedule_groups_no_matches')}
+            </p>
+          )}
         </div>
       )}
 
@@ -110,7 +127,7 @@ export function ScheduleSetupEditor({
             {t('schedule_setup_retry')}
           </Button>
         </div>
-      ) : (
+      ) : !groupId ? null : (
         <>
           <section
             className="space-y-2"
