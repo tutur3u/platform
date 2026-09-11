@@ -22,7 +22,9 @@ export function PeriodicStatusBadge({
   const Icon = appearance.icon;
   return (
     <Badge variant="outline" className={appearance.className}>
-      <Icon className="mr-1 size-3" />
+      <Icon
+        className={`mr-1 size-3 ${'iconClassName' in appearance ? (appearance.iconClassName ?? '') : ''}`}
+      />
       {delivery === 'draft'
         ? t('not_sent')
         : t(

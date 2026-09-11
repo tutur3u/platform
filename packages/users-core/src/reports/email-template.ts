@@ -92,7 +92,7 @@ export function renderReportEmail(
   const body = [
     section(labels.report, intro ? dynamicText(intro) : identity, '#f8fafc'),
     report.score !== null && Number.isFinite(report.score)
-      ? `<tr><td style="padding-bottom:20px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="60%" valign="top" style="padding:20px;border:1px solid #a5f3fc;border-radius:24px;background:#ecfeff">${heading(contentLabel)}<div style="font-size:15px;line-height:1.8">${text(report.content?.split('\n').find((line) => line.trim()) || '')}</div></td><td width="12"></td><td valign="top" style="padding:20px;border:1px solid #fde68a;border-radius:24px;background:#fffbeb">${heading(scoreLabel)}<strong style="font-size:36px;line-height:1.2;font-variant-numeric:tabular-nums">${report.score.toFixed(1)}</strong></td></tr></table></td></tr>`
+      ? `<tr><td style="padding-bottom:20px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td width="60%" valign="top" style="padding:20px;border:1px solid #a5f3fc;border-radius:24px;background:#ecfeff">${heading(contentLabel)}<div style="font-size:15px;line-height:1.8">${text(vietnamese ? 'Nội dung học tập và tiến bộ trong tháng được trình bày bên dưới.' : 'Learning content and progress are organized below.')}</div></td><td width="12"></td><td valign="top" style="padding:20px;border:1px solid #fde68a;border-radius:24px;background:#fffbeb">${heading(scoreLabel)}<strong style="font-size:36px;line-height:1.2;font-variant-numeric:tabular-nums">${report.score.toFixed(1)}</strong></td></tr></table></td></tr>`
       : '',
     section(contentLabel, text(report.content)),
     report.feedback?.trim()

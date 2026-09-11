@@ -70,6 +70,9 @@ export default function PeriodicReportsPanel({
   const queryClient = useQueryClient();
   const [cadence, setCadence] = useState<PeriodicReportCadence>('monthly');
   const [query, setQuery] = useState('');
+  const [generationStatus, setGenerationStatus] = useState<'all' | 'draft'>(
+    'all'
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [approvalStatus, setApprovalStatus] =
     useState<PeriodicApprovalFilter>('all');
@@ -93,6 +96,7 @@ export default function PeriodicReportsPanel({
     queryKey: [
       'periodic-reports',
       wsId,
+      generationStatus,
       cadence,
       debouncedQuery,
       approvalStatus,
@@ -104,6 +108,8 @@ export default function PeriodicReportsPanel({
       listPeriodicReports(wsId, {
         approvalStatus: approvalStatus === 'all' ? undefined : approvalStatus,
         cadence,
+        generationStatus:
+          generationStatus === 'all' ? undefined : generationStatus,
         deliveryStatus: deliveryStatus === 'all' ? undefined : deliveryStatus,
         page: pageParam,
         pageSize: 20,
@@ -193,10 +199,12 @@ export default function PeriodicReportsPanel({
     <div className="space-y-4">
       <PeriodicEmailReadiness wsId={wsId} />
       <PeriodicStatusSummary
+        generation={generationStatus}
         counts={counts}
         approval={approvalStatus}
         delivery={deliveryStatus}
-        onChange={(approval, delivery) => {
+        onChange={(approval, delivery, generation = 'all') => {
+          setGenerationStatus(generation);
           setApprovalStatus(approval);
           setDeliveryStatus(delivery);
         }}
@@ -236,6 +244,7 @@ export default function PeriodicReportsPanel({
         onReset={() => {
           setApprovalStatus('all');
           setDeliveryStatus('all');
+          setGenerationStatus('all');
         }}
         onSortChange={(nextSortBy, nextDirection) => {
           setSortBy(nextSortBy);

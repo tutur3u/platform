@@ -5251,20 +5251,20 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/reports:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/users/reports:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/users/reports",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts",
       "kind": "api",
       "methods": ["PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/users/reports/:reportId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },

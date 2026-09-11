@@ -1,6 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { PeriodicReport } from '@tuturuuu/internal-api/reports';
+import type {
+  PeriodicReport,
+  PeriodicReportEmailPreview,
+} from '@tuturuuu/internal-api/reports';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PeriodicReportPreviewDialog } from './periodic-report-preview-dialog';
 
@@ -22,7 +25,10 @@ const report = {
   report_approval_status: 'APPROVED',
   delivery_status: 'sent',
 } as PeriodicReport;
-function mount(selected: PeriodicReport | null = report) {
+function mount(
+  selected: PeriodicReport | null = report,
+  emailPreview?: PeriodicReportEmailPreview
+) {
   return render(
     <QueryClientProvider
       client={
@@ -32,6 +38,7 @@ function mount(selected: PeriodicReport | null = report) {
       <PeriodicReportPreviewDialog
         wsId="workspace"
         report={selected}
+        emailPreview={emailPreview}
         onOpenChange={() => {}}
       />
     </QueryClientProvider>
@@ -66,6 +73,18 @@ describe('monthly recipient preview', () => {
     mount();
     fireEvent.click(await screen.findByRole('button', { name: 'retry' }));
     expect(await screen.findByTitle('preview')).toBeInTheDocument();
+  });
+  it('retains a supplied authorized preview without a second read', async () => {
+    mount(report, {
+      html: '<html>Supplied preview</html>',
+      title: 'August',
+      recipient: 'learner@example.com',
+    } as PeriodicReportEmailPreview);
+    expect(await screen.findByTitle('preview')).toHaveAttribute(
+      'srcdoc',
+      '<html>Supplied preview</html>'
+    );
+    expect(load).not.toHaveBeenCalled();
   });
   it('does not request a report when closed', () => {
     mount(null);

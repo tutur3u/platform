@@ -437,6 +437,10 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
     const unsubscribeUrl = createEmailUnsubscribeUrl(recipient);
     const service = await EmailService.fromWorkspace(row.ws_id);
     if (!(await hasEmailLease(privateDb, row))) return;
+    const subject =
+      row.delivery_kind === 'test'
+        ? `[TEST] ${reportResult.data.title}`
+        : reportResult.data.title;
     const sendResult = await service.send({
       content: {
         headers: {
@@ -444,7 +448,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
         html,
-        subject: reportResult.data.title,
+        subject,
       },
       metadata: {
         entityId: row.report_id,
@@ -482,7 +486,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       source_email:
         sourceResult.data?.source_email ?? 'notifications@tuturuuu.com',
       source_name: sourceResult.data?.source_name ?? 'Tuturuuu',
-      subject: reportResult.data.title,
+      subject,
       ws_id: row.ws_id,
     });
     if (auditResult.error) {

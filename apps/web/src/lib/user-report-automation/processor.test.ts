@@ -546,6 +546,12 @@ describe('periodic report email delivery', () => {
       await processPeriodicReportAutomation(client as never, 'worker-1');
 
       expect(send).toHaveBeenCalledOnce();
+      expect(send.mock.calls[0]?.[0].content.subject).toBe(
+        `[TEST] ${APPROVED_REPORT.title}`
+      );
+      expect(writesFor(writes, 'sent_emails')[0]?.payload.subject).toBe(
+        `[TEST] ${APPROVED_REPORT.title}`
+      );
       const reportUpdate = writesFor(
         writes,
         'external_user_monthly_reports'

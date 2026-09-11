@@ -146,6 +146,7 @@ export interface PeriodicReportCounts {
 }
 
 export interface ListPeriodicReportsParams {
+  generationStatus?: 'draft' | 'generating' | 'ready' | 'failed';
   approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
   cadence?: PeriodicReportCadence;
   deliveryStatus?: PeriodicReportDeliveryStatus;
@@ -366,6 +367,7 @@ export async function listPeriodicReports(
       query: {
         approvalStatus: params.approvalStatus,
         cadence: params.cadence,
+        generationStatus: params.generationStatus,
         deliveryStatus: params.deliveryStatus,
         page: params.page,
         pageSize: params.pageSize,
@@ -547,9 +549,12 @@ export interface PeriodicReportEmailPreview {
 
 export async function getPeriodicReportEmailPreview(
   wsId: string,
-  reportId: string
+  reportId: string,
+  options?: InternalApiClientOptions
 ) {
-  const preview = await getInternalApiClient().json<PeriodicReportEmailPreview>(
+  const preview = await getInternalApiClient(
+    options
+  ).json<PeriodicReportEmailPreview>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/users/reports/${encodePathSegment(reportId)}/delivery?preview=true`,
     { cache: 'no-store' }
   );

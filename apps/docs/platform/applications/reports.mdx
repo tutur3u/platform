@@ -224,7 +224,7 @@ Manual delivery requests lock the report before the queue and update both states
 During the app-before-migration deployment window, delivery requests return a temporary 503 with `Retry-After`, and enabling automatic sending waits until the new database function is available. Disabling automatic sending remains available throughout rollout.
 
 
-### Monthly email previews and delivery status
+## Monthly email previews and delivery status
 
 The Reports tab uses the same approval and email badge vocabulary as daily
 reports. Click a status total to filter; use the delivery filters for queued,
@@ -249,4 +249,6 @@ queueing mail. Sending still requires send permission, approval, and enabled
 workspace gates. Template-loading failures fail delivery rather than silently
 sending a simplified report. Delivery diagnostics show the actual recipient,
 acceptance timestamp, retries, and attempt history; successful test sends remain
-explicitly labeled tests and do not mark the report as sent to its real audience.
+explicitly labelled tests and do not mark the report as sent to its real audience.
+
+An active delivery locks the report content and approval until the worker finishes. Edits, deletion, or approval changes during that window return a conflict; retry once delivery has finished. This prevents an approved report from changing between the final approval check and sending.

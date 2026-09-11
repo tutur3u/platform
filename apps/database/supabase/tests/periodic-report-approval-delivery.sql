@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(59);
+select plan(65);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -133,6 +133,10 @@ select is((select status from private.user_report_email_queue where report_id = 
 
 -- Completion is fenced by the claimed owner and commits queue/report together.
 select count(*) from private.claim_periodic_report_emails('final-worker');
+select throws_ok($lock$update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_at = null, approved_by = null where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes approval');
+select throws_ok($lock$update private.external_user_monthly_reports set content = 'Changed' where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes content');
+select throws_ok($lock$update private.external_user_monthly_reports set score = 1 where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes score');
+select throws_ok($lock$delete from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes deletion');
 select is((select private.finish_periodic_report_email(id, 'old-worker', locked_at, 'sent', recipient_email, p_sent_at => now()) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), false, 'old worker cannot complete a newer lease');
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'processing', 'lost completion leaves the active report untouched');
 select is((select private.finish_periodic_report_email(id, locked_by, locked_at, 'sent', recipient_email, p_sent_at => now()) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), true, 'lease owner completes delivery');
@@ -140,6 +144,9 @@ select is((select delivery_status from private.external_user_monthly_reports whe
 select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'sent', 'completion updates queue status atomically');
 select is((select private.finish_periodic_report_email(id, 'final-worker', now(), 'failed', recipient_email) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), false, 'late failure cannot overwrite completed delivery');
 select ok(not has_function_privilege('authenticated', 'private.finish_periodic_report_email(uuid,text,timestamptz,text,text,text,timestamptz,text,timestamptz)', 'execute'), 'direct completion RPC is restricted to the server');
+
+select lives_ok($lock$update private.external_user_monthly_reports set content = 'Revised after delivery' where id = '40000000-0000-4000-8000-000000009106'$lock$, 'content can change after completion');
+select lives_ok($lock$update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_at = null, approved_by = null where id = '40000000-0000-4000-8000-000000009106'$lock$, 'approval can change after completion');
 
 select * from finish();
 rollback;

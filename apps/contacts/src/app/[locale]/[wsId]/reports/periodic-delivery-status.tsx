@@ -2,7 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getPeriodicReportDeliveryDiagnostics } from '@tuturuuu/internal-api/reports';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useFormatter, useTranslations } from 'next-intl';
 import { PeriodicStatusBadge } from './periodic-status-badge';
@@ -43,13 +42,7 @@ export function PeriodicDeliveryStatus({
     <section className="space-y-3" aria-label={t('delivery')}>
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-medium text-sm">{t('delivery')}</h3>
-        <PeriodicStatusBadge
-          delivery={
-            queue?.delivery_kind === 'test'
-              ? queue.status
-              : report.delivery_status
-          }
-        />
+        <PeriodicStatusBadge delivery={report.delivery_status} />
       </div>
       <p className="break-words text-xs">
         {t('delivery_recipient', {
@@ -59,13 +52,21 @@ export function PeriodicDeliveryStatus({
       </p>
       <p className="text-muted-foreground text-xs">{t('sent_explanation')}</p>
       {queue?.delivery_kind === 'test' && (
-        <Badge variant="secondary">{t('test_send')}</Badge>
+        <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-medium text-xs">{t('test_send')}</span>
+            <PeriodicStatusBadge delivery={queue.status} />
+          </div>
+          {queue.sent_at && (
+            <p className="text-xs">
+              {t('test_sent_at', { date: date(queue.sent_at) })}
+            </p>
+          )}
+        </div>
       )}
-      {(queue?.sent_at || report.delivered_at) && (
+      {report.delivered_at && (
         <p className="text-xs">
-          {t('delivery_sent_at', {
-            date: date(queue?.sent_at ?? report.delivered_at!),
-          })}
+          {t('delivery_sent_at', { date: date(report.delivered_at) })}
         </p>
       )}
       {queue && (
@@ -78,9 +79,9 @@ export function PeriodicDeliveryStatus({
           {t('delivery_next_attempt', { date: date(queue.next_attempt_at) })}
         </p>
       )}
-      {(queue?.last_error || report.last_delivery_error) && (
+      {(report.last_delivery_error || queue?.last_error) && (
         <p className="break-words text-destructive text-xs">
-          {queue?.last_error || report.last_delivery_error}
+          {report.last_delivery_error || queue?.last_error}
         </p>
       )}
       {attempts.length > 0 && (

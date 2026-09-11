@@ -43,10 +43,11 @@ export function PeriodicReportPreviewDialog({
       report?.updated_at,
     ],
     queryFn: () => getPeriodicReportEmailPreview(wsId, report!.id),
-    enabled: Boolean(report),
+    enabled: Boolean(report) && !emailPreview,
     initialData: emailPreview ?? undefined,
     staleTime: 0,
   });
+  const previewData = emailPreview ?? preview.data;
   return (
     <Dialog open={Boolean(report)} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-dvh max-h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-[92dvh] sm:max-h-[calc(100dvh-1rem)] sm:w-[calc(100vw-1rem)] sm:max-w-7xl sm:rounded-xl">
@@ -64,14 +65,14 @@ export function PeriodicReportPreviewDialog({
             className="min-h-[55dvh] bg-muted/30 md:min-h-0"
             aria-label={t('preview')}
           >
-            {preview.isPending ? (
+            {!emailPreview && preview.isPending ? (
               <div className="space-y-4 p-6">
                 <Skeleton className="h-16 w-2/3" />
                 <Skeleton className="h-72 w-full" />
               </div>
-            ) : preview.isError ? (
+            ) : !emailPreview && preview.isError ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 p-6">
-                <p>{t('load_error')}</p>
+                <p>{t('preview_load_error')}</p>
                 <Button
                   variant="outline"
                   onClick={() => void preview.refetch()}
@@ -79,10 +80,10 @@ export function PeriodicReportPreviewDialog({
                   {t('retry')}
                 </Button>
               </div>
-            ) : preview.data ? (
+            ) : previewData ? (
               <iframe
                 title={t('preview')}
-                srcDoc={preview.data.html}
+                srcDoc={previewData.html}
                 sandbox=""
                 referrerPolicy="no-referrer"
                 className="h-[65dvh] w-full border-0 bg-background md:h-full"

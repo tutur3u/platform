@@ -78,9 +78,9 @@ describe('monthly delivery status', () => {
     renderStatus();
     expect(await screen.findByText('test_send')).toBeInTheDocument();
     expect(
-      screen.getByText('delivery_sent_at 2026-09-01T01:00:00.000Z')
+      screen.getByText('test_sent_at 2026-09-01T01:00:00.000Z')
     ).toBeInTheDocument();
-    expect(screen.queryByText('not_sent')).not.toBeInTheDocument();
+    expect(screen.getByText('not_sent')).toBeInTheDocument();
   });
   it('shows a missing address before any delivery attempt', async () => {
     load.mockResolvedValue({
@@ -108,10 +108,15 @@ describe('monthly delivery status', () => {
         last_delivery_error: 'Sender unavailable',
         delivered_at: null,
       },
-      queue: { ...data.queue, status: 'failed' },
+      queue: {
+        ...data.queue,
+        status: 'failed',
+        last_error: 'Outdated failure',
+      },
     });
     renderStatus();
     expect(await screen.findByText('Sender unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('Outdated failure')).not.toBeInTheDocument();
     expect(
       screen.getByText('delivery_next_attempt 2026-09-01T01:00:00.000Z')
     ).toBeInTheDocument();

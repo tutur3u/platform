@@ -86,7 +86,7 @@ export function PeriodicReportRow({
           <p className="text-muted-foreground text-xs">
             {report.period_start && report.period_end
               ? `${report.period_start} – ${report.period_end}`
-              : null}
+              : t('manual_report')}
           </p>
           {report.last_delivery_error ? (
             <p className="mt-1 line-clamp-1 text-destructive text-xs">

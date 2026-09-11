@@ -8,6 +8,10 @@ import {
 import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
 import { NextResponse } from 'next/server';
 import {
+  isReportDeliveryLocked,
+  REPORT_DELIVERY_LOCKED_MESSAGE,
+} from '../../../reports/delivery-lock';
+import {
   ApprovalMutationSchema,
   type ApprovalRouteActor,
   type ApprovalRouteParams,
@@ -358,6 +362,11 @@ export async function handlePutApprovalsRequest(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (isReportDeliveryLocked(error))
+      return NextResponse.json(
+        { message: REPORT_DELIVERY_LOCKED_MESSAGE },
+        { status: 409 }
+      );
     console.error('Error in Contacts approvals PUT:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

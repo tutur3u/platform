@@ -57,7 +57,7 @@ function database(missing = false, configError = false) {
   return { client: { from, schema: () => ({ from }) }, calls };
 }
 describe('workspace-scoped email preview', () => {
-  it('loads report and branding only from the authorized workspace', async () => {
+  it('applies explicit workspace and report filters to both queries', async () => {
     const { client, calls } = database();
     const preview = await loadReportEmailPreview(
       client as never,

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { MailCheck, MailWarning, Settings2 } from '@tuturuuu/icons';
 import { getPeriodicReportSchedules } from '@tuturuuu/internal-api/reports';
 import { Button } from '@tuturuuu/ui/button';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -13,7 +14,25 @@ export function PeriodicEmailReadiness({ wsId }: { wsId: string }) {
     queryFn: () => getPeriodicReportSchedules(wsId),
     staleTime: 15_000,
   });
-  if (!query.data) return null;
+  if (query.isPending) return <Skeleton className="h-11 w-full" />;
+  if (query.isError)
+    return (
+      <div
+        role="status"
+        className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
+      >
+        <p className="text-muted-foreground text-xs">
+          {t('readiness_unavailable')}
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void query.refetch()}
+        >
+          {t('retry')}
+        </Button>
+      </div>
+    );
   const delivery = query.data.emailDelivery;
   const Icon = delivery.ready ? MailCheck : MailWarning;
   return (

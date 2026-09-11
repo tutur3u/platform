@@ -2393,6 +2393,16 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Per-report delivery diagnostics, view-authorized GET preview=true with shared branded email HTML, send/test-send/retry/cancel actions, and atomic delivery guards remain on the live Next.js API. Preserve workspace-scoped template configuration, escaped substitutions, saved scores and no-store previews. Rust port pending."
+    },
+    "api:/api/v1/workspaces/:wsId/users/reports:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Generation-status filter for draft reports alongside approval and delivery filters. First-class Next.js route; Rust parity pending."
+    },
+    "api:/api/v1/workspaces/:wsId/users/reports/:reportId:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Report edit and delete return 409 while the delivery snapshot is locked by an active worker. First-class Next.js route; Rust parity pending."
     }
   }
 }

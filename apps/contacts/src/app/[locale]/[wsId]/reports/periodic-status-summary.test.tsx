@@ -27,10 +27,12 @@ describe('monthly status filters', () => {
       'true'
     );
     fireEvent.click(screen.getByRole('button', { name: 'approved 12' }));
-    expect(change).toHaveBeenLastCalledWith('APPROVED', 'all');
+    expect(change).toHaveBeenLastCalledWith('APPROVED', 'all', 'all');
     fireEvent.click(screen.getByRole('button', { name: 'status_sent 8' }));
-    expect(change).toHaveBeenLastCalledWith('all', 'sent');
+    expect(change).toHaveBeenLastCalledWith('all', 'sent', 'all');
+    fireEvent.click(screen.getByRole('button', { name: 'drafts 4' }));
+    expect(change).toHaveBeenLastCalledWith('all', 'all', 'draft');
     fireEvent.click(screen.getByRole('button', { name: 'total 20' }));
-    expect(change).toHaveBeenLastCalledWith('all', 'all');
+    expect(change).toHaveBeenLastCalledWith('all', 'all', 'all');
   });
 });

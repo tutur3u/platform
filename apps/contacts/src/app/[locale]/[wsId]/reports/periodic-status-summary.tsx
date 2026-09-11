@@ -17,17 +17,20 @@ import type {
 } from './periodic-reports-toolbar';
 
 export function PeriodicStatusSummary({
+  generation = 'all',
   counts,
   approval,
   delivery,
   onChange,
 }: {
+  generation?: 'all' | 'draft';
   counts?: PeriodicReportCounts;
   approval: PeriodicApprovalFilter;
   delivery: PeriodicDeliveryFilter;
   onChange: (
     approval: PeriodicApprovalFilter,
-    delivery: PeriodicDeliveryFilter
+    delivery: PeriodicDeliveryFilter,
+    generation?: 'all' | 'draft'
   ) => void;
 }) {
   const t = useTranslations('reports-hub');
@@ -35,6 +38,13 @@ export function PeriodicStatusSummary({
     {
       label: 'total',
       count: counts?.total,
+      approval: 'all',
+      delivery: 'all',
+      icon: FileText,
+    },
+    {
+      label: 'drafts',
+      count: counts?.draft,
       approval: 'all',
       delivery: 'all',
       icon: FileText,
@@ -77,18 +87,26 @@ export function PeriodicStatusSummary({
   ] as const;
   return (
     <section
-      className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6"
+      className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7"
       aria-label={t('report_status')}
     >
       {stages.map((stage) => {
         const active =
-          approval === stage.approval && delivery === stage.delivery;
+          approval === stage.approval &&
+          delivery === stage.delivery &&
+          generation === (stage.label === 'drafts' ? 'draft' : 'all');
         return (
           <button
             key={stage.label}
             type="button"
             aria-pressed={active}
-            onClick={() => onChange(stage.approval, stage.delivery)}
+            onClick={() =>
+              onChange(
+                stage.approval,
+                stage.delivery,
+                stage.label === 'drafts' ? 'draft' : 'all'
+              )
+            }
             className={cn(
               'flex items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               active
