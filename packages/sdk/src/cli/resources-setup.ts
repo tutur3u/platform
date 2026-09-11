@@ -9,7 +9,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { resourceShims } from './resources-command';
 import {
   atomicJson,
@@ -25,6 +25,23 @@ const start = '# >>> ttr resources >>>';
 const end = '# <<< ttr resources <<<';
 export const shellQuote = (value: string) =>
   `'${value.replaceAll("'", "'\\''")}'`;
+
+export function stableResourceEntry(entry: string) {
+  for (const store of ['.bun', '.pnpm']) {
+    const index = entry.indexOf(`/node_modules/${store}/`);
+    if (index < 0) continue;
+    const candidate = join(
+      entry.slice(0, index),
+      'node_modules/tuturuuu/dist/cli',
+      basename(entry)
+    );
+    // Keep the public package link, not the versioned store it resolves to.
+    // Verify its target so a different installation cannot redirect the shim.
+    if (existsSync(candidate) && canonical(candidate) === canonical(entry))
+      return candidate;
+  }
+  return entry;
+}
 
 export function removeResourceHook(content: string) {
   const begin = content.indexOf(start);
@@ -95,9 +112,11 @@ export async function setupResources(options: {
   }
   const shellFiles = resourceShellFiles(options.shell);
   const bin = join(options.home, 'bin');
-  const entry = join(
-    __dirname,
-    __filename.endsWith('.ts') ? 'resources-entry.ts' : 'resources-entry.js'
+  const entry = stableResourceEntry(
+    join(
+      __dirname,
+      __filename.endsWith('.ts') ? 'resources-entry.ts' : 'resources-entry.js'
+    )
   );
   const plan = {
     config,
@@ -184,6 +203,7 @@ export async function installResourceShims(
     __filename.endsWith('.ts') ? 'resources-entry.ts' : 'resources-entry.js'
   )
 ) {
+  entry = stableResourceEntry(entry);
   const bin = join(home, 'bin');
   await mkdir(bin, { recursive: true, mode: 0o700 });
   const launcher = (name: string) =>

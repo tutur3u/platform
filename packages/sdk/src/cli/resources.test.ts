@@ -1,5 +1,12 @@
 import { type ChildProcess, spawn } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -15,8 +22,10 @@ import {
   resourceScope,
 } from './resources-config';
 import {
+  installResourceShims,
   removeResourceHook,
   setupResources,
+  stableResourceEntry,
   uninstallResources,
 } from './resources-setup';
 
@@ -190,6 +199,57 @@ describe('resource policy', () => {
       JSON.parse(await readFile(join(home, 'config.json'), 'utf8')).enabled
     ).toBe(false);
   });
+  it.each(['.bun', '.pnpm'])(
+    'survives a %s package upgrade and removal of the old version',
+    async (store) => {
+      const home = await temporary();
+      const modules = join(home, 'node_modules');
+      const oldPackage = join(
+        modules,
+        store,
+        'tuturuuu@old/node_modules/tuturuuu'
+      );
+      const nextPackage = join(
+        modules,
+        store,
+        'tuturuuu@next/node_modules/tuturuuu'
+      );
+      for (const [path, version] of [
+        [oldPackage, 'old-runtime'],
+        [nextPackage, 'new-runtime'],
+      ]) {
+        await mkdir(join(path!, 'dist/cli'), { recursive: true });
+        await writeFile(
+          join(path!, 'dist/cli/resources-entry.js'),
+          `process.stdout.write(${JSON.stringify(version)});`
+        );
+      }
+      const alias = join(modules, 'tuturuuu');
+      await symlink(oldPackage, alias, 'dir');
+      const oldEntry = join(oldPackage, 'dist/cli/resources-entry.js');
+      const stableEntry = join(alias, 'dist/cli/resources-entry.js');
+      expect(stableResourceEntry(oldEntry)).toBe(stableEntry);
+      const bin = await installResourceShims(join(home, 'controls'), oldEntry);
+      await rm(alias);
+      await symlink(nextPackage, alias, 'dir');
+      expect(stableResourceEntry(oldEntry)).toBe(oldEntry);
+      await rm(oldPackage, { recursive: true });
+      const child = spawn(join(bin, 'bun'), ['--version'], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      children.push(child);
+      let output = '';
+      child.stdout.on('data', (chunk) => {
+        output += chunk;
+      });
+      const code = await new Promise((resolve, reject) => {
+        child.once('exit', resolve);
+        child.once('error', reject);
+      });
+      expect(code).toBe(0);
+      expect(output).toBe('new-runtime');
+    }
+  );
 });
 
 describe('resource admission', () => {
