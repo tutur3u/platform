@@ -107,6 +107,10 @@ begin
      or (queue.delivery_kind = 'send' and queue.sent_at is not null) then
     return jsonb_build_object('code', 409, 'message', 'Delivery is already active or sent.');
   end if;
+  if queue.last_error = 'Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.'
+     and p_action in ('send', 'test') then
+    return jsonb_build_object('code', 409, 'message', 'Check provider logs, then use Retry for this delivery with an unknown outcome.');
+  end if;
   if p_action = 'cancel' then
     if queue.id is null or queue.status not in ('queued', 'failed') then
       return jsonb_build_object('code', 409, 'message', 'No waiting delivery to cancel.');
@@ -177,6 +181,8 @@ set search_path = ''
 as $$
 declare
   stale_report_id uuid;
+  candidate_report_id uuid;
+  claimed_queue private.user_report_email_queue%rowtype;
   stale_queue private.user_report_email_queue%rowtype;
   recovery_error constant text := 'Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.';
 begin
@@ -208,27 +214,76 @@ begin
       values (stale_queue.id, 'blocked', p_now, recovery_error, stale_queue.provider_message_id);
   end loop;
 
-  return query
-  with candidates as (
-    select queue.id
-    from private.user_report_email_queue queue
-    where queue.status in ('queued', 'failed')
-      and queue.next_attempt_at <= p_now
+  -- Claim the report and queue together in the same lock order as recovery.
+  for candidate_report_id in
+    select report.id from private.external_user_monthly_reports report
+    join private.user_report_email_queue queue on queue.report_id = report.id
+    where queue.status in ('queued', 'failed') and queue.next_attempt_at <= p_now
       and (queue.locked_at is null or queue.locked_at < p_now - interval '15 minutes')
-    order by queue.next_attempt_at, queue.created_at
-    for update skip locked
+    order by queue.next_attempt_at, queue.created_at, queue.id
     limit greatest(1, least(coalesce(p_limit, 10), 50))
-  )
-  update private.user_report_email_queue queue
-  set
-    status = 'processing',
-    locked_at = p_now,
-    locked_by = p_worker_id,
-    attempt_count = queue.attempt_count + 1,
-    updated_at = p_now
-  from candidates
-  where queue.id = candidates.id
-  returning queue.*;
+    for update of report skip locked
+  loop
+    select * into claimed_queue from private.user_report_email_queue
+      where report_id = candidate_report_id and status in ('queued', 'failed')
+        and next_attempt_at <= p_now
+        and (locked_at is null or locked_at < p_now - interval '15 minutes')
+      for update skip locked;
+    if not found then continue; end if;
+    update private.user_report_email_queue set status = 'processing',
+      locked_at = p_now, locked_by = p_worker_id,
+      attempt_count = attempt_count + 1, updated_at = p_now
+      where id = claimed_queue.id returning * into claimed_queue;
+    update private.external_user_monthly_reports set delivery_status = 'processing'
+      where id = candidate_report_id;
+    return next claimed_queue;
+  end loop;
 end;
 $$;
 
+
+-- Complete queue and report tracking atomically, only for the original lease.
+create or replace function private.finish_periodic_report_email(
+  p_queue_id uuid, p_worker_id text, p_locked_at timestamptz,
+  p_status text, p_recipient_email text, p_error text default null,
+  p_sent_at timestamptz default null, p_provider_message_id text default null,
+  p_next_attempt_at timestamptz default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  report_id_to_lock uuid;
+  queue private.user_report_email_queue%rowtype;
+  final_status text;
+begin
+  if p_status is null or p_status not in ('sent', 'failed', 'blocked')
+     or (p_status = 'sent' and p_sent_at is null) then
+    raise exception 'Invalid delivery completion status';
+  end if;
+  select report_id into report_id_to_lock from private.user_report_email_queue where id = p_queue_id;
+  perform 1 from private.external_user_monthly_reports where id = report_id_to_lock for update;
+  select * into queue from private.user_report_email_queue
+    where id = p_queue_id and status = 'processing'
+      and locked_by = p_worker_id and locked_at = p_locked_at for update;
+  if not found then return false; end if;
+  final_status := case when p_sent_at is not null and p_status = 'failed' then 'blocked' else p_status end;
+  update private.user_report_email_queue set status = final_status,
+    recipient_email = p_recipient_email, last_error = p_error,
+    sent_at = coalesce(p_sent_at, sent_at),
+    provider_message_id = coalesce(p_provider_message_id, provider_message_id),
+    locked_at = null, locked_by = null,
+    next_attempt_at = coalesce(p_next_attempt_at, next_attempt_at), updated_at = now()
+    where id = queue.id;
+  update private.external_user_monthly_reports
+    set delivery_status = case when final_status = 'sent' and queue.delivery_kind = 'test' then 'draft' else final_status end,
+      last_delivery_error = p_error,
+      delivered_at = case when queue.delivery_kind = 'send' then coalesce(p_sent_at, delivered_at) else delivered_at end
+    where id = queue.report_id;
+  return true;
+end;
+$$;
+revoke all on function private.finish_periodic_report_email(uuid,text,timestamptz,text,text,text,timestamptz,text,timestamptz) from public, anon, authenticated;
+grant execute on function private.finish_periodic_report_email(uuid,text,timestamptz,text,text,text,timestamptz,text,timestamptz) to service_role;

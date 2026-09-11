@@ -29,6 +29,8 @@ interface AutomationRun {
 }
 
 interface EmailQueueRow {
+  locked_at: string;
+  locked_by: string;
   attempt_count: number;
   delivery_kind: 'send' | 'test';
   id: string;
@@ -198,8 +200,9 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
               updated_at: new Date().toISOString(),
             })
             .eq('id', existing.data.id)
+            .eq('generation_status', existing.data.generation_status)
             .select('id')
-            .single()
+            .maybeSingle()
         : await privateDb
             .from('external_user_monthly_reports')
             .insert({
@@ -224,6 +227,7 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
             .select('id')
             .single();
       if (created.error) throw created.error;
+      if (!created.data) continue;
       if (!existing.data) createdReports++;
 
       if (run.generation_mode === 'ai') {
@@ -319,6 +323,26 @@ async function recordEmailAttempt(
   if (result.error) throw result.error;
 }
 
+async function hasEmailLease(privateDb: PrivateClient, row: EmailQueueRow) {
+  const lease = await privateDb
+    .from('user_report_email_queue')
+    .select('id')
+    .eq('id', row.id)
+    .eq('status', 'processing')
+    .eq('locked_by', row.locked_by)
+    .eq('locked_at', row.locked_at)
+    .gt('locked_at', new Date(Date.now() - 15 * 60_000).toISOString())
+    .maybeSingle();
+  if (lease.error) throw lease.error;
+  if (!lease.data)
+    console.warn('periodic_report.lease_lost', {
+      queueId: row.id,
+      reportId: row.report_id,
+      workspaceId: row.ws_id,
+    });
+  return Boolean(lease.data);
+}
+
 async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
   const privateDb = getPrivateDb(sbAdmin);
   let providerAccepted = false;
@@ -350,42 +374,30 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
         error,
       });
     }
-    const queueFailure = await privateDb
-      .from('user_report_email_queue')
-      .update({
-        last_error: message,
-        recipient_email: attemptedRecipient,
-        ...(providerAccepted
-          ? { sent_at: acceptedAt, provider_message_id: acceptedMessageId }
-          : {}),
-        locked_at: null,
-        locked_by: null,
-        next_attempt_at: getRetryAt(row.attempt_count),
-        status: blocked ? 'blocked' : 'failed',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', row.id);
-    const reportFailure = await privateDb
-      .from('external_user_monthly_reports')
-      .update({
-        delivery_status: blocked ? 'blocked' : 'failed',
-        last_delivery_error: message,
-        ...(providerAccepted && row.delivery_kind === 'send'
-          ? { delivered_at: acceptedAt }
-          : {}),
-      })
-      .eq('id', row.report_id);
-    if (queueFailure.error || reportFailure.error) {
-      console.error('periodic_report.failure_status_write_failed', {
+    const completion = await privateDb.rpc('finish_periodic_report_email', {
+      p_queue_id: row.id,
+      p_worker_id: row.locked_by,
+      p_locked_at: row.locked_at,
+      p_status: blocked ? 'blocked' : 'failed',
+      p_recipient_email: attemptedRecipient,
+      p_error: message,
+      p_next_attempt_at: getRetryAt(row.attempt_count),
+      ...(acceptedAt ? { p_sent_at: acceptedAt } : {}),
+      ...(acceptedMessageId
+        ? { p_provider_message_id: acceptedMessageId }
+        : {}),
+    });
+    if (completion.error || !completion.data) {
+      console.error('periodic_report.failure_lease_write_failed', {
         queueId: row.id,
         reportId: row.report_id,
-        queueError: queueFailure.error,
-        reportError: reportFailure.error,
+        error: completion.error,
       });
     }
   };
 
   try {
+    if (!(await hasEmailLease(privateDb, row))) return;
     const access = await resolvePeriodicReportEmailAccess(row.ws_id);
     if (!access.allowed) {
       await fail('blocked', `Delivery gate blocked: ${access.reason}`, true);
@@ -435,14 +447,10 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       return;
     }
 
-    const processing = await privateDb
-      .from('external_user_monthly_reports')
-      .update({ delivery_status: 'processing' })
-      .eq('id', row.report_id);
-    if (processing.error) throw processing.error;
     const html = reportHtml(reportResult.data);
     const unsubscribeUrl = createEmailUnsubscribeUrl(recipient);
     const service = await EmailService.fromWorkspace(row.ws_id);
+    if (!(await hasEmailLease(privateDb, row))) return;
     const sendResult = await service.send({
       content: {
         headers: {
@@ -499,36 +507,25 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
         workspaceId: row.ws_id,
       });
     }
-    const queueUpdate = await privateDb
-      .from('user_report_email_queue')
-      .update({
-        recipient_email: recipient,
-        last_error: null,
-        locked_at: null,
-        locked_by: null,
-        provider_message_id: sendResult.messageId,
-        sent_at: sentAt,
-        status: 'sent',
-        updated_at: sentAt,
-      })
-      .eq('id', row.id);
-    if (queueUpdate.error) throw queueUpdate.error;
-    const reportUpdate = await privateDb
-      .from('external_user_monthly_reports')
-      .update(
-        row.delivery_kind === 'test'
-          ? {
-              delivery_status: 'draft',
-              last_delivery_error: null,
-            }
-          : {
-              delivered_at: sentAt,
-              delivery_status: 'sent',
-              last_delivery_error: null,
-            }
-      )
-      .eq('id', row.report_id);
-    if (reportUpdate.error) throw reportUpdate.error;
+    const completion = await privateDb.rpc('finish_periodic_report_email', {
+      p_queue_id: row.id,
+      p_worker_id: row.locked_by,
+      p_locked_at: row.locked_at,
+      p_status: 'sent',
+      p_recipient_email: recipient,
+      p_sent_at: sentAt,
+      ...(sendResult.messageId
+        ? { p_provider_message_id: sendResult.messageId }
+        : {}),
+    });
+    if (completion.error) throw completion.error;
+    if (!completion.data) {
+      console.warn('periodic_report.accepted_after_lease_lost', {
+        queueId: row.id,
+        providerMessageId: sendResult.messageId,
+      });
+      return;
+    }
     console.info('periodic_report.delivery_sent', {
       queueId: row.id,
       reportId: row.report_id,
@@ -555,17 +552,38 @@ export async function processPeriodicReportAutomation(
 ) {
   const reconciliation = await reconcilePeriodicReportSchedules(sbAdmin);
   const privateDb = getPrivateDb(sbAdmin);
+  // Probe with a nonexistent queue before claiming anything: app deployment may
+  // precede the migration that supplies atomic, lease-fenced completion.
+  const readiness = await privateDb.rpc('finish_periodic_report_email', {
+    p_queue_id: '00000000-0000-0000-0000-000000000000',
+    p_worker_id: workerId,
+    p_locked_at: new Date().toISOString(),
+    p_status: 'blocked',
+    p_recipient_email: '',
+  });
+  const migrationPending =
+    readiness.error && ['42883', 'PGRST202'].includes(readiness.error.code);
+  if (readiness.error && !migrationPending)
+    throw new Error(readiness.error.message);
+  if (migrationPending)
+    console.warn('periodic_report.delivery_migration_pending');
   const [runsResult, emailsResult] = await Promise.all([
     callPrivateRpc<AutomationRun>(privateDb, 'claim_periodic_report_runs', {
       p_limit: 8,
       p_now: new Date().toISOString(),
       p_worker_id: workerId,
     }),
-    callPrivateRpc<EmailQueueRow>(privateDb, 'claim_periodic_report_emails', {
-      p_limit: 12,
-      p_now: new Date().toISOString(),
-      p_worker_id: workerId,
-    }),
+    migrationPending
+      ? Promise.resolve({ data: [] as EmailQueueRow[], error: null })
+      : callPrivateRpc<EmailQueueRow>(
+          privateDb,
+          'claim_periodic_report_emails',
+          {
+            p_limit: 12,
+            p_now: new Date().toISOString(),
+            p_worker_id: workerId,
+          }
+        ),
   ]);
   if (runsResult.error) throw new Error(runsResult.error.message);
   if (emailsResult.error) throw new Error(emailsResult.error.message);

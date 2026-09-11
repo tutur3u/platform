@@ -47,8 +47,10 @@ interface Write {
 }
 
 const QUEUE_ROW = {
+  locked_at: new Date().toISOString(),
+  locked_by: 'worker-1',
   attempt_count: 0,
-  delivery_kind: 'send' as const,
+  delivery_kind: 'send' as 'send' | 'test',
   id: 'queue-1',
   recipient_email: 'learner@example.com',
   report_id: 'report-1',
@@ -66,14 +68,15 @@ const APPROVED_REPORT = {
 
 function createAdminClientStub(
   overrides: Record<string, Result> = {},
-  runs: unknown[] = []
+  runs: unknown[] = [],
+  writeResults: Record<string, Result> = {}
 ) {
   const writes: Write[] = [];
   const reads: Record<string, Result> = {
     external_user_monthly_reports: { data: APPROVED_REPORT, error: null },
     sent_emails: { data: null, error: null },
     user_report_email_attempts: { data: null, error: null },
-    user_report_email_queue: { data: null, error: null },
+    user_report_email_queue: { data: { id: 'queue-1' }, error: null },
     workspace_email_credentials: {
       data: { source_email: 'reports@school.edu', source_name: 'School' },
       error: null,
@@ -89,9 +92,9 @@ function createAdminClientStub(
    * Proxying a Promise (instead of hand-rolling a `then`) keeps `await` and
    * `Promise.all` behaving exactly like the driver.
    */
-  const makeBuilder = (table: string) => {
+  const makeBuilder = (table: string, result = reads[table]) => {
     const settled = Promise.resolve<Result>(
-      reads[table] ?? { data: null, error: null }
+      result ?? { data: null, error: null }
     );
     const proxy: Record<string, unknown> = new Proxy(settled, {
       get(target, property) {
@@ -111,6 +114,8 @@ function createAdminClientStub(
             property === 'upsert'
           ) {
             writes.push({ op: property, payload, table });
+            if (writeResults[table])
+              return makeBuilder(table, writeResults[table]);
           }
           return proxy;
         };
@@ -122,8 +127,43 @@ function createAdminClientStub(
 
   const privateSchema = {
     from: (table: string) => makeBuilder(table),
-    rpc: (name: string) =>
-      Promise.resolve(
+    rpc: (name: string, args: Record<string, unknown>) => {
+      if (name === 'finish_periodic_report_email') {
+        if (reads.finish_periodic_report_email)
+          return Promise.resolve(reads.finish_periodic_report_email);
+        if (args.p_queue_id === '00000000-0000-0000-0000-000000000000')
+          return Promise.resolve({ data: false, error: null });
+        const lease = reads.user_report_email_queue;
+        if (lease?.error || !lease?.data)
+          return Promise.resolve({ data: false, error: lease?.error ?? null });
+        writes.push({
+          table: 'user_report_email_queue',
+          op: 'update',
+          payload: {
+            status: args.p_status,
+            last_error: args.p_error ?? null,
+            recipient_email: args.p_recipient_email,
+            sent_at: args.p_sent_at,
+            provider_message_id: args.p_provider_message_id,
+          },
+        });
+        writes.push({
+          table: 'external_user_monthly_reports',
+          op: 'update',
+          payload: {
+            delivery_status:
+              args.p_status === 'sent' && QUEUE_ROW.delivery_kind === 'test'
+                ? 'draft'
+                : args.p_status,
+            last_delivery_error: args.p_error ?? null,
+            ...(QUEUE_ROW.delivery_kind === 'send' && args.p_sent_at
+              ? { delivered_at: args.p_sent_at }
+              : {}),
+          },
+        });
+        return Promise.resolve({ data: true, error: null });
+      }
+      return Promise.resolve(
         name === 'claim_periodic_report_emails'
           ? {
               data:
@@ -139,7 +179,8 @@ function createAdminClientStub(
               error: null,
             }
           : { data: runs, error: null }
-      ),
+      );
+    },
   };
 
   return {
@@ -172,6 +213,69 @@ describe('periodic report email delivery', () => {
     fromWorkspace.mockResolvedValue({ send });
     send.mockResolvedValue({ messageId: 'provider-1', success: true });
   });
+
+  it('does not claim or send email before completion tracking is available', async () => {
+    const { client, writes } = createAdminClientStub({
+      finish_periodic_report_email: {
+        data: null,
+        error: { code: 'PGRST202', message: 'Missing completion RPC' },
+      },
+    });
+    const result = await processPeriodicReportAutomation(
+      client as never,
+      'worker'
+    );
+    expect(result.processedEmails).toBe(0);
+    expect(send).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
+  });
+
+  it('does not start a delivery after its lease is lost', async () => {
+    const { client, writes } = createAdminClientStub({
+      user_report_email_queue: { data: null, error: null },
+    });
+    await processPeriodicReportAutomation(client as never, 'old-worker');
+    expect(send).not.toHaveBeenCalled();
+    expect(writes).toEqual([]);
+  });
+
+  it('rechecks ownership after preparing the email provider', async () => {
+    const lease: Result = { data: { id: 'queue-1' }, error: null };
+    const { client, writes } = createAdminClientStub({
+      user_report_email_queue: lease,
+    });
+    fromWorkspace.mockImplementation(async () => {
+      lease.data = null;
+      return { send };
+    });
+    await processPeriodicReportAutomation(client as never, 'old-worker');
+    expect(send).not.toHaveBeenCalled();
+    expect(writesFor(writes, 'external_user_monthly_reports')).toEqual([]);
+  });
+
+  it.each([true, false])(
+    'does not overwrite report state after a lost completion lease (accepted=%s)',
+    async (success) => {
+      const lease: Result = { data: { id: 'queue-1' }, error: null };
+      const { client, writes } = createAdminClientStub({
+        user_report_email_queue: lease,
+      });
+      send.mockImplementation(async () => {
+        lease.data = null;
+        return {
+          success,
+          messageId: success ? 'accepted-old-attempt' : undefined,
+          error: success ? undefined : 'Rejected',
+        };
+      });
+      await processPeriodicReportAutomation(client as never, 'old-worker');
+      expect(send).toHaveBeenCalledOnce();
+      expect(writesFor(writes, 'external_user_monthly_reports')).toEqual([]);
+      expect(
+        writesFor(writes, 'user_report_email_attempts')[0]?.payload.status
+      ).toBe(success ? 'sent' : 'failed');
+    }
+  );
 
   it('sends an approved report and closes out the queue row', async () => {
     const { client, writes } = createAdminClientStub();
@@ -391,7 +495,7 @@ describe('periodic report email delivery', () => {
 
   it('keeps a test delivery out of the report delivery history', async () => {
     const { client, writes } = createAdminClientStub();
-    QUEUE_ROW.delivery_kind = 'test' as 'send';
+    QUEUE_ROW.delivery_kind = 'test';
 
     try {
       await processPeriodicReportAutomation(client as never, 'worker-1');
@@ -421,7 +525,7 @@ describe('monthly AI generation recovery', () => {
     schedule_id: 'schedule-1',
     ws_id: 'ws-1',
   };
-  function fixture(status: string) {
+  function fixture(status: string, writeResults: Record<string, Result> = {}) {
     return createAdminClientStub(
       {
         user_report_schedules: {
@@ -449,7 +553,8 @@ describe('monthly AI generation recovery', () => {
           error: null,
         },
       },
-      [run]
+      [run],
+      writeResults
     );
   }
   beforeEach(() => {
@@ -503,6 +608,14 @@ describe('monthly AI generation recovery', () => {
     expect(
       writesFor(writes, 'user_report_automation_runs').at(-1)?.payload
     ).toMatchObject({ status: 'failed', last_error: 'Provider unavailable' });
+  });
+  it('does not generate when another writer wins the retry claim', async () => {
+    const { client, writes } = fixture('failed', {
+      external_user_monthly_reports: { data: null, error: null },
+    });
+    await processPeriodicReportAutomation(client as never, 'worker');
+    expect(generateNarrative).not.toHaveBeenCalled();
+    expect(writesFor(writes, 'external_user_monthly_reports')).toHaveLength(1);
   });
   it('does not overwrite a report already generated', async () => {
     const { client } = fixture('ready');

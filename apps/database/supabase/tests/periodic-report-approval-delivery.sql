@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(47);
+select plan(56);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -122,8 +122,21 @@ select matches((select last_delivery_error from private.external_user_monthly_re
 update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009106';
 update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009106';
 select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'blocked', 'reapproval cannot implicitly resend an unknown outcome');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send', true)->>'code')::int, 409, 'send cannot clear an unknown delivery outcome');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'test', true)->>'code')::int, 409, 'test cannot clear an unknown delivery outcome');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 200, 'operator can explicitly retry a recovered abandoned delivery');
 select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'queued', 'explicit retry makes the recovered delivery claimable again');
+
+
+-- Completion is fenced by the claimed owner and commits queue/report together.
+select count(*) from private.claim_periodic_report_emails('final-worker');
+select is((select private.finish_periodic_report_email(id, 'old-worker', locked_at, 'sent', recipient_email, p_sent_at => now()) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), false, 'old worker cannot complete a newer lease');
+select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'processing', 'lost completion leaves the active report untouched');
+select is((select private.finish_periodic_report_email(id, locked_by, locked_at, 'sent', recipient_email, p_sent_at => now()) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), true, 'lease owner completes delivery');
+select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'sent', 'completion updates report status atomically');
+select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'sent', 'completion updates queue status atomically');
+select is((select private.finish_periodic_report_email(id, 'final-worker', now(), 'failed', recipient_email) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), false, 'late failure cannot overwrite completed delivery');
+select ok(not has_function_privilege('authenticated', 'private.finish_periodic_report_email(uuid,text,timestamptz,text,text,text,timestamptz,text,timestamptz)', 'execute'), 'direct completion RPC is restricted to the server');
 
 select * from finish();
 rollback;

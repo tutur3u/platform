@@ -16711,6 +16711,20 @@ export type Database = {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
         Returns: string;
       };
+      finish_periodic_report_email: {
+        Args: {
+          p_error?: string;
+          p_locked_at: string;
+          p_next_attempt_at?: string;
+          p_provider_message_id?: string;
+          p_queue_id: string;
+          p_recipient_email: string;
+          p_sent_at?: string;
+          p_status: string;
+          p_worker_id: string;
+        };
+        Returns: boolean;
+      };
       form_id_from_question: {
         Args: { p_question_id: string };
         Returns: string;
