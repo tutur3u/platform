@@ -57,6 +57,17 @@ describe('email provider document conversion', () => {
     ).toBe('Visible headingBody');
   });
 
+  it.each(['textarea', 'option'])(
+    'discards %s contents in both alternatives',
+    async (tag) => {
+      const fragment = `<${tag}>Hidden control text</${tag}><h1>Monthly report</h1>`;
+      expect(await provider.html(fragment)).not.toContain(
+        'Hidden control text'
+      );
+      expect(provider.plainText(fragment)).toBe('Monthly report');
+    }
+  );
+
   it.each(['title', 'TiTlE'])(
     'discards %s text from HTML fragments',
     async (tag) => {

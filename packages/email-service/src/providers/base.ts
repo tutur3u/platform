@@ -12,6 +12,8 @@ import type {
   ProviderSendResult,
 } from '../types';
 
+const NON_CONTENT_TAGS = ['script', 'style', 'textarea', 'option', 'title'];
+
 /**
  * Abstract base class for email providers.
  * Implement this class to add support for new email providers.
@@ -83,7 +85,7 @@ export abstract class BaseEmailProvider implements EmailProvider {
         'html',
       ],
       // Discard hidden document titles instead of unwrapping them into body text.
-      nonTextTags: ['script', 'style', 'textarea', 'option', 'title'],
+      nonTextTags: NON_CONTENT_TAGS,
       allowedAttributes: {
         '*': [
           'href',
@@ -134,7 +136,7 @@ export abstract class BaseEmailProvider implements EmailProvider {
   }
 
   /**
-   * Remove non-visible title, script, and style blocks safely.
+   * Remove non-content blocks consistently with HTML sanitization.
    * Uses a loop-based state machine to avoid ReDoS vulnerabilities
    * and properly handle malformed/nested tags.
    * @param html Raw HTML content
@@ -148,10 +150,9 @@ export abstract class BaseEmailProvider implements EmailProvider {
     while (i < len) {
       // Match whole tag names so similarly named elements remain intact.
       if (html[i] === '<' && i + 1 < len) {
-        const remaining = html.slice(i, i + 8).toLowerCase();
-        const tagName = ['script', 'style', 'title'].find(
+        const tagName = NON_CONTENT_TAGS.find(
           (tag) =>
-            remaining.startsWith(`<${tag}`) &&
+            html.slice(i, i + tag.length + 1).toLowerCase() === `<${tag}` &&
             /[\s/>]/u.test(html[i + tag.length + 1] ?? '')
         );
 
