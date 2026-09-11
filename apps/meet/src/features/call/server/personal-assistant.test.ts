@@ -203,3 +203,21 @@ it('reserves search separately, charges multiple actual queries and releases bot
     'search',
   ]);
 });
+
+it('accounts for an empty private generation and reports failure instead of saving a blank reply', async () => {
+  mocks.answer.mockResolvedValueOnce({
+    text: '',
+    searchCount: 0,
+    usage: { available: true, inputTokens: 10, outputTokens: 20 },
+  });
+  await expect(
+    answerPersonalMeetChat('requester', {
+      question: 'Public question',
+      timezone: 'UTC',
+      history: [],
+    })
+  ).rejects.toMatchObject({ status: 503 });
+  expect(mocks.deduct).toHaveBeenCalledOnce();
+  expect(mocks.service).not.toHaveBeenCalled();
+  expect(mocks.release).toHaveBeenCalled();
+});

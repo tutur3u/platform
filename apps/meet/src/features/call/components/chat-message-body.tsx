@@ -36,6 +36,11 @@ export function ChatMessageBody({
     : { text: body, sources: [] };
   return (
     <div className="min-w-0 space-y-3 text-sm leading-relaxed">
+      {assistant && !text.trim() && (
+        <p role="status" className="text-muted-foreground">
+          {t('assistant_empty_answer')}
+        </p>
+      )}
       <Markdown
         text={text}
         remarkPlugins={assistant ? assistantPlugins : userPlugins}

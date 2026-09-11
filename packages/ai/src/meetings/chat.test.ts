@@ -174,3 +174,91 @@ it('keeps private audience rules explicit and permits searches containing synthe
   );
   expect(mocks.generate).toHaveBeenCalledTimes(2);
 });
+
+it('reuses the grounded public answer when final synthesis is empty without another paid call', async () => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic');
+  mocks.generate
+    .mockImplementationOnce(async (input) => {
+      await input.tools.google_search.execute(
+        {},
+        { toolCallId: 'search', messages: [], context: {} }
+      );
+      return { ...result(), text: '  ' };
+    })
+    .mockResolvedValueOnce({
+      ...result(),
+      text: 'Grounded public answer',
+      sources: [
+        {
+          sourceType: 'url',
+          id: 'ref',
+          url: 'https://example.com/info',
+          title: 'Source',
+        },
+      ],
+    });
+  const answer = await answerMeetChat(
+    [],
+    900,
+    'Public organization',
+    model,
+    context
+  );
+  expect(answer.text).toContain('Grounded public answer');
+  expect(answer.text).toContain('https://example.com/info');
+  expect(mocks.generate).toHaveBeenCalledTimes(2);
+  expect(answer.usage.inputTokens).toBe(200);
+});
+it('leaves an unanswerable empty generation empty for the server error path', async () => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic');
+  mocks.generate.mockResolvedValue({
+    ...result(),
+    text: '',
+    sources: [{ sourceType: 'url', id: 'ref', url: 'https://example.com' }],
+  });
+  expect((await answerMeetChat([], 900, 'question', model, context)).text).toBe(
+    ''
+  );
+});
+
+it('never substitutes a public search answer for a pending private approval', async () => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic');
+  mocks.generate
+    .mockImplementationOnce(async (input) => {
+      await input.tools.google_search.execute(
+        {},
+        { toolCallId: 'search', messages: [], context: {} }
+      );
+      return {
+        ...result(),
+        text: '',
+        content: [
+          {
+            type: 'tool-approval-request',
+            approvalId: 'approve',
+            toolCall: { toolName: 'create_task', input: { name: 'Draft' } },
+          },
+        ],
+      };
+    })
+    .mockResolvedValueOnce({
+      ...result(),
+      text: 'Public answer',
+      sources: [{ sourceType: 'url', id: 'ref', url: 'https://example.com' }],
+    });
+  const answer = await answerMeetChat(
+    [],
+    900,
+    'public question',
+    model,
+    context,
+    {
+      workspaceTools: {
+        create_task: { inputSchema: {}, execute: vi.fn() },
+      } as never,
+    }
+  );
+  expect(answer.privateResult).toBe(true);
+  expect(answer.approvals).toHaveLength(1);
+  expect(answer.text).toBe('');
+});

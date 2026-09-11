@@ -20,9 +20,11 @@ export function publicMeetSearch(
   const steps: MeetGenerationStep[] = [];
   const sources: MeetCitationSource[] = [];
   let searched = false;
+  let groundedAnswer = '';
   return {
     steps,
     sources,
+    answer: () => groundedAnswer,
     unavailable: () => searched && sources.length === 0,
     tool: tool({
       description:
@@ -100,8 +102,9 @@ export function publicMeetSearch(
             error:
               'Google did not return grounded sources for this question. No verified web answer is available.',
           };
+        groundedAnswer = resolveMeetCitations(result.text, sources).trim();
         return {
-          answer: resolveMeetCitations(result.text, sources),
+          answer: groundedAnswer,
           sources: [
             ...new Map(
               sources.map(({ url, title }) => [url, { url, title }])

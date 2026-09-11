@@ -268,3 +268,20 @@ it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
     expect(mocks.answer).not.toHaveBeenCalled();
   }
 );
+
+it('settles usage but never publishes a blank model answer', async () => {
+  mocks.answer.mockResolvedValueOnce({
+    text: '  ',
+    costUsd: 0.001,
+    usage: { available: true, inputTokens: 100, outputTokens: 20 },
+  });
+  await expect(
+    POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
+  ).rejects.toMatchObject({ status: 503 });
+  expect(mocks.deduct).toHaveBeenCalledOnce();
+  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+    action: 'ai.finish',
+    messageId: 'message',
+    costUsd: 0.001,
+  });
+});

@@ -3827,6 +3827,7 @@
       "assistant_decision_saving": "Saving your decision…",
       "assistant_deny_actions": "Deny actions",
       "assistant_discard_draft": "Discard draft",
+      "assistant_empty_answer": "Mira did not complete this answer. Please ask again; the sources below are not a completed response.",
       "assistant_failed": "Mira could not answer. Please try again.",
       "assistant_only_you": "Only you can see this",
       "assistant_personal_workspace": "Mira · Personal workspace",

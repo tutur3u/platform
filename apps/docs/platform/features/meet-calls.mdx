@@ -830,10 +830,10 @@ Provider citation IDs are resolved only against their exact returned sources.
 Older unmapped references show an unavailable-reference badge rather than a guessed
 link, and the source footer is displayed as an expandable list of source cards.
 
-Source metadata is limited to eight distinct URLs and 4,000 serialized characters.
-The answer reserves space for complete source links within the 16,000-character
-saved-message limit; oversized prose stops at a complete Markdown block, or uses
-a safely escaped text prefix when the first block alone exceeds the limit.
+Source metadata is limited to eight URLs and 4,000 characters within the 16,000-character message limit; oversized prose is safely truncated.
+Empty final synthesis reuses only an available grounded public-search answer, without another paid call.
+Otherwise generation fails visibly after incurred usage is accounted for; pending approvals stay private.
+Legacy sources-only replies display an incomplete-answer notice. Sources alone never count as a completed answer.
 
 ### Fast return to ended meetings
 
