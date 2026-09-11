@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.12.0...ai-studio-v0.13.0) (2026-09-11)
+
+
+### Features
+
+* **ai:** add metered root-sponsored Colab endpoint ([#5296](https://github.com/tutur3u/platform/issues/5296)) ([d768a03](https://github.com/tutur3u/platform/commit/d768a0321ae12a69e8309b827d17952b36857fe9))
+* **ai:** meter root-sponsored Colab requests with audit context ([33d507e](https://github.com/tutur3u/platform/commit/33d507e126ef95ca68f0307d9384f1cc0b4965c2))
+* **colab:** add RISE learning, prompt coaching and keyless sponsorship ([#5297](https://github.com/tutur3u/platform/issues/5297)) ([a7d96f1](https://github.com/tutur3u/platform/commit/a7d96f163e8f850cdaa0edb65ecb5364bd0b9a55))
+* **colab:** authorize sponsored AI without manual API keys ([e24510a](https://github.com/tutur3u/platform/commit/e24510a7b83c5c5f8156280abc605ed9d2d18191))
+
+
+### Bug Fixes
+
+* **ai:** close sponsored pricing and retry edge cases ([11be505](https://github.com/tutur3u/platform/commit/11be505ebe943f2787a98db8f7da065c1e5fb99f))
+* **ai:** fence retries inside reservation transaction ([b56e2b0](https://github.com/tutur3u/platform/commit/b56e2b066e3ae6184799c457cb3086611dcd6dc7))
+* **ai:** fence sponsored retries and zero settlement ([09fa392](https://github.com/tutur3u/platform/commit/09fa392197947e9cb333ae08a959543730357942))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.11.3...ai-studio-v0.12.0) (2026-09-07)
 
 
