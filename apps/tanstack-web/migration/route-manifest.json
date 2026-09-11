@@ -5269,11 +5269,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/users/reports/:reportId/delivery",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5323,11 +5323,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
       "kind": "api",
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/workspaces/:wsId/users/reports/schedules",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7820,7 +7820,7 @@
     "pages": 152,
     "routeHandlers": 596,
     "methodCounts": {
-      "GET": 296,
+      "GET": 297,
       "HEAD": 4,
       "POST": 294,
       "PUT": 54,

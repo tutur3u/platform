@@ -113,6 +113,7 @@ export default function PeriodicReportsPanel({
     },
     placeholderData: keepPreviousData,
     staleTime: 30_000,
+    refetchInterval: 15_000,
   });
   const reports = reportsQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const counts = reportsQuery.data?.pages[0]?.counts;
@@ -313,6 +314,7 @@ export default function PeriodicReportsPanel({
         }}
       />
       <PeriodicReportPreviewDialog
+        wsId={wsId}
         report={previewSelection?.report ?? null}
         emailPreview={previewSelection?.emailPreview}
         onOpenChange={(open) => !open && setPreviewSelection(null)}

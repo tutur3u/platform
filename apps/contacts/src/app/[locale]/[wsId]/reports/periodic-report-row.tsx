@@ -102,6 +102,10 @@ export function PeriodicReportRow({
             {report.user_name ?? t('unknown_member')} ·{' '}
             {report.group_name ?? t('unknown_group')}
           </p>
+          <p className="mt-1 flex items-center gap-1 truncate text-muted-foreground text-xs">
+            <Mail className="size-3 shrink-0" />
+            {report.user_email || t('missing_email')}
+          </p>
           {report.creator_name ? (
             <p className="truncate text-muted-foreground text-xs">
               {t('teacher_name', { name: report.creator_name })}
@@ -207,7 +211,8 @@ function DeliveryMenu({
           <Eye className="mr-2 h-4 w-4" />
           {t('preview')}
         </DropdownMenuItem>
-        {report.report_approval_status === 'APPROVED' ? (
+        {report.report_approval_status === 'APPROVED' &&
+        !['queued', 'processing', 'sent'].includes(report.delivery_status) ? (
           <>
             <DropdownMenuItem onSelect={() => onDeliveryIntent('test')}>
               <Send className="mr-2 h-4 w-4" />

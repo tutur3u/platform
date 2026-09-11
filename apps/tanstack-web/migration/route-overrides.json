@@ -2383,6 +2383,16 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts."
+    },
+    "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Periodic report approval auto-send configuration and workspace-scoped delivery diagnostics. Preserve view/manage/send permission checks, private no-store diagnostics, approval gates, queue lifecycle, and idempotency. Rust port pending."
+    },
+    "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Periodic report approval auto-send configuration and workspace-scoped delivery diagnostics. Preserve view/manage/send permission checks, private no-store diagnostics, approval gates, queue lifecycle, and idempotency. Rust port pending."
     }
   }
 }

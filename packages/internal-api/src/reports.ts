@@ -196,6 +196,8 @@ export interface PeriodicReportSchedulesResponse {
   canManage: boolean;
   defaults: PeriodicReportSchedule[];
   emailDelivery: {
+    autoSendAfterApproval?: boolean;
+    canConfigureAutoSend?: boolean;
     globalGateEnabled: boolean;
     periodicGateEnabled: boolean;
     ready: boolean;
@@ -478,5 +480,56 @@ export async function upsertPeriodicReportSchedule(
       body: JSON.stringify(payload),
       cache: 'no-store',
     }
+  );
+}
+
+export function updatePeriodicReportAutoSend(
+  workspaceId: string,
+  enabled: boolean
+) {
+  return getInternalApiClient().json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/schedules`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ autoSendAfterApproval: enabled }),
+    }
+  );
+}
+
+export interface PeriodicReportDeliveryDiagnostics {
+  report: {
+    user_email: string | null;
+    delivery_status: PeriodicReportDeliveryStatus;
+    delivered_at: string | null;
+    delivery_requested_at: string | null;
+    last_delivery_error: string | null;
+  };
+  queue: {
+    status: PeriodicReportDeliveryStatus;
+    recipient_email: string;
+    delivery_kind: 'send' | 'test';
+    attempt_count: number;
+    next_attempt_at: string;
+    sent_at: string | null;
+    last_error: string | null;
+    provider_message_id: string | null;
+  } | null;
+  attempts: Array<{
+    id: string;
+    status: 'sent' | 'failed' | 'blocked';
+    attempted_at: string;
+    error_message: string | null;
+    provider_message_id: string | null;
+  }>;
+}
+
+export function getPeriodicReportDeliveryDiagnostics(
+  workspaceId: string,
+  reportId: string
+) {
+  return getInternalApiClient().json<PeriodicReportDeliveryDiagnostics>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/${encodePathSegment(reportId)}/delivery`,
+    { cache: 'no-store' }
   );
 }

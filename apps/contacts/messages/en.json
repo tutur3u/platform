@@ -3468,7 +3468,15 @@
     "unknown_member": "Unknown member",
     "weekly": "Weekly",
     "workspace_timezone": "Workspace timezone",
-    "yearly": "Yearly"
+    "yearly": "Yearly",
+    "auto_send_title": "Send automatically after approval",
+    "auto_send_description": "Future approvals queue an email to the member’s workspace profile address. Email delivery must be enabled. Previously sent reports are not resent.",
+    "delivery_loading": "Checking email delivery…",
+    "sent_explanation": "Sent means the email provider accepted the message; it does not confirm inbox delivery or that it was read.",
+    "delivery_sent_at": "Sent {date}",
+    "delivery_attempt_count": "{count} delivery attempts",
+    "delivery_next_attempt": "Next attempt: {date}",
+    "delivery_history": "Delivery history"
   },
   "satellite-workspace-settings": {
     "avatar": "Workspace avatar",

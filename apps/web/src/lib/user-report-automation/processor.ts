@@ -112,6 +112,12 @@ async function markRunFailure(
 ) {
   const message = error instanceof Error ? error.message : 'Unknown run error';
   const permanent = run.attempt_count >= 5;
+  console.error('periodic_report.generation_failed', {
+    runId: run.id,
+    workspaceId: run.ws_id,
+    attempt: run.attempt_count,
+    permanent,
+  });
   await privateDb
     .from('user_report_automation_runs')
     .update({
@@ -167,7 +173,7 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
     for (const user of usersResult.data ?? []) {
       const existing = await privateDb
         .from('external_user_monthly_reports')
-        .select('id')
+        .select('id, generation_status')
         .eq('user_id', user.id)
         .eq('group_id', run.group_id)
         .eq('cadence', run.cadence)
@@ -175,76 +181,100 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
         .eq('period_end', run.period_end)
         .maybeSingle();
       if (existing.error) throw existing.error;
-      if (existing.data) continue;
+      if (
+        existing.data &&
+        (run.generation_mode !== 'ai' ||
+          !['failed', 'generating'].includes(existing.data.generation_status))
+      )
+        continue;
 
       const userName = user.display_name ?? user.full_name ?? 'Member';
       const title = `${run.cadence[0]?.toUpperCase()}${run.cadence.slice(1)} report · ${userName}`;
-      const created = await privateDb
-        .from('external_user_monthly_reports')
-        .insert({
-          cadence: run.cadence,
-          content: '',
-          creator_id: scheduleResult.data.created_by,
-          feedback: '',
-          generation_mode: run.generation_mode,
-          generation_status:
-            run.generation_mode === 'ai' ? 'generating' : 'draft',
-          group_id: run.group_id,
-          manager_instruction: scheduleResult.data.manager_instruction,
-          period_end: run.period_end,
-          period_start: run.period_start,
-          report_approval_status: 'PENDING',
-          source_context: { automation_run_id: run.id, metrics: {} },
-          title,
-          updated_at: new Date().toISOString(),
-          updated_by: scheduleResult.data.created_by,
-          user_id: user.id,
-        })
-        .select('id')
-        .single();
+      const created = existing.data
+        ? { data: existing.data, error: null }
+        : await privateDb
+            .from('external_user_monthly_reports')
+            .insert({
+              cadence: run.cadence,
+              content: '',
+              creator_id: scheduleResult.data.created_by,
+              feedback: '',
+              generation_mode: run.generation_mode,
+              generation_status:
+                run.generation_mode === 'ai' ? 'generating' : 'draft',
+              group_id: run.group_id,
+              manager_instruction: scheduleResult.data.manager_instruction,
+              period_end: run.period_end,
+              period_start: run.period_start,
+              report_approval_status: 'PENDING',
+              source_context: { automation_run_id: run.id, metrics: {} },
+              title,
+              updated_at: new Date().toISOString(),
+              updated_by: scheduleResult.data.created_by,
+              user_id: user.id,
+            })
+            .select('id')
+            .single();
       if (created.error) throw created.error;
-      createdReports++;
+      if (!existing.data) createdReports++;
 
       if (run.generation_mode === 'ai') {
-        const scopedContext = await loadScopedReportContext(sbAdmin, {
-          cadence: run.cadence,
-          groupId: run.group_id,
-          periodEnd: run.period_end,
-          periodStart: run.period_start,
-          reportId: created.data.id,
-          userId: user.id,
-          wsId: run.ws_id,
-        });
-        const narrative = await generatePeriodicReportNarrative({
-          cadence: run.cadence,
-          deterministicMetrics: scopedContext.deterministicMetrics,
-          group: { id: run.group_id, name: groupResult.data.name },
-          managerInstruction: scheduleResult.data.manager_instruction,
-          periodEnd: run.period_end,
-          periodStart: run.period_start,
-          previousReport: scopedContext.previousReport,
-          subject: {
-            displayName: user.display_name,
-            fullName: user.full_name,
-            note: user.note,
-          },
-        });
-        const generated = await privateDb
-          .from('external_user_monthly_reports')
-          .update({
-            content: narrative.content,
-            feedback: narrative.feedback,
-            generation_status: 'ready',
-            report_approval_status: 'PENDING',
-            source_context: {
-              automation_run_id: run.id,
-              metrics: scopedContext.deterministicMetrics,
+        try {
+          const scopedContext = await loadScopedReportContext(sbAdmin, {
+            cadence: run.cadence,
+            groupId: run.group_id,
+            periodEnd: run.period_end,
+            periodStart: run.period_start,
+            reportId: created.data.id,
+            userId: user.id,
+            wsId: run.ws_id,
+          });
+          const narrative = await generatePeriodicReportNarrative({
+            cadence: run.cadence,
+            deterministicMetrics: scopedContext.deterministicMetrics,
+            group: { id: run.group_id, name: groupResult.data.name },
+            managerInstruction: scheduleResult.data.manager_instruction,
+            periodEnd: run.period_end,
+            periodStart: run.period_start,
+            previousReport: scopedContext.previousReport,
+            subject: {
+              displayName: user.display_name,
+              fullName: user.full_name,
+              note: user.note,
             },
-            title: narrative.title,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', created.data.id);
-        if (generated.error) throw generated.error;
+          });
+          const generated = await privateDb
+            .from('external_user_monthly_reports')
+            .update({
+              content: narrative.content,
+              feedback: narrative.feedback,
+              generation_status: 'ready',
+              report_approval_status: 'PENDING',
+              source_context: {
+                automation_run_id: run.id,
+                metrics: scopedContext.deterministicMetrics,
+              },
+              title: narrative.title,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', created.data.id);
+          if (generated.error) throw generated.error;
+        } catch (error) {
+          const failed = await privateDb
+            .from('external_user_monthly_reports')
+            .update({
+              generation_status: 'failed',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', created.data.id);
+          if (failed.error)
+            console.error('periodic_report.generation_status_write_failed', {
+              reportId: created.data.id,
+              runId: run.id,
+              error: failed.error,
+            });
+          throw error;
+        }
       }
     }
 
@@ -272,40 +302,66 @@ async function recordEmailAttempt(
   status: 'sent' | 'failed' | 'blocked',
   details?: { error?: string; providerMessageId?: string }
 ) {
-  await privateDb.from('user_report_email_attempts').insert({
+  const result = await privateDb.from('user_report_email_attempts').insert({
     error_message: details?.error ?? null,
     provider_message_id: details?.providerMessageId ?? null,
     queue_id: row.id,
     status,
   });
+  if (result.error) throw result.error;
 }
 
 async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
   const privateDb = getPrivateDb(sbAdmin);
+  let providerAccepted = false;
   const fail = async (
     status: 'failed' | 'blocked',
     message: string,
     permanent = false
   ) => {
-    await recordEmailAttempt(privateDb, row, status, { error: message });
-    await privateDb
+    const blocked = permanent || providerAccepted || row.attempt_count >= 5;
+    console.warn('periodic_report.delivery_failed', {
+      queueId: row.id,
+      reportId: row.report_id,
+      workspaceId: row.ws_id,
+      attempt: row.attempt_count,
+      status: blocked ? 'blocked' : status,
+      providerAccepted,
+    });
+    try {
+      await recordEmailAttempt(privateDb, row, status, { error: message });
+    } catch (error) {
+      console.error('periodic_report.attempt_write_failed', {
+        queueId: row.id,
+        error,
+      });
+    }
+    const queueFailure = await privateDb
       .from('user_report_email_queue')
       .update({
         last_error: message,
         locked_at: null,
         locked_by: null,
         next_attempt_at: getRetryAt(row.attempt_count),
-        status: permanent || row.attempt_count >= 5 ? 'blocked' : 'failed',
+        status: blocked ? 'blocked' : 'failed',
         updated_at: new Date().toISOString(),
       })
       .eq('id', row.id);
-    await privateDb
+    const reportFailure = await privateDb
       .from('external_user_monthly_reports')
       .update({
-        delivery_status: permanent ? 'blocked' : 'failed',
+        delivery_status: blocked ? 'blocked' : 'failed',
         last_delivery_error: message,
       })
       .eq('id', row.report_id);
+    if (queueFailure.error || reportFailure.error) {
+      console.error('periodic_report.failure_status_write_failed', {
+        queueId: row.id,
+        reportId: row.report_id,
+        queueError: queueFailure.error,
+        reportError: reportFailure.error,
+      });
+    }
   };
 
   try {
@@ -357,6 +413,11 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       return;
     }
 
+    const processing = await privateDb
+      .from('external_user_monthly_reports')
+      .update({ delivery_status: 'processing' })
+      .eq('id', row.report_id);
+    if (processing.error) throw processing.error;
     const html = reportHtml(reportResult.data);
     const unsubscribeUrl = createEmailUnsubscribeUrl(recipient);
     const service = await EmailService.fromWorkspace(row.ws_id);
@@ -389,6 +450,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       return;
     }
 
+    providerAccepted = true;
     const sentAt = new Date().toISOString();
     await recordEmailAttempt(privateDb, row, 'sent', {
       providerMessageId: sendResult.messageId,
@@ -413,9 +475,10 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
         workspaceId: row.ws_id,
       });
     }
-    await privateDb
+    const queueUpdate = await privateDb
       .from('user_report_email_queue')
       .update({
+        recipient_email: recipient,
         last_error: null,
         locked_at: null,
         locked_by: null,
@@ -425,7 +488,8 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
         updated_at: sentAt,
       })
       .eq('id', row.id);
-    await privateDb
+    if (queueUpdate.error) throw queueUpdate.error;
+    const reportUpdate = await privateDb
       .from('external_user_monthly_reports')
       .update(
         row.delivery_kind === 'test'
@@ -440,10 +504,23 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
             }
       )
       .eq('id', row.report_id);
+    if (reportUpdate.error) throw reportUpdate.error;
+    console.info('periodic_report.delivery_sent', {
+      queueId: row.id,
+      reportId: row.report_id,
+      workspaceId: row.ws_id,
+      attempt: row.attempt_count,
+      deliveryKind: row.delivery_kind,
+      providerMessageId: sendResult.messageId,
+    });
   } catch (error) {
     await fail(
       'failed',
-      error instanceof Error ? error.message : 'Unknown delivery error'
+      providerAccepted
+        ? 'Provider accepted the email, but delivery tracking failed. Check provider logs before retrying.'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown delivery error'
     );
   }
 }

@@ -5,6 +5,7 @@ const fromWorkspace = vi.fn();
 const isEmailBlacklisted = vi.fn();
 const resolvePeriodicReportEmailAccess = vi.fn();
 const reconcilePeriodicReportSchedules = vi.fn();
+const generateNarrative = vi.fn();
 
 vi.mock('@tuturuuu/email-service', () => ({
   EmailService: { fromWorkspace: (wsId: string) => fromWorkspace(wsId) },
@@ -23,6 +24,17 @@ vi.mock('./access', () => ({
 vi.mock('./schedule-reconciliation', () => ({
   reconcilePeriodicReportSchedules: (...args: unknown[]) =>
     reconcilePeriodicReportSchedules(...args),
+}));
+
+vi.mock('./context', () => ({
+  loadScopedReportContext: async () => ({
+    deterministicMetrics: {},
+    previousReport: null,
+  }),
+}));
+vi.mock('./generation', () => ({
+  generatePeriodicReportNarrative: (...args: unknown[]) =>
+    generateNarrative(...args),
 }));
 
 import { processPeriodicReportAutomation } from './processor';
@@ -52,7 +64,10 @@ const APPROVED_REPORT = {
   title: 'Monthly report · Mai',
 };
 
-function createAdminClientStub(overrides: Record<string, Result> = {}) {
+function createAdminClientStub(
+  overrides: Record<string, Result> = {},
+  runs: unknown[] = []
+) {
   const writes: Write[] = [];
   const reads: Record<string, Result> = {
     external_user_monthly_reports: { data: APPROVED_REPORT, error: null },
@@ -110,8 +125,8 @@ function createAdminClientStub(overrides: Record<string, Result> = {}) {
     rpc: (name: string) =>
       Promise.resolve(
         name === 'claim_periodic_report_emails'
-          ? { data: [QUEUE_ROW], error: null }
-          : { data: [], error: null }
+          ? { data: runs.length ? [] : [QUEUE_ROW], error: null }
+          : { data: runs, error: null }
       ),
   };
 
@@ -180,7 +195,7 @@ describe('periodic report email delivery', () => {
       writesFor(writes, 'user_report_email_queue')[0]?.payload
     ).toMatchObject({ status: 'sent' });
     expect(
-      writesFor(writes, 'external_user_monthly_reports')[0]?.payload
+      writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
     ).toMatchObject({ delivery_status: 'sent', last_delivery_error: null });
   });
 
@@ -217,7 +232,7 @@ describe('periodic report email delivery', () => {
       writesFor(writes, 'user_report_email_queue')[0]?.payload
     ).toMatchObject({ status: 'blocked' });
     expect(
-      writesFor(writes, 'external_user_monthly_reports')[0]?.payload
+      writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
     ).toMatchObject({ delivery_status: 'blocked' });
     expect(
       writesFor(writes, 'user_report_email_attempts')[0]?.payload
@@ -267,7 +282,7 @@ describe('periodic report email delivery', () => {
 
     expect(send).not.toHaveBeenCalled();
     expect(
-      writesFor(writes, 'external_user_monthly_reports')[0]?.payload
+      writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
     ).toMatchObject({ delivery_status: 'blocked' });
   });
 
@@ -291,6 +306,70 @@ describe('periodic report email delivery', () => {
     ).toMatchObject({ status: 'blocked' });
   });
 
+  it('reports exhausted retries as blocked in both queue and report', async () => {
+    const { client, writes } = createAdminClientStub();
+    QUEUE_ROW.attempt_count = 5;
+    send.mockResolvedValue({ success: false, error: 'Temporary outage' });
+    try {
+      await processPeriodicReportAutomation(client as never, 'worker');
+      expect(
+        writesFor(writes, 'user_report_email_queue')[0]?.payload.status
+      ).toBe('blocked');
+      expect(
+        writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
+          .delivery_status
+      ).toBe('blocked');
+    } finally {
+      QUEUE_ROW.attempt_count = 0;
+    }
+  });
+
+  it('does not retry an accepted email when writing its attempt fails', async () => {
+    const { client, writes } = createAdminClientStub({
+      user_report_email_attempts: {
+        data: null,
+        error: { message: 'database unavailable' },
+      },
+    });
+    await processPeriodicReportAutomation(client as never, 'worker');
+    expect(send).toHaveBeenCalledOnce();
+    expect(
+      writesFor(writes, 'user_report_email_queue')[0]?.payload.status
+    ).toBe('blocked');
+    expect(
+      writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
+        .last_delivery_error
+    ).toContain('Provider accepted');
+  });
+
+  it('retains the actual normalized recipient in delivery tracking', async () => {
+    const { client, writes } = createAdminClientStub({
+      workspace_users: { data: { email: 'New@Example.com ' }, error: null },
+    });
+    await processPeriodicReportAutomation(client as never, 'worker');
+    expect(
+      writesFor(writes, 'user_report_email_queue')[0]?.payload.recipient_email
+    ).toBe('new@example.com');
+  });
+
+  it('blocks rejected reports and retries read failures without sending', async () => {
+    const rejected = createAdminClientStub({
+      external_user_monthly_reports: {
+        data: { ...APPROVED_REPORT, report_approval_status: 'REJECTED' },
+        error: null,
+      },
+    });
+    await processPeriodicReportAutomation(rejected.client as never, 'worker');
+    const failed = createAdminClientStub({
+      workspace_users: { data: null, error: new Error('read failed') },
+    });
+    await processPeriodicReportAutomation(failed.client as never, 'worker');
+    expect(send).not.toHaveBeenCalled();
+    expect(
+      writesFor(failed.writes, 'user_report_email_queue')[0]?.payload.status
+    ).toBe('failed');
+  });
+
   it('keeps a test delivery out of the report delivery history', async () => {
     const { client, writes } = createAdminClientStub();
     QUEUE_ROW.delivery_kind = 'test' as 'send';
@@ -299,12 +378,107 @@ describe('periodic report email delivery', () => {
       await processPeriodicReportAutomation(client as never, 'worker-1');
 
       expect(send).toHaveBeenCalledOnce();
-      const reportUpdate = writesFor(writes, 'external_user_monthly_reports')[0]
-        ?.payload;
+      const reportUpdate = writesFor(
+        writes,
+        'external_user_monthly_reports'
+      ).at(-1)?.payload;
       expect(reportUpdate).toMatchObject({ delivery_status: 'draft' });
       expect(reportUpdate).not.toHaveProperty('delivered_at');
     } finally {
       QUEUE_ROW.delivery_kind = 'send';
     }
+  });
+});
+
+describe('monthly AI generation recovery', () => {
+  const run = {
+    id: 'run-1',
+    attempt_count: 2,
+    cadence: 'monthly',
+    generation_mode: 'ai',
+    group_id: 'group-1',
+    period_start: '2026-08-01',
+    period_end: '2026-08-31',
+    schedule_id: 'schedule-1',
+    ws_id: 'ws-1',
+  };
+  function fixture(status: string) {
+    return createAdminClientStub(
+      {
+        user_report_schedules: {
+          data: { created_by: 'teacher-1', manager_instruction: '' },
+          error: null,
+        },
+        workspace_user_groups_users: {
+          data: [{ user_id: 'user-1' }],
+          error: null,
+        },
+        workspace_user_groups: { data: { name: 'Class' }, error: null },
+        workspace_users: {
+          data: [
+            {
+              id: 'user-1',
+              display_name: 'Learner',
+              full_name: null,
+              note: null,
+            },
+          ],
+          error: null,
+        },
+        external_user_monthly_reports: {
+          data: { id: 'report-1', generation_status: status },
+          error: null,
+        },
+      },
+      [run]
+    );
+  }
+  beforeEach(() => {
+    generateNarrative.mockReset();
+    generateNarrative.mockResolvedValue({
+      content: 'Progress',
+      feedback: 'Practice',
+      title: 'Monthly',
+    });
+    reconcilePeriodicReportSchedules.mockResolvedValue({
+      createdRuns: 0,
+      dueSchedules: 0,
+    });
+  });
+  it.each(['failed', 'generating'])(
+    'resumes a %s report without creating a duplicate',
+    async (status) => {
+      const { client, writes } = fixture(status);
+      await processPeriodicReportAutomation(client as never, 'worker');
+      expect(generateNarrative).toHaveBeenCalledOnce();
+      expect(
+        writesFor(writes, 'external_user_monthly_reports').some(
+          (write) => write.op === 'insert'
+        )
+      ).toBe(false);
+      expect(
+        writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
+      ).toMatchObject({
+        generation_status: 'ready',
+        report_approval_status: 'PENDING',
+      });
+    }
+  );
+  it('marks generation failed and retains the automation retry', async () => {
+    generateNarrative.mockRejectedValue(new Error('Provider unavailable'));
+    const { client, writes } = fixture('generating');
+    await processPeriodicReportAutomation(client as never, 'worker');
+    expect(
+      writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
+        .generation_status
+    ).toBe('failed');
+    expect(
+      writesFor(writes, 'user_report_automation_runs').at(-1)?.payload
+    ).toMatchObject({ status: 'failed', last_error: 'Provider unavailable' });
+  });
+  it('does not overwrite a report already generated', async () => {
+    const { client } = fixture('ready');
+    await processPeriodicReportAutomation(client as never, 'worker');
+    expect(generateNarrative).not.toHaveBeenCalled();
   });
 });

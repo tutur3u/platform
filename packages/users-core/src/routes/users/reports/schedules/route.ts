@@ -53,6 +53,7 @@ export async function GET(request: Request, { params }: Params) {
       deliveriesResult,
       globalGate,
       periodicGate,
+      autoSendResult,
     ] = await Promise.all([
       sbAdmin
         .schema('private')
@@ -97,7 +98,14 @@ export async function GET(request: Request, { params }: Params) {
         value: 'true',
         wsId,
       }),
+      sbAdmin
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', wsId)
+        .eq('id', 'AUTO_SEND_APPROVED_REPORTS')
+        .maybeSingle(),
     ]);
+    if (autoSendResult.error) throw autoSendResult.error;
     if (schedulesResult.error) throw schedulesResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
     if (senderResult.error) throw senderResult.error;
@@ -112,6 +120,10 @@ export async function GET(request: Request, { params }: Params) {
       ),
       defaults: schedules.filter((schedule) => !schedule.group_id),
       emailDelivery: {
+        canConfigureAutoSend:
+          permissions.containsPermission('manage_user_report_automation') &&
+          permissions.containsPermission('send_user_group_report_emails'),
+        autoSendAfterApproval: autoSendResult.data?.value === 'true',
         globalGateEnabled: globalGate,
         periodicGateEnabled: periodicGate,
         ready: globalGate && periodicGate && senderConfigured,
@@ -135,7 +147,12 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   try {
-    const parsed = ScheduleSchema.safeParse(await request.json());
+    const parsed = z
+      .union([
+        z.object({ autoSendAfterApproval: z.boolean() }).strict(),
+        ScheduleSchema,
+      ])
+      .safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(
         { message: 'Invalid request body', issues: parsed.error.issues },
@@ -146,6 +163,22 @@ export async function PUT(request: Request, { params }: Params) {
     const { permissions, wsId } = await getAccess(request, params);
     if (!permissions?.containsPermission('manage_user_report_automation')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+    if ('autoSendAfterApproval' in parsed.data) {
+      if (!permissions.containsPermission('send_user_group_report_emails')) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+      }
+      const admin = await createAdminClient();
+      const result = await admin.from('workspace_configs').upsert(
+        {
+          ws_id: wsId,
+          id: 'AUTO_SEND_APPROVED_REPORTS',
+          value: String(parsed.data.autoSendAfterApproval),
+        },
+        { onConflict: 'ws_id,id' }
+      );
+      if (result.error) throw result.error;
+      return NextResponse.json({ success: true });
     }
     try {
       assertValidReportTimezone(parsed.data.timezone);

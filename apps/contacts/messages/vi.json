@@ -3468,7 +3468,15 @@
     "unknown_member": "Thành viên không xác định",
     "weekly": "Hằng tuần",
     "workspace_timezone": "Múi giờ không gian làm việc",
-    "yearly": "Hằng năm"
+    "yearly": "Hằng năm",
+    "auto_send_title": "Tự động gửi sau khi phê duyệt",
+    "auto_send_description": "Các lần phê duyệt tiếp theo sẽ xếp hàng gửi email đến địa chỉ hồ sơ thành viên. Cần bật gửi email. Báo cáo đã gửi sẽ không được gửi lại.",
+    "delivery_loading": "Đang kiểm tra trạng thái gửi email…",
+    "sent_explanation": "Đã gửi nghĩa là nhà cung cấp email đã tiếp nhận thư; không xác nhận thư vào hộp thư đến hoặc đã được đọc.",
+    "delivery_sent_at": "Đã gửi {date}",
+    "delivery_attempt_count": "{count} lần gửi",
+    "delivery_next_attempt": "Lần thử tiếp theo: {date}",
+    "delivery_history": "Lịch sử gửi email"
   },
   "satellite-workspace-settings": {
     "avatar": "Ảnh đại diện không gian làm việc",

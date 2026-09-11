@@ -179,3 +179,42 @@ validation includes:
 - E2E coverage for manual and AI approval flows, blocked delivery, retry, audit
   history, and legacy redirects;
 - Contacts and Web builds plus `bun check`.
+
+## Automatic delivery after approval
+
+In **Reports → Automations**, enable **Send automatically after approval**.
+Changing this setting requires both `manage_user_report_automation` and
+`send_user_group_report_emails`. The setting applies to future approval transitions,
+including approvals from the report editor and bulk approval flows. It does not
+backfill previously approved reports or automatically resend delivered reports.
+
+The `20260911100000_periodic_report_approval_delivery.sql` migration atomically
+queues the report with its approval. Production migration CI applies it automatically
+after integration into production. Enable the setting after that workflow succeeds. `AUTO_SEND_APPROVED_REPORTS` is a workspace config, defaulting to off.
+The worker still checks both email gates, the workspace sender, approval, the
+current workspace user email, and the unsubscribe/block list before sending.
+Revoking approval cancels waiting or retrying deliveries. An email already being
+processed or accepted by the provider cannot be recalled.
+
+Open a periodic report's details to see its recipient, delivery status, attempt
+count, next retry, and latest 20 attempts. The list refreshes every 15 seconds;
+open delivery details refresh every 10 seconds. **Sent** means provider acceptance,
+not confirmed inbox delivery or a read receipt. Test sends are labelled separately.
+Missing email addresses and permanent failures require correction before retrying.
+
+Worker logs use `periodic_report.delivery_sent`, `periodic_report.delivery_failed`,
+`periodic_report.attempt_write_failed`, and `periodic_report.generation_failed`.
+Correlate by `queueId`, `reportId`, `workspaceId`, and provider message ID; recipient
+addresses and report content are omitted from these structured events. If the
+provider accepted an email but tracking failed, the worker blocks automatic retry.
+Check provider logs before requesting another delivery to avoid duplicates.
+
+Local verification: run the Contacts schedule tests, the web
+`src/lib/user-report-automation` suite, the users-core report route tests, and the
+isolated Supabase periodic-report tests. These checks do not send real email.
+
+The isolated Supabase runner stages tracked files only. For an untracked migration
+or pgTAP test, explicitly include both files in the disposable project's
+`trackedFiles` list using `stageDisposableProject`; verify the staged migration
+is present before accepting a reset result. No production schema push is needed
+for this local validation.

@@ -13,6 +13,63 @@ interface Params {
   params: Promise<{ reportId: string; wsId: string }>;
 }
 
+export async function GET(request: Request, { params }: Params) {
+  try {
+    const { reportId, wsId: rawWsId } = await params;
+    const wsId = await resolveUserGroupRouteWorkspaceId(rawWsId, request);
+    const permissions = await getUserGroupRoutePermissions(wsId, request);
+    if (!permissions?.containsPermission('view_user_groups_reports')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+    const admin = await createAdminClient();
+    const db = admin.schema('private');
+    const report = await db
+      .from('external_user_monthly_reports_workspace_view')
+      .select(
+        'id, user_email, delivery_status, delivered_at, delivery_requested_at, last_delivery_error'
+      )
+      .eq('id', reportId)
+      .eq('user_ws_id', wsId)
+      .maybeSingle();
+    if (report.error) throw report.error;
+    if (!report.data)
+      return NextResponse.json(
+        { message: 'Report not found' },
+        { status: 404 }
+      );
+    const queue = await db
+      .from('user_report_email_queue')
+      .select(
+        'id, status, recipient_email, delivery_kind, attempt_count, next_attempt_at, sent_at, last_error, provider_message_id'
+      )
+      .eq('report_id', reportId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+    if (queue.error) throw queue.error;
+    const attempts = queue.data
+      ? await db
+          .from('user_report_email_attempts')
+          .select(
+            'id, status, attempted_at, error_message, provider_message_id'
+          )
+          .eq('queue_id', queue.data.id)
+          .order('attempted_at', { ascending: false })
+          .limit(20)
+      : { data: [], error: null };
+    if (attempts.error) throw attempts.error;
+    return NextResponse.json(
+      { report: report.data, queue: queue.data, attempts: attempts.data },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
+  } catch (error) {
+    console.error('Periodic report delivery diagnostics failed', { error });
+    return NextResponse.json(
+      { message: 'Unable to load delivery status' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: Request, { params }: Params) {
   try {
     const parsed = DeliveryActionSchema.safeParse(await request.json());
@@ -63,6 +120,17 @@ export async function POST(request: Request, { params }: Params) {
       });
     }
 
+    if (
+      report.delivery_status === 'processing' ||
+      (report.delivery_status === 'queued' &&
+        parsed.data.action !== 'cancel') ||
+      report.delivery_status === 'sent'
+    ) {
+      return NextResponse.json(
+        { message: 'This report is already queued, processing, or sent.' },
+        { status: 409 }
+      );
+    }
     if (parsed.data.action === 'cancel') {
       const cancelResult = await privateDb
         .from('user_report_email_queue')
@@ -73,12 +141,19 @@ export async function POST(request: Request, { params }: Params) {
           updated_at: new Date().toISOString(),
         })
         .eq('report_id', reportId)
-        .in('status', ['queued', 'failed']);
+        .in('status', ['queued', 'failed'])
+        .select('id');
       if (cancelResult.error) throw cancelResult.error;
-      await privateDb
+      if (!cancelResult.data?.length)
+        return NextResponse.json(
+          { message: 'No waiting delivery to cancel.' },
+          { status: 409 }
+        );
+      const cancelledReport = await privateDb
         .from('external_user_monthly_reports')
         .update({ delivery_status: 'cancelled' })
         .eq('id', reportId);
+      if (cancelledReport.error) throw cancelledReport.error;
       return NextResponse.json({
         message: 'Delivery cancelled.',
         queued: false,
@@ -156,10 +231,32 @@ export async function POST(request: Request, { params }: Params) {
       ws_id: wsId,
       ...(parsed.data.action === 'retry' ? { attempt_count: 0 } : {}),
     };
-    const queueResult = await privateDb
+    // Insert only if absent; never overwrite a worker's active or sent row.
+    let queueResult = await privateDb
       .from('user_report_email_queue')
-      .upsert(queuePayload, { onConflict: 'report_id' });
+      .upsert(queuePayload, { onConflict: 'report_id', ignoreDuplicates: true })
+      .select('id')
+      .maybeSingle();
     if (queueResult.error) throw queueResult.error;
+    if (!queueResult.data) {
+      queueResult = await privateDb
+        .from('user_report_email_queue')
+        .update({ ...queuePayload, attempt_count: 0 })
+        .eq('report_id', reportId)
+        .eq('ws_id', wsId)
+        .or(
+          'status.in.(failed,blocked,cancelled),and(status.eq.sent,delivery_kind.eq.test)'
+        )
+        .select('id')
+        .maybeSingle();
+      if (queueResult.error) throw queueResult.error;
+    }
+    if (!queueResult.data) {
+      return NextResponse.json(
+        { message: 'Delivery is already active or sent.' },
+        { status: 409 }
+      );
+    }
     const reportUpdate = await privateDb
       .from('external_user_monthly_reports')
       .update({
@@ -167,7 +264,8 @@ export async function POST(request: Request, { params }: Params) {
         delivery_status: 'queued',
         last_delivery_error: null,
       })
-      .eq('id', reportId);
+      .eq('id', reportId)
+      .not('delivery_status', 'in', '(sent,processing)');
     if (reportUpdate.error) throw reportUpdate.error;
 
     return NextResponse.json({
