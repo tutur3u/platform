@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.51.0](https://github.com/tutur3u/platform/compare/platform-v0.50.0...platform-v0.51.0) (2026-09-11)
+
+
+### Features
+
+* **ai:** add metered root-sponsored Colab endpoint ([#5296](https://github.com/tutur3u/platform/issues/5296)) ([d768a03](https://github.com/tutur3u/platform/commit/d768a0321ae12a69e8309b827d17952b36857fe9))
+* **cli:** add shared local resource controls ([b34e3fd](https://github.com/tutur3u/platform/commit/b34e3fd0788865fd5310e254c63b6271dd5dd0dc))
+* **colab:** add RISE learning, prompt coaching and keyless sponsorship ([#5297](https://github.com/tutur3u/platform/issues/5297)) ([a7d96f1](https://github.com/tutur3u/platform/commit/a7d96f163e8f850cdaa0edb65ecb5364bd0b9a55))
+
+
+### Bug Fixes
+
+* **ai:** close sponsored pricing and retry edge cases ([11be505](https://github.com/tutur3u/platform/commit/11be505ebe943f2787a98db8f7da065c1e5fb99f))
+* **ai:** fence retries inside reservation transaction ([b56e2b0](https://github.com/tutur3u/platform/commit/b56e2b066e3ae6184799c457cb3086611dcd6dc7))
+* **ai:** fence sponsored retries and zero settlement ([09fa392](https://github.com/tutur3u/platform/commit/09fa392197947e9cb333ae08a959543730357942))
+* **colab:** refine coaching and sponsorship recovery ([caad57e](https://github.com/tutur3u/platform/commit/caad57ef0e140fda3f5a3f6d3e0ec3a25e5fd101))
+* **meet:** preserve cached notes access and list recovery ([74a60a8](https://github.com/tutur3u/platform/commit/74a60a8dda96d12a5bff0d3bebe92beb20051867))
+* **meet:** recover call preparation and improve startup ([#5294](https://github.com/tutur3u/platform/issues/5294)) ([70b79af](https://github.com/tutur3u/platform/commit/70b79af35e4dd6532325adee12462a2ff6cc76ff))
+* **meet:** tolerate blocked browser storage events ([0019ffb](https://github.com/tutur3u/platform/commit/0019ffb541e1b8ce4d8f0a6e881833e762461788))
+* **meet:** use supported redirects in Live Worker requests ([#5295](https://github.com/tutur3u/platform/issues/5295)) ([5452118](https://github.com/tutur3u/platform/commit/54521182fab4183b2f7b500770dd8c170dc98a48))
+
 ## [0.50.0](https://github.com/tutur3u/platform/compare/platform-v0.49.0...platform-v0.50.0) (2026-09-10)
 
 

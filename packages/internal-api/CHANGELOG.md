@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.1](https://github.com/tutur3u/platform/compare/internal-api-v0.38.0...internal-api-v0.38.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **meet:** recover call preparation and improve startup ([#5294](https://github.com/tutur3u/platform/issues/5294)) ([70b79af](https://github.com/tutur3u/platform/commit/70b79af35e4dd6532325adee12462a2ff6cc76ff))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/internal-api-v0.37.0...internal-api-v0.38.0) (2026-09-10)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/sdk-v0.21.0...sdk-v0.22.0) (2026-09-11)
+
+
+### Features
+
+* **cli:** add shared local resource controls ([b34e3fd](https://github.com/tutur3u/platform/commit/b34e3fd0788865fd5310e254c63b6271dd5dd0dc))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/sdk-v0.20.1...sdk-v0.21.0) (2026-09-07)
 
 

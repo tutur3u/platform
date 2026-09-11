@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/meet-v0.29.0...meet-v0.29.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **meet:** preserve cached notes access and list recovery ([74a60a8](https://github.com/tutur3u/platform/commit/74a60a8dda96d12a5bff0d3bebe92beb20051867))
+* **meet:** recover call preparation and improve startup ([#5294](https://github.com/tutur3u/platform/issues/5294)) ([70b79af](https://github.com/tutur3u/platform/commit/70b79af35e4dd6532325adee12462a2ff6cc76ff))
+* **meet:** tolerate blocked browser storage events ([0019ffb](https://github.com/tutur3u/platform/commit/0019ffb541e1b8ce4d8f0a6e881833e762461788))
+* **meet:** use supported redirects in Live Worker requests ([#5295](https://github.com/tutur3u/platform/issues/5295)) ([5452118](https://github.com/tutur3u/platform/commit/54521182fab4183b2f7b500770dd8c170dc98a48))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/meet-v0.28.0...meet-v0.29.0) (2026-09-10)
 
 
