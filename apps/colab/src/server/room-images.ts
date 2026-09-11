@@ -12,8 +12,12 @@ export class RoomImages {
     storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS image_chunks (id TEXT NOT NULL, part INTEGER NOT NULL, value TEXT NOT NULL, PRIMARY KEY(id, part))'
     );
+    storage.sql.exec(
+      'CREATE TABLE IF NOT EXISTS image_cleanup (id TEXT PRIMARY KEY)'
+    );
   }
   canStore() {
+    this.retryCleanup();
     requireRule(
       this.storage.sql
         .exec<{ count: number }>('SELECT COUNT(*) AS count FROM images')
@@ -59,7 +63,7 @@ export class RoomImages {
   read(id: string, visibleTeams: string[]) {
     const entry = this.storage.sql
       .exec<{ team: string; mime: string }>(
-        'SELECT team, mime FROM images WHERE id = ?',
+        'SELECT team, mime FROM images WHERE id = ? AND id NOT IN (SELECT id FROM image_cleanup)',
         id
       )
       .toArray()[0];
@@ -84,15 +88,31 @@ export class RoomImages {
     );
   }
   remove(ids: string[]) {
+    // Persist intent outside the deletion transaction so failed cleanup survives eviction.
+    for (const id of ids) {
+      this.storage.sql.exec(
+        'INSERT OR IGNORE INTO image_cleanup VALUES (?)',
+        id
+      );
+    }
+    this.retryCleanup();
+  }
+  private retryCleanup() {
+    const pending = this.storage.sql
+      .exec<{ id: string }>('SELECT id FROM image_cleanup')
+      .toArray();
+    if (!pending.length) return;
     this.storage.transactionSync(() => {
-      for (const id of ids) {
+      for (const { id } of pending) {
         this.storage.sql.exec('DELETE FROM image_chunks WHERE id = ?', id);
         this.storage.sql.exec('DELETE FROM images WHERE id = ?', id);
+        this.storage.sql.exec('DELETE FROM image_cleanup WHERE id = ?', id);
       }
     });
   }
   clear() {
     this.storage.sql.exec('DELETE FROM image_chunks');
     this.storage.sql.exec('DELETE FROM images');
+    this.storage.sql.exec('DELETE FROM image_cleanup');
   }
 }

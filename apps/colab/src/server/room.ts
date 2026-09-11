@@ -450,7 +450,9 @@ export class ColabRoom extends DurableObject<Env> {
           if (!committed) this.images.remove(generatedImageIds);
         } catch {
           // Cleanup must never prevent accounting for already-billed usage.
-          console.warn('colab_image_cleanup_failed', { jobId: job });
+          console.warn('colab_image_cleanup_failed', {
+            jobId: aiEnv.sponsorship?.jobId,
+          });
         }
         if (aiEnv.sponsorship?.receipts.length) {
           const latest = this.read();
