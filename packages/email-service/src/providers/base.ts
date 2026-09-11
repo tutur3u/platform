@@ -148,6 +148,9 @@ export abstract class BaseEmailProvider implements EmailProvider {
         (tag) => !NON_CONTENT_TAGS.includes(tag)
       ),
       allowedAttributes: { a: ['href'] },
+      // This intermediate markup is never rendered. Preserve href text here;
+      // sanitizeHtml separately enforces URL safety for the HTML alternative.
+      allowedSchemesAppliedToAttributes: [],
       nonTextTags: NON_CONTENT_TAGS,
     });
 

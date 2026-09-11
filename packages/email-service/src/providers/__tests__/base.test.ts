@@ -60,6 +60,24 @@ describe('email provider document conversion', () => {
     ).toBe('A & B &lt;tag&gt;\n\nOpen (https://example.com?a=1&b=2)');
   });
 
+  it.each([
+    'tel:+84123456789',
+    'cid:report@example.test',
+    'mailto:parent@example.test',
+    'ftp://example.test/report',
+    'custom-app://reports/1',
+  ])('preserves the %s address in plain text', (href) => {
+    expect(provider.plainText(`<a href="${href}">Open</a>`)).toBe(
+      `Open (${href})`
+    );
+  });
+
+  it('keeps the URL safety filter on rendered HTML', async () => {
+    const html = await provider.html('<a href="javascript:alert(1)">Open</a>');
+    expect(html).not.toContain('javascript:');
+    expect(html).toContain('Open');
+  });
+
   it('omits head metadata from the plain-text alternative', () => {
     const result = provider.plainText(report);
     expect(result).not.toContain('Hidden document title');
