@@ -168,6 +168,21 @@ describe('ScheduleSetupDialog', () => {
     await screen.findByRole('option', { name: 'Physics B2' });
   });
 
+  it('retries only the schedule when the group is fixed', async () => {
+    listSessions.mockRejectedValueOnce(new Error('offline'));
+    listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });
+    listGroups.mockRejectedValue(new Error('group access denied'));
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: 'Manage schedule' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'schedule_setup_retry' })
+    );
+    expect(
+      await screen.findByText('No recurring schedule yet.')
+    ).toBeInTheDocument();
+    expect(listGroups).not.toHaveBeenCalled();
+  });
+
   it('shows an empty group state and blocks scheduling when no groups exist', async () => {
     listGroups.mockResolvedValue([]);
     listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });

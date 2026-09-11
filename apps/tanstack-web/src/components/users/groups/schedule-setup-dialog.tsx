@@ -338,7 +338,7 @@ export function ScheduleSetupDialog({
               createDraft={createDraft}
               groupId={groupId}
               groups={groups}
-              isError={scheduleQuery.isError || groupsQuery.isError}
+              isError={scheduleQuery.isError || (canChooseGroup && groupsQuery.isError)}
               isLoading={scheduleQuery.isLoading || (canChooseGroup && groupsQuery.isLoading)}
               mode={mode}
               onCreateDraftChange={setCreateDraft}
@@ -352,7 +352,7 @@ export function ScheduleSetupDialog({
                 setReviewing(false);
               }}
               onRetry={() => {
-                void groupsQuery.refetch();
+                if (canChooseGroup) void groupsQuery.refetch();
                 if (groupId) void scheduleQuery.refetch();
               }}
               onSeriesChange={(value) => {
