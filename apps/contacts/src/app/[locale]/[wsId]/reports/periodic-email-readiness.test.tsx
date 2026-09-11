@@ -9,15 +9,13 @@ vi.mock('@tuturuuu/internal-api/reports', () => ({
 }));
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 it('keeps unavailable readiness visible and recovers on retry', async () => {
-  load
-    .mockRejectedValueOnce(new Error('Forbidden'))
-    .mockResolvedValue({
-      emailDelivery: {
-        ready: true,
-        senderConfigured: true,
-        autoSendAfterApproval: true,
-      },
-    });
+  load.mockRejectedValueOnce(new Error('Forbidden')).mockResolvedValue({
+    emailDelivery: {
+      ready: true,
+      senderConfigured: true,
+      autoSendAfterApproval: true,
+    },
+  });
   render(
     <QueryClientProvider
       client={
