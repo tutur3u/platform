@@ -48,7 +48,7 @@ export class ColabRoom extends DurableObject<Env> {
     room.audit = audit ? JSON.parse(audit.value) : [];
     return room;
   }
-  private save(room: Room) {
+  private save(room: Room, notify = true) {
     room.revision++;
     // Keep private audit data out of the legacy room JSON. Older Worker versions
     // spread unknown room fields into their projections during a rollback.
@@ -63,7 +63,7 @@ export class ColabRoom extends DurableObject<Env> {
         JSON.stringify(audit ?? [])
       );
     });
-    this.broadcast(room);
+    if (notify) this.broadcast(room);
   }
   // Per-account index stores identifiers only; every list read rechecks room access.
   rememberRoom(id: string) {
@@ -442,8 +442,9 @@ export class ColabRoom extends DurableObject<Env> {
         body.action === 'scenario',
         body.action === 'scenario' ? undefined : requestedTeamId
       );
-      this.save(room);
+      this.save(room, false);
       committed = true;
+      this.broadcast(room);
     } finally {
       try {
         try {

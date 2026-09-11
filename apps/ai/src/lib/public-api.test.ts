@@ -119,6 +119,39 @@ describe('AI Studio billing policy', () => {
       })
     );
   });
+  it('fails closed for custom image pricing even without the sponsored flag', async () => {
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            kind: 'api-key',
+            workspaceId: 'workspace',
+            apiKey: { id: 'key' },
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'run',
+          startedAt: Date.now(),
+          calculateCost: async () => {
+            throw new Error('missing modality receipt');
+          },
+        },
+        {
+          status: 'succeeded',
+          usage: { imageUnits: 1, inputTokens: 100, outputTokens: 1120 },
+        }
+      )
+    ).rejects.toThrow('missing modality receipt');
+    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        imageUnits: 1,
+        inputTokens: 100,
+        outputTokens: 1120,
+        metadata: expect.objectContaining({ reconciliation_required: true }),
+      })
+    );
+  });
   it('rejects unknown zero model pricing before reserving credits', async () => {
     mocks.calculateAiStudioUsageCost.mockResolvedValueOnce({
       billedCredits: 0,

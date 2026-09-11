@@ -36,6 +36,7 @@ export async function executeImageRequest(
   } = {}
 ): Promise<Response> {
   let context: Awaited<ReturnType<typeof prepareMeteredExecution>> | undefined;
+  const generated: { image: { base64: string; mediaType: string } }[] = [];
   const gemini = isGeminiFlashImage(input.model)
     ? createGeminiImageBilling(input.prompt, input.n)
     : undefined;
@@ -62,24 +63,19 @@ export async function executeImageRequest(
       modelId: input.model,
       request,
     });
-    // Gemini calls are sequential so partial successes retain their paid usage.
-    const generated: { image: { base64: string; mediaType: string } }[] = gemini
-      ? []
-      : await Promise.all(
-          Array.from({ length: input.n }, () =>
-            generateImage({
+    // Retain partial paid usage for every provider when a later request fails.
+    for (let index = 0; index < input.n; index++) {
+      generated.push(
+        gemini
+          ? await gemini.generate(request, aspectRatio(input.size))
+          : await generateImage({
               abortSignal: request.signal,
               aspectRatio: aspectRatio(input.size),
               model: gateway.image(input.model),
               prompt: input.prompt,
               maxRetries: 0,
             })
-          )
-        );
-    if (gemini) {
-      for (let index = 0; index < input.n; index++) {
-        generated.push(await gemini.generate(request, aspectRatio(input.size)));
-      }
+      );
     }
 
     const [billing] = await Promise.all([
@@ -121,7 +117,7 @@ export async function executeImageRequest(
       await settleMeteredExecution(context, {
         error,
         status: request.signal.aborted ? 'aborted' : 'failed',
-        usage: gemini?.usage ?? {},
+        usage: gemini?.usage ?? { imageUnits: generated.length },
         metadata: gemini
           ? {
               provider_response_ids: gemini.generationIds,

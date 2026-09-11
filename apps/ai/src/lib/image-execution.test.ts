@@ -93,6 +93,24 @@ it('does not invent a successful asset or receipt after a provider failure', asy
   expect(mocks.capture).not.toHaveBeenCalled();
   expect(mocks.settle).toHaveBeenCalledWith(
     expect.anything(),
-    expect.objectContaining({ status: 'failed', usage: {} })
+    expect.objectContaining({ status: 'failed', usage: { imageUnits: 0 } })
+  );
+});
+it('retains paid non-Gemini image usage when a subsequent generation fails', async () => {
+  mocks.generate.mockResolvedValueOnce({
+    image: { base64: 'AAAA', mediaType: 'image/png' },
+  });
+  mocks.generate.mockRejectedValueOnce(new Error('provider unavailable'));
+  const response = await executeImageRequest(
+    new Request('https://ai.test'),
+    imageRequestSchema.parse({ model: 'image-model', prompt: 'Artwork', n: 2 })
+  );
+  expect(response.status).toBe(503);
+  expect(mocks.settle).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      status: 'failed',
+      usage: { imageUnits: 1 },
+    })
   );
 });

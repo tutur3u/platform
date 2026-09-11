@@ -123,7 +123,11 @@ it('charges a measured safety refusal without inventing an image', async () => {
     response: { id: 'google_response_test' },
     providerMetadata: {
       google: {
-        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 3 },
+        usageMetadata: {
+          promptTokenCount: 100,
+          candidatesTokenCount: 3,
+          candidatesTokensDetails: [{ modality: 'TEXT', tokenCount: 3 }],
+        },
       },
     },
   });
@@ -137,6 +141,16 @@ it('charges a measured safety refusal without inventing an image', async () => {
   ).toBeGreaterThan(0);
 });
 it('fails closed on cached or unsupported modality usage instead of guessing charges', () => {
+  expect(() =>
+    priceGoogleImageUsage(
+      {
+        promptTokenCount: 10,
+        candidatesTokenCount: 1121,
+        candidatesTokensDetails: [{ modality: 'IMAGE', tokenCount: 1120 }],
+      },
+      1
+    )
+  ).toThrow('complete uncached usage');
   expect(() =>
     priceGoogleImageUsage(
       { promptTokenCount: 10, cachedContentTokenCount: 5 },
@@ -153,4 +167,15 @@ it('fails closed on cached or unsupported modality usage instead of guessing cha
     )
   ).toThrow();
   expect(() => priceGoogleImageUsage(undefined, 1)).toThrow();
+});
+it('retains image receipts when optional SDK reasoning details are absent', async () => {
+  const result = await mocks.generate();
+  delete result.usage.outputTokenDetails;
+  mocks.generate.mockResolvedValue(result);
+  const billing = createGeminiImageBilling('Artwork', 1);
+  await billing.generate(new Request('https://ai.test'), '1:1');
+  expect(billing.usage).toMatchObject({ reasoningTokens: 0, imageUnits: 1 });
+  expect(
+    (await billing.calculateCost(billing.usage, 'root')).providerCostUsd
+  ).toBe(0.06749);
 });

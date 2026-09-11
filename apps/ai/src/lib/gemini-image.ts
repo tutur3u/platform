@@ -54,12 +54,16 @@ const googleUsageSchema = z.object({
  */
 export function priceGoogleImageUsage(raw: unknown, imageCount: number) {
   const usage = googleUsageSchema.parse(raw);
+  const classifiedTokens = usage.candidatesTokensDetails.reduce(
+    (sum, detail) => sum + detail.tokenCount,
+    0
+  );
   const imageTokens = usage.candidatesTokensDetails
     .filter((detail) => detail.modality === 'IMAGE')
     .reduce((sum, detail) => sum + detail.tokenCount, 0);
   if (
     usage.cachedContentTokenCount > 0 ||
-    imageTokens > usage.candidatesTokenCount ||
+    classifiedTokens !== usage.candidatesTokenCount ||
     (imageCount > 0 && imageTokens === 0)
   ) {
     throw new Error('Image modality pricing requires complete uncached usage.');
@@ -133,7 +137,7 @@ export function createGeminiImageBilling(prompt: string, count: number) {
         (usage.outputTokens ?? 0) + (result.usage.outputTokens ?? 0);
       usage.reasoningTokens =
         (usage.reasoningTokens ?? 0) +
-        (result.usage.outputTokenDetails.reasoningTokens ?? 0);
+        (result.usage.outputTokenDetails?.reasoningTokens ?? 0);
       const images = result.files.filter((file) =>
         file.mediaType.startsWith('image/')
       );

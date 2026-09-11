@@ -326,13 +326,14 @@ export async function settleMeteredExecution(
       return cost;
     })
     .catch(async (pricingError) => {
-      if (context.requirePricedUsage) {
+      if (context.requirePricedUsage || context.calculateCost) {
         // Release the hold without claiming a successful zero-cost generation.
         // Preserve measured usage for reconciliation once pricing recovers.
         await settleAiStudioRun({
           runId: context.runId,
           status: 'failed',
           actualCredits: 0,
+          imageUnits: usage.imageUnits,
           inputTokens: usage.inputTokens,
           outputTokens: usage.outputTokens,
           reasoningTokens: usage.reasoningTokens,
