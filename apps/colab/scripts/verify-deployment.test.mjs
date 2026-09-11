@@ -1,7 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
-import { waitForDeployment } from './verify-deployment.mjs';
+import { shellAssets, waitForDeployment } from './verify-deployment.mjs';
 
 describe('Cloudflare rollout verification', () => {
+  it('detects a stale entry shell without rejecting edge-injected challenge markup', () => {
+    const shell = '<script src="/assets/index-current.js"></script>';
+    expect(
+      shellAssets(`${shell}<script src="/cdn-cgi/challenge.js"></script>`)
+    ).toBe(shellAssets(shell));
+    expect(
+      shellAssets('<script src="/assets/index-old.js"></script>')
+    ).not.toBe(shellAssets(shell));
+  });
   it('waits for the new assets to replace the old edge response', async () => {
     const check = vi
       .fn()
