@@ -60,6 +60,7 @@ describe('monthly report automatic sending configuration', () => {
           ws_id: 'workspace-1',
           id: 'AUTO_SEND_APPROVED_REPORTS',
           value: String(enabled),
+          updated_at: expect.any(String),
         },
         { onConflict: 'ws_id,id' }
       );
@@ -74,7 +75,10 @@ describe('monthly report automatic sending configuration', () => {
         await PUT(
           request({
             autoSendAfterApproval: true,
-            group_id: 'another-workspace',
+            cadence: 'monthly',
+            enabled: true,
+            generation_mode: 'manual',
+            timezone: 'Asia/Ho_Chi_Minh',
           }),
           context
         )

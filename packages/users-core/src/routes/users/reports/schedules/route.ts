@@ -150,7 +150,7 @@ export async function PUT(request: Request, { params }: Params) {
     const parsed = z
       .union([
         z.object({ autoSendAfterApproval: z.boolean() }).strict(),
-        ScheduleSchema,
+        ScheduleSchema.strict(),
       ])
       .safeParse(await request.json());
     if (!parsed.success) {
@@ -174,6 +174,7 @@ export async function PUT(request: Request, { params }: Params) {
           ws_id: wsId,
           id: 'AUTO_SEND_APPROVED_REPORTS',
           value: String(parsed.data.autoSendAfterApproval),
+          updated_at: new Date().toISOString(),
         },
         { onConflict: 'ws_id,id' }
       );

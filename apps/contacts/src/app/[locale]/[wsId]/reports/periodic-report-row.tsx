@@ -104,7 +104,7 @@ export function PeriodicReportRow({
           </p>
           <p className="mt-1 flex items-center gap-1 truncate text-muted-foreground text-xs">
             <Mail className="size-3 shrink-0" />
-            {report.user_email || t('missing_email')}
+            {report.user_email?.trim() || t('missing_email')}
           </p>
           {report.creator_name ? (
             <p className="truncate text-muted-foreground text-xs">

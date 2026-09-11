@@ -125,7 +125,19 @@ function createAdminClientStub(
     rpc: (name: string) =>
       Promise.resolve(
         name === 'claim_periodic_report_emails'
-          ? { data: runs.length ? [] : [QUEUE_ROW], error: null }
+          ? {
+              data:
+                runs.length ||
+                ['sent', 'blocked', 'cancelled'].includes(
+                  String(
+                    writesFor(writes, 'user_report_email_queue').at(-1)?.payload
+                      .status
+                  )
+                )
+                  ? []
+                  : [QUEUE_ROW],
+              error: null,
+            }
           : { data: runs, error: null }
       ),
   };
@@ -332,6 +344,7 @@ describe('periodic report email delivery', () => {
       },
     });
     await processPeriodicReportAutomation(client as never, 'worker');
+    await processPeriodicReportAutomation(client as never, 'worker-again');
     expect(send).toHaveBeenCalledOnce();
     expect(
       writesFor(writes, 'user_report_email_queue')[0]?.payload.status
@@ -340,6 +353,12 @@ describe('periodic report email delivery', () => {
       writesFor(writes, 'external_user_monthly_reports').at(-1)?.payload
         .last_delivery_error
     ).toContain('Provider accepted');
+    expect(
+      writesFor(writes, 'user_report_email_queue')[0]?.payload.sent_at
+    ).toEqual(expect.any(String));
+    expect(
+      writesFor(writes, 'user_report_email_attempts').at(-1)?.payload.status
+    ).toBe('blocked');
   });
 
   it('retains the actual normalized recipient in delivery tracking', async () => {

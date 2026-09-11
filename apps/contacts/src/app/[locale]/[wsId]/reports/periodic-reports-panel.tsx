@@ -212,7 +212,7 @@ export default function PeriodicReportsPanel({
           setSortDirection(nextDirection);
         }}
         query={query}
-        isSearching={reportsQuery.isFetching || query.trim() !== debouncedQuery}
+        isSearching={reportsQuery.isLoading || query.trim() !== debouncedQuery}
         resultCount={totalReports}
         sortBy={sortBy}
         sortDirection={sortDirection}

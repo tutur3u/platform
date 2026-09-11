@@ -314,6 +314,9 @@ async function recordEmailAttempt(
 async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
   const privateDb = getPrivateDb(sbAdmin);
   let providerAccepted = false;
+  let acceptedAt: string | null = null;
+  let acceptedMessageId: string | undefined;
+  let attemptedRecipient = row.recipient_email;
   const fail = async (
     status: 'failed' | 'blocked',
     message: string,
@@ -329,7 +332,10 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       providerAccepted,
     });
     try {
-      await recordEmailAttempt(privateDb, row, status, { error: message });
+      await recordEmailAttempt(privateDb, row, blocked ? 'blocked' : status, {
+        error: message,
+        providerMessageId: acceptedMessageId,
+      });
     } catch (error) {
       console.error('periodic_report.attempt_write_failed', {
         queueId: row.id,
@@ -340,6 +346,10 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       .from('user_report_email_queue')
       .update({
         last_error: message,
+        recipient_email: attemptedRecipient,
+        ...(providerAccepted
+          ? { sent_at: acceptedAt, provider_message_id: acceptedMessageId }
+          : {}),
         locked_at: null,
         locked_by: null,
         next_attempt_at: getRetryAt(row.attempt_count),
@@ -352,6 +362,9 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       .update({
         delivery_status: blocked ? 'blocked' : 'failed',
         last_delivery_error: message,
+        ...(providerAccepted && row.delivery_kind === 'send'
+          ? { delivered_at: acceptedAt }
+          : {}),
       })
       .eq('id', row.report_id);
     if (queueFailure.error || reportFailure.error) {
@@ -408,6 +421,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       await fail('blocked', 'Subject profile email is missing.', true);
       return;
     }
+    attemptedRecipient = recipient;
     if (await isEmailBlacklisted(sbAdmin, recipient)) {
       await fail('blocked', 'Recipient is unsubscribed or blocked.', true);
       return;
@@ -452,6 +466,8 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
 
     providerAccepted = true;
     const sentAt = new Date().toISOString();
+    acceptedAt = sentAt;
+    acceptedMessageId = sendResult.messageId;
     await recordEmailAttempt(privateDb, row, 'sent', {
       providerMessageId: sendResult.messageId,
     });

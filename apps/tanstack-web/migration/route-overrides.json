@@ -2392,7 +2392,7 @@
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Periodic report approval auto-send configuration and workspace-scoped delivery diagnostics. Preserve view/manage/send permission checks, private no-store diagnostics, approval gates, queue lifecycle, and idempotency. Rust port pending."
+      "note": "Per-report delivery diagnostics, send/test-send/retry/cancel actions, and atomic delivery status guards remain on the live Next.js API. Rust port pending."
     }
   }
 }

@@ -149,11 +149,6 @@ export async function POST(request: Request, { params }: Params) {
           { message: 'No waiting delivery to cancel.' },
           { status: 409 }
         );
-      const cancelledReport = await privateDb
-        .from('external_user_monthly_reports')
-        .update({ delivery_status: 'cancelled' })
-        .eq('id', reportId);
-      if (cancelledReport.error) throw cancelledReport.error;
       return NextResponse.json({
         message: 'Delivery cancelled.',
         queued: false,
@@ -220,6 +215,8 @@ export async function POST(request: Request, { params }: Params) {
     const queuePayload = {
       delivery_kind: parsed.data.action === 'test' ? 'test' : 'send',
       last_error: null,
+      sent_at: null,
+      provider_message_id: null,
       locked_at: null,
       locked_by: null,
       next_attempt_at: now,
@@ -245,7 +242,7 @@ export async function POST(request: Request, { params }: Params) {
         .eq('report_id', reportId)
         .eq('ws_id', wsId)
         .or(
-          'status.in.(failed,blocked,cancelled),and(status.eq.sent,delivery_kind.eq.test)'
+          'and(status.in.(failed,blocked,cancelled),or(sent_at.is.null,delivery_kind.eq.test)),and(status.eq.sent,delivery_kind.eq.test)'
         )
         .select('id')
         .maybeSingle();
@@ -257,17 +254,7 @@ export async function POST(request: Request, { params }: Params) {
         { status: 409 }
       );
     }
-    const reportUpdate = await privateDb
-      .from('external_user_monthly_reports')
-      .update({
-        delivery_requested_at: now,
-        delivery_status: 'queued',
-        last_delivery_error: null,
-      })
-      .eq('id', reportId)
-      .not('delivery_status', 'in', '(sent,processing)');
-    if (reportUpdate.error) throw reportUpdate.error;
-
+    // The queue trigger synchronizes report state atomically with this write.
     return NextResponse.json({
       message:
         parsed.data.action === 'test'
@@ -277,6 +264,20 @@ export async function POST(request: Request, { params }: Params) {
       status: 'queued',
     });
   } catch (error) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      error.code === '23514'
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            'Delivery state changed. Refresh the report before trying again.',
+        },
+        { status: 409 }
+      );
+    }
     console.error('Error in periodic report delivery POST:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

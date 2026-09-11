@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(10);
+select plan(18);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -35,6 +35,34 @@ select is((select status from private.user_report_email_queue where report_id = 
 update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now(), rejected_by = null, rejected_at = null, rejection_reason = null
 where id = '40000000-0000-4000-8000-000000009105';
 select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009105'), 'queued', 'reapproval restarts a cancelled delivery');
+
+-- A completed test may become a real delivery; old test metadata must disappear.
+update private.user_report_email_queue set status = 'sent', delivery_kind = 'test', sent_at = now(), provider_message_id = 'test-message' where report_id = '40000000-0000-4000-8000-000000009105';
+update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009105';
+update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009105';
+select is((select sent_at from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009105'), null::timestamptz, 'real delivery clears the test timestamp');
+select is((select provider_message_id from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009105'), null::text, 'real delivery clears the test provider id');
+
+-- Queue lifecycle changes update report state in the same transaction.
+update private.user_report_email_queue set status = 'processing' where report_id = '40000000-0000-4000-8000-000000009105';
+select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009105'), 'processing', 'worker claim synchronizes visible status');
+with retried as (
+ update private.user_report_email_queue set status = 'queued'
+ where report_id = '40000000-0000-4000-8000-000000009105' and (status in ('failed','blocked','cancelled') or (status = 'sent' and delivery_kind = 'test')) returning id
+) select is((select count(*)::int from retried), 0, 'manual retry cannot overwrite an existing processing queue row');
+update private.user_report_email_queue set status = 'failed' where report_id = '40000000-0000-4000-8000-000000009105';
+update private.external_user_monthly_reports set report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009105';
+select throws_ok($$update private.user_report_email_queue set status = 'queued' where report_id = '40000000-0000-4000-8000-000000009105'$$, '23514', 'Report is not approved.', 'revocation wins over a stale queue request');
+select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009105'), 'cancelled', 'rejected stale request leaves report cancelled');
+update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009105';
+
+-- Even if report tracking loses its timestamp, the provider acceptance marker
+-- on the blocked queue prevents automatic redelivery after approval changes.
+update private.user_report_email_queue set status = 'blocked', sent_at = now(), provider_message_id = 'accepted-message', last_error = 'Provider accepted; tracking failed' where report_id = '40000000-0000-4000-8000-000000009105';
+update private.external_user_monthly_reports set delivered_at = null, report_approval_status = 'PENDING', approved_by = null, approved_at = null where id = '40000000-0000-4000-8000-000000009105';
+update private.external_user_monthly_reports set report_approval_status = 'APPROVED', approved_by = '40000000-0000-4000-8000-000000009103', approved_at = now() where id = '40000000-0000-4000-8000-000000009105';
+select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009105'), 'blocked', 'reapproval never requeues a provider-accepted blocked send');
+select throws_ok($$update private.user_report_email_queue set status = 'queued', sent_at = null where report_id = '40000000-0000-4000-8000-000000009105'$$, '23514', 'Provider already accepted this delivery.', 'manual retry also preserves accepted delivery');
 update private.external_user_monthly_reports set delivered_at = now(), delivery_status = 'sent'
 where id = '40000000-0000-4000-8000-000000009105';
 update private.user_report_email_queue set status = 'sent' where report_id = '40000000-0000-4000-8000-000000009105';

@@ -34,7 +34,10 @@ begin
   ) then return new; end if;
 
   -- Never automatically resend a successfully delivered report.
-  if new.delivered_at is not null then return new; end if;
+  if new.delivered_at is not null or exists (
+    select 1 from private.user_report_email_queue
+    where report_id = new.id and delivery_kind = 'send' and sent_at is not null
+  ) then return new; end if;
   if nullif(btrim(subject.email), '') is null then
     update private.external_user_monthly_reports
       set delivery_status = 'blocked', last_delivery_error = 'Subject profile email is missing.'
@@ -49,7 +52,7 @@ begin
     set status = 'queued', delivery_kind = 'send', attempt_count = 0,
         recipient_email = excluded.recipient_email, user_id = excluded.user_id,
         next_attempt_at = now(), locked_at = null, locked_by = null,
-        last_error = null, updated_at = now()
+        last_error = null, sent_at = null, provider_message_id = null, updated_at = now()
     where user_report_email_queue.status in ('cancelled', 'blocked', 'failed')
        or (user_report_email_queue.status = 'sent' and user_report_email_queue.delivery_kind = 'test')
   returning id into queued_id;
@@ -68,3 +71,46 @@ create trigger queue_approved_periodic_report
   after insert or update
   on private.external_user_monthly_reports
   for each row execute function private.queue_approved_periodic_report();
+
+-- Keep queue/report state in the same transaction, including manual requests,
+-- worker claims and approval revocation. A concurrent approval change either
+-- commits first and rejects the queue write, or cancels the queued delivery.
+create or replace function private.sync_periodic_report_delivery_state()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  report private.external_user_monthly_reports%rowtype;
+begin
+  select * into report from private.external_user_monthly_reports
+    where id = new.report_id for update;
+  if new.status = 'queued' then
+    if report.report_approval_status <> 'APPROVED' then
+      raise exception 'Report is not approved.' using errcode = '23514';
+    end if;
+    if report.delivered_at is not null then
+      raise exception 'Report was already sent.' using errcode = '23514';
+    end if;
+    if tg_op = 'UPDATE' then
+      if old.delivery_kind = 'send' and old.sent_at is not null then
+        raise exception 'Provider already accepted this delivery.' using errcode = '23514';
+      end if;
+    end if;
+  end if;
+  update private.external_user_monthly_reports
+    set delivery_status = case when new.status = 'sent' and new.delivery_kind = 'test'
+          then 'draft' else new.status end,
+        delivery_requested_at = case when new.status = 'queued' then now() else delivery_requested_at end,
+        last_delivery_error = new.last_error,
+        delivered_at = case when new.delivery_kind = 'send' and new.sent_at is not null
+          then new.sent_at else delivered_at end
+    where id = new.report_id;
+  return new;
+end;
+$$;
+revoke all on function private.sync_periodic_report_delivery_state() from public, anon, authenticated;
+create trigger sync_periodic_report_delivery_state
+  after insert or update of status on private.user_report_email_queue
+  for each row execute function private.sync_periodic_report_delivery_state();

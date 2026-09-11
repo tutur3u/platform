@@ -485,9 +485,10 @@ export async function upsertPeriodicReportSchedule(
 
 export function updatePeriodicReportAutoSend(
   workspaceId: string,
-  enabled: boolean
+  enabled: boolean,
+  options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient().json<{ success: boolean }>(
+  return getInternalApiClient(options).json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/schedules`,
     {
       method: 'PUT',
@@ -526,9 +527,10 @@ export interface PeriodicReportDeliveryDiagnostics {
 
 export function getPeriodicReportDeliveryDiagnostics(
   workspaceId: string,
-  reportId: string
+  reportId: string,
+  options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient().json<PeriodicReportDeliveryDiagnostics>(
+  return getInternalApiClient(options).json<PeriodicReportDeliveryDiagnostics>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/${encodePathSegment(reportId)}/delivery`,
     { cache: 'no-store' }
   );

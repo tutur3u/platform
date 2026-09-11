@@ -37,18 +37,35 @@ function database(
   const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
   const rows: Record<string, unknown> = {
     external_user_monthly_reports_workspace_view: report,
-    user_report_email_queue: { id: 'queue-1' },
+    user_report_email_queue: null,
     ...overrides,
   };
   const from = (table: string) => {
-    const promise = Promise.resolve({
-      data: rows[table] ?? null,
+    let operation = 'select';
+    const result = () => ({
+      data:
+        table === 'user_report_email_queue' && operation === 'upsert'
+          ? rows[table]
+            ? null
+            : { id: 'queue-1' }
+          : table === 'user_report_email_queue' &&
+              operation === 'update' &&
+              ['queued', 'processing', 'sent'].includes(
+                (rows[table] as { status?: string })?.status ?? ''
+              )
+            ? null
+            : (rows[table] ?? null),
       error: table === errorTable ? new Error('db failed') : null,
     });
-    const proxy = new Proxy(promise, {
-      get(target, property) {
-        if (property === 'then') return target.then.bind(target);
+    const proxy = new Proxy(Promise.resolve(), {
+      get(_target, property) {
+        if (property === 'then') {
+          const promise = Promise.resolve(result());
+          return promise.then.bind(promise);
+        }
         return (...args: unknown[]) => {
+          if (['upsert', 'update'].includes(String(property)))
+            operation = String(property);
           calls.push({ table, method: String(property), args });
           return proxy;
         };
@@ -148,13 +165,15 @@ describe('periodic report delivery route', () => {
     expect(calls.some((call) => call.method === 'upsert')).toBe(false);
   });
   it('does not overwrite an active queue row when a stale report still says draft', async () => {
-    const calls = database({ user_report_email_queue: null });
+    const calls = database({
+      user_report_email_queue: { id: 'queue-1', status: 'processing' },
+    });
     expect((await POST(request('send'), context)).status).toBe(409);
     expect(calls).toContainEqual({
       table: 'user_report_email_queue',
       method: 'or',
       args: [
-        'status.in.(failed,blocked,cancelled),and(status.eq.sent,delivery_kind.eq.test)',
+        'and(status.in.(failed,blocked,cancelled),or(sent_at.is.null,delivery_kind.eq.test)),and(status.eq.sent,delivery_kind.eq.test)',
       ],
     });
   });

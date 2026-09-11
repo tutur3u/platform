@@ -1,7 +1,7 @@
 ---
 title: 'Daily and Periodic Reports'
 description: 'Configure, approve, deliver, and troubleshoot daily, weekly, monthly, quarterly, and yearly workspace reports.'
-updatedAt: '2026-07-27'
+updated: '2026-09-11'
 ---
 
 The Contacts Reports hub at `/{wsId}/reports` is the canonical workspace surface
@@ -218,3 +218,5 @@ or pgTAP test, explicitly include both files in the disposable project's
 `trackedFiles` list using `stageDisposableProject`; verify the staged migration
 is present before accepting a reset result. No production schema push is needed
 for this local validation.
+
+Queue lifecycle changes synchronize the visible report status in the same database transaction. Stale queue requests are rejected after approval is revoked. Provider-accepted deliveries retain their acceptance timestamp even if later tracking fails, preventing re-approval from automatically resending them.
