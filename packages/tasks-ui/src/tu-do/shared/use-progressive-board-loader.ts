@@ -4,7 +4,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { confirmMissingBoardTasks } from './confirm-missing-board-tasks';
+import {
+  confirmMissingBoardTasks,
+  MISSING_TASK_CHECK_LIMIT,
+} from './confirm-missing-board-tasks';
 import type {
   ListPaginationState,
   ProgressiveLoaderValue,
@@ -52,6 +55,7 @@ export function useProgressiveBoardLoader(
   initialPagination: Record<string, ListPaginationState> = EMPTY_PAGINATION
 ): ProgressiveLoaderValue {
   const queryClient = useQueryClient();
+  const missingCheckOffsets = useRef<Record<string, number>>({});
   const [pagination, setPagination] =
     useState<Record<string, ListPaginationState>>(initialPagination);
   const paginationRef =
@@ -265,21 +269,22 @@ export function useProgressiveBoardLoader(
           : lastPageTasks.length === PAGE_SIZE;
 
       const refreshedIds = new Set(mergedListTasks.map((task) => task.id));
+      const missingTasks = (
+        queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? []
+      ).filter(
+        (task) =>
+          task.list_id === listId &&
+          !task.is_personal_external &&
+          !refreshedIds.has(task.id) &&
+          !hasFreshLocalMutation(task)
+      );
+      const offset = missingCheckOffsets.current[listId] ?? 0;
       const confirmedAbsent =
         hasAuthoritativeCount && hasMore
-          ? await confirmMissingBoardTasks(
-              wsId,
-              listId,
-              (
-                queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? []
-              ).filter(
-                (task) =>
-                  task.list_id === listId &&
-                  !refreshedIds.has(task.id) &&
-                  !hasFreshLocalMutation(task)
-              )
-            )
+          ? await confirmMissingBoardTasks(wsId, listId, missingTasks, offset)
           : new Set<string>();
+      missingCheckOffsets.current[listId] =
+        (offset + MISSING_TASK_CHECK_LIMIT) % Math.max(1, missingTasks.length);
 
       queryClient.setQueryData(
         ['tasks', boardId],

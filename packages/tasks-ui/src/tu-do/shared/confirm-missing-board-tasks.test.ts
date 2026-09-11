@@ -50,4 +50,20 @@ describe('partial board page membership', () => {
     ]);
     expect(getWorkspaceTask).not.toHaveBeenCalled();
   });
+  it('bounds each refresh and lets later refreshes check the next candidates', async () => {
+    const tasks = Array.from({ length: 100 }, (_, i) => ({
+      ...task,
+      id: `task-${i}`,
+    }));
+    vi.mocked(getWorkspaceTask).mockRejectedValue(
+      new InternalApiError('Gone', 404)
+    );
+    const first = await confirmMissingBoardTasks('ws', 'list-1', tasks);
+    expect(getWorkspaceTask).toHaveBeenCalledTimes(10);
+    expect(first).toEqual(new Set(tasks.slice(0, 10).map((t) => t.id)));
+    vi.mocked(getWorkspaceTask).mockClear();
+    const next = await confirmMissingBoardTasks('ws', 'list-1', tasks, 10);
+    expect(getWorkspaceTask).toHaveBeenCalledTimes(10);
+    expect(next).toEqual(new Set(tasks.slice(10, 20).map((t) => t.id)));
+  });
 });
