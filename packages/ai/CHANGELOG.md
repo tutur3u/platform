@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/ai-v0.12.0...ai-v0.13.0) (2026-09-11)
+
+
+### Features
+
+* **ai:** add metered root-sponsored Colab endpoint ([#5296](https://github.com/tutur3u/platform/issues/5296)) ([d768a03](https://github.com/tutur3u/platform/commit/d768a0321ae12a69e8309b827d17952b36857fe9))
+* **colab:** add RISE learning, prompt coaching and keyless sponsorship ([#5297](https://github.com/tutur3u/platform/issues/5297)) ([a7d96f1](https://github.com/tutur3u/platform/commit/a7d96f163e8f850cdaa0edb65ecb5364bd0b9a55))
+
+
+### Bug Fixes
+
+* **ai:** fence retries inside reservation transaction ([b56e2b0](https://github.com/tutur3u/platform/commit/b56e2b066e3ae6184799c457cb3086611dcd6dc7))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/ai-v0.11.0...ai-v0.12.0) (2026-09-10)
 
 

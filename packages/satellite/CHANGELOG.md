@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.1](https://github.com/tutur3u/platform/compare/satellite-v0.19.0...satellite-v0.19.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **meet:** recover call preparation and improve startup ([9e27b0c](https://github.com/tutur3u/platform/commit/9e27b0c8c3ff67a4e07ae91376a128b10e99cd85))
+* **meet:** recover call preparation and improve startup ([#5294](https://github.com/tutur3u/platform/issues/5294)) ([70b79af](https://github.com/tutur3u/platform/commit/70b79af35e4dd6532325adee12462a2ff6cc76ff))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/satellite-v0.18.0...satellite-v0.19.0) (2026-09-09)
 
 
