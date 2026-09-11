@@ -120,6 +120,12 @@ begin
   if queue.status = 'queued' or (queue.status = 'sent' and queue.delivery_kind = 'send') then
     return jsonb_build_object('code', 409, 'message', 'Delivery is already active or sent.');
   end if;
+  if p_action = 'retry' and (
+    (queue.id is not null and queue.status not in ('failed', 'blocked'))
+    or (queue.id is null and report.delivery_status not in ('failed', 'blocked'))
+  ) then
+    return jsonb_build_object('code', 409, 'message', 'This delivery cannot be retried. Use Send to start a new delivery.');
+  end if;
   if p_delivery_enabled is distinct from true then
     update private.external_user_monthly_reports set delivery_status = 'blocked',
       last_delivery_error = 'Periodic report email delivery is disabled for this workspace.' where id = p_report_id;

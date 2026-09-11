@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(34);
+select plan(36);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -82,11 +82,13 @@ select ok(not has_function_privilege('authenticated', 'private.request_periodic_
 select ok(has_function_privilege('service_role', 'private.request_periodic_report_delivery(uuid,uuid,text,boolean)', 'execute'), 'authorized server can request delivery');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009105', '40000000-0000-4000-8000-000000000000', 'send', true)->>'code')::int, 404, 'manual requests enforce workspace scope');
 update public.workspace_users set email = 'restored@example.com' where id = '40000000-0000-4000-8000-000000009103';
-select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'send', true)->>'code')::int, 200, 'manual request queues a restored recipient');
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 200, 'retry queues a report blocked before its first attempt');
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'queued', 'manual queue and report update atomically');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'cancel', true)->>'code')::int, 200, 'manual cancellation succeeds');
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'cancelled', 'manual cancellation updates the report');
 
+select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'retry', true)->>'code')::int, 409, 'retry cannot undo an explicit cancellation');
+select is((select status from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), 'cancelled', 'cancelled queue remains cancelled after retry');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', null, true)->>'code')::int, 400, 'null action never queues a send');
 select is((private.request_periodic_report_delivery('40000000-0000-4000-8000-000000009106', '40000000-0000-4000-8000-000000009102', 'test', true)->>'message'), 'Test delivery queued for the subject profile email.', 'test request identifies test delivery');
 update private.user_report_email_queue set status = 'failed' where report_id = '40000000-0000-4000-8000-000000009106';

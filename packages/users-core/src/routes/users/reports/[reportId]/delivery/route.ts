@@ -175,7 +175,10 @@ export async function POST(request: Request, { params }: Params) {
       status?: string;
     };
     const { code, ...body } = result;
-    return NextResponse.json(body, { status: code });
+    return NextResponse.json(
+      { ...body, ...(code !== 200 ? { queued: false } : {}) },
+      { status: code }
+    );
   } catch (error) {
     console.error('Error in periodic report delivery POST:', error);
     return NextResponse.json(

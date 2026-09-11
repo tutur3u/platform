@@ -166,12 +166,16 @@ describe('periodic report delivery route', () => {
   it('returns the atomic request conflict without claiming it queued a delivery', async () => {
     database();
     mocks.rpc.mockResolvedValue({
-      data: { code: 409, message: 'Delivery is already active or sent.' },
+      data: {
+        code: 409,
+        queued: true,
+        message: 'Delivery is already active or sent.',
+      },
       error: null,
     });
     const response = await POST(request('send'), context);
     expect(response.status).toBe(409);
-    expect((await response.json()).queued).not.toBe(true);
+    expect((await response.json()).queued).toBe(false);
   });
   it('cannot mark a sent report cancelled', async () => {
     const calls = database({
