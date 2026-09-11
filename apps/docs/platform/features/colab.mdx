@@ -1,5 +1,6 @@
 ---
 title: Colab team prompt workshops
+updated: 2026-09-11
 description: Run invite-only AI learning workshops on Cloudflare with isolated mock tools.
 ---
 
@@ -252,6 +253,73 @@ extended by this mechanism. The visible client checks its session every minute
 and reopens its room WebSocket when renewed credentials change. Temporary
 identity-service failures retain the current workspace and can be retried;
 explicit sign-out, account revocation, and private-room access denial still apply.
+
+## RISE learning and sponsored workshops
+
+New workshops start with the RISE Induction Day publishing mission. Teams build a
+reusable system prompt, generate skills, gather evidence across practice apps, and
+produce a bilingual Facebook draft plus artwork guidance and a publishing
+checklist. The catalog has 202 records across 24 apps, including ten connected
+Induction Day sources. Conflicting schedules and unconfirmed partner claims are
+deliberate research exercises. Dates, venue and registration links are rehearsal
+data: replace them with verified event details and obtain human approval before
+publishing. Colab does not publish to Facebook.
+
+Existing rooms receive the new scenario as an additional choice without changing
+their selected scenario, edited prompts or records. Learning is available from
+the workspace guide and as a dedicated workshop destination. It includes six
+lessons, an editable Markdown preview, a source map, and interactive RISE and
+CRAFT framework examples. Explored lessons are remembered on the device.
+
+The prompt editor provides an immediate, explicitly heuristic structure check.
+Ask AI to review performs a sponsored model call, maps exact prompt excerpts to
+framework sections, and explains suggested improvements. Reviews are shared with
+the team and marked outdated after prompt edits. Suggestions never replace a
+prompt automatically. A structure match is not a quality or safety guarantee.
+
+Only accounts with a centrally verified `@tuturuuu.com` email can create or manage
+workshops. Hosts may promote only other eligible Tuturuuu accounts. External
+members retain attendee, multi-team collaboration, learning and showcase access;
+legacy external admin flags are removed during room normalization.
+
+Production AI uses automatic first-party authorization with
+`COLAB_REQUIRE_SPONSORSHIP=true`; no AI API key needs to be created or copied.
+The authorized room job stores a random, one-use capability bound to the SHA-256
+digest of the exact model request. AI Studio redeems it over HTTPS at the pinned
+canonical `https://colab.tuturuuu.com/api/sponsorship/verify` endpoint. Redemption
+is an atomic delete, expires after 60 seconds, and cannot be replayed concurrently.
+The capability never enters browser state, activity logs or billing metadata.
+AI Studio revalidates the host's confirmed Tuturuuu account, fixes the billing
+workspace to root, and derives request/idempotency IDs from the approved job.
+Root workspace model, rate, budget and credit policies still apply. This is metered
+first-party usage, not an unmetered external-app credential. No new database
+migration is required: the existing reservation procedure supports a null API key.
+
+Deploy the AI Studio endpoint and Colab verifier together before testing live
+generation. `COLAB_AI_MODEL` selects an enabled, priced root-workspace model.
+Canonical HTTPS reachability is required in both directions; preview deployments
+cannot approve their own root-credit requests. No shared machine secret is needed.
+`COLAB_AI_API_KEY` remains an optional legacy transport for callers without room
+approval support; app-bound keys are rejected. Invalid approval, disabled hosts,
+unavailable verification or insufficient credits fails closed.
+The direct Cloudflare AI binding remains available only for local/legacy setups
+that do not require sponsorship; local verification uses deterministic responses.
+
+The dedicated endpoint checks root workspace ownership, reserves and settles
+credits through AI Studio, and records workshop, host, team, participant, scenario,
+operation, generation phase, job and request identifiers with a human-readable
+sponsorship description. Retries are separate metered calls. Unknown pricing must
+not be reported as free usage. Hosts can export the latest 100 confirmed receipts;
+attendees receive totals, not receipt identifiers. Workshop totals cover confirmed
+responses only; AI Studio remains authoritative for failed or interrupted calls.
+
+The finite browser verifier exercises learning interactions, shared prompt
+reviews, skill generation, multi-account showcase runs and reconnection with
+isolated Durable Objects. It does not establish real provider output quality or
+production credit settlement: verify those separately after deployment.
+`node scripts/verify-sponsorship.mjs` additionally exercises keyless generation,
+body tampering, concurrent replay rejection and receipts using isolated Durable
+Objects and mocked AI Studio responses. It does not spend production credits.
 
 ## Workshop directory and activity log
 

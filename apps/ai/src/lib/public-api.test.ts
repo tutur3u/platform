@@ -35,6 +35,29 @@ import {
 } from './public-api';
 
 describe('AI Studio billing policy', () => {
+  it('reserves real credits for a first-party capability, never external unmetered usage', async () => {
+    await prepareMeteredExecution({
+      credential: {
+        kind: 'first-party',
+        appId: 'colab',
+        actorId: 'host',
+        workspaceId: 'root',
+      },
+      feature: 'colab_compile',
+      maxUsage: { inputTokens: 100 },
+      modelId: 'model',
+      request: new Request('https://ai.tuturuuu.com'),
+    });
+    expect(mocks.beginAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: 'host',
+        workspaceId: 'root',
+        apiKeyId: undefined,
+        reservedCredits: 25,
+      })
+    );
+    expect(mocks.beginExternalAiStudioRun).not.toHaveBeenCalled();
+  });
   it('only one concurrent retry claims the reserved run', async () => {
     mocks.beginAiStudioRun
       .mockResolvedValueOnce({ runId: 'run' })

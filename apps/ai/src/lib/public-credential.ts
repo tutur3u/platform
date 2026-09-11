@@ -24,6 +24,14 @@ export type ExternalAppAiCredential = {
   workspaceId: string;
 };
 
+export type MeteredAiCredential =
+  | PublicAiCredential
+  | {
+      kind: 'first-party';
+      appId: 'colab';
+      actorId: string;
+      workspaceId: string;
+    };
 export type PublicAiCredential =
   | (Awaited<ReturnType<typeof authenticateAiStudioRequest>> & {
       kind: 'api-key';

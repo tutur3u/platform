@@ -16,6 +16,7 @@ import { Admin } from './admin';
 import { ErrorNotice } from './home';
 import { useCopy } from './i18n';
 import { Join } from './join';
+import { Learning } from './learning';
 import { MissionBrief } from './mission-brief';
 import { useWorkspaceLocation } from './navigation';
 import { newestRoomView } from './room-cache';
@@ -175,6 +176,7 @@ export function Workshop({
   const room = query.data;
   const allowedSections = [
     'mission',
+    'learning',
     'team-prompt',
     'team-skills',
     'sandbox-desk',
@@ -250,14 +252,21 @@ export function Workshop({
       </div>
       <ErrorNotice error={remove.error ?? mutate.error} />
       <div className="workshop-layout">
+        <div hidden={section !== 'learning'}>
+          <Learning inRoom />
+        </div>
         <div hidden={section !== 'mission'}>
           <MissionBrief room={room} />
         </div>
         <section
           className="team-area"
-          hidden={['mission', 'showcase', 'activity', 'controls'].includes(
-            section
-          )}
+          hidden={[
+            'mission',
+            'learning',
+            'showcase',
+            'activity',
+            'controls',
+          ].includes(section)}
         >
           <div className="team-toolbar">
             <label>

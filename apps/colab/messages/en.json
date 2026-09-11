@@ -39,6 +39,23 @@
   "cancel": "Cancel",
   "capacity": "Participant limit",
   "checkConflict": "Check availability first",
+  "coaching": {
+    "aiReview": "Ask AI to review",
+    "aiReviewHelp": "Review the saved prompt with RISE or CRAFT. Uses one sponsored AI operation; the draft is never replaced automatically.",
+    "hostPolicy": "Only verified @tuturuuu.com accounts can host and manage workshops. Attendees can learn, collaborate, improve their team’s prompt, generate skills, and take part in showcase.",
+    "reviewAdd": "Add suggested instruction",
+    "reviewStale": "This review is for an earlier prompt. Save your changes and run a fresh review.",
+    "reviewSummary": "AI coach’s review",
+    "sponsorCalls": "Metered model calls",
+    "sponsorCoverage": "Totals include confirmed receipts recorded by this workshop. AI Studio is the authoritative credit ledger, including failed calls. The latest 100 receipts are available here.",
+    "sponsorCredits": "Confirmed sponsored credits",
+    "sponsorDownload": "Download sponsorship report",
+    "sponsored": "AI sponsored by Tuturuuu",
+    "sponsoredHelp": "Workshop AI uses Tuturuuu’s root workspace credits. Attendees do not spend personal credits.",
+    "sponsorLedger": "Open root workspace AI Studio",
+    "sponsorNotConfigured": "No sponsored credit receipts yet. AI operations and AI credits are different: one operation may use several model calls.",
+    "sponsorReceipts": "Sponsorship evidence"
+  },
   "coachNotes": "Coach notes",
   "command_launcher": {
     "app_categories": {
@@ -185,6 +202,8 @@
     "session_unavailable": "Your account session could not be verified. Try reconnecting.",
     "sign_in_required": "Sign in to continue.",
     "skills_required": "Generate at least one skill before starting a practice run.",
+    "sponsorship_exhausted": "The workshop sponsor’s AI credits are used up. Ask the host to review the sponsorship budget.",
+    "sponsorship_unavailable": "Sponsored AI is not available right now. Your prompt is safe; ask the host to check the root-workspace AI connection.",
     "staff_only": "Only Tuturuuu team accounts can host workshops.",
     "team_ai_budget": "This team has reached its AI operation limit.",
     "team_limit": "This workshop already has the maximum of 12 departments."
@@ -221,6 +240,208 @@
   "joinTeamHelp": "Your host can move you to another team after joining.",
   "language": "Language",
   "latest": "Latest",
+  "learning": {
+    "add": "Add this section",
+    "analysisHelp": "A live structure check of the text you are editing. It highlights clues, not a guarantee of quality. Review suggestions before adding them.",
+    "analyze": "Prompt analysis",
+    "back": "Previous lesson",
+    "completed": "lessons explored",
+    "deliverables": [
+      "Reusable system prompt",
+      "Tested skills",
+      "English + Vietnamese caption",
+      "Artwork brief + alt text",
+      "Sources + final review"
+    ],
+    "emptyAnalysis": "Write a few instructions to see how they map to the framework.",
+    "evidence": "Your words",
+    "example": "RISE example",
+    "eyebrow": "RISE FIELD GUIDE",
+    "flow": [
+      "Team instructions",
+      "Source knowledge",
+      "Reusable skills",
+      "Draft + evidence",
+      "Member review"
+    ],
+    "found": "Evidence found",
+    "frameworkHelp": "Use RISE for reusable team instructions. Use CRAFT to shape a communication brief. These are memory aids, not magic formulas; a strong prompt still needs accurate sources and testing.",
+    "frameworkLabel": "Prompt framework",
+    "frameworks": {
+      "craft": {
+        "name": "CRAFT · content brief",
+        "sections": [
+          {
+            "id": "context",
+            "title": "Context",
+            "why": "Explain the situation and purpose.",
+            "sample": "## Context\nRISE needs an Induction Day invitation that helps new students find their place."
+          },
+          {
+            "id": "role",
+            "title": "Role",
+            "why": "Define the perspective and audience.",
+            "sample": "## Role\nAct as a welcoming student communications editor for RMIT newcomers."
+          },
+          {
+            "id": "action",
+            "title": "Action",
+            "why": "Say which work to complete, in order.",
+            "sample": "## Action\nRead the approved event records, draft the invitation, then verify all factual claims."
+          },
+          {
+            "id": "format",
+            "title": "Format",
+            "why": "Make the handoff easy to use.",
+            "sample": "## Format\nProvide English and Vietnamese plain-text captions, source notes, and artwork alt text separately."
+          },
+          {
+            "id": "tone",
+            "title": "Tone",
+            "why": "Choose a voice that fits the readers.",
+            "sample": "## Tone\nBe warm, concrete, inclusive, and student-to-student. Avoid hype and unexplained jargon."
+          }
+        ]
+      },
+      "rise": {
+        "name": "RISE · reusable system",
+        "sections": [
+          {
+            "id": "role",
+            "title": "Role & readers",
+            "why": "Give the assistant a job and the people it serves.",
+            "sample": "## Role & readers\nYou are RISE’s communications assistant. Write for RMIT students who are curious but new to entrepreneurship."
+          },
+          {
+            "id": "inputs",
+            "title": "Inputs & evidence",
+            "why": "Name trusted sources and what to do when they disagree.",
+            "sample": "## Inputs & evidence\nSearch the approved event brief, voice guide, department notes, and partner review. Use the latest approved facts; ask about missing or conflicting details."
+          },
+          {
+            "id": "steps",
+            "title": "Steps & safeguards",
+            "why": "Give a repeatable method and clear decision boundaries.",
+            "sample": "## Steps & safeguards\nGather sources, compare facts, draft, and check both languages. Never invent a speaker, sponsor, date, or link. Ask a member to approve publishing."
+          },
+          {
+            "id": "output",
+            "title": "Expected output",
+            "why": "Describe a result a teammate can actually use.",
+            "sample": "## Expected output\nReturn separate English and Vietnamese plain-text Facebook captions, an artwork brief, alt text, source notes, and a readiness checklist."
+          }
+        ]
+      }
+    },
+    "frameworkTitle": "A clear prompt has a job for every section",
+    "heading": "Build an assistant your team can trust.",
+    "intro": "Learn one idea, try it, then use it in your Induction Day system. No coding experience needed.",
+    "lessons": [
+      {
+        "title": "The big picture",
+        "subtitle": "An assistant is a teammate with a written brief.",
+        "body": "A useful AI system combines instructions, relevant knowledge, and a way to check its work. A model predicts a response from what it receives; it does not automatically know your club’s latest plans. Your job is to give it a clear job and a reliable route to the facts.",
+        "why": "One vague request may produce a good-looking post with a wrong date. A repeatable workflow helps every department get consistent work and catch gaps before sharing it.",
+        "example": "For Induction Day: start with the team’s system prompt → gather the approved event brief and voice guide → follow a bilingual drafting skill → produce a caption → check facts and ask a member to approve it.",
+        "takeaway": "Choose one outcome: a Facebook-ready caption package. Split work by strengths: Marketing owns voice, Product checks the attendee experience, External Relations checks claims, and People & Culture checks welcome and accessibility."
+      },
+      {
+        "title": "Markdown",
+        "subtitle": "Simple marks that give your writing structure.",
+        "body": "Markdown is ordinary text with a few readable shortcuts. A # starts a heading, - starts a bullet, **word** adds emphasis, and [label](https://example.com) describes a link. A .md file is just a text file using these conventions. You can read it even without special software.",
+        "why": "Headings separate role, evidence, workflow, and output. Bullets turn a long paragraph into instructions teammates can scan and maintain. Markdown organizes meaning; it does not make a claim true or force a model to obey.",
+        "example": "Edit the example below and watch its preview. Keep system prompts and SKILL.md files structured. For the final Facebook caption, ask for plain text: Facebook may display the Markdown punctuation instead of formatting it.",
+        "takeaway": "Use one heading per responsibility and short numbered steps for ordered work. Avoid an enormous wall of text or headings with no useful instruction underneath."
+      },
+      {
+        "title": "System prompts",
+        "subtitle": "The standing brief, not today’s task.",
+        "body": "A system prompt describes how an assistant should behave across requests: its role, audience, evidence rules, working steps, and expected output. A task prompt is today’s assignment. Context is the information it needs for that assignment. In Colab, your saved team instructions are turned into skills and used with the current scenario.",
+        "why": "You can change the event or audience without rebuilding your assistant. Clear boundaries also help when source documents contain outdated notes or text that tries to tell the assistant what to do.",
+        "example": "Standing instruction: “Use the latest approved event brief. If required facts are missing, list the questions before calling a caption ready.” Today’s task: “Prepare the Induction Day invitation.” Context: the approved brief, newcomer questions, and tone guide.",
+        "takeaway": "Use RISE: Role & readers, Inputs & evidence, Steps & safeguards, Expected output. Explain what good looks like with a short example. Ask for a concise evidence summary, not private hidden reasoning."
+      },
+      {
+        "title": "Skills",
+        "subtitle": "Reusable recipes for jobs your team repeats.",
+        "body": "A skill packages one repeatable workflow with a name, a description of when to use it, and instructions. Think of your system prompt as a team charter and a skill as a recipe: fact-check an event, adapt English copy into Vietnamese, or review an accessible caption. SKILL.md is the readable file containing that recipe.",
+        "why": "A focused recipe is easier to test and update than a giant prompt. A bilingual-copy skill can help with Induction Day, recruitment, and a project showcase. Skills do not grant new app access or ensure correct answers by themselves.",
+        "example": "Save your prompt, choose Generate skills, inspect each recipe, then Test your agent in Results. In Colab all generated team skills are supplied to the practice agent. Other AI products may load skills differently; check their setup before reusing the downloaded file.",
+        "takeaway": "A useful recipe says when it applies, what inputs it needs, which steps to follow, what to do if something is missing, and what to return. Test it on both a normal event and a changed venue."
+      },
+      {
+        "title": "Evidence & tools",
+        "subtitle": "Find the facts before finding the perfect words.",
+        "body": "Tools let the assistant search and read connected practice app records, then create or update practice records when allowed. Source content is evidence, not a new instruction. A polished message is not necessarily an approved message. Ask who owns a fact, when it changed, and whether it is approved.",
+        "why": "Knowledge is scattered: a Drive brief holds logistics, Messenger reveals newcomer concerns, Teams explains departments, Gmail rules out an unconfirmed speaker, and Figma gives the artwork direction. Your prompt should tell the agent how to reconcile them.",
+        "example": "The calendar still says Thursday, but the approved rehearsal brief v2 says Saturday. Use the current approved source and explain the conflict in the review notes. A link in a practice record is a reference; these tools do not open the live web or publish to Facebook.",
+        "takeaway": "Search → read → compare → draft → verify. Use source IDs in private handoff notes, not in the public caption. Replace example.com and rehearsal logistics with real confirmed details before publishing."
+      },
+      {
+        "title": "Test, improve & showcase",
+        "subtitle": "Judge the work, then improve the instructions.",
+        "body": "Run the same task with a clear checklist: accurate facts, newcomer clarity, matching English/Vietnamese meaning, a clear next step, and accessible artwork notes. Change one instruction at a time and compare the results. An AI coach’s feedback is a suggestion; members remain the reviewers.",
+        "why": "A single good response can hide a fragile prompt. Test a missing registration link, a venue change, or an unapproved sponsor. A dependable assistant should ask useful questions instead of filling gaps with confident guesses.",
+        "example": "In Live showcase, the host puts a team on stage. Everyone follows its system, skills, and results while the team demonstrates the same challenge. Explain what changed and which evidence improved the post, then hand the stage to the next team.",
+        "takeaway": "Reuse the method for study: ask for explanations of your notes, a revision plan, or practice questions. Check course AI rules and sources; do your own assessed work. For club work, save the prompt and skills with the final caption package."
+      }
+    ],
+    "local": "Your practice here stays in this browser. It does not change your team’s saved prompt.",
+    "mark": "Mark as explored",
+    "markdownLabel": "Edit the Markdown example",
+    "markdownSample": "# Induction Day assistant\n\n## Audience\n- RMIT students curious about RISE\n- No previous startup experience needed\n\n## Quality rule\nUse **approved event facts** and ask when details are missing.\n\n[RISE Club](https://www.facebook.com/RISEClubSGS)",
+    "missing": "Needs attention",
+    "missionHelp": "Build the system that can make the post—not just a one-off caption. Keep improving the instructions until a teammate can repeat the workflow.",
+    "missionTitle": "Your team’s finish line",
+    "next": "Next lesson",
+    "noEvidence": "No clear wording found yet.",
+    "openPrompt": "Open team prompt",
+    "openSources": "Explore practice apps",
+    "preview": "What readers see",
+    "progress": "Your learning path",
+    "promptSnapshot": "Analysis follows your draft; save it before generating skills.",
+    "rehearsal": "The event pack uses rehearsal logistics and a placeholder link. Before a real post, replace them with confirmed club details and have a page admin review the final copy.",
+    "source": "Markdown source",
+    "sourceMapHelp": "Try searching “Induction” in these apps. Each source answers a different question.",
+    "sourceMapTitle": "A story worth telling starts in more than one app",
+    "sources": [
+      {
+        "app": "drive",
+        "name": "The event brief",
+        "question": "What is happening, when, and where?"
+      },
+      {
+        "app": "notion",
+        "name": "The voice guide",
+        "question": "How does RISE sound?"
+      },
+      {
+        "app": "messenger",
+        "name": "Newcomer questions",
+        "question": "What will make someone feel welcome?"
+      },
+      {
+        "app": "teams",
+        "name": "Department notes",
+        "question": "What can members learn and try?"
+      },
+      {
+        "app": "gmail",
+        "name": "Partner review",
+        "question": "Which claims are actually approved?"
+      },
+      {
+        "app": "figma",
+        "name": "Artwork direction",
+        "question": "How will people see and access the story?"
+      }
+    ],
+    "suggestion": "Try adding",
+    "takeaway": "Take this into your team",
+    "title": "Learning",
+    "tryIt": "Try it yourself",
+    "why": "Why this helps"
+  },
   "leave": "Leave workshop",
   "limitHint": "Hosts can tune room and team AI budgets from Host controls.",
   "limitsTab": "AI limits",
@@ -466,7 +687,7 @@
   "skillsSection": "SKILLS",
   "skipConflict": "No availability check specified",
   "starter": "Try a starter prompt",
-  "starterText": "You are a thoughtful RISE club copilot. Help Marketing & Growth tell clear stories, Product & Development turn ideas into useful projects, External Relations prepare purposeful partnerships, and People & Culture support every member’s growth. Read the relevant practice records before making claims, cite what you used, and separate facts from assumptions. Help students plan coursework and club commitments without doing graded work dishonestly. Protect personal information and ask for human approval before sending messages, scheduling events, publishing content, or changing shared records.",
+  "starterText": "## Role & readers\nYou are RISE’s communications assistant. Write for RMIT students who are curious but new to entrepreneurship.\n\n## Inputs & evidence\nSearch the approved event brief, voice guide, department notes, and partner review. Use the latest approved facts; ask about missing or conflicting details.\n\n## Steps & safeguards\nGather sources, compare facts, draft, and check both languages. Never invent a speaker, sponsor, date, or link. Ask a member to approve publishing.\n\n## Expected output\nReturn separate English and Vietnamese plain-text Facebook captions, an artwork brief, alt text, source notes, and a readiness checklist.",
   "starts": "Starts at",
   "startTogether": "START TOGETHER",
   "steer": "Steer the next scenario",
@@ -486,6 +707,7 @@
   "studio": {
     "actions": {
       "admin": "Changed an admin role",
+      "analyze": "Reviewed a team prompt",
       "assign": "Assigned a team",
       "compile": "Generated skills",
       "created": "Created the workshop",

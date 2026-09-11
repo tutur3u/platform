@@ -117,7 +117,7 @@ export async function calculateAiStudioUsageCost(
 export type BeginAiStudioRunInput = {
   rejectExisting?: boolean;
   actorId: string;
-  apiKeyId: string;
+  apiKeyId?: string;
   feature: string;
   idempotencyKey?: string | null;
   metadata?: Json;
@@ -166,7 +166,8 @@ export async function beginAiStudioRun(
   const { data, error } = await sbAdmin
     .schema('private')
     .rpc('begin_ai_studio_run', {
-      p_api_key_id: input.apiKeyId,
+      // SQL accepts NULL for first-party workspace reservations; generated RPC types do not express nullable arguments.
+      p_api_key_id: input.apiKeyId ?? (null as unknown as string),
       p_feature: input.feature,
       p_idempotency_key: input.idempotencyKey ?? undefined,
       p_metadata: input.metadata,

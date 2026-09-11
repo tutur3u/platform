@@ -109,7 +109,7 @@ export function AdminMemberRow({
             })}
           </DropdownMenuContent>
         </DropdownMenu>
-        {staff(room.self) && member.email && !owner && (
+        {staff(room.self) && staff(member) && !owner && (
           <Button
             type="button"
             size="sm"

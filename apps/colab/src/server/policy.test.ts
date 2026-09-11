@@ -96,15 +96,17 @@ describe('sandbox and sessions', () => {
       ])
     );
     expect(mockApps).toHaveLength(24);
-    expect(records).toHaveLength(192);
-    expect(new Set(records.map(({ id }) => id)).size).toBe(192);
+    expect(records).toHaveLength(202);
+    expect(new Set(records.map(({ id }) => id)).size).toBe(202);
     expect(
       records.every(
         ({ title, content }) => !/lotus|lot-/i.test(`${title} ${content}`)
       )
     ).toBe(true);
     for (const app of mockApps)
-      expect(records.filter((record) => record.app === app)).toHaveLength(8);
+      expect(
+        records.filter((record) => record.app === app).length
+      ).toBeGreaterThanOrEqual(8);
     expect(
       JSON.parse(
         executeMockTool(records, {

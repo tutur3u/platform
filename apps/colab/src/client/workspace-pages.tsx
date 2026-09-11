@@ -1,5 +1,5 @@
 import { useCopy } from './i18n';
-import { LandingPreview, WorkshopDetails } from './landing-preview';
+import { Learning } from './learning';
 import { WorkshopsPage } from './workshops-page';
 
 export function WorkspacePages(props: { canHost: boolean }) {
@@ -15,8 +15,7 @@ export function WorkspacePages(props: { canHost: boolean }) {
             <p>{w.guideDescription}</p>
           </div>
         </div>
-        <LandingPreview />
-        <WorkshopDetails />
+        <Learning />
       </div>
     );
   return <WorkshopsPage canHost={props.canHost} />;

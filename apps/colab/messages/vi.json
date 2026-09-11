@@ -39,6 +39,23 @@
   "cancel": "Hủy",
   "capacity": "Giới hạn người tham gia",
   "checkConflict": "Kiểm tra lịch trống trước",
+  "coaching": {
+    "aiReview": "Nhờ AI góp ý",
+    "aiReviewHelp": "Rà soát prompt đã lưu bằng RISE hoặc CRAFT. Dùng một lượt AI được tài trợ; bản nháp không tự bị thay thế.",
+    "hostPolicy": "Chỉ tài khoản @tuturuuu.com đã xác minh được tổ chức và quản lý workshop. Người tham dự có thể học, cộng tác, cải thiện prompt của đội, tạo kỹ năng và tham gia trình diễn.",
+    "reviewAdd": "Thêm hướng dẫn gợi ý",
+    "reviewStale": "Góp ý này dành cho prompt cũ. Lưu thay đổi rồi yêu cầu góp ý mới.",
+    "reviewSummary": "Góp ý từ AI",
+    "sponsorCalls": "Lượt mô hình đã ghi nhận",
+    "sponsorCoverage": "Tổng gồm biên nhận đã xác nhận của workshop. AI Studio là sổ tín dụng chính thức, kể cả lượt lỗi. Tại đây lưu 100 biên nhận mới nhất.",
+    "sponsorCredits": "Tín dụng tài trợ đã xác nhận",
+    "sponsorDownload": "Tải báo cáo tài trợ",
+    "sponsored": "AI được Tuturuuu tài trợ",
+    "sponsoredHelp": "AI của workshop dùng tín dụng từ workspace gốc Tuturuuu. Người tham dự không dùng tín dụng cá nhân.",
+    "sponsorLedger": "Mở AI Studio của workspace gốc",
+    "sponsorNotConfigured": "Chưa có biên nhận tín dụng tài trợ. Lượt thao tác AI khác tín dụng AI: một thao tác có thể dùng nhiều lượt mô hình.",
+    "sponsorReceipts": "Bằng chứng tài trợ"
+  },
   "coachNotes": "Nhận xét từ người hướng dẫn",
   "command_launcher": {
     "app_categories": {
@@ -185,6 +202,8 @@
     "session_unavailable": "Không thể xác minh phiên tài khoản. Hãy thử kết nối lại.",
     "sign_in_required": "Hãy đăng nhập để tiếp tục.",
     "skills_required": "Hãy tạo ít nhất một kỹ năng trước khi bắt đầu lượt thực hành.",
+    "sponsorship_exhausted": "Tín dụng AI của nhà tài trợ đã hết. Nhờ người chủ trì kiểm tra ngân sách tài trợ.",
+    "sponsorship_unavailable": "AI tài trợ hiện chưa sẵn sàng. Prompt vẫn được giữ; nhờ người chủ trì kiểm tra kết nối AI của workspace gốc.",
     "staff_only": "Chỉ tài khoản thành viên Tuturuuu mới có thể tổ chức.",
     "team_ai_budget": "Nhóm này đã đạt giới hạn thao tác AI.",
     "team_limit": "Buổi thực hành đã đạt tối đa 12 ban."
@@ -221,6 +240,208 @@
   "joinTeamHelp": "Người tổ chức có thể chuyển bạn sang nhóm khác sau khi tham gia.",
   "language": "Ngôn ngữ",
   "latest": "Mới nhất",
+  "learning": {
+    "add": "Thêm phần này",
+    "analysisHelp": "Kiểm tra cấu trúc ngay khi bạn viết. Công cụ tìm dấu hiệu, không bảo đảm chất lượng. Hãy đọc gợi ý trước khi thêm.",
+    "analyze": "Phân tích prompt",
+    "back": "Bài trước",
+    "completed": "bài đã khám phá",
+    "deliverables": [
+      "System prompt dùng lại",
+      "Kỹ năng đã thử",
+      "Bài tiếng Anh + tiếng Việt",
+      "Brief hình ảnh + văn bản thay thế",
+      "Nguồn + kiểm tra cuối"
+    ],
+    "emptyAnalysis": "Viết vài hướng dẫn để xem chúng thuộc phần nào trong khung.",
+    "evidence": "Câu bạn đã viết",
+    "example": "Ví dụ tại RISE",
+    "eyebrow": "CẨM NANG RISE",
+    "flow": [
+      "Hướng dẫn đội",
+      "Kiến thức nguồn",
+      "Kỹ năng dùng lại",
+      "Bản nháp + nguồn",
+      "Thành viên duyệt"
+    ],
+    "found": "Đã tìm thấy dấu hiệu",
+    "frameworkHelp": "Dùng RISE cho hướng dẫn lâu dài của đội. Dùng CRAFT để xây yêu cầu nội dung. Đây là cách ghi nhớ, không phải công thức thần kỳ; prompt tốt vẫn cần nguồn đúng và thử nghiệm.",
+    "frameworkLabel": "Khung viết prompt",
+    "frameworks": {
+      "craft": {
+        "name": "CRAFT · yêu cầu nội dung",
+        "sections": [
+          {
+            "id": "context",
+            "title": "Bối cảnh",
+            "why": "Giải thích tình huống và mục đích.",
+            "sample": "## Bối cảnh\nRISE cần lời mời Induction Day giúp sinh viên mới tìm nơi phù hợp."
+          },
+          {
+            "id": "role",
+            "title": "Vai trò",
+            "why": "Xác định góc nhìn và độc giả.",
+            "sample": "## Vai trò\nLàm biên tập viên truyền thông sinh viên thân thiện cho người mới ở RMIT."
+          },
+          {
+            "id": "action",
+            "title": "Hành động",
+            "why": "Nêu việc cần hoàn thành theo thứ tự.",
+            "sample": "## Hành động\nĐọc bản ghi sự kiện đã duyệt, viết lời mời, rồi kiểm chứng mọi dữ kiện."
+          },
+          {
+            "id": "format",
+            "title": "Định dạng",
+            "why": "Giúp bàn giao dễ dùng.",
+            "sample": "## Định dạng\nTách bài văn bản thuần tiếng Anh và tiếng Việt, ghi chú nguồn, văn bản thay thế cho hình ảnh."
+          },
+          {
+            "id": "tone",
+            "title": "Giọng văn",
+            "why": "Chọn cách nói hợp người đọc.",
+            "sample": "## Giọng văn\nẤm áp, cụ thể, hòa nhập và sinh viên nói với sinh viên. Tránh cường điệu và thuật ngữ khó hiểu."
+          }
+        ]
+      },
+      "rise": {
+        "name": "RISE · hệ thống dùng lại",
+        "sections": [
+          {
+            "id": "role",
+            "title": "Vai trò & người đọc",
+            "why": "Giao một công việc và xác định người được phục vụ.",
+            "sample": "## Vai trò & người đọc\nBạn là trợ lý truyền thông RISE, viết cho sinh viên RMIT tò mò nhưng mới biết khởi nghiệp."
+          },
+          {
+            "id": "inputs",
+            "title": "Nguồn & bằng chứng",
+            "why": "Nêu nguồn đáng tin và cách xử lý mâu thuẫn.",
+            "sample": "## Nguồn & bằng chứng\nTìm brief sự kiện, hướng dẫn giọng văn, ghi chú các ban và duyệt đối tác. Dùng dữ kiện mới nhất đã duyệt; hỏi khi thiếu hoặc mâu thuẫn."
+          },
+          {
+            "id": "steps",
+            "title": "Quy trình & giới hạn",
+            "why": "Cho phương pháp lặp lại và ranh giới quyết định.",
+            "sample": "## Quy trình & giới hạn\nThu thập nguồn, đối chiếu, viết và kiểm tra hai ngôn ngữ. Không tự tạo diễn giả, nhà tài trợ, ngày hay link. Nhờ thành viên duyệt trước khi đăng."
+          },
+          {
+            "id": "output",
+            "title": "Đầu ra mong đợi",
+            "why": "Mô tả kết quả đồng đội thực sự dùng được.",
+            "sample": "## Đầu ra mong đợi\nTrả bài Facebook văn bản thuần tiếng Anh và tiếng Việt riêng, brief hình ảnh, văn bản thay thế, ghi chú nguồn và danh sách kiểm tra."
+          }
+        ]
+      }
+    },
+    "frameworkTitle": "Mỗi phần trong prompt đều có một nhiệm vụ",
+    "heading": "Xây trợ lý mà cả đội có thể tin tưởng.",
+    "intro": "Hiểu một ý tưởng, thử ngay, rồi áp dụng vào hệ thống cho Induction Day. Bạn không cần biết lập trình.",
+    "lessons": [
+      {
+        "title": "Bức tranh tổng thể",
+        "subtitle": "Trợ lý là đồng đội có bản hướng dẫn.",
+        "body": "Một hệ thống AI hữu ích kết hợp hướng dẫn, kiến thức liên quan và cách kiểm tra kết quả. Mô hình tạo câu trả lời từ thông tin nhận được, không tự biết kế hoạch mới nhất của CLB. Nhiệm vụ của bạn là giao việc rõ ràng và chỉ đường tới nguồn đáng tin.",
+        "why": "Yêu cầu chung chung có thể tạo bài viết rất hay nhưng sai ngày. Quy trình lặp lại giúp các ban làm việc nhất quán và phát hiện thiếu sót trước khi chia sẻ.",
+        "example": "Với Induction Day: prompt hệ thống của đội → đọc thông tin sự kiện và giọng văn đã duyệt → làm theo kỹ năng viết song ngữ → tạo bài → kiểm chứng và nhờ thành viên duyệt.",
+        "takeaway": "Chọn một đầu ra: bộ nội dung sẵn sàng cho Facebook. Marketing phụ trách giọng văn; Product kiểm tra trải nghiệm; External Relations kiểm chứng tuyên bố; People & Culture kiểm tra sự gần gũi và khả năng tiếp cận."
+      },
+      {
+        "title": "Markdown",
+        "subtitle": "Vài ký hiệu đơn giản giúp bài viết có cấu trúc.",
+        "body": "Markdown là văn bản thông thường với một số quy ước dễ đọc: # tạo tiêu đề, - tạo gạch đầu dòng, **từ** để nhấn mạnh, [nhãn](https://example.com) mô tả liên kết. Tệp .md đơn giản là tệp văn bản dùng các quy ước này. Không có phần mềm đặc biệt vẫn đọc được.",
+        "why": "Tiêu đề tách vai trò, nguồn, quy trình và đầu ra. Danh sách biến đoạn dài thành hướng dẫn dễ xem và cập nhật. Markdown tổ chức ý nghĩa, không làm thông tin tự đúng hay buộc AI tuân thủ.",
+        "example": "Sửa ví dụ bên dưới và xem bản hiển thị. Dùng cấu trúc cho prompt và SKILL.md. Riêng bài Facebook cuối cùng hãy yêu cầu văn bản thuần: Facebook có thể hiện nguyên ký hiệu Markdown.",
+        "takeaway": "Mỗi trách nhiệm có một tiêu đề; việc có thứ tự dùng các bước đánh số. Tránh bức tường chữ dài hoặc tiêu đề không có hướng dẫn cụ thể."
+      },
+      {
+        "title": "System prompt",
+        "subtitle": "Bản giao việc lâu dài, không chỉ việc hôm nay.",
+        "body": "System prompt mô tả cách trợ lý làm việc qua nhiều yêu cầu: vai trò, độc giả, quy tắc về nguồn, các bước và đầu ra. Task prompt là nhiệm vụ hôm nay. Context là thông tin cần để làm nhiệm vụ đó. Trong Colab, hướng dẫn đã lưu của đội được chuyển thành kỹ năng và dùng cùng tình huống hiện tại.",
+        "why": "Bạn thay sự kiện hoặc độc giả mà không phải xây lại trợ lý. Ranh giới rõ ràng cũng giúp khi tài liệu chứa ghi chú lỗi thời hoặc nội dung cố ra lệnh cho AI.",
+        "example": "Hướng dẫn lâu dài: “Dùng brief sự kiện mới nhất đã duyệt. Nếu thiếu dữ kiện bắt buộc, nêu câu hỏi trước khi gọi bài viết là sẵn sàng.” Việc hôm nay: “Viết lời mời Induction Day.” Ngữ cảnh: brief, câu hỏi thành viên mới và hướng dẫn giọng văn.",
+        "takeaway": "Dùng RISE: Vai trò & người đọc, Nguồn & bằng chứng, Quy trình & giới hạn, Đầu ra mong đợi. Cho ví dụ ngắn để diễn tả chất lượng tốt. Yêu cầu tóm tắt bằng chứng, không yêu cầu suy luận nội bộ ẩn."
+      },
+      {
+        "title": "Skills",
+        "subtitle": "Công thức dùng lại cho việc đội thường làm.",
+        "body": "Skill đóng gói một quy trình lặp lại: tên, mô tả khi nào dùng và hướng dẫn. System prompt giống thỏa thuận làm việc; skill giống công thức: kiểm chứng sự kiện, chuyển bài Anh sang Việt hoặc rà soát nội dung dễ tiếp cận. SKILL.md là tệp dễ đọc chứa công thức ấy.",
+        "why": "Công thức tập trung dễ thử và sửa hơn một prompt khổng lồ. Kỹ năng viết song ngữ dùng cho Induction Day, tuyển thành viên hay showcase. Skill không tự cấp quyền ứng dụng hoặc bảo đảm đáp án đúng.",
+        "example": "Lưu prompt, chọn Tạo kỹ năng, đọc từng công thức, rồi Chạy thử tác tử trong Kết quả. Colab đưa toàn bộ kỹ năng đã tạo cho tác tử thực hành. Sản phẩm AI khác có thể nạp skill khác; kiểm tra cách thiết lập trước khi dùng tệp tải về.",
+        "takeaway": "Công thức tốt nêu lúc áp dụng, đầu vào cần có, các bước, cách xử lý thiếu thông tin và đầu ra. Thử cả sự kiện bình thường và khi đổi địa điểm."
+      },
+      {
+        "title": "Nguồn & công cụ",
+        "subtitle": "Tìm đúng dữ kiện trước khi tìm câu chữ hay.",
+        "body": "Công cụ cho phép trợ lý tìm và đọc bản ghi ứng dụng thực hành, rồi tạo hoặc cập nhật khi được phép. Nội dung nguồn là bằng chứng, không phải lệnh mới. Tin nhắn trau chuốt chưa chắc đã được duyệt. Hãy hỏi ai sở hữu dữ kiện, khi nào cập nhật và đã xác nhận chưa.",
+        "why": "Kiến thức nằm nhiều nơi: Drive giữ thông tin sự kiện, Messenger cho biết băn khoăn của người mới, Teams giải thích các ban, Gmail loại diễn giả chưa duyệt, Figma cho hướng hình ảnh. Prompt cần chỉ cách đối chiếu chúng.",
+        "example": "Lịch cũ ghi thứ Năm, brief thực hành v2 đã duyệt ghi thứ Bảy. Dùng nguồn được duyệt mới nhất và giải thích xung đột trong ghi chú. Liên kết trong bản ghi chỉ là tham khảo; công cụ không mở web trực tiếp hay đăng Facebook.",
+        "takeaway": "Tìm → đọc → đối chiếu → viết → kiểm chứng. Đưa mã nguồn vào ghi chú bàn giao, không chèn vào bài công khai. Thay example.com và thông tin diễn tập bằng dữ kiện thật đã xác nhận trước khi đăng."
+      },
+      {
+        "title": "Thử, cải thiện & trình diễn",
+        "subtitle": "Đánh giá kết quả rồi cải thiện hướng dẫn.",
+        "body": "Chạy cùng nhiệm vụ với tiêu chí rõ: dữ kiện đúng, dễ hiểu với người mới, Anh–Việt đồng nghĩa, bước tiếp theo rõ và hình ảnh dễ tiếp cận. Mỗi lần thay một hướng dẫn rồi so kết quả. Phản hồi AI chỉ là gợi ý; thành viên vẫn là người đánh giá.",
+        "why": "Một câu trả lời hay có thể che prompt chưa vững. Thử thiếu link đăng ký, đổi địa điểm hoặc nhà tài trợ chưa duyệt. Trợ lý đáng tin cần hỏi đúng thay vì tự điền bằng phỏng đoán.",
+        "example": "Trong Trình diễn trực tiếp, người chủ trì đưa một đội lên sân khấu. Mọi người theo dõi hệ thống, kỹ năng và kết quả khi đội giải cùng thử thách. Giải thích điều đã sửa và nguồn giúp bài tốt hơn, rồi chuyển đội.",
+        "takeaway": "Áp dụng vào học tập: nhờ giải thích ghi chú, lên lịch ôn hoặc tạo câu hỏi luyện tập. Kiểm tra quy định AI của môn học và nguồn; tự làm bài đánh giá. Với việc CLB, lưu prompt và skill cùng bộ nội dung cuối."
+      }
+    ],
+    "local": "Bài tập này ở trong trình duyệt của bạn, không thay đổi prompt đã lưu của đội.",
+    "mark": "Đánh dấu đã khám phá",
+    "markdownLabel": "Chỉnh ví dụ Markdown",
+    "markdownSample": "# Trợ lý Induction Day\n\n## Người đọc\n- Sinh viên RMIT tò mò về RISE\n- Không cần kinh nghiệm khởi nghiệp\n\n## Chất lượng\nDùng **dữ kiện đã duyệt** và hỏi khi thiếu thông tin.\n\n[RISE Club](https://www.facebook.com/RISEClubSGS)",
+    "missing": "Cần bổ sung",
+    "missionHelp": "Xây hệ thống có thể tạo bài viết, không chỉ một bài đơn lẻ. Cải thiện hướng dẫn đến khi đồng đội có thể lặp lại quy trình.",
+    "missionTitle": "Đích đến của đội",
+    "next": "Bài tiếp theo",
+    "noEvidence": "Chưa tìm thấy cách diễn đạt rõ ràng.",
+    "openPrompt": "Mở prompt của đội",
+    "openSources": "Khám phá ứng dụng",
+    "preview": "Nội dung khi hiển thị",
+    "progress": "Lộ trình của bạn",
+    "promptSnapshot": "Phân tích theo bản nháp; hãy lưu trước khi tạo kỹ năng.",
+    "rehearsal": "Bộ dữ liệu dùng thông tin sự kiện diễn tập và link mẫu. Trước khi đăng thật, thay bằng thông tin CLB đã xác nhận và nhờ quản trị viên trang duyệt.",
+    "source": "Văn bản Markdown",
+    "sourceMapHelp": "Thử tìm “Induction” trong các ứng dụng. Mỗi nguồn trả lời một câu hỏi.",
+    "sourceMapTitle": "Câu chuyện hay bắt đầu từ nhiều ứng dụng",
+    "sources": [
+      {
+        "app": "drive",
+        "name": "Brief sự kiện",
+        "question": "Chuyện gì, lúc nào, ở đâu?"
+      },
+      {
+        "app": "notion",
+        "name": "Hướng dẫn giọng văn",
+        "question": "RISE nói chuyện như thế nào?"
+      },
+      {
+        "app": "messenger",
+        "name": "Câu hỏi người mới",
+        "question": "Điều gì giúp một người thấy được chào đón?"
+      },
+      {
+        "app": "teams",
+        "name": "Ghi chú các ban",
+        "question": "Thành viên học và thử điều gì?"
+      },
+      {
+        "app": "gmail",
+        "name": "Duyệt đối tác",
+        "question": "Tuyên bố nào đã được xác nhận?"
+      },
+      {
+        "app": "figma",
+        "name": "Hướng hình ảnh",
+        "question": "Mọi người xem và tiếp cận câu chuyện ra sao?"
+      }
+    ],
+    "suggestion": "Thử bổ sung",
+    "takeaway": "Mang về cho đội",
+    "title": "Học cùng AI",
+    "tryIt": "Tự tay thử",
+    "why": "Vì sao hữu ích"
+  },
   "leave": "Rời phòng thực hành",
   "limitHint": "Người tổ chức có thể điều chỉnh ngân sách AI của phòng và từng nhóm trong phần Quản trị.",
   "limitsTab": "Giới hạn AI",
@@ -466,7 +687,7 @@
   "skillsSection": "KỸ NĂNG",
   "skipConflict": "Chưa yêu cầu kiểm tra lịch trống",
   "starter": "Dùng prompt mẫu",
-  "starterText": "Bạn là trợ lý tận tâm của câu lạc bộ RISE. Hỗ trợ Marketing & Growth kể câu chuyện rõ ràng, Product & Development biến ý tưởng thành dự án hữu ích, External Relations chuẩn bị quan hệ đối tác có mục tiêu và People & Culture giúp mỗi thành viên phát triển. Đọc dữ liệu thực hành liên quan trước khi kết luận, dẫn nguồn đã dùng và tách biệt sự thật với giả định. Giúp sinh viên cân bằng bài tập và hoạt động câu lạc bộ nhưng không làm bài được chấm điểm một cách thiếu trung thực. Bảo vệ thông tin cá nhân và xin con người duyệt trước khi gửi tin nhắn, đặt lịch, xuất bản nội dung hoặc thay đổi dữ liệu chung.",
+  "starterText": "## Vai trò & người đọc\nBạn là trợ lý truyền thông RISE, viết cho sinh viên RMIT tò mò nhưng mới biết khởi nghiệp.\n\n## Nguồn & bằng chứng\nTìm brief sự kiện, hướng dẫn giọng văn, ghi chú các ban và duyệt đối tác. Dùng dữ kiện mới nhất đã duyệt; hỏi khi thiếu hoặc mâu thuẫn.\n\n## Quy trình & giới hạn\nThu thập nguồn, đối chiếu, viết và kiểm tra hai ngôn ngữ. Không tự tạo diễn giả, nhà tài trợ, ngày hay link. Nhờ thành viên duyệt trước khi đăng.\n\n## Đầu ra mong đợi\nTrả bài Facebook văn bản thuần tiếng Anh và tiếng Việt riêng, brief hình ảnh, văn bản thay thế, ghi chú nguồn và danh sách kiểm tra.",
   "starts": "Bắt đầu",
   "startTogether": "BẮT ĐẦU CÙNG NHAU",
   "steer": "Định hướng tình huống tiếp theo",
@@ -486,6 +707,7 @@
   "studio": {
     "actions": {
       "admin": "Đã đổi vai trò quản trị",
+      "analyze": "Đã góp ý prompt của đội",
       "assign": "Đã phân nhóm",
       "compile": "Đã tạo kỹ năng",
       "created": "Đã tạo buổi thực hành",

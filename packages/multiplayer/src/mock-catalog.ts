@@ -1,4 +1,5 @@
 import { riseMetadata } from './mock-rise-metadata';
+import { riseInductionRecords } from './rise-induction';
 
 export const mockAppCatalog = [
   { id: 'drive', name: 'Google Drive', kind: 'documents' },
@@ -215,32 +216,38 @@ const risePracticeRecords: Record<MockApp, RisePracticeRecord> = {
 export const mockApps: MockApp[] = mockAppCatalog.map(({ id }) => id);
 
 export function seedRecords(): MockRecord[] {
-  return mockAppCatalog.flatMap(({ id: app, name }, appIndex) => {
-    const riseRecords = risePracticeRecords[app];
-    const profile = {
-      ...riseRecords,
-      ...riseMetadata(
-        name,
-        appIndex,
-        riseRecords.primary[0],
-        riseRecords.followup[0]
-      ),
-    };
-    const entries: ReadonlyArray<readonly [string, string]> = [
-      profile.primary,
-      profile.followup,
-      ['Owner and collaborators', `${profile.owner} ${profile.collaborators}`],
-      ['Timeline', profile.timeline],
-      ['Current status', profile.status],
-      ['Access and privacy', profile.access],
-      ['Risk to check', profile.risk],
-      ['Snapshot and next action', `${profile.metric} Next: ${profile.next}`],
-    ];
-    return entries.map(([title, content], index) => ({
-      id: `${app}-${index + 1}`,
-      app,
-      title,
-      content,
-    }));
-  });
+  return [
+    ...mockAppCatalog.flatMap(({ id: app, name }, appIndex) => {
+      const riseRecords = risePracticeRecords[app];
+      const profile = {
+        ...riseRecords,
+        ...riseMetadata(
+          name,
+          appIndex,
+          riseRecords.primary[0],
+          riseRecords.followup[0]
+        ),
+      };
+      const entries: ReadonlyArray<readonly [string, string]> = [
+        profile.primary,
+        profile.followup,
+        [
+          'Owner and collaborators',
+          `${profile.owner} ${profile.collaborators}`,
+        ],
+        ['Timeline', profile.timeline],
+        ['Current status', profile.status],
+        ['Access and privacy', profile.access],
+        ['Risk to check', profile.risk],
+        ['Snapshot and next action', `${profile.metric} Next: ${profile.next}`],
+      ];
+      return entries.map(([title, content], index) => ({
+        id: `${app}-${index + 1}`,
+        app,
+        title,
+        content,
+      }));
+    }),
+    ...structuredClone(riseInductionRecords),
+  ];
 }

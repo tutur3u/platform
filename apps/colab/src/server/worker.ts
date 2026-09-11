@@ -56,6 +56,31 @@ async function handle(
   cookies: string[]
 ): Promise<Response> {
   const url = new URL(request.url);
+  // Server-to-server capability redemption, not a browser session mutation.
+  if (url.pathname === '/api/sponsorship/verify' && request.method === 'POST') {
+    const body = await bodyOf(request);
+    requireRule(
+      typeof body.roomId === 'string' && /^[a-f0-9-]{36}$/.test(body.roomId),
+      'invalid_input'
+    );
+    requireRule(
+      typeof body.token === 'string' &&
+        body.token.length >= 32 &&
+        body.token.length <= 128,
+      'invalid_input'
+    );
+    requireRule(
+      typeof body.digest === 'string' && /^[a-f0-9]{64}$/.test(body.digest),
+      'invalid_input'
+    );
+    return Response.json(
+      await env.ROOMS.getByName(body.roomId).consumeSponsorship(
+        body.token,
+        body.digest
+      ),
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
   if (url.pathname.startsWith('/auth/') || url.pathname === '/verify-token')
     return authRoute(request, env);
   if (!url.pathname.startsWith('/api/')) {
@@ -274,6 +299,9 @@ export default {
                 not_invited: 403,
                 private_room: 403,
                 admin_only: 403,
+                staff_only: 403,
+                sponsorship_unavailable: 503,
+                sponsorship_exhausted: 402,
                 room_missing: 404,
                 rate_limited: 429,
                 ai_busy: 409,
