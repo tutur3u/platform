@@ -36,20 +36,9 @@ import {
 
 describe('AI Studio billing policy', () => {
   it('only one concurrent retry claims the reserved run', async () => {
-    let reserved = true;
-    const query = {
-      update: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn(async () => {
-        const data = reserved ? { id: 'metered-run' } : null;
-        reserved = false;
-        return { data, error: null };
-      }),
-    };
-    mocks.createAdminClient.mockResolvedValue({
-      schema: () => ({ from: () => query }),
-    });
+    mocks.beginAiStudioRun
+      .mockResolvedValueOnce({ runId: 'run' })
+      .mockRejectedValueOnce({ status: 409 });
     const input = {
       credential: {
         kind: 'api-key',
@@ -72,7 +61,9 @@ describe('AI Studio billing policy', () => {
     expect(
       results.find((result) => result.status === 'rejected')
     ).toMatchObject({ reason: { status: 409 } });
-    expect(query.eq).toHaveBeenCalledWith('status', 'reserved');
+    expect(mocks.beginAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({ rejectExisting: true })
+    );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
   });
   it('fails and releases the hold if actual pricing becomes zero', async () => {
