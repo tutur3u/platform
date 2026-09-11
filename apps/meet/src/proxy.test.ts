@@ -105,6 +105,7 @@ vi.mock('next-intl/navigation', () => ({
 
 vi.mock('@/i18n/routing', () => ({
   supportedLocales: ['en', 'vi'],
+  defaultLocale: 'en',
 }));
 
 describe('Meet proxy auth handoff', () => {
@@ -206,7 +207,7 @@ describe('Meet proxy auth handoff', () => {
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
-  it('redirects authenticated root requests to default workspace meetings', async () => {
+  it('redirects authenticated root requests to personal workspace meetings', async () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user-id' });
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
@@ -218,15 +219,13 @@ describe('Meet proxy auth handoff', () => {
     const response = await proxy(request);
 
     expect(response.headers.get('Location')).toBe(
-      'https://meet.tuturuuu.localhost/team-workspace/meetings'
+      'https://meet.tuturuuu.localhost/personal/meetings'
     );
-    expect(mocks.getCurrentUserDefaultWorkspace).toHaveBeenCalledWith({
-      headers: request.headers,
-    });
+    expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
     expect(mocks.propagateAuthCookies).toHaveBeenCalled();
   });
 
-  it('redirects Supabase-authenticated root requests to default workspace meetings', async () => {
+  it('redirects Supabase-authenticated root requests to personal workspace meetings', async () => {
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
       id: 'team-workspace',
@@ -237,11 +236,9 @@ describe('Meet proxy auth handoff', () => {
     const response = await proxy(request);
 
     expect(response.headers.get('Location')).toBe(
-      'https://meet.tuturuuu.localhost/team-workspace/meetings'
+      'https://meet.tuturuuu.localhost/personal/meetings'
     );
-    expect(mocks.getCurrentUserDefaultWorkspace).toHaveBeenCalledWith({
-      headers: request.headers,
-    });
+    expect(mocks.getCurrentUserDefaultWorkspace).not.toHaveBeenCalled();
   });
 
   it('redirects authenticated login requests back to the normalized next path', async () => {
@@ -264,10 +261,6 @@ describe('Meet proxy auth handoff', () => {
     );
   });
   it.each([
-    [
-      '/workspace/personal?source=sidebar-apps',
-      '/personal/meetings?source=sidebar-apps',
-    ],
     ['/vi/workspace/team', '/vi/team/meetings'],
     ['/workspace/personal/plans', '/personal/plans'],
   ])(
@@ -280,6 +273,35 @@ describe('Meet proxy auth handoff', () => {
       expect(response.headers.get('Location')).toBe(
         `https://meet.tuturuuu.localhost${target}`
       );
+    }
+  );
+  it.each([
+    '/workspace/team?source=sidebar-apps',
+    '/internal/meetings?source=sidebar-apps',
+    '/vi/workspace/team?source=sidebar-apps',
+    '/00000000-0000-0000-0000-000000000000?source=sidebar-apps',
+  ])('opens Personal for implicit launcher context: %s', async (path) => {
+    const response = await proxy(
+      new NextRequest(`https://meet.tuturuuu.localhost${path}`)
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('Location')).toBe(
+      `https://meet.tuturuuu.localhost${path.startsWith('/vi/') ? '/vi' : ''}/personal/meetings`
+    );
+  });
+
+  it.each([
+    '/internal/meetings',
+    '/vi/internal/plans',
+    '/r/room-code?source=sidebar-apps',
+  ])(
+    'preserves explicit workspace and meeting destinations: %s',
+    async (path) => {
+      mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+      const response = await proxy(
+        new NextRequest(`https://meet.tuturuuu.localhost${path}`)
+      );
+      expect(response.headers.get('Location')).toBeNull();
     }
   );
 });

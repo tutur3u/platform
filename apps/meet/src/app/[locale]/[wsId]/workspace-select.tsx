@@ -2,20 +2,8 @@
 
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { TTR_URL } from '@/constants/common';
+import { resolveMeetWorkspacePath } from '@/lib/workspace-navigation';
 import { fetchWorkspaces } from './actions';
-
-function resolveWorkspacePath({
-  currentPathname,
-  nextSlug,
-}: {
-  currentPathname: string;
-  nextSlug: string;
-}) {
-  return currentPathname.replace(
-    /^((?:\/[a-z]{2})?\/workspace)\/[^/]+/,
-    `$1/${nextSlug}`
-  );
-}
 
 export function WorkspaceSelect({
   disableCreateNewWorkspace,
@@ -35,7 +23,7 @@ export function WorkspaceSelect({
       hideLeading={hideLeading}
       platformWorkspaceSetupUrl={TTR_URL}
       standalone={standalone}
-      resolveNextPathname={resolveWorkspacePath}
+      resolveNextPathname={resolveMeetWorkspacePath}
       wsId={wsId}
     />
   );
