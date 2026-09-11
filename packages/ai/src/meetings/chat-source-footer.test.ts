@@ -54,3 +54,16 @@ it('keeps a readable escaped prefix when the first paragraph alone is oversized'
   expect(answer.length).toBeGreaterThan(1000);
   expect(answer).toMatch(/\n…\n\n- \[example\.com\]/);
 });
+
+it('does not turn an empty answer into a sources-only success', () => {
+  expect(
+    formatMeetSourceAnswer('  ', [
+      {
+        sourceType: 'url',
+        id: 'ref',
+        url: 'https://example.com',
+        title: 'Source',
+      },
+    ])
+  ).toBe('');
+});

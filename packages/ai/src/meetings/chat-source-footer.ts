@@ -46,6 +46,7 @@ export function formatMeetSourceAnswer(
   text: string,
   sources: MeetCitationSource[]
 ) {
+  if (!text.trim()) return '';
   const selected = selectMeetSources(sources);
   const footer = [
     ...new Map(selected.map((source) => [source.url, source])).values(),

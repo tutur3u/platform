@@ -3827,6 +3827,7 @@
       "assistant_decision_saving": "Đang lưu quyết định của bạn…",
       "assistant_deny_actions": "Từ chối thao tác",
       "assistant_discard_draft": "Bỏ bản nháp",
+      "assistant_empty_answer": "Mira chưa hoàn thành câu trả lời này. Vui lòng hỏi lại; các nguồn bên dưới không phải là câu trả lời hoàn chỉnh.",
       "assistant_failed": "Mira chưa thể trả lời. Vui lòng thử lại.",
       "assistant_only_you": "Chỉ bạn có thể xem",
       "assistant_personal_workspace": "Mira · Không gian cá nhân",

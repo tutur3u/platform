@@ -193,6 +193,11 @@ export async function generateMeetAssistant(
     });
     if (!charge.success)
       throw new MeetCallAccessError(503, 'AI quota accounting failed');
+    if (!answer.text.trim() && !answer.approvals?.length)
+      throw new MeetCallAccessError(
+        503,
+        'AI returned no answer. Please try again.'
+      );
     settlement = answer.privateResult
       ? {
           action: 'ai.review.save',

@@ -159,7 +159,10 @@ export async function answerMeetChat(
             messages: [...initialMessages, ...result.responseMessages],
             text: search.unavailable()
               ? 'Google did not return verified sources for this question. Please try again or ask a more specific public question.'
-              : formatMeetSourceAnswer(result.text, sources),
+              : formatMeetSourceAnswer(
+                  result.text.trim() || (!privateResult ? search.answer() : ''),
+                  sources
+                ),
             ...measureMeetGeneration(
               [
                 ...result.steps.map((step) => ({

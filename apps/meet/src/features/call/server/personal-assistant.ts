@@ -133,6 +133,11 @@ export async function answerPersonalMeetChat(
     });
     if (!charge.success)
       throw new MeetCallAccessError(503, 'AI quota accounting failed');
+    if (!answer.text.trim())
+      throw new MeetCallAccessError(
+        503,
+        'AI returned no answer. Please try again.'
+      );
     return { text: answer.text.slice(0, 16000) };
   } finally {
     // Keep the hold through actual deduction: releasing first opens a spending race.
