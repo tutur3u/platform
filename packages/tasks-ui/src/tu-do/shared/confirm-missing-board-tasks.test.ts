@@ -6,7 +6,9 @@ import { confirmMissingBoardTasks } from './confirm-missing-board-tasks';
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({ getWorkspaceTask: vi.fn() }));
 const task = { id: 'saved', list_id: 'list-1' } as Task;
-beforeEach(() => vi.mocked(getWorkspaceTask).mockReset());
+beforeEach(() => {
+  vi.mocked(getWorkspaceTask).mockReset();
+});
 describe('partial board page membership', () => {
   it('preserves a task displaced to a later page', async () => {
     vi.mocked(getWorkspaceTask).mockResolvedValue({ task } as never);
