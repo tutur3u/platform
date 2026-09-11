@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/realtime-v0.6.0...realtime-v0.7.0) (2026-09-10)
+
+
+### Features
+
+* **meet:** add private and room-wide Gemini Live voice ([#5293](https://github.com/tutur3u/platform/issues/5293)) ([f39119a](https://github.com/tutur3u/platform/commit/f39119aab3fc76946955a6e1de8e8165336a1ab6))
+* **meet:** add private solo mode and reliable media recovery ([8aec940](https://github.com/tutur3u/platform/commit/8aec940c63185e815ce6253d9483f1251a7ab052))
+* **meet:** complete Gemini Live voice and private tool controls ([6e327c7](https://github.com/tutur3u/platform/commit/6e327c711ddfb66b18d289d6c6d9251296055e6f))
+* **meet:** private solo mode and reliable reconnect recovery ([#5286](https://github.com/tutur3u/platform/issues/5286)) ([e3c6b03](https://github.com/tutur3u/platform/commit/e3c6b03b0e319ea7b9a528e285b801a11ca62459))
+
+
+### Bug Fixes
+
+* **meet:** confirm live audio forwarding before reporting recovery ([a0f5baa](https://github.com/tutur3u/platform/commit/a0f5baaf2f3b175a0b6ed961772884f33e2b678c))
+* **meet:** harden live audio cancellation and tool replay ([613def7](https://github.com/tutur3u/platform/commit/613def78b74c42d86915306a28a90a2522288f2d))
+* **meet:** harden live voice recovery and private approvals ([a2c5950](https://github.com/tutur3u/platform/commit/a2c595016b67c904cb7147b1cf4c4898499d4a4a))
+* **meet:** keep mute authoritative and release ended room sessions ([3f11a2a](https://github.com/tutur3u/platform/commit/3f11a2a2c4f724d13fa4b6e13240f5a1df439bda))
+* **meet:** preserve live accounting and reconnect state ([d59fd76](https://github.com/tutur3u/platform/commit/d59fd7668adaddd777af320109b8c6687f7bfab5))
+* **meet:** preserve private receipts and cancel stale media work ([e5b33bc](https://github.com/tutur3u/platform/commit/e5b33bc3ff3f07c30271727daa5232089eb1899d))
+* **meet:** recover personal replies and publisher startup ([6c4352d](https://github.com/tutur3u/platform/commit/6c4352d27d1c672ff7122da64de8bf88394d3b91))
+* **meet:** retire stale media sessions across reconnects ([0d3f582](https://github.com/tutur3u/platform/commit/0d3f582cf617cafc0659504677d2d68c88b17a25))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/realtime-v0.5.0...realtime-v0.6.0) (2026-09-09)
 
 

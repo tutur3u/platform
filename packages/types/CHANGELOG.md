@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/types-v0.29.1...types-v0.30.0) (2026-09-10)
+
+
+### Features
+
+* **meet:** add private and room-wide Gemini Live voice ([#5293](https://github.com/tutur3u/platform/issues/5293)) ([f39119a](https://github.com/tutur3u/platform/commit/f39119aab3fc76946955a6e1de8e8165336a1ab6))
+
 ## [0.29.1](https://github.com/tutur3u/platform/compare/types-v0.29.0...types-v0.29.1) (2026-09-09)
 
 

@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/meet-v0.28.0...meet-v0.29.0) (2026-09-10)
+
+
+### Features
+
+* **meet:** add private and room-wide Gemini Live voice ([#5293](https://github.com/tutur3u/platform/issues/5293)) ([f39119a](https://github.com/tutur3u/platform/commit/f39119aab3fc76946955a6e1de8e8165336a1ab6))
+* **meet:** add private solo mode and reliable media recovery ([8aec940](https://github.com/tutur3u/platform/commit/8aec940c63185e815ce6253d9483f1251a7ab052))
+* **meet:** complete Gemini Live voice and private tool controls ([6e327c7](https://github.com/tutur3u/platform/commit/6e327c711ddfb66b18d289d6c6d9251296055e6f))
+* **meet:** private solo mode and reliable reconnect recovery ([#5286](https://github.com/tutur3u/platform/issues/5286)) ([e3c6b03](https://github.com/tutur3u/platform/commit/e3c6b03b0e319ea7b9a528e285b801a11ca62459))
+
+
+### Bug Fixes
+
+* **meet:** clarify private conversation copy ([9132765](https://github.com/tutur3u/platform/commit/9132765968b319826b7ba1380d8870b6210c5d7b))
+* **meet:** close expired private sessions and recover audio timing ([9bc0b3b](https://github.com/tutur3u/platform/commit/9bc0b3b9895ac94d2635e2bb64da0a3bb567f2dc))
+* **meet:** confirm live audio forwarding before reporting recovery ([a0f5baa](https://github.com/tutur3u/platform/commit/a0f5baaf2f3b175a0b6ed961772884f33e2b678c))
+* **meet:** handle multilingual private chats and quota cleanup ([afc025a](https://github.com/tutur3u/platform/commit/afc025ad8e119d557d31beb880f6b1c4e15fe360))
+* **meet:** harden live audio cancellation and tool replay ([613def7](https://github.com/tutur3u/platform/commit/613def78b74c42d86915306a28a90a2522288f2d))
+* **meet:** harden live voice recovery and private approvals ([a2c5950](https://github.com/tutur3u/platform/commit/a2c595016b67c904cb7147b1cf4c4898499d4a4a))
+* **meet:** harden solo quota and reconnect races ([57639df](https://github.com/tutur3u/platform/commit/57639df94b8bde21237c2933caf3237a32d68608))
+* **meet:** isolate removed speaker and audio setup failures ([2d0a89a](https://github.com/tutur3u/platform/commit/2d0a89a062c299b2bbc919f281c42167d1a9d879))
+* **meet:** keep mute authoritative and release ended room sessions ([3f11a2a](https://github.com/tutur3u/platform/commit/3f11a2a2c4f724d13fa4b6e13240f5a1df439bda))
+* **meet:** pause private Live playback with the room microphone ([a9febef](https://github.com/tutur3u/platform/commit/a9febef5fdf76aa019db6497c47cb32b42ad1b63))
+* **meet:** preserve live accounting and reconnect state ([d59fd76](https://github.com/tutur3u/platform/commit/d59fd7668adaddd777af320109b8c6687f7bfab5))
+* **meet:** preserve private receipts and cancel stale media work ([e5b33bc](https://github.com/tutur3u/platform/commit/e5b33bc3ff3f07c30271727daa5232089eb1899d))
+* **meet:** recover live leases and replay complete tool outcomes ([0fe4f3e](https://github.com/tutur3u/platform/commit/0fe4f3ec50826f8a445219d639274d4bada53409))
+* **meet:** recover personal replies and publisher startup ([6c4352d](https://github.com/tutur3u/platform/commit/6c4352d27d1c672ff7122da64de8bf88394d3b91))
+* **meet:** restore Live transcripts after reconnects ([7b56f0e](https://github.com/tutur3u/platform/commit/7b56f0e92709e797c47f92facc760e372743256e))
+* **meet:** retire stale media sessions across reconnects ([0d3f582](https://github.com/tutur3u/platform/commit/0d3f582cf617cafc0659504677d2d68c88b17a25))
+* **meet:** retry live cleanup and isolate assistant playback ([e188f79](https://github.com/tutur3u/platform/commit/e188f79005cdcb7bea1637cdbf194ec9b38d41d2))
+* **meet:** retry private answer receipt persistence ([74cf08f](https://github.com/tutur3u/platform/commit/74cf08f3f6cd9273458bfbadd884944434f0211b))
+* **meet:** serialize Live transcript recovery ([e2fb22d](https://github.com/tutur3u/platform/commit/e2fb22d93a1df0b5dad8cbffda626f00e84d33fe))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/meet-v0.27.0...meet-v0.28.0) (2026-09-09)
 
 
