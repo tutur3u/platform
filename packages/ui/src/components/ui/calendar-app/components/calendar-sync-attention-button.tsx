@@ -10,7 +10,10 @@ import {
   DialogTrigger,
 } from '../../dialog';
 import { CalendarConnectionsSettingsContent } from './calendar-connections-settings-content';
-import { needsCalendarSyncAttention } from './calendar-sync-recovery';
+import {
+  isCalendarSyncActive,
+  needsCalendarSyncAttention,
+} from './calendar-sync-recovery';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
 /** Keep recovery visible when the sidebar replaces the header calendar picker. */
@@ -20,49 +23,59 @@ export function CalendarSyncAttentionButton({
   state: CalendarConnectionsManagerState;
 }) {
   const [open, setOpen] = useState(false);
-  const syncing =
-    state.syncMutation.isPending || state.syncHealth?.currentlyRunning;
+  const syncing = isCalendarSyncActive(state);
   const needsAttention = needsCalendarSyncAttention(state);
-  if (!open && !syncing && !needsAttention) return null;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={
-            syncing || !needsAttention
-              ? 'gap-1.5 text-muted-foreground'
-              : 'gap-1.5 border-dynamic-orange/40 text-dynamic-orange'
-          }
-        >
-          {syncing ? (
-            <RefreshCw className="size-4 shrink-0 animate-spin" />
-          ) : needsAttention ? (
-            <AlertTriangle className="size-4 shrink-0" />
-          ) : (
-            <CalendarDays className="size-4 shrink-0" />
-          )}
-          <span role="status">
-            {state.t(
-              syncing
-                ? 'syncing_calendars'
-                : needsAttention
-                  ? 'sync_recovery.attention'
-                  : 'manage_calendar_accounts'
-            )}
-          </span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{state.t('manage_calendar_accounts')}</DialogTitle>
-          <DialogDescription>
-            {state.t('manage_calendar_accounts_desc')}
-          </DialogDescription>
-        </DialogHeader>
-        <CalendarConnectionsSettingsContent state={state} />
-      </DialogContent>
-    </Dialog>
+    <>
+      <span role="status" className="sr-only">
+        {needsAttention
+          ? state.t('sync_recovery.attention')
+          : syncing
+            ? state.t('syncing_calendars')
+            : ''}
+      </span>
+      {(open || syncing || needsAttention) && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={
+                !needsAttention
+                  ? 'gap-1.5 text-muted-foreground'
+                  : 'gap-1.5 border-dynamic-orange/40 text-dynamic-orange'
+              }
+            >
+              {syncing && !needsAttention ? (
+                <RefreshCw className="size-4 shrink-0 animate-spin" />
+              ) : needsAttention ? (
+                <AlertTriangle className="size-4 shrink-0" />
+              ) : (
+                <CalendarDays className="size-4 shrink-0" />
+              )}
+              <span>
+                {state.t(
+                  needsAttention
+                    ? 'sync_recovery.attention'
+                    : syncing
+                      ? 'syncing_calendars'
+                      : 'manage_calendar_accounts'
+                )}
+              </span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{state.t('manage_calendar_accounts')}</DialogTitle>
+              <DialogDescription>
+                {state.t('manage_calendar_accounts_desc')}
+              </DialogDescription>
+            </DialogHeader>
+            <CalendarConnectionsSettingsContent state={state} />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }

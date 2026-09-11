@@ -78,7 +78,10 @@ export async function refreshCalendarSyncStatus(
     health.state === 'disconnected' ||
     (health.retryAfterSeconds ?? 0) > 0 ||
     ['auth', 'reconnect_required', 'configuration'].includes(health.reason) ||
-    (health.state === 'healthy' && now - lastSuccess < SYNC_INTERVAL_MS)
+    // Missing or malformed timestamps are treated as stale, with normal throttling.
+    (health.state === 'healthy' &&
+      Number.isFinite(lastSuccess) &&
+      now - lastSuccess < SYNC_INTERVAL_MS)
   )
     return status;
 

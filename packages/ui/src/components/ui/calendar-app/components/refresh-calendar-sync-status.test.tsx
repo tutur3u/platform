@@ -59,6 +59,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   client.clear();
+  vi.restoreAllMocks();
   focusManager.setFocused(undefined);
   onlineManager.setOnline(true);
   vi.useRealTimers();
@@ -276,6 +277,23 @@ it('checks again shortly when another session already started provider work', as
   await refreshCalendarSyncStatus(client, 'ws');
   expect(sync).toHaveBeenCalledTimes(1);
   vi.advanceTimersByTime(1);
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(sync).toHaveBeenCalledTimes(2);
+});
+
+it('does not sync a hidden document even when the focus manager reports focused', async () => {
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(sync).not.toHaveBeenCalled();
+});
+
+it('treats a healthy response with no success timestamp as stale but throttles retries', async () => {
+  status.health.state = 'healthy';
+  sync.mockResolvedValue({ ok: true });
+  await refreshCalendarSyncStatus(client, 'ws');
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(sync).toHaveBeenCalledOnce();
+  vi.advanceTimersByTime(interval);
   await refreshCalendarSyncStatus(client, 'ws');
   expect(sync).toHaveBeenCalledTimes(2);
 });

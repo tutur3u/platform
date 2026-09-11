@@ -42,10 +42,17 @@ export function needsCalendarSyncAttention(
   );
 }
 
+export function isCalendarSyncActive(
+  state: Pick<RecoveryState, 'syncMutation' | 'syncHealth'>
+) {
+  return !!(state.syncMutation.isPending || state.syncHealth?.currentlyRunning);
+}
+
 export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
   const { t, syncHealth, syncStatusError, providerAccountStatuses } = state;
-  const syncing = state.syncMutation.isPending || syncHealth?.currentlyRunning;
-  if (!needsCalendarSyncAttention(state) && !syncing) return null;
+  const syncing = isCalendarSyncActive(state);
+  const needsAttention = needsCalendarSyncAttention(state);
+  if (!needsAttention && !syncing) return null;
   const reconnectAccounts = state.accounts.filter(
     (account) =>
       providerAccountStatuses[account.id]?.state === 'reconnect_required'
@@ -93,23 +100,27 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
   }
   return (
     <Alert
-      role={syncing ? 'status' : 'alert'}
+      role={needsAttention ? 'alert' : 'status'}
       className={
-        syncing
-          ? 'border-border bg-muted/30 text-foreground'
-          : 'border-dynamic-orange/30 bg-dynamic-orange/5 text-foreground'
+        needsAttention
+          ? 'border-dynamic-orange/30 bg-dynamic-orange/5 text-foreground'
+          : 'border-border bg-muted/30 text-foreground'
       }
     >
-      {syncing ? (
+      {!needsAttention ? (
         <RefreshCw className="size-4 animate-spin" />
       ) : (
         <AlertTriangle className="size-4 text-dynamic-orange" />
       )}
       <AlertTitle>
-        {t(syncing ? 'syncing_calendars' : 'sync_recovery.attention')}
+        {t(needsAttention ? 'sync_recovery.attention' : 'syncing_calendars')}
       </AlertTitle>
       <AlertDescription className="space-y-3">
-        <p>{t(syncing ? 'sync_recovery.syncing_description' : description)}</p>
+        <p>
+          {t(
+            needsAttention ? description : 'sync_recovery.syncing_description'
+          )}
+        </p>
         <p className="text-muted-foreground text-xs">
           {t('sync_recovery.saved_events')}
         </p>
