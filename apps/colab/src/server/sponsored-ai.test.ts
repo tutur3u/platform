@@ -77,6 +77,7 @@ describe('sponsored model transport', () => {
     ]);
     const [url, options] = fetcher.mock.calls[0]!;
     expect(url).toBe('https://ai.tuturuuu.com/v1/colab/responses');
+    expect(JSON.parse(options.body).model).toBe('google/gemini-3.5-flash-lite');
     expect(JSON.parse(options.body).sponsorship).toMatchObject({
       workshopId: 'room',
       participantId: 'guest:member',

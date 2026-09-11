@@ -29,7 +29,7 @@ export async function sponsoredGeneration(
   );
   const sequence = ++context.sequence;
   const body = JSON.stringify({
-    model: env.COLAB_AI_MODEL || 'google/gemini-2.5-flash',
+    model: env.COLAB_AI_MODEL || 'google/gemini-3.5-flash-lite',
     instructions: system,
     prompt: JSON.stringify(input),
     sponsorship: {
