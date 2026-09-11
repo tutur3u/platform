@@ -208,6 +208,7 @@ export async function prepareMeteredExecution({
         workspaceId: credential.workspaceId,
       })
     : await beginAiStudioRun({
+        rejectExisting: requirePricedUsage,
         actorId: credential.actorId,
         apiKeyId: apiKeyIdForMeteredRun(credential),
         feature,
@@ -218,28 +219,6 @@ export async function prepareMeteredExecution({
         reservedCredits: positiveReservation(estimatedCost.billedCredits),
         workspaceId: credential.workspaceId,
       });
-
-  if (requirePricedUsage) {
-    // Atomically claim the reserved run: retries receive the same run ID but
-    // cannot start another provider request or settle the original request.
-    const sbAdmin = await createAdminClient({ noCookie: true });
-    const { data, error } = await sbAdmin
-      .schema('private')
-      .from('ai_studio_runs')
-      .update({ status: 'running' })
-      .eq('id', reservation.runId)
-      .eq('status', 'reserved')
-      .select('id')
-      .maybeSingle();
-    if (error || !data)
-      throw new AiStudioError(
-        'This sponsored request is already running or completed.',
-        {
-          code: 'invalid_request_error',
-          status: error ? 503 : 409,
-        }
-      );
-  }
 
   return {
     requirePricedUsage,

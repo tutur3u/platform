@@ -115,6 +115,7 @@ export async function calculateAiStudioUsageCost(
 }
 
 export type BeginAiStudioRunInput = {
+  rejectExisting?: boolean;
   actorId: string;
   apiKeyId?: string;
   feature: string;
@@ -178,6 +179,19 @@ export async function beginAiStudioRun(
     });
 
   const result = data?.[0];
+  // The transactional RPC returns NULL remaining_credits for an existing run;
+  // a concurrent insert loses the unique idempotency constraint and rolls back.
+  // Fence before provider execution without a second, fallible claim update.
+  if (
+    input.rejectExisting &&
+    (error?.code === '23505' ||
+      (result?.success && result.remaining_credits === null))
+  ) {
+    throw new AiStudioError(
+      'This sponsored request is already running or completed.',
+      { code: 'invalid_request_error', status: 409 }
+    );
+  }
   if (error || !result?.success || !result.run_id || !result.reservation_id) {
     throw reservationError(result?.error_code ?? null);
   }
