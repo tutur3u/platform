@@ -61,15 +61,19 @@ export async function POST(request: Request) {
       );
     }
     const sponsor = parsed.data;
-    if (credential.kind === 'first-party') {
-      const headers = new Headers(request.headers);
-      headers.set(
-        'Idempotency-Key',
-        `colab:${sponsor.jobId}:${sponsor.sequence}`
-      );
-      headers.set('X-Request-ID', `colab:${sponsor.jobId}:${sponsor.sequence}`);
-      request = new Request(request.url, { method: 'POST', headers });
-    }
+    const headers = new Headers(request.headers);
+    headers.set(
+      'idempotency-key',
+      `colab:${sponsor.jobId}:${sponsor.sequence}`
+    );
+    headers.set('x-request-id', `colab:${sponsor.jobId}:${sponsor.sequence}`);
+    headers.delete('x-tuturuuu-operation');
+    headers.delete('x-tuturuuu-entity-id');
+    const executionRequest = new Request(request.url, {
+      method: 'POST',
+      headers,
+      signal: request.signal,
+    });
     // These are trusted credential identity and server policy, never caller-selected billing fields.
     const metadata = {
       ...sponsor,
@@ -79,7 +83,7 @@ export async function POST(request: Request) {
       description: `Tuturuuu sponsors ${sponsor.operation} / ${sponsor.phase} for workshop "${sponsor.workshopTitle}", team "${sponsor.teamName}" (step ${sponsor.sequence}). Attendee personal credits are not charged.`,
     };
     const response = await executeTextRequest(
-      request,
+      executionRequest,
       parseTextRequest({
         instructions: body.instructions,
         prompt: body.prompt,
