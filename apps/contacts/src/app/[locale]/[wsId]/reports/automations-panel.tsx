@@ -11,11 +11,13 @@ import {
   Save,
   ShieldCheck,
 } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   getPeriodicReportSchedules,
   listWorkspaceReportGroups,
   type PeriodicReportCadence,
   type UpsertPeriodicReportSchedulePayload,
+  updatePeriodicReportAutoSend,
   upsertPeriodicReportSchedule,
 } from '@tuturuuu/internal-api/reports';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -72,6 +74,23 @@ export default function AutomationsPanel({
     queryKey: ['periodic-report-schedules', wsId],
     queryFn: () => getPeriodicReportSchedules(wsId),
   });
+  const autoSendMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      updatePeriodicReportAutoSend(wsId, enabled),
+    onSuccess: async () => {
+      toast.success(t('automation_saved'));
+      await queryClient.invalidateQueries({
+        queryKey: ['periodic-report-schedules', wsId],
+      });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof InternalApiError &&
+          error.code === 'REPORT_DELIVERY_UPDATING'
+          ? t('delivery_updating')
+          : error.message
+      ),
+  });
   const groupsQuery = useQuery({
     queryFn: () => listWorkspaceReportGroups(wsId),
     queryKey: ['periodic-report-groups', wsId],
@@ -126,6 +145,26 @@ export default function AutomationsPanel({
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-2 md:grid-cols-2">
+          <div className="flex items-center justify-between gap-3 rounded-lg border p-3 md:col-span-2">
+            <div className="space-y-1">
+              <label htmlFor="report-auto-send" className="font-medium text-sm">
+                {t('auto_send_title')}
+              </label>
+              <p className="text-muted-foreground text-xs">
+                {t('auto_send_description')}
+              </p>
+            </div>
+            <Switch
+              id="report-auto-send"
+              checked={data.emailDelivery.autoSendAfterApproval ?? false}
+              disabled={
+                !canManage ||
+                !data.emailDelivery.canConfigureAutoSend ||
+                autoSendMutation.isPending
+              }
+              onCheckedChange={(enabled) => autoSendMutation.mutate(enabled)}
+            />
+          </div>
           <ReadinessItem
             label={t('global_email_gate')}
             ready={data.emailDelivery.globalGateEnabled}

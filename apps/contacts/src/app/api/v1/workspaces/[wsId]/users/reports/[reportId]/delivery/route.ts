@@ -1,1 +1,14 @@
-export { POST } from '@tuturuuu/users-core/routes/users/reports/[reportId]/delivery/route';
+import {
+  GET as getHandler,
+  POST,
+} from '@tuturuuu/users-core/routes/users/reports/[reportId]/delivery/route';
+import { connection } from 'next/server';
+
+export { POST };
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ wsId: string; reportId: string }> }
+) {
+  await connection();
+  return getHandler(request, context);
+}

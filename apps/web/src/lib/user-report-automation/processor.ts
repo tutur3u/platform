@@ -29,6 +29,8 @@ interface AutomationRun {
 }
 
 interface EmailQueueRow {
+  locked_at: string;
+  locked_by: string;
   attempt_count: number;
   delivery_kind: 'send' | 'test';
   id: string;
@@ -112,6 +114,12 @@ async function markRunFailure(
 ) {
   const message = error instanceof Error ? error.message : 'Unknown run error';
   const permanent = run.attempt_count >= 5;
+  console.error('periodic_report.generation_failed', {
+    runId: run.id,
+    workspaceId: run.ws_id,
+    attempt: run.attempt_count,
+    permanent,
+  });
   await privateDb
     .from('user_report_automation_runs')
     .update({
@@ -167,7 +175,7 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
     for (const user of usersResult.data ?? []) {
       const existing = await privateDb
         .from('external_user_monthly_reports')
-        .select('id')
+        .select('id, generation_status')
         .eq('user_id', user.id)
         .eq('group_id', run.group_id)
         .eq('cadence', run.cadence)
@@ -175,76 +183,110 @@ async function processAutomationRun(sbAdmin: AdminClient, run: AutomationRun) {
         .eq('period_end', run.period_end)
         .maybeSingle();
       if (existing.error) throw existing.error;
-      if (existing.data) continue;
+      if (
+        existing.data &&
+        (run.generation_mode !== 'ai' ||
+          !['failed', 'generating'].includes(existing.data.generation_status))
+      )
+        continue;
 
       const userName = user.display_name ?? user.full_name ?? 'Member';
       const title = `${run.cadence[0]?.toUpperCase()}${run.cadence.slice(1)} report · ${userName}`;
-      const created = await privateDb
-        .from('external_user_monthly_reports')
-        .insert({
-          cadence: run.cadence,
-          content: '',
-          creator_id: scheduleResult.data.created_by,
-          feedback: '',
-          generation_mode: run.generation_mode,
-          generation_status:
-            run.generation_mode === 'ai' ? 'generating' : 'draft',
-          group_id: run.group_id,
-          manager_instruction: scheduleResult.data.manager_instruction,
-          period_end: run.period_end,
-          period_start: run.period_start,
-          report_approval_status: 'PENDING',
-          source_context: { automation_run_id: run.id, metrics: {} },
-          title,
-          updated_at: new Date().toISOString(),
-          updated_by: scheduleResult.data.created_by,
-          user_id: user.id,
-        })
-        .select('id')
-        .single();
+      const created = existing.data
+        ? await privateDb
+            .from('external_user_monthly_reports')
+            .update({
+              generation_status: 'generating',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existing.data.id)
+            .eq('generation_status', existing.data.generation_status)
+            .select('id')
+            .maybeSingle()
+        : await privateDb
+            .from('external_user_monthly_reports')
+            .insert({
+              cadence: run.cadence,
+              content: '',
+              creator_id: scheduleResult.data.created_by,
+              feedback: '',
+              generation_mode: run.generation_mode,
+              generation_status:
+                run.generation_mode === 'ai' ? 'generating' : 'draft',
+              group_id: run.group_id,
+              manager_instruction: scheduleResult.data.manager_instruction,
+              period_end: run.period_end,
+              period_start: run.period_start,
+              report_approval_status: 'PENDING',
+              source_context: { automation_run_id: run.id, metrics: {} },
+              title,
+              updated_at: new Date().toISOString(),
+              updated_by: scheduleResult.data.created_by,
+              user_id: user.id,
+            })
+            .select('id')
+            .single();
       if (created.error) throw created.error;
-      createdReports++;
+      if (!created.data) continue;
+      if (!existing.data) createdReports++;
 
       if (run.generation_mode === 'ai') {
-        const scopedContext = await loadScopedReportContext(sbAdmin, {
-          cadence: run.cadence,
-          groupId: run.group_id,
-          periodEnd: run.period_end,
-          periodStart: run.period_start,
-          reportId: created.data.id,
-          userId: user.id,
-          wsId: run.ws_id,
-        });
-        const narrative = await generatePeriodicReportNarrative({
-          cadence: run.cadence,
-          deterministicMetrics: scopedContext.deterministicMetrics,
-          group: { id: run.group_id, name: groupResult.data.name },
-          managerInstruction: scheduleResult.data.manager_instruction,
-          periodEnd: run.period_end,
-          periodStart: run.period_start,
-          previousReport: scopedContext.previousReport,
-          subject: {
-            displayName: user.display_name,
-            fullName: user.full_name,
-            note: user.note,
-          },
-        });
-        const generated = await privateDb
-          .from('external_user_monthly_reports')
-          .update({
-            content: narrative.content,
-            feedback: narrative.feedback,
-            generation_status: 'ready',
-            report_approval_status: 'PENDING',
-            source_context: {
-              automation_run_id: run.id,
-              metrics: scopedContext.deterministicMetrics,
+        try {
+          const scopedContext = await loadScopedReportContext(sbAdmin, {
+            cadence: run.cadence,
+            groupId: run.group_id,
+            periodEnd: run.period_end,
+            periodStart: run.period_start,
+            reportId: created.data.id,
+            userId: user.id,
+            wsId: run.ws_id,
+          });
+          const narrative = await generatePeriodicReportNarrative({
+            cadence: run.cadence,
+            deterministicMetrics: scopedContext.deterministicMetrics,
+            group: { id: run.group_id, name: groupResult.data.name },
+            managerInstruction: scheduleResult.data.manager_instruction,
+            periodEnd: run.period_end,
+            periodStart: run.period_start,
+            previousReport: scopedContext.previousReport,
+            subject: {
+              displayName: user.display_name,
+              fullName: user.full_name,
+              note: user.note,
             },
-            title: narrative.title,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', created.data.id);
-        if (generated.error) throw generated.error;
+          });
+          const generated = await privateDb
+            .from('external_user_monthly_reports')
+            .update({
+              content: narrative.content,
+              feedback: narrative.feedback,
+              generation_status: 'ready',
+              report_approval_status: 'PENDING',
+              source_context: {
+                automation_run_id: run.id,
+                metrics: scopedContext.deterministicMetrics,
+              },
+              title: narrative.title,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', created.data.id);
+          if (generated.error) throw generated.error;
+        } catch (error) {
+          const failed = await privateDb
+            .from('external_user_monthly_reports')
+            .update({
+              generation_status: 'failed',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', created.data.id);
+          if (failed.error)
+            console.error('periodic_report.generation_status_write_failed', {
+              reportId: created.data.id,
+              runId: run.id,
+              error: failed.error,
+            });
+          throw error;
+        }
       }
     }
 
@@ -272,43 +314,90 @@ async function recordEmailAttempt(
   status: 'sent' | 'failed' | 'blocked',
   details?: { error?: string; providerMessageId?: string }
 ) {
-  await privateDb.from('user_report_email_attempts').insert({
+  const result = await privateDb.from('user_report_email_attempts').insert({
     error_message: details?.error ?? null,
     provider_message_id: details?.providerMessageId ?? null,
     queue_id: row.id,
     status,
   });
+  if (result.error) throw result.error;
+}
+
+async function hasEmailLease(privateDb: PrivateClient, row: EmailQueueRow) {
+  const lease = await privateDb
+    .from('user_report_email_queue')
+    .select('id')
+    .eq('id', row.id)
+    .eq('status', 'processing')
+    .eq('locked_by', row.locked_by)
+    .eq('locked_at', row.locked_at)
+    .gt('locked_at', new Date(Date.now() - 15 * 60_000).toISOString())
+    .maybeSingle();
+  if (lease.error) throw lease.error;
+  if (!lease.data)
+    console.warn('periodic_report.lease_lost', {
+      queueId: row.id,
+      reportId: row.report_id,
+      workspaceId: row.ws_id,
+    });
+  return Boolean(lease.data);
 }
 
 async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
   const privateDb = getPrivateDb(sbAdmin);
+  let providerAccepted = false;
+  let acceptedAt: string | null = null;
+  let acceptedMessageId: string | undefined;
+  let attemptedRecipient = row.recipient_email;
   const fail = async (
     status: 'failed' | 'blocked',
     message: string,
     permanent = false
   ) => {
-    await recordEmailAttempt(privateDb, row, status, { error: message });
-    await privateDb
-      .from('user_report_email_queue')
-      .update({
-        last_error: message,
-        locked_at: null,
-        locked_by: null,
-        next_attempt_at: getRetryAt(row.attempt_count),
-        status: permanent || row.attempt_count >= 5 ? 'blocked' : 'failed',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', row.id);
-    await privateDb
-      .from('external_user_monthly_reports')
-      .update({
-        delivery_status: permanent ? 'blocked' : 'failed',
-        last_delivery_error: message,
-      })
-      .eq('id', row.report_id);
+    const blocked = permanent || providerAccepted || row.attempt_count >= 5;
+    console.warn('periodic_report.delivery_failed', {
+      queueId: row.id,
+      reportId: row.report_id,
+      workspaceId: row.ws_id,
+      attempt: row.attempt_count,
+      status: blocked ? 'blocked' : status,
+      providerAccepted,
+    });
+    try {
+      await recordEmailAttempt(privateDb, row, blocked ? 'blocked' : status, {
+        error: message,
+        providerMessageId: acceptedMessageId,
+      });
+    } catch (error) {
+      console.error('periodic_report.attempt_write_failed', {
+        queueId: row.id,
+        error,
+      });
+    }
+    const completion = await privateDb.rpc('finish_periodic_report_email', {
+      p_queue_id: row.id,
+      p_worker_id: row.locked_by,
+      p_locked_at: row.locked_at,
+      p_status: blocked ? 'blocked' : 'failed',
+      p_recipient_email: attemptedRecipient,
+      p_error: message,
+      p_next_attempt_at: getRetryAt(row.attempt_count),
+      ...(acceptedAt ? { p_sent_at: acceptedAt } : {}),
+      ...(acceptedMessageId
+        ? { p_provider_message_id: acceptedMessageId }
+        : {}),
+    });
+    if (completion.error || !completion.data) {
+      console.error('periodic_report.failure_lease_write_failed', {
+        queueId: row.id,
+        reportId: row.report_id,
+        error: completion.error,
+      });
+    }
   };
 
   try {
+    if (!(await hasEmailLease(privateDb, row))) return;
     const access = await resolvePeriodicReportEmailAccess(row.ws_id);
     if (!access.allowed) {
       await fail('blocked', `Delivery gate blocked: ${access.reason}`, true);
@@ -352,6 +441,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       await fail('blocked', 'Subject profile email is missing.', true);
       return;
     }
+    attemptedRecipient = recipient;
     if (await isEmailBlacklisted(sbAdmin, recipient)) {
       await fail('blocked', 'Recipient is unsubscribed or blocked.', true);
       return;
@@ -360,6 +450,7 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
     const html = reportHtml(reportResult.data);
     const unsubscribeUrl = createEmailUnsubscribeUrl(recipient);
     const service = await EmailService.fromWorkspace(row.ws_id);
+    if (!(await hasEmailLease(privateDb, row))) return;
     const sendResult = await service.send({
       content: {
         headers: {
@@ -389,7 +480,10 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
       return;
     }
 
+    providerAccepted = true;
     const sentAt = new Date().toISOString();
+    acceptedAt = sentAt;
+    acceptedMessageId = sendResult.messageId;
     await recordEmailAttempt(privateDb, row, 'sent', {
       providerMessageId: sendResult.messageId,
     });
@@ -413,37 +507,41 @@ async function processEmailQueueRow(sbAdmin: AdminClient, row: EmailQueueRow) {
         workspaceId: row.ws_id,
       });
     }
-    await privateDb
-      .from('user_report_email_queue')
-      .update({
-        last_error: null,
-        locked_at: null,
-        locked_by: null,
-        provider_message_id: sendResult.messageId,
-        sent_at: sentAt,
-        status: 'sent',
-        updated_at: sentAt,
-      })
-      .eq('id', row.id);
-    await privateDb
-      .from('external_user_monthly_reports')
-      .update(
-        row.delivery_kind === 'test'
-          ? {
-              delivery_status: 'draft',
-              last_delivery_error: null,
-            }
-          : {
-              delivered_at: sentAt,
-              delivery_status: 'sent',
-              last_delivery_error: null,
-            }
-      )
-      .eq('id', row.report_id);
+    const completion = await privateDb.rpc('finish_periodic_report_email', {
+      p_queue_id: row.id,
+      p_worker_id: row.locked_by,
+      p_locked_at: row.locked_at,
+      p_status: 'sent',
+      p_recipient_email: recipient,
+      p_sent_at: sentAt,
+      ...(sendResult.messageId
+        ? { p_provider_message_id: sendResult.messageId }
+        : {}),
+    });
+    if (completion.error) throw completion.error;
+    if (!completion.data) {
+      console.warn('periodic_report.accepted_after_lease_lost', {
+        queueId: row.id,
+        providerMessageId: sendResult.messageId,
+      });
+      return;
+    }
+    console.info('periodic_report.delivery_sent', {
+      queueId: row.id,
+      reportId: row.report_id,
+      workspaceId: row.ws_id,
+      attempt: row.attempt_count,
+      deliveryKind: row.delivery_kind,
+      providerMessageId: sendResult.messageId,
+    });
   } catch (error) {
     await fail(
       'failed',
-      error instanceof Error ? error.message : 'Unknown delivery error'
+      providerAccepted
+        ? 'Provider accepted the email, but delivery tracking failed. Check provider logs before retrying.'
+        : error instanceof Error
+          ? error.message
+          : 'Unknown delivery error'
     );
   }
 }
@@ -454,17 +552,38 @@ export async function processPeriodicReportAutomation(
 ) {
   const reconciliation = await reconcilePeriodicReportSchedules(sbAdmin);
   const privateDb = getPrivateDb(sbAdmin);
+  // Probe with a nonexistent queue before claiming anything: app deployment may
+  // precede the migration that supplies atomic, lease-fenced completion.
+  const readiness = await privateDb.rpc('finish_periodic_report_email', {
+    p_queue_id: '00000000-0000-0000-0000-000000000000',
+    p_worker_id: workerId,
+    p_locked_at: new Date().toISOString(),
+    p_status: 'blocked',
+    p_recipient_email: '',
+  });
+  const migrationPending =
+    readiness.error && ['42883', 'PGRST202'].includes(readiness.error.code);
+  if (readiness.error && !migrationPending)
+    throw new Error(readiness.error.message);
+  if (migrationPending)
+    console.warn('periodic_report.delivery_migration_pending');
   const [runsResult, emailsResult] = await Promise.all([
     callPrivateRpc<AutomationRun>(privateDb, 'claim_periodic_report_runs', {
       p_limit: 8,
       p_now: new Date().toISOString(),
       p_worker_id: workerId,
     }),
-    callPrivateRpc<EmailQueueRow>(privateDb, 'claim_periodic_report_emails', {
-      p_limit: 12,
-      p_now: new Date().toISOString(),
-      p_worker_id: workerId,
-    }),
+    migrationPending
+      ? Promise.resolve({ data: [] as EmailQueueRow[], error: null })
+      : callPrivateRpc<EmailQueueRow>(
+          privateDb,
+          'claim_periodic_report_emails',
+          {
+            p_limit: 12,
+            p_now: new Date().toISOString(),
+            p_worker_id: workerId,
+          }
+        ),
   ]);
   if (runsResult.error) throw new Error(runsResult.error.message);
   if (emailsResult.error) throw new Error(emailsResult.error.message);

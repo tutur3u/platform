@@ -5,12 +5,74 @@ import { z } from 'zod';
 import { getUserGroupRoutePermissions } from '../../../../../lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '../../../../../lib/user-groups/route-helpers';
 
+import {
+  deliveryMigrationPendingResponse,
+  isDeliveryMigrationPending,
+} from '../../delivery-readiness';
+
 const DeliveryActionSchema = z.object({
   action: z.enum(['preview', 'test', 'send', 'retry', 'cancel']),
 });
 
 interface Params {
   params: Promise<{ reportId: string; wsId: string }>;
+}
+
+export async function GET(request: Request, { params }: Params) {
+  try {
+    const { reportId, wsId: rawWsId } = await params;
+    const wsId = await resolveUserGroupRouteWorkspaceId(rawWsId, request);
+    const permissions = await getUserGroupRoutePermissions(wsId, request);
+    if (!permissions?.containsPermission('view_user_groups_reports')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+    const admin = await createAdminClient();
+    const db = admin.schema('private');
+    const report = await db
+      .from('external_user_monthly_reports_workspace_view')
+      .select(
+        'id, user_email, delivery_status, delivered_at, delivery_requested_at, last_delivery_error'
+      )
+      .eq('id', reportId)
+      .eq('user_ws_id', wsId)
+      .maybeSingle();
+    if (report.error) throw report.error;
+    if (!report.data)
+      return NextResponse.json(
+        { message: 'Report not found' },
+        { status: 404 }
+      );
+    const queue = await db
+      .from('user_report_email_queue')
+      .select(
+        'id, status, recipient_email, delivery_kind, attempt_count, next_attempt_at, sent_at, last_error, provider_message_id'
+      )
+      .eq('report_id', reportId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+    if (queue.error) throw queue.error;
+    const attempts = queue.data
+      ? await db
+          .from('user_report_email_attempts')
+          .select(
+            'id, status, attempted_at, error_message, provider_message_id'
+          )
+          .eq('queue_id', queue.data.id)
+          .order('attempted_at', { ascending: false })
+          .limit(20)
+      : { data: [], error: null };
+    if (attempts.error) throw attempts.error;
+    return NextResponse.json(
+      { report: report.data, queue: queue.data, attempts: attempts.data },
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
+  } catch (error) {
+    console.error('Periodic report delivery diagnostics failed', { error });
+    return NextResponse.json(
+      { message: 'Unable to load delivery status' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request, { params }: Params) {
@@ -63,122 +125,68 @@ export async function POST(request: Request, { params }: Params) {
       });
     }
 
-    if (parsed.data.action === 'cancel') {
-      const cancelResult = await privateDb
-        .from('user_report_email_queue')
-        .update({
-          locked_at: null,
-          locked_by: null,
-          status: 'cancelled',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('report_id', reportId)
-        .in('status', ['queued', 'failed']);
-      if (cancelResult.error) throw cancelResult.error;
-      await privateDb
-        .from('external_user_monthly_reports')
-        .update({ delivery_status: 'cancelled' })
-        .eq('id', reportId);
-      return NextResponse.json({
-        message: 'Delivery cancelled.',
-        queued: false,
-        status: 'cancelled',
-      });
+    if (
+      report.delivery_status === 'processing' ||
+      (report.delivery_status === 'queued' &&
+        parsed.data.action !== 'cancel') ||
+      report.delivery_status === 'sent'
+    ) {
+      return NextResponse.json(
+        { message: 'This report is already queued, processing, or sent.' },
+        { status: 409 }
+      );
     }
-
-    if (report.report_approval_status !== 'APPROVED') {
+    if (
+      parsed.data.action !== 'cancel' &&
+      report.report_approval_status !== 'APPROVED'
+    ) {
       return NextResponse.json(
         { message: 'Approve this report before sending it.' },
         { status: 409 }
       );
     }
-    if (!report.user_email?.trim() || !report.user_id) {
-      await privateDb
-        .from('external_user_monthly_reports')
-        .update({
-          delivery_status: 'blocked',
-          last_delivery_error:
-            'The report subject or workspace profile email is missing.',
-        })
-        .eq('id', reportId);
-      return NextResponse.json(
-        {
-          message: 'The report subject or workspace profile email is missing.',
-        },
-        { status: 409 }
-      );
+    let deliveryEnabled = false;
+    if (parsed.data.action !== 'cancel') {
+      const [globalGateEnabled, periodicGateEnabled] = await Promise.all([
+        verifySecret({
+          forceAdmin: true,
+          name: 'ENABLE_EMAIL_SENDING',
+          value: 'true',
+          wsId,
+        }),
+        verifySecret({
+          forceAdmin: true,
+          name: 'ENABLE_REPORT_EMAIL_SENDING',
+          value: 'true',
+          wsId,
+        }),
+      ]);
+      deliveryEnabled = globalGateEnabled && periodicGateEnabled;
     }
-
-    const [globalGateEnabled, periodicGateEnabled] = await Promise.all([
-      verifySecret({
-        forceAdmin: true,
-        name: 'ENABLE_EMAIL_SENDING',
-        value: 'true',
-        wsId,
-      }),
-      verifySecret({
-        forceAdmin: true,
-        name: 'ENABLE_REPORT_EMAIL_SENDING',
-        value: 'true',
-        wsId,
-      }),
-    ]);
-    if (!globalGateEnabled || !periodicGateEnabled) {
-      await privateDb
-        .from('external_user_monthly_reports')
-        .update({
-          delivery_status: 'blocked',
-          last_delivery_error:
-            'Periodic report email delivery is disabled for this workspace.',
-        })
-        .eq('id', reportId);
-      return NextResponse.json(
-        {
-          message:
-            'Both workspace email gates must be enabled before periodic reports can send.',
-        },
-        { status: 409 }
-      );
-    }
-
-    const now = new Date().toISOString();
-    const queuePayload = {
-      delivery_kind: parsed.data.action === 'test' ? 'test' : 'send',
-      last_error: null,
-      locked_at: null,
-      locked_by: null,
-      next_attempt_at: now,
-      recipient_email: report.user_email.trim(),
-      report_id: reportId,
-      status: 'queued',
-      updated_at: now,
-      user_id: report.user_id,
-      ws_id: wsId,
-      ...(parsed.data.action === 'retry' ? { attempt_count: 0 } : {}),
+    const { data, error } = await privateDb.rpc(
+      'request_periodic_report_delivery',
+      {
+        p_report_id: reportId,
+        p_ws_id: wsId,
+        p_action: parsed.data.action,
+        p_delivery_enabled: deliveryEnabled,
+      }
+    );
+    if (error) throw error;
+    const result = data as {
+      code: number;
+      message: string;
+      queued?: boolean;
+      status?: string;
     };
-    const queueResult = await privateDb
-      .from('user_report_email_queue')
-      .upsert(queuePayload, { onConflict: 'report_id' });
-    if (queueResult.error) throw queueResult.error;
-    const reportUpdate = await privateDb
-      .from('external_user_monthly_reports')
-      .update({
-        delivery_requested_at: now,
-        delivery_status: 'queued',
-        last_delivery_error: null,
-      })
-      .eq('id', reportId);
-    if (reportUpdate.error) throw reportUpdate.error;
-
-    return NextResponse.json({
-      message:
-        parsed.data.action === 'test'
-          ? 'Test delivery queued for the subject profile email.'
-          : 'Periodic report delivery queued.',
-      queued: true,
-      status: 'queued',
-    });
+    const { code, ...body } = result;
+    return NextResponse.json(
+      { ...body, ...(code !== 200 ? { queued: false } : {}) },
+      { status: code }
+    );
   } catch (error) {
+    if (isDeliveryMigrationPending(error))
+      return deliveryMigrationPendingResponse();
     console.error('Error in periodic report delivery POST:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

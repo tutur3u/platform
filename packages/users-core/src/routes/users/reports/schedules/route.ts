@@ -10,6 +10,11 @@ import {
   resolveUserGroupRouteWorkspaceId,
 } from '../../../../lib/user-groups/route-helpers';
 
+import {
+  deliveryMigrationPendingResponse,
+  isDeliveryMigrationPending,
+} from '../delivery-readiness';
+
 const ScheduleSchema = z.object({
   cadence: z.enum(['weekly', 'monthly', 'quarterly', 'yearly']),
   delivery_time: z
@@ -53,6 +58,7 @@ export async function GET(request: Request, { params }: Params) {
       deliveriesResult,
       globalGate,
       periodicGate,
+      autoSendResult,
     ] = await Promise.all([
       sbAdmin
         .schema('private')
@@ -97,7 +103,14 @@ export async function GET(request: Request, { params }: Params) {
         value: 'true',
         wsId,
       }),
+      sbAdmin
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', wsId)
+        .eq('id', 'AUTO_SEND_APPROVED_REPORTS')
+        .maybeSingle(),
     ]);
+    if (autoSendResult.error) throw autoSendResult.error;
     if (schedulesResult.error) throw schedulesResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
     if (senderResult.error) throw senderResult.error;
@@ -112,6 +125,10 @@ export async function GET(request: Request, { params }: Params) {
       ),
       defaults: schedules.filter((schedule) => !schedule.group_id),
       emailDelivery: {
+        canConfigureAutoSend:
+          permissions.containsPermission('manage_user_report_automation') &&
+          permissions.containsPermission('send_user_group_report_emails'),
+        autoSendAfterApproval: autoSendResult.data?.value === 'true',
         globalGateEnabled: globalGate,
         periodicGateEnabled: periodicGate,
         ready: globalGate && periodicGate && senderConfigured,
@@ -135,7 +152,12 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   try {
-    const parsed = ScheduleSchema.safeParse(await request.json());
+    const parsed = z
+      .union([
+        z.object({ autoSendAfterApproval: z.boolean() }).strict(),
+        ScheduleSchema.strict(),
+      ])
+      .safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(
         { message: 'Invalid request body', issues: parsed.error.issues },
@@ -146,6 +168,38 @@ export async function PUT(request: Request, { params }: Params) {
     const { permissions, wsId } = await getAccess(request, params);
     if (!permissions?.containsPermission('manage_user_report_automation')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+    if ('autoSendAfterApproval' in parsed.data) {
+      if (!permissions.containsPermission('send_user_group_report_emails')) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+      }
+      const admin = await createAdminClient();
+      if (parsed.data.autoSendAfterApproval) {
+        // An invalid action probes availability without reading or changing reports.
+        // Production deploys the app before applying this migration.
+        const readiness = await admin
+          .schema('private')
+          .rpc('request_periodic_report_delivery', {
+            p_report_id: '00000000-0000-0000-0000-000000000000',
+            p_ws_id: wsId,
+            p_action: 'probe',
+            p_delivery_enabled: false,
+          });
+        if (isDeliveryMigrationPending(readiness.error))
+          return deliveryMigrationPendingResponse();
+        if (readiness.error) throw readiness.error;
+      }
+      const result = await admin.from('workspace_configs').upsert(
+        {
+          ws_id: wsId,
+          id: 'AUTO_SEND_APPROVED_REPORTS',
+          value: String(parsed.data.autoSendAfterApproval),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'ws_id,id' }
+      );
+      if (result.error) throw result.error;
+      return NextResponse.json({ success: true });
     }
     try {
       assertValidReportTimezone(parsed.data.timezone);

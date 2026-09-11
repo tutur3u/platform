@@ -14,6 +14,8 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 
+import { PeriodicDeliveryStatus } from './periodic-delivery-status';
+
 export interface PeriodicEmailPreview {
   content: string;
   feedback: string;
@@ -23,9 +25,11 @@ export interface PeriodicEmailPreview {
 
 export function PeriodicReportPreviewDialog({
   emailPreview,
+  wsId,
   onOpenChange,
   report,
 }: {
+  wsId: string;
   emailPreview?: PeriodicEmailPreview | null;
   onOpenChange: (open: boolean) => void;
   report: PeriodicReport | null;
@@ -85,9 +89,15 @@ export function PeriodicReportPreviewDialog({
             <div className="space-y-5 p-4 sm:p-6">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">
-                  {report?.report_approval_status}
+                  {report
+                    ? t(
+                        `status_${report.report_approval_status.toLowerCase() as 'approved' | 'pending' | 'rejected'}`
+                      )
+                    : ''}
                 </Badge>
-                <Badge variant="outline">{report?.delivery_status}</Badge>
+                <Badge variant="outline">
+                  {report ? t(`status_${report.delivery_status}`) : ''}
+                </Badge>
                 {report?.generation_mode === 'ai' ? (
                   <Badge variant="outline">
                     <Sparkles className="mr-1 h-3.5 w-3.5" />
@@ -95,6 +105,10 @@ export function PeriodicReportPreviewDialog({
                   </Badge>
                 ) : null}
               </div>
+              <Separator />
+              {report && (
+                <PeriodicDeliveryStatus wsId={wsId} reportId={report.id} />
+              )}
               <Separator />
               <PreviewMeta
                 icon={User}
