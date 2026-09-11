@@ -306,13 +306,7 @@ export const CalendarSyncProvider = ({
     const isCurrentWeek = includesCurrentWeek(dateRange);
     // 30 seconds for current week, 5 minutes for other weeks
     const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
-    const isStale = Date.now() - lastUpdated >= staleTime;
-
-    if (isCurrentWeek && isStale) {
-      // Current week cache is stale, forcing fresh fetch
-    }
-
-    return isStale;
+    return Date.now() - lastUpdated >= staleTime;
   };
 
   const updateCache = useCallback((cacheKey: string, update: CacheUpdate) => {
@@ -412,7 +406,12 @@ export const CalendarSyncProvider = ({
       if (
         cachedData &&
         !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
-        !isForcedRef.current
+        !isForcedRef.current &&
+        !queryClient.getQueryState([
+          'databaseCalendarEvents',
+          wsId,
+          activeCacheKey,
+        ])?.isInvalidated
       ) {
         return cachedData.dbEvents;
       }

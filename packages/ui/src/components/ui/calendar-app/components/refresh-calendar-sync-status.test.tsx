@@ -297,3 +297,25 @@ it('treats a healthy response with no success timestamp as stale but throttles r
   await refreshCalendarSyncStatus(client, 'ws');
   expect(sync).toHaveBeenCalledTimes(2);
 });
+
+it('refreshes event ranges after another session finishes importing, not on its pending response', async () => {
+  const invalidate = vi.spyOn(client, 'invalidateQueries');
+  sync.mockImplementationOnce(async () => {
+    status.health.state = 'syncing';
+    status.health.currentlyRunning = true;
+    return { ok: true, alreadyRunning: true };
+  });
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(invalidate).not.toHaveBeenCalled();
+  status.health.state = 'healthy';
+  status.health.currentlyRunning = false;
+  status.health.lastSuccessAt = new Date().toISOString();
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(invalidate).toHaveBeenCalledWith({
+    queryKey: ['databaseCalendarEvents', 'ws'],
+  });
+  expect(sync).toHaveBeenCalledOnce();
+  invalidate.mockClear();
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(invalidate).not.toHaveBeenCalled();
+});

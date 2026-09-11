@@ -18,6 +18,40 @@ type Attempt = { running: boolean; nextAt: number; failures: number };
 // All calendar controls in one app share a coordinator, scoped to their session.
 const attempts = new WeakMap<QueryClient, Map<string, Attempt>>();
 
+const observedHealth = new WeakMap<
+  QueryClient,
+  Map<string, CalendarSyncStatusResponse['health']>
+>();
+
+function observeSyncCompletion(
+  client: QueryClient,
+  wsId: string,
+  status: CalendarSyncStatusResponse
+) {
+  let workspaces = observedHealth.get(client);
+  if (!workspaces) {
+    workspaces = new Map();
+    observedHealth.set(client, workspaces);
+  }
+  const previous = workspaces.get(wsId);
+  const health = status.health;
+  workspaces.set(wsId, { ...health });
+  return (
+    !!previous &&
+    !health.currentlyRunning &&
+    (previous.currentlyRunning ||
+      previous.lastSuccessAt !== health.lastSuccessAt ||
+      previous.lastFailureAt !== health.lastFailureAt)
+  );
+}
+
+async function invalidateImportedEvents(client: QueryClient, wsId: string) {
+  await Promise.all([
+    client.invalidateQueries({ queryKey: ['databaseCalendarEvents', wsId] }),
+    client.invalidateQueries({ queryKey: ['provider-calendar-list', wsId] }),
+  ]);
+}
+
 export function calendarSyncStatusQueryOptions(
   queryClient: QueryClient,
   wsId: string,
@@ -48,6 +82,9 @@ export async function refreshCalendarSyncStatus(
 ): Promise<CalendarSyncStatusResponse> {
   const status = await getWorkspaceCalendarSyncStatus(wsId);
   const { health } = status;
+  if (observeSyncCompletion(queryClient, wsId, status)) {
+    await invalidateImportedEvents(queryClient, wsId);
+  }
   const now = Date.now();
   let workspaceAttempts = attempts.get(queryClient);
   if (!workspaceAttempts) {
@@ -123,17 +160,14 @@ export async function refreshCalendarSyncStatus(
             SYNC_INTERVAL_MS * 2 ** Math.min(attempt.failures, 3)
           )
       );
-    // Partial imports can still change events. Invalidate every loaded range.
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: ['databaseCalendarEvents', wsId],
-      }),
-      queryClient.invalidateQueries({
-        queryKey: ['provider-calendar-list', wsId],
-      }),
-    ]);
+    // Only completed requests can have imported changes. Remote runs are
+    // observed by subsequent health polls before their ranges are invalidated.
+    if (!alreadyRunning) await invalidateImportedEvents(queryClient, wsId);
   }
   const refreshed = await getWorkspaceCalendarSyncStatus(wsId);
+  const remoteCompleted = observeSyncCompletion(queryClient, wsId, refreshed);
+  if (alreadyRunning && remoteCompleted)
+    await invalidateImportedEvents(queryClient, wsId);
   if (failed && refreshed.health.state === 'healthy') {
     return {
       ...refreshed,
