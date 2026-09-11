@@ -1,4 +1,4 @@
-import { AlertTriangle, RefreshCw } from '@tuturuuu/icons';
+import { AlertTriangle, CalendarDays, RefreshCw } from '@tuturuuu/icons';
 import { useState } from 'react';
 import { Button } from '../../button';
 import {
@@ -22,7 +22,8 @@ export function CalendarSyncAttentionButton({
   const [open, setOpen] = useState(false);
   const syncing =
     state.syncMutation.isPending || state.syncHealth?.currentlyRunning;
-  if (!open && !syncing && !needsCalendarSyncAttention(state)) return null;
+  const needsAttention = needsCalendarSyncAttention(state);
+  if (!open && !syncing && !needsAttention) return null;
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -30,18 +31,26 @@ export function CalendarSyncAttentionButton({
           variant="outline"
           size="sm"
           className={
-            syncing
+            syncing || !needsAttention
               ? 'gap-1.5 text-muted-foreground'
               : 'gap-1.5 border-dynamic-orange/40 text-dynamic-orange'
           }
         >
           {syncing ? (
             <RefreshCw className="size-4 shrink-0 animate-spin" />
-          ) : (
+          ) : needsAttention ? (
             <AlertTriangle className="size-4 shrink-0" />
+          ) : (
+            <CalendarDays className="size-4 shrink-0" />
           )}
           <span role="status">
-            {state.t(syncing ? 'syncing_calendars' : 'sync_recovery.attention')}
+            {state.t(
+              syncing
+                ? 'syncing_calendars'
+                : needsAttention
+                  ? 'sync_recovery.attention'
+                  : 'manage_calendar_accounts'
+            )}
           </span>
         </Button>
       </DialogTrigger>
