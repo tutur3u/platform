@@ -20,12 +20,10 @@ import {
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { parseMonthsOwed } from '@tuturuuu/types/primitives/PendingInvoice';
-import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { z } from 'zod';
 import type { WorkspaceUserLinkedPromotion } from './internal-api';
 import {
   createPromotionWithInternalApi,
-  getWorkspaceUserWithInternalApi,
   listInvoiceProductsWithInternalApi,
   listMultiGroupProductsWithInternalApi,
   listPromotionsWithInternalApi,
@@ -37,7 +35,7 @@ import {
 } from './internal-api';
 import type { UserGroup } from './utils';
 
-// ==================== ZOD SCHEMAS ====================
+export { useInvoiceCustomerSearch } from './hooks/use-invoice-customer-search';
 
 const invoiceSchema = z.object({
   id: z.string(),
@@ -184,8 +182,6 @@ function isInvoiceQueryEnabled(options?: InvoiceQueryOptions) {
   return options?.enabled !== false;
 }
 
-// ==================== INVOICES DATA FETCHING ====================
-
 export interface InvoicesParams {
   q?: string;
   page?: number;
@@ -258,8 +254,6 @@ export function useWorkspaceInvoices(
   });
 }
 
-// ==================== LEGACY HOOKS ====================
-
 // React Query hooks for data fetching
 export const useUsers = (wsId: string) => {
   return useQuery({
@@ -272,106 +266,6 @@ export const useUsers = (wsId: string) => {
       ).data,
   });
 };
-
-const INVOICE_CUSTOMER_PAGE_SIZE = 25;
-
-type WorkspaceUsersPage = {
-  data: WorkspaceUser[];
-  count: number;
-  offset: number;
-};
-
-async function fetchInvoiceCustomerPage(
-  wsId: string,
-  searchQuery: string,
-  offset: number
-): Promise<WorkspaceUsersPage> {
-  const payload = await listWorkspaceUsersWithInternalApi(wsId, {
-    from: offset,
-    limit: INVOICE_CUSTOMER_PAGE_SIZE,
-    q: searchQuery.trim() || undefined,
-    to: offset + INVOICE_CUSTOMER_PAGE_SIZE - 1,
-  });
-
-  return {
-    data: payload.data,
-    count: payload.count,
-    offset,
-  };
-}
-
-async function fetchWorkspaceUserById(
-  wsId: string,
-  userId: string
-): Promise<WorkspaceUser | null> {
-  return getWorkspaceUserWithInternalApi(wsId, userId);
-}
-
-export function useInvoiceCustomerSearch(
-  wsId: string,
-  searchQuery: string,
-  selectedUserId: string
-) {
-  const normalizedSearchQuery = searchQuery.trim();
-
-  const usersQuery = useInfiniteQuery({
-    queryKey: ['invoice-customer-search', wsId, normalizedSearchQuery],
-    queryFn: async ({ pageParam = 0 }) =>
-      fetchInvoiceCustomerPage(wsId, normalizedSearchQuery, pageParam),
-    initialPageParam: 0,
-    placeholderData: (previousData) => previousData,
-    getNextPageParam: (lastPage, allPages) => {
-      const loadedCount = allPages.reduce(
-        (total, page) => total + page.data.length,
-        0
-      );
-      return loadedCount < lastPage.count ? loadedCount : undefined;
-    },
-    enabled: !!wsId,
-    staleTime: 30 * 1000,
-    gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  const loadedCustomers =
-    usersQuery.data?.pages.flatMap((page) => page.data) ?? [];
-  const selectedUserQuery = useQuery({
-    queryKey: ['invoice-customer', wsId, selectedUserId],
-    queryFn: async () => fetchWorkspaceUserById(wsId, selectedUserId),
-    enabled:
-      !!wsId &&
-      !!selectedUserId &&
-      !loadedCustomers.some((user) => user.id === selectedUserId),
-    staleTime: 30 * 1000,
-    gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  const customersById = new Map<string, WorkspaceUser>();
-
-  if (selectedUserQuery.data) {
-    customersById.set(selectedUserQuery.data.id, selectedUserQuery.data);
-  }
-
-  for (const customer of loadedCustomers) {
-    customersById.set(customer.id, customer);
-  }
-
-  const customers = Array.from(customersById.values());
-  const selectedUser =
-    (selectedUserId
-      ? customers.find((user) => user.id === selectedUserId)
-      : undefined) ?? undefined;
-
-  return {
-    ...usersQuery,
-    customers,
-    selectedUser,
-    error: usersQuery.error ?? selectedUserQuery.error,
-    isLoading: usersQuery.isLoading || selectedUserQuery.isLoading,
-    isFetchingSelectedUser: selectedUserQuery.isFetching,
-  };
-}
 
 // Users with selectable groups (groups where they have STUDENT role)
 export const useUsersWithSelectableGroups = (wsId: string) => {
@@ -391,6 +285,7 @@ export const useProducts = (wsId: string, options?: InvoiceQueryOptions) => {
     queryKey: ['products', wsId],
     queryFn: () => listInvoiceProductsWithInternalApi(wsId),
     enabled: !!wsId && isInvoiceQueryEnabled(options),
+    retry: false,
     staleTime: INVOICE_STATIC_QUERY_STALE_TIME,
     gcTime: INVOICE_STATIC_QUERY_GC_TIME,
     refetchOnWindowFocus: false,
@@ -493,7 +388,7 @@ export const useUserGroups = (wsId: string, userId: string) => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
-    retry: 3,
+    retry: false,
   });
 };
 

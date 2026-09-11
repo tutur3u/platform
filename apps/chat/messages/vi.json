@@ -744,6 +744,9 @@
     "rejecting": "Đang từ chối...",
     "title": "Tham gia {workspace}"
   },
+  "ws-invoices": {
+    "load_failed": "Không thể tải dữ liệu hóa đơn. Vui lòng thử lại."
+  },
   "ws-members": {
     "assign_invitation_role": "Gán vai trò",
     "clear_all_roles": "Xóa tất cả",

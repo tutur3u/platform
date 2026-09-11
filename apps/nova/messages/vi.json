@@ -4392,6 +4392,7 @@
     "description": "Hóa đơn được sử dụng để liên kết các giao dịch tài chính và sản phẩm đã mua với các chương trình khuyến mãi được áp dụng từ kho hàng trong không gian làm việc của bạn.",
     "edit": "Chỉnh sửa hóa đơn",
     "edit_description": "Chỉnh sửa hóa đơn hiện có",
+    "load_failed": "Không thể tải dữ liệu hóa đơn. Vui lòng thử lại.",
     "new_invoice": "Hóa đơn mới",
     "plural": "Hóa đơn",
     "singular": "Hóa đơn",

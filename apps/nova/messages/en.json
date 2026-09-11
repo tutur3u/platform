@@ -4392,6 +4392,7 @@
     "description": "Invoices are used to link finance transactions and purchased products with applied promotions from your workspace's inventory.",
     "edit": "Edit invoice",
     "edit_description": "Edit an existing invoice",
+    "load_failed": "Invoice data could not be loaded. Please try again.",
     "new_invoice": "New invoice",
     "plural": "Invoices",
     "singular": "Invoice",

@@ -838,5 +838,8 @@
     "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
     "decline-success": "Đã từ chối lời mời vào không gian làm việc"
   },
+  "ws-invoices": {
+    "load_failed": "Không thể tải dữ liệu hóa đơn. Vui lòng thử lại."
+  },
   "yourWorkspace": "Không gian nhóm của bạn"
 }

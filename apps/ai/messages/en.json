@@ -2310,6 +2310,9 @@
     "uses": "Uses",
     "view-users": "View Users"
   },
+  "ws-invoices": {
+    "load_failed": "Invoice data could not be loaded. Please try again."
+  },
   "ws-members": {
     "active_members": "Active",
     "admin": "Administrator",
