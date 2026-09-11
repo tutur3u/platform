@@ -277,6 +277,8 @@ describe('Meet proxy auth handoff', () => {
   );
   it.each([
     '/workspace/team?source=sidebar-apps',
+    '/workspace/team/meetings?source=sidebar-apps',
+    '/vi/workspace/team/meetings?source=sidebar-apps',
     '/internal/meetings?source=sidebar-apps',
     '/vi/workspace/team?source=sidebar-apps',
     '/00000000-0000-0000-0000-000000000000?source=sidebar-apps',

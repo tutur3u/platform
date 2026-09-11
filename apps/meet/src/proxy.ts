@@ -123,7 +123,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (hasWorkspaceSlug &&
       (entry.length === 1 ||
         (entry.length === 2 && entry[1] === 'meetings'))) ||
-    (entry.length === 2 && entry[0] === 'workspace');
+    (entry[0] === 'workspace' &&
+      (entry.length === 2 || (entry.length === 3 && entry[2] === 'meetings')));
   if (
     req.nextUrl.searchParams.get('source') === 'sidebar-apps' &&
     isWorkspaceEntry

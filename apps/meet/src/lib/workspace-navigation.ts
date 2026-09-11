@@ -11,7 +11,6 @@ export function resolveMeetWorkspacePath({
   const index = supportedLocales.some((locale) => locale === segments[0])
     ? 1
     : 0;
-  if (segments[index] === 'workspace') segments.splice(index, 1);
   segments[index] = nextSlug;
   return `/${segments.join('/')}`;
 }

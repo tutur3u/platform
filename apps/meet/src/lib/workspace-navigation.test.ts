@@ -8,8 +8,7 @@ describe('Meet workspace switching', () => {
     ['/personal/meetings', '/internal/meetings'],
     ['/vi/personal/meetings', '/vi/internal/meetings'],
     ['/en/personal/plans', '/en/internal/plans'],
-    ['/workspace/personal/plans', '/internal/plans'],
-    ['/vi/workspace/personal/meetings', '/vi/internal/meetings'],
+    ['/en/workspace/meetings', '/en/internal/meetings'],
   ])('switches %s while retaining the section and locale', (path, expected) => {
     expect(
       resolveMeetWorkspacePath({ currentPathname: path, nextSlug: 'internal' })
