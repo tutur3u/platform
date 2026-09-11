@@ -234,6 +234,7 @@ export default function PeriodicReportsPanel({
       </div>
 
       <PeriodicReportsToolbar
+        generationStatus={generationStatus}
         approvalStatus={approvalStatus}
         cadence={cadence}
         deliveryStatus={deliveryStatus}

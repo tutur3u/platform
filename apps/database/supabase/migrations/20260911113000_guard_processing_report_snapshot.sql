@@ -14,10 +14,14 @@ begin
         message = 'Report delivery is in progress. Try again after it finishes.';
     end if;
     if row(old.report_approval_status, old.title, old.content, old.feedback,
-           old.score, old.scores, old.user_id, old.group_id)
+           old.score, old.scores, old.user_id, old.group_id, old.creator_id,
+           old.approved_by, old.approved_at, old.rejected_by, old.rejected_at,
+           old.rejection_reason)
        is distinct from
        row(new.report_approval_status, new.title, new.content, new.feedback,
-           new.score, new.scores, new.user_id, new.group_id) then
+           new.score, new.scores, new.user_id, new.group_id, new.creator_id,
+           new.approved_by, new.approved_at, new.rejected_by, new.rejected_at,
+           new.rejection_reason) then
       raise exception using errcode = '55P03',
         message = 'Report delivery is in progress. Try again after it finishes.';
     end if;

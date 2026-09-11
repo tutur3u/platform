@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(65);
+select plan(66);
 
 insert into public.users (id, display_name) values
 ('40000000-0000-4000-8000-000000009101', 'Report test owner');
@@ -137,6 +137,7 @@ select throws_ok($lock$update private.external_user_monthly_reports set report_a
 select throws_ok($lock$update private.external_user_monthly_reports set content = 'Changed' where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes content');
 select throws_ok($lock$update private.external_user_monthly_reports set score = 1 where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes score');
 select throws_ok($lock$delete from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes deletion');
+select throws_ok($lock$update private.external_user_monthly_reports set approved_at = now() + interval '1 second' where id = '40000000-0000-4000-8000-000000009106'$lock$, '55P03', 'Report delivery is in progress. Try again after it finishes.', 'active lease freezes approval metadata without a status change');
 select is((select private.finish_periodic_report_email(id, 'old-worker', locked_at, 'sent', recipient_email, p_sent_at => now()) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), false, 'old worker cannot complete a newer lease');
 select is((select delivery_status from private.external_user_monthly_reports where id = '40000000-0000-4000-8000-000000009106'), 'processing', 'lost completion leaves the active report untouched');
 select is((select private.finish_periodic_report_email(id, locked_by, locked_at, 'sent', recipient_email, p_sent_at => now()) from private.user_report_email_queue where report_id = '40000000-0000-4000-8000-000000009106'), true, 'lease owner completes delivery');

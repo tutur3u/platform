@@ -4,7 +4,9 @@ export function isReportDeliveryLocked(error: unknown): boolean {
     typeof error === 'object' &&
     error !== null &&
     'code' in error &&
-    error.code === '55P03'
+    error.code === '55P03' &&
+    'message' in error &&
+    error.message === REPORT_DELIVERY_LOCKED_MESSAGE
   );
 }
 export const REPORT_DELIVERY_LOCKED_MESSAGE =

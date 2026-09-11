@@ -28,7 +28,13 @@ describe('processing report conflict responses', () => {
             ? { id: 'report', generation_mode: 'manual' }
             : null,
         error:
-          table === 'external_user_monthly_reports' ? { code: '55P03' } : null,
+          table === 'external_user_monthly_reports'
+            ? {
+                code: '55P03',
+                message:
+                  'Report delivery is in progress. Try again after it finishes.',
+              }
+            : null,
       };
       const proxy = new Proxy(
         {},
