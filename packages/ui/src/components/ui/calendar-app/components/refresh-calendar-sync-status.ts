@@ -5,10 +5,12 @@ import {
   queryOptions,
 } from '@tanstack/react-query';
 import type { CalendarSyncStatusResponse } from '@tuturuuu/internal-api/calendar';
+import { getWorkspaceCalendarSyncStatus } from '@tuturuuu/internal-api/calendar';
+
 import {
-  getWorkspaceCalendarSyncStatus,
-  syncWorkspaceCalendar,
-} from '@tuturuuu/internal-api/calendar';
+  isCalendarProviderSyncRunning,
+  runCalendarProviderSync,
+} from '../../../../hooks/calendar-provider-sync';
 
 const SYNC_INTERVAL_MS = 5 * 60_000;
 const MAX_BACKOFF_MS = 30 * 60_000;
@@ -54,12 +56,17 @@ export async function refreshCalendarSyncStatus(
   }
   const previous = workspaceAttempts.get(wsId);
   const lastSuccess = Date.parse(health.lastSuccessAt ?? '');
+  const lastFailure = Date.parse(health.lastFailureAt ?? '');
+  const recentFailure =
+    health.state === 'degraded' && now - lastFailure < SYNC_INTERVAL_MS * 2;
   if (
     !focusManager.isFocused() ||
     !onlineManager.isOnline() ||
     (typeof document !== 'undefined' &&
       document.visibilityState === 'hidden') ||
     syncBlocked ||
+    recentFailure ||
+    isCalendarProviderSyncRunning(queryClient, wsId) ||
     queryClient.isMutating({ mutationKey: ['calendar-provider-sync', wsId] }) >
       0 ||
     previous?.running ||
@@ -86,8 +93,11 @@ export async function refreshCalendarSyncStatus(
     health: { ...health, state: 'syncing', currentlyRunning: true },
   });
   let failed = false;
+  let alreadyRunning = false;
   try {
-    const result = await syncWorkspaceCalendar(wsId);
+    const result = await runCalendarProviderSync(queryClient, wsId);
+    alreadyRunning = !!result.alreadyRunning;
+    if (alreadyRunning) attempt.nextAt = Date.now() + 30_000;
     failed = !result.ok;
     if (result.retryAfterSeconds) {
       attempt.nextAt = Math.max(
@@ -100,15 +110,16 @@ export async function refreshCalendarSyncStatus(
     failed = true;
   } finally {
     attempt.running = false;
-    attempt.failures = failed ? attempt.failures + 1 : 0;
-    attempt.nextAt = Math.max(
-      attempt.nextAt,
-      Date.now() +
-        Math.min(
-          MAX_BACKOFF_MS,
-          SYNC_INTERVAL_MS * 2 ** Math.min(attempt.failures, 3)
-        )
-    );
+    if (!alreadyRunning) attempt.failures = failed ? attempt.failures + 1 : 0;
+    if (!alreadyRunning)
+      attempt.nextAt = Math.max(
+        attempt.nextAt,
+        Date.now() +
+          Math.min(
+            MAX_BACKOFF_MS,
+            SYNC_INTERVAL_MS * 2 ** Math.min(attempt.failures, 3)
+          )
+      );
     // Partial imports can still change events. Invalidate every loaded range.
     await Promise.all([
       queryClient.invalidateQueries({

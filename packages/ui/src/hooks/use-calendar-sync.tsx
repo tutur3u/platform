@@ -1,10 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  listWorkspaceCalendars,
-  syncWorkspaceCalendar,
-} from '@tuturuuu/internal-api/calendar';
+import { listWorkspaceCalendars } from '@tuturuuu/internal-api/calendar';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
@@ -24,6 +21,7 @@ import {
   useState,
 } from 'react';
 import { toast } from '../components/ui/sonner';
+import { runCalendarProviderSync } from './calendar-provider-sync';
 import {
   type CacheUpdate,
   type CalendarCache,
@@ -596,7 +594,7 @@ export const CalendarSyncProvider = ({
       });
 
       try {
-        const result = await syncWorkspaceCalendar(wsId);
+        const result = await runCalendarProviderSync(queryClient, wsId);
         // Partial imports can change events even when another calendar fails.
         refresh();
         if (!result.ok) throw new Error(result.error || 'Calendar sync failed');
@@ -640,7 +638,7 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, isActiveSyncOn, refresh]
+    [wsId, isActiveSyncOn, refresh, queryClient]
   );
 
   // Trigger refetch from DB when changing views (optimized to reduce load)

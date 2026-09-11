@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/internal-api/calendar';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { runCalendarProviderSync } from '../../../../hooks/calendar-provider-sync';
 import {
   calendarSyncStatusQueryOptions,
   refreshCalendarSyncStatus,
@@ -227,4 +228,54 @@ it('polls while open and catches up on focus and reconnect without a manual clic
   view.unmount();
   await act(() => vi.advanceTimersByTimeAsync(interval * 2));
   expect(sync).toHaveBeenCalledTimes(4);
+});
+
+it('shares provider work with legacy/manual sync started during a health fetch', async () => {
+  let finishStatus!: (value: CalendarSyncStatusResponse) => void;
+  let finishSync!: () => void;
+  getStatus.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishStatus = resolve;
+      })
+  );
+  sync.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finishSync = () => resolve({ ok: true });
+      })
+  );
+  const polling = refreshCalendarSyncStatus(client, 'ws');
+  const manual = runCalendarProviderSync(client, 'ws');
+  expect(runCalendarProviderSync(client, 'ws')).toBe(manual);
+  finishStatus(structuredClone(status));
+  await polling;
+  expect(sync).toHaveBeenCalledOnce();
+  finishSync();
+  await manual;
+  await runCalendarProviderSync(client, 'ws');
+  expect(sync).toHaveBeenCalledTimes(2);
+});
+
+it('seeds a new session cooldown from the last server failure', async () => {
+  status.health.reason = 'api_limit';
+  status.health.lastFailureAt = new Date().toISOString();
+  await refreshCalendarSyncStatus(client, 'ws');
+  vi.advanceTimersByTime(interval);
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(sync).not.toHaveBeenCalled();
+  vi.advanceTimersByTime(interval);
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(sync).toHaveBeenCalledOnce();
+});
+
+it('checks again shortly when another session already started provider work', async () => {
+  sync.mockResolvedValueOnce({ ok: true, alreadyRunning: true });
+  await refreshCalendarSyncStatus(client, 'ws');
+  vi.advanceTimersByTime(29_999);
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(sync).toHaveBeenCalledTimes(1);
+  vi.advanceTimersByTime(1);
+  await refreshCalendarSyncStatus(client, 'ws');
+  expect(sync).toHaveBeenCalledTimes(2);
 });

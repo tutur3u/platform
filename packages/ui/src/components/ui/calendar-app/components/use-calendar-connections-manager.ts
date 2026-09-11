@@ -5,7 +5,6 @@ import {
   getWorkspaceCalendarSyncPreferences,
   listCalendarAccounts,
   listProviderCalendars,
-  syncWorkspaceCalendar,
   updateCalendarConnection as updateCalendarConnectionRequest,
   updateWorkspaceCalendarDefaultSource,
   updateWorkspaceCalendarSyncPreferences,
@@ -14,6 +13,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { runCalendarProviderSync } from '../../../../hooks/calendar-provider-sync';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import { toast } from '../../sonner';
 import {
@@ -63,7 +63,7 @@ export function useCalendarConnectionsManager(wsId: string) {
 
   const syncMutation = useMutation({
     mutationKey: ['calendar-provider-sync', wsId],
-    mutationFn: () => syncWorkspaceCalendar(wsId),
+    mutationFn: () => runCalendarProviderSync(queryClient, wsId),
     onSuccess: (result) => {
       if (!result.ok) toast.error(t('sync_recovery.partial_failure'));
       else if (result.alreadyRunning) toast.info(t('syncing_calendars'));
