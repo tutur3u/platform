@@ -204,3 +204,15 @@ remaining dirty-path summary.
 - For `html2canvas`-based preview exports, inline critical SVG brand marks (or use raster assets) and provide a solid export background color so downloaded images do not lose logos or pick up transparent-edge artifacts.
 
 For deeper detail—such as React Query policy, toast usage rules, or Tailwind dynamic color guidance—refer directly to [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md#readme).
+
+## Share local validation capacity
+
+Before heavy local validation, check `ttr resources status --json` and use the
+`tuturuuu-cli-resources` skill. Run broad tests, builds, type checks, Supabase
+setup and browser suites through `ttr resources run -- <command>`. The per-user
+queue spans registered projects and linked worktrees, so concurrent agents can
+keep editing while heavy stages run sequentially. Prefer a verified remote
+runner for broad validation. Do not bypass live queues or stop another session's
+services to free capacity. See the SDK reference for setup, diagnosis, and
+rollback. If the installed CLI lacks the command, report its version and keep
+heavy local work serial with explicit worker limits until upgraded.

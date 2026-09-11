@@ -163,6 +163,14 @@ A skill does not authorize unrelated external actions or expand release scope.
 - After Flutter ARB key changes, run `flutter gen-l10n` before Flutter analysis
   or tests.
 
+- Before heavy local validation, use `ttr resources status --json` and load
+  `$tuturuuu-cli-resources`. Queue builds, broad tests/type checks, Supabase setup,
+  and browser suites with `ttr resources run -- <command>`; sequence heavy
+  stages across sessions. Prefer a verified remote devbox when available.
+  Do not bypass a live queue or kill another session's work to free resources.
+  If the installed CLI lacks resources support, report the version and run only
+  one heavy command with explicit Turbo/Vitest worker limits until upgraded.
+
 ## 4. Task-Specific Workflows
 
 Consult `plugins/tuturuuu/skills/tuturuuu-platform/references/repository-workflows.md`

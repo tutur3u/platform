@@ -1419,3 +1419,46 @@ the `0.10.x` line), see the maintained changelog rather than this page:
 ## License
 
 MIT
+
+## Local resource control
+
+Use `ttr resources` to keep multiple coding sessions responsive while serializing
+heavy validation on the same machine. This opt-in feature supports macOS and
+Linux, works without login, and does not start a background daemon.
+
+```bash
+ttr resources setup --root ~/code/project-a --root ~/code/project-b --shell zsh
+ttr resources status
+ttr resources run -- bun run test
+ttr resources monitor --seconds 60 > resource-samples.jsonl
+```
+
+Setup includes linked Git worktrees automatically. A shared per-user queue admits
+one finite validation command at a time; nested commands reuse its slot. Turbo
+runs one task and Vitest/Cargo workers adapt to RAM and CPU capacity. Use
+`--workers 2` to override workers and `--dry-run` to inspect planned changes.
+New admission waits for elevated memory pressure to clear. Existing jobs keep
+running; there is no automatic process killing or hard memory cap.
+
+Shell setup backs up existing files and adds a marked block to Zsh or Bash
+startup files. Open a new shell to activate it. Use `--shell none` for explicit
+`resources run` usage without shell changes. Absolute executable paths, custom
+PATH replacement and already-running processes can bypass the shims. Wrap
+unrecognized scripts explicitly. Custom scripts can still run parallel child
+jobs within a slot; sequence lint, tests and browser QA when memory is limited.
+
+Use `ttr resources disable` or `enable` to toggle future automatic admission.
+`TTR_RESOURCES_BYPASS=1` deliberately bypasses one command. Once the queue is idle,
+`ttr resources uninstall` removes owned hooks and shims while preserving other
+shell content, configuration and backups. Keep the default `TTR_RESOURCES_HOME`
+across projects so they share one queue.
+
+The monitor emits bounded-duration JSONL samples with memory pressure, T3 process
+tree resident memory, and the largest processes. It omits command arguments and
+environment values. RSS totals are not the same as Activity Monitor's memory
+footprint and can count shared pages more than once.
+
+Offload full validation with `ttr box run --runner <remote-id> -- <command>` only
+after verifying that the runner is on another machine with the intended checkout.
+A same-machine CI runner or Docker container still uses local RAM. Resource setup
+does not configure runners, transmit code or credentials, or restart Docker.

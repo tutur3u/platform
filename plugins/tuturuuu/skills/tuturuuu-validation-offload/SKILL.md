@@ -31,6 +31,13 @@ Keep validation local when:
   approval
 - the user asked for native/local reproduction specifically
 
+## Local Resource Admission
+
+When validation stays local, use `$tuturuuu-cli-resources` and
+`ttr resources run -- <command>` to share one validation slot across projects
+and worktrees. Check status first. Same-machine devboxes and CI runners still
+consume local CPU/RAM; identify the host before calling a run offloaded.
+
 ## Execution Pattern
 
 Start with focused commands, then broaden:

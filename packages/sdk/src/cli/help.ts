@@ -1,3 +1,8 @@
+import { getGlobalHelp } from './help-global';
+import { resourcesHelp } from './resources';
+
+export { getGlobalHelp } from './help-global';
+
 import { externalAdminHelp } from './external-admin';
 
 interface HelpTopic {
@@ -7,7 +12,6 @@ interface HelpTopic {
   options?: string[];
   usage: string;
 }
-
 const helpTopics: Record<string, HelpTopic> = {
   box: {
     commands: [
@@ -463,7 +467,6 @@ const helpTopics: Record<string, HelpTopic> = {
     usage: 'ttr workspaces [list|use] [id] [options]',
   },
 };
-
 const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
   external: {
     projects: {
@@ -1020,67 +1023,6 @@ function formatHelp(topic: HelpTopic, heading: string) {
     .replace(/\n{3,}/gu, '\n\n');
 }
 
-export function getGlobalHelp() {
-  return `${[
-    'Tuturuuu CLI',
-    '',
-    'Usage: ttr <command> [options]',
-    '',
-    'Commands:',
-    '  login [--copy] [--token <token>] [--base-url <url>]',
-    '  logout',
-    '  upgrade',
-    '  whoami',
-    '  host [current|list|use]',
-    '  config set-base-url <url>',
-    '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
-    '  external <apps|templates|binding|projects>  configure and manage external sites',
-    '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
-    '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',
-    '  workspaces [list]|use [id]',
-    '  boards [list]|use|create|update|delete',
-    '  lists [list]|use|create|update --board <id>',
-    '  tasks [list]|search|use|get|create|update|done|close|delete|move|bulk',
-    '  task-templates [list]|show|create|update|delete|use|import|export',
-    '  tiptap [parse|encode|decode|validate]',
-    '  labels [list]|use|create',
-    '  projects [list]|use|create|get|tasks',
-    '  relationships [list]|create|delete <task-id>',
-    '',
-    'Selection:',
-    '  Omit an id on use/get/update/delete/move to pick with up/down/space/enter.',
-    '  The personal workspace is selected by default.',
-    '',
-    'Task list filters:',
-    '  tasks                       open personal tasks plus assigned external tasks',
-    '  tasks --all                 include done and closed tasks',
-    '  tasks --done                completed tasks',
-    '  tasks --closed              closed tasks',
-    '  tasks --page 2 --page-size 50',
-    '  tasks --compact             title, list, and per-task workspace only',
-    '',
-    'Scoped help:',
-    '  ttr finance --help',
-    '  ttr external --help',
-    '  ttr external projects --help',
-    '  ttr calendar --help',
-    '  ttr calendar events --help',
-    '  ttr finance transactions --help',
-    '  ttr host --help',
-    '  ttr tasks --help',
-    '  ttr task-templates --help',
-    '  ttr tiptap --help',
-    '  ttr box --help',
-    '  ttr tasks create --help',
-    '  ttr tasks description --help',
-    '  ttr help workspaces',
-    '',
-    'Global options:',
-    '  -h, --help                  print help',
-    '  -v, --version               print the CLI version',
-  ].join('\n')}\n`;
-}
-
 function normalizeHelpAction(group: string, action?: string) {
   if (group !== 'tasks') {
     return action;
@@ -1106,6 +1048,7 @@ function normalizeHelpGroup(group: string) {
 }
 
 export function getHelpOutput(group?: string, action?: string) {
+  if (group === 'resources') return resourcesHelp();
   if (group === 'external' && action !== 'projects') return externalAdminHelp();
   if (!group) {
     return getGlobalHelp();

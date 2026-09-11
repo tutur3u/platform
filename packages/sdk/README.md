@@ -917,3 +917,54 @@ MIT
 - Documentation: <https://docs.tuturuuu.com>
 - Issues: <https://github.com/tutur3u/platform/issues>
 - Discord: <https://discord.gg/tuturuuu>
+
+### Keep local validation within the machine's capacity
+
+`ttr resources` is an opt-in, local-only tool for macOS and Linux. It requires no
+login and adds no background service. Setup registers project roots and their Git
+worktrees, installs command shims, and backs up the shell files it updates:
+
+```sh
+ttr resources setup --root ~/code/project-a --root ~/code/project-b --shell zsh
+ttr resources status
+ttr resources run -- bun run test
+ttr resources monitor --seconds 60 > resource-samples.jsonl
+```
+
+One finite validation command runs at a time across registered projects and
+worktrees. Nested commands share the current slot. Turbo runs one task at a time;
+Vitest and Cargo receive worker limits based on RAM and CPU capacity (two workers
+on a 24 GiB, 10-core machine). Admission waits when macOS reports elevated memory
+pressure or Linux has less than its memory reserve available. Started jobs are
+never killed to recover memory. Exit codes and cancellation propagate to the
+owned command group, and live jobs do not expire because of a time limit.
+
+Use `--dry-run` to inspect setup and `--workers 2` to set a worker count. Zsh and
+Bash hooks affect new shells. `--shell none` installs shims without editing shell
+files; prefix `PATH` with the reported `bin` directory or use `resources run`.
+Existing processes, absolute binary paths and commands that replace `PATH` can
+bypass automatic admission. Shims cover recognized Bun/Node/Turbo/Vitest/
+Playwright/Next/ESLint/TypeScript/Supabase/Cargo validation invocations; arbitrary
+scripts should be wrapped explicitly. Persistent dev servers are not queued
+unless explicitly wrapped. This is cooperative scheduling, not an OS memory cap.
+Within a command, custom scripts can still spawn concurrent subprocesses.
+
+```sh
+ttr resources disable    # Stop automatic admission for future commands
+ttr resources enable
+ttr resources uninstall  # Remove only owned hooks/shims; retain config/backups
+TTR_RESOURCES_BYPASS=1 bun run test # Deliberately bypass one command
+```
+
+Uninstall requires the queue to be idle. It preserves unrelated shell content.
+Do not set `TTR_RESOURCES_HOME` differently between projects: that intentionally
+creates separate queues. Diagnostics omit command arguments and environment
+values; resident-memory totals differ from Activity Monitor's memory footprint.
+
+For full builds, database setup and browser suites, prefer an independently
+hosted runner with `ttr box run --runner <remote-id> -- <command>`. Verify the
+runner's machine, checkout and credentials before queueing work. A CI runner or
+Docker container on the same laptop still competes for its RAM. No jobs,
+credentials, Docker settings or runner registrations are changed by resource
+setup. On a 24 GiB Mac, consider an 8 GiB Docker VM budget after measuring the
+required stack, and apply it only when restarting Docker will not interrupt work.

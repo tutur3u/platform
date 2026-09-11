@@ -219,3 +219,25 @@ Use focused CLI skills for command families:
 - `$tuturuuu-cli-finance` for `ttr finance`, wallet/transaction/category/budget
   and recurring CRUD, analytics reads, pagination, explicit-workspace finance
   diagnostics, and finance SDK response normalization.
+
+## Local validation resource control
+
+When concurrent sessions overload a developer machine, use the opt-in local
+`ttr resources` command group. It needs no login. Inspect with `setup --dry-run`,
+then register explicit project roots (`--root` may repeat) and the user's shell.
+Linked worktrees inherit repository scope. Setup backs up shell files; do not
+change active projects' source or kill jobs to impose limits.
+
+- `ttr resources setup --root <repo> --shell zsh` installs per-user shims.
+- `ttr resources status --json` reports the shared queue and adaptive limits.
+- `ttr resources run -- <command>` explicitly queues any finite validation.
+- `ttr resources monitor --seconds 60` captures JSONL without raw arguments/env.
+- `disable`, `enable`, and idle-only `uninstall` provide reversible control.
+
+One job is admitted per user, Turbo tasks are serial, and Vitest/Cargo workers are
+bounded independently. New admission waits for memory pressure to clear. Nested
+commands reuse the slot through process ancestry, including when Turbo filters
+environment variables. Existing jobs and absolute executable paths may bypass
+new shell configuration. This is cooperative scheduling, not a memory cgroup.
+Prefer remote `ttr box` validation for broad checks; verify the runner's actual
+host because same-machine runners and containers are not resource offload.

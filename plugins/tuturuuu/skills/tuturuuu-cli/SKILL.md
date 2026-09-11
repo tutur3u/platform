@@ -25,6 +25,9 @@ they are independently revertible.
 
 Use the focused companion skills when the task is specific:
 
+- `$tuturuuu-cli-resources` for local validation admission, adaptive worker limits,
+  memory-pressure diagnosis, shell setup, and reversible machine controls.
+
 - `$tuturuuu-cli-tasks` for task listing, task capture, task templates, task
   mutation, compact task output, task board/list/label discovery, and `ttr
   tasks` verification.

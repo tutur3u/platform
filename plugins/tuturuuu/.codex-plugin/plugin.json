@@ -58,7 +58,8 @@
       "Supabase CLI setup retry",
       "Codecov coverage retry",
       "Review comment resolution",
-      "Development tooling improvement"
+      "Development tooling improvement",
+      "Local resource admission and diagnostics"
     ],
     "websiteURL": "https://tuturuuu.com",
     "privacyPolicyURL": "https://tuturuuu.com/privacy",

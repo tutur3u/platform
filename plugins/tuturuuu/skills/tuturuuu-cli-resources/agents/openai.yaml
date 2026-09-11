@@ -1,0 +1,4 @@
+interface:
+  display_name: "TTR Resource Control"
+  short_description: "Keep concurrent validation within local CPU and RAM"
+  default_prompt: "Set up ttr resources and verify shared validation limits without interrupting active work."

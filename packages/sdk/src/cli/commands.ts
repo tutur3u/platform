@@ -1,4 +1,3 @@
-import { spawn } from 'node:child_process';
 import type {
   ListWorkspaceTasksOptions,
   SearchWorkspaceTasksPayload,
@@ -74,6 +73,7 @@ import {
 } from './task-templates';
 import { runTiptapCommand } from './tiptap';
 import { checkForCliUpdate, isCliUpdateCheckDisabled } from './update';
+import { upgradeCli } from './upgrade';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
 const closeActions = new Set(['archive', 'close', 'closed', 'mark-closed']);
@@ -134,27 +134,6 @@ type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
 type CliWorkspaceTasksResponse = WorkspaceTasksResponse & {
   pagination?: TaskPaginationSummary;
 };
-
-function upgradeCli() {
-  process.stdout.write('Upgrading Tuturuuu CLI with Bun...\n');
-
-  return new Promise<void>((resolve, reject) => {
-    const child = spawn('bun', ['i', '-g', 'tuturuuu'], {
-      shell: false,
-      stdio: 'inherit',
-    });
-
-    child.on('error', reject);
-    child.on('exit', (code) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
-
-      reject(new Error(`Upgrade failed with exit code ${code ?? 'unknown'}.`));
-    });
-  });
-}
 
 function getWorkspaceId(config: CliConfig, flags: Record<string, FlagValue>) {
   const explicit = getFlag(flags, 'workspace') || getFlag(flags, 'ws');
@@ -1270,6 +1249,8 @@ export function normalizeLabelColor(value?: string) {
 }
 
 export async function runCli(argv = process.argv.slice(2)) {
+  if (argv[0] === 'resources')
+    return (await import('./resources.js')).runResourcesCommand(argv.slice(1));
   const commandSeparatorIndex = argv.indexOf('--');
   const globalArgs =
     commandSeparatorIndex >= 0 ? argv.slice(0, commandSeparatorIndex) : argv;
