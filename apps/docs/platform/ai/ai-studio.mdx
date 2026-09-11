@@ -166,6 +166,17 @@ execution are not supported.
 
 ## Local verification
 
+### Colab sponsorship accounting
+
+The Colab endpoint deduplicates billing using the validated workshop job ID
+and provider-call sequence. Sponsored models must have a positive known price
+before any reservation or generation starts. A pricing failure during settlement
+finalizes the run as failed and releases the reservation; it does not represent
+free successful usage. Inspect `pricing_status: unavailable` and
+`reconciliation_required: true` in run metadata, restore model pricing, and
+reconcile the retained token counts before treating sponsorship totals as complete.
+Step pricing failures likewise do not create misleading priced-zero steps.
+
 Apply and test the private-schema migrations before running the app:
 
 ```bash

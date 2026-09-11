@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   calculateAiStudioUsageCost: vi.fn(),
   createAdminClient: vi.fn(),
   settleAiStudioRun: vi.fn(),
+  recordAiStudioRunStep: vi.fn(),
   settleExternalAiStudioRun: vi.fn(),
 }));
 
@@ -19,6 +20,7 @@ vi.mock('@tuturuuu/ai/studio/metering', () => ({
   beginExternalAiStudioRun: mocks.beginExternalAiStudioRun,
   calculateAiStudioUsageCost: mocks.calculateAiStudioUsageCost,
   settleAiStudioRun: mocks.settleAiStudioRun,
+  recordAiStudioRunStep: mocks.recordAiStudioRunStep,
   settleExternalAiStudioRun: mocks.settleExternalAiStudioRun,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -28,10 +30,157 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 import {
   describeAiStudioRuntimeError,
   prepareMeteredExecution,
+  recordMeteredExecutionStep,
   settleMeteredExecution,
 } from './public-api';
 
 describe('AI Studio billing policy', () => {
+  it('only one concurrent retry claims the reserved run', async () => {
+    mocks.beginAiStudioRun
+      .mockResolvedValueOnce({ runId: 'run' })
+      .mockRejectedValueOnce({ status: 409 });
+    const input = {
+      credential: {
+        kind: 'api-key',
+        workspaceId: 'workspace',
+        apiKey: { id: 'key' },
+      } as never,
+      feature: 'colab_compile',
+      modelId: 'model',
+      maxUsage: { inputTokens: 10, outputTokens: 100 },
+      request: new Request('https://ai.tuturuuu.com/v1/colab/responses'),
+      requirePricedUsage: true,
+    };
+    const results = await Promise.allSettled([
+      prepareMeteredExecution(input),
+      prepareMeteredExecution(input),
+    ]);
+    expect(
+      results.filter((result) => result.status === 'fulfilled')
+    ).toHaveLength(1);
+    expect(
+      results.find((result) => result.status === 'rejected')
+    ).toMatchObject({ reason: { status: 409 } });
+    expect(mocks.beginAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({ rejectExisting: true })
+    );
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
+  it('fails and releases the hold if actual pricing becomes zero', async () => {
+    mocks.calculateAiStudioUsageCost.mockResolvedValueOnce({
+      billedCredits: 0,
+      providerCostUsd: 0,
+    });
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            kind: 'api-key',
+            workspaceId: 'workspace',
+            apiKey: { id: 'key' },
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'run',
+          startedAt: Date.now(),
+          requirePricedUsage: true,
+        },
+        { status: 'succeeded', usage: { inputTokens: 100, outputTokens: 50 } }
+      )
+    ).rejects.toThrow('pricing is unavailable');
+    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        actualCredits: 0,
+        metadata: expect.objectContaining({ reconciliation_required: true }),
+      })
+    );
+  });
+  it('rejects unknown zero model pricing before reserving credits', async () => {
+    mocks.calculateAiStudioUsageCost.mockResolvedValueOnce({
+      billedCredits: 0,
+      providerCostUsd: 0,
+    });
+    await expect(
+      prepareMeteredExecution({
+        credential: {
+          kind: 'api-key',
+          workspaceId: 'workspace',
+          apiKey: { id: 'key' },
+        } as never,
+        feature: 'colab_compile',
+        modelId: 'model',
+        maxUsage: { inputTokens: 10, outputTokens: 100 },
+        request: new Request('https://ai.tuturuuu.com/v1/colab/responses'),
+        requirePricedUsage: true,
+      })
+    ).rejects.toThrow('known positive model pricing');
+    expect(mocks.beginAiStudioRun).not.toHaveBeenCalled();
+  });
+  it('does not record unknown step pricing as priced zero', async () => {
+    mocks.calculateAiStudioUsageCost.mockRejectedValueOnce(
+      new Error('pricing unavailable')
+    );
+    await expect(
+      recordMeteredExecutionStep(
+        {
+          credential: {
+            kind: 'api-key',
+            workspaceId: 'workspace',
+            apiKey: { id: 'key' },
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'run',
+          startedAt: Date.now(),
+          requirePricedUsage: true,
+        },
+        {
+          kind: 'model',
+          name: 'model',
+          sequence: 1,
+          status: 'succeeded',
+          inputTokens: 100,
+          outputTokens: 50,
+        }
+      )
+    ).rejects.toThrow('pricing unavailable');
+    expect(mocks.recordAiStudioRunStep).not.toHaveBeenCalled();
+  });
+  it('does not settle unknown sponsored pricing as zero credits', async () => {
+    mocks.calculateAiStudioUsageCost.mockRejectedValueOnce(
+      new Error('pricing unavailable')
+    );
+    await expect(
+      settleMeteredExecution(
+        {
+          credential: {
+            actorId: 'actor',
+            apiKey: { id: 'key' },
+            kind: 'api-key',
+            workspaceId: 'workspace',
+          } as never,
+          modelId: 'model',
+          requestId: 'request',
+          runId: 'run',
+          startedAt: Date.now(),
+          requirePricedUsage: true,
+        },
+        { status: 'succeeded', usage: { inputTokens: 100, outputTokens: 80 } }
+      )
+    ).rejects.toThrow('pricing unavailable');
+    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        actualCredits: 0,
+        errorClass: 'PricingUnavailable',
+        metadata: expect.objectContaining({
+          reconciliation_required: true,
+          pricing_status: 'unavailable',
+        }),
+      })
+    );
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.calculateAiStudioUsageCost.mockResolvedValue({

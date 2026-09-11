@@ -72,10 +72,14 @@ export async function executeTextRequest(
     credential,
     feature,
     responseShape,
+    metadata,
+    requirePricedUsage = false,
   }: {
     credential?: PublicAiCredential;
     feature: string;
     responseShape: 'chat' | 'responses';
+    metadata?: Record<string, Json>;
+    requirePricedUsage?: boolean;
   }
 ): Promise<Response> {
   let context: Awaited<ReturnType<typeof prepareMeteredExecution>> | undefined;
@@ -100,6 +104,7 @@ export async function executeTextRequest(
         outputTokens: input.max_output_tokens,
       },
       metadata: {
+        ...metadata,
         max_steps: input.max_steps,
         operation: auditHeader(request, 'x-tuturuuu-operation'),
         entity_id: auditHeader(request, 'x-tuturuuu-entity-id'),
@@ -110,6 +115,7 @@ export async function executeTextRequest(
       },
       modelId: input.model,
       request,
+      requirePricedUsage,
       requiredModelType: 'language',
     });
 
@@ -152,8 +158,9 @@ export async function executeTextRequest(
 
       reportedUsage = usage;
       usageSource = 'provider';
-      await settleMeteredExecution(context, {
+      const cost = await settleMeteredExecution(context, {
         metadata: {
+          ...metadata,
           finish_reason: String(result.finishReason),
           step_count: result.steps.length,
           tool_call_count: result.toolCalls.length,
@@ -198,7 +205,11 @@ export async function executeTextRequest(
                 prompt_tokens: usage.inputTokens,
                 total_tokens: usage.inputTokens + usage.outputTokens,
               },
-              tuturuuu: { steps: observed.summaries() },
+              tuturuuu: {
+                steps: observed.summaries(),
+                run_id: context.runId,
+                billing: cost,
+              },
             }
           : {
               created_at: created,
@@ -220,7 +231,11 @@ export async function executeTextRequest(
                 output_tokens: usage.outputTokens,
                 total_tokens: usage.inputTokens + usage.outputTokens,
               },
-              tuturuuu: { steps: observed.summaries() },
+              tuturuuu: {
+                steps: observed.summaries(),
+                run_id: context.runId,
+                billing: cost,
+              },
             };
 
       return Response.json(body, { headers: commonHeaders(context.requestId) });
@@ -242,6 +257,7 @@ export async function executeTextRequest(
         await settleMeteredExecution(context!, {
           firstTokenLatencyMs,
           metadata: {
+            ...metadata,
             finish_reason: String(finishReason),
             step_count: steps.length,
             tool_call_count: toolCalls.length,
@@ -374,6 +390,7 @@ export async function executeTextRequest(
         status: request.signal.aborted ? 'aborted' : 'failed',
         usage: reportedUsage,
         metadata: {
+          ...metadata,
           usage_source: usageSource,
           ...(objectError
             ? { finish_reason: String(objectError.finishReason) }
