@@ -292,10 +292,14 @@ export class ColabRoom extends DurableObject<Env> {
         429
       );
     const now = Date.now();
+    // Independent teams must not block each other's generation. Snapshot
+    // checks below still reject results if the prompt or scenario changes.
+    const jobKey =
+      body.action === 'scenario' ? 'ai-scenario' : `ai-team:${team.id}`;
     const busy = this.ctx.storage.sql
       .exec<{ expires: number }>(
         'SELECT expires FROM limits WHERE key = ?',
-        'ai-job'
+        jobKey
       )
       .toArray()[0];
     requireRule(!busy || busy.expires <= now, 'ai_busy', 409);
@@ -307,7 +311,7 @@ export class ColabRoom extends DurableObject<Env> {
         120_000;
     this.ctx.storage.sql.exec(
       'INSERT OR REPLACE INTO limits(key,count,expires) VALUES(?,1,?)',
-      'ai-job',
+      jobKey,
       job
     );
     room.aiCalls++;
@@ -480,7 +484,7 @@ export class ColabRoom extends DurableObject<Env> {
       } finally {
         this.ctx.storage.sql.exec(
           'DELETE FROM limits WHERE key = ? AND expires = ?',
-          'ai-job',
+          jobKey,
           job
         );
       }
