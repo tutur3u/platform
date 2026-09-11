@@ -11,6 +11,7 @@ import {
   Save,
   ShieldCheck,
 } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   getPeriodicReportSchedules,
   listWorkspaceReportGroups,
@@ -82,7 +83,13 @@ export default function AutomationsPanel({
         queryKey: ['periodic-report-schedules', wsId],
       });
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) =>
+      toast.error(
+        error instanceof InternalApiError &&
+          error.code === 'REPORT_DELIVERY_UPDATING'
+          ? t('delivery_updating')
+          : error.message
+      ),
   });
   const groupsQuery = useQuery({
     queryFn: () => listWorkspaceReportGroups(wsId),

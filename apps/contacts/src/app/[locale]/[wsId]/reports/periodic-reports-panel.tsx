@@ -7,6 +7,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { Sparkles } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   listPeriodicReports,
   type PeriodicReport,
@@ -166,7 +167,13 @@ export default function PeriodicReportsPanel({
       setDeliveryIntent(null);
       await invalidate();
     },
-    onError: (error) => toast.error(error.message),
+    onError: (error) =>
+      toast.error(
+        error instanceof InternalApiError &&
+          error.code === 'REPORT_DELIVERY_UPDATING'
+          ? t('delivery_updating')
+          : error.message
+      ),
   });
 
   if (reportsQuery.isLoading && !reportsQuery.data) {

@@ -220,3 +220,5 @@ is present before accepting a reset result. No production schema push is needed
 for this local validation.
 
 Manual delivery requests lock the report before the queue and update both states in the same database transaction. Approval transitions use the same lock order; worker queue claims do not lock reports. Stale queue requests are rejected after approval is revoked. Provider-accepted deliveries retain their acceptance timestamp even if later tracking fails, preventing re-approval from automatically resending them.
+
+During the app-before-migration deployment window, delivery requests return a temporary 503 with `Retry-After`, and enabling automatic sending waits until the new database function is available. Disabling automatic sending remains available throughout rollout.

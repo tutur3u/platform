@@ -3399,6 +3399,7 @@
     "delivery_readiness_description": "Email yêu cầu ENABLE_EMAIL_SENDING=true, ENABLE_REPORT_EMAIL_SENDING=true, người gửi đã cấu hình, báo cáo đã duyệt và email hồ sơ của đối tượng.",
     "delivery_sent_at": "Đã gửi {date}",
     "delivery_time": "Giờ gửi",
+    "delivery_updating": "Tính năng gửi báo cáo đang được cập nhật. Vui lòng thử lại sau ít phút.",
     "description": "Tạo cập nhật hằng ngày, xét duyệt, tự động hóa và gửi báo cáo định kỳ an toàn.",
     "details": "Chi tiết",
     "disabled": "Đã tắt",

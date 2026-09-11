@@ -177,6 +177,21 @@ describe('periodic report delivery route', () => {
     expect(response.status).toBe(409);
     expect((await response.json()).queued).toBe(false);
   });
+  it.each(['PGRST202', '42883'])(
+    'returns a retryable response before the migration is ready (%s)',
+    async (code) => {
+      database();
+      mocks.rpc.mockResolvedValue({ data: null, error: { code } });
+      const response = await POST(request('send'), context);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('Retry-After')).toBe('60');
+      expect(await response.json()).toMatchObject({
+        code: 'REPORT_DELIVERY_UPDATING',
+        queued: false,
+      });
+    }
+  );
+
   it('cannot mark a sent report cancelled', async () => {
     const calls = database({
       external_user_monthly_reports_workspace_view: {

@@ -5,6 +5,11 @@ import { z } from 'zod';
 import { getUserGroupRoutePermissions } from '../../../../../lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '../../../../../lib/user-groups/route-helpers';
 
+import {
+  deliveryMigrationPendingResponse,
+  isDeliveryMigrationPending,
+} from '../../delivery-readiness';
+
 const DeliveryActionSchema = z.object({
   action: z.enum(['preview', 'test', 'send', 'retry', 'cancel']),
 });
@@ -180,6 +185,8 @@ export async function POST(request: Request, { params }: Params) {
       { status: code }
     );
   } catch (error) {
+    if (isDeliveryMigrationPending(error))
+      return deliveryMigrationPendingResponse();
     console.error('Error in periodic report delivery POST:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

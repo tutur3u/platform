@@ -10,6 +10,11 @@ import {
   resolveUserGroupRouteWorkspaceId,
 } from '../../../../lib/user-groups/route-helpers';
 
+import {
+  deliveryMigrationPendingResponse,
+  isDeliveryMigrationPending,
+} from '../delivery-readiness';
+
 const ScheduleSchema = z.object({
   cadence: z.enum(['weekly', 'monthly', 'quarterly', 'yearly']),
   delivery_time: z
@@ -169,6 +174,21 @@ export async function PUT(request: Request, { params }: Params) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
       }
       const admin = await createAdminClient();
+      if (parsed.data.autoSendAfterApproval) {
+        // An invalid action probes availability without reading or changing reports.
+        // Production deploys the app before applying this migration.
+        const readiness = await admin
+          .schema('private')
+          .rpc('request_periodic_report_delivery', {
+            p_report_id: '00000000-0000-0000-0000-000000000000',
+            p_ws_id: wsId,
+            p_action: 'probe',
+            p_delivery_enabled: false,
+          });
+        if (isDeliveryMigrationPending(readiness.error))
+          return deliveryMigrationPendingResponse();
+        if (readiness.error) throw readiness.error;
+      }
       const result = await admin.from('workspace_configs').upsert(
         {
           ws_id: wsId,

@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   permissions: vi.fn(),
   upsert: vi.fn(),
+  rpc: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
@@ -34,7 +35,11 @@ describe('monthly report automatic sending configuration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.permissions.mockResolvedValue({ containsPermission: () => true });
-    mocks.admin.mockResolvedValue({ from: () => ({ upsert: mocks.upsert }) });
+    mocks.admin.mockResolvedValue({
+      from: () => ({ upsert: mocks.upsert }),
+      schema: () => ({ rpc: mocks.rpc }),
+    });
+    mocks.rpc.mockResolvedValue({ data: { code: 400 }, error: null });
     mocks.upsert.mockResolvedValue({ error: null });
   });
   it.each(['manage_user_report_automation', 'send_user_group_report_emails'])(
@@ -86,6 +91,27 @@ describe('monthly report automatic sending configuration', () => {
     ).toBe(400);
     expect(mocks.upsert).not.toHaveBeenCalled();
   });
+  it.each(['PGRST202', '42883'])(
+    'waits for the migration before enabling (%s)',
+    async (code) => {
+      mocks.rpc.mockResolvedValue({ data: null, error: { code } });
+      const response = await PUT(
+        request({ autoSendAfterApproval: true }),
+        context
+      );
+      expect(response.status).toBe(503);
+      expect(response.headers.get('Retry-After')).toBe('60');
+      expect(mocks.upsert).not.toHaveBeenCalled();
+    }
+  );
+  it('can disable automatic sending while the migration is pending', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'PGRST202' } });
+    expect(
+      (await PUT(request({ autoSendAfterApproval: false }), context)).status
+    ).toBe(200);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
   it('does not report success when saving fails', async () => {
     mocks.upsert.mockResolvedValue({ error: new Error('unavailable') });
     expect(
