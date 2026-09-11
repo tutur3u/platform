@@ -49,6 +49,19 @@ export async function POST(request: Request) {
         { code: 'invalid_request_error', status: 400 }
       );
     const sponsor = parsed.data;
+    const headers = new Headers(request.headers);
+    headers.set(
+      'idempotency-key',
+      `colab:${sponsor.jobId}:${sponsor.sequence}`
+    );
+    headers.set('x-request-id', `colab:${sponsor.jobId}:${sponsor.sequence}`);
+    headers.delete('x-tuturuuu-operation');
+    headers.delete('x-tuturuuu-entity-id');
+    const executionRequest = new Request(request.url, {
+      method: 'POST',
+      headers,
+      signal: request.signal,
+    });
     // These are trusted credential identity and server policy, never caller-selected billing fields.
     const metadata = {
       ...sponsor,
@@ -58,7 +71,7 @@ export async function POST(request: Request) {
       description: `Tuturuuu sponsors ${sponsor.operation} / ${sponsor.phase} for workshop "${sponsor.workshopTitle}", team "${sponsor.teamName}" (step ${sponsor.sequence}). Attendee personal credits are not charged.`,
     };
     const response = await executeTextRequest(
-      request,
+      executionRequest,
       parseTextRequest({
         instructions: body.instructions,
         prompt: body.prompt,

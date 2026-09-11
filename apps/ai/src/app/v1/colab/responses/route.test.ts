@@ -58,7 +58,10 @@ describe('Colab sponsorship boundary', () => {
     );
     expect(response.status).toBe(200);
     expect(response.headers.get('x-colab-sponsor-workspace')).toBe(root);
-    const [, input, options] = mocks.execute.mock.calls[0]!;
+    const [executionRequest, input, options] = mocks.execute.mock.calls[0]!;
+    expect(executionRequest.headers.get('idempotency-key')).toBe(
+      `colab:${sponsorship.jobId}:1`
+    );
     expect(input).toMatchObject({
       max_steps: 1,
       max_output_tokens: 4096,
@@ -67,6 +70,8 @@ describe('Colab sponsorship boundary', () => {
     });
     expect(options).toMatchObject({
       requirePricedUsage: true,
+      feature: 'colab_analyze',
+      responseShape: 'chat',
       credential: { kind: 'api-key', workspaceId: root },
       metadata: {
         ...sponsorship,
@@ -95,6 +100,16 @@ describe('Colab sponsorship boundary', () => {
     expect(
       (await POST(request({ sponsorship: { workshopId: 'room' } }))).status
     ).toBe(400);
+    expect(mocks.execute).not.toHaveBeenCalled();
+  });
+  it('rejects malformed JSON before generation', async () => {
+    const response = await POST(
+      new Request('https://ai.tuturuuu.com/v1/colab/responses', {
+        method: 'POST',
+        body: '{broken',
+      })
+    );
+    expect(response.status).toBe(400);
     expect(mocks.execute).not.toHaveBeenCalled();
   });
   it('does not claim sponsorship when metering fails', async () => {

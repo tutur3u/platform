@@ -31,6 +31,7 @@ export type MeteredUsage = {
 
 export type MeteredExecutionContext = {
   requirePricedUsage?: boolean;
+  pricingFailureFinalized?: boolean;
   credential: PublicAiCredential;
   modelId: string;
   requestId: string;
@@ -47,6 +48,7 @@ type ErrorDetails = {
 };
 
 type PrepareMeteredExecutionInput = {
+  requirePricedUsage?: boolean;
   feature: string;
   maxUsage: MeteredUsage;
   metadata?: Json;
@@ -150,6 +152,7 @@ export async function prepareMeteredExecution({
   metadata,
   modelId,
   request,
+  requirePricedUsage = false,
   requiredModelType,
   requiredExternalScope = EXTERNAL_AI_SCOPE,
 }: PrepareMeteredExecutionInput): Promise<MeteredExecutionContext> {
@@ -170,6 +173,19 @@ export async function prepareMeteredExecution({
   });
 
   const idempotencyKey = getIdempotencyKey(request);
+  if (
+    requirePricedUsage &&
+    !(estimatedCost.providerCostUsd > 0 && estimatedCost.billedCredits > 0)
+  ) {
+    throw new AiStudioError(
+      'Sponsored generation requires known positive model pricing.',
+      {
+        code: 'server_error',
+        status: 503,
+        type: 'server_error',
+      }
+    );
+  }
   const externalApp = externalAppAttribution(credential);
 
   // An API key with no app binding is the only credential that spends workspace
@@ -202,6 +218,7 @@ export async function prepareMeteredExecution({
       });
 
   return {
+    requirePricedUsage,
     credential,
     modelId,
     requestId,
@@ -256,6 +273,16 @@ export async function settleMeteredExecution(
     usage: MeteredUsage;
   }
 ): Promise<{ billedCredits: number; providerCostUsd: number }> {
+  if (context.pricingFailureFinalized) {
+    throw new AiStudioError(
+      'Usage pricing failed; the reservation was released.',
+      {
+        code: 'server_error',
+        status: 503,
+        type: 'server_error',
+      }
+    );
+  }
   const cost = await calculateAiStudioUsageCost({
     imageCount: usage.imageUnits,
     inputTokens: usage.inputTokens,
@@ -268,8 +295,33 @@ export async function settleMeteredExecution(
         : Math.max(0, usage.outputTokens - (usage.reasoningTokens ?? 0)),
     reasoningTokens: usage.reasoningTokens,
     workspaceId: context.credential.workspaceId,
-  }).catch((error) => {
-    if (context.requirePricedUsage) throw error;
+  }).catch(async (pricingError) => {
+    if (context.requirePricedUsage) {
+      // Release the hold without claiming a successful zero-cost generation.
+      // Preserve measured usage for reconciliation once pricing recovers.
+      await settleAiStudioRun({
+        runId: context.runId,
+        status: 'failed',
+        actualCredits: 0,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        reasoningTokens: usage.reasoningTokens,
+        errorClass: 'PricingUnavailable',
+        errorMessage:
+          'Pricing unavailable; reservation released. Usage needs reconciliation.',
+        metadata: {
+          ...(metadata &&
+          typeof metadata === 'object' &&
+          !Array.isArray(metadata)
+            ? metadata
+            : {}),
+          pricing_status: 'unavailable',
+          reconciliation_required: true,
+        },
+      });
+      context.pricingFailureFinalized = true;
+      throw pricingError;
+    }
     return { billedCredits: 0, providerCostUsd: 0 };
   });
 
@@ -328,7 +380,10 @@ export async function recordMeteredExecutionStep(
           modelId: context.modelId,
           outputTokens: input.outputTokens,
           workspaceId: context.credential.workspaceId,
-        }).catch(() => ({ billedCredits: 0, providerCostUsd: 0 }))
+        }).catch((error) => {
+          if (context.requirePricedUsage) throw error;
+          return { billedCredits: 0, providerCostUsd: 0 };
+        })
       : { billedCredits: 0, providerCostUsd: 0 };
 
   await recordAiStudioRunStep({

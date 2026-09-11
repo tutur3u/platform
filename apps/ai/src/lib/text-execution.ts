@@ -115,10 +115,10 @@ export async function executeTextRequest(
       },
       modelId: input.model,
       request,
+      requirePricedUsage,
       requiredModelType: 'language',
     });
 
-    context.requirePricedUsage = requirePricedUsage;
     const observed = createObservedTextAgent({
       context,
       instructions: input.instructions,
