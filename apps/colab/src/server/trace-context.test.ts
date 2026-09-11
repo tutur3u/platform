@@ -25,3 +25,25 @@ it('keeps long runs bounded and explicitly marks omitted evidence', () => {
   expect(context[0]?.output).toContain('read the record again');
   expect(context.at(-1)?.output).toBe(entries.at(-1)?.output);
 });
+
+it('does not suggest rereading complete short results or errors', () => {
+  const entries = Array.from({ length: 10 }, () => ({
+    tool: 'drive.search',
+    input: '{}',
+    output: '{"error":"record_missing"}',
+    status: 'error',
+  })) as Trace[];
+  expect(traceContext(entries)).toEqual(entries);
+});
+
+it('bounds the abbreviated baseline even with highly escaped data', () => {
+  const entries = Array.from({ length: 80 }, () => ({
+    tool: 'drive.read',
+    input: '\u0000'.repeat(3000),
+    output: '\u0000'.repeat(6000),
+  })) as Trace[];
+  const context = traceContext(entries);
+  expect(context.length).toBeGreaterThan(0);
+  expect(JSON.stringify(context).length).toBeLessThanOrEqual(120_000);
+  expect(context.at(-1)?.output).toContain('ABBREVIATED');
+});
