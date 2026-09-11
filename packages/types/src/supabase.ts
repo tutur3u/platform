@@ -18341,6 +18341,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      request_periodic_report_delivery: {
+        Args: { p_action: string; p_report_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
         Returns: string;

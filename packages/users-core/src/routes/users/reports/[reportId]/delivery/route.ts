@@ -131,153 +131,58 @@ export async function POST(request: Request, { params }: Params) {
         { status: 409 }
       );
     }
-    if (parsed.data.action === 'cancel') {
-      const cancelResult = await privateDb
-        .from('user_report_email_queue')
-        .update({
-          locked_at: null,
-          locked_by: null,
-          status: 'cancelled',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('report_id', reportId)
-        .in('status', ['queued', 'failed'])
-        .select('id');
-      if (cancelResult.error) throw cancelResult.error;
-      if (!cancelResult.data?.length)
-        return NextResponse.json(
-          { message: 'No waiting delivery to cancel.' },
-          { status: 409 }
-        );
-      return NextResponse.json({
-        message: 'Delivery cancelled.',
-        queued: false,
-        status: 'cancelled',
-      });
-    }
-
-    if (report.report_approval_status !== 'APPROVED') {
+    if (
+      parsed.data.action !== 'cancel' &&
+      report.report_approval_status !== 'APPROVED'
+    ) {
       return NextResponse.json(
         { message: 'Approve this report before sending it.' },
         { status: 409 }
       );
     }
-    if (!report.user_email?.trim() || !report.user_id) {
-      await privateDb
-        .from('external_user_monthly_reports')
-        .update({
-          delivery_status: 'blocked',
-          last_delivery_error:
-            'The report subject or workspace profile email is missing.',
-        })
-        .eq('id', reportId);
-      return NextResponse.json(
-        {
-          message: 'The report subject or workspace profile email is missing.',
-        },
-        { status: 409 }
-      );
+    if (parsed.data.action !== 'cancel') {
+      const [globalGateEnabled, periodicGateEnabled] = await Promise.all([
+        verifySecret({
+          forceAdmin: true,
+          name: 'ENABLE_EMAIL_SENDING',
+          value: 'true',
+          wsId,
+        }),
+        verifySecret({
+          forceAdmin: true,
+          name: 'ENABLE_REPORT_EMAIL_SENDING',
+          value: 'true',
+          wsId,
+        }),
+      ]);
+      if (!globalGateEnabled || !periodicGateEnabled) {
+        return NextResponse.json(
+          {
+            message:
+              'Both workspace email gates must be enabled before periodic reports can send.',
+          },
+          { status: 409 }
+        );
+      }
     }
-
-    const [globalGateEnabled, periodicGateEnabled] = await Promise.all([
-      verifySecret({
-        forceAdmin: true,
-        name: 'ENABLE_EMAIL_SENDING',
-        value: 'true',
-        wsId,
-      }),
-      verifySecret({
-        forceAdmin: true,
-        name: 'ENABLE_REPORT_EMAIL_SENDING',
-        value: 'true',
-        wsId,
-      }),
-    ]);
-    if (!globalGateEnabled || !periodicGateEnabled) {
-      await privateDb
-        .from('external_user_monthly_reports')
-        .update({
-          delivery_status: 'blocked',
-          last_delivery_error:
-            'Periodic report email delivery is disabled for this workspace.',
-        })
-        .eq('id', reportId);
-      return NextResponse.json(
-        {
-          message:
-            'Both workspace email gates must be enabled before periodic reports can send.',
-        },
-        { status: 409 }
-      );
-    }
-
-    const now = new Date().toISOString();
-    const queuePayload = {
-      delivery_kind: parsed.data.action === 'test' ? 'test' : 'send',
-      last_error: null,
-      sent_at: null,
-      provider_message_id: null,
-      locked_at: null,
-      locked_by: null,
-      next_attempt_at: now,
-      recipient_email: report.user_email.trim(),
-      report_id: reportId,
-      status: 'queued',
-      updated_at: now,
-      user_id: report.user_id,
-      ws_id: wsId,
-      ...(parsed.data.action === 'retry' ? { attempt_count: 0 } : {}),
+    const { data, error } = await privateDb.rpc(
+      'request_periodic_report_delivery',
+      {
+        p_report_id: reportId,
+        p_ws_id: wsId,
+        p_action: parsed.data.action,
+      }
+    );
+    if (error) throw error;
+    const result = data as {
+      code: number;
+      message: string;
+      queued?: boolean;
+      status?: string;
     };
-    // Insert only if absent; never overwrite a worker's active or sent row.
-    let queueResult = await privateDb
-      .from('user_report_email_queue')
-      .upsert(queuePayload, { onConflict: 'report_id', ignoreDuplicates: true })
-      .select('id')
-      .maybeSingle();
-    if (queueResult.error) throw queueResult.error;
-    if (!queueResult.data) {
-      queueResult = await privateDb
-        .from('user_report_email_queue')
-        .update({ ...queuePayload, attempt_count: 0 })
-        .eq('report_id', reportId)
-        .eq('ws_id', wsId)
-        .or(
-          'and(status.in.(failed,blocked,cancelled),or(sent_at.is.null,delivery_kind.eq.test)),and(status.eq.sent,delivery_kind.eq.test)'
-        )
-        .select('id')
-        .maybeSingle();
-      if (queueResult.error) throw queueResult.error;
-    }
-    if (!queueResult.data) {
-      return NextResponse.json(
-        { message: 'Delivery is already active or sent.' },
-        { status: 409 }
-      );
-    }
-    // The queue trigger synchronizes report state atomically with this write.
-    return NextResponse.json({
-      message:
-        parsed.data.action === 'test'
-          ? 'Test delivery queued for the subject profile email.'
-          : 'Periodic report delivery queued.',
-      queued: true,
-      status: 'queued',
-    });
+    const { code, ...body } = result;
+    return NextResponse.json(body, { status: code });
   } catch (error) {
-    if (
-      error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      error.code === '23514'
-    ) {
-      return NextResponse.json(
-        {
-          message:
-            'Delivery state changed. Refresh the report before trying again.',
-        },
-        { status: 409 }
-      );
-    }
     console.error('Error in periodic report delivery POST:', error);
     return NextResponse.json(
       { message: 'Internal server error' },

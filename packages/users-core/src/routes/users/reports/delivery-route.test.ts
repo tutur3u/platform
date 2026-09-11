@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   permissions: vi.fn(),
   secret: vi.fn(),
+  rpc: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
@@ -41,20 +42,8 @@ function database(
     ...overrides,
   };
   const from = (table: string) => {
-    let operation = 'select';
     const result = () => ({
-      data:
-        table === 'user_report_email_queue' && operation === 'upsert'
-          ? rows[table]
-            ? null
-            : { id: 'queue-1' }
-          : table === 'user_report_email_queue' &&
-              operation === 'update' &&
-              ['queued', 'processing', 'sent'].includes(
-                (rows[table] as { status?: string })?.status ?? ''
-              )
-            ? null
-            : (rows[table] ?? null),
+      data: rows[table] ?? null,
       error: table === errorTable ? new Error('db failed') : null,
     });
     const proxy = new Proxy(Promise.resolve(), {
@@ -64,8 +53,6 @@ function database(
           return promise.then.bind(promise);
         }
         return (...args: unknown[]) => {
-          if (['upsert', 'update'].includes(String(property)))
-            operation = String(property);
           calls.push({ table, method: String(property), args });
           return proxy;
         };
@@ -73,7 +60,7 @@ function database(
     });
     return proxy;
   };
-  mocks.admin.mockResolvedValue({ schema: () => ({ from }) });
+  mocks.admin.mockResolvedValue({ schema: () => ({ from, rpc: mocks.rpc }) });
   return calls;
 }
 function request(action: string) {
@@ -88,6 +75,10 @@ describe('periodic report delivery route', () => {
     vi.clearAllMocks();
     mocks.permissions.mockResolvedValue({ containsPermission: () => true });
     mocks.secret.mockResolvedValue(true);
+    mocks.rpc.mockResolvedValue({
+      data: { code: 200, queued: true, status: 'queued' },
+      error: null,
+    });
   });
   it('requires view permission before loading private diagnostics', async () => {
     mocks.permissions.mockResolvedValue({ containsPermission: () => false });
@@ -164,18 +155,15 @@ describe('periodic report delivery route', () => {
     expect((await POST(request('send'), context)).status).toBe(409);
     expect(calls.some((call) => call.method === 'upsert')).toBe(false);
   });
-  it('does not overwrite an active queue row when a stale report still says draft', async () => {
-    const calls = database({
-      user_report_email_queue: { id: 'queue-1', status: 'processing' },
+  it('returns the atomic request conflict without claiming it queued a delivery', async () => {
+    database();
+    mocks.rpc.mockResolvedValue({
+      data: { code: 409, message: 'Delivery is already active or sent.' },
+      error: null,
     });
-    expect((await POST(request('send'), context)).status).toBe(409);
-    expect(calls).toContainEqual({
-      table: 'user_report_email_queue',
-      method: 'or',
-      args: [
-        'and(status.in.(failed,blocked,cancelled),or(sent_at.is.null,delivery_kind.eq.test)),and(status.eq.sent,delivery_kind.eq.test)',
-      ],
-    });
+    const response = await POST(request('send'), context);
+    expect(response.status).toBe(409);
+    expect((await response.json()).queued).not.toBe(true);
   });
   it('cannot mark a sent report cancelled', async () => {
     const calls = database({
@@ -190,19 +178,13 @@ describe('periodic report delivery route', () => {
   it('queues an approved report to the workspace user email', async () => {
     const calls = database();
     expect((await POST(request('send'), context)).status).toBe(200);
-    expect(calls).toContainEqual(
-      expect.objectContaining({
-        table: 'user_report_email_queue',
-        method: 'upsert',
-        args: [
-          expect.objectContaining({
-            recipient_email: 'user@example.com',
-            ws_id: 'workspace-1',
-            delivery_kind: 'send',
-          }),
-          { onConflict: 'report_id', ignoreDuplicates: true },
-        ],
-      })
-    );
+    expect(mocks.rpc).toHaveBeenCalledWith('request_periodic_report_delivery', {
+      p_report_id: 'report-1',
+      p_ws_id: 'workspace-1',
+      p_action: 'send',
+    });
+    expect(
+      calls.some((call) => call.method === 'upsert' || call.method === 'update')
+    ).toBe(false);
   });
 });

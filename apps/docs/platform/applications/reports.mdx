@@ -219,4 +219,4 @@ or pgTAP test, explicitly include both files in the disposable project's
 is present before accepting a reset result. No production schema push is needed
 for this local validation.
 
-Queue lifecycle changes synchronize the visible report status in the same database transaction. Stale queue requests are rejected after approval is revoked. Provider-accepted deliveries retain their acceptance timestamp even if later tracking fails, preventing re-approval from automatically resending them.
+Manual delivery requests lock the report before the queue and update both states in the same database transaction. Approval transitions use the same lock order; worker queue claims do not lock reports. Stale queue requests are rejected after approval is revoked. Provider-accepted deliveries retain their acceptance timestamp even if later tracking fails, preventing re-approval from automatically resending them.

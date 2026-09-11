@@ -72,45 +72,74 @@ create trigger queue_approved_periodic_report
   on private.external_user_monthly_reports
   for each row execute function private.queue_approved_periodic_report();
 
--- Keep queue/report state in the same transaction, including manual requests,
--- worker claims and approval revocation. A concurrent approval change either
--- commits first and rejects the queue write, or cancels the queued delivery.
-create or replace function private.sync_periodic_report_delivery_state()
-returns trigger
+-- Lock the report before the queue, matching approval transitions. Worker queue
+-- claims/writes remain separate transactions and never lock reports in reverse.
+create or replace function private.request_periodic_report_delivery(
+  p_report_id uuid, p_ws_id uuid, p_action text
+)
+returns jsonb
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
   report private.external_user_monthly_reports%rowtype;
+  queue private.user_report_email_queue%rowtype;
+  subject public.workspace_users%rowtype;
+  queued_id uuid;
 begin
-  select * into report from private.external_user_monthly_reports
-    where id = new.report_id for update;
-  if new.status = 'queued' then
-    if report.report_approval_status <> 'APPROVED' then
-      raise exception 'Report is not approved.' using errcode = '23514';
-    end if;
-    if report.delivered_at is not null then
-      raise exception 'Report was already sent.' using errcode = '23514';
-    end if;
-    if tg_op = 'UPDATE' then
-      if old.delivery_kind = 'send' and old.sent_at is not null then
-        raise exception 'Provider already accepted this delivery.' using errcode = '23514';
-      end if;
-    end if;
+  if p_action not in ('send', 'test', 'retry', 'cancel') then
+    return jsonb_build_object('code', 400, 'message', 'Invalid delivery action.');
   end if;
-  update private.external_user_monthly_reports
-    set delivery_status = case when new.status = 'sent' and new.delivery_kind = 'test'
-          then 'draft' else new.status end,
-        delivery_requested_at = case when new.status = 'queued' then now() else delivery_requested_at end,
-        last_delivery_error = new.last_error,
-        delivered_at = case when new.delivery_kind = 'send' and new.sent_at is not null
-          then new.sent_at else delivered_at end
-    where id = new.report_id;
-  return new;
+  select r.* into report from private.external_user_monthly_reports r
+    join public.workspace_users u on u.id = r.user_id
+    where r.id = p_report_id and u.ws_id = p_ws_id for update of r;
+  if not found then
+    return jsonb_build_object('code', 404, 'message', 'Report not found.');
+  end if;
+  select * into queue from private.user_report_email_queue
+    where report_id = p_report_id for update;
+  if report.delivered_at is not null or report.delivery_status in ('sent', 'processing')
+     or queue.status = 'processing'
+     or (queue.delivery_kind = 'send' and queue.sent_at is not null) then
+    return jsonb_build_object('code', 409, 'message', 'Delivery is already active or sent.');
+  end if;
+  if p_action = 'cancel' then
+    if queue.id is null or queue.status not in ('queued', 'failed') then
+      return jsonb_build_object('code', 409, 'message', 'No waiting delivery to cancel.');
+    end if;
+    update private.user_report_email_queue set status = 'cancelled',
+      locked_at = null, locked_by = null, updated_at = now() where id = queue.id;
+    update private.external_user_monthly_reports set delivery_status = 'cancelled'
+      where id = p_report_id;
+    return jsonb_build_object('code', 200, 'message', 'Delivery cancelled.', 'queued', false, 'status', 'cancelled');
+  end if;
+  if report.report_approval_status <> 'APPROVED' then
+    return jsonb_build_object('code', 409, 'message', 'Approve this report before sending it.');
+  end if;
+  if queue.status = 'queued' or (queue.status = 'sent' and queue.delivery_kind = 'send') then
+    return jsonb_build_object('code', 409, 'message', 'Delivery is already active or sent.');
+  end if;
+  select * into subject from public.workspace_users where id = report.user_id and ws_id = p_ws_id;
+  if nullif(btrim(subject.email), '') is null then
+    update private.external_user_monthly_reports set delivery_status = 'blocked',
+      last_delivery_error = 'Subject profile email is missing.' where id = p_report_id;
+    return jsonb_build_object('code', 409, 'message', 'Subject profile email is missing.');
+  end if;
+  insert into private.user_report_email_queue
+    (report_id, ws_id, user_id, recipient_email, delivery_kind, status)
+    values (p_report_id, p_ws_id, subject.id, lower(btrim(subject.email)),
+      case when p_action = 'test' then 'test' else 'send' end, 'queued')
+    on conflict (report_id) do update set status = 'queued',
+      delivery_kind = excluded.delivery_kind, recipient_email = excluded.recipient_email,
+      attempt_count = 0, sent_at = null, provider_message_id = null,
+      locked_at = null, locked_by = null, last_error = null,
+      next_attempt_at = now(), updated_at = now()
+    returning id into queued_id;
+  update private.external_user_monthly_reports set delivery_status = 'queued',
+    delivery_requested_at = now(), last_delivery_error = null where id = p_report_id;
+  return jsonb_build_object('code', 200, 'message', 'Periodic report delivery queued.', 'queued', true, 'status', 'queued');
 end;
 $$;
-revoke all on function private.sync_periodic_report_delivery_state() from public, anon, authenticated;
-create trigger sync_periodic_report_delivery_state
-  after insert or update of status on private.user_report_email_queue
-  for each row execute function private.sync_periodic_report_delivery_state();
+revoke all on function private.request_periodic_report_delivery(uuid, uuid, text) from public, anon, authenticated;
+grant execute on function private.request_periodic_report_delivery(uuid, uuid, text) to service_role;
