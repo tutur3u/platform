@@ -133,6 +133,11 @@ function createAdminClientStub(
           return Promise.resolve(reads.finish_periodic_report_email);
         if (args.p_queue_id === '00000000-0000-0000-0000-000000000000')
           return Promise.resolve({ data: false, error: null });
+        if (
+          args.p_worker_id !== QUEUE_ROW.locked_by ||
+          args.p_locked_at !== QUEUE_ROW.locked_at
+        )
+          return Promise.resolve({ data: false, error: null });
         const lease = reads.user_report_email_queue;
         if (lease?.error || !lease?.data)
           return Promise.resolve({ data: false, error: lease?.error ?? null });
@@ -175,7 +180,7 @@ function createAdminClientStub(
                   )
                 )
                   ? []
-                  : [QUEUE_ROW],
+                  : [{ ...QUEUE_ROW }],
               error: null,
             }
           : { data: runs, error: null }
@@ -274,6 +279,32 @@ describe('periodic report email delivery', () => {
       expect(
         writesFor(writes, 'user_report_email_attempts')[0]?.payload.status
       ).toBe(success ? 'sent' : 'failed');
+    }
+  );
+
+  it.each(['locked_by', 'locked_at'] as const)(
+    'cannot complete when the current lease changes %s during sending',
+    async (field) => {
+      const original = QUEUE_ROW[field];
+      const { client, writes } = createAdminClientStub();
+      send.mockImplementation(async () => {
+        QUEUE_ROW[field] =
+          field === 'locked_by'
+            ? 'replacement-worker'
+            : new Date(Date.now() + 1000).toISOString();
+        return { success: true, messageId: 'accepted-old-attempt' };
+      });
+      try {
+        await processPeriodicReportAutomation(client as never, 'old-worker');
+        expect(send).toHaveBeenCalledOnce();
+        expect(writesFor(writes, 'user_report_email_queue')).toEqual([]);
+        expect(writesFor(writes, 'external_user_monthly_reports')).toEqual([]);
+        expect(
+          writesFor(writes, 'user_report_email_attempts')[0]?.payload.status
+        ).toBe('sent');
+      } finally {
+        QUEUE_ROW[field] = original;
+      }
     }
   );
 
