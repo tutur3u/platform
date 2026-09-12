@@ -252,3 +252,9 @@ acceptance timestamp, retries, and attempt history; successful test sends remain
 explicitly labelled tests and do not mark the report as sent to its real audience.
 
 An active delivery locks the report content and approval until the worker finishes. Edits, deletion, or approval changes during that window return a conflict; retry once delivery has finished. This prevents an approved report from changing between the final approval check and sending.
+
+### Review filters and test delivery
+
+Monthly reports open with Unapproved selected, including pending, rejected, and older reports without an approval value. Periodic filters and sorting use separate URL parameters from daily reports. Date bounds select overlapping saved report periods; reports without a saved period are included under All periods. Status totals reflect the selected period before search and status filters narrow the list.
+
+Report delivery and Test send are separate statuses. A successful test does not mark the report as delivered or prevent its regular send. Diagnostics show the latest send retry count separately from up to 20 recent delivery-history entries. Timestamps explicitly use the viewer device timezone. Provider references are available under each history entry.

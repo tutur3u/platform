@@ -62,7 +62,9 @@ describe('monthly delivery status', () => {
     expect(
       await screen.findByText('delivery_recipient original@example.com')
     ).toBeInTheDocument();
-    expect(screen.getByText('delivery_attempt_count 2')).toBeInTheDocument();
+    expect(
+      screen.getByText('delivery_current_attempt_count 2')
+    ).toBeInTheDocument();
     expect(screen.getByText('sent_explanation')).toBeInTheDocument();
     expect(
       screen.getByText('delivery_sent_at 2026-09-01T01:00:00.000Z')
@@ -81,6 +83,9 @@ describe('monthly delivery status', () => {
       screen.getByText('test_sent_at 2026-09-01T01:00:00.000Z')
     ).toBeInTheDocument();
     expect(screen.getByText('not_sent')).toBeInTheDocument();
+    expect(screen.getByText('live_delivery')).toBeInTheDocument();
+    expect(screen.getByText('test_only_explanation')).toBeInTheDocument();
+    expect(screen.getByText('delivery_recent_history 1')).toBeInTheDocument();
   });
   it('shows a missing address before any delivery attempt', async () => {
     load.mockResolvedValue({

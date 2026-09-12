@@ -37,11 +37,12 @@ export function PeriodicDeliveryStatus({
     format.dateTime(new Date(value), {
       dateStyle: 'medium',
       timeStyle: 'short',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
   return (
     <section className="space-y-3" aria-label={t('delivery')}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-medium text-sm">{t('delivery')}</h3>
+        <h3 className="font-medium text-sm">{t('live_delivery')}</h3>
         <PeriodicStatusBadge delivery={report.delivery_status} />
       </div>
       <p className="break-words text-xs">
@@ -50,6 +51,12 @@ export function PeriodicDeliveryStatus({
             queue?.recipient_email ?? report.user_email ?? t('missing_email'),
         })}
       </p>
+      {queue?.delivery_kind === 'test' &&
+        report.delivery_status === 'draft' && (
+          <p className="text-muted-foreground text-xs">
+            {t('test_only_explanation')}
+          </p>
+        )}
       <p className="text-muted-foreground text-xs">{t('sent_explanation')}</p>
       {queue?.delivery_kind === 'test' && (
         <div className="space-y-2 rounded-md border bg-muted/20 p-3">
@@ -71,7 +78,7 @@ export function PeriodicDeliveryStatus({
       )}
       {queue && (
         <p className="text-muted-foreground text-xs">
-          {t('delivery_attempt_count', { count: queue.attempt_count })}
+          {t('delivery_current_attempt_count', { count: queue.attempt_count })}
         </p>
       )}
       {queue && ['queued', 'failed'].includes(queue.status) && (
@@ -84,10 +91,15 @@ export function PeriodicDeliveryStatus({
           {report.last_delivery_error || queue?.last_error}
         </p>
       )}
+      <p className="break-words text-muted-foreground text-xs">
+        {t('delivery_timezone', {
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        })}
+      </p>
       {attempts.length > 0 && (
         <details className="rounded-md border p-2">
           <summary className="cursor-pointer text-xs">
-            {t('delivery_history')}
+            {t('delivery_recent_history', { count: attempts.length })}
           </summary>
           <ol className="mt-2 space-y-3">
             {attempts.map((attempt) => (
@@ -101,9 +113,14 @@ export function PeriodicDeliveryStatus({
                   </p>
                 )}
                 {attempt.provider_message_id && (
-                  <p className="break-all text-muted-foreground">
-                    {attempt.provider_message_id}
-                  </p>
+                  <details className="text-muted-foreground">
+                    <summary className="cursor-pointer">
+                      {t('delivery_reference')}
+                    </summary>
+                    <p className="mt-1 break-all font-mono">
+                      {attempt.provider_message_id}
+                    </p>
+                  </details>
                 )}
               </li>
             ))}

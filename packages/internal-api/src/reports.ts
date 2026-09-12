@@ -116,6 +116,10 @@ export interface PeriodicReport {
   created_at: string;
   creator_name?: string | null;
   delivery_status: PeriodicReportDeliveryStatus;
+  test_delivery?: {
+    status: PeriodicReportDeliveryStatus;
+    sent_at: string | null;
+  } | null;
   feedback: string;
   generation_mode: PeriodicReportGenerationMode;
   generation_status: 'draft' | 'generating' | 'ready' | 'failed';
@@ -126,7 +130,7 @@ export interface PeriodicReport {
   manager_instruction: string | null;
   period_end: string | null;
   period_start: string | null;
-  report_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  report_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   score: number | null;
   title: string;
   updated_at: string;
@@ -147,7 +151,9 @@ export interface PeriodicReportCounts {
 
 export interface ListPeriodicReportsParams {
   generationStatus?: 'draft' | 'generating' | 'ready' | 'failed';
-  approvalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approvalStatus?: 'UNAPPROVED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  periodStart?: string;
+  periodEnd?: string;
   cadence?: PeriodicReportCadence;
   deliveryStatus?: PeriodicReportDeliveryStatus;
   page?: number;
@@ -366,6 +372,8 @@ export async function listPeriodicReports(
       cache: 'no-store',
       query: {
         approvalStatus: params.approvalStatus,
+        periodStart: params.periodStart,
+        periodEnd: params.periodEnd,
         cadence: params.cadence,
         generationStatus: params.generationStatus,
         deliveryStatus: params.deliveryStatus,

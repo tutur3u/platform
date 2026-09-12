@@ -288,7 +288,11 @@ export default function PostsClient({
   }, [posts, posts.selected, postsData, setPosts]);
 
   return (
-    <div className={embedded ? 'space-y-6' : 'space-y-6 p-2 md:p-6'}>
+    <div
+      className={
+        embedded ? 'min-w-0 space-y-6' : 'min-w-0 space-y-6 p-2 md:p-6'
+      }
+    >
       {!embedded && (
         <FeatureSummary
           pluralTitle={t('ws-post-emails.plural')}
@@ -310,10 +314,6 @@ export default function PostsClient({
                 wsId={resolvedWsId}
                 statusSummary={postsStatus}
                 defaultDateRange={defaultDateRange}
-                onRefreshPosts={() => {
-                  void refetch();
-                }}
-                isRefreshing={isFetching}
               />
             ) : null
           }

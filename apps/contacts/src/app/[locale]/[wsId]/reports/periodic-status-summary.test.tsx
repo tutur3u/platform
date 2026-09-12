@@ -26,6 +26,8 @@ describe('monthly status filters', () => {
       'aria-pressed',
       'true'
     );
+    fireEvent.click(screen.getByRole('button', { name: 'unapproved 8' }));
+    expect(change).toHaveBeenLastCalledWith('UNAPPROVED', 'all', 'all');
     fireEvent.click(screen.getByRole('button', { name: 'approved 12' }));
     expect(change).toHaveBeenLastCalledWith('APPROVED', 'all', 'all');
     fireEvent.click(screen.getByRole('button', { name: 'status_sent 8' }));

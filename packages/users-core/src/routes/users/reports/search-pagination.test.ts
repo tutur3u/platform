@@ -44,6 +44,8 @@ describe('smart-search pagination through the real Supabase query builder', () =
             JSON.stringify({ id: 'workspace', timezone: 'UTC' }),
             { headers }
           );
+        if (url.pathname.endsWith('/user_report_email_queue'))
+          return new Response('[]', { headers });
         if (url.pathname.endsWith('/rpc/get_periodic_report_counts'))
           return new Response(JSON.stringify([{ total: 25 }]), { headers });
         if (!url.pathname.endsWith('/rpc/search_periodic_reports'))

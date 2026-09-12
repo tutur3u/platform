@@ -90,7 +90,7 @@ export function ReportActions({
 
   return (
     <div className="rounded-[28px] border border-border/60 bg-linear-to-br from-card via-card to-muted/30 p-4 shadow-sm">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           {approvalStatus === 'APPROVED' && (
             <Badge
@@ -152,7 +152,7 @@ export function ReportActions({
           )}
         </div>
 
-        <div className="space-y-1 lg:text-right">
+        <div className="min-w-0 space-y-1 2xl:text-right">
           <div className="font-medium text-sm">
             {t('ws-reports.report_export_panel_title')}
           </div>
@@ -166,9 +166,9 @@ export function ReportActions({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="mt-4 grid grid-cols-1 gap-3">
         <div className="rounded-2xl border border-border/60 bg-background/80 p-3 shadow-sm backdrop-blur-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
             <div className="space-y-1">
               <div className="font-medium text-sm">
                 {t('ws-reports.download_directly_title')}

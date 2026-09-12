@@ -20,6 +20,7 @@ import {
   type ReportFlowSegment,
   type ReportSectionTone,
 } from './report-preview-pagination';
+import { ReportPreviewViewport } from './report-preview-viewport';
 
 const PAGE_HEIGHT_MM = 297;
 const PAGE_WIDTH_MM = 210;
@@ -763,9 +764,7 @@ export default function ReportPreview({
 
       {singlePagePreview ? (
         <>
-          <div className="mx-auto flex w-[210mm] min-w-[210mm] flex-col gap-6 print:hidden">
-            {visiblePreviewPage}
-          </div>
+          <ReportPreviewViewport>{visiblePreviewPage}</ReportPreviewViewport>
           {paginationReady ? (
             <div className="pointer-events-none fixed top-0 -left-[99999px] z-[-1]">
               <div

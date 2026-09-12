@@ -415,8 +415,8 @@ export default function EditableReportPreview({
         </div>
       )}
 
-      <div className="grid h-fit gap-4 xl:grid-cols-3">
-        <div className="grid h-fit gap-4">
+      <div className="grid h-fit min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="grid h-fit min-w-0 gap-4">
           <Collapsible
             open={scoresOpen}
             onOpenChange={setScoresOpen}
@@ -625,7 +625,7 @@ export default function EditableReportPreview({
           )}
         </div>
 
-        <div className="grid h-fit gap-4 xl:col-span-2">
+        <div className="grid h-fit min-w-0 gap-4">
           {!isNew && (
             <ReportHistory
               logsQuery={logsQuery}
@@ -676,7 +676,7 @@ export default function EditableReportPreview({
 
           {previewPageCount > 1 || !isPaginationReady ? (
             <div className="mx-auto w-full max-w-[210mm] rounded-[26px] border bg-card/90 p-4 shadow-sm print:hidden">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
                 <div className="space-y-1">
                   <div className="font-medium text-sm">
                     {t('ws-reports.preview_pages')}
@@ -748,7 +748,7 @@ export default function EditableReportPreview({
             </div>
           ) : null}
 
-          <div className="relative mx-auto w-[210mm] min-w-[210mm]">
+          <div className="relative mx-auto w-full min-w-0 max-w-[210mm]">
             <ReportPreview
               t={t}
               lang={locale}

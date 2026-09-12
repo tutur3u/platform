@@ -5,11 +5,11 @@ import {
   CheckCircle2,
   CircleHelp,
   ListFilter,
-  Loader2,
   MinusCircle,
   PlusCircle,
   RotateCcw,
   User,
+  X,
 } from '@tuturuuu/icons';
 import { getPostsFilterOptions } from '@tuturuuu/internal-api/settings';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
@@ -47,8 +47,6 @@ export default function PostsFilters({
   defaultDateRange,
   noInclude = false,
   noExclude = false,
-  onRefreshPosts,
-  isRefreshing = false,
 }: {
   wsId: string;
   statusSummary: PostEmailStatusSummary;
@@ -58,8 +56,6 @@ export default function PostsFilters({
   };
   noInclude?: boolean;
   noExclude?: boolean;
-  onRefreshPosts?: () => void;
-  isRefreshing?: boolean;
 }) {
   const t = useTranslations();
   const [queryState, setQueryState] = useQueryStates(postsSearchParamParsers);
@@ -115,7 +111,8 @@ export default function PostsFilters({
     });
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex min-w-0 flex-wrap items-center gap-2">
+      <DateRangeFilterWrapper shallow />
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -302,30 +299,14 @@ export default function PostsFilters({
                   value: user.id,
                 }))}
               />
-              <DateRangeFilterWrapper shallow />
             </div>
           )}
         </PopoverContent>
       </Popover>
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => onRefreshPosts?.()}
-        disabled={isRefreshing}
-        className="size-8"
-        aria-label={t('common.refresh')}
-      >
-        {isRefreshing ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <RotateCcw className="h-4 w-4" />
-        )}
-      </Button>
       {hasAnyFilters ? (
         <Button
           variant="ghost"
-          size="icon"
-          className="size-8"
+          size="sm"
           aria-label={t('common.reset')}
           onClick={() =>
             void setQueryState({
@@ -342,7 +323,8 @@ export default function PostsFilters({
             })
           }
         >
-          <RotateCcw className="h-4 w-4" />
+          <X className="h-4 w-4" />
+          {t('common.reset')}
         </Button>
       ) : null}
     </div>

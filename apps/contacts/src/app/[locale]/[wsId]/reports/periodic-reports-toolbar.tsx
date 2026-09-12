@@ -35,6 +35,7 @@ const cadences: PeriodicReportCadence[] = [
 
 export type PeriodicApprovalFilter =
   | 'all'
+  | 'UNAPPROVED'
   | 'PENDING'
   | 'APPROVED'
   | 'REJECTED';
@@ -43,6 +44,9 @@ export type PeriodicSortBy = 'period' | 'title' | 'updated' | 'user';
 export type PeriodicSortDirection = 'asc' | 'desc';
 
 export function PeriodicReportsToolbar({
+  periodStart = '',
+  periodEnd = '',
+  onPeriodChange,
   approvalStatus,
   generationStatus = 'all',
   cadence,
@@ -59,6 +63,9 @@ export function PeriodicReportsToolbar({
   sortBy,
   sortDirection,
 }: {
+  periodStart?: string;
+  periodEnd?: string;
+  onPeriodChange?: (start: string, end: string) => void;
   approvalStatus: PeriodicApprovalFilter;
   generationStatus?: 'all' | 'draft';
   cadence: PeriodicReportCadence;
@@ -84,11 +91,86 @@ export function PeriodicReportsToolbar({
     generationStatus !== 'all',
     approvalStatus !== 'all',
     deliveryStatus !== 'all',
+    Boolean(periodStart || periodEnd),
   ].filter(Boolean).length;
   const sortValue = `${sortBy}:${sortDirection}`;
 
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-3">
+      {onPeriodChange && (
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="grid min-w-0 flex-1 gap-1 text-xs">
+            <span>{reportsT('period_from')}</span>
+            <Input
+              type="date"
+              aria-label={reportsT('period_from')}
+              value={periodStart}
+              max={periodEnd || undefined}
+              onChange={(e) =>
+                onPeriodChange(
+                  e.target.value,
+                  periodEnd && e.target.value > periodEnd
+                    ? e.target.value
+                    : periodEnd
+                )
+              }
+            />
+          </label>
+          <label className="grid min-w-0 flex-1 gap-1 text-xs">
+            <span>{reportsT('period_to')}</span>
+            <Input
+              type="date"
+              aria-label={reportsT('period_to')}
+              value={periodEnd}
+              min={periodStart || undefined}
+              onChange={(e) =>
+                onPeriodChange(
+                  periodStart && e.target.value && e.target.value < periodStart
+                    ? e.target.value
+                    : periodStart,
+                  e.target.value
+                )
+              }
+            />
+          </label>
+          {(periodStart || periodEnd) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onPeriodChange('', '')}
+            >
+              {reportsT('all_periods')}
+            </Button>
+          )}
+        </div>
+      )}
+      {(periodStart || periodEnd) && (
+        <p className="text-muted-foreground text-xs">
+          {reportsT('period_legacy_hint')}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+        <span>
+          {reportsT('approval_filter_label')}:{' '}
+          {approvalStatus === 'all'
+            ? t('common.all')
+            : reportsT(
+                approvalStatus === 'UNAPPROVED'
+                  ? 'unapproved'
+                  : `status_${approvalStatus.toLowerCase()}`
+              )}
+        </span>
+        {deliveryStatus !== 'all' && (
+          <span>
+            {reportsT('live_delivery')}:{' '}
+            {reportsT(
+              deliveryStatus === 'draft'
+                ? 'not_sent'
+                : `status_${deliveryStatus}`
+            )}
+          </span>
+        )}
+      </div>
       <div className="flex min-w-0 items-center gap-2">
         <div className="relative min-w-0 flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -150,7 +232,7 @@ export function PeriodicReportsToolbar({
               onValueChange={(value) =>
                 onApprovalStatusChange(value as PeriodicApprovalFilter)
               }
-              options={['all', 'PENDING', 'APPROVED', 'REJECTED']}
+              options={['all', 'UNAPPROVED', 'PENDING', 'APPROVED', 'REJECTED']}
               allLabel={t('common.all')}
             />
             <FilterSelect
@@ -205,6 +287,12 @@ export function PeriodicReportsToolbar({
                   [
                     ['period:desc', t('common.date'), t('common.descending')],
                     ['period:asc', t('common.date'), t('common.ascending')],
+                    [
+                      'updated:desc',
+                      reportsT('updated'),
+                      t('common.descending'),
+                    ],
+                    ['updated:asc', reportsT('updated'), t('common.ascending')],
                     ['title:asc', t('common.title'), t('common.ascending')],
                     ['title:desc', t('common.title'), t('common.descending')],
                     [
@@ -228,7 +316,7 @@ export function PeriodicReportsToolbar({
           </PopoverContent>
         </Popover>
       </div>
-      <div className="flex items-center justify-between gap-3 text-muted-foreground text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 text-muted-foreground text-xs">
         <span>{reportsT('search_periodic_help')}</span>
         <span className="shrink-0 font-medium tabular-nums">
           {reportsT('matching_reports', { count: resultCount })}
@@ -265,6 +353,7 @@ function FilterSelect({
   options: string[];
   value: string;
 }) {
+  const t = useTranslations('reports-hub');
   return (
     <label className="grid gap-1.5">
       <span className="text-muted-foreground text-xs">{label}</span>
@@ -275,7 +364,15 @@ function FilterSelect({
         <SelectContent>
           {options.map((option) => (
             <SelectItem key={option} value={option}>
-              {option === 'all' ? allLabel : option}
+              {option === 'all'
+                ? allLabel
+                : t(
+                    option === 'UNAPPROVED'
+                      ? 'unapproved'
+                      : option === 'draft'
+                        ? 'not_sent'
+                        : `status_${option.toLowerCase()}`
+                  )}
             </SelectItem>
           ))}
         </SelectContent>
