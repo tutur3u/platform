@@ -1,11 +1,12 @@
-import { gateway, generateText, stepCountIs } from 'ai';
+import { google } from '@ai-sdk/google';
+import { generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { withAiMemory } from '../../memory';
 import { isGoogleSearchToolName } from '../google-search-events';
 import { createGoogleSearchToolSet } from '../google-search-tool';
 import type { MiraToolContext } from '../mira-tools';
 
-const SEARCH_WRAPPER_MODEL = 'google/gemini-3.5-flash-lite';
+const SEARCH_WRAPPER_MODEL = 'gemini-3.5-flash-lite';
 
 type SearchSource = {
   sourceId?: string;
@@ -98,7 +99,7 @@ async function runGoogleSearchWrapper(
     model: await withAiMemory({
       addMemory: 'never',
       customId: ctx.chatId ? `${ctx.chatId}-google-search` : query,
-      model: gateway(SEARCH_WRAPPER_MODEL),
+      model: google(SEARCH_WRAPPER_MODEL),
       product: 'mira',
       source: 'mira_google_search_tool',
       surface: 'mira_google_search_tool',

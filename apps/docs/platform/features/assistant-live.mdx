@@ -149,9 +149,13 @@ provider step without answering. The outer step guard cannot interrupt that
 provider-step loop.
 
 Explicit search requests require the search executor before proceeding. The
-executor uses native Google search through the same gateway as chat, with
+executor uses native Google search through the direct Google provider used by chat, with
 automatic tool choice, a 30-second deadline, one provider step, and at most one
 grounding retry. It requires grounding evidence and a nonempty final answer.
 Other required workspace and task tools keep their required-tool policy.
 Verify a real grounded answer and visible sources after orchestration changes;
 mocked tool events alone are insufficient.
+
+The search executor must use the configured direct Google connection, like the
+chat route. Routing only search through AI Gateway adds a separate credit and
+authentication dependency; a gateway 403 does not mean Google search is down.
