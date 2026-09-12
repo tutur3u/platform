@@ -2397,7 +2397,7 @@
     "api:/api/v1/workspaces/:wsId/users/reports:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Generation-status filter for draft reports alongside approval and delivery filters; smart search requests exact RPC counts for pagination. First-class Next.js route; Rust parity pending."
+      "note": "Unapproved filter includes pending, rejected, and null legacy approvals. Optional ISO periodStart/periodEnd overlap filters scope rows and status aggregates; absent periods remain visible without date filters. Workspace-scoped batched test-delivery summary is separate from real delivery. Exact smart-search RPC pagination retained. First-class Next.js route; Rust parity pending."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/:reportId:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts": {
       "status": "legacy-next",

@@ -50,9 +50,9 @@ export function PeriodicStatusSummary({
       icon: FileText,
     },
     {
-      label: 'pending_review',
-      count: counts?.pendingReview,
-      approval: 'PENDING',
+      label: 'unapproved',
+      count: counts ? Math.max(0, counts.total - counts.approved) : undefined,
+      approval: 'UNAPPROVED',
       delivery: 'all',
       icon: Clock3,
     },
@@ -87,7 +87,7 @@ export function PeriodicStatusSummary({
   ] as const;
   return (
     <section
-      className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7"
+      className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 2xl:grid-cols-7"
       aria-label={t('report_status')}
     >
       {stages.map((stage) => {
@@ -115,7 +115,7 @@ export function PeriodicStatusSummary({
             )}
           >
             <stage.icon className="size-4 shrink-0 text-muted-foreground" />
-            <div>
+            <div className="min-w-0">
               <p className="text-muted-foreground text-xs">{t(stage.label)}</p>
               <p className="font-semibold text-xl tabular-nums tracking-tight">
                 {counts ? (stage.count ?? 0).toLocaleString() : '—'}

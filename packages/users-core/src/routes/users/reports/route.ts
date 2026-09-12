@@ -47,7 +47,11 @@ const ListReportsSchema = z.object({
   generationStatus: z
     .enum(['draft', 'generating', 'ready', 'failed'])
     .optional(),
-  approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+  approvalStatus: z
+    .enum(['UNAPPROVED', 'PENDING', 'APPROVED', 'REJECTED'])
+    .optional(),
+  periodStart: z.iso.date().optional(),
+  periodEnd: z.iso.date().optional(),
   cadence: z
     .enum(['weekly', 'monthly', 'quarterly', 'yearly'])
     .default('monthly'),
@@ -83,9 +87,17 @@ export async function GET(request: Request, { params }: Params) {
     const parsed = ListReportsSchema.safeParse(
       Object.fromEntries(new URL(request.url).searchParams)
     );
-    if (!parsed.success) {
+    if (
+      !parsed.success ||
+      (parsed.data.periodStart &&
+        parsed.data.periodEnd &&
+        parsed.data.periodStart > parsed.data.periodEnd)
+    ) {
       return NextResponse.json(
-        { message: 'Invalid query parameters', issues: parsed.error.issues },
+        {
+          message: 'Invalid query parameters',
+          issues: parsed.success ? [] : parsed.error.issues,
+        },
         { status: 400 }
       );
     }
@@ -175,7 +187,15 @@ export async function GET(request: Request, { params }: Params) {
           query = query.in('group_id', accessibleGroupIds);
         }
       }
-      if (parsed.data.approvalStatus) {
+      if (parsed.data.periodStart)
+        query = query.gte('period_end', parsed.data.periodStart);
+      if (parsed.data.periodEnd)
+        query = query.lte('period_start', parsed.data.periodEnd);
+      if (parsed.data.approvalStatus === 'UNAPPROVED') {
+        query = query.or(
+          'report_approval_status.neq.APPROVED,report_approval_status.is.null'
+        );
+      } else if (parsed.data.approvalStatus) {
         query = query.eq('report_approval_status', parsed.data.approvalStatus);
       }
       if (parsed.data.generationStatus) {
@@ -226,7 +246,11 @@ export async function GET(request: Request, { params }: Params) {
     if (workspaceResult.error) throw workspaceResult.error;
 
     let counts: ReturnType<typeof normalizePeriodicReportCounts>;
-    if (!countsRpcResult.error) {
+    if (
+      !countsRpcResult.error &&
+      !parsed.data.periodStart &&
+      !parsed.data.periodEnd
+    ) {
       const rpcRow = Array.isArray(countsRpcResult.data)
         ? countsRpcResult.data[0]
         : countsRpcResult.data;
@@ -247,6 +271,10 @@ export async function GET(request: Request, { params }: Params) {
         if (accessibleGroupIds) {
           query = query.in('group_id', accessibleGroupIds);
         }
+        if (parsed.data.periodStart)
+          query = query.gte('period_end', parsed.data.periodStart);
+        if (parsed.data.periodEnd)
+          query = query.lte('period_start', parsed.data.periodEnd);
         return filter ? query.eq(filter.column, filter.value) : query;
       };
       const [
@@ -298,8 +326,22 @@ export async function GET(request: Request, { params }: Params) {
         total: totalResult.count,
       });
     }
+    const reportIds = (listResult.data ?? []).map((row) => row.id);
+    const testDeliveries = reportIds.length
+      ? await privateDb
+          .from('user_report_email_queue')
+          .select('report_id, status, sent_at')
+          .eq('ws_id', wsId)
+          .eq('delivery_kind', 'test')
+          .in('report_id', reportIds)
+      : { data: [], error: null };
+    if (testDeliveries.error) throw testDeliveries.error;
+    const testsByReport = new Map(
+      (testDeliveries.data ?? []).map((row) => [row.report_id, row])
+    );
     const data = (listResult.data ?? []).map((row) => ({
       ...row,
+      test_delivery: testsByReport.get(row.id) ?? null,
       creator_name:
         row.creator_display_name ??
         row.creator_full_name ??

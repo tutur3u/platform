@@ -53,7 +53,7 @@ export default function ReportsHub({
   );
 
   return (
-    <main className="space-y-4 p-2 md:space-y-6 md:p-6">
+    <main className="min-w-0 space-y-4 p-2 md:space-y-6 md:p-6">
       <FeatureSummary
         pluralTitle={t('title')}
         singularTitle={t('title')}
@@ -84,7 +84,7 @@ export default function ReportsHub({
           )}
         </TabsList>
         {canViewDaily && (
-          <TabsContent value="daily" className="mt-4">
+          <TabsContent value="daily" className="mt-4 min-w-0">
             <PostsClient
               embedded
               locale={locale}
@@ -94,7 +94,7 @@ export default function ReportsHub({
           </TabsContent>
         )}
         {canViewPeriodic && (
-          <TabsContent value="periodic" className="mt-4">
+          <TabsContent value="periodic" className="mt-4 min-w-0">
             <PeriodicReportsPanel
               permissions={periodicPermissions}
               wsId={wsId}
@@ -102,7 +102,7 @@ export default function ReportsHub({
           </TabsContent>
         )}
         {canViewPeriodic && (
-          <TabsContent value="automations" className="mt-4">
+          <TabsContent value="automations" className="mt-4 min-w-0">
             <AutomationsPanel canManage={canManageAutomation} wsId={wsId} />
           </TabsContent>
         )}

@@ -11,7 +11,6 @@ import { InternalApiError } from '@tuturuuu/internal-api';
 import {
   listPeriodicReports,
   type PeriodicReport,
-  type PeriodicReportCadence,
   requestPeriodicReportDelivery,
   requestPeriodicReportGeneration,
   updatePeriodicReport,
@@ -27,10 +26,15 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useQueryStates } from 'nuqs';
 import { useState } from 'react';
 import GroupReportsSelector from '../users/reports/group-reports-selector';
 import { PeriodicDeliveryConfirmation } from './periodic-delivery-confirmation';
 import { PeriodicEmailReadiness } from './periodic-email-readiness';
+import {
+  periodicReportFilterKeys,
+  periodicReportFilters,
+} from './periodic-report-filters';
 import {
   type PeriodicEmailPreview,
   PeriodicReportPreviewDialog,
@@ -43,13 +47,7 @@ import {
   PeriodicReportsLoading,
   PeriodicReportsRowsLoading,
 } from './periodic-reports-loading';
-import {
-  type PeriodicApprovalFilter,
-  type PeriodicDeliveryFilter,
-  PeriodicReportsToolbar,
-  type PeriodicSortBy,
-  type PeriodicSortDirection,
-} from './periodic-reports-toolbar';
+import { PeriodicReportsToolbar } from './periodic-reports-toolbar';
 import { PeriodicStatusSummary } from './periodic-status-summary';
 
 export default function PeriodicReportsPanel({
@@ -68,19 +66,22 @@ export default function PeriodicReportsPanel({
 }) {
   const t = useTranslations('reports-hub');
   const queryClient = useQueryClient();
-  const [cadence, setCadence] = useState<PeriodicReportCadence>('monthly');
-  const [query, setQuery] = useState('');
-  const [generationStatus, setGenerationStatus] = useState<'all' | 'draft'>(
-    'all'
-  );
+  const [filters, setFilters] = useQueryStates(periodicReportFilters, {
+    urlKeys: periodicReportFilterKeys,
+    shallow: true,
+  });
+  const {
+    cadence,
+    query,
+    approval: approvalStatus,
+    delivery: deliveryStatus,
+    generation: generationStatus,
+    sort: sortBy,
+    direction: sortDirection,
+    start: periodStart,
+    end: periodEnd,
+  } = filters;
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [approvalStatus, setApprovalStatus] =
-    useState<PeriodicApprovalFilter>('all');
-  const [deliveryStatus, setDeliveryStatus] =
-    useState<PeriodicDeliveryFilter>('all');
-  const [sortBy, setSortBy] = useState<PeriodicSortBy>('period');
-  const [sortDirection, setSortDirection] =
-    useState<PeriodicSortDirection>('desc');
   const [debouncedQuery] = useDebounce(query.trim(), 300);
   const [deliveryIntent, setDeliveryIntent] = useState<{
     action: PeriodicDeliveryAction;
@@ -103,11 +104,15 @@ export default function PeriodicReportsPanel({
       deliveryStatus,
       sortBy,
       sortDirection,
+      periodStart,
+      periodEnd,
     ],
     queryFn: ({ pageParam }) =>
       listPeriodicReports(wsId, {
         approvalStatus: approvalStatus === 'all' ? undefined : approvalStatus,
         cadence,
+        periodStart: periodStart || undefined,
+        periodEnd: periodEnd || undefined,
         generationStatus:
           generationStatus === 'all' ? undefined : generationStatus,
         deliveryStatus: deliveryStatus === 'all' ? undefined : deliveryStatus,
@@ -196,20 +201,24 @@ export default function PeriodicReportsPanel({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <PeriodicEmailReadiness wsId={wsId} />
+      <p className="text-muted-foreground text-xs">
+        {t('period_scope', {
+          start: periodStart || t('all_time_start'),
+          end: periodEnd || t('all_time_end'),
+        })}
+      </p>
       <PeriodicStatusSummary
         generation={generationStatus}
         counts={counts}
         approval={approvalStatus}
         delivery={deliveryStatus}
         onChange={(approval, delivery, generation = 'all') => {
-          setGenerationStatus(generation);
-          setApprovalStatus(approval);
-          setDeliveryStatus(delivery);
+          void setFilters({ generation, approval, delivery });
         }}
       />
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground text-xs">
           {t('review_delivery_hint')}
         </p>
@@ -238,19 +247,28 @@ export default function PeriodicReportsPanel({
         approvalStatus={approvalStatus}
         cadence={cadence}
         deliveryStatus={deliveryStatus}
-        onApprovalStatusChange={setApprovalStatus}
-        onCadenceChange={setCadence}
-        onDeliveryStatusChange={setDeliveryStatus}
-        onQueryChange={setQuery}
+        onApprovalStatusChange={(approval) => void setFilters({ approval })}
+        onCadenceChange={(cadence) => void setFilters({ cadence })}
+        onDeliveryStatusChange={(delivery) => void setFilters({ delivery })}
+        onQueryChange={(query) => void setFilters({ query })}
         onReset={() => {
-          setApprovalStatus('all');
-          setDeliveryStatus('all');
-          setGenerationStatus('all');
+          void setFilters({
+            approval: 'UNAPPROVED',
+            delivery: 'all',
+            generation: 'all',
+            start: '',
+            end: '',
+            query: '',
+            sort: 'period',
+            direction: 'desc',
+          });
         }}
         onSortChange={(nextSortBy, nextDirection) => {
-          setSortBy(nextSortBy);
-          setSortDirection(nextDirection);
+          void setFilters({ sort: nextSortBy, direction: nextDirection });
         }}
+        periodStart={periodStart}
+        periodEnd={periodEnd}
+        onPeriodChange={(start, end) => void setFilters({ start, end })}
         query={query}
         isSearching={
           !reportsQuery.isError &&
@@ -295,8 +313,24 @@ export default function PeriodicReportsPanel({
             <CardContent className="flex min-h-40 flex-col items-center justify-center gap-2 p-4 text-center">
               <p className="font-medium">{t('no_periodic')}</p>
               <p className="text-muted-foreground text-sm">
-                {t('no_periodic_description')}
+                {t('no_matching_reports')}
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  void setFilters({
+                    approval: 'all',
+                    delivery: 'all',
+                    generation: 'all',
+                    query: '',
+                    start: '',
+                    end: '',
+                  })
+                }
+              >
+                {t('show_all_reports')}
+              </Button>
             </CardContent>
           </Card>
         ) : (

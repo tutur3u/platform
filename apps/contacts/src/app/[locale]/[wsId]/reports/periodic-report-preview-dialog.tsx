@@ -60,9 +60,9 @@ export function PeriodicReportPreviewDialog({
             {t('email_preview_description')}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid min-h-0 flex-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_18rem] md:overflow-hidden">
+        <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_18rem] lg:overflow-hidden">
           <section
-            className="min-h-[55dvh] bg-muted/30 md:min-h-0"
+            className="min-h-[55dvh] min-w-0 bg-muted/30 lg:min-h-0"
             aria-label={t('preview')}
           >
             {!emailPreview && preview.isPending ? (
@@ -86,11 +86,11 @@ export function PeriodicReportPreviewDialog({
                 srcDoc={previewData.html}
                 sandbox=""
                 referrerPolicy="no-referrer"
-                className="h-[65dvh] w-full border-0 bg-background md:h-full"
+                className="h-[65dvh] w-full border-0 bg-background lg:h-full"
               />
             ) : null}
           </section>
-          <aside className="space-y-5 border-t p-4 md:overflow-y-auto md:border-t-0 md:border-l">
+          <aside className="min-w-0 space-y-5 border-t p-4 lg:overflow-y-auto lg:border-t-0 lg:border-l">
             {report && (
               <>
                 <div className="space-y-3">

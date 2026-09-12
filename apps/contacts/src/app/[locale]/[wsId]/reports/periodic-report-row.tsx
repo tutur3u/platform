@@ -55,7 +55,7 @@ export function PeriodicReportRow({
   const t = useTranslations('reports-hub');
   return (
     <article className="border-border/60 border-b transition-colors last:border-b-0 hover:bg-muted/30">
-      <div className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:px-4">
+      <div className="flex flex-col gap-3 p-3 md:px-4 xl:flex-row xl:items-center">
         <button
           type="button"
           className="min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -94,11 +94,24 @@ export function PeriodicReportRow({
             </p>
           ) : null}
         </button>
-        <div className="flex flex-wrap items-center gap-2 md:w-56 md:shrink-0">
+        <div className="flex flex-wrap items-center gap-2 xl:max-w-56 xl:shrink-0">
           <PeriodicStatusBadge approval={report.report_approval_status} />
-          <PeriodicStatusBadge delivery={report.delivery_status} />
+          <span className="inline-flex flex-wrap items-center gap-1">
+            <span className="text-muted-foreground text-xs">
+              {t('live_delivery')}
+            </span>
+            <PeriodicStatusBadge delivery={report.delivery_status} />
+          </span>
+          {report.test_delivery && (
+            <span className="inline-flex flex-wrap items-center gap-1">
+              <span className="text-muted-foreground text-xs">
+                {t('test_send')}
+              </span>
+              <PeriodicStatusBadge delivery={report.test_delivery.status} />
+            </span>
+          )}
         </div>
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           {report.generation_mode === 'ai' &&
           report.generation_status !== 'ready' ? (
             <Button
