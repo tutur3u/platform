@@ -93,12 +93,13 @@ export function MiraWorkspaceLayout({ children }: { children: ReactNode }) {
   const workspace = useMiraWorkspace();
   const count = workspace?.artifacts.length ?? 0;
   const grid =
-    workspace?.layout === 'grid' || (workspace?.layout === 'auto' && count > 1);
+    count > 1 && (workspace?.layout === 'grid' || workspace?.layout === 'auto');
   const vertical = workspace?.layout === 'vertical';
   return (
     <div
       className={cn(
         'relative z-10 grid min-h-0 flex-1 gap-3 overflow-auto',
+        grid && count === 2 && '@3xl:[&>section:last-child]:col-span-2',
         count === 0
           ? 'grid-cols-1 grid-rows-1'
           : grid
