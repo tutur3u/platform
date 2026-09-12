@@ -28,3 +28,30 @@ describe('Mira tool discovery', () => {
     expect(searchMiraTools({ query: 'zzzzzzzzz' }).selectedTools).toEqual([]);
   });
 });
+
+it('finds singular calendar operations from plural queries', () => {
+  expect(
+    searchMiraTools(
+      { query: 'calendars' },
+      new Set(['get_calendar_connections'])
+    ).selectedTools
+  ).toContain('get_calendar_connections');
+});
+it('prefers explicit selection over discovery results in the same step', () => {
+  expect(
+    extractSelectedToolsFromSteps([
+      {
+        toolResults: [
+          {
+            toolName: 'search_tools',
+            output: { selectedTools: ['get_my_tasks'] },
+          },
+          {
+            toolName: 'select_tools',
+            output: { selectedTools: ['create_task'] },
+          },
+        ],
+      },
+    ])
+  ).toEqual(['create_task']);
+});

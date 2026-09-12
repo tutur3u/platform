@@ -97,6 +97,9 @@ describe('prepareMiraRuntime', () => {
       supabase: {} as TypedSupabaseClient,
     });
     expect(result.miraTools).toBeUndefined();
+    expect(result.miraSystemPrompt).toContain(
+      'Workspace access could not be verified'
+    );
     expect(mocks.createMiraStreamTools).not.toHaveBeenCalled();
     expect(mocks.buildMiraContext).not.toHaveBeenCalled();
   });

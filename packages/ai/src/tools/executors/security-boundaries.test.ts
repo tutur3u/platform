@@ -146,6 +146,25 @@ describe('Mira executor security boundaries', () => {
     });
   });
 
+  it('does not offer deleted lists as task creation destinations', async () => {
+    const ctx = createCtx(
+      new MockSupabase({
+        workspace_boards: () => ({ data: { id: 'board-1' } }),
+        task_lists: ({ filters }) => ({
+          data: filters.some(
+            ([method, field, value]) =>
+              method === 'eq' && field === 'deleted' && value === false
+          )
+            ? [{ id: 'active-list' }]
+            : [{ id: 'active-list' }, { id: 'deleted-list' }],
+        }),
+      })
+    );
+    await expect(
+      executeListTaskLists({ boardId: 'board-1' }, ctx)
+    ).resolves.toEqual({ count: 1, lists: [{ id: 'active-list' }] });
+  });
+
   it('rejects assigning a non-member to a task', async () => {
     const ctx = createCtx(
       new MockSupabase({

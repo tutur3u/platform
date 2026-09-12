@@ -139,7 +139,11 @@ it('routes event creation to the selected provider and returns its saved receipt
   );
   expect(api.create).toHaveBeenCalledWith(
     'workspace',
-    expect.objectContaining({ source, start_at: '2026-09-14T09:00:00+07:00' }),
+    expect.objectContaining({
+      source,
+      start_at: '2026-09-14T02:00:00.000Z',
+      end_at: '2026-09-14T03:00:00.000Z',
+    }),
     expect.anything()
   );
   expect(result).toEqual({
@@ -162,4 +166,18 @@ it('shares preview authorization across per-operation workspace snapshots', asyn
     { ...context(), executionState }
   );
   expect(api.apply).toHaveBeenCalledOnce();
+});
+
+it('normalizes offset timestamps in partial event updates', async () => {
+  await executeCalendarAutomation(
+    'update_event',
+    { eventId: 'event', startAt: '2026-09-14T09:00:00+07:00' },
+    context()
+  );
+  expect(api.update).toHaveBeenCalledWith(
+    'workspace',
+    'event',
+    { start_at: '2026-09-14T02:00:00.000Z' },
+    expect.anything()
+  );
 });

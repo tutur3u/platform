@@ -45,6 +45,25 @@ function hasGoogleSearchCallInSteps(steps: unknown): boolean {
   });
 }
 
+function hasGroundingQueries(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as {
+    providerMetadata?: {
+      google?: { groundingMetadata?: { webSearchQueries?: unknown } };
+    };
+    steps?: unknown[];
+  };
+  const queries =
+    result.providerMetadata?.google?.groundingMetadata?.webSearchQueries;
+  return (
+    (Array.isArray(queries) &&
+      queries.some(
+        (query) => typeof query === 'string' && query.trim().length > 0
+      )) ||
+    (result.steps?.some(hasGroundingQueries) ?? false)
+  );
+}
+
 function normalizeSources(value: unknown): SearchSource[] {
   if (!Array.isArray(value)) return [];
 
@@ -115,7 +134,7 @@ export async function executeGoogleSearch(
       (result as { steps?: unknown }).steps
     );
 
-    if (!wasToolCalled && sources.length === 0) {
+    if (!wasToolCalled && !hasGroundingQueries(result)) {
       result = await runGoogleSearchWrapper(query, true, ctx);
       sources = normalizeSources((result as { sources?: unknown }).sources);
       wasToolCalled = hasGoogleSearchCallInSteps(
@@ -123,7 +142,7 @@ export async function executeGoogleSearch(
       );
     }
 
-    if (!wasToolCalled && sources.length === 0) {
+    if (!wasToolCalled && !hasGroundingQueries(result)) {
       return {
         ok: false,
         query,

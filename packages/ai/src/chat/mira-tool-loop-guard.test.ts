@@ -74,3 +74,19 @@ describe('Mira repeated tool protection', () => {
     );
   });
 });
+
+it('does not let parallel verification re-enable a discovery loop', () => {
+  expect(
+    getMiraToolLoopReason([
+      step('get_my_tasks'),
+      step('run_parallel_checks'),
+      step('get_my_tasks'),
+    ])
+  ).toContain('Repeated completed action');
+});
+it('resets prior failures after the same read succeeds', () => {
+  const failed = step('get_my_tasks', {}, { success: false });
+  expect(
+    getMiraToolLoopReason([failed, step('get_my_tasks'), failed, failed])
+  ).toBeNull();
+});

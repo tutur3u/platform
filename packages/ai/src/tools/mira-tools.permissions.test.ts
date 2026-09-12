@@ -59,3 +59,23 @@ describe('Mira workspace tool authorization', () => {
     expect(await pending).toEqual({ wsId: 'first' });
   });
 });
+
+it('pins every discovery permission check to one workspace', async () => {
+  const authorize = vi.fn(async (_wsId: string) => {
+    ctx.wsId = 'second';
+    return true;
+  });
+  const ctx = {
+    wsId: 'first',
+    userId: 'user',
+    supabase: {},
+    authorizeWorkspaceTools: authorize,
+  } as unknown as MiraToolContext;
+  await invoke(
+    createMiraStreamTools(ctx, () => false),
+    'search_tools',
+    { query: 'tasks' }
+  );
+  expect(authorize.mock.calls.length).toBeGreaterThan(1);
+  expect(authorize.mock.calls.every(([wsId]) => wsId === 'first')).toBe(true);
+});

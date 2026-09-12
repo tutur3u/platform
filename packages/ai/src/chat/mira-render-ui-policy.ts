@@ -398,11 +398,9 @@ export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
       return tools.filter((tool): tool is string => typeof tool === 'string');
     }
 
-    const selectResult = step?.toolResults?.find(
-      (toolResult) =>
-        toolResult.toolName === 'select_tools' ||
-        toolResult.toolName === 'search_tools'
-    );
+    const selectResult =
+      step?.toolResults?.find((result) => result.toolName === 'select_tools') ??
+      step?.toolResults?.find((result) => result.toolName === 'search_tools');
     const selectedTools = selectResult?.output?.selectedTools;
     if (Array.isArray(selectedTools)) {
       return selectedTools.filter(

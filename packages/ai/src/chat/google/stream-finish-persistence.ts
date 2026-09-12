@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { CreditDeductionResult } from '../../credits/types';
+import { isGoogleSearchToolName } from '../../tools/google-search-events';
 
 type UsageLike = {
   inputTokens?: number;
@@ -21,7 +22,6 @@ type UsageLike = {
   };
   reasoningTokens?: number;
 };
-
 type GroundingMetadataLike = {
   webSearchQueries?: string[];
 };
@@ -252,8 +252,8 @@ function countGoogleSearchQueries(
   response: StreamFinishResponseLike,
   allToolCalls: ToolCallLike[]
 ): number {
-  const customGoogleSearchCalls = allToolCalls.filter(
-    (toolCall) => toolCall.toolName === 'google_search'
+  const customGoogleSearchCalls = allToolCalls.filter((toolCall) =>
+    isGoogleSearchToolName(toolCall.toolName)
   ).length;
   if (customGoogleSearchCalls > 0) return customGoogleSearchCalls;
 

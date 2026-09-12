@@ -63,8 +63,8 @@ export async function executeCalendarAutomation(
               wsId,
               {
                 title: args.title as string,
-                start_at: args.startAt as string,
-                end_at: args.endAt as string,
+                start_at: new Date(args.startAt as string).toISOString(),
+                end_at: new Date(args.endAt as string).toISOString(),
                 description: args.description as string | null | undefined,
                 location: args.location as string | null | undefined,
                 color: args.color as string | undefined,
@@ -89,7 +89,12 @@ export async function executeCalendarAutomation(
               ['source', 'source'],
             ] as const) {
               if (args[input] !== undefined)
-                Object.assign(payload, { [output]: args[input] });
+                Object.assign(payload, {
+                  [output]:
+                    input === 'startAt' || input === 'endAt'
+                      ? new Date(args[input] as string).toISOString()
+                      : args[input],
+                });
             }
             const event = await updateWorkspaceCalendarEvent(
               wsId,

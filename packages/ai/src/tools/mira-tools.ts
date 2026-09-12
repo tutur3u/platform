@@ -75,6 +75,7 @@ export function createMiraStreamTools(
       tools[name] = {
         ...def,
         execute: async (args: { query: string; limit?: number }) => {
+          const workspaceId = getWorkspaceContextWorkspaceId(ctx);
           const allowed = new Set<string>();
           for (const candidate of Object.keys(
             miraToolDefinitions
@@ -88,10 +89,7 @@ export function createMiraStreamTools(
             if (
               ctx.authorizeWorkspaceTools
                 ? !required.length ||
-                  (await ctx.authorizeWorkspaceTools(
-                    getWorkspaceContextWorkspaceId(ctx),
-                    required
-                  ))
+                  (await ctx.authorizeWorkspaceTools(workspaceId, required))
                 : permittedNames.has(candidate)
             )
               allowed.add(candidate);

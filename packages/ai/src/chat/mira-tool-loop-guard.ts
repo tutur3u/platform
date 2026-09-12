@@ -32,6 +32,7 @@ function isReadOrUi(name: string) {
       'set_sidebar',
       'set_theme',
       'set_immersive_mode',
+      'run_parallel_checks',
       'no_action_needed',
     ].includes(name)
   );
@@ -59,12 +60,16 @@ export function getMiraToolLoopReason(steps: unknown[]): string | null {
         return `Repeated mutation prevented: ${name}`;
       const failed =
         isObject(output) &&
-        (output.error || output.ok === false || output.success === false);
+        (output.error ||
+          output.ok === false ||
+          output.success === false ||
+          output.partialFailure === true);
       if (failed) {
         const count = (failures.get(signature) ?? 0) + 1;
         failures.set(signature, count);
         if (count >= 3) return `Repeated failure: ${name}`;
       } else if (isReadOrUi(name)) {
+        failures.delete(signature);
         const count = (successes.get(signature) ?? 0) + 1;
         successes.set(signature, count);
         if (count >= 2) return `Repeated completed action: ${name}`;

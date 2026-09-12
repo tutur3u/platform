@@ -14,16 +14,21 @@ export async function executeCreateTask(
 
   // If listId is provided directly, validate it exists and use it
   if (listIdArg) {
-    const { data: targetList } = await supabase
+    const { data: targetList, error: listError } = await supabase
       .from('task_lists')
       .select('id, board_id, workspace_boards!inner(ws_id)')
       .eq('id', listIdArg)
+      .not('status', 'in', '(done,closed)')
+      .is('workspace_boards.archived_at', null)
+      .is('workspace_boards.deleted_at', null)
       .eq('archived', false)
       .eq('deleted', false)
-      .single();
+      .maybeSingle();
+    if (listError) return { created: false, error: listError.message };
 
     if (!targetList) {
       return {
+        created: false,
         error: `Task list "${listIdArg}" not found or archived. Use list_task_lists to discover valid lists.`,
       };
     }
@@ -34,12 +39,16 @@ export async function executeCreateTask(
     const listWsId = (Array.isArray(relation) ? relation[0] : relation)?.ws_id;
     if (listWsId !== wsId) {
       return {
+        created: false,
         error: `Task list does not belong to the current workspace context. Switch workspace first with set_workspace_context.`,
       };
     }
 
     if (boardIdArg && targetList.board_id !== boardIdArg) {
-      return { error: 'The list does not belong to the specified board.' };
+      return {
+        created: false,
+        error: 'The list does not belong to the specified board.',
+      };
     }
     return persistTask(args, ctx, listIdArg);
   }
@@ -48,17 +57,19 @@ export async function executeCreateTask(
   let board: { id: string } | null = null;
 
   if (boardIdArg) {
-    const { data: targetBoard } = await supabase
+    const { data: targetBoard, error: boardError } = await supabase
       .from('workspace_boards')
       .select('id')
       .eq('id', boardIdArg)
       .eq('ws_id', wsId)
       .is('deleted_at', null)
       .is('archived_at', null)
-      .single();
+      .maybeSingle();
+    if (boardError) return { created: false, error: boardError.message };
 
     if (!targetBoard) {
       return {
+        created: false,
         error: `Board "${boardIdArg}" not found in this workspace. Use list_boards to discover valid boards.`,
       };
     }
@@ -73,7 +84,7 @@ export async function executeCreateTask(
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
-    if (lookupError) return { error: lookupError.message };
+    if (lookupError) return { created: false, error: lookupError.message };
     board = firstBoard;
   }
 
@@ -85,12 +96,14 @@ export async function executeCreateTask(
       .single();
     if (boardErr || !newBoard)
       return {
+        created: false,
+        writeUncertain: true,
         error: `Failed to create board: ${boardErr?.message ?? 'Unknown error'}`,
       };
     board = newBoard;
   }
 
-  let { data: list, error: lookupError } = await supabase
+  const { data: existingList, error: lookupError } = await supabase
     .from('task_lists')
     .select('id')
     .eq('board_id', board.id)
@@ -100,8 +113,9 @@ export async function executeCreateTask(
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
-  if (lookupError) return { error: lookupError.message };
+  if (lookupError) return { created: false, error: lookupError.message };
 
+  let list = existingList;
   if (!list) {
     const { data: newList, error: listErr } = await supabase
       .from('task_lists')
@@ -110,6 +124,8 @@ export async function executeCreateTask(
       .single();
     if (listErr || !newList)
       return {
+        created: false,
+        writeUncertain: true,
         error: `Failed to create list: ${listErr?.message ?? 'Unknown error'}`,
       };
     list = newList;

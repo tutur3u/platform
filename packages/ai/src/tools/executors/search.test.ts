@@ -11,7 +11,7 @@ vi.mock('../../memory', () => ({ withAiMemory: async () => ({}) }));
 const ctx = { userId: 'user', wsId: 'workspace' } as MiraToolContext;
 beforeEach(() => generate.mockReset());
 
-it('does not repeat a native server search because its name differs from google_search', async () => {
+it('recognizes native server search completion without repeating the search', async () => {
   generate.mockResolvedValue({
     text: 'Search completed',
     sources: [],
@@ -26,6 +26,11 @@ it('does not repeat a native server search because its name differs from google_
 it('accepts grounded sources from providers without explicit search-call events', async () => {
   generate.mockResolvedValue({
     text: 'Calendar sharing help',
+    providerMetadata: {
+      google: {
+        groundingMetadata: { webSearchQueries: ['Calendar sharing help'] },
+      },
+    },
     sources: [
       {
         url: 'https://support.google.com/calendar/answer/37082',
@@ -38,4 +43,16 @@ it('accepts grounded sources from providers without explicit search-call events'
     await executeGoogleSearch({ query: 'Calendar sharing help' }, ctx)
   ).toMatchObject({ ok: true, sourceCount: 1 });
   expect(generate).toHaveBeenCalledOnce();
+});
+
+it('does not claim web grounding from arbitrary sources alone', async () => {
+  generate.mockResolvedValue({
+    text: 'Unverified',
+    sources: [{ title: 'A source' }],
+    steps: [],
+  });
+  expect(
+    await executeGoogleSearch({ query: 'Calendar help' }, ctx)
+  ).toMatchObject({ ok: false });
+  expect(generate).toHaveBeenCalledTimes(2);
 });

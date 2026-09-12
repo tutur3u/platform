@@ -129,7 +129,11 @@ export async function executeCompleteTask(
 
   const { error } = await ctx.supabase
     .from('tasks')
-    .update({ completed: true, completed_at: new Date().toISOString() })
+    .update({
+      completed: true,
+      completed_at: new Date().toISOString(),
+      closed_at: new Date().toISOString(),
+    })
     .eq('id', taskId)
     .eq(taskScopePredicate.column, taskScopePredicate.value);
 
@@ -140,7 +144,7 @@ export async function executeCompleteTask(
 // ── New CRUD tools ──
 
 const UPDATE_TASK_FIELDS_HINT =
-  'Accepted fields: taskId (or id), endDate (or dueDate, ISO), name, description, priority, startDate, listId, estimationPoints.';
+  'Accepted fields: taskId (or id), endDate (or dueDate, ISO), name, description, priority, startDate, listId, estimationPoints, completed.';
 
 export async function executeUpdateTask(
   args: Record<string, unknown>,
@@ -169,7 +173,7 @@ export async function executeUpdateTask(
   if (args.completed !== undefined) {
     updates.completed = args.completed as boolean;
     updates.completed_at = args.completed ? new Date().toISOString() : null;
-    if (!args.completed) updates.closed_at = null;
+    updates.closed_at = updates.completed_at;
   }
   if (args.priority !== undefined)
     updates.priority = args.priority as Enums<'task_priority'>;
@@ -238,7 +242,11 @@ export async function executeUpdateTask(
       .select('id, status')
       .eq('id', listId ?? '')
       .single();
-    if (error || !list || list.status === 'done' || list.status === 'closed')
+    if (
+      error ||
+      !list ||
+      !['not_started', 'active'].includes(list.status ?? '')
+    )
       return {
         error:
           'To reopen this task, provide an active listId from list_task_lists. No changes were saved.',
@@ -395,9 +403,10 @@ export async function executeListTaskLists(
 
   const { data, error } = await ctx.supabase
     .from('task_lists')
-    .select('id, name, board_id, color, position, archived')
+    .select('id, name, board_id, status, color, position, archived')
     .eq('board_id', boardId)
     .eq('archived', false)
+    .eq('deleted', false)
     .order('position', { ascending: true });
 
   if (error) return { error: error.message };

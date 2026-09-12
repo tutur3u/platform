@@ -107,8 +107,28 @@ describe('task creation receipts', () => {
   it('does not create defaults after a board lookup error', async () => {
     const { ctx, insert } = fixture([{ error: { message: 'Unavailable' } }]);
     expect(await executeCreateTask({ name: 'Test' }, ctx)).toEqual({
+      created: false,
       error: 'Unavailable',
     });
     expect(insert).not.toHaveBeenCalled();
   });
+});
+
+it('rejects a foreign-workspace list without inserting', async () => {
+  const { ctx, insert } = fixture([
+    { data: { ...list.data, workspace_boards: { ws_id: 'foreign' } } },
+  ]);
+  expect(
+    await executeCreateTask({ name: 'Task', listId: 'list' }, ctx)
+  ).toHaveProperty('error');
+  expect(insert).not.toHaveBeenCalled();
+});
+it('reports explicit list lookup failures separately from missing destinations', async () => {
+  const { ctx, insert } = fixture([
+    { error: { message: 'Database unavailable' } },
+  ]);
+  expect(
+    await executeCreateTask({ name: 'Task', listId: 'list' }, ctx)
+  ).toMatchObject({ created: false, error: 'Database unavailable' });
+  expect(insert).not.toHaveBeenCalled();
 });
