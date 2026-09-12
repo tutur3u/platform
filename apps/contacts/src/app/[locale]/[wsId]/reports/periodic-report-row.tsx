@@ -22,7 +22,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { PeriodicStatusBadge } from './periodic-status-badge';
+import {
+  PeriodicStageBadge,
+  PeriodicStatusBadge,
+} from './periodic-status-badge';
 
 export type PeriodicDeliveryAction = 'test' | 'send' | 'retry' | 'cancel';
 
@@ -95,13 +98,19 @@ export function PeriodicReportRow({
           ) : null}
         </button>
         <div className="flex flex-wrap items-center gap-2 xl:max-w-56 xl:shrink-0">
-          <PeriodicStatusBadge approval={report.report_approval_status} />
-          <span className="inline-flex flex-wrap items-center gap-1">
-            <span className="text-muted-foreground text-xs">
-              {t('live_delivery')}
+          {report.report_stage ? (
+            <PeriodicStageBadge stage={report.report_stage} />
+          ) : (
+            <PeriodicStatusBadge approval={report.report_approval_status} />
+          )}
+          {!report.report_stage && (
+            <span className="inline-flex flex-wrap items-center gap-1">
+              <span className="text-muted-foreground text-xs">
+                {t('live_delivery')}
+              </span>
+              <PeriodicStatusBadge delivery={report.delivery_status} />
             </span>
-            <PeriodicStatusBadge delivery={report.delivery_status} />
-          </span>
+          )}
           {report.test_delivery && (
             <span className="inline-flex flex-wrap items-center gap-1">
               <span className="text-muted-foreground text-xs">

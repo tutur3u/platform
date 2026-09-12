@@ -15,6 +15,19 @@ export function normalizePeriodicReportPeriod(start: string, end: string) {
 
 // Keep periodic filters independent from the daily report URL state.
 export const periodicReportFilters = {
+  stage: parseAsStringLiteral([
+    'all',
+    'draft',
+    'pending',
+    'approved',
+    'blocked',
+    'queued',
+    'processing',
+    'sent',
+    'failed',
+    'skipped',
+    'rejected',
+  ]).withDefault('pending'),
   cadence: parseAsStringLiteral([
     'weekly',
     'monthly',
@@ -28,7 +41,7 @@ export const periodicReportFilters = {
     'PENDING',
     'APPROVED',
     'REJECTED',
-  ]).withDefault('PENDING'),
+  ]).withDefault('all'),
   delivery: parseAsStringLiteral([
     'all',
     'draft',
@@ -38,6 +51,7 @@ export const periodicReportFilters = {
     'failed',
     'blocked',
     'cancelled',
+    'skipped',
   ]).withDefault('all'),
   generation: parseAsStringLiteral(['all', 'draft']).withDefault('all'),
   sort: parseAsStringLiteral([
@@ -51,6 +65,7 @@ export const periodicReportFilters = {
   end: parseCalendarDate,
 };
 export const periodicReportFilterKeys = {
+  stage: 'reportStage',
   cadence: 'reportCadence',
   query: 'reportQuery',
   approval: 'reportApproval',

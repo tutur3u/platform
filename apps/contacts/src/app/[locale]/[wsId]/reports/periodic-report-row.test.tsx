@@ -31,7 +31,7 @@ it('labels legacy approval as pending and keeps successful tests distinct from r
     user_id: 'user-1',
     user_name: 'Test student',
   };
-  render(
+  const { rerender } = render(
     <PeriodicReportRow
       report={report}
       wsId="workspace"
@@ -52,4 +52,26 @@ it('labels legacy approval as pending and keeps successful tests distinct from r
   expect(screen.getByText('status_sent')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'approve' }));
   expect(approve).toHaveBeenCalledOnce();
+  rerender(
+    <PeriodicReportRow
+      report={{
+        ...report,
+        report_stage: 'skipped',
+        delivery_status: 'skipped',
+      }}
+      wsId="workspace"
+      permissions={{ canApproveReports: true, canSendReports: false }}
+      approvalPending={false}
+      generationPending={false}
+      onApprove={approve}
+      onGenerate={vi.fn()}
+      onPreview={vi.fn()}
+      onEmailPreview={vi.fn()}
+      onDeliveryIntent={vi.fn()}
+    />
+  );
+  expect(screen.getAllByText('status_skipped')).toHaveLength(1);
+  expect(screen.queryByText('live_delivery')).not.toBeInTheDocument();
+  expect(screen.queryByText('not_sent')).not.toBeInTheDocument();
+  expect(screen.getByText('test_send')).toBeInTheDocument();
 });

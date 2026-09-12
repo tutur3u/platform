@@ -49,7 +49,10 @@ import {
   PeriodicReportsRowsLoading,
 } from './periodic-reports-loading';
 import { PeriodicReportsToolbar } from './periodic-reports-toolbar';
-import { PeriodicStatusSummary } from './periodic-status-summary';
+import {
+  PERIODIC_STAGES,
+  PeriodicStatusSummary,
+} from './periodic-status-summary';
 
 export default function PeriodicReportsPanel({
   permissions,
@@ -72,6 +75,7 @@ export default function PeriodicReportsPanel({
     shallow: true,
   });
   const {
+    stage: requestedStage,
     cadence,
     query,
     approval: approvalStatus,
@@ -82,6 +86,12 @@ export default function PeriodicReportsPanel({
     start: rawPeriodStart,
     end: rawPeriodEnd,
   } = filters;
+  const stage =
+    approvalStatus !== 'all' ||
+    deliveryStatus !== 'all' ||
+    generationStatus !== 'all'
+      ? 'all'
+      : requestedStage;
   const { start: periodStart, end: periodEnd } = normalizePeriodicReportPeriod(
     rawPeriodStart,
     rawPeriodEnd
@@ -102,6 +112,7 @@ export default function PeriodicReportsPanel({
     queryKey: [
       'periodic-reports',
       wsId,
+      stage,
       generationStatus,
       cadence,
       debouncedQuery,
@@ -114,6 +125,7 @@ export default function PeriodicReportsPanel({
     ],
     queryFn: ({ pageParam }) =>
       listPeriodicReports(wsId, {
+        stage: stage === 'all' ? undefined : stage,
         approvalStatus: approvalStatus === 'all' ? undefined : approvalStatus,
         cadence,
         periodStart: periodStart || undefined,
@@ -209,13 +221,16 @@ export default function PeriodicReportsPanel({
     <div className="min-w-0 space-y-4">
       <PeriodicEmailReadiness wsId={wsId} />
       <PeriodicStatusSummary
-        generation={generationStatus}
+        stage={stage}
         counts={counts}
-        approval={approvalStatus}
-        delivery={deliveryStatus}
-        onChange={(approval, delivery, generation = 'all') => {
-          void setFilters({ generation, approval, delivery });
-        }}
+        onChange={(stage) =>
+          void setFilters({
+            stage,
+            approval: 'all',
+            delivery: 'all',
+            generation: 'all',
+          })
+        }
         toolbar={
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -248,21 +263,27 @@ export default function PeriodicReportsPanel({
             </div>
 
             <PeriodicReportsToolbar
+              stageLabel={
+                stage === 'all'
+                  ? undefined
+                  : t(PERIODIC_STAGES.find(([key]) => key === stage)![1])
+              }
               generationStatus={generationStatus}
               approvalStatus={approvalStatus}
               cadence={cadence}
               deliveryStatus={deliveryStatus}
               onApprovalStatusChange={(approval) =>
-                void setFilters({ approval })
+                void setFilters({ approval, stage: 'all' })
               }
               onCadenceChange={(cadence) => void setFilters({ cadence })}
               onDeliveryStatusChange={(delivery) =>
-                void setFilters({ delivery })
+                void setFilters({ delivery, stage: 'all' })
               }
               onQueryChange={(query) => void setFilters({ query })}
               onReset={() => {
                 void setFilters({
-                  approval: 'PENDING',
+                  stage: 'pending',
+                  approval: 'all',
                   delivery: 'all',
                   generation: 'all',
                   start: '',
@@ -332,6 +353,7 @@ export default function PeriodicReportsPanel({
                 size="sm"
                 onClick={() =>
                   void setFilters({
+                    stage: 'all',
                     approval: 'all',
                     delivery: 'all',
                     generation: 'all',

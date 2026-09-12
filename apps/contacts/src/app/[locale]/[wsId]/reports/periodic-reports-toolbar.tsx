@@ -44,6 +44,7 @@ export type PeriodicSortBy = 'period' | 'title' | 'updated' | 'user';
 export type PeriodicSortDirection = 'asc' | 'desc';
 
 export function PeriodicReportsToolbar({
+  stageLabel,
   periodStart = '',
   periodEnd = '',
   onPeriodChange,
@@ -63,6 +64,7 @@ export function PeriodicReportsToolbar({
   sortBy,
   sortDirection,
 }: {
+  stageLabel?: string;
   periodStart?: string;
   periodEnd?: string;
   onPeriodChange?: (start: string, end: string) => void;
@@ -88,6 +90,7 @@ export function PeriodicReportsToolbar({
   const t = useTranslations();
   const reportsT = useTranslations('reports-hub');
   const activeFilterCount = [
+    Boolean(stageLabel),
     generationStatus !== 'all',
     approvalStatus !== 'all',
     deliveryStatus !== 'all',
@@ -150,16 +153,17 @@ export function PeriodicReportsToolbar({
         </p>
       )}
       <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
-        <span>
-          {reportsT('approval_filter_label')}:{' '}
-          {approvalStatus === 'all'
-            ? t('common.all')
-            : reportsT(
-                approvalStatus === 'UNAPPROVED'
-                  ? 'unapproved'
-                  : `status_${approvalStatus.toLowerCase()}`
-              )}
-        </span>
+        {stageLabel && <span>{stageLabel}</span>}
+        {approvalStatus !== 'all' && (
+          <span>
+            {reportsT('approval_filter_label')}:{' '}
+            {reportsT(
+              approvalStatus === 'UNAPPROVED'
+                ? 'unapproved'
+                : `status_${approvalStatus.toLowerCase()}`
+            )}
+          </span>
+        )}
         {deliveryStatus !== 'all' && (
           <span>
             {reportsT('live_delivery')}:{' '}
@@ -250,6 +254,7 @@ export function PeriodicReportsToolbar({
                 'failed',
                 'blocked',
                 'cancelled',
+                'skipped',
               ]}
               allLabel={t('common.all')}
             />

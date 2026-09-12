@@ -42,6 +42,7 @@ afterEach(() => {
 
 it('applies period overlap to rows and counts, includes unapproved legacy records, and scopes test deliveries', async () => {
   const urls: URL[] = [];
+  let countArgs: unknown;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: string | URL, init?: RequestInit) => {
@@ -57,8 +58,10 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
           JSON.stringify({ id: 'workspace', timezone: 'Asia/Ho_Chi_Minh' }),
           { headers }
         );
-      if (url.pathname.endsWith('/rpc/get_periodic_report_counts'))
-        return new Response('[{"total":12000}]', { headers });
+      if (url.pathname.endsWith('/rpc/get_periodic_report_stage_counts')) {
+        countArgs = JSON.parse(String(init?.body));
+        return new Response('{"pending":1}', { headers });
+      }
       if (url.pathname.endsWith('/user_report_email_queue'))
         return new Response(
           '[{"report_id":"report-1","status":"sent","sent_at":"2026-09-11T15:20:44Z"}]',
@@ -72,7 +75,7 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
   );
   const response = await GET(
     new Request(
-      'https://example.test/reports?approvalStatus=UNAPPROVED&periodStart=2026-08-01&periodEnd=2026-08-31'
+      'https://example.test/reports?stage=pending&approvalStatus=UNAPPROVED&periodStart=2026-08-01&periodEnd=2026-08-31'
     ),
     { params: Promise.resolve({ wsId: 'workspace' }) }
   );
@@ -90,7 +93,14 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
   const reportQueries = urls.filter((url) =>
     url.pathname.endsWith('/external_user_monthly_reports_workspace_view')
   );
-  expect(reportQueries).toHaveLength(8);
+  expect(reportQueries).toHaveLength(1);
+  expect(reportQueries[0]?.searchParams.get('report_stage')).toBe('eq.pending');
+  expect(countArgs).toMatchObject({
+    p_ws_id: 'workspace',
+    p_group_ids: ['group-1'],
+    p_period_start: '2026-08-01',
+    p_period_end: '2026-08-31',
+  });
   for (const url of reportQueries) {
     expect(url.searchParams.get('period_end')).toBe('gte.2026-08-01');
     expect(url.searchParams.get('period_start')).toBe('lte.2026-08-31');
@@ -108,19 +118,20 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
   expect(queue.searchParams.get('delivery_kind')).toBe('eq.test');
 });
 
-it.each(['periodStart=invalid', 'periodStart=2026-09-01&periodEnd=2026-08-01'])(
-  'rejects invalid date scope: %s',
-  async (query) => {
-    const fetch = vi.fn();
-    vi.stubGlobal('fetch', fetch);
-    const response = await GET(
-      new Request(`https://example.test/reports?${query}`),
-      { params: Promise.resolve({ wsId: 'workspace' }) }
-    );
-    expect(response.status).toBe(400);
-    expect(fetch).not.toHaveBeenCalled();
-  }
-);
+it.each([
+  'stage=unknown',
+  'periodStart=invalid',
+  'periodStart=2026-09-01&periodEnd=2026-08-01',
+])('rejects invalid date scope: %s', async (query) => {
+  const fetch = vi.fn();
+  vi.stubGlobal('fetch', fetch);
+  const response = await GET(
+    new Request(`https://example.test/reports?${query}`),
+    { params: Promise.resolve({ wsId: 'workspace' }) }
+  );
+  expect(response.status).toBe(400);
+  expect(fetch).not.toHaveBeenCalled();
+});
 
 it('returns no reports when the actor has no accessible groups', async () => {
   access.actor = null;

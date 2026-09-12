@@ -14912,6 +14912,7 @@ export type Database = {
           report_approval_status:
             | Database['public']['Enums']['approval_status']
             | null;
+          report_stage: string | null;
           score: number | null;
           scores: number[] | null;
           source_context: Json | null;
@@ -17148,6 +17149,16 @@ export type Database = {
           total: number;
         }[];
       };
+      get_periodic_report_stage_counts: {
+        Args: {
+          p_cadence?: string;
+          p_group_ids?: string[];
+          p_period_end?: string;
+          p_period_start?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_post_email_queue_age_buckets: {
         Args: { p_now?: string };
         Returns: {
@@ -18210,6 +18221,10 @@ export type Database = {
         Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
+      periodic_report_stage: {
+        Args: { approval: string; delivery: string; generation: string };
+        Returns: string;
+      };
       prepare_inventory_pos_operator_access: {
         Args: { p_actor_id: string; p_ws_id: string };
         Returns: Json;
@@ -18428,6 +18443,7 @@ export type Database = {
           report_approval_status:
             | Database['public']['Enums']['approval_status']
             | null;
+          report_stage: string | null;
           score: number | null;
           scores: number[] | null;
           source_context: Json | null;
@@ -18538,6 +18554,10 @@ export type Database = {
         }[];
       };
       skip_rejected_post_email_queue: { Args: never; Returns: number };
+      skip_unsent_periodic_reports_before: {
+        Args: { p_created_before: string; p_ws_id: string };
+        Returns: number;
+      };
       task_capacity_rule_usage: {
         Args: { p_rule_id: string };
         Returns: number;
