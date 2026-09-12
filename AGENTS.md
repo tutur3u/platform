@@ -19,6 +19,8 @@ Continue authorized work through implementation, relevant verification, fixes,
 and any requested commit or delivery. Do not pause for review after a first draft
 unless review was requested or a concrete decision, permission, or access is missing.
 A skill does not authorize unrelated external actions or expand release scope.
+Define completion from the request: implementation and required checks, plus PR,
+merge, or production evidence only when that delivery is authorized.
 
 ## 2. Hard Prohibitions
 
@@ -75,6 +77,9 @@ A skill does not authorize unrelated external actions or expand release scope.
   separate branches. Merge stacks bottom-up. For base-chained stacks, merge parents
   with `--merge` so ancestry is retained, verify child retargeting, and rerun gates.
   Use `$tuturuuu-pr-merge-sync` for the exact stack and quiet-window procedure.
+- Before production sync, fetch and inspect the exact promotion range. If main
+  advanced with unrelated work, use the authorized pinned SHA when supported or
+  obtain approval for the broader range; green CI alone does not authorize it.
 - When the user authorizes ongoing integration, periodically checkpoint verified
   work instead of leaving it indefinitely only in retained worktrees: create
   scoped commits, integrate them into `main`, wait for every workflow on the
@@ -171,46 +176,23 @@ A skill does not authorize unrelated external actions or expand release scope.
   If the installed CLI lacks resources support, report the version and run only
   one heavy command with explicit Turbo/Vitest worker limits until upgraded.
 
-## 4. Task-Specific Workflows
+## 4. Focused References And Maintenance
 
-Consult `plugins/tuturuuu/skills/tuturuuu-platform/references/repository-workflows.md`
-for route ownership, settings shells, dependency commands, task capture, or
-coordination metadata. Keep these operational facts out of unrelated task context.
+Use only the topic relevant to the change under `plugins/tuturuuu/skills/`:
 
-## 5. Pattern Catalogs
+- Web/API/UI: `tuturuuu-platform/references/platform-patterns.md`.
+- Route ownership, settings shells, dependency commands, task capture:
+  `tuturuuu-platform/references/repository-workflows.md`.
+- Database/API/storage: `tuturuuu-database/references/database-api-patterns.md`.
+- Web release metadata: `tuturuuu-web-release/references/web-release-checklist.md`.
+- CI/root scripts: `tuturuuu-development-tooling/references/ci-tooling-patterns.md`.
+- Docker blue/green: `tuturuuu-ci-docs/references/blue-green-patterns.md`.
+- Mobile: `tuturuuu-mobile-task-board/references/mobile-patterns.md`.
 
-Detailed gotchas and composable patterns are intentionally outside this root
-file:
-
-- Web/API/UI patterns:
-  `plugins/tuturuuu/skills/tuturuuu-platform/references/platform-patterns.md`
-- Web release and badge patterns:
-  `plugins/tuturuuu/skills/tuturuuu-web-release/references/web-release-checklist.md`
-- Database/API/storage patterns:
-  `plugins/tuturuuu/skills/tuturuuu-database/references/database-api-patterns.md`
-- CI/root-script/tooling patterns:
-  `plugins/tuturuuu/skills/tuturuuu-development-tooling/references/ci-tooling-patterns.md`
-- Docker blue/green watcher patterns:
-  `plugins/tuturuuu/skills/tuturuuu-ci-docs/references/blue-green-patterns.md`
-- Mobile patterns:
-  `plugins/tuturuuu/skills/tuturuuu-mobile-task-board/references/mobile-patterns.md`
-
-When a durable rule belongs to one of those catalogs, update the focused skill
-reference and docs. Add root `AGENTS.md` rules only for cross-cutting hard
-mandates that must be seen before skill loading.
-
-## 6. Session Retrospective
-
-When implementation reveals a reusable failure or a changed operating rule:
-
-1. Identify the concrete failure or decision that future work needs to preserve.
-2. Put durable knowledge in the narrowest lasting home: focused skill reference,
-   `apps/docs`, validator, or helper script.
-3. Keep `AGENTS.md`, plugin skills, and docs aligned when a hard rule changes.
-4. Record verification and risks in your coordination note, then archive your
-   own completed note when appropriate.
-5. Report unrelated verification blockers without modifying unrelated files.
-
-Do not add a new rule or test merely to record that a session occurred. Once
+When work reveals a reusable failure or changed operating rule, update the
+narrowest skill reference, docs page, validator, or helper. Keep root rules,
+skills, and docs aligned when a hard mandate changes. Record verification and
+risks in your coordination note and archive your own completed note when no
+handoff needs it. Do not add rules or tests merely to record a session. After
 required checks pass, repeat or broaden them only for new changes, failures, or
-unresolved risks. Report any missing authenticated or production evidence plainly.
+unresolved risks; report unrelated blockers and missing production evidence.

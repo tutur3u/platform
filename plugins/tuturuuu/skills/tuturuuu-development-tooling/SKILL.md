@@ -19,6 +19,8 @@ Audit canonical sources and symlink targets once. Managed plugin caches and runt
 system skills are installer-owned; update their source package when appropriate.
 Preserve metadata, licenses, invocation policy, scripts, and useful references.
 An audit may leave a file unchanged when it already has the right scope.
+For prompt/skill maintenance, use `references/agent-guidance-review.md` for
+placement decisions and realistic routing checks.
 
 - For scripts and CI behavior, consult the relevant section of
   `references/ci-tooling-patterns.md`.

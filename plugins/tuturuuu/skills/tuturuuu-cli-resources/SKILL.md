@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-cli-resources
-description: Configure and use ttr resources for concurrent local validation, worker limits, memory-pressure diagnosis, and reversible machine setup. Use when multiple agent sessions compete for CPU or RAM or before heavy local validation in an opted-in project.
+description: "Queue heavy local Tuturuuu validation and diagnose competing CPU or RAM workloads with ttr resources."
 ---
 
 # TTR Resource Control

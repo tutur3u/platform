@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu Platform"
-  short_description: "Work safely in the Tuturuuu platform shared worktree"
-  default_prompt: "Make this platform change in the shared worktree and run the checks it needs."
+  short_description: "Implement Tuturuuu web routes and shared UI"
+  default_prompt: "Implement this platform change and complete the checks it needs."

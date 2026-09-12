@@ -1,7 +1,7 @@
 ---
 title: 'Agent Operating Manual'
 description: 'Field guide summarizing the AGENTS.md policies for autonomous contributors inside the Tuturuuu monorepo.'
-updatedAt: '2026-09-05'
+updatedAt: '2026-09-12'
 ---
 
 This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth. The root file is now a hard-policy index; detailed reusable implementation patterns live in the repo-local Tuturuuu Codex plugin skills under `plugins/tuturuuu/skills/*/references/`.
@@ -44,10 +44,16 @@ Ask when a concrete action exceeds the requested scope, needs missing access, or
 requires an unresolved product decision. File counts and SQL line counts alone do
 not require approval. Prepare the reviewable change before requesting approval for
 an external action. Preserve existing authorization for routine retries and fixes;
-never infer permission for broader production scope.
+never infer permission for broader production scope. Fetch before production
+sync and inspect the promotion range: if main advanced with unrelated commits,
+use the supported pinned-SHA path or obtain authorization for the expanded range.
 
 Read only the focused skill and reference sections relevant to the task. Keep
 AGENTS.md constraints concise; preserve detailed app lessons in skill references.
+Define completion from the request and carry authorized work through the required
+checks and fixes. A read-only CLI operation needs its diagnostic procedure, not
+the implementation test suite; a local UI change needs its owning surface, not
+a full application audit. See [focused agent guidance](/build/development-tools/codex-plugin#maintaining-focused-agent-guidance).
 
 ## Canonical Workflows (Cheat Sheet)
 

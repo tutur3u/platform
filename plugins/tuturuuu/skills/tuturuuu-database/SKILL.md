@@ -42,4 +42,5 @@ reverted independently.
 - Run `bun sb:typegen` after schema changes once the local database reflects the migration.
 - Run focused tests for affected API routes, helpers, or pgTAP coverage where available.
 - Run `bun check` when TypeScript or root config changed.
-- Never run `bun sb:push` or `bun sb:linkpush` unless the user explicitly requests it.
+- Production migration application remains user-operated; do not run
+  `bun sb:push` or `bun sb:linkpush`.

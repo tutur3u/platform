@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-external-apps
-description: "Integrate branded external apps with Tuturuuu app sessions, workspace invitations and members, Drive storage, uploads, and content APIs."
+description: "Connect branded external apps to Tuturuuu authentication, workspace administration, storage, and content APIs."
 ---
 
 # Tuturuuu External Apps
@@ -11,8 +11,7 @@ Use this skill for external or branded apps that connect back to Tuturuuu
 instead of living inside `apps/web`, especially sites with their own admin
 surface, storage, content delivery, or publishing flow.
 
-Start with `AGENTS.md`, `git status --short`, and active coordination notes.
-Then map both sides of the integration:
+Trace the affected integration on both sides; use these source locations as needed:
 
 - the external app's auth/session, admin API routes, storage routes, and public
   content readers
@@ -43,8 +42,8 @@ uploads, publish/delivery behavior, or error reporting.
   invitation manually. Keep the action token server-only in a short-lived,
   encrypted `HttpOnly` cookie and protect decisions with same-origin and CSRF
   checks.
-- Include member, invitation, role, and Drive management when the external app
-  has an authenticated admin surface and the registration grants those scopes.
+- When requested admin work includes member, invitation, role, or Drive
+  management, require the corresponding registration scopes.
   Use external-app-aware workspace APIs; do not fall back to browser Supabase
   sessions or standard dashboard-only routes that reject valid app sessions.
 - Keep file bytes out of app API routes. Request signed upload metadata through
@@ -69,7 +68,6 @@ Run focused tests around the integration boundary before broader checks:
 
 ```bash
 bun test <session-tests> <auth-exchange-tests> <invitation-tests> <member-tests> <drive-tests> <mutation-tests> <upload-url-tests>
-python3 plugins/tuturuuu/scripts/validate_plugin.py
 ```
 
 For `apps/web` TypeScript, JavaScript, docs, or repo-config changes, finish with

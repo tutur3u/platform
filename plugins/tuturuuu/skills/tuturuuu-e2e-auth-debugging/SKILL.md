@@ -32,8 +32,9 @@ and run the production-style Docker web stack and are slower to patch.
 
 Use Docker-backed web E2E only when the user explicitly asks for Docker or CI
 parity, or when the suspected bug is specific to the production Docker runtime.
-If a Docker web E2E run is already in progress and the task is local patch
-debugging, stop it before starting the native workflow.
+If your own Docker web E2E run is already in progress and native debugging is
+more appropriate, stop your run before switching. Leave other sessions' runs
+alone and wait for resource admission.
 
 The native workflow still uses local Supabase. Keep all E2E origins local and do
 not point browser tests at a cloud Supabase project.
