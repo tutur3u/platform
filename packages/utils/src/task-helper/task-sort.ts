@@ -1,5 +1,14 @@
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 
+export const TASK_UNPRIORITIZED_POSITION_CONFIG_ID =
+  'TASK_UNPRIORITIZED_POSITION';
+export type UnprioritizedPosition = 'first' | 'last';
+export function normalizeUnprioritizedPosition(
+  value: unknown
+): UnprioritizedPosition {
+  return value === 'last' ? 'last' : 'first';
+}
+
 export type TaskSortBy =
   | 'name-asc'
   | 'name-desc'
@@ -78,11 +87,29 @@ function compareCreatedFallback(a: SortableTask, b: SortableTask) {
   return created || a.id.localeCompare(b.id);
 }
 
+export function compareUnprioritizedPlacement(
+  a: TaskPriority | null | undefined,
+  b: TaskPriority | null | undefined,
+  position: UnprioritizedPosition = 'first'
+) {
+  if ((a == null) === (b == null)) return 0;
+  return (a == null ? -1 : 1) * (position === 'first' ? 1 : -1);
+}
+
 export function compareTasksByCriterion(
   a: SortableTask,
   b: SortableTask,
-  sortBy: TaskSortBy
+  sortBy: TaskSortBy,
+  unprioritizedPosition: UnprioritizedPosition = 'first'
 ) {
+  if (sortBy === 'priority-high' || sortBy === 'priority-low') {
+    const placement = compareUnprioritizedPlacement(
+      a.priority,
+      b.priority,
+      unprioritizedPosition
+    );
+    if (placement) return placement;
+  }
   let result = 0;
 
   switch (sortBy) {
@@ -155,8 +182,11 @@ export function compareTasksByCriterion(
 
 export function sortTasksByCriterion<T extends SortableTask>(
   tasks: readonly T[],
-  sortBy: TaskSortBy | null | undefined
+  sortBy: TaskSortBy | null | undefined,
+  unprioritizedPosition: UnprioritizedPosition = 'first'
 ) {
   if (!sortBy) return [...tasks];
-  return [...tasks].sort((a, b) => compareTasksByCriterion(a, b, sortBy));
+  return [...tasks].sort((a, b) =>
+    compareTasksByCriterion(a, b, sortBy, unprioritizedPosition)
+  );
 }

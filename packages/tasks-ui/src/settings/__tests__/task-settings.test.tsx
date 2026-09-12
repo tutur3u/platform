@@ -19,6 +19,7 @@ const {
   mockUpdateUserConfigMutate: vi.fn(),
   mockConfigState: {
     dialogPresentation: 'compact',
+    priorityPosition: 'first',
     soundEffectsEnabled: true,
     soundEffectsVolume: '35',
   },
@@ -50,11 +51,13 @@ vi.mock('@tuturuuu/ui/hooks/use-user-config', () => ({
   },
   useUserConfig: (configId: string, defaultValue = '') => ({
     data:
-      configId === 'TASK_SOUND_EFFECTS_VOLUME'
-        ? mockConfigState.soundEffectsVolume
-        : configId.endsWith('_PRESENTATION')
-          ? mockConfigState.dialogPresentation
-          : defaultValue,
+      configId === 'TASK_UNPRIORITIZED_POSITION'
+        ? mockConfigState.priorityPosition
+        : configId === 'TASK_SOUND_EFFECTS_VOLUME'
+          ? mockConfigState.soundEffectsVolume
+          : configId.endsWith('_PRESENTATION')
+            ? mockConfigState.dialogPresentation
+            : defaultValue,
     isLoading: false,
   }),
   useUpdateUserConfig: () => ({
@@ -80,6 +83,7 @@ describe('task sound settings controls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfigState.dialogPresentation = 'compact';
+    mockConfigState.priorityPosition = 'first';
     mockConfigState.soundEffectsEnabled = true;
     mockConfigState.soundEffectsVolume = '35';
     vi.stubGlobal(
@@ -106,6 +110,28 @@ describe('task sound settings controls', () => {
     fireEvent.click(screen.getByRole('switch', { name: 'sound_effects' }));
 
     expect(mockSetSoundEffectsEnabled).toHaveBeenCalledWith(false);
+  });
+
+  it('defaults unprioritized tasks first and saves last placement', async () => {
+    renderWithQueryClient(<TaskSettings />);
+    const control = await screen.findByRole('combobox', {
+      name: 'unprioritized_position',
+    });
+    expect(control).toHaveTextContent('unprioritized_first');
+    fireEvent.click(control);
+    fireEvent.click(screen.getByText('unprioritized_last'));
+    expect(mockUpdateUserConfigMutate).toHaveBeenCalledWith(
+      { configId: 'TASK_UNPRIORITIZED_POSITION', value: 'last' },
+      expect.objectContaining({ onError: expect.any(Function) })
+    );
+  });
+
+  it('restores the saved last placement when settings reopen', async () => {
+    mockConfigState.priorityPosition = 'last';
+    renderWithQueryClient(<TaskSettings />);
+    expect(
+      await screen.findByRole('combobox', { name: 'unprioritized_position' })
+    ).toHaveTextContent('unprioritized_last');
   });
 
   it('persists task creation presentation independently', async () => {

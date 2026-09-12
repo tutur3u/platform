@@ -22,7 +22,7 @@ describe('sortTasksByCriterion', () => {
     expect(parseTaskSortBy(null)).toBeUndefined();
   });
 
-  it('sorts every priority direction with unset priorities last', () => {
+  it('sorts every priority direction with unset priorities first by default', () => {
     const tasks = [
       task('none'),
       task('high', { priority: 'high' }),
@@ -33,11 +33,30 @@ describe('sortTasksByCriterion', () => {
 
     expect(
       sortTasksByCriterion(tasks, 'priority-high').map(({ id }) => id)
-    ).toEqual(['critical', 'high', 'normal', 'low', 'none']);
+    ).toEqual(['none', 'critical', 'high', 'normal', 'low']);
     expect(
       sortTasksByCriterion(tasks, 'priority-low').map(({ id }) => id)
-    ).toEqual(['low', 'normal', 'high', 'critical', 'none']);
+    ).toEqual(['none', 'low', 'normal', 'high', 'critical']);
   });
+
+  it.each(['priority-high', 'priority-low'] as const)(
+    'keeps null and undefined priorities last when requested: %s',
+    (sortBy) => {
+      const tasks = [
+        task('null', { priority: null }),
+        task('set', { priority: 'high' }),
+        task('undefined'),
+      ];
+      expect(
+        sortTasksByCriterion(tasks, sortBy, 'last').map((t) => t.id)
+      ).toEqual(['set', 'null', 'undefined']);
+      expect(sortTasksByCriterion(tasks, sortBy).map((t) => t.id)).toEqual([
+        'null',
+        'undefined',
+        'set',
+      ]);
+    }
+  );
 
   it('keeps missing due dates and estimations last in both directions', () => {
     const tasks = [

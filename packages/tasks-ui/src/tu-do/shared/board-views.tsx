@@ -26,7 +26,8 @@ import {
 } from '@tuturuuu/ui/hooks/use-user-workspace-config';
 import {
   getPersonalExternalStagingListId,
-  sortTasksByCriterion,
+  normalizeUnprioritizedPosition,
+  TASK_UNPRIORITIZED_POSITION_CONFIG_ID,
   type WorkspaceLabel,
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
@@ -51,9 +52,12 @@ import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
 import {
+  sortLocalTasks,
+  taskMatchesLocalFilters,
+} from './board-task-filtering';
+import {
   listBoardTaskCountsForSearch,
   listBoardTasksForSearch,
-  taskMatchesBoardSearch,
 } from './board-task-search';
 import { KanbanPresentation } from './kanban-presentation';
 import {
@@ -96,86 +100,6 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   sourceWorkspaceIds: [],
   sourceBoardIds: [],
 };
-function taskMatchesLocalFilters(
-  task: Task,
-  filters: TaskFilters,
-  currentUserId?: string,
-  boardTicketPrefix?: string | null
-) {
-  if (!taskMatchesBoardSearch(task, filters.searchQuery, boardTicketPrefix))
-    return false;
-
-  if (
-    filters.labels.length > 0 &&
-    !filters.labels.every((label) =>
-      task.labels?.some((taskLabel) => taskLabel.id === label.id)
-    )
-  ) {
-    return false;
-  }
-
-  if (
-    filters.projects.length > 0 &&
-    !filters.projects.every((project) =>
-      task.projects?.some((taskProject) => taskProject.id === project.id)
-    )
-  ) {
-    return false;
-  }
-
-  if (
-    filters.priorities.length > 0 &&
-    (!task.priority || !filters.priorities.includes(task.priority))
-  ) {
-    return false;
-  }
-
-  if (filters.assignees.length > 0) {
-    const assigneeIds = new Set(
-      filters.assignees.map((assignee) => assignee.id)
-    );
-    if (!task.assignees?.some((assignee) => assigneeIds.has(assignee.id))) {
-      return false;
-    }
-  }
-
-  if (
-    filters.includeMyTasks &&
-    currentUserId &&
-    !task.assignees?.some((assignee) => assignee.id === currentUserId)
-  ) {
-    return false;
-  }
-
-  if (filters.includeUnassigned && (task.assignees?.length ?? 0) > 0) {
-    return false;
-  }
-
-  if (filters.dueDateRange?.from || filters.dueDateRange?.to) {
-    if (!task.end_date) return false;
-    const dueTime = new Date(task.end_date).getTime();
-    const fromTime = filters.dueDateRange.from?.getTime() ?? -Infinity;
-    const toTime = filters.dueDateRange.to?.getTime() ?? Infinity;
-    if (dueTime < fromTime || dueTime > toTime) return false;
-  }
-
-  if (
-    typeof filters.estimationRange?.min === 'number' ||
-    typeof filters.estimationRange?.max === 'number'
-  ) {
-    const estimate = task.estimation_points ?? 0;
-    const min = filters.estimationRange.min ?? -Infinity;
-    const max = filters.estimationRange.max ?? Infinity;
-    if (estimate < min || estimate > max) return false;
-  }
-
-  return true;
-}
-
-function sortLocalTasks(tasks: Task[], sortBy: TaskFilters['sortBy']) {
-  return sortTasksByCriterion(tasks, sortBy);
-}
-
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
@@ -236,6 +160,13 @@ export function BoardViews({
   >(() => undefined);
   const { createTask } = useTaskDialog();
   const localTaskState = readOnly || publicView;
+  const { data: priorityPositionRaw } = useUserConfig(
+    TASK_UNPRIORITIZED_POSITION_CONFIG_ID,
+    'first',
+    { enabled: !localTaskState }
+  );
+  const unprioritizedPosition =
+    normalizeUnprioritizedPosition(priorityPositionRaw);
   const { data: quickCreateTargetListRaw } = useUserConfig(
     TASK_QUICK_CREATE_TARGET_LIST_CONFIG_ID,
     DEFAULT_TASK_QUICK_CREATE_TARGET_LIST,
@@ -355,6 +286,7 @@ export function BoardViews({
       projectIds: filters.projects.map((project) => project.id),
       q: filters.searchQuery?.trim() || undefined,
       sortBy: filters.sortBy,
+      unprioritizedPosition,
       sourceBoardIds,
       sourceScope,
       sourceWorkspaceIds,
@@ -372,6 +304,7 @@ export function BoardViews({
       filters.projects,
       filters.searchQuery,
       filters.sortBy,
+      unprioritizedPosition,
       sourceBoardIds,
       sourceScope,
       sourceWorkspaceIds,
@@ -709,9 +642,10 @@ export function BoardViews({
             board.ticket_prefix
           )
         ),
-        filters.sortBy
+        filters.sortBy,
+        unprioritizedPosition
       ),
-    [board.ticket_prefix, currentUserId, filters, tasks]
+    [board.ticket_prefix, currentUserId, filters, tasks, unprioritizedPosition]
   );
 
   const localListCounts = useMemo(() => {
@@ -832,8 +766,8 @@ export function BoardViews({
 
     tasks = tasks.filter((task) => !task.deleted_at);
 
-    return sortLocalTasks(tasks, filters.sortBy);
-  }, [filteredTasks, filters.sortBy, taskOverrides]);
+    return sortLocalTasks(tasks, filters.sortBy, unprioritizedPosition);
+  }, [filteredTasks, filters.sortBy, taskOverrides, unprioritizedPosition]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({

@@ -19,6 +19,26 @@ function task(id: string, name: string, createdAt: string): Task {
 }
 
 describe('sortListViewTasks', () => {
+  it.each(['asc', 'desc'] as const)(
+    'honors unprioritized placement independently of direction: %s',
+    (sortOrder) => {
+      const none = task('none', 'None', '2026-01-01');
+      const high = {
+        ...task('high', 'High', '2026-01-01'),
+        priority: 'high' as const,
+      };
+      const options = { sortField: 'priority' as const, sortOrder };
+      expect(sortListViewTasks([high, none], options).map((t) => t.id)).toEqual(
+        ['none', 'high']
+      );
+      expect(
+        sortListViewTasks([high, none], {
+          ...options,
+          unprioritizedPosition: 'last',
+        }).map((t) => t.id)
+      ).toEqual(['high', 'none']);
+    }
+  );
   it('keeps parent-provided order when board-level sorting is active', () => {
     const parentSortedTasks = [
       task('task-a', 'Alpha', '2026-01-01T00:00:00.000Z'),

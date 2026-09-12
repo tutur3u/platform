@@ -13875,6 +13875,10 @@
       "ticket_prefix_placeholder": "TEAM",
       "title": "Tasks",
       "unarchive_board": "Unarchive board",
+      "unprioritized_first": "Show first",
+      "unprioritized_last": "Show last",
+      "unprioritized_position": "Tasks without priority",
+      "unprioritized_position_description": "Choose where tasks without priority appear when sorting by priority, in either direction.",
       "use_as_default_board": "Use as default"
     },
     "time_tracker": {

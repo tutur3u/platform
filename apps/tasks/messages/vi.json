@@ -7452,6 +7452,10 @@
       "templates": "Mẫu",
       "templates_description": "Quản lý các mẫu bảng công việc có thể tái sử dụng",
       "title": "Nhiệm vụ",
+      "unprioritized_first": "Hiển thị đầu tiên",
+      "unprioritized_last": "Hiển thị cuối cùng",
+      "unprioritized_position": "Công việc chưa có độ ưu tiên",
+      "unprioritized_position_description": "Chọn vị trí hiển thị công việc chưa có độ ưu tiên khi sắp xếp theo độ ưu tiên theo cả hai chiều.",
       "untitled_board": "Bảng chưa đặt tên",
       "untitled_list": "Danh sách chưa đặt tên"
     },

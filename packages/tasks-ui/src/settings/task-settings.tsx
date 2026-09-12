@@ -42,6 +42,7 @@ import {
   TASK_SOUND_EFFECTS_VOLUME_CONFIG_ID,
 } from '../tu-do/shared/task-sound-effects';
 import { TaskDialogPresentationSettings } from './task-dialog-presentation-settings';
+import { TaskPrioritySettings } from './task-priority-settings';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
@@ -306,6 +307,8 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             </SelectContent>
           </Select>
         </SettingItemTab>
+        <Separator />
+        <TaskPrioritySettings />
         <Separator />
         <TaskDialogPresentationSettings />
         <Separator />
