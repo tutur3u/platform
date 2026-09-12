@@ -34,7 +34,28 @@ describe('monthly status filters', () => {
     expect(change).toHaveBeenLastCalledWith('all', 'sent', 'all');
     fireEvent.click(screen.getByRole('button', { name: 'drafts 4' }));
     expect(change).toHaveBeenLastCalledWith('all', 'all', 'draft');
-    fireEvent.click(screen.getByRole('button', { name: 'total 20' }));
+    fireEvent.click(screen.getByRole('button', { name: 'show_all_reports' }));
     expect(change).toHaveBeenLastCalledWith('all', 'all', 'all');
+  });
+  it('restores unapproved reports from the total view and renders its toolbar', () => {
+    const change = vi.fn();
+    render(
+      <PeriodicStatusSummary
+        approval="all"
+        delivery="all"
+        onChange={change}
+        toolbar={<button type="button">Date range</button>}
+      />
+    );
+    expect(screen.getByText('total_reports')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'show_all_reports' })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'unapproved' }));
+    expect(change).toHaveBeenCalledWith('UNAPPROVED', 'all', 'all');
+    expect(
+      screen.getByRole('button', { name: 'Date range' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/NaN|Infinity/)).not.toBeInTheDocument();
   });
 });

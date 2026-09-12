@@ -216,73 +216,81 @@ export default function PeriodicReportsPanel({
         onChange={(approval, delivery, generation = 'all') => {
           void setFilters({ generation, approval, delivery });
         }}
-      />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-xs">
-          {periodStart || periodEnd
-            ? t('period_scope', {
-                start: periodStart || t('all_time_start'),
-                end: periodEnd || t('all_time_end'),
-              })
-            : t('all_periods')}
-        </p>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isRefreshing}
-          onClick={async () => {
-            setIsRefreshing(true);
-            try {
-              await reportsQuery.refetch();
-            } finally {
-              setIsRefreshing(false);
-            }
-          }}
-        >
-          <RefreshCw
-            className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
-          />
-          {t('refresh')}
-        </Button>
-      </div>
+        toolbar={
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-muted-foreground text-xs">
+                {periodStart || periodEnd
+                  ? t('period_scope', {
+                      start: periodStart || t('all_time_start'),
+                      end: periodEnd || t('all_time_end'),
+                    })
+                  : t('all_periods')}
+              </p>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={isRefreshing}
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    await reportsQuery.refetch();
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
+              >
+                <RefreshCw
+                  className={`size-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
+                {t('refresh')}
+              </Button>
+            </div>
 
-      <PeriodicReportsToolbar
-        generationStatus={generationStatus}
-        approvalStatus={approvalStatus}
-        cadence={cadence}
-        deliveryStatus={deliveryStatus}
-        onApprovalStatusChange={(approval) => void setFilters({ approval })}
-        onCadenceChange={(cadence) => void setFilters({ cadence })}
-        onDeliveryStatusChange={(delivery) => void setFilters({ delivery })}
-        onQueryChange={(query) => void setFilters({ query })}
-        onReset={() => {
-          void setFilters({
-            approval: 'UNAPPROVED',
-            delivery: 'all',
-            generation: 'all',
-            start: '',
-            end: '',
-            query: '',
-            sort: 'period',
-            direction: 'desc',
-          });
-        }}
-        onSortChange={(nextSortBy, nextDirection) => {
-          void setFilters({ sort: nextSortBy, direction: nextDirection });
-        }}
-        periodStart={periodStart}
-        periodEnd={periodEnd}
-        onPeriodChange={(start, end) => void setFilters({ start, end })}
-        query={query}
-        isSearching={
-          !reportsQuery.isError &&
-          (reportsQuery.isLoading ||
-            reportsQuery.isPlaceholderData ||
-            query.trim() !== debouncedQuery)
+            <PeriodicReportsToolbar
+              generationStatus={generationStatus}
+              approvalStatus={approvalStatus}
+              cadence={cadence}
+              deliveryStatus={deliveryStatus}
+              onApprovalStatusChange={(approval) =>
+                void setFilters({ approval })
+              }
+              onCadenceChange={(cadence) => void setFilters({ cadence })}
+              onDeliveryStatusChange={(delivery) =>
+                void setFilters({ delivery })
+              }
+              onQueryChange={(query) => void setFilters({ query })}
+              onReset={() => {
+                void setFilters({
+                  approval: 'UNAPPROVED',
+                  delivery: 'all',
+                  generation: 'all',
+                  start: '',
+                  end: '',
+                  query: '',
+                  sort: 'period',
+                  direction: 'desc',
+                });
+              }}
+              onSortChange={(nextSortBy, nextDirection) => {
+                void setFilters({ sort: nextSortBy, direction: nextDirection });
+              }}
+              periodStart={periodStart}
+              periodEnd={periodEnd}
+              onPeriodChange={(start, end) => void setFilters({ start, end })}
+              query={query}
+              isSearching={
+                !reportsQuery.isError &&
+                (reportsQuery.isLoading ||
+                  reportsQuery.isPlaceholderData ||
+                  query.trim() !== debouncedQuery)
+              }
+              resultCount={totalReports}
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+            />
+          </div>
         }
-        resultCount={totalReports}
-        sortBy={sortBy}
-        sortDirection={sortDirection}
       />
 
       <Accordion type="single" collapsible>

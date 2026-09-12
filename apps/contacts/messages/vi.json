@@ -3503,6 +3503,7 @@
     "test_sent_at": "Đã gửi thử {date}",
     "title": "Báo cáo",
     "total": "Tổng",
+    "total_reports": "Tổng báo cáo",
     "unapproved": "Chưa phê duyệt",
     "unknown_group": "Nhóm không xác định",
     "unknown_member": "Thành viên không xác định",

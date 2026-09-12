@@ -1,20 +1,19 @@
 'use client';
 
-import {
-  Ban,
-  CheckCircle2,
-  Clock3,
-  FileText,
-  MailCheck,
-  MailX,
-} from '@tuturuuu/icons';
+import { FileText } from '@tuturuuu/icons';
 import type { PeriodicReportCounts } from '@tuturuuu/internal-api/reports';
-import { cn } from '@tuturuuu/utils/format';
+import { Button } from '@tuturuuu/ui/button';
+import { getPostReviewStageAppearance } from '@tuturuuu/users-ui/components/post-status-meta';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import type {
   PeriodicApprovalFilter,
   PeriodicDeliveryFilter,
 } from './periodic-reports-toolbar';
+import {
+  ReportStatusCard,
+  ReportStatusDashboard,
+} from './report-status-dashboard';
 
 export function PeriodicStatusSummary({
   generation = 'all',
@@ -22,8 +21,10 @@ export function PeriodicStatusSummary({
   approval,
   delivery,
   onChange,
+  toolbar,
 }: {
   generation?: 'all' | 'draft';
+  toolbar?: ReactNode;
   counts?: PeriodicReportCounts;
   approval: PeriodicApprovalFilter;
   delivery: PeriodicDeliveryFilter;
@@ -36,94 +37,106 @@ export function PeriodicStatusSummary({
   const t = useTranslations('reports-hub');
   const stages = [
     {
-      label: 'total',
-      count: counts?.total,
-      approval: 'all',
-      delivery: 'all',
-      icon: FileText,
-    },
-    {
       label: 'drafts',
       count: counts?.draft,
       approval: 'all',
       delivery: 'all',
-      icon: FileText,
+      appearance: {
+        ...getPostReviewStageAppearance('missing_check'),
+        icon: FileText,
+      },
     },
     {
       label: 'unapproved',
       count: counts ? Math.max(0, counts.total - counts.approved) : undefined,
       approval: 'UNAPPROVED',
       delivery: 'all',
-      icon: Clock3,
+      appearance: getPostReviewStageAppearance('pending_approval'),
     },
     {
       label: 'approved',
       count: counts?.approved,
       approval: 'APPROVED',
       delivery: 'all',
-      icon: CheckCircle2,
+      appearance: getPostReviewStageAppearance('approved_awaiting_delivery'),
     },
     {
       label: 'status_sent',
       count: counts?.delivered,
       approval: 'all',
       delivery: 'sent',
-      icon: MailCheck,
+      appearance: getPostReviewStageAppearance('sent'),
     },
     {
       label: 'failed',
       count: counts?.failed,
       approval: 'all',
       delivery: 'failed',
-      icon: MailX,
+      appearance: getPostReviewStageAppearance('delivery_failed'),
     },
     {
       label: 'status_blocked',
       count: counts?.blocked,
       approval: 'all',
       delivery: 'blocked',
-      icon: Ban,
+      appearance: getPostReviewStageAppearance('undeliverable'),
     },
   ] as const;
+  const isShowingAll =
+    approval === 'all' && delivery === 'all' && generation === 'all';
+  const isUnapproved =
+    approval === 'UNAPPROVED' && delivery === 'all' && generation === 'all';
   return (
-    <section
-      className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 2xl:grid-cols-7"
-      aria-label={t('report_status')}
+    <ReportStatusDashboard
+      label={t('report_status')}
+      total={counts?.total}
+      totalLabel={t('total_reports')}
+      columns={3}
+      toolbar={toolbar}
+      actions={
+        <>
+          {!isShowingAll && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onChange('all', 'all', 'all')}
+            >
+              {t('show_all_reports')}
+            </Button>
+          )}
+          {!isUnapproved && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => onChange('UNAPPROVED', 'all', 'all')}
+            >
+              {t('unapproved')}
+            </Button>
+          )}
+        </>
+      }
     >
       {stages.map((stage) => {
-        const active =
-          approval === stage.approval &&
-          delivery === stage.delivery &&
-          generation === (stage.label === 'drafts' ? 'draft' : 'all');
+        const stageGeneration = stage.label === 'drafts' ? 'draft' : 'all';
         return (
-          <button
+          <ReportStatusCard
             key={stage.label}
-            type="button"
-            aria-pressed={active}
-            onClick={() =>
-              onChange(
-                stage.approval,
-                stage.delivery,
-                stage.label === 'drafts' ? 'draft' : 'all'
-              )
+            label={t(stage.label)}
+            count={stage.count}
+            total={counts?.total}
+            active={
+              approval === stage.approval &&
+              delivery === stage.delivery &&
+              generation === stageGeneration
             }
-            className={cn(
-              'flex items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              active
-                ? 'border-primary/40 bg-primary/5'
-                : 'border-border/60 bg-background hover:bg-muted/50'
-            )}
-          >
-            <stage.icon className="size-4 shrink-0 text-muted-foreground" />
-            <div className="min-w-0">
-              <p className="text-muted-foreground text-xs">{t(stage.label)}</p>
-              <p className="font-semibold text-xl tabular-nums tracking-tight">
-                {counts ? (stage.count ?? 0).toLocaleString() : '—'}
-              </p>
-            </div>
-          </button>
+            appearance={stage.appearance}
+            onClick={() =>
+              onChange(stage.approval, stage.delivery, stageGeneration)
+            }
+          />
         );
       })}
-    </section>
+    </ReportStatusDashboard>
   );
 }
