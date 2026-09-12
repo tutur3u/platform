@@ -21,25 +21,33 @@ export function SourcesPart({
 
   if (unique.length === 0) return null;
 
+  const Header = unique.length > 3 ? 'button' : 'div';
   return (
     <div className="mt-2 flex flex-col gap-1.5">
-      <button
-        type="button"
-        onClick={() => setExpanded((e) => !e)}
-        aria-expanded={expanded}
+      <Header
+        type={unique.length > 3 ? 'button' : undefined}
+        onClick={unique.length > 3 ? () => setExpanded((e) => !e) : undefined}
+        aria-expanded={unique.length > 3 ? expanded : undefined}
         className="flex items-center gap-1.5 text-muted-foreground text-xs transition-colors hover:text-foreground"
       >
         <Globe className="h-3 w-3 text-dynamic-cyan" />
         <span className="font-medium">
           {t('sources_count', { count: unique.length })}
         </span>
-        <ChevronRight
-          className={cn(
-            'ml-0.5 h-3 w-3 transition-transform',
-            expanded && 'rotate-90'
-          )}
-        />
-      </button>
+        {unique.length > 3 && (
+          <>
+            <span>
+              {t(expanded ? 'sources_show_less' : 'sources_show_all')}
+            </span>
+            <ChevronRight
+              className={cn(
+                'ml-0.5 h-3 w-3 transition-transform',
+                expanded && 'rotate-90'
+              )}
+            />
+          </>
+        )}
+      </Header>
       {
         <div className="flex flex-wrap gap-1.5">
           {(expanded ? unique : unique.slice(0, 3)).map((src, i) => {

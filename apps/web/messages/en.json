@@ -5781,6 +5781,8 @@
       "show_less": "Show less",
       "show_more": "Show more",
       "sources_count": "{count, plural, one {# source} other {# sources}}",
+      "sources_show_all": "Show all",
+      "sources_show_less": "Show less",
       "stream_error": "Something went wrong with the response. Please try again.",
       "submission": "Submission",
       "thinking": "Working...",

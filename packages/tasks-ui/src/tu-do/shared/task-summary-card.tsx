@@ -49,10 +49,14 @@ export function TaskSummaryCard({
   labels,
   assignees,
 }: TaskSummaryCardProps) {
+  const Card = href ? 'a' : 'article';
   return (
-    <article
+    <Card
+      href={href}
+      target={href ? '_blank' : undefined}
+      rel={href ? 'noreferrer' : undefined}
       className={cn(
-        'group relative h-full space-y-2 overflow-hidden rounded-lg border border-l-4 bg-background p-2.5 shadow-xs transition-colors focus-within:ring-2 focus-within:ring-ring hover:bg-muted/30',
+        'group relative block h-full space-y-2 overflow-hidden rounded-lg border border-l-4 bg-background p-2.5 shadow-xs transition-colors focus-within:ring-2 focus-within:ring-ring hover:bg-muted/30',
         getCardColorClasses(undefined, priority)
       )}
     >
@@ -74,22 +78,13 @@ export function TaskSummaryCard({
           )}
         </div>
       )}
-      <h3 className="font-medium text-sm leading-snug">
-        {href ? (
-          <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-start gap-2 rounded-sm after:absolute after:inset-0 focus-visible:outline-none"
-          >
-            <span className="line-clamp-2 flex-1">{title}</span>
-            <ArrowUpRight
-              aria-hidden
-              className="mt-0.5 size-3 shrink-0 text-muted-foreground"
-            />
-          </a>
-        ) : (
-          title
+      <h3 className="flex items-start gap-2 font-medium text-sm leading-snug">
+        <span className="line-clamp-2 flex-1">{title}</span>
+        {href && (
+          <ArrowUpRight
+            aria-hidden
+            className="mt-0.5 size-3 shrink-0 text-muted-foreground"
+          />
         )}
       </h3>
       <div
@@ -146,6 +141,6 @@ export function TaskSummaryCard({
           )}
         </div>
       ) : null}
-    </article>
+    </Card>
   );
 }

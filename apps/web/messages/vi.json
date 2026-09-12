@@ -5781,6 +5781,8 @@
       "show_less": "Thu gọn",
       "show_more": "Hiện thêm",
       "sources_count": "{count} nguồn",
+      "sources_show_all": "Xem tất cả",
+      "sources_show_less": "Thu gọn",
       "stream_error": "Đã xảy ra lỗi khi phản hồi. Vui lòng thử lại.",
       "submission": "Gửi",
       "thinking": "Đang xử lý...",
