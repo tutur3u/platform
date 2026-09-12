@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { PermissionId } from '@tuturuuu/types';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -13,7 +14,7 @@ import { buildMiraSystemInstruction } from '../mira-system-instruction';
 import type { ChatRequestTaskBoardContext } from './chat-request-schema';
 
 type PermissionResultLike = {
-  withoutPermission?: (permission: unknown) => boolean;
+  withoutPermission?: (permission: PermissionId) => boolean;
 };
 
 type SupabaseClientLike = TypedSupabaseClient;
@@ -188,26 +189,29 @@ export async function prepareMiraRuntime({
     });
   } catch (workspaceContextErr) {
     console.error(
-      'Failed to resolve Mira workspace context, falling back to current workspace:',
+      'Failed to verify Mira workspace context:',
       workspaceContextErr
     );
-    resolvedWorkspaceContext = {
-      workspaceContextId: wsId,
-      wsId,
-      name: 'Current workspace',
-      personal: false,
-      memberCount: 0,
+    return {
+      miraSystemPrompt:
+        'You are Mira. Workspace access could not be verified for this request. Do not claim to read or change workspace data. Explain that the user can retry after access is restored; answer unrelated general questions normally.',
     };
   }
 
   let withoutPermission: PermissionResultLike['withoutPermission'];
   const denyPermissionByDefault = () => true;
   withoutPermission = denyPermissionByDefault;
+  const permissionCache = new Map<
+    string,
+    Promise<PermissionResultLike | null>
+  >();
   try {
-    const permissionsResult = (await getPermissions({
+    const pending = getPermissions({
       wsId: resolvedWorkspaceContext.wsId,
       ...(user ? { user } : { request }),
-    })) as PermissionResultLike | null;
+    });
+    permissionCache.set(resolvedWorkspaceContext.wsId, pending);
+    const permissionsResult = await pending;
     if (permissionsResult?.withoutPermission) {
       withoutPermission = permissionsResult.withoutPermission;
     }
@@ -224,6 +228,27 @@ export async function prepareMiraRuntime({
     supabase: miraSupabase,
     timezone,
     requestHeaders: request.headers,
+    authorizeWorkspaceTools: async (targetWsId, permissions) => {
+      let pending = permissionCache.get(targetWsId);
+      if (!pending) {
+        pending = getPermissions({
+          wsId: targetWsId,
+          ...(user ? { user } : { request }),
+        });
+        permissionCache.set(targetWsId, pending);
+      }
+      try {
+        const resolved = await pending;
+        return (
+          !!resolved?.withoutPermission &&
+          permissions.every(
+            (permission) => !resolved.withoutPermission?.(permission)
+          )
+        );
+      } catch {
+        return false;
+      }
+    },
   };
 
   let miraSystemPrompt: string;

@@ -12,6 +12,7 @@ import {
   isWorkspaceMember,
   type TaskScope,
 } from './scope-helpers';
+import { executeTaskDashboard } from './task-dashboard';
 
 type RpcTask = {
   task_id: string;
@@ -45,6 +46,7 @@ export async function executeGetMyTasks(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  if (ctx.requestHeaders) return executeTaskDashboard(args, ctx);
   const { userId, supabase } = ctx;
   const wsId = getWorkspaceContextWorkspaceId(ctx);
   const category = ((args.category ?? args.status) as string) || 'all';
@@ -167,6 +169,7 @@ export async function executeUpdateTask(
   if (args.completed !== undefined) {
     updates.completed = args.completed as boolean;
     updates.completed_at = args.completed ? new Date().toISOString() : null;
+    if (!args.completed) updates.closed_at = null;
   }
   if (args.priority !== undefined)
     updates.priority = args.priority as Enums<'task_priority'>;
@@ -228,14 +231,39 @@ export async function executeUpdateTask(
     return { error: 'Task not found in current workspace' };
   }
 
-  const { error } = await ctx.supabase
+  if (args.completed === false) {
+    const listId = (args.listId as string | undefined) ?? taskScope.listId;
+    const { data: list, error } = await ctx.supabase
+      .from('task_lists')
+      .select('id, status')
+      .eq('id', listId ?? '')
+      .single();
+    if (error || !list || list.status === 'done' || list.status === 'closed')
+      return {
+        error:
+          'To reopen this task, provide an active listId from list_task_lists. No changes were saved.',
+      };
+  }
+  const { data: saved, error } = await ctx.supabase
     .from('tasks')
     .update(updates)
     .eq('id', taskId)
-    .eq(taskScopePredicate.column, taskScopePredicate.value);
+    .eq(taskScopePredicate.column, taskScopePredicate.value)
+    .select('id, name, priority, start_date, end_date, completed, list_id')
+    .maybeSingle();
 
-  if (error) return { error: error.message };
-  return { success: true, message: `Task ${taskId} updated` };
+  if (error || !saved)
+    return {
+      success: false,
+      error:
+        error?.message ??
+        'Task was not updated; it may have moved or been removed.',
+    };
+  return {
+    success: true,
+    task: saved,
+    workspaceId: getWorkspaceContextWorkspaceId(ctx),
+  };
 }
 
 export async function executeDeleteTask(

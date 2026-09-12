@@ -36,6 +36,7 @@ export function createMiraStreamTools(
   let renderUiInvalidAttempts = 0;
   const permittedNames = new Set<string>();
   const guardTaskWrite = createTaskWriteGuard();
+  ctx.executionState ??= {};
 
   // Create a per-stream render_ui tool with stateful preprocessor.
   // The preprocessor auto-populates a context-aware fallback on the first
@@ -73,13 +74,35 @@ export function createMiraStreamTools(
     if (name === 'search_tools') {
       tools[name] = {
         ...def,
-        execute: (args: { query: string; limit?: number }) =>
-          searchMiraTools(args, permittedNames),
+        execute: async (args: { query: string; limit?: number }) => {
+          const allowed = new Set<string>();
+          for (const candidate of Object.keys(
+            miraToolDefinitions
+          ) as MiraToolName[]) {
+            const permission = MIRA_TOOL_PERMISSIONS[candidate];
+            const required = permission
+              ? Array.isArray(permission)
+                ? permission
+                : [permission]
+              : [];
+            if (
+              ctx.authorizeWorkspaceTools
+                ? !required.length ||
+                  (await ctx.authorizeWorkspaceTools(
+                    getWorkspaceContextWorkspaceId(ctx),
+                    required
+                  ))
+                : permittedNames.has(candidate)
+            )
+              allowed.add(candidate);
+          }
+          return searchMiraTools(args, allowed);
+        },
       } as Tool;
       continue;
     }
 
-    if (isMissingPermission) {
+    if (isMissingPermission && !ctx.authorizeWorkspaceTools) {
       tools[name] = {
         ...def,
         execute: async () => ({
@@ -175,12 +198,38 @@ export function createMiraStreamTools(
       execute: async (
         args: Record<string, unknown>,
         options?: { abortSignal?: AbortSignal }
-      ) =>
-        name === 'create_task'
-          ? guardTaskWrite(getWorkspaceContextWorkspaceId(ctx), args, () =>
-              executeMiraTool(name, args, ctx, options)
+      ) => {
+        const executionCtx =
+          name === 'set_workspace_context'
+            ? ctx
+            : {
+                ...ctx,
+                workspaceContext: ctx.workspaceContext
+                  ? { ...ctx.workspaceContext }
+                  : undefined,
+              };
+        const targetWsId = getWorkspaceContextWorkspaceId(executionCtx);
+        const required = requiredPerm
+          ? Array.isArray(requiredPerm)
+            ? requiredPerm
+            : [requiredPerm]
+          : [];
+        if (
+          required.length &&
+          ctx.authorizeWorkspaceTools &&
+          !(await ctx.authorizeWorkspaceTools(targetWsId, required))
+        )
+          return {
+            success: false,
+            error:
+              'The current workspace does not grant permission for this operation.',
+          };
+        return name === 'create_task'
+          ? guardTaskWrite(targetWsId, args, () =>
+              executeMiraTool(name, args, executionCtx, options)
             )
-          : executeMiraTool(name, args, ctx, options),
+          : executeMiraTool(name, args, executionCtx, options);
+      },
     } as Tool;
   }
 

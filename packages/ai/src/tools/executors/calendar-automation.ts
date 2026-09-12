@@ -1,5 +1,7 @@
 import {
   applyWorkspaceCalendarSchedule,
+  createWorkspaceCalendarEvent,
+  deleteWorkspaceCalendarEvent,
   getGoogleCalendarAuthUrl,
   getWorkspaceCalendarSyncStatus,
   listCalendarConnections,
@@ -7,6 +9,8 @@ import {
   previewWorkspaceCalendarSchedule,
   syncWorkspaceCalendar,
   updateWorkspaceCalendarEvent,
+  type WorkspaceCalendarEventCreatePayload,
+  type WorkspaceCalendarEventUpdatePayload,
 } from '@tuturuuu/internal-api/calendar';
 import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api/client';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
@@ -21,7 +25,7 @@ type SchedulePreview = {
   habits?: unknown;
   lockedEvents?: unknown[];
 };
-const previews = new WeakMap<MiraToolContext, Set<string>>();
+const previews = new WeakMap<object, Set<string>>();
 
 export async function executeCalendarAutomation(
   name: string,
@@ -35,6 +39,7 @@ export async function executeCalendarAutomation(
         'Calendar automation is unavailable in this session. Open Calendar settings to manage connections.',
     };
   const wsId = getWorkspaceContextWorkspaceId(ctx);
+  const state = ctx.executionState ?? ctx;
   const baseUrl = resolveInternalAppUrl({
     appName: 'calendar',
     candidates: [
@@ -53,6 +58,56 @@ export async function executeCalendarAutomation(
     Effect.tryPromise({
       try: async () => {
         switch (name) {
+          case 'create_event': {
+            const event = await createWorkspaceCalendarEvent(
+              wsId,
+              {
+                title: args.title as string,
+                start_at: args.startAt as string,
+                end_at: args.endAt as string,
+                description: args.description as string | null | undefined,
+                location: args.location as string | null | undefined,
+                color: args.color as string | undefined,
+                locked: args.locked as boolean | undefined,
+                source:
+                  args.source as WorkspaceCalendarEventCreatePayload['source'],
+              },
+              options
+            );
+            return { success: true, event, workspaceId: wsId };
+          }
+          case 'update_event': {
+            const payload: WorkspaceCalendarEventUpdatePayload = {};
+            for (const [input, output] of [
+              ['title', 'title'],
+              ['startAt', 'start_at'],
+              ['endAt', 'end_at'],
+              ['description', 'description'],
+              ['location', 'location'],
+              ['color', 'color'],
+              ['locked', 'locked'],
+              ['source', 'source'],
+            ] as const) {
+              if (args[input] !== undefined)
+                Object.assign(payload, { [output]: args[input] });
+            }
+            const event = await updateWorkspaceCalendarEvent(
+              wsId,
+              args.eventId as string,
+              payload,
+              options
+            );
+            return { success: true, event, workspaceId: wsId };
+          }
+          case 'delete_event':
+            return {
+              success: true,
+              ...(await deleteWorkspaceCalendarEvent(
+                wsId,
+                args.eventId as string,
+                options
+              )),
+            };
           case 'get_calendar_connections': {
             const [connections, sync] = await Promise.all([
               listCalendarConnections(wsId, options),
@@ -91,9 +146,9 @@ export async function executeCalendarAutomation(
                 success: false,
                 error: 'Scheduling preview failed. Nothing was applied.',
               };
-            const keys = previews.get(ctx) ?? new Set<string>();
+            const keys = previews.get(state) ?? new Set<string>();
             keys.add(previewKey);
-            previews.set(ctx, keys);
+            previews.set(state, keys);
             return {
               success: true,
               summary: preview.preview?.summary,
@@ -106,12 +161,12 @@ export async function executeCalendarAutomation(
             };
           }
           case 'apply_calendar_schedule': {
-            if (!previews.get(ctx)?.has(previewKey))
+            if (!previews.get(state)?.has(previewKey))
               return {
                 success: false,
                 error: 'Preview this workspace and scheduling window first.',
               };
-            previews.get(ctx)?.delete(previewKey);
+            previews.get(state)?.delete(previewKey);
             return applyWorkspaceCalendarSchedule(
               wsId,
               {

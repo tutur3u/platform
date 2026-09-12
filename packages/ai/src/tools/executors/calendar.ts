@@ -4,6 +4,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
+import { executeCalendarAutomation } from './calendar-automation';
 import {
   decryptEventsForTools,
   encryptEventFieldsForTools,
@@ -95,6 +96,17 @@ export async function executeCreateEvent(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  if (ctx.requestHeaders)
+    return executeCalendarAutomation('create_event', args, ctx);
+  if (
+    args.source !== undefined ||
+    args.locked !== undefined ||
+    args.color !== undefined
+  )
+    return {
+      error:
+        'Provider destinations, colors and locks require an authenticated Chat or Calendar session. No event changes were saved.',
+    };
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   const title = args.title as string;
   const description = (args.description as string) ?? '';
@@ -165,6 +177,17 @@ export async function executeUpdateEvent(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  if (ctx.requestHeaders)
+    return executeCalendarAutomation('update_event', args, ctx);
+  if (
+    args.source !== undefined ||
+    args.locked !== undefined ||
+    args.color !== undefined
+  )
+    return {
+      error:
+        'Provider destinations, colors and locks require an authenticated Chat or Calendar session. No event changes were saved.',
+    };
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   const eventId = args.eventId as string;
   const title = args.title as string | undefined;
@@ -261,6 +284,8 @@ export async function executeDeleteEvent(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
+  if (ctx.requestHeaders)
+    return executeCalendarAutomation('delete_event', args, ctx);
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);
   const eventId = args.eventId as string;
 

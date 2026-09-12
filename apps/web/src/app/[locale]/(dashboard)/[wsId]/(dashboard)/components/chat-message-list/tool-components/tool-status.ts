@@ -12,6 +12,8 @@ export function getToolPartStatus(part: ToolPartData) {
   const logicalError =
     isDone &&
     (outputRecord?.success === false ||
+      outputRecord?.ok === false ||
+      outputRecord?.partialFailure === true ||
       (typeof outputRecord?.error === 'string' &&
         outputRecord.error.length > 0));
 

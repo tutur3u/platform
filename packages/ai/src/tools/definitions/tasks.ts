@@ -118,7 +118,9 @@ export const taskToolDefinitions = {
         completed: z
           .boolean()
           .optional()
-          .describe('Complete or reopen this task'),
+          .describe(
+            'Complete or reopen this task; reopening a terminal list requires an active listId'
+          ),
         description: z
           .string()
           .nullable()

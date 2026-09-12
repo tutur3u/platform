@@ -7,11 +7,15 @@ const api = vi.hoisted(() => ({
   apply: vi.fn(),
   update: vi.fn(),
   sync: vi.fn(),
+  create: vi.fn(),
+  remove: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api/calendar', () => ({
   previewWorkspaceCalendarSchedule: api.preview,
   applyWorkspaceCalendarSchedule: api.apply,
   updateWorkspaceCalendarEvent: api.update,
+  createWorkspaceCalendarEvent: api.create,
+  deleteWorkspaceCalendarEvent: api.remove,
   getGoogleCalendarAuthUrl: vi.fn(),
   listCalendarConnections: vi.fn(),
   listWorkspaceSchedulableTasks: vi.fn(),
@@ -118,4 +122,44 @@ describe('Calendar automation', () => {
     ).toHaveProperty('error');
     expect(api.sync).toHaveBeenCalledTimes(1);
   });
+});
+
+it('routes event creation to the selected provider and returns its saved receipt', async () => {
+  api.create.mockResolvedValue({ id: 'saved-event' });
+  const source = { provider: 'google', connectionId: 'connection' };
+  const result = await executeCalendarAutomation(
+    'create_event',
+    {
+      title: 'Planning',
+      startAt: '2026-09-14T09:00:00+07:00',
+      endAt: '2026-09-14T10:00:00+07:00',
+      source,
+    },
+    context()
+  );
+  expect(api.create).toHaveBeenCalledWith(
+    'workspace',
+    expect.objectContaining({ source, start_at: '2026-09-14T09:00:00+07:00' }),
+    expect.anything()
+  );
+  expect(result).toEqual({
+    success: true,
+    event: { id: 'saved-event' },
+    workspaceId: 'workspace',
+  });
+});
+it('shares preview authorization across per-operation workspace snapshots', async () => {
+  const executionState = {};
+  api.preview.mockResolvedValue({ success: true, preview: { events: [] } });
+  await executeCalendarAutomation(
+    'preview_calendar_schedule',
+    {},
+    { ...context(), executionState }
+  );
+  await executeCalendarAutomation(
+    'apply_calendar_schedule',
+    {},
+    { ...context(), executionState }
+  );
+  expect(api.apply).toHaveBeenCalledOnce();
 });
