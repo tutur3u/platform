@@ -89,13 +89,13 @@ export const workspaceUserChatToolDefinitions = {
 
   show_workspace_artifact: tool({
     description:
-      'Open or update a tailored artifact beside chat. Choose tasks, calendar, finance, or meetings. Use presentation for a helpful title, grounded explanation, up to three useful highlights, search, taskStatus, currency, date, or specific itemIds. Opening multiple panels splits the space automatically. Omit layout to preserve the current arrangement. Use proactively when a visual view helps the task; no toolbar click is needed.',
+      'Open or update a tailored artifact beside chat. Choose tasks, calendar, finance, or meetings. Use presentation for a helpful title, grounded explanation, up to three useful highlights, search, taskStatus, currency, date, or specific itemIds. Opening multiple panels splits the space automatically. Omit layout to preserve the current arrangement. Use proactively when a visual view helps the task; no toolbar click is needed. This tool does not read product data: use only a title unless a data-read tool returned the facts in this turn. On success the opening/update is complete; do not repeat it to verify.',
     inputSchema: showWorkspaceArtifactSchema,
   }),
 
   manage_workspace: tool({
     description:
-      'Manage screen space: close_artifact closes the selected kind in this workspace, close_all returns to full chat, focus_artifact keeps only the chosen artifact, and set_layout changes the split. horizontal is side by side, vertical is stacked, grid gives chat one quarter with multiple panels. Close irrelevant panels and focus useful ones as the conversation evolves.',
+      'Manage screen space: close_artifact closes the selected kind in this workspace, close_all returns to full chat, focus_artifact keeps only the chosen artifact, and set_layout changes the split. horizontal is side by side, vertical is stacked, grid gives chat one quarter with multiple panels. focus_artifact closes every other panel, so never use it when the user asks to keep other panels. Replace one panel with close_artifact plus show_workspace_artifact. Call each required action once; success means it is complete, so finish after the requested actions succeed.',
     inputSchema: manageWorkspaceSchema,
   }),
 

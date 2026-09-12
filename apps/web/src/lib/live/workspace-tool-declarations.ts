@@ -35,7 +35,7 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: 'show_workspace_artifact',
     description:
-      'Open or tailor a useful product artifact beside chat. Supply a contextual title, explanation and filters. Omit layout to preserve the current arrangement. This does not create a meeting or modify data.',
+      'Open or tailor a useful product artifact beside chat. Supply a contextual title, explanation and filters. Omit layout to preserve the current arrangement. This does not read product data, create a meeting, or modify data. Use a title only unless a data-read tool returned the facts. Call each required UI action once and stop after success.',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -85,7 +85,7 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: 'manage_workspace',
     description:
-      'Close irrelevant artifacts, return to full chat, focus one panel, or arrange screen space. Use kind for close_artifact/focus_artifact; layout for set_layout.',
+      'Close irrelevant artifacts, return to full chat, focus one panel, or arrange screen space. Use kind for close_artifact/focus_artifact; layout for set_layout. focus_artifact closes all other panels, so do not focus when asked to keep them. Replace a panel with close_artifact plus show_workspace_artifact. Do not repeat successful UI actions.',
     parameters: {
       type: Type.OBJECT,
       properties: {

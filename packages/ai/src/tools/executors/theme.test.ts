@@ -22,6 +22,7 @@ describe('Mira UI tool markers', () => {
       success: true,
       wsId: 'selected-workspace',
       operation: 'focus_artifact',
+      message: expect.stringContaining('Do not repeat'),
     });
     expect(
       await executeManageWorkspace({ operation: 'focus_artifact' }, ctx)
@@ -55,12 +56,15 @@ describe('Mira UI tool markers', () => {
   it('uses the selected data workspace rather than the dashboard workspace', async () => {
     expect(
       await executeShowWorkspaceArtifact({ kind: 'tasks', layout: 'grid' }, ctx)
-    ).toEqual({
+    ).toMatchObject({
       success: true,
       action: 'show_workspace_artifact',
       kind: 'tasks',
       layout: 'grid',
       wsId: 'selected-workspace',
+      message: expect.stringMatching(
+        /did not fetch product data.*Do not repeat/
+      ),
     });
   });
   it('rejects malformed layout, artifact, sidebar, and theme values', async () => {

@@ -109,7 +109,14 @@ export function useLiveTools(wsId: string) {
               : fc.name === 'manage_workspace'
                 ? manageWorkspaceSchema.parse(fc.args)
                 : showWorkspaceArtifactSchema.parse(fc.args);
-        const response = { ...output, success: true, action: fc.name, wsId };
+        const response = {
+          ...output,
+          success: true,
+          action: fc.name,
+          wsId,
+          message:
+            'UI command completed. Do not repeat it to verify. This UI command did not fetch product data; finish once all requested UI actions succeed.',
+        };
         applyUiAction(fc.name, response);
         return { id: fc.id, name: fc.name, response };
       }

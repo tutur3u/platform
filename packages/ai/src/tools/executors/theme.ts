@@ -47,6 +47,8 @@ export async function executeShowWorkspaceArtifact(
   return {
     success: true,
     action: 'show_workspace_artifact',
+    message:
+      'Artifact UI command completed. This UI command did not fetch product data; the panel fetches its own data separately. Do not repeat this successful command. Continue only with other requested actions, then answer.',
     ...parsed.data,
     wsId: getWorkspaceContextWorkspaceId(ctx),
   };
@@ -61,6 +63,8 @@ export async function executeManageWorkspace(
   return {
     success: true,
     action: 'manage_workspace',
+    message:
+      'Workspace UI command completed. Do not repeat this successful command to verify it. Preserve panels the user asked to keep; once the requested actions are complete, answer without further UI calls.',
     ...parsed.data,
     wsId: getWorkspaceContextWorkspaceId(ctx),
   };
