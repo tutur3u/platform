@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.2](https://github.com/tutur3u/platform/compare/tasks-api-v0.5.1...tasks-api-v0.5.2) (2026-09-12)
+
+
+### Bug Fixes
+
+* **tasks:** align filtered counts and local task visibility ([913388b](https://github.com/tutur3u/platform/commit/913388b78767f927685df695398da030ad73bf82))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/tasks-api-v0.5.0...tasks-api-v0.5.1) (2026-09-04)
 
 

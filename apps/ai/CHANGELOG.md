@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.13.0...ai-studio-v0.14.0) (2026-09-12)
+
+
+### Features
+
+* **ai:** support sponsored Gemini Flash artwork ([43d3fc3](https://github.com/tutur3u/platform/commit/43d3fc3c6bdc5917304cd6a8c6c49f15c7fbd5a9))
+
+
+### Bug Fixes
+
+* **ai:** accept Google image-only modality details ([d7d853f](https://github.com/tutur3u/platform/commit/d7d853f152c7ff3887083cc65cd69f16fa9ba3bf))
+* **ai:** preserve image accounting on partial failures ([1621787](https://github.com/tutur3u/platform/commit/162178794ee9e09081c9c3eb7643c7bcde3948ae))
+* **ai:** preserve step telemetry and identify retired image models ([9ac0235](https://github.com/tutur3u/platform/commit/9ac0235f1a48371fcf267982ffa834b54a3dbc4d))
+* **ai:** use direct Google image provider and modality billing ([1082e93](https://github.com/tutur3u/platform/commit/1082e93da2fb0ce5b05d5150c92bead94ff1381a))
+* **ai:** use supported Gemini Flash image model ([3a18d50](https://github.com/tutur3u/platform/commit/3a18d50250e929ce4c358640643505432af6fe87))
+* **colab:** deliver reliable tool runs and sponsored artwork ([58c9601](https://github.com/tutur3u/platform/commit/58c9601324a18a70d5963c0bb7f5ccd2678be852))
+* **colab:** harden sponsored artwork and retained evidence ([99f7afe](https://github.com/tutur3u/platform/commit/99f7afeda213ad8eecfab8662a392fdf0831126d))
+* **colab:** recover malformed sponsored agent decisions ([198d85f](https://github.com/tutur3u/platform/commit/198d85f6358b0468c7516bd7028def8c5fe13947))
+* **colab:** reliable tool runs, 50-call defaults, and sponsored artwork ([#5303](https://github.com/tutur3u/platform/issues/5303)) ([805311a](https://github.com/tutur3u/platform/commit/805311a2bdef20200b5f7ab06563b2a42ccfd95e))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.12.0...ai-studio-v0.13.0) (2026-09-11)
 
 

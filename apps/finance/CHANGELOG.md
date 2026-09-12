@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.28.1](https://github.com/tutur3u/platform/compare/finance-v0.28.0...finance-v0.28.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** recover stalled invoice loading ([#5310](https://github.com/tutur3u/platform/issues/5310)) ([a5c6a37](https://github.com/tutur3u/platform/commit/a5c6a3765008e1fb503d6e2ceadec9c43b1e23e5))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/finance-v0.27.3...finance-v0.28.0) (2026-09-07)
 
 

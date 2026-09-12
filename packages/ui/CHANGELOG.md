@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/ui-v0.32.0...ui-v0.33.0) (2026-09-12)
+
+
+### Features
+
+* **calendar:** automatically refresh connected calendars ([03584af](https://github.com/tutur3u/platform/commit/03584af0d9b7135b90953e9f81f7e971968679ff))
+* **calendar:** automatically refresh connected calendars ([#5311](https://github.com/tutur3u/platform/issues/5311)) ([e52894f](https://github.com/tutur3u/platform/commit/e52894fd746b76fee1c76efab40c9e398c95b5a4))
+
+
+### Bug Fixes
+
+* **calendar:** clear recovered sync attention state ([bbf22be](https://github.com/tutur3u/platform/commit/bbf22bed0034518cd62d6dc063c30dd210ed2adb))
+* **calendar:** coordinate sync requests and recovery timing ([a1ddf89](https://github.com/tutur3u/platform/commit/a1ddf89570ec0f917d4bcb3cd0f9a1302e9d72c1))
+* **calendar:** preserve recovery alerts during automatic sync ([04b2a1d](https://github.com/tutur3u/platform/commit/04b2a1d22400d20b922edf8d8372700ab490b9af))
+* **calendar:** refresh cached events after remote synchronization ([f59f126](https://github.com/tutur3u/platform/commit/f59f12646c255bbc8a0944701299102d6ff14fe7))
+* **calendar:** use public calendar API type exports ([ac23511](https://github.com/tutur3u/platform/commit/ac23511863ae7c2713da411651cd6e67fa92d153))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** recover stalled invoice loading ([#5310](https://github.com/tutur3u/platform/issues/5310)) ([a5c6a37](https://github.com/tutur3u/platform/commit/a5c6a3765008e1fb503d6e2ceadec9c43b1e23e5))
+* **reports:** clarify delivery and streamline review filters ([b790cb3](https://github.com/tutur3u/platform/commit/b790cb38e48cf7429a698d6360977e35a9aa2617))
+* **reports:** clarify delivery and streamline review filters ([#5314](https://github.com/tutur3u/platform/issues/5314)) ([e9af5a5](https://github.com/tutur3u/platform/commit/e9af5a58f0c133764e91c745b183eae24e512270))
+* **reports:** validate filters and legacy approval states ([d86bd68](https://github.com/tutur3u/platform/commit/d86bd6814986895962fc72dec7dee89570c9269b))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/ui-v0.31.0...ui-v0.32.0) (2026-09-09)
 
 

@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/contacts-v0.19.2...contacts-v0.20.0) (2026-09-12)
+
+
+### Features
+
+* **contacts:** familiar report statuses and branded monthly emails ([#5309](https://github.com/tutur3u/platform/issues/5309)) ([88d74a8](https://github.com/tutur3u/platform/commit/88d74a828ce4deb2047906c66452d17ae50e7b61))
+* **contacts:** track and automate approved report delivery ([#5300](https://github.com/tutur3u/platform/issues/5300)) ([b69c22f](https://github.com/tutur3u/platform/commit/b69c22f433df8a1aa7cea18b538c1a3016582b9e))
+* **contacts:** unify report status UX and branded email previews ([8d464ab](https://github.com/tutur3u/platform/commit/8d464ab47c3297b9846f5d768581a7091704f3a8))
+
+
+### Bug Fixes
+
+* **contacts:** default periodic reports to pending approval ([d41c091](https://github.com/tutur3u/platform/commit/d41c091b512418793ffe36b9931d07b072100162))
+* **contacts:** default periodic reports to pending approval ([#5320](https://github.com/tutur3u/platform/issues/5320)) ([2d58c1c](https://github.com/tutur3u/platform/commit/2d58c1c2474c8e4e840a28dd1845b306e9e26feb))
+* **contacts:** expose named report dashboard regions ([c78820b](https://github.com/tutur3u/platform/commit/c78820b04df6029f1dd154daf4dde6d465e71795))
+* **contacts:** keep background polling separate from manual refresh ([6c0e8c7](https://github.com/tutur3u/platform/commit/6c0e8c7d31805487ea924a7f531bf8225bfa562f))
+* **contacts:** remove redundant report interface copy ([c4c1502](https://github.com/tutur3u/platform/commit/c4c15022a3a15e311048b55a89e5e9d352ef9a7d))
+* **contacts:** remove redundant report interface copy ([#5316](https://github.com/tutur3u/platform/issues/5316)) ([f1ed95f](https://github.com/tutur3u/platform/commit/f1ed95f1a0d7561f4f4146ec0f36dc20f3f28b97))
+* **contacts:** unify daily and periodic report status dashboards ([16ed8b8](https://github.com/tutur3u/platform/commit/16ed8b8448375d232167fa7c0e811f60bae72daa))
+* **contacts:** unify daily and periodic report status dashboards ([#5317](https://github.com/tutur3u/platform/issues/5317)) ([31aea30](https://github.com/tutur3u/platform/commit/31aea30fedf48603fe294803c7bf1d1ae20915a8))
+* **contacts:** unify report stages and skip legacy unsent reports ([0f7fce8](https://github.com/tutur3u/platform/commit/0f7fce8cd1841f777ba18db6e335946ed2fb80bb))
+* **contacts:** unify report stages and skip legacy unsent reports ([#5322](https://github.com/tutur3u/platform/issues/5322)) ([dd9dc1b](https://github.com/tutur3u/platform/commit/dd9dc1bfd3ca6d1ddb113105381387c9f690137e))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** recover stalled invoice loading ([#5310](https://github.com/tutur3u/platform/issues/5310)) ([a5c6a37](https://github.com/tutur3u/platform/commit/a5c6a3765008e1fb503d6e2ceadec9c43b1e23e5))
+* **reports:** clarify delivery and streamline review filters ([b790cb3](https://github.com/tutur3u/platform/commit/b790cb38e48cf7429a698d6360977e35a9aa2617))
+* **reports:** clarify delivery and streamline review filters ([#5314](https://github.com/tutur3u/platform/issues/5314)) ([e9af5a5](https://github.com/tutur3u/platform/commit/e9af5a58f0c133764e91c745b183eae24e512270))
+* **reports:** clarify delivery states and protect active sends ([e8396f2](https://github.com/tutur3u/platform/commit/e8396f269a42703aac3852c1b86ff2299324819e))
+* **reports:** expose draft filters and freeze approval metadata ([58469b2](https://github.com/tutur3u/platform/commit/58469b2092d975deaf4d140cf2a8766bafb1e5da))
+* **reports:** guard skipped deliveries and share stage metadata ([9744b3e](https://github.com/tutur3u/platform/commit/9744b3e8315ff70596a811fad42742dcdcbfc809))
+* **reports:** validate filters and legacy approval states ([d86bd68](https://github.com/tutur3u/platform/commit/d86bd6814986895962fc72dec7dee89570c9269b))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+
 ## [0.19.2](https://github.com/tutur3u/platform/compare/contacts-v0.19.1...contacts-v0.19.2) (2026-09-11)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.1](https://github.com/tutur3u/platform/compare/git-v0.9.0...git-v0.9.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/git-v0.8.3...git-v0.9.0) (2026-09-07)
 
 

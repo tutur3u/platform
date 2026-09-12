@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/types-v0.30.0...types-v0.31.0) (2026-09-12)
+
+
+### Features
+
+* **contacts:** track and automate approved report delivery ([#5300](https://github.com/tutur3u/platform/issues/5300)) ([b69c22f](https://github.com/tutur3u/platform/commit/b69c22f433df8a1aa7cea18b538c1a3016582b9e))
+
+
+### Bug Fixes
+
+* **contacts:** fence report delivery leases and completion ([b692e20](https://github.com/tutur3u/platform/commit/b692e20c95d9d0112b68dbf7afc809f8769c7f5d))
+* **contacts:** harden delivery action boundaries ([1b2969d](https://github.com/tutur3u/platform/commit/1b2969d74d92f2b981610b5665c7255f90742904))
+* **contacts:** serialize approval and delivery requests safely ([caafe51](https://github.com/tutur3u/platform/commit/caafe517131bfa8693f46ae41f27b34fc3d3f129))
+* **contacts:** unify report stages and skip legacy unsent reports ([0f7fce8](https://github.com/tutur3u/platform/commit/0f7fce8cd1841f777ba18db6e335946ed2fb80bb))
+* **contacts:** unify report stages and skip legacy unsent reports ([#5322](https://github.com/tutur3u/platform/issues/5322)) ([dd9dc1b](https://github.com/tutur3u/platform/commit/dd9dc1bfd3ca6d1ddb113105381387c9f690137e))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/types-v0.29.1...types-v0.30.0) (2026-09-10)
 
 
