@@ -1,6 +1,7 @@
 'use client';
 
-import { ArrowUpRight, Circle, Flag } from '@tuturuuu/icons';
+import { TaskSummaryCard } from '@tuturuuu/tasks-ui/tu-do/shared/task-summary-card';
+import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -41,10 +42,10 @@ export function MiraTaskArtifact({
               setFilter(filter === group ? 'all' : group);
               setLimit(12);
             }}
-            className={`rounded-lg border px-2.5 py-2 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-pressed:border-primary ${group === 'overdue' ? 'bg-destructive/5' : group === 'today' ? 'bg-chart-1/10' : 'bg-chart-2/10'}`}
+            className={`flex items-center justify-between gap-1 rounded-lg border px-2.5 py-1.5 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-pressed:border-primary ${group === 'overdue' ? 'bg-destructive/5' : group === 'today' ? 'bg-chart-1/10' : 'bg-chart-2/10'}`}
           >
             <span
-              className={`block font-semibold text-xl tabular-nums ${group === 'overdue' ? 'text-destructive' : ''}`}
+              className={`order-2 font-semibold text-xs tabular-nums ${group === 'overdue' ? 'text-destructive' : ''}`}
             >
               {rows.filter((row) => row.group === group).length}
             </span>
@@ -57,60 +58,42 @@ export function MiraTaskArtifact({
           {t('no_matching_items')}
         </p>
       )}
-      <ul className="divide-y divide-border/60">
+      <ul className="grid @min-[36rem]:grid-cols-2 gap-2">
         {visible.slice(0, limit).map((row) => (
           <li key={row.id}>
-            <a
+            <TaskSummaryCard
+              title={row.title}
               href={
                 row.path
                   ? getTasksAppUrlClient(`/${locale}${row.path}`)
                   : undefined
               }
-              target="_blank"
-              rel="noreferrer"
-              className="group flex gap-2 rounded-md px-1 py-2.5 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              <Circle
-                aria-hidden
-                className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 font-medium text-sm leading-snug">
-                  {row.title}
-                </p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-                  {row.detail && (
-                    <span className="max-w-full truncate">{row.detail}</span>
-                  )}
-                  {row.date && (
-                    <time
-                      dateTime={row.date}
-                      className={
-                        row.group === 'overdue' ? 'text-destructive' : ''
-                      }
-                    >
-                      {format.dateTime(new Date(row.date), {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </time>
-                  )}
-                  {!row.date && <span>{t('no_due_date')}</span>}
-                  {(row.priority === 'critical' || row.priority === 'high') && (
-                    <span className="inline-flex items-center gap-1 text-destructive">
-                      <Flag aria-hidden className="size-3" />
-                      {t(row.priority)}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {row.path && (
-                <ArrowUpRight
-                  aria-hidden
-                  className="mt-0.5 size-3 shrink-0 text-muted-foreground opacity-40 group-hover:opacity-100"
-                />
-              )}
-            </a>
+              source={row.detail}
+              listName={row.listName}
+              priority={isTaskPriority(row.priority) ? row.priority : undefined}
+              priorityLabel={
+                isTaskPriority(row.priority) ? t(row.priority) : undefined
+              }
+              date={row.date}
+              dateLabel={
+                row.date
+                  ? format.dateTime(new Date(row.date), {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      timeZone:
+                        Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    })
+                  : t('no_due_date')
+              }
+              overdue={row.group === 'overdue'}
+              estimationPoints={row.estimationPoints}
+              estimationType={row.estimationType}
+              estimationLabel={t('estimation')}
+              labels={row.labels}
+              assignees={row.assignees}
+            />
           </li>
         ))}
       </ul>

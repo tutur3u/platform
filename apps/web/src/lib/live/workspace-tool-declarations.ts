@@ -35,7 +35,7 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: 'show_workspace_artifact',
     description:
-      'Open or tailor a useful product artifact beside chat. Supply a contextual title, explanation and filters. Omit layout to preserve the current arrangement. This does not read product data, create a meeting, or modify data. Use a title only unless a data-read tool returned the facts. Call each required UI action once and stop after success.',
+      'Open or tailor a useful product artifact beside chat. Supply a concise title and filters; keep explanations in chat. Omit layout to preserve the current arrangement. This does not read product data, create a meeting, or modify data. Use a title only unless a data-read tool returned the facts. Call each required UI action once and stop after success.',
     parameters: {
       type: Type.OBJECT,
       properties: {

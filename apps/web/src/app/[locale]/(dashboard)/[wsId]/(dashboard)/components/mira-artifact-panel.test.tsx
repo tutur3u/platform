@@ -58,7 +58,10 @@ describe('Mira artifact navigation', () => {
     expect(
       screen.getByRole('heading', { name: 'Travel budget' })
     ).toBeInTheDocument();
-    expect(screen.getByText('Review the travel balance.')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Review the travel balance.')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('finance_description')).not.toBeInTheDocument();
     expect(screen.getByText('no_matching_items')).toBeInTheDocument();
     expect(screen.queryByText('Cash')).not.toBeInTheDocument();
   });

@@ -69,6 +69,15 @@ export function useMiraUiActionDispatcher() {
         const parsed = showWorkspaceArtifactSchema.safeParse(output);
         if (!parsed.success) return;
         const { kind, layout, presentation } = parsed.data;
+        const isNewArtifact =
+          workspace &&
+          !workspace.artifacts.some(
+            (artifact) =>
+              artifact.kind === kind && artifact.wsId === output.wsId
+          );
+        if (isNewArtifact && sidebar?.behavior === 'expanded') {
+          sidebar.handleBehaviorChange('collapsed');
+        }
         workspace?.open(kind, output.wsId, layout, presentation);
       } else if (
         toolName === 'manage_workspace' &&

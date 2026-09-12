@@ -1,5 +1,6 @@
 import { ChevronRight, ExternalLink, Globe } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 export function SourcesPart({
@@ -7,6 +8,7 @@ export function SourcesPart({
 }: {
   parts: Array<{ url: string; title?: string; sourceId: string }>;
 }) {
+  const t = useTranslations('dashboard.mira_chat');
   const [expanded, setExpanded] = useState(false);
   const unique = useMemo(() => {
     const seen = new Set<string>();
@@ -17,29 +19,38 @@ export function SourcesPart({
     });
   }, [parts]);
 
-  if (parts.length === 0) return null;
+  if (unique.length === 0) return null;
 
+  const Header = unique.length > 3 ? 'button' : 'div';
   return (
     <div className="mt-2 flex flex-col gap-1.5">
-      <button
-        type="button"
-        onClick={() => setExpanded((e) => !e)}
+      <Header
+        type={unique.length > 3 ? 'button' : undefined}
+        onClick={unique.length > 3 ? () => setExpanded((e) => !e) : undefined}
+        aria-expanded={unique.length > 3 ? expanded : undefined}
         className="flex items-center gap-1.5 text-muted-foreground text-xs transition-colors hover:text-foreground"
       >
         <Globe className="h-3 w-3 text-dynamic-cyan" />
         <span className="font-medium">
-          {unique.length} {unique.length === 1 ? 'source' : 'sources'}
+          {t('sources_count', { count: unique.length })}
         </span>
-        <ChevronRight
-          className={cn(
-            'ml-0.5 h-3 w-3 transition-transform',
-            expanded && 'rotate-90'
-          )}
-        />
-      </button>
-      {expanded && (
+        {unique.length > 3 && (
+          <>
+            <span>
+              {t(expanded ? 'sources_show_less' : 'sources_show_all')}
+            </span>
+            <ChevronRight
+              className={cn(
+                'ml-0.5 h-3 w-3 transition-transform',
+                expanded && 'rotate-90'
+              )}
+            />
+          </>
+        )}
+      </Header>
+      {
         <div className="flex flex-wrap gap-1.5">
-          {unique.map((src, i) => {
+          {(expanded ? unique : unique.slice(0, 3)).map((src, i) => {
             const hostname = (() => {
               try {
                 return new URL(src.url).hostname.replace(/^www\./, '');
@@ -67,7 +78,7 @@ export function SourcesPart({
             );
           })}
         </div>
-      )}
+      }
     </div>
   );
 }
