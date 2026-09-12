@@ -35,7 +35,7 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: 'show_workspace_artifact',
     description:
-      'Open tasks, calendar, finance, or meetings beside the chat. This opens a panel; it does not create a meeting.',
+      'Open or tailor a useful product artifact beside chat. Supply a contextual title, explanation and filters. Omit layout to preserve the current arrangement. This does not create a meeting or modify data.',
     parameters: {
       type: Type.OBJECT,
       properties: {
@@ -47,8 +47,62 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
           type: Type.STRING,
           enum: ['auto', 'horizontal', 'vertical', 'grid'],
         },
+        presentation: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            description: { type: Type.STRING },
+            highlights: {
+              type: Type.ARRAY,
+              maxItems: '3',
+              items: { type: Type.STRING },
+              description:
+                'Up to three brief recommendations grounded in tool data.',
+            },
+            search: { type: Type.STRING },
+            taskStatus: {
+              type: Type.STRING,
+              enum: ['all', 'overdue', 'today', 'upcoming'],
+            },
+            currency: { type: Type.STRING },
+            date: {
+              type: Type.STRING,
+              description:
+                'Local date YYYY-MM-DD; Calendar starts its week here.',
+            },
+            itemIds: {
+              type: Type.ARRAY,
+              maxItems: '50',
+              items: { type: Type.STRING },
+              description: 'Only IDs already returned by data tools.',
+            },
+          },
+        },
       },
       required: ['kind'],
+    },
+  },
+  {
+    name: 'manage_workspace',
+    description:
+      'Close irrelevant artifacts, return to full chat, focus one panel, or arrange screen space. Use kind for close_artifact/focus_artifact; layout for set_layout.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        operation: {
+          type: Type.STRING,
+          enum: ['close_artifact', 'close_all', 'focus_artifact', 'set_layout'],
+        },
+        kind: {
+          type: Type.STRING,
+          enum: ['tasks', 'calendar', 'finance', 'meetings'],
+        },
+        layout: {
+          type: Type.STRING,
+          enum: ['auto', 'horizontal', 'vertical', 'grid'],
+        },
+      },
+      required: ['operation'],
     },
   },
   {

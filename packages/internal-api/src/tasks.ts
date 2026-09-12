@@ -1,3 +1,7 @@
+import { getCurrentUserTask } from './tasks-dashboard';
+
+export * from './tasks-dashboard';
+
 import type { ListWorkspaceTasksOptions } from './task-list-options';
 
 export type {
@@ -1814,19 +1818,6 @@ export async function abortWorkspaceTaskDescriptionChunks(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ action: 'abort', session_id: sessionId }),
-      cache: 'no-store',
-    }
-  );
-}
-
-export async function getCurrentUserTask(
-  taskId: string,
-  options?: InternalApiClientOptions
-) {
-  const client = getTaskApiClient(options);
-  return client.json<CurrentUserTaskDialogResponse>(
-    `/api/v1/users/me/tasks/${encodePathSegment(taskId)}`,
-    {
       cache: 'no-store',
     }
   );

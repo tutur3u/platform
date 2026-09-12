@@ -17,15 +17,16 @@ pressed state identify the control. The chat and its draft stay mounted and
 visible while the live session opens in a compact panel. Close the panel or press
 Escape to stop the session and return focus to the composer.
 
-The dashboard workspace toolbar opens tasks, calendar, finance, and meetings next
-to the conversation. One artifact splits the available space in half; multiple
+The assistant opens tasks, calendar, finance, and meetings next to the conversation
+through tool calls. The chat toolbar has no product, sidebar, or layout controls. One artifact splits the available space in half; multiple
 artifacts automatically use a four-cell grid with chat in one cell. Side-by-side,
 stacked, and grid controls override the arrangement. Narrow containers stack
 panels so sidebar width is included in the responsive decision. Up to three
 artifacts remain open; opening a fourth replaces the oldest. Artifacts are scoped
 to the workspace selected when opened and can be refreshed or closed individually.
-Task previews show up to 30 open assigned tasks, calendar previews cover the next
-seven days, and wallet balances retain their own currencies. APIs remain the
+Task previews use the Tasks app’s personal feed, showing 12 rows at a time with
+Show more. Calendar previews cover the next seven days, and wallet balances retain
+their own currencies. APIs remain the
 permission boundary and panels expose loading, empty, and retry states.
 
 The assistant can call `show_workspace_artifact`, `set_sidebar` (expanded,
@@ -33,8 +34,8 @@ collapsed, hover, hidden), and `set_theme` (light, dark, system) in chat and Liv
 Chat applies UI commands when the streamed tool output arrives, independently of
 whether the result card is visible. Restoring history does not replay old UI
 commands. Sidebar changes use the existing preference provider and respect its
-local/account synchronization settings. The header sidebar menu remains available
-when navigation is hidden.
+local/account synchronization settings. Ask the assistant to restore navigation
+when it is hidden.
 
 Meeting panels provide a creation form to eligible `@tuturuuu.com` accounts using
 `createWorkspaceMeeting`. The existing meeting API authenticates the account,
@@ -53,15 +54,6 @@ accessible dialog. Export downloads the available transcript and notes as text.
 These notes are not workspace documents and are lost when leaving or restarting
 Live mode. The existing five-minute credit authorization limit remains in force;
 expiration ends media capture while retaining the mounted transcript for export.
-
-### Workspace previews
-
-These browser previews use fixture data with the dashboard components and shared
-stylesheet. They illustrate layout and theme behavior, not live account data.
-
-![Mira beside task, calendar, and finance artifacts in dark mode](/images/mira-workspace/grid-dark.png)
-
-![The same artifact workspace immediately after switching to light mode](/images/mira-workspace/grid-light.png)
 
 ## First-party tools
 
@@ -122,3 +114,15 @@ credit settlement, or authenticated production delivery.
 Artifact panels replace the dashboard’s former server-loaded task and calendar insight slots. Full-view links preserve the active language; meeting links open the Meet app. Meeting creation checks the authenticated account’s verified email and provides a retry if account lookup fails. The live panel follows measured header and composer sizes as attachments, text, and narrow layouts change.
 
 Platform forwards `/api/v1/workspaces/:wsId/calendar/events` and its event-detail path to the Calendar app. Calendar remains responsible for membership, `manage_calendar`, and event encryption. Keep these forwarding rules when changing dashboard artifacts or Live calendar tools; a missing rule returns a Platform HTML 404 before Calendar authorization runs. The empty chat reserves space for the composer, allowing welcome actions to scroll independently in compact panels.
+
+### Compact product panels
+
+The Tasks artifact uses the same personal task feed as the Tasks app. A Personal context includes tasks across workspaces and applies personal overrides; a team context stays scoped to that workspace. Due-date groups, priority markers, and board links make each row actionable. Search filters the loaded panel, and Show more reveals additional tasks without discarding the rest of the feed.
+
+Calendar shows a seven-day strip and an agenda, including events spanning multiple days. Finance keeps currencies separate and compares absolute wallet balances, marking negative values; totals reflect the displayed wallets. Meetings separates upcoming and past entries from the latest 30 records and keeps creation in an expandable form for eligible accounts. Each panel retains refresh, error recovery, and full-app navigation.
+
+### Assistant-managed workspace
+
+Use `show_workspace_artifact` to open or update a panel. Its optional `presentation` carries a contextual title, short explanation, and up to three grounded highlights plus search, taskStatus, currency, date, or itemIds filters. Calendar dates start a seven-day local range. Keep explanations grounded in tool data and only use IDs already returned by data tools. Artifacts fetch their own authorized data; presentation text never grants access or changes source records.
+
+Use `manage_workspace` with `close_artifact`, `focus_artifact`, `close_all`, or `set_layout` to manage screen space as the task changes. Opening or updating a panel without a layout preserves the current arrangement. Focusing retains that panel's presentation and closes the others; closing all restores full-width chat. The user can still search, filter, refresh, open the full product, and close each artifact directly. Distinct theme-aware product accents distinguish task urgency, calendar days, wallet balances, and meetings.

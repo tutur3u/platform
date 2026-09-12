@@ -23,7 +23,6 @@ import { MiraChatConversation } from './mira-chat-conversation';
 import { MiraChatEmptyState } from './mira-chat-empty-state';
 import { MiraChatHeader } from './mira-chat-header';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
-import { MiraWorkspaceToolbar } from './mira-workspace-layout';
 import { useMiraBottomBarVisibility } from './use-mira-bottom-bar-visibility';
 import { useMiraChatActions } from './use-mira-chat-actions';
 import { useMiraChatAttachments } from './use-mira-chat-attachments';
@@ -376,7 +375,6 @@ export default function MiraChatPanel({
           <MiraChatHeader
             hasMessages={hasMessages}
             hotkeyLabels={hotkeyLabels}
-            insightsDock={<MiraWorkspaceToolbar wsId={dataWorkspaceId} />}
             isFullscreen={isFullscreen}
             modeControl={modeControl}
             onExportChat={handleExportChat}

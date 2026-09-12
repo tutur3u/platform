@@ -2407,7 +2407,7 @@
     "page:/:locale/:wsId:apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/page.tsx": {
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
-      "note": "Mira dashboard uses unified chat/live composer controls and client-loaded workspace artifact panels in place of server insight slots. Preserve workspace membership checks, selected data context, sidebar/theme actions, responsive split layouts, and verified meeting creation policy in the frontend migration."
+      "note": "Mira dashboard uses assistant-managed artifact open/update/close/focus/layout tools with tailored presentation filters and unified chat/live composer controls and client-loaded workspace artifact panels in place of server insight slots. Personal Tasks uses the cross-workspace personal feed with overrides; panels include urgency filters, calendar day overlap, currency-separated balance comparisons, and upcoming/past meetings. Preserve workspace membership checks, selected data context, sidebar/theme actions, responsive split layouts, and verified meeting creation policy in the frontend migration."
     }
   }
 }

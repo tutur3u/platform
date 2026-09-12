@@ -71,6 +71,7 @@ import {
   executeUpdateTaskList,
 } from './executors/tasks';
 import {
+  executeManageWorkspace,
   executeSetSidebar,
   executeSetTheme,
   executeShowWorkspaceArtifact,
@@ -210,6 +211,7 @@ const toolHandlers = {
   set_default_currency: executeSetDefaultCurrency,
   set_theme: executeSetTheme,
   set_sidebar: executeSetSidebar,
+  manage_workspace: executeManageWorkspace,
   show_workspace_artifact: executeShowWorkspaceArtifact,
   list_workspace_members: executeListWorkspaceMembers,
   update_user_name: executeUpdateUserName,

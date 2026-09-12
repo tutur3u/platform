@@ -1,7 +1,8 @@
 import { listWorkspaceCalendarEvents } from '@tuturuuu/internal-api/calendar';
 import { listWallets } from '@tuturuuu/internal-api/finance';
 import { getWorkspaceMeetings } from '@tuturuuu/internal-api/meetings';
-import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
+import { getUserTaskDashboard } from '@tuturuuu/internal-api/tasks';
+import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { ArtifactKind } from './mira-workspace-state';
 
 export interface ArtifactRow {
@@ -11,25 +12,41 @@ export interface ArtifactRow {
   date?: string;
   amount?: number;
   currency?: string;
+  endDate?: string;
+  allDay?: boolean;
+  group?: string;
+  priority?: string;
+  path?: string;
 }
 export async function loadArtifactRows(
   kind: ArtifactKind,
-  wsId: string
+  wsId: string,
+  date?: string
 ): Promise<ArtifactRow[]> {
   if (kind === 'tasks') {
-    const result = await listWorkspaceTasks(wsId, {
-      limit: 30,
-      listStatuses: ['not_started', 'active'],
-      assignedToMe: true,
+    const workspace = await getWorkspace(wsId);
+    const result = await getUserTaskDashboard({
+      wsId: workspace.id,
+      isPersonal: workspace.personal === true,
     });
-    return result.tasks.map((task) => ({
-      id: task.id,
-      title: task.name,
-      date: task.end_date ?? undefined,
-    }));
+    return (['overdue', 'today', 'upcoming'] as const).flatMap((group) =>
+      result[group].map((task) => ({
+        id: task.id,
+        title: task.name,
+        date: task.end_date ?? undefined,
+        group,
+        priority: task.priority ?? undefined,
+        detail: [task.list?.board?.workspaces?.name, task.list?.board?.name]
+          .filter(Boolean)
+          .join(' · '),
+        path: task.list?.board
+          ? `/${encodeURIComponent(task.list.board.ws_id)}/boards/${encodeURIComponent(task.list.board.id)}?task=${encodeURIComponent(task.id)}`
+          : undefined,
+      }))
+    );
   }
   if (kind === 'calendar') {
-    const start = new Date();
+    const start = date ? new Date(`${date}T00:00:00`) : new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 7);
@@ -41,6 +58,8 @@ export async function loadArtifactRows(
       id: event.id,
       title: event.title ?? '',
       date: event.start_at,
+      endDate: event.end_at,
+      detail: event.location,
     }));
   }
   if (kind === 'finance') {

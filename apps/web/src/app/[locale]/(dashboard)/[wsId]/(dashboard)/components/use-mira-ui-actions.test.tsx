@@ -7,13 +7,20 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMiraUiActions } from './use-mira-ui-actions';
 
-const mocks = vi.hoisted(() => ({ setTheme: vi.fn(), open: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  setTheme: vi.fn(),
+  open: vi.fn(),
+  close: vi.fn(),
+  closeAll: vi.fn(),
+  focus: vi.fn(),
+  setLayout: vi.fn(),
+}));
 vi.mock('next-themes', () => ({
   useTheme: () => ({ setTheme: mocks.setTheme }),
 }));
 vi.mock('./mira-workspace-state', () => ({
   artifactKinds: ['tasks', 'calendar', 'finance', 'meetings'],
-  useMiraWorkspace: () => ({ open: mocks.open }),
+  useMiraWorkspace: () => mocks,
 }));
 function message(
   name: string,
@@ -76,7 +83,63 @@ describe('Mira streamed UI actions', () => {
     expect(mocks.open).toHaveBeenCalledWith(
       'calendar',
       'workspace-2',
-      'vertical'
+      'vertical',
+      undefined
+    );
+  });
+  it.each([
+    ['close_artifact', { kind: 'tasks' }, 'close', ['tasks', 'workspace-2']],
+    [
+      'focus_artifact',
+      { kind: 'finance' },
+      'focus',
+      ['finance', 'workspace-2'],
+    ],
+    ['set_layout', { layout: 'grid' }, 'setLayout', ['grid']],
+    ['close_all', {}, 'closeAll', []],
+  ] as const)(
+    'applies %s from a tool response',
+    (operation, args, method, expected) => {
+      renderHook(() =>
+        useMiraUiActions(
+          [
+            message('manage_workspace', {
+              success: true,
+              wsId: 'workspace-2',
+              operation,
+              ...args,
+            }),
+          ],
+          'streaming'
+        )
+      );
+      expect(mocks[method]).toHaveBeenCalledWith(...expected);
+    }
+  );
+  it('passes tailored presentation to the artifact', () => {
+    const presentation = {
+      title: 'This week',
+      taskStatus: 'overdue',
+      itemIds: ['task-1'],
+    };
+    renderHook(() =>
+      useMiraUiActions(
+        [
+          message('show_workspace_artifact', {
+            success: true,
+            wsId: 'workspace-2',
+            kind: 'tasks',
+            presentation,
+          }),
+        ],
+        'streaming'
+      )
+    );
+    expect(mocks.open).toHaveBeenCalledWith(
+      'tasks',
+      'workspace-2',
+      undefined,
+      presentation
     );
   });
   it.each(['expanded', 'collapsed', 'hover', 'hidden'] as const)(
