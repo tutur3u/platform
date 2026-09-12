@@ -7,6 +7,51 @@ const timestamp = {
 };
 export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   {
+    name: 'set_theme',
+    description: 'Immediately switch the application theme when asked.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        theme: { type: Type.STRING, enum: ['light', 'dark', 'system'] },
+      },
+      required: ['theme'],
+    },
+  },
+  {
+    name: 'set_sidebar',
+    description:
+      'Set navigation to expanded, collapsed, expand on hover, or hidden.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        behavior: {
+          type: Type.STRING,
+          enum: ['expanded', 'collapsed', 'hover', 'hidden'],
+        },
+      },
+      required: ['behavior'],
+    },
+  },
+  {
+    name: 'show_workspace_artifact',
+    description:
+      'Open tasks, calendar, finance, or meetings beside the chat. This opens a panel; it does not create a meeting.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        kind: {
+          type: Type.STRING,
+          enum: ['tasks', 'calendar', 'finance', 'meetings'],
+        },
+        layout: {
+          type: Type.STRING,
+          enum: ['auto', 'horizontal', 'vertical', 'grid'],
+        },
+      },
+      required: ['kind'],
+    },
+  },
+  {
     name: 'get_current_time',
     description:
       'Get current UTC time, local time, and the user browser timezone and UTC offset for scheduling.',

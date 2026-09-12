@@ -102,6 +102,9 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   set_workspace_context:
     'Switch the current workspace context for task, calendar, and finance tools',
   update_my_settings: "Update the assistant's personality settings",
+  set_sidebar: 'Control navigation sidebar visibility and hover expansion',
+  show_workspace_artifact:
+    'Open tasks, calendar, finance, or meetings beside the chat',
   set_theme: 'Switch dark mode, light mode, or system theme',
   render_ui:
     'Generate an interactive, actionable UI component or widget instead of plain text when it significantly improves user experience (e.g. for forms, dashboards, blog-like insight layouts, or data visualization).',

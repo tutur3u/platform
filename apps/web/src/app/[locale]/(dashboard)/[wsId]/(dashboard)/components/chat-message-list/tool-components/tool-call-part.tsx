@@ -17,7 +17,6 @@ import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { getToolName, isToolUIPart } from 'ai';
 import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useState } from 'react';
 import { registry } from '@/components/json-render/dashboard-registry';
 import { resolveRenderUiSpecFromOutput } from '@/components/json-render/render-ui-spec';
@@ -195,17 +194,6 @@ export function ToolCallPart({
     },
     [copyImageMutation]
   );
-
-  const { setTheme } = useTheme();
-  useEffect(() => {
-    if (!isToolPart) return;
-    if (rawToolName !== 'set_theme' || !isDone || logicalError) return;
-    const action = (output as { action?: string } | undefined)?.action;
-    const theme = (output as { theme?: string } | undefined)?.theme;
-    if (action === 'set_theme' && theme) {
-      setTheme(theme);
-    }
-  }, [isToolPart, rawToolName, isDone, logicalError, output, setTheme]);
 
   if (!isToolPart) {
     return null;

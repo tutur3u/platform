@@ -1,12 +1,18 @@
 'use client';
 
-import { AudioLines, MessageSquareText } from '@tuturuuu/icons';
-import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
-import { cn } from '@tuturuuu/utils/format';
+import { AudioLines, X } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import type { ReactNode, RefObject } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const AssistantVoiceClient = dynamic(
   () => import('../assistant/assistant-client'),
@@ -32,6 +38,7 @@ function VoiceClientModuleLoading() {
 }
 
 export function MiraVoiceModeSwitcher({
+  composerRef,
   creditSource,
   creditWsId,
   children,
@@ -39,7 +46,8 @@ export function MiraVoiceModeSwitcher({
   inputRef,
   wsId,
 }: {
-  children: (onVoiceToggle: () => void) => ReactNode;
+  composerRef?: RefObject<HTMLDivElement | null>;
+  children: (onVoiceToggle: () => void, voiceActive: boolean) => ReactNode;
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
   header: (modeControl: ReactNode) => ReactNode;
@@ -49,6 +57,23 @@ export function MiraVoiceModeSwitcher({
   const t = useTranslations('dashboard.voice_assistant');
   const [mode, setMode] = useState<'chat' | 'live'>('chat');
   const voiceActive = mode === 'live';
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [insets, setInsets] = useState({ top: 0, bottom: 0 });
+
+  useLayoutEffect(() => {
+    if (!voiceActive) return;
+    const measure = () =>
+      setInsets({
+        top: (headerRef.current?.getBoundingClientRect().height ?? 0) + 8,
+        bottom: (composerRef?.current?.getBoundingClientRect().height ?? 0) + 8,
+      });
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    if (headerRef.current) observer.observe(headerRef.current);
+    if (composerRef?.current) observer.observe(composerRef.current);
+    return () => observer.disconnect();
+  }, [composerRef, voiceActive]);
   const voiceActiveRef = useRef(false);
   const focusFrameRef = useRef<number | null>(null);
   const focusTimeoutRef = useRef<number | null>(null);
@@ -98,55 +123,46 @@ export function MiraVoiceModeSwitcher({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [exitVoice, voiceActive]);
 
-  const modeControl = (
-    <ToggleGroup
-      aria-label={t('mode_label')}
-      className="h-8 shrink-0 gap-0.5 rounded-[10px] bg-muted/55 p-0.5 shadow-foreground/5 shadow-inner"
-      onValueChange={(value) => {
-        if (value === 'chat') exitVoice();
-        if (value === 'live') enterVoice();
-      }}
-      type="single"
-      value={mode}
-    >
-      <ToggleGroupItem
-        aria-label={t('chat_mode')}
-        className="h-7 gap-1.5 rounded-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
-        value="chat"
-      >
-        <MessageSquareText className="size-3.5" />
-        <span>{t('chat_mode')}</span>
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        aria-label={t('live_mode')}
-        className="h-7 gap-1.5 rounded-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
-        value="live"
-      >
-        <AudioLines className="size-3.5" />
-        <span>{t('live_mode')}</span>
-      </ToggleGroupItem>
-    </ToggleGroup>
-  );
-
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      {header(modeControl)}
-      <div
-        aria-hidden={voiceActive || undefined}
-        className={cn(
-          'min-h-0 min-w-0 flex-1 flex-col',
-          voiceActive ? 'hidden' : 'flex'
-        )}
-      >
-        {children(enterVoice)}
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <div ref={headerRef} className="shrink-0">
+        {header(null)}
+      </div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {children(voiceActive ? exitVoice : enterVoice, voiceActive)}
       </div>
       {voiceActive && (
-        <AssistantVoiceClient
-          creditSource={creditSource}
-          creditWsId={creditWsId}
-          onReturnToChat={exitVoice}
-          wsId={wsId}
-        />
+        <section
+          aria-label={t('live_mode')}
+          style={insets}
+          className="absolute inset-x-2 z-20 flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg sm:left-auto sm:w-[min(28rem,90%)]"
+        >
+          <div className="flex items-center justify-between border-b px-3 py-2">
+            <span className="flex items-center gap-2 font-medium text-sm">
+              <AudioLines className="size-4 text-primary" />
+              {t('live_mode')}
+            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={exitVoice}
+                  aria-label={t('return_to_chat')}
+                >
+                  <X className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('return_to_chat')} (Esc)</TooltipContent>
+            </Tooltip>
+          </div>
+          <AssistantVoiceClient
+            creditSource={creditSource}
+            creditWsId={creditWsId}
+            onReturnToChat={exitVoice}
+            wsId={wsId}
+          />
+        </section>
       )}
     </div>
   );

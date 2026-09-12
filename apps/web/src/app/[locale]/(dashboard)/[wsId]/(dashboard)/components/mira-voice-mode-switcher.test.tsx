@@ -1,6 +1,12 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { useRef, useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 
 vi.mock('../assistant/assistant-client', () => ({
@@ -17,11 +23,13 @@ vi.mock('next-intl', () => ({
 }));
 
 function Harness() {
+  const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('Keep this draft');
 
   return (
     <MiraVoiceModeSwitcher
+      composerRef={composerRef}
       creditSource="personal"
       creditWsId="personal-workspace"
       header={(modeControl) => (
@@ -31,7 +39,7 @@ function Harness() {
       wsId="workspace-1"
     >
       {(onVoiceToggle) => (
-        <div>
+        <div ref={composerRef} data-testid="composer">
           <textarea
             ref={inputRef}
             aria-label="Message"
@@ -48,48 +56,72 @@ function Harness() {
 }
 
 describe('MiraVoiceModeSwitcher', () => {
-  it('defaults to Chat and exposes one consolidated Chat and Live control', () => {
+  beforeEach(() =>
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      }
+    )
+  );
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+  it('keeps the live panel between a wrapped header and growing composer', () => {
+    const observed: Element[] = [];
+    let resize = () => {};
+    let headerHeight = 88;
+    let composerHeight = 240;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resize = callback;
+        }
+        observe(element: Element) {
+          observed.push(element);
+        }
+        disconnect() {}
+      }
+    );
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: HTMLElement) {
+        return {
+          height:
+            this.dataset.testid === 'composer' ? composerHeight : headerHeight,
+        } as DOMRect;
+      }
+    );
     render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(observed).toContain(screen.getByTestId('composer'));
+    expect(observed).toContain(
+      screen.getByTestId('assistant-header').parentElement
+    );
+    const panel = screen.getByRole('region', { name: 'Live' });
+    expect(panel).toHaveStyle({ top: '96px', bottom: '248px' });
+    headerHeight = 124;
+    composerHeight = 320;
+    act(() => resize());
+    expect(panel).toHaveStyle({ top: '132px', bottom: '328px' });
+  });
+  it('opens Live when ResizeObserver is unavailable', async () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(await screen.findByTestId('voice-canvas')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(
+      'Keep this draft'
+    );
+  });
 
-    expect(screen.getByRole('radio', { name: 'Chat' })).toHaveAttribute(
-      'data-state',
-      'on'
-    );
-    expect(screen.getByRole('radio', { name: 'Live' })).toHaveAttribute(
-      'data-state',
-      'off'
-    );
+  it('keeps mode tabs out of the header and starts live from the composer', () => {
+    render(<Harness />);
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Message' })).toBeVisible();
     expect(screen.queryByTestId('voice-canvas')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Assistant mode')).toHaveClass(
-      'h-8',
-      'gap-0.5',
-      'rounded-[10px]',
-      'p-0.5'
-    );
-    expect(screen.getByLabelText('Assistant mode')).not.toHaveAttribute(
-      'data-variant',
-      'outline'
-    );
-    expect(screen.getByRole('radio', { name: 'Chat' })).not.toHaveAttribute(
-      'data-variant',
-      'outline'
-    );
-    expect(screen.getByRole('radio', { name: 'Live' })).not.toHaveAttribute(
-      'data-variant',
-      'outline'
-    );
-    expect(screen.getByRole('radio', { name: 'Chat' })).toHaveClass(
-      'rounded-lg'
-    );
-    expect(screen.getByRole('radio', { name: 'Live' })).toHaveClass(
-      'rounded-lg'
-    );
-    expect(screen.getByRole('radio', { name: 'Chat' })).toHaveClass(
-      'focus-visible:ring-1'
-    );
-    expect(screen.getByTestId('assistant-header')).toContainElement(
-      screen.getByLabelText('Assistant mode')
-    );
   });
 
   it('returns from the in-panel voice canvas without losing the text draft', async () => {
@@ -98,11 +130,12 @@ describe('MiraVoiceModeSwitcher', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
     expect(await screen.findByTestId('voice-canvas')).toBeVisible();
-    expect(screen.getByRole('textbox', { hidden: true, name: 'Message' })).toBe(
+    expect(screen.getByRole('textbox', { name: 'Message' })).toBe(
       originalInput
     );
+    expect(originalInput).toBeVisible();
 
-    fireEvent.click(screen.getByRole('radio', { name: 'Chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'return_to_chat' }));
 
     const input = await screen.findByRole('textbox', { name: 'Message' });
     expect(input).toHaveValue('Keep this draft');
@@ -142,7 +175,7 @@ describe('MiraVoiceModeSwitcher', () => {
     render(<Harness />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'Chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'return_to_chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
 
     await new Promise((resolve) => window.setTimeout(resolve, 220));

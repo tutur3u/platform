@@ -20,6 +20,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { MiraSidebarControls } from './mira-sidebar-controls';
 
 interface MiraChatHeaderProps {
   hasMessages: boolean;
@@ -58,7 +59,7 @@ export function MiraChatHeader({
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   return (
-    <div className="flex min-w-0 items-center justify-between gap-2 pb-2">
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 pb-2">
       {/* Left: workspace context badge */}
       <div className="flex min-w-0 items-center gap-2">
         {workspaceContextBadge}
@@ -66,7 +67,8 @@ export function MiraChatHeader({
       </div>
 
       {/* Right: actions */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex max-w-full flex-wrap items-center gap-1">
+        <MiraSidebarControls />
         {/* New conversation */}
         <Tooltip>
           <TooltipTrigger asChild>

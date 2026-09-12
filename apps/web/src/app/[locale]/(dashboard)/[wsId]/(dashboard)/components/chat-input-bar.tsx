@@ -1,6 +1,6 @@
 'use client';
 
-import { Mic, Paperclip, Send } from '@tuturuuu/icons';
+import { AudioLines, Paperclip, Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useEnterSubmit } from '@tuturuuu/ui/hooks/use-enter-submit';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -93,6 +93,7 @@ interface ChatInputBarProps {
   disabled?: boolean;
   assistantName: string;
   onVoiceToggle?: () => void;
+  voiceActive?: boolean;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   /** Currently attached files */
   files?: ChatFile[];
@@ -112,6 +113,7 @@ export default function ChatInputBar({
   disabled,
   assistantName,
   onVoiceToggle,
+  voiceActive,
   inputRef: externalRef,
   files = [],
   onFilesSelected,
@@ -270,12 +272,17 @@ export default function ChatInputBar({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 shrink-0"
+                  className={cn(
+                    'h-9 w-9 shrink-0',
+                    voiceActive &&
+                      'bg-primary/10 text-primary ring-1 ring-primary/30'
+                  )}
                   onClick={onVoiceToggle}
+                  aria-pressed={voiceActive}
                   disabled={disabled}
                   aria-label={t('voice_input')}
                 >
-                  <Mic className="h-4.5 w-4.5" />
+                  <AudioLines className="h-4.5 w-4.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('voice_input')}</TooltipContent>

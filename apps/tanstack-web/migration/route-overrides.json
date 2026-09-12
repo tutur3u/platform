@@ -2403,6 +2403,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Report edit and delete return 409 while the delivery snapshot is locked by an active worker. First-class Next.js route; Rust parity pending."
+    },
+    "page:/:locale/:wsId:apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Mira dashboard uses unified chat/live composer controls and client-loaded workspace artifact panels in place of server insight slots. Preserve workspace membership checks, selected data context, sidebar/theme actions, responsive split layouts, and verified meeting creation policy in the frontend migration."
     }
   }
 }

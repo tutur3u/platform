@@ -8,33 +8,6 @@ import MiraDashboardClient from './components/mira-dashboard-client';
 
 const DEFAULT_ASSISTANT_NAME = 'Mira';
 
-function DashboardInsightFallback() {
-  return (
-    <div className="group animate-pulse rounded-lg border">
-      <div className="p-1 text-center font-semibold text-lg text-transparent">
-        ...
-      </div>
-      <div className="m-2 mt-0 flex items-center justify-center rounded border border-foreground/5 bg-foreground/5 p-4 font-bold text-2xl text-transparent">
-        ...
-      </div>
-    </div>
-  );
-}
-
-async function DashboardInsightsSlot({
-  userId,
-  wsId,
-}: {
-  userId: string;
-  wsId: string;
-}) {
-  const { default: DashboardInsights } = await import(
-    './components/dashboard-insights'
-  );
-
-  return <DashboardInsights wsId={wsId} userId={userId} />;
-}
-
 async function UserGroupQuickActionsSlot({ wsId }: { wsId: string }) {
   const { default: UserGroupQuickActions } = await import(
     './user-groups/quick-actions'
@@ -145,11 +118,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
         currentUser={currentUser}
         initialAssistantName={DEFAULT_ASSISTANT_NAME}
         wsId={wsId}
-      >
-        <Suspense fallback={<DashboardInsightFallback />}>
-          <DashboardInsightsSlot wsId={wsId} userId={currentUser.id} />
-        </Suspense>
-      </MiraDashboardClient>
+      />
     </>
   );
 }

@@ -23,6 +23,7 @@ import { MiraChatConversation } from './mira-chat-conversation';
 import { MiraChatEmptyState } from './mira-chat-empty-state';
 import { MiraChatHeader } from './mira-chat-header';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
+import { MiraWorkspaceToolbar } from './mira-workspace-layout';
 import { useMiraBottomBarVisibility } from './use-mira-bottom-bar-visibility';
 import { useMiraChatActions } from './use-mira-chat-actions';
 import { useMiraChatAttachments } from './use-mira-chat-attachments';
@@ -32,6 +33,7 @@ import { useMiraChatEffects } from './use-mira-chat-effects';
 import { useMiraChatHotkeys } from './use-mira-chat-hotkeys';
 import { useMiraChatPersistence } from './use-mira-chat-persistence';
 import { useMiraMessageQueue } from './use-mira-message-queue';
+import { useMiraUiActions } from './use-mira-ui-actions';
 
 export interface MiraChatPanelProps {
   wsId: string;
@@ -40,7 +42,6 @@ export interface MiraChatPanelProps {
   assistantName: string;
   userName?: string;
   userAvatarUrl?: string | null;
-  insightsDock?: ReactNode;
   workspaceContextBadge?: ReactNode;
   taskBoardContext?: MiraTaskBoardContext;
   isFullscreen?: boolean;
@@ -55,7 +56,6 @@ export default function MiraChatPanel({
   assistantName,
   userName,
   userAvatarUrl,
-  insightsDock,
   workspaceContextBadge,
   taskBoardContext,
   isFullscreen,
@@ -68,6 +68,7 @@ export default function MiraChatPanel({
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [viewOnly, setViewOnly] = useState(false);
+  const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const toolbarContentRef = useRef<HTMLDivElement>(null);
@@ -206,6 +207,8 @@ export default function MiraChatPanel({
       toast.error(t('stream_error'));
     },
   });
+
+  useMiraUiActions(messages, status);
 
   const sendMessageWithCurrentConfig = useCallback(
     (message: UIMessage) =>
@@ -358,16 +361,22 @@ export default function MiraChatPanel({
     onToggleViewOnly: () => setViewOnly((value) => !value),
   });
 
+  const dataWorkspaceId =
+    chatRequestBody.workspaceContextId === 'personal'
+      ? (personalWorkspaceId ?? 'personal')
+      : chatRequestBody.workspaceContextId;
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MiraVoiceModeSwitcher
+        composerRef={composerRef}
         creditSource={activeCreditSource}
         creditWsId={creditWsId}
         header={(modeControl) => (
           <MiraChatHeader
             hasMessages={hasMessages}
             hotkeyLabels={hotkeyLabels}
-            insightsDock={insightsDock}
+            insightsDock={<MiraWorkspaceToolbar wsId={dataWorkspaceId} />}
             isFullscreen={isFullscreen}
             modeControl={modeControl}
             onExportChat={handleExportChat}
@@ -380,9 +389,9 @@ export default function MiraChatPanel({
           />
         )}
         inputRef={inputRef}
-        wsId={wsId}
+        wsId={dataWorkspaceId}
       >
-        {(onVoiceToggle) => (
+        {(onVoiceToggle, voiceActive) => (
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {hasMessages ? (
               <MiraChatConversation
@@ -414,6 +423,7 @@ export default function MiraChatPanel({
             )}
 
             <MiraChatBottomBar
+              composerRef={composerRef}
               assistantName={assistantName}
               attachedFiles={attachedFiles}
               bottomBarVisible={bottomBarVisible}
@@ -427,6 +437,7 @@ export default function MiraChatPanel({
               }
               onSubmit={handleSubmit}
               onVoiceToggle={onVoiceToggle}
+              voiceActive={voiceActive}
               setInput={setInput}
               // Toolbar props
               activeCreditSource={activeCreditSource}
