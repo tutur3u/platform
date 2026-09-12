@@ -262,7 +262,7 @@ export default function PeriodicReportsPanel({
               onQueryChange={(query) => void setFilters({ query })}
               onReset={() => {
                 void setFilters({
-                  approval: 'UNAPPROVED',
+                  approval: 'PENDING',
                   delivery: 'all',
                   generation: 'all',
                   start: '',

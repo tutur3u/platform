@@ -47,9 +47,9 @@ export function PeriodicStatusSummary({
       },
     },
     {
-      label: 'unapproved',
-      count: counts ? Math.max(0, counts.total - counts.approved) : undefined,
-      approval: 'UNAPPROVED',
+      label: 'status_pending',
+      count: counts?.pendingReview,
+      approval: 'PENDING',
       delivery: 'all',
       appearance: getPostReviewStageAppearance('pending_approval'),
     },
@@ -84,8 +84,8 @@ export function PeriodicStatusSummary({
   ] as const;
   const isShowingAll =
     approval === 'all' && delivery === 'all' && generation === 'all';
-  const isUnapproved =
-    approval === 'UNAPPROVED' && delivery === 'all' && generation === 'all';
+  const isPending =
+    approval === 'PENDING' && delivery === 'all' && generation === 'all';
   return (
     <ReportStatusDashboard
       label={t('report_status')}
@@ -104,14 +104,14 @@ export function PeriodicStatusSummary({
               {t('show_all_reports')}
             </Button>
           )}
-          {!isUnapproved && (
+          {!isPending && (
             <Button
               variant="ghost"
               size="sm"
               className="text-muted-foreground"
-              onClick={() => onChange('UNAPPROVED', 'all', 'all')}
+              onClick={() => onChange('PENDING', 'all', 'all')}
             >
-              {t('unapproved')}
+              {t('status_pending')}
             </Button>
           )}
         </>

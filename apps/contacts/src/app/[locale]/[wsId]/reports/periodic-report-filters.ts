@@ -28,7 +28,7 @@ export const periodicReportFilters = {
     'PENDING',
     'APPROVED',
     'REJECTED',
-  ]).withDefault('UNAPPROVED'),
+  ]).withDefault('PENDING'),
   delivery: parseAsStringLiteral([
     'all',
     'draft',

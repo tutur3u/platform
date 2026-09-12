@@ -26,8 +26,8 @@ describe('monthly status filters', () => {
       'aria-pressed',
       'true'
     );
-    fireEvent.click(screen.getByRole('button', { name: 'unapproved 8' }));
-    expect(change).toHaveBeenLastCalledWith('UNAPPROVED', 'all', 'all');
+    fireEvent.click(screen.getByRole('button', { name: 'status_pending 5' }));
+    expect(change).toHaveBeenLastCalledWith('PENDING', 'all', 'all');
     fireEvent.click(screen.getByRole('button', { name: 'approved 12' }));
     expect(change).toHaveBeenLastCalledWith('APPROVED', 'all', 'all');
     fireEvent.click(screen.getByRole('button', { name: 'status_sent 8' }));
@@ -37,7 +37,7 @@ describe('monthly status filters', () => {
     fireEvent.click(screen.getByRole('button', { name: 'show_all_reports' }));
     expect(change).toHaveBeenLastCalledWith('all', 'all', 'all');
   });
-  it('restores unapproved reports from the total view and renders its toolbar', () => {
+  it('restores pending reports from the total view and renders its toolbar', () => {
     const change = vi.fn();
     render(
       <PeriodicStatusSummary
@@ -54,8 +54,8 @@ describe('monthly status filters', () => {
     expect(
       screen.queryByRole('button', { name: 'show_all_reports' })
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'unapproved' }));
-    expect(change).toHaveBeenCalledWith('UNAPPROVED', 'all', 'all');
+    fireEvent.click(screen.getByRole('button', { name: 'status_pending' }));
+    expect(change).toHaveBeenCalledWith('PENDING', 'all', 'all');
     expect(
       screen.getByRole('button', { name: 'Date range' })
     ).toBeInTheDocument();
