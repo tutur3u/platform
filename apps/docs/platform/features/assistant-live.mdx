@@ -120,3 +120,5 @@ sizes. Component or mocked protocol checks do not prove provider audio quality,
 credit settlement, or authenticated production delivery.
 
 Artifact panels replace the dashboard’s former server-loaded task and calendar insight slots. Full-view links preserve the active language; meeting links open the Meet app. Meeting creation checks the authenticated account’s verified email and provides a retry if account lookup fails. The live panel follows measured header and composer sizes as attachments, text, and narrow layouts change.
+
+Platform forwards `/api/v1/workspaces/:wsId/calendar/events` and its event-detail path to the Calendar app. Calendar remains responsible for membership, `manage_calendar`, and event encryption. Keep these forwarding rules when changing dashboard artifacts or Live calendar tools; a missing rule returns a Platform HTML 404 before Calendar authorization runs. The empty chat reserves space for the composer, allowing welcome actions to scroll independently in compact panels.

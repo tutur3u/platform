@@ -22,8 +22,8 @@ export function MiraChatEmptyState({
   userName,
 }: MiraChatEmptyStateProps) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-start overflow-y-auto px-4 pt-6 pb-40 sm:px-6">
-      <div className="relative mx-auto my-auto w-full max-w-xl">
+    <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-start overflow-y-auto px-4 py-4 sm:px-6">
+      <div className="relative mx-auto my-auto w-full max-w-xl shrink-0">
         <div className="relative mx-auto w-full px-2 py-5 sm:px-6 sm:py-8">
           <div className="flex flex-col items-start text-left">
             <div className="mt-4 max-w-xl space-y-2">
