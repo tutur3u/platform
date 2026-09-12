@@ -40,12 +40,10 @@ consume local CPU/RAM; identify the host before calling a run offloaded.
 
 ## Execution Pattern
 
-Start with focused commands, then broaden:
-
-1. Quick runner smoke such as `bun --version`.
-2. Focused tests for the changed files.
-3. Package-level tests.
-4. `bun check` only after narrower failures are resolved.
+Verify an unfamiliar runner with a small smoke command. Choose focused tests
+for changed behavior and the repository-required checks; add package-wide tests
+only when affected scope or an unresolved failure warrants them. Do not run
+every validation tier merely because it appears in this guide.
 
 Split independent commands into separate runs so failures identify the owning
 surface. Use explicit `--timeout` values and report run IDs, status, exit code,

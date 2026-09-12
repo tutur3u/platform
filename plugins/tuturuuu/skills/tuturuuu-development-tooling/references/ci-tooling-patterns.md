@@ -20,8 +20,9 @@ formatting behavior, or repo-wide verification.
 
 ## Commands And Formatting
 
-- Do not run long-lived dev/build commands such as `bun dev`, `bun run build`,
-  or equivalent bundling unless the user explicitly asks.
+- Finite setup, tests, and builds needed to validate authorized work may run.
+  Start long-lived development servers only when requested or needed for
+  explicitly requested runtime verification. Deployment authority stays separate.
 - For TypeScript, JavaScript, root scripts, or repo config changes, finish with
   `bun check` unless a documented unrelated blocker prevents it.
 - Use focused package-local tests first, then repo checks.

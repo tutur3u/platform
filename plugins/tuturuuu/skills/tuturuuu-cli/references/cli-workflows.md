@@ -28,7 +28,9 @@ ttr workspaces --help
 ```
 
 Inside the Tuturuuu monorepo, use `bun ttr ...` to run the local package script.
-After global installation, use `ttr ...` directly.
+After global installation, use `ttr ...` directly. Do not diagnose `bun ttr login`
+as a registry install failure: Bun interprets that form as a workspace package-script
+lookup, so inspect the local script and its error first.
 
 Upgrade an existing global install with:
 

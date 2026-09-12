@@ -5,145 +5,29 @@ description: "Complete authorized Tuturuuu PR merges or main-to-production sync 
 
 # Tuturuuu PR Merge Sync
 
-Use this skill for end-to-end PR closeout requests that go beyond fixing review
-comments: quiet-window watching, merge, mandatory main-green verification,
-`bun git-sync`, and production-green verification.
+Complete the requested integration through review resolution, the quiet window,
+merge, exact-SHA main CI, `bun git-sync`, and production verification. Keep open
+PR work in an isolated `.worktrees/` checkout with immediate `bun setup`.
 
-## Compose With Focused Skills
+Read `references/merge-procedure.md` for Required Gates, watcher commands, and
+failure recovery when preparing a merge or sync. For a stack, inspect its stack
+gate before merging: parents first; base-chained parents use merge commits and
+children must retarget. A non-main base alone does not prove a stack.
 
-- Use `$tuturuuu-review-comments` first when unresolved review threads need
-  inspection, fixes, replies, or resolution.
-- Use `$tuturuuu-commit` before staging, committing, amending, rebasing, or
-  any user-requested commit/push work.
-- Use `$tuturuuu-agent-coordination` when the checkout is shared, dirty, or the
-  work will take long enough to need a coordination note.
-- Use `$tuturuuu-ci-docs` only when CI workflow behavior or docs navigation
-  must be changed.
+Use the requested quiet duration (30 minutes if unspecified). New comments or
+review activity or pushed commits restart it; with no comments, start at PR
+creation. Fresh commits require checks/review against the new head. Recheck the PR number, head, unresolved threads, activity, and terminal
+checks immediately before merging; use `--match-head-commit <head-sha>`.
+Normal merge is first choice. Admin merge is limited to requested merge
+follow-through with a policy-only block after all other gates are clean.
 
-## Required Gates
+Do not sync until every workflow on the exact merge SHA is green. Fetch again
+before sync: if main advanced with unrelated commits, retain the approved SHA
+and obtain authorization for broader promotion. Do not move a shared checkout
+or claim local branch equality when its owner prevents updating it.
 
-0. Check whether the PR is part of a stack. A base other than `main` is not
-   proof: a PR can legitimately target `production`, a release branch, or a
-   maintenance branch with no parent PR at all, and treating those as stacked
-   blocks valid closeout work. It is a stack only when the base branch is the
-   head branch of an open pull request, or the PR body names its parent:
-
-       gh pr list --state open --json number,headRefName \
-         --jq '.[] | select(.headRefName == "<this-pr-base>") | .number'
-
-   When it is stacked, the parent must merge first — merging a child while its
-   parent is open pulls the parent's unreviewed commits into `main` through the
-   child, and merging a mid-stack or top PR merges everything below it. Merge
-   bottom-up, one PR at a time, running every gate below for each.
-
-   A native stack (`gh stack`) rebases and retargets the rest on merge and
-   accepts any merge method. A base-chained stack (`gh pr create --base`) does
-   not: merge its parents with `gh pr merge --merge`, because a squash or
-   rebase merge leaves the parent's commits outside `main`'s ancestry and the
-   retargeted child re-shows changes that already landed. Either way, confirm
-   each child's `baseRefName` actually moved before treating the stack as
-   advanced. See `/build/development-tools/stacked-pull-requests` in
-   `apps/docs`.
-1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
-   `bun setup` immediately after creating it.
-2. Confirm GitHub auth and rate limits:
-   - `gh auth status`
-   - `gh api rate_limit`
-3. Confirm the PR has zero active unresolved review threads.
-4. Wait for the requested quiet window, defaulting to 30 minutes after the
-   latest PR comment update or review submission.
-5. Wait for PR checks to finish with only `success`, `skipped`, or `neutral`
-   conclusions.
-6. Merge the PR, preferring normal merge first. Use admin merge only when the
-   user requested merge follow-through and GitHub reports a policy-only block
-   after the gates above are clean.
-7. Fetch and fast-forward local `main` to `origin/main`.
-8. Verify every `main` workflow for the merge SHA is green. This is a hard gate:
-   do not run `bun git-sync` while any main workflow is queued, in progress, or
-   failed.
-9. Run `bun git-sync` only after main is fully green.
-10. Verify local and remote `main` and `production` point to the same SHA.
-11. Verify every `production` workflow for that SHA is green.
-12. After the merge is confirmed on `main`, remove the PR worktree and delete
-    its local task branch.
-
-For a user-authorized direct integration without a PR, apply the same safety
-boundary after the scoped current-main commit: wait for the exact main SHA to be
-fully green, run `bun git-sync`, verify production, then remove only that
-completed worktree and its local branch. Never clean blocked, dirty, unmerged,
-user-owned, or other-agent-owned lanes.
-
-## Watcher Scripts
-
-Prefer the bundled scripts for long waits. They print only changed summaries,
-use two-minute polling by default, and exit nonzero on failed checks or active
-review threads.
-
-```bash
-node <skill-dir>/scripts/watch_pr_ready.mjs \
-  --repo tutur3u/platform \
-  --pr 123 \
-  --quiet-minutes 30
-```
-
-```bash
-node <skill-dir>/scripts/watch_branch_runs.mjs \
-  --repo tutur3u/platform \
-  --branch main \
-  --commit <merge-sha>
-```
-
-Use the branch watcher again for `production` after `bun git-sync`.
-
-## Merge And Sync Flow
-
-After the PR watcher exits cleanly:
-
-```bash
-gh pr merge <pr> --repo tutur3u/platform --merge
-```
-
-If GitHub reports that branch policy prohibits the merge despite clean gates,
-and the user asked for merge follow-through, retry with:
-
-```bash
-gh pr merge <pr> --repo tutur3u/platform --merge --admin
-```
-
-Then update and verify `main`:
-
-```bash
-git fetch origin
-git switch main
-git merge --ff-only origin/main
-node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch main --commit <merge-sha>
-```
-
-Only after main is green:
-
-```bash
-bun git-sync
-git rev-parse HEAD main production origin/main origin/production
-node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch production --commit <merge-sha>
-```
-
-## Failure Handling
-
-- If PR checks fail, inspect the failing run/job logs before changing code.
-- If active unresolved threads appear, stop and address them through
-  `$tuturuuu-review-comments`.
-- If main fails after merge, do not run `bun git-sync`; fix or report the main
-  blocker first.
-- If production fails after `bun git-sync`, inspect production workflow logs and
-  fix or report the blocker.
-- Keep temporary watcher files under `tmp/` if custom one-off scripts are
-  needed; never stage coordination notes or scratch watchers.
-- Keep the PR worktree and local task branch when the PR remains open, a required
-  gate is blocked, the merge is absent from `main`, main is not fully green,
-  `bun git-sync` has not completed, or production follow-through is unresolved.
-
-## Final Report
-
-Report the PR URL, merge SHA, quiet-window result, review-thread count, PR check
-summary, main workflow result, `bun git-sync` result, production workflow result,
-final branch refs, rate-limit status if checked, and remaining risks.
+Read the review-comments skill when threads need work and the commit skill when
+staging or committing. Those operations stay within the user's authorized scope.
+Keep the worktree until required production verification is complete; remove
+only the completed clean worktree and its local task branch. Report PR/merge SHA,
+quiet-window evidence, check outcomes, sync result, and remaining delivery limits.

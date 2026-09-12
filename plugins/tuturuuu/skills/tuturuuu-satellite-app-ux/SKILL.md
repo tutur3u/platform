@@ -10,10 +10,9 @@ description: "Implement Tuturuuu satellite app shells, app-session auth, and wor
 Use this skill for standalone app surfaces under `apps/*` that behave like
 satellite apps rather than sections inside `apps/web`.
 
-Start with `AGENTS.md`, `git status --short`, and active coordination notes.
-Then inspect the target app's existing `proxy.ts`, `i18n/routing.ts`,
-providers, workspace layout, navigation, and app-session routes before designing
-new UI.
+For shell or auth changes, trace the target app's relevant `proxy.ts`, providers,
+workspace layout, navigation, or app-session routes. A local UI change does not
+require a full shell audit.
 
 ## App Shell Checklist
 

@@ -7,6 +7,44 @@ The local Tuturuuu Codex plugin lives at `plugins/tuturuuu`. It packages
 repo-specific operating knowledge as Codex skills so future agent sessions can
 load focused guidance without copying long instructions into every prompt.
 
+## Maintaining focused agent guidance
+
+Tuturuuu skills support a specific operation. Discover the capability from its
+short description, read its entrypoint when needed, then open only the relevant
+reference section. CLI task capture, finance reads, CLI implementation, and PR
+integration have different procedures; using one does not require all the others.
+
+This organization follows OpenAI's
+[Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra).
+The guidance remains model-neutral: preserve repository invariants while letting
+the agent choose routine implementation details.
+
+The maintained source is `plugins/tuturuuu/skills`. Audit all skill descriptions,
+entrypoints, and `agents/openai.yaml` prompts there. Keep existing short skills
+when their boundaries are already clear. Update source packages rather than
+installed plugin caches or third-party skill copies. App `CLAUDE.md` aliases and
+generated Next.js instruction blocks retain their canonical owners.
+
+| Work | Guidance to load |
+| --- | --- |
+| CLI install/auth/implementation | `tuturuuu-cli`, then relevant CLI procedure |
+| Task capture or templates | `tuturuuu-cli-tasks`, then task or template procedure |
+| Finance read or mutation | `tuturuuu-cli-finance`, then finance diagnostics/examples |
+| PR integration | `tuturuuu-pr-merge-sync`, then merge gates and watcher commands |
+| Skill or prompt audit | `tuturuuu-development-tooling/references/agent-guidance-review.md` |
+
+Task prompts should name the desired outcome, relevant constraints, and completion
+boundary. For example: "Fix the invoice loading failure, verify recovery, open a
+PR, and merge only after 15 minutes without new review activity, zero unresolved
+review threads, and green checks on the current head." The duration belongs
+to that request; it does not change the default for every future PR. Required
+checks, ownership, production data protections, and migration parity still apply.
+
+A plugin validator proves structural validity, not better model behavior. Review
+representative read, mutation, implementation, and delivery requests for correct
+routing. Record any isolated behavioral evaluation separately. Live product AI
+prompts need their own behavior evaluation before changing their contracts.
+
 ## Discovery
 
 Codex discovers repo-local plugins through

@@ -70,7 +70,8 @@ verification would require a mutation that was not authorized, say so.
 
 ## Product Improvement Loop
 
-Use the same workflow for proactive improvement, not only break/fix work:
+For a requested product audit, select the relevant checks below. A focused bug
+fix does not require this broader audit:
 
 - exercise English and Vietnamese, desktop and narrow/mobile layouts, keyboard
   navigation, empty/loading/error states, and restricted-role behavior
@@ -80,7 +81,7 @@ Use the same workflow for proactive improvement, not only break/fix work:
   owning client polling, cache, or server-rendering behavior
 - measure before changing caching; never cache user-specific, permissioned, or
   Supabase-authenticated data as if it were public
-- turn every confirmed production regression into a focused automated test
+- add a focused regression test when it can meaningfully reproduce the failure
 
 ## Verification
 
