@@ -25,14 +25,17 @@ describe('personal task dashboard client', () => {
   });
 });
 
-it('excludes completed and closed rows even when their list is active', async () => {
+it('excludes completion flags and terminal timestamps from the active feed', async () => {
   const fetch = vi.fn().mockResolvedValue(
     new Response(
       JSON.stringify({
         overdue: [{ id: 'completed', completed_at: '2026-09-01T00:00:00Z' }],
-        today: [{ id: 'closed', closed_at: '2026-09-01T00:00:00Z' }],
+        today: [
+          { id: 'closed', closed_at: '2026-09-01T00:00:00Z' },
+          { id: 'flag-only', completed: true },
+        ],
         upcoming: [{ id: 'active' }],
-        totalActiveTasks: 3,
+        totalActiveTasks: 4,
       }),
       { headers: { 'content-type': 'application/json' } }
     )

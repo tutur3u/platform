@@ -55,3 +55,8 @@ it('prefers explicit selection over discovery results in the same step', () => {
     ])
   ).toEqual(['create_task']);
 });
+
+it('does not truncate singular words ending in s', () => {
+  expect(searchMiraTools({ query: 'basis' }).selectedTools).toEqual([]);
+  expect(searchMiraTools({ query: 'bias' }).selectedTools).toEqual([]);
+});

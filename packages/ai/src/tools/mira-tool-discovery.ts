@@ -8,8 +8,8 @@ const normalize = (value: string) =>
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
     .replace(/_/g, ' ');
-const stem = (word: string) =>
-  word.length > 3 && word.endsWith('s') ? word.slice(0, -1) : word;
+const matchesTerm = (word: string, term: string) =>
+  word.startsWith(term) || term === `${word}s`;
 const domains = {
   tasks: {
     keywords:
@@ -75,11 +75,12 @@ export function searchMiraTools(
   const query = normalize(args.query);
   const terms = query
     .split(/[^\p{L}\p{N}]+/u)
-    .filter((term) => term.length > 2)
-    .map(stem);
+    .filter((term) => term.length > 2);
   const matchingDomains = Object.entries(domains).filter(([, domain]) =>
     terms.some((term) =>
-      normalize(domain.keywords).split(' ').map(stem).includes(term)
+      normalize(domain.keywords)
+        .split(' ')
+        .some((word) => word === term || term === `${word}s`)
     )
   );
   const matches = (
@@ -101,9 +102,9 @@ export function searchMiraTools(
         terms.reduce(
           (total, term) =>
             total +
-            (nameWords.some((word) => stem(word).startsWith(term))
+            (nameWords.some((word) => matchesTerm(word, term))
               ? 6
-              : words.some((word) => stem(word).startsWith(term))
+              : words.some((word) => matchesTerm(word, term))
                 ? 2
                 : 0),
           0
