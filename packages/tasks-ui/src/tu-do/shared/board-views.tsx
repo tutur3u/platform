@@ -887,7 +887,9 @@ export function BoardViews({
             tasks={effectiveTasks}
             lists={filteredLists}
             isLoading={
-              !localTaskState && shouldEagerLoadTasks && isFullTasksPending
+              !localTaskState &&
+              !!filters.searchQuery?.trim() &&
+              isFullTasksPending
             }
             isSearchError={!localTaskState && isFullTasksError}
             disableSort={!!filters.sortBy}
