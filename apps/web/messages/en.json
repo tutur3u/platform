@@ -5747,6 +5747,7 @@
       "model_picker": "Model picker",
       "model_removed_from_favorites": "Removed {model} from favorites",
       "model_selector_empty": "No models found.",
+      "model_selector_load_more": "Load more models",
       "model_selector_search": "Search models...",
       "model_show_all": "Show all models",
       "model_show_favorites": "Show favorites only",

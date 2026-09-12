@@ -5747,6 +5747,7 @@
       "model_picker": "Bộ chọn mô hình",
       "model_removed_from_favorites": "Đã bỏ {model} khỏi mục yêu thích",
       "model_selector_empty": "Không tìm thấy mô hình.",
+      "model_selector_load_more": "Tải thêm mô hình",
       "model_selector_search": "Tìm mô hình...",
       "model_show_all": "Hiển thị tất cả mô hình",
       "model_show_favorites": "Chỉ hiển thị mục yêu thích",
