@@ -3,17 +3,20 @@ import type { MiraToolContext } from '../mira-tool-types';
 import { executeGoogleSearch } from './search';
 
 const generate = vi.hoisted(() => vi.fn());
+const googleModel = vi.hoisted(() => vi.fn(() => ({})));
 vi.mock('ai', () => ({
   generateText: generate,
   stepCountIs: vi.fn(),
-  gateway: vi.fn(() => ({})),
 }));
 vi.mock('@ai-sdk/google', () => ({
-  google: Object.assign(() => ({}), { tools: { googleSearch: () => ({}) } }),
+  google: Object.assign(googleModel, { tools: { googleSearch: () => ({}) } }),
 }));
 vi.mock('../../memory', () => ({ withAiMemory: async () => ({}) }));
 const ctx = { userId: 'user', wsId: 'workspace' } as MiraToolContext;
-beforeEach(() => generate.mockReset());
+beforeEach(() => {
+  generate.mockReset();
+  googleModel.mockClear();
+});
 
 it('recognizes native server search completion without repeating the search', async () => {
   generate.mockResolvedValue({
@@ -24,6 +27,7 @@ it('recognizes native server search completion without repeating the search', as
   expect(
     await executeGoogleSearch({ query: 'Calendar help' }, ctx)
   ).toMatchObject({ ok: true });
+  expect(googleModel).toHaveBeenCalledWith('gemini-3.5-flash-lite');
   expect(generate).toHaveBeenCalledOnce();
 });
 
