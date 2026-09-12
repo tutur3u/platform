@@ -1,16 +1,15 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
+import {
+  manageWorkspaceSchema,
+  showWorkspaceArtifactSchema,
+} from '@tuturuuu/ai/workspace-artifacts';
 import { SidebarContext } from '@tuturuuu/ui/custom/sidebar-context';
 import { useTheme } from 'next-themes';
 import { useCallback, useContext, useEffect, useRef } from 'react';
 import { getMiraToolCallId, getMiraToolName } from './mira-tool-part-utils';
-import {
-  type ArtifactKind,
-  type ArtifactLayout,
-  artifactKinds,
-  useMiraWorkspace,
-} from './mira-workspace-state';
+import { useMiraWorkspace } from './mira-workspace-state';
 
 export function useMiraUiActions(messages: UIMessage[], status: string) {
   const applyAction = useMiraUiActionDispatcher();
@@ -65,17 +64,26 @@ export function useMiraUiActionDispatcher() {
         );
       } else if (
         toolName === 'show_workspace_artifact' &&
-        artifactKinds.includes(output.kind as ArtifactKind) &&
-        typeof output.wsId === 'string' &&
-        ['auto', 'horizontal', 'vertical', 'grid'].includes(
-          String(output.layout)
-        )
+        typeof output.wsId === 'string'
       ) {
-        workspace?.open(
-          output.kind as ArtifactKind,
-          output.wsId,
-          output.layout as ArtifactLayout
-        );
+        const parsed = showWorkspaceArtifactSchema.safeParse(output);
+        if (!parsed.success) return;
+        const { kind, layout, presentation } = parsed.data;
+        workspace?.open(kind, output.wsId, layout, presentation);
+      } else if (
+        toolName === 'manage_workspace' &&
+        typeof output.wsId === 'string'
+      ) {
+        const parsed = manageWorkspaceSchema.safeParse(output);
+        if (!parsed.success) return;
+        const { operation, kind, layout } = parsed.data;
+        if (operation === 'close_all') workspace?.closeAll();
+        else if (operation === 'set_layout' && layout)
+          workspace?.setLayout(layout);
+        else if (operation === 'close_artifact' && kind)
+          workspace?.close(kind, output.wsId);
+        else if (operation === 'focus_artifact' && kind)
+          workspace?.focus(kind, output.wsId);
       }
     },
     [setTheme, sidebar, workspace]

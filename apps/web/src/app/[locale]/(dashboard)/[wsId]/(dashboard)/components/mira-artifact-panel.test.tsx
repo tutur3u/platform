@@ -7,7 +7,10 @@ import type { WorkspaceArtifact } from './mira-workspace-state';
 vi.mock('next-intl', () => ({
   useLocale: () => 'vi',
   useTranslations: () => (key: string) => key,
-  useFormatter: () => ({}),
+  useFormatter: () => ({
+    number: (value: number) => String(value),
+    dateTime: (value: Date) => value.toISOString(),
+  }),
 }));
 vi.mock('@/lib/meet-app-url', () => ({
   getMeetAppOrigin: () => 'https://meet.tuturuuu.com',
@@ -31,11 +34,38 @@ describe('Mira artifact navigation', () => {
       'https://meet.tuturuuu.com/vi/workspace-1/meetings'
     );
   });
+  it('explains when a tailored currency filter has no matching wallets', () => {
+    const client = new QueryClient();
+    client.setQueryData(
+      ['mira-artifact', 'workspace-1', 'finance'],
+      [{ id: 'wallet', title: 'Cash', amount: 50, currency: 'VND' }]
+    );
+    render(
+      <QueryClientProvider client={client}>
+        <MiraArtifactPanel
+          artifact={{
+            kind: 'finance',
+            wsId: 'workspace-1',
+            presentation: {
+              title: 'Travel budget',
+              currency: 'USD',
+              description: 'Review the travel balance.',
+            },
+          }}
+        />
+      </QueryClientProvider>
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Travel budget' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Review the travel balance.')).toBeInTheDocument();
+    expect(screen.getByText('no_matching_items')).toBeInTheDocument();
+    expect(screen.queryByText('Cash')).not.toBeInTheDocument();
+  });
   it('keeps finance navigation within the current workspace and language', () => {
     setup('finance');
-    expect(screen.getByRole('link', { name: 'open_full' })).toHaveAttribute(
-      'href',
-      '/vi/workspace-1/finance/wallets'
-    );
+    for (const link of screen.getAllByRole('link', { name: 'open_full' })) {
+      expect(link).toHaveAttribute('href', '/vi/workspace-1/finance/wallets');
+    }
   });
 });

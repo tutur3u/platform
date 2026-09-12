@@ -1,6 +1,10 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import {
+  manageWorkspaceSchema,
+  showWorkspaceArtifactSchema,
+} from '@tuturuuu/ai/workspace-artifacts';
 import { executeLiveTool } from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -79,9 +83,12 @@ export function useLiveTools(wsId: string) {
     }) => {
       signal.throwIfAborted();
       if (
-        ['set_theme', 'set_sidebar', 'show_workspace_artifact'].includes(
-          fc.name
-        )
+        [
+          'set_theme',
+          'set_sidebar',
+          'show_workspace_artifact',
+          'manage_workspace',
+        ].includes(fc.name)
       ) {
         const output =
           fc.name === 'set_theme'
@@ -99,14 +106,9 @@ export function useLiveTools(wsId: string) {
                     ]),
                   })
                   .parse(fc.args)
-              : z
-                  .object({
-                    kind: z.enum(['tasks', 'calendar', 'finance', 'meetings']),
-                    layout: z
-                      .enum(['auto', 'horizontal', 'vertical', 'grid'])
-                      .default('auto'),
-                  })
-                  .parse(fc.args);
+              : fc.name === 'manage_workspace'
+                ? manageWorkspaceSchema.parse(fc.args)
+                : showWorkspaceArtifactSchema.parse(fc.args);
         const response = { ...output, success: true, action: fc.name, wsId };
         applyUiAction(fc.name, response);
         return { id: fc.id, name: fc.name, response };

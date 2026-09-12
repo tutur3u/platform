@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
 import {
+  executeManageWorkspace,
   executeSetSidebar,
   executeSetTheme,
   executeShowWorkspaceArtifact,
@@ -11,6 +12,46 @@ const ctx = {
   workspaceContext: { wsId: 'selected-workspace' },
 } as MiraToolContext;
 describe('Mira UI tool markers', () => {
+  it('validates management actions and keeps them in the selected workspace', async () => {
+    expect(
+      await executeManageWorkspace(
+        { operation: 'focus_artifact', kind: 'tasks' },
+        ctx
+      )
+    ).toMatchObject({
+      success: true,
+      wsId: 'selected-workspace',
+      operation: 'focus_artifact',
+    });
+    expect(
+      await executeManageWorkspace({ operation: 'focus_artifact' }, ctx)
+    ).toHaveProperty('error');
+    expect(
+      await executeManageWorkspace({ operation: 'set_layout' }, ctx)
+    ).toHaveProperty('error');
+    expect(
+      await executeManageWorkspace({ operation: 'close_all' }, ctx)
+    ).toMatchObject({ success: true, operation: 'close_all' });
+  });
+  it('accepts bounded presentation and rejects invalid dates', async () => {
+    expect(
+      await executeShowWorkspaceArtifact(
+        {
+          kind: 'calendar',
+          presentation: { title: 'Plan Monday', date: '2026-09-14' },
+        },
+        ctx
+      )
+    ).toMatchObject({
+      presentation: { title: 'Plan Monday', date: '2026-09-14' },
+    });
+    expect(
+      await executeShowWorkspaceArtifact(
+        { kind: 'calendar', presentation: { date: '2026-02-31' } },
+        ctx
+      )
+    ).toHaveProperty('error');
+  });
   it('uses the selected data workspace rather than the dashboard workspace', async () => {
     expect(
       await executeShowWorkspaceArtifact({ kind: 'tasks', layout: 'grid' }, ctx)

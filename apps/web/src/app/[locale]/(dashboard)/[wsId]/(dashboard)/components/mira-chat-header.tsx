@@ -20,7 +20,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { MiraSidebarControls } from './mira-sidebar-controls';
 
 interface MiraChatHeaderProps {
   hasMessages: boolean;
@@ -30,7 +29,6 @@ interface MiraChatHeaderProps {
     newChat: string;
     viewOnly: string;
   };
-  insightsDock?: ReactNode;
   isFullscreen?: boolean;
   modeControl?: ReactNode;
   onExportChat: () => void;
@@ -45,7 +43,6 @@ interface MiraChatHeaderProps {
 export function MiraChatHeader({
   hasMessages,
   hotkeyLabels,
-  insightsDock,
   isFullscreen,
   modeControl,
   onExportChat,
@@ -68,7 +65,6 @@ export function MiraChatHeader({
 
       {/* Right: actions */}
       <div className="flex max-w-full flex-wrap items-center gap-1">
-        <MiraSidebarControls />
         {/* New conversation */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -160,8 +156,6 @@ export function MiraChatHeader({
             </DropdownMenuContent>
           </DropdownMenu>
         </Tooltip>
-
-        {insightsDock && <div className="shrink-0">{insightsDock}</div>}
       </div>
     </div>
   );

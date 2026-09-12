@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  manageWorkspaceSchema,
+  showWorkspaceArtifactSchema,
+} from '../../workspace-artifacts';
 import { tool } from '../core';
 
 type SettingsLikeData = {
@@ -85,13 +89,14 @@ export const workspaceUserChatToolDefinitions = {
 
   show_workspace_artifact: tool({
     description:
-      'Open a persistent workspace artifact beside the conversation. Use for tasks, calendar, finance, or meetings. Multiple artifacts arrange automatically; horizontal means side by side, vertical means stacked, grid gives chat one quarter of the workspace.',
-    inputSchema: z.object({
-      kind: z.enum(['tasks', 'calendar', 'finance', 'meetings']),
-      layout: z
-        .enum(['auto', 'horizontal', 'vertical', 'grid'])
-        .default('auto'),
-    }),
+      'Open or update a tailored artifact beside chat. Choose tasks, calendar, finance, or meetings. Use presentation for a helpful title, grounded explanation, up to three useful highlights, search, taskStatus, currency, date, or specific itemIds. Opening multiple panels splits the space automatically. Omit layout to preserve the current arrangement. Use proactively when a visual view helps the task; no toolbar click is needed.',
+    inputSchema: showWorkspaceArtifactSchema,
+  }),
+
+  manage_workspace: tool({
+    description:
+      'Manage screen space: close_artifact closes the selected kind in this workspace, close_all returns to full chat, focus_artifact keeps only the chosen artifact, and set_layout changes the split. horizontal is side by side, vertical is stacked, grid gives chat one quarter with multiple panels. Close irrelevant panels and focus useful ones as the conversation evolves.',
+    inputSchema: manageWorkspaceSchema,
   }),
 
   set_theme: tool({

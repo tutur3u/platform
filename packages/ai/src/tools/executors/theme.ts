@@ -1,3 +1,7 @@
+import {
+  manageWorkspaceSchema,
+  showWorkspaceArtifactSchema,
+} from '../../workspace-artifacts';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
 
@@ -37,18 +41,27 @@ export async function executeShowWorkspaceArtifact(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
-  const { kind, layout = 'auto' } = args;
-  if (
-    !['tasks', 'calendar', 'finance', 'meetings'].includes(String(kind)) ||
-    !['auto', 'horizontal', 'vertical', 'grid'].includes(String(layout))
-  ) {
-    return { error: 'Invalid artifact or layout' };
-  }
+  const parsed = showWorkspaceArtifactSchema.safeParse(args);
+  if (!parsed.success)
+    return { error: 'Invalid artifact presentation or layout' };
   return {
     success: true,
     action: 'show_workspace_artifact',
-    kind,
-    layout,
+    ...parsed.data,
+    wsId: getWorkspaceContextWorkspaceId(ctx),
+  };
+}
+
+export async function executeManageWorkspace(
+  args: Record<string, unknown>,
+  ctx: MiraToolContext
+) {
+  const parsed = manageWorkspaceSchema.safeParse(args);
+  if (!parsed.success) return { error: 'Invalid workspace operation' };
+  return {
+    success: true,
+    action: 'manage_workspace',
+    ...parsed.data,
     wsId: getWorkspaceContextWorkspaceId(ctx),
   };
 }
