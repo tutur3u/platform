@@ -9,6 +9,7 @@ export interface MiraToolContext {
   chatId?: string;
   supabase: TypedSupabaseClient;
   timezone?: string;
+  requestHeaders?: Pick<Headers, 'get'>;
   canReadUserGroupStorage?: (input: {
     groupId: string;
     storagePath: string;

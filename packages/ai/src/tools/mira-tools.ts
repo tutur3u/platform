@@ -2,7 +2,9 @@ import type { PermissionId } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { Tool, ToolSet } from 'ai';
 import { createStreamRenderUiTool } from './definitions/render-ui';
+import { createTaskWriteGuard } from './mira-task-write-guard';
 import { miraToolDefinitions } from './mira-tool-definitions';
+import { searchMiraTools } from './mira-tool-discovery';
 import { executeMiraTool } from './mira-tool-dispatcher';
 import {
   MIRA_TOOL_DIRECTORY,
@@ -14,6 +16,7 @@ import {
   isRenderableRenderUiSpec,
 } from './mira-tool-render-ui';
 import type { MiraToolContext } from './mira-tool-types';
+import { getWorkspaceContextWorkspaceId } from './workspace-context';
 
 export type { MiraToolContext } from './mira-tool-types';
 export type { MiraToolName };
@@ -31,6 +34,8 @@ export function createMiraStreamTools(
 ): ToolSet {
   const tools: ToolSet = {};
   let renderUiInvalidAttempts = 0;
+  const permittedNames = new Set<string>();
+  const guardTaskWrite = createTaskWriteGuard();
 
   // Create a per-stream render_ui tool with stateful preprocessor.
   // The preprocessor auto-populates a context-aware fallback on the first
@@ -61,6 +66,17 @@ export function createMiraStreamTools(
         isMissingPermission = true;
         missingPermissionsStr = requiredPerm;
       }
+    }
+
+    if (!isMissingPermission) permittedNames.add(name);
+
+    if (name === 'search_tools') {
+      tools[name] = {
+        ...def,
+        execute: (args: { query: string; limit?: number }) =>
+          searchMiraTools(args, permittedNames),
+      } as Tool;
+      continue;
     }
 
     if (isMissingPermission) {
@@ -159,7 +175,12 @@ export function createMiraStreamTools(
       execute: async (
         args: Record<string, unknown>,
         options?: { abortSignal?: AbortSignal }
-      ) => executeMiraTool(name, args, ctx, options),
+      ) =>
+        name === 'create_task'
+          ? guardTaskWrite(getWorkspaceContextWorkspaceId(ctx), args, () =>
+              executeMiraTool(name, args, ctx, options)
+            )
+          : executeMiraTool(name, args, ctx, options),
     } as Tool;
   }
 

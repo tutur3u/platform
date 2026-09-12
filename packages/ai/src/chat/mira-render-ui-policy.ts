@@ -398,7 +398,9 @@ export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
     }
 
     const selectResult = step?.toolResults?.find(
-      (toolResult) => toolResult.toolName === 'select_tools'
+      (toolResult) =>
+        toolResult.toolName === 'select_tools' ||
+        toolResult.toolName === 'search_tools'
     );
     const selectedTools = selectResult?.output?.selectedTools;
     if (Array.isArray(selectedTools)) {
@@ -429,7 +431,11 @@ export function wasToolEverSelectedInSteps(
     if (fromCalls) return true;
 
     return (typedStep?.toolResults ?? []).some((toolResult) => {
-      if (toolResult.toolName !== 'select_tools') return false;
+      if (
+        toolResult.toolName !== 'select_tools' &&
+        toolResult.toolName !== 'search_tools'
+      )
+        return false;
       const selected = toolResult.output?.selectedTools;
       return (
         Array.isArray(selected) &&
@@ -516,7 +522,8 @@ export function countRenderUiAttemptsInSteps(steps: unknown[]): number {
 export function buildActiveToolsFromSelected(
   selectedTools: string[]
 ): string[] {
-  if (selectedTools.length === 0) return ['select_tools', 'no_action_needed'];
+  if (selectedTools.length === 0)
+    return ['search_tools', 'select_tools', 'no_action_needed'];
 
   const unique = Array.from(new Set(selectedTools));
   const includesNoAction = unique.includes('no_action_needed');
@@ -526,6 +533,7 @@ export function buildActiveToolsFromSelected(
       (toolName) =>
         toolName !== 'select_tools' && toolName !== 'no_action_needed'
     ),
+    'search_tools',
     'select_tools',
     ...(includesNoAction ? ['no_action_needed'] : []),
   ];

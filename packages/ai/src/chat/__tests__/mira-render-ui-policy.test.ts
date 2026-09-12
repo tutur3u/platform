@@ -406,9 +406,11 @@ describe('mira render_ui policy', () => {
   it('builds active tools without implicit no_action_needed', () => {
     expect(buildActiveToolsFromSelected(['render_ui'])).toEqual([
       'render_ui',
+      'search_tools',
       'select_tools',
     ]);
     expect(buildActiveToolsFromSelected(['no_action_needed'])).toEqual([
+      'search_tools',
       'select_tools',
       'no_action_needed',
     ]);

@@ -9,6 +9,7 @@ import {
   removeWorkspaceDiscoveryTools,
   wasToolEverSelectedInSteps,
 } from '../mira-render-ui-policy';
+import { getMiraToolLoopReason } from '../mira-tool-loop-guard';
 
 export type PrepareMiraToolStepInput = {
   steps: unknown[];
@@ -29,21 +30,23 @@ export function prepareMiraToolStep({
   needsWorkspaceMembersTool,
   preferMarkdownTables,
 }: PrepareMiraToolStepInput): {
-  toolChoice?: 'required';
+  toolChoice?: 'required' | 'none';
   activeTools: string[];
 } {
+  if (getMiraToolLoopReason(steps))
+    return { toolChoice: 'none', activeTools: [] };
   if (steps.length === 0) {
     if (forceGoogleSearch) {
       return {
         toolChoice: 'required',
-        activeTools: ['google_search', 'select_tools'],
+        activeTools: ['google_search', 'search_tools', 'select_tools'],
       };
     }
 
     if (needsParallelChecks) {
       return {
         toolChoice: 'required',
-        activeTools: ['run_parallel_checks', 'select_tools'],
+        activeTools: ['run_parallel_checks', 'search_tools', 'select_tools'],
       };
     }
 
@@ -54,6 +57,7 @@ export function prepareMiraToolStep({
           'list_accessible_workspaces',
           'get_workspace_context',
           'set_workspace_context',
+          'search_tools',
           'select_tools',
         ],
       };
@@ -65,13 +69,14 @@ export function prepareMiraToolStep({
         activeTools: [
           'get_workspace_context',
           'list_workspace_members',
+          'search_tools',
           'select_tools',
         ],
       };
     }
 
     return {
-      activeTools: ['select_tools', 'no_action_needed'],
+      activeTools: ['search_tools', 'select_tools', 'no_action_needed'],
     };
   }
 
@@ -106,11 +111,17 @@ export function prepareMiraToolStep({
     return {
       toolChoice: 'required',
       activeTools: hasListedAccessibleWorkspaces
-        ? ['get_workspace_context', 'set_workspace_context', 'select_tools']
+        ? [
+            'get_workspace_context',
+            'set_workspace_context',
+            'search_tools',
+            'select_tools',
+          ]
         : [
             'list_accessible_workspaces',
             'get_workspace_context',
             'set_workspace_context',
+            'search_tools',
             'select_tools',
           ],
     };
@@ -131,6 +142,7 @@ export function prepareMiraToolStep({
       'get_workspace_context',
       'list_workspace_members',
       ...selected,
+      'search_tools',
       'select_tools',
     ];
 
@@ -143,7 +155,7 @@ export function prepareMiraToolStep({
   if (forceGoogleSearch && !hasToolCallInSteps(steps, 'google_search')) {
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'no_action_needed')
-      .concat('google_search', 'select_tools');
+      .concat('google_search', 'search_tools', 'select_tools');
 
     return {
       toolChoice: 'required',
@@ -157,7 +169,7 @@ export function prepareMiraToolStep({
   ) {
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'no_action_needed')
-      .concat('run_parallel_checks', 'select_tools');
+      .concat('run_parallel_checks', 'search_tools', 'select_tools');
 
     return {
       toolChoice: 'required',
@@ -178,6 +190,7 @@ export function prepareMiraToolStep({
           toolName !== 'select_tools' && toolName !== 'no_action_needed'
       ),
       'render_ui',
+      'search_tools',
       'select_tools',
     ];
 
@@ -199,7 +212,7 @@ export function prepareMiraToolStep({
   ) {
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'no_action_needed')
-      .concat('render_ui', 'select_tools');
+      .concat('render_ui', 'search_tools', 'select_tools');
     return {
       toolChoice: 'required',
       activeTools: Array.from(new Set(active)),
@@ -209,7 +222,7 @@ export function prepareMiraToolStep({
   if (hasRenderableRenderUiInSteps(steps)) {
     const active = buildActiveToolsFromSelected(toolsForBuild)
       .filter((toolName) => toolName !== 'render_ui')
-      .concat('select_tools');
+      .concat('search_tools', 'select_tools');
     return {
       activeTools: Array.from(new Set(active)),
     };

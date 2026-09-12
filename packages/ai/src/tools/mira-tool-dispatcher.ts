@@ -6,6 +6,7 @@ import {
   executeGetUpcomingEvents,
   executeUpdateEvent,
 } from './executors/calendar';
+import { executeCalendarAutomation } from './executors/calendar-automation';
 import { executeSetImmersiveMode } from './executors/chat';
 import {
   executeCreateTransactionCategory,
@@ -41,6 +42,7 @@ import { executeParallelChecks } from './executors/parallel-checks';
 import { executeCreateQrCode } from './executors/qr';
 import { executeGoogleSearch } from './executors/search';
 import { executeUpdateMySettings } from './executors/settings';
+import { executeGetTask, executeSearchTasks } from './executors/task-read';
 import {
   executeAddTaskAssignee,
   executeAddTaskLabels,
@@ -103,6 +105,7 @@ import {
   executeSetWorkspaceContext,
 } from './executors/workspace';
 import type { DefinedMiraToolName } from './mira-tool-definitions';
+import { searchMiraTools } from './mira-tool-discovery';
 import {
   buildRenderUiRecoverySpec,
   isRenderableRenderUiSpec,
@@ -116,12 +119,19 @@ type ToolHandler = (
 ) => Promise<unknown> | unknown;
 
 const toolHandlers = {
+  search_tools: (args) =>
+    searchMiraTools({
+      query: String(args.query ?? ''),
+      limit: typeof args.limit === 'number' ? args.limit : undefined,
+    }),
   select_tools: (args) => ({ ok: true, selectedTools: args.tools }),
   no_action_needed: () => ({ ok: true }),
   google_search: executeGoogleSearch,
   run_parallel_checks: (args, ctx, options) =>
     executeParallelChecks(args, ctx, options),
 
+  get_task: executeGetTask,
+  search_tasks: executeSearchTasks,
   get_my_tasks: executeGetMyTasks,
   create_task: executeCreateTask,
   complete_task: executeCompleteTask,
@@ -150,6 +160,20 @@ const toolHandlers = {
   add_task_assignee: executeAddTaskAssignee,
   remove_task_assignee: executeRemoveTaskAssignee,
 
+  get_calendar_connections: (args, ctx) =>
+    executeCalendarAutomation('get_calendar_connections', args, ctx),
+  connect_google_calendar: (args, ctx) =>
+    executeCalendarAutomation('connect_google_calendar', args, ctx),
+  sync_calendar: (args, ctx) =>
+    executeCalendarAutomation('sync_calendar', args, ctx),
+  set_event_locked: (args, ctx) =>
+    executeCalendarAutomation('set_event_locked', args, ctx),
+  preview_calendar_schedule: (args, ctx) =>
+    executeCalendarAutomation('preview_calendar_schedule', args, ctx),
+  apply_calendar_schedule: (args, ctx) =>
+    executeCalendarAutomation('apply_calendar_schedule', args, ctx),
+  get_schedulable_tasks: (args, ctx) =>
+    executeCalendarAutomation('get_schedulable_tasks', args, ctx),
   get_upcoming_events: executeGetUpcomingEvents,
   create_event: executeCreateEvent,
   update_event: executeUpdateEvent,
