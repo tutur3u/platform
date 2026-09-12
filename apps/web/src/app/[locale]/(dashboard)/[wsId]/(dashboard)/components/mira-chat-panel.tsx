@@ -427,6 +427,7 @@ export default function MiraChatPanel({
               assistantName={assistantName}
               attachedFiles={attachedFiles}
               bottomBarVisible={bottomBarVisible}
+              floating={hasMessages}
               canUploadFiles={supportsFileInput}
               input={input}
               inputRef={inputRef}

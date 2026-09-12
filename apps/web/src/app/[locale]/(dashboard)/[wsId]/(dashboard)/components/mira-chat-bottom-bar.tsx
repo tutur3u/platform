@@ -13,6 +13,7 @@ interface MiraChatBottomBarProps {
   assistantName: string;
   attachedFiles: ChatFile[];
   bottomBarVisible: boolean;
+  floating: boolean;
   canUploadFiles: boolean;
   input: string;
   inputRef: RefObject<HTMLTextAreaElement | null>;
@@ -50,6 +51,7 @@ export function MiraChatBottomBar({
   assistantName,
   attachedFiles,
   bottomBarVisible,
+  floating,
   canUploadFiles,
   input,
   inputRef,
@@ -80,7 +82,8 @@ export function MiraChatBottomBar({
     <div
       ref={composerRef}
       className={cn(
-        'absolute right-0 bottom-0 left-0 z-10 flex min-w-0 max-w-full flex-col p-3 sm:p-4'
+        'z-10 flex min-w-0 max-w-full flex-col p-3 sm:p-4',
+        floating ? 'absolute right-0 bottom-0 left-0' : 'relative shrink-0'
       )}
     >
       <div

@@ -24,6 +24,14 @@ export function createSatelliteApiRewrites({
       destination: `${infrastructureOrigin}/api/v1/infrastructure/resolve-workspace-id`,
     },
     {
+      source: '/api/v1/workspaces/:wsId/calendar/events',
+      destination: `${calendarOrigin}/api/v1/workspaces/:wsId/calendar/events`,
+    },
+    {
+      source: '/api/v1/workspaces/:wsId/calendar/events/:eventId',
+      destination: `${calendarOrigin}/api/v1/workspaces/:wsId/calendar/events/:eventId`,
+    },
+    {
       source: '/api/v1/users/calendar-settings',
       destination: `${calendarOrigin}/api/v1/users/calendar-settings`,
     },
