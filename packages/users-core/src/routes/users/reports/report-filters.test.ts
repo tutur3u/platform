@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
+const access = vi.hoisted(() => ({
+  actor: 'actor' as string | null,
+  allowed: true,
+}));
+vi.mock('../../../lib/user-groups/groups-utils', () => ({
+  getUserGroupMembershipsForActor: async () => ['group-1'],
+}));
+
 vi.mock('@tuturuuu/supabase/next/server', async (original) => {
   const actual =
     await original<typeof import('@tuturuuu/supabase/next/server')>();
@@ -10,17 +18,20 @@ vi.mock('@tuturuuu/supabase/next/server', async (original) => {
 });
 vi.mock('../../../lib/user-groups/route-auth', () => ({
   getUserGroupRoutePermissions: async () => ({
-    containsPermission: () => true,
+    containsPermission: (permission: string) =>
+      access.allowed && permission !== 'manage_users',
   }),
 }));
 vi.mock('../../../lib/user-groups/route-helpers', () => ({
   resolveUserGroupRouteWorkspaceId: async () => 'workspace',
-  resolveRequestActorAuthUid: async () => 'actor',
+  resolveRequestActorAuthUid: async () => access.actor,
 }));
 
 import { GET } from './route';
 
 beforeEach(() => {
+  access.actor = 'actor';
+  access.allowed = true;
   vi.stubEnv('SUPABASE_SERVER_URL', 'https://reports-filters.test');
   vi.stubEnv('SUPABASE_SECRET_KEY', 'test-only-key');
 });
@@ -68,6 +79,10 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
   expect(response.status).toBe(200);
   const body = await response.json();
   expect(body.counts.total).toBe(1);
+  expect(body.workspace.timezone).toBe('Asia/Ho_Chi_Minh');
+  expect(
+    urls.some((url) => url.pathname.endsWith('/rpc/get_periodic_report_counts'))
+  ).toBe(false);
   expect(body.data[0]).toMatchObject({
     delivery_status: 'draft',
     test_delivery: { status: 'sent' },
@@ -80,6 +95,7 @@ it('applies period overlap to rows and counts, includes unapproved legacy record
     expect(url.searchParams.get('period_end')).toBe('gte.2026-08-01');
     expect(url.searchParams.get('period_start')).toBe('lte.2026-08-31');
     expect(url.searchParams.get('user_ws_id')).toBe('eq.workspace');
+    expect(url.searchParams.get('group_id')).toBe('in.(group-1)');
   }
   expect(reportQueries[0]?.searchParams.get('or')).toBe(
     '(report_approval_status.neq.APPROVED,report_approval_status.is.null)'
@@ -105,3 +121,25 @@ it.each(['periodStart=invalid', 'periodStart=2026-09-01&periodEnd=2026-08-01'])(
     expect(fetch).not.toHaveBeenCalled();
   }
 );
+
+it('returns no reports when the actor has no accessible groups', async () => {
+  access.actor = null;
+  const fetch = vi.fn();
+  vi.stubGlobal('fetch', fetch);
+  const response = await GET(new Request('https://example.test/reports'), {
+    params: Promise.resolve({ wsId: 'workspace' }),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ data: [], total: 0 });
+  expect(fetch).not.toHaveBeenCalled();
+});
+it('rejects viewers without report permission before querying data', async () => {
+  access.allowed = false;
+  const fetch = vi.fn();
+  vi.stubGlobal('fetch', fetch);
+  const response = await GET(new Request('https://example.test/reports'), {
+    params: Promise.resolve({ wsId: 'workspace' }),
+  });
+  expect(response.status).toBe(403);
+  expect(fetch).not.toHaveBeenCalled();
+});

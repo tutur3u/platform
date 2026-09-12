@@ -126,7 +126,8 @@ export function PeriodicReportRow({
             </Button>
           ) : null}
           {permissions.canApproveReports &&
-          report.report_approval_status === 'PENDING' ? (
+          (report.report_approval_status === 'PENDING' ||
+            report.report_approval_status === null) ? (
             <Button
               size="icon"
               className="size-8"

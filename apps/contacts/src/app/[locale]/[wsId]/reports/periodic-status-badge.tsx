@@ -12,12 +12,13 @@ export function PeriodicStatusBadge({
   approval,
   delivery,
 }: {
-  approval?: 'APPROVED' | 'PENDING' | 'REJECTED';
+  approval?: 'APPROVED' | 'PENDING' | 'REJECTED' | null;
   delivery?: PeriodicReportDeliveryStatus;
 }) {
   const t = useTranslations('reports-hub');
-  const appearance = approval
-    ? getPostApprovalStatusAppearance(approval)
+  const approvalValue = approval === null ? 'PENDING' : approval;
+  const appearance = approvalValue
+    ? getPostApprovalStatusAppearance(approvalValue)
     : getPostEmailStatusAppearance(delivery === 'draft' ? undefined : delivery);
   const Icon = appearance.icon;
   return (
@@ -28,7 +29,7 @@ export function PeriodicStatusBadge({
       {delivery === 'draft'
         ? t('not_sent')
         : t(
-            `status_${approval ? (approval.toLowerCase() as 'approved' | 'pending' | 'rejected') : (delivery ?? 'draft')}`
+            `status_${approvalValue ? (approvalValue.toLowerCase() as 'approved' | 'pending' | 'rejected') : (delivery ?? 'draft')}`
           )}
     </Badge>
   );

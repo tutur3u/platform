@@ -130,7 +130,7 @@ export interface PeriodicReport {
   manager_instruction: string | null;
   period_end: string | null;
   period_start: string | null;
-  report_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  report_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   score: number | null;
   title: string;
   updated_at: string;

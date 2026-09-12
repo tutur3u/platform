@@ -32,6 +32,7 @@ import GroupReportsSelector from '../users/reports/group-reports-selector';
 import { PeriodicDeliveryConfirmation } from './periodic-delivery-confirmation';
 import { PeriodicEmailReadiness } from './periodic-email-readiness';
 import {
+  normalizePeriodicReportPeriod,
   periodicReportFilterKeys,
   periodicReportFilters,
 } from './periodic-report-filters';
@@ -78,9 +79,13 @@ export default function PeriodicReportsPanel({
     generation: generationStatus,
     sort: sortBy,
     direction: sortDirection,
-    start: periodStart,
-    end: periodEnd,
+    start: rawPeriodStart,
+    end: rawPeriodEnd,
   } = filters;
+  const { start: periodStart, end: periodEnd } = normalizePeriodicReportPeriod(
+    rawPeriodStart,
+    rawPeriodEnd
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [debouncedQuery] = useDebounce(query.trim(), 300);
   const [deliveryIntent, setDeliveryIntent] = useState<{

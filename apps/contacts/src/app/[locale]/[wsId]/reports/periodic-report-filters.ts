@@ -1,4 +1,17 @@
-import { parseAsString, parseAsStringLiteral } from 'nuqs';
+import { createParser, parseAsString, parseAsStringLiteral } from 'nuqs';
+import { z } from 'zod';
+
+const calendarDate = z.iso.date();
+const parseCalendarDate = createParser({
+  parse: (value) => (calendarDate.safeParse(value).success ? value : null),
+  serialize: (value) => value,
+}).withDefault('');
+
+export function normalizePeriodicReportPeriod(start: string, end: string) {
+  return start && end && start > end
+    ? { start: end, end: start }
+    : { start, end };
+}
 
 // Keep periodic filters independent from the daily report URL state.
 export const periodicReportFilters = {
@@ -34,8 +47,8 @@ export const periodicReportFilters = {
     'user',
   ]).withDefault('period'),
   direction: parseAsStringLiteral(['asc', 'desc']).withDefault('desc'),
-  start: parseAsString.withDefault(''),
-  end: parseAsString.withDefault(''),
+  start: parseCalendarDate,
+  end: parseCalendarDate,
 };
 export const periodicReportFilterKeys = {
   cadence: 'reportCadence',

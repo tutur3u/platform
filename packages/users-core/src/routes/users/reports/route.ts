@@ -210,20 +210,23 @@ export async function GET(request: Request, { params }: Params) {
       return query;
     };
 
-    const countsRpcPromise = (
-      privateDb.rpc as unknown as (
-        name: string,
-        args: {
-          p_cadence: string;
-          p_group_ids: string[] | null;
-          p_ws_id: string;
-        }
-      ) => Promise<PeriodicReportCountsRpcResponse>
-    )('get_periodic_report_counts', {
-      p_cadence: parsed.data.cadence,
-      p_group_ids: accessibleGroupIds,
-      p_ws_id: wsId,
-    });
+    const countsRpcPromise =
+      parsed.data.periodStart || parsed.data.periodEnd
+        ? Promise.resolve({ data: null, error: null })
+        : (
+            privateDb.rpc as unknown as (
+              name: string,
+              args: {
+                p_cadence: string;
+                p_group_ids: string[] | null;
+                p_ws_id: string;
+              }
+            ) => Promise<PeriodicReportCountsRpcResponse>
+          )('get_periodic_report_counts', {
+            p_cadence: parsed.data.cadence,
+            p_group_ids: accessibleGroupIds,
+            p_ws_id: wsId,
+          });
 
     const workspacePromise = sbAdmin
       .from('workspaces')
@@ -326,7 +329,9 @@ export async function GET(request: Request, { params }: Params) {
         total: totalResult.count,
       });
     }
-    const reportIds = (listResult.data ?? []).map((row) => row.id);
+    const reportIds = (listResult.data ?? []).flatMap((row) =>
+      row.id ? [row.id] : []
+    );
     const testDeliveries = reportIds.length
       ? await privateDb
           .from('user_report_email_queue')
@@ -341,7 +346,7 @@ export async function GET(request: Request, { params }: Params) {
     );
     const data = (listResult.data ?? []).map((row) => ({
       ...row,
-      test_delivery: testsByReport.get(row.id) ?? null,
+      test_delivery: row.id ? (testsByReport.get(row.id) ?? null) : null,
       creator_name:
         row.creator_display_name ??
         row.creator_full_name ??

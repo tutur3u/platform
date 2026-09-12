@@ -40,3 +40,17 @@ it('fits the visible sheet when the panel shrinks and never enlarges A4', () => 
   unmount();
   expect(disconnect).toHaveBeenCalledOnce();
 });
+
+it('renders and performs the initial fit without ResizeObserver', () => {
+  vi.stubGlobal('ResizeObserver', undefined);
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400);
+  vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(800);
+  const { container } = render(
+    <ReportPreviewViewport>
+      <div>Report</div>
+    </ReportPreviewViewport>
+  );
+  expect((container.querySelector('[style]') as HTMLElement).style.zoom).toBe(
+    '0.5'
+  );
+});

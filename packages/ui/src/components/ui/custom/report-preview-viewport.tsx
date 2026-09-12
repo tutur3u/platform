@@ -17,9 +17,10 @@ export function ReportPreviewViewport({ children }: { children: ReactNode }) {
         setScale(Math.min(1, parent.clientWidth / width));
       }
     };
+    resize();
+    if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(resize);
     observer.observe(parent);
-    resize();
     return () => observer.disconnect();
   }, []);
   return (
