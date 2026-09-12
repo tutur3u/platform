@@ -20,15 +20,6 @@ const quickActionsSource = readFileSync(
     encoding: 'utf8',
   }
 );
-const dashboardInsightsSource = readFileSync(
-  join(
-    process.cwd(),
-    'src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/dashboard-insights.tsx'
-  ),
-  {
-    encoding: 'utf8',
-  }
-);
 const navigationSource = readFileSync(
   join(process.cwd(), 'src/app/[locale]/(dashboard)/[wsId]/navigation.tsx'),
   { encoding: 'utf8' }
@@ -103,25 +94,5 @@ describe('[wsId] dashboard page compile graph', () => {
     expect(quickActionsSource).toMatch(
       /import\(\s*['"]\.\/quick-actions-content['"]\s*\)/u
     );
-  });
-
-  it('keeps compact dashboard insight summaries behind async split points', () => {
-    for (const modulePath of [
-      './compact-calendar-summary',
-      './compact-tasks-summary',
-    ] as const) {
-      expect(dashboardInsightsSource).not.toMatch(
-        staticImportPattern(modulePath)
-      );
-      expect(dashboardInsightsSource).toMatch(
-        new RegExp(
-          String.raw`import\(\s*['"]${modulePath.replace(
-            /[.*+?^${}()|[\]\\]/gu,
-            String.raw`\$&`
-          )}['"]\s*\)`,
-          'u'
-        )
-      );
-    }
   });
 });

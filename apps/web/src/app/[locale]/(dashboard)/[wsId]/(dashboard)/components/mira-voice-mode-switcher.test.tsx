@@ -70,6 +70,7 @@ describe('MiraVoiceModeSwitcher', () => {
     vi.unstubAllGlobals();
   });
   it('keeps the live panel between a wrapped header and growing composer', () => {
+    const observed: Element[] = [];
     let resize = () => {};
     let headerHeight = 88;
     let composerHeight = 240;
@@ -79,7 +80,9 @@ describe('MiraVoiceModeSwitcher', () => {
         constructor(callback: () => void) {
           resize = callback;
         }
-        observe() {}
+        observe(element: Element) {
+          observed.push(element);
+        }
         disconnect() {}
       }
     );
@@ -93,6 +96,10 @@ describe('MiraVoiceModeSwitcher', () => {
     );
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(observed).toContain(screen.getByTestId('composer'));
+    expect(observed).toContain(
+      screen.getByTestId('assistant-header').parentElement
+    );
     const panel = screen.getByRole('region', { name: 'Live' });
     expect(panel).toHaveStyle({ top: '96px', bottom: '248px' });
     headerHeight = 124;
@@ -100,6 +107,16 @@ describe('MiraVoiceModeSwitcher', () => {
     act(() => resize());
     expect(panel).toHaveStyle({ top: '132px', bottom: '328px' });
   });
+  it('opens Live when ResizeObserver is unavailable', async () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(await screen.findByTestId('voice-canvas')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(
+      'Keep this draft'
+    );
+  });
+
   it('keeps mode tabs out of the header and starts live from the composer', () => {
     render(<Harness />);
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();

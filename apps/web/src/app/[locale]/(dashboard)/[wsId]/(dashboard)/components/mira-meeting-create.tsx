@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createWorkspaceMeeting } from '@tuturuuu/internal-api/meetings';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -20,7 +20,7 @@ export function MiraMeetingCreate({ wsId }: { wsId: string }) {
   const profile = useQuery({
     queryKey: ['mira-meeting-account'],
     queryFn: async () => {
-      const { data, error } = await createClient().auth.getUser();
+      const { data, error } = await createAuthClient().auth.getUser();
       if (error) throw error;
       return data.user;
     },

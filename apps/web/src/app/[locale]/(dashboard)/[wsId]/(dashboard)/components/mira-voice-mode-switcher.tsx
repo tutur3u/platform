@@ -68,6 +68,7 @@ export function MiraVoiceModeSwitcher({
         bottom: (composerRef?.current?.getBoundingClientRect().height ?? 0) + 8,
       });
     measure();
+    if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);
     if (headerRef.current) observer.observe(headerRef.current);
     if (composerRef?.current) observer.observe(composerRef.current);

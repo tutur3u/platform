@@ -12,9 +12,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   getPermissions: vi.fn(),
   getWorkspace: vi.fn(),
-  MiraDashboardClient: vi.fn(({ children }) => (
-    <div data-testid="mira-dashboard">{children}</div>
-  )),
+  MiraDashboardClient: vi.fn(() => <div data-testid="mira-dashboard" />),
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
@@ -35,10 +33,6 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('./components/mira-dashboard-client', () => ({
   default: mocks.MiraDashboardClient,
-}));
-
-vi.mock('./components/dashboard-insights', () => ({
-  default: () => <div data-testid="dashboard-insights" />,
 }));
 
 vi.mock('./permission-setup-banner', () => ({

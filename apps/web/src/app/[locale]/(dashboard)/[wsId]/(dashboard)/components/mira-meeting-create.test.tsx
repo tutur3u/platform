@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraMeetingCreate } from './mira-meeting-create';
 
 const mocks = vi.hoisted(() => ({ profile: vi.fn(), create: vi.fn() }));
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => ({
+vi.mock('@tuturuuu/supabase/next/auth-browser', () => ({
+  createAuthClient: () => ({
     auth: {
       getUser: async () => ({
         data: { user: await mocks.profile() },
