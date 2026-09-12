@@ -1,12 +1,19 @@
 'use client';
 
-import type { PeriodicReportDeliveryStatus } from '@tuturuuu/internal-api/reports';
+import type {
+  PeriodicReportDeliveryStatus,
+  PeriodicReportStage,
+} from '@tuturuuu/internal-api/reports';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
 } from '@tuturuuu/users-ui/components/post-status-meta';
 import { useTranslations } from 'next-intl';
+import {
+  getPeriodicStageAppearance,
+  PERIODIC_STAGES,
+} from './periodic-stage-meta';
 
 export function PeriodicStatusBadge({
   approval,
@@ -31,6 +38,19 @@ export function PeriodicStatusBadge({
         : t(
             `status_${approvalValue ? (approvalValue.toLowerCase() as 'approved' | 'pending' | 'rejected') : (delivery ?? 'draft')}`
           )}
+    </Badge>
+  );
+}
+
+export function PeriodicStageBadge({ stage }: { stage: PeriodicReportStage }) {
+  const t = useTranslations('reports-hub');
+  const meta = PERIODIC_STAGES.find(([key]) => key === stage)!;
+  const appearance = getPeriodicStageAppearance(stage);
+  const Icon = appearance.icon;
+  return (
+    <Badge variant="outline" className={appearance.className}>
+      <Icon className={`mr-1 size-3 ${appearance.iconClassName ?? ''}`} />
+      {t(meta[1])}
     </Badge>
   );
 }

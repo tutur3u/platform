@@ -19,7 +19,10 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { PeriodicDeliveryStatus } from './periodic-delivery-status';
-import { PeriodicStatusBadge } from './periodic-status-badge';
+import {
+  PeriodicStageBadge,
+  PeriodicStatusBadge,
+} from './periodic-status-badge';
 
 export type PeriodicEmailPreview = PeriodicReportEmailPreview;
 
@@ -94,9 +97,13 @@ export function PeriodicReportPreviewDialog({
             {report && (
               <>
                 <div className="space-y-3">
-                  <PeriodicStatusBadge
-                    approval={report.report_approval_status}
-                  />
+                  {report.report_stage ? (
+                    <PeriodicStageBadge stage={report.report_stage} />
+                  ) : (
+                    <PeriodicStatusBadge
+                      approval={report.report_approval_status}
+                    />
+                  )}
                   <div>
                     <p className="font-medium text-sm">
                       {report.user_name ?? t('unknown_member')}

@@ -255,6 +255,12 @@ An active delivery locks the report content and approval until the worker finish
 
 ### Review filters and test delivery
 
-Monthly reports open with Unapproved selected, including pending, rejected, and older reports without an approval value. Periodic filters and sorting use separate URL parameters from daily reports. Date bounds select overlapping saved report periods; reports without a saved period are included under All periods. Status totals reflect the selected period before search and status filters narrow the list.
+Periodic reports open with Pending approval selected, excluding drafts, approved, rejected, and terminal delivery states. Periodic filters and sorting use separate URL parameters from daily reports. Date bounds select overlapping saved report periods; reports without a saved period are included under All periods. Status totals reflect the selected period before search and status filters narrow the list.
 
 Report delivery and Test send are separate statuses. A successful test does not mark the report as delivered or prevent its regular send. Diagnostics show the latest send retry count separately from up to 20 recent delivery-history entries. Timestamps explicitly use the viewer device timezone. Provider references are available under each history entry.
+
+## Periodic report stages
+
+Weekly, monthly, quarterly, and yearly reports use ten exclusive stages: Drafts, Pending approval, Approved awaiting delivery, Undeliverable, Queued, Processing, Sent, Failed, Skipped, and Rejected. The default view shows Pending approval. Select a status to filter or Show all reports to include terminal states. Counts respect the cadence and period range. Skipped reports are preserved and do not send automatically after approval.
+
+The September 12, 2026 cleanup marks Easy Center reports created strictly before `2026-09-11T17:00:00Z` as Skipped when their delivery status is still Not sent. It covers all periodic cadences and generation states, preserves content/approval/history, and excludes active queues, accepted real deliveries, and unknown delivery outcomes. Any stale retryable queue entry on a skipped report is cancelled. The migration logs the affected row count and is safe to rerun.

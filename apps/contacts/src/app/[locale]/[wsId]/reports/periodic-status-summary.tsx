@@ -1,115 +1,54 @@
 'use client';
-
-import { FileText } from '@tuturuuu/icons';
-import type { PeriodicReportCounts } from '@tuturuuu/internal-api/reports';
+import type {
+  PeriodicReportCounts,
+  PeriodicReportStage,
+} from '@tuturuuu/internal-api/reports';
 import { Button } from '@tuturuuu/ui/button';
-import { getPostReviewStageAppearance } from '@tuturuuu/users-ui/components/post-status-meta';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type {
-  PeriodicApprovalFilter,
-  PeriodicDeliveryFilter,
-} from './periodic-reports-toolbar';
 import {
   ReportStatusCard,
   ReportStatusDashboard,
 } from './report-status-dashboard';
 
+export { PERIODIC_STAGES } from './periodic-stage-meta';
+
+import {
+  getPeriodicStageAppearance,
+  PERIODIC_STAGES,
+} from './periodic-stage-meta';
+
 export function PeriodicStatusSummary({
-  generation = 'all',
   counts,
-  approval,
-  delivery,
+  stage,
   onChange,
   toolbar,
 }: {
-  generation?: 'all' | 'draft';
-  toolbar?: ReactNode;
   counts?: PeriodicReportCounts;
-  approval: PeriodicApprovalFilter;
-  delivery: PeriodicDeliveryFilter;
-  onChange: (
-    approval: PeriodicApprovalFilter,
-    delivery: PeriodicDeliveryFilter,
-    generation?: 'all' | 'draft'
-  ) => void;
+  stage: PeriodicReportStage | 'all';
+  onChange: (stage: PeriodicReportStage | 'all') => void;
+  toolbar?: ReactNode;
 }) {
   const t = useTranslations('reports-hub');
-  const stages = [
-    {
-      label: 'drafts',
-      count: counts?.draft,
-      approval: 'all',
-      delivery: 'all',
-      appearance: {
-        ...getPostReviewStageAppearance('missing_check'),
-        icon: FileText,
-      },
-    },
-    {
-      label: 'status_pending',
-      count: counts?.pendingReview,
-      approval: 'PENDING',
-      delivery: 'all',
-      appearance: getPostReviewStageAppearance('pending_approval'),
-    },
-    {
-      label: 'approved',
-      count: counts?.approved,
-      approval: 'APPROVED',
-      delivery: 'all',
-      appearance: getPostReviewStageAppearance('approved_awaiting_delivery'),
-    },
-    {
-      label: 'status_sent',
-      count: counts?.delivered,
-      approval: 'all',
-      delivery: 'sent',
-      appearance: getPostReviewStageAppearance('sent'),
-    },
-    {
-      label: 'failed',
-      count: counts?.failed,
-      approval: 'all',
-      delivery: 'failed',
-      appearance: getPostReviewStageAppearance('delivery_failed'),
-    },
-    {
-      label: 'status_blocked',
-      count: counts?.blocked,
-      approval: 'all',
-      delivery: 'blocked',
-      appearance: getPostReviewStageAppearance('undeliverable'),
-    },
-  ] as const;
-  const isShowingAll =
-    approval === 'all' && delivery === 'all' && generation === 'all';
-  const isPending =
-    approval === 'PENDING' && delivery === 'all' && generation === 'all';
   return (
     <ReportStatusDashboard
       label={t('report_status')}
       total={counts?.total}
       totalLabel={t('total_reports')}
-      columns={3}
       toolbar={toolbar}
       actions={
         <>
-          {!isShowingAll && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onChange('all', 'all', 'all')}
-            >
+          {stage !== 'all' && (
+            <Button variant="outline" size="sm" onClick={() => onChange('all')}>
               {t('show_all_reports')}
             </Button>
           )}
-          {!isPending && (
+          {stage !== 'pending' && (
             <Button
               variant="ghost"
               size="sm"
               className="text-muted-foreground"
-              onClick={() => onChange('PENDING', 'all', 'all')}
+              onClick={() => onChange('pending')}
             >
               {t('status_pending')}
             </Button>
@@ -117,23 +56,17 @@ export function PeriodicStatusSummary({
         </>
       }
     >
-      {stages.map((stage) => {
-        const stageGeneration = stage.label === 'drafts' ? 'draft' : 'all';
+      {PERIODIC_STAGES.map(([value, label]) => {
+        const appearance = getPeriodicStageAppearance(value);
         return (
           <ReportStatusCard
-            key={stage.label}
-            label={t(stage.label)}
-            count={stage.count}
+            key={value}
+            label={t(label)}
+            count={counts?.stages?.[value]}
             total={counts?.total}
-            active={
-              approval === stage.approval &&
-              delivery === stage.delivery &&
-              generation === stageGeneration
-            }
-            appearance={stage.appearance}
-            onClick={() =>
-              onChange(stage.approval, stage.delivery, stageGeneration)
-            }
+            active={stage === value}
+            appearance={appearance}
+            onClick={() => onChange(value)}
           />
         );
       })}

@@ -3362,6 +3362,9 @@
     "linked_modules": "Linked Modules"
   },
   "reports-hub": {
+    "status_skipped": "Skipped",
+    "approved_awaiting_delivery": "Approved awaiting delivery",
+    "undeliverable": "Undeliverable",
     "ai_draft": "AI-generated draft",
     "all_periods": "All periods",
     "all_time_end": "Latest",

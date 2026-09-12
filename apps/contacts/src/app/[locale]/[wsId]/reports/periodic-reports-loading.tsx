@@ -11,7 +11,6 @@ export function PeriodicReportsLoading() {
     <div className="space-y-4">
       <ReportStatusDashboard
         totalLabel={t('total_reports')}
-        columns={3}
         actions={<Skeleton className="h-8 w-32" />}
         toolbar={
           <div className="space-y-3">
@@ -20,7 +19,7 @@ export function PeriodicReportsLoading() {
           </div>
         }
       >
-        {Array.from({ length: 6 }, (_, index) => (
+        {Array.from({ length: 10 }, (_, index) => (
           <div
             key={`count-${index}`}
             className="space-y-2 rounded-xl border px-3.5 py-3"

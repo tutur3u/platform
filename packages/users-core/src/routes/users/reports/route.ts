@@ -13,14 +13,11 @@ import {
   resolveUserGroupRouteWorkspaceId,
 } from '../../../lib/user-groups/route-helpers';
 import {
-  normalizePeriodicReportCounts,
-  type PeriodicReportCountsRpcRow,
-} from './report-counts';
-import {
   buildPeriodicReportFallbackFilter,
   isMissingReportSearchRpc,
 } from './report-search';
 import { getPeriodicReportSortColumn } from './report-sorting';
+import { normalizeReportStages, PERIODIC_REPORT_STAGES } from './report-stages';
 
 const CreateReportSchema = z.object({
   user_id: z.guid(),
@@ -44,6 +41,7 @@ const CreateReportSchema = z.object({
 });
 
 const ListReportsSchema = z.object({
+  stage: z.enum(PERIODIC_REPORT_STAGES).optional(),
   generationStatus: z
     .enum(['draft', 'generating', 'ready', 'failed'])
     .optional(),
@@ -64,6 +62,7 @@ const ListReportsSchema = z.object({
       'failed',
       'blocked',
       'cancelled',
+      'skipped',
     ])
     .optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -75,11 +74,6 @@ const ListReportsSchema = z.object({
 
 interface Params {
   params: Promise<{ wsId: string }>;
-}
-
-interface PeriodicReportCountsRpcResponse {
-  data: PeriodicReportCountsRpcRow[] | PeriodicReportCountsRpcRow | null;
-  error: unknown | null;
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -121,6 +115,7 @@ export async function GET(request: Request, { params }: Params) {
     if (accessibleGroupIds?.length === 0) {
       return NextResponse.json({
         counts: {
+          stages: normalizeReportStages(null),
           approved: 0,
           blocked: 0,
           delivered: 0,
@@ -191,6 +186,8 @@ export async function GET(request: Request, { params }: Params) {
         query = query.gte('period_end', parsed.data.periodStart);
       if (parsed.data.periodEnd)
         query = query.lte('period_start', parsed.data.periodEnd);
+      if (parsed.data.stage)
+        query = query.eq('report_stage', parsed.data.stage);
       if (parsed.data.approvalStatus === 'UNAPPROVED') {
         query = query.or(
           'report_approval_status.neq.APPROVED,report_approval_status.is.null'
@@ -210,30 +207,29 @@ export async function GET(request: Request, { params }: Params) {
       return query;
     };
 
-    const countsRpcPromise =
-      parsed.data.periodStart || parsed.data.periodEnd
-        ? Promise.resolve({ data: null, error: null })
-        : (
-            privateDb.rpc as unknown as (
-              name: string,
-              args: {
-                p_cadence: string;
-                p_group_ids: string[] | null;
-                p_ws_id: string;
-              }
-            ) => Promise<PeriodicReportCountsRpcResponse>
-          )('get_periodic_report_counts', {
-            p_cadence: parsed.data.cadence,
-            p_group_ids: accessibleGroupIds,
-            p_ws_id: wsId,
-          });
-
+    const stageCountsPromise = privateDb.rpc(
+      'get_periodic_report_stage_counts',
+      {
+        p_ws_id: wsId,
+        p_cadence: parsed.data.cadence,
+        p_group_ids: accessibleGroupIds ?? undefined,
+        p_period_start: parsed.data.periodStart,
+        p_period_end: parsed.data.periodEnd,
+      }
+    );
     const workspacePromise = sbAdmin
       .from('workspaces')
       .select('id, timezone')
       .eq('id', wsId)
       .single();
-    let listResult = await buildListQuery(Boolean(parsed.data.q));
+    const [initialListResult, workspaceResult, stageCounts] = await Promise.all(
+      [
+        buildListQuery(Boolean(parsed.data.q)),
+        workspacePromise,
+        stageCountsPromise,
+      ]
+    );
+    let listResult = initialListResult;
     if (
       listResult.error &&
       parsed.data.q &&
@@ -241,94 +237,21 @@ export async function GET(request: Request, { params }: Params) {
     ) {
       listResult = await buildListQuery(false);
     }
-    const [countsRpcResult, workspaceResult] = await Promise.all([
-      countsRpcPromise,
-      workspacePromise,
-    ]);
     if (listResult.error) throw listResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
 
-    let counts: ReturnType<typeof normalizePeriodicReportCounts>;
-    if (
-      !countsRpcResult.error &&
-      !parsed.data.periodStart &&
-      !parsed.data.periodEnd
-    ) {
-      const rpcRow = Array.isArray(countsRpcResult.data)
-        ? countsRpcResult.data[0]
-        : countsRpcResult.data;
-      counts = normalizePeriodicReportCounts(rpcRow);
-    } else {
-      const createCountQuery = (filter?: {
-        column:
-          | 'delivery_status'
-          | 'generation_status'
-          | 'report_approval_status';
-        value: string;
-      }) => {
-        let query = privateDb
-          .from('external_user_monthly_reports_workspace_view')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_ws_id', wsId)
-          .eq('cadence', parsed.data.cadence);
-        if (accessibleGroupIds) {
-          query = query.in('group_id', accessibleGroupIds);
-        }
-        if (parsed.data.periodStart)
-          query = query.gte('period_end', parsed.data.periodStart);
-        if (parsed.data.periodEnd)
-          query = query.lte('period_start', parsed.data.periodEnd);
-        return filter ? query.eq(filter.column, filter.value) : query;
-      };
-      const [
-        totalResult,
-        draftResult,
-        pendingResult,
-        approvedResult,
-        deliveredResult,
-        failedResult,
-        blockedResult,
-      ] = await Promise.all([
-        createCountQuery(),
-        createCountQuery({
-          column: 'generation_status',
-          value: 'draft',
-        }),
-        createCountQuery({
-          column: 'report_approval_status',
-          value: 'PENDING',
-        }),
-        createCountQuery({
-          column: 'report_approval_status',
-          value: 'APPROVED',
-        }),
-        createCountQuery({ column: 'delivery_status', value: 'sent' }),
-        createCountQuery({ column: 'delivery_status', value: 'failed' }),
-        createCountQuery({ column: 'delivery_status', value: 'blocked' }),
-      ]);
-      const fallbackResults = [
-        totalResult,
-        draftResult,
-        pendingResult,
-        approvedResult,
-        deliveredResult,
-        failedResult,
-        blockedResult,
-      ];
-      const fallbackError = fallbackResults.find(
-        (result) => result.error
-      )?.error;
-      if (fallbackError) throw fallbackError;
-      counts = normalizePeriodicReportCounts({
-        approved: approvedResult.count,
-        blocked: blockedResult.count,
-        delivered: deliveredResult.count,
-        draft: draftResult.count,
-        failed: failedResult.count,
-        pending_review: pendingResult.count,
-        total: totalResult.count,
-      });
-    }
+    if (stageCounts.error) throw stageCounts.error;
+    const stages = normalizeReportStages(stageCounts.data);
+    const counts = {
+      total: Object.values(stages).reduce((sum, n) => sum + n, 0),
+      draft: stages.draft,
+      pendingReview: stages.pending,
+      approved: stages.approved,
+      blocked: stages.blocked,
+      failed: stages.failed,
+      delivered: stages.sent,
+    };
+
     const reportIds = (listResult.data ?? []).flatMap((row) =>
       row.id ? [row.id] : []
     );
@@ -357,7 +280,7 @@ export async function GET(request: Request, { params }: Params) {
     }));
 
     return NextResponse.json({
-      counts,
+      counts: { ...counts, stages },
       data,
       page: parsed.data.page,
       pageSize: parsed.data.pageSize,

@@ -3362,6 +3362,9 @@
     "linked_modules": "Mô đun liên kết"
   },
   "reports-hub": {
+    "status_skipped": "Đã bỏ qua",
+    "approved_awaiting_delivery": "Đã duyệt, chờ gửi",
+    "undeliverable": "Không thể gửi",
     "ai_draft": "Bản nháp do AI tạo",
     "all_periods": "Tất cả các kỳ",
     "all_time_end": "Mới nhất",

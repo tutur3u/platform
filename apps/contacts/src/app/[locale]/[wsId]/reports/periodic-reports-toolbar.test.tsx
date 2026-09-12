@@ -31,3 +31,40 @@ it('counts the draft filter and makes it visible and resettable alongside approv
   fireEvent.click(screen.getByRole('button', { name: 'common.reset' }));
   expect(reset).toHaveBeenCalledOnce();
 });
+
+it('does not count the default pending stage as a resettable filter', async () => {
+  const props = {
+    stageLabel: 'Pending approval',
+    approvalStatus: 'all' as const,
+    cadence: 'monthly' as const,
+    deliveryStatus: 'all' as const,
+    onApprovalStatusChange: vi.fn(),
+    onCadenceChange: vi.fn(),
+    onDeliveryStatusChange: vi.fn(),
+    onQueryChange: vi.fn(),
+    onReset: vi.fn(),
+    onSortChange: vi.fn(),
+    query: '',
+    isSearching: false,
+    resultCount: 0,
+    sortBy: 'period' as const,
+    sortDirection: 'desc' as const,
+  };
+  const { rerender } = render(<PeriodicReportsToolbar {...props} />);
+  expect(
+    screen.getByRole('button', { name: 'common.filters' })
+  ).not.toHaveTextContent('1');
+  expect(
+    screen.queryByRole('button', { name: 'common.reset' })
+  ).not.toBeInTheDocument();
+  rerender(
+    <PeriodicReportsToolbar {...props} stageLabel="Skipped" stageChanged />
+  );
+  expect(
+    screen.getByRole('button', { name: 'common.filters' })
+  ).toHaveTextContent('1');
+  fireEvent.click(screen.getByRole('button', { name: 'common.filters' }));
+  expect(
+    await screen.findByRole('button', { name: 'common.reset' })
+  ).toBeInTheDocument();
+});

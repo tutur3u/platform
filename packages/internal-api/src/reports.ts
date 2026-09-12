@@ -107,9 +107,25 @@ export type PeriodicReportDeliveryStatus =
   | 'sent'
   | 'failed'
   | 'blocked'
-  | 'cancelled';
+  | 'cancelled'
+  | 'skipped';
+
+export const PERIODIC_REPORT_STAGES = [
+  'draft',
+  'pending',
+  'approved',
+  'blocked',
+  'queued',
+  'processing',
+  'sent',
+  'failed',
+  'skipped',
+  'rejected',
+] as const;
+export type PeriodicReportStage = (typeof PERIODIC_REPORT_STAGES)[number];
 
 export interface PeriodicReport {
+  report_stage?: PeriodicReportStage;
   approved_at: string | null;
   cadence: PeriodicReportCadence;
   content: string;
@@ -140,6 +156,7 @@ export interface PeriodicReport {
 }
 
 export interface PeriodicReportCounts {
+  stages?: Record<PeriodicReportStage, number>;
   approved: number;
   blocked: number;
   delivered: number;
@@ -150,6 +167,7 @@ export interface PeriodicReportCounts {
 }
 
 export interface ListPeriodicReportsParams {
+  stage?: PeriodicReportStage;
   generationStatus?: 'draft' | 'generating' | 'ready' | 'failed';
   approvalStatus?: 'UNAPPROVED' | 'PENDING' | 'APPROVED' | 'REJECTED';
   periodStart?: string;
@@ -377,6 +395,7 @@ export async function listPeriodicReports(
         cadence: params.cadence,
         generationStatus: params.generationStatus,
         deliveryStatus: params.deliveryStatus,
+        stage: params.stage,
         page: params.page,
         pageSize: params.pageSize,
         q: params.query,
