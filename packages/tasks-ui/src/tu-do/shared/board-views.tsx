@@ -417,6 +417,7 @@ export function BoardViews({
     data: fullTasks = [],
     isFetching: isFullTasksFetching,
     isPending: isFullTasksPending,
+    isError: isFullTasksError,
   } = useQuery({
     queryKey: ['tasks-full', board.id, taskFilterKey],
     enabled: !localTaskState && shouldEagerLoadTasks,
@@ -424,19 +425,16 @@ export function BoardViews({
     refetchOnMount: false,
     staleTime: 5 * 60_000,
   });
-
   const initialTaskLists = useMemo(
     () => lists.filter((list) => !list.deleted),
     [lists]
   );
-
   const { data: boardLists = initialTaskLists } = useQuery({
     queryKey: ['task_lists', board.id],
     queryFn: async () => initialTaskLists,
     initialData: initialTaskLists,
     staleTime: Infinity,
   });
-
   const {
     deadlineSectionsCollapsed,
     externalTasksCollapsed,
@@ -454,11 +452,9 @@ export function BoardViews({
     persistCollapsedTaskLists,
     personalWorkspace: workspace.personal,
   });
-
   useEffect(() => {
     queryClient.setQueryData(['task_lists', board.id], initialTaskLists);
   }, [board.id, initialTaskLists, queryClient]);
-
   useLayoutEffect(() => {
     const savedConfig = loadBoardConfig(board.id);
     const requestedView =
@@ -474,7 +470,6 @@ export function BoardViews({
     const effectiveDefaultView = routeDefaultView ?? fallbackView;
     const initialView =
       requestedView && viewIsEnabled(requestedView) ? requestedView : null;
-
     if (!savedConfig) {
       setCurrentView(initialView ?? effectiveDefaultView);
       setFilters(
@@ -485,7 +480,6 @@ export function BoardViews({
       setListStatusFilter('all');
       return;
     }
-
     setCurrentView(
       initialView ??
         routeDefaultView ??
@@ -510,7 +504,6 @@ export function BoardViews({
     hideEmptyTaskListsByDefault,
     viewIsEnabled,
   ]);
-
   useEffect(() => {
     const previousPreference = previousHideEmptyPreferenceRef.current;
     previousHideEmptyPreferenceRef.current = hideEmptyTaskListsByDefault;
@@ -893,7 +886,10 @@ export function BoardViews({
             boardId={board.id}
             tasks={effectiveTasks}
             lists={filteredLists}
-            isLoading={false}
+            isLoading={
+              !localTaskState && shouldEagerLoadTasks && isFullTasksPending
+            }
+            isSearchError={!localTaskState && isFullTasksError}
             disableSort={!!filters.sortBy}
             onFiltersChange={setFilters}
             deadlineTaskQueryOptions={deadlineTaskQueryOptions}

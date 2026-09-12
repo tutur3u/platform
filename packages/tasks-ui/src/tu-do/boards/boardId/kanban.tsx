@@ -75,6 +75,7 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   isLoading: boolean;
+  isSearchError?: boolean;
   disableSort?: boolean;
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
@@ -108,6 +109,7 @@ export function KanbanBoard({
   tasks,
   lists,
   isLoading,
+  isSearchError = false,
   disableSort = false,
   listStatusFilter = 'all',
   filters,
@@ -493,6 +495,8 @@ export function KanbanBoard({
   }
 
   if (
+    (Boolean(filters?.searchQuery?.trim()) &&
+      (isSearchError || deadlineTasksError)) ||
     shouldShowTaskSearchEmpty({
       query: filters?.searchQuery,
       taskCount:
@@ -500,11 +504,12 @@ export function KanbanBoard({
         deadlineSections.overdue.length +
         deadlineSections.upcoming.length,
       pending: !readOnly && deadlineTasksPending,
-      failed: deadlineTasksError,
+      failed: isSearchError || deadlineTasksError,
     })
   ) {
     return (
       <TaskSearchEmptyState
+        failed={isSearchError || deadlineTasksError}
         query={filters?.searchQuery ?? ''}
         onClear={
           onFiltersChange && filters
