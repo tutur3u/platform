@@ -32,6 +32,10 @@ import type {
   SpecialTaskListPinState,
 } from '../../shared/special-task-list-pins';
 import { TaskBoardLoadingState } from '../../shared/task-board-loading-state';
+import {
+  shouldShowTaskSearchEmpty,
+  TaskSearchEmptyState,
+} from '../../shared/task-search-empty-state';
 import { BoardSelector } from '../board-selector';
 import { BulkActionsIsland } from './kanban/bulk/bulk-actions-island';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
@@ -71,6 +75,7 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   isLoading: boolean;
+  isSearchError?: boolean;
   disableSort?: boolean;
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
@@ -104,6 +109,7 @@ export function KanbanBoard({
   tasks,
   lists,
   isLoading,
+  isSearchError = false,
   disableSort = false,
   listStatusFilter = 'all',
   filters,
@@ -165,22 +171,25 @@ export function KanbanBoard({
     readOnly ? null : boardId,
     readOnly ? null : workspaceId
   );
-  const { data: deadlineTasks = [], isPending: deadlineTasksPending } =
-    useQuery({
-      enabled: Boolean(boardId) && !readOnly,
-      queryFn: () =>
-        listKanbanDeadlineTasks({
-          boardId: boardId ?? '',
-          taskQueryOptions: deadlineTaskQueryOptions,
-          workspaceId,
-        }),
-      queryKey: getKanbanDeadlineTasksQueryKey(
+  const {
+    data: deadlineTasks = [],
+    isPending: deadlineTasksPending,
+    isError: deadlineTasksError,
+  } = useQuery({
+    enabled: Boolean(boardId) && !readOnly,
+    queryFn: () =>
+      listKanbanDeadlineTasks({
+        boardId: boardId ?? '',
+        taskQueryOptions: deadlineTaskQueryOptions,
         workspaceId,
-        boardId,
-        deadlineTaskQueryOptions
-      ),
-      staleTime: 30_000,
-    });
+      }),
+    queryKey: getKanbanDeadlineTasksQueryKey(
+      workspaceId,
+      boardId,
+      deadlineTaskQueryOptions
+    ),
+    staleTime: 30_000,
+  });
   const persistListPositions = useCallback(
     async (updates: Array<{ listId: string; newPosition: number }>) => {
       if (!boardId || updates.length === 0) return;
@@ -483,6 +492,32 @@ export function KanbanBoard({
 
   if (isLoading) {
     return <TaskBoardLoadingState />;
+  }
+
+  if (
+    (Boolean(filters?.searchQuery?.trim()) &&
+      (isSearchError || deadlineTasksError)) ||
+    shouldShowTaskSearchEmpty({
+      query: filters?.searchQuery,
+      taskCount:
+        tasks.length +
+        deadlineSections.overdue.length +
+        deadlineSections.upcoming.length,
+      pending: !readOnly && deadlineTasksPending,
+      failed: isSearchError || deadlineTasksError,
+    })
+  ) {
+    return (
+      <TaskSearchEmptyState
+        failed={isSearchError || deadlineTasksError}
+        query={filters?.searchQuery ?? ''}
+        onClear={
+          onFiltersChange && filters
+            ? () => onFiltersChange({ ...filters, searchQuery: '' })
+            : undefined
+        }
+      />
+    );
   }
 
   return (
