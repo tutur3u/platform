@@ -22,6 +22,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe('PWA status and installation', () => {
+  it('does not show a floating install button in the app', () => {
+    render(<PwaStatus labels={labels} />);
+    expect(screen.queryByRole('button', { name: 'install' })).toBeNull();
+  });
   it('shows offline limitations without offering an unavailable install', () => {
     vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
     render(<PwaStatus labels={labels} />);
@@ -29,7 +33,7 @@ describe('PWA status and installation', () => {
     expect(screen.queryByRole('button', { name: 'install' })).toBeNull();
   });
   it('provides Home Screen instructions when a browser has no install prompt', () => {
-    render(<PwaStatus labels={labels} />);
+    render(<PwaStatus placement="settings" labels={labels} />);
     fireEvent.click(screen.getByRole('button', { name: 'install' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('install_help');
   });
@@ -42,7 +46,7 @@ describe('PWA status and installation', () => {
     act(() => {
       window.dispatchEvent(event);
     });
-    render(<PwaStatus labels={labels} />);
+    render(<PwaStatus placement="settings" labels={labels} />);
     expect(prompt).not.toHaveBeenCalled();
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'install' }));
