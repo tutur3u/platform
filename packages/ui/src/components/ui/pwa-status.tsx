@@ -26,12 +26,15 @@ function subscribeOnline(callback: () => void) {
 }
 export function PwaStatus({
   labels,
+  placement = 'status',
 }: {
+  placement?: 'status' | 'settings';
   labels: {
     offline_status: string;
     install: string;
     install_help: string;
     cache_help: string;
+    installed?: string;
   };
 }) {
   const t = (key: keyof typeof labels) => labels[key];
@@ -82,22 +85,31 @@ export function PwaStatus({
       {!online && (
         <div
           role="status"
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl items-start gap-2 rounded-lg border bg-background p-3 text-sm shadow-lg"
+          className={
+            placement === 'settings'
+              ? 'flex items-start gap-2 rounded-lg border bg-muted/30 p-3 text-sm'
+              : 'fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl items-start gap-2 rounded-lg border bg-background p-3 text-sm shadow-lg'
+          }
         >
           <WifiOff className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <p>{t('offline_status')}</p>
         </div>
       )}
-      {online && !installed && (
+      {placement === 'settings' && online && !installed && (
         <Button
           variant="outline"
           size="sm"
-          className="fixed right-3 bottom-3 z-30 gap-2 rounded-full bg-background shadow-sm"
+          className="gap-2"
           onClick={() => void install()}
         >
           <Download className="size-4" />
           {t('install')}
         </Button>
+      )}
+      {placement === 'settings' && installed && labels.installed && (
+        <p role="status" className="text-muted-foreground text-sm">
+          {labels.installed}
+        </p>
       )}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="max-w-md">

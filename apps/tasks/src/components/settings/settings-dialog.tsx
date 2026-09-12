@@ -7,6 +7,7 @@ import {
   Brain,
   CalendarDays,
   CheckSquare,
+  Download,
   FileEdit,
   hexagons3,
   Icon,
@@ -39,6 +40,7 @@ import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calend
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import { PwaStatus } from '@tuturuuu/ui/pwa-status';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -253,6 +255,13 @@ export function SettingsDialog({
         label: t('settings.preferences.title'),
         items: [
           {
+            name: 'app_install',
+            label: t('pwa.install'),
+            icon: Download,
+            description: t('pwa.cache_help'),
+            keywords: ['Install', 'App', 'Offline'],
+          },
+          {
             name: 'appearance',
             label: t('settings.preferences.appearance'),
             icon: Paintbrush,
@@ -387,6 +396,18 @@ export function SettingsDialog({
         <SatelliteProfileSettingsPanel user={user} />
       )}
 
+      {activeTab === 'app_install' && (
+        <PwaStatus
+          placement="settings"
+          labels={{
+            offline_status: t('pwa.offline_status'),
+            install: t('pwa.install'),
+            install_help: t('pwa.install_help'),
+            cache_help: t('pwa.cache_help'),
+            installed: t('pwa.installed'),
+          }}
+        />
+      )}
       {activeTab === 'appearance' && (
         <div className="h-full">
           <AppearanceSettings
