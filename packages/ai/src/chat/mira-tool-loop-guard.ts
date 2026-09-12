@@ -1,3 +1,5 @@
+import { isGoogleSearchToolName } from '../tools/google-search-events';
+
 type Call = {
   toolName?: string;
   toolCallId?: string;
@@ -21,6 +23,7 @@ function stableValue(value: unknown): unknown {
 
 function isReadOrUi(name: string) {
   return (
+    isGoogleSearchToolName(name) ||
     /^(get_|list_|search_|recall$|check_|preview_)/.test(name) ||
     [
       'select_tools',

@@ -2,6 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { prepareMiraToolStep } from './mira-step-preparation';
 
 describe('prepareMiraToolStep', () => {
+  it('allows an answer after Gemini reports a native server search', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        { toolResults: [{ toolName: 'server:GOOGLE_SEARCH_WEB', output: {} }] },
+      ],
+      forceGoogleSearch: true,
+      forceRenderUi: false,
+      needsParallelChecks: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+    expect(result.toolChoice).toBeUndefined();
+  });
   it('keeps the first optional-tool step lean so text can stream quickly', () => {
     const result = prepareMiraToolStep({
       steps: [],

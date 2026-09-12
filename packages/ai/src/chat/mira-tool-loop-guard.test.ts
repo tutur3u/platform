@@ -12,6 +12,15 @@ const step = (
 });
 
 describe('Mira repeated tool protection', () => {
+  it('treats native server searches as reads rather than mutations', () => {
+    expect(
+      getMiraToolLoopReason([
+        step('select_tools', { tools: ['google_search'] }),
+        step('server:GOOGLE_SEARCH_WEB', { query: 'Calendar help' }),
+        step('select_tools', { tools: ['google_search'] }),
+      ])
+    ).toContain('Repeated completed action');
+  });
   it('ends the select/context cycle with a text response even when workspace resolution is required', () => {
     const steps = [
       step('select_tools', { tools: ['get_workspace_context'] }),

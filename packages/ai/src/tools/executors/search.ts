@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import { generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { withAiMemory } from '../../memory';
+import { isGoogleSearchToolName } from '../google-search-events';
 import { createGoogleSearchToolSet } from '../google-search-tool';
 import type { MiraToolContext } from '../mira-tools';
 
@@ -34,11 +35,11 @@ function hasGoogleSearchCallInSteps(steps: unknown): boolean {
   return steps.some((step) => {
     if (!step || typeof step !== 'object') return false;
     const typedStep = step as ToolStepLike;
-    const called = (typedStep.toolCalls ?? []).some(
-      (toolCall) => toolCall.toolName === 'google_search'
+    const called = (typedStep.toolCalls ?? []).some((toolCall) =>
+      isGoogleSearchToolName(toolCall.toolName)
     );
-    const hasResult = (typedStep.toolResults ?? []).some(
-      (toolResult) => toolResult.toolName === 'google_search'
+    const hasResult = (typedStep.toolResults ?? []).some((toolResult) =>
+      isGoogleSearchToolName(toolResult.toolName)
     );
     return called || hasResult;
   });
@@ -114,7 +115,7 @@ export async function executeGoogleSearch(
       (result as { steps?: unknown }).steps
     );
 
-    if (!wasToolCalled) {
+    if (!wasToolCalled && sources.length === 0) {
       result = await runGoogleSearchWrapper(query, true, ctx);
       sources = normalizeSources((result as { sources?: unknown }).sources);
       wasToolCalled = hasGoogleSearchCallInSteps(

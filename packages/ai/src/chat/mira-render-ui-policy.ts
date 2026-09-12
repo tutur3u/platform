@@ -1,4 +1,5 @@
 import type { ModelMessage } from 'ai';
+import { isGoogleSearchToolName } from '../tools/google-search-events';
 
 type ToolStepLike = {
   toolCalls?: Array<{
@@ -449,13 +450,17 @@ export function hasToolCallInSteps(
   steps: unknown[],
   toolName: string
 ): boolean {
+  const matches = (name: string | undefined) =>
+    toolName === 'google_search'
+      ? isGoogleSearchToolName(name)
+      : name === toolName;
   return steps.some((step) => {
     const typedStep = step as ToolStepLike | undefined;
-    const called = (typedStep?.toolCalls ?? []).some(
-      (toolCall) => toolCall.toolName === toolName
+    const called = (typedStep?.toolCalls ?? []).some((toolCall) =>
+      matches(toolCall.toolName)
     );
-    const hasResult = (typedStep?.toolResults ?? []).some(
-      (toolResult) => toolResult.toolName === toolName
+    const hasResult = (typedStep?.toolResults ?? []).some((toolResult) =>
+      matches(toolResult.toolName)
     );
     return called || hasResult;
   });
