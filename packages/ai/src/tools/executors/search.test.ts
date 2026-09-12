@@ -3,7 +3,11 @@ import type { MiraToolContext } from '../mira-tool-types';
 import { executeGoogleSearch } from './search';
 
 const generate = vi.hoisted(() => vi.fn());
-vi.mock('ai', () => ({ generateText: generate, stepCountIs: vi.fn() }));
+vi.mock('ai', () => ({
+  generateText: generate,
+  stepCountIs: vi.fn(),
+  gateway: vi.fn(() => ({})),
+}));
 vi.mock('@ai-sdk/google', () => ({
   google: Object.assign(() => ({}), { tools: { googleSearch: () => ({}) } }),
 }));
@@ -59,4 +63,23 @@ it('does not claim web grounding from arbitrary sources alone', async () => {
     await executeGoogleSearch({ query: 'Calendar help' }, ctx)
   ).toMatchObject({ ok: false });
   expect(generate).toHaveBeenCalledTimes(2);
+});
+
+it('keeps native search automatic on the grounding retry', async () => {
+  generate.mockResolvedValue({ text: 'Unverified', sources: [], steps: [] });
+  await executeGoogleSearch({ query: 'Calendar help' }, ctx);
+  expect(generate).toHaveBeenCalledTimes(2);
+  for (const [request] of generate.mock.calls)
+    expect(request.toolChoice).toBe('auto');
+});
+it('does not report success when native search produces no answer', async () => {
+  generate.mockResolvedValue({
+    text: '',
+    sources: [],
+    steps: [{ toolResults: [{ toolName: 'server:GOOGLE_SEARCH_WEB' }] }],
+  });
+  expect(
+    await executeGoogleSearch({ query: 'Calendar help' }, ctx)
+  ).toMatchObject({ ok: false });
+  expect(generate).toHaveBeenCalledOnce();
 });

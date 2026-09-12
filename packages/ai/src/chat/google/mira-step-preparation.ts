@@ -39,7 +39,7 @@ export function prepareMiraToolStep({
     if (forceGoogleSearch) {
       return {
         toolChoice: 'required',
-        activeTools: ['google_search', 'search_tools', 'select_tools'],
+        activeTools: ['google_search'],
       };
     }
 
@@ -153,14 +153,7 @@ export function prepareMiraToolStep({
   }
 
   if (forceGoogleSearch && !hasToolCallInSteps(steps, 'google_search')) {
-    const active = buildActiveToolsFromSelected(toolsForBuild)
-      .filter((toolName) => toolName !== 'no_action_needed')
-      .concat('google_search', 'search_tools', 'select_tools');
-
-    return {
-      toolChoice: 'required',
-      activeTools: Array.from(new Set(active)),
-    };
+    return { toolChoice: 'required', activeTools: ['google_search'] };
   }
 
   if (

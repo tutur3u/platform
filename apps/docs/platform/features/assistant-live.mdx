@@ -139,3 +139,19 @@ Workspace verification fails closed before context reads. Mutation permissions a
 Chat Calendar automation and event writes forward the authenticated request through the existing Calendar API, including selected Google/Microsoft destinations. It can inspect connection health, provide Google OAuth authorization, sync connected calendars, lock/unlock events, read schedulable tasks, and preview/apply scheduling. Apply requires a successful same-workspace/window preview in the current turn and uses safe apply; the Calendar service recomputes availability and rejects unresolved warnings. Provider authorization and locked commitments remain enforced by Calendar. These new automation tools are not exposed in legacy Live/Meet sessions without the corresponding authenticated execution path.
 
 When debugging a reported false completion, inspect the stored tool result and returned task ID first, then read that ID in its recorded workspace. A chat confirmation or artifact opening alone is not evidence of a product write. Runtime verification of provider sync or scheduling requires an authorized test account; mocked tests only verify dispatch and failure handling.
+
+### Native search completion
+
+Mira keeps `google_search` as an executable function tool. Do not override it
+with a provider-native tool in the main mixed tool set: Gemini maps required
+tool choice to `ANY`, which can issue many server-side searches inside one
+provider step without answering. The outer step guard cannot interrupt that
+provider-step loop.
+
+Explicit search requests require the search executor before proceeding. The
+executor uses native Google search through the same gateway as chat, with
+automatic tool choice, a 30-second deadline, one provider step, and at most one
+grounding retry. It requires grounding evidence and a nonempty final answer.
+Other required workspace and task tools keep their required-tool policy.
+Verify a real grounded answer and visible sources after orchestration changes;
+mocked tool events alone are insufficient.

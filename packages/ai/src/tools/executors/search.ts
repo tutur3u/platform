@@ -1,12 +1,11 @@
-import { google } from '@ai-sdk/google';
-import { generateText, stepCountIs } from 'ai';
+import { gateway, generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { withAiMemory } from '../../memory';
 import { isGoogleSearchToolName } from '../google-search-events';
 import { createGoogleSearchToolSet } from '../google-search-tool';
 import type { MiraToolContext } from '../mira-tools';
 
-const SEARCH_WRAPPER_MODEL = 'gemini-3.1-flash-lite';
+const SEARCH_WRAPPER_MODEL = 'google/gemini-3.5-flash-lite';
 
 type SearchSource = {
   sourceId?: string;
@@ -99,7 +98,7 @@ async function runGoogleSearchWrapper(
     model: await withAiMemory({
       addMemory: 'never',
       customId: ctx.chatId ? `${ctx.chatId}-google-search` : query,
-      model: google(SEARCH_WRAPPER_MODEL),
+      model: gateway(SEARCH_WRAPPER_MODEL),
       product: 'mira',
       source: 'mira_google_search_tool',
       surface: 'mira_google_search_tool',
@@ -108,8 +107,11 @@ async function runGoogleSearchWrapper(
     }),
     tools: createGoogleSearchToolSet(),
     prompt,
-    stopWhen: stepCountIs(4),
-    ...(forceTool ? { toolChoice: 'required' as const } : {}),
+    stopWhen: stepCountIs(1),
+    maxRetries: 0,
+    maxOutputTokens: 2048,
+    abortSignal: AbortSignal.timeout(30_000),
+    toolChoice: 'auto',
   });
 }
 
@@ -149,6 +151,14 @@ export async function executeGoogleSearch(
         error: 'Failed to invoke google_search tool for web-grounded results.',
       };
     }
+
+    if (!result.text.trim())
+      return {
+        ok: false,
+        query,
+        error:
+          'Search completed without a final answer. Try a more specific query.',
+      };
 
     return {
       ok: true,
