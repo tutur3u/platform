@@ -26,7 +26,13 @@ export function MiraArtifactPanel({
   artifact: WorkspaceArtifact;
 }) {
   const t = useTranslations('dashboard.mira_workspace');
-  const [search, setSearch] = useState(artifact.presentation?.search ?? '');
+  const requestedSearch = artifact.presentation?.search ?? '';
+  const [previousSearch, setPreviousSearch] = useState(requestedSearch);
+  const [search, setSearch] = useState(requestedSearch);
+  if (previousSearch !== requestedSearch) {
+    setPreviousSearch(requestedSearch);
+    setSearch(requestedSearch);
+  }
   const locale = useLocale();
   const workspace = useMiraWorkspace();
   const { kind, wsId, presentation } = artifact;

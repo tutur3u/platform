@@ -66,11 +66,11 @@ export function MiraWorkspaceProvider({ children }: { children: ReactNode }) {
           setLayout('auto');
         },
         focus(kind, wsId) {
-          setArtifacts((current) => [
-            current.find(
-              (item) => item.kind === kind && item.wsId === wsId
-            ) ?? { kind, wsId },
-          ]);
+          const target = artifacts.find(
+            (item) => item.kind === kind && item.wsId === wsId
+          );
+          if (!target) return;
+          setArtifacts([target]);
           setLayout('auto');
         },
         close(kind, wsId) {

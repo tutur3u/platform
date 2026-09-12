@@ -130,3 +130,27 @@ describe('calendar day overlap', () => {
     ).toEqual([]);
   });
 });
+
+it('ignores an old selected calendar day after the assistant changes the date range', () => {
+  const { rerender } = render(
+    <MiraScheduleArtifact startDate="2026-09-12" rows={[]} />
+  );
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: `${new Date(2026, 8, 12).toISOString()}, event_count`,
+    })
+  );
+  rerender(
+    <MiraScheduleArtifact
+      startDate="2026-10-01"
+      rows={[
+        {
+          id: 'new',
+          title: 'New month event',
+          date: new Date(2026, 9, 1, 14).toISOString(),
+        },
+      ]}
+    />
+  );
+  expect(screen.getByText('New month event')).toBeInTheDocument();
+});

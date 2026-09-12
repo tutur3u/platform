@@ -56,3 +56,13 @@ describe('Mira artifact workspace', () => {
     expect(result.current?.artifacts).toHaveLength(2);
   });
 });
+
+it('does not open a missing artifact when asked to focus it', () => {
+  const { result } = renderHook(useMiraWorkspace, {
+    wrapper: MiraWorkspaceProvider,
+  });
+  act(() => result.current?.open('tasks', 'one', 'vertical'));
+  act(() => result.current?.focus('finance', 'one'));
+  expect(result.current?.artifacts.map((item) => item.kind)).toEqual(['tasks']);
+  expect(result.current?.layout).toBe('vertical');
+});

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MiraArtifactPanel } from './mira-artifact-panel';
 import type { WorkspaceArtifact } from './mira-workspace-state';
@@ -68,4 +68,27 @@ describe('Mira artifact navigation', () => {
       expect(link).toHaveAttribute('href', '/vi/workspace-1/finance/wallets');
     }
   });
+});
+
+it('preserves user search for title updates but applies an assistant search change', () => {
+  const client = new QueryClient();
+  client.setQueryData(['mira-artifact', 'workspace-1', 'finance'], []);
+  const panel = (title: string, search?: string) => (
+    <QueryClientProvider client={client}>
+      <MiraArtifactPanel
+        artifact={{
+          kind: 'finance',
+          wsId: 'workspace-1',
+          presentation: { title, search },
+        }}
+      />
+    </QueryClientProvider>
+  );
+  const { rerender } = render(panel('Balances'));
+  const input = screen.getByRole('textbox', { name: 'search_items' });
+  fireEvent.change(input, { target: { value: 'Travel' } });
+  rerender(panel('Your balances'));
+  expect(input).toHaveValue('Travel');
+  rerender(panel('Cash balances', 'Cash'));
+  expect(input).toHaveValue('Cash');
 });

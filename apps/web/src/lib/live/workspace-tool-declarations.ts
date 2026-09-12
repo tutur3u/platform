@@ -54,6 +54,7 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
             description: { type: Type.STRING },
             highlights: {
               type: Type.ARRAY,
+              maxItems: '3',
               items: { type: Type.STRING },
               description:
                 'Up to three brief recommendations grounded in tool data.',
@@ -71,6 +72,7 @@ export const WORKSPACE_LIVE_TOOL_DECLARATIONS: FunctionDeclaration[] = [
             },
             itemIds: {
               type: Type.ARRAY,
+              maxItems: '50',
               items: { type: Type.STRING },
               description: 'Only IDs already returned by data tools.',
             },

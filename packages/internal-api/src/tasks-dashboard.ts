@@ -24,6 +24,7 @@ export function getUserTaskDashboard(
   ).json<UserTaskDashboard>('/api/v1/users/me/tasks', {
     query: { ...scope, completedLimit: 0 },
     cache: 'no-store',
+    credentials: 'include',
   });
 }
 
@@ -36,6 +37,7 @@ export async function getCurrentUserTask(
     `/api/v1/users/me/tasks/${encodePathSegment(taskId)}`,
     {
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }

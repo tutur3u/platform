@@ -18,6 +18,7 @@ describe('personal task dashboard client', () => {
       { wsId: 'personal-id', isPersonal: true },
       { baseUrl: 'https://internal.example.com', fetch }
     );
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ credentials: 'include' });
     expect(String(fetch.mock.calls[0]?.[0])).toBe(
       'https://internal.example.com/api/v1/users/me/tasks?wsId=personal-id&isPersonal=true&completedLimit=0'
     );

@@ -19,6 +19,12 @@ export function MiraTaskArtifact({
   const locale = useLocale();
   const [filter, setFilter] = useState(initialFilter);
   const [limit, setLimit] = useState(12);
+  const [previousFilter, setPreviousFilter] = useState(initialFilter);
+  if (previousFilter !== initialFilter) {
+    setPreviousFilter(initialFilter);
+    setFilter(initialFilter);
+    setLimit(12);
+  }
   const groups = ['overdue', 'today', 'upcoming'] as const;
   const visible = rows.filter(
     (row) => filter === 'all' || row.group === filter

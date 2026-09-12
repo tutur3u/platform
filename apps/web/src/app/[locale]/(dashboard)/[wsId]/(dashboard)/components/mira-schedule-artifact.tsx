@@ -25,7 +25,7 @@ export function MiraScheduleArtifact({
   const [showPast, setShowPast] = useState(false);
   const now = new Date();
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const days = Array.from({ length: 7 }, (_, index) => {
+  const days = Array.from({ length: meetings ? 0 : 7 }, (_, index) => {
     const day = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
     day.setHours(0, 0, 0, 0);
     day.setDate(day.getDate() + index);
@@ -40,13 +40,16 @@ export function MiraScheduleArtifact({
   const past = sorted
     .filter((row) => new Date(row.endDate ?? row.date!) < now)
     .reverse();
-  const calendarRows = calendarDayRows(sorted, days);
+  const calendarRows = meetings ? [] : calendarDayRows(sorted, days);
+  const activeDay = days.some((day) => dayKey(day) === selectedDay)
+    ? selectedDay
+    : null;
   const visible = meetings
     ? showPast
       ? past
       : upcoming
     : calendarRows.filter(
-        (row) => !selectedDay || dayKey(new Date(row.date!)) === selectedDay
+        (row) => !activeDay || dayKey(new Date(row.date!)) === activeDay
       );
   const groups = Map.groupBy(visible, (row) => dayKey(new Date(row.date!)));
   return (
@@ -81,8 +84,8 @@ export function MiraScheduleArtifact({
                 type="button"
                 key={key}
                 aria-label={`${format.dateTime(day, { dateStyle: 'full', timeZone })}, ${t('event_count', { count })}`}
-                aria-pressed={selectedDay === key}
-                onClick={() => setSelectedDay(selectedDay === key ? null : key)}
+                aria-pressed={activeDay === key}
+                onClick={() => setSelectedDay(activeDay === key ? null : key)}
                 className="flex min-w-0 flex-col items-center rounded-lg border border-transparent px-0.5 py-2 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-pressed:border-chart-2 aria-pressed:bg-chart-2/10"
               >
                 <span className="text-[10px] text-muted-foreground">
@@ -105,7 +108,7 @@ export function MiraScheduleArtifact({
         {t('event_count', {
           count: new Set(visible.map((row) => row.id)).size,
         })}
-        {selectedDay && !meetings && (
+        {activeDay && !meetings && (
           <button
             type="button"
             className="ml-auto underline underline-offset-4"

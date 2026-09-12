@@ -30,7 +30,7 @@ export function MiraWorkspaceLayout({ children }: { children: ReactNode }) {
       {grid
         ? workspace?.artifacts.map((artifact) => (
             <MiraArtifactPanel
-              key={`${artifact.wsId}:${artifact.kind}:${JSON.stringify(artifact.presentation)}`}
+              key={`${artifact.wsId}:${artifact.kind}`}
               artifact={artifact}
             />
           ))
@@ -38,7 +38,7 @@ export function MiraWorkspaceLayout({ children }: { children: ReactNode }) {
             <div className="grid min-h-0 min-w-0 auto-rows-fr gap-3">
               {workspace?.artifacts.map((artifact) => (
                 <MiraArtifactPanel
-                  key={`${artifact.wsId}:${artifact.kind}:${JSON.stringify(artifact.presentation)}`}
+                  key={`${artifact.wsId}:${artifact.kind}`}
                   artifact={artifact}
                 />
               ))}
