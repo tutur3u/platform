@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
 import { executeCalendarAutomation } from './calendar-automation';
 
@@ -34,6 +34,7 @@ const context = () =>
     requestHeaders: new Headers(),
   }) as unknown as MiraToolContext;
 beforeEach(() => vi.clearAllMocks());
+afterEach(() => vi.unstubAllEnvs());
 describe('Calendar automation', () => {
   it('requires a successful same-window preview before safe apply', async () => {
     const ctx = context();
@@ -180,4 +181,24 @@ it('normalizes offset timestamps in partial event updates', async () => {
     { start_at: '2026-09-14T02:00:00.000Z' },
     expect.anything()
   );
+});
+
+it('rejects cleartext remote Calendar configuration before forwarding auth', async () => {
+  vi.stubEnv('CALENDAR_APP_URL', 'http://calendar.example.test');
+  expect(
+    await executeCalendarAutomation('sync_calendar', {}, context())
+  ).toMatchObject({ success: false });
+  expect(api.sync).not.toHaveBeenCalled();
+});
+it('permits explicit localhost HTTP only in development', async () => {
+  vi.stubEnv('CALENDAR_APP_URL', 'http://localhost:3002');
+  vi.stubEnv('NODE_ENV', 'development');
+  api.sync.mockResolvedValue({ success: true });
+  await executeCalendarAutomation('sync_calendar', {}, context());
+  expect(api.sync).toHaveBeenCalledOnce();
+  vi.stubEnv('NODE_ENV', 'production');
+  expect(
+    await executeCalendarAutomation('sync_calendar', {}, context())
+  ).toMatchObject({ success: false });
+  expect(api.sync).toHaveBeenCalledOnce();
 });

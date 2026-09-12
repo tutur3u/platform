@@ -1,24 +1,27 @@
 import type { MiraToolContext } from '../mira-tool-types';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';
-import { hasTaskAccess } from './scope-helpers';
 
 export async function executeGetTask(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ) {
   const taskId = args.taskId as string;
-  if (!(await hasTaskAccess(ctx, taskId)))
-    return { error: 'Task not found in the current workspace.' };
+  const wsId = getWorkspaceContextWorkspaceId(ctx);
   const { data, error } = await ctx.supabase
     .from('tasks')
     .select(
-      'id, name, description, priority, start_date, end_date, estimation_points, completed, completed_at, list_id, task_lists(id, name, workspace_boards(id, name, ws_id)), task_assignees(user_id), task_labels(label_id)'
+      'id, name, description, priority, start_date, end_date, estimation_points, completed, completed_at, board_id, list_id, direct_board:workspace_boards!fk_tasks_board_id(id, name, ws_id), task_lists(id, name, workspace_boards!inner(id, name, ws_id)), task_assignees(user_id), task_labels(label_id)'
     )
     .eq('id', taskId)
-    .single();
+    .eq('direct_board.ws_id', wsId)
+    .eq('task_lists.workspace_boards.ws_id', wsId)
+    .or('direct_board.not.is.null,and(board_id.is.null,task_lists.not.is.null)')
+    .maybeSingle();
   return error
     ? { error: error.message }
-    : { task: data, workspaceId: getWorkspaceContextWorkspaceId(ctx) };
+    : data
+      ? { task: data, workspaceId: wsId }
+      : { error: 'Task not found in the current workspace.' };
 }
 
 export async function executeSearchTasks(

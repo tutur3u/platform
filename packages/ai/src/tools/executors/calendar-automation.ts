@@ -51,6 +51,16 @@ export async function executeCalendarAutomation(
         ? 'https://calendar.tuturuuu.com'
         : 'https://calendar.tuturuuu.localhost',
   });
+  const target = new URL(baseUrl);
+  const localDevelopment =
+    process.env.NODE_ENV !== 'production' &&
+    (['localhost', '127.0.0.1', '[::1]'].includes(target.hostname) ||
+      target.hostname.endsWith('.localhost'));
+  if (target.protocol !== 'https:' && !localDevelopment)
+    return {
+      success: false,
+      error: 'Calendar requires a secure HTTPS connection.',
+    };
   const options = withForwardedInternalApiAuth(ctx.requestHeaders, { baseUrl });
   const windowDays = typeof args.windowDays === 'number' ? args.windowDays : 7;
   const previewKey = `${wsId}:${windowDays}:${ctx.timezone ?? ''}`;

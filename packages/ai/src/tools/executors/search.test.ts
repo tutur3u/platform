@@ -23,27 +23,31 @@ it('recognizes native server search completion without repeating the search', as
   expect(generate).toHaveBeenCalledOnce();
 });
 
-it('accepts grounded sources from providers without explicit search-call events', async () => {
-  generate.mockResolvedValue({
-    text: 'Calendar sharing help',
-    providerMetadata: {
+it.each(['response', 'step'])(
+  'accepts %s grounding metadata without explicit search-call events',
+  async (location) => {
+    const providerMetadata = {
       google: {
         groundingMetadata: { webSearchQueries: ['Calendar sharing help'] },
       },
-    },
-    sources: [
-      {
-        url: 'https://support.google.com/calendar/answer/37082',
-        title: 'Share your calendar',
-      },
-    ],
-    steps: [],
-  });
-  expect(
-    await executeGoogleSearch({ query: 'Calendar sharing help' }, ctx)
-  ).toMatchObject({ ok: true, sourceCount: 1 });
-  expect(generate).toHaveBeenCalledOnce();
-});
+    };
+    generate.mockResolvedValue({
+      text: 'Calendar sharing help',
+      ...(location === 'response' ? { providerMetadata } : {}),
+      sources: [
+        {
+          url: 'https://support.google.com/calendar/answer/37082',
+          title: 'Share your calendar',
+        },
+      ],
+      steps: location === 'step' ? [{ providerMetadata }] : [],
+    });
+    expect(
+      await executeGoogleSearch({ query: 'Calendar sharing help' }, ctx)
+    ).toMatchObject({ ok: true, sourceCount: 1 });
+    expect(generate).toHaveBeenCalledOnce();
+  }
+);
 
 it('does not claim web grounding from arbitrary sources alone', async () => {
   generate.mockResolvedValue({

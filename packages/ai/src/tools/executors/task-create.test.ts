@@ -132,3 +132,10 @@ it('reports explicit list lookup failures separately from missing destinations',
   ).toMatchObject({ created: false, error: 'Database unavailable' });
   expect(insert).not.toHaveBeenCalled();
 });
+
+it('marks an insert without a saved receipt as uncertain', async () => {
+  const { ctx } = fixture([list, { error: { message: 'Connection lost' } }]);
+  expect(
+    await executeCreateTask({ name: 'Task', listId: 'list' }, ctx)
+  ).toMatchObject({ success: false, writeUncertain: true });
+});

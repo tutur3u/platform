@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import type { MiraToolContext } from '../mira-tool-types';
-import { executeSearchTasks } from './task-read';
+import { executeGetTask, executeSearchTasks } from './task-read';
 
 it('keeps board-only search results while enforcing both parent visibility paths', async () => {
   const calls: Array<[string, ...unknown[]]> = [];
@@ -57,4 +57,35 @@ it('rejects a blank search without querying tasks', async () => {
     'error'
   );
   expect(from).not.toHaveBeenCalled();
+});
+
+it('authorizes the final detail read atomically through workspace parents', async () => {
+  const calls: Array<[string, ...unknown[]]> = [];
+  const builder: Record<string, unknown> = {};
+  for (const method of ['select', 'eq', 'or'])
+    builder[method] = (...args: unknown[]) => {
+      calls.push([method, ...args]);
+      return builder;
+    };
+  builder.maybeSingle = () => Promise.resolve({ data: null, error: null });
+  const from = vi.fn(() => builder);
+  const ctx = {
+    wsId: 'workspace',
+    supabase: { from },
+  } as unknown as MiraToolContext;
+  expect(await executeGetTask({ taskId: 'moved-task' }, ctx)).toHaveProperty(
+    'error'
+  );
+  expect(from).toHaveBeenCalledOnce();
+  expect(calls).toContainEqual(['eq', 'id', 'moved-task']);
+  expect(calls).toContainEqual(['eq', 'direct_board.ws_id', 'workspace']);
+  expect(calls).toContainEqual([
+    'eq',
+    'task_lists.workspace_boards.ws_id',
+    'workspace',
+  ]);
+  expect(calls).toContainEqual([
+    'or',
+    'direct_board.not.is.null,and(board_id.is.null,task_lists.not.is.null)',
+  ]);
 });

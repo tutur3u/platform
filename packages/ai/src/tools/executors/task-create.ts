@@ -178,7 +178,10 @@ async function persistTask(
   if (error || !task)
     return {
       success: false,
+      writeUncertain: true,
       error: error?.message ?? 'Task creation returned no saved task.',
+      instruction:
+        'The insert could not be verified. Check existing tasks before attempting creation again.',
     };
 
   let assignmentError: string | undefined;

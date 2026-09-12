@@ -33,13 +33,20 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   remove_task_from_project: 'Unlink a task from a project',
   add_task_assignee: 'Assign a user to a task',
   remove_task_assignee: 'Remove a user from a task',
-  get_calendar_connections: 'get calendar connections',
-  connect_google_calendar: 'connect google calendar',
-  sync_calendar: 'sync calendar',
-  set_event_locked: 'set event locked',
-  preview_calendar_schedule: 'preview calendar schedule',
-  apply_calendar_schedule: 'apply calendar schedule',
-  get_schedulable_tasks: 'get schedulable tasks',
+  get_calendar_connections:
+    'List linked external calendar accounts and their sync status',
+  connect_google_calendar:
+    'Start the Google Calendar OAuth connection flow for this workspace',
+  sync_calendar:
+    'Synchronize events with a connected external calendar in a given direction',
+  set_event_locked:
+    'Lock or unlock a calendar event so automatic scheduling cannot move it',
+  preview_calendar_schedule:
+    'Preview a proposed schedule for tasks without writing events',
+  apply_calendar_schedule:
+    'Apply a previously previewed schedule and create calendar events',
+  get_schedulable_tasks:
+    'List tasks eligible for automatic calendar scheduling',
   get_upcoming_events: 'Get calendar events for the next N days',
   create_event: 'Create a calendar event',
   update_event: 'Update a calendar event',
