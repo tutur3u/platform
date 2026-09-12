@@ -175,14 +175,20 @@ async function persistTask(
     })
     .select('id')
     .single();
-  if (error || !task)
+  if (error || !task) {
+    // PostgreSQL data/constraint/permission errors reject the insert statement.
+    // Unknown or transport errors can lose the response after a committed write.
+    const rejected =
+      /^(22|23)/.test(error?.code ?? '') || error?.code === '42501';
     return {
       success: false,
-      writeUncertain: true,
+      ...(rejected ? { created: false } : { writeUncertain: true }),
       error: error?.message ?? 'Task creation returned no saved task.',
-      instruction:
-        'The insert could not be verified. Check existing tasks before attempting creation again.',
+      instruction: rejected
+        ? 'The database rejected the insert. Correct the reported problem before retrying.'
+        : 'The insert could not be verified. Check existing tasks before attempting creation again.',
     };
+  }
 
   let assignmentError: string | undefined;
   if (assignToSelf) {

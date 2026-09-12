@@ -192,8 +192,8 @@ export const taskToolDefinitions = {
       )
       .refine(
         (data) =>
-          data.endDate == null ||
-          data.dueDate == null ||
+          data.endDate === undefined ||
+          data.dueDate === undefined ||
           data.endDate === data.dueDate,
         {
           message: 'endDate and dueDate must match when both are provided',

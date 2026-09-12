@@ -139,3 +139,19 @@ it('marks an insert without a saved receipt as uncertain', async () => {
     await executeCreateTask({ name: 'Task', listId: 'list' }, ctx)
   ).toMatchObject({ success: false, writeUncertain: true });
 });
+
+it.each(['23503', '22007', '42501'])(
+  'allows correction after a definite database rejection (%s)',
+  async (code) => {
+    const { ctx } = fixture([
+      list,
+      { error: { code, message: 'Insert rejected' } },
+    ]);
+    const result = await executeCreateTask(
+      { name: 'Task', listId: 'list' },
+      ctx
+    );
+    expect(result).toMatchObject({ success: false, created: false });
+    expect(result).not.toHaveProperty('writeUncertain', true);
+  }
+);
