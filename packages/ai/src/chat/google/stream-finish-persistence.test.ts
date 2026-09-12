@@ -24,66 +24,72 @@ describe('stream finish persistence', () => {
     });
   });
 
-  it('marks finished tool calls without explicit outputs as completed', async () => {
-    const insert = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        single: vi.fn().mockResolvedValue({
-          data: { id: 'assistant-message-1' },
-          error: null,
+  it.each(['google_search', 'server:GOOGLE_SEARCH_WEB'])(
+    'persists and accounts for completed %s calls',
+    async (toolName) => {
+      const insert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'assistant-message-1' },
+            error: null,
+          }),
         }),
-      }),
-    });
-    const sbAdmin = {
-      from: vi.fn().mockReturnValue({ insert }),
-    };
-
-    const persisted = await persistAssistantResponse({
-      chatId: 'chat-1',
-      effectiveSource: 'Mira',
-      model: 'google/gemini-3-flash',
-      persistenceRequestId: '11111111-1111-4111-8111-111111111111',
-      response: {
-        finishReason: 'stop',
-        steps: [
-          {
-            toolCalls: [
-              {
-                input: { query: 'latest updates' },
-                toolCallId: 'search-1',
-                toolName: 'google_search',
-              },
-            ],
-            usage: { inputTokens: 10, outputTokens: 2 },
-          },
-        ],
-        text: 'Done.',
-      },
-      sbAdmin,
-      userId: 'user-1',
-      wsId: 'workspace-1',
-    });
-
-    expect(persisted).toBe(true);
-
-    const payload = insert.mock.calls[0]?.[0] as {
-      metadata: {
-        ai: { parts: Record<string, unknown>[] };
-        requestId: string;
+      });
+      const sbAdmin = {
+        from: vi.fn().mockReturnValue({ insert }),
       };
-    };
 
-    expect(payload.metadata.requestId).toBe(
-      '11111111-1111-4111-8111-111111111111'
-    );
-    expect(payload.metadata.ai.parts).toContainEqual(
-      expect.objectContaining({
-        output: null,
-        state: 'output-available',
-        toolCallId: 'search-1',
-        toolName: 'google_search',
-      })
-    );
-  });
+      const persisted = await persistAssistantResponse({
+        chatId: 'chat-1',
+        effectiveSource: 'Mira',
+        model: 'google/gemini-3-flash',
+        persistenceRequestId: '11111111-1111-4111-8111-111111111111',
+        response: {
+          finishReason: 'stop',
+          steps: [
+            {
+              toolCalls: [
+                {
+                  input: { query: 'latest updates' },
+                  toolCallId: 'search-1',
+                  toolName,
+                },
+              ],
+              usage: { inputTokens: 10, outputTokens: 2 },
+            },
+          ],
+          text: 'Done.',
+        },
+        sbAdmin,
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      });
+
+      expect(persisted).toBe(true);
+      expect(mocks.deductAiCredits).toHaveBeenCalledWith(
+        expect.objectContaining({ searchCount: 1 })
+      );
+
+      const payload = insert.mock.calls[0]?.[0] as {
+        metadata: {
+          ai: { parts: Record<string, unknown>[] };
+          requestId: string;
+        };
+      };
+
+      expect(payload.metadata.requestId).toBe(
+        '11111111-1111-4111-8111-111111111111'
+      );
+      expect(payload.metadata.ai.parts).toContainEqual(
+        expect.objectContaining({
+          output: null,
+          state: 'output-available',
+          toolCallId: 'search-1',
+          toolName,
+        })
+      );
+    }
+  );
 
   it('reports empty streams as not persisted', async () => {
     const sbAdmin = { from: vi.fn() };

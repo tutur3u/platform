@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import { generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { withAiMemory } from '../../memory';
+import { isGoogleSearchToolName } from '../google-search-events';
 import { createGoogleSearchToolSet } from '../google-search-tool';
 import type { MiraToolContext } from '../mira-tools';
 
@@ -34,14 +35,33 @@ function hasGoogleSearchCallInSteps(steps: unknown): boolean {
   return steps.some((step) => {
     if (!step || typeof step !== 'object') return false;
     const typedStep = step as ToolStepLike;
-    const called = (typedStep.toolCalls ?? []).some(
-      (toolCall) => toolCall.toolName === 'google_search'
+    const called = (typedStep.toolCalls ?? []).some((toolCall) =>
+      isGoogleSearchToolName(toolCall.toolName)
     );
-    const hasResult = (typedStep.toolResults ?? []).some(
-      (toolResult) => toolResult.toolName === 'google_search'
+    const hasResult = (typedStep.toolResults ?? []).some((toolResult) =>
+      isGoogleSearchToolName(toolResult.toolName)
     );
     return called || hasResult;
   });
+}
+
+function hasGroundingQueries(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const result = value as {
+    providerMetadata?: {
+      google?: { groundingMetadata?: { webSearchQueries?: unknown } };
+    };
+    steps?: unknown[];
+  };
+  const queries =
+    result.providerMetadata?.google?.groundingMetadata?.webSearchQueries;
+  return (
+    (Array.isArray(queries) &&
+      queries.some(
+        (query) => typeof query === 'string' && query.trim().length > 0
+      )) ||
+    (result.steps?.some(hasGroundingQueries) ?? false)
+  );
 }
 
 function normalizeSources(value: unknown): SearchSource[] {
@@ -114,7 +134,7 @@ export async function executeGoogleSearch(
       (result as { steps?: unknown }).steps
     );
 
-    if (!wasToolCalled) {
+    if (!wasToolCalled && !hasGroundingQueries(result)) {
       result = await runGoogleSearchWrapper(query, true, ctx);
       sources = normalizeSources((result as { sources?: unknown }).sources);
       wasToolCalled = hasGoogleSearchCallInSteps(
@@ -122,7 +142,7 @@ export async function executeGoogleSearch(
       );
     }
 
-    if (!wasToolCalled && sources.length === 0) {
+    if (!wasToolCalled && !hasGroundingQueries(result)) {
       return {
         ok: false,
         query,

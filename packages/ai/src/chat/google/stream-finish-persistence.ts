@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { CreditDeductionResult } from '../../credits/types';
+import { countGoogleSearchQueries } from './google-search-usage';
 
 type UsageLike = {
   inputTokens?: number;
@@ -21,7 +22,6 @@ type UsageLike = {
   };
   reasoningTokens?: number;
 };
-
 type GroundingMetadataLike = {
   webSearchQueries?: string[];
 };
@@ -246,36 +246,6 @@ function logGoogleSearchDebug(response: StreamFinishResponseLike): void {
       JSON.stringify(step?.sources, null, 2)?.slice(0, 500)
     );
   }
-}
-
-function countGoogleSearchQueries(
-  response: StreamFinishResponseLike,
-  allToolCalls: ToolCallLike[]
-): number {
-  const customGoogleSearchCalls = allToolCalls.filter(
-    (toolCall) => toolCall.toolName === 'google_search'
-  ).length;
-  if (customGoogleSearchCalls > 0) return customGoogleSearchCalls;
-
-  const topQueries =
-    response.providerMetadata?.google?.groundingMetadata?.webSearchQueries;
-  if (topQueries?.length) return topQueries.length;
-
-  let perStepQueriesCount = 0;
-  for (const step of response.steps ?? []) {
-    const stepQueries =
-      step.providerMetadata?.google?.groundingMetadata?.webSearchQueries;
-    if (stepQueries?.length) {
-      perStepQueriesCount += stepQueries.length;
-    }
-  }
-  if (perStepQueriesCount > 0) return perStepQueriesCount;
-
-  if (Array.isArray(response.sources) && response.sources.length > 0) {
-    return 1;
-  }
-
-  return 0;
 }
 
 function collectUiMessageParts({
@@ -666,7 +636,7 @@ export async function persistAssistantResponse({
   console.log('AI Response saved to database');
   logGoogleSearchDebug(response);
 
-  const searchCount = countGoogleSearchQueries(response, allToolCalls);
+  const searchCount = countGoogleSearchQueries(model, response, allToolCalls);
   if (searchCount > 0) {
     console.log(
       `Google Search grounding detected: ${searchCount} search quer${searchCount === 1 ? 'y' : 'ies'}`

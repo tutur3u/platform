@@ -83,6 +83,27 @@ describe('prepareMiraRuntime', () => {
     mocks.resolveWorkspaceContextState.mockReset();
   });
 
+  it('does not expose admin-backed tools or read context after workspace verification fails', async () => {
+    mocks.resolveWorkspaceContextState.mockRejectedValue(
+      new Error('Membership unavailable')
+    );
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    const result = await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'unverified',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user',
+      chatId: 'chat',
+      supabase: {} as TypedSupabaseClient,
+    });
+    expect(result.miraTools).toBeUndefined();
+    expect(result.miraSystemPrompt).toContain(
+      'Workspace access could not be verified'
+    );
+    expect(mocks.createMiraStreamTools).not.toHaveBeenCalled();
+    expect(mocks.buildMiraContext).not.toHaveBeenCalled();
+  });
+
   it('uses the authorized tool supabase client for Mira context resolution and tools', async () => {
     const sessionSupabase = {
       client: 'session',

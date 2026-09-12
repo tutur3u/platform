@@ -1,6 +1,7 @@
 import type { PermissionId } from '@tuturuuu/types';
 import type { ToolSet } from 'ai';
 import { calendarToolDefinitions } from '../tools/definitions/calendar';
+import { calendarAutomationToolDefinitions } from '../tools/definitions/calendar-automation';
 import { financeToolDefinitions } from '../tools/definitions/finance';
 import { taskToolDefinitions } from '../tools/definitions/tasks';
 import { timeTrackingToolDefinitions } from '../tools/definitions/time-tracking';
@@ -46,7 +47,8 @@ export function createMeetWorkspaceTools(
   };
   for (const [name, definition] of Object.entries(definitions)) {
     // E2EE activation needs the platform's client key-management flow.
-    if (name === 'enable_e2ee') continue;
+    if (name === 'enable_e2ee' || name in calendarAutomationToolDefinitions)
+      continue;
     const required = MIRA_TOOL_PERMISSIONS[name as MiraToolName];
     if (!required && !memberTools.has(name)) continue;
     const permissions = required

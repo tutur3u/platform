@@ -17,13 +17,29 @@ const optionalTrimmedString = (max: number, field: string) =>
   );
 
 export const metaToolDefinitions = {
+  search_tools: tool({
+    description:
+      'Find capabilities by intent, app, or exact tool name. Returns a small matching set with domain guidance and activates those tools for the next step. Search again as the task changes; you do not need to know tool names. Discovery performs no product operation.',
+    inputSchema: z.object({
+      query: z
+        .string()
+        .trim()
+        .min(1)
+        .max(240)
+        .describe(
+          'Operation to perform, e.g. assign task labels, Google Calendar sync, or wallet transactions'
+        ),
+      limit: z.number().int().min(1).max(8).default(6),
+    }),
+  }),
   select_tools: tool({
     description:
-      'Pick which tools you need for this request. You may stream a short text acknowledgement first when useful, then call this before using other Mira tools. Choose from the available tool names listed in the system prompt. Use no_action_needed ONLY for truly conversational turns with no durable info to save and no real-world lookup needed.',
+      'Pick which tools you need for this request. You may stream a short text acknowledgement first when useful, then call this before using other Mira tools. Use search_tools when you do not know the tool names. Use no_action_needed ONLY for truly conversational turns with no durable info to save and no real-world lookup needed.',
     inputSchema: z.object({
       tools: z
         .array(z.string())
         .min(1)
+        .max(12)
         .refine(
           (tools) => tools.every((toolName) => validToolSet.has(toolName)),
           {

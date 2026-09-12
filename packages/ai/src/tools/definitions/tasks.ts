@@ -4,6 +4,21 @@ import { tool } from '../core';
 const colorHexRegex = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 export const taskToolDefinitions = {
+  get_task: tool({
+    description:
+      'Read the saved task details, workspace, board, list, dates, labels and assignees by ID. Use this to verify a previous creation or before editing.',
+    inputSchema: z.object({ taskId: z.guid() }),
+  }),
+  search_tasks: tool({
+    description:
+      'Search tasks by title in the current workspace, including saved task location. Use includeCompleted to find completed tasks and page to load more.',
+    inputSchema: z.object({
+      query: z.string().trim().min(1).max(200),
+      page: z.number().int().min(1).default(1),
+      limit: z.number().int().min(1).max(50).default(20),
+      includeCompleted: z.boolean().default(false),
+    }),
+  }),
   get_my_tasks: tool({
     description:
       "Get the current user's tasks organized by status. Returns overdue, due today, and upcoming tasks with priority and dates. Use category (or status) with values: all, overdue, today, upcoming.",
@@ -35,33 +50,62 @@ export const taskToolDefinitions = {
   create_task: tool({
     description:
       "Create a new task in the user's workspace. Tasks MUST be placed in a task list (board → list hierarchy). Use list_boards and list_task_lists first to discover existing structure, then pass boardId and listId. If omitted, the system auto-picks the first board/list or creates defaults. By default the task is assigned to the current user.",
-    inputSchema: z.object({
-      name: z.string().describe('Task title'),
-      description: z
-        .string()
-        .nullish()
-        .describe('Task description (plain text), or null/omit'),
-      priority: z
-        .enum(['low', 'normal', 'high', 'critical'])
-        .nullish()
-        .describe('Task priority level, or null/omit for no priority'),
-      boardId: z
-        .guid()
-        .optional()
-        .describe(
-          'UUID of the board to create the task in. Use list_boards to discover. If omitted, uses the first workspace board or creates a default one.'
-        ),
-      listId: z
-        .guid()
-        .optional()
-        .describe(
-          'UUID of the task list to place the task in. Use list_task_lists to discover lists within a board. If omitted, uses the first list in the board or creates a default one.'
-        ),
-      assignToSelf: z
-        .boolean()
-        .optional()
-        .describe('Assign to current user. Defaults to true.'),
-    }),
+    inputSchema: z
+      .object({
+        name: z.string().trim().min(1).describe('Task title'),
+        description: z
+          .string()
+          .nullish()
+          .describe('Task description (plain text), or null/omit'),
+        priority: z
+          .enum(['low', 'normal', 'high', 'critical'])
+          .nullish()
+          .describe('Task priority level, or null/omit for no priority'),
+        boardId: z
+          .guid()
+          .optional()
+          .describe(
+            'UUID of the board to create the task in. Use list_boards to discover. If omitted, uses the first workspace board or creates a default one.'
+          ),
+        listId: z
+          .guid()
+          .optional()
+          .describe(
+            'UUID of the task list to place the task in. Use list_task_lists to discover lists within a board. If omitted, uses the first list in the board or creates a default one.'
+          ),
+        startDate: z
+          .string()
+          .datetime({ offset: true })
+          .nullish()
+          .describe('Start date with timezone offset'),
+        endDate: z
+          .string()
+          .datetime({ offset: true })
+          .nullish()
+          .describe(
+            'Due date with timezone offset; include the requested deadline'
+          ),
+        dueDate: z
+          .string()
+          .datetime({ offset: true })
+          .nullish()
+          .describe('Alias for endDate'),
+        estimationPoints: z.number().int().min(0).max(7).nullish(),
+        assignToSelf: z
+          .boolean()
+          .optional()
+          .describe('Assign to current user. Defaults to true.'),
+      })
+      .refine(
+        (data) =>
+          data.endDate == null ||
+          data.dueDate == null ||
+          data.endDate === data.dueDate,
+        {
+          message: 'endDate and dueDate must match when both are provided',
+          path: ['dueDate'],
+        }
+      ),
   }),
 
   complete_task: tool({
@@ -81,7 +125,13 @@ export const taskToolDefinitions = {
           .guid()
           .optional()
           .describe('Alias for taskId. Use either taskId or id.'),
-        name: z.string().optional().describe('New task name'),
+        name: z.string().trim().min(1).optional().describe('New task name'),
+        completed: z
+          .boolean()
+          .optional()
+          .describe(
+            'Complete or reopen this task; reopening a terminal list requires an active listId'
+          ),
         description: z
           .string()
           .nullable()
@@ -94,19 +144,19 @@ export const taskToolDefinitions = {
           .describe('New priority'),
         startDate: z
           .string()
-          .datetime()
+          .datetime({ offset: true })
           .nullable()
           .optional()
           .describe('Start date ISO'),
         endDate: z
           .string()
-          .datetime()
+          .datetime({ offset: true })
           .nullable()
           .optional()
           .describe('Due date ISO (use for due date)'),
         dueDate: z
           .string()
-          .datetime()
+          .datetime({ offset: true })
           .nullable()
           .optional()
           .describe('Alias for endDate. Use either endDate or dueDate.'),
@@ -115,6 +165,7 @@ export const taskToolDefinitions = {
           .int()
           .min(0)
           .max(7)
+          .nullable()
           .optional()
           .describe('Estimation point index (0-7)'),
         listId: z.guid().optional().describe('Move to a different list'),

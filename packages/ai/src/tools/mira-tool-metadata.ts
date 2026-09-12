@@ -2,7 +2,10 @@ import type { PermissionId } from '@tuturuuu/types';
 import type { MiraToolName } from './mira-tool-names';
 
 export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
-  select_tools: 'Present user with tool selection options',
+  select_tools: 'Activate a small working set of tools',
+  search_tools: 'Discover tools and domain guidance for an operation',
+  get_task: 'Read saved task details and location by ID',
+  search_tasks: 'Search tasks by title with pagination',
   get_my_tasks: 'Get your tasks by status (overdue, today, upcoming)',
   create_task: 'Create a new task',
   complete_task: 'Mark a task as completed',
@@ -30,6 +33,20 @@ export const MIRA_TOOL_DIRECTORY: Record<MiraToolName, string> = {
   remove_task_from_project: 'Unlink a task from a project',
   add_task_assignee: 'Assign a user to a task',
   remove_task_assignee: 'Remove a user from a task',
+  get_calendar_connections:
+    'List linked external calendar accounts and their sync status',
+  connect_google_calendar:
+    'Start the Google Calendar OAuth connection flow for this workspace',
+  sync_calendar:
+    'Synchronize events with a connected external calendar in a given direction',
+  set_event_locked:
+    'Lock or unlock a calendar event so automatic scheduling cannot move it',
+  preview_calendar_schedule:
+    'Preview a proposed schedule for tasks without writing events',
+  apply_calendar_schedule:
+    'Apply a previously previewed schedule and create calendar events',
+  get_schedulable_tasks:
+    'List tasks eligible for automatic calendar scheduling',
   get_upcoming_events: 'Get calendar events for the next N days',
   create_event: 'Create a calendar event',
   update_event: 'Update a calendar event',
@@ -140,6 +157,13 @@ export const MIRA_TOOL_PERMISSIONS: Partial<
   remove_task_from_project: 'manage_projects',
   add_task_assignee: 'manage_projects',
   remove_task_assignee: 'manage_projects',
+  get_calendar_connections: 'manage_calendar',
+  connect_google_calendar: 'manage_calendar',
+  sync_calendar: 'manage_calendar',
+  set_event_locked: 'manage_calendar',
+  preview_calendar_schedule: 'manage_calendar',
+  apply_calendar_schedule: 'manage_calendar',
+  get_schedulable_tasks: 'manage_calendar',
   get_upcoming_events: 'manage_calendar',
   create_event: 'manage_calendar',
   update_event: 'manage_calendar',

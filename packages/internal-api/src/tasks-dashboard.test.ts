@@ -24,3 +24,31 @@ describe('personal task dashboard client', () => {
     );
   });
 });
+
+it('excludes completion flags and terminal timestamps from the active feed', async () => {
+  const fetch = vi.fn().mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        overdue: [{ id: 'completed', completed_at: '2026-09-01T00:00:00Z' }],
+        today: [
+          { id: 'closed', closed_at: '2026-09-01T00:00:00Z' },
+          { id: 'flag-only', completed: true },
+        ],
+        upcoming: [{ id: 'active' }],
+        totalActiveTasks: 4,
+      }),
+      { headers: { 'content-type': 'application/json' } }
+    )
+  );
+  expect(
+    await getUserTaskDashboard(
+      { wsId: 'ws', isPersonal: true },
+      { baseUrl: 'https://internal.example.com', fetch }
+    )
+  ).toEqual({
+    overdue: [],
+    today: [],
+    upcoming: [{ id: 'active' }],
+    totalActiveTasks: 1,
+  });
+});

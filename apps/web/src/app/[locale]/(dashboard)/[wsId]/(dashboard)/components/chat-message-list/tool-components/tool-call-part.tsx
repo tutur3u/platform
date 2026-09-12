@@ -136,7 +136,7 @@ export function ToolCallPart({
         (typeof outputRecord?.message === 'string'
           ? outputRecord.message
           : null) ||
-        'Unknown error'
+        (outputRecord ? JSON.stringify(outputRecord, null, 2) : 'Unknown error')
       : JSON.stringify(output, null, 2)
     : '';
 
@@ -562,10 +562,10 @@ export function ToolCallPart({
         >
           <span className="font-medium">{toolName}</span>
           <span className="text-muted-foreground">
-            {isDone
-              ? t('tool_done')
-              : isError
-                ? t('tool_error')
+            {isError
+              ? t('tool_error')
+              : isDone
+                ? t('tool_done')
                 : t('tool_running')}
           </span>
           {hasOutput && (

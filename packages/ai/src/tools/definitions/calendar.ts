@@ -1,7 +1,20 @@
 import { z } from 'zod';
 import { tool } from '../core';
+import { calendarAutomationToolDefinitions } from './calendar-automation';
+
+const eventSource = z.discriminatedUnion('provider', [
+  z.object({
+    provider: z.literal('tuturuuu'),
+    workspaceCalendarId: z.guid().nullish(),
+  }),
+  z.object({
+    provider: z.enum(['google', 'microsoft']),
+    connectionId: z.guid(),
+  }),
+]);
 
 export const calendarToolDefinitions = {
+  ...calendarAutomationToolDefinitions,
   get_upcoming_events: tool({
     description:
       'Get upcoming calendar events for the next N days. Events are automatically decrypted if E2EE is enabled.',
@@ -21,7 +34,14 @@ export const calendarToolDefinitions = {
       'Create a new calendar event. Events are automatically encrypted if E2EE is enabled.',
     inputSchema: z
       .object({
-        title: z.string().describe('Event title'),
+        title: z.string().trim().min(1).describe('Event title'),
+        source: eventSource
+          .optional()
+          .describe(
+            'Destination calendar; use a connection ID from get_calendar_connections'
+          ),
+        color: z.string().optional(),
+        locked: z.boolean().optional(),
         startAt: z
           .string()
           .datetime({ offset: true })
@@ -56,6 +76,9 @@ export const calendarToolDefinitions = {
     inputSchema: z
       .object({
         eventId: z.guid().describe('Event UUID'),
+        source: eventSource.optional(),
+        color: z.string().optional(),
+        locked: z.boolean().optional(),
         title: z.string().optional().describe('Updated event title'),
         startAt: z.iso
           .datetime({ offset: true })
@@ -76,6 +99,9 @@ export const calendarToolDefinitions = {
       })
       .refine(
         (value) =>
+          value.source !== undefined ||
+          value.color !== undefined ||
+          value.locked !== undefined ||
           value.title !== undefined ||
           value.startAt !== undefined ||
           value.endAt !== undefined ||

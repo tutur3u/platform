@@ -1,4 +1,5 @@
 import type { ModelMessage } from 'ai';
+import { isGoogleSearchToolName } from '../tools/google-search-events';
 
 type ToolStepLike = {
   toolCalls?: Array<{
@@ -397,9 +398,9 @@ export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
       return tools.filter((tool): tool is string => typeof tool === 'string');
     }
 
-    const selectResult = step?.toolResults?.find(
-      (toolResult) => toolResult.toolName === 'select_tools'
-    );
+    const selectResult =
+      step?.toolResults?.find((result) => result.toolName === 'select_tools') ??
+      step?.toolResults?.find((result) => result.toolName === 'search_tools');
     const selectedTools = selectResult?.output?.selectedTools;
     if (Array.isArray(selectedTools)) {
       return selectedTools.filter(
@@ -429,7 +430,11 @@ export function wasToolEverSelectedInSteps(
     if (fromCalls) return true;
 
     return (typedStep?.toolResults ?? []).some((toolResult) => {
-      if (toolResult.toolName !== 'select_tools') return false;
+      if (
+        toolResult.toolName !== 'select_tools' &&
+        toolResult.toolName !== 'search_tools'
+      )
+        return false;
       const selected = toolResult.output?.selectedTools;
       return (
         Array.isArray(selected) &&
@@ -443,13 +448,17 @@ export function hasToolCallInSteps(
   steps: unknown[],
   toolName: string
 ): boolean {
+  const matches = (name: string | undefined) =>
+    toolName === 'google_search'
+      ? isGoogleSearchToolName(name)
+      : name === toolName;
   return steps.some((step) => {
     const typedStep = step as ToolStepLike | undefined;
-    const called = (typedStep?.toolCalls ?? []).some(
-      (toolCall) => toolCall.toolName === toolName
+    const called = (typedStep?.toolCalls ?? []).some((toolCall) =>
+      matches(toolCall.toolName)
     );
-    const hasResult = (typedStep?.toolResults ?? []).some(
-      (toolResult) => toolResult.toolName === toolName
+    const hasResult = (typedStep?.toolResults ?? []).some((toolResult) =>
+      matches(toolResult.toolName)
     );
     return called || hasResult;
   });
@@ -516,7 +525,8 @@ export function countRenderUiAttemptsInSteps(steps: unknown[]): number {
 export function buildActiveToolsFromSelected(
   selectedTools: string[]
 ): string[] {
-  if (selectedTools.length === 0) return ['select_tools', 'no_action_needed'];
+  if (selectedTools.length === 0)
+    return ['search_tools', 'select_tools', 'no_action_needed'];
 
   const unique = Array.from(new Set(selectedTools));
   const includesNoAction = unique.includes('no_action_needed');
@@ -526,6 +536,7 @@ export function buildActiveToolsFromSelected(
       (toolName) =>
         toolName !== 'select_tools' && toolName !== 'no_action_needed'
     ),
+    'search_tools',
     'select_tools',
     ...(includesNoAction ? ['no_action_needed'] : []),
   ];
