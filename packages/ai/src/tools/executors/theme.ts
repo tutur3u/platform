@@ -48,7 +48,7 @@ export async function executeShowWorkspaceArtifact(
     success: true,
     action: 'show_workspace_artifact',
     message:
-      'Artifact UI command completed. The panel fetches its own data; this result contains no task counts, balances, or meeting facts. Do not repeat this successful command. Continue only with other requested actions, then answer.',
+      'Artifact UI command completed. This UI command did not fetch product data; the panel fetches its own data separately. Do not repeat this successful command. Continue only with other requested actions, then answer.',
     ...parsed.data,
     wsId: getWorkspaceContextWorkspaceId(ctx),
   };

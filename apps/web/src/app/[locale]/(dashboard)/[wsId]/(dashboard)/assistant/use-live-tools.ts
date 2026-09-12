@@ -115,7 +115,7 @@ export function useLiveTools(wsId: string) {
           action: fc.name,
           wsId,
           message:
-            'UI command completed. Do not repeat it to verify. This result contains no product data; finish once all requested UI actions succeed.',
+            'UI command completed. Do not repeat it to verify. This UI command did not fetch product data; finish once all requested UI actions succeed.',
         };
         applyUiAction(fc.name, response);
         return { id: fc.id, name: fc.name, response };
