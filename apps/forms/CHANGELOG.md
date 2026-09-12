@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.14.1](https://github.com/tutur3u/platform/compare/forms-v0.14.0...forms-v0.14.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** recover stalled invoice loading ([#5310](https://github.com/tutur3u/platform/issues/5310)) ([a5c6a37](https://github.com/tutur3u/platform/commit/a5c6a3765008e1fb503d6e2ceadec9c43b1e23e5))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/forms-v0.13.3...forms-v0.14.0) (2026-09-07)
 
 

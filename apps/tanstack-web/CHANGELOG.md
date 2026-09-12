@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.28.1...tanstack-web-v0.29.0) (2026-09-12)
+
+
+### Features
+
+* **contacts:** familiar report statuses and branded monthly emails ([#5309](https://github.com/tutur3u/platform/issues/5309)) ([88d74a8](https://github.com/tutur3u/platform/commit/88d74a828ce4deb2047906c66452d17ae50e7b61))
+* **contacts:** track and automate approved report delivery ([#5300](https://github.com/tutur3u/platform/issues/5300)) ([b69c22f](https://github.com/tutur3u/platform/commit/b69c22f433df8a1aa7cea18b538c1a3016582b9e))
+* **contacts:** unify report status UX and branded email previews ([8d464ab](https://github.com/tutur3u/platform/commit/8d464ab47c3297b9846f5d768581a7091704f3a8))
+* **mira:** manage contextual artifacts through assistant tools ([e7fc89a](https://github.com/tutur3u/platform/commit/e7fc89a52723ad1d05b8a14f6dfa01fa708b09fc))
+* **mira:** manage contextual artifacts through assistant tools ([#5323](https://github.com/tutur3u/platform/issues/5323)) ([40d652e](https://github.com/tutur3u/platform/commit/40d652e5f7089373c12884c3f89a2c764121ec87))
+* **mira:** unify live chat controls and artifact workspace ([#5318](https://github.com/tutur3u/platform/issues/5318)) ([dc2af8c](https://github.com/tutur3u/platform/commit/dc2af8ce8748c144de3b076ef963eb5ceff5fabc))
+
+
+### Bug Fixes
+
+* **contacts:** unify report stages and skip legacy unsent reports ([0f7fce8](https://github.com/tutur3u/platform/commit/0f7fce8cd1841f777ba18db6e335946ed2fb80bb))
+* **contacts:** unify report stages and skip legacy unsent reports ([#5322](https://github.com/tutur3u/platform/issues/5322)) ([dd9dc1b](https://github.com/tutur3u/platform/commit/dd9dc1bfd3ca6d1ddb113105381387c9f690137e))
+* **mira:** address workspace review edge cases ([8a96a32](https://github.com/tutur3u/platform/commit/8a96a32ceb4498915125739f8476ada69c7ca99d))
+* **reports:** clarify delivery and streamline review filters ([b790cb3](https://github.com/tutur3u/platform/commit/b790cb38e48cf7429a698d6360977e35a9aa2617))
+* **reports:** clarify delivery and streamline review filters ([#5314](https://github.com/tutur3u/platform/issues/5314)) ([e9af5a5](https://github.com/tutur3u/platform/commit/e9af5a58f0c133764e91c745b183eae24e512270))
+* **reports:** clarify delivery states and protect active sends ([e8396f2](https://github.com/tutur3u/platform/commit/e8396f269a42703aac3852c1b86ff2299324819e))
+* **reports:** retain exact smart-search pagination totals ([67ef0b9](https://github.com/tutur3u/platform/commit/67ef0b9b1e199b4f4095107a021fdae0af1924a4))
+* **reports:** retain exact smart-search pagination totals ([#5312](https://github.com/tutur3u/platform/issues/5312)) ([fe8f826](https://github.com/tutur3u/platform/commit/fe8f82699581ce2aa0b2cee9962c3bde7fa48ca8))
+
 ## [0.28.1](https://github.com/tutur3u/platform/compare/tanstack-web-v0.28.0...tanstack-web-v0.28.1) (2026-09-11)
 
 

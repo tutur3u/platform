@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/ai-v0.13.0...ai-v0.14.0) (2026-09-12)
+
+
+### Features
+
+* **mira:** manage contextual artifacts through assistant tools ([e7fc89a](https://github.com/tutur3u/platform/commit/e7fc89a52723ad1d05b8a14f6dfa01fa708b09fc))
+* **mira:** manage contextual artifacts through assistant tools ([#5323](https://github.com/tutur3u/platform/issues/5323)) ([40d652e](https://github.com/tutur3u/platform/commit/40d652e5f7089373c12884c3f89a2c764121ec87))
+* **mira:** unify live chat controls and artifact workspace ([d8dfa1e](https://github.com/tutur3u/platform/commit/d8dfa1e47def97af3bfa725c03948b905f057713))
+* **mira:** unify live chat controls and artifact workspace ([#5318](https://github.com/tutur3u/platform/issues/5318)) ([dc2af8c](https://github.com/tutur3u/platform/commit/dc2af8ce8748c144de3b076ef963eb5ceff5fabc))
+
+
+### Bug Fixes
+
+* **ai:** preserve step telemetry and identify retired image models ([9ac0235](https://github.com/tutur3u/platform/commit/9ac0235f1a48371fcf267982ffa834b54a3dbc4d))
+* **colab:** reliable tool runs, 50-call defaults, and sponsored artwork ([#5303](https://github.com/tutur3u/platform/issues/5303)) ([805311a](https://github.com/tutur3u/platform/commit/805311a2bdef20200b5f7ab06563b2a42ccfd95e))
+* **meet:** recover sources-only assistant answers ([3b660d3](https://github.com/tutur3u/platform/commit/3b660d36ac8681b00d5741e5819bd11313251373))
+* **meet:** recover sources-only assistant answers ([#5304](https://github.com/tutur3u/platform/issues/5304)) ([249b171](https://github.com/tutur3u/platform/commit/249b17158379b5a6909328b489ef9b935592316a))
+* **mira:** clarify artifact tool completion and grounding ([6d51402](https://github.com/tutur3u/platform/commit/6d51402d097c2780818bef61e65b972ddb0f55a4))
+* **mira:** clarify artifact tool completion and grounding ([#5324](https://github.com/tutur3u/platform/issues/5324)) ([1f75bc8](https://github.com/tutur3u/platform/commit/1f75bc83d61f671ff8e9c5ae41bafc186d6a7996))
+* **mira:** distinguish UI completion from data retrieval ([410df80](https://github.com/tutur3u/platform/commit/410df80325c752a6ee9be51afe4d219f4d72bd57))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/ai-v0.12.0...ai-v0.13.0) (2026-09-11)
 
 

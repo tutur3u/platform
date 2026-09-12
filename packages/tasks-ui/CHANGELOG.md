@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.16.2](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.1...tasks-ui-v0.16.2) (2026-09-12)
+
+
+### Bug Fixes
+
+* **tasks:** align filtered counts and local task visibility ([913388b](https://github.com/tutur3u/platform/commit/913388b78767f927685df695398da030ad73bf82))
+* **tasks:** handle viewport and refresh review edge cases ([7ee889a](https://github.com/tutur3u/platform/commit/7ee889abe44103434f5b4b4b60587f1318820a0a))
+* **tasks:** preserve saved tasks and preload visible lists ([f25cfc5](https://github.com/tutur3u/platform/commit/f25cfc59b75abce8ba7adb5e8c8a2836e2c28276))
+* **tasks:** preserve saved tasks and preload visible lists ([#5308](https://github.com/tutur3u/platform/issues/5308)) ([a6aec2f](https://github.com/tutur3u/platform/commit/a6aec2f3f702c48b7cf9e356a98af2cdcc2d8ee7))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+
+
+### Performance Improvements
+
+* **tasks:** bound missing-task verification per refresh ([37599dc](https://github.com/tutur3u/platform/commit/37599dc20a03a6ed425f0fe2bb8b0aecf293c2d7))
+
 ## [0.16.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.0...tasks-ui-v0.16.1) (2026-09-08)
 
 

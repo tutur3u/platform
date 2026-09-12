@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.32.1](https://github.com/tutur3u/platform/compare/cms-v0.32.0...cms-v0.32.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/cms-v0.31.3...cms-v0.32.0) (2026-09-07)
 
 

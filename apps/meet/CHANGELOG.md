@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.29.2](https://github.com/tutur3u/platform/compare/meet-v0.29.1...meet-v0.29.2) (2026-09-12)
+
+
+### Bug Fixes
+
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **meet:** normalize legacy launcher entry paths ([27049d6](https://github.com/tutur3u/platform/commit/27049d6923a7c0412fcfdd5911b13add8668f0e7))
+* **meet:** recover sources-only assistant answers ([3b660d3](https://github.com/tutur3u/platform/commit/3b660d36ac8681b00d5741e5819bd11313251373))
+* **meet:** recover sources-only assistant answers ([#5304](https://github.com/tutur3u/platform/issues/5304)) ([249b171](https://github.com/tutur3u/platform/commit/249b17158379b5a6909328b489ef9b935592316a))
+* **meet:** restore workspace switching and personal app entry ([8c0fa38](https://github.com/tutur3u/platform/commit/8c0fa389c5554bbe85debc3065aa9008639916a5))
+* **meet:** restore workspace switching and personal app entry ([#5307](https://github.com/tutur3u/platform/issues/5307)) ([c680c25](https://github.com/tutur3u/platform/commit/c680c251f26d5ba7899f4c41981228c2a9db7cde))
+
 ## [0.29.1](https://github.com/tutur3u/platform/compare/meet-v0.29.0...meet-v0.29.1) (2026-09-11)
 
 

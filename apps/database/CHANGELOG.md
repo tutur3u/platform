@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.33.0](https://github.com/tutur3u/platform/compare/database-v1.32.0...database-v1.33.0) (2026-09-12)
+
+
+### Features
+
+* **contacts:** familiar report statuses and branded monthly emails ([#5309](https://github.com/tutur3u/platform/issues/5309)) ([88d74a8](https://github.com/tutur3u/platform/commit/88d74a828ce4deb2047906c66452d17ae50e7b61))
+* **contacts:** track and automate approved report delivery ([5a73577](https://github.com/tutur3u/platform/commit/5a73577fd404f223d025f88daa04b16002a11e81))
+* **contacts:** track and automate approved report delivery ([#5300](https://github.com/tutur3u/platform/issues/5300)) ([b69c22f](https://github.com/tutur3u/platform/commit/b69c22f433df8a1aa7cea18b538c1a3016582b9e))
+
+
+### Bug Fixes
+
+* **contacts:** fence report delivery leases and completion ([b692e20](https://github.com/tutur3u/platform/commit/b692e20c95d9d0112b68dbf7afc809f8769c7f5d))
+* **contacts:** harden delivery action boundaries ([1b2969d](https://github.com/tutur3u/platform/commit/1b2969d74d92f2b981610b5665c7255f90742904))
+* **contacts:** make report delivery transitions atomic ([72cffb9](https://github.com/tutur3u/platform/commit/72cffb94ac34702bd9f53fa055209c575c967829))
+* **contacts:** preserve cancellation on delivery retries ([2c84cda](https://github.com/tutur3u/platform/commit/2c84cdae2288d49ca3b2952f44e23911e44f12a0))
+* **contacts:** preserve unknown delivery outcomes on blocked retry ([f68bf6c](https://github.com/tutur3u/platform/commit/f68bf6c04170c36676349a1ffbf4c864a3c92c5e))
+* **contacts:** recover abandoned monthly delivery claims ([1c46a20](https://github.com/tutur3u/platform/commit/1c46a20eca3e1ab4c9b910ed71eaab578e9a0a8f))
+* **contacts:** serialize approval and delivery requests safely ([caafe51](https://github.com/tutur3u/platform/commit/caafe517131bfa8693f46ae41f27b34fc3d3f129))
+* **contacts:** unify report stages and skip legacy unsent reports ([0f7fce8](https://github.com/tutur3u/platform/commit/0f7fce8cd1841f777ba18db6e335946ed2fb80bb))
+* **contacts:** unify report stages and skip legacy unsent reports ([#5322](https://github.com/tutur3u/platform/issues/5322)) ([dd9dc1b](https://github.com/tutur3u/platform/commit/dd9dc1bfd3ca6d1ddb113105381387c9f690137e))
+* **database:** validate report constraint separately ([a0c2a01](https://github.com/tutur3u/platform/commit/a0c2a0136d94c06e737fd590afd46287abf7e495))
+* **reports:** clarify delivery states and protect active sends ([e8396f2](https://github.com/tutur3u/platform/commit/e8396f269a42703aac3852c1b86ff2299324819e))
+* **reports:** expose draft filters and freeze approval metadata ([58469b2](https://github.com/tutur3u/platform/commit/58469b2092d975deaf4d140cf2a8766bafb1e5da))
+* **reports:** guard skipped deliveries and share stage metadata ([9744b3e](https://github.com/tutur3u/platform/commit/9744b3e8315ff70596a811fad42742dcdcbfc809))
+
 ## [1.32.0](https://github.com/tutur3u/platform/compare/database-v1.31.1...database-v1.32.0) (2026-09-10)
 
 

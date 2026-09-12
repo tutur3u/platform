@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/email-service-v0.6.0...email-service-v0.6.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **email:** align non-content stripping across alternatives ([8c8f209](https://github.com/tutur3u/platform/commit/8c8f2093b82f73a1536e71afa5f86f8a0d805a4b))
+* **email:** discard hidden titles and preserve report table layout ([4d92181](https://github.com/tutur3u/platform/commit/4d921814d63e11153274db3ea46b8c5ebc05181d))
+* **email:** discard hidden titles and preserve report table layout ([#5313](https://github.com/tutur3u/platform/issues/5313)) ([b268300](https://github.com/tutur3u/platform/commit/b268300d9db0d219b5c365fe5e3bd3a97928ef06))
+* **email:** parse HTML before creating plaintext alternatives ([804c113](https://github.com/tutur3u/platform/commit/804c113997ba332e2a365dd6b401bdacc8ae2f7b))
+* **email:** preserve raw text exclusions during sanitization ([5f609b4](https://github.com/tutur3u/platform/commit/5f609b49b2ca99036b416d23dd3454db57e2943b))
+* **email:** retain link addresses in plaintext conversion ([fab481f](https://github.com/tutur3u/platform/commit/fab481f7ab30f0d1a71f2cc90af38f10fd63cc3a))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/email-service-v0.5.0...email-service-v0.6.0) (2026-08-26)
 
 
