@@ -7452,6 +7452,10 @@
       "templates": "Templates",
       "templates_description": "Manage reusable task board templates",
       "title": "Tasks",
+      "unprioritized_first": "Show first",
+      "unprioritized_last": "Show last",
+      "unprioritized_position": "Tasks without priority",
+      "unprioritized_position_description": "Choose where tasks without priority appear when sorting by priority, in either direction.",
       "untitled_board": "Untitled board",
       "untitled_list": "Untitled list"
     },

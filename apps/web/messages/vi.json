@@ -13875,6 +13875,10 @@
       "ticket_prefix_placeholder": "TEAM",
       "title": "Nhiệm vụ",
       "unarchive_board": "Bỏ lưu trữ bảng",
+      "unprioritized_first": "Hiển thị đầu tiên",
+      "unprioritized_last": "Hiển thị cuối cùng",
+      "unprioritized_position": "Công việc chưa có độ ưu tiên",
+      "unprioritized_position_description": "Chọn vị trí hiển thị công việc chưa có độ ưu tiên khi sắp xếp theo độ ưu tiên theo cả hai chiều.",
       "use_as_default_board": "Dùng làm mặc định"
     },
     "time_tracker": {

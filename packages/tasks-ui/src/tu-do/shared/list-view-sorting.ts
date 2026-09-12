@@ -1,5 +1,8 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { priorityCompare } from '@tuturuuu/utils/task-helper';
+import {
+  priorityCompare,
+  type UnprioritizedPosition,
+} from '@tuturuuu/utils/task-helper';
 
 export type ListViewSortField =
   | 'name'
@@ -13,6 +16,7 @@ export type ListViewSortField =
 export type ListViewSortOrder = 'asc' | 'desc';
 
 interface SortListViewTasksOptions {
+  unprioritizedPosition?: UnprioritizedPosition;
   preserveTaskOrder?: boolean;
   searchQuery?: string;
   sortField: ListViewSortField;
@@ -22,6 +26,7 @@ interface SortListViewTasksOptions {
 export function sortListViewTasks(
   tasks: Task[],
   {
+    unprioritizedPosition = 'first',
     preserveTaskOrder = false,
     searchQuery,
     sortField,
@@ -42,6 +47,15 @@ export function sortListViewTasks(
       return aCompleted ? 1 : -1;
     }
 
+    if (
+      sortField === 'priority' &&
+      (a.priority == null) !== (b.priority == null)
+    ) {
+      return (
+        (a.priority == null ? -1 : 1) *
+        (unprioritizedPosition === 'first' ? 1 : -1)
+      );
+    }
     let comparison = 0;
 
     switch (sortField) {

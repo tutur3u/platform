@@ -9792,7 +9792,11 @@
       "submit_shortcut_cmd_enter": "⌘/Ctrl + Enter",
       "submit_shortcut_description": "Chọn phím tắt dùng để gửi tác vụ từ ô nhập nhanh và hộp thoại",
       "submit_shortcut_enter": "Enter",
-      "title": "Nhiệm vụ"
+      "title": "Nhiệm vụ",
+      "unprioritized_first": "Hiển thị đầu tiên",
+      "unprioritized_last": "Hiển thị cuối cùng",
+      "unprioritized_position": "Công việc chưa có độ ưu tiên",
+      "unprioritized_position_description": "Chọn vị trí hiển thị công việc chưa có độ ưu tiên khi sắp xếp theo độ ưu tiên theo cả hai chiều."
     },
     "time_tracker": {
       "active": "Hoạt động",

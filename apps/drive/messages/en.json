@@ -6990,7 +6990,11 @@
       "submit_shortcut_cmd_enter": "⌘/Ctrl + Enter",
       "submit_shortcut_description": "Choose the keyboard shortcut used to submit tasks from the quick input area and dialogs",
       "submit_shortcut_enter": "Enter",
-      "title": "Tasks"
+      "title": "Tasks",
+      "unprioritized_first": "Show first",
+      "unprioritized_last": "Show last",
+      "unprioritized_position": "Tasks without priority",
+      "unprioritized_position_description": "Choose where tasks without priority appear when sorting by priority, in either direction."
     },
     "time_tracker": {
       "active": "Active",

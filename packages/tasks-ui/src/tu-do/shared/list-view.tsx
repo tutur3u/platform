@@ -75,16 +75,13 @@ import {
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
 import { useBoardBroadcast } from './board-broadcast-context';
-import {
-  type ListViewSortField,
-  type ListViewSortOrder,
-  sortListViewTasks,
-} from './list-view-sorting';
+import type { ListViewSortField, ListViewSortOrder } from './list-view-sorting';
 import {
   shouldShowTaskDueDate,
   TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
 } from './task-due-date-visibility';
 import { TaskRowActionsMenu } from './task-row-actions-menu';
+import { useSortedListViewTasks } from './use-sorted-list-view-tasks';
 
 interface Props {
   workspaceId: string;
@@ -142,15 +139,10 @@ function ReadOnlyListView({
     () => new Map(lists.map((list) => [list.id, list])),
     [lists]
   );
-  const sortedTasks = useMemo(
-    () =>
-      sortListViewTasks(tasks, {
-        preserveTaskOrder,
-        searchQuery,
-        sortField,
-        sortOrder,
-      }),
-    [preserveTaskOrder, searchQuery, sortField, sortOrder, tasks]
+  const sortedTasks = useSortedListViewTasks(
+    tasks,
+    { preserveTaskOrder, searchQuery, sortField, sortOrder },
+    true
   );
 
   function handleSort(field: ListViewSortField) {
@@ -459,14 +451,12 @@ function InteractiveListView({
   }, [boardId, clearSelection, queryClient, workspaceId]);
 
   // Apply sorting only (filters are handled by parent)
-  const sortedTasks = useMemo(() => {
-    return sortListViewTasks(localTasks, {
-      preserveTaskOrder,
-      searchQuery,
-      sortField,
-      sortOrder,
-    });
-  }, [localTasks, preserveTaskOrder, searchQuery, sortField, sortOrder]);
+  const sortedTasks = useSortedListViewTasks(localTasks, {
+    preserveTaskOrder,
+    searchQuery,
+    sortField,
+    sortOrder,
+  });
 
   // Display tasks with incremental rendering
   const displayedTasks = useMemo(() => {
