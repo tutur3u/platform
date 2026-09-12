@@ -90,7 +90,7 @@ export default function MiraModelSelector({
       </Tooltip>
 
       <PopoverContent
-        className="flex h-[min(480px,85vh)] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden p-0"
+        className="flex h-[min(480px,85vh)] max-h-[var(--radix-popover-content-available-height)] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden p-0"
         align="start"
         sideOffset={4}
       >

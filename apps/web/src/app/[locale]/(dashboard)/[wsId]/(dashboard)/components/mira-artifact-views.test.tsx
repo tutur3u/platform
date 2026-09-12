@@ -155,7 +155,7 @@ it('ignores an old selected calendar day after the assistant changes the date ra
   expect(screen.getByText('New month event')).toBeInTheDocument();
 });
 
-it('renders all priority levels and native estimate and label metadata', () => {
+it('renders priority, estimate, and label metadata', () => {
   render(
     <MiraTaskArtifact
       rows={[

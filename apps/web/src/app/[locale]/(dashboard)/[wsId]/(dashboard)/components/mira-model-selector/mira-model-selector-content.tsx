@@ -4,7 +4,6 @@ import { Loader2 } from '@tuturuuu/icons';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { Command, CommandList } from '@tuturuuu/ui/command';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
 import { ProviderLogo } from '../provider-logo';
 import { MiraModelList } from './mira-model-list';
@@ -76,10 +75,9 @@ export function MiraModelSelectorContent({
   if (favoritesOnly) {
     return (
       <Command className="flex min-h-0 flex-1 flex-col" shouldFilter={false}>
-        <CommandList className="flex min-h-0 flex-1 flex-col border-0 px-3 py-2">
+        <CommandList className="max-h-none min-h-0 flex-1 overflow-y-auto border-0 px-3 py-2">
           <MiraModelList
             defaultModelId={defaultModelId}
-            fillHeight={true}
             isEmptyMessage={t('model_selector_empty')}
             isFavorited={isFavorited}
             isModelAllowed={isModelAllowed}
@@ -109,10 +107,9 @@ export function MiraModelSelectorContent({
             </span>
           </div>
         </div>
-        <CommandList className="flex min-h-0 flex-1 flex-col border-0 px-3 py-2">
+        <CommandList className="max-h-none min-h-0 flex-1 overflow-y-auto border-0 px-3 py-2">
           <MiraModelList
             defaultModelId={defaultModelId}
-            fillHeight={true}
             hasNextPage={selectedProviderModelsHasNextPage}
             isEmptyMessage={t('model_selector_empty')}
             isFavorited={isFavorited}
@@ -139,36 +136,34 @@ export function MiraModelSelectorContent({
   }
 
   return (
-    <ScrollArea className="min-h-0 flex-1">
-      <Command shouldFilter={false}>
-        <CommandList className="max-h-none w-full border-0 px-0 py-0">
-          <Accordion
-            type="multiple"
-            value={expandedProviders}
-            onValueChange={(value) =>
-              onExpandedProvidersChange(Array.isArray(value) ? value : [])
-            }
-            className="w-full min-w-0"
-          >
-            {providerNames.map((provider) => (
-              <MiraProviderModelsSection
-                key={provider}
-                defaultModelId={defaultModelId}
-                enabled={expandedProviders.includes(provider)}
-                hideLockedModels={hideLockedModels}
-                isFavorited={isFavorited}
-                isModelAllowed={isModelAllowed}
-                model={model}
-                onSelectModel={onSelectModel}
-                onToggleFavorite={onToggleFavorite}
-                pendingModelId={pendingModelId}
-                provider={provider}
-                search={search}
-              />
-            ))}
-          </Accordion>
-        </CommandList>
-      </Command>
-    </ScrollArea>
+    <Command className="min-h-0 flex-1" shouldFilter={false}>
+      <CommandList className="max-h-none min-h-0 w-full flex-1 overflow-y-auto border-0 px-0 py-0">
+        <Accordion
+          type="multiple"
+          value={expandedProviders}
+          onValueChange={(value) =>
+            onExpandedProvidersChange(Array.isArray(value) ? value : [])
+          }
+          className="w-full min-w-0"
+        >
+          {providerNames.map((provider) => (
+            <MiraProviderModelsSection
+              key={provider}
+              defaultModelId={defaultModelId}
+              enabled={expandedProviders.includes(provider)}
+              hideLockedModels={hideLockedModels}
+              isFavorited={isFavorited}
+              isModelAllowed={isModelAllowed}
+              model={model}
+              onSelectModel={onSelectModel}
+              onToggleFavorite={onToggleFavorite}
+              pendingModelId={pendingModelId}
+              provider={provider}
+              search={search}
+            />
+          ))}
+        </Accordion>
+      </CommandList>
+    </Command>
   );
 }

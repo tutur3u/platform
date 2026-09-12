@@ -23,7 +23,6 @@ export type ModelFavoritedFn = (modelId: string) => boolean;
 
 export interface MiraModelListProps {
   defaultModelId: string | null;
-  fillHeight?: boolean;
   hasNextPage?: boolean;
   isEmptyMessage: string;
   isFavorited: ModelFavoritedFn;
