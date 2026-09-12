@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(39);
+select plan(42);
 select is(private.periodic_report_stage('draft', 'PENDING', 'draft'), 'draft', 'draft/PENDING/draft stage');
 select is(private.periodic_report_stage('ready', 'PENDING', 'draft'), 'pending', 'ready/PENDING/draft stage');
 select is(private.periodic_report_stage('ready', 'APPROVED', 'draft'), 'approved', 'ready/APPROVED/draft stage');
@@ -46,8 +46,8 @@ insert into public.workspace_users(id,ws_id,display_name,email) values ('4000000
 insert into public.workspace_user_groups(id,ws_id,name) values ('40000000-0000-4000-8000-000000009202','42529372-c669-4833-bb32-2cab1f4ffd83','Cleanup group');
 insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009210','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 0','Keep content','Keep feedback','weekly','draft','draft','2026-09-11 16:59:59+00',now());
 insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009211','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 1','Keep content','Keep feedback','monthly','ready','draft','2026-09-11 16:59:59+00',now());
-insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009212','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 2','Keep content','Keep feedback','quarterly','draft','draft','2026-09-11 16:59:59+00',now());
-insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009213','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 3','Keep content','Keep feedback','yearly','ready','draft','2026-09-11 16:59:59+00',now());
+insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009212','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 2','Keep content','Keep feedback','quarterly','generating','draft','2026-09-11 16:59:59+00',now());
+insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009213','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 3','Keep content','Keep feedback','yearly','failed','draft','2026-09-11 16:59:59+00',now());
 insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009214','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 4','Keep content','Keep feedback','monthly','draft','draft','2026-09-11 17:00:00+00',now());
 insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009215','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 5','Keep content','Keep feedback','monthly','ready','draft','2026-09-11 17:00:01+00',now());
 insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,cadence,generation_status,delivery_status,created_at,updated_at) values ('40000000-0000-4000-8000-000000009216','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Cutoff 6','Keep content','Keep feedback','monthly','draft','sent','2026-09-11 16:59:59+00',now());
@@ -81,5 +81,8 @@ select is((select status from private.user_report_email_queue where report_id='4
 select is((select delivery_status from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009220'),'draft','unknown delivery outcome is preserved for manual verification');
 select is((select count(*)::int from private.claim_periodic_report_emails('cleanup-test-worker',50) where report_id='40000000-0000-4000-8000-000000009211'),0,'worker cannot claim the skipped report');
 select is((select delivery_status from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009211'),'skipped','worker leaves skipped report unchanged');
+select is((select delivery_status from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009212'),'skipped','generating reports are included in cleanup');
+select is((select delivery_status from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009213'),'skipped','failed generation reports are included in cleanup');
+select ok((select convalidated from pg_constraint where conrelid='private.external_user_monthly_reports'::regclass and conname='external_user_monthly_reports_delivery_status_check'),'replacement delivery constraint is validated');
 select * from finish();
 rollback;

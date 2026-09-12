@@ -2,7 +2,7 @@
 alter table private.external_user_monthly_reports
   drop constraint external_user_monthly_reports_delivery_status_check,
   add constraint external_user_monthly_reports_delivery_status_check
-    check (delivery_status in ('draft', 'queued', 'processing', 'sent', 'failed', 'blocked', 'cancelled', 'skipped'));
+    check (delivery_status in ('draft', 'queued', 'processing', 'sent', 'failed', 'blocked', 'cancelled', 'skipped')) not valid;
 
 create or replace function private.periodic_report_stage(generation text, approval text, delivery text)
 returns text language sql immutable set search_path = '' as $$
