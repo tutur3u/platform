@@ -14,7 +14,11 @@ describe('prepareMiraToolStep', () => {
     });
 
     expect(result.toolChoice).toBeUndefined();
-    expect(result.activeTools).toEqual(['select_tools', 'no_action_needed']);
+    expect(result.activeTools).toEqual([
+      'search_tools',
+      'select_tools',
+      'no_action_needed',
+    ]);
   });
 
   it('forces web search immediately for current external information', () => {
@@ -29,7 +33,11 @@ describe('prepareMiraToolStep', () => {
     });
 
     expect(result.toolChoice).toBe('required');
-    expect(result.activeTools).toEqual(['google_search', 'select_tools']);
+    expect(result.activeTools).toEqual([
+      'google_search',
+      'search_tools',
+      'select_tools',
+    ]);
   });
 
   it('forces parallel checks for explicit verification requests', () => {
@@ -44,7 +52,11 @@ describe('prepareMiraToolStep', () => {
     });
 
     expect(result.toolChoice).toBe('required');
-    expect(result.activeTools).toEqual(['run_parallel_checks', 'select_tools']);
+    expect(result.activeTools).toEqual([
+      'run_parallel_checks',
+      'search_tools',
+      'select_tools',
+    ]);
   });
 
   it('forces workspace resolution tools before task tools for explicit workspace requests', () => {
@@ -72,6 +84,7 @@ describe('prepareMiraToolStep', () => {
       'list_accessible_workspaces',
       'get_workspace_context',
       'set_workspace_context',
+      'search_tools',
       'select_tools',
     ]);
   });
@@ -108,6 +121,7 @@ describe('prepareMiraToolStep', () => {
     expect(result.activeTools).toEqual([
       'get_workspace_context',
       'set_workspace_context',
+      'search_tools',
       'select_tools',
     ]);
   });
@@ -202,7 +216,11 @@ describe('prepareMiraToolStep', () => {
     });
 
     expect(result.toolChoice).toBeUndefined();
-    expect(result.activeTools).toEqual(['create_task', 'select_tools']);
+    expect(result.activeTools).toEqual([
+      'create_task',
+      'search_tools',
+      'select_tools',
+    ]);
   });
 
   it('drops workspace discovery tools from selected tools after context resolution succeeds', () => {
@@ -249,7 +267,11 @@ describe('prepareMiraToolStep', () => {
     });
 
     expect(result.toolChoice).toBeUndefined();
-    expect(result.activeTools).toEqual(['create_task', 'select_tools']);
+    expect(result.activeTools).toEqual([
+      'create_task',
+      'search_tools',
+      'select_tools',
+    ]);
   });
 
   it('keeps forcing workspace resolution until set_workspace_context succeeds', () => {
@@ -309,6 +331,7 @@ describe('prepareMiraToolStep', () => {
     expect(result.activeTools).toEqual([
       'get_workspace_context',
       'set_workspace_context',
+      'search_tools',
       'select_tools',
     ]);
   });
@@ -337,6 +360,7 @@ describe('prepareMiraToolStep', () => {
     expect(result.activeTools).toEqual([
       'get_workspace_context',
       'list_workspace_members',
+      'search_tools',
       'select_tools',
     ]);
   });

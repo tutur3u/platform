@@ -42,7 +42,9 @@ export async function executeGetUpcomingEvents(
 
   const { data: events, error } = await ctx.supabase
     .from('workspace_calendar_events')
-    .select('id, title, description, start_at, end_at, location, is_encrypted')
+    .select(
+      'id, title, description, start_at, end_at, location, is_encrypted, locked'
+    )
     .eq('ws_id', workspaceId)
     .gte('start_at', rangeStart.toISOString())
     .lte('start_at', rangeEnd.toISOString())
@@ -75,6 +77,7 @@ export async function executeGetUpcomingEvents(
         start_at: string;
         end_at: string;
         location: string | null;
+        locked?: boolean | null;
       }) => ({
         id: e.id,
         title: e.title,
@@ -82,6 +85,7 @@ export async function executeGetUpcomingEvents(
         start: formatInTz(e.start_at),
         end: formatInTz(e.end_at),
         location: e.location,
+        locked: e.locked === true,
       })
     ),
   };

@@ -223,6 +223,7 @@ export async function prepareMiraRuntime({
     chatId,
     supabase: miraSupabase,
     timezone,
+    requestHeaders: request.headers,
   };
 
   let miraSystemPrompt: string;

@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { tool } from '../core';
+import { calendarAutomationToolDefinitions } from './calendar-automation';
 
 export const calendarToolDefinitions = {
+  ...calendarAutomationToolDefinitions,
   get_upcoming_events: tool({
     description:
       'Get upcoming calendar events for the next N days. Events are automatically decrypted if E2EE is enabled.',

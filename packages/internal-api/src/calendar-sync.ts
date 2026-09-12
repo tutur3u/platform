@@ -74,13 +74,17 @@ export function getWorkspaceCalendarSyncStatus(
 
 export function syncWorkspaceCalendar(
   wsId: string,
-  options?: InternalApiClientOptions
+  options?: InternalApiClientOptions,
+  payload: { direction?: 'inbound' | 'outbound' | 'both' } = {}
 ) {
   return getInternalApiClient(options).json<CalendarSyncResult>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/sync`,
     {
       method: 'POST',
-      body: JSON.stringify({ direction: 'inbound', source: 'manual' }),
+      body: JSON.stringify({
+        direction: payload.direction ?? 'inbound',
+        source: 'manual',
+      }),
     }
   );
 }
