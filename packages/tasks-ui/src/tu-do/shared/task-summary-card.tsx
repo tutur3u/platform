@@ -52,7 +52,7 @@ export function TaskSummaryCard({
   return (
     <article
       className={cn(
-        'group relative h-full space-y-2 overflow-hidden rounded-lg border border-l-4 bg-background p-2.5 shadow-xs transition-colors hover:bg-muted/30',
+        'group relative h-full space-y-2 overflow-hidden rounded-lg border border-l-4 bg-background p-2.5 shadow-xs transition-colors focus-within:ring-2 focus-within:ring-ring hover:bg-muted/30',
         getCardColorClasses(undefined, priority)
       )}
     >
@@ -80,7 +80,7 @@ export function TaskSummaryCard({
             href={href}
             target="_blank"
             rel="noreferrer"
-            className="flex items-start gap-2 rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
+            className="flex items-start gap-2 rounded-sm after:absolute after:inset-0 focus-visible:outline-none"
           >
             <span className="line-clamp-2 flex-1">{title}</span>
             <ArrowUpRight

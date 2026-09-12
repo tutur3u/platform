@@ -5780,6 +5780,7 @@
       "show_input_panel": "Show input panel",
       "show_less": "Show less",
       "show_more": "Show more",
+      "sources_count": "{count, plural, one {# source} other {# sources}}",
       "stream_error": "Something went wrong with the response. Please try again.",
       "submission": "Submission",
       "thinking": "Working...",

@@ -5780,6 +5780,7 @@
       "show_input_panel": "Hiện khung nhập",
       "show_less": "Thu gọn",
       "show_more": "Hiện thêm",
+      "sources_count": "{count} nguồn",
       "stream_error": "Đã xảy ra lỗi khi phản hồi. Vui lòng thử lại.",
       "submission": "Gửi",
       "thinking": "Đang xử lý...",
