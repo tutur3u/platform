@@ -1,9 +1,4 @@
-import {
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-  Suspense,
-} from 'react';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The page opts into request-time rendering via `connection()` (required under
@@ -118,17 +113,6 @@ describe('WorkspaceHomePage dashboard access', () => {
     expect(miraDashboard.props.currentUser.id).toBe('creator-1');
     expect(miraDashboard.props.initialAssistantName).toBe('Mira');
     expect(miraDashboard.props.wsId).toBe('workspace-1');
-    const insightsBoundary = miraDashboard.props.children as ReactElement<{
-      children: ReactElement<{ userId: string; wsId: string }>;
-    }>;
-    expect(insightsBoundary.type).toBe(Suspense);
-    expect(typeof insightsBoundary.props.children.type).toBe('function');
-    expect(
-      (insightsBoundary.props.children.type as { name: string }).name
-    ).toBe('DashboardInsightsSlot');
-    expect(insightsBoundary.props.children.props).toMatchObject({
-      userId: 'creator-1',
-      wsId: 'workspace-1',
-    });
+    expect(miraDashboard.props.children).toBeUndefined();
   });
 });

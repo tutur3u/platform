@@ -9,6 +9,7 @@ import type { CreditSource, ThinkingMode } from './mira-chat-constants';
 import MiraChatInputToolbar from './mira-chat-input-toolbar';
 
 interface MiraChatBottomBarProps {
+  composerRef?: RefObject<HTMLDivElement | null>;
   assistantName: string;
   attachedFiles: ChatFile[];
   bottomBarVisible: boolean;
@@ -45,6 +46,7 @@ interface MiraChatBottomBarProps {
 }
 
 export function MiraChatBottomBar({
+  composerRef,
   assistantName,
   attachedFiles,
   bottomBarVisible,
@@ -76,6 +78,7 @@ export function MiraChatBottomBar({
 }: MiraChatBottomBarProps) {
   return (
     <div
+      ref={composerRef}
       className={cn(
         'absolute right-0 bottom-0 left-0 z-10 flex min-w-0 max-w-full flex-col p-3 sm:p-4'
       )}

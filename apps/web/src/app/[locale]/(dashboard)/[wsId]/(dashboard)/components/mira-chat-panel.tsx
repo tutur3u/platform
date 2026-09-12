@@ -42,7 +42,6 @@ export interface MiraChatPanelProps {
   assistantName: string;
   userName?: string;
   userAvatarUrl?: string | null;
-  insightsDock?: ReactNode;
   workspaceContextBadge?: ReactNode;
   taskBoardContext?: MiraTaskBoardContext;
   isFullscreen?: boolean;
@@ -69,6 +68,7 @@ export default function MiraChatPanel({
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [viewOnly, setViewOnly] = useState(false);
+  const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const toolbarContentRef = useRef<HTMLDivElement>(null);
@@ -361,18 +361,22 @@ export default function MiraChatPanel({
     onToggleViewOnly: () => setViewOnly((value) => !value),
   });
 
+  const dataWorkspaceId =
+    chatRequestBody.workspaceContextId === 'personal'
+      ? (personalWorkspaceId ?? 'personal')
+      : chatRequestBody.workspaceContextId;
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MiraVoiceModeSwitcher
+        composerRef={composerRef}
         creditSource={activeCreditSource}
         creditWsId={creditWsId}
         header={(modeControl) => (
           <MiraChatHeader
             hasMessages={hasMessages}
             hotkeyLabels={hotkeyLabels}
-            insightsDock={
-              <MiraWorkspaceToolbar wsId={chatRequestBody.workspaceContextId} />
-            }
+            insightsDock={<MiraWorkspaceToolbar wsId={dataWorkspaceId} />}
             isFullscreen={isFullscreen}
             modeControl={modeControl}
             onExportChat={handleExportChat}
@@ -385,7 +389,7 @@ export default function MiraChatPanel({
           />
         )}
         inputRef={inputRef}
-        wsId={chatRequestBody.workspaceContextId}
+        wsId={dataWorkspaceId}
       >
         {(onVoiceToggle, voiceActive) => (
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -419,6 +423,7 @@ export default function MiraChatPanel({
             )}
 
             <MiraChatBottomBar
+              composerRef={composerRef}
               assistantName={assistantName}
               attachedFiles={attachedFiles}
               bottomBarVisible={bottomBarVisible}

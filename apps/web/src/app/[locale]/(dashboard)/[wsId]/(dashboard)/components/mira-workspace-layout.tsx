@@ -98,7 +98,7 @@ export function MiraWorkspaceLayout({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        'grid min-h-0 flex-1 gap-3 overflow-auto',
+        'relative z-10 grid min-h-0 flex-1 gap-3 overflow-auto',
         count === 0
           ? 'grid-cols-1 grid-rows-1'
           : grid

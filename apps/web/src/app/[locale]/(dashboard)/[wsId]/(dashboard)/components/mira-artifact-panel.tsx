@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, RefreshCw, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { loadArtifactRows } from './mira-artifact-data';
 import { MiraMeetingCreate } from './mira-meeting-create';
 import {
@@ -19,6 +20,7 @@ export function MiraArtifactPanel({
 }) {
   const t = useTranslations('dashboard.mira_workspace');
   const format = useFormatter();
+  const locale = useLocale();
   const workspace = useMiraWorkspace();
   const { kind, wsId } = artifact;
   const query = useQuery({
@@ -27,6 +29,7 @@ export function MiraArtifactPanel({
     staleTime: 15_000,
   });
   const path = kind === 'finance' ? 'finance/wallets' : kind;
+  const href = `${kind === 'meetings' ? getMeetAppOrigin() : ''}/${locale}/${encodeURIComponent(wsId)}/${path}`;
   return (
     <section
       aria-label={t(kind)}
@@ -54,7 +57,7 @@ export function MiraArtifactPanel({
             <TooltipTrigger asChild>
               <Button size="icon" variant="ghost" className="size-7" asChild>
                 <a
-                  href={`/${wsId}/${path}`}
+                  href={href}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={t('open_full')}

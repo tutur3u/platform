@@ -6,7 +6,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import type { ReactNode, RefObject } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const AssistantVoiceClient = dynamic(
   () => import('../assistant/assistant-client'),
@@ -32,6 +38,7 @@ function VoiceClientModuleLoading() {
 }
 
 export function MiraVoiceModeSwitcher({
+  composerRef,
   creditSource,
   creditWsId,
   children,
@@ -39,6 +46,7 @@ export function MiraVoiceModeSwitcher({
   inputRef,
   wsId,
 }: {
+  composerRef?: RefObject<HTMLDivElement | null>;
   children: (onVoiceToggle: () => void, voiceActive: boolean) => ReactNode;
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
@@ -49,6 +57,22 @@ export function MiraVoiceModeSwitcher({
   const t = useTranslations('dashboard.voice_assistant');
   const [mode, setMode] = useState<'chat' | 'live'>('chat');
   const voiceActive = mode === 'live';
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [insets, setInsets] = useState({ top: 0, bottom: 0 });
+
+  useLayoutEffect(() => {
+    if (!voiceActive) return;
+    const measure = () =>
+      setInsets({
+        top: (headerRef.current?.getBoundingClientRect().height ?? 0) + 8,
+        bottom: (composerRef?.current?.getBoundingClientRect().height ?? 0) + 8,
+      });
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (headerRef.current) observer.observe(headerRef.current);
+    if (composerRef?.current) observer.observe(composerRef.current);
+    return () => observer.disconnect();
+  }, [composerRef, voiceActive]);
   const voiceActiveRef = useRef(false);
   const focusFrameRef = useRef<number | null>(null);
   const focusTimeoutRef = useRef<number | null>(null);
@@ -100,14 +124,17 @@ export function MiraVoiceModeSwitcher({
 
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-      {header(null)}
+      <div ref={headerRef} className="shrink-0">
+        {header(null)}
+      </div>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {children(voiceActive ? exitVoice : enterVoice, voiceActive)}
       </div>
       {voiceActive && (
         <section
           aria-label={t('live_mode')}
-          className="absolute inset-x-2 top-10 bottom-36 z-20 flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg sm:left-auto sm:w-[min(28rem,90%)]"
+          style={insets}
+          className="absolute inset-x-2 z-20 flex flex-col overflow-hidden rounded-xl border bg-background shadow-lg sm:left-auto sm:w-[min(28rem,90%)]"
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <span className="flex items-center gap-2 font-medium text-sm">

@@ -1,6 +1,12 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { useRef, useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 
 vi.mock('../assistant/assistant-client', () => ({
@@ -17,11 +23,13 @@ vi.mock('next-intl', () => ({
 }));
 
 function Harness() {
+  const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('Keep this draft');
 
   return (
     <MiraVoiceModeSwitcher
+      composerRef={composerRef}
       creditSource="personal"
       creditWsId="personal-workspace"
       header={(modeControl) => (
@@ -31,7 +39,7 @@ function Harness() {
       wsId="workspace-1"
     >
       {(onVoiceToggle) => (
-        <div>
+        <div ref={composerRef} data-testid="composer">
           <textarea
             ref={inputRef}
             aria-label="Message"
@@ -48,6 +56,50 @@ function Harness() {
 }
 
 describe('MiraVoiceModeSwitcher', () => {
+  beforeEach(() =>
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      }
+    )
+  );
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+  it('keeps the live panel between a wrapped header and growing composer', () => {
+    let resize = () => {};
+    let headerHeight = 88;
+    let composerHeight = 240;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resize = callback;
+        }
+        observe() {}
+        disconnect() {}
+      }
+    );
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: HTMLElement) {
+        return {
+          height:
+            this.dataset.testid === 'composer' ? composerHeight : headerHeight,
+        } as DOMRect;
+      }
+    );
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    const panel = screen.getByRole('region', { name: 'Live' });
+    expect(panel).toHaveStyle({ top: '96px', bottom: '248px' });
+    headerHeight = 124;
+    composerHeight = 320;
+    act(() => resize());
+    expect(panel).toHaveStyle({ top: '132px', bottom: '328px' });
+  });
   it('keeps mode tabs out of the header and starts live from the composer', () => {
     render(<Harness />);
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();

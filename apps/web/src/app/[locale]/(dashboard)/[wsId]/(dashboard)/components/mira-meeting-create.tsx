@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createWorkspaceMeeting } from '@tuturuuu/internal-api/meetings';
-import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -19,7 +19,11 @@ export function MiraMeetingCreate({ wsId }: { wsId: string }) {
   const queryClient = useQueryClient();
   const profile = useQuery({
     queryKey: ['mira-meeting-account'],
-    queryFn: () => getCurrentUserProfile(),
+    queryFn: async () => {
+      const { data, error } = await createClient().auth.getUser();
+      if (error) throw error;
+      return data.user;
+    },
   });
   const create = useMutation({
     mutationFn: () =>
@@ -36,8 +40,29 @@ export function MiraMeetingCreate({ wsId }: { wsId: string }) {
       });
     },
   });
-  if (profile.isPending) return null;
-  if (!canCreateOnlineMeeting(profile.data?.email))
+  if (profile.isPending)
+    return (
+      <p role="status" className="text-muted-foreground text-xs">
+        {t('loading')}
+      </p>
+    );
+  if (profile.isError)
+    return (
+      <div role="alert" className="space-y-2">
+        <p className="text-destructive text-sm">{t('load_failed')}</p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void profile.refetch()}
+        >
+          {t('retry')}
+        </Button>
+      </div>
+    );
+  if (
+    !profile.data?.email_confirmed_at ||
+    !canCreateOnlineMeeting(profile.data?.email)
+  )
     return (
       <p className="text-muted-foreground text-xs">{t('meeting_restricted')}</p>
     );

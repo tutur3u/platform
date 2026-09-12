@@ -85,7 +85,6 @@ export default function MiraDashboardClientImpl({
   currentUser,
   initialAssistantName,
   wsId,
-  children,
 }: MiraDashboardClientProps) {
   const { data: soul } = useMiraSoul();
   const assistantName = soul?.name ?? initialAssistantName;
@@ -119,7 +118,6 @@ export default function MiraDashboardClientImpl({
             }
             userAvatarUrl={currentUser.avatar_url}
             isFullscreen={isFullscreen}
-            insightsDock={!isFullscreen ? children : undefined}
             onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
             onResetPanelState={() =>
               setChatPanelResetKey((current) => current + 1)

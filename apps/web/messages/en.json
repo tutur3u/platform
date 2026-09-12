@@ -5834,7 +5834,7 @@
       "loading": "Loading workspace data",
       "meeting_created": "Meeting created.",
       "meeting_name": "Meeting name",
-      "meeting_restricted": "Meeting creation is available to @tuturuuu.com accounts.",
+      "meeting_restricted": "Meeting creation is available to verified @tuturuuu.com accounts.",
       "meeting_time": "Start time (your local time)",
       "meetings": "Meetings",
       "meetings_description": "Workspace meetings · latest 30 items",
