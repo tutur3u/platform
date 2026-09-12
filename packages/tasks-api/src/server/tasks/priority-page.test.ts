@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { loadPriorityPage } from './priority-page';
 
-const ids = ['critical', 'high', 'low', 'none-new', 'none-old'];
-const expected = ['none-new', 'none-old', 'critical', 'high', 'low'];
+const ids = ['critical', 'high', 'normal', 'low', 'none-new', 'none-old'];
+const expected = ['none-new', 'none-old', 'critical', 'high', 'normal', 'low'];
 const options = {
   priorities: [],
   sortBy: 'priority-high',
@@ -21,7 +21,7 @@ function loader(source = ids) {
       limit: number;
     }) => {
       const filtered = priorities.length
-        ? source.filter((id) => !id.startsWith('none'))
+        ? source.filter((id) => priorities.includes(id))
         : source;
       return {
         count: filtered.length,
@@ -37,7 +37,7 @@ describe('priority pagination', () => {
     async (offset) => {
       const load = loader();
       expect(await loadPriorityPage({ ...options, offset }, load)).toEqual({
-        count: 5,
+        count: 6,
         taskIds: expected.slice(offset, offset + 2),
       });
       expect(load.mock.calls.length).toBeLessThanOrEqual(4);
@@ -78,14 +78,27 @@ describe('priority pagination', () => {
       });
     }
   );
-  it('returns count-only requests without loading task pages', async () => {
-    const load = loader();
-    expect(await loadPriorityPage({ ...options, limit: 0 }, load)).toEqual({
-      count: 5,
-      taskIds: [],
-    });
-    expect(load).toHaveBeenCalledTimes(1);
-  });
+  it.each([
+    { sortBy: 'name-asc' },
+    { unprioritizedPosition: 'last' as const },
+    {},
+    { priorities: ['normal'] },
+  ])(
+    'returns count-only requests without loading task pages: %j',
+    async (overrides) => {
+      const load = loader();
+      expect(
+        await loadPriorityPage(
+          { ...options, ...overrides, offset: 500, limit: 0 },
+          load
+        )
+      ).toEqual({
+        count: 'priorities' in overrides ? 1 : 6,
+        taskIds: [],
+      });
+      expect(load).toHaveBeenCalledTimes(1);
+    }
+  );
   it('propagates database failures instead of returning a misleading empty page', async () => {
     await expect(
       loadPriorityPage(

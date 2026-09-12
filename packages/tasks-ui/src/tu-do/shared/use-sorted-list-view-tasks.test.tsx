@@ -6,14 +6,14 @@ import type { ReactNode } from 'react';
 import { expect, it, vi } from 'vitest';
 import { useSortedListViewTasks } from './use-sorted-list-view-tasks';
 
+const getConfigMock = vi.hoisted(() => vi.fn(async () => ({ value: 'first' })));
 vi.mock('@tuturuuu/internal-api/users', () => ({
-  getUserConfig: vi.fn(async () => ({ value: 'first' })),
+  getUserConfig: getConfigMock,
 }));
 
-it('immediately reorders loaded tasks when the shared saved preference changes', () => {
+it('immediately reorders loaded tasks when the shared saved preference changes', async () => {
   const queryClient = new QueryClient();
   const key = ['user-config', TASK_UNPRIORITIZED_POSITION_CONFIG_ID];
-  queryClient.setQueryData(key, 'first');
   const tasks = [
     { id: 'high', priority: 'high' },
     { id: 'none', priority: null },
@@ -32,6 +32,12 @@ it('immediately reorders loaded tasks when the shared saved preference changes',
       ),
     }
   );
+  await vi.waitFor(() => {
+    expect(getConfigMock).toHaveBeenCalledWith(
+      TASK_UNPRIORITIZED_POSITION_CONFIG_ID
+    );
+    expect(queryClient.isFetching()).toBe(0);
+  });
   expect(result.current.map((task) => task.id)).toEqual(['none', 'high']);
   act(() => {
     queryClient.setQueryData(key, 'last');

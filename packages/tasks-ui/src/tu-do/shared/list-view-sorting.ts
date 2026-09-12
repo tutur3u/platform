@@ -1,5 +1,6 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
+  compareUnprioritizedPlacement,
   priorityCompare,
   type UnprioritizedPosition,
 } from '@tuturuuu/utils/task-helper';
@@ -47,14 +48,13 @@ export function sortListViewTasks(
       return aCompleted ? 1 : -1;
     }
 
-    if (
-      sortField === 'priority' &&
-      (a.priority == null) !== (b.priority == null)
-    ) {
-      return (
-        (a.priority == null ? -1 : 1) *
-        (unprioritizedPosition === 'first' ? 1 : -1)
+    if (sortField === 'priority') {
+      const placement = compareUnprioritizedPlacement(
+        a.priority,
+        b.priority,
+        unprioritizedPosition
       );
+      if (placement) return placement;
     }
     let comparison = 0;
 

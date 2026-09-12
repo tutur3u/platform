@@ -11,6 +11,10 @@ export async function loadPriorityPage(
   },
   load: (page: PageOptions) => Promise<Page>
 ): Promise<Page> {
+  if (options.limit === 0) {
+    const total = await load({ ...options, offset: 0, limit: 1 });
+    return { count: total.count, taskIds: [] };
+  }
   if (
     options.unprioritizedPosition === 'last' ||
     !options.sortBy?.startsWith('priority-') ||
@@ -22,7 +26,6 @@ export async function loadPriorityPage(
   const total = await load({ ...options, offset: 0, limit: 1 });
   if (total.count === 0 || options.offset >= total.count)
     return { count: total.count, taskIds: [] };
-  if (options.limit === 0) return { count: total.count, taskIds: [] };
   const prioritized = await load({
     ...options,
     offset: 0,

@@ -87,20 +87,28 @@ function compareCreatedFallback(a: SortableTask, b: SortableTask) {
   return created || a.id.localeCompare(b.id);
 }
 
+export function compareUnprioritizedPlacement(
+  a: TaskPriority | null | undefined,
+  b: TaskPriority | null | undefined,
+  position: UnprioritizedPosition = 'first'
+) {
+  if ((a == null) === (b == null)) return 0;
+  return (a == null ? -1 : 1) * (position === 'first' ? 1 : -1);
+}
+
 export function compareTasksByCriterion(
   a: SortableTask,
   b: SortableTask,
   sortBy: TaskSortBy,
   unprioritizedPosition: UnprioritizedPosition = 'first'
 ) {
-  if (
-    (sortBy === 'priority-high' || sortBy === 'priority-low') &&
-    (a.priority == null) !== (b.priority == null)
-  ) {
-    return (
-      (a.priority == null ? -1 : 1) *
-      (unprioritizedPosition === 'first' ? 1 : -1)
+  if (sortBy === 'priority-high' || sortBy === 'priority-low') {
+    const placement = compareUnprioritizedPlacement(
+      a.priority,
+      b.priority,
+      unprioritizedPosition
     );
+    if (placement) return placement;
   }
   let result = 0;
 

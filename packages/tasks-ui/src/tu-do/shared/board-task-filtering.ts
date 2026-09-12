@@ -17,7 +17,7 @@ export function taskMatchesLocalFilters(
 
   if (
     filters.labels.length > 0 &&
-    !filters.labels.every((label) =>
+    !filters.labels.some((label) =>
       task.labels?.some((taskLabel) => taskLabel.id === label.id)
     )
   ) {
@@ -26,7 +26,7 @@ export function taskMatchesLocalFilters(
 
   if (
     filters.projects.length > 0 &&
-    !filters.projects.every((project) =>
+    !filters.projects.some((project) =>
       task.projects?.some((taskProject) => taskProject.id === project.id)
     )
   ) {
@@ -73,7 +73,8 @@ export function taskMatchesLocalFilters(
     typeof filters.estimationRange?.min === 'number' ||
     typeof filters.estimationRange?.max === 'number'
   ) {
-    const estimate = task.estimation_points ?? 0;
+    const estimate = task.estimation_points;
+    if (estimate == null) return false;
     const min = filters.estimationRange.min ?? -Infinity;
     const max = filters.estimationRange.max ?? Infinity;
     if (estimate < min || estimate > max) return false;
