@@ -34,19 +34,22 @@ const WorkspaceContext = createContext<WorkspaceState | null>(null);
 export const useMiraWorkspace = () => useContext(WorkspaceContext);
 
 export function MiraWorkspaceProvider({ children }: { children: ReactNode }) {
-  const [artifacts, setArtifacts] = useState<WorkspaceArtifact[]>([]);
-  const [layout, setLayout] = useState<ArtifactLayout>('auto');
+  const [state, setState] = useState<{
+    artifacts: WorkspaceArtifact[];
+    layout: ArtifactLayout;
+  }>({ artifacts: [], layout: 'auto' });
   return (
     <WorkspaceContext.Provider
       value={{
-        artifacts,
-        layout,
-        setLayout,
+        ...state,
+        setLayout(layout) {
+          setState((current) => ({ ...current, layout }));
+        },
         open(kind, wsId, nextLayout, presentation) {
-          if (nextLayout) setLayout(nextLayout);
-          setArtifacts((current) =>
-            [
-              ...current.filter(
+          setState((current) => ({
+            layout: nextLayout ?? current.layout,
+            artifacts: [
+              ...current.artifacts.filter(
                 (item) => item.kind !== kind || item.wsId !== wsId
               ),
               {
@@ -54,29 +57,31 @@ export function MiraWorkspaceProvider({ children }: { children: ReactNode }) {
                 wsId,
                 presentation:
                   presentation ??
-                  current.find(
+                  current.artifacts.find(
                     (item) => item.kind === kind && item.wsId === wsId
                   )?.presentation,
               },
-            ].slice(-3)
-          );
+            ].slice(-3),
+          }));
         },
         closeAll() {
-          setArtifacts([]);
-          setLayout('auto');
+          setState({ artifacts: [], layout: 'auto' });
         },
         focus(kind, wsId) {
-          const target = artifacts.find(
-            (item) => item.kind === kind && item.wsId === wsId
-          );
-          if (!target) return;
-          setArtifacts([target]);
-          setLayout('auto');
+          setState((current) => {
+            const target = current.artifacts.find(
+              (item) => item.kind === kind && item.wsId === wsId
+            );
+            return target ? { artifacts: [target], layout: 'auto' } : current;
+          });
         },
         close(kind, wsId) {
-          setArtifacts((current) =>
-            current.filter((item) => item.kind !== kind || item.wsId !== wsId)
-          );
+          setState((current) => ({
+            ...current,
+            artifacts: current.artifacts.filter(
+              (item) => item.kind !== kind || item.wsId !== wsId
+            ),
+          }));
         },
       }}
     >

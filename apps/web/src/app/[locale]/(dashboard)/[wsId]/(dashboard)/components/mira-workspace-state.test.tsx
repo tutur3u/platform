@@ -66,3 +66,23 @@ it('does not open a missing artifact when asked to focus it', () => {
   expect(result.current?.artifacts.map((item) => item.kind)).toEqual(['tasks']);
   expect(result.current?.layout).toBe('vertical');
 });
+
+it('applies batched open, close, and focus actions in tool order', () => {
+  const { result } = renderHook(useMiraWorkspace, {
+    wrapper: MiraWorkspaceProvider,
+  });
+  act(() => {
+    result.current?.open('tasks', 'one', 'grid');
+    result.current?.open('finance', 'one');
+    result.current?.focus('finance', 'one');
+  });
+  expect(result.current?.artifacts.map((item) => item.kind)).toEqual([
+    'finance',
+  ]);
+  expect(result.current?.layout).toBe('auto');
+  act(() => {
+    result.current?.close('finance', 'one');
+    result.current?.focus('finance', 'one');
+  });
+  expect(result.current?.artifacts).toEqual([]);
+});
