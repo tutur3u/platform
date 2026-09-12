@@ -89,7 +89,7 @@ export const workspaceUserChatToolDefinitions = {
 
   show_workspace_artifact: tool({
     description:
-      'Open or update a tailored artifact beside chat. Choose tasks, calendar, finance, or meetings. Use presentation for a helpful title, grounded explanation, up to three useful highlights, search, taskStatus, currency, date, or specific itemIds. Opening multiple panels splits the space automatically. Omit layout to preserve the current arrangement. Use proactively when a visual view helps the task; no toolbar click is needed. This tool does not read product data: use only a title unless a data-read tool returned the facts in this turn. On success the opening/update is complete; do not repeat it to verify.',
+      'Open or update a tailored artifact beside chat. Choose tasks, calendar, finance, or meetings. Use presentation for a concise title, search, taskStatus, currency, date, or specific itemIds. Opening multiple panels splits the space automatically. Omit layout to preserve the current arrangement. Use proactively when a visual view helps the task; no toolbar click is needed. The panel displays product cards without explanatory prose; keep recommendations in chat. This tool does not read product data: use only a title unless a data-read tool returned the facts in this turn. On success the opening/update is complete; do not repeat it to verify.',
     inputSchema: showWorkspaceArtifactSchema,
   }),
 

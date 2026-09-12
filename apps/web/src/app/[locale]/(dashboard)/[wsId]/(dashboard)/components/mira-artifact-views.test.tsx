@@ -154,3 +154,31 @@ it('ignores an old selected calendar day after the assistant changes the date ra
   );
   expect(screen.getByText('New month event')).toBeInTheDocument();
 });
+
+it('renders all priority levels and native estimate and label metadata', () => {
+  render(
+    <MiraTaskArtifact
+      rows={[
+        {
+          id: 'low',
+          title: 'Plan launch',
+          priority: 'low',
+          listName: 'Next week',
+          estimationPoints: 4,
+          estimationType: 't-shirt',
+          labels: [
+            { id: 'design', name: 'Design', color: '#22aa88', created_at: '' },
+          ],
+          assignees: [{ id: 'phuc', name: 'Phuc' }],
+        },
+        { id: 'normal', title: 'Review', priority: 'normal' },
+      ]}
+    />
+  );
+  expect(screen.getByText('low')).toBeInTheDocument();
+  expect(screen.getByText('normal')).toBeInTheDocument();
+  expect(screen.getByText('Next week')).toBeInTheDocument();
+  expect(screen.getByText('Design')).toBeInTheDocument();
+  expect(screen.getByText('L')).toBeInTheDocument();
+  expect(screen.getByTitle('Phuc')).toBeInTheDocument();
+});

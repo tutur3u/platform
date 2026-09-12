@@ -1,6 +1,6 @@
 'use client';
 
-import { Wallet } from '@tuturuuu/icons';
+import { WalletIconDisplay } from '@tuturuuu/ui/finance/wallets/wallet-icon-display';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { ArtifactRow } from './mira-artifact-data';
 
@@ -15,7 +15,7 @@ export function MiraFinanceArtifact({
   const format = useFormatter();
   const currencies = [...new Set(rows.map((row) => row.currency ?? ''))].sort();
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {currencies.map((currency) => {
         const wallets = rows
           .filter((row) => (row.currency ?? '') === currency)
@@ -31,7 +31,7 @@ export function MiraFinanceArtifact({
             className="space-y-2"
             aria-label={currency || t('unknown_currency')}
           >
-            <div className="rounded-lg border border-chart-3/15 bg-chart-3/5 p-3">
+            <div className="rounded-lg border border-chart-3/20 bg-chart-3/10 px-3 py-2.5">
               <div className="flex items-center justify-between gap-2 text-muted-foreground text-xs">
                 <span>{t('net_balance')}</span>
                 <span className="font-medium">
@@ -47,19 +47,22 @@ export function MiraFinanceArtifact({
                 {t('wallet_count', { count: wallets.length })}
               </p>
             </div>
-            <ul className="space-y-0.5">
+            <ul className="grid @min-[36rem]:grid-cols-2 gap-2">
               {wallets.map((row) => (
                 <li
                   key={row.id}
-                  className="rounded-md px-1 py-2 hover:bg-muted/30"
+                  className="rounded-lg border bg-background p-2.5 transition-colors hover:border-chart-3/40 hover:bg-chart-3/5"
                 >
                   <div className="flex items-start gap-2">
-                    <Wallet
-                      aria-hidden
-                      className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
-                    />
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-chart-3/10 text-chart-3">
+                      <WalletIconDisplay
+                        icon={row.icon}
+                        imageSrc={row.imageSrc}
+                        size="sm"
+                      />
+                    </div>
                     <span
-                      className="min-w-0 flex-1 truncate text-xs"
+                      className="min-w-0 flex-1 truncate pt-1 font-medium text-xs"
                       title={row.title}
                     >
                       {href ? (
@@ -76,7 +79,7 @@ export function MiraFinanceArtifact({
                       )}
                     </span>
                     <span
-                      className={`shrink-0 font-medium text-xs tabular-nums ${(row.amount ?? 0) < 0 ? 'text-destructive' : ''}`}
+                      className={`shrink-0 pt-1 font-semibold text-xs tabular-nums ${(row.amount ?? 0) < 0 ? 'text-destructive' : ''}`}
                     >
                       {format.number(row.amount ?? 0, {
                         maximumFractionDigits: 2,
@@ -96,7 +99,7 @@ export function MiraFinanceArtifact({
                   />
                   <div
                     aria-hidden
-                    className="mt-1.5 ml-5.5 h-1 overflow-hidden rounded-full bg-muted"
+                    className="mt-2.5 h-1 overflow-hidden rounded-full bg-muted"
                   >
                     <div
                       className={`h-full rounded-full ${(row.amount ?? 0) < 0 ? 'bg-destructive/70' : 'bg-chart-2/70'}`}
@@ -111,7 +114,6 @@ export function MiraFinanceArtifact({
           </section>
         );
       })}
-      <p className="text-[11px] text-muted-foreground">{t('balance_note')}</p>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { Clock, MapPin, Video } from '@tuturuuu/icons';
+import { ArrowUpRight, Clock, MapPin, Video } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { ArtifactRow } from './mira-artifact-data';
@@ -73,7 +74,7 @@ export function MiraScheduleArtifact({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1 rounded-lg border bg-chart-2/5 p-1">
           {days.map((day) => {
             const key = dayKey(day);
             const count = calendarRows.filter(
@@ -131,7 +132,7 @@ export function MiraScheduleArtifact({
       )}
       {[...groups.entries()].map(([key, events]) => (
         <section key={key} className="space-y-1.5">
-          <h3 className="border-b pb-1.5 font-medium text-[11px] text-muted-foreground">
+          <h3 className="flex items-center gap-2 py-1 font-semibold text-[11px] text-muted-foreground after:h-px after:flex-1 after:bg-border">
             {format.dateTime(new Date(events[0]!.date!), {
               timeZone,
               weekday: 'long',
@@ -139,64 +140,74 @@ export function MiraScheduleArtifact({
               day: 'numeric',
             })}
           </h3>
-          <ul className="space-y-1">
-            {events.map((row) => (
-              <li
-                key={row.id}
-                className="flex gap-2.5 rounded-md py-2 hover:bg-muted/30"
-              >
-                <div className="w-12 shrink-0 pt-0.5 text-right text-[11px] tabular-nums">
-                  <time dateTime={row.date}>
-                    {row.allDay
-                      ? t('all_day')
-                      : format.dateTime(new Date(row.date!), {
+          <ul className="space-y-2">
+            {events.map((row) => {
+              const colors =
+                !meetings && row.color ? getEventStyles(row.color) : undefined;
+              return (
+                <li
+                  key={row.id}
+                  className={`flex gap-2.5 rounded-lg border p-2.5 transition-colors ${colors ? `${colors.bg} ${colors.border}` : meetings ? 'border-chart-4/20 bg-chart-4/5 hover:bg-chart-4/10' : 'border-chart-2/20 bg-chart-2/5 hover:bg-chart-2/10'}`}
+                >
+                  <div
+                    className={`w-14 shrink-0 rounded-md p-1 text-center font-medium text-[11px] tabular-nums ${colors ? colors.text : meetings ? 'bg-chart-4/10 text-chart-4' : 'bg-chart-2/10 text-chart-2'}`}
+                  >
+                    <time dateTime={row.date}>
+                      {row.allDay
+                        ? t('all_day')
+                        : format.dateTime(new Date(row.date!), {
+                            timeZone,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                    </time>
+                    {row.endDate && !row.allDay && (
+                      <p className="mt-0.5 text-muted-foreground">
+                        {format.dateTime(new Date(row.endDate), {
                           timeZone,
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
-                  </time>
-                  {row.endDate && !row.allDay && (
-                    <p className="mt-0.5 text-muted-foreground">
-                      {format.dateTime(new Date(row.endDate), {
-                        timeZone,
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  )}
-                </div>
-                <div
-                  className={`min-w-0 flex-1 border-l-2 pl-2.5 ${meetings ? 'border-chart-4/60' : 'border-chart-2/60'}`}
-                >
-                  <p className="line-clamp-2 font-medium text-sm leading-snug">
-                    {meetings && href ? (
-                      <a
-                        className="hover:underline focus-visible:underline"
-                        href={`${href}/${encodeURIComponent(row.id)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {row.title}
-                      </a>
-                    ) : (
-                      row.title
+                      </p>
                     )}
-                  </p>
-                  {row.detail && (
-                    <p className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
-                      <MapPin aria-hidden className="size-3 shrink-0" />
-                      <span className="truncate">{row.detail}</span>
+                  </div>
+                  <div
+                    className={`min-w-0 flex-1 border-l-2 pl-2.5 ${colors ? colors.border : meetings ? 'border-chart-4/40' : 'border-chart-2/40'}`}
+                  >
+                    <p className="line-clamp-2 font-medium text-sm leading-snug">
+                      {meetings && href ? (
+                        <a
+                          className="flex items-start justify-between gap-2 rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                          href={`${href}/${encodeURIComponent(row.id)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span>{row.title}</span>
+                          <ArrowUpRight
+                            aria-hidden
+                            className="mt-0.5 size-3 shrink-0 text-chart-4"
+                          />
+                        </a>
+                      ) : (
+                        row.title
+                      )}
                     </p>
-                  )}
-                  {meetings && (
-                    <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <Video aria-hidden className="size-3" />
-                      {t('meetings')}
-                    </p>
-                  )}
-                </div>
-              </li>
-            ))}
+                    {row.detail && (
+                      <p className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                        <MapPin aria-hidden className="size-3 shrink-0" />
+                        <span className="truncate">{row.detail}</span>
+                      </p>
+                    )}
+                    {meetings && (
+                      <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <Video aria-hidden className="size-3" />
+                        {t('meetings')}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ))}

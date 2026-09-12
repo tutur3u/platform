@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMiraUiActions } from './use-mira-ui-actions';
 
 const mocks = vi.hoisted(() => ({
+  artifacts: [] as { kind: string; wsId: string }[],
   setTheme: vi.fn(),
   open: vi.fn(),
   close: vi.fn(),
@@ -36,7 +37,10 @@ function message(
   } as UIMessage;
 }
 describe('Mira streamed UI actions', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.artifacts = [];
+  });
   it('applies theme as soon as a tool output arrives, without a mounted result card', () => {
     const { rerender } = renderHook(
       ({ messages, status }) => useMiraUiActions(messages, status),
@@ -187,3 +191,47 @@ describe('Mira streamed UI actions', () => {
     expect(mocks.setTheme).not.toHaveBeenCalled();
   });
 });
+
+it.each(['expanded', 'collapsed', 'hover', 'hidden'] as const)(
+  'only auto-collapses expanded navigation when a new artifact opens (%s)',
+  (behavior) => {
+    mocks.artifacts = [];
+    const change = vi.fn();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <SidebarContext.Provider
+        value={{
+          behavior,
+          handleBehaviorChange: change,
+          setBehavior: vi.fn(),
+          localOverride: false,
+          setLocalOverride: vi.fn(),
+        }}
+      >
+        {children}
+      </SidebarContext.Provider>
+    );
+    const output = { success: true, kind: 'tasks', wsId: 'workspace-2' };
+    renderHook(
+      () =>
+        useMiraUiActions(
+          [message('show_workspace_artifact', output)],
+          'streaming'
+        ),
+      { wrapper }
+    );
+    if (behavior === 'expanded')
+      expect(change).toHaveBeenCalledWith('collapsed');
+    else expect(change).not.toHaveBeenCalled();
+    change.mockClear();
+    mocks.artifacts = [{ kind: 'tasks', wsId: 'workspace-2' }];
+    renderHook(
+      () =>
+        useMiraUiActions(
+          [message('show_workspace_artifact', output)],
+          'streaming'
+        ),
+      { wrapper }
+    );
+    expect(change).not.toHaveBeenCalled();
+  }
+);

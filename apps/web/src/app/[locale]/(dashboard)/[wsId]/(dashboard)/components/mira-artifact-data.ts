@@ -3,6 +3,7 @@ import { listWallets } from '@tuturuuu/internal-api/finance';
 import { getWorkspaceMeetings } from '@tuturuuu/internal-api/meetings';
 import { getUserTaskDashboard } from '@tuturuuu/internal-api/tasks';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
+import type { TaskLabelSummary } from '@tuturuuu/types/db';
 import type { ArtifactKind } from './mira-workspace-state';
 
 export interface ArtifactRow {
@@ -12,11 +13,19 @@ export interface ArtifactRow {
   date?: string;
   amount?: number;
   currency?: string;
+  icon?: string;
+  imageSrc?: string;
   endDate?: string;
   allDay?: boolean;
+  color?: string;
   group?: string;
   priority?: string;
   path?: string;
+  listName?: string;
+  estimationPoints?: number;
+  estimationType?: string;
+  labels?: TaskLabelSummary[];
+  assignees?: { id: string; name: string; avatarUrl?: string }[];
 }
 export async function loadArtifactRows(
   kind: ArtifactKind,
@@ -36,6 +45,23 @@ export async function loadArtifactRows(
         date: task.end_date ?? undefined,
         group,
         priority: task.priority ?? undefined,
+        listName: task.list?.name ?? undefined,
+        estimationPoints: task.estimation_points ?? undefined,
+        estimationType: task.list?.board?.estimation_type ?? undefined,
+        labels: (task.labels ?? []).flatMap(({ label }) =>
+          label ? [label] : []
+        ),
+        assignees: (task.assignees ?? []).flatMap(({ user }) =>
+          user
+            ? [
+                {
+                  id: user.id,
+                  name: user.display_name ?? '',
+                  avatarUrl: user.avatar_url ?? undefined,
+                },
+              ]
+            : []
+        ),
         detail: [task.list?.board?.workspaces?.name, task.list?.board?.name]
           .filter(Boolean)
           .join(' · '),
@@ -60,6 +86,7 @@ export async function loadArtifactRows(
       date: event.start_at,
       endDate: event.end_at,
       detail: event.location,
+      color: event.color,
     }));
   }
   if (kind === 'finance') {
@@ -69,6 +96,8 @@ export async function loadArtifactRows(
       title: wallet.name ?? '',
       amount: wallet.balance,
       currency: wallet.currency,
+      icon: wallet.icon ?? undefined,
+      imageSrc: wallet.image_src ?? undefined,
     }));
   }
   const result = await getWorkspaceMeetings<{

@@ -13,7 +13,22 @@ const task = {
   name: 'Task from another workspace',
   end_date: '2026-09-12T09:00:00Z',
   priority: 'high',
-  assignees: null,
+  estimation_points: 4,
+  labels: [
+    {
+      label: {
+        id: 'label',
+        name: 'Delivery',
+        color: '#22aa88',
+        created_at: '',
+      },
+    },
+    { label: null },
+  ],
+  assignees: [
+    { user: { id: 'person', display_name: 'Phuc', avatar_url: '/avatar.png' } },
+    { user: null },
+  ],
   list: {
     id: 'list',
     name: 'In progress',
@@ -22,6 +37,7 @@ const task = {
       id: 'board',
       name: 'Delivery',
       ws_id: 'team',
+      estimation_type: 't-shirt',
       workspaces: { id: 'team', name: 'Team', personal: false },
     },
   },
@@ -49,6 +65,11 @@ describe('Mira task feed scope', () => {
       id: 'external-task',
       group: 'overdue',
       priority: 'high',
+      listName: 'In progress',
+      estimationPoints: 4,
+      estimationType: 't-shirt',
+      labels: [expect.objectContaining({ id: 'label', name: 'Delivery' })],
+      assignees: [{ id: 'person', name: 'Phuc', avatarUrl: '/avatar.png' }],
       path: '/team/boards/board?task=external-task',
     });
   });

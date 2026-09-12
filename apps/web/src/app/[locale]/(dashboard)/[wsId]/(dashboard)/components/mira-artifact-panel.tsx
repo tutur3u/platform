@@ -8,7 +8,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
-import { MiraArtifactContext } from './mira-artifact-context';
 import { loadArtifactRows } from './mira-artifact-data';
 import { artifactVisuals } from './mira-artifact-visuals';
 import { MiraFinanceArtifact } from './mira-finance-artifact';
@@ -61,7 +60,7 @@ export function MiraArtifactPanel({
   return (
     <section
       aria-label={t(kind)}
-      className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border bg-card"
+      className="@container flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border bg-card"
     >
       <header
         className={`flex items-center justify-between gap-2 border-b px-3 py-2 ${visual.headerClass}`}
@@ -129,10 +128,6 @@ export function MiraArtifactPanel({
         </div>
       </header>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-        <p className="text-muted-foreground text-xs">
-          {t(`${kind}_description`)}
-        </p>
-        <MiraArtifactContext presentation={presentation} kind={kind} />
         <div className="relative">
           <Search
             aria-hidden
