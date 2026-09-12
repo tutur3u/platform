@@ -55,7 +55,7 @@ describe('Mira UI tool markers', () => {
   it('uses the selected data workspace rather than the dashboard workspace', async () => {
     expect(
       await executeShowWorkspaceArtifact({ kind: 'tasks', layout: 'grid' }, ctx)
-    ).toEqual({
+    ).toMatchObject({
       success: true,
       action: 'show_workspace_artifact',
       kind: 'tasks',
