@@ -3505,7 +3505,7 @@
     "period_from": "Report period from",
     "period_to": "Report period to",
     "all_periods": "All periods",
-    "period_scope": "Report periods: {start} – {end}. Status totals cover this period; search and status filters narrow the list.",
+    "period_scope": "Report period: {start} – {end}",
     "all_time_start": "Beginning",
     "all_time_end": "Latest",
     "approval_filter_label": "Approval",

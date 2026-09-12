@@ -3505,7 +3505,7 @@
     "period_from": "Kỳ báo cáo từ",
     "period_to": "Kỳ báo cáo đến",
     "all_periods": "Tất cả các kỳ",
-    "period_scope": "Kỳ báo cáo: {start} – {end}. Tổng trạng thái áp dụng cho kỳ này; tìm kiếm và bộ lọc trạng thái thu hẹp danh sách.",
+    "period_scope": "Kỳ báo cáo: {start} – {end}",
     "all_time_start": "Ban đầu",
     "all_time_end": "Mới nhất",
     "approval_filter_label": "Phê duyệt",
