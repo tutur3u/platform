@@ -110,17 +110,19 @@ export type PeriodicReportDeliveryStatus =
   | 'cancelled'
   | 'skipped';
 
-export type PeriodicReportStage =
-  | 'draft'
-  | 'pending'
-  | 'approved'
-  | 'blocked'
-  | 'queued'
-  | 'processing'
-  | 'sent'
-  | 'failed'
-  | 'skipped'
-  | 'rejected';
+export const PERIODIC_REPORT_STAGES = [
+  'draft',
+  'pending',
+  'approved',
+  'blocked',
+  'queued',
+  'processing',
+  'sent',
+  'failed',
+  'skipped',
+  'rejected',
+] as const;
+export type PeriodicReportStage = (typeof PERIODIC_REPORT_STAGES)[number];
 
 export interface PeriodicReport {
   report_stage?: PeriodicReportStage;

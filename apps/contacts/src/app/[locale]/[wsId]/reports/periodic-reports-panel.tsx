@@ -263,6 +263,7 @@ export default function PeriodicReportsPanel({
             </div>
 
             <PeriodicReportsToolbar
+              stageChanged={stage !== 'pending'}
               stageLabel={
                 stage === 'all'
                   ? undefined

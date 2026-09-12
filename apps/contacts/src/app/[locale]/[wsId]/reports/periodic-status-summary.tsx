@@ -1,11 +1,9 @@
 'use client';
-import { FileText } from '@tuturuuu/icons';
 import type {
   PeriodicReportCounts,
   PeriodicReportStage,
 } from '@tuturuuu/internal-api/reports';
 import { Button } from '@tuturuuu/ui/button';
-import { getPostReviewStageAppearance } from '@tuturuuu/users-ui/components/post-status-meta';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import {
@@ -15,7 +13,10 @@ import {
 
 export { PERIODIC_STAGES } from './periodic-stage-meta';
 
-import { PERIODIC_STAGES } from './periodic-stage-meta';
+import {
+  getPeriodicStageAppearance,
+  PERIODIC_STAGES,
+} from './periodic-stage-meta';
 
 export function PeriodicStatusSummary({
   counts,
@@ -55,8 +56,8 @@ export function PeriodicStatusSummary({
         </>
       }
     >
-      {PERIODIC_STAGES.map(([value, label, appearanceKey]) => {
-        const appearance = getPostReviewStageAppearance(appearanceKey);
+      {PERIODIC_STAGES.map(([value, label]) => {
+        const appearance = getPeriodicStageAppearance(value);
         return (
           <ReportStatusCard
             key={value}
@@ -64,9 +65,7 @@ export function PeriodicStatusSummary({
             count={counts?.stages?.[value]}
             total={counts?.total}
             active={stage === value}
-            appearance={
-              value === 'draft' ? { ...appearance, icon: FileText } : appearance
-            }
+            appearance={appearance}
             onClick={() => onChange(value)}
           />
         );

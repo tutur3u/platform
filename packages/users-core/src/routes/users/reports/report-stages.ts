@@ -1,15 +1,6 @@
-export const PERIODIC_REPORT_STAGES = [
-  'draft',
-  'pending',
-  'approved',
-  'blocked',
-  'queued',
-  'processing',
-  'sent',
-  'failed',
-  'skipped',
-  'rejected',
-] as const;
+import { PERIODIC_REPORT_STAGES } from '@tuturuuu/internal-api/reports';
+
+export { PERIODIC_REPORT_STAGES } from '@tuturuuu/internal-api/reports';
 export function normalizeReportStages(value: unknown) {
   const source =
     value && typeof value === 'object'

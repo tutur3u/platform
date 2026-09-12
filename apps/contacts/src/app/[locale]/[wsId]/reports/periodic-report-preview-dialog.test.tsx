@@ -8,7 +8,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PeriodicReportPreviewDialog } from './periodic-report-preview-dialog';
 
 const load = vi.hoisted(() => vi.fn());
-vi.mock('@tuturuuu/internal-api/reports', () => ({
+vi.mock('@tuturuuu/internal-api/reports', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/internal-api/reports')>()),
   getPeriodicReportEmailPreview: load,
 }));
 vi.mock('./periodic-delivery-status', () => ({

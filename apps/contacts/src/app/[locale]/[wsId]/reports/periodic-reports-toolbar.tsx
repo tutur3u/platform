@@ -45,6 +45,7 @@ export type PeriodicSortDirection = 'asc' | 'desc';
 
 export function PeriodicReportsToolbar({
   stageLabel,
+  stageChanged = false,
   periodStart = '',
   periodEnd = '',
   onPeriodChange,
@@ -65,6 +66,7 @@ export function PeriodicReportsToolbar({
   sortDirection,
 }: {
   stageLabel?: string;
+  stageChanged?: boolean;
   periodStart?: string;
   periodEnd?: string;
   onPeriodChange?: (start: string, end: string) => void;
@@ -90,7 +92,7 @@ export function PeriodicReportsToolbar({
   const t = useTranslations();
   const reportsT = useTranslations('reports-hub');
   const activeFilterCount = [
-    Boolean(stageLabel),
+    stageChanged,
     generationStatus !== 'all',
     approvalStatus !== 'all',
     deliveryStatus !== 'all',

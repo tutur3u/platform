@@ -8,10 +8,12 @@ import { Badge } from '@tuturuuu/ui/badge';
 import {
   getPostApprovalStatusAppearance,
   getPostEmailStatusAppearance,
-  getPostReviewStageAppearance,
 } from '@tuturuuu/users-ui/components/post-status-meta';
 import { useTranslations } from 'next-intl';
-import { PERIODIC_STAGES } from './periodic-stage-meta';
+import {
+  getPeriodicStageAppearance,
+  PERIODIC_STAGES,
+} from './periodic-stage-meta';
 
 export function PeriodicStatusBadge({
   approval,
@@ -43,7 +45,7 @@ export function PeriodicStatusBadge({
 export function PeriodicStageBadge({ stage }: { stage: PeriodicReportStage }) {
   const t = useTranslations('reports-hub');
   const meta = PERIODIC_STAGES.find(([key]) => key === stage)!;
-  const appearance = getPostReviewStageAppearance(meta[2]);
+  const appearance = getPeriodicStageAppearance(stage);
   const Icon = appearance.icon;
   return (
     <Badge variant="outline" className={appearance.className}>

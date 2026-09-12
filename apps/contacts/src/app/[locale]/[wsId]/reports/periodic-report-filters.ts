@@ -1,3 +1,4 @@
+import { PERIODIC_REPORT_STAGES } from '@tuturuuu/internal-api/reports';
 import { createParser, parseAsString, parseAsStringLiteral } from 'nuqs';
 import { z } from 'zod';
 
@@ -15,19 +16,9 @@ export function normalizePeriodicReportPeriod(start: string, end: string) {
 
 // Keep periodic filters independent from the daily report URL state.
 export const periodicReportFilters = {
-  stage: parseAsStringLiteral([
-    'all',
-    'draft',
-    'pending',
-    'approved',
-    'blocked',
-    'queued',
-    'processing',
-    'sent',
-    'failed',
-    'skipped',
-    'rejected',
-  ]).withDefault('pending'),
+  stage: parseAsStringLiteral(['all', ...PERIODIC_REPORT_STAGES]).withDefault(
+    'pending'
+  ),
   cadence: parseAsStringLiteral([
     'weekly',
     'monthly',

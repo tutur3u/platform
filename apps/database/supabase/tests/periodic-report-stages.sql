@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(35);
+select plan(39);
 select is(private.periodic_report_stage('draft', 'PENDING', 'draft'), 'draft', 'draft/PENDING/draft stage');
 select is(private.periodic_report_stage('ready', 'PENDING', 'draft'), 'pending', 'ready/PENDING/draft stage');
 select is(private.periodic_report_stage('ready', 'APPROVED', 'draft'), 'approved', 'ready/APPROVED/draft stage');
@@ -59,6 +59,11 @@ insert into private.user_report_email_queue(report_id,ws_id,user_id,recipient_em
 ('40000000-0000-4000-8000-000000009217','42529372-c669-4833-bb32-2cab1f4ffd83','40000000-0000-4000-8000-000000009201','cleanup@example.com','send','queued',null),
 ('40000000-0000-4000-8000-000000009218','42529372-c669-4833-bb32-2cab1f4ffd83','40000000-0000-4000-8000-000000009201','cleanup@example.com','send','sent',now());
 update private.external_user_monthly_reports set delivery_status='draft',delivered_at=null where id in ('40000000-0000-4000-8000-000000009217','40000000-0000-4000-8000-000000009218');
+insert into private.external_user_monthly_reports(id,user_id,group_id,title,content,feedback,delivery_status,created_at,updated_at)
+values ('40000000-0000-4000-8000-000000009220','40000000-0000-4000-8000-000000009201','40000000-0000-4000-8000-000000009202','Unknown delivery','Keep content','Keep feedback','draft','2026-09-11 16:59:59+00',now());
+insert into private.user_report_email_queue(report_id,ws_id,user_id,recipient_email,delivery_kind,status,last_error) values
+('40000000-0000-4000-8000-000000009211','42529372-c669-4833-bb32-2cab1f4ffd83','40000000-0000-4000-8000-000000009201','cleanup@example.com','send','failed','Retryable provider failure'),
+('40000000-0000-4000-8000-000000009220','42529372-c669-4833-bb32-2cab1f4ffd83','40000000-0000-4000-8000-000000009201','cleanup@example.com','send','blocked','Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.');
 select is(private.skip_unsent_periodic_reports_before('42529372-c669-4833-bb32-2cab1f4ffd83', '2026-09-12 00:00:00+07'),4,'cleanup returns exact affected count');
 select is((select count(*)::int from private.external_user_monthly_reports where user_id='40000000-0000-4000-8000-000000009201' and delivery_status='skipped'),4,'only eligible old Not sent reports skipped across all cadences');
 select is((select delivery_status from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009214'),'draft','exact midnight GMT+7 is excluded');
@@ -72,5 +77,9 @@ update private.external_user_monthly_reports set last_delivery_error='skip-audit
 select is(private.skip_unsent_periodic_reports_before('42529372-c669-4833-bb32-2cab1f4ffd83', '2026-09-12 00:00:00+07'),0,'repeated cleanup affects no reports');
 select is((select last_delivery_error from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009210'),'skip-audit-sentinel','cleanup is idempotent');
 select ok(not has_function_privilege('authenticated','private.skip_unsent_periodic_reports_before(uuid,timestamptz)','EXECUTE'),'cleanup is restricted to server maintenance');
+select is((select status from private.user_report_email_queue where report_id='40000000-0000-4000-8000-000000009211'),'cancelled','skipping cancels stale retryable queue entries');
+select is((select delivery_status from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009220'),'draft','unknown delivery outcome is preserved for manual verification');
+select is((select count(*)::int from private.claim_periodic_report_emails('cleanup-test-worker',50) where report_id='40000000-0000-4000-8000-000000009211'),0,'worker cannot claim the skipped report');
+select is((select delivery_status from private.external_user_monthly_reports where id='40000000-0000-4000-8000-000000009211'),'skipped','worker leaves skipped report unchanged');
 select * from finish();
 rollback;

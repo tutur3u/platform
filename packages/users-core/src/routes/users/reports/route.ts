@@ -207,24 +207,7 @@ export async function GET(request: Request, { params }: Params) {
       return query;
     };
 
-    const workspacePromise = sbAdmin
-      .from('workspaces')
-      .select('id, timezone')
-      .eq('id', wsId)
-      .single();
-    let listResult = await buildListQuery(Boolean(parsed.data.q));
-    if (
-      listResult.error &&
-      parsed.data.q &&
-      isMissingReportSearchRpc(listResult.error)
-    ) {
-      listResult = await buildListQuery(false);
-    }
-    const workspaceResult = await workspacePromise;
-    if (listResult.error) throw listResult.error;
-    if (workspaceResult.error) throw workspaceResult.error;
-
-    const stageCounts = await privateDb.rpc(
+    const stageCountsPromise = privateDb.rpc(
       'get_periodic_report_stage_counts',
       {
         p_ws_id: wsId,
@@ -234,6 +217,29 @@ export async function GET(request: Request, { params }: Params) {
         p_period_end: parsed.data.periodEnd,
       }
     );
+    const workspacePromise = sbAdmin
+      .from('workspaces')
+      .select('id, timezone')
+      .eq('id', wsId)
+      .single();
+    const [initialListResult, workspaceResult, stageCounts] = await Promise.all(
+      [
+        buildListQuery(Boolean(parsed.data.q)),
+        workspacePromise,
+        stageCountsPromise,
+      ]
+    );
+    let listResult = initialListResult;
+    if (
+      listResult.error &&
+      parsed.data.q &&
+      isMissingReportSearchRpc(listResult.error)
+    ) {
+      listResult = await buildListQuery(false);
+    }
+    if (listResult.error) throw listResult.error;
+    if (workspaceResult.error) throw workspaceResult.error;
+
     if (stageCounts.error) throw stageCounts.error;
     const stages = normalizeReportStages(stageCounts.data);
     const counts = {

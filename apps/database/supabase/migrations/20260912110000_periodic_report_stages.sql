@@ -81,7 +81,12 @@ declare
   subject public.workspace_users%rowtype;
   queued_id uuid;
 begin
-  if new.delivery_status = 'skipped' then return new; end if;
+  if new.delivery_status = 'skipped' then
+    update private.user_report_email_queue
+      set status = 'cancelled', locked_at = null, locked_by = null, updated_at = now()
+      where report_id = new.id and status in ('queued', 'failed');
+    return new;
+  end if;
   if tg_op = 'UPDATE' then
     if old.report_approval_status is not distinct from new.report_approval_status then return new; end if;
   end if;

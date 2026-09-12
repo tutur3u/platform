@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PeriodicDeliveryStatus } from './periodic-delivery-status';
 
 const load = vi.hoisted(() => vi.fn());
-vi.mock('@tuturuuu/internal-api/reports', () => ({
+vi.mock('@tuturuuu/internal-api/reports', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/internal-api/reports')>()),
   getPeriodicReportDeliveryDiagnostics: load,
 }));
 vi.mock('next-intl', () => ({

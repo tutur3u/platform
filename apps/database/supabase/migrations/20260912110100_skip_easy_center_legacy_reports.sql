@@ -19,6 +19,7 @@ begin
       select 1 from private.user_report_email_queue queue
       where queue.report_id = report.id
         and (queue.status in ('queued', 'processing')
+          or queue.last_error = 'Delivery worker timed out. Delivery outcome is unknown; check provider logs before retrying.'
           or (queue.delivery_kind = 'send' and (queue.sent_at is not null or queue.status = 'sent')))
     );
   get diagnostics skipped_count = row_count;
