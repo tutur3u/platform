@@ -3,6 +3,7 @@
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
 import type { MiraDashboardClientProps } from './mira-dashboard-client-types';
+import { MiraWorkspaceProvider } from './mira-workspace-state';
 
 type MiraDashboardClientImplComponent = ComponentType<MiraDashboardClientProps>;
 
@@ -46,5 +47,9 @@ export default function MiraDashboardClient(props: MiraDashboardClientProps) {
     return <MiraDashboardClientFallback />;
   }
 
-  return <MiraDashboardClientImpl {...props} />;
+  return (
+    <MiraWorkspaceProvider key={props.wsId}>
+      <MiraDashboardClientImpl {...props} />
+    </MiraWorkspaceProvider>
+  );
 }

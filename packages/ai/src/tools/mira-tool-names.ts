@@ -84,6 +84,8 @@ export const MIRA_TOOL_NAMES = [
   'set_workspace_context',
   'update_my_settings',
   'set_theme',
+  'set_sidebar',
+  'show_workspace_artifact',
   'render_ui',
   'list_workspace_members',
   'update_user_name',

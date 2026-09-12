@@ -22,13 +22,10 @@ export function MiraChatEmptyState({
   userName,
 }: MiraChatEmptyStateProps) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center px-4 py-10 sm:px-8 sm:py-14">
-      <div className="relative mx-auto w-full max-w-3xl">
-        <div className="pointer-events-none absolute top-8 left-1/2 h-44 w-44 -translate-x-1/2 rounded-full bg-dynamic-purple/12 blur-3xl" />
-        <div className="pointer-events-none absolute top-40 right-10 h-32 w-32 rounded-full bg-dynamic-cyan/6 blur-3xl" />
-
+    <div className="flex h-full w-full flex-col items-center justify-start overflow-y-auto px-4 pt-6 pb-40 sm:px-6">
+      <div className="relative mx-auto my-auto w-full max-w-xl">
         <div className="relative mx-auto w-full px-2 py-5 sm:px-6 sm:py-8">
-          <div className="flex flex-col items-center text-center">
+          <div className="flex flex-col items-start text-left">
             <div className="mt-4 max-w-xl space-y-2">
               <h2 className="text-2xl tracking-tight sm:text-3xl">
                 <MiraNameBadge currentName={assistantName} className="px-0.5">
@@ -39,7 +36,7 @@ export function MiraChatEmptyState({
               </h2>
               <p className="font-semibold text-muted-foreground text-sm tracking-tight sm:text-base">
                 {greetingT(greetingKey)}
-                {userName ? `, ${userName}` : ''}!
+                {userName ? `, ${userName}` : ''}
               </p>
             </div>
           </div>
@@ -52,15 +49,15 @@ export function MiraChatEmptyState({
                   type="button"
                   onClick={() => onQuickAction(t(action.titleKey))}
                   className={cn(
-                    'group flex min-w-0 items-center justify-center gap-3 rounded-xl border border-border/30 bg-background/20 px-3.5 py-3 text-center transition-all duration-200',
-                    'hover:border-dynamic-purple/30 hover:bg-dynamic-purple/5'
+                    'group flex min-w-0 items-center justify-start gap-3 rounded-lg border border-transparent bg-muted/35 px-3.5 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'hover:border-border hover:bg-muted/65'
                   )}
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium text-sm leading-tight">
                       {t(action.titleKey)}
                     </p>
-                    <p className="mt-1 line-clamp-1 text-muted-foreground text-xs leading-relaxed">
+                    <p className="mt-1 line-clamp-2 text-muted-foreground text-xs leading-relaxed">
                       {t(action.descKey)}
                     </p>
                   </div>

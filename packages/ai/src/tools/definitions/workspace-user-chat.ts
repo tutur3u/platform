@@ -75,6 +75,25 @@ export const workspaceUserChatToolDefinitions = {
       }),
   }),
 
+  set_sidebar: tool({
+    description:
+      'Set the navigation sidebar to expanded, collapsed, hover (expand on hover), or hidden. Apply immediately when asked.',
+    inputSchema: z.object({
+      behavior: z.enum(['expanded', 'collapsed', 'hover', 'hidden']),
+    }),
+  }),
+
+  show_workspace_artifact: tool({
+    description:
+      'Open a persistent workspace artifact beside the conversation. Use for tasks, calendar, finance, or meetings. Multiple artifacts arrange automatically; horizontal means side by side, vertical means stacked, grid gives chat one quarter of the workspace.',
+    inputSchema: z.object({
+      kind: z.enum(['tasks', 'calendar', 'finance', 'meetings']),
+      layout: z
+        .enum(['auto', 'horizontal', 'vertical', 'grid'])
+        .default('auto'),
+    }),
+  }),
+
   set_theme: tool({
     description:
       'Switch the UI theme. Use when user asks for dark mode, light mode, or system theme.',

@@ -20,6 +20,7 @@ interface MiraChatBottomBarProps {
   onFilesSelected?: (files: File[]) => void;
   onSubmit: (value: string) => void;
   onVoiceToggle?: () => void;
+  voiceActive?: boolean;
   setInput: (value: string) => void;
   // Toolbar props
   activeCreditSource: CreditSource;
@@ -55,6 +56,7 @@ export function MiraChatBottomBar({
   onFilesSelected,
   onSubmit,
   onVoiceToggle,
+  voiceActive,
   setInput,
   // Toolbar props
   activeCreditSource,
@@ -112,6 +114,7 @@ export function MiraChatBottomBar({
           isStreaming={isBusy}
           assistantName={assistantName}
           onVoiceToggle={onVoiceToggle}
+          voiceActive={voiceActive}
           inputRef={inputRef}
           files={attachedFiles}
           onFilesSelected={onFilesSelected}

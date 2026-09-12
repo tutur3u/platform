@@ -11,6 +11,36 @@ Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
 
 ## Experience
 
+Start or stop Live with the waveform icon in the chat composer. The tooltip and
+pressed state identify the control. The chat and its draft stay mounted and
+visible while the live session opens in a compact panel. Close the panel or press
+Escape to stop the session and return focus to the composer.
+
+The dashboard workspace toolbar opens tasks, calendar, finance, and meetings next
+to the conversation. One artifact splits the available space in half; multiple
+artifacts automatically use a four-cell grid with chat in one cell. Side-by-side,
+stacked, and grid controls override the arrangement. Narrow containers stack
+panels so sidebar width is included in the responsive decision. Up to three
+artifacts remain open; opening a fourth replaces the oldest. Artifacts are scoped
+to the workspace selected when opened and can be refreshed or closed individually.
+Task previews show up to 30 open assigned tasks, calendar previews cover the next
+seven days, and wallet balances retain their own currencies. APIs remain the
+permission boundary and panels expose loading, empty, and retry states.
+
+The assistant can call `show_workspace_artifact`, `set_sidebar` (expanded,
+collapsed, hover, hidden), and `set_theme` (light, dark, system) in chat and Live.
+Chat applies UI commands when the streamed tool output arrives, independently of
+whether the result card is visible. Restoring history does not replay old UI
+commands. Sidebar changes use the existing preference provider and respect its
+local/account synchronization settings. The header sidebar menu remains available
+when navigation is hidden.
+
+Meeting panels provide a creation form to eligible `@tuturuuu.com` accounts using
+`createWorkspaceMeeting`. The existing meeting API authenticates the account,
+checks workspace membership, and enforces the domain policy. Opening the panel is
+not meeting creation; success is shown only after the creation request succeeds.
+No meeting API or database policy changes are part of this interface update.
+
 Live mode displays both speakers' streamed transcripts, task visualizations,
 Google Search sources, tool activity, and temporary session notes. Typed prompts
 and voice share one session. Camera and screen sharing require an explicit media
@@ -22,6 +52,15 @@ accessible dialog. Export downloads the available transcript and notes as text.
 These notes are not workspace documents and are lost when leaving or restarting
 Live mode. The existing five-minute credit authorization limit remains in force;
 expiration ends media capture while retaining the mounted transcript for export.
+
+### Workspace previews
+
+These browser previews use fixture data with the dashboard components and shared
+stylesheet. They illustrate layout and theme behavior, not live account data.
+
+![Mira beside task, calendar, and finance artifacts in dark mode](/images/mira-workspace/grid-dark.png)
+
+![The same artifact workspace immediately after switching to light mode](/images/mira-workspace/grid-light.png)
 
 ## First-party tools
 

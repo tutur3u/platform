@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { useMiraSoul } from '../hooks/use-mira-soul';
 import type { MiraChatPanelProps } from './mira-chat-panel';
 import type { MiraDashboardClientProps } from './mira-dashboard-client-types';
+import { MiraWorkspaceLayout } from './mira-workspace-layout';
 
 const MiraWorkspaceContextSelector = dynamic(
   () =>
@@ -95,58 +96,40 @@ export default function MiraDashboardClientImpl({
   return (
     <div
       className={cn(
-        'relative flex flex-col overflow-hidden',
+        '@container relative flex flex-col overflow-hidden',
         isFullscreen
           ? 'fixed inset-0 z-50 bg-background p-3 sm:p-4'
-          : 'h-[calc(100vh-5rem)] min-h-0 md:h-[calc(100vh-2rem)]'
+          : 'h-[calc(100dvh-5rem)] min-h-0 md:h-[calc(100dvh-2rem)]'
       )}
     >
       {/* Animated gradient backdrop in fullscreen */}
       {isFullscreen && <FullscreenGradientBg />}
 
-      {/* Main layout: semi-fullscreen chat with an in-panel insight dock */}
-      <div
-        className={cn(
-          'relative z-10 flex min-h-0 min-w-0 flex-1 flex-col gap-3 sm:gap-4',
-          !isFullscreen && 'xl:h-full'
+      <MiraWorkspaceLayout>
+        {MiraChatPanel ? (
+          <MiraChatPanel
+            key={`${wsId}-${chatPanelResetKey}`}
+            wsId={wsId}
+            assistantName={assistantName}
+            userName={
+              currentUser.display_name ||
+              currentUser.full_name ||
+              currentUser.email?.split('@')[0] ||
+              undefined
+            }
+            userAvatarUrl={currentUser.avatar_url}
+            isFullscreen={isFullscreen}
+            insightsDock={!isFullscreen ? children : undefined}
+            onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
+            onResetPanelState={() =>
+              setChatPanelResetKey((current) => current + 1)
+            }
+            workspaceContextBadge={<MiraWorkspaceContextSelector wsId={wsId} />}
+          />
+        ) : (
+          <MiraChatPanelLoading />
         )}
-      >
-        {/* Chat panel — hero element with desktop overlay slot for compact widgets */}
-        <div
-          className={cn(
-            'relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden rounded-xl border p-3 pb-0 shadow-sm backdrop-blur-sm sm:p-4',
-            isFullscreen
-              ? 'border-border/30 bg-card/40'
-              : 'border-border/60 bg-card/50'
-          )}
-        >
-          {MiraChatPanel ? (
-            <MiraChatPanel
-              key={`${wsId}-${chatPanelResetKey}`}
-              wsId={wsId}
-              assistantName={assistantName}
-              userName={
-                currentUser.display_name ||
-                currentUser.full_name ||
-                currentUser.email?.split('@')[0] ||
-                undefined
-              }
-              userAvatarUrl={currentUser.avatar_url}
-              isFullscreen={isFullscreen}
-              insightsDock={!isFullscreen ? children : undefined}
-              onToggleFullscreen={() => setIsFullscreen((prev) => !prev)}
-              onResetPanelState={() =>
-                setChatPanelResetKey((current) => current + 1)
-              }
-              workspaceContextBadge={
-                <MiraWorkspaceContextSelector wsId={wsId} />
-              }
-            />
-          ) : (
-            <MiraChatPanelLoading />
-          )}
-        </div>
-      </div>
+      </MiraWorkspaceLayout>
     </div>
   );
 }

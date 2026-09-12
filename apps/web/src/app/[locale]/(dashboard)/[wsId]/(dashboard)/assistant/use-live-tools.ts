@@ -5,6 +5,7 @@ import { executeLiveTool } from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
+import { useMiraUiActionDispatcher } from '../components/use-mira-ui-actions';
 import {
   executeWorkspaceLiveTool,
   LIVE_MUTATION_TOOLS,
@@ -29,6 +30,7 @@ export interface LiveSessionNote {
 }
 
 export function useLiveTools(wsId: string) {
+  const applyUiAction = useMiraUiActionDispatcher();
   const { client, connected, sendToolResponse } = useLiveAPIContext();
   const [activities, setActivities] = useState<LiveToolActivity[]>([]);
   const [calendarResult, setCalendarResult] = useState<Record<
@@ -76,6 +78,39 @@ export function useLiveTools(wsId: string) {
       signal: AbortSignal;
     }) => {
       signal.throwIfAborted();
+      if (
+        ['set_theme', 'set_sidebar', 'show_workspace_artifact'].includes(
+          fc.name
+        )
+      ) {
+        const output =
+          fc.name === 'set_theme'
+            ? z
+                .object({ theme: z.enum(['light', 'dark', 'system']) })
+                .parse(fc.args)
+            : fc.name === 'set_sidebar'
+              ? z
+                  .object({
+                    behavior: z.enum([
+                      'expanded',
+                      'collapsed',
+                      'hover',
+                      'hidden',
+                    ]),
+                  })
+                  .parse(fc.args)
+              : z
+                  .object({
+                    kind: z.enum(['tasks', 'calendar', 'finance', 'meetings']),
+                    layout: z
+                      .enum(['auto', 'horizontal', 'vertical', 'grid'])
+                      .default('auto'),
+                  })
+                  .parse(fc.args);
+        const response = { ...output, success: true, action: fc.name, wsId };
+        applyUiAction(fc.name, response);
+        return { id: fc.id, name: fc.name, response };
+      }
       if (fc.name === 'capture_session_note') {
         const note = z
           .object({

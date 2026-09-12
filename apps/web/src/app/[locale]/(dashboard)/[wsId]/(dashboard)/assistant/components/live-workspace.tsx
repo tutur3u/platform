@@ -83,7 +83,7 @@ export function LiveWorkspace({
   };
   return (
     <section
-      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border bg-background lg:overflow-hidden"
+      className="@container relative flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border bg-background"
       aria-label={t('title')}
     >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6">
@@ -111,8 +111,8 @@ export function LiveWorkspace({
           {t('expired')}
         </p>
       )}
-      <div className="grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.7fr)]">
-        <main className="flex flex-col lg:min-h-0 lg:border-r">
+      <div className="grid @3xl:min-h-0 @3xl:flex-1 @3xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.7fr)]">
+        <main className="flex @3xl:min-h-0 flex-col @3xl:border-r">
           <div className="flex items-center justify-between gap-4 border-b bg-muted/20 px-4 py-4 sm:px-6">
             {status}
             <div aria-hidden="true" className="flex h-8 items-center gap-1">
@@ -144,7 +144,7 @@ export function LiveWorkspace({
             aria-label={t('transcript')}
             aria-live="polite"
             aria-relevant="additions text"
-            className="min-h-64 space-y-5 p-4 sm:p-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+            className="@3xl:min-h-0 min-h-32 @3xl:flex-1 space-y-5 @3xl:overflow-y-auto p-4 sm:p-6"
           >
             {!entries.length ? (
               <div className="mx-auto flex min-h-full max-w-lg flex-col justify-center py-6">
@@ -225,7 +225,7 @@ export function LiveWorkspace({
           </div>
         </main>
         <aside
-          className="flex min-h-0 flex-col border-t bg-muted/15 lg:border-t-0"
+          className="flex min-h-0 flex-col border-t @3xl:border-t-0 bg-muted/15"
           aria-label={t('workspace')}
         >
           <div className="flex gap-1 border-b p-2">

@@ -165,6 +165,7 @@ export function useMiraChatEffects({
     const wasBusy = prev === 'submitted' || prev === 'streaming';
     if (wasBusy && (status === 'ready' || status === 'error')) {
       queryClient.invalidateQueries({ queryKey: ['ai-credits'] });
+      void queryClient.invalidateQueries({ queryKey: ['mira-artifact'] });
       if (!taskBoardId) {
         routerRefresh();
       }

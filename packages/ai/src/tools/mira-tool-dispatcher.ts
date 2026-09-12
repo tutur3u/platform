@@ -70,7 +70,11 @@ import {
   executeUpdateTaskLabel,
   executeUpdateTaskList,
 } from './executors/tasks';
-import { executeSetTheme } from './executors/theme';
+import {
+  executeSetSidebar,
+  executeSetTheme,
+  executeShowWorkspaceArtifact,
+} from './executors/theme';
 import {
   executeCreateTimeTrackerGoal,
   executeCreateTimeTrackingCategory,
@@ -205,6 +209,8 @@ const toolHandlers = {
   update_my_settings: executeUpdateMySettings,
   set_default_currency: executeSetDefaultCurrency,
   set_theme: executeSetTheme,
+  set_sidebar: executeSetSidebar,
+  show_workspace_artifact: executeShowWorkspaceArtifact,
   list_workspace_members: executeListWorkspaceMembers,
   update_user_name: executeUpdateUserName,
   set_immersive_mode: executeSetImmersiveMode,
