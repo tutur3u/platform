@@ -3492,7 +3492,7 @@
     "status_cancelled": "Đã hủy",
     "status_draft": "Bản nháp",
     "status_failed": "Thất bại",
-    "status_pending": "Chờ duyệt",
+    "status_pending": "Chờ phê duyệt",
     "status_processing": "Đang xử lý",
     "status_queued": "Đang xếp hàng",
     "status_rejected": "Bị từ chối",
