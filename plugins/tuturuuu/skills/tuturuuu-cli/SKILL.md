@@ -9,11 +9,14 @@ Use `ttr <group> <action> --help` to discover the requested operation. In the
 monorepo, `bun ttr ...` runs the workspace CLI; elsewhere use installed `ttr`.
 Scoped help must work without login, saved config, or update-network access.
 
+For requested installation/repair or command-help changes, read Installation
+or Scoped Help in `references/cli-workflows.md`; keep bootstrap instructions
+there rather than copying executable installers into other guides.
+
 Load the relevant procedure in `references/cli-procedures.md`:
 
-- Install Or Repair: missing CLI, requested installation or upgrade.
 - Login UX: browser/copy-token authentication or workspace selection.
-- Scoped Help / Keyboard Selection: command help, human pickers, or output changes.
+- Keyboard Selection: human pickers or output changes.
 - SDK Client Surfaces / Verification: CLI implementation and affected test targets.
 
 Use `references/cli-workflows.md` for auth and SDK client examples. Source ownership:

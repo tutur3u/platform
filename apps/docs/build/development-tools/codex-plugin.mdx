@@ -35,7 +35,8 @@ generated Next.js instruction blocks retain their canonical owners.
 
 Task prompts should name the desired outcome, relevant constraints, and completion
 boundary. For example: "Fix the invoice loading failure, verify recovery, open a
-PR, and merge after 15 minutes without new review activity." The duration belongs
+PR, and merge only after 15 minutes without new review activity, zero unresolved
+review threads, and green checks on the current head." The duration belongs
 to that request; it does not change the default for every future PR. Required
 checks, ownership, production data protections, and migration parity still apply.
 
