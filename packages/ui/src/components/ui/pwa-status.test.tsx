@@ -37,6 +37,13 @@ describe('PWA status and installation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'install' }));
     expect(screen.getByRole('dialog')).toHaveTextContent('install_help');
   });
+  it('explains offline status inside the installation settings panel', () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    render(<PwaStatus placement="settings" labels={labels} />);
+    expect(screen.getByRole('status')).toHaveTextContent('offline_status');
+    expect(screen.getByRole('status')).not.toHaveClass('fixed');
+    expect(screen.queryByRole('button', { name: 'install' })).toBeNull();
+  });
   it('only invokes the native install prompt after an explicit click', async () => {
     const prompt = vi.fn(async () => {});
     const event = Object.assign(
