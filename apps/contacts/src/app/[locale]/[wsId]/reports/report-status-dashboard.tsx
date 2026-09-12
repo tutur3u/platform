@@ -21,7 +21,8 @@ export function ReportStatusDashboard({
 }) {
   return (
     <Card
-      aria-label={label}
+      role="region"
+      aria-label={label ?? totalLabel}
       className="min-w-0 overflow-hidden border-border/60 shadow-sm"
     >
       <CardContent className="p-0">

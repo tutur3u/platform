@@ -47,6 +47,9 @@ describe('monthly status filters', () => {
         toolbar={<button type="button">Date range</button>}
       />
     );
+    expect(
+      screen.getByRole('region', { name: 'report_status' })
+    ).toBeInTheDocument();
     expect(screen.getByText('total_reports')).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'show_all_reports' })
