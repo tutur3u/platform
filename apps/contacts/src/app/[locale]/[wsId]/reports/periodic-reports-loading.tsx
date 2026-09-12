@@ -1,24 +1,36 @@
+'use client';
+
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { useTranslations } from 'next-intl';
+import { ReportStatusDashboard } from './report-status-dashboard';
 
 export function PeriodicReportsLoading() {
+  const t = useTranslations('reports-hub');
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+      <ReportStatusDashboard
+        totalLabel={t('total_reports')}
+        columns={3}
+        actions={<Skeleton className="h-8 w-32" />}
+        toolbar={
+          <div className="space-y-3">
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        }
+      >
         {Array.from({ length: 6 }, (_, index) => (
-          <Card key={`count-${index}`}>
-            <CardContent className="space-y-2 p-3 md:p-4">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-7 w-16" />
-            </CardContent>
-          </Card>
+          <div
+            key={`count-${index}`}
+            className="space-y-2 rounded-xl border px-3.5 py-3"
+          >
+            <Skeleton className="size-8 rounded-lg" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-7 w-16" />
+          </div>
         ))}
-      </div>
-      <div className="flex gap-2">
-        <Skeleton className="h-9 min-w-0 flex-1" />
-        <Skeleton className="size-9 rounded-md" />
-        <Skeleton className="size-9 rounded-md" />
-      </div>
+      </ReportStatusDashboard>
       <Skeleton className="h-12 w-full rounded-lg" />
       <div className="space-y-2">
         {Array.from({ length: 7 }, (_, index) => (

@@ -3503,6 +3503,7 @@
     "test_sent_at": "Test sent {date}",
     "title": "Reports",
     "total": "Total",
+    "total_reports": "Total reports",
     "unapproved": "Unapproved",
     "unknown_group": "Unknown group",
     "unknown_member": "Unknown member",
