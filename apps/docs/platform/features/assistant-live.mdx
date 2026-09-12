@@ -139,3 +139,15 @@ Workspace verification fails closed before context reads. Mutation permissions a
 Chat Calendar automation and event writes forward the authenticated request through the existing Calendar API, including selected Google/Microsoft destinations. It can inspect connection health, provide Google OAuth authorization, sync connected calendars, lock/unlock events, read schedulable tasks, and preview/apply scheduling. Apply requires a successful same-workspace/window preview in the current turn and uses safe apply; the Calendar service recomputes availability and rejects unresolved warnings. Provider authorization and locked commitments remain enforced by Calendar. These new automation tools are not exposed in legacy Live/Meet sessions without the corresponding authenticated execution path.
 
 When debugging a reported false completion, inspect the stored tool result and returned task ID first, then read that ID in its recorded workspace. A chat confirmation or artifact opening alone is not evidence of a product write. Runtime verification of provider sync or scheduling requires an authorized test account; mocked tests only verify dispatch and failure handling.
+
+### Native search completion
+
+Keep `toolChoice: 'auto'` whenever native `google_search` is active. Gemini's
+mixed native/function tool configuration maps `required` to `ANY`, which can
+keep issuing server-side searches instead of producing an answer. These calls
+can occur inside a single provider step, before the application step guard runs.
+A trace with one `step-start` and many `server:GOOGLE_SEARCH_WEB` calls is evidence
+of this provider-step loop; do not increase the outer step limit to compensate.
+The search wrapper also reports a missing final answer as incomplete, even when
+native search events exist. Verify a real grounded answer and visible sources
+after changing search orchestration; mocked tool events alone are insufficient.

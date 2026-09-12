@@ -109,7 +109,7 @@ async function runGoogleSearchWrapper(
     tools: createGoogleSearchToolSet(),
     prompt,
     stopWhen: stepCountIs(4),
-    ...(forceTool ? { toolChoice: 'required' as const } : {}),
+    toolChoice: 'auto',
   });
 }
 
@@ -149,6 +149,14 @@ export async function executeGoogleSearch(
         error: 'Failed to invoke google_search tool for web-grounded results.',
       };
     }
+
+    if (!result.text.trim())
+      return {
+        ok: false,
+        query,
+        error:
+          'Search completed without a final answer. Try a more specific query.',
+      };
 
     return {
       ok: true,

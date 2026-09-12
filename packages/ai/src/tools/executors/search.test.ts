@@ -60,3 +60,22 @@ it('does not claim web grounding from arbitrary sources alone', async () => {
   ).toMatchObject({ ok: false });
   expect(generate).toHaveBeenCalledTimes(2);
 });
+
+it('keeps native search automatic on the grounding retry', async () => {
+  generate.mockResolvedValue({ text: 'Unverified', sources: [], steps: [] });
+  await executeGoogleSearch({ query: 'Calendar help' }, ctx);
+  expect(generate).toHaveBeenCalledTimes(2);
+  for (const [request] of generate.mock.calls)
+    expect(request.toolChoice).toBe('auto');
+});
+it('does not report success when native search produces no answer', async () => {
+  generate.mockResolvedValue({
+    text: '',
+    sources: [],
+    steps: [{ toolResults: [{ toolName: 'server:GOOGLE_SEARCH_WEB' }] }],
+  });
+  expect(
+    await executeGoogleSearch({ query: 'Calendar help' }, ctx)
+  ).toMatchObject({ ok: false });
+  expect(generate).toHaveBeenCalledOnce();
+});

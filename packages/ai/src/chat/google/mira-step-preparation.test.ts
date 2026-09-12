@@ -35,7 +35,7 @@ describe('prepareMiraToolStep', () => {
     ]);
   });
 
-  it('forces web search immediately for current external information', () => {
+  it('offers native search immediately while allowing the provider to answer', () => {
     const result = prepareMiraToolStep({
       steps: [],
       forceGoogleSearch: true,
@@ -46,7 +46,7 @@ describe('prepareMiraToolStep', () => {
       preferMarkdownTables: false,
     });
 
-    expect(result.toolChoice).toBe('required');
+    expect(result.toolChoice).toBe('auto');
     expect(result.activeTools).toEqual([
       'google_search',
       'search_tools',
@@ -378,4 +378,27 @@ describe('prepareMiraToolStep', () => {
       'select_tools',
     ]);
   });
+});
+
+it('does not force another native-search-only turn after tool discovery', () => {
+  const result = prepareMiraToolStep({
+    steps: [
+      {
+        toolResults: [
+          {
+            toolName: 'select_tools',
+            output: { selectedTools: ['google_search'] },
+          },
+        ],
+      },
+    ],
+    forceGoogleSearch: true,
+    forceRenderUi: false,
+    needsParallelChecks: false,
+    needsWorkspaceContextResolution: false,
+    needsWorkspaceMembersTool: false,
+    preferMarkdownTables: false,
+  });
+  expect(result.activeTools).toContain('google_search');
+  expect(result.toolChoice).toBe('auto');
 });

@@ -21,7 +21,24 @@ export type PrepareMiraToolStepInput = {
   preferMarkdownTables: boolean;
 };
 
-export function prepareMiraToolStep({
+type MiraToolStepPolicy = {
+  toolChoice?: 'auto' | 'required' | 'none';
+  activeTools: string[];
+};
+
+export function prepareMiraToolStep(
+  input: PrepareMiraToolStepInput
+): MiraToolStepPolicy {
+  const policy = buildMiraToolStep(input);
+  // Native search runs inside one provider step. Requiring tools maps to ANY
+  // for Gemini's mixed tool config and can prevent the provider from answering.
+  return policy.toolChoice === 'required' &&
+    policy.activeTools.includes('google_search')
+    ? { ...policy, toolChoice: 'auto' }
+    : policy;
+}
+
+function buildMiraToolStep({
   steps,
   forceGoogleSearch,
   forceRenderUi,
@@ -29,10 +46,7 @@ export function prepareMiraToolStep({
   needsWorkspaceContextResolution,
   needsWorkspaceMembersTool,
   preferMarkdownTables,
-}: PrepareMiraToolStepInput): {
-  toolChoice?: 'required' | 'none';
-  activeTools: string[];
-} {
+}: PrepareMiraToolStepInput): MiraToolStepPolicy {
   if (getMiraToolLoopReason(steps))
     return { toolChoice: 'none', activeTools: [] };
   if (steps.length === 0) {
