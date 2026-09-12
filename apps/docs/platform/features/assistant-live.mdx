@@ -142,12 +142,16 @@ When debugging a reported false completion, inspect the stored tool result and r
 
 ### Native search completion
 
-Keep `toolChoice: 'auto'` whenever native `google_search` is active. Gemini's
-mixed native/function tool configuration maps `required` to `ANY`, which can
-keep issuing server-side searches instead of producing an answer. These calls
-can occur inside a single provider step, before the application step guard runs.
-A trace with one `step-start` and many `server:GOOGLE_SEARCH_WEB` calls is evidence
-of this provider-step loop; do not increase the outer step limit to compensate.
-The search wrapper also reports a missing final answer as incomplete, even when
-native search events exist. Verify a real grounded answer and visible sources
-after changing search orchestration; mocked tool events alone are insufficient.
+Mira keeps `google_search` as an executable function tool. Do not override it
+with a provider-native tool in the main mixed tool set: Gemini maps required
+tool choice to `ANY`, which can issue many server-side searches inside one
+provider step without answering. The outer step guard cannot interrupt that
+provider-step loop.
+
+Explicit search requests require the search executor before proceeding. The
+executor uses native Google search through the same gateway as chat, with
+automatic tool choice, a 30-second deadline, one provider step, and at most one
+grounding retry. It requires grounding evidence and a nonempty final answer.
+Other required workspace and task tools keep their required-tool policy.
+Verify a real grounded answer and visible sources after orchestration changes;
+mocked tool events alone are insufficient.

@@ -3,7 +3,11 @@ import type { MiraToolContext } from '../mira-tool-types';
 import { executeGoogleSearch } from './search';
 
 const generate = vi.hoisted(() => vi.fn());
-vi.mock('ai', () => ({ generateText: generate, stepCountIs: vi.fn() }));
+vi.mock('ai', () => ({
+  generateText: generate,
+  stepCountIs: vi.fn(),
+  gateway: vi.fn(() => ({})),
+}));
 vi.mock('@ai-sdk/google', () => ({
   google: Object.assign(() => ({}), { tools: { googleSearch: () => ({}) } }),
 }));

@@ -35,7 +35,7 @@ describe('prepareMiraToolStep', () => {
     ]);
   });
 
-  it('offers native search immediately while allowing the provider to answer', () => {
+  it('requires the search executor before answering explicit web requests', () => {
     const result = prepareMiraToolStep({
       steps: [],
       forceGoogleSearch: true,
@@ -46,12 +46,8 @@ describe('prepareMiraToolStep', () => {
       preferMarkdownTables: false,
     });
 
-    expect(result.toolChoice).toBe('auto');
-    expect(result.activeTools).toEqual([
-      'google_search',
-      'search_tools',
-      'select_tools',
-    ]);
+    expect(result.toolChoice).toBe('required');
+    expect(result.activeTools).toEqual(['google_search']);
   });
 
   it('forces parallel checks for explicit verification requests', () => {
@@ -380,7 +376,7 @@ describe('prepareMiraToolStep', () => {
   });
 });
 
-it('does not force another native-search-only turn after tool discovery', () => {
+it('requires the search executor after discovery without accepting another selector call', () => {
   const result = prepareMiraToolStep({
     steps: [
       {
@@ -400,5 +396,28 @@ it('does not force another native-search-only turn after tool discovery', () => 
     preferMarkdownTables: false,
   });
   expect(result.activeTools).toContain('google_search');
-  expect(result.toolChoice).toBe('auto');
+  expect(result.toolChoice).toBe('required');
+});
+
+it('preserves required workspace operations when search was selected', () => {
+  const result = prepareMiraToolStep({
+    steps: [
+      {
+        toolResults: [
+          {
+            toolName: 'select_tools',
+            output: { selectedTools: ['google_search'] },
+          },
+        ],
+      },
+    ],
+    forceGoogleSearch: false,
+    forceRenderUi: false,
+    needsParallelChecks: false,
+    needsWorkspaceContextResolution: false,
+    needsWorkspaceMembersTool: true,
+    preferMarkdownTables: false,
+  });
+  expect(result.toolChoice).toBe('required');
+  expect(result.activeTools).toContain('list_workspace_members');
 });

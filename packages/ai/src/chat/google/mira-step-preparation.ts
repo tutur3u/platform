@@ -21,24 +21,7 @@ export type PrepareMiraToolStepInput = {
   preferMarkdownTables: boolean;
 };
 
-type MiraToolStepPolicy = {
-  toolChoice?: 'auto' | 'required' | 'none';
-  activeTools: string[];
-};
-
-export function prepareMiraToolStep(
-  input: PrepareMiraToolStepInput
-): MiraToolStepPolicy {
-  const policy = buildMiraToolStep(input);
-  // Native search runs inside one provider step. Requiring tools maps to ANY
-  // for Gemini's mixed tool config and can prevent the provider from answering.
-  return policy.toolChoice === 'required' &&
-    policy.activeTools.includes('google_search')
-    ? { ...policy, toolChoice: 'auto' }
-    : policy;
-}
-
-function buildMiraToolStep({
+export function prepareMiraToolStep({
   steps,
   forceGoogleSearch,
   forceRenderUi,
@@ -46,14 +29,17 @@ function buildMiraToolStep({
   needsWorkspaceContextResolution,
   needsWorkspaceMembersTool,
   preferMarkdownTables,
-}: PrepareMiraToolStepInput): MiraToolStepPolicy {
+}: PrepareMiraToolStepInput): {
+  toolChoice?: 'required' | 'none';
+  activeTools: string[];
+} {
   if (getMiraToolLoopReason(steps))
     return { toolChoice: 'none', activeTools: [] };
   if (steps.length === 0) {
     if (forceGoogleSearch) {
       return {
         toolChoice: 'required',
-        activeTools: ['google_search', 'search_tools', 'select_tools'],
+        activeTools: ['google_search'],
       };
     }
 
@@ -167,14 +153,7 @@ function buildMiraToolStep({
   }
 
   if (forceGoogleSearch && !hasToolCallInSteps(steps, 'google_search')) {
-    const active = buildActiveToolsFromSelected(toolsForBuild)
-      .filter((toolName) => toolName !== 'no_action_needed')
-      .concat('google_search', 'search_tools', 'select_tools');
-
-    return {
-      toolChoice: 'required',
-      activeTools: Array.from(new Set(active)),
-    };
+    return { toolChoice: 'required', activeTools: ['google_search'] };
   }
 
   if (

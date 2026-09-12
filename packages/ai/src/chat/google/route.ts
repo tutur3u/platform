@@ -18,7 +18,6 @@ import {
   resolvePlanModel,
 } from '../../credits/resolve-plan-model';
 import { withAiMemory } from '../../memory';
-import { createGoogleSearchToolSet } from '../../tools/google-search-tool';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import {
   shouldForceGoogleSearchForLatestUserMessage,
@@ -29,6 +28,7 @@ import {
   shouldUseParallelChecksForLatestUserMessage,
 } from '../mira-render-ui-policy';
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
+import { resolveChatTools } from './chat-tools';
 import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
 import { resolveChatReasoningSettings } from './reasoning-settings';
@@ -529,8 +529,6 @@ export function createPOST(
         promptMessages.messages
       );
 
-      const googleSearchTool = createGoogleSearchToolSet();
-
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
       >;
@@ -597,20 +595,16 @@ export function createPOST(
           promptMessages.system
         ),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
+        tools: resolveChatTools(miraTools),
         ...(miraTools
           ? {
-              tools: { ...miraTools, ...googleSearchTool } as NonNullable<
-                Parameters<typeof streamText>[0]
-              >['tools'],
               stopWhen: stepCountIs(25),
               toolChoice: 'auto' as const,
               prepareStep: prepareStep as NonNullable<
                 NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
               >,
             }
-          : {
-              tools: googleSearchTool,
-            }),
+          : {}),
         providerOptions: {
           google: {
             thinkingConfig: {
