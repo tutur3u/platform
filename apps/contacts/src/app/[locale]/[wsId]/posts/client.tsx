@@ -306,7 +306,6 @@ export default function PostsClient({
       ) : (
         <PostStatusSummary
           activeStage={activeStage}
-          filteredCount={postsData?.count || 0}
           summary={postsStatus}
           toolbar={
             resolvedWsId && defaultDateRange ? (

@@ -1,7 +1,6 @@
 'use client';
 
 import { BarChart3, CalendarDays, Settings2 } from '@tuturuuu/icons';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { parseAsStringEnum, useQueryState } from 'nuqs';
@@ -54,11 +53,7 @@ export default function ReportsHub({
 
   return (
     <main className="min-w-0 space-y-4 p-2 md:space-y-6 md:p-6">
-      <FeatureSummary
-        pluralTitle={t('title')}
-        singularTitle={t('title')}
-        description={t('description')}
-      />
+      <h1 className="font-semibold text-2xl tracking-tight">{t('title')}</h1>
       <Tabs
         value={view}
         onValueChange={(next) => void setView(next as ReportView)}

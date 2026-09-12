@@ -71,13 +71,7 @@ describe('PostStatusSummary', () => {
   });
 
   it('replaces the current stage when a stage card is clicked', () => {
-    render(
-      <PostStatusSummary
-        activeStage="sent"
-        filteredCount={3}
-        summary={summary}
-      />
-    );
+    render(<PostStatusSummary activeStage="sent" summary={summary} />);
 
     fireEvent.click(screen.getByText('pending_approval'));
 
@@ -90,24 +84,14 @@ describe('PostStatusSummary', () => {
 
   it('uses a five-column grid on lg and above', () => {
     const { container } = render(
-      <PostStatusSummary
-        activeStage="sent"
-        filteredCount={3}
-        summary={summary}
-      />
+      <PostStatusSummary activeStage="sent" summary={summary} />
     );
 
     expect(container.querySelector('.lg\\:grid-cols-5')).not.toBeNull();
   });
 
   it('clears stage when show all recipients is clicked', () => {
-    render(
-      <PostStatusSummary
-        activeStage="queued"
-        filteredCount={1}
-        summary={summary}
-      />
-    );
+    render(<PostStatusSummary activeStage="queued" summary={summary} />);
 
     fireEvent.click(screen.getByText('show_all_recipients'));
 
@@ -119,13 +103,7 @@ describe('PostStatusSummary', () => {
   });
 
   it('restores the default actionable stage when requested', () => {
-    render(
-      <PostStatusSummary
-        activeStage="sent"
-        filteredCount={3}
-        summary={summary}
-      />
-    );
+    render(<PostStatusSummary activeStage="sent" summary={summary} />);
 
     fireEvent.click(screen.getByText('show_actionable_queue'));
 

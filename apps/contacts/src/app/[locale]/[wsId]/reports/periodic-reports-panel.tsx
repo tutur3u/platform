@@ -208,12 +208,6 @@ export default function PeriodicReportsPanel({
   return (
     <div className="min-w-0 space-y-4">
       <PeriodicEmailReadiness wsId={wsId} />
-      <p className="text-muted-foreground text-xs">
-        {t('period_scope', {
-          start: periodStart || t('all_time_start'),
-          end: periodEnd || t('all_time_end'),
-        })}
-      </p>
       <PeriodicStatusSummary
         generation={generationStatus}
         counts={counts}
@@ -225,7 +219,12 @@ export default function PeriodicReportsPanel({
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground text-xs">
-          {t('review_delivery_hint')}
+          {periodStart || periodEnd
+            ? t('period_scope', {
+                start: periodStart || t('all_time_start'),
+                end: periodEnd || t('all_time_end'),
+              })
+            : t('all_periods')}
         </p>
         <Button
           size="sm"

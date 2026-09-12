@@ -316,8 +316,7 @@ export function PeriodicReportsToolbar({
           </PopoverContent>
         </Popover>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 text-muted-foreground text-xs">
-        <span>{reportsT('search_periodic_help')}</span>
+      <div className="flex justify-end text-muted-foreground text-xs">
         <span className="shrink-0 font-medium tabular-nums">
           {reportsT('matching_reports', { count: resultCount })}
         </span>

@@ -21,12 +21,10 @@ function getStatusPercentage(count: number, total: number) {
 
 export function PostStatusSummary({
   activeStage,
-  filteredCount,
   summary,
   toolbar,
 }: {
   activeStage?: PostReviewStage;
-  filteredCount: number;
   summary: PostEmailStatusSummary;
   toolbar?: ReactNode;
 }) {
@@ -47,9 +45,6 @@ export function PostStatusSummary({
         <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,0.72fr)_minmax(0,2.28fr)]">
           <div className="space-y-4">
             <div className="space-y-2">
-              <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.24em]">
-                {t('pipeline_overview')}
-              </p>
               <div>
                 <p className="text-muted-foreground text-sm">
                   {t('total_recipients')}
@@ -58,12 +53,6 @@ export function PostStatusSummary({
                   {summary.total.toLocaleString()}
                 </p>
               </div>
-              <p className="text-muted-foreground text-sm">
-                {t('matching_recipients', {
-                  filtered: filteredCount,
-                  total: summary.total,
-                })}
-              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -119,12 +108,6 @@ export function PostStatusSummary({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.2em]">
-                  {t('current_stage')}
-                </p>
-                <div className="h-px flex-1 bg-border/60" />
-              </div>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                 {POST_REVIEW_STAGE_ORDER.map((stage) => {
                   const count = summary.stages[stage];
