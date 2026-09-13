@@ -1,5 +1,6 @@
 'use client';
 
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
@@ -8,6 +9,7 @@ import {
   useEphemeralToken,
 } from '@/hooks/use-ephemeral-token';
 import { LiveAPIProvider } from '@/hooks/use-live-api';
+import type { LiveConversationChange } from '../assistant/use-live-conversation';
 import type { LiveComposer } from '../components/mira-voice-mode-switcher';
 import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 import { AssistantVoiceSession } from './assistant-voice-session';
@@ -16,6 +18,8 @@ export interface AssistantClientProps {
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
   onReturnToChat: () => void;
+  history?: UIMessage[];
+  onConversationChange?: LiveConversationChange;
   onComposerChange?: (composer: LiveComposer | null) => void;
   wsId: string;
 }
@@ -25,6 +29,8 @@ export default function AssistantClient({
   creditWsId,
   onReturnToChat,
   onComposerChange,
+  history,
+  onConversationChange,
   wsId,
 }: AssistantClientProps) {
   const t = useTranslations('dashboard.voice_assistant');
@@ -120,6 +126,8 @@ export default function AssistantClient({
         scopeKey={scopeKey}
       >
         <AssistantVoiceSession
+          history={history}
+          onConversationChange={onConversationChange}
           onComposerChange={onComposerChange}
           onError={setSessionError}
           onRestartSession={restartSession}

@@ -3,7 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types';
+import { toast } from '@tuturuuu/ui/sonner';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
+import { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useState } from 'react';
 import type { MessageFileAttachment } from './file-preview-chips';
@@ -21,6 +23,7 @@ export function useMiraChatPersistence({
   wsId,
   setMessageAttachments,
 }: UseMiraChatPersistenceParams) {
+  const t = useTranslations('dashboard.voice_assistant');
   const [chat, setChat] = useState<Partial<AIChat> | undefined>();
   const [fallbackChatId, setFallbackChatId] = useState(generateRandomUUID);
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
@@ -57,6 +60,18 @@ export function useMiraChatPersistence({
   });
 
   useEffect(() => {
+    if (restoredChatQuery.isError)
+      toast.error(t('history_restore_failed'), {
+        action: {
+          label: t('retry_history'),
+          onClick: () => {
+            void restoredChatQuery.refetch();
+          },
+        },
+      });
+  }, [restoredChatQuery.isError, restoredChatQuery.refetch, t]);
+
+  useEffect(() => {
     if (!storedChatId) {
       setInitialMessages([]);
       setChat(undefined);
@@ -81,6 +96,9 @@ export function useMiraChatPersistence({
   }, [restoredChatQuery.data, setMessageAttachments, storedChatId, wsId]);
 
   return {
+    isRestoring:
+      storedChatId != null &&
+      (restoredChatQuery.isFetching || chat?.id !== storedChatId),
     chat,
     fallbackChatId,
     initialMessages,

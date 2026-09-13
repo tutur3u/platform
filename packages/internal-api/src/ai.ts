@@ -1,4 +1,4 @@
-import type { AIModelUI } from '@tuturuuu/types';
+import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import type { ChatAttachmentDraft } from './chat-types';
 import {
   encodePathSegment,
@@ -391,5 +391,46 @@ export async function generateQuizFromLesson(
       ...payload,
     }),
     cache: 'no-store',
+  });
+}
+
+export async function saveLiveConversation(
+  payload: {
+    chatId: string;
+    messages: { id: string; role: string; parts: unknown[] }[];
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ id: string }>(
+    '/api/ai/chat/live-messages',
+    {
+      method: 'POST',
+      cache: 'no-store',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export async function restoreAiConversation(
+  chatId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    chat: Partial<AIChat>;
+    messages: {
+      id: string;
+      role: string;
+      created_at?: string;
+      content: string | null;
+      metadata: unknown;
+    }[];
+  }>('/api/ai/chat/restore', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chatId }),
   });
 }

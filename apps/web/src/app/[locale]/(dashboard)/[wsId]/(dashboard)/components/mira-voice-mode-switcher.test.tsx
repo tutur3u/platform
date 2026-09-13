@@ -16,7 +16,7 @@ vi.mock('next-intl', () => ({
     })[key] ?? key,
 }));
 
-function Harness() {
+function Harness({ beforeStart }: { beforeStart?: () => Promise<void> } = {}) {
   const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('Keep this draft');
@@ -24,6 +24,7 @@ function Harness() {
   return (
     <MiraVoiceModeSwitcher
       composerRef={composerRef}
+      onBeforeVoiceStart={beforeStart}
       creditSource="personal"
       creditWsId="personal-workspace"
       header={(modeControl) => (
@@ -153,4 +154,22 @@ describe('MiraVoiceModeSwitcher', () => {
       screen.getByRole('textbox', { hidden: true, name: 'Message' })
     ).not.toHaveFocus();
   });
+});
+
+it('waits for the text stream to stop before starting Live', async () => {
+  let finish!: () => void;
+  const beforeStart = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      })
+  );
+  render(<Harness beforeStart={beforeStart} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+  expect(beforeStart).toHaveBeenCalledTimes(1);
+  expect(
+    screen.queryByRole('region', { name: 'Live' })
+  ).not.toBeInTheDocument();
+  finish();
+  expect(await screen.findByRole('region', { name: 'Live' })).toBeVisible();
 });

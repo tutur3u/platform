@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 510,
+        "legacyNext": 511,
         "migrated": 62,
-        "percentComplete": 12.67,
-        "remaining": 510,
+        "percentComplete": 12.65,
+        "remaining": 511,
         "terminal": 74,
-        "total": 584,
+        "total": 585,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 518,
+        "legacyNext": 519,
         "migrated": 67,
-        "percentComplete": 13.23,
-        "remaining": 518,
+        "percentComplete": 13.21,
+        "remaining": 519,
         "terminal": 79,
-        "total": 597,
+        "total": 598,
         "unknownStatus": 0
       },
       {
@@ -195,6 +195,15 @@
       {
         "kind": "api",
         "methods": ["POST"],
+        "routePath": "/api/ai/chat/live-messages",
+        "sourceFile": "apps/web/src/app/api/ai/chat/live-messages/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/chat/live-messages:apps/web/src/app/api/ai/chat/live-messages/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
         "routePath": "/api/ai/chat/new",
         "sourceFile": "apps/web/src/legacy-api-routes/ai/chat/new/route.ts",
         "status": "legacy-next",
@@ -205,10 +214,10 @@
         "kind": "api",
         "methods": ["POST"],
         "routePath": "/api/ai/chat/restore",
-        "sourceFile": "apps/web/src/legacy-api-routes/ai/chat/restore/route.ts",
+        "sourceFile": "apps/web/src/app/api/ai/chat/restore/route.ts",
         "status": "legacy-next",
         "targetOwner": "rust-backend",
-        "id": "api:/api/ai/chat/restore:apps/web/src/legacy-api-routes/ai/chat/restore/route.ts"
+        "id": "api:/api/ai/chat/restore:apps/web/src/app/api/ai/chat/restore/route.ts"
       },
       {
         "kind": "api",
@@ -308,27 +317,18 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/auth/callback:apps/web/src/app/api/auth/callback/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["POST"],
-        "routePath": "/api/auth/dev-login",
-        "sourceFile": "apps/web/src/legacy-api-routes/auth/dev-login/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/auth/dev-login:apps/web/src/legacy-api-routes/auth/dev-login/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 592,
+      "legacyNext": 593,
       "migrated": 215,
-      "percentComplete": 27.89,
-      "remaining": 592,
+      "percentComplete": 27.86,
+      "remaining": 593,
       "terminal": 229,
-      "total": 821,
+      "total": 822,
       "unknownStatus": 0
     }
   },
@@ -415,6 +415,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/ai/chat/live-messages:apps/web/src/app/api/ai/chat/live-messages/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/ai/chat/live-messages",
+      "sourceFile": "apps/web/src/app/api/ai/chat/live-messages/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/ai/chat/new:apps/web/src/legacy-api-routes/ai/chat/new/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -424,11 +433,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/ai/chat/restore:apps/web/src/legacy-api-routes/ai/chat/restore/route.ts",
+      "id": "api:/api/ai/chat/restore:apps/web/src/app/api/ai/chat/restore/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/ai/chat/restore",
-      "sourceFile": "apps/web/src/legacy-api-routes/ai/chat/restore/route.ts",
+      "sourceFile": "apps/web/src/app/api/ai/chat/restore/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7832,20 +7841,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 584,
+    "apiRoutes": 585,
     "cronRoutes": 8,
     "layouts": 67,
     "pages": 153,
-    "routeHandlers": 597,
+    "routeHandlers": 598,
     "methodCounts": {
       "GET": 298,
       "HEAD": 4,
-      "POST": 294,
+      "POST": 295,
       "PUT": 54,
       "PATCH": 63,
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 821
+    "total": 822
   }
 }

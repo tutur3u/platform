@@ -94,6 +94,7 @@ interface MultimodalLiveClientEventTypes {
   setupcomplete: () => void;
   turncomplete: () => void;
   toolcall: (toolCall: ToolCall) => void;
+  toolresponse: (response: ToolResponseMessage['toolResponse']) => void;
   toolcallcancellation: (toolcallCancellation: ToolCallCancellation) => void;
   groundingmetadata: (metadata: GroundingMetadata) => void;
   usage: (metadata: UsageMetadata) => void;
@@ -388,17 +389,16 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     if (message.serverContent) {
       const serverContent = message.serverContent;
 
-      // PRIORITY: Handle grounding metadata FIRST so search results appear immediately
-      // This ensures users see what was searched before hearing the full response
+      if (serverContent.inputTranscription?.text) {
+        this.emit('inputtranscription', serverContent.inputTranscription.text);
+      }
+
+      // Establish the user turn before attaching grounding from this frame.
       const groundingMetadata = (
         serverContent as { groundingMetadata?: GroundingMetadata }
       ).groundingMetadata;
       if (groundingMetadata) {
         this.emit('groundingmetadata', groundingMetadata);
-      }
-
-      if (serverContent.inputTranscription?.text) {
-        this.emit('inputtranscription', serverContent.inputTranscription.text);
       }
 
       // Check for interruption
@@ -595,6 +595,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       };
     });
 
+    this.emit('toolresponse', toolResponse);
     this.session.sendToolResponse({
       functionResponses: formattedResponses,
     });
@@ -602,6 +603,13 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       'client.toolResponse',
       `${formattedResponses.length} tool responses`
     );
+  }
+
+  seedConversation(
+    turns: { role: 'user' | 'model'; parts: { text: string }[] }[]
+  ) {
+    if (turns.length)
+      this.session?.sendClientContent({ turns, turnComplete: false });
   }
 
   /**

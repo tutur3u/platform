@@ -1,8 +1,10 @@
 'use client';
 
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { AnimatePresence } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
+import type { LiveConversationChange } from '../assistant/use-live-conversation';
 import type { LiveComposer } from '../components/mira-voice-mode-switcher';
 import { AuroraBlob, StatusPill } from './assistant-visuals';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
@@ -16,6 +18,7 @@ import type { ServerContent } from './multimodal-live';
 import { isModelTurn } from './multimodal-live';
 import { useVisualizationStore } from './stores/visualization-store';
 import type { GoogleSearchVisualization } from './types/visualizations';
+import { useLiveConversation } from './use-live-conversation';
 import { useLiveJournal } from './use-live-journal';
 import { useLiveTools } from './use-live-tools';
 
@@ -28,10 +31,14 @@ export function stopMediaStream(stream: MediaStream | null) {
 export function AssistantVoiceSession({
   onError,
   onComposerChange,
+  history,
+  onConversationChange,
   onRestartSession,
   wsId,
 }: {
   onError: (error: Error) => void;
+  history?: UIMessage[];
+  onConversationChange?: LiveConversationChange;
   onComposerChange?: (composer: LiveComposer | null) => void;
   onRestartSession: () => Promise<void>;
   wsId: string;
@@ -98,7 +105,15 @@ export function AssistantVoiceSession({
   );
 
   const { activities, notes, decide, calendarResult } = useLiveTools(wsId);
-  const { entries, sendText } = useLiveJournal();
+  const { entries, sendText: sendJournalText } = useLiveJournal();
+  const recordText = useLiveConversation(onConversationChange, history);
+  const sendText = useCallback(
+    (text: string) => {
+      sendJournalText(text);
+      recordText(text);
+    },
+    [sendJournalText, recordText]
+  );
   useEffect(() => {
     onComposerChange?.({ connected, sendText });
     return () => onComposerChange?.(null);
@@ -234,6 +249,7 @@ export function AssistantVoiceSession({
 
   return (
     <LiveWorkspace
+      inline={!!onConversationChange}
       hasResults={!!calendarResult || hasVisualizations}
       connected={connected}
       authorizationExpired={authorizationExpired}

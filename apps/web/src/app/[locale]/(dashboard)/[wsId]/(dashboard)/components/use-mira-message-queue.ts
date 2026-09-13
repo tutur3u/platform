@@ -11,7 +11,9 @@ interface UseMiraMessageQueueParams {
   chatId?: string;
   clearAttachedFiles: () => void;
   createChat: (userInput: string) => Promise<void>;
-  sendMessageWithCurrentConfig: (message: UIMessage) => void;
+  sendMessageWithCurrentConfig: (
+    message: UIMessage
+  ) => void | boolean | Promise<boolean> | Promise<void>;
   snapshotAttachmentsForMessage: (messageId: string) => void;
   status: string;
   stop?: () => void;
@@ -66,14 +68,16 @@ export function useMiraMessageQueue({
         console.error('[Mira Chat] Failed to create chat from queued input:', {
           error,
         });
+        return;
       }
     } else {
       snapshotAttachmentsForMessage('__latest_user_upload');
-      sendMessageWithCurrentConfig({
+      const sent = await sendMessageWithCurrentConfig({
         id: generateRandomUUID(),
         role: 'user',
         parts: [{ type: 'text', text: combined }],
       });
+      if (sent === false) return;
     }
 
     clearAttachedFiles();

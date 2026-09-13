@@ -27,7 +27,9 @@ interface UseMiraChatActionsParams {
   messageAttachments: Map<string, MessageFileAttachment[]>;
   messages: UIMessage[];
   model: AIModelUI;
-  sendMessageWithCurrentConfig: (message: UIMessage) => void | Promise<void>;
+  sendMessageWithCurrentConfig: (
+    message: UIMessage
+  ) => void | Promise<void> | Promise<boolean>;
   setChat: Dispatch<SetStateAction<Partial<AIChat> | undefined>>;
   setFallbackChatId: (value: string) => void;
   setInput: (value: string) => void;
