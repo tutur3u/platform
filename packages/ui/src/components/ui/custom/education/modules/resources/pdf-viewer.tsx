@@ -12,7 +12,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`
 ).toString();
 
-export function PDFViewer({ url }: { url: string }) {
+export function PDFViewer({
+  onLoadError,
+  url,
+}: {
+  onLoadError?: () => void;
+  url: string;
+}) {
   const t = useTranslations();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -47,7 +53,11 @@ export function PDFViewer({ url }: { url: string }) {
 
   return (
     <div ref={containerRef} className="relative">
-      <Document file={url} onLoadSuccess={onDocumentLoadSuccess}>
+      <Document
+        file={url}
+        onLoadError={onLoadError}
+        onLoadSuccess={onDocumentLoadSuccess}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={pageNumber}

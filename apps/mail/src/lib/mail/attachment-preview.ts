@@ -1,4 +1,4 @@
-/** Only passive formats may be embedded on the authenticated Mail origin. */
+/** Only directly embeddable passive formats and safely rendered PDFs. */
 export function mailAttachmentPreviewType(
   contentType: string,
   filename: string
@@ -10,6 +10,8 @@ export function mailAttachmentPreviewType(
     return { kind: 'video', contentType: type } as const;
   if (/^audio\/(mpeg|mp4|ogg|wav|webm|x-wav)$/u.test(type))
     return { kind: 'audio', contentType: type } as const;
+  if (type === 'application/pdf')
+    return { kind: 'pdf', contentType: type } as const;
   if (
     type === 'text/plain' ||
     (type === 'application/octet-stream' && /\.txt$/iu.test(filename))

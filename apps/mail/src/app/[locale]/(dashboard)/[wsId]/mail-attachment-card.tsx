@@ -14,12 +14,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
   mailAttachmentPreviewType,
   mailAttachmentPreviewUrl,
 } from '@/lib/mail/attachment-preview';
+
+const PDFViewer = dynamic(
+  () =>
+    import('@tuturuuu/ui/custom/education/modules/resources/pdf-viewer').then(
+      (module) => module.PDFViewer
+    ),
+  { ssr: false }
+);
 
 export function MailAttachmentCard({
   attachment,
@@ -119,6 +128,13 @@ export function MailAttachmentCard({
                 src={previewUrl}
                 onError={() => setFailed(true)}
               />
+            ) : preview?.kind === 'pdf' ? (
+              <div className="mx-auto w-full max-w-4xl p-4">
+                <PDFViewer
+                  url={previewUrl!}
+                  onLoadError={() => setFailed(true)}
+                />
+              </div>
             ) : preview?.kind === 'text' ? (
               textPreview.isPending ? (
                 <p className="p-6 text-muted-foreground text-sm">
