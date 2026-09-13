@@ -40,6 +40,10 @@ invoice. Seat-only updates do not replace the product, price or discount.
 Paid plan changes preserve the current quantity: adjust seats first when a target
 minimum or reserved invitations need additional capacity. Paid billing-model
 changes require assisted migration. Missing counts or bounds block updates.
+Paid updates synchronize the database projection before reporting completion. If
+projection fails after Polar succeeds, the UI reports pending synchronization and
+disables resubmission. A retry reconciles an already-applied plan without invoicing
+the same change again.
 An invitation alone does not increase the purchased quantity. All quantity
 reductions must still cover members and both pending invitation tables.
 The legacy preview endpoint returns list-price estimates, not discount- or tax-aware

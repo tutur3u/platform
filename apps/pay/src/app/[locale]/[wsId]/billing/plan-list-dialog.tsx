@@ -646,6 +646,7 @@ export default function PlanListDialog({
         </div>
       </DialogContent>
       <PaidPlanChangeDialog
+        key={selectedPaidPlan?.id ?? 'no-selection'}
         subscriptionId={currentPlan.id}
         plan={selectedPaidPlan}
         onClose={() => setSelectedPaidPlan(null)}

@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 import {
   getSelfServePlanChangeError,
   isSelfServeWorkspaceProduct,
@@ -193,27 +194,48 @@ export async function POST(
   try {
     const polar = createPolarClient();
 
-    // Use Admin API to update subscription with proration control
-    // The Admin API allows setting prorationBehavior
-    const result = await polar.subscriptions.update({
+    // Reconcile an already-applied update instead of invoicing a retry while
+    // the asynchronous webhook projection is still behind.
+    const live = await polar.subscriptions.get({
       id: subscription.polar_subscription_id,
-      subscriptionUpdate: {
-        productId: productId,
-        // 'invoice' creates a separate invoice for the prorated amount immediately
-        prorationBehavior: 'invoice',
-      },
     });
-
-    return NextResponse.json({
-      success: true,
-      result,
-    });
-  } catch (error) {
-    console.error('Error changing subscription:', error);
+    if (
+      live.productId !== productId &&
+      (live.productId !== subscription.product_id ||
+        live.seats !== subscription.seat_count)
+    )
+      return NextResponse.json(
+        {
+          error:
+            'Subscription changed. Reload billing before confirming again.',
+        },
+        { status: 409 }
+      );
+    const result =
+      live.productId === productId
+        ? live
+        : await polar.subscriptions.update({
+            id: subscription.polar_subscription_id,
+            subscriptionUpdate: { productId, prorationBehavior: 'invoice' },
+          });
+    let syncPending = false;
+    try {
+      await syncSubscriptionToDatabase(supabase, {
+        ...result,
+        metadata: { ...result.metadata, wsId: subscription.ws_id },
+      });
+    } catch {
+      // The charge may already have succeeded: never turn this into a retryable
+      // billing failure. Webhooks will retry the projection independently.
+      syncPending = true;
+      console.error('Paid plan changed but billing projection is pending');
+    }
+    return NextResponse.json({ success: true, syncPending });
+  } catch {
+    console.error('Error changing subscription');
     return NextResponse.json(
       {
         error: 'Failed to change subscription',
-        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

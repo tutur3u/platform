@@ -14,6 +14,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 export interface PaidPlanSelection {
   id: string;
@@ -36,13 +37,18 @@ export function PaidPlanChangeDialog({
 }) {
   const t = useTranslations('billing');
   const router = useRouter();
+  const [syncPending, setSyncPending] = useState(false);
   const mutation = useMutation({
     mutationFn: (selection: PaidPlanSelection) =>
       changePaySubscriptionPlan(subscriptionId, selection.id, {
         expectedSeats: selection.seats,
         expectedPricePerSeat: selection.amount / selection.seats,
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.syncPending) {
+        setSyncPending(true);
+        return;
+      }
       onClose();
       onChanged();
       router.refresh();
@@ -77,6 +83,11 @@ export function PaidPlanChangeDialog({
             </p>
           </div>
         )}
+        {syncPending && (
+          <p role="status" className="text-muted-foreground text-sm">
+            {t('plan-sync-pending')}
+          </p>
+        )}
         <DialogFooter>
           <Button
             variant="outline"
@@ -86,7 +97,7 @@ export function PaidPlanChangeDialog({
             {t('cancel')}
           </Button>
           <Button
-            disabled={mutation.isPending || !plan}
+            disabled={mutation.isPending || syncPending || !plan}
             onClick={() => {
               if (plan) mutation.mutate(plan);
             }}

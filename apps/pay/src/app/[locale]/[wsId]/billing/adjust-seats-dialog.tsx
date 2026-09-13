@@ -61,7 +61,9 @@ export default function AdjustSeatsDialog({
     validCheckoutSeats(minPlanSeats) &&
     validCheckoutSeats(currentSeats) &&
     (maxSeats == null ||
-      (validCheckoutSeats(maxSeats) && maxSeats >= minPlanSeats));
+      (validCheckoutSeats(maxSeats) &&
+        maxSeats >= minPlanSeats &&
+        maxSeats >= requiredSeats));
   const minSeats = Math.max(
     1,
     requiredSeats ?? currentSeats,
@@ -172,12 +174,13 @@ export default function AdjustSeatsDialog({
                 variant="outline"
                 size="icon"
                 onClick={decrementSeats}
-                disabled={newSeatCount <= minSeats}
+                disabled={!capacityVerified || newSeatCount <= minSeats}
               >
                 <Minus className="h-4 w-4" />
               </Button>
               <Input
                 type="number"
+                disabled={!capacityVerified}
                 min={minSeats}
                 max={effectiveMaxSeats}
                 value={newSeatCount}
@@ -193,13 +196,17 @@ export default function AdjustSeatsDialog({
                 variant="outline"
                 size="icon"
                 onClick={incrementSeats}
-                disabled={newSeatCount >= effectiveMaxSeats}
+                disabled={
+                  !capacityVerified || newSeatCount >= effectiveMaxSeats
+                }
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
             <p className="text-center text-muted-foreground text-xs">
-              {t('seat-range', { min: minSeats, max: maxSeats ?? '1000' })}
+              {capacityVerified
+                ? t('seat-range', { min: minSeats, max: effectiveMaxSeats })
+                : t('plan-unavailable')}
             </p>
           </div>
 

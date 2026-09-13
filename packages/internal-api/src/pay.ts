@@ -118,15 +118,15 @@ export function changePaySubscriptionPlan(
   confirmation: { expectedSeats: number; expectedPricePerSeat: number },
   options?: InternalApiClientOptions
 ) {
-  return getPayClient(options).json<{ success?: boolean }>(
-    `/api/payment/subscriptions/${encodePathSegment(subscriptionId)}/change`,
-    {
-      body: JSON.stringify({ productId, ...confirmation }),
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    }
-  );
+  return getPayClient(options).json<{
+    success?: boolean;
+    syncPending?: boolean;
+  }>(`/api/payment/subscriptions/${encodePathSegment(subscriptionId)}/change`, {
+    body: JSON.stringify({ productId, ...confirmation }),
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
 }
 
 export function updatePaySubscriptionCancellation(
