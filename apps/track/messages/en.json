@@ -5205,7 +5205,7 @@
         ],
         "title": "Pay As You Go"
       },
-      "subtitle": "Plans are per workspace, billed per user. Up to 10 free workspaces per account.",
+      "subtitle": "Each workspace has its own plan, billed per member. Standard accounts can create up to 10 workspaces; upgrading does not increase this account limit.",
       "tiers": {
         "enterprise": {
           "cta": "Contact Sales",
@@ -5249,12 +5249,8 @@
           ],
           "name": "Plus",
           "period": {
-            "monthly": "/user/mo",
-            "yearly": "/user/yr"
-          },
-          "price": {
-            "monthly": "$8",
-            "yearly": "$80"
+            "monthly": "/member/mo",
+            "yearly": "/member/yr"
           }
         },
         "pro": {
@@ -5270,12 +5266,8 @@
           ],
           "name": "Pro",
           "period": {
-            "monthly": "/user/mo",
-            "yearly": "/user/yr"
-          },
-          "price": {
-            "monthly": "$15",
-            "yearly": "$150"
+            "monthly": "/member/mo",
+            "yearly": "/member/yr"
           }
         }
       },

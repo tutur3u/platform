@@ -6,6 +6,6 @@ export interface PublicWorkspacePrices {
 export function getPublicWorkspacePrices(options?: InternalApiClientOptions) {
   return getInternalApiClient(options).json<PublicWorkspacePrices>(
     '/api/v1/public/pricing',
-    { cache: 'no-store' }
+    { credentials: 'omit' }
   );
 }

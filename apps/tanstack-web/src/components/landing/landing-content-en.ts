@@ -1,4 +1,3 @@
-import approvedCatalog from '../../../../../packages/payment-core/src/approved-workspace-prices.json';
 import type { LandingContent } from './landing-content';
 
 export const englishLandingContent = {
@@ -168,7 +167,7 @@ export const englishLandingContent = {
   },
   pricing: {
     subtitle:
-      'Plans are per workspace, billed per user. Up to 10 free workspaces per account.',
+      'Each workspace has its own plan, billed per member. Standard accounts can create up to 10 workspaces.',
     tiers: [
       {
         cta: 'Get Started',
@@ -194,8 +193,8 @@ export const englishLandingContent = {
           'AI credits with optional purchased top-ups',
         ],
         name: 'Plus',
-        period: '/user/mo',
-        price: `$${approvedCatalog.prices.plus.monthly / 100}`,
+        period: '/member/mo',
+        price: '—',
       },
       {
         badge: 'Most Powerful',
@@ -208,8 +207,8 @@ export const englishLandingContent = {
           'Mira, AI Lab and workforce tools',
         ],
         name: 'Pro',
-        period: '/user/mo',
-        price: `$${approvedCatalog.prices.pro.monthly / 100}`,
+        period: '/member/mo',
+        price: '—',
       },
     ],
     title: 'Simple pricing. No surprises.',

@@ -79,6 +79,7 @@ describe('workspace checkout boundary', () => {
     const f = adminFixture({ subscription: false });
     mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
     expect((await checkout()).status).toBe(404);
+    expect(f.queries.workspace_subscriptions).toHaveBeenCalledWith('id', 'sub');
     expect(f.queries.workspace_subscriptions).toHaveBeenCalledWith(
       'ws_id',
       'workspace'

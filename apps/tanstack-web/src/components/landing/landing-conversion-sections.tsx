@@ -1,3 +1,4 @@
+import { getConfiguredInternalApiBaseUrl } from '@tuturuuu/internal-api';
 import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
 import {
   ArrowRight,
@@ -76,7 +77,9 @@ export function PricingSection({
   content: LandingContent['pricing'];
   priceStatus: { pricesLoading: string; pricesUnavailable: string };
 }>) {
-  const catalog = usePublicWorkspacePrices();
+  const catalog = usePublicWorkspacePrices({
+    baseUrl: getConfiguredInternalApiBaseUrl(),
+  });
   return (
     <SectionShell id="pricing">
       {!catalog.data && (

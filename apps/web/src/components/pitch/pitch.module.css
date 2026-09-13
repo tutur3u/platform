@@ -226,7 +226,7 @@
 .orbitLabel {
   position: absolute;
   left: calc(12% + var(--i) * 20%);
-  top: calc(20% + mod(var(--i), 2) * 56%);
+  top: 20%;
   background: var(--background);
   border: 1px solid var(--border);
   border-radius: 2rem;
@@ -234,6 +234,9 @@
   font-size: 0.75rem;
   animation: float 6s ease-in-out infinite alternate;
   animation-delay: calc(var(--i) * -0.8s);
+}
+.orbitLabel:nth-of-type(even) {
+  top: 76%;
 }
 .plans {
   display: grid;

@@ -14,10 +14,10 @@ export const FEATURE_TIERS = {
   realtime_cursors: 'FREE',
   documents: 'FREE',
   time_tracker: 'FREE',
+  voice_assistant: 'FREE',
 
   // PLUS tier features
   chat: 'PLUS',
-  voice_assistant: 'FREE',
 
   // PRO tier features
   workforce: 'PRO',

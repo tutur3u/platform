@@ -5516,7 +5516,7 @@
       "compare": "So sánh tất cả tính năng",
       "faq": {
         "q1": {
-          "answer": "Gói Free không có phí thuê bao. Các giới hạn sử dụng và tính khả dụng của sản phẩm vẫn áp dụng.",
+          "answer": "Gói Miễn phí không có phí thuê bao. Các giới hạn sử dụng và tính khả dụng của sản phẩm vẫn áp dụng.",
           "question": "Có thật sự có gói miễn phí không?"
         },
         "q2": {
@@ -5582,7 +5582,7 @@
         ],
         "title": "Trả theo nhu cầu sử dụng"
       },
-      "subtitle": "Mỗi workspace có gói riêng, tính phí theo người dùng. Tối đa 10 workspace miễn phí mỗi tài khoản.",
+      "subtitle": "Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường được tạo tối đa 10 không gian làm việc; nâng cấp không tăng giới hạn này.",
       "tiers": {
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",
@@ -5626,12 +5626,8 @@
           ],
           "name": "Plus",
           "period": {
-            "monthly": "/người/tháng",
-            "yearly": "/người/năm"
-          },
-          "price": {
-            "monthly": "$8",
-            "yearly": "$80"
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
           }
         },
         "pro": {
@@ -5647,12 +5643,8 @@
           ],
           "name": "Pro",
           "period": {
-            "monthly": "/người/tháng",
-            "yearly": "/người/năm"
-          },
-          "price": {
-            "monthly": "$15",
-            "yearly": "$150"
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
           }
         }
       },

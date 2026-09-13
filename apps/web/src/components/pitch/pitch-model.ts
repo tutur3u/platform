@@ -1,5 +1,3 @@
-import { PROPOSED_WORKSPACE_CATALOG } from '@tuturuuu/payment-core/subscription-constants';
-
 export const SLIDE_IDS = [
   'opening',
   'problem',
@@ -20,6 +18,8 @@ export interface PitchCopy {
   description: string;
   edition: string;
   proposal: string;
+  pricesLoading: string;
+  pricesUnavailable: string;
   previous: string;
   next: string;
   overview: string;
@@ -69,24 +69,18 @@ export interface PitchCopy {
     { title: string; body: string; kicker: string; note: string }
   >;
 }
-export const PROPOSED_PRICES = {
-  plus: {
-    monthly: PROPOSED_WORKSPACE_CATALOG.prices.plus.monthly / 100,
-    annual: PROPOSED_WORKSPACE_CATALOG.prices.plus.annual / 100,
-  },
-  pro: {
-    monthly: PROPOSED_WORKSPACE_CATALOG.prices.pro.monthly / 100,
-    annual: PROPOSED_WORKSPACE_CATALOG.prices.pro.annual / 100,
-  },
-} as const;
 export function slideFromHash(hash: string): number {
   const index = SLIDE_IDS.findIndex((id) => `#${id}` === hash);
   return index < 0 ? 0 : index;
 }
-export function subscriptionEstimate(seats: number, annual: boolean) {
+export function subscriptionEstimate(
+  seats: number,
+  annual: boolean,
+  prices: Record<'plus' | 'pro', { monthly: number; annual: number }>
+) {
   const count = Math.min(100, Math.max(1, Math.trunc(seats) || 1));
   return {
-    plus: count * PROPOSED_PRICES.plus[annual ? 'annual' : 'monthly'],
-    pro: count * PROPOSED_PRICES.pro[annual ? 'annual' : 'monthly'],
+    plus: count * prices.plus[annual ? 'annual' : 'monthly'],
+    pro: count * prices.pro[annual ? 'annual' : 'monthly'],
   };
 }

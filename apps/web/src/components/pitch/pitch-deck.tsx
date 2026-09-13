@@ -137,6 +137,9 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
   const id = SLIDE_IDS[index] ?? 'opening';
   return (
     <div className={styles.deck} ref={root}>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {copy.slide} {index + 1} / {SLIDE_IDS.length}: {copy.slides[id].title}
+      </span>
       <header className={styles.header}>
         <a href={`/${locale}`} className={styles.brand}>
           tuturuuu

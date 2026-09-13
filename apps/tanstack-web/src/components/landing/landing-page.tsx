@@ -1,6 +1,5 @@
 import { CommercialComparison } from '@tuturuuu/ui/commercial-comparison';
-import enMessages from '../../messages/en.json';
-import viMessages from '../../messages/vi.json';
+import { getMessages } from '../../lib/platform/messages';
 import type { Locale } from '../../lib/platform/locale';
 import { getLandingContent } from './landing-content';
 import {
@@ -32,16 +31,10 @@ export function LandingPage({ locale }: Readonly<{ locale: Locale }>) {
       <AiSection content={content.ai} />
       <PricingSection
         content={content.pricing}
-        priceStatus={
-          (locale === 'vi' ? viMessages : enMessages).commercialComparison
-        }
+        priceStatus={getMessages(locale).commercialComparison}
       />
       <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6">
-        <CommercialComparison
-          copy={
-            (locale === 'vi' ? viMessages : enMessages).commercialComparison
-          }
-        />
+        <CommercialComparison copy={getMessages(locale).commercialComparison} />
       </div>
       <SocialProofSection content={content.socialProof} />
       <CtaSection content={content.cta} />

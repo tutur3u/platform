@@ -226,12 +226,28 @@ export default function PlanListDialog({
       };
     }
 
+    const tierRank = { FREE: 0, PLUS: 1, PRO: 2, ENTERPRISE: 3 };
+    const targetRank = plan.isEnterprise
+      ? 3
+      : plan.isPro
+        ? 2
+        : plan.isPlus
+          ? 1
+          : 0;
+    const currentRank = tierRank[currentPlan.tier];
+    const memberCount = seatStatus?.memberCount ?? currentPlan.seatCount ?? 1;
+    const targetMonthly =
+      (plan.pricingModel === 'seat_based'
+        ? (plan.pricePerSeat ?? 0) * memberCount
+        : (plan.price ?? 0)) / (plan.billingCycle === 'year' ? 12 : 1);
+    const currentMonthly =
+      (currentPlan.pricingModel === 'seat_based'
+        ? (currentPlan.pricePerSeat ?? 0) * memberCount
+        : (currentPlan.price ?? 0)) /
+      (currentPlan.billingCycle === 'year' ? 12 : 1);
     const isDowngrade =
-      currentPlan.tier !== 'FREE' &&
-      ((plan.pricingModel === 'fixed' &&
-        (plan.price ?? 0) < (currentPlan.price ?? 0)) ||
-        (plan.pricingModel === 'seat_based' &&
-          (plan.pricePerSeat ?? 0) < (currentPlan.pricePerSeat ?? 0)));
+      targetRank < currentRank ||
+      (targetRank === currentRank && targetMonthly < currentMonthly);
 
     if (isDowngrade) {
       return {

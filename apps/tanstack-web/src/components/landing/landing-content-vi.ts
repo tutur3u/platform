@@ -1,4 +1,3 @@
-import approvedCatalog from '../../../../../packages/payment-core/src/approved-workspace-prices.json';
 import type { LandingContent } from './landing-content';
 
 export const vietnameseLandingContent = {
@@ -168,7 +167,7 @@ export const vietnameseLandingContent = {
   },
   pricing: {
     subtitle:
-      'Mỗi workspace có gói riêng, tính phí theo người dùng. Tối đa 10 workspace miễn phí mỗi tài khoản.',
+      'Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường được tạo tối đa 10 không gian làm việc.',
     tiers: [
       {
         cta: 'Dùng Ngay',
@@ -194,8 +193,8 @@ export const vietnameseLandingContent = {
           'Tín dụng AI với lựa chọn mua thêm',
         ],
         name: 'Plus',
-        period: '/người/tháng',
-        price: `$${approvedCatalog.prices.plus.monthly / 100}`,
+        period: '/thành viên/tháng',
+        price: '—',
       },
       {
         badge: 'Mạnh Nhất',
@@ -208,8 +207,8 @@ export const vietnameseLandingContent = {
           'Mira, AI Lab và công cụ quản lý nhân sự',
         ],
         name: 'Pro',
-        period: '/người/tháng',
-        price: `$${approvedCatalog.prices.pro.monthly / 100}`,
+        period: '/thành viên/tháng',
+        price: '—',
       },
     ],
     title: 'Giá rõ ràng. Không phí ẩn.',

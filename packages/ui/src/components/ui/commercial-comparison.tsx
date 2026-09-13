@@ -72,6 +72,7 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
       copy.apps[row.app],
       copy.categories[row.category],
       copy.explanations[row.detail],
+      ...row.values.map(valueLabel),
     ]
       .join(' ')
       .normalize('NFD')
@@ -307,7 +308,7 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
                               <button
                                 type="button"
                                 aria-label={copy.features[row.id]}
-                                className="mt-0.5 shrink-0 rounded text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                                className="inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
                               >
                                 <Info size={15} />
                               </button>
