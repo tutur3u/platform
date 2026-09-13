@@ -65,6 +65,7 @@ export interface PitchCopy {
   roadmap: string[];
   metrics: string[];
   creditValues: string[];
+  orbitLabels: string[];
   slides: Record<
     SlideId,
     { title: string; body: string; kicker: string; note: string }

@@ -11452,6 +11452,7 @@
     "next": "Next slide",
     "noClaims": "Product direction, not a launch or performance guarantee.",
     "notes": "Presenter notes",
+    "orbitLabels": ["Tasks", "AI", "Drive", "Learn"],
     "overview": "All slides",
     "pause": "Pause",
     "people": ["Individuals", "Small teams", "Educators", "Operators"],
@@ -11537,7 +11538,7 @@
       "pricing": {
         "body": "One workspace subscription across the suite. Pay for capacity and advanced workflows as your needs grow.",
         "kicker": "Plans and allowances",
-        "note": "These prices require review: Plus $9 monthly or $90 annually; Pro $19 monthly or $190 annually per full member. Existing subscriptions are unchanged.",
+        "note": "Approved new-purchase prices: Plus $9 monthly or $90 annually; Pro $19 monthly or $190 annually per full member. The slide reads the current catalog until deployment and Polar reconciliation finish. Existing subscriptions are unchanged.",
         "title": "Simple plans.\nRoom to grow."
       },
       "problem": {

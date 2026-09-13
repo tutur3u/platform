@@ -11452,6 +11452,7 @@
     "next": "Trang tiếp",
     "noClaims": "Định hướng sản phẩm, không cam kết phát hành hoặc hiệu suất.",
     "notes": "Ghi chú thuyết trình",
+    "orbitLabels": ["Công việc", "AI", "Tệp", "Học tập"],
     "overview": "Tất cả trang",
     "pause": "Tạm dừng",
     "people": ["Cá nhân", "Đội nhóm nhỏ", "Nhà giáo dục", "Nhà vận hành"],
@@ -11537,7 +11538,7 @@
       "pricing": {
         "body": "Một thuê bao không gian cho bộ ứng dụng. Trả phí cho dung lượng và quy trình nâng cao khi cần.",
         "kicker": "Gói và hạn mức",
-        "note": "Giá chờ duyệt: Plus 9 USD/tháng hoặc 90 USD/năm; Pro 19 USD/tháng hoặc 190 USD/năm cho mỗi thành viên. Thuê bao hiện tại không đổi.",
+        "note": "Giá đã duyệt cho lượt mua mới: Plus 9 USD/tháng hoặc 90 USD/năm; Pro 19 USD/tháng hoặc 190 USD/năm cho mỗi thành viên. Trang trình bày đọc giá hiện tại cho đến khi triển khai và đồng bộ Polar hoàn tất. Thuê bao hiện tại không đổi.",
         "title": "Gói đơn giản.\nDư địa phát triển."
       },
       "problem": {

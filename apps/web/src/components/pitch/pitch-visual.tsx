@@ -36,7 +36,7 @@ export function PitchVisual({ id, copy }: { id: SlideId; copy: PitchCopy }) {
         <div className={styles.wordmark}>
           tu<span>tur</span>uuu
         </div>
-        {['Tasks', 'AI', 'Drive', 'Learn'].map((name, i) => (
+        {copy.orbitLabels.map((name, i) => (
           <span
             key={name}
             className={styles.orbitLabel}

@@ -30,6 +30,7 @@ export function LandingPage({ locale }: Readonly<{ locale: Locale }>) {
       <DemoSection content={content.demo} />
       <AiSection content={content.ai} />
       <PricingSection
+        locale={locale}
         content={content.pricing}
         priceStatus={getMessages(locale).commercialComparison}
       />
