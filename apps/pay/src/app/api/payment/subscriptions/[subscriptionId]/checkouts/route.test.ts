@@ -81,22 +81,53 @@ describe('workspace checkout boundary', () => {
     }
   });
   it('rejects excessive or unverifiable purchased capacity', async () => {
-    for (const config of [
-      { currentSeats: 3, maxSeats: 2 },
-      { currentSeats: null },
-      { currentSeats: 0 },
+    for (const { config, status } of [
+      { config: { currentSeats: 3, maxSeats: 2 }, status: 400 },
+      { config: { currentSeats: null }, status: 503 },
+      { config: { currentSeats: 0 }, status: 503 },
+      { config: { currentModel: null }, status: 503 },
+      { config: { currentModel: 'unknown' }, status: 503 },
+      { config: { minSeats: null }, status: 400 },
+      { config: { pendingInvites: null }, status: 503 },
+      { config: { pendingEmailInvites: null }, status: 503 },
+      { config: { pendingInvites: -1 }, status: 503 },
+      { config: { pendingEmailInvites: 3, maxSeats: 2 }, status: 400 },
     ]) {
       const f = adminFixture(config);
       mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
-      expect((await checkout()).status).toBe(config.maxSeats ? 400 : 503);
+      expect((await checkout()).status).toBe(status);
     }
     expect(mocks.create).not.toHaveBeenCalled();
   });
+  it('quotes reserved invitations when a legacy fixed workspace moves to seats', async () => {
+    const f = adminFixture({
+      currentModel: 'fixed',
+      currentSeats: null,
+      count: 2,
+      pendingInvites: 3,
+      pendingEmailInvites: 4,
+    });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    expect((await checkout()).status).toBe(200);
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({ seats: 9 })
+    );
+    for (const table of [
+      'workspace_members',
+      'workspace_invites',
+      'workspace_email_invites',
+    ])
+      expect(f.queries[table]).toHaveBeenCalledWith('ws_id', 'workspace');
+  });
   it('denies legacy fixed products and unavailable seat accounting', async () => {
-    for (const config of [{ model: 'fixed' }, { count: null }, { count: 0 }]) {
+    for (const { config, status } of [
+      { config: { model: 'fixed' }, status: 400 },
+      { config: { count: null }, status: 503 },
+      { config: { count: 0 }, status: 503 },
+    ]) {
       const f = adminFixture(config);
       mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
-      expect((await checkout()).status).toBe(config.model ? 400 : 503);
+      expect((await checkout()).status).toBe(status);
     }
     expect(mocks.create).not.toHaveBeenCalled();
   });

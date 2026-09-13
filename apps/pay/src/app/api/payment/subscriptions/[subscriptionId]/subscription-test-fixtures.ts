@@ -4,9 +4,12 @@ export function adminFixture({
   subscription = true,
   model = 'seat_based',
   count = 1,
+  pendingInvites = 0,
+  pendingEmailInvites = 0,
   targetTier = 'PLUS',
   currentTier = 'PLUS',
   currentMissing = false,
+  currentModel,
   currentSeats = 1,
   minSeats = 1,
   maxSeats = null,
@@ -14,13 +17,17 @@ export function adminFixture({
   subscription?: boolean;
   model?: string;
   count?: number | null;
+  pendingInvites?: number | null;
+  pendingEmailInvites?: number | null;
   targetTier?: string;
   currentTier?: string;
   currentMissing?: boolean;
+  currentModel?: string | null;
   currentSeats?: number | null;
   minSeats?: number | null;
   maxSeats?: number | null;
 } = {}) {
+  const now = Date.now();
   const queries: Record<string, ReturnType<typeof vi.fn>> = {};
   const from = vi.fn((table: string) => {
     let queriedId: unknown;
@@ -37,15 +44,23 @@ export function adminFixture({
                     product_id: 'current-product',
                     seat_count: currentSeats,
                     current_period_start: new Date(
-                      Date.now() - 10 * 86400000
+                      now - 10 * 86400000
                     ).toISOString(),
                     current_period_end: new Date(
-                      Date.now() + 20 * 86400000
+                      now + 20 * 86400000
                     ).toISOString(),
                   }
                 : null,
             }
-          : { count, error: null };
+          : {
+              count:
+                table === 'workspace_invites'
+                  ? pendingInvites
+                  : table === 'workspace_email_invites'
+                    ? pendingEmailInvites
+                    : count,
+              error: null,
+            };
     const query = Object.assign(Promise.resolve(result), {
       select: vi.fn(),
       eq: vi.fn(),
@@ -59,7 +74,12 @@ export function adminFixture({
                   id: 'current-product',
                   name: 'Current',
                   tier: currentTier,
-                  pricing_model: currentTier === 'FREE' ? 'free' : 'seat_based',
+                  pricing_model:
+                    currentModel === undefined
+                      ? currentTier === 'FREE'
+                        ? 'free'
+                        : 'seat_based'
+                      : currentModel,
                   price: 0,
                   price_per_seat: 800,
                   recurring_interval: 'month',

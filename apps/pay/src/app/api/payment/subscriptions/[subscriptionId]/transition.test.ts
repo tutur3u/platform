@@ -38,10 +38,26 @@ describe('subscription transition seats', () => {
       'workspace'
     );
   });
+  it('previews members and both kinds of reserved invitations', async () => {
+    const f = adminFixture({
+      count: 2,
+      currentSeats: 3,
+      pendingInvites: 2,
+      pendingEmailInvites: 1,
+    });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    const response = await preview(request(), params());
+    expect(response.status).toBe(200);
+    expect((await response.json()).newPlan).toMatchObject({
+      seatCount: 5,
+      price: 4500,
+    });
+  });
   it('requires checkout instead of silently changing seats', async () => {
     for (const config of [
       { currentSeats: 3, count: 2, minSeats: 5 },
       { currentSeats: 3, count: 5 },
+      { currentSeats: 3, count: 2, pendingInvites: 1, pendingEmailInvites: 1 },
     ]) {
       const f = adminFixture(config);
       mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });

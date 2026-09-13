@@ -33,7 +33,9 @@ server-only internal origins and credentials must not be exposed to Vite clients
 
 Plan changes open Polar checkout for the final quantity, discount, tax and payable
 amount. Seat calculation preserves purchased capacity, covers current members and
-honors target minimum/maximum bounds. Direct plan mutation rejects changes that
+pending workspace/email invitations, and honors target minimum/maximum bounds.
+An invitation alone does not increase the purchased quantity; a plan-transition
+checkout explicitly quotes any additional reserved capacity for confirmation. Direct plan mutation rejects changes that
 would alter the purchased seat count; those require checkout confirmation.
 The legacy preview endpoint returns list-price estimates, not discount- or tax-aware
 quotes. Do not use those estimates to authorize payment.

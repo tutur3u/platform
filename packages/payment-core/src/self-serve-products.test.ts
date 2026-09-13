@@ -83,17 +83,19 @@ describe('shared transition policy', () => {
   it('preserves capacity and enforces the target bounds', () => {
     const base = {
       currentSeats: 3,
-      memberCount: 2,
+      requiredSeats: 2,
       minSeats: 5,
       maxSeats: null,
     };
     expect(resolveSelfServeSeatCount(base)).toBe(5);
+    expect(resolveSelfServeSeatCount({ ...base, currentSeats: 0 })).toBe(5);
     expect(resolveSelfServeSeatCount({ ...base, currentSeats: 8 })).toBe(8);
-    expect(resolveSelfServeSeatCount({ ...base, memberCount: 9 })).toBe(9);
+    expect(resolveSelfServeSeatCount({ ...base, requiredSeats: 9 })).toBe(9);
     for (const override of [
-      { memberCount: null },
+      { requiredSeats: null },
       { currentSeats: null },
       { minSeats: -1 },
+      { minSeats: null },
       { maxSeats: 4 },
       { maxSeats: 1001 },
     ])
