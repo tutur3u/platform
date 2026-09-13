@@ -311,10 +311,7 @@
               "build/development-tools/documenting",
               {
                 "group": "Skills",
-                "pages": [
-                  "build/skills/overview",
-                  "build/skills/installation"
-                ]
+                "pages": ["build/skills/overview", "build/skills/installation"]
               }
             ]
           },
@@ -324,9 +321,7 @@
               "learn/overview",
               {
                 "group": "Examples",
-                "pages": [
-                  "learn/examples/overview"
-                ]
+                "pages": ["learn/examples/overview"]
               },
               {
                 "group": "Workshops",

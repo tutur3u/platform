@@ -73,7 +73,7 @@ export async function checkAiCredits(
   }
 
   const row = Array.isArray(data) ? data[0] : data;
-  const rawBalance = row?.remaining_credits;
+  const rawBalance: unknown = row?.remaining_credits;
   const balance =
     typeof rawBalance === 'number' ||
     (typeof rawBalance === 'string' && rawBalance.trim() !== '')
