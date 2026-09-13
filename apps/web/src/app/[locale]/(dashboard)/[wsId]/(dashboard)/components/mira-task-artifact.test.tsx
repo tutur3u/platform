@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { useRef } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { MiraTaskArtifact } from './mira-task-artifact';
@@ -83,4 +89,18 @@ it('rearms near-viewport loading for every page using the panel scroll root', ()
     observers[3]?.notify();
   });
   expect(screen.getAllByRole('heading')).toHaveLength(30);
+});
+
+it('keeps keyboard focus on Load more and moves it to new cards on the final page', async () => {
+  vi.stubGlobal('IntersectionObserver', undefined);
+  const { container } = render(<Panel />);
+  const button = screen.getByRole('button', { name: 'load_more' });
+  button.focus();
+  fireEvent.click(button);
+  expect(screen.getByRole('button', { name: 'load_more' })).toBe(button);
+  expect(button).toHaveFocus();
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(container.querySelector('[data-task-index="24"]')).toHaveFocus()
+  );
 });

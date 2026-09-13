@@ -30,7 +30,18 @@ export function MiraTaskArtifact({
     setFilter(initialFilter);
     setLimit(12);
   }
-  const loadMore = useCallback(() => setLimit((value) => value + 12), []);
+  const loadMore = useCallback(() => {
+    const focused = document.activeElement;
+    const restoreFocus = !!focused?.closest('[data-artifact-pagination]');
+    setLimit(limit + 12);
+    if (restoreFocus)
+      requestAnimationFrame(() => {
+        if (!focused?.isConnected)
+          scrollRootRef?.current
+            ?.querySelector<HTMLElement>(`[data-task-index="${limit}"]`)
+            ?.focus();
+      });
+  }, [limit, scrollRootRef]);
   const groups = ['overdue', 'today', 'upcoming'] as const;
   const visible = rows.filter(
     (row) => filter === 'all' || row.group === filter
@@ -64,8 +75,8 @@ export function MiraTaskArtifact({
         </p>
       )}
       <ul className="grid @min-[36rem]:grid-cols-2 gap-2">
-        {visible.slice(0, limit).map((row) => (
-          <li key={row.id}>
+        {visible.slice(0, limit).map((row, index) => (
+          <li key={row.id} data-task-index={index} tabIndex={-1}>
             <TaskSummaryCard
               title={row.title}
               onComplete={
@@ -110,12 +121,13 @@ export function MiraTaskArtifact({
         ))}
       </ul>
       {visible.length > limit && (
-        <TaskListLoadMore
-          key={limit}
-          onLoadMore={loadMore}
-          isLoading={false}
-          scrollRootRef={scrollRootRef}
-        />
+        <div data-artifact-pagination>
+          <TaskListLoadMore
+            onLoadMore={loadMore}
+            isLoading={false}
+            scrollRootRef={scrollRootRef}
+          />
+        </div>
       )}
     </div>
   );

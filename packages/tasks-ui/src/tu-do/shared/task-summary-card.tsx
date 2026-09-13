@@ -21,10 +21,8 @@ import type { TaskLabel } from './label-chip';
 import { TaskEstimationDisplay } from './task-estimation-display';
 import { TaskLabelsDisplay } from './task-labels-display';
 
-interface TaskSummaryCardProps {
+interface TaskSummaryCardBaseProps {
   title: string;
-  onComplete?: () => void;
-  completeLabel?: string;
   completing?: boolean;
   href?: string;
   source?: string;
@@ -40,6 +38,12 @@ interface TaskSummaryCardProps {
   labels?: TaskLabel[];
   assignees?: { id: string; name: string; avatarUrl?: string }[];
 }
+
+type TaskSummaryCardProps = TaskSummaryCardBaseProps &
+  (
+    | { onComplete?: () => void; completeLabel: string }
+    | { onComplete?: never; completeLabel?: never }
+  );
 
 /** Compact counterpart to the board card, using the same metadata. */
 export function TaskSummaryCard({
@@ -99,7 +103,7 @@ export function TaskSummaryCard({
         ) : (
           <span className="line-clamp-2 flex-1">{title}</span>
         )}
-        {onComplete && (
+        {onComplete && completeLabel && (
           <button
             type="button"
             onClick={onComplete}
