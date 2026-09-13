@@ -232,10 +232,13 @@ export function createPOST(
         creditCheck.maxOutputTokens,
         creditCheck.remainingCredits
       );
-      if (cappedMaxOutput === null && creditCheck.remainingCredits <= 0) {
+      if (cappedMaxOutput === null) {
         return NextResponse.json(
-          { error: 'AI credits insufficient', code: 'CREDITS_EXHAUSTED' },
-          { status: 403 }
+          {
+            error: 'AI request budget could not be verified',
+            code: 'CREDIT_CHECK_FAILED',
+          },
+          { status: 503 }
         );
       }
 

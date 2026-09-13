@@ -27,27 +27,33 @@ describe('billing fail-closed safeguards', () => {
     } as unknown as Product);
     expect(update).toHaveBeenCalledWith({ archived: true });
   });
-  it('does not create a free subscription when the provider lookup fails', async () => {
-    const create = vi.fn();
-    const polar = {
-      subscriptions: {
-        list: vi.fn().mockRejectedValue(new Error('unavailable')),
-        create,
-      },
-    } as unknown as Polar;
-    const query = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'ws' } }),
-    };
-    const db = {
-      from: vi.fn().mockReturnValue(query),
-    } as unknown as TypedSupabaseClient;
-    expect((await createFreeSubscription(polar, db, 'ws')).status).toBe(
-      'error'
-    );
-    expect(create).not.toHaveBeenCalled();
-  });
+  it.each(['failure', undefined, null, {}])(
+    'does not create a free subscription with unavailable provider data %s',
+    async (items) => {
+      const create = vi.fn();
+      const polar = {
+        subscriptions: {
+          list:
+            items === 'failure'
+              ? vi.fn().mockRejectedValue(new Error('unavailable'))
+              : vi.fn().mockResolvedValue({ result: { items } }),
+          create,
+        },
+      } as unknown as Polar;
+      const query = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'ws' } }),
+      };
+      const db = {
+        from: vi.fn().mockReturnValue(query),
+      } as unknown as TypedSupabaseClient;
+      expect((await createFreeSubscription(polar, db, 'ws')).status).toBe(
+        'error'
+      );
+      expect(create).not.toHaveBeenCalled();
+    }
+  );
   it.each([null, -1, Number.NaN, 1.5])(
     'does not grant seats with invalid member count %s',
     async (count) => {

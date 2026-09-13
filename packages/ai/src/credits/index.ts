@@ -5,6 +5,7 @@ export {
 export { checkAiCredits, deductAiCredits } from './check-credits';
 export {
   AI_FEATURES,
+  AI_REQUEST_MAX_OUTPUT_TOKENS,
   type AiFeature,
   CREDIT_ERROR_CODES,
   CREDIT_UNIT_USD,

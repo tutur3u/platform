@@ -30,9 +30,13 @@ async function getOutputPricePerToken(
     Array.isArray(data.output_tiers) &&
     data.output_tiers.length > 0
   ) {
-    const costs = data.output_tiers.map((tier) =>
-      Number((tier as { cost?: unknown }).cost)
-    );
+    const costs = data.output_tiers.map((tier) => {
+      const cost = (tier as { cost?: unknown } | null)?.cost;
+      return typeof cost === 'number' ||
+        (typeof cost === 'string' && cost.trim() !== '')
+        ? Number(cost)
+        : NaN;
+    });
     if (costs.some((cost) => !Number.isFinite(cost) || cost <= 0)) return null;
     return Math.max(...costs);
   }

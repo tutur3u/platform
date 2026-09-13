@@ -1,6 +1,7 @@
 ---
 title: Usage accounting safety guards
 description: Failure behavior for AI budgets, storage capacity and subscription seats.
+updated: "2026-09-13"
 ---
 
 ## Fail closed for new consumption
@@ -15,7 +16,9 @@ a substitute for input, tool, retry or media accounting.
 Workspace storage rejects missing object sizes, invalid limits and unsafe byte
 arithmetic. App-managed artifacts count toward upload capacity even when hidden
 from ordinary Drive browsing. Infrastructure delegates to the same shared storage implementation.
-When diagnosing a denied upload, verify object metadata and the quota RPC instead
+If object sizes cannot be verified, the usage overview reports an accounting
+failure rather than a misleading zero. File listing and download paths remain
+separate and do not call the quota overview. When diagnosing a denied upload, verify object metadata and the quota RPC instead
 of adding an unlimited override. Capacity checks do not yet atomically reserve
 all concurrent signed uploads; final-object verification and provider reconciliation
 remain required before selling new storage/egress add-ons.
