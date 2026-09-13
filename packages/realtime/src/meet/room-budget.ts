@@ -4,7 +4,8 @@ import type { MeetRoomSnapshot } from './room';
 import { outcome } from './room-outcome';
 import { failActiveRecording } from './room-recording';
 import { publicationCleanupKey } from './room-tracks';
-import type { CloseTracksInput } from './sfu';
+
+export { closeBudgetPublications } from './room-provider-cleanup';
 
 /** Operational preview ceilings, not a paid-plan entitlement or billing rate. */
 export const MEET_MAX_ROOM_DURATION_MS = 2 * 60 * 60_000;
@@ -101,6 +102,7 @@ export function expireRoomBudget(state: MeetRoomSnapshot, now = Date.now()) {
     return null;
   const budget = {
     ...accounted.budget,
+    nextCleanupAt: 0,
     pendingPublications: [
       ...new Map(
         [
@@ -131,55 +133,6 @@ export function expireRoomBudget(state: MeetRoomSnapshot, now = Date.now()) {
     }
   );
 }
-/** Keep closures durable until the provider confirms; retries must not lose them. */
-export async function closeBudgetPublications(
-  state: MeetRoomSnapshot,
-  close: (input: CloseTracksInput) => Promise<unknown>,
-  persistProgress?: (state: MeetRoomSnapshot) => Promise<void>
-): Promise<MeetRoomSnapshot> {
-  const pending = state.budget?.pendingPublications;
-  if (!pending?.length) return state;
-  let progress = state;
-  for (const sessionId of new Set(pending.map((track) => track.sessionId))) {
-    const tracks = pending.filter((track) => track.sessionId === sessionId);
-    if (tracks.some((track) => !track.mid))
-      throw new Error(
-        'Meeting publication cleanup requires a provider track identifier'
-      );
-    const result = await close({
-      sessionId,
-      force: true,
-      tracks: tracks.map((track) => ({ mid: track.mid })),
-    });
-    if (
-      result &&
-      typeof result === 'object' &&
-      (('errorCode' in result && result.errorCode) ||
-        ('tracks' in result &&
-          Array.isArray(result.tracks) &&
-          result.tracks.some(
-            (track: unknown) =>
-              track &&
-              typeof track === 'object' &&
-              'errorCode' in track &&
-              track.errorCode
-          )))
-    )
-      throw new Error('Meeting publication cleanup failed');
-    progress = {
-      ...progress,
-      budget: {
-        ...progress.budget!,
-        pendingPublications: progress.budget!.pendingPublications!.filter(
-          (track) => track.sessionId !== sessionId
-        ),
-      },
-    };
-    await persistProgress?.(progress);
-  }
-  return progress;
-}
-
 /** Expose measurements without leaking provider cleanup identifiers. */
 export function roomBudgetSummary(state: MeetRoomSnapshot, now = Date.now()) {
   const budget = accountRoomTime(state, now).budget;
