@@ -127,6 +127,7 @@ export function applyRoomControl(
         budget: state.budget
           ? {
               ...state.budget,
+              nextCleanupAt: 0,
               pendingPublications: [
                 ...new Map(
                   [
