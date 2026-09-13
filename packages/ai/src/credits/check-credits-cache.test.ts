@@ -68,7 +68,7 @@ describe('AI credit Redis snapshot cache', () => {
     });
   });
 
-  it('denies malformed or unbounded allowance responses', async () => {
+  it('denies malformed, unbounded or non-positive allowance responses', async () => {
     for (const row of [
       { remaining_credits: 100 },
       { allowed: true, remaining_credits: 'Infinity' },

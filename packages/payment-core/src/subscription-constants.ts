@@ -1,5 +1,3 @@
-import approvedCatalog from './approved-workspace-prices.json';
-
 /**
  * Subscription statuses that count as "active" for seat-based enforcement.
  * Must match the status filter in the DB function workspace_has_available_seats().
@@ -7,9 +5,6 @@ import approvedCatalog from './approved-workspace-prices.json';
 export const SEAT_ACTIVE_STATUSES = ['active', 'trialing', 'past_due'] as const;
 
 export type SeatActiveStatus = (typeof SEAT_ACTIVE_STATUSES)[number];
-
-/** Public USD list prices in cents. Changes require catalog reconciliation. */
-export const WORKSPACE_LIST_PRICES = approvedCatalog.prices;
 
 /** Commercially approved target; display activation follows provider reconciliation. */
 export const PROPOSED_WORKSPACE_CATALOG = {

@@ -37,6 +37,7 @@ const embeddedSeatBasedPolarProduct = {
   prices: [
     {
       amountType: 'seat_based',
+      priceCurrency: 'usd',
       priceAmount: null,
       seatTiers: {
         minimumSeats: 1,

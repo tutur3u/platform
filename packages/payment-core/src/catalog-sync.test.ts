@@ -78,12 +78,16 @@ it('requires a complete reconciled database binding before any provider write', 
     recurring_interval: 'month',
     tier: 'PLUS',
     price_per_seat: 800,
+    min_seats: 1,
+    max_seats: null,
   };
   expect(() => assertCatalogDatabaseSnapshot(changes, [row])).not.toThrow();
   for (const rows of [
     [],
     [row, row],
     [{ ...row, archived: true }],
+    [{ ...row, min_seats: 2 }],
+    [{ ...row, max_seats: 10 }],
     [{ ...row, price_per_seat: 700 }],
     [{ ...row, tier: 'PRO' }],
   ])

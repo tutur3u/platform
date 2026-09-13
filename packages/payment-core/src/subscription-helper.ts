@@ -67,7 +67,10 @@ export async function hasActiveSubscription(
       metadata: { wsId },
     });
 
-    const activeSubscription = result.items?.find((sub) =>
+    if (!Array.isArray(result?.items)) {
+      return { hasWorkspace: true, hasActive: true, subscription: null };
+    }
+    const activeSubscription = result.items.find((sub) =>
       SEAT_ACTIVE_STATUSES.some((status) => status === sub.status)
     );
 

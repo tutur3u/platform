@@ -14,6 +14,13 @@ export function getSupportedProductPrice(product: Product, requireUsd = true) {
   const price = prices[0];
   if (!price) throw new Error(`Product ${product.id} has no active price`);
   if (
+    price.amountType !== 'free' &&
+    (!('priceCurrency' in price) ||
+      typeof price.priceCurrency !== 'string' ||
+      !/^[a-z]{3}$/i.test(price.priceCurrency))
+  )
+    throw new Error(`Product ${product.id} requires an explicit currency`);
+  if (
     requireUsd &&
     'priceCurrency' in price &&
     price.priceCurrency.toLowerCase() !== 'usd'
@@ -42,6 +49,14 @@ export function getSupportedProductPrice(product: Product, requireUsd = true) {
     };
   }
   if (price.amountType === 'seat_based') {
+    const { minimumSeats, maximumSeats } = price.seatTiers;
+    if (
+      !Number.isSafeInteger(minimumSeats) ||
+      minimumSeats < 1 ||
+      (maximumSeats !== null &&
+        (!Number.isSafeInteger(maximumSeats) || maximumSeats < minimumSeats))
+    )
+      throw new Error(`Product ${product.id} has invalid seat bounds`);
     const tiers = price.seatTiers.tiers;
     const tier = tiers[0];
     if (
