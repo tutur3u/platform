@@ -9209,7 +9209,7 @@
       },
       "pricesLoading": "Đang tải giá hiện tại…",
       "pricesUnavailable": "Giá tạm thời chưa khả dụng. Vui lòng xác nhận giá hiện tại khi thanh toán.",
-      "subtitle": "Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường được tạo tối đa 10 không gian làm việc; nâng cấp không tăng giới hạn này.",
+      "subtitle": "Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường có thể tạo tối đa 10 không gian làm việc; nâng cấp không tăng giới hạn này.",
       "tiers": {
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",

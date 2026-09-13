@@ -233,7 +233,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
                 <p className={styles.body}>{slide.body}</p>
                 {['pricing', 'calculator', 'ai'].includes(slideId) && (
                   <span className={styles.badge}>
-                    {id === 'pricing' || id === 'calculator'
+                    {slideId === 'pricing' || slideId === 'calculator'
                       ? copy.livePricingProposal
                       : copy.proposal}
                   </span>
