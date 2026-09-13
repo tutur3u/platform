@@ -16,6 +16,7 @@ import {
 import type { Product } from '@tuturuuu/payment/polar';
 import { getSupportedProductPrice } from '@tuturuuu/payment-core/polar-price';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
+import { isPlanUpgrade } from '@tuturuuu/payment-core/proration';
 import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import { isSelfServeWorkspaceProduct } from '@tuturuuu/payment-core/self-serve-products';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -226,28 +227,29 @@ export default function PlanListDialog({
       };
     }
 
-    const tierRank = { FREE: 0, PLUS: 1, PRO: 2, ENTERPRISE: 3 };
-    const targetRank = plan.isEnterprise
-      ? 3
-      : plan.isPro
-        ? 2
-        : plan.isPlus
-          ? 1
-          : 0;
-    const currentRank = tierRank[currentPlan.tier];
     const memberCount = seatStatus?.memberCount ?? currentPlan.seatCount ?? 1;
-    const targetMonthly =
-      (plan.pricingModel === 'seat_based'
-        ? (plan.pricePerSeat ?? 0) * memberCount
-        : (plan.price ?? 0)) / (plan.billingCycle === 'year' ? 12 : 1);
-    const currentMonthly =
-      (currentPlan.pricingModel === 'seat_based'
-        ? (currentPlan.pricePerSeat ?? 0) * memberCount
-        : (currentPlan.price ?? 0)) /
-      (currentPlan.billingCycle === 'year' ? 12 : 1);
-    const isDowngrade =
-      targetRank < currentRank ||
-      (targetRank === currentRank && targetMonthly < currentMonthly);
+    const isDowngrade = !isPlanUpgrade(
+      {
+        tier: currentPlan.tier,
+        amount:
+          currentPlan.pricingModel === 'seat_based'
+            ? (currentPlan.pricePerSeat ?? 0) * memberCount
+            : (currentPlan.price ?? 0),
+      },
+      {
+        tier: plan.isEnterprise
+          ? 'ENTERPRISE'
+          : plan.isPro
+            ? 'PRO'
+            : plan.isPlus
+              ? 'PLUS'
+              : 'FREE',
+        amount:
+          plan.pricingModel === 'seat_based'
+            ? (plan.pricePerSeat ?? 0) * memberCount
+            : (plan.price ?? 0),
+      }
+    );
 
     if (isDowngrade) {
       return {

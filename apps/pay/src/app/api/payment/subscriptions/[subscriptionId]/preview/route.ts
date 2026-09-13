@@ -1,3 +1,4 @@
+import { isPlanUpgrade } from '@tuturuuu/payment-core/proration';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -96,7 +97,7 @@ export async function POST(
           .schema('private')
           .from('workspace_subscription_products')
           .select(
-            'id, name, price, recurring_interval, pricing_model, price_per_seat, min_seats, max_seats'
+            'id, name, tier, price, recurring_interval, pricing_model, price_per_seat, min_seats, max_seats'
           )
           .eq('id', subscription.product_id)
           .maybeSingle()
@@ -226,7 +227,10 @@ export async function POST(
   // Calculate net amount (what user pays or receives as credit)
   const netAmount = newPlanProratedCharge - currentPlanRemainingValue;
 
-  const isUpgrade = targetActualPrice > currentActualPrice;
+  const isUpgrade = isPlanUpgrade(
+    { tier: currentProduct.tier, amount: currentActualPrice },
+    { tier: targetProduct.tier, amount: targetActualPrice }
+  );
 
   const preview: ProrationPreview = {
     currentPlan: {

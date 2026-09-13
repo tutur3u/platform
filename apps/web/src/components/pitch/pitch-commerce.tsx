@@ -1,5 +1,6 @@
 'use client';
 import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
+import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import styles from './pitch.module.css';
 import { type PitchCopy, subscriptionEstimate } from './pitch-model';
@@ -10,6 +11,12 @@ export function PitchCommerce({
   id: 'pricing' | 'calculator';
   copy: PitchCopy;
 }) {
+  const locale = useLocale();
+  const money = (value: number) =>
+    new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'USD',
+    }).format(value);
   const [seats, setSeats] = useState(10);
   const [annual, setAnnual] = useState(false);
   const { data, isPending, isError } = usePublicWorkspacePrices();
@@ -69,7 +76,7 @@ export function PitchCommerce({
               <div className={styles.row}>
                 <span>{copy[plan]}</span>
                 <strong>
-                  ${totals[plan].toLocaleString('en-US')}{' '}
+                  {money(totals[plan])}{' '}
                   <small>{annual ? copy.perYear : copy.perMonth}</small>
                 </strong>
               </div>
@@ -82,7 +89,7 @@ export function PitchCommerce({
               </div>
               {annual && (
                 <small>
-                  ${(totals[plan] / 12).toFixed(2)} {copy.equivalent}
+                  {money(totals[plan] / 12)} {copy.equivalent}
                 </small>
               )}
             </div>
@@ -100,7 +107,7 @@ export function PitchCommerce({
             <strong>
               {plan === 'enterprise'
                 ? copy.custom
-                : `$${plan === 'free' ? 0 : prices[plan].monthly}`}
+                : money(plan === 'free' ? 0 : prices[plan].monthly)}
             </strong>
             <small>
               {plan === 'enterprise'
@@ -113,7 +120,7 @@ export function PitchCommerce({
             </p>
             {(plan === 'plus' || plan === 'pro') && (
               <small>
-                ${prices[plan].annual} / {copy.perYear}
+                {money(prices[plan].annual)} / {copy.perYear}
               </small>
             )}
           </div>

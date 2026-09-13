@@ -76,3 +76,9 @@ describe('pitch presentation controls', () => {
     ).toBe(true);
   });
 });
+
+it('labels printed slides independently of the selected slide', () => {
+  render(<PitchDeck copy={copy} />);
+  expect(screen.getAllByText(copy.livePricingProposal)).toHaveLength(2);
+  expect(screen.getAllByText(copy.proposal)).toHaveLength(1);
+});
