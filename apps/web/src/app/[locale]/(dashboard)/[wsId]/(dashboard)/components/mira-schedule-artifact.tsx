@@ -160,6 +160,7 @@ export function MiraScheduleArtifact({
               <MiraScheduleCard
                 key={row.id}
                 row={row}
+                timeZone={timeZone}
                 meetings={meetings}
                 href={href}
               />

@@ -10,17 +10,23 @@ export function MiraScheduleCard({
   row,
   meetings,
   href,
+  timeZone,
 }: {
   row: ArtifactRow;
   meetings: boolean;
   href?: string;
+  timeZone: string;
 }) {
   const t = useTranslations('dashboard.mira_workspace');
   const format = useFormatter();
   const date = new Date(row.date!);
   const colors = getEventStyles(row.color || (meetings ? 'purple' : 'blue'));
   const time = (value: string) =>
-    format.dateTime(new Date(value), { hour: '2-digit', minute: '2-digit' });
+    format.dateTime(new Date(value), {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone,
+    });
   return (
     <li
       className={cn(
@@ -32,10 +38,10 @@ export function MiraScheduleCard({
         {meetings && (
           <div className="flex w-10 shrink-0 flex-col items-center rounded-lg bg-dynamic-purple/10 py-1 text-dynamic-purple">
             <span className="text-[9px] uppercase">
-              {format.dateTime(date, { month: 'short' })}
+              {format.dateTime(date, { month: 'short', timeZone })}
             </span>
             <span className="font-semibold text-lg leading-tight">
-              {date.getDate()}
+              {format.dateTime(date, { day: 'numeric', timeZone })}
             </span>
           </div>
         )}
