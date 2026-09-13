@@ -109,7 +109,8 @@ export function MiraChatBottomBar({
     }
   }, [density.compact]);
   const { expand } = density;
-  const toolbarShown = (bottomBarVisible || !!input) && !voiceActive;
+  const toolbarShown =
+    (bottomBarVisible || !!input || attachedFiles.length > 0) && !voiceActive;
   useEffect(() => {
     if (modelPickerHotkeySignal > 0) expand();
   }, [expand, modelPickerHotkeySignal]);
@@ -124,7 +125,9 @@ export function MiraChatBottomBar({
           const inMenu = event.target.closest(
             '[role="dialog"], [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper]'
           );
-          density.onFocus(!!inMenu);
+          density.onFocus(
+            !inputRef.current?.isSameNode(event.target) || !!inMenu
+          );
         }
       }}
       onBlurCapture={(event) => {

@@ -90,3 +90,38 @@ it('reveals settings when composing from view-only mode', () => {
     screen.getByRole('button', { name: 'Model control' }).closest('[inert]')
   ).toBeNull();
 });
+
+it('keeps focused toolbar controls accessible until focus returns to the empty input', () => {
+  vi.useFakeTimers();
+  render(<MiraChatBottomBar {...props} />);
+  const control = screen.getByRole('button', { name: 'Model control' });
+  act(() => control.focus());
+  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
+  expect(control).toHaveFocus();
+  expect(screen.getByRole('textbox')).toBeVisible();
+  act(() => screen.getByRole('textbox').focus());
+  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
+  expect(screen.getByRole('button', { name: 'Chat' })).toHaveFocus();
+});
+
+it('reveals settings for attachment-only drafts in view-only mode', () => {
+  render(
+    <MiraChatBottomBar
+      {...props}
+      bottomBarVisible={false}
+      attachedFiles={[
+        {
+          id: 'draft-file',
+          file: new File(['draft'], 'draft.txt', { type: 'text/plain' }),
+          previewUrl: null,
+          storagePath: null,
+          signedUrl: null,
+          status: 'pending',
+        },
+      ]}
+    />
+  );
+  expect(
+    screen.getByRole('button', { name: 'Model control' }).closest('[inert]')
+  ).toBeNull();
+});

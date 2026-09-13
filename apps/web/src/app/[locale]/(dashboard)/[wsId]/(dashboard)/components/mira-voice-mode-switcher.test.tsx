@@ -70,6 +70,7 @@ describe('MiraVoiceModeSwitcher', () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
     const panel = screen.getByRole('region', { name: 'Live' });
+    expect(screen.getByTestId('chat-surface')).toContainElement(panel);
     expect(panel).not.toHaveClass('absolute');
     expect(panel.style.top).toBe('');
     expect(panel.style.bottom).toBe('');
