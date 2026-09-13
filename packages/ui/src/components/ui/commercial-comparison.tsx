@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Info, Search, SlidersHorizontal } from '@tuturuuu/icons/lucide';
+import { Check, Search, SlidersHorizontal } from '@tuturuuu/icons/lucide';
 import {
   COMPARISON_FEATURES,
   COMPARISON_TIERS,
@@ -8,8 +8,8 @@ import {
 } from '@tuturuuu/utils/commercial-comparison';
 import { useId, useState } from 'react';
 import { Button } from './button';
+import { ComparisonValue } from './comparison-value';
 import { Input } from './input';
-import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 export interface ComparisonCopy {
   title: string;
@@ -274,7 +274,7 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
                   <th
                     scope="col"
                     key={tier}
-                    className="sticky top-0 z-20 min-w-32 border-b bg-background p-4 text-center font-semibold"
+                    className="sticky top-0 z-20 min-w-24 border-b bg-background px-3 py-3 text-center font-semibold"
                   >
                     {copy.tierNames[tier]}
                   </th>
@@ -299,30 +299,22 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
                     <tr key={row.id} className="group">
                       <th
                         scope="row"
-                        className="sticky left-0 z-10 max-w-80 border-b bg-background p-4 font-normal group-hover:bg-muted"
+                        className="sticky left-0 z-10 max-w-80 border-b bg-background px-4 py-2 font-normal group-hover:bg-muted"
                       >
                         <div className="flex items-start gap-2">
                           <span>{copy.features[row.id]}</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                aria-label={copy.features[row.id]}
-                                className="inline-flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring"
-                              >
-                                <Info size={15} />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {copy.explanations[row.detail]}
-                            </TooltipContent>
-                          </Tooltip>
+                          <ComparisonValue
+                            value={row.pending ? 'pending' : 'info'}
+                            label={
+                              row.pending
+                                ? copy.pending
+                                : (copy.features[row.id] ?? row.id)
+                            }
+                            context={copy.details}
+                            explanation={copy.explanations[row.detail]}
+                          />
                         </div>
-                        {row.pending && (
-                          <span className="mt-2 block text-muted-foreground text-xs">
-                            {copy.pending}
-                          </span>
-                        )}
+
                         {details && (
                           <p className="mt-2 text-muted-foreground text-xs leading-relaxed">
                             {copy.explanations[row.detail]}
@@ -336,17 +328,14 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
                         return (
                           <td
                             key={tier}
-                            className="border-b p-4 text-center align-middle group-hover:bg-muted/30"
+                            className="border-b px-3 py-2 text-center align-middle group-hover:bg-muted/30"
                           >
-                            <span
-                              className={
-                                value === 'excluded'
-                                  ? 'text-muted-foreground'
-                                  : 'font-medium'
-                              }
-                            >
-                              {valueLabel(value)}
-                            </span>
+                            <ComparisonValue
+                              value={value}
+                              label={valueLabel(value)}
+                              context={`${copy.tierNames[tier]}: ${copy.features[row.id]}`}
+                              explanation={copy.explanations[row.detail]}
+                            />
                           </td>
                         );
                       })}
