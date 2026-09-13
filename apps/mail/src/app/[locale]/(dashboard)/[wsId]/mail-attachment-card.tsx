@@ -119,6 +119,13 @@ export function MailAttachmentCard({
                 src={previewUrl}
                 onError={() => setFailed(true)}
               />
+            ) : preview?.kind === 'pdf' ? (
+              <iframe
+                className="h-[65dvh] w-full"
+                src={previewUrl}
+                title={attachment.filename}
+                onError={() => setFailed(true)}
+              />
             ) : preview?.kind === 'text' ? (
               textPreview.isPending ? (
                 <p className="p-6 text-muted-foreground text-sm">
