@@ -3,6 +3,7 @@ import {
   buildActiveToolsFromSelected,
   countRenderUiAttemptsInSteps,
   extractSelectedToolsFromSteps,
+  getWorkspaceArtifactProgress,
   hasRenderableRenderUiInSteps,
   hasSuccessfulWorkspaceContextResolutionInSteps,
   hasToolCallInSteps,
@@ -15,6 +16,7 @@ export type PrepareMiraToolStepInput = {
   steps: unknown[];
   forceGoogleSearch: boolean;
   forceRenderUi: boolean;
+  forceWorkspaceArtifact?: boolean;
   needsParallelChecks: boolean;
   needsWorkspaceContextResolution: boolean;
   needsWorkspaceMembersTool: boolean;
@@ -25,6 +27,7 @@ export function prepareMiraToolStep({
   steps,
   forceGoogleSearch,
   forceRenderUi,
+  forceWorkspaceArtifact,
   needsParallelChecks,
   needsWorkspaceContextResolution,
   needsWorkspaceMembersTool,
@@ -33,8 +36,20 @@ export function prepareMiraToolStep({
   toolChoice?: 'required' | 'none';
   activeTools: string[];
 } {
+  if (forceWorkspaceArtifact) forceRenderUi = false;
   if (getMiraToolLoopReason(steps))
     return { toolChoice: 'none', activeTools: [] };
+  const artifact = getWorkspaceArtifactProgress(steps);
+  if (forceWorkspaceArtifact && !artifact.completed && artifact.attempts >= 3)
+    return { toolChoice: 'none', activeTools: [] };
+  if (
+    forceWorkspaceArtifact &&
+    !artifact.completed &&
+    (!needsWorkspaceContextResolution ||
+      hasSuccessfulWorkspaceContextResolutionInSteps(steps))
+  ) {
+    return { toolChoice: 'required', activeTools: ['show_workspace_artifact'] };
+  }
   if (steps.length === 0) {
     if (forceGoogleSearch) {
       return {

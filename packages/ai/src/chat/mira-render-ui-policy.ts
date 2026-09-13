@@ -549,3 +549,23 @@ export function removeWorkspaceDiscoveryTools(selectedTools: string[]) {
     (toolName) => !WORKSPACE_DISCOVERY_TOOL_NAMES.has(toolName)
   );
 }
+
+/** A dispatched UI command is complete only after an acknowledged success. */
+export function getWorkspaceArtifactProgress(steps: unknown[]) {
+  let attempts = 0;
+  let completed = false;
+  for (const step of steps) {
+    const value = step as ToolStepLike | undefined;
+    const calls = (value?.toolCalls ?? []).filter(
+      (call) => call.toolName === 'show_workspace_artifact'
+    );
+    const results = (value?.toolResults ?? []).filter(
+      (result) => result.toolName === 'show_workspace_artifact'
+    );
+    attempts += Math.max(calls.length, results.length);
+    completed ||= results.some(
+      (result) => result.output?.success === true && !result.output.error
+    );
+  }
+  return { attempts, completed };
+}

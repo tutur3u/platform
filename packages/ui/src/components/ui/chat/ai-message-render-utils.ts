@@ -5,7 +5,25 @@ export function normalizeAiMessageParts(
   textFallback?: string
 ) {
   const fallbackText = textFallback?.trim();
-  const normalizedParts = Array.isArray(parts) ? parts : [];
+  const normalizedParts = Array.isArray(parts)
+    ? parts.map((part) => {
+        if (
+          part.type === 'text' &&
+          typeof part.textStart === 'number' &&
+          typeof part.textLength === 'number' &&
+          typeof textFallback === 'string'
+        ) {
+          return {
+            type: 'text',
+            text: textFallback.slice(
+              part.textStart,
+              part.textStart + part.textLength
+            ),
+          };
+        }
+        return part;
+      })
+    : [];
   const hasTextPart = normalizedParts.some(
     (part) => readString(part.type) === 'text' && readString(part.text)
   );
