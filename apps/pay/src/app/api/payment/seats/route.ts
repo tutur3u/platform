@@ -1,4 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
+import { validCheckoutSeats } from '@tuturuuu/payment-core/self-serve-products';
 import { SEAT_ACTIVE_STATUSES } from '@tuturuuu/payment-core/subscription-constants';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
@@ -58,47 +60,13 @@ export async function GET(req: Request) {
       );
     }
 
-    // Get subscription and member count
-    const { data: subscription } = await sbAdmin
-      .from('workspace_subscriptions')
-      .select('*')
-      .eq('ws_id', wsId)
-      .in('status', SEAT_ACTIVE_STATUSES)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const { count: memberCount } = await sbAdmin
-      .from('workspace_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId);
-
-    const { data: product } = subscription?.product_id
-      ? await sbAdmin
-          .schema('private')
-          .from('workspace_subscription_products')
-          .select('pricing_model, price_per_seat')
-          .eq('id', subscription.product_id)
-          .maybeSingle()
-      : { data: null };
-
-    const isSeatBased = product?.pricing_model === 'seat_based';
-    const currentMembers = memberCount ?? 0;
-
-    // Use -1 to represent unlimited seats in the JSON response,
-    // since JSON.stringify(Infinity) produces null.
-    const seatCount = isSeatBased ? (subscription?.seat_count ?? 1) : -1;
-    const availableSeats = isSeatBased
-      ? Math.max(0, seatCount - currentMembers)
-      : -1;
-
+    const status = await getSeatStatus(sbAdmin, wsId);
     return NextResponse.json({
-      isSeatBased,
-      seatCount,
-      memberCount: currentMembers,
-      availableSeats,
-      canAddMember: !isSeatBased || availableSeats > 0,
-      pricePerSeat: product?.price_per_seat ?? null,
+      ...status,
+      seatCount: Number.isFinite(status.seatCount) ? status.seatCount : -1,
+      availableSeats: Number.isFinite(status.availableSeats)
+        ? status.availableSeats
+        : -1,
     });
   } catch (error) {
     console.error('Error getting seat status:', error);
@@ -117,9 +85,15 @@ export async function POST(req: Request) {
   try {
     const { wsId, newSeatCount } = await req.json();
 
-    if (!wsId || !newSeatCount || newSeatCount < 1) {
+    if (
+      typeof wsId !== 'string' ||
+      !wsId ||
+      !validCheckoutSeats(newSeatCount)
+    ) {
       return NextResponse.json(
-        { error: 'Missing required fields: wsId and newSeatCount (min 1)' },
+        {
+          error: 'Provide wsId and an integer newSeatCount between 1 and 1000',
+        },
         { status: 400 }
       );
     }
@@ -171,20 +145,49 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get current member count
-    const { count: memberCount } = await sbAdmin
+    const { count: memberCount, error: memberError } = await sbAdmin
       .from('workspace_members')
       .select('*', { count: 'exact', head: true })
       .eq('ws_id', wsId);
+    if (
+      memberError ||
+      !Number.isSafeInteger(memberCount) ||
+      memberCount === null ||
+      memberCount < 0
+    ) {
+      return NextResponse.json(
+        { error: 'Workspace member count could not be verified' },
+        { status: 503 }
+      );
+    }
+    if (newSeatCount < memberCount) {
+      return NextResponse.json(
+        { error: 'Remove members before reducing their paid seats' },
+        { status: 400 }
+      );
+    }
 
-    const currentMembers = memberCount ?? 0;
+    const currentMembers = memberCount;
 
     // Validate new seat count against constraints
     const seatProduct = product as Pick<
       WorkspaceSubscriptionProduct,
       'pricing_model' | 'min_seats' | 'max_seats' | 'price_per_seat'
     > | null;
-    const minSeats = Math.max(1, currentMembers, seatProduct?.min_seats ?? 0);
+    if (
+      !seatProduct ||
+      !Number.isSafeInteger(seatProduct.min_seats) ||
+      (seatProduct.min_seats ?? 0) < 1 ||
+      (seatProduct.max_seats !== null &&
+        (!Number.isSafeInteger(seatProduct.max_seats) ||
+          seatProduct.max_seats < (seatProduct.min_seats ?? 1)))
+    ) {
+      return NextResponse.json(
+        { error: 'Product seat limits could not be verified' },
+        { status: 503 }
+      );
+    }
+    const minSeats = Math.max(1, currentMembers, seatProduct.min_seats ?? 1);
     const maxSeats = seatProduct?.max_seats ?? Infinity;
 
     if (newSeatCount < minSeats) {
