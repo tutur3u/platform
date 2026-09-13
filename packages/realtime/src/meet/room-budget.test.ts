@@ -159,8 +159,13 @@ it('expires admitted legacy snapshots without inventing historical usage', () =>
 });
 it('preserves current accounting and newly queued publications during cleanup', () => {
   const started = initial();
-  const oldTrack = { sessionId: 'old', userId: 'host', mid: '0' };
-  const newTrack = { sessionId: 'new', userId: 'host', mid: '1' };
+  const oldTrack = {
+    sessionId: 'session',
+    userId: 'host',
+    trackName: 'audio',
+    mid: '0',
+  };
+  const newTrack = { ...oldTrack, mid: '1' };
   started.budget!.pendingPublications = [oldTrack];
   const current = accountRoomTime(started, now + 1000);
   current.budget!.pendingPublications = [oldTrack, newTrack];
@@ -172,4 +177,21 @@ it('preserves current accounting and newly queued publications during cleanup', 
   expect(merged.budget?.participantMilliseconds).toBe(1000);
   expect(merged.budget?.accountedAt).toBe(now + 1000);
   expect(merged.budget?.pendingPublications).toEqual([newTrack]);
+});
+
+it('retains both provider mids when pending cleanup and an active track share a name', () => {
+  const state = initial();
+  const oldTrack = {
+    sessionId: 'session',
+    userId: 'host',
+    trackName: 'audio',
+    mid: '0',
+  };
+  state.budget!.pendingPublications = [oldTrack];
+  state.tracks.audio = { ...oldTrack, mid: '1' };
+  const ended = expireRoomBudget(state, now + MEET_MAX_ROOM_DURATION_MS)!.state;
+  expect(ended.budget?.pendingPublications?.map((track) => track.mid)).toEqual([
+    '0',
+    '1',
+  ]);
 });

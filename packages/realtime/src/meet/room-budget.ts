@@ -3,7 +3,7 @@ import type { MeetRealtimeRole, MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
 import { outcome } from './room-outcome';
 import { failActiveRecording } from './room-recording';
-import { meetTrackKey } from './room-tracks';
+import { publicationCleanupKey } from './room-tracks';
 import type { CloseTracksInput } from './sfu';
 
 /** Operational preview ceilings, not a paid-plan entitlement or billing rate. */
@@ -106,7 +106,7 @@ export function expireRoomBudget(state: MeetRoomSnapshot, now = Date.now()) {
         [
           ...(accounted.budget?.pendingPublications ?? []),
           ...Object.values(accounted.tracks),
-        ].map((track) => [meetTrackKey(track), track])
+        ].map((track) => [publicationCleanupKey(track), track])
       ).values(),
     ],
   };
