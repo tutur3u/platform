@@ -215,8 +215,8 @@
       transparent
     ),
     var(--card);
-  border-top: 3px solid var(--tone);
   border: 1px solid color-mix(in srgb, var(--tone) 40%, var(--border));
+  border-top: 3px solid var(--tone);
   padding: 1.5rem;
   border-radius: 1rem;
   display: flex;
