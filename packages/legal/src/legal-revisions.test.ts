@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { reviseLegalDocument } from './commercial-revisions';
 import { getLegalDocument, LEGAL_DOCUMENTS } from './documents';
 
 describe('shared legal revisions', () => {
@@ -23,6 +24,31 @@ describe('shared legal revisions', () => {
         expect(document.version).toBe('2026-09-13-draft');
         expect(document.sections.length).toBeGreaterThan(2);
       }
+  });
+  it('updates the intended clauses after sections and summaries move', () => {
+    const document = getLegalDocument('sla', 'en');
+    const revised = reviseLegalDocument({
+      ...document,
+      sections: [...document.sections]
+        .reverse()
+        .map((section) => ({ ...section, content: 'unchanged sentinel' })),
+      summaryRows: [...document.summaryRows].reverse(),
+    });
+    expect(
+      revised.sections.find((section) => section.id === 'sla-claims')?.content
+    ).toContain('executed order');
+    expect(
+      revised.sections.find((section) => section.id === 'sla-exclusions')
+        ?.content
+    ).toContain('maintenance windows');
+    expect(
+      revised.sections.find(
+        (section) => section.title === 'Definitions and activation'
+      )?.content
+    ).toBe('unchanged sentinel');
+    expect(
+      revised.summaryRows.find((row) => row.topic === 'Claims')?.summary
+    ).toContain('signed order');
   });
   it('exposes the same current terms through both the getter and registry', () => {
     expect(getLegalDocument('terms', 'en')).toBe(LEGAL_DOCUMENTS.en.terms);

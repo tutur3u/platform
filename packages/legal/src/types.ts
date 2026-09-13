@@ -26,6 +26,7 @@ export interface LegalSummaryRow {
 }
 
 export interface LegalSection {
+  id?: string;
   content: string;
   icon:
     | 'shield'

@@ -15,7 +15,7 @@ const content: Record<
         'Purchase terms and Polar',
         `The checkout or signed order form identifies the plan, currency, billing interval, full amount due, seat basis, included allowances and applicable taxes. A monthly equivalent for annual billing is an illustration; the annual total is charged for the annual period. A pitch, roadmap, beta label or proposed price is not an offer or a promise of availability.
 
-Where checkout is provided by Polar, Polar acts as merchant of record and authorized reseller for that transaction. Tuturuuu supplies the product and service license. The [Polar Buyer Terms](https://polar.sh/legal/checkout-buyer-terms) govern Polar checkout and reseller services. Use the payment method, invoice, cancellation and refund channels identified on your receipt or billing portal. Do not send payment-card details to Tuturuuu support.`,
+Where checkout is provided by Polar, Polar acts as merchant of record and authorized reseller for that transaction. Tuturuuu supplies the product and service license. The [Polar Buyer Terms](https://polar.sh/legal/checkout-buyer-terms) govern Polar checkout and reseller services. Use the payment method, invoice, cancellation and refund channels identified on your receipt or billing portal. Do not send full payment-card details to Tuturuuu support.`,
       ],
       [
         'Seats, renewals, changes and refunds',
@@ -148,37 +148,49 @@ export function reviseLegalDocument(document: LegalDocument): LegalDocument {
   if (kind === 'acceptable-use' || kind === 'community-guidelines')
     return document;
   const additions = content[document.locale][kind];
-  const sections = document.sections.map((section) => ({ ...section }));
+  const sections = document.sections
+    .filter(
+      (section) =>
+        !(kind === 'terms' && section.id === 'purchase-terms') &&
+        !(kind === 'dpa' && section.id === 'incident-assistance')
+    )
+    .map((section) => ({ ...section }));
   const summaryRows = document.summaryRows.map((row) => ({ ...row }));
   // Replace conflicting older clauses instead of appending contradictory policy.
-  if (document.kind === 'terms') sections.splice(2, 1);
   if (document.kind === 'privacy') {
-    const rights = sections[5];
+    const rights = sections.find((section) => section.id === 'privacy-rights');
     if (rights)
       rights.content =
         document.locale === 'en'
           ? 'Individuals retain applicable privacy rights. Workspace administrators and educational institutions must provide appropriate notices and obtain any required guardian consent before using the Services with children. AI and third-party integrations may impose additional age restrictions. Contact privacy@tuturuuu.com for assistance.'
           : 'Cá nhân giữ quyền riêng tư áp dụng. Quản trị viên và cơ sở giáo dục phải thông báo phù hợp và có sự đồng ý của người giám hộ khi cần trước khi dùng Dịch vụ với trẻ em. AI và tích hợp có thể có giới hạn tuổi bổ sung. Liên hệ privacy@tuturuuu.com để được hỗ trợ.';
   }
-  if (document.kind === 'dpa') sections.splice(3, 1);
   if (document.kind === 'sla') {
-    const claims = sections[2];
+    const claims = sections.find((section) => section.id === 'sla-claims');
     if (claims)
       claims.content =
         document.locale === 'en'
           ? 'The executed order specifies eligibility, credit limits, claim deadlines and the supported remedy. Submit claims through the designated support channel with incident dates, impact and request identifiers. Tuturuuu assesses claims in good faith. Billing adjustments must be supported by the merchant of record; mandatory legal remedies remain available.'
           : 'Đơn đặt hàng đã ký quy định điều kiện, giới hạn tín dụng, thời hạn khiếu nại và biện pháp hỗ trợ. Gửi yêu cầu qua kênh hỗ trợ được chỉ định kèm thời gian, tác động và mã yêu cầu. Tuturuuu đánh giá thiện chí; điều chỉnh thanh toán phải được bên bán hỗ trợ và không loại bỏ quyền bắt buộc theo luật.';
-    if (summaryRows[2])
-      summaryRows[2].summary =
+    const creditsSummary = summaryRows.find(
+      (row) => row.topic === (document.locale === 'en' ? 'Credits' : 'Tín dụng')
+    );
+    if (creditsSummary)
+      creditsSummary.summary =
         document.locale === 'en'
           ? 'Remedies follow the signed order and supported billing process.'
           : 'Biện pháp theo đơn đã ký và quy trình thanh toán được hỗ trợ.';
-    if (summaryRows[3])
-      summaryRows[3].summary =
+    const claimsSummary = summaryRows.find(
+      (row) => row.topic === (document.locale === 'en' ? 'Claims' : 'Yêu cầu')
+    );
+    if (claimsSummary)
+      claimsSummary.summary =
         document.locale === 'en'
           ? 'Claim deadlines and eligibility follow the signed order.'
           : 'Thời hạn và điều kiện theo đơn đặt hàng đã ký.';
-    const exclusions = sections[1];
+    const exclusions = sections.find(
+      (section) => section.id === 'sla-exclusions'
+    );
     if (exclusions)
       exclusions.content =
         document.locale === 'en'

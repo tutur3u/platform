@@ -107,7 +107,7 @@ export function getCommunityPolicy(
   const title =
     kind === 'acceptable-use'
       ? vi
-        ? 'Sử dụng'
+        ? 'Chính sách'
         : 'Acceptable Use'
       : vi
         ? 'Nguyên tắc'
@@ -125,7 +125,7 @@ export function getCommunityPolicy(
     highlightedWord:
       kind === 'acceptable-use'
         ? vi
-          ? 'Chấp nhận được'
+          ? 'sử dụng chấp nhận được'
           : 'Policy'
         : vi
           ? 'Cộng đồng'
@@ -138,7 +138,11 @@ export function getCommunityPolicy(
     footer: vi
       ? 'Bản sửa đổi để rà soát; chưa phải thỏa thuận mới có hiệu lực. Liên hệ legal@tuturuuu.com.'
       : 'Draft revision for review; not a newly effective agreement. Contact legal@tuturuuu.com.',
-    summaryTitle: vi ? 'Tổng quan' : 'At a glance',
+    summaryTitle: vi
+      ? 'Tổng quan'
+      : kind === 'community-guidelines'
+        ? 'Guidelines at a Glance'
+        : 'At a glance',
     summaryDescription: vi
       ? 'Bản tóm tắt không thay thế toàn bộ chính sách.'
       : 'This summary does not replace the complete policy.',

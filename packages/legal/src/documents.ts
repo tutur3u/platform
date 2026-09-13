@@ -62,6 +62,7 @@ We do not sell personal information or share it for cross-context behavioral adv
 
 Users should normally contact their workspace administrator first for customer-controlled content. Tuturuuu will assist controllers under the DPA. The Services are not directed to children below the minimum lawful age; administrators and guardians must obtain required consent, and AI features may have higher age restrictions.`,
       icon: 'scale',
+      id: 'privacy-rights',
       title: 'Regional rights, children, and requests',
       tone: 'indigo',
     },
@@ -124,6 +125,7 @@ Integrations and curated agent tools access only capabilities explicitly approve
 
 AI credits are usage units, not currency, and may expire or be limited by plan. Reservations, provider usage, streaming and billable failures may consume credits as disclosed. Previews can change or end. Tuturuuu may enforce rate, storage, model, retention and usage quotas.`,
       icon: 'credit-card',
+      id: 'purchase-terms',
       title: 'Plans, taxes, renewals, cancellation, and AI credits',
       tone: 'emerald',
     },
@@ -209,6 +211,7 @@ const dpaEn: LegalDocument = {
     {
       content: `Tuturuuu will notify the customer without undue delay after confirming a personal data breach affecting customer data, consistent with legal and security constraints. Tuturuuu will reasonably assist with data-subject requests, impact assessments and regulatory consultation, taking account of processing nature and available information.`,
       icon: 'bell',
+      id: 'incident-assistance',
       title: 'Incidents and data-subject assistance',
       tone: 'orange',
     },
@@ -261,12 +264,14 @@ const slaEn: LegalDocument = {
     {
       content: `Downtime excludes previews, free tiers, customer configuration, third-party providers outside Tuturuuu control, internet or device failure, force majeure, abuse, suspension, emergency security work and announced maintenance. Tuturuuu communicates material incidents through available status and support channels and prioritizes restoration and accurate post-incident review.`,
       icon: 'bell',
+      id: 'sla-exclusions',
       title: 'Exclusions, incidents, and maintenance',
       tone: 'orange',
     },
     {
       content: `When activated, the order form specifies credit tiers and maximum credit. Credits are the sole contractual SLA remedy, are applied to future invoices, cannot exceed affected recurring fees and are not cash. Claims must be submitted by an authorized customer contact within 30 days with dates, impact and supporting request identifiers. Tuturuuu will validate measurements in good faith.`,
       icon: 'credit-card',
+      id: 'sla-claims',
       title: 'Credits and claim procedure',
       tone: 'emerald',
     },
