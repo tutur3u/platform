@@ -196,8 +196,9 @@ still precedes presentation when a named workspace needs to be selected.
 The collapsed action summary counts unresolved failed attempts, rather than all
 calls in a chain. A later successful call with the same tool name and normalized
 input changes the summary to "Completed after retry". The original failed attempt
-remains expandable, labeled as recovered. Different inputs, missing inputs, and
-logical failure outputs do not establish recovery. This outcome is derived from
+remains expandable, labeled as recovered. Different inputs and missing inputs do not establish recovery. A logical failure
+output is not a successful retry; a later verified success can recover either
+a transport error or a logical failure. This outcome is derived from
 ordered message parts, so restoring a conversation produces the same summary;
 assistant prose is never used as proof of success.
 

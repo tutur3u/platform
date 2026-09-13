@@ -201,7 +201,7 @@ export function ToolCallPart({
     return null;
   }
 
-  if (rawToolName === 'select_tools') {
+  if (rawToolName === 'select_tools' && !recovered) {
     const selected = (output as { selectedTools?: string[] } | undefined)
       ?.selectedTools;
     const isNoAction =
@@ -225,7 +225,7 @@ export function ToolCallPart({
     if (isOnlyGoogleSearch) return null;
   }
 
-  if (rawToolName === 'google_search') {
+  if (rawToolName === 'google_search' && !recovered) {
     return (
       <div className="flex flex-col gap-1.5">
         <div className="flex items-start gap-2 rounded-lg border border-dynamic-cyan/30 bg-dynamic-cyan/5 px-3 py-2 text-xs">
@@ -355,7 +355,7 @@ export function ToolCallPart({
     );
   }
 
-  if (rawToolName === 'render_ui' && hasOutput) {
+  if (rawToolName === 'render_ui' && hasOutput && !recovered) {
     if (isDone && !logicalError && output) {
       const cleanedSpec = resolveRenderUiSpecFromOutput(output);
       if (cleanedSpec && !renderUiFailure) {

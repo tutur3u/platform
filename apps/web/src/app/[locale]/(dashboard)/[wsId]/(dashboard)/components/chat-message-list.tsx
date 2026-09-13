@@ -432,14 +432,22 @@ export default function ChatMessageList({
                                   <ToolCallPart
                                     key={descriptor.key}
                                     part={descriptor.part}
+                                    recovered={recovered.has(descriptor.part)}
                                     renderUiFailure={descriptor.renderUiFailure}
                                   />
                                 ) : (
-                                  <GroupedToolCallParts
+                                  <div
                                     key={descriptor.key}
-                                    parts={descriptor.parts}
-                                    toolName={descriptor.toolName}
-                                  />
+                                    className="flex flex-col gap-2"
+                                  >
+                                    {descriptor.parts.map((part) => (
+                                      <ToolCallPart
+                                        key={part.toolCallId}
+                                        part={part}
+                                        recovered={recovered.has(part)}
+                                      />
+                                    ))}
+                                  </div>
                                 )
                               );
                             } else {

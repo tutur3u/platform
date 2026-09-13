@@ -17,6 +17,19 @@ function part(
 }
 
 describe('tool chain recovery', () => {
+  it('recovers a logical failure only after a matching successful result', () => {
+    const failed = part(
+      'output-available',
+      { taskId: 'a' },
+      { success: false }
+    );
+    expect(
+      getToolChainOutcome([
+        failed,
+        part('output-available', { taskId: 'a' }, { success: true }),
+      ]).status
+    ).toBe('recovered');
+  });
   it('recognizes retries separated by text without reordering either batch', () => {
     const failed = part('output-error');
     const success = part('output-available');

@@ -443,8 +443,8 @@ describe('mira render_ui policy', () => {
 it.each([
   'Show me my tasks in the task panel. Do not create, complete, or modify any tasks.',
   'Open my calendar in a panel',
-  'Present my finances in the artifact',
-  'Show my meetings in the sidebar',
+  'Present my finance in the artifact',
+  'Show my team meetings in the sidebar',
 ])('does not interpret a UI destination as a workspace: %s', (content) => {
   expect(
     shouldResolveWorkspaceContextForLatestUserMessage([
@@ -452,3 +452,14 @@ it.each([
     ])
   ).toBe(false);
 });
+
+it.each(['Chat', 'Panel', 'Screen', 'Tasks Panel'])(
+  'resolves an explicitly named %s workspace',
+  (name) => {
+    expect(
+      shouldResolveWorkspaceContextForLatestUserMessage([
+        { role: 'user', content: `Show my tasks in the ${name} workspace` },
+      ])
+    ).toBe(true);
+  }
+);
