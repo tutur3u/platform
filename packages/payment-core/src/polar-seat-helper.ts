@@ -157,14 +157,14 @@ export async function revokeSeatFromMember(
   wsId: string,
   userId: string
 ): Promise<void> {
-  const subscription = await getActiveSeatSubscription(supabase, wsId);
-
-  // No active subscription or not seat-based
-  if (!subscription) {
-    return; // Skip for non-seat-based subscriptions
-  }
-
   try {
+    const subscription = await getActiveSeatSubscription(supabase, wsId);
+
+    // No active subscription or not seat-based
+    if (!subscription) {
+      return; // Skip for non-seat-based subscriptions
+    }
+
     // Get the user's personal Polar customer to find their internal ID
     const customer = await polar.customers.getExternal({
       externalId: userId,

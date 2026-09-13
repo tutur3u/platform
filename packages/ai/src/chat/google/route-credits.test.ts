@@ -11,7 +11,7 @@ vi.mock('@tuturuuu/ai/credits/cap-output-tokens', () => ({
 import { performCreditPreflight } from './route-credits';
 
 describe('chat provider budget boundary', () => {
-  it('rejects a missing output budget even when credits remain', async () => {
+  it('rejects an unverifiable output cap even when credits remain', async () => {
     mocks.check.mockResolvedValue({
       allowed: true,
       remainingCredits: 1000,
