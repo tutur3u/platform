@@ -98,7 +98,7 @@ export default function MiraChatPanel({
   };
 
   const sendMessageRef = useRef<
-    ((message: UIMessage) => void | Promise<void>) | null
+    ((message: UIMessage) => void | Promise<boolean> | Promise<void>) | null
   >(null);
   const submitTextRef = useRef<((value: string) => void) | null>(null);
 
@@ -160,6 +160,7 @@ export default function MiraChatPanel({
     chat,
     fallbackChatId,
     initialMessages,
+    isRestoring,
     pendingPrompt,
     setChat,
     setFallbackChatId,
@@ -230,9 +231,10 @@ export default function MiraChatPanel({
           .flatMap((part) => (part.type === 'text' ? [part.text] : []))
           .join('\n');
         setInput((current) => [unsent, current].filter(Boolean).join('\n'));
-        return;
+        return false;
       }
-      return sendMessage(message, { body: chatRequestBody });
+      await sendMessage(message, { body: chatRequestBody });
+      return true;
     },
     [chatRequestBody, sendMessage, flushLiveConversation]
   );
@@ -381,6 +383,8 @@ export default function MiraChatPanel({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MiraVoiceModeSwitcher
+        key={stableChatId}
+        historyReady={!isRestoring}
         history={messages}
         onConversationChange={onLiveConversationChange}
         onBeforeVoiceStart={stop}

@@ -81,6 +81,9 @@ export function useMiraChatPersistence({
   }, [restoredChatQuery.data, setMessageAttachments, storedChatId, wsId]);
 
   return {
+    isRestoring:
+      storedChatId != null &&
+      (restoredChatQuery.isFetching || chat?.id !== storedChatId),
     chat,
     fallbackChatId,
     initialMessages,

@@ -389,17 +389,16 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     if (message.serverContent) {
       const serverContent = message.serverContent;
 
-      // PRIORITY: Handle grounding metadata FIRST so search results appear immediately
-      // This ensures users see what was searched before hearing the full response
+      if (serverContent.inputTranscription?.text) {
+        this.emit('inputtranscription', serverContent.inputTranscription.text);
+      }
+
+      // Establish the user turn before attaching grounding from this frame.
       const groundingMetadata = (
         serverContent as { groundingMetadata?: GroundingMetadata }
       ).groundingMetadata;
       if (groundingMetadata) {
         this.emit('groundingmetadata', groundingMetadata);
-      }
-
-      if (serverContent.inputTranscription?.text) {
-        this.emit('inputtranscription', serverContent.inputTranscription.text);
       }
 
       // Check for interruption

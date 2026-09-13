@@ -41,6 +41,7 @@ function VoiceClientModuleLoading() {
 export function MiraVoiceModeSwitcher({
   creditSource,
   history,
+  historyReady = true,
   onConversationChange,
   onBeforeVoiceStart,
   creditWsId,
@@ -51,6 +52,7 @@ export function MiraVoiceModeSwitcher({
 }: {
   onBeforeVoiceStart?: () => void | Promise<void>;
   history?: UIMessage[];
+  historyReady?: boolean;
   onConversationChange?: LiveConversationChange;
   composerRef?: RefObject<HTMLDivElement | null>;
   children: (
@@ -97,11 +99,12 @@ export function MiraVoiceModeSwitcher({
   }, [cancelPendingFocus, inputRef]);
 
   const enterVoice = useCallback(async () => {
+    if (!historyReady) return;
     cancelPendingFocus();
     if (onBeforeVoiceStart) await onBeforeVoiceStart();
     voiceActiveRef.current = true;
     setMode('live');
-  }, [cancelPendingFocus, onBeforeVoiceStart]);
+  }, [cancelPendingFocus, onBeforeVoiceStart, historyReady]);
 
   useEffect(() => cancelPendingFocus, [cancelPendingFocus]);
 

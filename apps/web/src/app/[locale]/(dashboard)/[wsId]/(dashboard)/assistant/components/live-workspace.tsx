@@ -79,6 +79,14 @@ export function LiveWorkspace({
         className="flex min-h-0 flex-1 flex-wrap items-center gap-2 overflow-auto px-3 pb-2"
         aria-label={t('title')}
       >
+        {authorizationExpired && (
+          <p
+            role="status"
+            className="basis-full rounded-md bg-muted px-2 py-1 text-foreground text-xs"
+          >
+            {t('expired')}
+          </p>
+        )}
         <div className="size-12 shrink-0 overflow-hidden [&>div]:w-full">
           {visualization}
         </div>

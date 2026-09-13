@@ -80,8 +80,22 @@ export function useMiraLiveConversation({
             (message) =>
               saved.current.get(message.id) !== JSON.stringify(message)
           );
-        for (let offset = 0; offset < changed.length; offset += 50) {
-          const batch = changed.slice(offset, offset + 50);
+        const batches: UIMessage[][] = [];
+        let batch: UIMessage[] = [];
+        for (const message of changed) {
+          if (
+            batch.length &&
+            (batch.length >= 50 ||
+              JSON.stringify({ chatId, messages: [...batch, message] }).length >
+                750000)
+          ) {
+            batches.push(batch);
+            batch = [];
+          }
+          batch.push(message);
+        }
+        if (batch.length) batches.push(batch);
+        for (const batch of batches) {
           await callbacks.current.mutateAsync({ chatId, messages: batch });
           batch.forEach((message) => {
             saved.current.set(message.id, JSON.stringify(message));

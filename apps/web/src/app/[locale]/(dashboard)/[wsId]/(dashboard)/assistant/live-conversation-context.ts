@@ -18,11 +18,13 @@ export function buildLiveConversationContext(
         const name = getMiraToolName(part);
         if (name) {
           const value =
-            'output' in part
-              ? part.output
-              : 'input' in part
-                ? part.input
-                : null;
+            'errorText' in part
+              ? { state: 'output-error', error: part.errorText }
+              : 'output' in part
+                ? part.output
+                : 'input' in part
+                  ? part.input
+                  : null;
           return `[${name}: ${JSON.stringify(value)?.slice(0, 4000)}]`;
         }
         return '';

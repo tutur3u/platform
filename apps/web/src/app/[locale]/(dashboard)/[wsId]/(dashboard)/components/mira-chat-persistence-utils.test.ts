@@ -114,3 +114,17 @@ it('omits empty canonical records and preserves the legacy restoration path', ()
     },
   ]);
 });
+
+it('restores concurrent timestamp ties deterministically', () => {
+  const messages = ['b', 'a'].map((id) => ({
+    id,
+    role: 'USER',
+    created_at: '2026-09-13T08:00:00.000000Z',
+    content: id,
+    metadata: null,
+  }));
+  expect(restoreMessages(messages).map((message) => message.id)).toEqual([
+    'a',
+    'b',
+  ]);
+});

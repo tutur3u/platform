@@ -244,9 +244,14 @@ export default function ChatMessageList({
           isUser && (messageAttachments?.get(message.id)?.length ?? 0) > 0;
 
         // Skip messages with no renderable content
-        const hasSources = message.parts.some(
-          (part) => part.type === 'source-url'
-        );
+        const hasSources =
+          !isUser &&
+          message.parts.some(
+            (part) =>
+              part.type === 'source-url' &&
+              part.url.trim().length > 0 &&
+              part.sourceId.trim().length > 0
+          );
         if (!hasDisplayText && !hasTools && !hasAttachments && !hasSources)
           return null;
 

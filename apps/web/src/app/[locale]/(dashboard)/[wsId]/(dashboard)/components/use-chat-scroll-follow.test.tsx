@@ -1,9 +1,18 @@
 import { act, renderHook } from '@testing-library/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { useChatScrollFollow } from './use-chat-scroll-follow';
 
+afterEach(() => vi.unstubAllGlobals());
+
 it('follows growing text without pulling a reader away from earlier history', () => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  );
   const node = document.createElement('div');
   Object.defineProperties(node, {
     scrollHeight: { value: 1000, configurable: true },
@@ -34,4 +43,23 @@ it('follows growing text without pulling a reader away from earlier history', ()
   });
   rerender({ rows: [...messages] });
   expect(node.scrollTo).toHaveBeenCalledTimes(2);
+});
+
+it('keeps the latest turn visible when Live resizes the chat viewport', () => {
+  let resize = () => {};
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
+      observe() {}
+      disconnect() {}
+    }
+  );
+  const node = document.createElement('div');
+  node.scrollTo = vi.fn();
+  renderHook(() => useChatScrollFollow({ current: node }, []));
+  act(() => resize());
+  expect(node.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' });
 });

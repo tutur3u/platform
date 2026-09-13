@@ -11,7 +11,11 @@ import {
   reduceLiveConversation,
 } from './live-conversation';
 import { buildLiveConversationContext } from './live-conversation-context';
-import type { ToolCall, ToolResponse } from './multimodal-live';
+import type {
+  ToolCall,
+  ToolCallCancellation,
+  ToolResponse,
+} from './multimodal-live';
 
 export type LiveConversationChange = (
   messages: LiveConversationMessage[],
@@ -30,6 +34,7 @@ export function useLiveConversation(
   const changeRef = useRef(onChange);
   changeRef.current = onChange;
   const historyRef = useRef(history);
+  historyRef.current = history;
   const seeded = useRef(false);
   const publish = useCallback((event: LiveConversationEvent) => {
     if (!changeRef.current) return;
@@ -76,6 +81,17 @@ export function useLiveConversation(
       functionCalls.forEach((fc) => {
         publish({ type: 'tool', id: fc.id, name: fc.name, input: fc.args });
       });
+    const cancelled = ({ ids }: ToolCallCancellation) =>
+      ids.forEach((id) => {
+        publish({
+          type: 'result',
+          id,
+          output: {
+            cancelled: true,
+            error: translations.current('action_interrupted'),
+          },
+        });
+      });
     const result = ({ functionResponses }: ToolResponse) =>
       functionResponses.forEach((fr) => {
         publish({ type: 'result', id: fr.id, output: fr.response });
@@ -88,6 +104,7 @@ export function useLiveConversation(
       .on('close', interrupted)
       .on('toolcall', call)
       .on('toolresponse', result)
+      .on('toolcallcancellation', cancelled)
       .on('groundingmetadata', sources);
     return () => {
       interrupted();
@@ -99,6 +116,7 @@ export function useLiveConversation(
         .off('close', interrupted)
         .off('toolcall', call)
         .off('toolresponse', result)
+        .off('toolcallcancellation', cancelled)
         .off('groundingmetadata', sources);
     };
   }, [client, publish]);

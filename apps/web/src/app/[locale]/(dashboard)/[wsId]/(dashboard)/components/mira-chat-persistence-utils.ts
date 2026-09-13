@@ -14,6 +14,7 @@ export function restoreMessages(
   messagesData: Array<{
     id: string;
     role: string;
+    created_at?: string;
     content: string | null;
     metadata: unknown;
   }>
@@ -24,7 +25,12 @@ export function restoreMessages(
     return 'assistant';
   };
 
-  return messagesData
+  return [...messagesData]
+    .sort((a, b) =>
+      a.created_at && b.created_at
+        ? a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id)
+        : 0
+    )
     .filter((message) => {
       const metadata = message.metadata as Record<string, unknown> | null;
       const canonicalParts = (metadata?.ai as { parts?: unknown } | undefined)

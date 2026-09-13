@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types/supabase';
 import { NextResponse } from 'next/server';
@@ -16,7 +17,7 @@ const bodySchema = z.object({
             z.discriminatedUnion('type', [
               z.object({
                 type: z.literal('source-url'),
-                sourceId: z.string().max(2000),
+                sourceId: z.string().trim().min(1).max(2000),
                 url: z.url().max(2000),
                 title: z.string().max(1000).optional(),
               }),
@@ -149,7 +150,8 @@ export const POST = withSessionAuth(
       const values = {
         content: message.parts
           .flatMap((part) => (part.type === 'text' ? [part.text] : []))
-          .join('\n'),
+          .join('\n')
+          .slice(0, 16000),
         metadata: {
           source: 'Mira',
           channel: 'live',
@@ -182,6 +184,25 @@ export const POST = withSessionAuth(
           { message: 'Could not save messages' },
           { status: 500 }
         );
+      if (!known) {
+        const { data: persisted, error: verifyError } = await admin
+          .from('ai_chat_messages')
+          .select('chat_id, creator_id, metadata, content')
+          .eq('id', message.id)
+          .maybeSingle();
+        if (
+          verifyError ||
+          !persisted ||
+          persisted.chat_id !== chatId ||
+          persisted.creator_id !== user.id ||
+          !isDeepStrictEqual(persisted.metadata, values.metadata) ||
+          persisted.content !== values.content
+        )
+          return NextResponse.json(
+            { message: 'Message conflict; retry the save' },
+            { status: 409 }
+          );
+      }
     }
     return NextResponse.json({ id: chatId });
   },

@@ -17,7 +17,18 @@ export function useChatScrollFollow(
         node.scrollHeight - node.scrollTop - node.clientHeight < 80;
     };
     node.addEventListener('scroll', update, { passive: true });
-    return () => node.removeEventListener('scroll', update);
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => {
+            if (following.current)
+              node.scrollTo({ top: node.scrollHeight, behavior: 'instant' });
+          });
+    observer?.observe(node);
+    return () => {
+      observer?.disconnect();
+      node.removeEventListener('scroll', update);
+    };
   }, [ref]);
   useLayoutEffect(() => {
     const node = ref.current;

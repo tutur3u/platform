@@ -33,3 +33,24 @@ it('includes static and dynamic tool results so voice can ground follow-up quest
   expect(turns[0]?.parts[0]?.text).toContain('create_task');
   expect(turns[0]?.parts[0]?.text).toContain('personal');
 });
+
+it('includes failed tool results in voice context', () => {
+  const context = buildLiveConversationContext([
+    {
+      id: 'failed',
+      role: 'assistant',
+      parts: [
+        {
+          type: 'dynamic-tool',
+          toolName: 'create_task',
+          toolCallId: 'call',
+          input: {},
+          state: 'output-error',
+          errorText: 'Permission denied',
+        },
+      ],
+    },
+  ]);
+  expect(JSON.stringify(context)).toContain('Permission denied');
+  expect(JSON.stringify(context)).toContain('output-error');
+});
