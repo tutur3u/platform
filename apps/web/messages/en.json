@@ -6057,6 +6057,8 @@
       "enable_camera": "Turn on camera",
       "end_session": "End session",
       "greeting": "How can I help you today?",
+      "history_not_ready": "Wait for chat history to finish loading before starting Live.",
+      "history_restore_failed": "Chat history could not load. Retry to continue this conversation.",
       "initializing": "Setting up your microphone and session.",
       "insufficient_credits": "You need at least 500 AI credits to start Live mode.",
       "listening": "Hearing you",

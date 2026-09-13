@@ -6057,6 +6057,8 @@
       "enable_camera": "Bật camera",
       "end_session": "Kết thúc phiên",
       "greeting": "Hôm nay tôi có thể giúp gì cho bạn?",
+      "history_not_ready": "Vui lòng đợi lịch sử trò chuyện tải xong trước khi bắt đầu Trực tiếp.",
+      "history_restore_failed": "Không thể tải lịch sử trò chuyện. Thử lại để tiếp tục cuộc trò chuyện này.",
       "initializing": "Đang thiết lập micrô và phiên của bạn.",
       "insufficient_credits": "Bạn cần ít nhất 500 tín dụng AI để bắt đầu chế độ Trực tiếp.",
       "listening": "Đang nghe bạn",

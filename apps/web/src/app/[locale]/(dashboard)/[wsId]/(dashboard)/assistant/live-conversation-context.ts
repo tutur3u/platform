@@ -18,7 +18,9 @@ export function buildLiveConversationContext(
         const name = getMiraToolName(part);
         if (name) {
           const value =
-            'errorText' in part
+            'errorText' in part &&
+            typeof part.errorText === 'string' &&
+            part.errorText.trim()
               ? { state: 'output-error', error: part.errorText }
               : 'output' in part
                 ? part.output

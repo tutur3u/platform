@@ -146,6 +146,7 @@ export const POST = withSessionAuth(
       Date.now(),
       latest ? Date.parse(latest.created_at) + 1 : 0
     );
+    const inserted = new Map<string, { content: string; metadata: Json }>();
     for (const [index, message] of messages.entries()) {
       const values = {
         content: message.parts
@@ -184,25 +185,32 @@ export const POST = withSessionAuth(
           { message: 'Could not save messages' },
           { status: 500 }
         );
-      if (!known) {
-        const { data: persisted, error: verifyError } = await admin
-          .from('ai_chat_messages')
-          .select('chat_id, creator_id, metadata, content')
-          .eq('id', message.id)
-          .maybeSingle();
-        if (
-          verifyError ||
-          !persisted ||
-          persisted.chat_id !== chatId ||
-          persisted.creator_id !== user.id ||
-          !isDeepStrictEqual(persisted.metadata, values.metadata) ||
-          persisted.content !== values.content
-        )
-          return NextResponse.json(
-            { message: 'Message conflict; retry the save' },
-            { status: 409 }
+      if (!known) inserted.set(message.id, values);
+    }
+    if (inserted.size) {
+      const { data: persisted, error: verifyError } = await admin
+        .from('ai_chat_messages')
+        .select('id, chat_id, creator_id, metadata, content')
+        .in('id', [...inserted.keys()]);
+      if (
+        verifyError ||
+        !persisted ||
+        persisted.length !== inserted.size ||
+        persisted.some((row) => {
+          const expected = inserted.get(row.id);
+          return (
+            !expected ||
+            row.chat_id !== chatId ||
+            row.creator_id !== user.id ||
+            !isDeepStrictEqual(row.metadata, expected.metadata) ||
+            row.content !== expected.content
           );
-      }
+        })
+      )
+        return NextResponse.json(
+          { message: 'Message conflict; retry the save' },
+          { status: 409 }
+        );
     }
     return NextResponse.json({ id: chatId });
   },

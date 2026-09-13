@@ -171,6 +171,7 @@ export async function loadExistingChat({
     messages: Array<{
       id: string;
       role: string;
+      created_at?: string;
       content: string | null;
       metadata: unknown;
     }>;

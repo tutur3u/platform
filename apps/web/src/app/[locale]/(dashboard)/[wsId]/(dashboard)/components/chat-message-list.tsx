@@ -249,6 +249,8 @@ export default function ChatMessageList({
           message.parts.some(
             (part) =>
               part.type === 'source-url' &&
+              typeof part.url === 'string' &&
+              typeof part.sourceId === 'string' &&
               part.url.trim().length > 0 &&
               part.sourceId.trim().length > 0
           );

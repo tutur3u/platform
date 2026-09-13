@@ -3,6 +3,7 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { AudioLines, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
@@ -99,12 +100,15 @@ export function MiraVoiceModeSwitcher({
   }, [cancelPendingFocus, inputRef]);
 
   const enterVoice = useCallback(async () => {
-    if (!historyReady) return;
+    if (!historyReady) {
+      toast.info(t('history_not_ready'));
+      return;
+    }
     cancelPendingFocus();
     if (onBeforeVoiceStart) await onBeforeVoiceStart();
     voiceActiveRef.current = true;
     setMode('live');
-  }, [cancelPendingFocus, onBeforeVoiceStart, historyReady]);
+  }, [cancelPendingFocus, onBeforeVoiceStart, historyReady, t]);
 
   useEffect(() => cancelPendingFocus, [cancelPendingFocus]);
 

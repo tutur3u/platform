@@ -81,7 +81,8 @@ export function useLiveConversation(
       functionCalls.forEach((fc) => {
         publish({ type: 'tool', id: fc.id, name: fc.name, input: fc.args });
       });
-    const cancelled = ({ ids }: ToolCallCancellation) =>
+    const cancelled = ({ ids }: ToolCallCancellation) => {
+      if (!ids.length) return;
       ids.forEach((id) => {
         publish({
           type: 'result',
@@ -92,6 +93,8 @@ export function useLiveConversation(
           },
         });
       });
+      publish({ type: 'finish' });
+    };
     const result = ({ functionResponses }: ToolResponse) =>
       functionResponses.forEach((fr) => {
         publish({ type: 'result', id: fr.id, output: fr.response });

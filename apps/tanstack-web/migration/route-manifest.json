@@ -214,10 +214,10 @@
         "kind": "api",
         "methods": ["POST"],
         "routePath": "/api/ai/chat/restore",
-        "sourceFile": "apps/web/src/legacy-api-routes/ai/chat/restore/route.ts",
+        "sourceFile": "apps/web/src/app/api/ai/chat/restore/route.ts",
         "status": "legacy-next",
         "targetOwner": "rust-backend",
-        "id": "api:/api/ai/chat/restore:apps/web/src/legacy-api-routes/ai/chat/restore/route.ts"
+        "id": "api:/api/ai/chat/restore:apps/web/src/app/api/ai/chat/restore/route.ts"
       },
       {
         "kind": "api",
@@ -433,11 +433,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/ai/chat/restore:apps/web/src/legacy-api-routes/ai/chat/restore/route.ts",
+      "id": "api:/api/ai/chat/restore:apps/web/src/app/api/ai/chat/restore/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/ai/chat/restore",
-      "sourceFile": "apps/web/src/legacy-api-routes/ai/chat/restore/route.ts",
+      "sourceFile": "apps/web/src/app/api/ai/chat/restore/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
