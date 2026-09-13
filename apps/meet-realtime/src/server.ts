@@ -162,7 +162,11 @@ export function createMeetRealtimeServer(
           .catch(() => {
             room.snapshot = {
               ...room.snapshot,
-              budget: deferBudgetCleanup(room.snapshot).budget,
+              budget: deferBudgetCleanup(
+                room.snapshot,
+                Date.now(),
+                cleanupStarted
+              ).budget,
             };
             console.error(
               'Meeting media cleanup deferred; provider confirmation is still pending'
