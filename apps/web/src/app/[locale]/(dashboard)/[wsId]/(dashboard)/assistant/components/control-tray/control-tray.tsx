@@ -43,6 +43,7 @@ export type ControlTrayProps = {
   videoStopRequest?: number;
   textChatOpen?: boolean;
   onToggleChat?: () => void;
+  onReturnToChat?: () => void;
 };
 
 export async function runLiveSessionAction({
@@ -116,6 +117,7 @@ function ControlTray({
   supportsVideo,
   textChatOpen,
   onToggleChat,
+  onReturnToChat,
   videoStopRequest = 0,
 }: ControlTrayProps) {
   const t = useTranslations('dashboard.voice_assistant');
@@ -342,7 +344,17 @@ function ControlTray({
           </>
         )}
 
-        {typeof onToggleChat === 'function' && (
+        {!connected && onReturnToChat ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-10 gap-2 rounded-full px-3"
+            onClick={onReturnToChat}
+          >
+            <MessageSquareText className="size-4" />
+            {t('return_to_chat')}
+          </Button>
+        ) : typeof onToggleChat === 'function' ? (
           <Button
             aria-label={textChatOpen ? t('close_chat') : t('open_chat')}
             title={textChatOpen ? t('close_chat') : t('open_chat')}
@@ -357,7 +369,7 @@ function ControlTray({
           >
             <MessageSquareText className="size-4" />
           </Button>
-        )}
+        ) : null}
 
         <Button
           hidden={compact && textChatOpen && connected}
