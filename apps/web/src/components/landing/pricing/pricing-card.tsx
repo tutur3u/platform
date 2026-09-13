@@ -146,12 +146,12 @@ export function PricingCard({
           </h3>
 
           {/* Price — re-animates whenever the billing period flips. */}
-          <div className="mt-3 flex items-baseline gap-1">
-            <span className="block overflow-hidden">
+          <div className="@container mt-3 flex flex-wrap items-baseline gap-x-1 gap-y-2">
+            <span className="block max-w-full shrink-0 overflow-hidden">
               <AnimatePresence initial={false} mode="wait">
                 <motion.span
                   animate={{ y: 0, opacity: 1 }}
-                  className="block font-display font-semibold text-[2.75rem] tabular-nums leading-none tracking-[-0.04em]"
+                  className="block font-display font-semibold text-[clamp(1.5rem,16cqi,2.75rem)] tabular-nums leading-none tracking-[-0.04em]"
                   exit={reduced ? { opacity: 0 } : { y: -24, opacity: 0 }}
                   initial={reduced ? { opacity: 0 } : { y: 24, opacity: 0 }}
                   key={price}
