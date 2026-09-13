@@ -9,6 +9,7 @@ import {
   isAutoMermaidRepairPrompt,
   simpleStableHash,
 } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mermaid-auto-repair';
+import { getToolChainOutcome } from './chat-message-list/tool-components/tool-chain-outcome';
 import 'katex/dist/katex.min.css';
 import mermaidParser from 'mermaid';
 import { useTranslations } from 'next-intl';
@@ -347,6 +348,14 @@ export default function ChatMessageList({
                           isStreaming,
                           isLastAssistant,
                         });
+                        const historyParts = descriptors.flatMap((d) =>
+                          d.kind === 'tool'
+                            ? [d.part]
+                            : d.kind === 'tool-group'
+                              ? d.parts
+                              : []
+                        );
+                        const { recovered } = getToolChainOutcome(historyParts);
                         const elements: React.ReactNode[] = [];
                         let genericToolBatch: Extract<
                           (typeof descriptors)[number],
@@ -355,13 +364,22 @@ export default function ChatMessageList({
 
                         const flushBatch = () => {
                           if (genericToolBatch.length === 0) return;
-                          if (genericToolBatch.length === 1) {
+                          if (
+                            genericToolBatch.length === 1 &&
+                            !(
+                              genericToolBatch[0]?.kind === 'tool-group' &&
+                              genericToolBatch[0].parts.some((part) =>
+                                recovered.has(part)
+                              )
+                            )
+                          ) {
                             const d = genericToolBatch[0]!;
                             elements.push(
                               d.kind === 'tool' ? (
                                 <ToolCallPart
                                   key={d.key}
                                   part={d.part}
+                                  recovered={recovered.has(d.part)}
                                   renderUiFailure={d.renderUiFailure}
                                 />
                               ) : (
@@ -377,6 +395,7 @@ export default function ChatMessageList({
                               <CollapsibleToolSection
                                 key={`collapsible-${genericToolBatch[0]!.key}`}
                                 descriptors={genericToolBatch}
+                                historyParts={historyParts}
                               />
                             );
                           }
@@ -413,14 +432,22 @@ export default function ChatMessageList({
                                   <ToolCallPart
                                     key={descriptor.key}
                                     part={descriptor.part}
+                                    recovered={recovered.has(descriptor.part)}
                                     renderUiFailure={descriptor.renderUiFailure}
                                   />
                                 ) : (
-                                  <GroupedToolCallParts
+                                  <div
                                     key={descriptor.key}
-                                    parts={descriptor.parts}
-                                    toolName={descriptor.toolName}
-                                  />
+                                    className="flex flex-col gap-2"
+                                  >
+                                    {descriptor.parts.map((part) => (
+                                      <ToolCallPart
+                                        key={part.toolCallId}
+                                        part={part}
+                                        recovered={recovered.has(part)}
+                                      />
+                                    ))}
+                                  </div>
                                 )
                               );
                             } else {

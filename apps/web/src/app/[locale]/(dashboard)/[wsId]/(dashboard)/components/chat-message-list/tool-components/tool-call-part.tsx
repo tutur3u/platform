@@ -102,9 +102,11 @@ function useCopyImageMutation() {
 export function ToolCallPart({
   part,
   renderUiFailure,
+  recovered = false,
 }: {
   part: ToolPartData;
   renderUiFailure?: RenderUiFailureMeta;
+  recovered?: boolean;
 }) {
   const t = useTranslations('dashboard.mira_chat');
   const [expanded, setExpanded] = useState(false);
@@ -199,7 +201,7 @@ export function ToolCallPart({
     return null;
   }
 
-  if (rawToolName === 'select_tools') {
+  if (rawToolName === 'select_tools' && !recovered) {
     const selected = (output as { selectedTools?: string[] } | undefined)
       ?.selectedTools;
     const isNoAction =
@@ -223,7 +225,7 @@ export function ToolCallPart({
     if (isOnlyGoogleSearch) return null;
   }
 
-  if (rawToolName === 'google_search') {
+  if (rawToolName === 'google_search' && !recovered) {
     return (
       <div className="flex flex-col gap-1.5">
         <div className="flex items-start gap-2 rounded-lg border border-dynamic-cyan/30 bg-dynamic-cyan/5 px-3 py-2 text-xs">
@@ -353,7 +355,7 @@ export function ToolCallPart({
     );
   }
 
-  if (rawToolName === 'render_ui' && hasOutput) {
+  if (rawToolName === 'render_ui' && hasOutput && !recovered) {
     if (isDone && !logicalError && output) {
       const cleanedSpec = resolveRenderUiSpecFromOutput(output);
       if (cleanedSpec && !renderUiFailure) {
@@ -536,13 +538,15 @@ export function ToolCallPart({
     <div
       className={cn(
         'flex w-full items-start gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors',
-        isError
+        isError && !recovered
           ? 'border-dynamic-red/20 bg-dynamic-red/5'
           : 'border-border/50 bg-foreground/2'
       )}
     >
       <span className="mt-0.5 shrink-0">
-        {isError ? (
+        {recovered ? (
+          <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+        ) : isError ? (
           <AlertCircle className="h-3.5 w-3.5 text-dynamic-red" />
         ) : isDone ? (
           <Check className="h-3.5 w-3.5 text-dynamic-green" />
@@ -562,11 +566,13 @@ export function ToolCallPart({
         >
           <span className="font-medium">{toolName}</span>
           <span className="text-muted-foreground">
-            {isError
-              ? t('tool_error')
-              : isDone
-                ? t('tool_done')
-                : t('tool_running')}
+            {recovered
+              ? t('tool_attempt_recovered')
+              : isError
+                ? t('tool_error')
+                : isDone
+                  ? t('tool_done')
+                  : t('tool_running')}
           </span>
           {hasOutput && (
             <ChevronRight

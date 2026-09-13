@@ -230,6 +230,15 @@ function hasExplicitWorkspaceQualifier(text: string): boolean {
 
   const normalizedCandidate = normalizeWorkspaceQualifierCandidate(candidate);
   if (!normalizedCandidate) return false;
+  // Explicit workspace naming wins over presentation-destination heuristics.
+  if (/\bworkspace\b/u.test(normalizedCandidate)) return true;
+  // A presentation destination is not a named workspace.
+  if (
+    /^(?:(?:the|an?|my)\s+)?(?:(?:tasks?|calendar|finance|meetings?)\s+)?(?:panels?|artifacts?|chat|sidebar|views?|screen)\b/u.test(
+      normalizedCandidate
+    )
+  )
+    return false;
   if (DISALLOWED_WORKSPACE_QUALIFIERS.has(normalizedCandidate)) return false;
 
   return true;
