@@ -1,0 +1,344 @@
+.ecosystem {
+  position: relative;
+  min-height: 28rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  overflow: hidden;
+  box-shadow: 0 30px 100px
+    color-mix(in srgb, var(--pitch-innovation) 12%, transparent);
+}
+.grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 36px 36px;
+  opacity: 0.3;
+  mask-image: radial-gradient(ellipse, black, transparent 80%);
+}
+.connections {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+.connections path {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 2;
+  opacity: 0.6;
+  stroke-dasharray: 7 8;
+  animation: travel 24s linear infinite;
+}
+.brandCore {
+  z-index: 1;
+  padding: 2rem;
+  border-radius: 2rem;
+  border: 1px solid var(--border);
+  background: var(--background);
+  box-shadow: 0 0 70px
+    color-mix(in srgb, var(--pitch-innovation) 24%, transparent);
+}
+.satellite {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid color-mix(in srgb, var(--tone) 40%, var(--border));
+  border-radius: 1rem;
+  background: var(--background);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: inset 0 0 24px color-mix(in srgb, var(--tone) 10%, transparent);
+}
+.satellite svg {
+  color: var(--tone);
+}
+.satellite:nth-of-type(3) {
+  left: 7%;
+  top: 9%;
+}
+.satellite:nth-of-type(4) {
+  right: 7%;
+  top: 9%;
+}
+.satellite:nth-of-type(5) {
+  left: 7%;
+  bottom: 12%;
+}
+.satellite:nth-of-type(6) {
+  right: 7%;
+  bottom: 12%;
+}
+.signature {
+  position: absolute;
+  display: flex;
+  bottom: 0;
+  inset-inline: 0;
+  height: 5px;
+}
+.signature span {
+  flex: 1;
+  background: var(--tone);
+}
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.card {
+  position: relative;
+  overflow: hidden;
+  padding: 1.65rem;
+  border: 1px solid color-mix(in srgb, var(--tone) 28%, var(--border));
+  border-radius: 1.4rem;
+  background:
+    radial-gradient(
+      ellipse at 100% 0,
+      color-mix(in srgb, var(--tone) 14%, transparent),
+      transparent 75%
+    ),
+    var(--card);
+}
+.cardIcon {
+  color: var(--tone);
+}
+.cardIndex {
+  position: absolute;
+  right: 1.6rem;
+  top: 1.7rem;
+  font: 0.6rem monospace;
+  color: var(--muted-foreground);
+}
+.card h3 {
+  margin-top: 1.4rem;
+  font-size: 1.2rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.card p {
+  margin-top: 0.65rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.miniBoard {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 1.3rem;
+  opacity: 0.65;
+  height: 2.5rem;
+}
+.miniBoard > span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: color-mix(in srgb, var(--tone) 7%, transparent);
+  padding: 0.4rem;
+  border-radius: 0.3rem;
+}
+.miniBoard i {
+  display: block;
+  height: 0.35rem;
+  background: color-mix(in srgb, var(--tone) 65%, transparent);
+  border-radius: 0.2rem;
+}
+.miniBoard span:nth-child(2) i:last-child {
+  width: 55%;
+}
+.miniBoard span:nth-child(3) i:last-child {
+  display: none;
+}
+.fragmented {
+  gap: 1.4rem;
+}
+.fragmented .card:nth-child(odd) {
+  transform: rotate(-3deg);
+}
+.fragmented .card:nth-child(even) {
+  transform: translateY(1rem) rotate(2deg);
+}
+.journey {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+  padding: 0;
+}
+.journey li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.3rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--border));
+  border-radius: 1.2rem;
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--tone) 12%, transparent),
+      transparent
+    ),
+    var(--card);
+}
+.journey h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.step {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.8rem;
+  color: var(--foreground);
+  border: 1px solid var(--tone);
+  background: color-mix(in srgb, var(--tone) 22%, transparent);
+  font: 0.8rem monospace;
+}
+.connector {
+  position: absolute;
+  bottom: -1.25rem;
+  left: 2.1rem;
+  color: var(--tone);
+}
+.miniTimeline {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.7rem;
+  width: min(16rem, 40vw);
+}
+.miniTimeline span {
+  height: 0.3rem;
+  flex: 1;
+  background: var(--tone);
+  opacity: 0.3;
+  border-radius: 1rem;
+}
+.miniTimeline span:first-child {
+  flex: 2;
+  opacity: 0.8;
+}
+.chart {
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(
+      ellipse at top right,
+      color-mix(in srgb, var(--pitch-growth) 13%, transparent),
+      transparent
+    ),
+    var(--card);
+}
+.chartHeading,
+.chartFooter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+}
+.chartHeading svg {
+  color: var(--pitch-growth);
+}
+.chartFooter {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+}
+.chartFooter svg {
+  flex-shrink: 0;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.metric {
+  position: relative;
+  padding: 1.5rem;
+  min-height: 9rem;
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--border));
+  border-radius: 1.4rem;
+  background: color-mix(in srgb, var(--tone) 10%, var(--card));
+}
+.metric h3 {
+  margin-top: 1rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.metric > svg {
+  position: absolute;
+  right: 1.3rem;
+  top: 1.7rem;
+  color: var(--tone);
+}
+.metrics > p {
+  grid-column: 1 / -1;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+@keyframes travel {
+  to {
+    stroke-dashoffset: -150;
+  }
+}
+@media (max-width: 800px) {
+  .ecosystem {
+    min-height: 23rem;
+  }
+  .brandCore {
+    padding: 1.25rem;
+  }
+  .brandCore img {
+    width: 92px;
+    height: 92px;
+  }
+  .satellite {
+    padding: 0.8rem;
+    font-size: 0.75rem;
+    gap: 0.5rem;
+  }
+  .cards {
+    gap: 0.65rem;
+  }
+  .card {
+    padding: 1.15rem;
+  }
+  .card h3 {
+    font-size: 1rem;
+  }
+  .chart {
+    padding: 1.25rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .connections path {
+    animation: none;
+  }
+}
+@media print {
+  .ecosystem {
+    min-height: 100mm;
+    box-shadow: none;
+  }
+  .card,
+  .chart,
+  .journey li,
+  .metric {
+    break-inside: avoid;
+  }
+  .connections path {
+    animation: none;
+  }
+  .card {
+    padding: 1rem;
+  }
+}

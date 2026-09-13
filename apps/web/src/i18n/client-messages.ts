@@ -48,6 +48,21 @@ export const RATE_LIMIT_COMMON_MESSAGE_KEYS = [
 ] as const;
 
 export const ROOT_CLIENT_MESSAGE_PATHS = [
+  'common.apps',
+  'common.blog-description',
+  'common.branding-description',
+  'common.careers-description',
+  'common.changelog-description',
+  'common.contributors',
+  'common.contributors-description',
+  'common.documentation-description',
+  'common.home',
+  'common.partners-description',
+  'common.random_generator',
+  'common.random_generator-description',
+  'common.security-description',
+  'common.ui-description',
+
   'common.about',
   'common.acceptable-use',
   'common.blog',

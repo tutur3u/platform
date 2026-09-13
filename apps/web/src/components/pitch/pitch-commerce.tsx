@@ -3,6 +3,7 @@ import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
 import { useLocale } from 'next-intl';
 import { useMemo, useState } from 'react';
 import styles from './pitch.module.css';
+import { pitchTone } from './pitch-brand';
 import { type PitchCopy, subscriptionEstimate } from './pitch-model';
 export function PitchCommerce({
   id,
@@ -72,7 +73,7 @@ export function PitchCommerce({
         </div>
         <div aria-live="polite" className={styles.bars}>
           {(['plus', 'pro'] as const).map((plan) => (
-            <div key={plan}>
+            <div key={plan} style={pitchTone(plan === 'plus' ? 0 : 1)}>
               <div className={styles.row}>
                 <span>{copy[plan]}</span>
                 <strong>
@@ -102,7 +103,7 @@ export function PitchCommerce({
     return (
       <div className={styles.plans}>
         {(['free', 'plus', 'pro', 'enterprise'] as const).map((plan, index) => (
-          <div key={plan} className={styles.plan}>
+          <div key={plan} className={styles.plan} style={pitchTone(index)}>
             <span>{copy[plan]}</span>
             <strong>
               {plan === 'enterprise'
