@@ -191,7 +191,7 @@ and [EU controller-processor clauses](https://eur-lex.europa.eu/legal-content/EN
 ## Catalog delivery checks
 
 Production catalog publication requires an enabled Polar webhook at
-`https://pay.tuturuuu.com/api/payment/webhooks`, the `product.updated` event,
+`https://pay.tuturuuu.com/api/payment/webhooks`, the `raw` format and `product.updated` event,
 and a signing secret matching the trusted deployment environment. The sync
 command checks these before changing prices and sends an unsigned probe: the
 handler must return its signature rejection, not browser-session authentication

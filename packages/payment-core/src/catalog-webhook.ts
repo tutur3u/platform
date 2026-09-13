@@ -4,6 +4,7 @@ export const PRODUCTION_CATALOG_WEBHOOK_URL =
 type CatalogWebhook = {
   organizationId: string;
   url: string;
+  format: string;
   enabled: boolean;
   events: readonly string[];
   secret: string;
@@ -23,11 +24,12 @@ export function assertProductionCatalogWebhook(
     !deploymentSecret ||
     matches.length !== 1 ||
     !matches[0]?.enabled ||
+    matches[0].format !== 'raw' ||
     !matches[0].events.includes('product.updated') ||
     matches[0].secret !== deploymentSecret
   ) {
     throw new Error(
-      'Production catalog webhook must be enabled, unique, subscribed to product.updated and match the deployment signing secret; no prices changed'
+      'Production catalog webhook must be enabled, unique, raw-format, subscribed to product.updated and match the deployment signing secret; no prices changed'
     );
   }
 }

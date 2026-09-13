@@ -9,6 +9,7 @@ const endpoint = {
   organizationId: 'org',
   url: PRODUCTION_CATALOG_WEBHOOK_URL,
   enabled: true,
+  format: 'raw',
   events: ['product.updated'],
   secret: 'test-signing-secret',
 };
@@ -22,6 +23,8 @@ describe('catalog delivery preflight', () => {
       [],
       [endpoint, endpoint],
       [{ ...endpoint, enabled: false }],
+      [{ ...endpoint, format: 'slack' }],
+      [{ ...endpoint, format: 'discord' }],
       [{ ...endpoint, events: [] }],
       [{ ...endpoint, organizationId: 'other' }],
       [{ ...endpoint, url: 'https://other.example/webhook' }],
