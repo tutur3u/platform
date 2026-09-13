@@ -490,8 +490,7 @@
     color: black;
   }
   .plan:nth-child(3),
-  .deck button[aria-pressed="true"],
-  .deck button[aria-current="step"] {
+  .deck button[aria-pressed="true"] {
     background: transparent;
     color: black;
   }
