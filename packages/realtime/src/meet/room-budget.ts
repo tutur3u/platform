@@ -151,9 +151,26 @@ export function roomBudgetSummary(state: MeetRoomSnapshot, now = Date.now()) {
 /** Retain unresolved closures, with bounded provider retry traffic. */
 export function deferBudgetCleanup(
   state: MeetRoomSnapshot,
-  now = Date.now()
+  now = Date.now(),
+  attemptedState?: MeetRoomSnapshot
 ): MeetRoomSnapshot {
   if (!state.budget) return state;
+  const attempted = new Set(
+    (attemptedState?.budget?.pendingPublications ?? []).map(
+      publicationCleanupKey
+    )
+  );
+  if (
+    attemptedState &&
+    state.budget.pendingPublications?.some(
+      (track) => !attempted.has(publicationCleanupKey(track))
+    )
+  ) {
+    return {
+      ...state,
+      budget: { ...state.budget, cleanupAttempts: 0, nextCleanupAt: 0 },
+    };
+  }
   const attempts = Math.min(32, (state.budget.cleanupAttempts ?? 0) + 1);
   return {
     ...state,

@@ -231,3 +231,23 @@ it('resets prior cleanup backoff when ending or expiring an active room', () => 
   });
   expect(ended.state.budget?.nextCleanupAt).toBe(0);
 });
+
+it('does not defer obligations added while an older cleanup attempt was in flight', () => {
+  const started = initial();
+  const oldTrack = { sessionId: 'session', userId: 'host', mid: '0' };
+  started.budget!.pendingPublications = [oldTrack];
+  started.budget!.cleanupAttempts = 30;
+  const current = {
+    ...started,
+    budget: {
+      ...started.budget!,
+      pendingPublications: [oldTrack, { ...oldTrack, mid: '1' }],
+    },
+  };
+  const retry = deferBudgetCleanup(current, now, started);
+  expect(retry.budget?.nextCleanupAt).toBe(0);
+  expect(retry.budget?.pendingPublications).toHaveLength(2);
+  expect(deferBudgetCleanup(retry, now, retry).budget?.nextCleanupAt).toBe(
+    now + 10_000
+  );
+});

@@ -125,11 +125,9 @@ it('recovers closure after persistence fails without treating arbitrary close er
     )
   ).rejects.toThrow('storage unavailable');
   expect(state.budget.pendingPublications).toHaveLength(1);
-  const close = vi
-    .fn()
-    .mockResolvedValue({
-      tracks: [{ mid: '0', errorCode: 'not_found_track_error' }],
-    });
+  const close = vi.fn().mockResolvedValue({
+    tracks: [{ mid: '0', errorCode: 'not_found_track_error' }],
+  });
   const recovered = await closeBudgetPublications(
     state,
     close,
