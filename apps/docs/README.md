@@ -73,7 +73,8 @@ updatedAt: 'YYYY-MM-DD'
 ---
 ```
 
-- Use `updatedAt` when making meaningful edits.
+- Use `updatedAt` for new pages and meaningful edits. Some older pages retain
+  the legacy `updated` field; normalize that field when editing those pages.
 - Keep titles sentence case; avoid title case unless it is a proper noun.
 
 ### Content Checklist

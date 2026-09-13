@@ -489,6 +489,12 @@
     background: white;
     color: black;
   }
+  .plan:nth-child(3),
+  .deck button[aria-pressed="true"],
+  .deck button[aria-current="step"] {
+    background: transparent;
+    color: black;
+  }
   .header,
   .footer,
   .overview,
