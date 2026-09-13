@@ -173,6 +173,7 @@
     "plan-desc": "* Upgrading your plan will take effect immediately. You'll be charged the prorated amount for the remainder of your current billing cycle.",
     "plan-features": "Plan Features",
     "plan-note-title": "Important Note",
+    "plan-sync-pending": "Your plan was changed in Polar. Billing details are still syncing; do not submit the change again. You can close this dialog and refresh billing shortly.",
     "plan-unavailable": "Plan unavailable for this seat count",
     "plan-update-failed": "Could not update the plan",
     "postal-code": "Postal code",
