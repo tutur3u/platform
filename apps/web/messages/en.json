@@ -6080,6 +6080,7 @@
       "ready_to_connect": "Session ended",
       "reconnecting": "Reconnecting",
       "reservation_release_note": "Unused reserved credits are released automatically.",
+      "retry_history": "Retry loading",
       "retry_save": "Retry save",
       "return_to_chat": "Chat",
       "session_expired_title": "Live session ended",

@@ -6080,6 +6080,7 @@
       "ready_to_connect": "Phiên đã kết thúc",
       "reconnecting": "Đang kết nối lại",
       "reservation_release_note": "Tín dụng đã giữ chỗ nhưng không sử dụng sẽ tự động được hoàn lại.",
+      "retry_history": "Thử tải lại",
       "retry_save": "Thử lưu lại",
       "return_to_chat": "Trò chuyện",
       "session_expired_title": "Phiên Trực tiếp đã kết thúc",

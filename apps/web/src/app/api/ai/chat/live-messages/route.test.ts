@@ -57,6 +57,21 @@ function client() {
         },
         // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally thenable.
         then(resolve: (result: unknown) => unknown) {
+          // Mirror the explicit constraints restored by 20260601210819.
+          if (
+            table === 'ai_chat_messages' &&
+            action !== 'select' &&
+            typeof values.content === 'string' &&
+            (Array.from(values.content).length > 10000 ||
+              new TextEncoder().encode(values.content).byteLength > 40000)
+          ) {
+            return Promise.resolve(
+              resolve({
+                data: null,
+                error: { message: 'content limit exceeded' },
+              })
+            );
+          }
           if (action === 'insert' || action === 'upsert') {
             if (!rows.some((row) => row.id === values.id)) rows.push(values);
           }
@@ -178,7 +193,7 @@ it('creates a new owned conversation without generating a second AI reply', asyn
 });
 
 it('retains complete long Unicode transcripts in canonical parts on save and retry', async () => {
-  const text = '日本語'.repeat(8000);
+  const text = '\u{1f30d}'.repeat(12000) + '日本語'.repeat(8000);
   const message = { ...first, parts: [{ type: 'text', text }] };
   for (let attempt = 0; attempt < 2; attempt++) {
     expect((await POST(request([message]))).status).toBe(200);
@@ -186,8 +201,9 @@ it('retains complete long Unicode transcripts in canonical parts on save and ret
     const saved = JSON.parse(JSON.stringify(state.messages[0]));
     expect(saved.metadata.ai.parts).toEqual(message.parts);
     expect(saved.metadata.ai.parts[0].text).toBe(text);
+    expect(Array.from(saved.content)).toHaveLength(10000);
     expect(
       new TextEncoder().encode(saved.content).byteLength
-    ).toBeLessThanOrEqual(65536);
+    ).toBeLessThanOrEqual(40000);
   }
 });

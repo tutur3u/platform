@@ -63,7 +63,7 @@ export function useMiraChatPersistence({
     if (restoredChatQuery.isError)
       toast.error(t('history_restore_failed'), {
         action: {
-          label: t('retry_save'),
+          label: t('retry_history'),
           onClick: () => {
             void restoredChatQuery.refetch();
           },

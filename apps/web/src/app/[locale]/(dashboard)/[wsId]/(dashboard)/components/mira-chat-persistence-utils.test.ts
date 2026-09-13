@@ -1,5 +1,15 @@
-import { describe, expect, it } from 'vitest';
-import { restoreMessages } from './mira-chat-persistence-utils';
+import { InternalApiError } from '@tuturuuu/internal-api';
+import { restoreAiConversation } from '@tuturuuu/internal-api/ai';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@tuturuuu/internal-api/ai', () => ({
+  restoreAiConversation: vi.fn(),
+}));
+
+import {
+  loadExistingChat,
+  restoreMessages,
+} from './mira-chat-persistence-utils';
 
 describe('Mira history chronology', () => {
   it('restores canonical parts rather than regrouping legacy metadata', () => {
@@ -127,4 +137,23 @@ it('restores concurrent timestamp ties deterministically', () => {
     'a',
     'b',
   ]);
+});
+
+it.each([401, 429, 500, 503])(
+  'keeps restore failures retryable for status %s',
+  async (status) => {
+    const error = new InternalApiError('Restore failed', status);
+    vi.mocked(restoreAiConversation).mockRejectedValueOnce(error);
+    await expect(
+      loadExistingChat({ wsId: 'workspace', storedChatId: 'chat' })
+    ).rejects.toBe(error);
+  }
+);
+it('clears only a missing conversation', async () => {
+  vi.mocked(restoreAiConversation).mockRejectedValueOnce(
+    new InternalApiError('Missing', 404)
+  );
+  await expect(
+    loadExistingChat({ wsId: 'workspace', storedChatId: 'chat' })
+  ).resolves.toBeNull();
 });

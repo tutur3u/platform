@@ -1,4 +1,4 @@
-import type { AIModelUI } from '@tuturuuu/types';
+import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import type { ChatAttachmentDraft } from './chat-types';
 import {
   encodePathSegment,
@@ -411,4 +411,26 @@ export async function saveLiveConversation(
       body: JSON.stringify(payload),
     }
   );
+}
+
+export async function restoreAiConversation(
+  chatId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    chat: Partial<AIChat>;
+    messages: {
+      id: string;
+      role: string;
+      created_at?: string;
+      content: string | null;
+      metadata: unknown;
+    }[];
+  }>('/api/ai/chat/restore', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chatId }),
+  });
 }

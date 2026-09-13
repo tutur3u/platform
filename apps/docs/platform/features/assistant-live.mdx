@@ -22,7 +22,8 @@ Finalized Live turns are saved to the same chat through the owner-checked
 `/api/ai/chat/live-messages` endpoint. Stable message IDs make retries idempotent;
 ordered parts keep text and tools interleaved after refresh. Complete transcript
 text lives in canonical parts metadata; the separate search/fallback content field
-is capped at 16,000 characters to stay within its database byte limit. Pending saves finish
+is capped at 10,000 Unicode characters to satisfy its database limits of
+10,000 characters and 40,000 bytes. Pending saves finish
 before a subsequent typed request. Failed saves show a retry action; keep the page
 open until they succeed. In-progress speech remains provisional until the turn
 finishes or the session closes. Audio and video are not stored as chat attachments.

@@ -149,10 +149,13 @@ export const POST = withSessionAuth(
     const inserted = new Map<string, { content: string; metadata: Json }>();
     for (const [index, message] of messages.entries()) {
       const values = {
-        content: message.parts
-          .flatMap((part) => (part.type === 'text' ? [part.text] : []))
-          .join('\n')
-          .slice(0, 16000),
+        content: Array.from(
+          message.parts
+            .flatMap((part) => (part.type === 'text' ? [part.text] : []))
+            .join('\n')
+        )
+          .slice(0, 10000)
+          .join(''),
         metadata: {
           source: 'Mira',
           channel: 'live',

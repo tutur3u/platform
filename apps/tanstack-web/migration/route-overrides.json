@@ -2412,12 +2412,12 @@
     "api:/api/ai/chat/live-messages:apps/web/src/app/api/ai/chat/live-messages/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Persist owner-only Mira Live turns and ordered tool parts, with bounded batches and idempotent message IDs. Rust parity pending."
+      "note": "Persist owner-only Mira Live turns and ordered tool parts, with bounded batches, idempotent message IDs, and a 10000-character search fallback retaining full text in metadata. Rust parity pending."
     },
     "api:/api/ai/chat/restore:apps/web/src/app/api/ai/chat/restore/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Owner-scoped chat restoration returns created_at and uses stable created_at/id ordering for concurrent Live turns. First-class Next handler; Rust parity pending."
+      "note": "Owner-scoped chat restoration returns chat and message created_at fields and uses stable created_at/id ordering for concurrent Live turns. First-class Next handler; Rust parity pending."
     }
   }
 }

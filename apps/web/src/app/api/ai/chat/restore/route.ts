@@ -16,7 +16,7 @@ export const POST = withSessionAuth(
 
       const { data: chatData, error: chatError } = await sbAdmin
         .from('ai_chats')
-        .select('id, title, model, is_public')
+        .select('id, title, model, is_public, created_at')
         .eq('id', chatId)
         .eq('creator_id', user.id)
         .maybeSingle();

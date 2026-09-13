@@ -1,6 +1,8 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { InternalApiError } from '@tuturuuu/internal-api';
+import { restoreAiConversation } from '@tuturuuu/internal-api/ai';
 import type { AIChat } from '@tuturuuu/types';
 import type { MessageFileAttachment } from './file-preview-chips';
 
@@ -148,34 +150,15 @@ export async function loadExistingChat({
   wsId: string;
   storedChatId: string;
 }): Promise<RestoredChatPayload | null> {
-  const restoreRes = await fetch('/api/ai/chat/restore', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chatId: storedChatId }),
-    cache: 'no-store',
-  });
-
-  if (!restoreRes.ok) {
-    console.error(
-      '[Mira Chat] Error restoring chat:',
-      await restoreRes.json().catch(() => ({})),
-      'storedChatId:',
-      storedChatId
-    );
-    return null;
+  let restorePayload: Awaited<ReturnType<typeof restoreAiConversation>>;
+  try {
+    restorePayload = await restoreAiConversation(storedChatId);
+  } catch (error) {
+    // Only an absent conversation invalidates the stored ID. Transient/auth
+    // failures must reach the query's retry state without discarding history.
+    if (error instanceof InternalApiError && error.status === 404) return null;
+    throw error;
   }
-
-  const restorePayload = (await restoreRes.json()) as {
-    chat: Partial<AIChat>;
-    messages: Array<{
-      id: string;
-      role: string;
-      created_at?: string;
-      content: string | null;
-      metadata: unknown;
-    }>;
-  };
   const chatData = restorePayload.chat;
   const messagesData = restorePayload.messages;
 
