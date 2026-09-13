@@ -1,5 +1,5 @@
 .deck {
-  --pitch-accent: var(--primary);
+  --pitch-accent: var(--pitch-innovation);
   position: relative;
   min-height: 100svh;
   display: flex;
@@ -15,11 +15,22 @@
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  background: radial-gradient(
-    ellipse at 85% 40%,
-    color-mix(in srgb, var(--primary) 9%, transparent),
-    transparent 55%
-  );
+  background:
+    radial-gradient(
+      ellipse at 85% 20%,
+      color-mix(in srgb, var(--pitch-innovation) 14%, transparent),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 15% 80%,
+      color-mix(in srgb, var(--pitch-growth) 9%, transparent),
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 65% 95%,
+      color-mix(in srgb, var(--pitch-impact) 8%, transparent),
+      transparent 45%
+    );
 }
 .header,
 .footer {
@@ -32,9 +43,12 @@
   border-bottom: 1px solid var(--border);
 }
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   font-weight: 850;
   font-size: 1.6rem;
-  letter-spacing: -0.08em;
+  letter-spacing: -0.04em;
   text-decoration: none;
 }
 .brand span {
@@ -89,8 +103,13 @@
 }
 .deck button[aria-pressed="true"],
 .deck button[aria-current="step"] {
-  background: var(--foreground);
-  color: var(--background);
+  background: color-mix(
+    in srgb,
+    var(--pitch-innovation) 20%,
+    var(--background)
+  );
+  border-color: var(--pitch-innovation);
+  color: var(--foreground);
 }
 .main {
   flex: 1;
@@ -104,6 +123,7 @@
   gap: 5vw;
   padding: 5vw 6vw;
   min-height: 70svh;
+  --tone: var(--pitch-innovation);
 }
 .visual {
   min-width: 0;
@@ -123,7 +143,7 @@
   align-items: center;
   gap: 1rem;
   margin-bottom: 2.5rem;
-  color: var(--muted-foreground);
+  color: var(--foreground);
 }
 .eyebrow span {
   display: inline-grid;
@@ -131,17 +151,34 @@
   width: 2rem;
   height: 2rem;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 0.6rem;
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 15%, transparent);
 }
 .story h1 {
   font-size: clamp(2.6rem, 4.4vw, 6rem);
-  font-weight: 600;
-  letter-spacing: -0.065em;
+  font-weight: 750;
+  letter-spacing: -0.055em;
   line-height: 1.03;
   white-space: pre-line;
   margin: 0;
   outline: none;
   text-wrap: balance;
+}
+.story h1::after {
+  content: "";
+  display: block;
+  width: 5rem;
+  height: 0.35rem;
+  margin-top: 1.5rem;
+  border-radius: 1rem;
+  background: linear-gradient(
+    90deg,
+    var(--pitch-innovation) 25%,
+    var(--pitch-growth) 25% 50%,
+    var(--pitch-energy) 50% 75%,
+    var(--pitch-impact) 75%
+  );
 }
 .body {
   font-size: clamp(1rem, 1.25vw, 1.35rem);
@@ -154,7 +191,8 @@
   display: inline-block;
   margin-top: 1.5rem;
   padding: 0.5rem 0.8rem;
-  border: 1px dashed var(--border);
+  border: 1px solid color-mix(in srgb, var(--tone) 45%, var(--border));
+  background: color-mix(in srgb, var(--tone) 9%, transparent);
   border-radius: 2rem;
   font-size: 0.75rem;
 }
@@ -164,87 +202,21 @@
   color: var(--muted-foreground);
   font-size: 0.7rem;
 }
-.tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--border);
-  border-radius: 1rem;
-  overflow: hidden;
-}
-.tile {
-  min-height: 10rem;
-  padding: 1.75rem;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--background) 70%, transparent);
-}
-.tileNumber {
-  font-family: monospace;
-  color: var(--muted-foreground);
-  font-size: 0.7rem;
-}
-.tile h3 {
-  font-size: 1.3rem;
-  letter-spacing: -0.04em;
-  margin-top: 1.5rem;
-}
-.tile p {
-  font-size: 0.7rem;
-  color: var(--muted-foreground);
-  margin-top: 0.5rem;
-}
-.tileLine {
-  height: 2px;
-  background: var(--foreground);
-  margin-top: 1.5rem;
-  opacity: 0.25;
-}
-.orbit {
-  height: clamp(18rem, 32vw, 32rem);
-  position: relative;
-  display: grid;
-  place-items: center;
-}
-.orbitRing {
-  position: absolute;
-  width: 85%;
-  height: 85%;
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  transform: rotate(-25deg) scaleY(0.65);
-}
-.orbitRing:nth-child(2) {
-  transform: rotate(55deg) scaleY(0.65);
-}
-.wordmark {
-  font-size: clamp(3rem, 5vw, 6rem);
-  font-weight: 800;
-  letter-spacing: -0.09em;
-}
-.wordmark span {
-  color: var(--muted-foreground);
-}
-.orbitLabel {
-  position: absolute;
-  left: calc(12% + var(--i) * 20%);
-  top: 20%;
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: 2rem;
-  padding: 0.75rem 1.1rem;
-  font-size: 0.75rem;
-  animation: float 6s ease-in-out infinite alternate;
-  animation-delay: calc(var(--i) * -0.8s);
-}
-.orbitLabel:nth-of-type(even) {
-  top: 76%;
-}
 .plans {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.7rem;
 }
 .plan {
-  border: 1px solid var(--border);
+  background:
+    radial-gradient(
+      ellipse at top right,
+      color-mix(in srgb, var(--tone) 14%, transparent),
+      transparent
+    ),
+    var(--card);
+  border: 1px solid color-mix(in srgb, var(--tone) 40%, var(--border));
+  border-top: 3px solid var(--tone);
   padding: 1.5rem;
   border-radius: 1rem;
   display: flex;
@@ -252,8 +224,13 @@
   gap: 0.65rem;
 }
 .plan:nth-child(3) {
-  background: var(--foreground);
-  color: var(--background);
+  background: color-mix(
+    in srgb,
+    var(--pitch-innovation) 20%,
+    var(--background)
+  );
+  border-color: var(--pitch-innovation);
+  color: var(--foreground);
 }
 .plan strong {
   font-size: clamp(1.5rem, 3vw, 3rem);
@@ -282,7 +259,7 @@
 }
 .calculator input {
   width: 100%;
-  accent-color: var(--foreground);
+  accent-color: var(--pitch-innovation);
   margin: 1.5rem 0;
 }
 .calculator small {
@@ -296,7 +273,7 @@
   padding: 2rem 0;
 }
 .track {
-  height: 0.65rem;
+  height: 0.85rem;
   background: var(--muted);
   border-radius: 1rem;
   margin: 0.65rem 0;
@@ -305,11 +282,16 @@
 .track > div {
   height: 100%;
   min-width: 2px;
-  background: var(--foreground);
+  background: var(--tone, var(--pitch-innovation));
   border-radius: inherit;
   transition: width 0.35s ease;
 }
 .footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+  backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
   flex-wrap: wrap;
 }
@@ -318,8 +300,8 @@
   gap: 0.3rem;
 }
 .deck .progress button {
-  width: 1.25rem;
-  height: 2rem;
+  width: 1.6rem;
+  height: 2.75rem;
   padding: 0;
   border: none;
   border-radius: 0;
@@ -336,7 +318,7 @@
   background: var(--border);
 }
 .progress button[aria-current="step"]::after {
-  background: var(--foreground);
+  background: var(--tone, var(--pitch-innovation));
 }
 .help {
   font-size: 0.5rem;
@@ -364,6 +346,7 @@
   align-items: center;
   gap: 0.8rem;
   font-size: 0.8rem;
+  border-top: 3px solid var(--tone);
 }
 .overview button span {
   opacity: 0.5;
@@ -398,8 +381,13 @@
   font-size: 0.85rem;
 }
 .links a {
-  background: var(--foreground);
-  color: var(--background);
+  background: color-mix(
+    in srgb,
+    var(--pitch-innovation) 20%,
+    var(--background)
+  );
+  border-color: var(--pitch-innovation);
+  color: var(--foreground);
 }
 .confetti {
   position: fixed;
@@ -446,10 +434,6 @@
   .overview {
     grid-template-columns: 1fr 1fr;
   }
-  .tile {
-    padding: 1.1rem;
-    min-height: 8rem;
-  }
   .footer {
     gap: 0.5rem;
   }
@@ -457,7 +441,7 @@
     gap: 0.1rem;
   }
   .deck .progress button {
-    width: 0.85rem;
+    width: 1.5rem;
   }
   .calculator {
     padding: 1.2rem;
@@ -481,6 +465,7 @@
   }
   .deck {
     --background: white;
+    --card: white;
     --foreground: black;
     --muted: #f0f0f0;
     --muted-foreground: #444;

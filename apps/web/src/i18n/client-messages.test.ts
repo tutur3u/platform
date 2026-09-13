@@ -126,6 +126,7 @@ describe('getPublicClientMessages', () => {
   it('covers every literal common key used by the public shell', () => {
     const sources = [
       join('src/app/[locale]/marketing-nav/marketing-nav-menu.tsx'),
+      join('src/app/[locale]/shared/navigation-config.tsx'),
       join('src/app/[locale]/mobile-menu.tsx'),
       join('src/app/[locale]/public-navbar-actions.tsx'),
       join('../../packages/ui/src/components/ui/custom/common-footer.tsx'),

@@ -11,9 +11,11 @@ import {
   Printer,
   Sparkles,
 } from '@tuturuuu/icons/lucide';
+import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './pitch.module.css';
+import { pitchBrandColors, pitchBrandStyle, pitchTone } from './pitch-brand';
 import { type PitchCopy, SLIDE_IDS, slideFromHash } from './pitch-model';
 import { PitchVisual } from './pitch-visual';
 
@@ -33,7 +35,12 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
     setIndex(bounded);
     window.history.replaceState(null, '', `#${SLIDE_IDS[bounded]}`);
     setOverview(false);
-    if (focus) requestAnimationFrame(() => title.current?.focus());
+    if (focus)
+      requestAnimationFrame(() => {
+        root.current?.scrollTo?.({ top: 0, behavior: 'instant' });
+        root.current?.scrollIntoView?.({ block: 'start', behavior: 'instant' });
+        title.current?.focus({ preventScroll: true });
+      });
   }, []);
 
   useEffect(() => {
@@ -125,6 +132,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
     try {
       await burst({
         particleCount: 140,
+        colors: pitchBrandColors,
         spread: 100,
         origin: { y: 0.65 },
         disableForReducedMotion: true,
@@ -136,13 +144,19 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
   }
   const id = SLIDE_IDS[index] ?? 'opening';
   return (
-    <div className={styles.deck} ref={root}>
+    <div className={styles.deck} ref={root} style={pitchBrandStyle}>
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {copy.slide} {index + 1} / {SLIDE_IDS.length}: {copy.slides[id].title}
       </span>
       <header className={styles.header}>
         <a href={`/${locale}`} className={styles.brand}>
-          tuturuuu
+          <Image
+            src="/media/branding/tuturuuu.svg"
+            alt=""
+            width={36}
+            height={36}
+          />
+          Tuturuuu
         </a>
         <span className={styles.edition}>{copy.edition}</span>
         <div className={styles.tools}>
@@ -203,6 +217,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
           {SLIDE_IDS.map((slideId, i) => (
             <button
               key={slideId}
+              style={pitchTone(i)}
               type="button"
               aria-current={i === index ? 'step' : undefined}
               onClick={() => go(i, true)}
@@ -219,6 +234,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
           return (
             <section
               key={slideId}
+              style={pitchTone(i)}
               className={`${styles.slide} ${i === index ? styles.active : ''}`}
               aria-hidden={i !== index}
               aria-label={`${copy.slide} ${i + 1}: ${slide.kicker}`}
@@ -277,6 +293,7 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
             <button
               type="button"
               key={slideId}
+              style={pitchTone(i)}
               aria-label={`${copy.slide} ${i + 1}: ${copy.slides[slideId].kicker}`}
               aria-current={i === index ? 'step' : undefined}
               onClick={() => {
