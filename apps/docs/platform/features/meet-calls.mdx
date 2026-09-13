@@ -12,6 +12,26 @@ Every participant holds exactly **two peer connections** to the SFU — one
 publishing, one subscribing — regardless of room size. Connection count stays
 fixed; bandwidth and decoding work still grow with subscribed media tracks.
 
+## Preview resource budgets
+
+Hosting remains a restricted preview. A room lasts at most two hours from its
+first admitted participant; reconnects keep the original deadline. Signed room
+limits default to eight publishers and 96 viewers and may be lower. Server hard
+ceilings still apply to every role and tier. Each publisher can register at most
+six media tracks.
+
+The server accrues participant-milliseconds through the room deadline. Expiration
+ends the room, disconnects clients and persists outstanding SFU closures before
+provider cleanup. Failed cleanup retries with exponential backoff from ten seconds
+to one hour. Progress is persisted after each completed provider session so a
+later failure does not repeat already-confirmed work. Unconfirmed tracks remain
+recorded for retry/operator reconciliation.
+
+The UI shows the room deadline and explains resource-limit failures. Browser
+bandwidth counters are diagnostic, not billing evidence. Monthly workspace media
+aggregation and provider invoice reconciliation remain prerequisites for selling
+meeting overages. Internal or sponsored workspaces do not bypass these ceilings.
+
 ## Pieces
 
 | piece | where |

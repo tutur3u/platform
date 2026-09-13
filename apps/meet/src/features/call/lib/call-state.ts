@@ -32,6 +32,7 @@ export interface CallChatMessage {
 
 export interface CallState {
   title?: string;
+  roomExpiresAt?: string;
   ended: boolean;
   settings: MeetRoomSettings;
   approved: MeetApprovedParticipant[];
@@ -107,6 +108,8 @@ export function reduceCallState(
       return {
         ...state,
         admission: message.admission === 'waiting' ? 'waiting' : 'admitted',
+        roomExpiresAt: message.roomExpiresAt,
+        error: null,
         remoteTracks: message.tracks
           ? Object.fromEntries(
               message.tracks

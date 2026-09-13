@@ -17,6 +17,7 @@ import {
   personalChatReceipt,
   personalChatReceiptCommand,
 } from './personal-chat-receipts';
+import { roomBudgetSummary } from './room-budget';
 import { retainRoomChat } from './room-chat';
 import { applyRoomLive, type RoomLiveState } from './room-live';
 import { applyLiveSharing } from './room-live-sharing';
@@ -221,6 +222,7 @@ export function roomService(
     return {
       state: snapshot,
       body: {
+        budget: roomBudgetSummary(snapshot),
         cloudflare: summarizeRoomUsage(snapshot.usage),
         live: summarizeLiveUsage(snapshot.liveUsage),
         miraRequests: Object.values(snapshot.aiRequests ?? {}).length,
@@ -260,6 +262,7 @@ export function roomService(
                   ([id, { review: _, ...request }]) => [id, request]
                 )
               ),
+              budget: roomBudgetSummary(snapshot),
               cloudflare: summarizeRoomUsage(snapshot.usage),
             }
           : {}),

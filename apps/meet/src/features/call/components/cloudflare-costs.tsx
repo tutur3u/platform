@@ -25,6 +25,16 @@ export function CloudflareCosts({ meetingId }: { meetingId: string }) {
       <p className="text-muted-foreground text-xs">
         {t('cloudflare_cost_hint')}
       </p>
+      <p className="text-muted-foreground text-xs">
+        {t('resource_limits_hint')}
+      </p>
+      {data?.budget && (
+        <p className="text-xs">
+          {t('participant_minutes', {
+            minutes: (data.budget.participantMilliseconds / 60000).toFixed(1),
+          })}
+        </p>
+      )}
       {!usage ? (
         <p role="status" className="text-muted-foreground text-xs">
           {t('cost_unavailable')}

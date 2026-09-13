@@ -115,8 +115,8 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   z.object({
     requestId,
     sessionDescription: cloudflareSfuSessionDescriptionSchema,
-    sessionId: z.string().trim().min(1),
-    tracks: z.array(cloudflareSfuTrackSchema).min(1),
+    sessionId: z.string().trim().min(1).max(180),
+    tracks: z.array(cloudflareSfuTrackSchema).min(1).max(256),
     type: z.literal('sfu.tracks.publish'),
   }),
   z.object({
@@ -126,20 +126,20 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     // `sfu.renegotiate`. Requiring it here forced callers to send `sdp: ''`,
     // which the schema then rejected as malformed.
     sessionDescription: cloudflareSfuSessionDescriptionSchema.optional(),
-    sessionId: z.string().trim().min(1),
-    tracks: z.array(cloudflareSfuTrackSchema).min(1),
+    sessionId: z.string().trim().min(1).max(180),
+    tracks: z.array(cloudflareSfuTrackSchema).min(1).max(256),
     type: z.literal('sfu.tracks.subscribe'),
   }),
   z.object({
     requestId,
     sessionDescription: cloudflareSfuSessionDescriptionSchema,
-    sessionId: z.string().trim().min(1),
+    sessionId: z.string().trim().min(1).max(180),
     type: z.literal('sfu.renegotiate'),
   }),
   z.object({
     requestId,
-    sessionId: z.string().trim().min(1),
-    tracks: z.array(cloudflareSfuTrackSchema).min(1),
+    sessionId: z.string().trim().min(1).max(180),
+    tracks: z.array(cloudflareSfuTrackSchema).min(1).max(256),
     force: z.boolean().optional(),
     type: z.literal('sfu.tracks.close'),
   }),
@@ -199,6 +199,7 @@ export type MeetRealtimeServerMessage =
   | {
       admission: 'admitted' | 'waiting';
       expiresAt: string;
+      roomExpiresAt?: string;
       limits: MeetRealtimeTokenPayload['limits'];
       mode: MeetRealtimeRoomMode;
       role: MeetRealtimeRole;

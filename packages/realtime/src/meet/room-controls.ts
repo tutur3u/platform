@@ -123,6 +123,12 @@ export function applyRoomControl(
     return outcome(
       {
         ...failActiveRecording(state, now),
+        budget: state.budget
+          ? {
+              ...state.budget,
+              pendingPublications: Object.values(state.tracks),
+            }
+          : undefined,
         ended: true,
         presence: {},
         waiting: {},

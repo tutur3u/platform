@@ -24,6 +24,7 @@ import {
 import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
+import { CallResourceNotice, resourceErrorKey } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
 import { type CallPanel, ControlBar } from './control-bar';
@@ -212,10 +213,12 @@ export function ConnectedCallShell({
         avatarUrl={defaultAvatarUrl}
         defaultDisplayName={defaultDisplayName}
         connectionError={
-          room.connectionStatus === 'closed' ||
-          room.connectionStatus === 'error'
-            ? t('signaling_unreachable')
-            : null
+          resourceErrorKey(state.error)
+            ? t(resourceErrorKey(state.error)!)
+            : room.connectionStatus === 'closed' ||
+                room.connectionStatus === 'error'
+              ? t('signaling_unreachable')
+              : null
         }
         isJoining={state.admission === 'connecting'}
         meetingName={meetingName}
@@ -322,6 +325,7 @@ export function ConnectedCallShell({
           onOutput={setOutputDeviceId}
         />
       </header>
+      <CallResourceNotice error={state.error} expiresAt={state.roomExpiresAt} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="relative min-h-0 flex-1 p-2 sm:p-3">
           {room.screenStream && (

@@ -1,8 +1,14 @@
+import {
+  accountRoomTime,
+  expireRoomBudget,
+  type RoomBudget,
+  roomCapacityError,
+  startRoomBudget,
+} from './room-budget';
 import { applyChatMessage } from './room-chat';
 import {
   applyRoomControl,
   approvedParticipantsMessage,
-  rememberAdmission,
   roomSettingsMessage,
 } from './room-controls';
 import { retireIdlePublication } from './room-idle';
@@ -51,6 +57,7 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 export interface MeetRoomSnapshot {
+  budget?: RoomBudget;
   attachments?: Record<string, RoomAttachment>;
   usage?: RoomUsage;
   approved?: Record<string, MeetApprovedParticipant>;
@@ -73,28 +80,17 @@ export interface MeetRoomSnapshot {
   waiting: Record<string, MeetRealtimeWaitingParticipant>;
 }
 
-/**
- * A Cloudflare Realtime SFU call the transport must perform on the room's
- * behalf. Keeping it as data rather than a callback is what lets the whole
- * room reducer stay pure and unit-testable without network or credentials.
- */
 export type MeetSfuIntent = {
   message: MeetRealtimeSfuClientMessage;
   requestId?: string;
 };
 
 export interface MeetRoomOutcome {
-  /** Sent to every connected client in the room. */
   broadcast: MeetRealtimeServerMessage[];
-  /** Sent to one specific participant, wherever they are connected. */
   direct: Array<{ message: MeetRealtimeServerMessage; userId: string }>;
-  /** Participants the transport should disconnect after flushing messages. */
   disconnect: string[];
-  /** Sent back to the participant that produced the command. */
   reply: MeetRealtimeServerMessage[];
-  /** Sent only to participants that can manage the room. */
   toManagers: MeetRealtimeServerMessage[];
-  /** Cloudflare SFU work for the transport to execute, if any. */
   sfu: MeetSfuIntent | null;
   state: MeetRoomSnapshot;
 }
@@ -145,7 +141,6 @@ export function createMeetPresence(
   };
 }
 
-/** Allow throttled connected tabs a bounded grace period before expiring. */
 export function pruneMeetPresence(
   state: MeetRoomSnapshot,
   nowMs: number,
@@ -189,94 +184,8 @@ export function meetAdmissionPendingMessage(
   };
 }
 
-/**
- * Registers a participant that has just connected. Anyone holding a `lobby`
- * token lands in the waiting list instead of presence until a manager admits
- * them.
- */
-export function admitOrHold(
-  state: MeetRoomSnapshot,
-  token: MeetRealtimeTokenPayload,
-  now: string
-): MeetRoomOutcome {
-  if (state.ended)
-    return outcome(state, {
-      reply: [{ type: 'room.ended' }],
-      disconnect: [token.userId],
-    });
-  if (
-    token.admission === 'lobby' &&
-    !state.presence[token.userId] &&
-    !state.approved?.[token.accountId ?? token.userId]
-  ) {
-    const next: MeetRoomSnapshot = {
-      ...state,
-      waiting: {
-        ...state.waiting,
-        [token.userId]: {
-          accountId: token.accountId,
-          avatarUrl: token.avatarUrl,
-          displayName: getMeetDisplayName(token),
-          requestedAt: now,
-          userId: token.userId,
-        },
-      },
-    };
+export { admitOrHold } from './room-admission';
 
-    return outcome(next, {
-      reply: [buildReady(next, token, 'waiting')],
-      toManagers: [meetAdmissionPendingMessage(next)],
-    });
-  }
-
-  const previous = state.presence[token.userId];
-  const person = createMeetPresence(token, now, previous?.media);
-  if (previous) person.joinedAt = previous.joinedAt;
-  const next: MeetRoomSnapshot = {
-    ...state,
-    approved: rememberAdmission(state, person),
-    presence: {
-      ...state.presence,
-      [token.userId]: person,
-    },
-  };
-
-  return outcome(next, {
-    broadcast: [meetPresenceMessage(next, token.roomId)],
-    toManagers: [approvedParticipantsMessage(next)],
-    reply: [
-      { ...buildReady(next, token, 'admitted'), resumed: !!previous },
-      roomSettingsMessage(next),
-      recordingMessage(next),
-      ...(next.chat ?? []).map((entry) => ({ ...entry, replayed: true })),
-      ...(token.role === 'host' ? [approvedParticipantsMessage(next)] : []),
-      ...(canMeetRealtimeManageParticipants(token)
-        ? [meetAdmissionPendingMessage(next)]
-        : []),
-    ],
-  });
-}
-
-function buildReady(
-  state: MeetRoomSnapshot,
-  token: MeetRealtimeTokenPayload,
-  admission: 'admitted' | 'waiting'
-): Extract<MeetRealtimeServerMessage, { type: 'ready' }> {
-  return {
-    admission,
-    tracks: admission === 'admitted' ? Object.values(state.tracks) : [],
-    expiresAt: new Date(token.exp * 1000).toISOString(),
-    limits: token.limits,
-    mode: token.mode,
-    role: token.role,
-    roomId: token.roomId,
-    stage: state.stage,
-    type: 'ready',
-    userId: token.userId,
-  };
-}
-
-/** Removes a participant that has disconnected. */
 export function releaseParticipant(
   state: MeetRoomSnapshot,
   userId: string,
@@ -342,17 +251,14 @@ export function releaseParticipant(
   });
 }
 
-/**
- * The single authority for what a client message does to a room. Pure: it
- * returns the next snapshot plus the messages and Cloudflare SFU work the
- * transport should carry out, so the Durable Object and the Bun server share
- * identical behaviour.
- */
 export function applyMeetRoomCommand(
   state: MeetRoomSnapshot,
   { message, now, token }: MeetRoomCommand
 ): MeetRoomOutcome {
   const { roomId, userId } = token;
+  state = accountRoomTime(state, Date.parse(now));
+  const expired = expireRoomBudget(state, Date.parse(now));
+  if (expired) return expired;
   if (state.ended)
     return outcome(state, {
       reply: [{ type: 'room.ended' }],
@@ -368,6 +274,8 @@ export function applyMeetRoomCommand(
   if (control) return control;
   switch (message.type) {
     case 'presence.join': {
+      const capacityError = roomCapacityError(state, token);
+      if (capacityError) return denied(state, capacityError);
       if (state.waiting[userId]) return outcome(state);
 
       const next = {
@@ -393,6 +301,8 @@ export function applyMeetRoomCommand(
     }
 
     case 'presence.update': {
+      const capacityError = roomCapacityError(state, token);
+      if (capacityError) return denied(state, capacityError);
       const existing = state.presence[userId] ?? createMeetPresence(token, now);
       const next = {
         ...state,
@@ -483,6 +393,14 @@ export function applyMeetRoomCommand(
         });
       }
 
+      const capacityError = roomCapacityError(
+        state,
+        token,
+        message.userId,
+        'speaker'
+      );
+      if (capacityError) return denied(state, capacityError);
+      state = startRoomBudget(state, token, Date.parse(now));
       const next: MeetRoomSnapshot = {
         ...state,
         presence: {
@@ -668,7 +586,6 @@ export function applyMeetRoomCommand(
   }
 }
 
-/** Every track currently published by someone other than `userId`. */
 export function remoteMeetTracks(state: MeetRoomSnapshot, userId: string) {
   return Object.values(state.tracks).filter((track) => track.userId !== userId);
 }

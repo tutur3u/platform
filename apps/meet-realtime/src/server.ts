@@ -1,6 +1,10 @@
 import {
+  accountRoomTime,
   admitOrHold,
   CloudflareSfuClient,
+  closeBudgetPublications,
+  deferBudgetCleanup,
+  expireRoomBudget,
   MeetCommandExecutor,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
@@ -108,6 +112,7 @@ async function handleMessage(
 export function createMeetRealtimeServer(
   options: MeetRealtimeServerOptions = {}
 ) {
+  const cleanupInFlight = new Set<string>();
   let sfuClient = options.sfuClient;
   const getSfuClient = () => {
     sfuClient ??= new CloudflareSfuClient();
@@ -121,6 +126,40 @@ export function createMeetRealtimeServer(
           .filter((socket) => socket.readyState === 1)
           .map((socket) => socket.data.token.userId)
       );
+      const expiredBudget = expireRoomBudget(room.snapshot);
+      if (expiredBudget) {
+        room.snapshot = expiredBudget.state;
+        broadcast(roomId, expiredBudget.broadcast);
+        disconnectUsers(roomId, expiredBudget.disconnect);
+      }
+      if (
+        room.snapshot.budget?.pendingPublications?.length &&
+        Date.now() >= (room.snapshot.budget.nextCleanupAt ?? 0) &&
+        !cleanupInFlight.has(roomId)
+      ) {
+        cleanupInFlight.add(roomId);
+        void closeBudgetPublications(
+          room.snapshot,
+          (input) => getSfuClient().closeTracks(input),
+          async (progress) => {
+            room.snapshot = { ...room.snapshot, budget: progress.budget };
+          }
+        )
+          .then((snapshot) => {
+            room.snapshot = { ...room.snapshot, budget: snapshot.budget };
+          })
+          .catch(() => {
+            room.snapshot = {
+              ...room.snapshot,
+              budget: deferBudgetCleanup(room.snapshot).budget,
+            };
+            console.error(
+              'Meeting media cleanup deferred; provider confirmation is still pending'
+            );
+          })
+          .finally(() => cleanupInFlight.delete(roomId));
+      }
+      room.snapshot = accountRoomTime(room.snapshot, Date.now());
       room.snapshot = pruneMeetPresence(room.snapshot, Date.now(), connected);
       broadcast(roomId, [meetPresenceMessage(room.snapshot, roomId)]);
     }
@@ -159,6 +198,7 @@ export function createMeetRealtimeServer(
         room?.clients.delete(ws);
         if (!room || hasOtherSocket(roomId, userId, ws)) return;
 
+        room.snapshot = accountRoomTime(room.snapshot, Date.now());
         const outcome = releaseParticipant(room.snapshot, userId, roomId);
         room.snapshot = outcome.state;
         broadcast(roomId, outcome.broadcast);
