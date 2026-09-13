@@ -6,7 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type RefObject, useEffect } from 'react';
+import { type RefObject, useCallback, useEffect, useRef } from 'react';
 import ChatInputBar from './chat-input-bar';
 import type { ChatFile } from './file-preview-chips';
 import type { CreditSource, ThinkingMode } from './mira-chat-constants';
@@ -89,23 +89,43 @@ export function MiraChatBottomBar({
 }: MiraChatBottomBarProps) {
   const t = useTranslations('dashboard.mira_chat');
   const voiceT = useTranslations('dashboard.voice_assistant');
+  const compactButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreCompactFocus = useRef(false);
+  const onCollapse = useCallback(() => {
+    restoreCompactFocus.current = !!inputRef.current
+      ?.closest('[data-mira-composer]')
+      ?.contains(document.activeElement);
+  }, [inputRef]);
   const density = useMiraComposerDensity({
+    onCollapse,
     enabled: floating && !voiceActive,
     protectedContent: !!input || attachedFiles.length > 0,
     scrollContainerRef,
   });
+  useEffect(() => {
+    if (density.compact && restoreCompactFocus.current) {
+      compactButtonRef.current?.focus({ preventScroll: true });
+      restoreCompactFocus.current = false;
+    }
+  }, [density.compact]);
   const { expand } = density;
-  const toolbarShown = bottomBarVisible && !voiceActive;
+  const toolbarShown = (bottomBarVisible || !!input) && !voiceActive;
   useEffect(() => {
     if (modelPickerHotkeySignal > 0) expand();
   }, [expand, modelPickerHotkeySignal]);
   return (
     <div
       ref={composerRef}
+      data-mira-composer=""
       onPointerMove={density.onActivity}
       onKeyDownCapture={density.onActivity}
-      onFocusCapture={() => {
-        if (!density.compact) density.onFocus();
+      onFocusCapture={(event) => {
+        if (!density.compact) {
+          const inMenu = event.target.closest(
+            '[role="dialog"], [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper]'
+          );
+          density.onFocus(!!inMenu);
+        }
       }}
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget))
@@ -121,6 +141,7 @@ export function MiraChatBottomBar({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                ref={compactButtonRef}
                 size="sm"
                 variant="ghost"
                 className="gap-2 rounded-full"

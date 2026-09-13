@@ -66,4 +66,22 @@ it('returns expanded after leaving Live even when entered from the compact bar',
   rerender({ enabled: false });
   rerender({ enabled: true });
   expect(result.current.compact).toBe(false);
+  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
+  expect(result.current.compact).toBe(true);
+});
+
+it('compacts an idle empty input while retaining focus protection for menus', () => {
+  vi.useFakeTimers();
+  const onCollapse = vi.fn();
+  const { result } = renderHook(() =>
+    useMiraComposerDensity({
+      enabled: true,
+      protectedContent: false,
+      onCollapse,
+    })
+  );
+  act(() => result.current.onFocus(false));
+  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
+  expect(result.current.compact).toBe(true);
+  expect(onCollapse).toHaveBeenCalledOnce();
 });

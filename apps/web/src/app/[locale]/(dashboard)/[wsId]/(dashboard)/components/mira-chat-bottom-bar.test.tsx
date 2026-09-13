@@ -62,12 +62,31 @@ it('replaces the idle composer with Chat and Live controls and restores focus on
   vi.useFakeTimers();
   render(<MiraChatBottomBar {...props} />);
   const input = screen.getByRole('textbox');
+  act(() => input.focus());
   act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
   expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Live' })).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Chat' })).toHaveFocus();
   fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
   act(() => vi.advanceTimersByTime(20));
   expect(screen.getByRole('textbox')).toBe(input);
   expect(input).toHaveFocus();
   expect(screen.getByRole('button', { name: 'Model control' })).toBeVisible();
+});
+
+it('reveals settings when composing from view-only mode', () => {
+  const { rerender } = render(
+    <MiraChatBottomBar {...props} bottomBarVisible={false} />
+  );
+  expect(
+    screen
+      .getByRole('button', { name: 'Model control', hidden: true })
+      .closest('[inert]')
+  ).not.toBeNull();
+  rerender(
+    <MiraChatBottomBar {...props} bottomBarVisible={false} input="New draft" />
+  );
+  expect(
+    screen.getByRole('button', { name: 'Model control' }).closest('[inert]')
+  ).toBeNull();
 });

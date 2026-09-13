@@ -13,21 +13,27 @@ export const COMPOSER_IDLE_MS = 6000;
 export function useMiraComposerDensity({
   enabled,
   protectedContent,
+  onCollapse,
   scrollContainerRef,
 }: {
   enabled: boolean;
   protectedContent: boolean;
+  onCollapse?: () => void;
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }) {
   const [compact, setCompact] = useState(false);
   const focused = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const clearTimer = useCallback(() => clearTimeout(timer.current), []);
+  const collapse = useCallback(() => {
+    onCollapse?.();
+    setCompact(true);
+  }, [onCollapse]);
   const schedule = useCallback(() => {
     clearTimer();
     if (!enabled || protectedContent || focused.current) return;
-    timer.current = setTimeout(() => setCompact(true), COMPOSER_IDLE_MS);
-  }, [clearTimer, enabled, protectedContent]);
+    timer.current = setTimeout(collapse, COMPOSER_IDLE_MS);
+  }, [clearTimer, collapse, enabled, protectedContent]);
   const expand = useCallback(() => {
     setCompact(false);
     schedule();
@@ -48,20 +54,20 @@ export function useMiraComposerDensity({
       previous = node.scrollTop;
       if (delta > 4 && !protectedContent && !focused.current) {
         clearTimer();
-        setCompact(true);
+        collapse();
       }
     };
     node.addEventListener('scroll', onScroll, { passive: true });
     return () => node.removeEventListener('scroll', onScroll);
-  }, [clearTimer, enabled, protectedContent, scrollContainerRef]);
+  }, [clearTimer, collapse, enabled, protectedContent, scrollContainerRef]);
 
   return {
     compact: enabled && !protectedContent && compact,
     expand,
     onActivity: schedule,
-    onFocus: () => {
-      focused.current = true;
-      clearTimer();
+    onFocus: (keepExpanded = true) => {
+      focused.current = keepExpanded;
+      schedule();
       setCompact(false);
     },
     onBlur: () => {
