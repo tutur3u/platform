@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { isSelfServeWorkspaceProduct } from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -115,10 +116,33 @@ export async function POST(
     );
   }
 
-  if (!targetProduct) {
+  if (!targetProduct || !isSelfServeWorkspaceProduct(targetProduct)) {
     return NextResponse.json(
       { error: 'Target product not found' },
       { status: 404 }
+    );
+  }
+
+  if (!subscription.product_id)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  const { data: currentProduct, error: currentError } = await supabase
+    .schema('private')
+    .from('workspace_subscription_products')
+    .select('pricing_model')
+    .eq('id', subscription.product_id)
+    .maybeSingle();
+  if (currentError || !currentProduct)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  if (currentProduct.pricing_model !== targetProduct.pricing_model) {
+    return NextResponse.json(
+      { error: 'Use checkout to review and confirm a change of billing model' },
+      { status: 409 }
     );
   }
 

@@ -1312,19 +1312,7 @@ export {
   getConnectedOnboardingProgress,
   updateConnectedOnboardingProgress,
 } from './onboarding';
-export {
-  changePaySubscriptionPlan,
-  createPayCreditPackCheckout,
-  createPaySubscriptionCheckout,
-  getPayOrderInvoiceUrl,
-  getPaySubscriptionChangePreview,
-  getPayWorkspaceAiCreditStatus,
-  getPayWorkspaceBillingSummary,
-  updatePaySubscriptionCancellation,
-  updatePaySubscriptionSeats,
-  type WorkspaceAiCreditStatus,
-  type WorkspaceBillingSummary,
-} from './pay';
+export * from './pay';
 export {
   type CreateUserGroupPostCheckPayload,
   clearUserGroupPostChecks,
@@ -1354,6 +1342,10 @@ export {
   type WorkspaceUserLinkedPromotion,
   type WorkspaceUserReferralDiscount,
 } from './promotions';
+export {
+  getPublicWorkspacePrices,
+  type PublicWorkspacePrices,
+} from './public-pricing';
 export * from './rate-limit-appeals';
 export * from './rate-limits';
 export {

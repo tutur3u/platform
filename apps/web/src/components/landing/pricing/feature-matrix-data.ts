@@ -86,15 +86,15 @@ export const featureCategories: FeatureCategory[] = [
     features: [
       {
         name: 'whiteboards',
-        free: false,
+        free: true,
         plus: true,
         pro: true,
         enterprise: true,
       },
-      { name: 'drive', free: false, plus: true, pro: true, enterprise: true },
+      { name: 'drive', free: true, plus: true, pro: true, enterprise: true },
       {
         name: 'timeTracker',
-        free: false,
+        free: true,
         plus: true,
         pro: true,
         enterprise: true,

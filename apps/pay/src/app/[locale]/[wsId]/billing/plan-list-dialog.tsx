@@ -14,8 +14,10 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
+import { getSupportedProductPrice } from '@tuturuuu/payment-core/polar-price';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
+import { isSelfServeWorkspaceProduct } from '@tuturuuu/payment-core/self-serve-products';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -44,7 +46,6 @@ interface PlanListDialogProps {
 type BillingCycleTab = 'month' | 'year';
 
 export default function PlanListDialog({
-  isPersonalWorkspace,
   currentPlan,
   products,
   wsId,
@@ -76,30 +77,30 @@ export default function PlanListDialog({
 
   const allPlans = products
     .map((product) => {
-      const firstPrice = product.prices.find((p) => 'amountType' in p);
-
-      const isSeatBased = firstPrice?.amountType === 'seat_based';
-      const isFixed = firstPrice?.amountType === 'fixed';
-      const isFreeModel = product.metadata.product_tier === 'FREE';
-
-      const price = isFixed ? firstPrice.priceAmount : null;
-
-      const pricePerSeat = isSeatBased
-        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
-        : null;
-
-      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
-
-      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
-
-      if (
-        !isFreeModel &&
-        ((isPersonalWorkspace && isSeatBased) ||
-          (!isPersonalWorkspace && !isSeatBased))
-      ) {
-        // Exclude seat-based plans for personal workspaces
+      let supported: ReturnType<typeof getSupportedProductPrice>;
+      try {
+        supported = getSupportedProductPrice(product);
+      } catch {
         return null;
       }
+      const firstPrice = supported.price;
+      const isFreeModel = product.metadata.product_tier === 'FREE';
+      if (
+        !isSelfServeWorkspaceProduct({
+          tier:
+            typeof product.metadata.product_tier === 'string'
+              ? product.metadata.product_tier
+              : null,
+          pricing_model: firstPrice.amountType,
+          archived: product.isArchived,
+          price: supported.amount,
+        })
+      )
+        return null;
+      const price = supported.amount;
+      const pricePerSeat = supported.pricePerSeat;
+      const minSeats = supported.minSeats;
+      const maxSeats = supported.maxSeats;
 
       return {
         id: product.id,
@@ -558,7 +559,8 @@ export default function PlanListDialog({
                               onOpenChange(false);
                             }}
                             onPlanChange={
-                              currentPlan.tier === 'FREE'
+                              currentPlan.tier === 'FREE' ||
+                              currentPlan.pricingModel !== plan.pricingModel
                                 ? undefined
                                 : () => handlePlanChange(plan)
                             }

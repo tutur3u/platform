@@ -85,6 +85,7 @@ export const MARKETING_CLIENT_MESSAGE_NAMESPACES = [
   'account_switcher',
   'branding',
   'changelog-page',
+  'commercialComparison',
   'contact',
   'course-details-tabs',
   'facebook_mockup',

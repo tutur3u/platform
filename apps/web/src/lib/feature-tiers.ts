@@ -1,4 +1,5 @@
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
+import { FEATURE_TIERS } from '@tuturuuu/utils/feature-tier-policy';
 
 /**
  * Tier hierarchy for comparison (higher index = higher tier)
@@ -36,31 +37,7 @@ export type FeatureId =
 /**
  * Feature tier requirements configuration
  */
-export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
-  // FREE tier features
-  dashboard: 'FREE',
-  tasks: 'FREE',
-  calendar: 'FREE',
-  notifications: 'FREE',
-  qr_generator: 'FREE',
-  finance: 'FREE',
-  users: 'FREE',
-  inventory: 'FREE',
-  whiteboards: 'FREE',
-  drive: 'FREE',
-  realtime_cursors: 'FREE',
-  documents: 'FREE',
-  time_tracker: 'FREE',
-
-  // PLUS tier features
-  chat: 'PLUS',
-  voice_assistant: 'FREE',
-
-  // PRO tier features
-  workforce: 'PRO',
-  ai_lab: 'PRO',
-  mira: 'PRO',
-};
+export { FEATURE_TIERS } from '@tuturuuu/utils/feature-tier-policy';
 
 /**
  * Per-board realtime concurrency limits by tier

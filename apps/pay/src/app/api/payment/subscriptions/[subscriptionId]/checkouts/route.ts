@@ -1,4 +1,8 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  isSelfServeWorkspaceProduct,
+  validCheckoutSeats,
+} from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
@@ -88,6 +92,7 @@ export async function POST(
     .from('workspace_subscriptions')
     .select('*')
     .eq('id', subscriptionId)
+    .eq('ws_id', wsId)
     .maybeSingle();
 
   if (subscriptionError) {
@@ -105,36 +110,36 @@ export async function POST(
     );
   }
 
+  const { data: targetProduct, error: targetError } = await supabase
+    .schema('private')
+    .from('workspace_subscription_products')
+    .select('tier, pricing_model, archived, price')
+    .eq('id', productId)
+    .maybeSingle();
+  if (targetError)
+    return NextResponse.json(
+      { error: 'Product availability could not be verified' },
+      { status: 503 }
+    );
+  if (!targetProduct || !isSelfServeWorkspaceProduct(targetProduct)) {
+    return NextResponse.json(
+      { error: 'This product is not available for new purchases' },
+      { status: 400 }
+    );
+  }
   let seats: number | undefined;
-
-  if (!workspace.personal) {
-    const { count: memberCount, error: memberCountError } = await supabase
+  if (targetProduct.pricing_model === 'seat_based') {
+    const { count, error: countError } = await supabase
       .from('workspace_members')
       .select('*', { count: 'exact', head: true })
       .eq('ws_id', wsId);
-
-    if (memberCountError) {
+    if (countError || !validCheckoutSeats(count)) {
       return NextResponse.json(
-        { error: memberCountError.message },
-        { status: 500 }
+        { error: 'Workspace seat count could not be verified' },
+        { status: 503 }
       );
     }
-
-    seats = memberCount || 0;
-
-    if (seats && !Number.isInteger(seats)) {
-      return NextResponse.json(
-        { error: 'Seats must be an integer' },
-        { status: 400 }
-      );
-    }
-
-    if (seats < 1 || seats > 1000) {
-      return NextResponse.json(
-        { error: 'Seats must be between 1 and 1000' },
-        { status: 400 }
-      );
-    }
+    seats = count;
   }
 
   // HERE is where you add the metadata

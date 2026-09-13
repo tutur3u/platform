@@ -1,3 +1,4 @@
+import approvedCatalog from '../../../../../packages/payment-core/src/approved-workspace-prices.json';
 import type { LandingContent } from './landing-content';
 
 export const englishLandingContent = {
@@ -174,9 +175,9 @@ export const englishLandingContent = {
         description: 'For individuals exploring Tuturuuu',
         features: [
           'Basic task management',
-          'Calendar sync (limited)',
-          'AI chat (limited tokens)',
-          'QR Generator',
+          'Calendars, whiteboards and time tracking',
+          'AI chat with a finite credit allowance',
+          'Workspace roles and permissions',
         ],
         name: 'Free',
         period: 'forever',
@@ -188,13 +189,13 @@ export const englishLandingContent = {
         description: 'For teams that need collaboration',
         features: [
           'Everything in Free +',
-          'Unlimited Whiteboards',
-          '20GB Drive storage',
-          'Granular permissions',
+          'Paid member billing and team collaboration',
+          '20 GiB Drive storage per workspace',
+          'AI credits with optional purchased top-ups',
         ],
         name: 'Plus',
         period: '/user/mo',
-        price: '$8',
+        price: `$${approvedCatalog.prices.plus.monthly / 100}`,
       },
       {
         badge: 'Most Powerful',
@@ -202,13 +203,13 @@ export const englishLandingContent = {
         description: 'For power teams that need it all',
         features: [
           'Everything in Plus +',
-          'Unlimited AI',
+          'Generous AI credits; top-ups available',
           'Priority support',
-          'Reports & Analytics',
+          'Mira, AI Lab and workforce tools',
         ],
         name: 'Pro',
         period: '/user/mo',
-        price: '$15',
+        price: `$${approvedCatalog.prices.pro.monthly / 100}`,
       },
     ],
     title: 'Simple pricing. No surprises.',

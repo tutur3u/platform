@@ -5185,7 +5185,7 @@
       "compare": "So sánh tất cả tính năng",
       "faq": {
         "q1": {
-          "answer": "Có! Gói Miễn Phí hoàn toàn miễn phí mãi mãi với các tính năng cơ bản. Nâng cấp bất cứ lúc nào để có thêm khả năng.",
+          "answer": "Gói Free không có phí thuê bao. Các giới hạn sử dụng và tính khả dụng của sản phẩm vẫn áp dụng.",
           "question": "Có thật sự có gói miễn phí không?"
         },
         "q2": {
@@ -5193,7 +5193,7 @@
           "question": "Tôi có tiết kiệm với thanh toán hàng năm không?"
         },
         "q3": {
-          "answer": "Mỗi workspace có gói riêng. Gói trả phí tính theo người dùng trong workspace đó. Bạn có thể dùng gói khác nhau cho các workspace khác nhau. Mỗi tài khoản được tối đa 10 workspace miễn phí—workspace thêm cần gói trả phí.",
+          "answer": "Mỗi không gian làm việc có gói riêng; gói trả phí tính theo thành viên. Mỗi tài khoản được tạo tối đa 10 không gian làm việc. Nâng cấp không tự động tăng giới hạn này.",
           "question": "Giá theo workspace hoạt động thế nào?"
         },
         "q4": {
@@ -5212,7 +5212,7 @@
         },
         "featuresLabel": "Tính Năng",
         "featuresList": {
-          "advancedAI": "AI Không Giới Hạn",
+          "advancedAI": "Tín dụng AI dồi dào; có thể mua thêm",
           "aiChat": "Chat AI",
           "analytics": "Báo Cáo & Analytics",
           "calendar": "Đồng Bộ Lịch",
@@ -5225,7 +5225,7 @@
           "prioritySupport": "Hỗ Trợ Ưu Tiên",
           "qrGenerator": "Tạo Mã QR",
           "selfHosting": "Tự Host",
-          "sla": "Cam Kết SLA",
+          "sla": "Tùy chọn SLA theo hợp đồng",
           "tasks": "Quản Lý Công Việc",
           "timeTracker": "Chấm Công",
           "tuchat": "Tuchat (Nhắn Tin)",
@@ -5238,7 +5238,7 @@
           "advanced": "nâng cao",
           "limited": "giới hạn",
           "soon": "Sắp có",
-          "unlimited": "không giới hạn"
+          "unlimited": "Theo giới hạn gói"
         }
       },
       "payAsYouGo": {
@@ -5260,7 +5260,7 @@
             "Mọi thứ của Pro +",
             "Tùy chỉnh theo nhu cầu",
             "Đội ngũ support riêng",
-            "SLA đảm bảo",
+            "SLA theo hợp đồng đã ký",
             "Tự host được"
           ],
           "name": "Doanh Nghiệp",
@@ -5272,7 +5272,7 @@
           "features": [
             "Quản lý công việc cơ bản",
             "Đồng bộ lịch (có giới hạn)",
-            "Chat AI cơ bản",
+            "Chat AI trong hạn mức tín dụng",
             "Tạo mã QR",
             "CRM & Kho hàng (beta)"
           ],
@@ -5286,12 +5286,12 @@
           "description": "Khi team cần phối hợp",
           "features": [
             "Mọi thứ của Free +",
-            "Whiteboard không giới hạn",
+            "Bảng trắng có giới hạn bảo vệ tài nguyên",
             "Lưu trữ Drive",
             "Chấm công & Yêu cầu",
             "Phân quyền chi tiết",
             "Tuwrite & Tuchat (sắp ra mắt)",
-            "Tumeet—Video call (sắp ra mắt)"
+            "Tạo cuộc họp Meet: thử nghiệm giới hạn"
           ],
           "name": "Plus",
           "period": {
@@ -5309,7 +5309,7 @@
           "description": "Cho team cần sức mạnh tối đa",
           "features": [
             "Mọi thứ của Plus +",
-            "AI không giới hạn",
+            "Tín dụng AI dồi dào; có thể mua thêm",
             "Hỗ trợ ưu tiên",
             "Báo cáo & Analytics",
             "Tích hợp tùy chỉnh"

@@ -1,3 +1,4 @@
+import approvedCatalog from '../../../../../packages/payment-core/src/approved-workspace-prices.json';
 import type { LandingContent } from './landing-content';
 
 export const vietnameseLandingContent = {
@@ -174,9 +175,9 @@ export const vietnameseLandingContent = {
         description: 'Khởi đầu nhẹ nhàng',
         features: [
           'Quản lý công việc cơ bản',
-          'Đồng bộ lịch (có giới hạn)',
-          'Chat AI cơ bản',
-          'Tạo mã QR',
+          'Lịch, bảng trắng và theo dõi thời gian',
+          'Chat AI trong hạn mức tín dụng hữu hạn',
+          'Vai trò và quyền trong không gian làm việc',
         ],
         name: 'Miễn Phí',
         period: 'miễn phí mãi',
@@ -188,13 +189,13 @@ export const vietnameseLandingContent = {
         description: 'Khi team cần phối hợp',
         features: [
           'Mọi thứ của Free +',
-          'Whiteboard không giới hạn',
-          'Lưu trữ Drive 20GB',
-          'Phân quyền chi tiết',
+          'Thanh toán theo thành viên và cộng tác nhóm',
+          '20 GiB Drive cho mỗi không gian làm việc',
+          'Tín dụng AI với lựa chọn mua thêm',
         ],
         name: 'Plus',
         period: '/người/tháng',
-        price: '$8',
+        price: `$${approvedCatalog.prices.plus.monthly / 100}`,
       },
       {
         badge: 'Mạnh Nhất',
@@ -202,13 +203,13 @@ export const vietnameseLandingContent = {
         description: 'Cho team cần sức mạnh tối đa',
         features: [
           'Mọi thứ của Plus +',
-          'AI không giới hạn',
+          'Tín dụng AI dồi dào; có thể mua thêm',
           'Hỗ trợ ưu tiên',
-          'Báo cáo & Analytics',
+          'Mira, AI Lab và công cụ quản lý nhân sự',
         ],
         name: 'Pro',
         period: '/người/tháng',
-        price: '$15',
+        price: `$${approvedCatalog.prices.pro.monthly / 100}`,
       },
     ],
     title: 'Giá rõ ràng. Không phí ẩn.',
