@@ -191,6 +191,9 @@ export function BillingClient({
               </div>
 
               {/* Pricing */}
+              <p className="text-muted-foreground text-xs">
+                {t('catalog-rate-label')}
+              </p>
               <div className="flex items-baseline gap-1">
                 <span className="font-black text-4xl tracking-tight">
                   $
@@ -207,6 +210,10 @@ export function BillingClient({
                   </span>
                 )}
               </div>
+
+              <p className="max-w-md text-muted-foreground text-xs">
+                {t('catalog-rate-description')}
+              </p>
 
               {/* Seat Usage - Only show for seat-based pricing */}
               {isSeatBased && seatStatus && (

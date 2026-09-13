@@ -44,6 +44,8 @@
     "cancel": "Cancel",
     "cancel-subscription": "Cancel Subscription",
     "cannot-downgrade-to-free": "Cannot downgrade to Free",
+    "catalog-rate-description": "Your existing subscription price and discounts may differ. Open the customer portal below to review your billing amount.",
+    "catalog-rate-label": "Current catalog list rate",
     "charge": "charge",
     "charged-now": "You'll be charged {amount} now",
     "choose-plan-description": "Choose the plan that best fits your needs.",
