@@ -176,3 +176,18 @@ it('creates a new owned conversation without generating a second AI reply', asyn
   });
   expect(state.messages).toHaveLength(1);
 });
+
+it('retains complete long Unicode transcripts in canonical parts on save and retry', async () => {
+  const text = '日本語'.repeat(8000);
+  const message = { ...first, parts: [{ type: 'text', text }] };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    expect((await POST(request([message]))).status).toBe(200);
+    expect(state.messages).toHaveLength(1);
+    const saved = JSON.parse(JSON.stringify(state.messages[0]));
+    expect(saved.metadata.ai.parts).toEqual(message.parts);
+    expect(saved.metadata.ai.parts[0].text).toBe(text);
+    expect(
+      new TextEncoder().encode(saved.content).byteLength
+    ).toBeLessThanOrEqual(65536);
+  }
+});
