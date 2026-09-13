@@ -465,6 +465,7 @@
   }
   .deck {
     --background: white;
+    --card: white;
     --foreground: black;
     --muted: #f0f0f0;
     --muted-foreground: #444;
