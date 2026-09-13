@@ -23,7 +23,6 @@ import { MiraChatConversation } from './mira-chat-conversation';
 import { MiraChatEmptyState } from './mira-chat-empty-state';
 import { MiraChatHeader } from './mira-chat-header';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
-import { useMiraBottomBarVisibility } from './use-mira-bottom-bar-visibility';
 import { useMiraChatActions } from './use-mira-chat-actions';
 import { useMiraChatAttachments } from './use-mira-chat-attachments';
 import type { MiraTaskBoardContext } from './use-mira-chat-config';
@@ -71,7 +70,6 @@ export default function MiraChatPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const toolbarContentRef = useRef<HTMLDivElement>(null);
-  const toolbarVisibilityAnchorRef = useRef<HTMLDivElement>(null);
   const greetingKey = useMemo(() => getGreetingKey(), []);
   const generativeUIStore = useMemo(() => createGenerativeUIAdapter(), []);
 
@@ -318,13 +316,6 @@ export default function MiraChatPanel({
     wsId,
   });
 
-  const { bottomBarVisible } = useMiraBottomBarVisibility({
-    auxiliaryToolbarRef: toolbarContentRef,
-    hasMessages,
-    scrollContainerRef,
-    toolbarVisibilityAnchorRef,
-    viewOnly,
-  });
   useEffect(() => {
     if (!hasMessages) {
       setViewOnly(false);
@@ -407,7 +398,6 @@ export default function MiraChatPanel({
                 pendingPrompt={pendingPrompt}
                 queuedText={queuedText}
                 scrollContainerRef={scrollContainerRef}
-                toolbarVisibilityAnchorRef={toolbarVisibilityAnchorRef}
                 userAvatarUrl={userAvatarUrl}
                 userName={userName}
               />
@@ -426,7 +416,7 @@ export default function MiraChatPanel({
               composerRef={composerRef}
               assistantName={assistantName}
               attachedFiles={attachedFiles}
-              bottomBarVisible={bottomBarVisible}
+              bottomBarVisible={!viewOnly}
               floating={hasMessages && !voiceActive}
               scrollContainerRef={scrollContainerRef}
               canUploadFiles={supportsFileInput && !voiceActive}

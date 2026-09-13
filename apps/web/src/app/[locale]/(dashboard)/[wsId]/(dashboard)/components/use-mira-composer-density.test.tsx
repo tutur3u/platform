@@ -53,3 +53,17 @@ describe('composer density', () => {
     expect(result.current.compact).toBe(true);
   });
 });
+
+it('returns expanded after leaving Live even when entered from the compact bar', () => {
+  vi.useFakeTimers();
+  const { result, rerender } = renderHook(
+    ({ enabled }) =>
+      useMiraComposerDensity({ enabled, protectedContent: false }),
+    { initialProps: { enabled: true } }
+  );
+  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
+  expect(result.current.compact).toBe(true);
+  rerender({ enabled: false });
+  rerender({ enabled: true });
+  expect(result.current.compact).toBe(false);
+});

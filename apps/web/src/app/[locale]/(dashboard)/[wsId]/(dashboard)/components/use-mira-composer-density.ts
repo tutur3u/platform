@@ -20,7 +20,6 @@ export function useMiraComposerDensity({
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }) {
   const [compact, setCompact] = useState(false);
-  const [showControls, setShowControls] = useState(false);
   const focused = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const clearTimer = useCallback(() => clearTimeout(timer.current), []);
@@ -30,15 +29,15 @@ export function useMiraComposerDensity({
     timer.current = setTimeout(() => setCompact(true), COMPOSER_IDLE_MS);
   }, [clearTimer, enabled, protectedContent]);
   const expand = useCallback(() => {
-    setShowControls(true);
     setCompact(false);
     schedule();
   }, [schedule]);
 
   useEffect(() => {
+    if (!enabled) setCompact(false);
     schedule();
     return clearTimer;
-  }, [clearTimer, schedule]);
+  }, [clearTimer, enabled, schedule]);
 
   useEffect(() => {
     const node = scrollContainerRef?.current;
@@ -59,10 +58,8 @@ export function useMiraComposerDensity({
   return {
     compact: enabled && !protectedContent && compact,
     expand,
-    showControls,
     onActivity: schedule,
     onFocus: () => {
-      setShowControls(true);
       focused.current = true;
       clearTimer();
       setCompact(false);

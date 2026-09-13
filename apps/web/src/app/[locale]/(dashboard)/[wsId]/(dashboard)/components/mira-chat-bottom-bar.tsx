@@ -95,8 +95,7 @@ export function MiraChatBottomBar({
     scrollContainerRef,
   });
   const { expand } = density;
-  const toolbarShown =
-    (bottomBarVisible || density.showControls || !!input) && !voiceActive;
+  const toolbarShown = bottomBarVisible && !voiceActive;
   useEffect(() => {
     if (modelPickerHotkeySignal > 0) expand();
   }, [expand, modelPickerHotkeySignal]);
