@@ -3,7 +3,8 @@
 import { AnimatePresence } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
-import { StatusPill } from './assistant-visuals';
+import type { LiveComposer } from '../components/mira-voice-mode-switcher';
+import { AuroraBlob, StatusPill } from './assistant-visuals';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
@@ -26,10 +27,12 @@ export function stopMediaStream(stream: MediaStream | null) {
 
 export function AssistantVoiceSession({
   onError,
+  onComposerChange,
   onRestartSession,
   wsId,
 }: {
   onError: (error: Error) => void;
+  onComposerChange?: (composer: LiveComposer | null) => void;
   onRestartSession: () => Promise<void>;
   wsId: string;
 }) {
@@ -96,7 +99,16 @@ export function AssistantVoiceSession({
 
   const { activities, notes, decide, calendarResult } = useLiveTools(wsId);
   const { entries, sendText } = useLiveJournal();
+  useEffect(() => {
+    onComposerChange?.({ connected, sendText });
+    return () => onComposerChange?.(null);
+  }, [connected, sendText, onComposerChange]);
   const { addVisualization } = useVisualizationStore();
+  const hasVisualizations = useVisualizationStore(
+    (state) =>
+      state.visualizations.some((item) => !item.dismissed) ||
+      !!state.centerVisualization
+  );
 
   // Handle grounding metadata for Google Search visualization
   useEffect(() => {
@@ -222,6 +234,7 @@ export function AssistantVoiceSession({
 
   return (
     <LiveWorkspace
+      hasResults={!!calendarResult || hasVisualizations}
       connected={connected}
       authorizationExpired={authorizationExpired}
       speaking={isSpeaking || volume > 0.03}
@@ -230,7 +243,14 @@ export function AssistantVoiceSession({
       activities={activities}
       notes={notes}
       decide={decide}
-      onPrompt={sendText}
+      visualization={
+        <AuroraBlob
+          connected={connected}
+          isSpeaking={isSpeaking}
+          isUserSpeaking={isUserSpeaking}
+          volume={volume}
+        />
+      }
       status={
         <StatusPill
           connected={connected}
@@ -252,8 +272,10 @@ export function AssistantVoiceSession({
             onRestartSession={onRestartSession}
             videoRef={videoRef}
             supportsVideo={true}
-            textChatOpen={textChatOpen}
-            onToggleChat={() => setTextChatOpen((v) => !v)}
+            textChatOpen={onComposerChange ? false : textChatOpen}
+            onToggleChat={
+              onComposerChange ? undefined : () => setTextChatOpen((v) => !v)
+            }
             onVideoStreamChange={(stream, type) => {
               setActiveVideoStream(stream);
               setVideoType(type);
@@ -262,7 +284,7 @@ export function AssistantVoiceSession({
             videoStopRequest={videoStopRequest}
           />
           <AnimatePresence>
-            {textChatOpen && connected && (
+            {!onComposerChange && textChatOpen && connected && (
               <ChatBox
                 connected={connected}
                 disabled={!connected}

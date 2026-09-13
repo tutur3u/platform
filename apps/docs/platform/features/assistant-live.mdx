@@ -13,9 +13,19 @@ Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
 ## Experience
 
 Start or stop Live with the waveform icon in the chat composer. The tooltip and
-pressed state identify the control. The chat and its draft stay mounted and
-visible while the live session opens in a compact panel. Close the panel or press
-Escape to stop the session and return focus to the composer.
+pressed state identify the control. Live occupies the conversation area in normal
+layout flow, with a responsive gradient visualization and the same text composer.
+Close Live or press Escape to stop the session and return to the chat. The chat
+state and draft are retained. Text submission waits until Live is connected.
+Recent captions follow the speaker; the transcript disclosure and export expose
+the session journal (up to 200 entries). This journal is session-local and is not
+persisted into the chat database.
+
+While reading chat, downward scrolling or six seconds without composer activity
+compacts the composer into a right-aligned Chat/Live bar. Focused controls, drafts,
+and attachments keep it expanded. The Chat button reopens and focuses the input.
+The expanded controls have a blurred background so messages remain legible behind
+them; hidden controls are removed from keyboard navigation.
 
 The assistant opens tasks, calendar, finance, and meetings next to the conversation
 through tool calls. The chat toolbar has no product, sidebar, or layout controls. One artifact splits the available space in half; multiple

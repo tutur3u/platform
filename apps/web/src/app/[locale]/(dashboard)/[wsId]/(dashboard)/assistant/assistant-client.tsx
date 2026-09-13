@@ -8,6 +8,7 @@ import {
   useEphemeralToken,
 } from '@/hooks/use-ephemeral-token';
 import { LiveAPIProvider } from '@/hooks/use-live-api';
+import type { LiveComposer } from '../components/mira-voice-mode-switcher';
 import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 import { AssistantVoiceSession } from './assistant-voice-session';
 
@@ -15,6 +16,7 @@ export interface AssistantClientProps {
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
   onReturnToChat: () => void;
+  onComposerChange?: (composer: LiveComposer | null) => void;
   wsId: string;
 }
 
@@ -22,6 +24,7 @@ export default function AssistantClient({
   creditSource,
   creditWsId,
   onReturnToChat,
+  onComposerChange,
   wsId,
 }: AssistantClientProps) {
   const t = useTranslations('dashboard.voice_assistant');
@@ -117,6 +120,7 @@ export default function AssistantClient({
         scopeKey={scopeKey}
       >
         <AssistantVoiceSession
+          onComposerChange={onComposerChange}
           onError={setSessionError}
           onRestartSession={restartSession}
           wsId={wsId}

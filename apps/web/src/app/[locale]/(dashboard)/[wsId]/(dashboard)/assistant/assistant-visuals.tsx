@@ -44,7 +44,7 @@ export function AuroraBlob({
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none relative grid aspect-square w-[min(54vmin,400px)] place-items-center"
+      className="pointer-events-none relative grid aspect-square w-[min(32cqw,32cqh,14rem)] min-w-12 place-items-center"
       style={{ scale: signalScale }}
     >
       <motion.div
@@ -79,7 +79,7 @@ export function AuroraBlob({
 
       <motion.div
         className={cn(
-          'absolute inset-[24%] rounded-full border bg-background/55 shadow-2xl backdrop-blur-2xl',
+          'absolute inset-[24%] rounded-[42%_58%_63%_37%/45%_38%_62%_55%] border bg-linear-to-br from-dynamic-cyan/75 via-dynamic-purple/65 to-dynamic-pink/80 shadow-2xl backdrop-blur-2xl',
           connected ? 'border-primary/25' : 'border-border/50'
         )}
         style={{
@@ -88,11 +88,11 @@ export function AuroraBlob({
         }}
       >
         <motion.div
-          className="absolute inset-[12%] rounded-full bg-primary/12 blur-2xl"
+          className="absolute inset-[12%] rounded-full bg-dynamic-cyan/30 blur-xl"
           style={{ opacity: haloOpacity, scale: coreScale }}
         />
         <motion.div
-          className="absolute inset-[28%] rounded-full border border-primary/25 bg-primary/20"
+          className="absolute inset-[28%] rounded-full border border-primary/25 bg-dynamic-purple/30"
           style={{ scale: coreScale }}
           animate={
             shouldReduceMotion || !connected
