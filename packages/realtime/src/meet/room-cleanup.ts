@@ -1,6 +1,6 @@
 import type { MeetRoomCommand, MeetRoomSnapshot } from './room';
 import { startRoomBudget } from './room-budget';
-import { meetTrackKey } from './room-tracks';
+import { publicationCleanupKey } from './room-tracks';
 
 /** A provider success rejected by the current room still requires durable cleanup. */
 export function queueUncommittedPublication(
@@ -39,7 +39,7 @@ export function queueUncommittedPublication(
       pendingPublications: [
         ...new Map(
           [...(state.budget.pendingPublications ?? []), ...publications].map(
-            (track) => [meetTrackKey(track), track]
+            (track) => [publicationCleanupKey(track), track]
           )
         ).values(),
       ],
@@ -55,11 +55,11 @@ export function mergePublicationCleanup(
 ): MeetRoomSnapshot {
   if (!current.budget) return current;
   const remaining = new Set(
-    (progress.budget?.pendingPublications ?? []).map(meetTrackKey)
+    (progress.budget?.pendingPublications ?? []).map(publicationCleanupKey)
   );
   const completed = new Set(
     (started.budget?.pendingPublications ?? [])
-      .map(meetTrackKey)
+      .map(publicationCleanupKey)
       .filter((key) => !remaining.has(key))
   );
   return {
@@ -67,7 +67,7 @@ export function mergePublicationCleanup(
     budget: {
       ...current.budget,
       pendingPublications: current.budget.pendingPublications?.filter(
-        (track) => !completed.has(meetTrackKey(track))
+        (track) => !completed.has(publicationCleanupKey(track))
       ),
     },
   };
