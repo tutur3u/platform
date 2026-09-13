@@ -51,27 +51,34 @@ export function AiMessageParts({
     thinking: t('ai_thinking_mode'),
     thought: t('ai_thought'),
   };
-  const contentParts = normalizedParts.filter((part) => !isAiToolPart(part));
-  const toolParts = normalizedParts.filter(isAiToolPart);
+  const groups: AiMessagePart[][] = [];
+  for (const part of normalizedParts) {
+    const previous = groups.at(-1);
+    if (isAiToolPart(part) && previous?.every(isAiToolPart))
+      previous.push(part);
+    else groups.push([part]);
+  }
 
   if (normalizedParts.length === 0) return null;
 
   return (
     <div className={cn('flex min-w-0 max-w-full flex-col gap-2', className)}>
-      {contentParts.map((part, index) => (
-        <AiPartRenderer
-          isStreaming={Boolean(isStreaming)}
-          key={getPartKey(part, index)}
-          labels={labels}
-          part={part}
-        />
-      ))}
-      {toolParts.length > 0 && (
-        <ToolGroup
-          isStreaming={Boolean(isStreaming)}
-          labels={labels}
-          parts={toolParts}
-        />
+      {groups.map((group, index) =>
+        isAiToolPart(group[0]!) ? (
+          <ToolGroup
+            key={getPartKey(group[0]!, index)}
+            isStreaming={Boolean(isStreaming)}
+            labels={labels}
+            parts={group}
+          />
+        ) : (
+          <AiPartRenderer
+            key={getPartKey(group[0]!, index)}
+            isStreaming={Boolean(isStreaming)}
+            labels={labels}
+            part={group[0]!}
+          />
+        )
       )}
     </div>
   );

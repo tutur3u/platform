@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LiveWorkspace } from './live-workspace';
 
@@ -16,18 +16,20 @@ const base = {
   activities: [],
   notes: [],
   decide: vi.fn(),
-  onPrompt: vi.fn(),
+  visualization: <div>Voice visualization</div>,
   status: 'Connected',
   results: 'Workspace result',
   controls: 'Controls',
   children: null,
 };
 describe('live workspace interactions', () => {
-  it('disables prompts while disconnected and keeps the transcript labelled', () => {
+  it('shows compact visualization without duplicate welcome content', () => {
     render(<LiveWorkspace {...base} connected={false} />);
     expect(
-      screen.getByRole('button', { name: 'shortcuts.plan' })
-    ).toBeDisabled();
+      screen.queryByRole('button', { name: 'shortcuts.plan' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Voice visualization')).toBeVisible();
+    expect(screen.queryByText('welcome')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'export' })).toBeDisabled();
     expect(screen.getByRole('log', { name: 'transcript' })).toBeVisible();
   });
@@ -76,4 +78,30 @@ describe('live workspace interactions', () => {
     expect(screen.getByText('Your next step is review.')).toBeVisible();
     expect(screen.getByRole('button', { name: 'export' })).toBeEnabled();
   });
+});
+
+it('shows grounded search results even without function-tool activity', () => {
+  render(<LiveWorkspace {...base} hasResults />);
+  expect(screen.getByText('Workspace result')).toBeVisible();
+});
+
+it('follows the latest captions while retaining full session history', () => {
+  render(
+    <LiveWorkspace
+      {...base}
+      entries={Array.from({ length: 5 }, (_, i) => ({
+        id: `turn-${i}`,
+        role: 'assistant' as const,
+        text: `Caption ${i}`,
+        complete: true,
+      }))}
+    />
+  );
+  const captions = within(screen.getByRole('log'));
+  expect(captions.queryByText('Caption 0')).not.toBeInTheDocument();
+  expect(captions.getByText('Caption 4')).toBeVisible();
+  expect(screen.getByText('Caption 0')).not.toBeVisible();
+  fireEvent.click(screen.getByText('transcript', { selector: 'summary' }));
+  // The complete history remains available in the disclosure and export.
+  expect(screen.getByText('Caption 0')).toBeVisible();
 });
