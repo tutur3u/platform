@@ -48,7 +48,9 @@ describe('pitch presentation controls', () => {
     fireEvent.click(screen.getByRole('button', { name: copy.overview }));
     const overview = screen.getByRole('navigation', { name: copy.overview });
     fireEvent.click(
-      within(overview).getByRole('button', { name: /Pricing proposal/ })
+      within(overview).getByRole('button', {
+        name: new RegExp(copy.slides.pricing.kicker),
+      })
     );
     expect(window.location.hash).toBe('#pricing');
     expect(

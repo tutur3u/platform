@@ -18,6 +18,7 @@ export interface PitchCopy {
   description: string;
   edition: string;
   proposal: string;
+  livePricingProposal: string;
   pricesLoading: string;
   pricesUnavailable: string;
   previous: string;

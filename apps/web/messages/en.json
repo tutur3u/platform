@@ -11440,6 +11440,7 @@
     "fullscreen": "Fullscreen",
     "fullscreenError": "Fullscreen is unavailable in this browser.",
     "help": "Arrow keys navigate · Home / End jump · Space plays or pauses",
+    "livePricingProposal": "Current prices · capacity changes awaiting rollout",
     "members": "Full members",
     "metrics": [
       "Activation",
@@ -11510,7 +11511,7 @@
         "title": "Grow through value.\nMeasure the economics."
       },
       "calculator": {
-        "body": "Explore the proposed subscription cost for your team. No add-ons or taxes are included in this illustration.",
+        "body": "Explore team subscription costs at current catalog prices. This illustration excludes add-ons and taxes.",
         "kicker": "Interactive model",
         "note": "Move the team size slider. Annual totals are actual annual charges; monthly equivalents are explanatory. This is a proposal calculator, not a checkout quote.",
         "title": "Make the cost\nconcrete."
@@ -11535,7 +11536,7 @@
       },
       "pricing": {
         "body": "One workspace subscription across the suite. Pay for capacity and advanced workflows as your needs grow.",
-        "kicker": "Pricing proposal",
+        "kicker": "Plans and allowances",
         "note": "These prices require review: Plus $9 monthly or $90 annually; Pro $19 monthly or $190 annually per full member. Existing subscriptions are unchanged.",
         "title": "Simple plans.\nRoom to grow."
       },

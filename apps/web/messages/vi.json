@@ -11440,6 +11440,7 @@
     "fullscreen": "Toàn màn hình",
     "fullscreenError": "Trình duyệt không hỗ trợ toàn màn hình.",
     "help": "Phím mũi tên chuyển trang · Home / End đến đầu / cuối · Space phát hoặc dừng",
+    "livePricingProposal": "Giá hiện tại · thay đổi hạn mức chờ triển khai",
     "members": "Thành viên chính thức",
     "metrics": [
       "Kích hoạt",
@@ -11510,7 +11511,7 @@
         "title": "Tăng trưởng từ giá trị.\nĐo lường hiệu quả."
       },
       "calculator": {
-        "body": "Khám phá chi phí thuê bao đề xuất cho đội nhóm. Minh họa chưa bao gồm tiện ích bổ sung và thuế.",
+        "body": "Khám phá chi phí thuê bao đội nhóm theo giá hiện tại. Minh họa chưa bao gồm tiện ích bổ sung và thuế.",
         "kicker": "Mô hình tương tác",
         "note": "Điều chỉnh số thành viên. Tổng năm là khoản thanh toán năm; mức tương đương tháng chỉ để tham khảo. Đây không phải báo giá thanh toán.",
         "title": "Chi phí\ntrong tầm nhìn."
@@ -11535,7 +11536,7 @@
       },
       "pricing": {
         "body": "Một thuê bao không gian cho bộ ứng dụng. Trả phí cho dung lượng và quy trình nâng cao khi cần.",
-        "kicker": "Đề xuất giá",
+        "kicker": "Gói và hạn mức",
         "note": "Giá chờ duyệt: Plus 9 USD/tháng hoặc 90 USD/năm; Pro 19 USD/tháng hoặc 190 USD/năm cho mỗi thành viên. Thuê bao hiện tại không đổi.",
         "title": "Gói đơn giản.\nDư địa phát triển."
       },
