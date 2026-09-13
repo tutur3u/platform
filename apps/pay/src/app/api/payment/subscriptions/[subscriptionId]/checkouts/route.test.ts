@@ -9,75 +9,9 @@ vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: mocks.resolve,
 }));
 
+import { adminFixture } from '../subscription-test-fixtures';
 import { POST } from './route';
 
-function adminFixture({
-  subscription = true,
-  model = 'seat_based',
-  count = 1,
-  targetTier = 'PLUS',
-  currentTier = 'PLUS',
-  currentMissing = false,
-}: {
-  subscription?: boolean;
-  model?: string;
-  count?: number | null;
-  targetTier?: string;
-  currentTier?: string;
-  currentMissing?: boolean;
-} = {}) {
-  const queries: Record<string, ReturnType<typeof vi.fn>> = {};
-  let productQueries = 0;
-  const from = vi.fn((table: string) => {
-    if (table === 'workspace_subscription_products') productQueries++;
-    const result =
-      table === 'workspaces'
-        ? { data: { id: 'workspace', personal: true } }
-        : table === 'workspace_subscriptions'
-          ? {
-              data: subscription
-                ? {
-                    id: 'sub',
-                    ws_id: 'workspace',
-                    polar_subscription_id: 'polar-sub',
-                    product_id: 'current-product',
-                  }
-                : null,
-            }
-          : table === 'workspace_subscription_products'
-            ? {
-                data:
-                  productQueries > 1
-                    ? currentMissing
-                      ? null
-                      : { tier: currentTier }
-                    : {
-                        tier: targetTier,
-                        pricing_model: model,
-                        archived: false,
-                        price: 0,
-                      },
-              }
-            : { count, error: null };
-    const query = Object.assign(Promise.resolve(result), {
-      select: vi.fn(),
-      eq: vi.fn(),
-      maybeSingle: vi.fn(async () => result),
-    });
-    query.select.mockReturnValue(query);
-    query.eq.mockReturnValue(query);
-    queries[table] = query.eq;
-    return query;
-  });
-  return {
-    admin: {
-      from,
-      schema: () => ({ from }),
-      rpc: vi.fn(async () => ({ data: true, error: null })),
-    },
-    queries,
-  };
-}
 async function checkout() {
   return POST(
     new NextRequest(
@@ -132,6 +66,31 @@ describe('workspace checkout boundary', () => {
     mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
     expect((await checkout()).status).toBe(200);
     expect(mocks.create).toHaveBeenCalledOnce();
+  });
+  it('uses the target minimum while retaining purchased capacity', async () => {
+    for (const [currentSeats, minSeats, expected] of [
+      [3, 5, 5],
+      [5, 1, 5],
+    ]) {
+      const f = adminFixture({ currentSeats, minSeats, count: 2 });
+      mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+      expect((await checkout()).status).toBe(200);
+      expect(mocks.create).toHaveBeenLastCalledWith(
+        expect.objectContaining({ seats: expected })
+      );
+    }
+  });
+  it('rejects excessive or unverifiable purchased capacity', async () => {
+    for (const config of [
+      { currentSeats: 3, maxSeats: 2 },
+      { currentSeats: null },
+      { currentSeats: 0 },
+    ]) {
+      const f = adminFixture(config);
+      mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+      expect((await checkout()).status).toBe(config.maxSeats ? 400 : 503);
+    }
+    expect(mocks.create).not.toHaveBeenCalled();
   });
   it('denies legacy fixed products and unavailable seat accounting', async () => {
     for (const config of [{ model: 'fixed' }, { count: null }, { count: 0 }]) {

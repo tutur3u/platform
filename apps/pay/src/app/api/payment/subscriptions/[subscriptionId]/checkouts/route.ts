@@ -1,11 +1,12 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
+  getSelfServePlanChangeError,
   isSelfServeWorkspaceProduct,
-  validCheckoutSeats,
 } from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
+import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
 
 export async function POST(
   request: NextRequest,
@@ -113,7 +114,7 @@ export async function POST(
   const { data: targetProduct, error: targetError } = await supabase
     .schema('private')
     .from('workspace_subscription_products')
-    .select('tier, pricing_model, archived, price')
+    .select('tier, pricing_model, archived, price, min_seats, max_seats')
     .eq('id', productId)
     .maybeSingle();
   if (targetError)
@@ -135,7 +136,7 @@ export async function POST(
   const { data: currentProduct, error: currentError } = await supabase
     .schema('private')
     .from('workspace_subscription_products')
-    .select('tier')
+    .select('tier, pricing_model')
     .eq('id', subscription.product_id)
     .maybeSingle();
   if (currentError || !currentProduct)
@@ -143,27 +144,26 @@ export async function POST(
       { error: 'Current pricing model unavailable' },
       { status: 503 }
     );
-  if (currentProduct.tier !== 'FREE' && targetProduct.tier === 'FREE')
-    return NextResponse.json(
-      {
-        error:
-          'Cancel at period end to move to Free without forfeiting paid access',
-      },
-      { status: 400 }
-    );
+  const transitionError = getSelfServePlanChangeError(
+    currentProduct.tier,
+    targetProduct.tier
+  );
+  if (transitionError)
+    return NextResponse.json({ error: transitionError }, { status: 400 });
   let seats: number | undefined;
   if (targetProduct.pricing_model === 'seat_based') {
-    const { count, error: countError } = await supabase
-      .from('workspace_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId);
-    if (countError || !validCheckoutSeats(count)) {
+    const capacity = await getSubscriptionTransitionSeats(
+      supabase,
+      subscription,
+      currentProduct.pricing_model,
+      targetProduct
+    );
+    if (!capacity.ok)
       return NextResponse.json(
-        { error: 'Workspace seat count could not be verified' },
-        { status: 503 }
+        { error: capacity.error },
+        { status: capacity.status }
       );
-    }
-    seats = count;
+    seats = capacity.seats;
   }
 
   // HERE is where you add the metadata

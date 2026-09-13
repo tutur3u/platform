@@ -18,7 +18,10 @@ import { getSupportedProductPrice } from '@tuturuuu/payment-core/polar-price';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { isPlanUpgrade } from '@tuturuuu/payment-core/proration';
 import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
-import { isSelfServeWorkspaceProduct } from '@tuturuuu/payment-core/self-serve-products';
+import {
+  isSelfServeWorkspaceProduct,
+  resolveSelfServeSeatCount,
+} from '@tuturuuu/payment-core/self-serve-products';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -31,7 +34,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Plan } from './billing-client';
-import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';
 
 interface PlanListDialogProps {
@@ -59,12 +61,6 @@ export default function PlanListDialog({
   // Default to yearly tab for better value proposition, unless current plan is monthly
   const [selectedCycle, setSelectedCycle] = useState<BillingCycleTab>(
     currentPlan.billingCycle === 'month' ? 'month' : 'year'
-  );
-
-  // State for plan change confirmation dialog
-  const [showPlanChangeDialog, setShowPlanChangeDialog] = useState(false);
-  const [selectedTargetPlan, setSelectedTargetPlan] = useState<string | null>(
-    null
   );
 
   // Helper to simplify plan names (remove "Tuturuuu Workspace" prefix and billing cycle suffix)
@@ -144,6 +140,19 @@ export default function PlanListDialog({
   const filteredPlans = allPlans.filter(
     (plan) => plan.isFree || plan.billingCycle === selectedCycle
   );
+
+  const currentSeats =
+    currentPlan.pricingModel === 'seat_based'
+      ? (currentPlan.seatCount ?? null)
+      : 0;
+  const memberCount = seatStatus?.memberCount ?? currentPlan.seatCount ?? 1;
+  const effectiveSeats = (plan: (typeof allPlans)[0]) =>
+    resolveSelfServeSeatCount({
+      currentSeats,
+      memberCount,
+      minSeats: plan.minSeats ?? null,
+      maxSeats: plan.maxSeats ?? null,
+    });
 
   // Get plan styling based on tier
   const getPlanStyles = (
@@ -227,13 +236,21 @@ export default function PlanListDialog({
       };
     }
 
-    const memberCount = seatStatus?.memberCount ?? currentPlan.seatCount ?? 1;
+    const targetSeats =
+      plan.pricingModel === 'seat_based' ? effectiveSeats(plan) : 0;
+    if (targetSeats === null)
+      return {
+        text: t('plan-unavailable'),
+        icon: X,
+        variant: 'outline' as const,
+        disabled: true,
+      };
     const isDowngrade = !isPlanUpgrade(
       {
         tier: currentPlan.tier,
         amount:
           currentPlan.pricingModel === 'seat_based'
-            ? (currentPlan.pricePerSeat ?? 0) * memberCount
+            ? (currentPlan.pricePerSeat ?? 0) * (currentSeats ?? 0)
             : (currentPlan.price ?? 0),
       },
       {
@@ -246,8 +263,7 @@ export default function PlanListDialog({
               : 'FREE',
         amount:
           plan.pricingModel === 'seat_based'
-            ? (plan.pricePerSeat ?? 0) *
-              Math.max(memberCount, plan.minSeats ?? 1)
+            ? (plan.pricePerSeat ?? 0) * targetSeats
             : (plan.price ?? 0),
       }
     );
@@ -268,19 +284,6 @@ export default function PlanListDialog({
       disabled: false,
       isIncompatible: false,
     };
-  };
-
-  // Handle plan change for existing subscriptions
-  const handlePlanChange = (plan: (typeof allPlans)[0]) => {
-    setSelectedTargetPlan(plan.id);
-    setShowPlanChangeDialog(true);
-  };
-
-  // Handle successful plan change
-  const handlePlanChangeSuccess = () => {
-    setShowPlanChangeDialog(false);
-    setSelectedTargetPlan(null);
-    onOpenChange(false);
   };
 
   return (
@@ -353,6 +356,7 @@ export default function PlanListDialog({
               const isCurrentPlan = plan.id === currentPlan.productId;
               const isSeatBased = plan.pricingModel === 'seat_based';
               const isFixed = plan.pricingModel === 'fixed';
+              const targetSeats = effectiveSeats(plan);
               const styles = getPlanStyles(plan, isCurrentPlan);
               const PlanIcon = styles.Icon;
 
@@ -465,7 +469,7 @@ export default function PlanListDialog({
                       {/* Estimated total for seat-based plans */}
                       {isSeatBased &&
                         plan.pricePerSeat &&
-                        seatStatus?.memberCount && (
+                        targetSeats !== null && (
                           <div
                             className={cn(
                               'mt-2 rounded-lg border px-3 py-2',
@@ -478,20 +482,13 @@ export default function PlanListDialog({
                               <p className="font-semibold text-foreground text-xs">
                                 {t('estimated-total', {
                                   total: centToDollar(
-                                    plan.pricePerSeat *
-                                      Math.max(
-                                        seatStatus.memberCount,
-                                        plan.minSeats ?? 1
-                                      )
+                                    plan.pricePerSeat * targetSeats
                                   ),
                                   cycle:
                                     plan.billingCycle === 'month'
                                       ? t('per-month')
                                       : t('per-year'),
-                                  count: Math.max(
-                                    seatStatus.memberCount,
-                                    plan.minSeats ?? 1
-                                  ),
+                                  count: targetSeats,
                                 })}
                               </p>
                             </div>
@@ -577,12 +574,6 @@ export default function PlanListDialog({
                             onCheckoutOpened={() => {
                               onOpenChange(false);
                             }}
-                            onPlanChange={
-                              currentPlan.tier === 'FREE' ||
-                              currentPlan.pricingModel !== plan.pricingModel
-                                ? undefined
-                                : () => handlePlanChange(plan)
-                            }
                             className={cn(
                               'w-full transition-all hover:scale-[1.02]',
                               !plan.isFree &&
@@ -621,17 +612,6 @@ export default function PlanListDialog({
           )}
         </div>
       </DialogContent>
-
-      {/* Plan Change Confirmation Dialog */}
-      {selectedTargetPlan && currentPlan.id && (
-        <PlanChangeConfirmationDialog
-          open={showPlanChangeDialog}
-          onOpenChange={setShowPlanChangeDialog}
-          targetPlanId={selectedTargetPlan}
-          subscriptionId={currentPlan.id}
-          onSuccess={handlePlanChangeSuccess}
-        />
-      )}
     </Dialog>
   );
 }
