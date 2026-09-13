@@ -229,6 +229,7 @@
       "back-to-billing": "Back to Billing",
       "billing-cycle": "Billing Cycle Started",
       "billing-cycle-desc": "Your billing cycle has started. You will be charged on the same date each month.",
+      "checkout-id": "Checkout reference",
       "completed": "Completed",
       "confirmation-email": "Confirmation Email",
       "confirmation-email-desc": "You will receive a confirmation email with your payment details.",
@@ -252,6 +253,7 @@
       "status": "Status",
       "support-team": "Contact our support team for any questions or issues regarding your payment.",
       "title": "Payment Successful",
+      "view-invoices": "View invoices",
       "what-next": "What happens next?"
     },
     "switch-to-annual": "Switch to annual for 17% savings",

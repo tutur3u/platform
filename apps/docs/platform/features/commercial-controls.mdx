@@ -37,6 +37,12 @@ only supports Free subscriptions in checkout. Paid plan changes and explicit
 seat adjustments use the subscription update API after in-app confirmation.
 List-price estimates exclude existing discounts, tax and the final prorated
 invoice. Seat-only updates do not replace the product, price or discount.
+
+Invoice downloads come from Polar order history, not a subscription-price HTML
+receipt. The legacy `/api/billing/[wsId]/invoice` link redirects to that history.
+Checkout confirmation requires workspace billing permission, matching checkout
+workspace metadata and a succeeded status; its displayed total includes provider
+discounts and taxes. A checkout reference is not an invoice number.
 Paid plan changes preserve the current quantity: adjust seats first when a target
 minimum or reserved invitations need additional capacity. Paid billing-model
 changes require assisted migration. Missing counts or bounds block updates.

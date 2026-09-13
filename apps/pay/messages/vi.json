@@ -229,6 +229,7 @@
       "back-to-billing": "Quay lại trang thanh toán",
       "billing-cycle": "Chu kỳ thanh toán bắt đầu",
       "billing-cycle-desc": "Chu kỳ thanh toán của bạn bắt đầu từ ngày này và sẽ tự động gia hạn vào cùng ngày hàng tháng hoặc hàng năm, tùy thuộc vào gói bạn chọn.",
+      "checkout-id": "Mã phiên thanh toán",
       "completed": "Đã hoàn tất",
       "confirmation-email": "Email xác nhận",
       "confirmation-email-desc": "Bạn sẽ nhận được một email xác nhận với chi tiết thanh toán và hoá đơn của bạn.",
@@ -252,6 +253,7 @@
       "status": "Trạng thái",
       "support-team": "Liên hệ với đội ngũ hỗ trợ của chúng tôi nếu bạn có bất kỳ câu hỏi hoặc vấn đề nào liên quan đến thanh toán của bạn.",
       "title": "Thanh toán thành công",
+      "view-invoices": "Xem hóa đơn",
       "what-next": "Tiếp theo là gì?"
     },
     "switch-to-annual": "Chuyển sang gói năm để tiết kiệm 17%",
