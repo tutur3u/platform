@@ -27,6 +27,8 @@ vi.mock('next-intl', () => ({
   useFormatter: () => ({
     number: (value: number) => String(value),
     dateTime: (value: Date) => value.toISOString(),
+    dateTimeRange: (start: Date, end: Date) =>
+      `${start.toISOString()} – ${end.toISOString()}`,
   }),
 }));
 

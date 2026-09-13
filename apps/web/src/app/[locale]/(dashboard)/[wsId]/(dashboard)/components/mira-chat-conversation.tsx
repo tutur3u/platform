@@ -2,11 +2,12 @@
 
 import { ActionProvider, StateProvider } from '@json-render/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
-import type { RefObject } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import ChatMessageList from './chat-message-list';
 import type { MessageFileAttachment } from './file-preview-chips';
 
 interface MiraChatConversationProps {
+  liveResults?: ReactNode;
   actionHandlers: ReturnType<
     typeof import('@/components/json-render/dashboard-registry').handlers
   >;
@@ -28,6 +29,7 @@ interface MiraChatConversationProps {
 }
 
 export function MiraChatConversation({
+  liveResults,
   actionHandlers,
   assistantName,
   generativeUIStore,
@@ -70,6 +72,7 @@ export function MiraChatConversation({
       <StateProvider store={generativeUIStore}>
         <ActionProvider handlers={actionHandlers}>
           <ChatMessageList
+            footer={liveResults}
             messages={renderedMessages}
             isStreaming={isBusy || !!pendingPrompt}
             assistantName={assistantName}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, UserIcon } from '@tuturuuu/icons';
+import { AudioLines, Sparkles, UserIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { cn } from '@tuturuuu/utils/format';
 import {
@@ -133,6 +133,7 @@ function AssistantActivityBubble({
 }
 
 export default function ChatMessageList({
+  footer,
   messages,
   isStreaming,
   assistantName,
@@ -234,6 +235,29 @@ export default function ChatMessageList({
       )}
     >
       {messages.map((message, index) => {
+        const notice = message.parts.find(
+          (part) => part.type === 'data-live-session'
+        );
+        if (
+          notice &&
+          'data' in notice &&
+          notice.data &&
+          typeof notice.data === 'object' &&
+          'text' in notice.data &&
+          typeof notice.data.text === 'string'
+        )
+          return (
+            <div
+              key={message.id}
+              role="status"
+              className="my-3 flex min-w-0 items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-muted-foreground text-xs"
+            >
+              <AudioLines className="size-3.5 shrink-0" />
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {notice.data.text}
+              </span>
+            </div>
+          );
         const isUser = message.role === 'user';
         const hasText = hasTextContent(message);
         const displayText = isUser
@@ -262,7 +286,9 @@ export default function ChatMessageList({
 
         // Check if previous visible message has the same role (for grouping)
         const prevMessage = messages[index - 1];
-        const isContinuation = prevMessage?.role === message.role;
+        const isContinuation =
+          prevMessage?.role === message.role &&
+          !prevMessage.parts.some((part) => part.type === 'data-live-session');
 
         const messageText = isUser ? displayText : getMessageText(message);
 
@@ -270,7 +296,7 @@ export default function ChatMessageList({
           <div
             key={message.id}
             className={cn(
-              'group flex gap-2.5',
+              'group flex min-w-0 max-w-full gap-2',
               isUser ? 'flex-row-reverse' : '',
               isContinuation ? 'mt-0.5' : 'mt-3 first:mt-0'
             )}
@@ -309,7 +335,7 @@ export default function ChatMessageList({
             {/* Message content — min-w-0 so bubble can shrink and wrap inside chat area */}
             <div
               className={cn(
-                'flex min-w-0 max-w-[85%] flex-col sm:max-w-[80%]',
+                'flex min-w-0 max-w-[calc(100%-2.25rem)] flex-1 flex-col',
                 isUser ? 'items-end' : 'items-start'
               )}
             >
@@ -328,13 +354,13 @@ export default function ChatMessageList({
               {/* Bubble + actions row */}
               <div
                 className={cn(
-                  'flex min-w-0 items-end gap-1',
+                  'flex w-full min-w-0 max-w-full flex-wrap items-end gap-1',
                   isUser ? 'flex-row-reverse' : ''
                 )}
               >
                 <div
                   className={cn(
-                    'wrap-break-word min-w-0 max-w-full overflow-hidden rounded-2xl px-3.5 py-2.5 text-sm',
+                    'min-w-0 max-w-full overflow-hidden rounded-2xl px-3.5 py-2.5 text-sm [overflow-wrap:anywhere]',
                     isUser
                       ? 'bg-foreground text-background'
                       : 'bg-muted/50 text-foreground'
@@ -492,6 +518,7 @@ export default function ChatMessageList({
         );
       })}
 
+      {footer}
       {(() => {
         const status = getAssistantActivityStatus({
           isStreaming,

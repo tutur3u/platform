@@ -54,3 +54,41 @@ it('includes failed tool results in voice context', () => {
   expect(JSON.stringify(context)).toContain('Permission denied');
   expect(JSON.stringify(context)).toContain('output-error');
 });
+
+it('retains earlier goals alongside recent turns without exceeding the context budget', () => {
+  const messages = Array.from({ length: 30 }, (_, i) => ({
+    id: String(i),
+    role: 'user' as const,
+    parts: [
+      {
+        type: 'text' as const,
+        text:
+          i === 0
+            ? 'Important goal: prepare the product launch'
+            : `Turn ${i}: ${'context '.repeat(400)}`,
+      },
+    ],
+  }));
+  const context = buildLiveConversationContext(messages, 8000);
+  const text = context
+    .flatMap((turn) => turn.parts.map((part) => part.text))
+    .join('');
+  expect(text).toContain('Important goal');
+  expect(text).toContain('Turn 29');
+  expect(text.length).toBeLessThanOrEqual(8000);
+});
+
+it('keeps older excerpt roles without duplicating them among recent turns', () => {
+  const messages = Array.from({ length: 10 }, (_, index) => ({
+    id: String(index),
+    role: index % 2 ? ('assistant' as const) : ('user' as const),
+    parts: [{ type: 'text' as const, text: `Unique turn ${index}` }],
+  }));
+  const context = buildLiveConversationContext(messages);
+  expect(context.map((turn) => turn.role)).toEqual(
+    messages.map((message) => (message.role === 'user' ? 'user' : 'model'))
+  );
+  expect(context.map((turn) => turn.parts[0]?.text)).toEqual(
+    messages.map((message) => message.parts[0]?.text)
+  );
+});

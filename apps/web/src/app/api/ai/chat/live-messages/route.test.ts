@@ -207,3 +207,25 @@ it('retains complete long Unicode transcripts in canonical parts on save and ret
     ).toBeLessThanOrEqual(40000);
   }
 });
+
+it('saves session notifications in canonical parts without losing their order', async () => {
+  const notice = {
+    ...second,
+    parts: [
+      {
+        type: 'data-live-session',
+        data: { status: 'ended', text: 'Session ended' },
+      },
+    ],
+  };
+  const response = await POST(
+    new NextRequest('http://localhost/api/ai/chat/live-messages', {
+      method: 'POST',
+      body: JSON.stringify({ chatId, messages: [first, notice] }),
+    })
+  );
+  expect(response.status).toBe(200);
+  expect(
+    (state.messages[1]!.metadata as { ai: { parts: unknown[] } }).ai.parts
+  ).toEqual(notice.parts);
+});

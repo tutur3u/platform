@@ -6091,6 +6091,7 @@
       "no_upcoming_meetings": "Không có cuộc họp sắp tới trong 30 mục gần nhất. Xem Đã qua hoặc mở giao diện đầy đủ.",
       "normal": "Trung bình",
       "open_full": "Mở giao diện đầy đủ",
+      "open_meeting": "Mở {name}",
       "overdue": "Quá hạn",
       "past_meetings": "Đã qua",
       "refresh": "Làm mới",
@@ -6413,6 +6414,8 @@
         "you": "Bạn"
       },
       "subtitle": "Trò chuyện với Mira, trợ lý AI của bạn",
+      "timeline_ended": "Cuộc trò chuyện trực tiếp đã kết thúc. Tiếp tục nhập hoặc bắt đầu trực tiếp lại.",
+      "timeline_started": "Đã bắt đầu trò chuyện trực tiếp với ngữ cảnh cuộc trò chuyện hiện tại.",
       "title": "Trợ lý giọng nói",
       "try_again": "Kết nối lại",
       "unable_to_connect": "Kết nối bị gián đoạn",

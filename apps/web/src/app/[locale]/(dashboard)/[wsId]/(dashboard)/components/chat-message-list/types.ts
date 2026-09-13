@@ -3,6 +3,7 @@ import type { RefObject } from 'react';
 import type { MessageFileAttachment } from '../file-preview-chips';
 
 export interface ChatMessageListProps {
+  footer?: import('react').ReactNode;
   messages: UIMessage[];
   isStreaming: boolean;
   assistantName?: string;

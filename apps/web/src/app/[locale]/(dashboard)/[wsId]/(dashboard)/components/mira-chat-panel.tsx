@@ -411,9 +411,9 @@ export default function MiraChatPanel({
       >
         {(onVoiceToggle, voiceActive, live) => (
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {live.content}
             {hasMessages ? (
               <MiraChatConversation
+                liveResults={live.results}
                 actionHandlers={actionHandlers}
                 assistantName={assistantName}
                 generativeUIStore={generativeUIStore}
@@ -441,17 +441,21 @@ export default function MiraChatPanel({
             )}
 
             <MiraChatBottomBar
+              liveControls={live.content}
+              liveInputOpen={live.inputOpen}
               composerRef={composerRef}
               assistantName={assistantName}
               attachedFiles={attachedFiles}
               bottomBarVisible={!viewOnly}
-              floating={hasMessages && !voiceActive}
+              floating={hasMessages}
               scrollContainerRef={scrollContainerRef}
               canUploadFiles={supportsFileInput && !voiceActive}
               input={input}
               inputRef={inputRef}
               isBusy={isBusy}
-              disabled={voiceActive && !live.composer?.connected}
+              disabled={
+                voiceActive && (!live.composer || live.composer.connecting)
+              }
               onFileRemove={handleFileRemove}
               onFilesSelected={
                 supportsFileInput && !voiceActive
@@ -459,7 +463,7 @@ export default function MiraChatPanel({
                   : undefined
               }
               onSubmit={
-                voiceActive
+                voiceActive && live.composer?.connected
                   ? (text) => {
                       if (live.composer?.connected) {
                         live.composer.sendText(text);

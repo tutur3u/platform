@@ -13,12 +13,12 @@ export function MiraWorkspaceLayout({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        'relative z-10 grid min-h-0 flex-1 gap-3 overflow-auto',
+        'relative z-10 grid min-h-0 min-w-0 flex-1 gap-3 overflow-auto',
         grid && count === 2 && '@3xl:[&>section:last-child]:col-span-2',
         count === 0
           ? 'grid-cols-1 grid-rows-1'
           : automatic
-            ? '@3xl:grid-cols-[minmax(18rem,0.7fr)_minmax(0,2fr)] grid-cols-1 @3xl:grid-rows-1 grid-rows-[minmax(18rem,0.7fr)_minmax(24rem,2fr)]'
+            ? '@3xl:grid-cols-[minmax(20rem,0.7fr)_minmax(0,2fr)] grid-cols-1 @3xl:grid-rows-1 grid-rows-[minmax(20rem,0.7fr)_minmax(24rem,2fr)]'
             : grid
               ? '@3xl:auto-rows-auto auto-rows-[minmax(26rem,1fr)] @3xl:grid-cols-2 grid-cols-1 @3xl:grid-rows-2'
               : vertical
@@ -26,7 +26,7 @@ export function MiraWorkspaceLayout({ children }: { children: ReactNode }) {
                 : '@3xl:grid-cols-2 grid-cols-1 @3xl:grid-rows-1 grid-rows-[minmax(26rem,1fr)_minmax(20rem,1fr)]'
       )}
     >
-      <div className="relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border bg-card/60 p-3 sm:p-4">
+      <div className="relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border bg-card/60 @lg:p-3 p-2">
         {children}
       </div>
       {grid

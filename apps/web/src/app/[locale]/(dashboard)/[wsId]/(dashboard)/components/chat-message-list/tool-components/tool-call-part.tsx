@@ -318,7 +318,9 @@ export function ToolCallPart({
       <div className="flex items-start gap-2 rounded-lg border border-border/50 bg-foreground/2 px-3 py-2 text-xs">
         <Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
         <span className="flex items-center gap-1.5">
-          <span className="font-medium">{toolName}</span>
+          <span className="min-w-0 flex-1 text-left font-medium [overflow-wrap:anywhere]">
+            {toolName}
+          </span>
           <span className="text-muted-foreground">
             {t('tool_generating_image')}
           </span>
@@ -332,7 +334,9 @@ export function ToolCallPart({
       <div className="flex items-start gap-2 rounded-lg border border-border/50 bg-foreground/2 px-3 py-2 text-xs">
         <Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
         <span className="flex items-center gap-1.5">
-          <span className="font-medium">{toolName}</span>
+          <span className="min-w-0 flex-1 text-left font-medium [overflow-wrap:anywhere]">
+            {toolName}
+          </span>
           <span className="text-muted-foreground">
             {t('tool_generating_qr')}
           </span>
@@ -363,8 +367,12 @@ export function ToolCallPart({
           <div className="my-2 flex w-full max-w-full flex-col gap-1.5">
             <div className="mb-1 flex items-center gap-1.5 text-xs">
               <Check className="h-3.5 w-3.5 text-dynamic-green" />
-              <span className="font-medium">{toolName}</span>
-              <span className="text-muted-foreground">{t('tool_done')}</span>
+              <span className="min-w-0 flex-1 text-left font-medium [overflow-wrap:anywhere]">
+                {toolName}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {t('tool_done')}
+              </span>
             </div>
             <VisibilityProvider>
               <Renderer spec={cleanedSpec} registry={registry} />
@@ -402,8 +410,12 @@ export function ToolCallPart({
       <div className="my-2 flex w-full max-w-full flex-col gap-1.5">
         <div className="mb-1 flex items-center gap-1.5 text-xs">
           <Check className="h-3.5 w-3.5 text-dynamic-green" />
-          <span className="font-medium">{toolName}</span>
-          <span className="text-muted-foreground">{t('tool_done')}</span>
+          <span className="min-w-0 flex-1 text-left font-medium [overflow-wrap:anywhere]">
+            {toolName}
+          </span>
+          <span className="shrink-0 text-muted-foreground">
+            {t('tool_done')}
+          </span>
         </div>
         <VisibilityProvider>
           <Renderer spec={approvalUiSpec} registry={registry} />
@@ -420,8 +432,12 @@ export function ToolCallPart({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1.5 text-xs">
               <Check className="h-3.5 w-3.5 text-dynamic-green" />
-              <span className="font-medium">{toolName}</span>
-              <span className="text-muted-foreground">{t('tool_done')}</span>
+              <span className="min-w-0 flex-1 text-left font-medium [overflow-wrap:anywhere]">
+                {toolName}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {t('tool_done')}
+              </span>
             </div>
             <ImagePreviewWithCopy
               imageUrl={imageUrl}
@@ -474,8 +490,12 @@ export function ToolCallPart({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-1.5 text-xs">
               <Check className="h-3.5 w-3.5 text-dynamic-green" />
-              <span className="font-medium">{toolName}</span>
-              <span className="text-muted-foreground">{t('tool_done')}</span>
+              <span className="min-w-0 flex-1 text-left font-medium [overflow-wrap:anywhere]">
+                {toolName}
+              </span>
+              <span className="shrink-0 text-muted-foreground">
+                {t('tool_done')}
+              </span>
             </div>
 
             <ImagePreviewWithCopy
@@ -564,7 +584,9 @@ export function ToolCallPart({
             hasOutput ? 'cursor-pointer' : 'cursor-default'
           )}
         >
-          <span className="font-medium">{toolName}</span>
+          <span className="min-w-0 flex-1 text-left font-medium [overflow-wrap:anywhere]">
+            {toolName}
+          </span>
           <span className="text-muted-foreground">
             {recovered
               ? t('tool_attempt_recovered')

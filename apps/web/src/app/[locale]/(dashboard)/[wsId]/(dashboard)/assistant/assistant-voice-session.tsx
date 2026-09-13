@@ -1,8 +1,16 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { Button } from '@tuturuuu/ui/button';
 import { AnimatePresence } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
 import type { LiveConversationChange } from '../assistant/use-live-conversation';
 import type { LiveComposer } from '../components/mira-voice-mode-switcher';
@@ -10,6 +18,7 @@ import { AuroraBlob, StatusPill } from './assistant-visuals';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
+import { LiveActionPreview } from './components/live-action-preview';
 import { LiveCalendarResult } from './components/live-calendar-result';
 import { LiveWorkspace } from './components/live-workspace';
 import VideoPreview from './components/video-panel/video-preview';
@@ -29,6 +38,9 @@ export function stopMediaStream(stream: MediaStream | null) {
 }
 
 export function AssistantVoiceSession({
+  onResultsChange,
+  inputOpen,
+  onToggleInput,
   onError,
   onComposerChange,
   history,
@@ -36,6 +48,9 @@ export function AssistantVoiceSession({
   onRestartSession,
   wsId,
 }: {
+  onResultsChange?: (results: ReactNode) => void;
+  inputOpen?: boolean;
+  onToggleInput?: () => void;
   onError: (error: Error) => void;
   history?: UIMessage[];
   onConversationChange?: LiveConversationChange;
@@ -43,6 +58,7 @@ export function AssistantVoiceSession({
   onRestartSession: () => Promise<void>;
   wsId: string;
 }) {
+  const t = useTranslations('dashboard.voice_assistant.studio');
   const videoRef = useRef<HTMLVideoElement>(null);
   const [textChatOpen, setTextChatOpen] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -115,9 +131,15 @@ export function AssistantVoiceSession({
     [sendJournalText, recordText]
   );
   useEffect(() => {
-    onComposerChange?.({ connected, sendText });
+    onComposerChange?.({
+      connected,
+      connecting:
+        connectionStatus === 'connecting' ||
+        connectionStatus === 'reconnecting',
+      sendText,
+    });
     return () => onComposerChange?.(null);
-  }, [connected, sendText, onComposerChange]);
+  }, [connected, connectionStatus, sendText, onComposerChange]);
   const { addVisualization } = useVisualizationStore();
   const hasVisualizations = useVisualizationStore(
     (state) =>
@@ -246,6 +268,69 @@ export function AssistantVoiceSession({
       client.off('interrupted', handleTurnComplete);
     };
   }, [client]);
+
+  useEffect(() => {
+    onResultsChange?.(
+      <>
+        <LiveCalendarResult result={calendarResult} />
+        {hasVisualizations && <VisualizationContainer wsId={wsId} />}
+      </>
+    );
+    return () => onResultsChange?.(null);
+  }, [onResultsChange, calendarResult, hasVisualizations, wsId]);
+
+  if (onConversationChange)
+    return (
+      <div className="min-w-0 max-w-full">
+        <ControlTray
+          compact
+          textChatOpen={inputOpen}
+          onToggleChat={onToggleInput}
+          onError={onError}
+          onRestartSession={onRestartSession}
+          videoRef={videoRef}
+          supportsVideo
+          onVideoStreamChange={(stream, type) => {
+            setActiveVideoStream(stream);
+            setVideoType(type);
+          }}
+          onInputVolumeChange={setInputVolume}
+          videoStopRequest={videoStopRequest}
+        />
+        {activities
+          .filter((activity) => activity.status === 'approval')
+          .map((activity) => (
+            <div
+              key={activity.id}
+              className="max-h-40 overflow-auto rounded-lg border p-2"
+            >
+              <LiveActionPreview args={activity.args} />
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => decide(activity.id, true)}>
+                  {t('approve')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => decide(activity.id, false)}
+                >
+                  {t('decline')}
+                </Button>
+              </div>
+            </div>
+          ))}
+        <VideoPreview
+          stream={activeVideoStream}
+          type={videoType}
+          onClose={() => {
+            setActiveVideoStream(null);
+            setVideoType(null);
+            setVideoStopRequest((request) => request + 1);
+          }}
+        />
+        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
+      </div>
+    );
 
   return (
     <LiveWorkspace

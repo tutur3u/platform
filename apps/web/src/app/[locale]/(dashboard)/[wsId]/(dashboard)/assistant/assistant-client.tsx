@@ -15,6 +15,10 @@ import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 import { AssistantVoiceSession } from './assistant-voice-session';
 
 export interface AssistantClientProps {
+  onResultsChange?: (results: ReactNode) => void;
+  onBeforeStart?: () => void | Promise<void>;
+  inputOpen?: boolean;
+  onToggleInput?: () => void;
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
   onReturnToChat: () => void;
@@ -25,6 +29,10 @@ export interface AssistantClientProps {
 }
 
 export default function AssistantClient({
+  onResultsChange,
+  onBeforeStart,
+  inputOpen,
+  onToggleInput,
   creditSource,
   creditWsId,
   onReturnToChat,
@@ -58,11 +66,12 @@ export default function AssistantClient({
     setSessionError(null);
     setIsRestarting(true);
     try {
+      await onBeforeStart?.();
       await refreshToken();
     } finally {
       setIsRestarting(false);
     }
-  }, [refreshToken]);
+  }, [refreshToken, onBeforeStart]);
 
   let content: ReactNode;
 
@@ -99,6 +108,7 @@ export default function AssistantClient({
   if (isLoading || isRestarting) {
     content = (
       <VoiceLoadingState
+        compact={!!onConversationChange}
         description={t('initializing')}
         title={t('preparing_live')}
       />
@@ -106,6 +116,7 @@ export default function AssistantClient({
   } else if (effectiveError || !token || !scopeKey || !liveSessionId) {
     content = (
       <VoiceErrorState
+        compact={!!onConversationChange}
         description={errorDescription}
         onReturnToChat={onReturnToChat}
         onRetry={() => void restartSession()}
@@ -126,6 +137,9 @@ export default function AssistantClient({
         scopeKey={scopeKey}
       >
         <AssistantVoiceSession
+          onResultsChange={onResultsChange}
+          inputOpen={inputOpen}
+          onToggleInput={onToggleInput}
           history={history}
           onConversationChange={onConversationChange}
           onComposerChange={onComposerChange}

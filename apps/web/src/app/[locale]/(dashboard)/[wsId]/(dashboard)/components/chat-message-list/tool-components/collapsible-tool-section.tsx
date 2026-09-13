@@ -93,10 +93,14 @@ export function CollapsibleToolSection({
   const latestAction = getLatestActionName(descriptors);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible
+      className="w-full min-w-0 max-w-full"
+      open={open}
+      onOpenChange={setOpen}
+    >
       <CollapsibleTrigger
         className={cn(
-          'flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors',
+          'flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors',
           'hover:bg-foreground/3',
           status === 'error'
             ? 'border-dynamic-red/20 bg-dynamic-red/5'

@@ -108,3 +108,34 @@ it('does not label failed or declined tool responses as completed actions', () =
     errorText: 'Declined',
   });
 });
+
+it('persists session notices as separate ordered timeline entries', () => {
+  let messages = reduceLiveConversation(
+    [],
+    { type: 'notice', status: 'started', text: 'Started' },
+    'start'
+  );
+  messages = reduceLiveConversation(
+    messages,
+    { type: 'text', role: 'user', text: 'Hello' },
+    'user'
+  );
+  messages = reduceLiveConversation(
+    messages,
+    { type: 'notice', status: 'ended', text: 'Ended' },
+    'end'
+  );
+  const restored = JSON.parse(JSON.stringify(messages));
+  expect(restored.map((message: { id: string }) => message.id)).toEqual([
+    'start',
+    'user',
+    'end',
+  ]);
+  expect(restored[2].parts[0]).toEqual({
+    type: 'data-live-session',
+    data: { status: 'ended', text: 'Ended' },
+  });
+  expect(
+    restored.every((message: { complete: boolean }) => message.complete)
+  ).toBe(true);
+});

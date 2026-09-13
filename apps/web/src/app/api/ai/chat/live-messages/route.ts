@@ -16,6 +16,13 @@ const bodySchema = z.object({
           .array(
             z.discriminatedUnion('type', [
               z.object({
+                type: z.literal('data-live-session'),
+                data: z.object({
+                  status: z.enum(['started', 'ended']),
+                  text: z.string().trim().min(1).max(1000),
+                }),
+              }),
+              z.object({
                 type: z.literal('source-url'),
                 sourceId: z.string().trim().min(1).max(2000),
                 url: z.url().max(2000),
