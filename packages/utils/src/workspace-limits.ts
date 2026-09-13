@@ -55,7 +55,7 @@ export async function checkWorkspaceCreationLimit(
       canCreate: false,
       currentCount,
       limit: MAX_WORKSPACES_FOR_FREE_USERS,
-      errorMessage: `You have reached the maximum limit of ${MAX_WORKSPACES_FOR_FREE_USERS} workspaces. Please upgrade to a paid plan or contact the Tuturuuu team for more information.`,
+      errorMessage: `You have reached the maximum limit of ${MAX_WORKSPACES_FOR_FREE_USERS} workspaces. Upgrading does not increase this account limit. Contact the Tuturuuu team if you need more workspaces.`,
       errorCode: WORKSPACE_LIMIT_ERROR_CODE,
     };
   }

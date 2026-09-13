@@ -169,7 +169,7 @@ describe('subscription-helper', () => {
       });
     });
 
-    it('should return false when items is null/undefined', async () => {
+    it('should fail closed when items is null/undefined', async () => {
       const mockPolar = {
         subscriptions: {
           list: vi.fn().mockResolvedValue({
@@ -200,7 +200,7 @@ describe('subscription-helper', () => {
 
       expect(result).toEqual({
         hasWorkspace: true,
-        hasActive: false,
+        hasActive: true,
         subscription: null,
       });
     });

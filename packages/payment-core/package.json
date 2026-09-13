@@ -19,7 +19,10 @@
     "./proration": "./src/proration.ts",
     "./seat-limits": "./src/seat-limits.ts",
     "./subscription-constants": "./src/subscription-constants.ts",
-    "./subscription-helper": "./src/subscription-helper.ts"
+    "./subscription-helper": "./src/subscription-helper.ts",
+    "./polar-price": "./src/polar-price.ts",
+    "./self-serve-products": "./src/self-serve-products.ts",
+    "./public-prices": "./src/public-prices.ts"
   },
   "license": "MIT",
   "scripts": {

@@ -68,6 +68,23 @@ describe('AI credit Redis snapshot cache', () => {
     });
   });
 
+  it('denies malformed, unbounded or non-positive allowance responses', async () => {
+    for (const row of [
+      { remaining_credits: 100 },
+      { allowed: true, remaining_credits: 'Infinity' },
+      { allowed: true, remaining_credits: true },
+      { allowed: true, remaining_credits: [100] },
+      { allowed: true, remaining_credits: null },
+      { allowed: true, remaining_credits: -1 },
+      { allowed: true, remaining_credits: 0 },
+    ]) {
+      mocks.rpc.mockResolvedValue({ data: [row], error: null });
+      expect((await checkAiCredits('workspace', 'model', 'chat')).allowed).toBe(
+        false
+      );
+    }
+  });
+
   it('does not authorize AI requests from Redis status snapshots', async () => {
     mocks.readAiCreditSnapshot.mockResolvedValue({
       remainingCredits: 250,

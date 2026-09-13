@@ -88,11 +88,18 @@ export async function getSeatStatus(
   }
 
   // Always count current workspace members (needed for upgrade estimates)
-  const { count: memberCount } = await supabase
+  const { count: memberCount, error: countError } = await supabase
     .from('workspace_members')
     .select('*', { count: 'exact', head: true })
     .eq('ws_id', wsId);
 
+  if (
+    countError ||
+    !Number.isSafeInteger(memberCount) ||
+    (memberCount ?? -1) < 0 ||
+    (subscription && !product)
+  )
+    return unavailableSeatStatus();
   const currentMembers = memberCount ?? 0;
 
   // If not seat-based, no limit applies
@@ -107,6 +114,11 @@ export async function getSeatStatus(
     };
   }
 
+  if (
+    !Number.isSafeInteger(subscription.seat_count) ||
+    (subscription.seat_count ?? 0) < 1
+  )
+    return unavailableSeatStatus();
   const seatCount = subscription.seat_count ?? 1;
   const availableSeats = Math.max(0, seatCount - currentMembers);
 
@@ -134,6 +146,15 @@ export async function enforceSeatLimit(
 
   if (!status.isSeatBased) {
     return { allowed: true, status };
+  }
+
+  if (status.seatCount === 0) {
+    return {
+      allowed: false,
+      status,
+      message:
+        'Seat usage is temporarily unavailable. Please try again before changing capacity.',
+    };
   }
 
   if (!status.canAddMember) {
@@ -176,18 +197,32 @@ export async function getEffectiveAvailableSeats(
     return { status, totalPending: 0, effectiveAvailable: Infinity };
   }
 
-  const [{ count: workspaceInvitesCount }, { count: emailInvitesCount }] =
-    await Promise.all([
-      supabase
-        .from('workspace_invites')
-        .select('*', { count: 'exact', head: true })
-        .eq('ws_id', wsId),
-      supabase
-        .from('workspace_email_invites')
-        .select('*', { count: 'exact', head: true })
-        .eq('ws_id', wsId),
-    ]);
+  const [
+    { count: workspaceInvitesCount, error: workspaceError },
+    { count: emailInvitesCount, error: emailError },
+  ] = await Promise.all([
+    supabase
+      .from('workspace_invites')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId),
+    supabase
+      .from('workspace_email_invites')
+      .select('*', { count: 'exact', head: true })
+      .eq('ws_id', wsId),
+  ]);
 
+  if (
+    workspaceError ||
+    emailError ||
+    ![workspaceInvitesCount, emailInvitesCount].every(
+      (count) => Number.isSafeInteger(count) && (count ?? -1) >= 0
+    )
+  )
+    return {
+      status: unavailableSeatStatus(),
+      totalPending: 0,
+      effectiveAvailable: 0,
+    };
   const totalPending = (workspaceInvitesCount ?? 0) + (emailInvitesCount ?? 0);
   const effectiveUsed = status.memberCount + totalPending;
   const effectiveAvailable = Math.max(0, status.seatCount - effectiveUsed);
@@ -211,6 +246,15 @@ export async function canCreateInvitation(
 
   if (!status.isSeatBased) {
     return { allowed: true, status };
+  }
+
+  if (status.seatCount === 0) {
+    return {
+      allowed: false,
+      status,
+      message:
+        'Seat usage is temporarily unavailable. Please try again before changing capacity.',
+    };
   }
 
   if (effectiveAvailable === 0) {
@@ -245,4 +289,15 @@ export function calculateSeatCost(
   additionalSeats: number
 ): number {
   return currentPricePerSeat * additionalSeats;
+}
+
+function unavailableSeatStatus(): SeatStatus {
+  return {
+    isSeatBased: true,
+    seatCount: 0,
+    memberCount: 0,
+    availableSeats: 0,
+    canAddMember: false,
+    pricePerSeat: null,
+  };
 }

@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { computeAffordableTokens } from '../cap-output-tokens';
 
 describe('computeAffordableTokens', () => {
+  it('rejects arithmetic overflow from finite inputs', () => {
+    expect(computeAffordableTokens(Number.MAX_VALUE, Number.MIN_VALUE)).toBe(0);
+  });
   // 1 credit = $0.0001 USD
   // tokens = (credits * 0.0001 / markup) / pricePerToken
 
@@ -73,5 +76,17 @@ describe('computeAffordableTokens', () => {
     const withDefault = computeAffordableTokens(1000, 0.0000004);
     const withExplicit = computeAffordableTokens(1000, 0.0000004, 1.0);
     expect(withDefault).toBe(withExplicit);
+  });
+});
+
+describe('invalid AI budgets', () => {
+  it('does not convert malformed prices, balances or discounted markup into spending authority', () => {
+    for (const value of [NaN, Infinity, -Infinity]) {
+      expect(computeAffordableTokens(value, 1, 1)).toBe(0);
+      expect(computeAffordableTokens(1, value, 1)).toBe(0);
+      expect(computeAffordableTokens(1, 1, value)).toBe(0);
+    }
+    expect(computeAffordableTokens(100, 0.01, 0)).toBe(0);
+    expect(computeAffordableTokens(100, 0.01, 0.5)).toBe(0);
   });
 });

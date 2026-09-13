@@ -52,7 +52,8 @@
                       "platform/features/smart-scheduling/api-reference"
                     ]
                   },
-                  "platform/features/progress-goals-leaderboards"
+                  "platform/features/progress-goals-leaderboards",
+                  "platform/features/usage-accounting-guards"
                 ]
               },
               {
