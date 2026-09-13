@@ -19,7 +19,7 @@ const bodySchema = z.object({
                 type: z.literal('data-live-session'),
                 data: z.object({
                   status: z.enum(['started', 'ended']),
-                  text: z.string().max(1000),
+                  text: z.string().trim().min(1).max(1000),
                 }),
               }),
               z.object({

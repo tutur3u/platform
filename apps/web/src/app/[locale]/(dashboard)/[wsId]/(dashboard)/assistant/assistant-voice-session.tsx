@@ -4,7 +4,13 @@ import type { UIMessage } from '@tuturuuu/ai/types';
 import { Button } from '@tuturuuu/ui/button';
 import { AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
 import type { LiveConversationChange } from '../assistant/use-live-conversation';
 import type { LiveComposer } from '../components/mira-voice-mode-switcher';
@@ -32,6 +38,7 @@ export function stopMediaStream(stream: MediaStream | null) {
 }
 
 export function AssistantVoiceSession({
+  onResultsChange,
   inputOpen,
   onToggleInput,
   onError,
@@ -41,6 +48,7 @@ export function AssistantVoiceSession({
   onRestartSession,
   wsId,
 }: {
+  onResultsChange?: (results: ReactNode) => void;
   inputOpen?: boolean;
   onToggleInput?: () => void;
   onError: (error: Error) => void;
@@ -261,6 +269,16 @@ export function AssistantVoiceSession({
     };
   }, [client]);
 
+  useEffect(() => {
+    onResultsChange?.(
+      <>
+        <LiveCalendarResult result={calendarResult} />
+        {hasVisualizations && <VisualizationContainer wsId={wsId} />}
+      </>
+    );
+    return () => onResultsChange?.(null);
+  }, [onResultsChange, calendarResult, hasVisualizations, wsId]);
+
   if (onConversationChange)
     return (
       <div className="min-w-0 max-w-full">
@@ -301,6 +319,15 @@ export function AssistantVoiceSession({
               </div>
             </div>
           ))}
+        <VideoPreview
+          stream={activeVideoStream}
+          type={videoType}
+          onClose={() => {
+            setActiveVideoStream(null);
+            setVideoType(null);
+            setVideoStopRequest((request) => request + 1);
+          }}
+        />
         <video ref={videoRef} autoPlay playsInline muted className="hidden" />
       </div>
     );

@@ -15,6 +15,7 @@ import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 import { AssistantVoiceSession } from './assistant-voice-session';
 
 export interface AssistantClientProps {
+  onResultsChange?: (results: ReactNode) => void;
   onBeforeStart?: () => void | Promise<void>;
   inputOpen?: boolean;
   onToggleInput?: () => void;
@@ -28,6 +29,7 @@ export interface AssistantClientProps {
 }
 
 export default function AssistantClient({
+  onResultsChange,
   onBeforeStart,
   inputOpen,
   onToggleInput,
@@ -135,6 +137,7 @@ export default function AssistantClient({
         scopeKey={scopeKey}
       >
         <AssistantVoiceSession
+          onResultsChange={onResultsChange}
           inputOpen={inputOpen}
           onToggleInput={onToggleInput}
           history={history}

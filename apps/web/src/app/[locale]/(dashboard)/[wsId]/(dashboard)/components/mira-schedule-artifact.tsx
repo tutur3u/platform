@@ -58,8 +58,9 @@ export function MiraScheduleArtifact({
       {!meetings && (
         <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-1">
           <h3 className="font-semibold text-sm">
-            {format.dateTime(days[0]!, {
-              month: 'long',
+            {format.dateTimeRange(days[0]!, days[days.length - 1]!, {
+              month: 'short',
+              day: 'numeric',
               year: 'numeric',
               timeZone,
             })}

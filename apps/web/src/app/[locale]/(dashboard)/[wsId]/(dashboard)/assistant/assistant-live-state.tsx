@@ -69,6 +69,7 @@ export function VoiceErrorState({
   if (compact)
     return (
       <div role="alert" className="min-w-0 space-y-2 p-2 text-xs">
+        <p className="font-medium">{title}</p>
         <p className="text-dynamic-red [overflow-wrap:anywhere]">
           {description}
         </p>

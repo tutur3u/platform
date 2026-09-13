@@ -27,8 +27,9 @@ is capped at 10,000 Unicode characters to satisfy its database limits of
 before a subsequent typed request. Failed saves show a retry action; keep the page
 open until they succeed. In-progress speech remains provisional until the turn
 finishes or the session closes. Audio and video are not stored as chat attachments.
-Live starts with up to 64,000 characters of recent conversation context, including
-compact tool results. This bound does not remove older saved messages. Temporary session notes
+Live starts with up to 64,000 characters of conversation context: bounded earlier
+excerpts preserve original roles alongside recent turns and compact tool results.
+This is deterministic compaction, not a generated summary. This bound does not remove older saved messages. Temporary session notes
 remain separate from workspace documents.
 
 While reading chat, downward scrolling or six seconds without composer activity
@@ -219,4 +220,4 @@ subject to the existing three-attempt artifact limit.
 
 Mira keeps Live controls in the chat composer. Voice starts with text entry collapsed; opening text entry hides the media controls until the user closes text entry again. The shared conversation stays visible at every artifact layout size. Session start/end notices are canonical `data-live-session` parts and are restored alongside text and tool results. They describe session state, not a guarantee that an outstanding save has completed; save failures retain the existing retry notification.
 
-Before the first Live turn, the client supplies up to 64,000 characters of conversation context. Bounded excerpts preserve earlier goals alongside recent turns and tool results; this is deterministic compaction, not a generated summary or unlimited recall. Full saved messages are not shortened. Real microphone and provider transport should be verified separately from mocked lifecycle tests.
+Context bounds are described under [Experience](#experience); media verification remains covered under [Verification](#verification).

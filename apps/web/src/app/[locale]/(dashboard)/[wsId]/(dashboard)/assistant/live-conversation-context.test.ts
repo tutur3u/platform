@@ -77,3 +77,18 @@ it('retains earlier goals alongside recent turns without exceeding the context b
   expect(text).toContain('Turn 29');
   expect(text.length).toBeLessThanOrEqual(8000);
 });
+
+it('keeps older excerpt roles without duplicating them among recent turns', () => {
+  const messages = Array.from({ length: 10 }, (_, index) => ({
+    id: String(index),
+    role: index % 2 ? ('assistant' as const) : ('user' as const),
+    parts: [{ type: 'text' as const, text: `Unique turn ${index}` }],
+  }));
+  const context = buildLiveConversationContext(messages);
+  expect(context.map((turn) => turn.role)).toEqual(
+    messages.map((message) => (message.role === 'user' ? 'user' : 'model'))
+  );
+  expect(context.map((turn) => turn.parts[0]?.text)).toEqual(
+    messages.map((message) => message.parts[0]?.text)
+  );
+});

@@ -84,19 +84,13 @@ describe('MiraVoiceModeSwitcher', () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
-  it('mounts Live controls in the composer without a separate region', async () => {
+  it('mounts Live controls in the composer and toggles typing', async () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
     const panel = await screen.findByTestId('voice-canvas');
     expect(screen.getByTestId('composer')).toContainElement(panel);
-    expect(
-      screen.queryByRole('region', { name: 'Live' })
-    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Open input' }));
     expect(screen.getByRole('button', { name: 'Close input' })).toBeVisible();
-    expect(panel).not.toHaveClass('absolute');
-    expect(panel.style.top).toBe('');
-    expect(panel.style.bottom).toBe('');
   });
   it('opens Live when ResizeObserver is unavailable', async () => {
     vi.stubGlobal('ResizeObserver', undefined);

@@ -133,6 +133,7 @@ function AssistantActivityBubble({
 }
 
 export default function ChatMessageList({
+  footer,
   messages,
   isStreaming,
   assistantName,
@@ -285,7 +286,9 @@ export default function ChatMessageList({
 
         // Check if previous visible message has the same role (for grouping)
         const prevMessage = messages[index - 1];
-        const isContinuation = prevMessage?.role === message.role;
+        const isContinuation =
+          prevMessage?.role === message.role &&
+          !prevMessage.parts.some((part) => part.type === 'data-live-session');
 
         const messageText = isUser ? displayText : getMessageText(message);
 
@@ -370,6 +373,7 @@ export default function ChatMessageList({
                     />
                   ) : (
                     <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden *:min-w-0 *:max-w-full">
+                      {footer}
                       {(() => {
                         const descriptors = resolveMessageRenderGroups({
                           message,

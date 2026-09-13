@@ -62,3 +62,21 @@ it('seeds existing context and emits one ended notice after disconnect plus unmo
       )
   ).toHaveLength(1);
 });
+
+it('records intentional disconnect and reconnect even without a socket close event', () => {
+  const onChange = vi.fn();
+  const { rerender, unmount } = renderHook(() => useLiveConversation(onChange));
+  state.connected = true;
+  rerender();
+  state.connected = false;
+  rerender();
+  state.connected = true;
+  rerender();
+  const statuses = onChange.mock.lastCall?.[0]
+    .flatMap((message: { parts: { data?: { status: string } }[] }) =>
+      message.parts.map((part) => part.data?.status)
+    )
+    .filter(Boolean);
+  expect(statuses).toEqual(['started', 'ended', 'started']);
+  unmount();
+});

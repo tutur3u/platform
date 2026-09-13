@@ -58,7 +58,22 @@ export function useLiveConversation(
     client.seedConversation(buildLiveConversationContext(historyRef.current));
   }, [client, connected]);
   useEffect(() => {
-    if (!connected || sessionActive.current) return;
+    if (!connected) {
+      if (!sessionActive.current) return;
+      sessionActive.current = false;
+      publish({
+        type: 'finish',
+        interrupted: true,
+        errorText: translations.current('action_interrupted'),
+      });
+      publish({
+        type: 'notice',
+        status: 'ended',
+        text: translations.current('timeline_ended'),
+      });
+      return;
+    }
+    if (sessionActive.current) return;
     sessionActive.current = true;
     publish({
       type: 'notice',

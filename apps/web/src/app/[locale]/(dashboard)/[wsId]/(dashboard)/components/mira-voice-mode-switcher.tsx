@@ -60,6 +60,7 @@ export function MiraVoiceModeSwitcher({
     voiceActive: boolean,
     live: {
       content: ReactNode;
+      results: ReactNode;
       composer: LiveComposer | null;
       inputOpen: boolean;
       toggleInput: () => void;
@@ -75,6 +76,7 @@ export function MiraVoiceModeSwitcher({
   const [mode, setMode] = useState<'chat' | 'live'>('chat');
   const voiceActive = mode === 'live';
   const [inputOpen, setInputOpen] = useState(false);
+  const [results, setResults] = useState<ReactNode>(null);
   const [liveComposer, setLiveComposer] = useState<LiveComposer | null>(null);
   const voiceActiveRef = useRef(false);
   const focusFrameRef = useRef<number | null>(null);
@@ -134,6 +136,7 @@ export function MiraVoiceModeSwitcher({
 
   const liveContent = voiceActive ? (
     <AssistantVoiceClient
+      onResultsChange={setResults}
       onBeforeStart={onBeforeVoiceStart}
       inputOpen={inputOpen}
       onToggleInput={() => setInputOpen((open) => !open)}
@@ -152,6 +155,7 @@ export function MiraVoiceModeSwitcher({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {children(voiceActive ? exitVoice : enterVoice, voiceActive, {
           content: liveContent,
+          results: voiceActive ? results : null,
           composer: liveComposer,
           inputOpen,
           toggleInput: () => setInputOpen((open) => !open),
