@@ -10,22 +10,30 @@ async function getActiveSeatSubscription(
   supabase: TypedSupabaseClient,
   wsId: string
 ) {
-  const { data: subscription } = await supabase
+  const { data: subscription, error: subscriptionError } = await supabase
     .from('workspace_subscriptions')
     .select('polar_subscription_id, product_id')
     .eq('ws_id', wsId)
     .in('status', SEAT_ACTIVE_STATUSES)
-    .single();
+    .maybeSingle();
 
-  if (!subscription?.product_id) return null;
+  if (subscriptionError)
+    throw new Error('Seat subscription could not be verified');
+  if (!subscription) return null;
+  if (!subscription.product_id)
+    throw new Error('Seat product could not be verified');
 
-  const { data: product } = await privateSchema(supabase)
+  const { data: product, error: productError } = await privateSchema(supabase)
     .from('workspace_subscription_products')
     .select('pricing_model')
     .eq('id', subscription.product_id)
     .maybeSingle();
 
-  if (product?.pricing_model !== 'seat_based') return null;
+  if (productError || !product?.pricing_model)
+    throw new Error('Seat product could not be verified');
+  if (product.pricing_model !== 'seat_based') return null;
+  if (!subscription.polar_subscription_id)
+    throw new Error('Polar seat subscription is missing');
 
   return subscription;
 }
