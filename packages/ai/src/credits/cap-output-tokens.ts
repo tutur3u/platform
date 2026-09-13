@@ -90,7 +90,7 @@ export async function capMaxOutputTokensByCredits(
     (remainingCredits * 0.0001) / markupMultiplier / outputPricePerToken
   );
 
-  if (affordableTokens < 1) return null;
+  if (!Number.isFinite(affordableTokens) || affordableTokens < 1) return null;
   return Math.min(
     maxOutputTokens ?? AI_REQUEST_MAX_OUTPUT_TOKENS,
     affordableTokens,
@@ -116,7 +116,8 @@ export function computeAffordableTokens(
     markupMultiplier < 1
   )
     return 0;
-  return Math.floor(
+  const affordableTokens = Math.floor(
     (remainingCredits * 0.0001) / markupMultiplier / outputPricePerToken
   );
+  return Number.isFinite(affordableTokens) ? affordableTokens : 0;
 }
