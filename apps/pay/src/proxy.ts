@@ -143,12 +143,24 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(request, {
-          sessionMode: 'supabase-first',
-          targetApp: 'pay',
-        });
+    // Machine endpoints authenticate in their handlers: Polar signatures or the
+    // cron bearer secret. A browser session would reject legitimate deliveries.
+    const isMachineApi =
+      (request.method === 'POST' &&
+        request.nextUrl.pathname === '/api/payment/webhooks') ||
+      (request.method === 'GET' &&
+        [
+          '/api/cron/payment/products',
+          '/api/cron/payment/subscriptions',
+          '/api/cron/payment/orders',
+        ].includes(request.nextUrl.pathname));
+    const appSessionRefresh =
+      isLocalAuthApi || isMachineApi
+        ? null
+        : await refreshAppSessionForRequest(request, {
+            sessionMode: 'supabase-first',
+            targetApp: 'pay',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return clearSupabaseAuthCookies(

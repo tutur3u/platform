@@ -628,14 +628,6 @@ function hasHeaderToken(
   return secrets.some((secret) => !!secret && headerValue === secret);
 }
 
-function hasPolarWebhookSignatureHeaders(headers: Headers) {
-  return (
-    !!headers.get('webhook-id') &&
-    !!headers.get('webhook-timestamp') &&
-    !!headers.get('webhook-signature')
-  );
-}
-
 const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
   {
     matches: (pathname, headers) =>
@@ -653,13 +645,6 @@ const DEFAULT_TRUSTED_BYPASS_RULES: TrustedProxyBypassRule[] = [
           process.env.CRON_SECRET,
           process.env.VERCEL_CRON_SECRET,
         ])),
-  },
-  {
-    matches: (pathname, headers) =>
-      (pathname === '/api/payment/webhooks' ||
-        pathname.startsWith('/api/payment/webhooks/')) &&
-      !!process.env.POLAR_WEBHOOK_SECRET &&
-      hasPolarWebhookSignatureHeaders(headers),
   },
   {
     matches: (pathname, headers) =>
