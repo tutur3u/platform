@@ -536,8 +536,8 @@ export class MeetRoomDurableObject implements DurableObject {
       this.snapshot.budget?.pendingPublications?.length &&
       Date.now() >= (this.snapshot.budget.nextCleanupAt ?? 0)
     ) {
+      const cleanupStarted = this.snapshot;
       try {
-        const cleanupStarted = this.snapshot;
         const closed = await closeBudgetPublications(
           cleanupStarted,
           (input) => this.sfuClient().closeTracks(input),
@@ -560,7 +560,8 @@ export class MeetRoomDurableObject implements DurableObject {
       } catch {
         this.snapshot = {
           ...this.snapshot,
-          budget: deferBudgetCleanup(this.snapshot).budget,
+          budget: deferBudgetCleanup(this.snapshot, Date.now(), cleanupStarted)
+            .budget,
         };
         await this.persist();
         console.error(
