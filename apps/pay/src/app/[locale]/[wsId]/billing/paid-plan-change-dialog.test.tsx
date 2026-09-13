@@ -29,7 +29,8 @@ import { PaidPlanChangeDialog } from './paid-plan-change-dialog';
 
 function setup() {
   const onClose = vi.fn(),
-    onChanged = vi.fn();
+    onChanged = vi.fn(),
+    onSyncPending = vi.fn();
   render(
     <QueryClientProvider
       client={
@@ -47,10 +48,11 @@ function setup() {
         }}
         onClose={onClose}
         onChanged={onChanged}
+        onSyncPending={onSyncPending}
       />
     </QueryClientProvider>
   );
-  return { onClose, onChanged };
+  return { onClose, onChanged, onSyncPending };
 }
 describe('paid plan confirmation', () => {
   beforeEach(() => {
@@ -98,6 +100,7 @@ describe('paid plan confirmation', () => {
     await waitFor(() =>
       expect(screen.getByRole('status').textContent).toBe('plan-sync-pending')
     );
+    expect(callbacks.onSyncPending).toHaveBeenCalledOnce();
     expect(
       screen
         .getByRole('button', { name: 'confirm-paid-plan-change' })

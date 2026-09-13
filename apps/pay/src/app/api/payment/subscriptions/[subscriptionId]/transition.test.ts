@@ -46,7 +46,7 @@ describe('subscription transition seats', () => {
       productId: 'current-product',
       seats: 3,
     });
-    mocks.sync.mockResolvedValue({});
+    mocks.sync.mockResolvedValue({ subscriptionData: { id: 'sub' } });
   });
   it('previews the target minimum separately from current purchased seats', async () => {
     const f = adminFixture({ count: 2, currentSeats: 3, minSeats: 5 });
@@ -99,6 +99,19 @@ describe('subscription transition seats', () => {
         prorationBehavior: 'invoice',
       },
     });
+  });
+  it('rejects live product or quantity drift before a charge or projection', async () => {
+    const f = adminFixture({ currentSeats: 3, count: 2 });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    for (const live of [
+      { productId: 'current-product', seats: 5 },
+      { productId: 'another-product', seats: 3 },
+    ]) {
+      mocks.get.mockResolvedValue(live);
+      expect((await change(request(), params())).status).toBe(409);
+    }
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.sync).not.toHaveBeenCalled();
   });
   it('waits for projection before reporting synchronized success', async () => {
     const f = adminFixture({ currentSeats: 3, count: 2 });

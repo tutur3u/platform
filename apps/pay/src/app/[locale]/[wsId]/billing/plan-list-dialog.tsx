@@ -31,7 +31,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Plan } from './billing-client';
 import {
   PaidPlanChangeDialog,
@@ -60,6 +60,11 @@ export default function PlanListDialog({
   requiredSeats,
 }: PlanListDialogProps) {
   const t = useTranslations('billing');
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const billingSyncPending = pendingPlanId !== null;
+  useEffect(() => {
+    if (pendingPlanId === currentPlan.productId) setPendingPlanId(null);
+  }, [pendingPlanId, currentPlan.productId]);
   const [selectedPaidPlan, setSelectedPaidPlan] =
     useState<PaidPlanSelection | null>(null);
 
@@ -240,6 +245,13 @@ export default function PlanListDialog({
       };
     }
 
+    if (billingSyncPending)
+      return {
+        text: t('billing-syncing'),
+        icon: Info,
+        variant: 'outline' as const,
+        disabled: true,
+      };
     const targetSeats =
       plan.pricingModel === 'seat_based' ? effectiveSeats(plan) : 0;
     if (targetSeats === null)
@@ -631,6 +643,11 @@ export default function PlanListDialog({
             })}
           </div>
 
+          {billingSyncPending && (
+            <p role="status" className="mt-4 text-muted-foreground text-sm">
+              {t('plan-sync-pending')}
+            </p>
+          )}
           {/* Important Note */}
           {currentPlan.tier !== 'FREE' && (
             <div className="mt-6 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
@@ -651,6 +668,7 @@ export default function PlanListDialog({
         plan={selectedPaidPlan}
         onClose={() => setSelectedPaidPlan(null)}
         onChanged={() => onOpenChange(false)}
+        onSyncPending={() => setPendingPlanId(selectedPaidPlan?.id ?? null)}
       />
     </Dialog>
   );

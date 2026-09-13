@@ -29,11 +29,13 @@ export function PaidPlanChangeDialog({
   plan,
   onClose,
   onChanged,
+  onSyncPending,
 }: {
   subscriptionId: string;
   plan: PaidPlanSelection | null;
   onClose: () => void;
   onChanged: () => void;
+  onSyncPending: () => void;
 }) {
   const t = useTranslations('billing');
   const router = useRouter();
@@ -47,6 +49,7 @@ export function PaidPlanChangeDialog({
     onSuccess: (data) => {
       if (data.syncPending) {
         setSyncPending(true);
+        onSyncPending();
         return;
       }
       onClose();

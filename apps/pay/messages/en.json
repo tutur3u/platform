@@ -41,6 +41,7 @@
     "billing-info": "Manage your billing information and subscriptions here.",
     "billing-loading-error": "An error occurred while loading billing information.",
     "billing-name": "Billing Name",
+    "billing-syncing": "Billing is syncing",
     "buy-credit-packs": "Buy Credit Packs",
     "buy-now": "Buy Now",
     "cancel": "Cancel",
