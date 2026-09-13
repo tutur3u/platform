@@ -483,3 +483,37 @@ it.each([undefined, { error: 'Invalid artifact' }])(
     ).toEqual({ toolChoice: 'none', activeTools: [] });
   }
 );
+
+it('opens the requested artifact after repeated discovery instead of disabling it', () => {
+  const step = {
+    toolCalls: [
+      {
+        toolName: 'select_tools',
+        toolCallId: 'select',
+        input: { tools: ['show_workspace_artifact'] },
+      },
+    ],
+    toolResults: [
+      {
+        toolName: 'select_tools',
+        toolCallId: 'select',
+        output: { ok: true, selectedTools: ['show_workspace_artifact'] },
+      },
+    ],
+  };
+  expect(
+    prepareMiraToolStep({
+      steps: [step, step],
+      forceWorkspaceArtifact: true,
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsParallelChecks: false,
+      needsWorkspaceContextResolution: false,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    })
+  ).toEqual({
+    toolChoice: 'required',
+    activeTools: ['show_workspace_artifact'],
+  });
+});

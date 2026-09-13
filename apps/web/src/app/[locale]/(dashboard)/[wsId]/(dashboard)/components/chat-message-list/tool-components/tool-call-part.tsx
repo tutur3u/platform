@@ -102,9 +102,11 @@ function useCopyImageMutation() {
 export function ToolCallPart({
   part,
   renderUiFailure,
+  recovered = false,
 }: {
   part: ToolPartData;
   renderUiFailure?: RenderUiFailureMeta;
+  recovered?: boolean;
 }) {
   const t = useTranslations('dashboard.mira_chat');
   const [expanded, setExpanded] = useState(false);
@@ -536,13 +538,15 @@ export function ToolCallPart({
     <div
       className={cn(
         'flex w-full items-start gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors',
-        isError
+        isError && !recovered
           ? 'border-dynamic-red/20 bg-dynamic-red/5'
           : 'border-border/50 bg-foreground/2'
       )}
     >
       <span className="mt-0.5 shrink-0">
-        {isError ? (
+        {recovered ? (
+          <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+        ) : isError ? (
           <AlertCircle className="h-3.5 w-3.5 text-dynamic-red" />
         ) : isDone ? (
           <Check className="h-3.5 w-3.5 text-dynamic-green" />
@@ -562,11 +566,13 @@ export function ToolCallPart({
         >
           <span className="font-medium">{toolName}</span>
           <span className="text-muted-foreground">
-            {isError
-              ? t('tool_error')
-              : isDone
-                ? t('tool_done')
-                : t('tool_running')}
+            {recovered
+              ? t('tool_attempt_recovered')
+              : isError
+                ? t('tool_error')
+                : isDone
+                  ? t('tool_done')
+                  : t('tool_running')}
           </span>
           {hasOutput && (
             <ChevronRight

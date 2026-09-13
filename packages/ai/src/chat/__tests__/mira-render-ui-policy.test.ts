@@ -439,3 +439,16 @@ describe('mira render_ui policy', () => {
     expect(wasToolEverSelectedInSteps(steps, 'render_ui')).toBe(true);
   });
 });
+
+it.each([
+  'Show me my tasks in the task panel. Do not create, complete, or modify any tasks.',
+  'Open my calendar in a panel',
+  'Present my finances in the artifact',
+  'Show my meetings in the sidebar',
+])('does not interpret a UI destination as a workspace: %s', (content) => {
+  expect(
+    shouldResolveWorkspaceContextForLatestUserMessage([
+      { role: 'user', content },
+    ])
+  ).toBe(false);
+});

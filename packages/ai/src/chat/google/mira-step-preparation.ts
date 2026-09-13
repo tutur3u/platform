@@ -37,8 +37,6 @@ export function prepareMiraToolStep({
   activeTools: string[];
 } {
   if (forceWorkspaceArtifact) forceRenderUi = false;
-  if (getMiraToolLoopReason(steps))
-    return { toolChoice: 'none', activeTools: [] };
   const artifact = getWorkspaceArtifactProgress(steps);
   if (forceWorkspaceArtifact && !artifact.completed && artifact.attempts >= 3)
     return { toolChoice: 'none', activeTools: [] };
@@ -50,6 +48,8 @@ export function prepareMiraToolStep({
   ) {
     return { toolChoice: 'required', activeTools: ['show_workspace_artifact'] };
   }
+  if (getMiraToolLoopReason(steps))
+    return { toolChoice: 'none', activeTools: [] };
   if (steps.length === 0) {
     if (forceGoogleSearch) {
       return {

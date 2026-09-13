@@ -190,3 +190,17 @@ artifact opener directly. Follow-ups such as "show it in an artifact" use recent
 conversation context. Product panels fetch their own data; a task-data read or
 Markdown table must never be described as an opened artifact. Workspace resolution
 still precedes presentation when a named workspace needs to be selected.
+
+### Reading retried tool chains
+
+The collapsed action summary counts unresolved failed attempts, rather than all
+calls in a chain. A later successful call with the same tool name and normalized
+input changes the summary to "Completed after retry". The original failed attempt
+remains expandable, labeled as recovered. Different inputs, missing inputs, and
+logical failure outputs do not establish recovery. This outcome is derived from
+ordered message parts, so restoring a conversation produces the same summary;
+assistant prose is never used as proof of success.
+
+Presentation destinations such as "in the task panel" are not workspace names.
+An explicitly requested artifact can still open after repeated discovery calls,
+subject to the existing three-attempt artifact limit.
