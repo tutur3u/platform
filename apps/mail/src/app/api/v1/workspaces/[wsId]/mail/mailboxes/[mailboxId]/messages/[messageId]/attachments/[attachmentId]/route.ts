@@ -36,8 +36,9 @@ export async function GET(
       location: authorized.location,
       range,
     });
-    const filename = authorized.attachment.filename.replaceAll(
-      /[\r\n"]/gu,
+    const originalFilename = authorized.attachment.filename;
+    const asciiFilename = originalFilename.replaceAll(
+      /[^\u0020-\u007e]|["\\]/gu,
       '_'
     );
     const preview = mailAttachmentPreviewType(
@@ -47,7 +48,8 @@ export async function GET(
       authorized.attachment.filename
     );
     const inline =
-      preview &&
+      preview !== null &&
+      preview.kind !== 'pdf' &&
       (request.nextUrl.searchParams.get('preview') === '1' ||
         authorized.attachment.disposition === 'inline');
     const headers = new Headers({
@@ -57,7 +59,7 @@ export async function GET(
       'Cache-Control': 'private, no-store',
       'Content-Disposition': `${
         inline ? 'inline' : 'attachment'
-      }; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+      }; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(originalFilename)}`,
       'Content-Type':
         (inline ? preview.contentType : null) ??
         object.contentType ??

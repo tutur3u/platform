@@ -73,6 +73,9 @@ vi.mock('@tuturuuu/payment/polar/server', () => ({
 const mockProductLookup = vi.fn<MockProductLookup>();
 const mockProductUpsert = vi.fn<MockProductUpsert>();
 const mockUpsert = vi.fn<MockSubscriptionUpsert>();
+const mockProjection = vi.fn();
+const mockVersionFilter = vi.fn();
+const mockProjectionResult = vi.fn();
 
 const mockCreditPackMaybeSingle = vi.fn<MockCreditPackLookup>(() =>
   Promise.resolve({ data: null, error: null })
@@ -84,6 +87,7 @@ const mockSupabase = {
     if (table === 'workspace_subscriptions') {
       return {
         upsert: mockUpsert,
+        update: mockProjection,
       };
     }
     if (table === 'workspace_credit_pack_purchases') {
@@ -148,6 +152,14 @@ describe('syncSubscriptionToDatabase', () => {
     });
     mockProductUpsert.mockResolvedValue({ error: null });
     mockUpsert.mockResolvedValue({ error: null });
+    mockProjectionResult.mockResolvedValue({
+      data: { id: 'local-sub' },
+      error: null,
+    });
+    mockVersionFilter.mockReturnValue({
+      select: () => ({ maybeSingle: mockProjectionResult }),
+    });
+    mockProjection.mockReturnValue({ eq: () => ({ or: mockVersionFilter }) });
   });
 
   it('should identify seat-based pricing and save seat count', async () => {
@@ -189,11 +201,77 @@ describe('syncSubscriptionToDatabase', () => {
       ],
       {
         onConflict: 'polar_subscription_id',
-        ignoreDuplicates: false,
+        ignoreDuplicates: true,
       }
     );
   });
 
+  it.each([null, 0, -1, Number.POSITIVE_INFINITY])(
+    'rejects unverifiable provider seats %s before writing a subscription',
+    async (seats) => {
+      await expect(
+        syncSubscriptionToDatabase(mockSupabase, { ...mockSubscription, seats })
+      ).rejects.toThrow('Subscription seats could not be verified');
+      expect(mockUpsert).not.toHaveBeenCalled();
+    }
+  );
+  it('rejects an older projection atomically and skips webhook side effects', async () => {
+    mockProjectionResult.mockResolvedValue({ data: null, error: null });
+    const result = await syncSubscriptionToDatabase(
+      mockSupabase,
+      mockSubscription
+    );
+    expect(mockVersionFilter).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'updated_at.is.null,updated_at.lt.2026-01-01T00:00:00.000Z,and('
+      )
+    );
+    expect(result.subscriptionData).toBeNull();
+    expect(mockUpsert).toHaveBeenCalledWith(expect.any(Array), {
+      onConflict: 'polar_subscription_id',
+      ignoreDuplicates: true,
+    });
+  });
+  it('uses creation time when an event has no modification timestamp', async () => {
+    await syncSubscriptionToDatabase(mockSupabase, {
+      ...mockSubscription,
+      modifiedAt: null,
+    });
+    expect(mockVersionFilter).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'updated_at.is.null,updated_at.lt.2026-01-01T00:00:00.000Z,and('
+      )
+    );
+  });
+  it('allows equal-version retries only when every projected value already matches', async () => {
+    const result = await syncSubscriptionToDatabase(mockSupabase, {
+      ...mockSubscription,
+      modifiedAt: null,
+    });
+    expect(result.subscriptionData).toEqual(
+      expect.objectContaining({
+        polar_subscription_id: 'sub_123',
+        seat_count: 5,
+        updated_at: '2026-01-01T00:00:00.000Z',
+      })
+    );
+    const filter = mockVersionFilter.mock.calls[0]![0] as string;
+    expect(filter).not.toContain('updated_at.lte.');
+    const sameVersionBranch = filter.slice(filter.indexOf('and('));
+    expect(sameVersionBranch).toContain(
+      'updated_at.eq."2026-01-01T00:00:00.000Z"'
+    );
+    expect(sameVersionBranch).toContain('seat_count.eq.5');
+    expect(sameVersionBranch).toContain('product_id.eq."prod_123"');
+    expect(sameVersionBranch).toContain('status.eq."active"');
+    expect(sameVersionBranch).toContain('cancel_at_period_end.eq.false');
+    expect(sameVersionBranch).toContain(
+      'current_period_end.eq."2026-02-01T00:00:00.000Z"'
+    );
+    expect(sameVersionBranch).toContain(
+      'current_period_start.eq."2026-01-01T00:00:00.000Z"'
+    );
+  });
   it('should handle fixed pricing correctly', async () => {
     // Mock product to be fixed price
     mockProductLookup.mockResolvedValue({
@@ -226,7 +304,7 @@ describe('syncSubscriptionToDatabase', () => {
       ],
       {
         onConflict: 'polar_subscription_id',
-        ignoreDuplicates: false,
+        ignoreDuplicates: true,
       }
     );
   });
@@ -311,7 +389,7 @@ describe('syncSubscriptionToDatabase', () => {
       ],
       {
         onConflict: 'polar_subscription_id',
-        ignoreDuplicates: false,
+        ignoreDuplicates: true,
       }
     );
   });

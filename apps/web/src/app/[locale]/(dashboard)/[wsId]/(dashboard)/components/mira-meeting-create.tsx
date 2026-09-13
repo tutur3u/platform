@@ -49,7 +49,7 @@ export function MiraMeetingCreate({ wsId }: { wsId: string }) {
   if (profile.isError)
     return (
       <div role="alert" className="space-y-2">
-        <p className="text-destructive text-sm">{t('load_failed')}</p>
+        <p className="text-dynamic-red text-sm">{t('load_failed')}</p>
         <Button
           size="sm"
           variant="outline"
@@ -101,7 +101,7 @@ export function MiraMeetingCreate({ wsId }: { wsId: string }) {
         {create.isPending ? t('creating') : t('create_meeting')}
       </Button>
       {create.isError && (
-        <p role="alert" className="text-destructive text-sm">
+        <p role="alert" className="text-dynamic-red text-sm">
           {t('create_failed')}
         </p>
       )}

@@ -57,6 +57,8 @@ describe('getPublicClientMessages', () => {
     expect(auth).toHaveProperty('login');
     expect(auth).not.toHaveProperty('landing');
     expect(marketing).toHaveProperty('landing');
+    expect(marketing.commercialComparison).toEqual(en.commercialComparison);
+    expect(auth).not.toHaveProperty('commercialComparison');
     expect(marketing).not.toHaveProperty('login');
     expect(ui).toHaveProperty('ui-showcase');
     expect(ui).not.toHaveProperty('onboarding');

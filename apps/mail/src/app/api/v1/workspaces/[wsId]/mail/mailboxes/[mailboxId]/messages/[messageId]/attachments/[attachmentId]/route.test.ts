@@ -80,6 +80,29 @@ describe('attachment preview route', () => {
       (await GET(request(true), { params })).headers.get('content-disposition')
     ).toMatch(/^attachment;/);
   });
+  it('keeps safely rendered PDFs downloadable at the attachment endpoint', async () => {
+    mocks.authorized.mockResolvedValue({
+      attachment: {
+        filename: 'ĐƠN HÀNG CÔNG TY.pdf',
+        disposition: 'attachment',
+        content_type: 'application/pdf',
+      },
+      location: {},
+    });
+    mocks.stream.mockResolvedValue({
+      body: new Uint8Array([0x25, 0x50, 0x44, 0x46]),
+      contentType: 'application/pdf',
+    });
+
+    expect(
+      (await GET(request(), { params })).headers.get('content-disposition')
+    ).toBe(
+      'attachment; filename="__N H_NG C_NG TY.pdf"; filename*=UTF-8\'\'%C4%90%C6%A0N%20H%C3%80NG%20C%C3%94NG%20TY.pdf'
+    );
+    const response = await GET(request(true), { params });
+    expect(response.headers.get('content-disposition')).toMatch(/^attachment;/);
+    expect(response.headers.get('content-type')).toBe('application/pdf');
+  });
   it('retains video seeking ranges and partial response headers', async () => {
     mocks.stream.mockResolvedValue({
       body: new Uint8Array([1, 2]),

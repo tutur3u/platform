@@ -39,7 +39,7 @@ export function MiraFinanceArtifact({
                 </span>
               </div>
               <p
-                className={`mt-1 break-words font-semibold text-xl tabular-nums tracking-tight ${total < 0 ? 'text-destructive' : ''}`}
+                className={`mt-1 break-words font-semibold text-xl tabular-nums tracking-tight ${total < 0 ? 'text-dynamic-red' : ''}`}
               >
                 {format.number(total, { maximumFractionDigits: 2 })}
               </p>
@@ -79,7 +79,7 @@ export function MiraFinanceArtifact({
                       )}
                     </span>
                     <span
-                      className={`shrink-0 pt-1 font-semibold text-xs tabular-nums ${(row.amount ?? 0) < 0 ? 'text-destructive' : ''}`}
+                      className={`shrink-0 pt-1 font-semibold text-xs tabular-nums ${(row.amount ?? 0) < 0 ? 'text-dynamic-red' : ''}`}
                     >
                       {format.number(row.amount ?? 0, {
                         maximumFractionDigits: 2,

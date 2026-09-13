@@ -15,7 +15,7 @@ import type { MessageRenderDescriptor } from '../resolve-message-render-groups';
 import type { ToolPartData } from '../types';
 import { GroupedToolCallParts } from './grouped-tool-call-parts';
 import { ToolCallPart } from './tool-call-part';
-import { getToolPartStatus } from './tool-status';
+import { getToolChainOutcome } from './tool-chain-outcome';
 
 /** Tool names that render rich visual output and should NOT be collapsed. */
 const VISUAL_TOOL_NAMES = new Set([
@@ -56,27 +56,6 @@ function getPartCount(descriptors: CollapsibleDescriptor[]): number {
   return count;
 }
 
-function getAggregateStatus(
-  descriptors: CollapsibleDescriptor[]
-): 'running' | 'done' | 'error' {
-  let anyRunning = false;
-  let anyError = false;
-
-  for (const d of descriptors) {
-    const parts = d.kind === 'tool' ? [d.part] : d.parts;
-    for (const part of parts) {
-      const { isDone, isError, isRunning } = getToolPartStatus(part);
-      if (isRunning) anyRunning = true;
-      if (isError) anyError = true;
-      if (!isDone && !isError && !isRunning) anyRunning = true;
-    }
-  }
-
-  if (anyRunning) return 'running';
-  if (anyError) return 'error';
-  return 'done';
-}
-
 /**
  * Get the display name of the most recently added tool in the collapsed batch.
  */
@@ -99,13 +78,18 @@ export function getLatestActionName(
 
 export function CollapsibleToolSection({
   descriptors,
+  historyParts,
 }: {
   descriptors: CollapsibleDescriptor[];
+  historyParts?: ToolPartData[];
 }) {
   const t = useTranslations('dashboard.mira_chat');
   const [open, setOpen] = useState(false);
   const count = getPartCount(descriptors);
-  const status = getAggregateStatus(descriptors);
+  const { status, failedCount, recovered } = getToolChainOutcome(
+    descriptors.flatMap((d) => (d.kind === 'tool' ? [d.part] : d.parts)),
+    historyParts
+  );
   const latestAction = getLatestActionName(descriptors);
 
   return (
@@ -132,8 +116,10 @@ export function CollapsibleToolSection({
           {status === 'running'
             ? t('tool_section_running', { count })
             : status === 'error'
-              ? t('tool_section_error', { count })
-              : t('tool_section_done', { count })}
+              ? t('tool_section_error', { count: failedCount })
+              : status === 'recovered'
+                ? t('tool_section_recovered')
+                : t('tool_section_done', { count })}
           {latestAction && (
             <span className="ml-1.5 font-normal opacity-60">
               {'· '}
@@ -155,8 +141,23 @@ export function CollapsibleToolSection({
               <ToolCallPart
                 key={descriptor.key}
                 part={descriptor.part}
+                recovered={recovered.has(descriptor.part)}
                 renderUiFailure={descriptor.renderUiFailure}
               />
+            );
+          }
+          if (
+            descriptor.kind === 'tool-group' &&
+            descriptor.parts.some((part) => recovered.has(part))
+          ) {
+            return (
+              <div key={descriptor.key} className="flex flex-col gap-1">
+                {descriptor.parts.map((part) => (
+                  <div key={part.toolCallId}>
+                    <ToolCallPart part={part} recovered={recovered.has(part)} />
+                  </div>
+                ))}
+              </div>
             );
           }
           if (descriptor.kind === 'tool-group') {

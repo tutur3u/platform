@@ -1,4 +1,6 @@
+import type { Subscription } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import { validCheckoutSeats } from '@tuturuuu/payment-core/self-serve-products';
 import { SEAT_ACTIVE_STATUSES } from '@tuturuuu/payment-core/subscription-constants';
@@ -6,6 +8,7 @@ import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-acce
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { getRequiredWorkspaceSeats } from '@/lib/subscription-seats';
 
 /**
  * Resolve the caller on a satellite.
@@ -145,30 +148,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const { count: memberCount, error: memberError } = await sbAdmin
-      .from('workspace_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId);
+    const requiredSeats = await getRequiredWorkspaceSeats(sbAdmin, wsId);
     if (
-      memberError ||
-      !Number.isSafeInteger(memberCount) ||
-      memberCount === null ||
-      memberCount < 0
+      requiredSeats === null ||
+      !validCheckoutSeats(subscription.seat_count)
     ) {
       return NextResponse.json(
-        { error: 'Workspace member count could not be verified' },
+        { error: 'Workspace seat capacity could not be verified' },
         { status: 503 }
       );
     }
-    if (newSeatCount < memberCount) {
-      return NextResponse.json(
-        { error: 'Remove members before reducing their paid seats' },
-        { status: 400 }
-      );
-    }
-
-    const currentMembers = memberCount;
-
     // Validate new seat count against constraints
     const seatProduct = product as Pick<
       WorkspaceSubscriptionProduct,
@@ -187,7 +176,7 @@ export async function POST(req: Request) {
         { status: 503 }
       );
     }
-    const minSeats = Math.max(1, currentMembers, seatProduct.min_seats ?? 1);
+    const minSeats = Math.max(requiredSeats, seatProduct.min_seats ?? 1);
     const maxSeats = seatProduct?.max_seats ?? Infinity;
 
     if (newSeatCount < minSeats) {
@@ -208,54 +197,61 @@ export async function POST(req: Request) {
       );
     }
 
-    const previousSeats = subscription.seat_count ?? 1;
+    const previousSeats = subscription.seat_count;
 
     // Update subscription in Polar (prorated billing)
     const polar = createPolarClient();
 
+    let updatedSubscription: Subscription;
     try {
-      await polar.subscriptions.update({
+      const live = await polar.subscriptions.get({
         id: subscription.polar_subscription_id,
-        subscriptionUpdate: {
-          seats: newSeatCount,
-          prorationBehavior: 'invoice',
-        },
       });
-    } catch (polarError) {
-      console.error('Polar subscription update error:', polarError);
+      if (
+        live.product.id !== subscription.product_id ||
+        (live.seats !== previousSeats && live.seats !== newSeatCount)
+      ) {
+        return NextResponse.json(
+          { error: 'Subscription changed. Reload billing before confirming.' },
+          { status: 409 }
+        );
+      }
+      // Polar PATCH locks the subscription row and treats an unchanged absolute
+      // seat quantity as a no-op (subscription/endpoints.py and service.py).
+      // A retry after a successful charge only reconciles the existing result.
+      updatedSubscription =
+        live.seats === newSeatCount
+          ? live
+          : await polar.subscriptions.update({
+              id: subscription.polar_subscription_id,
+              subscriptionUpdate: {
+                seats: newSeatCount,
+                prorationBehavior: 'invoice',
+              },
+            });
+    } catch {
+      console.error('Polar subscription seat update failed');
       return NextResponse.json(
         { error: 'Failed to update subscription with payment provider' },
         { status: 500 }
       );
     }
 
-    // Update local record
-    const { error: updateError } = await sbAdmin
-      .from('workspace_subscriptions')
-      .update({ seat_count: newSeatCount })
-      .eq('id', subscription.id);
-
-    if (updateError) {
-      console.error('Database update error:', updateError);
-      // Polar was already updated — return a warning so the client knows
-      // the billing provider has the new count but the local record is stale.
-      // The webhook should eventually sync the local record.
-      return NextResponse.json(
-        {
-          success: true,
-          warning:
-            'Billing updated but local record sync failed. It will be reconciled shortly.',
-          previousSeats,
-          newSeats: newSeatCount,
-          seatChange: newSeatCount - previousSeats,
-          pricePerSeat: product?.price_per_seat,
-        },
-        { status: 200 }
-      );
+    let syncPending = false;
+    try {
+      const projection = await syncSubscriptionToDatabase(sbAdmin, {
+        ...updatedSubscription,
+        metadata: { ...updatedSubscription.metadata, wsId },
+      });
+      syncPending = !projection.subscriptionData;
+    } catch {
+      console.error('Subscription seat projection is pending reconciliation');
+      syncPending = true;
     }
 
     return NextResponse.json({
       success: true,
+      syncPending,
       previousSeats,
       newSeats: newSeatCount,
       seatChange: newSeatCount - previousSeats,

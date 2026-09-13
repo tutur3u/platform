@@ -1,6 +1,12 @@
 'use client';
 
-import { ArrowUpRight, Calendar, Circle } from '@tuturuuu/icons';
+import {
+  ArrowUpRight,
+  Calendar,
+  Check,
+  Circle,
+  Loader2,
+} from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -15,8 +21,9 @@ import type { TaskLabel } from './label-chip';
 import { TaskEstimationDisplay } from './task-estimation-display';
 import { TaskLabelsDisplay } from './task-labels-display';
 
-interface TaskSummaryCardProps {
+interface TaskSummaryCardBaseProps {
   title: string;
+  completing?: boolean;
   href?: string;
   source?: string;
   listName?: string;
@@ -32,9 +39,18 @@ interface TaskSummaryCardProps {
   assignees?: { id: string; name: string; avatarUrl?: string }[];
 }
 
-/** Compact read-only counterpart to the board card, using the same metadata. */
+type TaskSummaryCardProps = TaskSummaryCardBaseProps &
+  (
+    | { onComplete?: () => void; completeLabel: string }
+    | { onComplete?: never; completeLabel?: never }
+  );
+
+/** Compact counterpart to the board card, using the same metadata. */
 export function TaskSummaryCard({
   title,
+  onComplete,
+  completeLabel,
+  completing = false,
   href,
   source,
   listName,
@@ -49,19 +65,15 @@ export function TaskSummaryCard({
   labels,
   assignees,
 }: TaskSummaryCardProps) {
-  const Card = href ? 'a' : 'article';
   return (
-    <Card
-      href={href}
-      target={href ? '_blank' : undefined}
-      rel={href ? 'noreferrer' : undefined}
+    <article
       className={cn(
         'group relative block h-full space-y-2 overflow-hidden rounded-lg border border-l-4 bg-background p-2.5 shadow-xs transition-colors focus-within:ring-2 focus-within:ring-ring hover:bg-muted/30',
         getCardColorClasses(undefined, priority)
       )}
     >
       {(source || listName) && (
-        <div className="flex min-w-0 items-center gap-1.5 text-[10px] text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-foreground/75">
           {listName && (
             <Badge
               variant="outline"
@@ -79,7 +91,34 @@ export function TaskSummaryCard({
         </div>
       )}
       <h3 className="flex items-start gap-2 font-medium text-sm leading-snug">
-        <span className="line-clamp-2 flex-1">{title}</span>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="line-clamp-2 flex-1 rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            {title}
+          </a>
+        ) : (
+          <span className="line-clamp-2 flex-1">{title}</span>
+        )}
+        {onComplete && completeLabel && (
+          <button
+            type="button"
+            onClick={onComplete}
+            disabled={completing}
+            aria-label={completeLabel}
+            title={completeLabel}
+            className="flex size-7 shrink-0 items-center justify-center rounded-full border border-foreground/30 text-foreground/80 hover:border-dynamic-green hover:bg-dynamic-green/10 hover:text-dynamic-green focus-visible:outline-2 focus-visible:outline-ring disabled:cursor-wait disabled:opacity-70"
+          >
+            {completing ? (
+              <Loader2 aria-hidden className="size-4 animate-spin" />
+            ) : (
+              <Check aria-hidden className="size-4" />
+            )}
+          </button>
+        )}
         {href && (
           <ArrowUpRight
             aria-hidden
@@ -89,8 +128,8 @@ export function TaskSummaryCard({
       </h3>
       <div
         className={cn(
-          'flex items-center gap-1 text-[11px] text-muted-foreground',
-          overdue && 'text-destructive'
+          'flex items-center gap-1 text-foreground/75 text-xs',
+          overdue && 'text-dynamic-red'
         )}
       >
         <Calendar aria-hidden className="size-3 shrink-0" />
@@ -141,6 +180,6 @@ export function TaskSummaryCard({
           )}
         </div>
       ) : null}
-    </Card>
+    </article>
   );
 }

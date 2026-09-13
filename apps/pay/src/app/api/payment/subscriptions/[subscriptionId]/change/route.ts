@@ -1,6 +1,12 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
+import {
+  getSelfServePlanChangeError,
+  isSelfServeWorkspaceProduct,
+} from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
 
 // POST: Change subscription to a different product with immediate proration
 export async function POST(
@@ -16,7 +22,7 @@ export async function POST(
     );
   }
 
-  const { productId } = await req.json();
+  const { productId, expectedSeats, expectedPricePerSeat } = await req.json();
 
   if (!productId) {
     return NextResponse.json(
@@ -115,37 +121,123 @@ export async function POST(
     );
   }
 
-  if (!targetProduct) {
+  if (!targetProduct || !isSelfServeWorkspaceProduct(targetProduct)) {
     return NextResponse.json(
       { error: 'Target product not found' },
       { status: 404 }
     );
   }
 
+  if (!subscription.product_id)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  const { data: currentProduct, error: currentError } = await supabase
+    .schema('private')
+    .from('workspace_subscription_products')
+    .select('pricing_model,tier')
+    .eq('id', subscription.product_id)
+    .maybeSingle();
+  if (currentError || !currentProduct)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  const transitionError = getSelfServePlanChangeError(
+    currentProduct.tier,
+    targetProduct.tier
+  );
+  if (transitionError)
+    return NextResponse.json({ error: transitionError }, { status: 400 });
+  if (currentProduct.pricing_model !== targetProduct.pricing_model) {
+    return NextResponse.json(
+      { error: 'Changing a paid billing model requires an assisted migration' },
+      { status: 409 }
+    );
+  }
+
+  if (targetProduct.pricing_model === 'seat_based') {
+    const capacity = await getSubscriptionTransitionSeats(
+      supabase,
+      subscription,
+      currentProduct.pricing_model,
+      targetProduct
+    );
+    if (!capacity.ok)
+      return NextResponse.json(
+        { error: capacity.error },
+        { status: capacity.status }
+      );
+    if (capacity.seats !== subscription.seat_count)
+      return NextResponse.json(
+        {
+          error: 'Adjust purchased seats before confirming this plan change',
+        },
+        { status: 409 }
+      );
+  }
+
+  if (
+    targetProduct.pricing_model === 'seat_based' &&
+    (expectedSeats !== subscription.seat_count ||
+      expectedPricePerSeat !== targetProduct.price_per_seat)
+  )
+    return NextResponse.json(
+      {
+        error:
+          'Price or purchased quantity changed. Reload billing and review the plan again.',
+      },
+      { status: 409 }
+    );
+
   try {
     const polar = createPolarClient();
 
-    // Use Admin API to update subscription with proration control
-    // The Admin API allows setting prorationBehavior
-    const result = await polar.subscriptions.update({
+    // Reconcile an already-applied update instead of invoicing a retry while
+    // the asynchronous webhook projection is still behind.
+    const live = await polar.subscriptions.get({
       id: subscription.polar_subscription_id,
-      subscriptionUpdate: {
-        productId: productId,
-        // 'invoice' creates a separate invoice for the prorated amount immediately
-        prorationBehavior: 'invoice',
-      },
     });
-
-    return NextResponse.json({
-      success: true,
-      result,
-    });
-  } catch (error) {
-    console.error('Error changing subscription:', error);
+    if (
+      live.productId !== productId &&
+      (live.productId !== subscription.product_id ||
+        live.seats !== subscription.seat_count)
+    )
+      return NextResponse.json(
+        {
+          error:
+            'Subscription changed. Reload billing before confirming again.',
+        },
+        { status: 409 }
+      );
+    const result =
+      live.productId === productId
+        ? live
+        : await polar.subscriptions.update({
+            id: subscription.polar_subscription_id,
+            subscriptionUpdate: { productId, prorationBehavior: 'invoice' },
+          });
+    let syncPending = false;
+    try {
+      const projection = await syncSubscriptionToDatabase(supabase, {
+        ...result,
+        metadata: { ...result.metadata, wsId: subscription.ws_id },
+      });
+      if (!('subscriptionData' in projection) || !projection.subscriptionData)
+        syncPending = true;
+    } catch {
+      // The charge may already have succeeded: never turn this into a retryable
+      // billing failure. Webhooks will retry the projection independently.
+      syncPending = true;
+      console.error('Paid plan changed but billing projection is pending');
+    }
+    return NextResponse.json({ success: true, syncPending });
+  } catch {
+    console.error('Error changing subscription');
     return NextResponse.json(
       {
         error: 'Failed to change subscription',
-        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

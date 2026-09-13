@@ -22,3 +22,40 @@ export function validCheckoutSeats(count: number | null): count is number {
     Number.isSafeInteger(count) && (count ?? 0) >= 1 && (count ?? 0) <= 1000
   );
 }
+
+/** Plan changes cannot silently cancel the remaining paid term. */
+export function getSelfServePlanChangeError(
+  currentTier: string | null,
+  targetTier: string | null
+) {
+  return currentTier !== 'FREE' && targetTier === 'FREE'
+    ? 'Cancel at period end to move to Free without forfeiting paid access'
+    : null;
+}
+
+/** Preserve purchased capacity, cover members and reserved invitations, and honor the target bounds. */
+export function resolveSelfServeSeatCount({
+  currentSeats,
+  requiredSeats,
+  minSeats,
+  maxSeats,
+}: {
+  currentSeats: number | null;
+  requiredSeats: number | null;
+  minSeats: number | null;
+  maxSeats: number | null;
+}): number | null {
+  if (currentSeats !== 0 && !validCheckoutSeats(currentSeats)) return null;
+  if (!validCheckoutSeats(requiredSeats)) return null;
+  const minimum = minSeats;
+  if (!validCheckoutSeats(minimum)) return null;
+  if (
+    maxSeats !== null &&
+    (!validCheckoutSeats(maxSeats) || maxSeats < minimum)
+  )
+    return null;
+  const seats = Math.max(currentSeats ?? 0, requiredSeats, minimum);
+  return validCheckoutSeats(seats) && (maxSeats === null || seats <= maxSeats)
+    ? seats
+    : null;
+}

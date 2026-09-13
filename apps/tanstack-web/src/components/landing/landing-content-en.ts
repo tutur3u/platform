@@ -167,16 +167,16 @@ export const englishLandingContent = {
   },
   pricing: {
     subtitle:
-      'Plans are per workspace, billed per user. Up to 10 free workspaces per account.',
+      'Each workspace has its own plan, billed per member. Standard accounts can create up to 10 workspaces.',
     tiers: [
       {
         cta: 'Get Started',
         description: 'For individuals exploring Tuturuuu',
         features: [
           'Basic task management',
-          'Calendar sync (limited)',
-          'AI chat (limited tokens)',
-          'QR Generator',
+          'Calendars, whiteboards and time tracking',
+          'AI chat with a finite credit allowance',
+          'Workspace roles and permissions',
         ],
         name: 'Free',
         period: 'forever',
@@ -188,13 +188,13 @@ export const englishLandingContent = {
         description: 'For teams that need collaboration',
         features: [
           'Everything in Free +',
-          'Unlimited Whiteboards',
-          '20GB Drive storage',
-          'Granular permissions',
+          'Paid member billing and team collaboration',
+          '20 GiB Drive storage per workspace',
+          'AI credits with optional purchased top-ups',
         ],
         name: 'Plus',
-        period: '/user/mo',
-        price: '$8',
+        period: '/member/mo',
+        price: '—',
       },
       {
         badge: 'Most Powerful',
@@ -202,13 +202,13 @@ export const englishLandingContent = {
         description: 'For power teams that need it all',
         features: [
           'Everything in Plus +',
-          'Unlimited AI',
+          'Generous AI credits; top-ups available',
           'Priority support',
-          'Reports & Analytics',
+          'Mira, AI Lab and workforce tools',
         ],
         name: 'Pro',
-        period: '/user/mo',
-        price: '$15',
+        period: '/member/mo',
+        price: '—',
       },
     ],
     title: 'Simple pricing. No surprises.',

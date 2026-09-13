@@ -31,3 +31,16 @@ export interface ProrationPreview {
   nextBillingDate: string;
   billingCycleChanged: boolean; // true when switching between monthly/yearly
 }
+
+/** Tier changes follow capabilities; same-tier changes compare full cycle charges. */
+export function isPlanUpgrade(
+  current: { tier: string | null; amount: number },
+  target: { tier: string | null; amount: number }
+): boolean {
+  const tiers = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'];
+  const before = tiers.indexOf(current.tier ?? '');
+  const after = tiers.indexOf(target.tier ?? '');
+  return before >= 0 && after >= 0 && before !== after
+    ? after > before
+    : target.amount > current.amount;
+}

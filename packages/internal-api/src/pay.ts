@@ -115,17 +115,18 @@ export function getPaySubscriptionChangePreview<T>(
 export function changePaySubscriptionPlan(
   subscriptionId: string,
   productId: string,
+  confirmation: { expectedSeats: number; expectedPricePerSeat: number },
   options?: InternalApiClientOptions
 ) {
-  return getPayClient(options).json<{ success?: boolean }>(
-    `/api/payment/subscriptions/${encodePathSegment(subscriptionId)}/change`,
-    {
-      body: JSON.stringify({ productId }),
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    }
-  );
+  return getPayClient(options).json<{
+    success?: boolean;
+    syncPending?: boolean;
+  }>(`/api/payment/subscriptions/${encodePathSegment(subscriptionId)}/change`, {
+    body: JSON.stringify({ productId, ...confirmation }),
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
 }
 
 export function updatePaySubscriptionCancellation(
@@ -147,15 +148,15 @@ export function updatePaySubscriptionSeats(
   payload: { newSeatCount: number; wsId: string },
   options?: InternalApiClientOptions
 ) {
-  return getPayClient(options).json<{ newSeats: number }>(
-    '/api/payment/seats',
-    {
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    }
-  );
+  return getPayClient(options).json<{
+    newSeats: number;
+    syncPending?: boolean;
+  }>('/api/payment/seats', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
 }
 
 export async function getPayOrderInvoiceUrl(

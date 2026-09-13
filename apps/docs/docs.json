@@ -53,6 +53,8 @@
                     ]
                   },
                   "platform/features/progress-goals-leaderboards",
+                  "platform/features/pitch-deck",
+                  "platform/features/commercial-controls",
                   "platform/features/usage-accounting-guards"
                 ]
               },

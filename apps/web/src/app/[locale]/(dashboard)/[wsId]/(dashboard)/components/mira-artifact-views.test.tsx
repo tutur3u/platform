@@ -1,9 +1,20 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  fireEvent,
+  screen,
+  render as testingRender,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MiraFinanceArtifact } from './mira-finance-artifact';
 import { MiraScheduleArtifact } from './mira-schedule-artifact';
 import { calendarDayRows } from './mira-schedule-utils';
 import { MiraTaskArtifact } from './mira-task-artifact';
+
+function render(ui: Parameters<typeof testingRender>[0]) {
+  return testingRender(
+    <QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>
+  );
+}
 
 vi.mock('@/lib/tasks-app-url-client', () => ({
   getTasksAppUrlClient: (path: string) => `https://tasks.tuturuuu.com${path}`,

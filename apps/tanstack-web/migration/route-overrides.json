@@ -2409,6 +2409,16 @@
       "targetOwner": "tanstack-start",
       "note": "Mira dashboard uses assistant-managed artifact open/update/close/focus/layout tools with tailored presentation filters and unified chat/live composer controls and client-loaded workspace artifact panels in place of server insight slots. Personal Tasks uses the cross-workspace personal feed with overrides; panels include urgency filters, calendar day overlap, currency-separated balance comparisons, and upcoming/past meetings. Preserve workspace membership checks, selected data context, sidebar/theme actions, responsive split layouts, and verified meeting creation policy in the frontend migration."
     },
+    "page:/:locale/pitch:apps/web/src/app/[locale]/pitch/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Public localized living pitch deck with proposed pricing, stable slide hashes, keyboard navigation, overview, presenter notes, autoplay, fullscreen, reduced-motion confetti and print layout. Future port must preserve proposal labels and calculator annual-total semantics."
+    },
+    "api:/api/v1/public/pricing:apps/web/src/app/api/v1/public/pricing/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Public read-only four-product USD seat catalog. No secrets or workspace data returned. Fail closed on unavailable or invalid catalog; 30-second shared cache. Rust parity backlog."
+    },
     "api:/api/ai/chat/live-messages:apps/web/src/app/api/ai/chat/live-messages/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
