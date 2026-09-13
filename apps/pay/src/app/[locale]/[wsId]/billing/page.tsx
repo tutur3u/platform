@@ -106,6 +106,7 @@ export default async function BillingPage({
     seatCount: subscription.seatCount,
     seatList: subscription.seatList,
     maxSeats: subscription.product.max_seats,
+    minSeats: subscription.product.min_seats,
   };
 
   return (

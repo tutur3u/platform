@@ -9,7 +9,11 @@ vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: mocks.resolve,
 }));
 
-import { adminFixture } from '../subscription-test-fixtures';
+import { adminFixture as fixture } from '../subscription-test-fixtures';
+
+const adminFixture = (options: Parameters<typeof fixture>[0] = {}) =>
+  fixture({ currentTier: 'FREE', ...options });
+
 import { POST } from './route';
 
 async function checkout() {
@@ -46,11 +50,20 @@ describe('workspace checkout boundary', () => {
     mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
     expect((await checkout()).status).toBe(200);
     expect(mocks.create).toHaveBeenCalledWith(
-      expect.objectContaining({ seats: 1, metadata: { wsId: 'workspace' } })
+      expect.objectContaining({
+        seats: 1,
+        minSeats: 1,
+        maxSeats: 1000,
+        metadata: { wsId: 'workspace' },
+      })
     );
   });
   it('requires period-end cancellation for paid-to-Free changes', async () => {
-    const f = adminFixture({ targetTier: 'FREE', model: 'free' });
+    const f = adminFixture({
+      currentTier: 'PLUS',
+      targetTier: 'FREE',
+      model: 'free',
+    });
     mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
     expect((await checkout()).status).toBe(400);
     expect(mocks.create).not.toHaveBeenCalled();
@@ -67,24 +80,22 @@ describe('workspace checkout boundary', () => {
     expect((await checkout()).status).toBe(200);
     expect(mocks.create).toHaveBeenCalledOnce();
   });
-  it('uses the target minimum while retaining purchased capacity', async () => {
-    for (const [currentSeats, minSeats, expected] of [
-      [3, 5, 5],
-      [5, 1, 5],
-    ]) {
-      const f = adminFixture({ currentSeats, minSeats, count: 2 });
-      mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
-      expect((await checkout()).status).toBe(200);
-      expect(mocks.create).toHaveBeenLastCalledWith(
-        expect.objectContaining({ seats: expected })
-      );
-    }
+  it('honors the target minimum and locks checkout against under-purchasing', async () => {
+    const f = adminFixture({ count: 2, minSeats: 5 });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    expect((await checkout()).status).toBe(200);
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({ seats: 5, minSeats: 5, maxSeats: 1000 })
+    );
   });
-  it('rejects excessive or unverifiable purchased capacity', async () => {
+  it('rejects paid-subscription checkout before contacting Polar', async () => {
+    const f = adminFixture({ currentTier: 'PLUS' });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    expect((await checkout()).status).toBe(409);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it('rejects unverifiable bounds and invitation capacity', async () => {
     for (const { config, status } of [
-      { config: { currentSeats: 3, maxSeats: 2 }, status: 400 },
-      { config: { currentSeats: null }, status: 503 },
-      { config: { currentSeats: 0 }, status: 503 },
       { config: { currentModel: null }, status: 503 },
       { config: { currentModel: 'unknown' }, status: 503 },
       { config: { minSeats: null }, status: 400 },
@@ -99,10 +110,8 @@ describe('workspace checkout boundary', () => {
     }
     expect(mocks.create).not.toHaveBeenCalled();
   });
-  it('quotes reserved invitations when a legacy fixed workspace moves to seats', async () => {
+  it('quotes both kinds of pending invitations', async () => {
     const f = adminFixture({
-      currentModel: 'fixed',
-      currentSeats: null,
       count: 2,
       pendingInvites: 3,
       pendingEmailInvites: 4,
@@ -110,7 +119,7 @@ describe('workspace checkout boundary', () => {
     mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
     expect((await checkout()).status).toBe(200);
     expect(mocks.create).toHaveBeenCalledWith(
-      expect.objectContaining({ seats: 9 })
+      expect.objectContaining({ seats: 9, minSeats: 9 })
     );
     for (const table of [
       'workspace_members',

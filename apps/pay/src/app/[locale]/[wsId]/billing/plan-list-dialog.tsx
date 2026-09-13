@@ -33,6 +33,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { Plan } from './billing-client';
+import {
+  PaidPlanChangeDialog,
+  type PaidPlanSelection,
+} from './paid-plan-change-dialog';
 import PurchaseLink from './purchase-link';
 
 interface PlanListDialogProps {
@@ -56,6 +60,8 @@ export default function PlanListDialog({
   requiredSeats,
 }: PlanListDialogProps) {
   const t = useTranslations('billing');
+  const [selectedPaidPlan, setSelectedPaidPlan] =
+    useState<PaidPlanSelection | null>(null);
 
   // Default to yearly tab for better value proposition, unless current plan is monthly
   const [selectedCycle, setSelectedCycle] = useState<BillingCycleTab>(
@@ -239,6 +245,21 @@ export default function PlanListDialog({
     if (targetSeats === null)
       return {
         text: t('plan-unavailable'),
+        icon: X,
+        variant: 'outline' as const,
+        disabled: true,
+      };
+    if (
+      currentPlan.tier !== 'FREE' &&
+      (currentPlan.pricingModel !== plan.pricingModel ||
+        targetSeats !== currentSeats)
+    )
+      return {
+        text: t(
+          currentPlan.pricingModel !== plan.pricingModel
+            ? 'assisted-plan-change'
+            : 'adjust-seats-first'
+        ),
         icon: X,
         variant: 'outline' as const,
         disabled: true,
@@ -569,6 +590,20 @@ export default function PlanListDialog({
                             subscriptionId={currentPlan.id}
                             wsId={wsId}
                             productId={plan.id}
+                            onPlanChange={
+                              currentPlan.tier !== 'FREE'
+                                ? () =>
+                                    setSelectedPaidPlan({
+                                      id: plan.id,
+                                      name: plan.name,
+                                      seats: targetSeats ?? 0,
+                                      amount:
+                                        (plan.pricePerSeat ?? 0) *
+                                        (targetSeats ?? 0),
+                                      cycle: plan.billingCycle,
+                                    })
+                                : undefined
+                            }
                             onCheckoutOpened={() => {
                               onOpenChange(false);
                             }}
@@ -610,6 +645,12 @@ export default function PlanListDialog({
           )}
         </div>
       </DialogContent>
+      <PaidPlanChangeDialog
+        subscriptionId={currentPlan.id}
+        plan={selectedPaidPlan}
+        onClose={() => setSelectedPaidPlan(null)}
+        onChanged={() => onOpenChange(false)}
+      />
     </Dialog>
   );
 }

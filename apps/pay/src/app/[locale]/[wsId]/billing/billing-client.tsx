@@ -54,6 +54,7 @@ export interface Plan {
   price: number | null;
   pricePerSeat: number | null;
   maxSeats: number | null;
+  minSeats: number | null;
 }
 
 interface BillingClientProps {
@@ -458,6 +459,8 @@ export function BillingClient({
           wsId={wsId}
           currentSeats={seatStatus.seatCount}
           currentMembers={seatStatus.memberCount}
+          requiredSeats={requiredSeats}
+          minPlanSeats={currentPlan.minSeats}
           maxSeats={currentPlan.maxSeats}
           pricePerSeat={currentPlan.pricePerSeat ?? 0}
           billingCycle={currentPlan.billingCycle}

@@ -6,6 +6,7 @@ import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-acce
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { getRequiredWorkspaceSeats } from '@/lib/subscription-seats';
 
 /**
  * Resolve the caller on a satellite.
@@ -145,30 +146,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const { count: memberCount, error: memberError } = await sbAdmin
-      .from('workspace_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId);
+    const requiredSeats = await getRequiredWorkspaceSeats(sbAdmin, wsId);
     if (
-      memberError ||
-      !Number.isSafeInteger(memberCount) ||
-      memberCount === null ||
-      memberCount < 0
+      requiredSeats === null ||
+      !validCheckoutSeats(subscription.seat_count)
     ) {
       return NextResponse.json(
-        { error: 'Workspace member count could not be verified' },
+        { error: 'Workspace seat capacity could not be verified' },
         { status: 503 }
       );
     }
-    if (newSeatCount < memberCount) {
-      return NextResponse.json(
-        { error: 'Remove members before reducing their paid seats' },
-        { status: 400 }
-      );
-    }
-
-    const currentMembers = memberCount;
-
     // Validate new seat count against constraints
     const seatProduct = product as Pick<
       WorkspaceSubscriptionProduct,
@@ -187,7 +174,7 @@ export async function POST(req: Request) {
         { status: 503 }
       );
     }
-    const minSeats = Math.max(1, currentMembers, seatProduct.min_seats ?? 1);
+    const minSeats = Math.max(requiredSeats, seatProduct.min_seats ?? 1);
     const maxSeats = seatProduct?.max_seats ?? Infinity;
 
     if (newSeatCount < minSeats) {
@@ -208,7 +195,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const previousSeats = subscription.seat_count ?? 1;
+    const previousSeats = subscription.seat_count;
 
     // Update subscription in Polar (prorated billing)
     const polar = createPolarClient();

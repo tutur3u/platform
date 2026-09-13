@@ -21,7 +21,7 @@ export async function POST(
     );
   }
 
-  const { productId } = await req.json();
+  const { productId, expectedSeats, expectedPricePerSeat } = await req.json();
 
   if (!productId) {
     return NextResponse.json(
@@ -151,7 +151,7 @@ export async function POST(
     return NextResponse.json({ error: transitionError }, { status: 400 });
   if (currentProduct.pricing_model !== targetProduct.pricing_model) {
     return NextResponse.json(
-      { error: 'Use checkout to review and confirm a change of billing model' },
+      { error: 'Changing a paid billing model requires an assisted migration' },
       { status: 409 }
     );
   }
@@ -171,12 +171,24 @@ export async function POST(
     if (capacity.seats !== subscription.seat_count)
       return NextResponse.json(
         {
-          error:
-            'Use checkout to review and confirm a change of purchased seats',
+          error: 'Adjust purchased seats before confirming this plan change',
         },
         { status: 409 }
       );
   }
+
+  if (
+    targetProduct.pricing_model === 'seat_based' &&
+    (expectedSeats !== subscription.seat_count ||
+      expectedPricePerSeat !== targetProduct.price_per_seat)
+  )
+    return NextResponse.json(
+      {
+        error:
+          'Price or purchased quantity changed. Reload billing and review the plan again.',
+      },
+      { status: 409 }
+    );
 
   try {
     const polar = createPolarClient();

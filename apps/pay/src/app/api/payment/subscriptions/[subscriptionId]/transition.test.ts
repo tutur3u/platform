@@ -16,7 +16,14 @@ import { POST as preview } from './preview/route';
 function request() {
   return new NextRequest(
     'https://pay.tuturuuu.com/api/payment/subscriptions/sub/change',
-    { method: 'POST', body: JSON.stringify({ productId: 'product' }) }
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        productId: 'product',
+        expectedSeats: 3,
+        expectedPricePerSeat: 900,
+      }),
+    }
   );
 }
 const params = () => ({ params: Promise.resolve({ subscriptionId: 'sub' }) });
@@ -53,7 +60,7 @@ describe('subscription transition seats', () => {
       price: 4500,
     });
   });
-  it('requires checkout instead of silently changing seats', async () => {
+  it('requires a separate seat adjustment instead of silently changing seats', async () => {
     for (const config of [
       { currentSeats: 3, count: 2, minSeats: 5 },
       { currentSeats: 3, count: 5 },
@@ -76,6 +83,25 @@ describe('subscription transition seats', () => {
         prorationBehavior: 'invoice',
       },
     });
+  });
+  it('rejects a stale or missing confirmation before contacting Polar', async () => {
+    const f = adminFixture({ currentSeats: 3, count: 2 });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    for (const confirmation of [
+      {},
+      { expectedSeats: 3, expectedPricePerSeat: 800 },
+      { expectedSeats: 2, expectedPricePerSeat: 900 },
+    ]) {
+      const req = new NextRequest(
+        'https://pay.tuturuuu.com/api/payment/subscriptions/sub/change',
+        {
+          method: 'POST',
+          body: JSON.stringify({ productId: 'product', ...confirmation }),
+        }
+      );
+      expect((await change(req, params())).status).toBe(409);
+    }
+    expect(mocks.update).not.toHaveBeenCalled();
   });
   it('fails preview and mutation on unknown counts and target over-capacity', async () => {
     for (const config of [
