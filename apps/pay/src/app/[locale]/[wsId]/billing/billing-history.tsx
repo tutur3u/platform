@@ -164,7 +164,10 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/50 bg-card">
+    <div
+      id="billing-history"
+      className="scroll-mt-6 overflow-hidden rounded-2xl border border-border/50 bg-card"
+    >
       {/* Header */}
       <div className="border-border/50 border-b p-6">
         <div className="flex items-center gap-3">
