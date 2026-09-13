@@ -33,6 +33,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { Plan } from './billing-client';
+import { BillingStatusRefresh } from './billing-status-refresh';
 import {
   PaidPlanChangeDialog,
   type PaidPlanSelection,
@@ -644,9 +645,12 @@ export default function PlanListDialog({
           </div>
 
           {billingSyncPending && (
-            <p role="status" className="mt-4 text-muted-foreground text-sm">
-              {t('plan-sync-pending')}
-            </p>
+            <div className="mt-4 space-y-2">
+              <p role="status" className="text-muted-foreground text-sm">
+                {t('plan-sync-pending')}
+              </p>
+              <BillingStatusRefresh />
+            </div>
           )}
           {/* Important Note */}
           {currentPlan.tier !== 'FREE' && (

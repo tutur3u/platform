@@ -29,16 +29,20 @@ import AdjustSeatsDialog from './adjust-seats-dialog';
 
 function Harness() {
   const [open, setOpen] = useState(true);
+  const [currentSeats, setCurrentSeats] = useState(5);
   return (
     <>
       <button type="button" onClick={() => setOpen(true)}>
         Reopen
       </button>
+      <button type="button" onClick={() => setCurrentSeats(4)}>
+        Simulate sync
+      </button>
       <AdjustSeatsDialog
         open={open}
         onOpenChange={setOpen}
         wsId="workspace"
-        currentSeats={5}
+        currentSeats={currentSeats}
         currentMembers={2}
         requiredSeats={4}
         minPlanSeats={1}
@@ -67,6 +71,7 @@ it('retains pending reconciliation across dismissal and prevents another confirm
   fireEvent.click(screen.getByRole('button', { name: /^cancel$/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
   expect(screen.getByRole('status').textContent).toBe('billing-syncing');
+  fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '4' } });
   expect(
     (
       screen.getByRole('button', {
@@ -74,5 +79,21 @@ it('retains pending reconciliation across dismissal and prevents another confirm
       }) as HTMLButtonElement
     ).disabled
   ).toBe(true);
+  fireEvent.click(
+    screen.getByRole('button', { name: 'refresh-billing-status' })
+  );
+  expect(mocks.refresh).toHaveBeenCalledOnce();
+  expect(screen.getByRole('status').textContent).toBe('billing-syncing');
+  // A refresh alone does not unlock billing; only authoritative convergence does.
+  fireEvent.click(screen.getByText('Simulate sync'));
+  await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+  fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '6' } });
+  expect(
+    (
+      screen.getByRole('button', {
+        name: 'confirm-seat-change',
+      }) as HTMLButtonElement
+    ).disabled
+  ).toBe(false);
   expect(mocks.update).toHaveBeenCalledOnce();
 });

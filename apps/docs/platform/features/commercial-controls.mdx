@@ -42,12 +42,19 @@ minimum or reserved invitations need additional capacity. Paid billing-model
 changes require assisted migration. Missing counts or bounds block updates.
 Paid updates synchronize the database projection before reporting completion. If
 projection fails after Polar succeeds, the UI reports pending synchronization and
-disables resubmission. A retry reconciles an already-applied plan without invoicing
-the same change again. Pending state survives confirmation-dialog dismissal until
+disables resubmission. Pending billing dialogs offer a read-only status refresh. They unlock only
+when the authoritative plan or seat count converges. A retry reconciles an already-applied
+plan or quantity without invoicing the same change again. Pending state survives confirmation-dialog dismissal until
 the billing page observes the target plan. Subscription projections insert without
-overwriting existing rows, then update only when the stored provider timestamp is
-not newer. Older webhook deliveries return no subscription data, preventing stale
+overwriting existing rows, then update only for a newer provider timestamp or an
+identical projection at the same timestamp. Equal-version conflicting payloads
+are not ordered by arrival time. Older webhook deliveries return no subscription data, preventing stale
 seat-assignment or cancellation side effects.
+Polar's [subscription update endpoint](https://github.com/polarsource/polar/blob/9d20e549052a4dbd2d5b57fa6ea165200530b59f/server/polar/subscription/endpoints.py#L416)
+locks the provider subscription row. Its [seat update service](https://github.com/polarsource/polar/blob/9d20e549052a4dbd2d5b57fa6ea165200530b59f/server/polar/subscription/service.py#L2166)
+treats an unchanged absolute quantity as a no-op before invoice generation. Keep
+sending absolute quantities; do not implement a client-side increment/retry loop.
+This is provider-source evidence, not a live concurrent-charge test.
 An invitation alone does not increase the purchased quantity. All quantity
 reductions must still cover members and both pending invitation tables.
 The legacy preview endpoint returns list-price estimates, not discount- or tax-aware
@@ -56,9 +63,9 @@ quotes. Do not use those estimates to authorize payment.
 ## Feature comparison maintenance
 
 The shared comparison covers every app directory, with app/category filters,
-accent-insensitive search, selectable tiers, differences-only mode, tooltips and
-visible explanations for touch users. Internal infrastructure is opt-in in the
-comparison and is never a purchasable upgrade. Restricted previews remain distinct
+accent-insensitive search, selectable tiers, differences-only mode, compact status
+icons, keyboard/tap tooltips and visible numeric quotas. Expanded explanations
+also support touch users. Internal infrastructure is opt-in in the comparison and is never a purchasable upgrade. Restricted previews remain distinct
 from tier access. Standard platform gates share `feature-tier-policy.ts` with web.
 Add capabilities, explanations in both locales, and source evidence when changing
 an app's public scope. The inventory regression fails when an app is unrepresented.

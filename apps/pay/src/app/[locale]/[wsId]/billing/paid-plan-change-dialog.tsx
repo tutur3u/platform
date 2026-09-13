@@ -15,6 +15,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { BillingStatusRefresh } from './billing-status-refresh';
 
 export interface PaidPlanSelection {
   id: string;
@@ -87,9 +88,12 @@ export function PaidPlanChangeDialog({
           </div>
         )}
         {syncPending && (
-          <p role="status" className="text-muted-foreground text-sm">
-            {t('plan-sync-pending')}
-          </p>
+          <div className="mt-4 space-y-2">
+            <p role="status" className="text-muted-foreground text-sm">
+              {t('plan-sync-pending')}
+            </p>
+            <BillingStatusRefresh />
+          </div>
         )}
         <DialogFooter>
           <Button
