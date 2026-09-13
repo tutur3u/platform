@@ -137,6 +137,7 @@ export default function AssistantClient({
         scopeKey={scopeKey}
       >
         <AssistantVoiceSession
+          onReturnToChat={onReturnToChat}
           onResultsChange={onResultsChange}
           inputOpen={inputOpen}
           onToggleInput={onToggleInput}

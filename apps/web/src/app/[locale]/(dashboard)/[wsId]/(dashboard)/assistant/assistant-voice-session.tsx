@@ -38,6 +38,7 @@ export function stopMediaStream(stream: MediaStream | null) {
 }
 
 export function AssistantVoiceSession({
+  onReturnToChat,
   onResultsChange,
   inputOpen,
   onToggleInput,
@@ -48,6 +49,7 @@ export function AssistantVoiceSession({
   onRestartSession,
   wsId,
 }: {
+  onReturnToChat?: () => void;
   onResultsChange?: (results: ReactNode) => void;
   inputOpen?: boolean;
   onToggleInput?: () => void;
@@ -284,6 +286,7 @@ export function AssistantVoiceSession({
       <div className="min-w-0 max-w-full">
         <ControlTray
           compact
+          onReturnToChat={onReturnToChat}
           textChatOpen={inputOpen}
           onToggleChat={onToggleInput}
           onError={onError}
