@@ -33,28 +33,28 @@ export function getSelfServePlanChangeError(
     : null;
 }
 
-/** Preserve purchased capacity, cover members, and honor the target bounds. */
+/** Preserve purchased capacity, cover members and reserved invitations, and honor the target bounds. */
 export function resolveSelfServeSeatCount({
   currentSeats,
-  memberCount,
+  requiredSeats,
   minSeats,
   maxSeats,
 }: {
   currentSeats: number | null;
-  memberCount: number | null;
+  requiredSeats: number | null;
   minSeats: number | null;
   maxSeats: number | null;
 }): number | null {
   if (currentSeats !== 0 && !validCheckoutSeats(currentSeats)) return null;
-  if (!validCheckoutSeats(memberCount)) return null;
-  const minimum = minSeats ?? 1;
+  if (!validCheckoutSeats(requiredSeats)) return null;
+  const minimum = minSeats;
   if (!validCheckoutSeats(minimum)) return null;
   if (
     maxSeats !== null &&
     (!validCheckoutSeats(maxSeats) || maxSeats < minimum)
   )
     return null;
-  const seats = Math.max(currentSeats ?? 0, memberCount, minimum);
+  const seats = Math.max(currentSeats ?? 0, requiredSeats, minimum);
   return validCheckoutSeats(seats) && (maxSeats === null || seats <= maxSeats)
     ? seats
     : null;

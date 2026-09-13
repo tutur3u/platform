@@ -62,6 +62,7 @@ interface BillingClientProps {
   currentPlan: Plan;
   products: Product[];
   seatStatus?: SeatStatus;
+  requiredSeats: number | null;
 }
 
 function getSimplePlanName(name: string): string {
@@ -78,6 +79,7 @@ export function BillingClient({
   currentPlan,
   products,
   seatStatus,
+  requiredSeats,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
@@ -431,7 +433,7 @@ export function BillingClient({
         wsId={wsId}
         open={showUpgradeOptions}
         onOpenChange={setShowUpgradeOptions}
-        seatStatus={seatStatus}
+        requiredSeats={requiredSeats}
       />
 
       <SubscriptionConfirmationDialog

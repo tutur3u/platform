@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { getRequiredWorkspaceSeats } from '@/lib/subscription-seats';
 import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
 import BillingDetailsCard from './billing-details-card';
@@ -56,6 +57,7 @@ export default async function BillingPage({
     products,
     creditPacks,
     seatStatus,
+    requiredSeats,
     orders,
     locale,
     t,
@@ -65,6 +67,7 @@ export default async function BillingPage({
     fetchProducts(polar),
     fetchCreditPacks(sbAdmin),
     getSeatStatus(sbAdmin, wsId),
+    getRequiredWorkspaceSeats(sbAdmin, wsId),
     fetchWorkspaceOrders(sbAdmin, wsId),
     getLocale(),
     getTranslations('billing'),
@@ -113,6 +116,7 @@ export default async function BillingPage({
         currentPlan={currentPlan}
         products={products}
         seatStatus={seatStatus}
+        requiredSeats={requiredSeats}
       />
 
       <BillingDetailsCard wsId={wsId} />

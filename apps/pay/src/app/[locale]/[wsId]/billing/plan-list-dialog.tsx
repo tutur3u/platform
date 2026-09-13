@@ -17,7 +17,6 @@ import type { Product } from '@tuturuuu/payment/polar';
 import { getSupportedProductPrice } from '@tuturuuu/payment-core/polar-price';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { isPlanUpgrade } from '@tuturuuu/payment-core/proration';
-import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import {
   isSelfServeWorkspaceProduct,
   resolveSelfServeSeatCount,
@@ -43,7 +42,7 @@ interface PlanListDialogProps {
   wsId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  seatStatus?: SeatStatus;
+  requiredSeats: number | null;
 }
 
 type BillingCycleTab = 'month' | 'year';
@@ -54,7 +53,7 @@ export default function PlanListDialog({
   wsId,
   open,
   onOpenChange,
-  seatStatus,
+  requiredSeats,
 }: PlanListDialogProps) {
   const t = useTranslations('billing');
 
@@ -145,11 +144,10 @@ export default function PlanListDialog({
     currentPlan.pricingModel === 'seat_based'
       ? (currentPlan.seatCount ?? null)
       : 0;
-  const memberCount = seatStatus?.memberCount ?? currentPlan.seatCount ?? 1;
   const effectiveSeats = (plan: (typeof allPlans)[0]) =>
     resolveSelfServeSeatCount({
       currentSeats,
-      memberCount,
+      requiredSeats,
       minSeats: plan.minSeats ?? null,
       maxSeats: plan.maxSeats ?? null,
     });
