@@ -82,8 +82,7 @@ describe('stream finish persistence', () => {
       );
       expect(payload.metadata.ai.parts).toContainEqual(
         expect.objectContaining({
-          output: null,
-          state: 'output-available',
+          state: 'input-available',
           toolCallId: 'search-1',
           toolName,
         })
@@ -235,6 +234,64 @@ describe('stream finish persistence', () => {
     );
     expect(mocks.deductAiCredits).toHaveBeenCalledWith(
       expect.objectContaining({ chatMessageId: 'assistant-message-3' })
+    );
+  });
+
+  it('saves all step text and chronology even when large metadata needs compaction', async () => {
+    const single = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: null,
+        error: {
+          code: '22001',
+          message:
+            'PAYLOAD_FIELD_BYTES_EXCEEDED: ai_chat_messages.metadata exceeds 16384 bytes',
+        },
+      })
+      .mockResolvedValueOnce({ data: { id: 'saved' }, error: null });
+    const insert = vi.fn().mockReturnValue({ select: () => ({ single }) });
+    const steps = Array.from({ length: 12 }, (_, i) => ({
+      text: `Text ${i}`,
+      content: [
+        { type: 'text', text: `Text ${i}` },
+        {
+          type: 'tool-call',
+          toolName: 'lookup',
+          toolCallId: `call-${i}`,
+          input: {},
+        },
+      ],
+      toolCalls: [{ toolName: 'lookup', toolCallId: `call-${i}`, input: {} }],
+      toolResults: [
+        {
+          toolName: 'lookup',
+          toolCallId: `call-${i}`,
+          output: { data: 'x'.repeat(20000) },
+        },
+      ],
+    }));
+    await persistAssistantResponse({
+      chatId: 'chat',
+      userId: 'user',
+      model: 'google/gemini-3.5-flash-lite',
+      effectiveSource: 'Mira',
+      sbAdmin: { from: () => ({ insert }) },
+      response: { steps, text: 'Text 11' },
+    });
+    const [original, compact] = insert.mock.calls.map(([payload]) => payload);
+    expect(original.content).toBe(steps.map((step) => step.text).join('\n\n'));
+    expect(compact.metadata.ai.parts).toHaveLength(36);
+    expect(compact.metadata.ai.parts.at(-1)).toMatchObject({
+      toolCallId: 'call-11',
+    });
+    expect(compact.metadata.ai.parts[0]).toEqual({ type: 'step-start' });
+    expect(compact.metadata.ai.parts[1]).toEqual({
+      type: 'text',
+      textStart: 0,
+      textLength: 6,
+    });
+    expect(Buffer.byteLength(JSON.stringify(compact.metadata))).toBeLessThan(
+      16384
     );
   });
 });

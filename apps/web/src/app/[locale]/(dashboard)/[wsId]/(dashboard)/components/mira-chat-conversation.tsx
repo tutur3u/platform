@@ -23,7 +23,6 @@ interface MiraChatConversationProps {
   pendingPrompt: string | null;
   queuedText: string | null;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
-  toolbarVisibilityAnchorRef: RefObject<HTMLDivElement | null>;
   userAvatarUrl?: string | null;
   userName?: string;
 }
@@ -41,7 +40,6 @@ export function MiraChatConversation({
   pendingPrompt,
   queuedText,
   scrollContainerRef,
-  toolbarVisibilityAnchorRef,
   userAvatarUrl,
   userName,
 }: MiraChatConversationProps) {
@@ -79,7 +77,6 @@ export function MiraChatConversation({
             userAvatarUrl={userAvatarUrl}
             onAutoSubmitMermaidFix={onAutoSubmitMermaidFix}
             scrollContainerRef={scrollContainerRef}
-            toolbarVisibilityAnchorRef={toolbarVisibilityAnchorRef}
             messageAttachments={messageAttachments}
           />
         </ActionProvider>

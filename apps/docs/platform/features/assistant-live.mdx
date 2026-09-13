@@ -1,6 +1,6 @@
 ---
 title: "Assistant Live"
-updated: "2026-09-12"
+updated: "2026-09-13"
 description: "Gemini voice, screen context, workspace tools, and session recovery in the dashboard assistant."
 ---
 
@@ -13,9 +13,20 @@ Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
 ## Experience
 
 Start or stop Live with the waveform icon in the chat composer. The tooltip and
-pressed state identify the control. The chat and its draft stay mounted and
-visible while the live session opens in a compact panel. Close the panel or press
-Escape to stop the session and return focus to the composer.
+pressed state identify the control. Live occupies the conversation area in normal
+layout flow, with a responsive gradient visualization and the same text composer.
+Close Live or press Escape to stop the session and return to the chat. The chat
+state and draft are retained. Text submission waits until Live is connected.
+Recent captions follow the speaker; the transcript disclosure and export expose
+the session journal (up to 200 entries). This journal is session-local and is not
+persisted into the chat database.
+
+While reading chat, downward scrolling or six seconds without composer activity
+compacts the composer into a right-aligned Chat/Live bar. Focused menus, drafts,
+and attachments keep it expanded. An empty input can compact after inactivity,
+with keyboard focus moving to the Chat button. The Chat button reopens and focuses the input.
+The expanded controls have a blurred background so messages remain legible behind
+them; hidden controls are removed from keyboard navigation.
 
 The assistant opens tasks, calendar, finance, and meetings next to the conversation
 through tool calls. The chat toolbar has no product, sidebar, or layout controls. One artifact splits the available space in half; multiple
@@ -159,3 +170,23 @@ mocked tool events alone are insufficient.
 The search executor must use the configured direct Google connection, like the
 chat route. Routing only search through AI Gateway adds a separate credit and
 authentication dependency; a gateway 403 does not mean Google search is down.
+
+### Conversation chronology and native presentation
+
+Assistant history stores the ordered provider content for every generation step in
+`metadata.ai.parts`. Tool results update their original call slot, including failed
+and unfinished calls; they do not move to completion order. The message content
+column contains all text segments in order. History loading prefers these canonical
+parts over legacy text/tool arrays, and only adjacent tool activity is grouped.
+When metadata must be compacted, text spans reference the content column and tool
+payload previews shrink while later timeline entries remain present. The fallback
+omits the detailed context breakdown to prioritize conversation history. The
+current schema allows 10 MiB of AI message metadata and exempts message content
+from generic short-text limits. Old records
+that already lost interleaving cannot have their original chronology reconstructed.
+
+Explicit requests to show tasks, calendar, finance, or meetings activate the native
+artifact opener directly. Follow-ups such as "show it in an artifact" use recent
+conversation context. Product panels fetch their own data; a task-data read or
+Markdown table must never be described as an opened artifact. Workspace resolution
+still precedes presentation when a named workspace needs to be selected.

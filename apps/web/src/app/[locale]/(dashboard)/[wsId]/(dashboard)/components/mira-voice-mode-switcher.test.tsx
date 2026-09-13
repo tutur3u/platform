@@ -1,10 +1,4 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
@@ -38,17 +32,20 @@ function Harness() {
       inputRef={inputRef}
       wsId="workspace-1"
     >
-      {(onVoiceToggle) => (
-        <div ref={composerRef} data-testid="composer">
-          <textarea
-            ref={inputRef}
-            aria-label="Message"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-          <button type="button" onClick={onVoiceToggle}>
-            Start voice
-          </button>
+      {(onVoiceToggle, _voiceActive, live) => (
+        <div data-testid="chat-surface">
+          {live.content}
+          <div ref={composerRef} data-testid="composer">
+            <textarea
+              ref={inputRef}
+              aria-label="Message"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+            />
+            <button type="button" onClick={onVoiceToggle}>
+              Start voice
+            </button>
+          </div>
         </div>
       )}
     </MiraVoiceModeSwitcher>
@@ -69,43 +66,14 @@ describe('MiraVoiceModeSwitcher', () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
-  it('keeps the live panel between a wrapped header and growing composer', () => {
-    const observed: Element[] = [];
-    let resize = () => {};
-    let headerHeight = 88;
-    let composerHeight = 240;
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        constructor(callback: () => void) {
-          resize = callback;
-        }
-        observe(element: Element) {
-          observed.push(element);
-        }
-        disconnect() {}
-      }
-    );
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
-      function (this: HTMLElement) {
-        return {
-          height:
-            this.dataset.testid === 'composer' ? composerHeight : headerHeight,
-        } as DOMRect;
-      }
-    );
+  it('embeds Live in normal chat flow without floating offsets', () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
-    expect(observed).toContain(screen.getByTestId('composer'));
-    expect(observed).toContain(
-      screen.getByTestId('assistant-header').parentElement
-    );
     const panel = screen.getByRole('region', { name: 'Live' });
-    expect(panel).toHaveStyle({ top: '96px', bottom: '248px' });
-    headerHeight = 124;
-    composerHeight = 320;
-    act(() => resize());
-    expect(panel).toHaveStyle({ top: '132px', bottom: '328px' });
+    expect(screen.getByTestId('chat-surface')).toContainElement(panel);
+    expect(panel).not.toHaveClass('absolute');
+    expect(panel.style.top).toBe('');
+    expect(panel.style.bottom).toBe('');
   });
   it('opens Live when ResizeObserver is unavailable', async () => {
     vi.stubGlobal('ResizeObserver', undefined);
