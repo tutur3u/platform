@@ -17,6 +17,7 @@ export function getSupportedProductPrice(product: Product, requireUsd = true) {
     price.amountType !== 'free' &&
     (!('priceCurrency' in price) ||
       typeof price.priceCurrency !== 'string' ||
+      price.priceCurrency.length !== 3 ||
       !/^[a-z]{3}$/i.test(price.priceCurrency))
   )
     throw new Error(`Product ${product.id} requires an explicit currency`);

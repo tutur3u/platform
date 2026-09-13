@@ -1,7 +1,7 @@
 import type { Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { describe, expect, it, vi } from 'vitest';
-import { assignSeatToMember } from './polar-seat-helper';
+import { assignSeatToMember, revokeSeatFromMember } from './polar-seat-helper';
 
 function client(subscription: unknown, product: unknown) {
   const query = (result: unknown) => {
@@ -20,6 +20,22 @@ function client(subscription: unknown, product: unknown) {
 }
 
 describe('seat assignment accounting failures', () => {
+  it('keeps seat revocation best-effort when subscription verification fails', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      await expect(
+        revokeSeatFromMember(
+          {} as Polar,
+          client({ data: null, error: { message: 'unavailable' } }, undefined),
+          'workspace',
+          'user'
+        )
+      ).resolves.toBeUndefined();
+      expect(log).toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
+  });
   it.each([
     [{ data: null, error: { message: 'unavailable' } }, undefined],
     [
