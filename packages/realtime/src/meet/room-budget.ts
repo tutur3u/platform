@@ -3,12 +3,14 @@ import type { MeetRealtimeRole, MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
 import { outcome } from './room-outcome';
 import { failActiveRecording } from './room-recording';
+import { meetTrackKey } from './room-tracks';
 import type { CloseTracksInput } from './sfu';
 
 /** Operational preview ceilings, not a paid-plan entitlement or billing rate. */
 export const MEET_MAX_ROOM_DURATION_MS = 2 * 60 * 60_000;
 export const MEET_MAX_ROOM_PARTICIPANTS = 104;
 export interface RoomBudget {
+  historicalUsageUnknown?: boolean;
   expiresAt: number;
   accountedAt: number;
   participantMilliseconds: number;
@@ -39,9 +41,26 @@ export function accountRoomTime(
   state: MeetRoomSnapshot,
   now: number
 ): MeetRoomSnapshot {
+  if (!Number.isFinite(now)) return state;
+  if (!state.budget && !state.ended && Object.keys(state.presence).length) {
+    const joined = Object.values(state.presence)
+      .map((person) => Date.parse(person.joinedAt))
+      .filter(Number.isFinite);
+    const expiresAt = Math.min(now, ...joined) + MEET_MAX_ROOM_DURATION_MS;
+    state = {
+      ...state,
+      budget: {
+        expiresAt,
+        accountedAt: Math.min(now, expiresAt),
+        participantMilliseconds: 0,
+        historicalUsageUnknown: true,
+        maxPublishers: 8,
+        maxViewers: 96,
+      },
+    };
+  }
   const budget = state.budget;
-  if (!budget || !Number.isFinite(now) || now <= budget.accountedAt)
-    return state;
+  if (!budget || now <= budget.accountedAt) return state;
   const until = Math.min(now, budget.expiresAt);
   const elapsed = Math.max(0, until - budget.accountedAt);
   return {
@@ -83,7 +102,14 @@ export function expireRoomBudget(state: MeetRoomSnapshot, now = Date.now()) {
     return null;
   const budget = {
     ...accounted.budget,
-    pendingPublications: Object.values(accounted.tracks),
+    pendingPublications: [
+      ...new Map(
+        [
+          ...(accounted.budget?.pendingPublications ?? []),
+          ...Object.values(accounted.tracks),
+        ].map((track) => [meetTrackKey(track), track])
+      ).values(),
+    ],
   };
   return outcome(
     {
@@ -96,7 +122,6 @@ export function expireRoomBudget(state: MeetRoomSnapshot, now = Date.now()) {
       lastReactionAt: {},
     },
     {
-      reply: [{ type: 'room.ended' }],
       broadcast: [{ type: 'room.ended' }],
       disconnect: [
         ...new Set([
@@ -162,7 +187,13 @@ export function roomBudgetSummary(state: MeetRoomSnapshot, now = Date.now()) {
   if (!budget) return undefined;
   const { expiresAt, participantMilliseconds, maxPublishers, maxViewers } =
     budget;
-  return { expiresAt, participantMilliseconds, maxPublishers, maxViewers };
+  return {
+    expiresAt,
+    participantMilliseconds,
+    maxPublishers,
+    maxViewers,
+    historicalUsageUnknown: budget.historicalUsageUnknown ?? false,
+  };
 }
 
 /** Retain unresolved closures, with bounded provider retry traffic. */

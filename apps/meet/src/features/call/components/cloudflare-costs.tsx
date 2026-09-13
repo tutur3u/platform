@@ -35,6 +35,11 @@ export function CloudflareCosts({ meetingId }: { meetingId: string }) {
           })}
         </p>
       )}
+      {data?.budget?.historicalUsageUnknown && (
+        <p className="text-muted-foreground text-xs">
+          {t('historical_usage_unknown')}
+        </p>
+      )}
       {!usage ? (
         <p role="status" className="text-muted-foreground text-xs">
           {t('cost_unavailable')}

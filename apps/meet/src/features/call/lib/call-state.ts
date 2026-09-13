@@ -170,7 +170,15 @@ export function reduceCallState(
       return {
         ...state,
         admission: message.admitted ? 'admitted' : 'denied',
+        roomExpiresAt: message.roomExpiresAt ?? state.roomExpiresAt,
+        error: message.admitted ? null : state.error,
       };
+
+    case 'sfu.response':
+      return message.action === 'sfu.tracks.publish' ||
+        message.action === 'sfu.tracks.close'
+        ? { ...state, error: null }
+        : state;
 
     case 'track.published': {
       const remoteTracks = { ...state.remoteTracks };

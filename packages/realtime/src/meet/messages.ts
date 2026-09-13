@@ -244,6 +244,7 @@ export type MeetRealtimeServerMessage =
       admitted: boolean;
       decidedBy: string;
       type: 'admission.result';
+      roomExpiresAt?: string;
     }
   | {
       by: string;

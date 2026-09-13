@@ -15,6 +15,7 @@ import {
   type MeetSfuIntent,
   meetPresenceMessage,
   meetRealtimeClientMessageSchema,
+  mergePublicationCleanup,
   pruneMeetPresence,
   releaseParticipant,
   remoteMeetTracks,
@@ -536,15 +537,24 @@ export class MeetRoomDurableObject implements DurableObject {
       Date.now() >= (this.snapshot.budget.nextCleanupAt ?? 0)
     ) {
       try {
+        const cleanupStarted = this.snapshot;
         const closed = await closeBudgetPublications(
-          this.snapshot,
+          cleanupStarted,
           (input) => this.sfuClient().closeTracks(input),
           async (progress) => {
-            this.snapshot = { ...this.snapshot, budget: progress.budget };
+            this.snapshot = mergePublicationCleanup(
+              this.snapshot,
+              cleanupStarted,
+              progress
+            );
             await this.persist();
           }
         );
-        this.snapshot = { ...this.snapshot, budget: closed.budget };
+        this.snapshot = mergePublicationCleanup(
+          this.snapshot,
+          cleanupStarted,
+          closed
+        );
         await this.persist();
       } catch {
         this.snapshot = {
