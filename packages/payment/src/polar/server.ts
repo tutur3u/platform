@@ -1,3 +1,5 @@
+export { ResourceNotFound } from '@polar-sh/sdk/models/errors/resourcenotfound';
+
 import { Polar } from '@tuturuuu/payment/polar';
 
 /**

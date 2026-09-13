@@ -1,4 +1,7 @@
-import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  createPolarClient,
+  ResourceNotFound,
+} from '@tuturuuu/payment/polar/server';
 import { checkManageSubscriptionPermission } from '@tuturuuu/payment-core/billing-helper';
 import { resolveSatellitePageActor } from '@tuturuuu/satellite/workspace-access';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -46,7 +49,12 @@ export default async function SuccessPage({
 
   const polar = createPolarClient();
 
-  const checkout = await polar.checkouts.get({ id: checkoutId });
+  const checkout = await polar.checkouts
+    .get({ id: checkoutId })
+    .catch((error: unknown) => {
+      if (error instanceof ResourceNotFound) return notFound();
+      throw error;
+    });
 
   if (!checkout || checkout.metadata.wsId !== workspace.id) {
     return notFound();

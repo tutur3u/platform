@@ -1,3 +1,4 @@
+import { ResourceNotFound } from '@tuturuuu/payment/polar/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +16,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@tuturuuu/payment-core/billing-helper', () => ({
   checkManageSubscriptionPermission: mocks.permission,
 }));
-vi.mock('@tuturuuu/payment/polar/server', () => ({
+vi.mock('@tuturuuu/payment/polar/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/payment/polar/server')>()),
   createPolarClient: () => ({ checkouts: { get: mocks.get } }),
 }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
@@ -49,6 +51,24 @@ beforeEach(() => {
   });
 });
 describe('checkout confirmation access', () => {
+  it('returns not found for the SDK ResourceNotFound error', async () => {
+    mocks.get.mockRejectedValueOnce(
+      new ResourceNotFound(
+        { error: 'ResourceNotFound', detail: 'Unknown checkout' },
+        {
+          response: new Response(null, { status: 404 }),
+          request: new Request('https://api.polar.sh/v1/checkouts/unknown'),
+          body: '',
+        }
+      )
+    );
+    await expect(render()).rejects.toThrow('NOT_FOUND');
+  });
+  it('preserves provider failures other than not found', async () => {
+    const failure = new Error('Provider unavailable');
+    mocks.get.mockRejectedValueOnce(failure);
+    await expect(render()).rejects.toBe(failure);
+  });
   it('checks billing permission before reading provider data', async () => {
     mocks.permission.mockResolvedValue(false);
     await expect(render()).rejects.toThrow('NOT_FOUND');
