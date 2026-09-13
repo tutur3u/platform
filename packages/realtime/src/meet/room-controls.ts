@@ -9,6 +9,7 @@ import type {
 import type { MeetRoomSnapshot } from './room';
 import { denied, outcome } from './room-outcome';
 import { failActiveRecording } from './room-recording';
+import { publicationCleanupKey } from './room-tracks';
 
 export function approvedParticipantsMessage(
   state: MeetRoomSnapshot
@@ -123,6 +124,20 @@ export function applyRoomControl(
     return outcome(
       {
         ...failActiveRecording(state, now),
+        budget: state.budget
+          ? {
+              ...state.budget,
+              nextCleanupAt: 0,
+              pendingPublications: [
+                ...new Map(
+                  [
+                    ...(state.budget?.pendingPublications ?? []),
+                    ...Object.values(state.tracks),
+                  ].map((track) => [publicationCleanupKey(track), track])
+                ).values(),
+              ],
+            }
+          : undefined,
         ended: true,
         presence: {},
         waiting: {},

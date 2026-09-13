@@ -34,7 +34,7 @@ function fixture() {
       values.set(key, structuredClone(value));
     },
     getAlarm: async () => null,
-    setAlarm: async () => {},
+    setAlarm: async (_deadline: number) => {},
   };
   const state = {
     storage,
@@ -112,23 +112,79 @@ test('messages marked unsaved never enter durable snapshots', async () => {
   assert.deepEqual((values.get('snapshot') as typeof snapshot).chat, []);
 });
 
-test('an idle connected room does not reschedule alarms or broadcast presence', async () => {
-  const { room, socket, storage } = fixture();
+test('an idle connected room schedules only its resource deadline without broadcasting presence', async () => {
+  const { room, socket, storage, values } = fixture();
   Object.assign(socket, { readyState: WebSocket.OPEN });
   const internals = room as unknown as {
     sockets: () => WebSocket[];
     broadcast: () => void;
   };
   internals.sockets = () => [socket];
-  let alarms = 0,
-    broadcasts = 0;
-  storage.setAlarm = async () => {
-    alarms++;
+  const alarms: number[] = [];
+  let broadcasts = 0;
+  storage.setAlarm = async (deadline: number) => {
+    alarms.push(deadline);
   };
   internals.broadcast = () => {
     broadcasts++;
   };
   await room.alarm();
-  assert.equal(alarms, 0);
+  assert.deepEqual(alarms, [
+    (values.get('snapshot') as ReturnType<typeof createMeetRoomSnapshot>)
+      .budget!.expiresAt,
+  ]);
   assert.equal(broadcasts, 0);
+});
+
+test('the resource alarm persists a room end and final participant time', async () => {
+  const { room, values } = fixture();
+  const snapshot = values.get('snapshot') as ReturnType<
+    typeof createMeetRoomSnapshot
+  >;
+  snapshot.budget!.expiresAt = Date.now() - 1;
+  snapshot.budget!.accountedAt = snapshot.budget!.expiresAt - 60_000;
+  const broadcasts: unknown[] = [];
+  (room as unknown as { broadcast: (messages: unknown[]) => void }).broadcast =
+    (messages) => {
+      broadcasts.push(...messages);
+    };
+  await room.alarm();
+  const saved = values.get('snapshot') as typeof snapshot;
+  assert.equal(saved.ended, true);
+  assert.deepEqual(saved.presence, {});
+  assert.equal(saved.budget!.participantMilliseconds, 60_000);
+  assert.ok(
+    broadcasts.some(
+      (message) => (message as { type: string }).type === 'room.ended'
+    )
+  );
+});
+
+test('failed media closure stays durable and a premature alarm does not retry the provider', async () => {
+  const { room, values } = fixture();
+  const snapshot = values.get('snapshot') as ReturnType<
+    typeof createMeetRoomSnapshot
+  >;
+  snapshot.budget!.expiresAt = Date.now() - 1;
+  snapshot.budget!.accountedAt = snapshot.budget!.expiresAt - 1000;
+  snapshot.tracks.media = {
+    userId: token.userId,
+    sessionId: 'session',
+    mid: '0',
+    kind: 'video',
+  };
+  let calls = 0;
+  (room as unknown as { sfuClient: () => unknown }).sfuClient = () => ({
+    closeTracks: async () => {
+      calls++;
+      throw new Error('provider unavailable');
+    },
+  });
+  await room.alarm();
+  const saved = values.get('snapshot') as typeof snapshot;
+  assert.equal(saved.budget!.cleanupAttempts, 1);
+  assert.equal(saved.budget!.pendingPublications!.length, 1);
+  assert.ok(saved.budget!.nextCleanupAt! > Date.now());
+  await room.alarm();
+  assert.equal(calls, 1);
 });

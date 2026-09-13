@@ -61,6 +61,9 @@ export function CallPreparation({
             {description ?? t('preparing_call_hint')}
           </p>
         </div>
+        <p className="mt-4 text-muted-foreground text-xs">
+          {t('resource_limits_hint')}
+        </p>
         {children && <div className="mt-6 w-full space-y-4">{children}</div>}
         <p className="mt-8 flex items-center justify-center gap-2 text-muted-foreground text-xs">
           <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />

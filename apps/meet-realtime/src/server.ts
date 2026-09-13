@@ -1,12 +1,17 @@
 import {
+  accountRoomTime,
   admitOrHold,
   CloudflareSfuClient,
+  closeBudgetPublications,
+  deferBudgetCleanup,
+  expireRoomBudget,
   MeetCommandExecutor,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
   type MeetSfuIntent,
   meetPresenceMessage,
   meetRealtimeClientMessageSchema,
+  mergePublicationCleanup,
   pruneMeetPresence,
   releaseParticipant,
   remoteMeetTracks,
@@ -108,25 +113,74 @@ async function handleMessage(
 export function createMeetRealtimeServer(
   options: MeetRealtimeServerOptions = {}
 ) {
+  const cleanupInFlight = new Set<string>();
   let sfuClient = options.sfuClient;
   const getSfuClient = () => {
     sfuClient ??= new CloudflareSfuClient();
     return sfuClient;
   };
 
-  setInterval(() => {
+  const sweep = setInterval(() => {
     for (const [roomId, room] of rooms.entries()) {
       const connected = new Set(
         [...room.clients]
           .filter((socket) => socket.readyState === 1)
           .map((socket) => socket.data.token.userId)
       );
+      const expiredBudget = expireRoomBudget(room.snapshot);
+      if (expiredBudget) {
+        room.snapshot = expiredBudget.state;
+        broadcast(roomId, expiredBudget.broadcast);
+        disconnectUsers(roomId, expiredBudget.disconnect);
+      }
+      if (
+        room.snapshot.budget?.pendingPublications?.length &&
+        Date.now() >= (room.snapshot.budget.nextCleanupAt ?? 0) &&
+        !cleanupInFlight.has(roomId)
+      ) {
+        cleanupInFlight.add(roomId);
+        const cleanupStarted = room.snapshot;
+        void closeBudgetPublications(
+          cleanupStarted,
+          (input) => getSfuClient().closeTracks(input),
+          async (progress) => {
+            room.snapshot = mergePublicationCleanup(
+              room.snapshot,
+              cleanupStarted,
+              progress
+            );
+          },
+          (sessionId) => getSfuClient().getSession(sessionId)
+        )
+          .then((snapshot) => {
+            room.snapshot = mergePublicationCleanup(
+              room.snapshot,
+              cleanupStarted,
+              snapshot
+            );
+          })
+          .catch(() => {
+            room.snapshot = {
+              ...room.snapshot,
+              budget: deferBudgetCleanup(
+                room.snapshot,
+                Date.now(),
+                cleanupStarted
+              ).budget,
+            };
+            console.error(
+              'Meeting media cleanup deferred; provider confirmation is still pending'
+            );
+          })
+          .finally(() => cleanupInFlight.delete(roomId));
+      }
+      room.snapshot = accountRoomTime(room.snapshot, Date.now());
       room.snapshot = pruneMeetPresence(room.snapshot, Date.now(), connected);
       broadcast(roomId, [meetPresenceMessage(room.snapshot, roomId)]);
     }
   }, PRESENCE_SWEEP_MS);
 
-  return Bun.serve<{ token: MeetRealtimeTokenPayload }>({
+  const server = Bun.serve<{ token: MeetRealtimeTokenPayload }>({
     fetch(request, server) {
       const url = new URL(request.url);
 
@@ -159,6 +213,7 @@ export function createMeetRealtimeServer(
         room?.clients.delete(ws);
         if (!room || hasOtherSocket(roomId, userId, ws)) return;
 
+        room.snapshot = accountRoomTime(room.snapshot, Date.now());
         const outcome = releaseParticipant(room.snapshot, userId, roomId);
         room.snapshot = outcome.state;
         broadcast(roomId, outcome.broadcast);
@@ -207,4 +262,10 @@ export function createMeetRealtimeServer(
       },
     },
   });
+  const stop = server.stop.bind(server);
+  server.stop = (...args) => {
+    clearInterval(sweep);
+    return stop(...args);
+  };
+  return server;
 }

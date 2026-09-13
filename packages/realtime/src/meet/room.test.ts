@@ -110,6 +110,9 @@ describe('meet room admission', () => {
       {
         message: {
           admitted: true,
+          roomExpiresAt: new Date(
+            Date.parse(NOW) + 2 * 60 * 60_000
+          ).toISOString(),
           decidedBy: HOST_ID,
           type: 'admission.result',
         },
@@ -410,13 +413,66 @@ describe('meet room SFU relay', () => {
     ]);
   });
 
+  it('accepts six tracks and rejects cumulative or duplicate-key overflow', () => {
+    const publishTracks = (
+      state: typeof joined,
+      count: number,
+      offset = 0,
+      duplicate = false
+    ) =>
+      run(
+        state,
+        {
+          sessionDescription,
+          sessionId: 'session-1',
+          type: 'sfu.tracks.publish',
+          tracks: Array.from({ length: count }, (_, i) => ({
+            kind: 'audio' as const,
+            mid: String(i + offset),
+            trackName: duplicate ? 'same' : `audio-${i + offset}`,
+          })),
+        },
+        token()
+      );
+    expect(publishTracks(joined, 6).sfu).not.toBeNull();
+    const first = publishTracks(joined, 4);
+    expect(publishTracks(first.state, 3, 4).reply[0]).toMatchObject({
+      error: 'media_track_limit_reached',
+    });
+    expect(publishTracks(joined, 7, 0, true).reply[0]).toMatchObject({
+      error: 'invalid_publication',
+    });
+  });
+
+  it('rejects excess media tracks before contacting the SFU', () => {
+    const result = run(
+      joined,
+      {
+        sessionDescription,
+        sessionId: 'session-1',
+        type: 'sfu.tracks.publish',
+        tracks: Array.from({ length: 7 }, (_, i) => ({
+          kind: 'audio',
+          mid: String(i),
+          trackName: `audio-${i}`,
+        })),
+      },
+      token()
+    );
+    expect(result.sfu).toBeNull();
+    expect(result.reply[0]).toMatchObject({
+      error: 'media_track_limit_reached',
+    });
+    expect(result.state.tracks).toEqual(joined.tracks);
+  });
+
   it('drops closed tracks from the room registry', () => {
     const published = run(
       joined,
       {
         sessionDescription,
         sessionId: 'session-1',
-        tracks: [{ kind: 'audio', trackName: 'host-audio' }],
+        tracks: [{ kind: 'audio', mid: '0', trackName: 'host-audio' }],
         type: 'sfu.tracks.publish',
       },
       token()
@@ -426,7 +482,7 @@ describe('meet room SFU relay', () => {
       published.state,
       {
         sessionId: 'session-1',
-        tracks: [{ kind: 'audio', trackName: 'host-audio' }],
+        tracks: [{ kind: 'audio', mid: '0', trackName: 'host-audio' }],
         type: 'sfu.tracks.close',
       },
       token()
@@ -458,7 +514,7 @@ describe('meet room SFU relay', () => {
       {
         sessionDescription,
         sessionId: 'session-1',
-        tracks: [{ kind: 'audio', trackName: 'host-audio' }],
+        tracks: [{ kind: 'audio', mid: '0', trackName: 'host-audio' }],
         type: 'sfu.tracks.publish',
       },
       token()
@@ -478,7 +534,7 @@ describe('meet room lifecycle', () => {
       {
         sessionDescription: { sdp: 'v=0', type: 'offer' },
         sessionId: 'session-1',
-        tracks: [{ kind: 'audio', trackName: 'host-audio' }],
+        tracks: [{ kind: 'audio', mid: '0', trackName: 'host-audio' }],
         type: 'sfu.tracks.publish',
       },
       token()

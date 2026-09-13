@@ -6,6 +6,7 @@ import {
 } from './permissions';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomOutcome, MeetRoomSnapshot } from './room';
+import { roomCapacityError } from './room-budget';
 import { denied, outcome } from './room-outcome';
 import { meetTrackKey, replaceRoomPublications } from './room-tracks';
 export function applySfuCommand(
@@ -37,6 +38,10 @@ export function applySfuCommand(
   }
 
   if (message.type === 'sfu.tracks.publish') {
+    const capacityError = roomCapacityError(state, token);
+    if (capacityError) return denied(state, capacityError, message.requestId);
+    if (message.tracks.some((track) => !track.mid))
+      return denied(state, 'invalid_publication', message.requestId);
     if (
       state.retiredSessions?.[
         `${encodeURIComponent(token.userId)}:${encodeURIComponent(message.sessionId)}`
@@ -54,6 +59,13 @@ export function applySfuCommand(
       state.retiredTracks
     );
     if (error) return denied(state, error, message.requestId);
+    if (new Set(published.map(meetTrackKey)).size !== published.length)
+      return denied(state, 'invalid_publication', message.requestId);
+    if (
+      Object.values(tracks).filter((track) => track.userId === token.userId)
+        .length > 6
+    )
+      return denied(state, 'media_track_limit_reached', message.requestId);
     const next = { ...state, tracks, retiredTracks: retired };
 
     return outcome(next, {

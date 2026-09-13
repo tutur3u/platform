@@ -49,3 +49,22 @@ explicitly bound before a catalog update; display names are not identifiers.
 These controls do not activate new prices, reduce existing AI grants, or implement
 a complete cross-product billing ledger. Use the commercial rollout runbook for
 versioned allowance changes, provider reconciliation and existing-customer notice.
+
+## Meeting lifecycle accounting
+
+New rooms retain their first-admission deadline. Admitted legacy snapshots without
+a stored deadline end on observation because departed participants make their
+original start time unrecoverable. Legacy
+participant time before observation remains unknown and is marked as incomplete
+in the usage response and UI; it is never backfilled as a fabricated zero-cost history.
+Lobby approvals carry the room deadline. Successful provider publications that
+cannot be committed after a leave or room end are queued for durable cleanup.
+Cleanup completion removes only confirmed obligations and preserves newer usage
+counters and cleanup requests. The local server stops its sweep when stopped.
+
+Cleanup reads Cloudflare session state to recover missing legacy provider mids by
+local track name, and settles mixed close responses per mid. Unidentifiable tracks
+remain pending for investigation; they cannot prevent later sessions from closing.
+Room termination resets prior cleanup backoff. The lobby remains independently
+bounded while active capacity is full; host approval still enforces active limits.
+Provider contract: [Cloudflare SFU Connection API](https://developers.cloudflare.com/realtime/sfu/https-api/).

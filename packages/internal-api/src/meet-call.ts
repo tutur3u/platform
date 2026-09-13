@@ -132,6 +132,13 @@ export function readMeetRecording(meetingId: string, sessionId: string) {
 
 export function getMeetRoomCosts(meetingId: string) {
   return getInternalApiClient().json<{
+    budget?: {
+      historicalUsageUnknown?: boolean;
+      expiresAt: number;
+      participantMilliseconds: number;
+      maxPublishers: number;
+      maxViewers: number;
+    };
     cloudflare: null | {
       receivedBytes: number;
       devices: number;

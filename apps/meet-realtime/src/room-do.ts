@@ -1,9 +1,13 @@
 import {
+  accountRoomTime,
   admitOrHold,
   CloudflareSfuClient,
   canMeetRealtimeManageParticipants,
   canReadRoomNotes,
+  closeBudgetPublications,
   createMeetRoomSnapshot,
+  deferBudgetCleanup,
+  expireRoomBudget,
   MeetCommandExecutor,
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
@@ -11,6 +15,7 @@ import {
   type MeetSfuIntent,
   meetPresenceMessage,
   meetRealtimeClientMessageSchema,
+  mergePublicationCleanup,
   pruneMeetPresence,
   releaseParticipant,
   remoteMeetTracks,
@@ -375,6 +380,10 @@ export class MeetRoomDurableObject implements DurableObject {
 
     const outcome = admitOrHold(this.snapshot, token, new Date().toISOString());
     this.snapshot = outcome.state;
+    if (this.snapshot.budget?.pendingPublications?.length)
+      await this.scheduleSweep(Date.now());
+    else if (this.snapshot.budget && !this.snapshot.ended)
+      await this.scheduleSweep(this.snapshot.budget.expiresAt);
     if (this.snapshot.usage && this.snapshot.presence[token.userId])
       if (Object.keys(this.snapshot.usage.devices).length < 4096)
         this.snapshot.usage.devices[token.userId] = true;
@@ -446,6 +455,8 @@ export class MeetRoomDurableObject implements DurableObject {
   private async flush(socket: WebSocket, result: MeetRoomOutcome) {
     this.snapshot = result.state;
     await this.persist();
+    if (this.snapshot.budget?.pendingPublications?.length)
+      await this.scheduleSweep(Date.now());
     for (const message of result.reply) this.sendTo(socket, message);
     this.broadcast(result.broadcast);
     this.sendToManagers(result.toManagers);
@@ -493,6 +504,7 @@ export class MeetRoomDurableObject implements DurableObject {
       return;
     }
 
+    this.snapshot = accountRoomTime(this.snapshot, Date.now());
     const outcome = releaseParticipant(
       this.snapshot,
       token.userId,
@@ -513,6 +525,54 @@ export class MeetRoomDurableObject implements DurableObject {
 
   async alarm() {
     await this.load();
+    const expiredBudget = expireRoomBudget(this.snapshot);
+    if (expiredBudget) {
+      this.snapshot = expiredBudget.state;
+      await this.persist();
+      this.broadcast(expiredBudget.broadcast);
+      this.disconnect(expiredBudget.disconnect);
+    }
+    if (
+      this.snapshot.budget?.pendingPublications?.length &&
+      Date.now() >= (this.snapshot.budget.nextCleanupAt ?? 0)
+    ) {
+      const cleanupStarted = this.snapshot;
+      try {
+        const closed = await closeBudgetPublications(
+          cleanupStarted,
+          (input) => this.sfuClient().closeTracks(input),
+          async (progress) => {
+            this.snapshot = mergePublicationCleanup(
+              this.snapshot,
+              cleanupStarted,
+              progress
+            );
+            await this.persist();
+          },
+          (sessionId) => this.sfuClient().getSession(sessionId)
+        );
+        this.snapshot = mergePublicationCleanup(
+          this.snapshot,
+          cleanupStarted,
+          closed
+        );
+        await this.persist();
+      } catch {
+        this.snapshot = {
+          ...this.snapshot,
+          budget: deferBudgetCleanup(this.snapshot, Date.now(), cleanupStarted)
+            .budget,
+        };
+        await this.persist();
+        console.error(
+          'Meeting media cleanup deferred; provider confirmation is still pending'
+        );
+      }
+    }
+    if (this.snapshot.budget?.pendingPublications?.length)
+      await this.scheduleSweep(
+        this.snapshot.budget.nextCleanupAt ?? Date.now()
+      );
     const expiredLive = expireRoomLive(this.snapshot);
     if (expiredLive) {
       this.snapshot = expiredLive.state;
@@ -527,6 +587,11 @@ export class MeetRoomDurableObject implements DurableObject {
         .map((socket) => this.tokenOf(socket)?.userId)
         .filter((userId): userId is string => Boolean(userId))
     );
+    const accounted = accountRoomTime(this.snapshot, Date.now());
+    if (accounted !== this.snapshot) {
+      this.snapshot = accounted;
+      await this.persist();
+    }
     const pruned = pruneMeetPresence(
       this.snapshot,
       Date.now(),
@@ -577,5 +642,7 @@ export class MeetRoomDurableObject implements DurableObject {
       await this.scheduleSweep();
     if (this.snapshot.liveAssistant)
       await this.scheduleSweep(this.snapshot.liveAssistant.expiresAt);
+    if (this.snapshot.budget && !this.snapshot.ended)
+      await this.scheduleSweep(this.snapshot.budget.expiresAt);
   }
 }
