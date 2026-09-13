@@ -9,6 +9,15 @@ export function meetTrackKey(track: MeetRealtimeRoomTrack) {
   return `${encodeURIComponent(track.sessionId)}:${encodeURIComponent(track.trackName ?? track.mid ?? track.userId)}`;
 }
 
+/** Provider cleanup must distinguish replacements that reuse a logical track name. */
+export function publicationCleanupKey(track: MeetRealtimeRoomTrack) {
+  return JSON.stringify([
+    track.sessionId,
+    track.mid ?? null,
+    track.mid ? null : meetTrackKey(track),
+  ]);
+}
+
 export function retiredTrackKey(track: MeetRealtimeRoomTrack) {
   return `${encodeURIComponent(track.userId)}:${meetTrackKey(track)}`;
 }
