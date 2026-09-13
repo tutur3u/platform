@@ -5,17 +5,32 @@ import { meetTrackKey } from './room-tracks';
 /** A provider success rejected by the current room still requires durable cleanup. */
 export function queueUncommittedPublication(
   state: MeetRoomSnapshot,
-  command: MeetRoomCommand
+  command: MeetRoomCommand,
+  providerResult: unknown
 ): MeetRoomSnapshot {
   if (command.message.type !== 'sfu.tracks.publish') return state;
+  const response = providerResult as {
+    errorCode?: unknown;
+    tracks?: Array<{ mid?: string; errorCode?: unknown }>;
+  } | null;
+  if (!response || response.errorCode || !Array.isArray(response.tracks))
+    return state;
+  const confirmedMids = new Set(
+    response.tracks
+      .filter((track) => track && !track.errorCode)
+      .map((track) => track.mid)
+  );
+  const message = command.message;
+  const publications = message.tracks
+    .filter((track) => confirmedMids.has(track.mid))
+    .map((track) => ({
+      ...track,
+      sessionId: message.sessionId,
+      userId: command.token.userId,
+    }));
+  if (!publications.length) return state;
   state = startRoomBudget(state, command.token, Date.parse(command.now));
   if (!state.budget) throw new Error('publication_cleanup_budget_missing');
-  const message = command.message;
-  const publications = message.tracks.map((track) => ({
-    ...track,
-    sessionId: message.sessionId,
-    userId: command.token.userId,
-  }));
   return {
     ...state,
     budget: {

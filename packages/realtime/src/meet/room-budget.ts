@@ -43,10 +43,9 @@ export function accountRoomTime(
 ): MeetRoomSnapshot {
   if (!Number.isFinite(now)) return state;
   if (!state.budget && !state.ended && Object.keys(state.presence).length) {
-    const joined = Object.values(state.presence)
-      .map((person) => Date.parse(person.joinedAt))
-      .filter(Number.isFinite);
-    const expiresAt = Math.min(now, ...joined) + MEET_MAX_ROOM_DURATION_MS;
+    // Legacy presence omits departed participants: it cannot establish the first
+    // admission time. End the room now instead of granting a fresh deadline.
+    const expiresAt = now;
     state = {
       ...state,
       budget: {
