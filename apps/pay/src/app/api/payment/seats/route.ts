@@ -216,6 +216,8 @@ export async function POST(req: Request) {
           { status: 409 }
         );
       }
+      // Polar PATCH locks the subscription row and treats an unchanged absolute
+      // seat quantity as a no-op (subscription/endpoints.py and service.py).
       // A retry after a successful charge only reconciles the existing result.
       updatedSubscription =
         live.seats === newSeatCount

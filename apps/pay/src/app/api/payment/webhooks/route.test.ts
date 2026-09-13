@@ -244,10 +244,17 @@ describe('syncSubscriptionToDatabase', () => {
     );
   });
   it('allows equal-version retries only when every projected value already matches', async () => {
-    await syncSubscriptionToDatabase(mockSupabase, {
+    const result = await syncSubscriptionToDatabase(mockSupabase, {
       ...mockSubscription,
       modifiedAt: null,
     });
+    expect(result.subscriptionData).toEqual(
+      expect.objectContaining({
+        polar_subscription_id: 'sub_123',
+        seat_count: 5,
+        updated_at: '2026-01-01T00:00:00.000Z',
+      })
+    );
     const filter = mockVersionFilter.mock.calls[0]![0] as string;
     expect(filter).not.toContain('updated_at.lte.');
     const sameVersionBranch = filter.slice(filter.indexOf('and('));

@@ -19,6 +19,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { BillingStatusRefresh } from './billing-status-refresh';
 
 interface AdjustSeatsDialogProps {
   open: boolean;
@@ -142,9 +143,12 @@ export default function AdjustSeatsDialog({
 
         <div className="space-y-6 py-4">
           {pendingSeats !== null && (
-            <p role="status" className="text-sm">
-              {t('billing-syncing')}
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p role="status" className="text-sm">
+                {t('billing-syncing')}
+              </p>
+              <BillingStatusRefresh />
+            </div>
           )}
           {/* Current seats info */}
           <div className="rounded-lg border bg-muted/50 p-4">

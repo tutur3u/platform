@@ -101,6 +101,11 @@ describe('paid plan confirmation', () => {
       expect(screen.getByRole('status').textContent).toBe('plan-sync-pending')
     );
     expect(callbacks.onSyncPending).toHaveBeenCalledOnce();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'refresh-billing-status' })
+    );
+    expect(mocks.refresh).toHaveBeenCalledOnce();
+    expect(mocks.change).toHaveBeenCalledOnce();
     expect(
       screen
         .getByRole('button', { name: 'confirm-paid-plan-change' })
