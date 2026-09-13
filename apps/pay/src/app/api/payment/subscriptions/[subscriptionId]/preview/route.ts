@@ -1,6 +1,12 @@
 import { isPlanUpgrade } from '@tuturuuu/payment-core/proration';
+import {
+  getSelfServePlanChangeError,
+  isSelfServeWorkspaceProduct,
+  validCheckoutSeats,
+} from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
 
 export type { ProrationPreview } from '@tuturuuu/payment-core/proration';
 
@@ -141,19 +147,53 @@ export async function POST(
     );
   }
 
-  // Get current seat count from subscription
-  const currentSeatCount = subscription.seat_count || 1;
+  if (!isSelfServeWorkspaceProduct(targetProduct))
+    return NextResponse.json(
+      { error: 'This product is not available for new purchases' },
+      { status: 400 }
+    );
+  const transitionError = getSelfServePlanChangeError(
+    currentProduct.tier,
+    targetProduct.tier
+  );
+  if (transitionError)
+    return NextResponse.json({ error: transitionError }, { status: 400 });
+  const currentSeatCount =
+    currentProduct.pricing_model === 'seat_based' ? subscription.seat_count : 0;
+  if (
+    currentProduct.pricing_model === 'seat_based' &&
+    !validCheckoutSeats(currentSeatCount)
+  )
+    return NextResponse.json(
+      { error: 'Current purchased seats could not be verified' },
+      { status: 503 }
+    );
+  let targetSeatCount = 0;
+  if (targetProduct.pricing_model === 'seat_based') {
+    const capacity = await getSubscriptionTransitionSeats(
+      supabase,
+      subscription,
+      currentProduct.pricing_model,
+      targetProduct
+    );
+    if (!capacity.ok)
+      return NextResponse.json(
+        { error: capacity.error },
+        { status: capacity.status }
+      );
+    targetSeatCount = capacity.seats;
+  }
 
   // Calculate actual prices based on pricing model
   const currentActualPrice =
     currentProduct.pricing_model === 'seat_based' &&
     currentProduct.price_per_seat
-      ? currentProduct.price_per_seat * currentSeatCount
+      ? currentProduct.price_per_seat * (currentSeatCount ?? 0)
       : (currentProduct.price ?? 0);
 
   const targetActualPrice =
     targetProduct.pricing_model === 'seat_based' && targetProduct.price_per_seat
-      ? targetProduct.price_per_seat * currentSeatCount
+      ? targetProduct.price_per_seat * targetSeatCount
       : (targetProduct.price ?? 0);
 
   // Calculate proration
@@ -243,7 +283,7 @@ export async function POST(
         (currentProduct.pricing_model as 'fixed' | 'seat_based') ?? 'fixed',
       seatCount:
         currentProduct.pricing_model === 'seat_based'
-          ? currentSeatCount
+          ? (currentSeatCount ?? undefined)
           : undefined,
       pricePerSeat:
         currentProduct.pricing_model === 'seat_based'
@@ -260,7 +300,7 @@ export async function POST(
         (targetProduct.pricing_model as 'fixed' | 'seat_based') ?? 'fixed',
       seatCount:
         targetProduct.pricing_model === 'seat_based'
-          ? currentSeatCount
+          ? targetSeatCount
           : undefined,
       pricePerSeat:
         targetProduct.pricing_model === 'seat_based'

@@ -27,6 +27,17 @@ retain their pricing; new paid self-service purchases use seat products for both
 personal and team workspaces. Changing billing models requires checkout, where
 the customer can review seats and price. Never silently migrate subscribers.
 
+The TanStack browser pricing query uses `VITE_PUBLIC_WEB_API_ORIGIN` at build time,
+falling back to `https://tuturuuu.com`. Only use a public API origin for this value;
+server-only internal origins and credentials must not be exposed to Vite clients.
+
+Plan changes open Polar checkout for the final quantity, discount, tax and payable
+amount. Seat calculation preserves purchased capacity, covers current members and
+honors target minimum/maximum bounds. Direct plan mutation rejects changes that
+would alter the purchased seat count; those require checkout confirmation.
+The legacy preview endpoint returns list-price estimates, not discount- or tax-aware
+quotes. Do not use those estimates to authorize payment.
+
 ## Feature comparison maintenance
 
 The shared comparison covers every app directory, with app/category filters,
@@ -154,7 +165,3 @@ Primary references: [Polar product pricing](https://polar.sh/docs/features/produ
 [Merchant terms](https://polar.sh/legal/master-services-terms),
 [Vietnam Law 91/2025/QH15](https://chinhphu.vn/?classid=1&docid=214590&orggroupid=1&pageid=27160),
 and [EU controller-processor clauses](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?from=ES&uri=CELEX%3A32021D0915).
-
-The TanStack browser pricing query uses `VITE_PUBLIC_WEB_API_ORIGIN` at build time,
-falling back to `https://tuturuuu.com`. Only use a public API origin for this value;
-server-only internal origins and credentials must not be exposed to Vite clients.

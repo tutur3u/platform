@@ -1,7 +1,11 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { isSelfServeWorkspaceProduct } from '@tuturuuu/payment-core/self-serve-products';
+import {
+  getSelfServePlanChangeError,
+  isSelfServeWorkspaceProduct,
+} from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
 
 // POST: Change subscription to a different product with immediate proration
 export async function POST(
@@ -139,19 +143,39 @@ export async function POST(
       { error: 'Current pricing model unavailable' },
       { status: 503 }
     );
-  if (currentProduct.tier !== 'FREE' && targetProduct.tier === 'FREE')
-    return NextResponse.json(
-      {
-        error:
-          'Cancel at period end to move to Free without forfeiting paid access',
-      },
-      { status: 400 }
-    );
+  const transitionError = getSelfServePlanChangeError(
+    currentProduct.tier,
+    targetProduct.tier
+  );
+  if (transitionError)
+    return NextResponse.json({ error: transitionError }, { status: 400 });
   if (currentProduct.pricing_model !== targetProduct.pricing_model) {
     return NextResponse.json(
       { error: 'Use checkout to review and confirm a change of billing model' },
       { status: 409 }
     );
+  }
+
+  if (targetProduct.pricing_model === 'seat_based') {
+    const capacity = await getSubscriptionTransitionSeats(
+      supabase,
+      subscription,
+      currentProduct.pricing_model,
+      targetProduct
+    );
+    if (!capacity.ok)
+      return NextResponse.json(
+        { error: capacity.error },
+        { status: capacity.status }
+      );
+    if (capacity.seats !== subscription.seat_count)
+      return NextResponse.json(
+        {
+          error:
+            'Use checkout to review and confirm a change of purchased seats',
+        },
+        { status: 409 }
+      );
   }
 
   try {
