@@ -73,7 +73,7 @@ export class MeetCommandExecutor {
       await options.commit(
         outcome(
           result !== undefined
-            ? queueUncommittedPublication(options.read(), command)
+            ? queueUncommittedPublication(options.read(), command, result)
             : options.read(),
           {
             reply: [
@@ -95,7 +95,7 @@ export class MeetCommandExecutor {
     if (!confirmed.sfu) {
       await options.commit({
         ...confirmed,
-        state: queueUncommittedPublication(confirmed.state, command),
+        state: queueUncommittedPublication(confirmed.state, command, result),
       });
       return;
     }

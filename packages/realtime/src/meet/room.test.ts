@@ -440,7 +440,7 @@ describe('meet room SFU relay', () => {
       error: 'media_track_limit_reached',
     });
     expect(publishTracks(joined, 7, 0, true).reply[0]).toMatchObject({
-      error: 'media_track_limit_reached',
+      error: 'invalid_publication',
     });
   });
 
