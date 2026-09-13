@@ -30,6 +30,8 @@ import {
   isReservedMobileDeploymentDrivePath,
 } from './mobile-deployment/storage-policy';
 import { getWorkspaceStorageMetrics } from './storage-analytics';
+import { fitsStorageBudget, readStorageUsageBytes } from './storage-quota';
+import { getStorageLimit } from './storage-quota-reader';
 import {
   DRIVE_R2_ACCESS_KEY_ID_SECRET,
   DRIVE_R2_BUCKET_SECRET,
@@ -42,7 +44,6 @@ import {
   type WorkspaceStorageProvider,
 } from './workspace-storage-config';
 
-const STORAGE_LIMIT_FALLBACK_BYTES = 104857600;
 const R2_SIGNED_URL_TTL_SECONDS = 900;
 const SUPABASE_STORAGE_LIST_PAGE_SIZE = 1000;
 type SignedUrlClient = Parameters<typeof getSignedUrl>[0];
@@ -453,24 +454,6 @@ async function resolveWorkspaceStorageConfig(
   return resolveWorkspaceStorageConfigForProvider(wsId, secretMap, provider);
 }
 
-async function getStorageLimit(
-  wsId: string,
-  supabase?: TypedSupabaseClient
-): Promise<number> {
-  const client =
-    supabase ?? ((await createDynamicAdminClient()) as TypedSupabaseClient);
-  const { data, error } = await client.rpc('get_workspace_storage_limit', {
-    p_ws_id: wsId,
-  });
-
-  if (error) {
-    console.error('Error fetching storage limit:', error);
-    return STORAGE_LIMIT_FALLBACK_BYTES;
-  }
-
-  return data ?? STORAGE_LIMIT_FALLBACK_BYTES;
-}
-
 async function listR2Directory(
   wsId: string,
   config: Extract<ResolvedWorkspaceStorageConfig, { provider: 'r2' }>,
@@ -550,7 +533,8 @@ async function listR2Directory(
 
 async function getR2Overview(
   wsId: string,
-  config: Extract<ResolvedWorkspaceStorageConfig, { provider: 'r2' }>
+  config: Extract<ResolvedWorkspaceStorageConfig, { provider: 'r2' }>,
+  includeReservedForQuota = false
 ): Promise<WorkspaceStorageOverview> {
   const client = createR2Client(config);
   const prefix = buildWorkspaceStoragePrefix(wsId);
@@ -578,11 +562,14 @@ async function getR2Overview(
         continue;
       }
 
-      if (isReservedMobileDeploymentDrivePath(wsId, relativeKey)) {
+      if (
+        !includeReservedForQuota &&
+        isReservedMobileDeploymentDrivePath(wsId, relativeKey)
+      ) {
         continue;
       }
 
-      const size = item.Size ?? 0;
+      const size = readStorageUsageBytes(item.Size);
       const record = {
         name: posix.basename(relativeKey),
         size,
@@ -601,6 +588,8 @@ async function getR2Overview(
       }
     }
 
+    if (response.IsTruncated && !response.NextContinuationToken)
+      throw new Error('Storage usage listing is incomplete');
     continuationToken = response.IsTruncated
       ? response.NextContinuationToken
       : undefined;
@@ -627,7 +616,7 @@ async function ensureWorkspaceCapacity(
 ): Promise<void> {
   if (
     incomingBytes === undefined ||
-    !Number.isFinite(incomingBytes) ||
+    !Number.isSafeInteger(incomingBytes) ||
     incomingBytes <= 0
   ) {
     throw new WorkspaceStorageError(
@@ -635,17 +624,16 @@ async function ensureWorkspaceCapacity(
       400
     );
   }
-
-  const overview = await getWorkspaceStorageOverview(wsId);
+  const overview = options?.provider
+    ? await getWorkspaceStorageOverviewForProvider(wsId, options.provider, true)
+    : await getWorkspaceStorageOverview(wsId, true);
   let existingBytes = 0;
-
   if (options?.upsert && options.provider && options.fullPath) {
     if (options.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
       const config = await resolveWorkspaceStorageBackendConfig(
         wsId,
         options.provider
       );
-
       if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
         try {
           const response = await createR2Client(config).send(
@@ -670,10 +658,13 @@ async function ensureWorkspaceCapacity(
       existingBytes = toNumber(existingObject?.metadata?.size);
     }
   }
-
   if (
-    overview.totalSize - existingBytes + incomingBytes >
-    overview.storageLimit
+    !fitsStorageBudget(
+      overview.totalSize,
+      incomingBytes,
+      overview.storageLimit,
+      existingBytes
+    )
   ) {
     throw new WorkspaceStorageError(
       'Workspace storage limit exceeded. Please free up space or upgrade your plan.',
@@ -681,7 +672,6 @@ async function ensureWorkspaceCapacity(
     );
   }
 }
-
 async function hasR2Object(
   client: S3Client,
   bucket: string,
@@ -694,11 +684,9 @@ async function hasR2Object(
     if (isNotFoundError(error)) {
       return false;
     }
-
     throw error;
   }
 }
-
 async function copyR2Object(
   client: S3Client,
   bucket: string,
@@ -713,7 +701,6 @@ async function copyR2Object(
     })
   );
 }
-
 async function countSupabaseDirectoryEntries(
   supabase: TypedSupabaseClient,
   storagePath: string,
@@ -721,7 +708,6 @@ async function countSupabaseDirectoryEntries(
 ) {
   let offset = 0;
   let total = 0;
-
   while (true) {
     const { data, error } = await supabase.storage
       .from('workspaces')
@@ -730,31 +716,25 @@ async function countSupabaseDirectoryEntries(
         offset,
         search,
       });
-
     if (error) {
       throw new WorkspaceStorageError(error.message || 'Failed to list files');
     }
-
     const page = data ?? [];
     total += page.filter(
       (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
     ).length;
-
     if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
       return total;
     }
-
     offset += page.length;
   }
 }
-
 async function listSupabaseFolderObjectPathsRecursively(
   supabase: TypedSupabaseClient,
   folderPath: string
 ): Promise<string[]> {
   const objectPaths: string[] = [];
   let offset = 0;
-
   while (true) {
     const { data, error } = await supabase.storage
       .from('workspaces')
@@ -766,22 +746,17 @@ async function listSupabaseFolderObjectPathsRecursively(
           order: 'asc',
         },
       });
-
     if (error) {
       throw new WorkspaceStorageError(
         error.message || 'Failed to list files in folder'
       );
     }
-
     const page = (data ?? []) as StorageObject[];
-
     for (const entry of page) {
       if (!entry.name) {
         continue;
       }
-
       const entryPath = posix.join(folderPath, entry.name);
-
       if (!entry.id) {
         objectPaths.push(
           ...(await listSupabaseFolderObjectPathsRecursively(
@@ -791,18 +766,14 @@ async function listSupabaseFolderObjectPathsRecursively(
         );
         continue;
       }
-
       objectPaths.push(entryPath);
     }
-
     if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
       return objectPaths;
     }
-
     offset += page.length;
   }
 }
-
 async function findSupabaseStorageObject(
   supabase: TypedSupabaseClient,
   fullPath: string
@@ -810,7 +781,6 @@ async function findSupabaseStorageObject(
   const folderPath = posix.dirname(fullPath);
   const objectName = posix.basename(fullPath);
   let offset = 0;
-
   while (true) {
     const { data, error } = await supabase.storage
       .from('workspaces')
@@ -823,28 +793,22 @@ async function findSupabaseStorageObject(
           order: 'asc',
         },
       });
-
     if (error) {
       throw new WorkspaceStorageError(
         error.message || 'Failed to inspect destination object'
       );
     }
-
     const page = (data ?? []) as StorageObject[];
     const object = page.find((entry) => entry.id && entry.name === objectName);
-
     if (object) {
       return object;
     }
-
     if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
       return null;
     }
-
     offset += page.length;
   }
 }
-
 async function listSupabaseRawObjectsRecursively(
   supabase: TypedSupabaseClient,
   wsId: string,
@@ -853,13 +817,11 @@ async function listSupabaseRawObjectsRecursively(
 ): Promise<WorkspaceStorageRawObject[]> {
   const objects: WorkspaceStorageRawObject[] = [];
   let offset = 0;
-
   while (true) {
     const remaining = limit ? limit - objects.length : undefined;
     if (remaining !== undefined && remaining <= 0) {
       return objects;
     }
-
     const { data, error } = await supabase.storage
       .from('workspaces')
       .list(folderPath, {
@@ -873,22 +835,17 @@ async function listSupabaseRawObjectsRecursively(
           order: 'asc',
         },
       });
-
     if (error) {
       throw new WorkspaceStorageError(
         error.message || 'Failed to list Supabase storage objects'
       );
     }
-
     const page = (data ?? []) as StorageObject[];
-
     for (const entry of page) {
       if (!entry.name) {
         continue;
       }
-
       const entryPath = posix.join(folderPath, entry.name);
-
       if (!entry.id) {
         objects.push(
           ...(await listSupabaseRawObjectsRecursively(
@@ -903,7 +860,6 @@ async function listSupabaseRawObjectsRecursively(
         }
         continue;
       }
-
       objects.push({
         path: stripWorkspaceStoragePrefix(wsId, entryPath),
         fullPath: entryPath,
@@ -913,16 +869,13 @@ async function listSupabaseRawObjectsRecursively(
           typeof entry.updated_at === 'string' ? entry.updated_at : null,
         isFolderPlaceholder: entryPath.endsWith(EMPTY_FOLDER_PLACEHOLDER_NAME),
       });
-
       if (limit && objects.length >= limit) {
         return objects;
       }
     }
-
     if (page.length < SUPABASE_STORAGE_LIST_PAGE_SIZE) {
       return objects;
     }
-
     offset += page.length;
   }
 }
@@ -1015,16 +968,21 @@ export async function listWorkspaceStorageDirectory(
 }
 
 export async function getWorkspaceStorageOverview(
-  wsId: string
+  wsId: string,
+  includeReservedForQuota = false
 ): Promise<WorkspaceStorageOverview> {
   const config = await resolveWorkspaceStorageConfig(wsId);
   const supabase = await createDynamicAdminClient();
 
   if (config.provider === WORKSPACE_STORAGE_PROVIDER_R2) {
-    return getR2Overview(wsId, config);
+    return getR2Overview(wsId, config, includeReservedForQuota);
   }
 
-  const metrics = await getWorkspaceStorageMetrics(supabase, wsId);
+  const metrics = await getWorkspaceStorageMetrics(
+    supabase,
+    wsId,
+    includeReservedForQuota
+  );
 
   return {
     provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
@@ -1038,11 +996,16 @@ export async function getWorkspaceStorageOverview(
 
 export async function getWorkspaceStorageOverviewForProvider(
   wsId: string,
-  provider: WorkspaceStorageProvider
+  provider: WorkspaceStorageProvider,
+  includeReservedForQuota = false
 ): Promise<WorkspaceStorageOverview> {
   if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
     const supabase = await createDynamicAdminClient();
-    const metrics = await getWorkspaceStorageMetrics(supabase, wsId);
+    const metrics = await getWorkspaceStorageMetrics(
+      supabase,
+      wsId,
+      includeReservedForQuota
+    );
 
     return {
       provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
@@ -1063,7 +1026,7 @@ export async function getWorkspaceStorageOverviewForProvider(
     );
   }
 
-  return getR2Overview(wsId, config);
+  return getR2Overview(wsId, config, includeReservedForQuota);
 }
 
 export async function listWorkspaceStorageRawObjectsForProvider(

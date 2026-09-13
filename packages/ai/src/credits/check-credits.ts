@@ -73,7 +73,18 @@ export async function checkAiCredits(
   }
 
   const row = Array.isArray(data) ? data[0] : data;
-  if (!row) {
+  const rawBalance = row?.remaining_credits;
+  const balance =
+    typeof rawBalance === 'number' ||
+    (typeof rawBalance === 'string' && rawBalance.trim() !== '')
+      ? Number(rawBalance)
+      : NaN;
+  if (
+    !row ||
+    typeof row.allowed !== 'boolean' ||
+    !Number.isFinite(balance) ||
+    balance < 0
+  ) {
     return {
       allowed: false,
       remainingCredits: 0,
@@ -85,8 +96,8 @@ export async function checkAiCredits(
   }
 
   return {
-    allowed: row.allowed ?? true,
-    remainingCredits: Number(row.remaining_credits ?? 0),
+    allowed: row.allowed === true && balance > 0,
+    remainingCredits: balance,
     tier: row.tier ?? 'FREE',
     maxOutputTokens: row.max_output_tokens ?? null,
     errorCode: (row.error_code as CreditErrorCode) ?? null,

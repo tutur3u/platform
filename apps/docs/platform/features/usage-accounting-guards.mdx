@@ -1,0 +1,40 @@
+---
+title: Usage accounting safety guards
+description: Failure behavior for AI budgets, storage capacity and subscription seats.
+---
+
+## Fail closed for new consumption
+
+Unknown usage is not zero usage. AI credit lookups reject malformed allowance
+rows; generation output budgets reject missing model prices and use the highest
+applicable output-token price. The technical output ceiling is 65,536 tokens,
+independent of available credits. Existing atomic AI reservation paths remain
+responsible for their full request budget and settlement; an output cap is not
+a substitute for input, tool, retry or media accounting.
+
+Workspace storage rejects missing object sizes, invalid limits and unsafe byte
+arithmetic. App-managed artifacts count toward upload capacity even when hidden
+from ordinary Drive browsing. Infrastructure delegates to the same shared storage implementation.
+When diagnosing a denied upload, verify object metadata and the quota RPC instead
+of adding an unlimited override. Capacity checks do not yet atomically reserve
+all concurrent signed uploads; final-object verification and provider reconciliation
+remain required before selling new storage/egress add-ons.
+
+Subscription provider lookup failure does not authorize creation of a duplicate
+Free subscription. Seat availability rejects failed counts, missing products and
+invalid purchased quantities. Active, trialing and past-due subscriptions use the
+existing seat policy. Readable existing data is preserved; new capacity changes
+must wait for accounting recovery. The Rust billing port mirrors these semantics
+but does not serve production traffic.
+
+## Provider catalog safety
+
+Product normalization supports one active fixed, legacy Free or flat seat price.
+Ambiguous, graduated, invalid or non-USD subscription prices cannot be flattened
+into a misleading amount. Archived products can still be marked archived when
+they have no active price. Product IDs, intervals and pricing model must be
+explicitly bound before a catalog update; display names are not identifiers.
+
+These controls do not activate new prices, reduce existing AI grants, or implement
+a complete cross-product billing ledger. Use the commercial rollout runbook for
+versioned allowance changes, provider reconciliation and existing-customer notice.

@@ -1,5 +1,6 @@
 import type { Polar, Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
 function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');
@@ -66,8 +67,8 @@ export async function hasActiveSubscription(
       metadata: { wsId },
     });
 
-    const activeSubscription = result.items?.find(
-      (sub) => sub.status === 'active'
+    const activeSubscription = result.items?.find((sub) =>
+      SEAT_ACTIVE_STATUSES.some((status) => status === sub.status)
     );
 
     // Check if there's at least one active subscription
@@ -110,6 +111,13 @@ export async function createFreeSubscription(
     );
     return { status: 'already_active', subscription };
   }
+
+  if (hasActive)
+    return {
+      status: 'error',
+      message:
+        'Subscription status is unavailable. Please retry before creating a subscription.',
+    };
 
   let externalCustomerId: string;
 

@@ -1,0 +1,8 @@
+{
+  "version": "existing-list-prices",
+  "currency": "usd",
+  "prices": {
+    "plus": { "monthly": 800, "annual": 8000 },
+    "pro": { "monthly": 1500, "annual": 15000 }
+  }
+}

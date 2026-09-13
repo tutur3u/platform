@@ -29,3 +29,6 @@ export const CREDIT_ERROR_CODES = {
 
 export type CreditErrorCode =
   (typeof CREDIT_ERROR_CODES)[keyof typeof CREDIT_ERROR_CODES];
+
+/** Technical ceiling, separate from the purchased credit allowance. */
+export const AI_REQUEST_MAX_OUTPUT_TOKENS = 65_536;

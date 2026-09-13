@@ -75,3 +75,15 @@ describe('computeAffordableTokens', () => {
     expect(withDefault).toBe(withExplicit);
   });
 });
+
+describe('invalid AI budgets', () => {
+  it('does not convert malformed prices, balances or discounted markup into spending authority', () => {
+    for (const value of [NaN, Infinity, -Infinity]) {
+      expect(computeAffordableTokens(value, 1, 1)).toBe(0);
+      expect(computeAffordableTokens(1, value, 1)).toBe(0);
+      expect(computeAffordableTokens(1, 1, value)).toBe(0);
+    }
+    expect(computeAffordableTokens(100, 0.01, 0)).toBe(0);
+    expect(computeAffordableTokens(100, 0.01, 0.5)).toBe(0);
+  });
+});

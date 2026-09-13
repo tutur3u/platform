@@ -1,5 +1,6 @@
 import type { Product } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { getSupportedProductPrice } from './polar-price';
 import {
   isAiCreditPackProduct,
   parseCreditPackTokens,
@@ -8,19 +9,8 @@ import {
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 
-type PolarPrice = Product['prices'][number];
-
 function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');
-}
-
-function isPolarPrice(value: unknown): value is PolarPrice {
-  if (!value || typeof value !== 'object') return false;
-  return (
-    'amountType' in value &&
-    typeof value.amountType === 'string' &&
-    'priceAmount' in value
-  );
 }
 
 export type WorkspaceOrderProductKind =
@@ -105,35 +95,20 @@ async function upsertSubscriptionProduct(
     );
   }
 
-  const firstPrice = product.prices.find(isPolarPrice);
-  if (!firstPrice) {
-    throw new Error(
-      `Subscription product ${product.id} is missing valid pricing data`
-    );
-  }
-  const isSeatBased = firstPrice.amountType === 'seat_based';
-  const isFixed = firstPrice.amountType === 'fixed';
-
-  const price = isFixed ? firstPrice.priceAmount : null;
-  const pricePerSeat = isSeatBased
-    ? (firstPrice.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
-    : null;
-  const minSeats = isSeatBased ? firstPrice.seatTiers?.minimumSeats : null;
-  const maxSeats = isSeatBased ? firstPrice.seatTiers?.maximumSeats : null;
-  const pricingModel = firstPrice.amountType ?? undefined;
+  const resolved = getSupportedProductPrice(product);
 
   const productData = {
     id: product.id,
     name: product.name,
     description: product.description || '',
-    price,
+    price: resolved.amount,
     recurring_interval: product.recurringInterval ?? 'month',
     tier,
     archived: product.isArchived ?? false,
-    pricing_model: pricingModel,
-    price_per_seat: pricePerSeat,
-    min_seats: minSeats,
-    max_seats: maxSeats,
+    pricing_model: resolved.price.amountType,
+    price_per_seat: resolved.pricePerSeat,
+    min_seats: resolved.minSeats,
+    max_seats: resolved.maxSeats,
   };
 
   const { error: upsertError } = await privateSchema(supabase)
@@ -161,17 +136,12 @@ async function upsertCreditPackProduct(
     throw new Error(`Credit pack ${product.id} is missing metadata tokens`);
   }
 
-  const firstPrice = product.prices.find(isPolarPrice);
-  const isFixed = firstPrice?.amountType === 'fixed';
-  if (!firstPrice || !isFixed) {
-    throw new Error(
-      `Credit pack ${product.id} is missing a fixed price configuration`
-    );
+  const resolved = getSupportedProductPrice(product, false);
+  if (resolved.price.amountType !== 'fixed') {
+    throw new Error(`Credit pack ${product.id} requires a fixed price`);
   }
-  const price = firstPrice.priceAmount ?? 0;
-  const currency = firstPrice.priceCurrency
-    ? firstPrice.priceCurrency.toLowerCase()
-    : 'usd';
+  const price = resolved.amount ?? 0;
+  const currency = resolved.price.priceCurrency.toLowerCase();
 
   const creditPackData = {
     id: product.id,
@@ -202,6 +172,19 @@ export async function syncProductToDatabase(
   supabase: TypedSupabaseClient,
   product: Product
 ) {
+  if (product.isArchived) {
+    const table = isAiCreditPackProduct(product.metadata)
+      ? 'workspace_credit_packs'
+      : 'workspace_subscription_products';
+    const { data, error } = await privateSchema(supabase)
+      .from(table)
+      .update({ archived: true })
+      .eq('id', product.id)
+      .select('*')
+      .maybeSingle();
+    if (error) throw new Error(`Product archival failed: ${error.message}`);
+    return data;
+  }
   if (isAiCreditPackProduct(product.metadata)) {
     const creditPackData = await upsertCreditPackProduct(supabase, product);
     return creditPackData;

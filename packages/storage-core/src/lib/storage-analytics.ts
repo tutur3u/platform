@@ -1,6 +1,7 @@
 import { posix } from 'node:path';
 import { EMPTY_FOLDER_PLACEHOLDER_NAME } from '@tuturuuu/types/primitives/StorageObject';
 import { isReservedMobileDeploymentDrivePath } from './mobile-deployment/storage-policy';
+import { readStorageUsageBytes } from './storage-quota';
 
 const STORAGE_ANALYTICS_PAGE_SIZE = 1000;
 
@@ -108,7 +109,8 @@ async function walkWorkspaceStorage(
 
 export async function getWorkspaceStorageMetrics(
   supabase: any,
-  wsId: string
+  wsId: string,
+  includeReservedForQuota = false
 ): Promise<WorkspaceStorageMetrics> {
   let fileCount = 0;
   let largestFile: WorkspaceStorageMetrics['largestFile'] = null;
@@ -123,11 +125,14 @@ export async function getWorkspaceStorageMetrics(
         ? fullPath.slice(wsId.length + 1)
         : fullPath;
 
-      if (isReservedMobileDeploymentDrivePath(wsId, relativePath)) {
+      if (
+        !includeReservedForQuota &&
+        isReservedMobileDeploymentDrivePath(wsId, relativePath)
+      ) {
         return;
       }
 
-      const size = Number(file.metadata?.size ?? 0);
+      const size = readStorageUsageBytes(file.metadata?.size);
       const record = {
         name: file.name,
         size,
