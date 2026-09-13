@@ -13,6 +13,11 @@ import {
   type CatalogMapping,
   planCatalogSync,
 } from '../packages/payment-core/src/catalog-sync';
+import {
+  assertCatalogWebhookProbe,
+  assertProductionCatalogWebhook,
+  PRODUCTION_CATALOG_WEBHOOK_URL,
+} from '../packages/payment-core/src/catalog-webhook';
 import canonicalProductIds from '../packages/payment-core/src/polar-workspace-product-ids.json';
 
 function option(name: string) {
@@ -70,6 +75,31 @@ async function main() {
   if (!process.argv.includes('--apply')) return;
   if (option('--approve-plan') !== hash)
     throw new Error('Exact reviewed plan hash is required; no changes applied');
+  if (environment === 'production') {
+    const endpoints = [];
+    const pages = await polar.webhooks.listWebhookEndpoints({
+      organizationId,
+      limit: 100,
+    });
+    for await (const page of pages) endpoints.push(...page.result.items);
+    assertProductionCatalogWebhook(
+      endpoints,
+      organizationId,
+      process.env.POLAR_WEBHOOK_SECRET
+    );
+    const probe = await fetch(PRODUCTION_CATALOG_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000),
+    });
+    assertCatalogWebhookProbe(
+      probe.status,
+      await probe.json().catch(() => null)
+    );
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SECRET_KEY;
   if (!supabaseUrl || !serviceKey)

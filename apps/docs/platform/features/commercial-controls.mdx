@@ -187,3 +187,26 @@ Primary references: [Polar product pricing](https://polar.sh/docs/features/produ
 [Merchant terms](https://polar.sh/legal/master-services-terms),
 [Vietnam Law 91/2025/QH15](https://chinhphu.vn/?classid=1&docid=214590&orggroupid=1&pageid=27160),
 and [EU controller-processor clauses](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?from=ES&uri=CELEX%3A32021D0915).
+
+## Catalog delivery checks
+
+Production catalog publication requires an enabled Polar webhook at
+`https://pay.tuturuuu.com/api/payment/webhooks`, the `product.updated` event,
+and a signing secret matching the trusted deployment environment. The sync
+command checks these before changing prices and sends an unsigned probe: the
+handler must return its signature rejection, not browser-session authentication
+or hosting protection. Credentials remain in the deployment secret store.
+
+Pay allows only the exact webhook POST and registered payment-cron GET paths
+to reach their own signature or bearer-secret validators without a browser
+session. Other billing APIs retain session checks and all paths retain edge
+protection. Do not replace webhook authentication with an anonymous bypass.
+
+On 13 September 2026, the approved four-product catalog was reconciled at
+Plus $9/month or $90/year and Pro $19/month or $190/year per purchased seat.
+The existing webhook had been disabled, and the Pay session middleware also
+rejected provider deliveries. The endpoint was re-enabled without rotating its
+secret or changing its event subscriptions; the four catalog records were
+reconciled through the existing product-sync helper. Existing subscription
+financial terms and internal 100% discounts were preserved. Verify successful
+provider deliveries after deploying the middleware repair.
