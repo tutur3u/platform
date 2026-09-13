@@ -18,7 +18,7 @@ import {
   useGenerativeUIStore,
 } from '@/components/json-render/generative-ui-store';
 import { MiraChatBottomBar } from './mira-chat-bottom-bar';
-import { getGreetingKey } from './mira-chat-constants';
+import { getGreetingKey, STORAGE_KEY_PREFIX } from './mira-chat-constants';
 import { MiraChatConversation } from './mira-chat-conversation';
 import { MiraChatEmptyState } from './mira-chat-empty-state';
 import { MiraChatHeader } from './mira-chat-header';
@@ -30,6 +30,7 @@ import { useMiraChatConfig } from './use-mira-chat-config';
 import { useMiraChatEffects } from './use-mira-chat-effects';
 import { useMiraChatHotkeys } from './use-mira-chat-hotkeys';
 import { useMiraChatPersistence } from './use-mira-chat-persistence';
+import { useMiraLiveConversation } from './use-mira-live-conversation';
 import { useMiraMessageQueue } from './use-mira-message-queue';
 import { useMiraUiActions } from './use-mira-ui-actions';
 
@@ -191,6 +192,7 @@ export default function MiraChatPanel({
   const {
     id: chatId,
     messages,
+    setMessages,
     sendMessage,
     status,
     stop,
@@ -205,14 +207,34 @@ export default function MiraChatPanel({
     },
   });
 
+  const { onChange: onLiveConversationChange, flush: flushLiveConversation } =
+    useMiraLiveConversation({
+      chatId: stableChatId,
+      setMessages,
+      onStarted: (id) =>
+        setChat((current) => current ?? { id, is_public: false }),
+      onSaved: (id) => {
+        setChat((current) => current ?? { id, is_public: false });
+        localStorage.setItem(`${STORAGE_KEY_PREFIX}${wsId}`, id);
+      },
+    });
+
   useMiraUiActions(messages, status);
 
   const sendMessageWithCurrentConfig = useCallback(
-    (message: UIMessage) =>
-      sendMessage(message, {
-        body: chatRequestBody,
-      }),
-    [chatRequestBody, sendMessage]
+    async (message: UIMessage) => {
+      try {
+        await flushLiveConversation();
+      } catch {
+        const unsent = message.parts
+          .flatMap((part) => (part.type === 'text' ? [part.text] : []))
+          .join('\n');
+        setInput((current) => [unsent, current].filter(Boolean).join('\n'));
+        return;
+      }
+      return sendMessage(message, { body: chatRequestBody });
+    },
+    [chatRequestBody, sendMessage, flushLiveConversation]
   );
   sendMessageRef.current = sendMessageWithCurrentConfig;
 
@@ -359,6 +381,9 @@ export default function MiraChatPanel({
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MiraVoiceModeSwitcher
+        history={messages}
+        onConversationChange={onLiveConversationChange}
+        onBeforeVoiceStart={stop}
         composerRef={composerRef}
         creditSource={activeCreditSource}
         creditWsId={creditWsId}
@@ -382,9 +407,8 @@ export default function MiraChatPanel({
       >
         {(onVoiceToggle, voiceActive, live) => (
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {voiceActive ? (
-              live.content
-            ) : hasMessages ? (
+            {live.content}
+            {hasMessages ? (
               <MiraChatConversation
                 actionHandlers={actionHandlers}
                 assistantName={assistantName}

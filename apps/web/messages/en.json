@@ -6042,6 +6042,7 @@
     "view_changelog": "View Changelog",
     "view_tasks": "View Tasks",
     "voice_assistant": {
+      "action_interrupted": "Session ended before this action returned a result.",
       "authorization_expired": "Your secure Live session expired. Start a new session to continue.",
       "badge": "Beta",
       "chat_mode": "Chat",
@@ -6049,6 +6050,7 @@
       "connecting": "Connecting",
       "connection_error_fallback": "We could not start Live mode. Try again, or continue in Chat.",
       "connection_failed": "Start a new session to continue.",
+      "conversation_save_failed": "Could not save the Live conversation. Keep this chat open and try again.",
       "credits_required_title": "More AI credits needed",
       "description": "Manage tasks, search the web, and get things done with natural voice conversations.",
       "disable_camera": "Turn off camera",
@@ -6076,6 +6078,7 @@
       "ready_to_connect": "Session ended",
       "reconnecting": "Reconnecting",
       "reservation_release_note": "Unused reserved credits are released automatically.",
+      "retry_save": "Retry save",
       "return_to_chat": "Chat",
       "session_expired_title": "Live session ended",
       "share_screen": "Share screen",

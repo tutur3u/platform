@@ -393,3 +393,22 @@ export async function generateQuizFromLesson(
     cache: 'no-store',
   });
 }
+
+export async function saveLiveConversation(
+  payload: {
+    chatId: string;
+    messages: { id: string; role: string; parts: unknown[] }[];
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ id: string }>(
+    '/api/ai/chat/live-messages',
+    {
+      method: 'POST',
+      cache: 'no-store',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+}

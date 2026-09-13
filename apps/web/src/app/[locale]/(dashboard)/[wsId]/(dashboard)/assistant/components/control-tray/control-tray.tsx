@@ -273,11 +273,11 @@ function ControlTray({
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col items-center justify-center gap-2">
       {mediaError && (
-        <p role="alert" className="text-center text-destructive text-xs">
+        <p role="alert" className="text-center text-dynamic-red text-xs">
           {t('studio.media_error')}
         </p>
       )}
-      <div className="flex items-center gap-1.5 rounded-2xl border border-border/60 bg-background/70 p-1.5 shadow-foreground/5 shadow-lg backdrop-blur-xl">
+      <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border/60 bg-background/70 p-1.5 shadow-foreground/5 shadow-lg backdrop-blur-xl">
         {connected && (
           <>
             <Button
@@ -287,7 +287,7 @@ function ControlTray({
               size="icon"
               className={cn(
                 'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
-                muted && 'bg-destructive/10 text-destructive'
+                muted && 'bg-destructive/10 text-dynamic-red'
               )}
               onClick={() => {
                 setMediaError(false);

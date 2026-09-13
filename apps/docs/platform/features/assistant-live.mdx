@@ -12,14 +12,21 @@ Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
 
 ## Experience
 
-Start or stop Live with the waveform icon in the chat composer. The tooltip and
-pressed state identify the control. Live occupies the conversation area in normal
-layout flow, with a responsive gradient visualization and the same text composer.
-Close Live or press Escape to stop the session and return to the chat. The chat
-state and draft are retained. Text submission waits until Live is connected.
-Recent captions follow the speaker; the transcript disclosure and export expose
-the session journal (up to 200 entries). This journal is session-local and is not
-persisted into the chat database.
+Start or stop Live with the waveform icon in the chat composer. Live keeps the
+same message timeline visible, with a compact gradient visualization and media
+controls above it. Spoken turns, typed prompts, tool calls, and search sources
+appear in that timeline and share the workspace artifacts. Close Live or press
+Escape to stop media capture and continue typing.
+
+Finalized Live turns are saved to the same chat through the owner-checked
+`/api/ai/chat/live-messages` endpoint. Stable message IDs make retries idempotent;
+ordered parts keep text and tools interleaved after refresh. Pending saves finish
+before a subsequent typed request. Failed saves show a retry action; keep the page
+open until they succeed. In-progress speech remains provisional until the turn
+finishes or the session closes. Audio and video are not stored as chat attachments.
+Live starts with up to 64,000 characters of recent conversation context, including
+compact tool results. This bound does not remove older saved messages. Temporary session notes
+remain separate from workspace documents.
 
 While reading chat, downward scrolling or six seconds without composer activity
 compacts the composer into a right-aligned Chat/Live bar. Focused menus, drafts,
@@ -60,11 +67,10 @@ and voice share one session. Camera and screen sharing require an explicit media
 control action; a preview indicates what is shared. Microphone mute sends
 `audioStreamEnd`, and interruption stops queued assistant playback.
 
-Results stay inside a responsive side panel. Expanded results use a keyboard
-accessible dialog. Export downloads the available transcript and notes as text.
-These notes are not workspace documents and are lost when leaving or restarting
-Live mode. The existing five-minute credit authorization limit remains in force;
-expiration ends media capture while retaining the mounted transcript for export.
+Workspace artifacts remain beside the shared conversation. Tool results and Google
+Search sources stay in the message timeline. Temporary notes are not workspace
+documents. The existing five-minute credit authorization limit remains in force;
+expiration ends media capture and keeps the saved conversation available.
 
 ## First-party tools
 

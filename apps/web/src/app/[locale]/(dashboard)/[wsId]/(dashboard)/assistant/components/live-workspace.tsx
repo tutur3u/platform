@@ -10,6 +10,7 @@ import type { LiveSessionNote, LiveToolActivity } from '../use-live-tools';
 import { LiveActionPreview } from './live-action-preview';
 
 export function LiveWorkspace({
+  inline = false,
   authorizationExpired,
   entries,
   activities,
@@ -22,6 +23,7 @@ export function LiveWorkspace({
   controls,
   children,
 }: {
+  inline?: boolean;
   connected: boolean;
   authorizationExpired?: boolean;
   speaking: boolean;
@@ -71,6 +73,42 @@ export function LiveWorkspace({
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+  if (inline)
+    return (
+      <section
+        className="flex min-h-0 flex-1 flex-wrap items-center gap-2 overflow-auto px-3 pb-2"
+        aria-label={t('title')}
+      >
+        <div className="size-12 shrink-0 overflow-hidden [&>div]:w-full">
+          {visualization}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {status}
+          {controls}
+        </div>
+        {approvals.map((activity) => (
+          <div
+            key={activity.id}
+            className="max-h-40 w-full overflow-auto rounded-lg border bg-background p-2"
+          >
+            <LiveActionPreview args={activity.args} />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => decide(activity.id, true)}>
+                {t('approve')}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => decide(activity.id, false)}
+              >
+                {t('decline')}
+              </Button>
+            </div>
+          </div>
+        ))}
+        {children}
+      </section>
+    );
   return (
     <section
       className="@container flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto"

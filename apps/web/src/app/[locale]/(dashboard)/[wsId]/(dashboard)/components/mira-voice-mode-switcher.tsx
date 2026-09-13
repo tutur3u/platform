@@ -1,5 +1,6 @@
 'use client';
 
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { AudioLines, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -7,6 +8,7 @@ import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import type { ReactNode, RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { LiveConversationChange } from '../assistant/use-live-conversation';
 
 export type LiveComposer = {
   connected: boolean;
@@ -38,12 +40,18 @@ function VoiceClientModuleLoading() {
 
 export function MiraVoiceModeSwitcher({
   creditSource,
+  history,
+  onConversationChange,
+  onBeforeVoiceStart,
   creditWsId,
   children,
   header,
   inputRef,
   wsId,
 }: {
+  onBeforeVoiceStart?: () => void | Promise<void>;
+  history?: UIMessage[];
+  onConversationChange?: LiveConversationChange;
   composerRef?: RefObject<HTMLDivElement | null>;
   children: (
     onVoiceToggle: () => void,
@@ -88,11 +96,12 @@ export function MiraVoiceModeSwitcher({
     focusTimeoutRef.current = window.setTimeout(focusInput, 180);
   }, [cancelPendingFocus, inputRef]);
 
-  const enterVoice = useCallback(() => {
+  const enterVoice = useCallback(async () => {
     cancelPendingFocus();
+    if (onBeforeVoiceStart) await onBeforeVoiceStart();
     voiceActiveRef.current = true;
     setMode('live');
-  }, [cancelPendingFocus]);
+  }, [cancelPendingFocus, onBeforeVoiceStart]);
 
   useEffect(() => cancelPendingFocus, [cancelPendingFocus]);
 
@@ -113,7 +122,7 @@ export function MiraVoiceModeSwitcher({
   const liveContent = voiceActive ? (
     <section
       aria-label={t('live_mode')}
-      className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden [container-type:size]"
+      className="@container flex max-h-[45%] min-h-28 min-w-0 shrink-0 flex-col overflow-hidden border-b"
     >
       <div className="flex shrink-0 items-center justify-between px-3 py-1">
         <span className="flex items-center gap-2 font-medium text-muted-foreground text-xs">
@@ -136,6 +145,8 @@ export function MiraVoiceModeSwitcher({
         </Tooltip>
       </div>
       <AssistantVoiceClient
+        history={history}
+        onConversationChange={onConversationChange}
         creditSource={creditSource}
         creditWsId={creditWsId}
         onReturnToChat={exitVoice}

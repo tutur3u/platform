@@ -105,3 +105,37 @@ it('follows the latest captions while retaining full session history', () => {
   // The complete history remains available in the disclosure and export.
   expect(screen.getByText('Caption 0')).toBeVisible();
 });
+
+it('uses only compact controls in shared-chat mode and keeps action approvals reachable', () => {
+  const decide = vi.fn();
+  render(
+    <LiveWorkspace
+      {...base}
+      inline
+      decide={decide}
+      entries={[
+        {
+          id: 'speech',
+          role: 'assistant',
+          text: 'Already in chat',
+          complete: true,
+        },
+      ]}
+      activities={[
+        {
+          id: 'action',
+          name: 'create_task',
+          args: { name: 'Review design' },
+          status: 'approval',
+        },
+      ]}
+    />
+  );
+  expect(
+    screen.queryByRole('log', { name: 'transcript' })
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText('Already in chat')).not.toBeInTheDocument();
+  expect(screen.getByText('Voice visualization')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'approve' }));
+  expect(decide).toHaveBeenCalledWith('action', true);
+});

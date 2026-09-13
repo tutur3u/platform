@@ -41,6 +41,7 @@ import {
 } from './chat-message-list/tool-components';
 import type { ChatMessageListProps } from './chat-message-list/types';
 import { UserMessageContent } from './chat-message-list/user-message-components';
+import { useChatScrollFollow } from './use-chat-scroll-follow';
 
 const MAX_AUTO_MERMAID_REPAIR_ATTEMPTS = 2;
 const RESPONSE_STATUS_INTERVAL_MS = 1800;
@@ -157,14 +158,7 @@ export default function ChatMessageList({
     [scrollContainerRef]
   );
 
-  // Auto-scroll to bottom only when a new message is added (e.g. user sends prompt)
-  // using scrollTop instead of scrollIntoView to avoid stealing focus from the input.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: messages.length is intentional scroll trigger
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [messages.length]);
+  useChatScrollFollow(containerRef, messages);
 
   const attemptedMermaidRepairsRef = useRef<Set<string>>(new Set());
 
@@ -250,7 +244,11 @@ export default function ChatMessageList({
           isUser && (messageAttachments?.get(message.id)?.length ?? 0) > 0;
 
         // Skip messages with no renderable content
-        if (!hasDisplayText && !hasTools && !hasAttachments) return null;
+        const hasSources = message.parts.some(
+          (part) => part.type === 'source-url'
+        );
+        if (!hasDisplayText && !hasTools && !hasAttachments && !hasSources)
+          return null;
 
         const isLastAssistant = index === lastAssistantIndex;
 

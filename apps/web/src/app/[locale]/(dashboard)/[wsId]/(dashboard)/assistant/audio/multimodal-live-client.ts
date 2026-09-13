@@ -94,6 +94,7 @@ interface MultimodalLiveClientEventTypes {
   setupcomplete: () => void;
   turncomplete: () => void;
   toolcall: (toolCall: ToolCall) => void;
+  toolresponse: (response: ToolResponseMessage['toolResponse']) => void;
   toolcallcancellation: (toolcallCancellation: ToolCallCancellation) => void;
   groundingmetadata: (metadata: GroundingMetadata) => void;
   usage: (metadata: UsageMetadata) => void;
@@ -595,6 +596,7 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       };
     });
 
+    this.emit('toolresponse', toolResponse);
     this.session.sendToolResponse({
       functionResponses: formattedResponses,
     });
@@ -602,6 +604,13 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       'client.toolResponse',
       `${formattedResponses.length} tool responses`
     );
+  }
+
+  seedConversation(
+    turns: { role: 'user' | 'model'; parts: { text: string }[] }[]
+  ) {
+    if (turns.length)
+      this.session?.sendClientContent({ turns, turnComplete: false });
   }
 
   /**
