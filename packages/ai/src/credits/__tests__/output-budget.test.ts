@@ -44,6 +44,7 @@ describe('provider output spending ceiling', () => {
     null,
     { output_price_per_token: 0 },
     { output_price_per_token: 0.001, output_tiers: [{ cost: 'invalid' }] },
+    { output_price_per_token: 0.001, output_tiers: [{ cost: true }] },
   ])('denies missing or malformed prices', async (data) => {
     expect(
       await capMaxOutputTokensByCredits(

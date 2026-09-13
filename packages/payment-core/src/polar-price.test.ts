@@ -21,6 +21,29 @@ const seat = {
 };
 
 describe('Polar product price mapping', () => {
+  it('maps a fixed USD amount and rejects malformed currencies and seat bounds', () => {
+    expect(getSupportedProductPrice(product([fixed]))).toMatchObject({
+      amount: 900,
+      pricePerSeat: null,
+    });
+    expect(() =>
+      getSupportedProductPrice(
+        product([{ ...fixed, priceCurrency: undefined }]),
+        false
+      )
+    ).toThrow('explicit currency');
+    for (const bounds of [
+      { minimumSeats: 0 },
+      { minimumSeats: 1.5 },
+      { maximumSeats: 0 },
+      { maximumSeats: NaN },
+    ])
+      expect(() =>
+        getSupportedProductPrice(
+          product([{ ...seat, seatTiers: { ...seat.seatTiers, ...bounds } }])
+        )
+      ).toThrow('seat bounds');
+  });
   it('maps seat pricing without a priceAmount field', () => {
     expect(getSupportedProductPrice(product([seat]))).toMatchObject({
       amount: null,

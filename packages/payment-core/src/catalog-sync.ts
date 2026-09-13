@@ -94,6 +94,8 @@ export function assertCatalogDatabaseSnapshot(
       !row ||
       row.archived !== false ||
       row.pricing_model !== 'seat_based' ||
+      row.min_seats !== 1 ||
+      row.max_seats !== null ||
       row.recurring_interval !== change.interval ||
       row.tier !== change.key.split('-')[0]?.toUpperCase() ||
       (row.price_per_seat !== change.currentAmount &&
