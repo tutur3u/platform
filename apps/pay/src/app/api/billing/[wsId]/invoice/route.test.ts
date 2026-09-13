@@ -14,6 +14,20 @@ const request = () =>
     { params: Promise.resolve({ wsId: 'personal' }) }
   );
 describe('legacy receipt URL', () => {
+  it('returns a controlled non-cacheable response when access resolution fails', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    access.mockRejectedValueOnce(new Error('private provider details'));
+    const response = await request();
+    expect(response.status).toBe(500);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({
+      error: 'Failed to load invoice history',
+    });
+    expect(log).toHaveBeenCalledWith(
+      'Failed to resolve billing invoice history'
+    );
+    log.mockRestore();
+  });
   it('does not expose receipts without workspace access', async () => {
     access.mockResolvedValue(null);
     expect((await request()).status).toBe(404);
