@@ -11,6 +11,7 @@ import {
   type MeetSfuIntent,
   meetPresenceMessage,
   meetRealtimeClientMessageSchema,
+  mergePublicationCleanup,
   pruneMeetPresence,
   releaseParticipant,
   remoteMeetTracks,
@@ -119,7 +120,7 @@ export function createMeetRealtimeServer(
     return sfuClient;
   };
 
-  setInterval(() => {
+  const sweep = setInterval(() => {
     for (const [roomId, room] of rooms.entries()) {
       const connected = new Set(
         [...room.clients]
@@ -138,15 +139,24 @@ export function createMeetRealtimeServer(
         !cleanupInFlight.has(roomId)
       ) {
         cleanupInFlight.add(roomId);
+        const cleanupStarted = room.snapshot;
         void closeBudgetPublications(
-          room.snapshot,
+          cleanupStarted,
           (input) => getSfuClient().closeTracks(input),
           async (progress) => {
-            room.snapshot = { ...room.snapshot, budget: progress.budget };
+            room.snapshot = mergePublicationCleanup(
+              room.snapshot,
+              cleanupStarted,
+              progress
+            );
           }
         )
           .then((snapshot) => {
-            room.snapshot = { ...room.snapshot, budget: snapshot.budget };
+            room.snapshot = mergePublicationCleanup(
+              room.snapshot,
+              cleanupStarted,
+              snapshot
+            );
           })
           .catch(() => {
             room.snapshot = {
@@ -165,7 +175,7 @@ export function createMeetRealtimeServer(
     }
   }, PRESENCE_SWEEP_MS);
 
-  return Bun.serve<{ token: MeetRealtimeTokenPayload }>({
+  const server = Bun.serve<{ token: MeetRealtimeTokenPayload }>({
     fetch(request, server) {
       const url = new URL(request.url);
 
@@ -247,4 +257,10 @@ export function createMeetRealtimeServer(
       },
     },
   });
+  const stop = server.stop.bind(server);
+  server.stop = (...args) => {
+    clearInterval(sweep);
+    return stop(...args);
+  };
+  return server;
 }

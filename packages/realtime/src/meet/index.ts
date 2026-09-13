@@ -85,6 +85,7 @@ export {
   MEET_MAX_ROOM_DURATION_MS,
   MEET_MAX_ROOM_PARTICIPANTS,
 } from './room-budget';
+export { mergePublicationCleanup } from './room-cleanup';
 export { canReadRoomNotes } from './room-controls';
 export type {
   MeetApprovedParticipant,

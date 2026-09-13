@@ -457,3 +457,23 @@ it('restores the authoritative track registry on a resumed connection', () => {
     reduceCallState(resumed, { ...READY, resumed: true }).remoteTracks
   ).toEqual(resumed.remoteTracks);
 });
+
+it('clears a corrected resource error and receives the lobby admission deadline', () => {
+  const failed = { ...INITIAL_CALL_STATE, error: 'media_track_limit_reached' };
+  expect(
+    reduceCallState(failed, {
+      type: 'sfu.response',
+      action: 'sfu.tracks.publish',
+      requestId: 'publish',
+      result: {},
+    }).error
+  ).toBeNull();
+  const admitted = reduceCallState(failed, {
+    type: 'admission.result',
+    admitted: true,
+    decidedBy: SELF,
+    roomExpiresAt: '2026-09-13T02:00:00Z',
+  });
+  expect(admitted.error).toBeNull();
+  expect(admitted.roomExpiresAt).toBe('2026-09-13T02:00:00Z');
+});

@@ -110,6 +110,9 @@ describe('meet room admission', () => {
       {
         message: {
           admitted: true,
+          roomExpiresAt: new Date(
+            Date.parse(NOW) + 2 * 60 * 60_000
+          ).toISOString(),
           decidedBy: HOST_ID,
           type: 'admission.result',
         },
@@ -408,6 +411,37 @@ describe('meet room SFU relay', () => {
     expect(repeated.broadcast.map((message) => message.type)).toEqual([
       'track.published',
     ]);
+  });
+
+  it('accepts six tracks and rejects cumulative or duplicate-key overflow', () => {
+    const publishTracks = (
+      state: typeof joined,
+      count: number,
+      offset = 0,
+      duplicate = false
+    ) =>
+      run(
+        state,
+        {
+          sessionDescription,
+          sessionId: 'session-1',
+          type: 'sfu.tracks.publish',
+          tracks: Array.from({ length: count }, (_, i) => ({
+            kind: 'audio' as const,
+            mid: String(i + offset),
+            trackName: duplicate ? 'same' : `audio-${i + offset}`,
+          })),
+        },
+        token()
+      );
+    expect(publishTracks(joined, 6).sfu).not.toBeNull();
+    const first = publishTracks(joined, 4);
+    expect(publishTracks(first.state, 3, 4).reply[0]).toMatchObject({
+      error: 'media_track_limit_reached',
+    });
+    expect(publishTracks(joined, 7, 0, true).reply[0]).toMatchObject({
+      error: 'media_track_limit_reached',
+    });
   });
 
   it('rejects excess media tracks before contacting the SFU', () => {

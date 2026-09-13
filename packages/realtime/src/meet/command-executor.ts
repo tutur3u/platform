@@ -6,6 +6,7 @@ import {
   type MeetRoomSnapshot,
   type MeetSfuIntent,
 } from './room';
+import { queueUncommittedPublication } from './room-cleanup';
 import { outcome } from './room-outcome';
 
 type CommandOptions = {
@@ -70,16 +71,21 @@ export class MeetCommandExecutor {
         throw new Error('participant_left');
     } catch (error) {
       await options.commit(
-        outcome(options.read(), {
-          reply: [
-            {
-              type: 'error',
-              requestId: planned.sfu.requestId,
-              error:
-                error instanceof Error ? error.message : 'sfu_request_failed',
-            },
-          ],
-        })
+        outcome(
+          result !== undefined
+            ? queueUncommittedPublication(options.read(), command)
+            : options.read(),
+          {
+            reply: [
+              {
+                type: 'error',
+                requestId: planned.sfu.requestId,
+                error:
+                  error instanceof Error ? error.message : 'sfu_request_failed',
+              },
+            ],
+          }
+        )
       );
       return;
     }
@@ -87,7 +93,10 @@ export class MeetCommandExecutor {
     // Rebase only this completed operation onto the latest presence/settings state.
     const confirmed = applyMeetRoomCommand(current, command);
     if (!confirmed.sfu) {
-      await options.commit(confirmed);
+      await options.commit({
+        ...confirmed,
+        state: queueUncommittedPublication(confirmed.state, command),
+      });
       return;
     }
     const response: MeetRealtimeServerMessage = {
