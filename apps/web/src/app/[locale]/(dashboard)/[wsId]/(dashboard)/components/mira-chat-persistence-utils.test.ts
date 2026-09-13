@@ -69,3 +69,48 @@ describe('Mira history chronology', () => {
     ).toHaveLength(1);
   });
 });
+
+it('omits empty canonical records and preserves the legacy restoration path', () => {
+  const restored = restoreMessages([
+    {
+      id: 'empty',
+      role: 'ASSISTANT',
+      content: null,
+      metadata: { ai: { parts: [] } },
+    },
+    {
+      id: 'legacy',
+      role: 'ASSISTANT',
+      content: 'Answer',
+      metadata: {
+        reasoning: 'Thought',
+        toolCalls: [
+          { toolName: 'lookup', toolCallId: 'one', args: { query: 'tasks' } },
+        ],
+        toolResults: [{ toolCallId: 'one', result: { count: 1 } }],
+        sources: [
+          { sourceId: 'source', url: 'https://example.com', title: 'Source' },
+        ],
+      },
+    },
+  ]);
+  expect(restored).toHaveLength(1);
+  expect(restored[0]?.parts).toEqual([
+    { type: 'reasoning', text: 'Thought' },
+    { type: 'text', text: 'Answer' },
+    {
+      type: 'dynamic-tool',
+      toolName: 'lookup',
+      toolCallId: 'one',
+      input: { query: 'tasks' },
+      output: { count: 1 },
+      state: 'output-available',
+    },
+    {
+      type: 'source-url',
+      sourceId: 'source',
+      url: 'https://example.com',
+      title: 'Source',
+    },
+  ]);
+});

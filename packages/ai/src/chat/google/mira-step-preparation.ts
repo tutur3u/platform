@@ -3,6 +3,7 @@ import {
   buildActiveToolsFromSelected,
   countRenderUiAttemptsInSteps,
   extractSelectedToolsFromSteps,
+  getWorkspaceArtifactProgress,
   hasRenderableRenderUiInSteps,
   hasSuccessfulWorkspaceContextResolutionInSteps,
   hasToolCallInSteps,
@@ -38,9 +39,12 @@ export function prepareMiraToolStep({
   if (forceWorkspaceArtifact) forceRenderUi = false;
   if (getMiraToolLoopReason(steps))
     return { toolChoice: 'none', activeTools: [] };
+  const artifact = getWorkspaceArtifactProgress(steps);
+  if (forceWorkspaceArtifact && !artifact.completed && artifact.attempts >= 3)
+    return { toolChoice: 'none', activeTools: [] };
   if (
     forceWorkspaceArtifact &&
-    !hasToolCallInSteps(steps, 'show_workspace_artifact') &&
+    !artifact.completed &&
     (!needsWorkspaceContextResolution ||
       hasSuccessfulWorkspaceContextResolutionInSteps(steps))
   ) {

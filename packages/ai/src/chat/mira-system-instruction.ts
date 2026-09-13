@@ -245,7 +245,7 @@ ${
 
 ### Special components
 - **MyTasks**: Renders the complete "My Tasks" interface (summary, filters, and list).
-  - Use for user-facing task summaries and interactive displays (e.g., showing pending items, current workload).
+  - Use only inside an explicitly requested custom composed UI that combines task summaries with other components.
   - \`props\`: \`showSummary\` (boolean), \`showFilters\` (boolean).
   - **vs. get_my_tasks tool**: Prefer the native tasks workspace artifact for product task views; use MyTasks only inside a specifically requested custom composed UI; use get_my_tasks when the agent needs raw task data for filtering, processing, or logic before rendering.
 - **TimeTrackingStats**: Renders a standardized time-tracking stats dashboard and fetches period data internally.

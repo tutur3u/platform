@@ -20,13 +20,13 @@ export function shouldPresentWorkspaceArtifact(
     );
   const latest = userTexts.at(-1) ?? '';
   if (
-    /\b(don't (?:show|open|display|present)|do not (?:show|open|display|present)|without (?:an? )?(?:artifact|panel)|text only|chat only|how (do|can|to))\b|\bkhong\b/u.test(
+    /\b((?:don't|do not) (?:show|open|display|present|see|view)|(?:can't|cannot) (?:see|view)|without (?:an? )?(?:artifacts?|panels?)|(?:no|not)(?: (?:in|as))?(?: an?)? (?:artifacts?|panels?)|text[-\s]+only|chat[-\s]+only|how (do|can|to))\b|\bkhong (?:mo|hien thi|xem)\b/u.test(
       latest
     )
   )
     return false;
   const product =
-    /\b(tasks?|calendar|schedule|agenda|finances?|wallets?|transactions?|meetings?|cong viec|lich|tai chinh|cuoc hop)\b/u;
+    /\b(tasks?|to[-\s]?dos?|calendars?|schedules?|agendas?|finances?|wallets?|transactions?|meetings?|cong viec|lich|tai chinh|cuoc hop)\b/u;
   const present =
     /\b(show|display|present|open|view|see|hien thi|cho (toi|minh) xem|mo)\b/u;
   if (present.test(latest) && product.test(latest)) return true;

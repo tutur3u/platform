@@ -80,3 +80,33 @@ it('preserves failed and unfinished calls without claiming completion', () => {
   });
   expect(parts[2]).toMatchObject({ state: 'input-available' });
 });
+
+it('supports aggregate-only responses without losing their text or reasoning', () => {
+  expect(
+    collectAssistantMessageParts({ text: 'Answer', reasoningText: 'Thought' })
+  ).toEqual([
+    { type: 'text', text: 'Answer' },
+    { type: 'reasoning', text: 'Thought' },
+  ]);
+});
+
+it('preserves SDK StepResult generated files', () => {
+  expect(
+    collectAssistantMessageParts({
+      steps: [
+        {
+          content: [
+            {
+              type: 'file',
+              file: { mediaType: 'image/png', base64: 'aW1hZ2U=' },
+            },
+          ],
+        },
+      ],
+    })
+  ).toContainEqual({
+    type: 'file',
+    mediaType: 'image/png',
+    url: 'data:image/png;base64,aW1hZ2U=',
+  });
+});

@@ -1,6 +1,6 @@
 ---
 title: "Assistant Live"
-updated: "2026-09-12"
+updated: "2026-09-13"
 description: "Gemini voice, screen context, workspace tools, and session recovery in the dashboard assistant."
 ---
 
@@ -168,7 +168,10 @@ and unfinished calls; they do not move to completion order. The message content
 column contains all text segments in order. History loading prefers these canonical
 parts over legacy text/tool arrays, and only adjacent tool activity is grouped.
 When metadata must be compacted, text spans reference the content column and tool
-payload previews shrink while later timeline entries remain present. Old records
+payload previews shrink while later timeline entries remain present. The fallback
+omits the detailed context breakdown to prioritize conversation history. The
+current schema allows 10 MiB of AI message metadata and exempts message content
+from generic short-text limits. Old records
 that already lost interleaving cannot have their original chronology reconstructed.
 
 Explicit requests to show tasks, calendar, finance, or meetings activate the native

@@ -27,11 +27,11 @@ export function restoreMessages(
   return messagesData
     .filter((message) => {
       const metadata = message.metadata as Record<string, unknown> | null;
+      const canonicalParts = (metadata?.ai as { parts?: unknown } | undefined)
+        ?.parts;
       return (
         message.content != null ||
-        Array.isArray(
-          (metadata?.ai as { parts?: unknown } | undefined)?.parts
-        ) ||
+        (Array.isArray(canonicalParts) && canonicalParts.length > 0) ||
         metadata?.toolCalls != null ||
         metadata?.reasoning != null ||
         metadata?.sources != null
