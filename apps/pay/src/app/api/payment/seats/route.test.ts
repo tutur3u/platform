@@ -1,11 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ resolve: vi.fn(), update: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  resolve: vi.fn(),
+  update: vi.fn(),
+  get: vi.fn(),
+  sync: vi.fn(),
+}));
 vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: mocks.resolve,
 }));
 vi.mock('@tuturuuu/payment/polar/server', () => ({
-  createPolarClient: () => ({ subscriptions: { update: mocks.update } }),
+  createPolarClient: () => ({
+    subscriptions: { update: mocks.update, get: mocks.get },
+  }),
+}));
+
+vi.mock('@tuturuuu/payment-core/polar-subscription-helper', () => ({
+  syncSubscriptionToDatabase: mocks.sync,
 }));
 
 import { POST } from './route';
@@ -92,7 +103,17 @@ function actor({
 describe('seat mutation boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.update.mockResolvedValue({ id: 'polar-sub' });
+    mocks.get.mockResolvedValue({
+      id: 'polar-sub',
+      product: { id: 'product' },
+      seats: 5,
+    });
+    mocks.update.mockResolvedValue({
+      id: 'polar-sub',
+      product: { id: 'product' },
+      seats: 4,
+    });
+    mocks.sync.mockResolvedValue({ subscriptionData: { id: 'sub' } });
   });
   it.each(['2', 1.5, 0, -1, 1001, null])(
     'rejects invalid seat quantity %s before contacting billing',
@@ -127,6 +148,42 @@ describe('seat mutation boundary', () => {
       id: 'polar-sub',
       subscriptionUpdate: { seats: 4, prorationBehavior: 'invoice' },
     });
-    expect(f.localUpdate).toHaveBeenCalledWith({ seat_count: 4 });
+    expect(f.localUpdate).not.toHaveBeenCalled();
+    expect(mocks.sync).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ seats: 4, metadata: { wsId: 'workspace' } })
+    );
+  });
+  it('reports pending reconciliation after an applied charge without returning a retryable error', async () => {
+    actor();
+    mocks.sync.mockRejectedValue(new Error('database unavailable'));
+    const result = await request(4);
+    expect(result.status).toBe(200);
+    expect(await result.json()).toMatchObject({
+      syncPending: true,
+      newSeats: 4,
+    });
+  });
+  it('reconciles an already-applied quantity without another provider mutation', async () => {
+    actor();
+    mocks.get.mockResolvedValue({
+      id: 'polar-sub',
+      product: { id: 'product' },
+      seats: 4,
+    });
+    expect((await request(4)).status).toBe(200);
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.sync).toHaveBeenCalled();
+  });
+  it('rejects provider drift before changing purchased capacity', async () => {
+    actor();
+    mocks.get.mockResolvedValue({
+      id: 'polar-sub',
+      product: { id: 'other' },
+      seats: 5,
+    });
+    expect((await request(4)).status).toBe(409);
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.sync).not.toHaveBeenCalled();
   });
 });
