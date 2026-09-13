@@ -37,6 +37,8 @@ it.each([
   'show me a poem',
   'show my tasks, not in an artifact',
   'show my tasks, no panel',
+  'show my tasks without any artifacts',
+  'show my tasks without any panels',
   "I don't see my tasks",
   "I can't see my tasks",
   'Không mở công việc',

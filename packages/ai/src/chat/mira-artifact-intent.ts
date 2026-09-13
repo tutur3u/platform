@@ -20,7 +20,7 @@ export function shouldPresentWorkspaceArtifact(
     );
   const latest = userTexts.at(-1) ?? '';
   if (
-    /\b((?:don't|do not) (?:show|open|display|present|see|view)|(?:can't|cannot) (?:see|view)|without (?:an? )?(?:artifacts?|panels?)|(?:no|not)(?: (?:in|as))?(?: an?)? (?:artifacts?|panels?)|text[-\s]+only|chat[-\s]+only|how (do|can|to))\b|\bkhong (?:mo|hien thi|xem)\b/u.test(
+    /\b((?:don't|do not) (?:show|open|display|present|see|view)|(?:can't|cannot) (?:see|view)|without (?:(?:any|an?) )?(?:artifacts?|panels?)|(?:no|not)(?: (?:in|as))?(?: an?)? (?:artifacts?|panels?)|text[-\s]+only|chat[-\s]+only|how (do|can|to))\b|\bkhong (?:mo|hien thi|xem)\b/u.test(
       latest
     )
   )
