@@ -22,6 +22,10 @@ export interface ArtifactRow {
   priority?: string;
   path?: string;
   listName?: string;
+  taskWorkspaceId?: string;
+  taskBoardId?: string;
+  personalBoardId?: string | null;
+  personalListId?: string | null;
   estimationPoints?: number;
   estimationType?: string;
   labels?: TaskLabelSummary[];
@@ -46,6 +50,14 @@ export async function loadArtifactRows(
         group,
         priority: task.priority ?? undefined,
         listName: task.list?.name ?? undefined,
+        taskWorkspaceId: task.list?.board?.ws_id,
+        taskBoardId: task.list?.board?.id,
+        personalBoardId: (
+          task.overrides as { personal_board_id?: string | null } | undefined
+        )?.personal_board_id,
+        personalListId: (
+          task.overrides as { personal_list_id?: string | null } | undefined
+        )?.personal_list_id,
         estimationPoints: task.estimation_points ?? undefined,
         estimationType: task.list?.board?.estimation_type ?? undefined,
         labels: (task.labels ?? []).flatMap(({ label }) =>

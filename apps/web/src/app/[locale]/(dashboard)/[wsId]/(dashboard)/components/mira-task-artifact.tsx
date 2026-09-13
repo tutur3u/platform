@@ -1,23 +1,27 @@
 'use client';
 
+import { TaskListLoadMore } from '@tuturuuu/tasks-ui/tu-do/boards/boardId/task-list-load-more';
 import { TaskSummaryCard } from '@tuturuuu/tasks-ui/tu-do/shared/task-summary-card';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
-import { Button } from '@tuturuuu/ui/button';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type RefObject, useCallback, useState } from 'react';
 import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type { ArtifactRow } from './mira-artifact-data';
+import { useMiraTaskCompletion } from './use-mira-task-completion';
 
 export function MiraTaskArtifact({
   rows,
   initialFilter = 'all',
+  scrollRootRef,
 }: {
   rows: ArtifactRow[];
   initialFilter?: string;
+  scrollRootRef?: RefObject<HTMLDivElement | null>;
 }) {
   const t = useTranslations('dashboard.mira_workspace');
   const format = useFormatter();
   const locale = useLocale();
+  const completion = useMiraTaskCompletion();
   const [filter, setFilter] = useState(initialFilter);
   const [limit, setLimit] = useState(12);
   const [previousFilter, setPreviousFilter] = useState(initialFilter);
@@ -26,6 +30,7 @@ export function MiraTaskArtifact({
     setFilter(initialFilter);
     setLimit(12);
   }
+  const loadMore = useCallback(() => setLimit((value) => value + 12), []);
   const groups = ['overdue', 'today', 'upcoming'] as const;
   const visible = rows.filter(
     (row) => filter === 'all' || row.group === filter
@@ -45,11 +50,11 @@ export function MiraTaskArtifact({
             className={`flex items-center justify-between gap-1 rounded-lg border px-2.5 py-1.5 text-left transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring aria-pressed:border-primary ${group === 'overdue' ? 'bg-destructive/5' : group === 'today' ? 'bg-chart-1/10' : 'bg-chart-2/10'}`}
           >
             <span
-              className={`order-2 font-semibold text-xs tabular-nums ${group === 'overdue' ? 'text-destructive' : ''}`}
+              className={`order-2 font-semibold text-xs tabular-nums ${group === 'overdue' ? 'text-dynamic-red' : ''}`}
             >
               {rows.filter((row) => row.group === group).length}
             </span>
-            <span className="text-muted-foreground text-xs">{t(group)}</span>
+            <span className="text-foreground/80 text-xs">{t(group)}</span>
           </button>
         ))}
       </div>
@@ -63,6 +68,13 @@ export function MiraTaskArtifact({
           <li key={row.id}>
             <TaskSummaryCard
               title={row.title}
+              onComplete={
+                row.taskWorkspaceId && row.taskBoardId
+                  ? () => completion.complete(row)
+                  : undefined
+              }
+              completeLabel={t('complete_task', { name: row.title })}
+              completing={completion.pendingIds.has(row.id)}
               href={
                 row.path
                   ? getTasksAppUrlClient(`/${locale}${row.path}`)
@@ -98,14 +110,12 @@ export function MiraTaskArtifact({
         ))}
       </ul>
       {visible.length > limit && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 w-full text-xs"
-          onClick={() => setLimit(limit + 12)}
-        >
-          {t('show_more', { count: visible.length - limit })}
-        </Button>
+        <TaskListLoadMore
+          key={limit}
+          onLoadMore={loadMore}
+          isLoading={false}
+          scrollRootRef={scrollRootRef}
+        />
       )}
     </div>
   );
