@@ -214,3 +214,9 @@ assistant prose is never used as proof of success.
 Presentation destinations such as "in the task panel" are not workspace names.
 An explicitly requested artifact can still open after repeated discovery calls,
 subject to the existing three-attempt artifact limit.
+
+## Composer and session timeline
+
+Mira keeps Live controls in the chat composer. Voice starts with text entry collapsed; opening text entry hides the media controls until the user closes text entry again. The shared conversation stays visible at every artifact layout size. Session start/end notices are canonical `data-live-session` parts and are restored alongside text and tool results. They describe session state, not a guarantee that an outstanding save has completed; save failures retain the existing retry notification.
+
+Before the first Live turn, the client supplies up to 64,000 characters of conversation context. Bounded excerpts preserve earlier goals alongside recent turns and tool results; this is deterministic compaction, not a generated summary or unlimited recall. Full saved messages are not shortened. Real microphone and provider transport should be verified separately from mocked lifecycle tests.

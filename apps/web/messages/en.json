@@ -6091,6 +6091,7 @@
       "no_upcoming_meetings": "No upcoming meetings in the latest 30. Check Past or open the full view.",
       "normal": "Medium",
       "open_full": "Open full view",
+      "open_meeting": "Open {name}",
       "overdue": "Overdue",
       "past_meetings": "Past",
       "refresh": "Refresh",
@@ -6413,6 +6414,8 @@
         "you": "You"
       },
       "subtitle": "Talk to Mira, your AI assistant",
+      "timeline_ended": "Live conversation ended. Continue typing or start Live again.",
+      "timeline_started": "Live conversation started. Your chat context is available.",
       "title": "Voice Assistant",
       "try_again": "Reconnect",
       "unable_to_connect": "Connection interrupted",

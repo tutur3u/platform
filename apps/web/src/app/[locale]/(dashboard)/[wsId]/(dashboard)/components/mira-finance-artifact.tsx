@@ -15,7 +15,7 @@ export function MiraFinanceArtifact({
   const format = useFormatter();
   const currencies = [...new Set(rows.map((row) => row.currency ?? ''))].sort();
   return (
-    <div className="space-y-3">
+    <div className="min-w-0 space-y-4">
       {currencies.map((currency) => {
         const wallets = rows
           .filter((row) => (row.currency ?? '') === currency)
@@ -28,10 +28,10 @@ export function MiraFinanceArtifact({
         return (
           <section
             key={currency}
-            className="space-y-2"
+            className="min-w-0 space-y-2"
             aria-label={currency || t('unknown_currency')}
           >
-            <div className="rounded-lg border border-chart-3/20 bg-chart-3/10 px-3 py-2.5">
+            <div className="rounded-xl border border-chart-3/20 bg-linear-to-br from-chart-3/10 via-background to-chart-2/10 px-3 py-3">
               <div className="flex items-center justify-between gap-2 text-muted-foreground text-xs">
                 <span>{t('net_balance')}</span>
                 <span className="font-medium">
@@ -39,7 +39,7 @@ export function MiraFinanceArtifact({
                 </span>
               </div>
               <p
-                className={`mt-1 break-words font-semibold text-xl tabular-nums tracking-tight ${total < 0 ? 'text-dynamic-red' : ''}`}
+                className={`mt-1 font-semibold text-2xl tabular-nums tracking-tight [overflow-wrap:anywhere] ${total < 0 ? 'text-dynamic-red' : ''}`}
               >
                 {format.number(total, { maximumFractionDigits: 2 })}
               </p>
@@ -47,13 +47,13 @@ export function MiraFinanceArtifact({
                 {t('wallet_count', { count: wallets.length })}
               </p>
             </div>
-            <ul className="grid @min-[36rem]:grid-cols-2 gap-2">
+            <ul className="grid min-w-0 grid-cols-1 gap-1.5">
               {wallets.map((row) => (
                 <li
                   key={row.id}
-                  className="rounded-lg border bg-background p-2.5 transition-colors hover:border-chart-3/40 hover:bg-chart-3/5"
+                  className="min-w-0 rounded-lg border bg-background p-2.5 transition-colors hover:border-chart-3/40 hover:bg-chart-3/5"
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex min-w-0 flex-wrap items-start gap-2">
                     <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-chart-3/10 text-chart-3">
                       <WalletIconDisplay
                         icon={row.icon}
@@ -62,7 +62,7 @@ export function MiraFinanceArtifact({
                       />
                     </div>
                     <span
-                      className="min-w-0 flex-1 truncate pt-1 font-medium text-xs"
+                      className="min-w-0 flex-1 basis-20 pt-1 font-medium text-xs [overflow-wrap:anywhere]"
                       title={row.title}
                     >
                       {href ? (
@@ -79,7 +79,7 @@ export function MiraFinanceArtifact({
                       )}
                     </span>
                     <span
-                      className={`shrink-0 pt-1 font-semibold text-xs tabular-nums ${(row.amount ?? 0) < 0 ? 'text-dynamic-red' : ''}`}
+                      className={`max-w-full pt-1 text-right font-semibold text-sm tabular-nums [overflow-wrap:anywhere] ${(row.amount ?? 0) < 0 ? 'text-dynamic-red' : ''}`}
                     >
                       {format.number(row.amount ?? 0, {
                         maximumFractionDigits: 2,

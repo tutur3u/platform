@@ -4,7 +4,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 
 vi.mock('../assistant/assistant-client', () => ({
-  default: () => <div data-testid="voice-canvas" />,
+  default: ({
+    onReturnToChat,
+    inputOpen,
+    onToggleInput,
+  }: {
+    onReturnToChat: () => void;
+    inputOpen: boolean;
+    onToggleInput: () => void;
+  }) => (
+    <div data-testid="voice-canvas">
+      <button type="button" onClick={onReturnToChat}>
+        return_to_chat
+      </button>
+      <button type="button" onClick={onToggleInput}>
+        {inputOpen ? 'Close input' : 'Open input'}
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('next-intl', () => ({
@@ -35,8 +52,8 @@ function Harness({ beforeStart }: { beforeStart?: () => Promise<void> } = {}) {
     >
       {(onVoiceToggle, _voiceActive, live) => (
         <div data-testid="chat-surface">
-          {live.content}
           <div ref={composerRef} data-testid="composer">
+            {live.content}
             <textarea
               ref={inputRef}
               aria-label="Message"
@@ -67,11 +84,16 @@ describe('MiraVoiceModeSwitcher', () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
-  it('embeds Live in normal chat flow without floating offsets', () => {
+  it('mounts Live controls in the composer without a separate region', async () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
-    const panel = screen.getByRole('region', { name: 'Live' });
-    expect(screen.getByTestId('chat-surface')).toContainElement(panel);
+    const panel = await screen.findByTestId('voice-canvas');
+    expect(screen.getByTestId('composer')).toContainElement(panel);
+    expect(
+      screen.queryByRole('region', { name: 'Live' })
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open input' }));
+    expect(screen.getByRole('button', { name: 'Close input' })).toBeVisible();
     expect(panel).not.toHaveClass('absolute');
     expect(panel.style.top).toBe('');
     expect(panel.style.bottom).toBe('');
@@ -171,5 +193,5 @@ it('waits for the text stream to stop before starting Live', async () => {
     screen.queryByRole('region', { name: 'Live' })
   ).not.toBeInTheDocument();
   finish();
-  expect(await screen.findByRole('region', { name: 'Live' })).toBeVisible();
+  expect(await screen.findByTestId('voice-canvas')).toBeVisible();
 });

@@ -2,6 +2,7 @@ import type { UIMessage } from '@tuturuuu/ai/types';
 
 export type LiveConversationMessage = UIMessage & { complete: boolean };
 export type LiveConversationEvent =
+  | { type: 'notice'; status: 'started' | 'ended'; text: string }
   | { type: 'text'; role: 'user' | 'assistant'; text: string }
   | { type: 'tool'; id: string; name: string; input: unknown }
   | { type: 'result'; id: string; output: unknown }
@@ -14,6 +15,21 @@ export function reduceLiveConversation(
   event: LiveConversationEvent,
   id: string
 ): LiveConversationMessage[] {
+  if (event.type === 'notice')
+    return [
+      ...messages.map((message) => ({ ...message, complete: true })),
+      {
+        id,
+        role: 'assistant',
+        complete: true,
+        parts: [
+          {
+            type: 'data-live-session',
+            data: { status: event.status, text: event.text },
+          },
+        ],
+      },
+    ];
   if (event.type === 'finish') {
     return messages.map((message) => ({
       ...message,

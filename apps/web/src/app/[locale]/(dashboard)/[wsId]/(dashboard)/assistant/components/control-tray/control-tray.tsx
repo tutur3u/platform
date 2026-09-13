@@ -29,6 +29,7 @@ import { useWebcam } from '@/hooks/use-webcam';
 import { AudioRecorder } from '../../audio/audio-recorder';
 
 export type ControlTrayProps = {
+  compact?: boolean;
   videoRef: RefObject<HTMLVideoElement | null>;
   children?: ReactNode;
   supportsVideo: boolean;
@@ -105,6 +106,7 @@ function MediaStreamButton({
 }
 
 function ControlTray({
+  compact = false,
   videoRef,
   children,
   onInputVolumeChange = () => {},
@@ -271,17 +273,25 @@ function ControlTray({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col items-center justify-center gap-2">
+    <div className="flex w-full min-w-0 max-w-full flex-col items-center justify-center gap-2">
       {mediaError && (
         <p role="alert" className="text-center text-dynamic-red text-xs">
           {t('studio.media_error')}
         </p>
       )}
-      <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border/60 bg-background/70 p-1.5 shadow-foreground/5 shadow-lg backdrop-blur-xl">
+      <div
+        className={cn(
+          'flex max-w-full flex-wrap items-center justify-end gap-1',
+          !compact &&
+            'rounded-2xl border bg-background/70 p-1.5 shadow-lg backdrop-blur-xl'
+        )}
+      >
         {connected && (
           <>
             <Button
+              hidden={compact && textChatOpen}
               aria-label={muted ? t('unmute_microphone') : t('mute_microphone')}
+              title={muted ? t('unmute_microphone') : t('mute_microphone')}
               aria-pressed={muted}
               variant="ghost"
               size="icon"
@@ -301,7 +311,7 @@ function ControlTray({
               )}
             </Button>
 
-            {supportsVideo && (
+            {supportsVideo && !(compact && textChatOpen) && (
               <>
                 <MediaStreamButton
                   active={Boolean(screenCapture?.isStreaming)}
@@ -326,29 +336,34 @@ function ControlTray({
               </>
             )}
 
-            {typeof onToggleChat === 'function' && (
-              <Button
-                aria-label={textChatOpen ? t('close_chat') : t('open_chat')}
-                aria-pressed={Boolean(textChatOpen)}
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
-                  textChatOpen && 'bg-primary/10 text-primary'
-                )}
-                onClick={onToggleChat}
-              >
-                <MessageSquareText className="size-4" />
-              </Button>
+            {!(compact && textChatOpen) && (
+              <span className="mx-0.5 h-6 w-px bg-border/60" />
             )}
-
-            <span className="mx-0.5 h-6 w-px bg-border/60" />
           </>
         )}
 
+        {typeof onToggleChat === 'function' && (
+          <Button
+            aria-label={textChatOpen ? t('close_chat') : t('open_chat')}
+            title={textChatOpen ? t('close_chat') : t('open_chat')}
+            aria-pressed={Boolean(textChatOpen)}
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+              textChatOpen && 'bg-primary/10 text-primary'
+            )}
+            onClick={onToggleChat}
+          >
+            <MessageSquareText className="size-4" />
+          </Button>
+        )}
+
         <Button
+          hidden={compact && textChatOpen && connected}
           ref={sessionButtonRef}
           aria-label={connected ? t('end_session') : t('new_session')}
+          title={connected ? t('end_session') : t('new_session')}
           disabled={
             !connected &&
             (!canRestart ||

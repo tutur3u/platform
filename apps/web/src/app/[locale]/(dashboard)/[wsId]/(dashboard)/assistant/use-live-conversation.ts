@@ -36,6 +36,7 @@ export function useLiveConversation(
   const historyRef = useRef(history);
   historyRef.current = history;
   const seeded = useRef(false);
+  const sessionActive = useRef(false);
   const publish = useCallback((event: LiveConversationEvent) => {
     if (!changeRef.current) return;
     messages.current = reduceLiveConversation(
@@ -45,7 +46,8 @@ export function useLiveConversation(
     );
     changeRef.current?.(
       messages.current,
-      event.type === 'finish' ||
+      event.type === 'notice' ||
+        event.type === 'finish' ||
         event.type === 'result' ||
         event.type === 'source'
     );
@@ -55,6 +57,15 @@ export function useLiveConversation(
     seeded.current = true;
     client.seedConversation(buildLiveConversationContext(historyRef.current));
   }, [client, connected]);
+  useEffect(() => {
+    if (!connected || sessionActive.current) return;
+    sessionActive.current = true;
+    publish({
+      type: 'notice',
+      status: 'started',
+      text: translations.current('timeline_started'),
+    });
+  }, [connected, publish]);
   useEffect(() => {
     const input = (text: string) =>
       publish({ type: 'text', role: 'user', text });
@@ -67,6 +78,16 @@ export function useLiveConversation(
         interrupted: true,
         errorText: translations.current('action_interrupted'),
       });
+    const closed = () => {
+      interrupted();
+      if (!sessionActive.current) return;
+      sessionActive.current = false;
+      publish({
+        type: 'notice',
+        status: 'ended',
+        text: translations.current('timeline_ended'),
+      });
+    };
     const sources = (metadata: GroundingMetadata) => {
       for (const chunk of metadata.groundingChunks ?? []) {
         if (chunk.web?.uri)
@@ -104,19 +125,19 @@ export function useLiveConversation(
       .on('transcription', output)
       .on('turncomplete', finish)
       .on('interrupted', interrupted)
-      .on('close', interrupted)
+      .on('close', closed)
       .on('toolcall', call)
       .on('toolresponse', result)
       .on('toolcallcancellation', cancelled)
       .on('groundingmetadata', sources);
     return () => {
-      interrupted();
+      closed();
       client
         .off('inputtranscription', input)
         .off('transcription', output)
         .off('turncomplete', finish)
         .off('interrupted', interrupted)
-        .off('close', interrupted)
+        .off('close', closed)
         .off('toolcall', call)
         .off('toolresponse', result)
         .off('toolcallcancellation', cancelled)

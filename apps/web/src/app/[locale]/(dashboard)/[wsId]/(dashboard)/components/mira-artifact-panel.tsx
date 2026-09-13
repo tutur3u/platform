@@ -81,7 +81,7 @@ export function MiraArtifactPanel({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -130,7 +130,7 @@ export function MiraArtifactPanel({
       </header>
       <div
         ref={scrollRootRef}
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3"
+        className="min-h-0 min-w-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden @sm:p-3 p-2.5"
       >
         <div className="relative">
           <Search

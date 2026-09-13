@@ -6,7 +6,13 @@ import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type RefObject, useCallback, useEffect, useRef } from 'react';
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import ChatInputBar from './chat-input-bar';
 import type { ChatFile } from './file-preview-chips';
 import type { CreditSource, ThinkingMode } from './mira-chat-constants';
@@ -14,6 +20,8 @@ import MiraChatInputToolbar from './mira-chat-input-toolbar';
 import { useMiraComposerDensity } from './use-mira-composer-density';
 
 interface MiraChatBottomBarProps {
+  liveControls?: ReactNode;
+  liveInputOpen?: boolean;
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   composerRef?: RefObject<HTMLDivElement | null>;
   assistantName: string;
@@ -54,6 +62,8 @@ interface MiraChatBottomBarProps {
 }
 
 export function MiraChatBottomBar({
+  liveControls,
+  liveInputOpen,
   composerRef,
   scrollContainerRef,
   assistantName,
@@ -139,7 +149,12 @@ export function MiraChatBottomBar({
         floating ? 'absolute right-0 bottom-0 left-0' : 'relative shrink-0'
       )}
     >
-      {density.compact && (
+      {voiceActive && (
+        <div className="pointer-events-auto max-w-full rounded-2xl border bg-background/90 p-1 shadow-lg backdrop-blur-xl">
+          {liveControls}
+        </div>
+      )}
+      {!voiceActive && density.compact && (
         <div className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/85 p-1 shadow-lg backdrop-blur-xl">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -180,7 +195,7 @@ export function MiraChatBottomBar({
         </div>
       )}
       <div
-        hidden={density.compact}
+        hidden={voiceActive ? !liveInputOpen : density.compact}
         className="pointer-events-auto w-full min-w-0 rounded-2xl bg-background/85 shadow-sm backdrop-blur-xl"
       >
         <div
@@ -210,7 +225,7 @@ export function MiraChatBottomBar({
             />
           </div>
         </div>
-        <div className="min-w-0">
+        <div className="relative min-w-0">
           <ChatInputBar
             input={input}
             setInput={setInput}
@@ -218,7 +233,7 @@ export function MiraChatBottomBar({
             isStreaming={isBusy}
             disabled={disabled}
             assistantName={assistantName}
-            onVoiceToggle={onVoiceToggle}
+            onVoiceToggle={voiceActive ? undefined : onVoiceToggle}
             voiceActive={voiceActive}
             inputRef={inputRef}
             files={attachedFiles}

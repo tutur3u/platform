@@ -9,12 +9,24 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 
 export function VoiceLoadingState({
+  compact = false,
   description,
   title,
 }: {
+  compact?: boolean;
   description: string;
   title: string;
 }) {
+  if (compact)
+    return (
+      <div
+        role="status"
+        className="flex min-w-0 items-center gap-2 px-3 py-2 text-muted-foreground text-xs"
+      >
+        <AudioLines className="size-4 shrink-0 animate-pulse" />
+        <span className="min-w-0">{title}</span>
+      </div>
+    );
   return (
     <section
       aria-live="polite"
@@ -38,6 +50,7 @@ export function VoiceLoadingState({
 }
 
 export function VoiceErrorState({
+  compact = false,
   description,
   onReturnToChat,
   onRetry,
@@ -45,6 +58,7 @@ export function VoiceErrorState({
   returnLabel,
   title,
 }: {
+  compact?: boolean;
   description: string;
   onReturnToChat: () => void;
   onRetry: () => void;
@@ -52,6 +66,22 @@ export function VoiceErrorState({
   returnLabel: string;
   title: string;
 }) {
+  if (compact)
+    return (
+      <div role="alert" className="min-w-0 space-y-2 p-2 text-xs">
+        <p className="text-dynamic-red [overflow-wrap:anywhere]">
+          {description}
+        </p>
+        <div className="flex flex-wrap gap-1">
+          <Button size="sm" variant="ghost" onClick={onReturnToChat}>
+            {returnLabel}
+          </Button>
+          <Button size="sm" onClick={onRetry}>
+            {retryLabel}
+          </Button>
+        </div>
+      </div>
+    );
   return (
     <section
       aria-live="assertive"

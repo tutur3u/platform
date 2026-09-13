@@ -7,7 +7,27 @@ export function buildLiveConversationContext(
   maxCharacters = 64000
 ) {
   const turns: { role: 'user' | 'model'; parts: { text: string }[] }[] = [];
-  let remaining = maxCharacters;
+  // Keep earlier goals and decisions as bounded excerpts alongside recent turns.
+  // This is deterministic context compaction, not a model-generated summary.
+  const olderBudget =
+    maxCharacters >= 8000 ? Math.min(8000, Math.floor(maxCharacters / 8)) : 0;
+  const older = messages
+    .slice(0, -8)
+    .flatMap((message) => {
+      const text = message.parts
+        .flatMap((part) => (part.type === 'text' ? [part.text] : []))
+        .join(' ');
+      return text ? [`${message.role}: ${text.slice(0, 800)}`] : [];
+    })
+    .join('\n')
+    .slice(0, olderBudget);
+  const context = older
+    ? `Earlier conversation excerpts (historical context):\n${older}`.slice(
+        0,
+        olderBudget
+      )
+    : '';
+  let remaining = maxCharacters - context.length;
   for (const message of [...messages].reverse()) {
     if (remaining <= 0) break;
     const text = message.parts
@@ -41,5 +61,6 @@ export function buildLiveConversationContext(
       parts: [{ text }],
     });
   }
+  if (context) turns.unshift({ role: 'user', parts: [{ text: context }] });
   return turns;
 }

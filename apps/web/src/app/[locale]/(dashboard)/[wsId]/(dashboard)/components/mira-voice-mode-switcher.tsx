@@ -1,10 +1,8 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { AudioLines, X } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { AudioLines } from '@tuturuuu/icons';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import type { ReactNode, RefObject } from 'react';
@@ -13,6 +11,7 @@ import type { LiveConversationChange } from '../assistant/use-live-conversation'
 
 export type LiveComposer = {
   connected: boolean;
+  connecting?: boolean;
   sendText: (text: string) => void;
 };
 
@@ -59,7 +58,12 @@ export function MiraVoiceModeSwitcher({
   children: (
     onVoiceToggle: () => void,
     voiceActive: boolean,
-    live: { content: ReactNode; composer: LiveComposer | null }
+    live: {
+      content: ReactNode;
+      composer: LiveComposer | null;
+      inputOpen: boolean;
+      toggleInput: () => void;
+    }
   ) => ReactNode;
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
@@ -70,6 +74,7 @@ export function MiraVoiceModeSwitcher({
   const t = useTranslations('dashboard.voice_assistant');
   const [mode, setMode] = useState<'chat' | 'live'>('chat');
   const voiceActive = mode === 'live';
+  const [inputOpen, setInputOpen] = useState(false);
   const [liveComposer, setLiveComposer] = useState<LiveComposer | null>(null);
   const voiceActiveRef = useRef(false);
   const focusFrameRef = useRef<number | null>(null);
@@ -107,6 +112,7 @@ export function MiraVoiceModeSwitcher({
     cancelPendingFocus();
     if (onBeforeVoiceStart) await onBeforeVoiceStart();
     voiceActiveRef.current = true;
+    setInputOpen(false);
     setMode('live');
   }, [cancelPendingFocus, onBeforeVoiceStart, historyReady, t]);
 
@@ -127,40 +133,18 @@ export function MiraVoiceModeSwitcher({
   }, [exitVoice, voiceActive]);
 
   const liveContent = voiceActive ? (
-    <section
-      aria-label={t('live_mode')}
-      className="@container flex max-h-[45%] min-h-28 min-w-0 shrink-0 flex-col overflow-hidden border-b"
-    >
-      <div className="flex shrink-0 items-center justify-between px-3 py-1">
-        <span className="flex items-center gap-2 font-medium text-muted-foreground text-xs">
-          <AudioLines className="size-3.5 text-dynamic-cyan" />
-          {t('live_mode')}
-        </span>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={exitVoice}
-              aria-label={t('return_to_chat')}
-              className="size-7"
-            >
-              <X className="size-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('return_to_chat')} (Esc)</TooltipContent>
-        </Tooltip>
-      </div>
-      <AssistantVoiceClient
-        history={history}
-        onConversationChange={onConversationChange}
-        creditSource={creditSource}
-        creditWsId={creditWsId}
-        onReturnToChat={exitVoice}
-        onComposerChange={setLiveComposer}
-        wsId={wsId}
-      />
-    </section>
+    <AssistantVoiceClient
+      onBeforeStart={onBeforeVoiceStart}
+      inputOpen={inputOpen}
+      onToggleInput={() => setInputOpen((open) => !open)}
+      history={history}
+      onConversationChange={onConversationChange}
+      creditSource={creditSource}
+      creditWsId={creditWsId}
+      onReturnToChat={exitVoice}
+      onComposerChange={setLiveComposer}
+      wsId={wsId}
+    />
   ) : null;
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
@@ -169,6 +153,8 @@ export function MiraVoiceModeSwitcher({
         {children(voiceActive ? exitVoice : enterVoice, voiceActive, {
           content: liveContent,
           composer: liveComposer,
+          inputOpen,
+          toggleInput: () => setInputOpen((open) => !open),
         })}
       </div>
     </div>
