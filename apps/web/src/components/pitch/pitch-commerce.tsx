@@ -1,7 +1,7 @@
 'use client';
 import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
 import { useLocale } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import styles from './pitch.module.css';
 import { type PitchCopy, subscriptionEstimate } from './pitch-model';
 export function PitchCommerce({
@@ -12,11 +12,11 @@ export function PitchCommerce({
   copy: PitchCopy;
 }) {
   const locale = useLocale();
-  const money = (value: number) =>
-    new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
+  const moneyFormat = useMemo(
+    () => new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' }),
+    [locale]
+  );
+  const money = (value: number) => moneyFormat.format(value);
   const [seats, setSeats] = useState(10);
   const [annual, setAnnual] = useState(false);
   const { data, isPending, isError } = usePublicWorkspacePrices();
