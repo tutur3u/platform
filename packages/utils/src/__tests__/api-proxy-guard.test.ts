@@ -2231,45 +2231,38 @@ describe('guardApiProxyRequest', () => {
     expect(blockedResponse?.headers.get('X-RateLimit-Policy')).toBe('cron');
   });
 
-  it('bypasses trusted webhook traffic only with required signature headers', async () => {
+  it('rate limits webhook requests even with forged signature headers', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('POLAR_WEBHOOK_SECRET', 'polar-secret');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
     mocks.redis.mockReturnValue({});
-
-    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
-      await import('../api-proxy-guard.js');
-    clearApiProxyGuardLimiterCache();
-
-    const allowedResponse = await guardApiProxyRequest(
-      makeRequest('/api/payment/webhooks', 'POST', {
-        'webhook-id': 'id',
-        'webhook-signature': 'sig',
-        'webhook-timestamp': 'ts',
-      }),
-      { prefixBase: 'proxy:test:api' }
-    );
-
-    expect(allowedResponse).toBeNull();
-
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    mocks.limit.mockResolvedValueOnce({
+    mocks.limit.mockResolvedValue({
       success: false,
-      limit: 12,
+      limit: 30,
       remaining: 0,
       reset: Date.now() + 15_000,
     });
-
-    const blockedResponse = await guardApiProxyRequest(
-      makeRequest('/api/payment/webhooks', 'POST', {
+    const { guardApiProxyRequest } = await import('../api-proxy-guard.js');
+    const attempts: Record<string, string>[] = [
+      { 'webhook-id': 'id' },
+      {
         'webhook-id': 'id',
-      }),
-      { prefixBase: 'proxy:test:api' }
-    );
-
-    expect(blockedResponse?.status).toBe(429);
+        'webhook-signature': 'sig',
+        'webhook-timestamp': 'ts',
+      },
+    ];
+    for (const headers of attempts) {
+      const response = await guardApiProxyRequest(
+        makeRequest('/api/payment/webhooks', 'POST', headers),
+        { prefixBase: 'proxy:test:api' }
+      );
+      expect(response?.status).toBe(429);
+      expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
+    }
+    expect(mocks.limit).toHaveBeenCalledTimes(2);
   });
 
   it('delegates to emoji validation after rate limiting passes', async () => {

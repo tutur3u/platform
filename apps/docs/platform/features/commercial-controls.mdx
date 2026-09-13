@@ -200,7 +200,9 @@ or hosting protection. Credentials remain in the deployment secret store.
 Pay allows only the exact webhook POST and registered payment-cron GET paths
 to reach their own signature or bearer-secret validators without a browser
 session. Other billing APIs retain session checks and all paths retain edge
-protection. Do not replace webhook authentication with an anonymous bypass.
+protection. Webhook signature headers alone never establish trust at the edge;
+requests consume the configured rate-limit budget before signature validation.
+Do not replace webhook authentication with an anonymous bypass.
 
 On 13 September 2026, the approved four-product catalog was reconciled at
 Plus $9/month or $90/year and Pro $19/month or $190/year per purchased seat.

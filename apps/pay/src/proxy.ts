@@ -152,6 +152,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         [
           '/api/cron/payment/products',
           '/api/cron/payment/subscriptions',
+          '/api/cron/payment/orders',
         ].includes(request.nextUrl.pathname));
     const appSessionRefresh =
       isLocalAuthApi || isMachineApi

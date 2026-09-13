@@ -33,6 +33,7 @@ describe('Pay machine-authenticated endpoints', () => {
     ['POST', '/api/payment/webhooks'],
     ['GET', '/api/cron/payment/products'],
     ['GET', '/api/cron/payment/subscriptions'],
+    ['GET', '/api/cron/payment/orders'],
   ])(
     'allows %s %s to reach its signature or bearer validator',
     async (method, path) => {
