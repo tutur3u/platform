@@ -112,3 +112,43 @@ it('recognizes a missing legacy publication only from a complete provider invent
   expect(result.budget?.pendingPublications).toEqual([]);
   expect(close).not.toHaveBeenCalled();
 });
+
+it('recovers closure after persistence fails without treating arbitrary close errors as success', async () => {
+  const state = snapshot([one]);
+  await expect(
+    closeBudgetPublications(
+      state,
+      async () => ({ tracks: [{ mid: '0' }] }),
+      async () => {
+        throw new Error('storage unavailable');
+      }
+    )
+  ).rejects.toThrow('storage unavailable');
+  expect(state.budget.pendingPublications).toHaveLength(1);
+  const close = vi
+    .fn()
+    .mockResolvedValue({
+      tracks: [{ mid: '0', errorCode: 'not_found_track_error' }],
+    });
+  const recovered = await closeBudgetPublications(
+    state,
+    close,
+    undefined,
+    async () => ({ tracks: [] })
+  );
+  expect(recovered.budget?.pendingPublications).toEqual([]);
+});
+it('retains a failed closure when the provider still lists its mid', async () => {
+  const state = snapshot([one]);
+  await expect(
+    closeBudgetPublications(
+      state,
+      async () => ({ tracks: [{ mid: '0', errorCode: 'temporary' }] }),
+      undefined,
+      async () => ({
+        tracks: [{ location: 'local', trackName: 'audio', mid: '0' }],
+      })
+    )
+  ).rejects.toThrow('cleanup failed');
+  expect(state.budget.pendingPublications).toHaveLength(1);
+});

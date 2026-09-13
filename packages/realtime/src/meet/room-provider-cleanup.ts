@@ -24,6 +24,24 @@ function providerResponse(value: unknown): {
   return response as { errorCode?: unknown; tracks?: ProviderTrack[] };
 }
 
+function sessionInventory(value: unknown): ProviderTrack[] {
+  const session = providerResponse(value);
+  if (
+    session.errorCode ||
+    !session.tracks ||
+    session.tracks.some(
+      (track) =>
+        !['local', 'remote'].includes(track.location ?? '') ||
+        typeof track.trackName !== 'string' ||
+        !track.trackName ||
+        typeof track.mid !== 'string' ||
+        !track.mid
+    )
+  )
+    throw new Error('Meeting publication cleanup lookup failed');
+  return session.tracks!;
+}
+
 /** Persist confirmed closures per provider track; one failed session cannot starve another. */
 export async function closeBudgetPublications(
   state: MeetRoomSnapshot,
@@ -48,26 +66,13 @@ export async function closeBudgetPublications(
           throw new Error(
             'Meeting publication cleanup requires a provider track identifier'
           );
-        const session = providerResponse(await getSession(sessionId));
-        if (
-          session.errorCode ||
-          !session.tracks ||
-          session.tracks.some(
-            (track) =>
-              !['local', 'remote'].includes(track.location ?? '') ||
-              typeof track.trackName !== 'string' ||
-              !track.trackName ||
-              typeof track.mid !== 'string' ||
-              !track.mid
-          )
-        )
-          throw new Error('Meeting publication cleanup lookup failed');
+        const inventory = sessionInventory(await getSession(sessionId));
         for (const track of legacy) {
           if (!track.trackName)
             throw new Error(
               'Meeting publication cleanup requires a provider track identifier'
             );
-          const matches = session.tracks.filter(
+          const matches = inventory.filter(
             (candidate) =>
               candidate.location === 'local' &&
               candidate.trackName === track.trackName
@@ -116,6 +121,18 @@ export async function closeBudgetPublications(
         failure = error;
       }
     }
+    // A previous attempt may have closed the track before its durable write failed.
+    // Confirm absence from the provider instead of assuming close errors are idempotent.
+    if (getSession && [...resolved.keys()].some((key) => !completed.has(key))) {
+      try {
+        const inventory = sessionInventory(await getSession(sessionId));
+        const present = new Set(inventory.map((track) => track.mid));
+        for (const [key, mid] of resolved)
+          if (!present.has(mid)) completed.add(key);
+      } catch (error) {
+        failure = error;
+      }
+    }
     if (completed.size) {
       progress = {
         ...progress,
@@ -130,6 +147,7 @@ export async function closeBudgetPublications(
       await persistProgress?.(progress);
     }
   }
-  if (failure) throw failure;
+  if (progress.budget?.pendingPublications?.length)
+    throw failure ?? new Error('Meeting publication cleanup failed');
   return progress;
 }
