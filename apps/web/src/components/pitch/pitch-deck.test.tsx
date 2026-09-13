@@ -4,6 +4,20 @@ import messages from '../../../messages/en.json';
 import { PitchDeck } from './pitch-deck';
 import type { PitchCopy } from './pitch-model';
 
+vi.mock('@tuturuuu/ui/public-workspace-prices', () => ({
+  usePublicWorkspacePrices: () => ({
+    data: {
+      currency: 'usd',
+      prices: {
+        plus: { monthly: 800, annual: 8000 },
+        pro: { monthly: 1500, annual: 15000 },
+      },
+    },
+    isPending: false,
+    isError: false,
+  }),
+}));
+
 vi.mock('next-intl', () => ({ useLocale: () => 'en' }));
 
 const copy = messages.pitch as PitchCopy;
@@ -24,6 +38,7 @@ describe('pitch presentation controls', () => {
       key: 'ArrowRight',
     });
     expect(window.location.hash).toBe('#calculator');
+    expect(visibleSlide().textContent).toContain('$80');
     fireEvent.keyDown(document.body, { key: 'ArrowRight' });
     expect(window.location.hash).toBe('#trust');
   });
@@ -33,7 +48,9 @@ describe('pitch presentation controls', () => {
     fireEvent.click(screen.getByRole('button', { name: copy.overview }));
     const overview = screen.getByRole('navigation', { name: copy.overview });
     fireEvent.click(
-      within(overview).getByRole('button', { name: /Pricing proposal/ })
+      within(overview).getByRole('button', {
+        name: new RegExp(copy.slides.pricing.kicker),
+      })
     );
     expect(window.location.hash).toBe('#pricing');
     expect(

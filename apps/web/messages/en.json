@@ -9209,7 +9209,7 @@
       },
       "pricesLoading": "Loading current prices…",
       "pricesUnavailable": "Prices are temporarily unavailable. Confirm the current price in checkout.",
-      "subtitle": "Plans are per workspace, billed per user. Up to 10 free workspaces per account.",
+      "subtitle": "Each workspace has its own plan, billed per member. Standard accounts can create up to 10 workspaces; upgrading does not increase this account limit.",
       "tiers": {
         "enterprise": {
           "cta": "Contact Sales",
@@ -9254,12 +9254,8 @@
           ],
           "name": "Plus",
           "period": {
-            "monthly": "/user/mo",
-            "yearly": "/user/yr"
-          },
-          "price": {
-            "monthly": "$8",
-            "yearly": "$80"
+            "monthly": "/member/mo",
+            "yearly": "/member/yr"
           }
         },
         "pro": {
@@ -9276,12 +9272,8 @@
           ],
           "name": "Pro",
           "period": {
-            "monthly": "/user/mo",
-            "yearly": "/user/yr"
-          },
-          "price": {
-            "monthly": "$15",
-            "yearly": "$150"
+            "monthly": "/member/mo",
+            "yearly": "/member/yr"
           }
         }
       },
@@ -11448,6 +11440,7 @@
     "fullscreen": "Fullscreen",
     "fullscreenError": "Fullscreen is unavailable in this browser.",
     "help": "Arrow keys navigate · Home / End jump · Space plays or pauses",
+    "livePricingProposal": "Current prices · capacity changes awaiting rollout",
     "members": "Full members",
     "metrics": [
       "Activation",
@@ -11473,6 +11466,8 @@
     "play": "Autoplay",
     "plus": "Plus",
     "previous": "Previous slide",
+    "pricesLoading": "Loading current prices…",
+    "pricesUnavailable": "Current prices are unavailable. Please try again shortly.",
     "principles": [
       "Clear permissions",
       "Visible usage",
@@ -11516,7 +11511,7 @@
         "title": "Grow through value.\nMeasure the economics."
       },
       "calculator": {
-        "body": "Explore the proposed subscription cost for your team. No add-ons or taxes are included in this illustration.",
+        "body": "Explore team subscription costs at current catalog prices. This illustration excludes add-ons and taxes.",
         "kicker": "Interactive model",
         "note": "Move the team size slider. Annual totals are actual annual charges; monthly equivalents are explanatory. This is a proposal calculator, not a checkout quote.",
         "title": "Make the cost\nconcrete."
@@ -11541,7 +11536,7 @@
       },
       "pricing": {
         "body": "One workspace subscription across the suite. Pay for capacity and advanced workflows as your needs grow.",
-        "kicker": "Pricing proposal",
+        "kicker": "Plans and allowances",
         "note": "These prices require review: Plus $9 monthly or $90 annually; Pro $19 monthly or $190 annually per full member. Existing subscriptions are unchanged.",
         "title": "Simple plans.\nRoom to grow."
       },

@@ -36,6 +36,7 @@ describe('public pricing endpoint', () => {
     const response = await GET();
     const body = await response.json();
     expect(response.status).toBe(200);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
     expect(Object.keys(body).sort()).toEqual(['currency', 'prices']);
     expect(mocks.read).toHaveBeenCalledWith('id', Object.values(ids));
     expect(response.headers.get('Cache-Control')).toContain('s-maxage=30');
@@ -48,6 +49,7 @@ describe('public pricing endpoint', () => {
     });
     const response = await GET();
     expect(response.status).toBe(503);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
     expect(response.headers.get('Cache-Control')).toBe('no-store');
     expect(await response.text()).not.toContain('private database details');
   });

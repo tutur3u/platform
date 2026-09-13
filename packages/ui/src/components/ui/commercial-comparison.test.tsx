@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { COMPARISON_FEATURES } from '@tuturuuu/utils/commercial-comparison';
 import { describe, expect, it } from 'vitest';
 import en from '../../../../../apps/web/messages/en.json';
 import vi from '../../../../../apps/web/messages/vi.json';
@@ -10,7 +11,11 @@ describe('commercial comparison', () => {
     fireEvent.change(screen.getByLabelText('App'), {
       target: { value: 'drive' },
     });
-    expect(screen.getByText('4 matching features')).toBeTruthy();
+    expect(
+      screen.getByText(
+        `${COMPARISON_FEATURES.filter((row) => row.app === 'drive' && row.category !== 'internal').length} matching features`
+      )
+    ).toBeTruthy();
     fireEvent.change(
       screen.getByPlaceholderText(en.commercialComparison.search),
       { target: { value: 'no-matching-feature' } }
@@ -19,7 +24,19 @@ describe('commercial comparison', () => {
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Reset filters' })[0]!
     );
-    expect(screen.getByText('114 matching features')).toBeTruthy();
+    expect(
+      screen.getByText(
+        `${COMPARISON_FEATURES.filter((row) => row.category !== 'internal').length} matching features`
+      )
+    ).toBeTruthy();
+  });
+  it('searches displayed capacity values', () => {
+    render(<CommercialComparison copy={en.commercialComparison} />);
+    fireEvent.change(
+      screen.getByPlaceholderText(en.commercialComparison.search),
+      { target: { value: '20 GiB' } }
+    );
+    expect(screen.queryByText(en.commercialComparison.empty)).toBeNull();
   });
   it('compares only selected tiers and keeps at least one visible', () => {
     render(<CommercialComparison copy={en.commercialComparison} />);

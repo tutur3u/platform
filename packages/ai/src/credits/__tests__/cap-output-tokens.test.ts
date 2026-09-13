@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { computeAffordableTokens } from '../cap-output-tokens';
 
 describe('computeAffordableTokens', () => {
+  it('rejects arithmetic overflow from finite inputs', () => {
+    expect(computeAffordableTokens(Number.MAX_VALUE, Number.MIN_VALUE)).toBe(0);
+  });
   // 1 credit = $0.0001 USD
   // tokens = (credits * 0.0001 / markup) / pricePerToken
 

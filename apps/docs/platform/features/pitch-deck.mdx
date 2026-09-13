@@ -1,10 +1,11 @@
 ---
 title: Living pitch deck
 description: Maintain the public product presentation and its proposed commercial model.
+updated: "2026-09-13"
 ---
 
 The localized `/pitch` page is a twelve-slide product and business presentation.
-It is intentionally excluded from search indexing while its pricing is proposed.
+It is intentionally excluded from search indexing while its commercial rollout remains under review.
 It does not change billing or grant product access.
 
 ## Present
@@ -26,13 +27,13 @@ information in them.
 
 Edit narrative and presenter notes under `pitch` in `apps/web/messages/en.json`
 and `vi.json`, then run `bun i18n:sort`. Structured arrays are read from server-side `getMessages`;
-keep both locale shapes aligned with `PitchCopy`. Slide identifiers live in `apps/web/src/components/pitch/pitch-model.ts`; proposed
-prices are imported from `packages/payment-core/src/subscription-constants.ts`. Keep stable slide IDs when
+keep both locale shapes aligned with `PitchCopy`. Slide identifiers live in `apps/web/src/components/pitch/pitch-model.ts`; the pricing slide and calculator read the same public catalog API as the pricing page.
+They refresh every five minutes and show an unavailable state instead of a fallback price. Keep stable slide IDs when
 reordering so shared links continue to work. Add specialized visualizations in
 `pitch-visual.tsx`, with ordinary text labels and reduced-motion support.
 
-All financial illustrations must say they are proposed, state USD and billing
-interval, and distinguish annual charges from monthly equivalents. Do not add
+Financial illustrations must state USD and billing interval, identify proposed
+allowances separately from current catalog prices, and distinguish annual charges from monthly equivalents. Do not add
 traction figures, customer logos, savings claims, certifications, launch dates or
 contractual benefits without evidence and approval. Current pricing proposals
 require commercial review and do not override the live pricing or Polar catalog.
@@ -42,5 +43,5 @@ require commercial review and do not override the live pricing or Polar catalog.
 Run the focused pitch model tests, `bun check`, and the real web build through
 `ttr resources run`. Inspect desktop/mobile layouts, both locales, keyboard and
 focus behavior, deep links, reduced motion, notes, autoplay, fullscreen, confetti
-and print preview. Keep the TanStack route manifest entry accurate when the
-route or ownership changes.
+and print preview. Keep `apps/tanstack-web/migration/route-manifest.json` accurate when route ownership
+changes, and retain `/pitch` in `apps/web/src/constants/public_paths.ts`.

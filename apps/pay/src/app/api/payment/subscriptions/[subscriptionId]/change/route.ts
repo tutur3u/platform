@@ -131,13 +131,21 @@ export async function POST(
   const { data: currentProduct, error: currentError } = await supabase
     .schema('private')
     .from('workspace_subscription_products')
-    .select('pricing_model')
+    .select('pricing_model,tier')
     .eq('id', subscription.product_id)
     .maybeSingle();
   if (currentError || !currentProduct)
     return NextResponse.json(
       { error: 'Current pricing model unavailable' },
       { status: 503 }
+    );
+  if (currentProduct.tier !== 'FREE' && targetProduct.tier === 'FREE')
+    return NextResponse.json(
+      {
+        error:
+          'Cancel at period end to move to Free without forfeiting paid access',
+      },
+      { status: 400 }
     );
   if (currentProduct.pricing_model !== targetProduct.pricing_model) {
     return NextResponse.json(

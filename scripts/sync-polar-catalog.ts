@@ -13,6 +13,7 @@ import {
   type CatalogMapping,
   planCatalogSync,
 } from '../packages/payment-core/src/catalog-sync';
+import canonicalProductIds from '../packages/payment-core/src/polar-workspace-product-ids.json';
 
 function option(name: string) {
   const index = process.argv.indexOf(name);
@@ -45,6 +46,13 @@ async function main() {
   const environment = option('--environment');
   if (environment !== 'sandbox' && environment !== 'production')
     throw new Error('Explicit --environment sandbox or production is required');
+  if (
+    environment === 'production' &&
+    CATALOG_KEYS.some((key) => mapping[key] !== canonicalProductIds[key])
+  )
+    throw new Error(
+      'Production mapping must match the reviewed public product bindings'
+    );
   const polar = createPolarClient({ environment });
   const products = [];
   for (const key of CATALOG_KEYS)
@@ -86,7 +94,7 @@ async function main() {
   );
   preflightUrl.searchParams.set(
     'select',
-    'id,price_per_seat,pricing_model,recurring_interval,tier,archived'
+    'id,price_per_seat,pricing_model,recurring_interval,tier,archived,min_seats,max_seats'
   );
   const preflightResponse = await fetch(preflightUrl, {
     headers: {
@@ -162,7 +170,7 @@ async function main() {
       url.searchParams.set('id', `eq.${change.productId}`);
       url.searchParams.set(
         'select',
-        'id,price_per_seat,pricing_model,recurring_interval,tier,archived'
+        'id,price_per_seat,pricing_model,recurring_interval,tier,archived,min_seats,max_seats'
       );
       const response = await fetch(url, {
         headers: {
@@ -184,7 +192,9 @@ async function main() {
         row.pricing_model === 'seat_based' &&
         row.recurring_interval === change.interval &&
         row.tier === change.key.split('-')[0]?.toUpperCase() &&
-        row.archived === false
+        row.archived === false &&
+        row.min_seats === 1 &&
+        row.max_seats === null
       ) {
         verified = true;
         break;

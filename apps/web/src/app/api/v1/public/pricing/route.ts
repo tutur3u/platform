@@ -18,12 +18,21 @@ export async function GET() {
       .in('id', PUBLIC_WORKSPACE_PRODUCT_IDS);
     if (error || !data) throw new Error('Catalog read unavailable');
     return NextResponse.json(publicWorkspacePrices(data), {
-      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30' },
+      headers: {
+        'Cache-Control': 'public, max-age=0, s-maxage=30',
+        'Access-Control-Allow-Origin': '*',
+      },
     });
   } catch {
     return NextResponse.json(
       { error: 'Pricing is temporarily unavailable' },
-      { status: 503, headers: { 'Cache-Control': 'no-store' } }
+      {
+        status: 503,
+        headers: {
+          'Cache-Control': 'no-store',
+          'Access-Control-Allow-Origin': '*',
+        },
+      }
     );
   }
 }

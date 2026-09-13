@@ -137,6 +137,9 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
   const id = SLIDE_IDS[index] ?? 'opening';
   return (
     <div className={styles.deck} ref={root}>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {copy.slide} {index + 1} / {SLIDE_IDS.length}: {copy.slides[id].title}
+      </span>
       <header className={styles.header}>
         <a href={`/${locale}`} className={styles.brand}>
           tuturuuu
@@ -229,7 +232,11 @@ export function PitchDeck({ copy }: { copy: PitchCopy }) {
                 </h1>
                 <p className={styles.body}>{slide.body}</p>
                 {['pricing', 'calculator', 'ai'].includes(slideId) && (
-                  <span className={styles.badge}>{copy.proposal}</span>
+                  <span className={styles.badge}>
+                    {id === 'pricing' || id === 'calculator'
+                      ? copy.livePricingProposal
+                      : copy.proposal}
+                  </span>
                 )}
                 {['platform', 'workflow', 'roadmap', 'business'].includes(
                   slideId
