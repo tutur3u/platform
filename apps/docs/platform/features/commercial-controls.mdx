@@ -24,19 +24,24 @@ the authorized Tuturuuu dashboard and reconciled against the private catalog.
 The organization ID is `f31a1452-88f6-4979-a03f-3d00424a3100`.
 Legacy fixed-price products share the same display names. Existing subscriptions
 retain their pricing; new paid self-service purchases use seat products for both
-personal and team workspaces. Changing billing models requires checkout, where
-the customer can review seats and price. Never silently migrate subscribers.
+personal and team workspaces. Free-to-paid changes use checkout; paid-model
+changes require an assisted migration. Never silently migrate subscribers.
 
 The TanStack browser pricing query uses `VITE_PUBLIC_WEB_API_ORIGIN` at build time,
 falling back to `https://tuturuuu.com`. Only use a public API origin for this value;
 server-only internal origins and credentials must not be exposed to Vite clients.
 
-Plan changes open Polar checkout for the final quantity, discount, tax and payable
-amount. Seat calculation preserves purchased capacity, covers current members and
-pending workspace/email invitations, and honors target minimum/maximum bounds.
-An invitation alone does not increase the purchased quantity; a plan-transition
-checkout explicitly quotes any additional reserved capacity for confirmation. Direct plan mutation rejects changes that
-would alter the purchased seat count; those require checkout confirmation.
+Free-to-paid upgrades open Polar checkout; its minimum quantity covers purchased
+capacity, members, pending workspace/email invitations, and target bounds. Polar
+only supports Free subscriptions in checkout. Paid plan changes and explicit
+seat adjustments use the subscription update API after in-app confirmation.
+List-price estimates exclude existing discounts, tax and the final prorated
+invoice. Seat-only updates do not replace the product, price or discount.
+Paid plan changes preserve the current quantity: adjust seats first when a target
+minimum or reserved invitations need additional capacity. Paid billing-model
+changes require assisted migration. Missing counts or bounds block updates.
+An invitation alone does not increase the purchased quantity. All quantity
+reductions must still cover members and both pending invitation tables.
 The legacy preview endpoint returns list-price estimates, not discount- or tax-aware
 quotes. Do not use those estimates to authorize payment.
 

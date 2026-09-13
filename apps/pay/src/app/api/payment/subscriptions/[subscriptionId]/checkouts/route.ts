@@ -136,7 +136,7 @@ export async function POST(
   const { data: currentProduct, error: currentError } = await supabase
     .schema('private')
     .from('workspace_subscription_products')
-    .select('tier, pricing_model')
+    .select('tier, pricing_model, price')
     .eq('id', subscription.product_id)
     .maybeSingle();
   if (currentError || !currentProduct)
@@ -150,6 +150,17 @@ export async function POST(
   );
   if (transitionError)
     return NextResponse.json({ error: transitionError }, { status: 400 });
+  // Polar only accepts an existing Free subscription in checkout. Paid
+  // subscriptions use guarded updates, preserving their billing relationship.
+  if (currentProduct.tier !== 'FREE')
+    return NextResponse.json(
+      {
+        error:
+          'Paid subscriptions require a confirmed plan update, not checkout',
+      },
+      { status: 409 }
+    );
+
   let seats: number | undefined;
   if (targetProduct.pricing_model === 'seat_based') {
     const capacity = await getSubscriptionTransitionSeats(
@@ -176,6 +187,9 @@ export async function POST(
       products: [productId],
       requireBillingAddress: true,
       seats,
+      minSeats: seats,
+      maxSeats:
+        seats === undefined ? undefined : (targetProduct.max_seats ?? 1000),
       embedOrigin: BASE_URL,
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
     });

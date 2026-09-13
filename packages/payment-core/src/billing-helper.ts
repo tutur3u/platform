@@ -204,7 +204,7 @@ export async function fetchSubscription(
   const { data: product, error: productError } = await privateSchema(supabase)
     .from('workspace_subscription_products')
     .select(
-      'id, name, description, price, recurring_interval, tier, pricing_model, price_per_seat, max_seats'
+      'id, name, description, price, recurring_interval, tier, pricing_model, price_per_seat, min_seats, max_seats'
     )
     .eq('id', dbSub.product_id)
     .maybeSingle();

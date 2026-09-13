@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Loader2, Minus, Plus, Users } from '@tuturuuu/icons';
 import { updatePaySubscriptionSeats } from '@tuturuuu/internal-api';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
+import { validCheckoutSeats } from '@tuturuuu/payment-core/self-serve-products';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -25,6 +26,8 @@ interface AdjustSeatsDialogProps {
   wsId: string;
   currentSeats: number;
   currentMembers: number;
+  requiredSeats: number | null;
+  minPlanSeats: number | null;
   maxSeats?: number | null;
   pricePerSeat: number;
   billingCycle: string | null;
@@ -36,6 +39,8 @@ export default function AdjustSeatsDialog({
   wsId,
   currentSeats,
   currentMembers,
+  requiredSeats,
+  minPlanSeats,
   maxSeats,
   pricePerSeat,
   billingCycle,
@@ -50,9 +55,19 @@ export default function AdjustSeatsDialog({
   const currentCost = pricePerSeat * currentSeats;
   const costDifference = totalCost - currentCost;
 
-  // Minimum is at least current members, maximum is maxSeats or unlimited
-  const minSeats = Math.max(1, currentMembers);
-  const effectiveMaxSeats = maxSeats ?? Infinity;
+  // Unknown reservation counts or plan bounds cannot authorize a quantity change.
+  const capacityVerified =
+    validCheckoutSeats(requiredSeats) &&
+    validCheckoutSeats(minPlanSeats) &&
+    validCheckoutSeats(currentSeats) &&
+    (maxSeats == null ||
+      (validCheckoutSeats(maxSeats) && maxSeats >= minPlanSeats));
+  const minSeats = Math.max(
+    1,
+    requiredSeats ?? currentSeats,
+    minPlanSeats ?? currentSeats
+  );
+  const effectiveMaxSeats = Math.min(1000, maxSeats ?? 1000);
 
   const mutation = useMutation({
     mutationFn: async ({
@@ -66,21 +81,13 @@ export default function AdjustSeatsDialog({
     },
     onError: (error, _variables, _context) => {
       console.error('Error updating seats:', error);
-      toast.error('Failed to update seats', {
+      toast.error(t('seat-update-failed'), {
         description:
-          error instanceof Error ? error.message : 'An error occurred',
+          error instanceof Error ? error.message : t('seat-update-failed'),
       });
     },
     onSuccess: (data) => {
-      const action =
-        seatDifference > 0
-          ? 'increased'
-          : seatDifference < 0
-            ? 'decreased'
-            : 'unchanged';
-      toast.success('Seats updated successfully', {
-        description: `Seat count ${action} to ${data.newSeats} seats.`,
-      });
+      toast.success(t('seat-update-success', { count: data.newSeats }));
 
       onOpenChange(false);
       router.refresh();
@@ -88,6 +95,7 @@ export default function AdjustSeatsDialog({
   });
 
   const handleUpdateSeats = async (): Promise<void> => {
+    if (!capacityVerified) return;
     if (newSeatCount < minSeats || newSeatCount > effectiveMaxSeats) return;
     if (newSeatCount === currentSeats) {
       onOpenChange(false);
@@ -135,7 +143,7 @@ export default function AdjustSeatsDialog({
             </div>
             <div className="mt-2 flex justify-between text-sm">
               <span className="text-muted-foreground">
-                {t('price-per-seat')}
+                {t('catalog-rate-label')}
               </span>
               <span className="font-medium">
                 ${centToDollar(pricePerSeat)}
@@ -214,7 +222,7 @@ export default function AdjustSeatsDialog({
             </div>
             <div className="border-t pt-3">
               <div className="flex justify-between">
-                <span className="font-medium">{t('new-cost')}</span>
+                <span className="font-medium">{t('estimated-list-total')}</span>
                 <span className="font-bold text-lg">
                   ${centToDollar(totalCost)}
                   {billingCycle === 'month'
@@ -238,7 +246,10 @@ export default function AdjustSeatsDialog({
                 </div>
               )}
               <p className="mt-1 text-muted-foreground text-xs">
-                {t('prorated-billing-note')}
+                {t('confirmed-seat-charge-note')}
+                {!capacityVerified && (
+                  <span className="block">{t('plan-unavailable')}</span>
+                )}
               </p>
             </div>
           </div>
@@ -255,6 +266,7 @@ export default function AdjustSeatsDialog({
           <Button
             onClick={handleUpdateSeats}
             disabled={
+              !capacityVerified ||
               mutation.isPending ||
               newSeatCount === currentSeats ||
               newSeatCount < minSeats ||
@@ -264,7 +276,7 @@ export default function AdjustSeatsDialog({
             {mutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            {t('update-seats')}
+            {t('confirm-seat-change')}
           </Button>
         </DialogFooter>
       </DialogContent>

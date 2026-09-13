@@ -115,12 +115,13 @@ export function getPaySubscriptionChangePreview<T>(
 export function changePaySubscriptionPlan(
   subscriptionId: string,
   productId: string,
+  confirmation: { expectedSeats: number; expectedPricePerSeat: number },
   options?: InternalApiClientOptions
 ) {
   return getPayClient(options).json<{ success?: boolean }>(
     `/api/payment/subscriptions/${encodePathSegment(subscriptionId)}/change`,
     {
-      body: JSON.stringify({ productId }),
+      body: JSON.stringify({ productId, ...confirmation }),
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
