@@ -48,7 +48,8 @@ export async function GET(
       authorized.attachment.filename
     );
     const inline =
-      preview &&
+      preview !== null &&
+      preview.kind !== 'pdf' &&
       (request.nextUrl.searchParams.get('preview') === '1' ||
         authorized.attachment.disposition === 'inline');
     const headers = new Headers({

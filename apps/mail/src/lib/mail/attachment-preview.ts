@@ -1,4 +1,4 @@
-/** Only passive formats may be embedded on the authenticated Mail origin. */
+/** Only directly embeddable passive formats and safely rendered PDFs. */
 export function mailAttachmentPreviewType(
   contentType: string,
   filename: string

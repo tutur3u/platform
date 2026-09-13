@@ -80,7 +80,7 @@ describe('attachment preview route', () => {
       (await GET(request(true), { params })).headers.get('content-disposition')
     ).toMatch(/^attachment;/);
   });
-  it('serves PDFs inline only for explicit previews', async () => {
+  it('keeps safely rendered PDFs downloadable at the attachment endpoint', async () => {
     mocks.authorized.mockResolvedValue({
       attachment: {
         filename: 'ĐƠN HÀNG CÔNG TY.pdf',
@@ -100,7 +100,7 @@ describe('attachment preview route', () => {
       'attachment; filename="__N H_NG C_NG TY.pdf"; filename*=UTF-8\'\'%C4%90%C6%A0N%20H%C3%80NG%20C%C3%94NG%20TY.pdf'
     );
     const response = await GET(request(true), { params });
-    expect(response.headers.get('content-disposition')).toMatch(/^inline;/);
+    expect(response.headers.get('content-disposition')).toMatch(/^attachment;/);
     expect(response.headers.get('content-type')).toBe('application/pdf');
   });
   it('retains video seeking ranges and partial response headers', async () => {
