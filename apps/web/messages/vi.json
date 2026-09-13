@@ -4381,6 +4381,234 @@
     "view_task": "Xem Nhiệm Vụ",
     "workspaces": "Không Gian Làm Việc"
   },
+  "commercialComparison": {
+    "allApps": "Tất cả ứng dụng",
+    "allCategories": "Tất cả nhóm",
+    "app": "Ứng dụng",
+    "apps": {
+      "ai": "AI",
+      "apps": "Ứng dụng",
+      "backend": "backend",
+      "calendar": "Lịch",
+      "capacity": "Hạn mức dùng chung",
+      "chat": "Trò chuyện",
+      "chat-realtime": "chat-realtime",
+      "cms": "CMS",
+      "colab": "Colab",
+      "contacts": "Danh bạ",
+      "database": "database",
+      "discord": "Discord",
+      "docs": "Tài liệu",
+      "drive": "Lưu trữ",
+      "external": "Tích hợp ngoài",
+      "finance": "Tài chính",
+      "forms": "Biểu mẫu",
+      "git": "Git",
+      "hive": "Hive",
+      "hive-realtime": "hive-realtime",
+      "infrastructure": "infrastructure",
+      "inventory": "Kho hàng",
+      "learn": "Học tập",
+      "mail": "Thư",
+      "meet": "Họp",
+      "meet-realtime": "meet-realtime",
+      "mind": "Mind",
+      "mobile": "Di động",
+      "nova": "Nova",
+      "pay": "Thanh toán",
+      "platform": "Không gian làm việc",
+      "playground": "Thử nghiệm",
+      "redis": "redis",
+      "rewise": "Rewise",
+      "shortener": "Rút gọn liên kết",
+      "storage-unzip-proxy": "storage-unzip-proxy",
+      "storefront": "Cửa hàng",
+      "supermemory": "supermemory",
+      "tanstack-web": "tanstack-web",
+      "tasks": "Công việc",
+      "teach": "Giảng dạy",
+      "tools": "Công cụ",
+      "track": "Theo dõi thời gian"
+    },
+    "categories": {
+      "ai": "AI và tri thức",
+      "capacity": "Hạn mức chung",
+      "developer": "Phát triển và tiện ích",
+      "internal": "Dịch vụ nền tảng",
+      "learning": "Học tập và cộng đồng",
+      "operations": "Vận hành doanh nghiệp",
+      "work": "Công việc và cộng tác"
+    },
+    "category": "Nhóm",
+    "contract": "Theo hợp đồng",
+    "description": "Một thuê bao cho không gian làm việc. Tìm tính năng, so sánh gói và xem rõ hạn mức cùng điều kiện sử dụng.",
+    "details": "Hiện giải thích",
+    "differences": "Chỉ điểm khác biệt",
+    "empty": "Không có tính năng phù hợp. Hãy thử từ khóa khác hoặc đặt lại bộ lọc.",
+    "excluded": "Không bao gồm",
+    "explanations": {
+      "account": "Giới hạn an toàn tạo không gian theo tài khoản, áp dụng mọi gói. Mua gói khác không tăng giới hạn này.",
+      "ai": "AI sử dụng số dư tín dụng hữu hạn. Chi phí mô hình và công cụ thay đổi; không cam kết số tin nhắn. Gói tín dụng bổ sung được mua riêng.",
+      "aiAllowance": "Free: mỗi người mỗi tháng, dùng chung mọi không gian Free. Gói trả phí: mỗi chỗ mỗi tháng, dùng chung trong không gian đó. Tín dụng kèm gói không chuyển kỳ. Gói mua thêm có hạn dùng riêng hiển thị trước thanh toán.",
+      "attachment": "Tối đa 50 MiB mỗi tệp, trong dung lượng chung của không gian.",
+      "board": "Số người đồng thời trên mỗi bảng. Tăng hạn mức Enterprise cần thỏa thuận rõ ràng đã kiểm thử tải.",
+      "guests": "Tính theo không gian. Khách phải có quyền truy cập ngoài giới hạn; liên hệ, học viên và người trả lời biểu mẫu không tự động thành thành viên tính phí.",
+      "meetSafety": "Bản thử nghiệm giới hạn người chủ trì. Thời lượng tính từ lần vào phòng đầu tiên; kết nối lại không đặt lại. Chính sách phòng có chữ ký có thể giảm sức chứa. Đây là trần an toàn, không phải hạn mức phương tiện hằng tháng hay cam kết truy cập công khai.",
+      "members": "Free: tính theo không gian. Gói trả phí: mỗi thành viên chính thức, kể cả chủ sở hữu, cần một chỗ ở từng không gian.",
+      "monthlyAllowance": "Free: theo không gian mỗi tháng. Gói trả phí: theo chỗ mỗi tháng, dùng chung trong không gian. Không tự động tính phí vượt hạn mức.",
+      "standard": "Cần vai trò phù hợp trong không gian và ứng dụng khả dụng. Mọi gói đều chịu giới hạn bảo mật và chống lạm dụng.",
+      "storage": "Tệp dùng chung dung lượng của không gian. Giới hạn kích thước tải lên, quyền và xử lý vẫn áp dụng khi nâng gói.",
+      "storageAllowance": "Free: theo không gian. Plus/Pro: theo chỗ trả phí, dùng chung trong không gian thuê bao. 1 GiB = 1.073.741.824 byte.",
+      "support": "Ưu tiên hỗ trợ không bảo đảm thời gian phản hồi. SLA, tích hợp và phạm vi triển khai riêng cần thỏa thuận rõ ràng; tính năng thử nghiệm không phải cam kết khi mua."
+    },
+    "feature": "Tính năng và phạm vi",
+    "features": {
+      "ai_0": "Trò chuyện AI và truy cập mô hình",
+      "ai_1": "Câu lệnh, tác tử và bộ dữ liệu",
+      "ai_2": "Thử nghiệm và lượt chạy",
+      "ai_3": "Chính sách mô hình và quản trị",
+      "ai_4": "Mức sử dụng, tín dụng và giám sát",
+      "ai_5": "Khóa API và tích hợp",
+      "aiCredits": "Tín dụng AI hằng tháng",
+      "aiLab": "Phòng thí nghiệm AI",
+      "apps_0": "Khám phá và chuyển ứng dụng",
+      "attachments": "Tệp đính kèm mỗi giao dịch",
+      "automation": "Lượt tự động hóa hằng tháng",
+      "backend_0": "Dịch vụ nền tảng và vận hành",
+      "board": "Người tham gia bảng đồng thời",
+      "calendar_0": "Sự kiện và lịch trình",
+      "calendar_1": "Kết nối và đồng bộ lịch",
+      "calendar_2": "Lên lịch công việc",
+      "chat_0": "Cuộc hội thoại và tin nhắn",
+      "chat_1": "Nhận tin theo thời gian thực",
+      "chat_2": "Tệp đính kèm tin nhắn",
+      "chat-realtime_0": "Dịch vụ nền tảng và vận hành",
+      "cms_0": "Trang web và trang nội dung",
+      "cms_1": "Bộ sưu tập nội dung và phân loại",
+      "cms_2": "Thư viện phương tiện",
+      "cms_3": "Sản phẩm và cửa hàng",
+      "cms_4": "Biên tập viên và người dùng",
+      "cms_5": "Xem trước và trò chuyện kết nối",
+      "cms_6": "Trò chơi và cấu hình dự án ngoài",
+      "colab_0": "Hội thảo và đội nhóm",
+      "colab_1": "Ứng dụng thực hành và sản phẩm chung",
+      "colab_2": "Kỹ năng tác tử và hướng dẫn",
+      "colab_3": "AI và hình ảnh được tài trợ",
+      "contacts_0": "Cơ sở dữ liệu liên hệ và khách tiềm năng",
+      "contacts_1": "Nhóm, nhãn và lịch nhóm",
+      "contacts_2": "Điểm danh và buổi học",
+      "contacts_3": "Chỉ số, phản hồi và báo cáo",
+      "contacts_4": "Dạy kèm và phê duyệt",
+      "contacts_5": "Thông báo và theo dõi gửi",
+      "contacts_6": "Mẫu và nhập liên hệ",
+      "customIntegrations": "Tích hợp tùy chỉnh",
+      "database_0": "Dịch vụ nền tảng và vận hành",
+      "dedicatedSupport": "Hỗ trợ chuyên trách",
+      "discord_0": "Bot và tích hợp cộng đồng",
+      "docs_0": "Tài liệu sản phẩm và nhà phát triển",
+      "drive_0": "Tệp, thư mục và tìm kiếm",
+      "drive_1": "Tải lên và tải xuống",
+      "drive_2": "Chia sẻ và quyền truy cập",
+      "drive_3": "Báo cáo dung lượng",
+      "duration": "Thời lượng phòng họp",
+      "external_0": "Tích hợp dự án ngoài",
+      "external_1": "Truy cập API theo phạm vi",
+      "finance_0": "Ví và giao dịch",
+      "finance_1": "Hóa đơn",
+      "finance_2": "Danh mục và nhãn",
+      "finance_3": "Giao dịch định kỳ",
+      "finance_4": "Ngân sách và phân tích",
+      "finance_5": "Công nợ và đối soát",
+      "finance_6": "Tệp đính kèm và xuất dữ liệu",
+      "forms_0": "Trình tạo biểu mẫu và câu hỏi",
+      "forms_1": "Xuất bản và quyền trả lời",
+      "forms_2": "Câu trả lời và kết quả",
+      "forms_3": "Chỉnh sửa cộng tác",
+      "git_0": "Duyệt kho mã",
+      "git_1": "Kết nối GitHub App",
+      "git_2": "Tích hợp tổ chức",
+      "guests": "Khách có quyền hạn giới hạn",
+      "hive_0": "Không gian AI cộng tác",
+      "hive_1": "Phiên cộng tác thời gian thực",
+      "hive-realtime_0": "Dịch vụ nền tảng và vận hành",
+      "infrastructure_0": "Dịch vụ nền tảng và vận hành",
+      "inventory_0": "Sản phẩm và hồ sơ kho",
+      "inventory_1": "Nghiệp vụ kho",
+      "learn_0": "Trải nghiệm người học và khóa học",
+      "mail_0": "Hộp thư và truy cập thư",
+      "mail_1": "Gửi thư và chuyển phát",
+      "mail_2": "Cấu hình tên miền và nhà cung cấp",
+      "meet_0": "Kế hoạch và lịch họp",
+      "meet_1": "Cuộc gọi âm thanh và hình ảnh",
+      "meet_2": "Chia sẻ màn hình và phòng chờ",
+      "meet_3": "Trợ lý AI trong cuộc họp",
+      "meet_4": "Ghi nhận thời gian người tham gia",
+      "meet-realtime_0": "Dịch vụ nền tảng và vận hành",
+      "members": "Thành viên chính thức",
+      "mind_0": "Không gian tri thức và bộ nhớ",
+      "mira": "Trợ lý Mira",
+      "mobile_0": "Truy cập không gian trên di động",
+      "mobile_1": "Công việc và trợ lý trên di động",
+      "nova_0": "Cuộc thi và chương trình cộng đồng",
+      "pay_0": "Thanh toán và cổng quản lý thuê bao",
+      "pay_1": "Quản lý chỗ và thuê bao",
+      "pay_2": "Gói tín dụng AI và hóa đơn",
+      "platform_0": "Tổng quan",
+      "platform_1": "Thành viên và lời mời",
+      "platform_2": "Vai trò và quyền",
+      "platform_3": "Thông báo",
+      "platform_4": "Tài liệu và ghi chú",
+      "platform_5": "Bảng trắng và con trỏ trực tiếp",
+      "playground_0": "Bản mẫu và thử nghiệm",
+      "prioritySupport": "Hỗ trợ ưu tiên",
+      "publishers": "Người phát / người xem cuộc họp",
+      "redis_0": "Dịch vụ nền tảng và vận hành",
+      "responses": "Câu trả lời biểu mẫu hằng tháng",
+      "rewise_0": "Trang học tập và công cụ",
+      "selfHosting": "Tự lưu trữ và triển khai riêng",
+      "shortener_0": "Liên kết rút gọn",
+      "sla": "Thỏa thuận mức dịch vụ",
+      "storage": "Dung lượng dùng chung",
+      "storage-unzip-proxy_0": "Dịch vụ nền tảng và vận hành",
+      "storefront_0": "Cửa hàng dành cho người mua",
+      "supermemory_0": "Dịch vụ nền tảng và vận hành",
+      "tanstack-web_0": "Dịch vụ nền tảng và vận hành",
+      "tasks_0": "Bảng và danh sách",
+      "tasks_1": "Người phụ trách, ngày và độ ưu tiên",
+      "tasks_2": "Nhãn và công việc con",
+      "tasks_3": "Tiến độ và mục tiêu",
+      "tasks_4": "Thống kê và bảng xếp hạng",
+      "teach_0": "Giảng dạy và quản lý học tập",
+      "tools_0": "Tiện ích và tạo mã QR",
+      "track_0": "Bộ đếm thời gian",
+      "track_1": "Lịch sử và báo cáo",
+      "track_2": "Yêu cầu thời gian và xét duyệt",
+      "track_3": "Quản lý thời gian nhóm",
+      "voiceAssistant": "Trợ lý giọng nói",
+      "workforce": "Quản trị nhân sự",
+      "workspaces": "Không gian tạo trên mỗi tài khoản"
+    },
+    "included": "Bao gồm",
+    "internal": "Hiện dịch vụ nền tảng",
+    "internalValue": "Dịch vụ nền tảng",
+    "notice": "Các hạn mức mới đã được duyệt và đang chờ triển khai. Trang thanh toán và mức sử dụng của không gian xác định thuê bao hiện tại. Mua gói không bảo đảm quyền dùng bản thử nghiệm.",
+    "pending": "Đã duyệt · chờ triển khai",
+    "preview": "Thử nghiệm giới hạn",
+    "pricesLoading": "Đang tải giá hiện tại…",
+    "pricesUnavailable": "Giá tạm thời chưa khả dụng. Vui lòng xác nhận giá hiện tại khi thanh toán.",
+    "reset": "Đặt lại bộ lọc",
+    "results": "tính năng phù hợp",
+    "search": "Tìm tính năng, ứng dụng hoặc hạn mức",
+    "seats": "Số chỗ đã mua",
+    "tierNames": {
+      "enterprise": "Enterprise",
+      "free": "Free",
+      "plus": "Plus",
+      "pro": "Pro"
+    },
+    "tiers": "Các gói cần so sánh",
+    "title": "Khám phá từng sản phẩm và gói"
+  },
   "common": {
     "0_usd_per_month": "không có phí hàng tháng",
     "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
@@ -8919,7 +9147,7 @@
       "eyebrow": "Bảng giá",
       "faq": {
         "q1": {
-          "answer": "Có! Gói Miễn Phí hoàn toàn miễn phí mãi mãi với các tính năng cơ bản. Nâng cấp bất cứ lúc nào để có thêm khả năng.",
+          "answer": "Gói Miễn phí không có phí thuê bao. Các giới hạn sử dụng và tính khả dụng của sản phẩm vẫn áp dụng.",
           "question": "Có thật sự có gói miễn phí không?"
         },
         "q2": {
@@ -8927,7 +9155,7 @@
           "question": "Tôi có tiết kiệm với thanh toán hàng năm không?"
         },
         "q3": {
-          "answer": "Mỗi workspace có gói riêng. Gói trả phí tính theo người dùng trong workspace đó. Bạn có thể dùng gói khác nhau cho các workspace khác nhau. Mỗi tài khoản được tối đa 10 workspace miễn phí—workspace thêm cần gói trả phí.",
+          "answer": "Mỗi không gian làm việc có gói riêng; gói trả phí tính theo thành viên. Mỗi tài khoản được tạo tối đa 10 không gian làm việc. Nâng cấp không tự động tăng giới hạn này.",
           "question": "Giá theo workspace hoạt động thế nào?"
         },
         "q4": {
@@ -8946,7 +9174,7 @@
         },
         "featuresLabel": "Tính Năng",
         "featuresList": {
-          "advancedAI": "AI Không Giới Hạn",
+          "advancedAI": "Tín dụng AI dồi dào; có thể mua thêm",
           "aiChat": "Chat AI",
           "analytics": "Báo Cáo & Analytics",
           "calendar": "Đồng Bộ Lịch",
@@ -8959,7 +9187,7 @@
           "prioritySupport": "Hỗ Trợ Ưu Tiên",
           "qrGenerator": "Tạo Mã QR",
           "selfHosting": "Tự Host",
-          "sla": "Cam Kết SLA",
+          "sla": "Tùy chọn SLA theo hợp đồng",
           "tasks": "Quản Lý Công Việc",
           "timeTracker": "Chấm Công",
           "tuchat": "Tuchat (Nhắn Tin)",
@@ -8972,7 +9200,7 @@
           "advanced": "nâng cao",
           "limited": "giới hạn",
           "soon": "Sắp có",
-          "unlimited": "không giới hạn"
+          "unlimited": "Theo giới hạn gói"
         }
       },
       "payAsYouGo": {
@@ -8985,16 +9213,18 @@
         ],
         "title": "Trả theo nhu cầu sử dụng"
       },
-      "subtitle": "Mỗi workspace có gói riêng, tính phí theo người dùng. Tối đa 10 workspace miễn phí mỗi tài khoản.",
+      "pricesLoading": "Đang tải giá hiện tại…",
+      "pricesUnavailable": "Giá tạm thời chưa khả dụng. Vui lòng xác nhận giá hiện tại khi thanh toán.",
+      "subtitle": "Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường có thể tạo tối đa 10 không gian làm việc; nâng cấp không tăng giới hạn này.",
       "tiers": {
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",
-          "description": "Scale không giới hạn",
+          "description": "Dành cho tổ chức lớn",
           "features": [
             "Mọi thứ của Pro +",
             "Tùy chỉnh theo nhu cầu",
             "Đội ngũ support riêng",
-            "SLA đảm bảo",
+            "SLA theo hợp đồng đã ký",
             "Tự host được"
           ],
           "name": "Doanh Nghiệp",
@@ -9004,12 +9234,12 @@
           "cta": "Dùng Ngay",
           "description": "Khởi đầu nhẹ nhàng",
           "features": [
-            "Quản lý công việc cơ bản",
-            "Đồng bộ lịch (có giới hạn)",
-            "Chat AI cơ bản",
-            "Tạo mã QR",
-            "CRM & Kho hàng (beta)",
-            "Lưu trữ Drive 100MB"
+            "Công việc, lịch và ghi chú",
+            "Bảng trắng và theo dõi thời gian",
+            "AI trong hạn mức tín dụng hữu hạn",
+            "Tài chính, danh bạ và kho cơ bản",
+            "Quyền trong không gian và xuất dữ liệu",
+            "100 MiB Drive mỗi không gian"
           ],
           "name": "Miễn Phí",
           "period": "miễn phí mãi",
@@ -9020,22 +9250,18 @@
           "cta": "Chọn Plus",
           "description": "Khi team cần phối hợp",
           "features": [
-            "Mọi thứ của Free +",
-            "Whiteboard không giới hạn",
-            "Lưu trữ Drive 20GB",
-            "Chấm công & Yêu cầu",
-            "Phân quyền chi tiết",
-            "Tuwrite & Tuchat (sắp ra mắt)",
-            "Tumeet—Video call (sắp ra mắt)"
+            "Công cụ cốt lõi trong bộ ứng dụng",
+            "Thanh toán theo chỗ cho đội nhóm",
+            "20 GiB Drive mỗi không gian",
+            "Tín dụng AI dùng chung trong không gian",
+            "Cộng tác qua Chat",
+            "Tùy chọn mua thêm tín dụng AI phù hợp",
+            "Chủ trì Meet: thử nghiệm giới hạn"
           ],
           "name": "Plus",
           "period": {
-            "monthly": "/người/tháng",
-            "yearly": "/người/năm"
-          },
-          "price": {
-            "monthly": "$8",
-            "yearly": "$80"
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
           }
         },
         "pro": {
@@ -9043,21 +9269,17 @@
           "cta": "Chọn Pro",
           "description": "Cho team cần sức mạnh tối đa",
           "features": [
-            "Mọi thứ của Plus +",
-            "AI không giới hạn",
+            "Mọi tính năng Plus",
+            "Ngân sách AI hữu hạn lớn hơn",
             "Hỗ trợ ưu tiên",
-            "Báo cáo & Analytics",
-            "Tích hợp tùy chỉnh",
-            "Lưu trữ Drive 100GB"
+            "Phòng thí nghiệm AI và Mira",
+            "Quản trị nhân sự",
+            "100 GiB Drive mỗi không gian"
           ],
           "name": "Pro",
           "period": {
-            "monthly": "/người/tháng",
-            "yearly": "/người/năm"
-          },
-          "price": {
-            "monthly": "$15",
-            "yearly": "$150"
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
           }
         }
       },
@@ -11190,6 +11412,168 @@
     "workspace_created": "Không gian làm việc đã được tạo thành công",
     "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
     "workspace_marked": "Không gian làm việc đã được đánh dấu là cá nhân thành công"
+  },
+  "pitch": {
+    "advanced": "Quy trình nâng cao",
+    "annual": "Thanh toán năm",
+    "capacity": "Thêm dung lượng",
+    "celebrate": "Chúc mừng",
+    "contract": "Phạm vi thỏa thuận",
+    "core": "Công việc cơ bản",
+    "credits": "Tín dụng AI / tháng",
+    "creditValues": [
+      "1.000 / người",
+      "10.000 / thành viên trả phí",
+      "30.000 / thành viên trả phí"
+    ],
+    "custom": "Theo thỏa thuận",
+    "description": "Bản trình bày sản phẩm và kinh doanh luôn phát triển của Tuturuuu.",
+    "edition": "Bản trình bày cập nhật / Tháng 9, 2026",
+    "enterprise": "Enterprise",
+    "equivalent": "tương đương mỗi tháng",
+    "estimate": "Tạm tính minh họa · USD · chưa gồm thuế và tiện ích bổ sung",
+    "exitFullscreen": "Thoát toàn màn hình",
+    "explore": "Khám phá Tuturuuu",
+    "families": ["Tổ chức", "Cộng tác", "Vận hành", "Học và sáng tạo"],
+    "feedback": "Góp ý",
+    "free": "Miễn phí",
+    "friction": [
+      "Ngữ cảnh phân tán",
+      "Thiết lập lặp lại",
+      "Bàn giao rời rạc",
+      "Chi phí khó thấy"
+    ],
+    "fullscreen": "Toàn màn hình",
+    "fullscreenError": "Trình duyệt không hỗ trợ toàn màn hình.",
+    "help": "Phím mũi tên chuyển trang · Home / End đến đầu / cuối · Space phát hoặc dừng",
+    "livePricingProposal": "Giá hiện tại · thay đổi hạn mức chờ triển khai",
+    "members": "Thành viên chính thức",
+    "metrics": [
+      "Kích hoạt",
+      "Chuyển đổi trả phí",
+      "Thành viên duy trì",
+      "Chi phí phục vụ"
+    ],
+    "monthly": "Thanh toán tháng",
+    "next": "Trang tiếp",
+    "noClaims": "Định hướng sản phẩm, không cam kết phát hành hoặc hiệu suất.",
+    "notes": "Ghi chú thuyết trình",
+    "orbitLabels": ["Công việc", "AI", "Tệp", "Học tập"],
+    "overview": "Tất cả trang",
+    "pause": "Tạm dừng",
+    "people": ["Cá nhân", "Đội nhóm nhỏ", "Nhà giáo dục", "Nhà vận hành"],
+    "perMonth": "mỗi tháng",
+    "perYear": "mỗi năm",
+    "planDetails": [
+      "5 thành viên · 1 GiB / không gian",
+      "20 GiB + 10.000 tín dụng AI / thành viên trả phí",
+      "100 GiB + 30.000 tín dụng AI / thành viên trả phí",
+      "Thỏa thuận dung lượng và hỗ trợ rõ ràng"
+    ],
+    "play": "Tự động trình chiếu",
+    "plus": "Plus",
+    "previous": "Trang trước",
+    "pricesLoading": "Đang tải giá hiện tại…",
+    "pricesUnavailable": "Chưa thể tải giá hiện tại. Vui lòng thử lại sau.",
+    "principles": [
+      "Quyền rõ ràng",
+      "Mức dùng minh bạch",
+      "Chi phí dễ dự tính",
+      "Giữ quyền dữ liệu"
+    ],
+    "print": "In bản trình bày",
+    "pro": "Pro",
+    "products": [
+      "Tasks · Calendar · Track",
+      "Chat · Drive · Meet",
+      "Finance · Contacts · Inventory",
+      "Learn · Teach · CMS · AI"
+    ],
+    "proposal": "Đề xuất · chờ xem xét",
+    "roadmap": [
+      "Thống nhất giá và chính sách",
+      "Kiểm chứng mọi giới hạn",
+      "Thử nghiệm mô hình mới",
+      "Mở rộng bằng bằng chứng"
+    ],
+    "seat": "mỗi thành viên",
+    "slide": "Trang",
+    "slides": {
+      "ai": {
+        "body": "AI hỗ trợ công việc với mức sử dụng minh bạch, giới hạn dễ hiểu và quyền kiểm soát chi phí.",
+        "kicker": "Hiệu quả có trách nhiệm",
+        "note": "Đề xuất trả phí giữ mức tín dụng AI mặc định theo thành viên trong mã nguồn. Free đề xuất 1.000 tín dụng mỗi người dùng chung trên các không gian Free. Cần xác minh hạn mức thực tế, chi phí và phạm vi số dư trước khi áp dụng.",
+        "title": "Trí tuệ với\nngân sách rõ ràng."
+      },
+      "audience": {
+        "body": "Không gian cá nhân có thể trở thành nền tảng cho đội nhóm, lớp học hoặc doanh nghiệp.",
+        "kicker": "Người dùng",
+        "note": "Ưu tiên đội nhóm nhỏ, mở rộng sang học tập và vận hành. Không ngụ ý số lượng khách hàng.",
+        "title": "Bắt đầu tập trung.\nCùng nhau phát triển."
+      },
+      "business": {
+        "body": "Giúp đội nhóm đạt kết quả hữu ích, mở rộng cộng tác và gắn bó nhờ công việc hằng ngày đáng tin cậy.",
+        "kicker": "Giả thuyết kinh doanh",
+        "note": "Không khẳng định doanh thu, giữ chân, quy mô thị trường hoặc tăng trưởng. Cần đo kích hoạt, chuyển đổi trả phí, chi phí và biên đóng góp.",
+        "title": "Tăng trưởng từ giá trị.\nĐo lường hiệu quả."
+      },
+      "calculator": {
+        "body": "Khám phá chi phí thuê bao đội nhóm theo giá hiện tại. Minh họa chưa bao gồm tiện ích bổ sung và thuế.",
+        "kicker": "Mô hình tương tác",
+        "note": "Điều chỉnh số thành viên. Tổng năm là khoản thanh toán năm; mức tương đương tháng chỉ để tham khảo. Đây không phải báo giá thanh toán.",
+        "title": "Chi phí\ntrong tầm nhìn."
+      },
+      "closing": {
+        "body": "Khám phá sản phẩm. Góp ý đề xuất. Cùng định hình chặng tiếp theo.",
+        "kicker": "Chương tiếp theo",
+        "note": "Mời góp ý về sản phẩm và mô hình thương mại. Không trình bày giá đề xuất như cam kết đã duyệt.",
+        "title": "Cùng xây cách\nlàm việc tốt hơn."
+      },
+      "opening": {
+        "body": "Ngôi nhà kết nối công việc, học tập và những người cùng tạo nên kết quả.",
+        "kicker": "Tầm nhìn sản phẩm và kinh doanh",
+        "note": "Bắt đầu từ kết quả: đội nhóm có thể tổ chức ngày làm việc với tài khoản và không gian thống nhất.",
+        "title": "Một không gian.\nNhiều khả năng."
+      },
+      "platform": {
+        "body": "Ứng dụng chuyên biệt. Ngữ cảnh chung. Cùng đưa công việc về một nơi.",
+        "kicker": "Nền tảng",
+        "note": "Các nhóm sản phẩm có trong mã nguồn. Khả năng sử dụng tùy ứng dụng, không đảm bảo tất cả đã ra mắt công khai.",
+        "title": "Bộ ứng dụng xoay quanh\nkhông gian của bạn."
+      },
+      "pricing": {
+        "body": "Một thuê bao không gian cho bộ ứng dụng. Trả phí cho dung lượng và quy trình nâng cao khi cần.",
+        "kicker": "Gói và hạn mức",
+        "note": "Giá đã duyệt cho lượt mua mới: Plus 9 USD/tháng hoặc 90 USD/năm; Pro 19 USD/tháng hoặc 190 USD/năm cho mỗi thành viên. Trang trình bày đọc giá hiện tại cho đến khi triển khai và đồng bộ Polar hoàn tất. Thuê bao hiện tại không đổi.",
+        "title": "Gói đơn giản.\nDư địa phát triển."
+      },
+      "problem": {
+        "body": "Dự án, trò chuyện, lịch, tệp và quyết định cần cùng một ngữ cảnh.",
+        "kicker": "Vấn đề",
+        "note": "Minh họa một cuộc họp trở thành nhiệm vụ, cần tài liệu và ảnh hưởng ngân sách. Không khẳng định mức tiết kiệm thời gian chưa đo lường.",
+        "title": "Công việc kết nối.\nCông cụ cũng vậy."
+      },
+      "roadmap": {
+        "body": "Thống nhất danh mục, kiểm chứng giới hạn và chỉ mở rộng khi độ tin cậy cùng chi phí đã sẵn sàng.",
+        "kicker": "Lộ trình phát triển",
+        "note": "Không cam kết ngày phát hành. Quyền tạo cuộc họp hiện còn hạn chế. AI tài trợ và tác vụ tốn chi phí cần ngân sách rõ ràng.",
+        "title": "Xây nền tảng.\nMở rộng vững vàng."
+      },
+      "trust": {
+        "body": "Quyền không gian, truy cập dữ liệu hiện có và xuất dữ liệu không nên trở thành rào cản nâng cấp.",
+        "kicker": "Nguyên tắc sản phẩm",
+        "note": "Đây là nguyên tắc đóng gói đề xuất, không khẳng định chứng nhận, SLA hoặc tính năng bảo mật chưa kiểm chứng.",
+        "title": "Niềm tin có mặt\nở mọi gói."
+      },
+      "workflow": {
+        "body": "Lập kế hoạch, phối hợp đội nhóm, theo dõi tiến độ và rút kinh nghiệm.",
+        "kicker": "Trải nghiệm",
+        "note": "Đây là kịch bản sản phẩm. Tự động hóa giữa các ứng dụng là định hướng, không phải khẳng định mọi bước đã tự động.",
+        "title": "Từ ý tưởng hay\nđến một ngày hiệu quả."
+      }
+    },
+    "stages": ["Lập kế hoạch", "Kết nối", "Hoàn thành", "Nhìn lại"],
+    "title": "Tuturuuu — không gian làm việc kết nối"
   },
   "platform-role-data-table": {
     "allow_challenge_management": "Quản lý thử thách",
@@ -22827,7 +23211,7 @@
   "ws-tasks": {
     "add_description": "Thêm mô tả...",
     "ai_credits_exhausted_tooltip": "Đã hết tín dụng AI. Nâng cấp gói để có thêm.",
-    "ai_credits_unlimited": "Không giới hạn",
+    "ai_credits_unlimited": "Trong số dư tín dụng của bạn",
     "ai_generated_tasks": "Nhiệm vụ AI tạo ({count})",
     "all_caught_up": "Bạn đã hoàn thành tất cả!",
     "all_caught_up_description": "Không có nhiệm vụ nào đang hoạt động. Duyệt bảng để xem tất cả nhiệm vụ hoặc lên kế hoạch cho bước tiếp theo.",

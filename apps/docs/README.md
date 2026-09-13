@@ -69,11 +69,12 @@ Static assets (images, favicon, logos) live alongside `docs.json` at the root of
 ---
 title: 'Page Title'
 description: 'Short purpose statement.'
-updated: 'YYYY-MM-DD'
+updatedAt: 'YYYY-MM-DD'
 ---
 ```
 
-- Use `updated` when making meaningful edits.
+- Use `updatedAt` for new pages and meaningful edits. Some older pages retain
+  the legacy `updated` field; normalize that field when editing those pages.
 - Keep titles sentence case; avoid title case unless it is a proper noun.
 
 ### Content Checklist
@@ -102,7 +103,7 @@ All sidebar navigation lives in `apps/docs/docs.json`. When adding a page:
 
 - Favor smaller, focused PRs that touch a single section.
 - Include screenshots or diagrams when introducing new UI/UX flows.
-- Update `updated` timestamps so readers can track freshness.
+- Update `updatedAt` timestamps so readers can track freshness.
 - If a change impacts multiple sections, coordinate with docs maintainers before merging.
 
 ## 📚 Useful Resources

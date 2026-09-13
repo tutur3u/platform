@@ -1,3 +1,5 @@
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
+import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
 import {
   ArrowRight,
   CheckCircle2,
@@ -70,9 +72,25 @@ export function AiSection({
 
 export function PricingSection({
   content,
-}: Readonly<{ content: LandingContent['pricing'] }>) {
+  priceStatus,
+  locale,
+}: Readonly<{
+  content: LandingContent['pricing'];
+  locale: string;
+  priceStatus: { pricesLoading: string; pricesUnavailable: string };
+}>) {
+  const catalog = usePublicWorkspacePrices({
+    baseUrl: import.meta.env.VITE_PUBLIC_WEB_API_ORIGIN || 'https://tuturuuu.com',
+  });
   return (
     <SectionShell id="pricing">
+      {!catalog.data && (
+        <p role="status" className="mb-4 text-muted-foreground text-sm">
+          {catalog.isError
+            ? priceStatus.pricesUnavailable
+            : priceStatus.pricesLoading}
+        </p>
+      )}
       <SectionHeader subtitle={content.subtitle} title={content.title} />
       <div className="grid gap-4 lg:grid-cols-3">
         {content.tiers.map((tier) => (
@@ -92,7 +110,13 @@ export function PricingSection({
               {tier.description}
             </p>
             <div className="mt-5 flex items-end gap-2">
-              <span className="font-bold text-4xl">{tier.price}</span>
+              <span className="font-bold text-4xl">
+                {tier.name === 'Plus' || tier.name === 'Pro'
+                  ? catalog.data
+                    ? formatMoneyFromMinor(catalog.data.prices[tier.name === 'Plus' ? 'plus' : 'pro'].monthly, 'USD', locale)
+                    : '—'
+                  : tier.price}
+              </span>
               {tier.period ? (
                 <span className="pb-1 text-foreground/50 text-sm">
                   {tier.period}

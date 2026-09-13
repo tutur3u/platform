@@ -54,6 +54,7 @@ export interface Plan {
   price: number | null;
   pricePerSeat: number | null;
   maxSeats: number | null;
+  minSeats: number | null;
 }
 
 interface BillingClientProps {
@@ -62,6 +63,7 @@ interface BillingClientProps {
   currentPlan: Plan;
   products: Product[];
   seatStatus?: SeatStatus;
+  requiredSeats: number | null;
 }
 
 function getSimplePlanName(name: string): string {
@@ -78,6 +80,7 @@ export function BillingClient({
   currentPlan,
   products,
   seatStatus,
+  requiredSeats,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
@@ -191,6 +194,9 @@ export function BillingClient({
               </div>
 
               {/* Pricing */}
+              <p className="text-muted-foreground text-xs">
+                {t('catalog-rate-label')}
+              </p>
               <div className="flex items-baseline gap-1">
                 <span className="font-black text-4xl tracking-tight">
                   $
@@ -207,6 +213,10 @@ export function BillingClient({
                   </span>
                 )}
               </div>
+
+              <p className="max-w-md text-muted-foreground text-xs">
+                {t('catalog-rate-description')}
+              </p>
 
               {/* Seat Usage - Only show for seat-based pricing */}
               {isSeatBased && seatStatus && (
@@ -424,7 +434,7 @@ export function BillingClient({
         wsId={wsId}
         open={showUpgradeOptions}
         onOpenChange={setShowUpgradeOptions}
-        seatStatus={seatStatus}
+        requiredSeats={requiredSeats}
       />
 
       <SubscriptionConfirmationDialog
@@ -449,6 +459,8 @@ export function BillingClient({
           wsId={wsId}
           currentSeats={seatStatus.seatCount}
           currentMembers={seatStatus.memberCount}
+          requiredSeats={requiredSeats}
+          minPlanSeats={currentPlan.minSeats}
           maxSeats={currentPlan.maxSeats}
           pricePerSeat={currentPlan.pricePerSeat ?? 0}
           billingCycle={currentPlan.billingCycle}

@@ -14,8 +14,13 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
+import { getSupportedProductPrice } from '@tuturuuu/payment-core/polar-price';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
-import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
+import { isPlanUpgrade } from '@tuturuuu/payment-core/proration';
+import {
+  isSelfServeWorkspaceProduct,
+  resolveSelfServeSeatCount,
+} from '@tuturuuu/payment-core/self-serve-products';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -26,9 +31,13 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Plan } from './billing-client';
-import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
+import { BillingStatusRefresh } from './billing-status-refresh';
+import {
+  PaidPlanChangeDialog,
+  type PaidPlanSelection,
+} from './paid-plan-change-dialog';
 import PurchaseLink from './purchase-link';
 
 interface PlanListDialogProps {
@@ -38,31 +47,31 @@ interface PlanListDialogProps {
   wsId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  seatStatus?: SeatStatus;
+  requiredSeats: number | null;
 }
 
 type BillingCycleTab = 'month' | 'year';
 
 export default function PlanListDialog({
-  isPersonalWorkspace,
   currentPlan,
   products,
   wsId,
   open,
   onOpenChange,
-  seatStatus,
+  requiredSeats,
 }: PlanListDialogProps) {
   const t = useTranslations('billing');
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const billingSyncPending = pendingPlanId !== null;
+  useEffect(() => {
+    if (pendingPlanId === currentPlan.productId) setPendingPlanId(null);
+  }, [pendingPlanId, currentPlan.productId]);
+  const [selectedPaidPlan, setSelectedPaidPlan] =
+    useState<PaidPlanSelection | null>(null);
 
   // Default to yearly tab for better value proposition, unless current plan is monthly
   const [selectedCycle, setSelectedCycle] = useState<BillingCycleTab>(
     currentPlan.billingCycle === 'month' ? 'month' : 'year'
-  );
-
-  // State for plan change confirmation dialog
-  const [showPlanChangeDialog, setShowPlanChangeDialog] = useState(false);
-  const [selectedTargetPlan, setSelectedTargetPlan] = useState<string | null>(
-    null
   );
 
   // Helper to simplify plan names (remove "Tuturuuu Workspace" prefix and billing cycle suffix)
@@ -76,30 +85,30 @@ export default function PlanListDialog({
 
   const allPlans = products
     .map((product) => {
-      const firstPrice = product.prices.find((p) => 'amountType' in p);
-
-      const isSeatBased = firstPrice?.amountType === 'seat_based';
-      const isFixed = firstPrice?.amountType === 'fixed';
-      const isFreeModel = product.metadata.product_tier === 'FREE';
-
-      const price = isFixed ? firstPrice.priceAmount : null;
-
-      const pricePerSeat = isSeatBased
-        ? (firstPrice?.seatTiers?.tiers?.[0]?.pricePerSeat ?? null)
-        : null;
-
-      const minSeats = isSeatBased ? firstPrice?.seatTiers?.minimumSeats : null;
-
-      const maxSeats = isSeatBased ? firstPrice?.seatTiers?.maximumSeats : null;
-
-      if (
-        !isFreeModel &&
-        ((isPersonalWorkspace && isSeatBased) ||
-          (!isPersonalWorkspace && !isSeatBased))
-      ) {
-        // Exclude seat-based plans for personal workspaces
+      let supported: ReturnType<typeof getSupportedProductPrice>;
+      try {
+        supported = getSupportedProductPrice(product);
+      } catch {
         return null;
       }
+      const firstPrice = supported.price;
+      const isFreeModel = product.metadata.product_tier === 'FREE';
+      if (
+        !isSelfServeWorkspaceProduct({
+          tier:
+            typeof product.metadata.product_tier === 'string'
+              ? product.metadata.product_tier
+              : null,
+          pricing_model: firstPrice.amountType,
+          archived: product.isArchived,
+          price: supported.amount,
+        })
+      )
+        return null;
+      const price = supported.amount;
+      const pricePerSeat = supported.pricePerSeat;
+      const minSeats = supported.minSeats;
+      const maxSeats = supported.maxSeats;
 
       return {
         id: product.id,
@@ -142,6 +151,18 @@ export default function PlanListDialog({
   const filteredPlans = allPlans.filter(
     (plan) => plan.isFree || plan.billingCycle === selectedCycle
   );
+
+  const currentSeats =
+    currentPlan.pricingModel === 'seat_based'
+      ? (currentPlan.seatCount ?? null)
+      : 0;
+  const effectiveSeats = (plan: (typeof allPlans)[0]) =>
+    resolveSelfServeSeatCount({
+      currentSeats,
+      requiredSeats,
+      minSeats: plan.minSeats ?? null,
+      maxSeats: plan.maxSeats ?? null,
+    });
 
   // Get plan styling based on tier
   const getPlanStyles = (
@@ -225,12 +246,59 @@ export default function PlanListDialog({
       };
     }
 
-    const isDowngrade =
+    if (billingSyncPending)
+      return {
+        text: t('billing-syncing'),
+        icon: Info,
+        variant: 'outline' as const,
+        disabled: true,
+      };
+    const targetSeats =
+      plan.pricingModel === 'seat_based' ? effectiveSeats(plan) : 0;
+    if (targetSeats === null)
+      return {
+        text: t('plan-unavailable'),
+        icon: X,
+        variant: 'outline' as const,
+        disabled: true,
+      };
+    if (
       currentPlan.tier !== 'FREE' &&
-      ((plan.pricingModel === 'fixed' &&
-        (plan.price ?? 0) < (currentPlan.price ?? 0)) ||
-        (plan.pricingModel === 'seat_based' &&
-          (plan.pricePerSeat ?? 0) < (currentPlan.pricePerSeat ?? 0)));
+      (currentPlan.pricingModel !== plan.pricingModel ||
+        targetSeats !== currentSeats)
+    )
+      return {
+        text: t(
+          currentPlan.pricingModel !== plan.pricingModel
+            ? 'assisted-plan-change'
+            : 'adjust-seats-first'
+        ),
+        icon: X,
+        variant: 'outline' as const,
+        disabled: true,
+      };
+    const isDowngrade = !isPlanUpgrade(
+      {
+        tier: currentPlan.tier,
+        amount:
+          currentPlan.pricingModel === 'seat_based'
+            ? (currentPlan.pricePerSeat ?? 0) * (currentSeats ?? 0)
+            : (currentPlan.price ?? 0),
+      },
+      {
+        tier: plan.isEnterprise
+          ? 'ENTERPRISE'
+          : plan.isPro
+            ? 'PRO'
+            : plan.isPlus
+              ? 'PLUS'
+              : 'FREE',
+        amount:
+          plan.pricingModel === 'seat_based'
+            ? (plan.pricePerSeat ?? 0) * targetSeats
+            : (plan.price ?? 0),
+      }
+    );
 
     if (isDowngrade) {
       return {
@@ -248,19 +316,6 @@ export default function PlanListDialog({
       disabled: false,
       isIncompatible: false,
     };
-  };
-
-  // Handle plan change for existing subscriptions
-  const handlePlanChange = (plan: (typeof allPlans)[0]) => {
-    setSelectedTargetPlan(plan.id);
-    setShowPlanChangeDialog(true);
-  };
-
-  // Handle successful plan change
-  const handlePlanChangeSuccess = () => {
-    setShowPlanChangeDialog(false);
-    setSelectedTargetPlan(null);
-    onOpenChange(false);
   };
 
   return (
@@ -333,6 +388,7 @@ export default function PlanListDialog({
               const isCurrentPlan = plan.id === currentPlan.productId;
               const isSeatBased = plan.pricingModel === 'seat_based';
               const isFixed = plan.pricingModel === 'fixed';
+              const targetSeats = effectiveSeats(plan);
               const styles = getPlanStyles(plan, isCurrentPlan);
               const PlanIcon = styles.Icon;
 
@@ -445,7 +501,7 @@ export default function PlanListDialog({
                       {/* Estimated total for seat-based plans */}
                       {isSeatBased &&
                         plan.pricePerSeat &&
-                        seatStatus?.memberCount && (
+                        targetSeats !== null && (
                           <div
                             className={cn(
                               'mt-2 rounded-lg border px-3 py-2',
@@ -458,20 +514,13 @@ export default function PlanListDialog({
                               <p className="font-semibold text-foreground text-xs">
                                 {t('estimated-total', {
                                   total: centToDollar(
-                                    plan.pricePerSeat *
-                                      Math.max(
-                                        seatStatus.memberCount,
-                                        plan.minSeats ?? 1
-                                      )
+                                    plan.pricePerSeat * targetSeats
                                   ),
                                   cycle:
                                     plan.billingCycle === 'month'
                                       ? t('per-month')
                                       : t('per-year'),
-                                  count: Math.max(
-                                    seatStatus.memberCount,
-                                    plan.minSeats ?? 1
-                                  ),
+                                  count: targetSeats,
                                 })}
                               </p>
                             </div>
@@ -554,14 +603,23 @@ export default function PlanListDialog({
                             subscriptionId={currentPlan.id}
                             wsId={wsId}
                             productId={plan.id}
+                            onPlanChange={
+                              currentPlan.tier !== 'FREE'
+                                ? () =>
+                                    setSelectedPaidPlan({
+                                      id: plan.id,
+                                      name: plan.name,
+                                      seats: targetSeats ?? 0,
+                                      amount:
+                                        (plan.pricePerSeat ?? 0) *
+                                        (targetSeats ?? 0),
+                                      cycle: plan.billingCycle,
+                                    })
+                                : undefined
+                            }
                             onCheckoutOpened={() => {
                               onOpenChange(false);
                             }}
-                            onPlanChange={
-                              currentPlan.tier === 'FREE'
-                                ? undefined
-                                : () => handlePlanChange(plan)
-                            }
                             className={cn(
                               'w-full transition-all hover:scale-[1.02]',
                               !plan.isFree &&
@@ -586,6 +644,14 @@ export default function PlanListDialog({
             })}
           </div>
 
+          {billingSyncPending && (
+            <div className="mt-4 space-y-2">
+              <p role="status" className="text-muted-foreground text-sm">
+                {t('plan-sync-pending')}
+              </p>
+              <BillingStatusRefresh />
+            </div>
+          )}
           {/* Important Note */}
           {currentPlan.tier !== 'FREE' && (
             <div className="mt-6 flex items-start gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
@@ -600,17 +666,14 @@ export default function PlanListDialog({
           )}
         </div>
       </DialogContent>
-
-      {/* Plan Change Confirmation Dialog */}
-      {selectedTargetPlan && currentPlan.id && (
-        <PlanChangeConfirmationDialog
-          open={showPlanChangeDialog}
-          onOpenChange={setShowPlanChangeDialog}
-          targetPlanId={selectedTargetPlan}
-          subscriptionId={currentPlan.id}
-          onSuccess={handlePlanChangeSuccess}
-        />
-      )}
+      <PaidPlanChangeDialog
+        key={selectedPaidPlan?.id ?? 'no-selection'}
+        subscriptionId={currentPlan.id}
+        plan={selectedPaidPlan}
+        onClose={() => setSelectedPaidPlan(null)}
+        onChanged={() => onOpenChange(false)}
+        onSyncPending={() => setPendingPlanId(selectedPaidPlan?.id ?? null)}
+      />
     </Dialog>
   );
 }

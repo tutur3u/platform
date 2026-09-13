@@ -102,8 +102,16 @@ async function upsertSubscription(
   const product = await resolveSubscriptionProduct(supabase, subscription);
 
   const isSeatBased = product.pricing_model === 'seat_based';
-  const seatCount = isSeatBased ? (subscription.seats ?? 1) : null;
+  const seatCount = isSeatBased ? (subscription.seats ?? null) : null;
+  if (
+    isSeatBased &&
+    (seatCount === null || !Number.isSafeInteger(seatCount) || seatCount < 1)
+  )
+    throw new Error('Subscription seats could not be verified');
 
+  const eventVersion = new Date(
+    subscription.modifiedAt ?? subscription.createdAt
+  ).toISOString();
   const subscriptionData = {
     ws_id: wsId,
     status:
@@ -118,9 +126,7 @@ async function upsertSubscription(
       : null,
     cancel_at_period_end: subscription.cancelAtPeriodEnd,
     created_at: new Date(subscription.createdAt).toISOString(),
-    updated_at: subscription.modifiedAt
-      ? new Date(subscription.modifiedAt).toISOString()
-      : null,
+    updated_at: eventVersion,
     seat_count: seatCount,
   };
 
@@ -128,12 +134,36 @@ async function upsertSubscription(
     .from('workspace_subscriptions')
     .upsert([subscriptionData], {
       onConflict: 'polar_subscription_id',
-      ignoreDuplicates: false,
+      ignoreDuplicates: true,
     });
 
   if (dbError) {
     throw new Error(`Subscription upsert error: ${dbError.message}`);
   }
+
+  // INSERT ... ON CONFLICT DO NOTHING cannot overwrite a newer event. The
+  // subsequent UPDATE evaluates the version predicate atomically in Postgres.
+  // Equal versions may retry side effects only for an identical projection;
+  // different payloads without a provable ordering must not overwrite it.
+  const identicalProjection = Object.entries(subscriptionData)
+    .map(([column, value]) =>
+      value === null
+        ? `${column}.is.null`
+        : `${column}.eq.${JSON.stringify(value)}`
+    )
+    .join(',');
+  const { data: applied, error: updateError } = await supabase
+    .from('workspace_subscriptions')
+    .update(subscriptionData)
+    .eq('polar_subscription_id', subscription.id)
+    .or(
+      `updated_at.is.null,updated_at.lt.${eventVersion},and(${identicalProjection})`
+    )
+    .select('id')
+    .maybeSingle();
+  if (updateError)
+    throw new Error(`Subscription projection error: ${updateError.message}`);
+  if (!applied) return { subscriptionData: null, isSeatBased };
 
   return { subscriptionData, isSeatBased };
 }

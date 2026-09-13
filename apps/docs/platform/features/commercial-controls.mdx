@@ -1,0 +1,189 @@
+---
+title: Pricing, usage safeguards and legal review
+description: Review commercial changes, reconcile Polar prices, and distinguish verified accounting from launch blockers.
+updatedAt: "2026-09-13"
+---
+
+## Approved catalog and automatic display
+
+Commercial direction approved on 13 September 2026: Plus **$9/month or $90/year**
+and Pro **$19/month or $190/year per paid member**, with finite included credits
+and separately purchased eligible top-ups. `PROPOSED_WORKSPACE_CATALOG` retains
+its compatibility export name but now records the approved target version.
+
+`GET /api/v1/public/pricing` projects only the four explicitly bound, active seat
+products from the private billing catalog. Both landing implementations read it
+through `packages/internal-api`; the response exposes amounts and USD currency,
+not workspace/customer records or credentials. It has a 30-second shared cache;
+visible clients refresh each minute. An invalid or unavailable catalog displays
+no numeric price rather than inventing a fallback. Checkout remains authoritative
+for currency, tax, seat count, discounts and the final payable amount.
+
+The production product IDs in `polar-workspace-product-ids.json` were verified in
+the authorized Tuturuuu dashboard and reconciled against the private catalog.
+The organization ID is `f31a1452-88f6-4979-a03f-3d00424a3100`.
+Legacy fixed-price products share the same display names. Existing subscriptions
+retain their pricing; new paid self-service purchases use seat products for both
+personal and team workspaces. Free-to-paid changes use checkout; paid-model
+changes require an assisted migration. Never silently migrate subscribers.
+
+The TanStack browser pricing query uses `VITE_PUBLIC_WEB_API_ORIGIN` at build time,
+falling back to `https://tuturuuu.com`. Only use a public API origin for this value;
+server-only internal origins and credentials must not be exposed to Vite clients.
+
+Free-to-paid upgrades open Polar checkout; its minimum quantity covers purchased
+capacity, members, pending workspace/email invitations, and target bounds. Polar
+only supports Free subscriptions in checkout. Paid plan changes and explicit
+seat adjustments use the subscription update API after in-app confirmation.
+List-price estimates exclude existing discounts, tax and the final prorated
+invoice. Seat-only updates do not replace the product, price or discount.
+Paid plan changes preserve the current quantity: adjust seats first when a target
+minimum or reserved invitations need additional capacity. Paid billing-model
+changes require assisted migration. Missing counts or bounds block updates.
+Paid updates synchronize the database projection before reporting completion. If
+projection fails after Polar succeeds, the UI reports pending synchronization and
+disables resubmission. Pending billing dialogs offer a read-only status refresh. They unlock only
+when the authoritative plan or seat count converges. A retry reconciles an already-applied
+plan or quantity without invoicing the same change again. Pending state survives confirmation-dialog dismissal until
+the billing page observes the target plan. Subscription projections insert without
+overwriting existing rows, then update only for a newer provider timestamp or an
+identical projection at the same timestamp. Equal-version conflicting payloads
+are not ordered by arrival time. Older webhook deliveries return no subscription data, preventing stale
+seat-assignment or cancellation side effects.
+Polar's [subscription update endpoint](https://github.com/polarsource/polar/blob/9d20e549052a4dbd2d5b57fa6ea165200530b59f/server/polar/subscription/endpoints.py#L416)
+locks the provider subscription row. Its [seat update service](https://github.com/polarsource/polar/blob/9d20e549052a4dbd2d5b57fa6ea165200530b59f/server/polar/subscription/service.py#L2166)
+treats an unchanged absolute quantity as a no-op before invoice generation. Keep
+sending absolute quantities; do not implement a client-side increment/retry loop.
+This is provider-source evidence, not a live concurrent-charge test.
+An invitation alone does not increase the purchased quantity. All quantity
+reductions must still cover members and both pending invitation tables.
+The legacy preview endpoint returns list-price estimates, not discount- or tax-aware
+quotes. Do not use those estimates to authorize payment.
+
+## Feature comparison maintenance
+
+The shared comparison covers every app directory, with app/category filters,
+accent-insensitive search, selectable tiers, differences-only mode, compact status
+icons, keyboard/tap tooltips and visible numeric quotas. Expanded explanations
+also support touch users. Internal infrastructure is opt-in in the comparison and is never a purchasable upgrade. Restricted previews remain distinct
+from tier access. Standard platform gates share `feature-tier-policy.ts` with web.
+Add capabilities, explanations in both locales, and source evidence when changing
+an app's public scope. The inventory regression fails when an app is unrepresented.
+
+Approved capacity changes are marked **awaiting rollout** until the database policy
+and required meters are deployed. Current database storage defaults remain
+**100 MiB / 20 GiB / 100 GiB per workspace** for Free / Plus / Pro, subject to
+configured overrides. Do not describe those current defaults as per-seat storage.
+The ten-workspace account ceiling remains independent of paid plans.
+
+Production allocation rows verified on 13 September 2026 differ from source
+seeds: Free has 10,000 credits per person/month, Plus has 40,000 per seat and Pro
+120,000 per seat. The approved 1,000 / 10,000 / 30,000 budgets are reductions,
+not retained production defaults. Preserve existing grants and purchased packs;
+enroll new contracts through a versioned policy and apply notice/grandfathering
+before reducing existing entitlements. Do not rewrite global allocation rows as
+an unannounced shortcut.
+
+## Reconcile Polar after commercial approval
+
+Use the checked product mapping; never choose products by display name. Supply
+existing authorized production credentials through environment variables, never
+in source, command arguments, logs or pull request descriptions. Preview:
+
+```sh
+bun scripts/sync-polar-catalog.ts --mapping packages/payment-core/src/polar-workspace-product-ids.json --organization ORGANIZATION_ID --environment production
+```
+
+Review organization, IDs, intervals, currency, seat tiers, current price IDs,
+amounts and the printed plan hash. The script rejects mixed currencies, graduated
+tiers, archived/ambiguous products and unexpected seat bounds. An approved
+execution adds `--apply --approve-plan REVIEWED_SHA256`. A sandbox preview cannot
+authorize production writes. Sandbox IDs require their own explicit mapping.
+
+Application waits for existing webhook/cron reconciliation using read-only
+Supabase credentials (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`). Only
+successful production verification updates `approved-workspace-prices.json`, which
+is an operator snapshot; public cards read the reconciled catalog. No subscription,
+customer, discount or direct database mutations are performed by this script.
+Deploy compatible webhook handling before changing Polar prices.
+
+Provider updates and webhook processing are **not one atomic transaction**.
+A failure can leave some provider products updated. Inspect all four products and
+re-preview before retrying; do not reuse a stale hash or assume a rollback. This
+is an explicit operator repricing workflow, with automatic propagation into the
+public price cards after successful reconciliation.
+
+The existing 100% discounts are assigned to specific internal Tuturuuu workspaces.
+Preserve those arrangements. Attribute consumption to sponsored internal cost;
+discounts must not bypass resource budgets, permissions or abuse protections.
+
+## Implemented safety controls
+
+- AI rejects unavailable/malformed credit balances and unknown output pricing.
+  Generation output is bounded by the credit-derived budget and a technical
+  ceiling of 65,536 tokens. Larger credit balances do not bypass that ceiling.
+  Existing credit purchases and expiry rules remain in force.
+- Drive rejects unknown/invalid quota values and invalid byte arithmetic before
+  issuing uploads. Infrastructure uses the same provider implementation. Deleting
+  existing data to restore capacity is preferable to unexpected overage charges.
+- Meet preview caps rooms at two hours from first admission, without extending the
+  deadline on reconnect. Signed participant limits are bounded by server ceilings;
+  the defaults remain eight publishers and 96 viewers. Admission and publishing
+  check capacity; each publisher can register at most six media tracks. The server records participant-milliseconds through the deadline.
+  Expiration disconnects clients and retains provider publication closures for retry.
+  Failed cleanup uses exponential retry intervals from ten seconds to one hour;
+  unconfirmed closures remain recorded instead of being silently discarded.
+  AI and persisted recordings also consume their existing AI/storage allowances.
+- Subscription lookup/count failures do not authorize new free subscriptions or
+  additional seats. Trialing and past-due states follow the existing seat policy.
+
+These safeguards are not a complete billing meter. Top-ups increase purchased
+capacity only where supported; they never bypass abuse, concurrency or safety caps.
+
+## Launch blockers for sustainable usage billing
+
+Track these as required work, not as completed guarantees:
+
+1. Atomic reservations for concurrent AI jobs, invites and uploads, with idempotent
+   settlement/release. A read-before-write capacity check alone permits races.
+2. Input tokens, cached tokens, retries, tools, embeddings, live audio, generated
+   media and hosted execution must have trusted prices and workspace attribution.
+   Output-token caps alone do not cover total invocation costs.
+3. Durable monthly workspace aggregation across rooms and restarts. Meet's
+   participant-time measure is server accounting; browser-reported bandwidth is
+   partial diagnostic evidence and must not generate invoices.
+4. Storage byte-hours, egress, operations, orphaned/signed uploads and all storage
+   providers need reconciliation. A stated upload size is not evidence of the final
+   object size; signed uploads require verification and reservation expiry.
+5. Mail delivery, automation runs, public forms, hosted compute and other expensive
+   product paths need the same reservation/settlement contracts before paid add-ons.
+6. Reconcile provider invoices against the usage ledger; track unpriced usage
+   separately, refunds/retries/credits explicitly, and contribution margin by tier.
+   Prove limits under concurrent load before relying on them for profitability.
+
+Do not claim “unlimited AI”, automatic profitability, complete cost coverage, or
+charge unknown usage. Publish included amounts, unit definitions, reset/expiry,
+notification thresholds and opt-in spending ceilings before selling new allowances.
+
+## Legal documents
+
+The shared legal registry serves English and Vietnamese terms, privacy, DPA, SLA,
+subprocessor, acceptable-use and community documents. September 2026 changes are
+marked review drafts; their draft publication date does not establish a new
+contractual effective date. Acceptance/version history and existing agreements
+must be preserved when a reviewed version takes effect.
+
+Before publication, confirm the legal entity/address, territorial scope, actual
+retention/deletion behavior, AI training commitments, processor regions and
+subprocessor list. Contractual SLA remedies need an executed order and a supported
+Polar adjustment path; do not promise a general SLA or direct refund workflow that
+the merchant-of-record arrangement cannot fulfill. Validate consumer cancellation,
+refund and renewal disclosures for the actual markets served. Legal drafts are not
+an assertion that operational compliance has been audited.
+
+Primary references: [Polar product pricing](https://polar.sh/docs/features/products),
+[product updates](https://polar.sh/docs/api-reference/products/update),
+[Buyer Terms](https://polar.sh/legal/checkout-buyer-terms),
+[Merchant terms](https://polar.sh/legal/master-services-terms),
+[Vietnam Law 91/2025/QH15](https://chinhphu.vn/?classid=1&docid=214590&orggroupid=1&pageid=27160),
+and [EU controller-processor clauses](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?from=ES&uri=CELEX%3A32021D0915).

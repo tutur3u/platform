@@ -5410,7 +5410,7 @@
       "compare": "Compare all features",
       "faq": {
         "q1": {
-          "answer": "Yes! The Free tier is completely free forever with basic features. Upgrade anytime for more capabilities.",
+          "answer": "The Free plan has no subscription fee. Usage limits and product availability still apply.",
           "question": "Is there really a free plan?"
         },
         "q2": {
@@ -5418,7 +5418,7 @@
           "question": "Do I save money with annual billing?"
         },
         "q3": {
-          "answer": "Each workspace has its own plan. Paid plans are billed per user within that workspace. You can have different plans for different workspaces. Every account gets up to 10 free workspaces—additional workspaces require a paid plan.",
+          "answer": "Each workspace has its own plan; paid plans are billed per member. Each account can create up to 10 workspaces. Upgrading does not automatically increase this limit.",
           "question": "How does per-workspace pricing work?"
         },
         "q4": {
@@ -5437,7 +5437,7 @@
         },
         "featuresLabel": "Features",
         "featuresList": {
-          "advancedAI": "Unlimited AI",
+          "advancedAI": "Generous AI credits; top-ups available",
           "aiChat": "AI Chat",
           "analytics": "Reports & Analytics",
           "calendar": "Calendar Sync",
@@ -5445,12 +5445,12 @@
           "customIntegrations": "Custom Integrations",
           "customSolutions": "Custom Solutions",
           "dedicatedSupport": "Dedicated Support",
-          "drive": "Drive Storage",
+          "drive": "Drive storage (plan allowance)",
           "granularRoles": "Granular Permissions",
           "prioritySupport": "Priority Support",
           "qrGenerator": "QR Generator",
           "selfHosting": "Self-Hosting",
-          "sla": "SLA Guarantees",
+          "sla": "Contractual SLA options",
           "tasks": "Task Management",
           "timeTracker": "Time Tracker",
           "tuchat": "Tuchat (Messaging)",
@@ -5463,7 +5463,7 @@
           "advanced": "advanced",
           "limited": "limited",
           "soon": "Soon",
-          "unlimited": "unlimited"
+          "unlimited": "Plan limits apply"
         }
       },
       "payAsYouGo": {
@@ -5476,7 +5476,7 @@
         ],
         "title": "Pay As You Go"
       },
-      "subtitle": "Plans are per workspace, billed per user. Up to 10 free workspaces per account.",
+      "subtitle": "Each workspace has its own plan, billed per member. Standard accounts can create up to 10 workspaces; upgrading does not increase this account limit.",
       "tiers": {
         "enterprise": {
           "cta": "Contact Sales",
@@ -5485,7 +5485,7 @@
             "Everything in Pro",
             "Custom solutions",
             "Dedicated support",
-            "SLA guarantees",
+            "SLA by signed order only",
             "Self-hosting options"
           ],
           "name": "Enterprise",
@@ -5497,9 +5497,9 @@
           "features": [
             "Basic task management",
             "Calendar sync (limited)",
-            "AI chat (limited tokens)",
+            "AI within your credit allowance",
             "QR Generator",
-            "CRM & Inventory (beta)"
+            "100 MiB Drive storage / workspace"
           ],
           "name": "Free",
           "period": "forever",
@@ -5511,21 +5511,17 @@
           "description": "For teams that need collaboration",
           "features": [
             "Everything in Free +",
-            "Unlimited Whiteboards",
-            "Drive storage",
+            "Shared whiteboards (usage limits apply)",
+            "20 GiB Drive storage / workspace",
             "Time Tracker & Requests",
             "Granular permissions",
-            "Tuwrite & Tuchat (coming soon)",
-            "Tumeet—Video calls (coming soon)"
+            "Preview apps: availability varies",
+            "Meet: hosting access currently restricted"
           ],
           "name": "Plus",
           "period": {
-            "monthly": "/user/mo",
-            "yearly": "/user/yr"
-          },
-          "price": {
-            "monthly": "$8",
-            "yearly": "$80"
+            "monthly": "/member/mo",
+            "yearly": "/member/yr"
           }
         },
         "pro": {
@@ -5534,19 +5530,15 @@
           "description": "For power teams that need it all",
           "features": [
             "Everything in Plus +",
-            "Unlimited AI",
+            "Generous AI credits; top-ups available",
             "Priority support",
             "Reports & Analytics",
-            "Custom integrations"
+            "100 GiB Drive storage / workspace"
           ],
           "name": "Pro",
           "period": {
-            "monthly": "/user/mo",
-            "yearly": "/user/yr"
-          },
-          "price": {
-            "monthly": "$15",
-            "yearly": "$150"
+            "monthly": "/member/mo",
+            "yearly": "/member/yr"
           }
         }
       },
@@ -14206,7 +14198,7 @@
   "ws-tasks": {
     "add_description": "Add a description...",
     "ai_credits_exhausted_tooltip": "AI credits exhausted. Upgrade your plan for more.",
-    "ai_credits_unlimited": "Unlimited",
+    "ai_credits_unlimited": "Within your credit balance",
     "ai_generated_tasks": "AI Generated Tasks ({count})",
     "all_caught_up": "You're all caught up!",
     "all_caught_up_description": "No active tasks right now. Browse your boards to view all tasks or take a moment to plan your next move.",

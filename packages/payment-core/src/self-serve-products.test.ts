@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getSelfServePlanChangeError,
   isSelfServeWorkspaceProduct,
+  resolveSelfServeSeatCount,
   validCheckoutSeats,
 } from './self-serve-products';
 
@@ -66,5 +68,37 @@ describe('self-serve product policy', () => {
       expect(validCheckoutSeats(count)).toBe(false);
     for (const count of [1, 5, 1000])
       expect(validCheckoutSeats(count)).toBe(true);
+  });
+});
+
+describe('shared transition policy', () => {
+  it('requires cancellation for every paid-to-Free path', () => {
+    for (const tier of ['PLUS', 'PRO', 'ENTERPRISE', null])
+      expect(getSelfServePlanChangeError(tier, 'FREE')).toContain(
+        'Cancel at period end'
+      );
+    expect(getSelfServePlanChangeError('FREE', 'PLUS')).toBeNull();
+    expect(getSelfServePlanChangeError('PLUS', 'PRO')).toBeNull();
+  });
+  it('preserves capacity and enforces the target bounds', () => {
+    const base = {
+      currentSeats: 3,
+      requiredSeats: 2,
+      minSeats: 5,
+      maxSeats: null,
+    };
+    expect(resolveSelfServeSeatCount(base)).toBe(5);
+    expect(resolveSelfServeSeatCount({ ...base, currentSeats: 0 })).toBe(5);
+    expect(resolveSelfServeSeatCount({ ...base, currentSeats: 8 })).toBe(8);
+    expect(resolveSelfServeSeatCount({ ...base, requiredSeats: 9 })).toBe(9);
+    for (const override of [
+      { requiredSeats: null },
+      { currentSeats: null },
+      { minSeats: -1 },
+      { minSeats: null },
+      { maxSeats: 4 },
+      { maxSeats: 1001 },
+    ])
+      expect(resolveSelfServeSeatCount({ ...base, ...override })).toBeNull();
   });
 });

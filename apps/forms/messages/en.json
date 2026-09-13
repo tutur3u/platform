@@ -8907,7 +8907,7 @@
   "ws-tasks": {
     "add_description": "Add a description...",
     "ai_credits_exhausted_tooltip": "AI credits exhausted. Upgrade your plan for more.",
-    "ai_credits_unlimited": "Unlimited",
+    "ai_credits_unlimited": "Within your credit balance",
     "ai_generated_tasks": "AI Generated Tasks ({count})",
     "all_caught_up": "You're all caught up!",
     "all_caught_up_description": "No active tasks right now. Browse your boards to view all tasks or take a moment to plan your next move.",

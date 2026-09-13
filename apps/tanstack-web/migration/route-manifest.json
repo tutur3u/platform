@@ -6,24 +6,24 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 509,
+        "legacyNext": 510,
         "migrated": 62,
-        "percentComplete": 12.69,
-        "remaining": 509,
+        "percentComplete": 12.67,
+        "remaining": 510,
         "terminal": 74,
-        "total": 583,
+        "total": 584,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 51,
+        "legacyNext": 52,
         "migrated": 99,
-        "percentComplete": 66.45,
-        "remaining": 51,
+        "percentComplete": 66.01,
+        "remaining": 52,
         "terminal": 101,
-        "total": 152,
+        "total": 153,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 517,
+        "legacyNext": 518,
         "migrated": 67,
-        "percentComplete": 13.26,
-        "remaining": 517,
+        "percentComplete": 13.23,
+        "remaining": 518,
         "terminal": 79,
-        "total": 596,
+        "total": 597,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 73,
+        "legacyNext": 74,
         "migrated": 148,
-        "percentComplete": 67.26,
-        "remaining": 73,
+        "percentComplete": 66.96,
+        "remaining": 74,
         "terminal": 150,
-        "total": 223,
+        "total": 224,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 590,
+      "legacyNext": 592,
       "migrated": 215,
-      "percentComplete": 27.96,
-      "remaining": 590,
+      "percentComplete": 27.89,
+      "remaining": 592,
       "terminal": 229,
-      "total": 819,
+      "total": 821,
       "unknownStatus": 0
     }
   },
@@ -2009,6 +2009,15 @@
       "routePath": "/api/v1/proxy/tuturuuu",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/proxy/tuturuuu/route.ts",
       "status": "accepted-removal",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/public/pricing:apps/web/src/app/api/v1/public/pricing/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/public/pricing",
+      "sourceFile": "apps/web/src/app/api/v1/public/pricing/route.ts",
+      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -7309,6 +7318,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/pitch:apps/web/src/app/[locale]/pitch/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/pitch",
+      "sourceFile": "apps/web/src/app/[locale]/pitch/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/pricing:apps/web/src/app/[locale]/(marketing)/pricing/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7814,13 +7832,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 583,
+    "apiRoutes": 584,
     "cronRoutes": 8,
     "layouts": 67,
-    "pages": 152,
-    "routeHandlers": 596,
+    "pages": 153,
+    "routeHandlers": 597,
     "methodCounts": {
-      "GET": 297,
+      "GET": 298,
       "HEAD": 4,
       "POST": 294,
       "PUT": 54,
@@ -7828,6 +7846,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 819
+    "total": 821
   }
 }

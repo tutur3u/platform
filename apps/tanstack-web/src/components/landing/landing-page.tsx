@@ -1,3 +1,5 @@
+import { CommercialComparison } from '@tuturuuu/ui/commercial-comparison';
+import { getMessages } from '../../lib/platform/messages';
 import type { Locale } from '../../lib/platform/locale';
 import { getLandingContent } from './landing-content';
 import {
@@ -27,7 +29,14 @@ export function LandingPage({ locale }: Readonly<{ locale: Locale }>) {
       <FeaturesSection content={content.features} />
       <DemoSection content={content.demo} />
       <AiSection content={content.ai} />
-      <PricingSection content={content.pricing} />
+      <PricingSection
+        locale={locale}
+        content={content.pricing}
+        priceStatus={getMessages(locale).commercialComparison}
+      />
+      <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6">
+        <CommercialComparison copy={getMessages(locale).commercialComparison} />
+      </div>
       <SocialProofSection content={content.socialProof} />
       <CtaSection content={content.cta} />
     </main>

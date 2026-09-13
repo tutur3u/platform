@@ -8907,7 +8907,7 @@
   "ws-tasks": {
     "add_description": "Thêm mô tả...",
     "ai_credits_exhausted_tooltip": "Đã hết tín dụng AI. Nâng cấp gói để có thêm.",
-    "ai_credits_unlimited": "Không giới hạn",
+    "ai_credits_unlimited": "Trong số dư tín dụng của bạn",
     "ai_generated_tasks": "Nhiệm vụ AI tạo ({count})",
     "all_caught_up": "Bạn đã hoàn thành tất cả!",
     "all_caught_up_description": "Không có nhiệm vụ nào đang hoạt động. Duyệt bảng để xem tất cả nhiệm vụ hoặc lên kế hoạch cho bước tiếp theo.",

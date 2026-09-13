@@ -5139,7 +5139,7 @@
       "compare": "So sánh tất cả tính năng",
       "faq": {
         "q1": {
-          "answer": "Có! Gói Miễn Phí hoàn toàn miễn phí mãi mãi với các tính năng cơ bản. Nâng cấp bất cứ lúc nào để có thêm khả năng.",
+          "answer": "Gói Miễn phí không có phí thuê bao. Các giới hạn sử dụng và tính khả dụng của sản phẩm vẫn áp dụng.",
           "question": "Có thật sự có gói miễn phí không?"
         },
         "q2": {
@@ -5147,7 +5147,7 @@
           "question": "Tôi có tiết kiệm với thanh toán hàng năm không?"
         },
         "q3": {
-          "answer": "Mỗi workspace có gói riêng. Gói trả phí tính theo người dùng trong workspace đó. Bạn có thể dùng gói khác nhau cho các workspace khác nhau. Mỗi tài khoản được tối đa 10 workspace miễn phí—workspace thêm cần gói trả phí.",
+          "answer": "Mỗi không gian làm việc có gói riêng; gói trả phí tính theo thành viên. Mỗi tài khoản được tạo tối đa 10 không gian làm việc. Nâng cấp không tự động tăng giới hạn này.",
           "question": "Giá theo workspace hoạt động thế nào?"
         },
         "q4": {
@@ -5166,7 +5166,7 @@
         },
         "featuresLabel": "Tính Năng",
         "featuresList": {
-          "advancedAI": "AI Không Giới Hạn",
+          "advancedAI": "Tín dụng AI dồi dào; có thể mua thêm",
           "aiChat": "Chat AI",
           "analytics": "Báo Cáo & Analytics",
           "calendar": "Đồng Bộ Lịch",
@@ -5174,12 +5174,12 @@
           "customIntegrations": "Tích Hợp Tùy Chỉnh",
           "customSolutions": "Giải Pháp Tùy Chỉnh",
           "dedicatedSupport": "Đội Ngũ Support Riêng",
-          "drive": "Lưu Trữ Drive",
+          "drive": "Lưu trữ Drive (theo hạn mức gói)",
           "granularRoles": "Phân Quyền Chi Tiết",
           "prioritySupport": "Hỗ Trợ Ưu Tiên",
           "qrGenerator": "Tạo Mã QR",
           "selfHosting": "Tự Host",
-          "sla": "Cam Kết SLA",
+          "sla": "Tùy chọn SLA theo hợp đồng",
           "tasks": "Quản Lý Công Việc",
           "timeTracker": "Chấm Công",
           "tuchat": "Tuchat (Nhắn Tin)",
@@ -5192,7 +5192,7 @@
           "advanced": "nâng cao",
           "limited": "giới hạn",
           "soon": "Sắp có",
-          "unlimited": "không giới hạn"
+          "unlimited": "Theo giới hạn gói"
         }
       },
       "payAsYouGo": {
@@ -5205,16 +5205,16 @@
         ],
         "title": "Trả theo nhu cầu sử dụng"
       },
-      "subtitle": "Mỗi workspace có gói riêng, tính phí theo người dùng. Tối đa 10 workspace miễn phí mỗi tài khoản.",
+      "subtitle": "Mỗi không gian làm việc có gói riêng, tính phí theo thành viên. Tài khoản thông thường có thể tạo tối đa 10 không gian làm việc; nâng cấp không tăng giới hạn này.",
       "tiers": {
         "enterprise": {
           "cta": "Liên Hệ Tư Vấn",
-          "description": "Scale không giới hạn",
+          "description": "Dành cho tổ chức lớn",
           "features": [
             "Mọi thứ của Pro +",
             "Tùy chỉnh theo nhu cầu",
             "Đội ngũ support riêng",
-            "SLA đảm bảo",
+            "SLA theo đơn đặt hàng đã ký",
             "Tự host được"
           ],
           "name": "Doanh Nghiệp",
@@ -5226,9 +5226,9 @@
           "features": [
             "Quản lý công việc cơ bản",
             "Đồng bộ lịch (có giới hạn)",
-            "Chat AI cơ bản",
+            "AI theo hạn mức tín dụng",
             "Tạo mã QR",
-            "CRM & Kho hàng (beta)"
+            "100 MiB lưu trữ Drive / không gian"
           ],
           "name": "Miễn Phí",
           "period": "miễn phí mãi",
@@ -5240,21 +5240,17 @@
           "description": "Khi team cần phối hợp",
           "features": [
             "Mọi thứ của Free +",
-            "Whiteboard không giới hạn",
-            "Lưu trữ Drive",
+            "Bảng trắng cộng tác (có giới hạn sử dụng)",
+            "20 GiB lưu trữ Drive / không gian",
             "Chấm công & Yêu cầu",
             "Phân quyền chi tiết",
-            "Tuwrite & Tuchat (sắp ra mắt)",
-            "Tumeet—Video call (sắp ra mắt)"
+            "Ứng dụng xem trước: khả dụng tùy sản phẩm",
+            "Meet: quyền tạo cuộc họp hiện còn hạn chế"
           ],
           "name": "Plus",
           "period": {
-            "monthly": "/người/tháng",
-            "yearly": "/người/năm"
-          },
-          "price": {
-            "monthly": "$8",
-            "yearly": "$80"
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
           }
         },
         "pro": {
@@ -5263,19 +5259,15 @@
           "description": "Cho team cần sức mạnh tối đa",
           "features": [
             "Mọi thứ của Plus +",
-            "AI không giới hạn",
+            "Tín dụng AI dồi dào; có thể mua thêm",
             "Hỗ trợ ưu tiên",
             "Báo cáo & Analytics",
-            "Tích hợp tùy chỉnh"
+            "100 GiB lưu trữ Drive / không gian"
           ],
           "name": "Pro",
           "period": {
-            "monthly": "/người/tháng",
-            "yearly": "/người/năm"
-          },
-          "price": {
-            "monthly": "$15",
-            "yearly": "$150"
+            "monthly": "/thành viên/tháng",
+            "yearly": "/thành viên/năm"
           }
         }
       },

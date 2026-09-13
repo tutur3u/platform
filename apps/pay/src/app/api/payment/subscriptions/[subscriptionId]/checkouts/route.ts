@@ -1,7 +1,12 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  getSelfServePlanChangeError,
+  isSelfServeWorkspaceProduct,
+} from '@tuturuuu/payment-core/self-serve-products';
 import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
 import { type NextRequest, NextResponse } from 'next/server';
 import { PORT } from '@/constants/common';
+import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
 
 export async function POST(
   request: NextRequest,
@@ -88,6 +93,7 @@ export async function POST(
     .from('workspace_subscriptions')
     .select('*')
     .eq('id', subscriptionId)
+    .eq('ws_id', wsId)
     .maybeSingle();
 
   if (subscriptionError) {
@@ -105,36 +111,70 @@ export async function POST(
     );
   }
 
+  const { data: targetProduct, error: targetError } = await supabase
+    .schema('private')
+    .from('workspace_subscription_products')
+    .select('tier, pricing_model, archived, price, min_seats, max_seats')
+    .eq('id', productId)
+    .maybeSingle();
+  if (targetError)
+    return NextResponse.json(
+      { error: 'Product availability could not be verified' },
+      { status: 503 }
+    );
+  if (!targetProduct || !isSelfServeWorkspaceProduct(targetProduct)) {
+    return NextResponse.json(
+      { error: 'This product is not available for new purchases' },
+      { status: 400 }
+    );
+  }
+  if (!subscription.product_id)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  const { data: currentProduct, error: currentError } = await supabase
+    .schema('private')
+    .from('workspace_subscription_products')
+    .select('tier, pricing_model, price')
+    .eq('id', subscription.product_id)
+    .maybeSingle();
+  if (currentError || !currentProduct)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  const transitionError = getSelfServePlanChangeError(
+    currentProduct.tier,
+    targetProduct.tier
+  );
+  if (transitionError)
+    return NextResponse.json({ error: transitionError }, { status: 400 });
+  // Polar only accepts an existing Free subscription in checkout. Paid
+  // subscriptions use guarded updates, preserving their billing relationship.
+  if (currentProduct.tier !== 'FREE')
+    return NextResponse.json(
+      {
+        error:
+          'Paid subscriptions require a confirmed plan update, not checkout',
+      },
+      { status: 409 }
+    );
+
   let seats: number | undefined;
-
-  if (!workspace.personal) {
-    const { count: memberCount, error: memberCountError } = await supabase
-      .from('workspace_members')
-      .select('*', { count: 'exact', head: true })
-      .eq('ws_id', wsId);
-
-    if (memberCountError) {
+  if (targetProduct.pricing_model === 'seat_based') {
+    const capacity = await getSubscriptionTransitionSeats(
+      supabase,
+      subscription,
+      currentProduct.pricing_model,
+      targetProduct
+    );
+    if (!capacity.ok)
       return NextResponse.json(
-        { error: memberCountError.message },
-        { status: 500 }
+        { error: capacity.error },
+        { status: capacity.status }
       );
-    }
-
-    seats = memberCount || 0;
-
-    if (seats && !Number.isInteger(seats)) {
-      return NextResponse.json(
-        { error: 'Seats must be an integer' },
-        { status: 400 }
-      );
-    }
-
-    if (seats < 1 || seats > 1000) {
-      return NextResponse.json(
-        { error: 'Seats must be between 1 and 1000' },
-        { status: 400 }
-      );
-    }
+    seats = capacity.seats;
   }
 
   // HERE is where you add the metadata
@@ -147,6 +187,9 @@ export async function POST(
       products: [productId],
       requireBillingAddress: true,
       seats,
+      minSeats: seats,
+      maxSeats:
+        seats === undefined ? undefined : (targetProduct.max_seats ?? 1000),
       embedOrigin: BASE_URL,
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
     });

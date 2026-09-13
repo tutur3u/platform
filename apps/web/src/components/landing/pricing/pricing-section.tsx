@@ -7,7 +7,9 @@ import {
   Sparkles,
   Tag,
 } from '@tuturuuu/icons/lucide';
-import { useTranslations } from 'next-intl';
+import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Reveal, RevealGroup, RevealItem } from '../shared/reveal';
 import { SectionShell } from '../shared/section-shell';
@@ -17,12 +19,20 @@ import { PricingCard } from './pricing-card';
 import { PricingToggle } from './pricing-toggle';
 
 export function PricingSection() {
+  const catalog = usePublicWorkspacePrices();
+  const locale = useLocale();
+  const prices = catalog.data?.prices;
   const [isYearly, setIsYearly] = useState(false);
   const t = useTranslations('landing.pricing');
 
   /** Shared vocabulary between the cards and the comparison matrix. */
   const soonLabel = t('matrix.values.soon');
 
+  const priceNotice = catalog.isError
+    ? t('pricesUnavailable')
+    : !prices
+      ? t('pricesLoading')
+      : null;
   const tiers = [
     {
       id: 'free',
@@ -47,7 +57,14 @@ export function PricingSection() {
       id: 'plus',
       icon: Sparkles,
       name: t('tiers.plus.name'),
-      price: { monthly: '$8', yearly: '$80' },
+      price: {
+        monthly: prices
+          ? formatMoneyFromMinor(prices.plus.monthly, 'USD', locale)
+          : '—',
+        yearly: prices
+          ? formatMoneyFromMinor(prices.plus.annual, 'USD', locale)
+          : '—',
+      },
       period: {
         monthly: t('tiers.plus.period.monthly'),
         yearly: t('tiers.plus.period.yearly'),
@@ -72,7 +89,14 @@ export function PricingSection() {
       id: 'pro',
       icon: Crown,
       name: t('tiers.pro.name'),
-      price: { monthly: '$15', yearly: '$150' },
+      price: {
+        monthly: prices
+          ? formatMoneyFromMinor(prices.pro.monthly, 'USD', locale)
+          : '—',
+        yearly: prices
+          ? formatMoneyFromMinor(prices.pro.annual, 'USD', locale)
+          : '—',
+      },
       period: {
         monthly: t('tiers.pro.period.monthly'),
         yearly: t('tiers.pro.period.yearly'),
@@ -165,6 +189,14 @@ export function PricingSection() {
 
       {/* Feature comparison */}
       <Reveal>
+        {priceNotice && (
+          <p
+            role="status"
+            className="text-center text-muted-foreground text-sm"
+          >
+            {priceNotice}
+          </p>
+        )}
         <FeatureMatrix />
       </Reveal>
 
