@@ -18,11 +18,20 @@ export const SUBPROCESSORS: readonly Subprocessor[] = [
     regions: ['Global edge network'],
   },
   {
-    changedAt: '2026-07-27',
-    dataCategories: ['IP addresses', 'request metadata', 'security signals'],
+    changedAt: '2026-09-13',
+    dataCategories: [
+      'IP addresses',
+      'request metadata',
+      'security signals',
+      'application content',
+      'stored files',
+      'collaboration state',
+      'meeting media when enabled',
+    ],
     name: 'Cloudflare',
     privacyUrl: 'https://www.cloudflare.com/privacypolicy/',
-    purpose: 'Network delivery, DNS, abuse prevention, and security',
+    purpose:
+      'Network delivery, security, application execution, durable state, storage, and realtime/media delivery where enabled',
     regions: ['Global network'],
   },
   {
@@ -54,11 +63,12 @@ export const SUBPROCESSORS: readonly Subprocessor[] = [
     regions: ['Provider-operated regions'],
   },
   {
-    changedAt: '2026-07-27',
+    changedAt: '2026-09-13',
     dataCategories: ['billing contact details', 'transaction metadata'],
     name: 'Polar',
     privacyUrl: 'https://polar.sh/legal/privacy',
-    purpose: 'Subscription billing and payment processing',
+    purpose:
+      'Merchant-of-record resale, subscription billing, payments, tax and transaction compliance; role depends on the activity',
     regions: ['Provider-operated regions'],
   },
   {

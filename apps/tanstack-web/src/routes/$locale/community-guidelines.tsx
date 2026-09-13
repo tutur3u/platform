@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Heart } from '@tuturuuu/icons/lucide';
+import { getLegalDocument } from '@tuturuuu/legal';
+import { toLegalPageConfig } from '../../components/legal/canonical-legal-config';
 import { LegalPageLayout } from '../../components/legal/legal-page-layout';
-import type { LegalPageConfig } from '../../components/legal/legal-types';
-import { communityGuidelinesSections } from '../../data/legal/community-guidelines-sections';
-import { communityGuidelinesSummaryRows } from '../../data/legal/community-guidelines-summary';
 import { createPageHead } from '../../lib/platform/head';
 
 export const Route = createFileRoute('/$locale/community-guidelines')({
@@ -11,26 +9,18 @@ export const Route = createFileRoute('/$locale/community-guidelines')({
   head: () =>
     createPageHead({
       description:
-        'Community Guidelines for Tuturuuu JSC - standards of behavior and expectations for our open-source community.',
+        'Community Guidelines governing Tuturuuu workspaces, applications, APIs, integrations, billing, and AI products.',
       title: 'Community Guidelines',
     }),
 });
 
-const config: LegalPageConfig = {
-  badgeText: 'Community',
-  badgeIcon: Heart,
-  title: 'Community',
-  highlightedWord: 'Guidelines',
-  effectiveDate: '2026-02-06',
-  summaryTitle: 'Guidelines at a Glance',
-  summaryDescription:
-    'This summary highlights the key principles but does not replace the full Community Guidelines below.',
-  summaryRows: communityGuidelinesSummaryRows,
-  sections: communityGuidelinesSections,
-  footerText:
-    'These Community Guidelines help ensure a positive experience for everyone on Tuturuuu. If you have questions, please contact our community team at community@tuturuuu.com.',
-};
-
-export default function CommunityGuidelinesPage() {
-  return <LegalPageLayout config={config} />;
+function CommunityGuidelinesPage() {
+  const { locale } = Route.useParams();
+  return (
+    <LegalPageLayout
+      config={toLegalPageConfig(
+        getLegalDocument('community-guidelines', locale)
+      )}
+    />
+  );
 }

@@ -1,9 +1,6 @@
-import type {
-  ArchivedLegalVersion,
-  LegalDocument,
-  LegalDocumentKind,
-  LegalLocale,
-} from './types';
+import { reviseLegalDocument } from './commercial-revisions';
+import { getCommunityPolicy } from './community-policies';
+import type { LegalDocument, LegalDocumentKind, LegalLocale } from './types';
 
 const EFFECTIVE_DATE = '2026-08-15';
 const PUBLISHED_DATE = '2026-07-27';
@@ -65,6 +62,7 @@ We do not sell personal information or share it for cross-context behavioral adv
 
 Users should normally contact their workspace administrator first for customer-controlled content. Tuturuuu will assist controllers under the DPA. The Services are not directed to children below the minimum lawful age; administrators and guardians must obtain required consent, and AI features may have higher age restrictions.`,
       icon: 'scale',
+      id: 'privacy-rights',
       title: 'Regional rights, children, and requests',
       tone: 'indigo',
     },
@@ -127,6 +125,7 @@ Integrations and curated agent tools access only capabilities explicitly approve
 
 AI credits are usage units, not currency, and may expire or be limited by plan. Reservations, provider usage, streaming and billable failures may consume credits as disclosed. Previews can change or end. Tuturuuu may enforce rate, storage, model, retention and usage quotas.`,
       icon: 'credit-card',
+      id: 'purchase-terms',
       title: 'Plans, taxes, renewals, cancellation, and AI credits',
       tone: 'emerald',
     },
@@ -212,6 +211,7 @@ const dpaEn: LegalDocument = {
     {
       content: `Tuturuuu will notify the customer without undue delay after confirming a personal data breach affecting customer data, consistent with legal and security constraints. Tuturuuu will reasonably assist with data-subject requests, impact assessments and regulatory consultation, taking account of processing nature and available information.`,
       icon: 'bell',
+      id: 'incident-assistance',
       title: 'Incidents and data-subject assistance',
       tone: 'orange',
     },
@@ -264,12 +264,14 @@ const slaEn: LegalDocument = {
     {
       content: `Downtime excludes previews, free tiers, customer configuration, third-party providers outside Tuturuuu control, internet or device failure, force majeure, abuse, suspension, emergency security work and announced maintenance. Tuturuuu communicates material incidents through available status and support channels and prioritizes restoration and accurate post-incident review.`,
       icon: 'bell',
+      id: 'sla-exclusions',
       title: 'Exclusions, incidents, and maintenance',
       tone: 'orange',
     },
     {
       content: `When activated, the order form specifies credit tiers and maximum credit. Credits are the sole contractual SLA remedy, are applied to future invoices, cannot exceed affected recurring fees and are not cash. Claims must be submitted by an authorized customer contact within 30 days with dates, impact and supporting request identifiers. Tuturuuu will validate measurements in good faith.`,
       icon: 'credit-card',
+      id: 'sla-claims',
       title: 'Credits and claim procedure',
       tone: 'emerald',
     },
@@ -345,6 +347,9 @@ For each provider, Tuturuuu maintains its purpose, data categories, operating re
 };
 
 function translateDocument(document: LegalDocument): LegalDocument {
+  const kind = document.kind;
+  if (kind === 'acceptable-use' || kind === 'community-guidelines')
+    return document;
   const translations: Record<
     LegalDocumentKind,
     Pick<
@@ -408,7 +413,7 @@ function translateDocument(document: LegalDocument): LegalDocument {
       title: 'Danh mục bên',
     },
   };
-  const translated = translations[document.kind];
+  const translated = translations[kind];
   const sectionTranslations: Record<
     LegalDocumentKind,
     Array<{ content: string; title: string }>
@@ -638,18 +643,18 @@ Với mỗi nhà cung cấp, Tuturuuu duy trì mục đích, loại dữ liệu,
     locale: 'vi',
     sections: document.sections.map((section, index) => ({
       ...section,
-      ...sectionTranslations[document.kind][index],
+      ...sectionTranslations[kind][index],
     })),
-    summaryRows: summaryTranslations[document.kind],
+    summaryRows: summaryTranslations[kind],
   };
 }
 
 const englishDocuments = {
-  dpa: dpaEn,
-  privacy: privacyEn,
-  sla: slaEn,
-  subprocessors: subprocessorsEn,
-  terms: termsEn,
+  dpa: reviseLegalDocument(dpaEn),
+  privacy: reviseLegalDocument(privacyEn),
+  sla: reviseLegalDocument(slaEn),
+  subprocessors: reviseLegalDocument(subprocessorsEn),
+  terms: reviseLegalDocument(termsEn),
 } as const satisfies Record<LegalDocumentKind, LegalDocument>;
 
 export const LEGAL_DOCUMENTS: Record<
@@ -658,32 +663,21 @@ export const LEGAL_DOCUMENTS: Record<
 > = {
   en: englishDocuments,
   vi: {
-    dpa: translateDocument(dpaEn),
-    privacy: translateDocument(privacyEn),
-    sla: translateDocument(slaEn),
-    subprocessors: translateDocument(subprocessorsEn),
-    terms: translateDocument(termsEn),
+    dpa: reviseLegalDocument(translateDocument(dpaEn)),
+    privacy: reviseLegalDocument(translateDocument(privacyEn)),
+    sla: reviseLegalDocument(translateDocument(slaEn)),
+    subprocessors: reviseLegalDocument(translateDocument(subprocessorsEn)),
+    terms: reviseLegalDocument(translateDocument(termsEn)),
   },
 };
 
-export const ARCHIVED_LEGAL_VERSIONS: readonly ArchivedLegalVersion[] = [
-  {
-    effectiveDate: '2026-02-06',
-    kind: 'privacy',
-    locale: 'en',
-    version: '2026-02-06',
-  },
-  {
-    effectiveDate: '2025-01-01',
-    kind: 'terms',
-    locale: 'en',
-    version: '2025-01-01',
-  },
-] as const;
+export { ARCHIVED_LEGAL_VERSIONS } from './archive';
 
 export function getLegalDocument(
-  kind: LegalDocumentKind,
+  kind: LegalDocumentKind | 'acceptable-use' | 'community-guidelines',
   locale: string
 ): LegalDocument {
+  if (kind === 'acceptable-use' || kind === 'community-guidelines')
+    return getCommunityPolicy(kind, locale);
   return LEGAL_DOCUMENTS[locale === 'vi' ? 'vi' : 'en'][kind];
 }
