@@ -373,7 +373,6 @@ export default function ChatMessageList({
                     />
                   ) : (
                     <div className="flex min-w-0 max-w-full flex-col gap-2 overflow-hidden *:min-w-0 *:max-w-full">
-                      {footer}
                       {(() => {
                         const descriptors = resolveMessageRenderGroups({
                           message,
@@ -519,6 +518,7 @@ export default function ChatMessageList({
         );
       })}
 
+      {footer}
       {(() => {
         const status = getAssistantActivityStatus({
           isStreaming,

@@ -94,8 +94,8 @@ export function useLiveConversation(
         errorText: translations.current('action_interrupted'),
       });
     const closed = () => {
-      interrupted();
       if (!sessionActive.current) return;
+      interrupted();
       sessionActive.current = false;
       publish({
         type: 'notice',
