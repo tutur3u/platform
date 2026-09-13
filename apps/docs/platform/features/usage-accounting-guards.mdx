@@ -49,3 +49,13 @@ explicitly bound before a catalog update; display names are not identifiers.
 These controls do not activate new prices, reduce existing AI grants, or implement
 a complete cross-product billing ledger. Use the commercial rollout runbook for
 versioned allowance changes, provider reconciliation and existing-customer notice.
+
+## Meeting lifecycle accounting
+
+Room deadlines apply to admitted legacy snapshots as well as new rooms. Legacy
+participant time before observation remains unknown and is marked as incomplete
+in the usage response and UI; it is never backfilled as a fabricated zero-cost history.
+Lobby approvals carry the room deadline. Successful provider publications that
+cannot be committed after a leave or room end are queued for durable cleanup.
+Cleanup completion removes only confirmed obligations and preserves newer usage
+counters and cleanup requests. The local server stops its sweep when stopped.

@@ -256,3 +256,28 @@ it('rejects a late publish even when idle arrived before any tracks were registe
   expect(f.options.runSfu).toHaveBeenCalledOnce();
   expect(f.state.tracks['fresh:audio']).toBeDefined();
 });
+
+it('retains late successful publications for cleanup after the room ends', async () => {
+  const f = fixture();
+  let resolve!: (value: unknown) => void;
+  f.options.runSfu.mockImplementation(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      })
+  );
+  const pending = f.run(publish());
+  await tick();
+  await f.run({ type: 'room.end' });
+  resolve({ tracks: [] });
+  await pending;
+  expect(f.state.ended).toBe(true);
+  expect(f.state.tracks).toEqual({});
+  expect(f.state.budget?.pendingPublications).toEqual([
+    expect.objectContaining({
+      sessionId: 'pub',
+      mid: '0',
+      userId: token.userId,
+    }),
+  ]);
+});

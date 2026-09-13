@@ -3938,6 +3938,7 @@
       "guest_transcription_notice": "The host can enable live transcription with Gemini and save notes for workspace members.",
       "hand_raised": "Hand raised",
       "hide_meeting_notes": "Hide notes & transcript",
+      "historical_usage_unknown": "This room started before server accounting was enabled. Earlier participant usage is unavailable and is not included in this total.",
       "host_controls": "Host controls",
       "in_call": "In this call",
       "incomplete_live_cost": "Incomplete cost coverage for {count} billing periods",

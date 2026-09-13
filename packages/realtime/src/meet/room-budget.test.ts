@@ -12,6 +12,7 @@ import {
   expireRoomBudget,
   MEET_MAX_ROOM_DURATION_MS,
 } from './room-budget';
+import { mergePublicationCleanup } from './room-cleanup';
 
 const now = Date.parse('2026-09-13T00:00:00Z');
 function token(userId = '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691', role = 'host') {
@@ -144,4 +145,30 @@ describe('meeting resource budget', () => {
     });
     expect(cleaned.budget?.pendingPublications).toEqual([]);
   });
+});
+
+it('expires admitted legacy snapshots without inventing historical usage', () => {
+  const legacy = { ...initial(), budget: undefined };
+  const expired = expireRoomBudget(legacy, now + MEET_MAX_ROOM_DURATION_MS + 1);
+  expect(expired?.state.ended).toBe(true);
+  expect(expired?.state.budget?.participantMilliseconds).toBe(0);
+  expect(expired?.state.budget?.historicalUsageUnknown).toBe(true);
+  expect(expired?.reply).toEqual([]);
+  expect(expired?.broadcast).toEqual([{ type: 'room.ended' }]);
+});
+it('preserves current accounting and newly queued publications during cleanup', () => {
+  const started = initial();
+  const oldTrack = { sessionId: 'old', userId: 'host', mid: '0' };
+  const newTrack = { sessionId: 'new', userId: 'host', mid: '1' };
+  started.budget!.pendingPublications = [oldTrack];
+  const current = accountRoomTime(started, now + 1000);
+  current.budget!.pendingPublications = [oldTrack, newTrack];
+  const progress = {
+    ...started,
+    budget: { ...started.budget!, pendingPublications: [] },
+  };
+  const merged = mergePublicationCleanup(current, started, progress);
+  expect(merged.budget?.participantMilliseconds).toBe(1000);
+  expect(merged.budget?.accountedAt).toBe(now + 1000);
+  expect(merged.budget?.pendingPublications).toEqual([newTrack]);
 });

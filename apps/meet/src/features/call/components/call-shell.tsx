@@ -213,11 +213,11 @@ export function ConnectedCallShell({
         avatarUrl={defaultAvatarUrl}
         defaultDisplayName={defaultDisplayName}
         connectionError={
-          resourceErrorKey(state.error)
-            ? t(resourceErrorKey(state.error)!)
-            : room.connectionStatus === 'closed' ||
-                room.connectionStatus === 'error'
-              ? t('signaling_unreachable')
+          room.connectionStatus === 'closed' ||
+          room.connectionStatus === 'error'
+            ? t('signaling_unreachable')
+            : resourceErrorKey(state.error)
+              ? t(resourceErrorKey(state.error)!)
               : null
         }
         isJoining={state.admission === 'connecting'}

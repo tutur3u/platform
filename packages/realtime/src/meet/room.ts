@@ -452,6 +452,9 @@ export function applyMeetRoomCommand(
           {
             message: {
               admitted: true,
+              roomExpiresAt: next.budget
+                ? new Date(next.budget.expiresAt).toISOString()
+                : undefined,
               decidedBy: userId,
               type: 'admission.result',
             },

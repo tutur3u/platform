@@ -3938,6 +3938,7 @@
       "guest_transcription_notice": "Chủ phòng có thể bật chép lời trực tiếp bằng Gemini và lưu ghi chú cho thành viên không gian làm việc.",
       "hand_raised": "Đã giơ tay",
       "hide_meeting_notes": "Ẩn ghi chú và bản chép lời",
+      "historical_usage_unknown": "Phòng này bắt đầu trước khi bật theo dõi mức dùng trên máy chủ. Mức dùng trước đó chưa xác định và không nằm trong tổng này.",
       "host_controls": "Điều khiển của chủ phòng",
       "in_call": "Trong cuộc gọi",
       "incomplete_live_cost": "Chi phí chưa đầy đủ cho {count} kỳ thanh toán",
