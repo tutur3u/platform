@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  AudioLines,
-  CalendarDays,
-  CheckCheck,
-  Download,
-  ListTodo,
-  NotebookPen,
-  Sparkles,
-  Wrench,
-} from '@tuturuuu/icons';
+import { Download, Wrench } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -19,17 +10,15 @@ import type { LiveSessionNote, LiveToolActivity } from '../use-live-tools';
 import { LiveActionPreview } from './live-action-preview';
 
 export function LiveWorkspace({
-  connected,
   authorizationExpired,
-  speaking,
-  listening,
   entries,
   activities,
   notes,
   decide,
-  onPrompt,
+  visualization,
   status,
   results,
+  hasResults = false,
   controls,
   children,
 }: {
@@ -41,9 +30,10 @@ export function LiveWorkspace({
   activities: LiveToolActivity[];
   notes: LiveSessionNote[];
   decide: (id: string, allowed: boolean) => void;
-  onPrompt: (text: string) => void;
+  visualization: ReactNode;
   status: ReactNode;
   results: ReactNode;
+  hasResults?: boolean;
   controls: ReactNode;
   children: ReactNode;
 }) {
@@ -83,55 +73,37 @@ export function LiveWorkspace({
   };
   return (
     <section
-      className="@container relative flex min-h-0 flex-1 flex-col overflow-y-auto rounded-2xl border bg-background"
+      className="@container flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto"
       aria-label={t('title')}
     >
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-primary text-primary-foreground">
-            <AudioLines className="size-5" />
-          </div>
-          <div>
-            <h2 className="font-semibold tracking-tight">{t('title')}</h2>
-            <p className="text-muted-foreground text-xs">{t('subtitle')}</p>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={exportSession}
-          disabled={!entries.length && !notes.length}
-        >
-          <Download className="size-4" />
-          {t('export')}
-        </Button>
-      </header>
       {authorizationExpired && (
         <p role="status" className="border-b bg-muted px-4 py-3 text-sm">
           {t('expired')}
         </p>
       )}
-      <div className="grid @3xl:min-h-0 @3xl:flex-1 @3xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.7fr)]">
-        <main className="flex @3xl:min-h-0 flex-col @3xl:border-r">
-          <div className="flex items-center justify-between gap-4 border-b bg-muted/20 px-4 py-4 sm:px-6">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <main className="flex min-h-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center justify-between gap-2 px-3">
             {status}
-            <div aria-hidden="true" className="flex h-8 items-center gap-1">
-              {[12, 20, 28, 16, 32, 24, 14, 26, 18].map((height, index) => (
-                <span
-                  key={`${index}-${height}`}
-                  style={{
-                    height: speaking || listening ? height : 4,
-                    animationDelay: `${index * 80}ms`,
-                  }}
-                  className={cn(
-                    'w-1 rounded-full bg-primary/60 transition-[height] motion-reduce:transition-none',
-                    connected &&
-                      (speaking || listening) &&
-                      'motion-safe:animate-pulse'
-                  )}
-                />
-              ))}
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              onClick={exportSession}
+              disabled={!entries.length && !notes.length}
+              aria-label={t('export')}
+              title={t('export')}
+            >
+              <Download className="size-3.5" />
+            </Button>
+          </div>
+          <div
+            className={cn(
+              'flex min-h-12 items-center justify-center overflow-hidden py-1',
+              entries.length ? 'shrink' : 'flex-1'
+            )}
+          >
+            {visualization}
           </div>
           <div
             ref={transcriptRef}
@@ -144,194 +116,166 @@ export function LiveWorkspace({
             aria-label={t('transcript')}
             aria-live="polite"
             aria-relevant="additions text"
-            className="@3xl:min-h-0 min-h-32 @3xl:flex-1 space-y-5 @3xl:overflow-y-auto p-4 sm:p-6"
+            className={cn(
+              'mx-auto min-h-0 w-full max-w-2xl space-y-2 overflow-y-auto px-4 py-2',
+              entries.length > 0 && 'flex-1'
+            )}
           >
-            {!entries.length ? (
-              <div className="mx-auto flex min-h-full max-w-lg flex-col justify-center py-6">
-                <p className="mb-3 flex items-center gap-2 font-medium text-primary text-xs uppercase tracking-widest">
-                  <Sparkles className="size-4" />
-                  {t('eyebrow')}
+            {entries.slice(-3).map((entry) => (
+              <article
+                key={entry.id}
+                className={cn(
+                  'max-w-[95%]',
+                  entry.role === 'user' && 'ml-auto'
+                )}
+              >
+                <p className="mb-0.5 font-medium text-[10px] text-muted-foreground">
+                  {entry.role === 'user' ? t('you') : 'Mira'}
                 </p>
-                <h3 className="max-w-sm font-semibold text-3xl leading-tight tracking-tight sm:text-4xl">
-                  {t('welcome')}
-                </h3>
-                <p className="mt-4 max-w-md text-muted-foreground text-sm leading-relaxed">
-                  {t('intro')}
-                </p>
-                <div className="mt-6 grid gap-2 sm:grid-cols-2">
-                  {(
-                    [
-                      { key: 'plan', icon: ListTodo },
-                      { key: 'schedule', icon: CalendarDays },
-                      { key: 'review', icon: CheckCheck },
-                      { key: 'recap', icon: NotebookPen },
-                    ] as const
-                  ).map(({ key, icon: Icon }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={!connected}
-                      onClick={() => onPrompt(t(`prompts.${key}`))}
-                      className="flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
-                    >
-                      <Icon className="size-4 shrink-0 text-primary" />
-                      {t(`shortcuts.${key}`)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              entries.map((entry) => (
-                <article
-                  key={entry.id}
+                <div
                   className={cn(
-                    'max-w-[95%]',
-                    entry.role === 'user' && 'ml-auto'
+                    'whitespace-pre-wrap break-words rounded-xl px-3 py-2 text-sm leading-relaxed',
+                    entry.role === 'user'
+                      ? 'rounded-tr-sm bg-muted'
+                      : 'rounded-tl-sm border border-primary/10 bg-primary/5'
                   )}
                 >
-                  <p className="mb-1.5 font-medium text-muted-foreground text-xs">
-                    {entry.role === 'user' ? t('you') : 'Mira'}
-                  </p>
-                  <div
-                    className={cn(
-                      'whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-relaxed',
-                      entry.role === 'user'
-                        ? 'rounded-tr-sm bg-muted'
-                        : 'rounded-tl-sm border border-primary/10 bg-primary/5'
-                    )}
-                  >
-                    {entry.text}
-                    {!entry.complete && (
-                      <span
-                        aria-hidden="true"
-                        className="ml-1 inline-block size-1.5 rounded-full bg-primary motion-safe:animate-pulse"
-                      />
-                    )}
-                  </div>
-                  {entry.interrupted && (
-                    <p className="mt-1 text-muted-foreground text-xs">
-                      {t('interrupted')}
-                    </p>
+                  {entry.text}
+                  {!entry.complete && (
+                    <span
+                      aria-hidden="true"
+                      className="ml-1 inline-block size-1.5 rounded-full bg-primary motion-safe:animate-pulse"
+                    />
                   )}
-                </article>
-              ))
-            )}
-          </div>
-          <div className="space-y-3 border-t bg-background p-3 sm:p-4">
-            {controls}
-            <p className="text-center text-muted-foreground text-xs">
-              {t('privacy')}
-            </p>
-          </div>
-        </main>
-        <aside
-          className="flex min-h-0 flex-col border-t @3xl:border-t-0 bg-muted/15"
-          aria-label={t('workspace')}
-        >
-          <div className="flex gap-1 border-b p-2">
-            {(['results', 'activity', 'notes'] as const).map((key) => (
-              <Button
-                key={key}
-                size="sm"
-                variant={panel === key ? 'secondary' : 'ghost'}
-                aria-pressed={panel === key}
-                onClick={() => setPanel(key)}
-                className="flex-1"
-              >
-                {t(key)}
-                {key === 'activity' && activities.length > 0 && (
-                  <span className="text-xs tabular-nums">
-                    {activities.length}
-                  </span>
-                )}
-                {key === 'notes' && notes.length > 0 && (
-                  <span className="text-xs tabular-nums">{notes.length}</span>
-                )}
-              </Button>
-            ))}
-          </div>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
-            {approvals.map((activity) => (
-              <div
-                key={activity.id}
-                className="space-y-3 rounded-xl border border-primary/30 bg-background p-4"
-              >
-                <p className="font-medium text-sm">{t('approval_title')}</p>
-                <p className="text-sm">
-                  {t(`tools.${activity.name}` as 'tools.create_task')}
-                </p>
-                <LiveActionPreview args={activity.args} />
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => decide(activity.id, true)}>
-                    {t('approve')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => decide(activity.id, false)}
-                  >
-                    {t('decline')}
-                  </Button>
                 </div>
-              </div>
+                {entry.interrupted && (
+                  <p className="mt-1 text-muted-foreground text-xs">
+                    {t('interrupted')}
+                  </p>
+                )}
+              </article>
             ))}
-            {panel === 'results' && (
-              <>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  {t('results_hint')}
-                </p>
-                {results}
-              </>
-            )}
-            {panel === 'activity' &&
-              (!activities.length ? (
-                <p className="py-6 text-muted-foreground text-sm">
-                  {t('activity_empty')}
-                </p>
-              ) : (
-                activities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-center gap-3 rounded-xl border bg-background p-3"
-                  >
-                    <Wrench className="size-4 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-sm">
-                        {t.has(`tools.${activity.name}` as 'tools.create_task')
-                          ? t(`tools.${activity.name}` as 'tools.create_task')
-                          : activity.name.replaceAll('_', ' ')}
-                      </p>
-                      <p
-                        className="text-muted-foreground text-xs"
-                        role="status"
-                      >
-                        {t(`statuses.${activity.status}`)}
-                      </p>
-                    </div>
-                  </div>
-                ))
-              ))}
-            {panel === 'notes' && (
-              <>
-                <p className="text-muted-foreground text-xs">
-                  {t('notes_hint')}
-                </p>
-                {notes.map((note) => (
-                  <article
-                    key={note.id}
-                    className="rounded-xl border bg-background p-4"
-                  >
-                    <h3 className="font-medium text-sm">{note.title}</h3>
-                    <p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground text-sm">
-                      {note.content}
-                    </p>
-                  </article>
-                ))}
-              </>
-            )}
           </div>
-        </aside>
+          <div className="shrink-0 space-y-1 px-3 py-2">{controls}</div>
+        </main>
+        {(hasResults || activities.length > 0 || notes.length > 0) && (
+          <aside
+            className="flex max-h-48 min-h-0 shrink-0 flex-col border-t bg-muted/15"
+            aria-label={t('workspace')}
+          >
+            <div className="flex gap-1 border-b p-2">
+              {(['results', 'activity', 'notes'] as const).map((key) => (
+                <Button
+                  key={key}
+                  size="sm"
+                  variant={panel === key ? 'secondary' : 'ghost'}
+                  aria-pressed={panel === key}
+                  onClick={() => setPanel(key)}
+                  className="flex-1"
+                >
+                  {t(key)}
+                  {key === 'activity' && activities.length > 0 && (
+                    <span className="text-xs tabular-nums">
+                      {activities.length}
+                    </span>
+                  )}
+                  {key === 'notes' && notes.length > 0 && (
+                    <span className="text-xs tabular-nums">{notes.length}</span>
+                  )}
+                </Button>
+              ))}
+            </div>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+              {approvals.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="space-y-3 rounded-xl border border-primary/30 bg-background p-4"
+                >
+                  <p className="font-medium text-sm">{t('approval_title')}</p>
+                  <p className="text-sm">
+                    {t(`tools.${activity.name}` as 'tools.create_task')}
+                  </p>
+                  <LiveActionPreview args={activity.args} />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => decide(activity.id, true)}>
+                      {t('approve')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => decide(activity.id, false)}
+                    >
+                      {t('decline')}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {panel === 'results' && <>{results}</>}
+              {panel === 'activity' &&
+                (!activities.length ? (
+                  <p className="py-6 text-muted-foreground text-sm">
+                    {t('activity_empty')}
+                  </p>
+                ) : (
+                  activities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center gap-3 rounded-xl border bg-background p-3"
+                    >
+                      <Wrench className="size-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-sm">
+                          {t.has(
+                            `tools.${activity.name}` as 'tools.create_task'
+                          )
+                            ? t(`tools.${activity.name}` as 'tools.create_task')
+                            : activity.name.replaceAll('_', ' ')}
+                        </p>
+                        <p
+                          className="text-muted-foreground text-xs"
+                          role="status"
+                        >
+                          {t(`statuses.${activity.status}`)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ))}
+              {panel === 'notes' && (
+                <>
+                  <p className="text-muted-foreground text-xs">
+                    {t('notes_hint')}
+                  </p>
+                  {notes.map((note) => (
+                    <article
+                      key={note.id}
+                      className="rounded-xl border bg-background p-4"
+                    >
+                      <h3 className="font-medium text-sm">{note.title}</h3>
+                      <p className="mt-2 whitespace-pre-wrap break-words text-muted-foreground text-sm">
+                        {note.content}
+                      </p>
+                    </article>
+                  ))}
+                </>
+              )}
+            </div>
+          </aside>
+        )}
       </div>
+      {entries.length > 3 && (
+        <details className="shrink-0 px-4 py-1 text-muted-foreground text-xs">
+          <summary className="cursor-pointer">{t('transcript')}</summary>
+          <div className="max-h-40 space-y-2 overflow-y-auto py-2">
+            {entries.map((entry) => (
+              <p key={entry.id}>
+                <strong>{entry.role === 'user' ? t('you') : 'Mira'}: </strong>
+                {entry.text}
+              </p>
+            ))}
+          </div>
+        </details>
+      )}
       {children}
     </section>
   );
