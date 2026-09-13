@@ -68,6 +68,9 @@ export async function hasActiveSubscription(
     });
 
     if (!Array.isArray(result?.items)) {
+      console.warn(
+        'Unexpected Polar subscriptions response: items is not an array; failing closed'
+      );
       return { hasWorkspace: true, hasActive: true, subscription: null };
     }
     const activeSubscription = result.items.find((sub) =>

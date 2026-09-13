@@ -21,6 +21,14 @@ const seat = {
 };
 
 describe('Polar product price mapping', () => {
+  it('rejects currency codes with a trailing line terminator for credit packs', () => {
+    expect(() =>
+      getSupportedProductPrice(
+        product([{ ...fixed, priceCurrency: 'usd\n' }]),
+        false
+      )
+    ).toThrow();
+  });
   it('maps a fixed USD amount and rejects malformed currencies and seat bounds', () => {
     expect(getSupportedProductPrice(product([fixed]))).toMatchObject({
       amount: 900,
