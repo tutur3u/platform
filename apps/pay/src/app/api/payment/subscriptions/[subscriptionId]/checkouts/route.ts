@@ -127,6 +127,30 @@ export async function POST(
       { status: 400 }
     );
   }
+  if (!subscription.product_id)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  const { data: currentProduct, error: currentError } = await supabase
+    .schema('private')
+    .from('workspace_subscription_products')
+    .select('tier')
+    .eq('id', subscription.product_id)
+    .maybeSingle();
+  if (currentError || !currentProduct)
+    return NextResponse.json(
+      { error: 'Current pricing model unavailable' },
+      { status: 503 }
+    );
+  if (currentProduct.tier !== 'FREE' && targetProduct.tier === 'FREE')
+    return NextResponse.json(
+      {
+        error:
+          'Cancel at period end to move to Free without forfeiting paid access',
+      },
+      { status: 400 }
+    );
   let seats: number | undefined;
   if (targetProduct.pricing_model === 'seat_based') {
     const { count, error: countError } = await supabase

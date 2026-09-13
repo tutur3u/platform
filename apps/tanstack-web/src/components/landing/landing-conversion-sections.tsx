@@ -1,4 +1,4 @@
-import { getConfiguredInternalApiBaseUrl } from '@tuturuuu/internal-api';
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
 import {
   ArrowRight,
@@ -73,12 +73,14 @@ export function AiSection({
 export function PricingSection({
   content,
   priceStatus,
+  locale,
 }: Readonly<{
   content: LandingContent['pricing'];
+  locale: string;
   priceStatus: { pricesLoading: string; pricesUnavailable: string };
 }>) {
   const catalog = usePublicWorkspacePrices({
-    baseUrl: getConfiguredInternalApiBaseUrl(),
+    baseUrl: import.meta.env.VITE_PUBLIC_WEB_API_ORIGIN || 'https://tuturuuu.com',
   });
   return (
     <SectionShell id="pricing">
@@ -111,7 +113,7 @@ export function PricingSection({
               <span className="font-bold text-4xl">
                 {tier.name === 'Plus' || tier.name === 'Pro'
                   ? catalog.data
-                    ? `$${catalog.data.prices[tier.name === 'Plus' ? 'plus' : 'pro'].monthly / 100}`
+                    ? formatMoneyFromMinor(catalog.data.prices[tier.name === 'Plus' ? 'plus' : 'pro'].monthly, 'USD', locale)
                     : '—'
                   : tier.price}
               </span>

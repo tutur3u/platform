@@ -113,6 +113,21 @@ async function main() {
     throw new Error('Invalid database catalog response');
   assertCatalogDatabaseSnapshot(changes, preflightRows);
 
+  // Validate the entire refreshed catalog before the first write. Provider writes
+  // are still sequential, so keep the per-product race check below as well.
+  const refreshedProducts = [];
+  for (const key of CATALOG_KEYS)
+    refreshedProducts.push(await polar.products.get({ id: mapping[key] }));
+  const refreshedChanges = planCatalogSync(
+    refreshedProducts,
+    mapping,
+    organizationId
+  );
+  if (JSON.stringify(refreshedChanges) !== JSON.stringify(changes))
+    throw new Error(
+      'Catalog changed before apply; re-run preview. No provider changes applied'
+    );
+
   for (const change of changes) {
     if (!change.needsUpdate) continue;
     // Re-read before each write. A changed price invalidates the reviewed plan.

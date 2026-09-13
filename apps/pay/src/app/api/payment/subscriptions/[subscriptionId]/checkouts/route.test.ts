@@ -15,13 +15,21 @@ function adminFixture({
   subscription = true,
   model = 'seat_based',
   count = 1,
+  targetTier = 'PLUS',
+  currentTier = 'PLUS',
+  currentMissing = false,
 }: {
   subscription?: boolean;
   model?: string;
   count?: number | null;
+  targetTier?: string;
+  currentTier?: string;
+  currentMissing?: boolean;
 } = {}) {
   const queries: Record<string, ReturnType<typeof vi.fn>> = {};
+  let productQueries = 0;
   const from = vi.fn((table: string) => {
+    if (table === 'workspace_subscription_products') productQueries++;
     const result =
       table === 'workspaces'
         ? { data: { id: 'workspace', personal: true } }
@@ -32,11 +40,24 @@ function adminFixture({
                     id: 'sub',
                     ws_id: 'workspace',
                     polar_subscription_id: 'polar-sub',
+                    product_id: 'current-product',
                   }
                 : null,
             }
           : table === 'workspace_subscription_products'
-            ? { data: { tier: 'PLUS', pricing_model: model, archived: false } }
+            ? {
+                data:
+                  productQueries > 1
+                    ? currentMissing
+                      ? null
+                      : { tier: currentTier }
+                    : {
+                        tier: targetTier,
+                        pricing_model: model,
+                        archived: false,
+                        price: 0,
+                      },
+              }
             : { count, error: null };
     const query = Object.assign(Promise.resolve(result), {
       select: vi.fn(),
@@ -93,6 +114,24 @@ describe('workspace checkout boundary', () => {
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({ seats: 1, metadata: { wsId: 'workspace' } })
     );
+  });
+  it('requires period-end cancellation for paid-to-Free changes', async () => {
+    const f = adminFixture({ targetTier: 'FREE', model: 'free' });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    expect((await checkout()).status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it('fails closed when the current product cannot be verified', async () => {
+    const f = adminFixture({ currentMissing: true });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    expect((await checkout()).status).toBe(503);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it('permits a verified Free-to-paid checkout', async () => {
+    const f = adminFixture({ currentTier: 'FREE' });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    expect((await checkout()).status).toBe(200);
+    expect(mocks.create).toHaveBeenCalledOnce();
   });
   it('denies legacy fixed products and unavailable seat accounting', async () => {
     for (const config of [{ model: 'fixed' }, { count: null }, { count: 0 }]) {

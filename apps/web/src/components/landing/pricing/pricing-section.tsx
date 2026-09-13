@@ -8,7 +8,8 @@ import {
   Tag,
 } from '@tuturuuu/icons/lucide';
 import { usePublicWorkspacePrices } from '@tuturuuu/ui/public-workspace-prices';
-import { useTranslations } from 'next-intl';
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Reveal, RevealGroup, RevealItem } from '../shared/reveal';
 import { SectionShell } from '../shared/section-shell';
@@ -19,6 +20,7 @@ import { PricingToggle } from './pricing-toggle';
 
 export function PricingSection() {
   const catalog = usePublicWorkspacePrices();
+  const locale = useLocale();
   const prices = catalog.data?.prices;
   const [isYearly, setIsYearly] = useState(false);
   const t = useTranslations('landing.pricing');
@@ -56,8 +58,12 @@ export function PricingSection() {
       icon: Sparkles,
       name: t('tiers.plus.name'),
       price: {
-        monthly: prices ? `$${prices.plus.monthly / 100}` : '—',
-        yearly: prices ? `$${prices.plus.annual / 100}` : '—',
+        monthly: prices
+          ? formatMoneyFromMinor(prices.plus.monthly, 'USD', locale)
+          : '—',
+        yearly: prices
+          ? formatMoneyFromMinor(prices.plus.annual, 'USD', locale)
+          : '—',
       },
       period: {
         monthly: t('tiers.plus.period.monthly'),
@@ -84,8 +90,12 @@ export function PricingSection() {
       icon: Crown,
       name: t('tiers.pro.name'),
       price: {
-        monthly: prices ? `$${prices.pro.monthly / 100}` : '—',
-        yearly: prices ? `$${prices.pro.annual / 100}` : '—',
+        monthly: prices
+          ? formatMoneyFromMinor(prices.pro.monthly, 'USD', locale)
+          : '—',
+        yearly: prices
+          ? formatMoneyFromMinor(prices.pro.annual, 'USD', locale)
+          : '—',
       },
       period: {
         monthly: t('tiers.pro.period.monthly'),

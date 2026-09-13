@@ -246,7 +246,8 @@ export default function PlanListDialog({
               : 'FREE',
         amount:
           plan.pricingModel === 'seat_based'
-            ? (plan.pricePerSeat ?? 0) * memberCount
+            ? (plan.pricePerSeat ?? 0) *
+              Math.max(memberCount, plan.minSeats ?? 1)
             : (plan.price ?? 0),
       }
     );
