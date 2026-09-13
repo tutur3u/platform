@@ -23,9 +23,10 @@ describe('composer density', () => {
 
   it('keeps focused controls and drafts expanded', () => {
     vi.useFakeTimers();
+    const onCollapse = vi.fn();
     const { result, rerender } = renderHook(
       ({ protectedContent }) =>
-        useMiraComposerDensity({ enabled: true, protectedContent }),
+        useMiraComposerDensity({ enabled: true, protectedContent, onCollapse }),
       { initialProps: { protectedContent: false } }
     );
     act(() => result.current.onFocus());
@@ -35,6 +36,7 @@ describe('composer density', () => {
     rerender({ protectedContent: true });
     act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS * 2));
     expect(result.current.compact).toBe(false);
+    expect(onCollapse).not.toHaveBeenCalled();
   });
 
   it('compacts on downward scrolling without waiting for the idle timer', () => {

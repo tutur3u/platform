@@ -107,7 +107,7 @@ export function AssistantVoiceSession({
   const hasVisualizations = useVisualizationStore(
     (state) =>
       state.visualizations.some((item) => !item.dismissed) ||
-      !!state.centerVisualization
+      !!(state.centerVisualization && !state.centerVisualization.dismissed)
   );
 
   // Handle grounding metadata for Google Search visualization

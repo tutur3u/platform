@@ -33,17 +33,19 @@ function Harness() {
       wsId="workspace-1"
     >
       {(onVoiceToggle, _voiceActive, live) => (
-        <div ref={composerRef} data-testid="composer">
+        <div data-testid="chat-surface">
           {live.content}
-          <textarea
-            ref={inputRef}
-            aria-label="Message"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-          <button type="button" onClick={onVoiceToggle}>
-            Start voice
-          </button>
+          <div ref={composerRef} data-testid="composer">
+            <textarea
+              ref={inputRef}
+              aria-label="Message"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+            />
+            <button type="button" onClick={onVoiceToggle}>
+              Start voice
+            </button>
+          </div>
         </div>
       )}
     </MiraVoiceModeSwitcher>
@@ -68,7 +70,6 @@ describe('MiraVoiceModeSwitcher', () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
     const panel = screen.getByRole('region', { name: 'Live' });
-    expect(screen.getByTestId('composer')).toContainElement(panel);
     expect(panel).not.toHaveClass('absolute');
     expect(panel.style.top).toBe('');
     expect(panel.style.bottom).toBe('');

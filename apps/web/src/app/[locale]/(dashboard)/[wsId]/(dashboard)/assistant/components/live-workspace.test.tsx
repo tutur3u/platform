@@ -103,5 +103,5 @@ it('follows the latest captions while retaining full session history', () => {
   expect(screen.getByText('Caption 0')).not.toBeVisible();
   fireEvent.click(screen.getByText('transcript', { selector: 'summary' }));
   // The complete history remains available in the disclosure and export.
-  expect(screen.getByText('Caption 0')).toBeInTheDocument();
+  expect(screen.getByText('Caption 0')).toBeVisible();
 });
