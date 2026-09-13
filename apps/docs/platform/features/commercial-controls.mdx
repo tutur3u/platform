@@ -43,7 +43,11 @@ changes require assisted migration. Missing counts or bounds block updates.
 Paid updates synchronize the database projection before reporting completion. If
 projection fails after Polar succeeds, the UI reports pending synchronization and
 disables resubmission. A retry reconciles an already-applied plan without invoicing
-the same change again.
+the same change again. Pending state survives confirmation-dialog dismissal until
+the billing page observes the target plan. Subscription projections insert without
+overwriting existing rows, then update only when the stored provider timestamp is
+not newer. Older webhook deliveries return no subscription data, preventing stale
+seat-assignment or cancellation side effects.
 An invitation alone does not increase the purchased quantity. All quantity
 reductions must still cover members and both pending invitation tables.
 The legacy preview endpoint returns list-price estimates, not discount- or tax-aware

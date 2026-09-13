@@ -220,10 +220,12 @@ export async function POST(
           });
     let syncPending = false;
     try {
-      await syncSubscriptionToDatabase(supabase, {
+      const projection = await syncSubscriptionToDatabase(supabase, {
         ...result,
         metadata: { ...result.metadata, wsId: subscription.ws_id },
       });
+      if (!('subscriptionData' in projection) || !projection.subscriptionData)
+        syncPending = true;
     } catch {
       // The charge may already have succeeded: never turn this into a retryable
       // billing failure. Webhooks will retry the projection independently.
