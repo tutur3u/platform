@@ -6,7 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { loadArtifactRows } from './mira-artifact-data';
 import { artifactVisuals } from './mira-artifact-visuals';
@@ -25,6 +25,7 @@ export function MiraArtifactPanel({
   artifact: WorkspaceArtifact;
 }) {
   const t = useTranslations('dashboard.mira_workspace');
+  const scrollRootRef = useRef<HTMLDivElement>(null);
   const requestedSearch = artifact.presentation?.search ?? '';
   const [previousSearch, setPreviousSearch] = useState(requestedSearch);
   const [search, setSearch] = useState(requestedSearch);
@@ -127,7 +128,10 @@ export function MiraArtifactPanel({
           </Tooltip>
         </div>
       </header>
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+      <div
+        ref={scrollRootRef}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3"
+      >
         <div className="relative">
           <Search
             aria-hidden
@@ -152,7 +156,7 @@ export function MiraArtifactPanel({
           </div>
         ) : query.isError ? (
           <div role="alert" className="space-y-2">
-            <p className="text-destructive text-sm">{t('load_failed')}</p>
+            <p className="text-dynamic-red text-sm">{t('load_failed')}</p>
             <Button
               size="sm"
               variant="outline"
@@ -184,6 +188,7 @@ export function MiraArtifactPanel({
         ) : kind === 'tasks' ? (
           <MiraTaskArtifact
             rows={rows}
+            scrollRootRef={scrollRootRef}
             initialFilter={presentation?.taskStatus}
           />
         ) : kind === 'finance' ? (
