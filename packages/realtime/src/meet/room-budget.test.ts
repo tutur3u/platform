@@ -149,7 +149,8 @@ describe('meeting resource budget', () => {
 
 it('expires admitted legacy snapshots without inventing historical usage', () => {
   const legacy = { ...initial(), budget: undefined };
-  const expired = expireRoomBudget(legacy, now + MEET_MAX_ROOM_DURATION_MS + 1);
+  const expired = expireRoomBudget(legacy, now + 1000);
+  expect(expired?.state.budget?.expiresAt).toBe(now + 1000);
   expect(expired?.state.ended).toBe(true);
   expect(expired?.state.budget?.participantMilliseconds).toBe(0);
   expect(expired?.state.budget?.historicalUsageUnknown).toBe(true);

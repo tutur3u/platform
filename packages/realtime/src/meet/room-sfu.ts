@@ -59,8 +59,9 @@ export function applySfuCommand(
       state.retiredTracks
     );
     if (error) return denied(state, error, message.requestId);
+    if (new Set(published.map(meetTrackKey)).size !== published.length)
+      return denied(state, 'invalid_publication', message.requestId);
     if (
-      new Set(published.map(meetTrackKey)).size !== published.length ||
       Object.values(tracks).filter((track) => track.userId === token.userId)
         .length > 6
     )

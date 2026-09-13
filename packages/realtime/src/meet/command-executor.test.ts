@@ -269,7 +269,7 @@ it('retains late successful publications for cleanup after the room ends', async
   const pending = f.run(publish());
   await tick();
   await f.run({ type: 'room.end' });
-  resolve({ tracks: [] });
+  resolve({ tracks: [{ mid: '0' }] });
   await pending;
   expect(f.state.ended).toBe(true);
   expect(f.state.tracks).toEqual({});
@@ -280,4 +280,30 @@ it('retains late successful publications for cleanup after the room ends', async
       userId: token.userId,
     }),
   ]);
+});
+
+it('queues only successful provider tracks after a partial publication failure', async () => {
+  const f = fixture();
+  f.options.runSfu.mockResolvedValue({
+    tracks: [{ mid: '0' }, { mid: '1', errorCode: 'failed' }],
+  });
+  const message = publish();
+  if (message.type !== 'sfu.tracks.publish') throw new Error('invalid fixture');
+  await f.run({
+    ...message,
+    tracks: [
+      ...message.tracks,
+      { location: 'local', trackName: 'video', mid: '1', kind: 'video' },
+    ],
+  });
+  expect(f.state.tracks).toEqual({});
+  expect(
+    f.state.budget?.pendingPublications?.map((track) => track.mid)
+  ).toEqual(['0']);
+});
+it('does not queue requested tracks after a provider-level publication failure', async () => {
+  const f = fixture();
+  f.options.runSfu.mockResolvedValue({ errorCode: 'failed' });
+  await f.run(publish());
+  expect(f.state.budget?.pendingPublications ?? []).toEqual([]);
 });
