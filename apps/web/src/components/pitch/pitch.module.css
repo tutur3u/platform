@@ -480,6 +480,11 @@
     margin: 12mm;
   }
   .deck {
+    --background: white;
+    --foreground: black;
+    --muted: #f0f0f0;
+    --muted-foreground: #444;
+    --border: #ccc;
     display: block;
     background: white;
     color: black;
