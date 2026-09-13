@@ -548,7 +548,8 @@ export class MeetRoomDurableObject implements DurableObject {
               progress
             );
             await this.persist();
-          }
+          },
+          (sessionId) => this.sfuClient().getSession(sessionId)
         );
         this.snapshot = mergePublicationCleanup(
           this.snapshot,

@@ -31,12 +31,6 @@ export function admitOrHold(
   state = accountRoomTime(state, Date.parse(now));
   const expired = expireRoomBudget(state, Date.parse(now));
   if (expired) return expired;
-  const capacityError = roomCapacityError(state, token);
-  if (capacityError)
-    return outcome(state, {
-      reply: [{ type: 'error', error: capacityError }],
-      disconnect: [token.userId],
-    });
   if (state.ended)
     return outcome(state, {
       reply: [{ type: 'room.ended' }],
@@ -75,6 +69,12 @@ export function admitOrHold(
     });
   }
 
+  const capacityError = roomCapacityError(state, token);
+  if (capacityError)
+    return outcome(state, {
+      reply: [{ type: 'error', error: capacityError }],
+      disconnect: [token.userId],
+    });
   state = startRoomBudget(state, token, Date.parse(now));
   const previous = state.presence[token.userId];
   const person = createMeetPresence(token, now, previous?.media);

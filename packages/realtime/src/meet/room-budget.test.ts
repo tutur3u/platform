@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   admitOrHold,
+  applyMeetRoomCommand,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
   meetRealtimeTokenPayloadSchema,
@@ -194,4 +195,39 @@ it('retains both provider mids when pending cleanup and an active track share a 
     '0',
     '1',
   ]);
+});
+
+it('allows a bounded lobby while publishers are full but rejects host admission', () => {
+  const state = initial();
+  const guest = {
+    ...token('8b5c036d-d38d-4c12-b8e8-2e0b2b4a2691', 'speaker'),
+    admission: 'lobby' as const,
+  };
+  const held = admitOrHold(state, guest, new Date(now + 1000).toISOString());
+  expect(held.state.waiting[guest.userId]).toBeDefined();
+  expect(held.disconnect).toEqual([]);
+  const approved = applyMeetRoomCommand(held.state, {
+    token: token(),
+    now: new Date(now + 1000).toISOString(),
+    message: { type: 'admission.decide', userId: guest.userId, admit: true },
+  });
+  expect(approved.state.presence[guest.userId]).toBeUndefined();
+  expect(approved.reply).toContainEqual(
+    expect.objectContaining({ error: 'publisher_limit_reached' })
+  );
+});
+it('resets prior cleanup backoff when ending or expiring an active room', () => {
+  const state = initial();
+  state.budget!.nextCleanupAt = now + 3_600_000;
+  state.tracks.audio = { sessionId: 'session', userId: 'host', mid: '0' };
+  expect(
+    expireRoomBudget(state, now + MEET_MAX_ROOM_DURATION_MS)!.state.budget
+      ?.nextCleanupAt
+  ).toBe(0);
+  const ended = applyMeetRoomCommand(state, {
+    token: token(),
+    now: new Date(now + 1000).toISOString(),
+    message: { type: 'room.end' },
+  });
+  expect(ended.state.budget?.nextCleanupAt).toBe(0);
 });

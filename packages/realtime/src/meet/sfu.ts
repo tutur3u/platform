@@ -108,6 +108,12 @@ export class CloudflareSfuClient {
     });
   }
 
+  getSession(sessionId: string) {
+    return this.request(`/sessions/${encodeURIComponent(sessionId)}`, {
+      method: 'GET',
+    });
+  }
+
   addTracks(input: AddTracksInput) {
     return this.request(
       `/sessions/${encodeURIComponent(input.sessionId)}/tracks/new`,

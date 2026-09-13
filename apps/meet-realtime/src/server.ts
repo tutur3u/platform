@@ -149,7 +149,8 @@ export function createMeetRealtimeServer(
               cleanupStarted,
               progress
             );
-          }
+          },
+          (sessionId) => getSfuClient().getSession(sessionId)
         )
           .then((snapshot) => {
             room.snapshot = mergePublicationCleanup(

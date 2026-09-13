@@ -163,3 +163,18 @@ describe('CloudflareSfuClient', () => {
     );
   });
 });
+
+it('reads provider session state without inventing legacy track identifiers', async () => {
+  const fetchMock = createFetchMock();
+  const client = new CloudflareSfuClient({
+    apiBaseUrl: 'https://rtc.example/v1',
+    appId: 'app',
+    appSecret: 'secret',
+    fetch: fetchMock as unknown as typeof fetch,
+  });
+  await client.getSession('session/one');
+  expect(fetchMock).toHaveBeenCalledWith(
+    'https://rtc.example/v1/apps/app/sessions/session%2Fone',
+    expect.objectContaining({ method: 'GET' })
+  );
+});
