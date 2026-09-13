@@ -1,9 +1,6 @@
-import type {
-  ArchivedLegalVersion,
-  LegalDocument,
-  LegalDocumentKind,
-  LegalLocale,
-} from './types';
+import { reviseLegalDocument } from './commercial-revisions';
+import { getCommunityPolicy } from './community-policies';
+import type { LegalDocument, LegalDocumentKind, LegalLocale } from './types';
 
 const EFFECTIVE_DATE = '2026-08-15';
 const PUBLISHED_DATE = '2026-07-27';
@@ -345,6 +342,9 @@ For each provider, Tuturuuu maintains its purpose, data categories, operating re
 };
 
 function translateDocument(document: LegalDocument): LegalDocument {
+  const kind = document.kind;
+  if (kind === 'acceptable-use' || kind === 'community-guidelines')
+    return document;
   const translations: Record<
     LegalDocumentKind,
     Pick<
@@ -408,7 +408,7 @@ function translateDocument(document: LegalDocument): LegalDocument {
       title: 'Danh mục bên',
     },
   };
-  const translated = translations[document.kind];
+  const translated = translations[kind];
   const sectionTranslations: Record<
     LegalDocumentKind,
     Array<{ content: string; title: string }>
@@ -638,18 +638,18 @@ Với mỗi nhà cung cấp, Tuturuuu duy trì mục đích, loại dữ liệu,
     locale: 'vi',
     sections: document.sections.map((section, index) => ({
       ...section,
-      ...sectionTranslations[document.kind][index],
+      ...sectionTranslations[kind][index],
     })),
-    summaryRows: summaryTranslations[document.kind],
+    summaryRows: summaryTranslations[kind],
   };
 }
 
 const englishDocuments = {
-  dpa: dpaEn,
-  privacy: privacyEn,
-  sla: slaEn,
-  subprocessors: subprocessorsEn,
-  terms: termsEn,
+  dpa: reviseLegalDocument(dpaEn),
+  privacy: reviseLegalDocument(privacyEn),
+  sla: reviseLegalDocument(slaEn),
+  subprocessors: reviseLegalDocument(subprocessorsEn),
+  terms: reviseLegalDocument(termsEn),
 } as const satisfies Record<LegalDocumentKind, LegalDocument>;
 
 export const LEGAL_DOCUMENTS: Record<
@@ -658,32 +658,21 @@ export const LEGAL_DOCUMENTS: Record<
 > = {
   en: englishDocuments,
   vi: {
-    dpa: translateDocument(dpaEn),
-    privacy: translateDocument(privacyEn),
-    sla: translateDocument(slaEn),
-    subprocessors: translateDocument(subprocessorsEn),
-    terms: translateDocument(termsEn),
+    dpa: reviseLegalDocument(translateDocument(dpaEn)),
+    privacy: reviseLegalDocument(translateDocument(privacyEn)),
+    sla: reviseLegalDocument(translateDocument(slaEn)),
+    subprocessors: reviseLegalDocument(translateDocument(subprocessorsEn)),
+    terms: reviseLegalDocument(translateDocument(termsEn)),
   },
 };
 
-export const ARCHIVED_LEGAL_VERSIONS: readonly ArchivedLegalVersion[] = [
-  {
-    effectiveDate: '2026-02-06',
-    kind: 'privacy',
-    locale: 'en',
-    version: '2026-02-06',
-  },
-  {
-    effectiveDate: '2025-01-01',
-    kind: 'terms',
-    locale: 'en',
-    version: '2025-01-01',
-  },
-] as const;
+export { ARCHIVED_LEGAL_VERSIONS } from './archive';
 
 export function getLegalDocument(
-  kind: LegalDocumentKind,
+  kind: LegalDocumentKind | 'acceptable-use' | 'community-guidelines',
   locale: string
 ): LegalDocument {
+  if (kind === 'acceptable-use' || kind === 'community-guidelines')
+    return getCommunityPolicy(kind, locale);
   return LEGAL_DOCUMENTS[locale === 'vi' ? 'vi' : 'en'][kind];
 }

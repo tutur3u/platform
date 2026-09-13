@@ -7,6 +7,8 @@ export type LegalDocumentKind =
   | 'sla'
   | 'subprocessors';
 
+export type CommunityPolicyKind = 'acceptable-use' | 'community-guidelines';
+
 export type LegalSectionTone =
   | 'purple'
   | 'blue'
@@ -47,7 +49,7 @@ export interface LegalDocument {
   effectiveDate: string;
   footer: string;
   highlightedWord: string;
-  kind: LegalDocumentKind;
+  kind: LegalDocumentKind | CommunityPolicyKind;
   locale: LegalLocale;
   publishedDate: string;
   reviewRequired: boolean;
@@ -61,7 +63,7 @@ export interface LegalDocument {
 
 export interface ArchivedLegalVersion {
   effectiveDate: string;
-  kind: LegalDocumentKind;
+  kind: LegalDocumentKind | CommunityPolicyKind;
   locale: LegalLocale;
   version: string;
 }
