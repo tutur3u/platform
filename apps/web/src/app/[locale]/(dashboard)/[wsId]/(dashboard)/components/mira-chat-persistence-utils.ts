@@ -29,6 +29,9 @@ export function restoreMessages(
       const metadata = message.metadata as Record<string, unknown> | null;
       return (
         message.content != null ||
+        Array.isArray(
+          (metadata?.ai as { parts?: unknown } | undefined)?.parts
+        ) ||
         metadata?.toolCalls != null ||
         metadata?.reasoning != null ||
         metadata?.sources != null
@@ -37,6 +40,27 @@ export function restoreMessages(
     .map((message) => {
       const parts: UIMessage['parts'] = [];
       const metadata = message.metadata as Record<string, unknown> | null;
+      const storedParts = (metadata?.ai as { parts?: unknown } | undefined)
+        ?.parts;
+      if (Array.isArray(storedParts) && storedParts.length > 0) {
+        return {
+          id: message.id,
+          role: normalizeRestoredRole(message.role),
+          parts: storedParts.map((part) =>
+            part.type === 'text' &&
+            typeof part.textStart === 'number' &&
+            typeof part.textLength === 'number'
+              ? {
+                  type: 'text',
+                  text: (message.content ?? '').slice(
+                    part.textStart,
+                    part.textStart + part.textLength
+                  ),
+                }
+              : part
+          ) as UIMessage['parts'],
+        };
+      }
       const reasoning = metadata?.reasoning as string | undefined;
       const toolCalls = metadata?.toolCalls as
         | Array<{

@@ -421,3 +421,37 @@ it('preserves required workspace operations when search was selected', () => {
   expect(result.toolChoice).toBe('required');
   expect(result.activeTools).toContain('list_workspace_members');
 });
+
+it('requires the artifact opener for presentation and never repeats it after completion', () => {
+  const input = {
+    steps: [],
+    forceWorkspaceArtifact: true,
+    forceGoogleSearch: false,
+    forceRenderUi: false,
+    needsParallelChecks: false,
+    needsWorkspaceContextResolution: false,
+    needsWorkspaceMembersTool: false,
+    preferMarkdownTables: false,
+  };
+  expect(prepareMiraToolStep(input)).toEqual({
+    toolChoice: 'required',
+    activeTools: ['show_workspace_artifact'],
+  });
+  expect(
+    prepareMiraToolStep({ ...input, needsWorkspaceContextResolution: true })
+      .activeTools
+  ).toContain('set_workspace_context');
+  expect(
+    prepareMiraToolStep({
+      ...input,
+      steps: [
+        {
+          toolCalls: [{ toolName: 'show_workspace_artifact' }],
+          toolResults: [
+            { toolName: 'show_workspace_artifact', output: { ok: true } },
+          ],
+        },
+      ],
+    }).toolChoice
+  ).not.toBe('required');
+});

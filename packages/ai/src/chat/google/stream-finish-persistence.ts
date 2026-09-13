@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto';
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { CreditDeductionResult } from '../../credits/types';
+import { collectAssistantMessageParts } from './assistant-message-parts';
 import { countGoogleSearchQueries } from './google-search-usage';
 
 type UsageLike = {
@@ -51,6 +51,7 @@ type SourceLike = {
 };
 
 type StepLike = {
+  content?: readonly unknown[];
   text?: string;
   toolCalls?: ReadonlyArray<ToolCallLike>;
   toolResults?: ReadonlyArray<ToolResultLike>;
@@ -248,75 +249,6 @@ function logGoogleSearchDebug(response: StreamFinishResponseLike): void {
   }
 }
 
-function collectUiMessageParts({
-  allToolCalls,
-  allToolResults,
-  reasoningText,
-  response,
-  serializedSources,
-}: {
-  allToolCalls: ToolCallLike[];
-  allToolResults: ToolResultLike[];
-  reasoningText: string;
-  response: StreamFinishResponseLike;
-  serializedSources: ReturnType<typeof collectSerializableSources>;
-}) {
-  const parts: Record<string, unknown>[] = [];
-
-  if (response.text) {
-    parts.push({ type: 'text', text: response.text });
-  }
-
-  if (reasoningText) {
-    parts.push({ type: 'reasoning', text: reasoningText });
-  }
-
-  for (const toolCall of allToolCalls) {
-    const toolCallId =
-      toolCall.toolCallId ?? readString(toolCall.toolCallId) ?? undefined;
-    const matchingResult = allToolResults.find(
-      (result) => toolCallId && readString(result.toolCallId) === toolCallId
-    );
-    parts.push({
-      type: 'dynamic-tool',
-      toolName: toolCall.toolName ?? matchingResult?.toolName ?? 'tool',
-      toolCallId: toolCallId ?? randomUUID(),
-      state: 'output-available',
-      input: extractToolInput(toolCall),
-      output: matchingResult ? extractToolOutput(matchingResult) : null,
-    });
-  }
-
-  for (const toolResult of allToolResults) {
-    const hasCall = allToolCalls.some(
-      (toolCall) =>
-        readString(toolCall.toolCallId) &&
-        readString(toolCall.toolCallId) === readString(toolResult.toolCallId)
-    );
-    if (hasCall) continue;
-
-    parts.push({
-      type: 'dynamic-tool',
-      toolName: toolResult.toolName ?? 'tool',
-      toolCallId: toolResult.toolCallId ?? randomUUID(),
-      state: 'output-available',
-      output: extractToolOutput(toolResult),
-    });
-  }
-
-  for (const source of serializedSources) {
-    if (!source.url) continue;
-    parts.push({
-      type: 'source-url',
-      sourceId: source.sourceId ?? source.url,
-      title: source.title,
-      url: source.url,
-    });
-  }
-
-  return parts;
-}
-
 export function buildAbortedStreamFinishResponse(
   steps: ReadonlyArray<StepLike>
 ): StreamFinishResponseLike {
@@ -356,14 +288,6 @@ function sumStepUsage(steps: ReadonlyArray<StepLike>): UsageLike {
   );
 }
 
-function extractToolInput(toolCall: ToolCallLike) {
-  return toolCall.input ?? toolCall.args ?? toolCall.arguments ?? {};
-}
-
-function extractToolOutput(toolResult: ToolResultLike) {
-  return toolResult.output ?? toolResult.result ?? toolResult;
-}
-
 function readString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
@@ -389,7 +313,7 @@ function compactJsonValue(value: unknown, maxLength = 400): unknown {
   }
 }
 
-function compactAiMessagePart(part: Record<string, unknown>) {
+function compactAiMessagePart(part: Record<string, unknown>, limit = 400) {
   const type = readString(part.type) ?? 'unknown';
 
   if (type === 'text' || type === 'reasoning') {
@@ -397,7 +321,7 @@ function compactAiMessagePart(part: Record<string, unknown>) {
       ...part,
       text:
         typeof part.text === 'string'
-          ? truncateString(part.text, 4000)
+          ? truncateString(part.text, limit)
           : part.text,
     };
   }
@@ -408,11 +332,11 @@ function compactAiMessagePart(part: Record<string, unknown>) {
       toolName: part.toolName,
       toolCallId: part.toolCallId,
       state: part.state,
-      input: compactJsonValue(part.input),
-      output: compactJsonValue(part.output),
+      input: compactJsonValue(part.input, limit),
+      output: compactJsonValue(part.output, limit),
       errorText:
         typeof part.errorText === 'string'
-          ? truncateString(part.errorText, 1200)
+          ? truncateString(part.errorText, limit)
           : part.errorText,
     };
   }
@@ -498,6 +422,22 @@ function compactAssistantMessageMetadata(
   metadata: ReturnType<typeof buildAssistantMessageMetadata>
 ) {
   const ai = metadata.ai;
+  let textOffset = 0;
+  const compactParts = ai.parts.map((part) => {
+    if (part.type === 'text' && typeof part.text === 'string') {
+      const result = {
+        type: 'text',
+        textStart: textOffset,
+        textLength: part.text.length,
+      };
+      textOffset += part.text.length + 2;
+      return result;
+    }
+    return compactAiMessagePart(
+      part,
+      Math.max(20, Math.min(400, Math.floor(1500 / ai.parts.length)))
+    );
+  });
   return {
     source: metadata.source,
     ...(metadata.requestId ? { requestId: metadata.requestId } : {}),
@@ -505,27 +445,11 @@ function compactAssistantMessageMetadata(
       finishReason: ai.finishReason,
       metadataCompacted: true,
       model: ai.model,
-      observability: {
-        contextBreakdown: Array.isArray(ai.observability.contextBreakdown)
-          ? ai.observability.contextBreakdown.slice(-20)
-          : [],
-      },
-      omittedPartCount: Math.max(0, ai.parts.length - 8),
-      parts: ai.parts
-        .slice(0, 8)
-        .map((part) =>
-          part && typeof part === 'object' && !Array.isArray(part)
-            ? compactAiMessagePart(part as Record<string, unknown>)
-            : part
-        ),
+      observability: { contextBreakdown: [] },
+      omittedPartCount: 0,
+      parts: compactParts,
       usage: ai.usage,
     },
-    ...(typeof metadata.reasoning === 'string'
-      ? { reasoning: truncateString(metadata.reasoning, 3000) }
-      : {}),
-    ...(Array.isArray(metadata.sources)
-      ? { sources: metadata.sources.slice(0, 20) }
-      : {}),
     toolCallCount: Array.isArray(metadata.toolCalls)
       ? metadata.toolCalls.length
       : 0,
@@ -549,15 +473,6 @@ export async function persistAssistantResponse({
   const steps = response.steps ?? [];
   const { allToolCalls, allToolResults } = collectToolData(steps);
 
-  if (
-    !response.text &&
-    allToolCalls.length === 0 &&
-    allToolResults.length === 0
-  ) {
-    console.warn('onFinish: no text and no tool calls — skipping DB save');
-    return false;
-  }
-
   const reasoningText = collectReasoningText(response);
   const {
     cachedInputTokens,
@@ -567,13 +482,14 @@ export async function persistAssistantResponse({
     reasoningTokens,
   } = collectUsageTotals(response);
   const serializedSources = collectSerializableSources(response);
-  const parts = collectUiMessageParts({
-    allToolCalls,
-    allToolResults,
-    reasoningText,
-    response,
-    serializedSources,
+  const parts = collectAssistantMessageParts({
+    ...response,
+    sources: serializedSources,
   });
+  if (!parts.some((part) => part.type !== 'step-start')) {
+    console.warn('onFinish: no message parts — skipping DB save');
+    return false;
+  }
 
   const metadata = buildAssistantMessageMetadata({
     allToolCalls,
@@ -596,7 +512,10 @@ export async function persistAssistantResponse({
   const insertPayload = {
     chat_id: chatId,
     creator_id: userId,
-    content: response.text || '',
+    content: parts
+      .filter((part) => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n\n'),
     role: 'ASSISTANT',
     model: (model.includes('/')
       ? model.split('/').pop()!

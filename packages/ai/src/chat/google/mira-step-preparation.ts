@@ -15,6 +15,7 @@ export type PrepareMiraToolStepInput = {
   steps: unknown[];
   forceGoogleSearch: boolean;
   forceRenderUi: boolean;
+  forceWorkspaceArtifact?: boolean;
   needsParallelChecks: boolean;
   needsWorkspaceContextResolution: boolean;
   needsWorkspaceMembersTool: boolean;
@@ -25,6 +26,7 @@ export function prepareMiraToolStep({
   steps,
   forceGoogleSearch,
   forceRenderUi,
+  forceWorkspaceArtifact,
   needsParallelChecks,
   needsWorkspaceContextResolution,
   needsWorkspaceMembersTool,
@@ -33,8 +35,17 @@ export function prepareMiraToolStep({
   toolChoice?: 'required' | 'none';
   activeTools: string[];
 } {
+  if (forceWorkspaceArtifact) forceRenderUi = false;
   if (getMiraToolLoopReason(steps))
     return { toolChoice: 'none', activeTools: [] };
+  if (
+    forceWorkspaceArtifact &&
+    !hasToolCallInSteps(steps, 'show_workspace_artifact') &&
+    (!needsWorkspaceContextResolution ||
+      hasSuccessfulWorkspaceContextResolutionInSteps(steps))
+  ) {
+    return { toolChoice: 'required', activeTools: ['show_workspace_artifact'] };
+  }
   if (steps.length === 0) {
     if (forceGoogleSearch) {
       return {

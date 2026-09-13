@@ -4,13 +4,7 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import {
-  consumeStream,
-  type ModelMessage,
-  smoothStream,
-  stepCountIs,
-  streamText,
-} from 'ai';
+import { consumeStream, smoothStream, stepCountIs, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeStableModelId } from '../../credits/model-mapping';
 import {
@@ -19,6 +13,7 @@ import {
 } from '../../credits/resolve-plan-model';
 import { withAiMemory } from '../../memory';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
+import { shouldPresentWorkspaceArtifact } from '../mira-artifact-intent';
 import {
   shouldForceGoogleSearchForLatestUserMessage,
   shouldForceRenderUiForLatestUserMessage,
@@ -50,53 +45,17 @@ import {
 import { performCreditPreflight } from './route-credits';
 import {
   extractLatestUserMessageContent,
+  mergeSystemInstructions,
   persistLatestUserMessage,
   persistRequestScopedUserMessage,
   prepareProcessedMessages,
+  splitSystemMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
 import {
   buildAbortedStreamFinishResponse,
   persistAssistantResponse,
 } from './stream-finish-persistence';
-
-function splitSystemMessages(messages: ModelMessage[]) {
-  const systemMessages: string[] = [];
-  const nonSystemMessages: ModelMessage[] = [];
-
-  for (const message of messages) {
-    if (message.role === 'system') {
-      const systemMessage = getTextContent(message.content);
-      if (systemMessage) systemMessages.push(systemMessage);
-      continue;
-    }
-
-    nonSystemMessages.push(message);
-  }
-
-  return {
-    messages: nonSystemMessages,
-    system: systemMessages.join('\n\n').trim(),
-  };
-}
-
-function getTextContent(content: ModelMessage['content']) {
-  if (typeof content === 'string') return content.trim();
-  if (!Array.isArray(content)) return '';
-
-  return content
-    .map((part) => (part.type === 'text' ? part.text.trim() : ''))
-    .filter(Boolean)
-    .join('\n')
-    .trim();
-}
-
-function mergeSystemInstructions(...instructions: Array<string | null>) {
-  return instructions
-    .map((instruction) => instruction?.trim())
-    .filter(Boolean)
-    .join('\n\n');
-}
 
 export function createPOST(
   _options: {
@@ -509,6 +468,9 @@ export function createPOST(
       });
 
       const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
+      const forceWorkspaceArtifact = shouldPresentWorkspaceArtifact(
+        promptMessages.messages
+      );
       const forceRenderUi = shouldForceRenderUiForLatestUserMessage(
         promptMessages.messages
       );
@@ -535,6 +497,7 @@ export function createPOST(
       const prepareStep: PrepareStep = ({ steps }) => {
         stepsRef.current = steps;
         return prepareMiraToolStep({
+          forceWorkspaceArtifact,
           steps,
           forceGoogleSearch,
           forceRenderUi,
