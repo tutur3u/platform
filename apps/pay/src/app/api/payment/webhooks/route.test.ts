@@ -222,7 +222,9 @@ describe('syncSubscriptionToDatabase', () => {
       mockSubscription
     );
     expect(mockVersionFilter).toHaveBeenCalledWith(
-      'updated_at.is.null,updated_at.lte.2026-01-01T00:00:00.000Z'
+      expect.stringContaining(
+        'updated_at.is.null,updated_at.lt.2026-01-01T00:00:00.000Z,and('
+      )
     );
     expect(result.subscriptionData).toBeNull();
     expect(mockUpsert).toHaveBeenCalledWith(expect.any(Array), {
@@ -236,7 +238,31 @@ describe('syncSubscriptionToDatabase', () => {
       modifiedAt: null,
     });
     expect(mockVersionFilter).toHaveBeenCalledWith(
-      'updated_at.is.null,updated_at.lte.2026-01-01T00:00:00.000Z'
+      expect.stringContaining(
+        'updated_at.is.null,updated_at.lt.2026-01-01T00:00:00.000Z,and('
+      )
+    );
+  });
+  it('allows equal-version retries only when every projected value already matches', async () => {
+    await syncSubscriptionToDatabase(mockSupabase, {
+      ...mockSubscription,
+      modifiedAt: null,
+    });
+    const filter = mockVersionFilter.mock.calls[0]![0] as string;
+    expect(filter).not.toContain('updated_at.lte.');
+    const sameVersionBranch = filter.slice(filter.indexOf('and('));
+    expect(sameVersionBranch).toContain(
+      'updated_at.eq."2026-01-01T00:00:00.000Z"'
+    );
+    expect(sameVersionBranch).toContain('seat_count.eq.5');
+    expect(sameVersionBranch).toContain('product_id.eq."prod_123"');
+    expect(sameVersionBranch).toContain('status.eq."active"');
+    expect(sameVersionBranch).toContain('cancel_at_period_end.eq.false');
+    expect(sameVersionBranch).toContain(
+      'current_period_end.eq."2026-02-01T00:00:00.000Z"'
+    );
+    expect(sameVersionBranch).toContain(
+      'current_period_start.eq."2026-01-01T00:00:00.000Z"'
     );
   });
   it('should handle fixed pricing correctly', async () => {

@@ -148,15 +148,15 @@ export function updatePaySubscriptionSeats(
   payload: { newSeatCount: number; wsId: string },
   options?: InternalApiClientOptions
 ) {
-  return getPayClient(options).json<{ newSeats: number }>(
-    '/api/payment/seats',
-    {
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-    }
-  );
+  return getPayClient(options).json<{
+    newSeats: number;
+    syncPending?: boolean;
+  }>('/api/payment/seats', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
 }
 
 export async function getPayOrderInvoiceUrl(

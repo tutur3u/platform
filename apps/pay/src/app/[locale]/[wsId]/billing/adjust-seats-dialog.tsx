@@ -46,6 +46,7 @@ export default function AdjustSeatsDialog({
   billingCycle,
 }: AdjustSeatsDialogProps) {
   const [newSeatCount, setNewSeatCount] = useState(currentSeats);
+  const [pendingSeats, setPendingSeats] = useState<number | null>(null);
 
   const t = useTranslations('billing');
   const router = useRouter();
@@ -89,6 +90,11 @@ export default function AdjustSeatsDialog({
       });
     },
     onSuccess: (data) => {
+      if (data.syncPending) {
+        setPendingSeats(data.newSeats);
+        return;
+      }
+      setPendingSeats(null);
       toast.success(t('seat-update-success', { count: data.newSeats }));
 
       onOpenChange(false);
@@ -97,7 +103,8 @@ export default function AdjustSeatsDialog({
   });
 
   const handleUpdateSeats = async (): Promise<void> => {
-    if (!capacityVerified) return;
+    if (!capacityVerified || pendingSeats !== null || mutation.isPending)
+      return;
     if (newSeatCount < minSeats || newSeatCount > effectiveMaxSeats) return;
     if (newSeatCount === currentSeats) {
       onOpenChange(false);
@@ -110,6 +117,11 @@ export default function AdjustSeatsDialog({
     setNewSeatCount((prev) => Math.min(effectiveMaxSeats, prev + 1));
   const decrementSeats = () =>
     setNewSeatCount((prev) => Math.max(minSeats, prev - 1));
+
+  useEffect(() => {
+    if (pendingSeats !== null && currentSeats === pendingSeats)
+      setPendingSeats(null);
+  }, [currentSeats, pendingSeats]);
 
   useEffect(() => {
     if (open) {
@@ -129,6 +141,11 @@ export default function AdjustSeatsDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {pendingSeats !== null && (
+            <p role="status" className="text-sm">
+              {t('billing-syncing')}
+            </p>
+          )}
           {/* Current seats info */}
           <div className="rounded-lg border bg-muted/50 p-4">
             <div className="flex justify-between text-sm">
@@ -174,13 +191,22 @@ export default function AdjustSeatsDialog({
                 variant="outline"
                 size="icon"
                 onClick={decrementSeats}
-                disabled={!capacityVerified || newSeatCount <= minSeats}
+                disabled={
+                  pendingSeats !== null ||
+                  mutation.isPending ||
+                  !capacityVerified ||
+                  newSeatCount <= minSeats
+                }
               >
                 <Minus className="h-4 w-4" />
               </Button>
               <Input
                 type="number"
-                disabled={!capacityVerified}
+                disabled={
+                  pendingSeats !== null ||
+                  mutation.isPending ||
+                  !capacityVerified
+                }
                 min={minSeats}
                 max={effectiveMaxSeats}
                 value={newSeatCount}
@@ -197,7 +223,10 @@ export default function AdjustSeatsDialog({
                 size="icon"
                 onClick={incrementSeats}
                 disabled={
-                  !capacityVerified || newSeatCount >= effectiveMaxSeats
+                  pendingSeats !== null ||
+                  mutation.isPending ||
+                  !capacityVerified ||
+                  newSeatCount >= effectiveMaxSeats
                 }
               >
                 <Plus className="h-4 w-4" />
@@ -273,6 +302,7 @@ export default function AdjustSeatsDialog({
           <Button
             onClick={handleUpdateSeats}
             disabled={
+              pendingSeats !== null ||
               !capacityVerified ||
               mutation.isPending ||
               newSeatCount === currentSeats ||

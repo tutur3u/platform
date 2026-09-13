@@ -143,11 +143,22 @@ async function upsertSubscription(
 
   // INSERT ... ON CONFLICT DO NOTHING cannot overwrite a newer event. The
   // subsequent UPDATE evaluates the version predicate atomically in Postgres.
+  // Equal versions may retry side effects only for an identical projection;
+  // different payloads without a provable ordering must not overwrite it.
+  const identicalProjection = Object.entries(subscriptionData)
+    .map(([column, value]) =>
+      value === null
+        ? `${column}.is.null`
+        : `${column}.eq.${JSON.stringify(value)}`
+    )
+    .join(',');
   const { data: applied, error: updateError } = await supabase
     .from('workspace_subscriptions')
     .update(subscriptionData)
     .eq('polar_subscription_id', subscription.id)
-    .or(`updated_at.is.null,updated_at.lte.${eventVersion}`)
+    .or(
+      `updated_at.is.null,updated_at.lt.${eventVersion},and(${identicalProjection})`
+    )
     .select('id')
     .maybeSingle();
   if (updateError)
