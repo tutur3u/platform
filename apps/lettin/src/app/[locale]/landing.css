@@ -1,0 +1,552 @@
+.lettin-hero {
+  overflow: hidden;
+  border-bottom: 1.5px solid var(--foreground);
+}
+
+.lettin-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(28rem, 0.95fr);
+  max-width: 96rem;
+  min-height: min(53rem, calc(100dvh - 5rem));
+  margin-inline: auto;
+}
+
+.lettin-hero-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(4rem, 7vw, 7rem) clamp(1.5rem, 5.5vw, 5.5rem);
+}
+
+.lettin-issue-row {
+  display: flex;
+  max-width: 46rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1.5px solid var(--foreground);
+  padding-bottom: 0.8rem;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lettin-kicker {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.lettin-hero-title {
+  max-width: 10ch;
+  margin-top: clamp(1.8rem, 4vw, 3.5rem);
+  font-size: clamp(4rem, 7.2vw, 7.8rem);
+  line-height: 0.92;
+}
+
+.lettin-hero-title > span {
+  display: block;
+  padding-block: 0.035em;
+  text-wrap: balance;
+}
+
+.lettin-hero-title > span:nth-child(2) {
+  color: var(--accent);
+}
+
+.lettin-hero-accent {
+  width: fit-content;
+  margin-top: 0.08em;
+  padding-inline: 0.12em;
+  border-radius: 0.08em;
+  background: var(--foreground);
+  color: var(--background);
+  font-family: var(--font-lettin-editorial), Georgia, serif;
+  font-size: 0.74em;
+  font-style: italic;
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+  transform: rotate(-1deg);
+}
+
+:lang(vi) .lettin-hero-title {
+  max-width: 11ch;
+  font-size: clamp(3.45rem, 6.3vw, 6.75rem);
+  line-height: 0.98;
+}
+
+.lettin-deck {
+  max-width: 40rem;
+  margin-top: 2rem;
+  padding-left: 1rem;
+  border-left: 0.35rem solid var(--secondary);
+  font-family: var(--font-lettin-editorial), Georgia, serif;
+  font-size: clamp(1.08rem, 1.7vw, 1.3rem);
+  line-height: 1.55;
+}
+
+.lettin-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+.lettin-primary-link,
+.lettin-secondary-link {
+  display: inline-flex;
+  min-height: 3.1rem;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1.5px solid var(--foreground);
+  border-radius: 0.35rem;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  box-shadow: 4px 4px 0 var(--foreground);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.lettin-primary-link {
+  background: var(--foreground);
+  color: var(--primary-foreground);
+}
+
+.lettin-secondary-link {
+  background: var(--secondary);
+}
+
+.lettin-primary-link:hover,
+.lettin-secondary-link:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--accent);
+}
+
+.lettin-primary-link:focus-visible,
+.lettin-secondary-link:focus-visible,
+.lettin-nav-link:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 4px;
+}
+
+.lettin-invite-note {
+  max-width: 37rem;
+  margin-top: 1.4rem;
+  color: var(--muted-foreground);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.lettin-signal-stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  overflow: hidden;
+  min-height: 42rem;
+  place-items: center;
+  border-left: 1.5px solid var(--foreground);
+  background: var(--foreground);
+  padding: clamp(3rem, 5vw, 5rem);
+}
+
+.lettin-signal-stage::before {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background:
+    linear-gradient(
+      135deg,
+      transparent 48%,
+      rgb(255 255 255 / 7%) 49% 51%,
+      transparent 52%
+    ),
+    radial-gradient(
+      circle at 65% 30%,
+      var(--lettin-lilac) 0 16%,
+      transparent 16.5%
+    ),
+    var(--foreground);
+  background-size:
+    38px 38px,
+    auto,
+    auto;
+  content: "";
+}
+
+.lettin-orbit {
+  position: absolute;
+  z-index: -1;
+  border: 1px solid color-mix(in oklch, var(--lettin-sky) 55%, transparent);
+  border-radius: 50%;
+  transform: rotate(-22deg);
+}
+
+.lettin-orbit-one {
+  width: 135%;
+  height: 52%;
+}
+
+.lettin-orbit-two {
+  width: 85%;
+  height: 105%;
+  transform: rotate(31deg);
+}
+
+.lettin-signal-tab {
+  position: absolute;
+  top: 8%;
+  right: -1rem;
+  z-index: 3;
+  max-width: 12rem;
+  border: 1.5px solid var(--foreground);
+  border-radius: 999px 0 0 999px;
+  background: var(--secondary);
+  padding: 0.65rem 1.8rem 0.65rem 1rem;
+  color: var(--foreground);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(3deg);
+}
+
+.lettin-map-card {
+  position: relative;
+  width: min(100%, 34rem);
+  overflow: hidden;
+  border: 1.5px solid var(--foreground);
+  border-radius: 0.7rem;
+  background: var(--lettin-sky);
+  box-shadow: 12px 12px 0 var(--accent);
+  transform: rotate(1.5deg);
+}
+
+.lettin-map-card::after {
+  position: absolute;
+  top: 3.4rem;
+  right: 1rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 5px var(--background),
+    0 0 0 6.5px var(--foreground);
+  content: "";
+}
+
+.lettin-map-card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1.5px solid var(--foreground);
+  background: var(--background);
+  padding: 0.75rem 1rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.lettin-map-art {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lettin-contour {
+  fill: var(--secondary);
+  stroke: var(--foreground);
+  stroke-width: 3;
+}
+
+.lettin-contour-inner {
+  fill: var(--lettin-lilac);
+  stroke-dasharray: 8 7;
+}
+
+.lettin-route {
+  fill: none;
+  stroke: var(--foreground);
+  stroke-dasharray: 12 10;
+  stroke-linecap: round;
+  stroke-width: 5;
+}
+
+.lettin-node {
+  stroke: var(--foreground);
+  stroke-width: 4;
+}
+
+.lettin-node-a,
+.lettin-node-c {
+  fill: var(--background);
+}
+
+.lettin-node-b,
+.lettin-star {
+  fill: var(--accent);
+  stroke: var(--foreground);
+  stroke-width: 4;
+}
+
+.lettin-map-caption {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.7rem;
+  align-items: start;
+  border-top: 1.5px solid var(--foreground);
+  background: var(--background);
+  padding: 1rem;
+  font-family: var(--font-lettin-editorial), Georgia, serif;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.lettin-field-note {
+  position: absolute;
+  bottom: 7%;
+  left: 3%;
+  z-index: 3;
+  width: min(17rem, 52%);
+  border: 1.5px solid var(--foreground);
+  border-radius: 0.35rem;
+  background: var(--background);
+  padding: 1rem;
+  box-shadow: 6px 6px 0 var(--secondary);
+  transform: rotate(-4deg);
+}
+
+.lettin-field-note span {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.lettin-field-note p {
+  margin-top: 0.65rem;
+  font-family: var(--font-lettin-editorial), Georgia, serif;
+  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  font-style: italic;
+  font-weight: 650;
+  line-height: 1.18;
+}
+
+.lettin-edition-strip {
+  overflow: hidden;
+  border-bottom: 1.5px solid var(--foreground);
+  background: var(--secondary);
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.lettin-edition-strip span {
+  display: inline-block;
+  padding: 0.7rem 1.5rem;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lettin-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 96rem;
+  margin-inline: auto;
+  border-inline: 1.5px solid var(--foreground);
+}
+
+.lettin-feature {
+  position: relative;
+  min-width: 0;
+  min-height: 24rem;
+  overflow: hidden;
+  border-right: 1.5px solid var(--foreground);
+  padding: clamp(2rem, 4vw, 3.5rem);
+}
+
+.lettin-feature:last-child {
+  border-right: 0;
+}
+
+.lettin-feature-1 {
+  background: var(--background);
+}
+
+.lettin-feature-2 {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.lettin-feature-3 {
+  background: var(--lettin-lilac);
+}
+
+.lettin-feature-number {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lettin-feature-glyph {
+  position: absolute;
+  top: 1.3rem;
+  right: 1.6rem;
+  font-family: var(--font-lettin-display), sans-serif;
+  font-size: 3.5rem;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.lettin-feature h2 {
+  max-width: 9ch;
+  margin-top: 5.5rem;
+  font-size: clamp(2.5rem, 4vw, 4.5rem);
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+:lang(vi) .lettin-feature h2 {
+  max-width: 11ch;
+  font-size: clamp(2.2rem, 3.5vw, 3.8rem);
+  line-height: 1.04;
+}
+
+.lettin-feature p:last-child {
+  max-width: 26rem;
+  margin-top: 1.4rem;
+  font-family: var(--font-lettin-editorial), Georgia, serif;
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .lettin-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lettin-signal-stage {
+    min-height: 36rem;
+    border-top: 1.5px solid var(--foreground);
+    border-left: 0;
+  }
+
+  .lettin-features {
+    grid-template-columns: 1fr;
+    border-inline: 0;
+  }
+
+  .lettin-feature {
+    min-height: 20rem;
+    border-right: 0;
+    border-bottom: 1.5px solid var(--foreground);
+  }
+
+  .lettin-feature:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .lettin-masthead > div {
+    align-items: flex-start;
+  }
+
+  .lettin-logo {
+    width: 100%;
+  }
+
+  .lettin-hero-copy {
+    padding: 3.5rem 1.25rem 3rem;
+  }
+
+  .lettin-issue-row {
+    align-items: flex-start;
+  }
+
+  .lettin-issue-row > span {
+    max-width: 7rem;
+    text-align: right;
+  }
+
+  .lettin-hero-title,
+  :lang(vi) .lettin-hero-title {
+    max-width: 100%;
+    font-size: clamp(3.15rem, 15vw, 4.5rem);
+    line-height: 0.98;
+  }
+
+  :lang(vi) .lettin-hero-title {
+    font-size: clamp(2.9rem, 13.5vw, 4rem);
+    line-height: 1.02;
+  }
+
+  .lettin-hero-accent {
+    font-size: 0.78em;
+  }
+
+  .lettin-primary-link,
+  .lettin-secondary-link {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .lettin-signal-stage {
+    min-height: 0;
+    align-content: center;
+    padding: 4.5rem 1.4rem 3rem;
+  }
+
+  .lettin-signal-tab {
+    top: 1.4rem;
+  }
+
+  .lettin-field-note {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    width: 88%;
+    margin-top: 1.25rem;
+    justify-self: start;
+  }
+
+  .lettin-map-caption {
+    font-size: 0.82rem;
+  }
+
+  .lettin-feature {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .notebook-theme *,
+  .notebook-theme *::before,
+  .notebook-theme *::after {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+}

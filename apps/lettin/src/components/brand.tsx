@@ -1,4 +1,4 @@
-import { BookOpen, Feather } from '@tuturuuu/icons';
+import { Feather } from '@tuturuuu/icons';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 export async function Brand() {
@@ -6,18 +6,14 @@ export async function Brand() {
   return (
     <header className="lettin-masthead">
       <div className="mx-auto flex max-w-[90rem] flex-wrap items-center justify-between gap-5 px-5 py-4 md:px-10">
-        <Link
-          href="/"
-          className="notebook-title flex items-center gap-4 text-3xl uppercase"
-        >
+        <Link href="/" className="lettin-logo">
           <span className="lettin-brand-mark">
-            <BookOpen className="size-6" />
+            <span>TL</span>
           </span>
-          <span>
-            <span className="text-secondary">(Tu)</span>lettin
-          </span>
+          <span className="lettin-wordmark">Lettin</span>
+          <span className="lettin-wordmark-note">{t('wordmarkNote')}</span>
         </Link>
-        <p className="hidden border-primary-foreground/30 border-x px-6 font-bold text-[10px] uppercase tracking-[0.18em] lg:block">
+        <p className="hidden border-foreground/20 border-x px-6 font-bold text-[10px] uppercase tracking-[0.18em] lg:block">
           {t('masthead')}
         </p>
         <nav className="flex items-center gap-6">
