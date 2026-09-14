@@ -34,11 +34,19 @@ export function LegacyNotFoundShell() {
 }
 
 export const LegacyErrorShell: ErrorRouteComponent = ({ error, reset }) => {
+  const message =
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+      ? error.message
+      : undefined;
+
   return (
     <div className="absolute inset-0 mx-4 mt-24 mb-8 flex flex-col items-center justify-center text-center md:mx-32 lg:mx-64">
       <h1 className="font-bold text-xl">Something went wrong.</h1>
       <p className="mb-4 font-semibold opacity-75">
-        {error?.message || 'Unknown error'}
+        {message || 'Unknown error'}
       </p>
 
       <Button onClick={() => reset()}>Try again</Button>

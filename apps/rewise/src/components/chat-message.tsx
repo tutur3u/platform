@@ -39,7 +39,6 @@ const MermaidRenderer = ({ content }: { content: string }) => {
 
         setIsRendering(true);
         try {
-          // Clean and preprocess the content
           const cleanContent = contentToRender
             .replace(/\\n/g, '\n')
             .replace(/\\t/g, '  ')
@@ -55,8 +54,9 @@ const MermaidRenderer = ({ content }: { content: string }) => {
             return;
           }
 
-          // Initialize mermaid
           mermaid.initialize({
+            layout: 'dagre',
+            look: 'classic',
             theme: 'default',
             startOnLoad: false,
             securityLevel: 'strict',
