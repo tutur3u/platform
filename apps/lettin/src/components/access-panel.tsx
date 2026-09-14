@@ -18,7 +18,7 @@ export function AccessPanel({
   const mutation = useLettinMutation(wsId);
   return (
     <details className="rounded-xl border border-border bg-card p-5">
-      <summary className="cursor-pointer font-medium">
+      <summary className="cursor-pointer font-semibold">
         {t('creatorAccess')}
       </summary>
       <div className="mt-5 space-y-5">
