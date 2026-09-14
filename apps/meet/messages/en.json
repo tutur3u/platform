@@ -1536,6 +1536,12 @@
     "changelog-description": "Stay up to date with our latest product updates and improvements.",
     "changelog-subscribe-description": "Subscribe to our newsletter to get notified about new updates and features as they roll out.",
     "characters": "characters",
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    },
     "clear": "Clear",
     "clear_all": "Clear All",
     "clear_all_description": "Are you sure you want to clear all content? This action cannot be undone.",

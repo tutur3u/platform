@@ -1325,6 +1325,12 @@
     "cancel": "Hủy",
     "change_list_name": "Thay đổi tên danh sách.",
     "characters": "kí tự",
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    },
     "choose_tasks": "Chọn công việc",
     "clear": "Xóa bỏ",
     "clear_all_filters": "Xóa tất cả các bộ lọc",

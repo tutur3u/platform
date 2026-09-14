@@ -543,6 +543,12 @@
     "affected-product-required": "Affected Product *",
     "back": "Back",
     "cancel": "Cancel",
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    },
     "close": "Close",
     "collapsed": "Collapsed",
     "continue": "Continue",

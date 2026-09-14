@@ -147,6 +147,12 @@
   "common": {
     "affected-product-required": "Sản phẩm bị ảnh hưởng *",
     "cancel": "Hủy",
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    },
     "close": "Đóng",
     "collapsed": "Đã thu gọn",
     "continue": "Tiếp tục",

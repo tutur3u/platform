@@ -138,6 +138,12 @@
   "common": {
     "background": "Màu nền",
     "characters": "kí tự",
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    },
     "download": "Tải xuống",
     "foreground": "Màu chi tiết",
     "formats": "Định dạng",

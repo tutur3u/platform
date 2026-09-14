@@ -2786,6 +2786,12 @@
     "changelog-description": "Cập nhật những thay đổi mới nhất về sản phẩm và cải tiến.",
     "changelog-subscribe-description": "Đăng ký nhận thông báo về các cập nhật và tính năng mới khi chúng được phát hành.",
     "characters": "kí tự",
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    },
     "choose_tasks": "Chọn công việc",
     "clear": "Xóa bỏ",
     "clear_all": "Xóa tất cả",
