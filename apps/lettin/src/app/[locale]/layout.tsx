@@ -38,7 +38,7 @@ export default async function Layout({ children }: { children: ReactNode }) {
   );
   return (
     <html lang={locale}>
-      <body>
+      <body className="notebook-theme">
         <Suspense>
           <NextIntlClientProvider>
             <Providers>{children}</Providers>

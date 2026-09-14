@@ -56,7 +56,7 @@ export default async function Layout({
   return (
     <div className="notebook-theme min-h-screen">
       <Brand />
-      <div className="flex flex-wrap items-center gap-4 border-border border-b px-6 py-3 text-sm">
+      <div className="lettin-workspace-bar flex flex-wrap items-center gap-4 px-6 py-3 text-sm">
         <WorkspacePicker current={workspace.id} workspaces={workspaces} />
         {(await getNavigationLinks(workspace.id)).map((link) => (
           <Link

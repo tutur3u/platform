@@ -56,7 +56,7 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
           src={draft.image}
           alt={draft.title}
           referrerPolicy="no-referrer"
-          className="mb-8 max-h-96 w-full rounded-lg object-cover"
+          className="mb-8 max-h-96 w-full object-cover"
         />
       )}
       <h1 className="break-words text-4xl md:text-5xl">{draft.title}</h1>
@@ -67,7 +67,7 @@ export function DocumentView({ draft }: { draft: LettinDraft }) {
       <div className="flex flex-wrap gap-2">
         {draft.tags.map((tag) => (
           <span
-            className="rounded-full bg-secondary px-3 py-1 text-xs"
+            className="border border-foreground bg-secondary px-3 py-1 font-bold text-xs uppercase tracking-wider"
             key={tag}
           >
             {tag}

@@ -47,14 +47,12 @@ export function Studio({
     );
   const data = query.data;
   return (
-    <main className="mx-auto max-w-6xl space-y-8 px-5 py-10 md:px-10">
-      <div className="flex flex-wrap items-end justify-between gap-5">
+    <main className="mx-auto max-w-[90rem] space-y-10 px-5 py-10 md:px-10">
+      <div className="lettin-section-heading flex flex-wrap items-end justify-between gap-5">
         <div>
-          <p className="mb-3 text-muted-foreground text-xs uppercase tracking-[0.2em]">
-            {t('privateStudio')}
-          </p>
-          <h1 className="text-4xl md:text-5xl">{t('myWorlds')}</h1>
-          <p className="mt-3 text-muted-foreground">{t('studioDescription')}</p>
+          <p className="lettin-kicker mb-5">{t('privateStudio')}</p>
+          <h1>{t('myWorlds')}</h1>
+          <p className="lettin-serif mt-4 text-lg">{t('studioDescription')}</p>
         </div>
         {data.canCreate && (
           <Dialog>
@@ -141,9 +139,9 @@ export function Studio({
             <Link
               key={world.id}
               href={`/${wsId}/worlds/${world.id}`}
-              className="notebook-cover block overflow-hidden transition-transform hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-ring"
+              className="notebook-cover block overflow-hidden focus-visible:outline-2 focus-visible:outline-ring"
             >
-              <div className="flex h-36 items-center justify-center bg-accent">
+              <div className="flex h-44 items-center justify-center overflow-hidden bg-secondary">
                 {world.draft.image ? (
                   // biome-ignore lint/performance/noImgElement: Artwork must bypass optimizer caching so private media access can be revoked.
                   <img
@@ -153,17 +151,17 @@ export function Studio({
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <BookOpen className="size-12 text-primary" />
+                  <BookOpen className="size-14 -rotate-6 text-primary" />
                 )}
               </div>
               <div className="p-6">
-                <p className="text-muted-foreground text-xs uppercase tracking-widest">
+                <p className="inline-block bg-foreground px-2 py-1 font-black text-[10px] text-primary-foreground uppercase tracking-widest">
                   {t(world.published_at ? 'published' : 'draft')}
                 </p>
-                <h2 className="mt-3 break-words text-2xl">
+                <h2 className="mt-4 break-words text-4xl uppercase leading-none">
                   {world.draft.title}
                 </h2>
-                <p className="mt-2 line-clamp-2 text-muted-foreground text-sm">
+                <p className="lettin-serif mt-3 line-clamp-2 text-sm leading-relaxed">
                   {world.draft.description || t('worldWaiting')}
                 </p>
                 <p className="mt-4 text-xs">{t(world.role)}</p>

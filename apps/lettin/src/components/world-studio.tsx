@@ -77,8 +77,8 @@ export function WorldStudio({
           </Link>
         )}
       </div>
-      <div className="grid items-start gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="space-y-4 lg:sticky lg:top-5">
+      <div className="grid items-start gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="lettin-sidebar space-y-4 lg:sticky lg:top-5">
           <Button
             variant={selected === null ? 'secondary' : 'ghost'}
             className="w-full justify-start"
