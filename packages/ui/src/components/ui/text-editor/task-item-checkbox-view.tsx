@@ -3,7 +3,8 @@
 import type { NodeViewProps } from '@tiptap/react';
 import { NodeViewContent } from '@tiptap/react';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useMemo } from 'react';
 import { DraggableNodeContainer } from './draggable-node-container';
 import {
   areAllMentionedTasksCompleted,
@@ -14,16 +15,14 @@ import {
   type TriStateChecked,
   useMentionedTaskStatuses,
 } from './task-item-checkbox';
+import { TaskItemStatusPicker } from './task-item-status-picker';
 
 export function TaskItemCheckboxContent({
   node,
   getPos,
   editor,
 }: NodeViewProps) {
-  const [manualOverride, setManualOverride] = useState<TriStateChecked | null>(
-    null
-  );
-
+  const t = useTranslations('common.checklist');
   const taskMentionIds = useMemo(() => {
     return extractTaskMentionIds(node);
   }, [node]);
@@ -40,187 +39,173 @@ export function TaskItemCheckboxContent({
 
   const checkboxState = useMemo((): TriStateChecked => {
     return resolveCheckboxState({
-      manualOverride,
+      manualOverride: null,
       nodeChecked: node.attrs.checked,
       allMentionedTasksCompleted,
     });
-  }, [manualOverride, node.attrs.checked, allMentionedTasksCompleted]);
+  }, [node.attrs.checked, allMentionedTasksCompleted]);
 
   const isChecked = checkboxState === true;
   const isIndeterminate = checkboxState === 'indeterminate';
 
-  const handleCheckboxCycle = useCallback(() => {
-    if (!editor.isEditable) return;
-
-    const pos = getPos();
-    if (typeof pos !== 'number') return;
-
-    const nextState = getNextTriState(checkboxState);
-
-    setManualOverride(nextState);
-
-    editor.commands.command(({ tr }) => {
-      tr.setNodeMarkup(pos, undefined, {
-        ...node.attrs,
-        checked: nextState,
+  const setCheckboxState = useCallback(
+    (checked: TriStateChecked) => {
+      if (!editor.isEditable) return;
+      const pos = getPos();
+      if (typeof pos !== 'number') return;
+      editor.commands.command(({ tr }) => {
+        const currentNode = tr.doc.nodeAt(pos);
+        if (currentNode?.type.name !== 'taskItem') return false;
+        tr.setNodeMarkup(pos, undefined, { ...currentNode.attrs, checked });
+        return true;
       });
-      return true;
-    });
-  }, [editor, getPos, node.attrs, checkboxState]);
-
-  const handleCheckboxPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLButtonElement>) => {
-      if (!event.isPrimary || event.button !== 0) return;
-      event.preventDefault();
-      event.stopPropagation();
-      handleCheckboxCycle();
     },
-    [handleCheckboxCycle]
-  );
-
-  const handleCheckboxKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      event.preventDefault();
-      event.stopPropagation();
-      handleCheckboxCycle();
-    },
-    [handleCheckboxCycle]
+    [editor, getPos]
   );
 
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex min-w-0 flex-1 items-start gap-2">
       <div
         className="task-list-checkbox-label flex shrink-0 select-none pt-2.5"
         contentEditable={false}
       >
-        {/* biome-ignore lint/a11y/useSemanticElements: a button avoids native checkbox state changes while ProseMirror owns the tri-state document update */}
-        <button
-          type="button"
-          role="checkbox"
-          aria-label="Task item status"
-          aria-checked={isIndeterminate ? 'mixed' : isChecked}
-          aria-disabled={!editor.isEditable}
-          onPointerDown={handleCheckboxPointerDown}
-          onKeyDown={handleCheckboxKeyDown}
-          className={cn(
-            'task-list-checkbox flex size-5 items-center justify-center',
-            'cursor-pointer rounded-md border-2 bg-background',
-            'transition-[color,background-color,border-color,box-shadow,transform] duration-150 active:scale-95',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2',
-            !editor.isEditable && 'cursor-default opacity-70',
-            !completedTaskColor && [
-              'border-input',
-              'hover:scale-105 hover:border-dynamic-gray hover:bg-dynamic-gray/10',
-              'focus-visible:border-dynamic-gray',
-              isChecked &&
-                'border-dynamic-green bg-dynamic-green/20 hover:border-dynamic-green hover:bg-dynamic-green/10 focus-visible:border-dynamic-green focus-visible:ring-dynamic-green/30',
-              isIndeterminate &&
-                'border-dynamic-orange bg-dynamic-orange/20 hover:border-dynamic-orange hover:bg-dynamic-orange/10 focus-visible:border-dynamic-orange focus-visible:ring-dynamic-orange/30',
-            ],
-            completedTaskColor === 'red' && [
-              'border-dynamic-red/50',
-              'hover:scale-105 hover:border-dynamic-red hover:bg-dynamic-red/10',
-              'focus:border-dynamic-red focus:outline-none focus:ring-2 focus:ring-dynamic-red/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-red bg-dynamic-red/20',
-            ],
-            completedTaskColor === 'orange' && [
-              'border-dynamic-orange/50',
-              'hover:scale-105 hover:border-dynamic-orange hover:bg-dynamic-orange/10',
-              'focus:border-dynamic-orange focus:outline-none focus:ring-2 focus:ring-dynamic-orange/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-orange bg-dynamic-orange/20',
-            ],
-            completedTaskColor === 'yellow' && [
-              'border-dynamic-yellow/50',
-              'hover:scale-105 hover:border-dynamic-yellow hover:bg-dynamic-yellow/10',
-              'focus:border-dynamic-yellow focus:outline-none focus:ring-2 focus:ring-dynamic-yellow/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-yellow bg-dynamic-yellow/20',
-            ],
-            completedTaskColor === 'green' && [
-              'border-dynamic-green/50',
-              'hover:scale-105 hover:border-dynamic-green hover:bg-dynamic-green/10',
-              'focus:border-dynamic-green focus:outline-none focus:ring-2 focus:ring-dynamic-green/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-green bg-dynamic-green/20',
-            ],
-            completedTaskColor === 'cyan' && [
-              'border-dynamic-cyan/50',
-              'hover:scale-105 hover:border-dynamic-cyan hover:bg-dynamic-cyan/10',
-              'focus:border-dynamic-cyan focus:outline-none focus:ring-2 focus:ring-dynamic-cyan/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-cyan bg-dynamic-cyan/20',
-            ],
-            completedTaskColor === 'blue' && [
-              'border-dynamic-blue/50',
-              'hover:scale-105 hover:border-dynamic-blue hover:bg-dynamic-blue/10',
-              'focus:border-dynamic-blue focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-blue bg-dynamic-blue/20',
-            ],
-            completedTaskColor === 'purple' && [
-              'border-dynamic-purple/50',
-              'hover:scale-105 hover:border-dynamic-purple hover:bg-dynamic-purple/10',
-              'focus:border-dynamic-purple focus:outline-none focus:ring-2 focus:ring-dynamic-purple/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-purple bg-dynamic-purple/20',
-            ],
-            completedTaskColor === 'pink' && [
-              'border-dynamic-pink/50',
-              'hover:scale-105 hover:border-dynamic-pink hover:bg-dynamic-pink/10',
-              'focus:border-dynamic-pink focus:outline-none focus:ring-2 focus:ring-dynamic-pink/30 focus:ring-offset-2',
-              (isChecked || isIndeterminate) &&
-                'border-dynamic-pink bg-dynamic-pink/20',
-            ]
-          )}
+        <TaskItemStatusPicker
+          state={checkboxState}
+          disabled={!editor.isEditable}
+          onSelect={setCheckboxState}
         >
-          {isChecked && (
-            <svg
-              className={cn(
-                'h-3.5 w-3.5',
-                completedTaskColor ? 'text-foreground' : 'text-dynamic-green'
-              )}
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M4 8l2.5 2.5L12 5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-          {isIndeterminate && (
-            <svg
-              className={cn(
-                'h-3.5 w-3.5',
-                completedTaskColor ? 'text-foreground' : 'text-dynamic-orange'
-              )}
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M4 8h8"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          )}
-        </button>
+          {/* biome-ignore lint/a11y/useSemanticElements: a button avoids native checkbox state changes while ProseMirror owns the tri-state document update */}
+          <button
+            type="button"
+            role="checkbox"
+            aria-label={t('status')}
+            aria-keyshortcuts="ArrowDown"
+            aria-checked={isIndeterminate ? 'mixed' : isChecked}
+            aria-disabled={!editor.isEditable}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => {
+              event.stopPropagation();
+              setCheckboxState(getNextTriState(checkboxState));
+            }}
+            className={cn(
+              'task-list-checkbox flex size-5 items-center justify-center',
+              'cursor-pointer rounded-md border-2 bg-background',
+              'transition-[color,background-color,border-color,box-shadow,transform] duration-150 active:scale-95',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2',
+              !editor.isEditable && 'cursor-default opacity-70',
+              !completedTaskColor && [
+                'border-muted-foreground/50',
+                'hover:scale-105 hover:border-dynamic-gray hover:bg-dynamic-gray/10',
+                'focus-visible:border-dynamic-gray',
+                isChecked &&
+                  'border-dynamic-green bg-dynamic-green/20 hover:border-dynamic-green hover:bg-dynamic-green/10 focus-visible:border-dynamic-green focus-visible:ring-dynamic-green/30',
+                isIndeterminate &&
+                  'border-dynamic-orange bg-dynamic-orange/20 hover:border-dynamic-orange hover:bg-dynamic-orange/10 focus-visible:border-dynamic-orange focus-visible:ring-dynamic-orange/30',
+              ],
+              completedTaskColor === 'red' && [
+                'border-dynamic-red/50',
+                'hover:scale-105 hover:border-dynamic-red hover:bg-dynamic-red/10',
+                'focus:border-dynamic-red focus:outline-none focus:ring-2 focus:ring-dynamic-red/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-red bg-dynamic-red/20',
+              ],
+              completedTaskColor === 'orange' && [
+                'border-dynamic-orange/50',
+                'hover:scale-105 hover:border-dynamic-orange hover:bg-dynamic-orange/10',
+                'focus:border-dynamic-orange focus:outline-none focus:ring-2 focus:ring-dynamic-orange/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-orange bg-dynamic-orange/20',
+              ],
+              completedTaskColor === 'yellow' && [
+                'border-dynamic-yellow/50',
+                'hover:scale-105 hover:border-dynamic-yellow hover:bg-dynamic-yellow/10',
+                'focus:border-dynamic-yellow focus:outline-none focus:ring-2 focus:ring-dynamic-yellow/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-yellow bg-dynamic-yellow/20',
+              ],
+              completedTaskColor === 'green' && [
+                'border-dynamic-green/50',
+                'hover:scale-105 hover:border-dynamic-green hover:bg-dynamic-green/10',
+                'focus:border-dynamic-green focus:outline-none focus:ring-2 focus:ring-dynamic-green/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-green bg-dynamic-green/20',
+              ],
+              completedTaskColor === 'cyan' && [
+                'border-dynamic-cyan/50',
+                'hover:scale-105 hover:border-dynamic-cyan hover:bg-dynamic-cyan/10',
+                'focus:border-dynamic-cyan focus:outline-none focus:ring-2 focus:ring-dynamic-cyan/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-cyan bg-dynamic-cyan/20',
+              ],
+              completedTaskColor === 'blue' && [
+                'border-dynamic-blue/50',
+                'hover:scale-105 hover:border-dynamic-blue hover:bg-dynamic-blue/10',
+                'focus:border-dynamic-blue focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-blue bg-dynamic-blue/20',
+              ],
+              completedTaskColor === 'purple' && [
+                'border-dynamic-purple/50',
+                'hover:scale-105 hover:border-dynamic-purple hover:bg-dynamic-purple/10',
+                'focus:border-dynamic-purple focus:outline-none focus:ring-2 focus:ring-dynamic-purple/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-purple bg-dynamic-purple/20',
+              ],
+              completedTaskColor === 'pink' && [
+                'border-dynamic-pink/50',
+                'hover:scale-105 hover:border-dynamic-pink hover:bg-dynamic-pink/10',
+                'focus:border-dynamic-pink focus:outline-none focus:ring-2 focus:ring-dynamic-pink/30 focus:ring-offset-2',
+                (isChecked || isIndeterminate) &&
+                  'border-dynamic-pink bg-dynamic-pink/20',
+              ]
+            )}
+          >
+            {isChecked && (
+              <svg
+                className={cn(
+                  'h-3.5 w-3.5',
+                  completedTaskColor ? 'text-foreground' : 'text-dynamic-green'
+                )}
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 8l2.5 2.5L12 5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+            {isIndeterminate && (
+              <svg
+                className={cn(
+                  'h-3.5 w-3.5',
+                  completedTaskColor ? 'text-foreground' : 'text-dynamic-orange'
+                )}
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M4 8h8"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+          </button>
+        </TaskItemStatusPicker>
       </div>
 
       <NodeViewContent
         className={cn(
-          'transition-opacity duration-150',
+          'min-w-0 flex-1 cursor-text caret-foreground transition-opacity duration-150',
           isChecked && 'task-content-faded'
         )}
       />

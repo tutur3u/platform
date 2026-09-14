@@ -67,7 +67,7 @@ const legalRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/acceptable-use`,
     heading: 'Acceptable Use',
-    summaryHeading: 'Key Policy Points',
+    summaryHeading: 'At a glance',
     effectiveDate: 'February 6, 2026',
   },
   {

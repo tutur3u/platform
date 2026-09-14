@@ -39,7 +39,14 @@ export const lettinDraftSchema = z.object({
     z
       .url()
       .max(2000)
-      .refine((v) => new URL(v).protocol === 'https:'),
+      .refine((v) => new URL(v).protocol === 'https:')
+      .transform((value) => {
+        const url = new URL(value);
+        return url.origin === 'https://lettin.tuturuuu.com' &&
+          url.pathname.startsWith('/api/v1/lettin/media/')
+          ? url.pathname
+          : value;
+      }),
   ]),
   credit: z.string().max(200),
   kind: z.enum(['page', 'character', 'location', 'lore', 'story']),

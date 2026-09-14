@@ -85,8 +85,6 @@ jobs:
     environment: lettin-production
     env:
       CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
-      # The existing account deployment credential can bootstrap Lettin; prefer its own credential when configured.
-      CLOUDFLARE_API_TOKEN: ${{ secrets.LETTIN_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -105,6 +103,7 @@ jobs:
       - name: Configure shared Tuturuuu identity on Cloudflare
         working-directory: apps/lettin
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.LETTIN_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
@@ -113,9 +112,13 @@ jobs:
         run: bun scripts/configure-identity.ts
       - name: Apply Lettin schema
         working-directory: apps/lettin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.LETTIN_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: bun run db:migrate:remote
       - name: Deploy verified Worker
         working-directory: apps/lettin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.LETTIN_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: bun run deploy:cloudflare -- --message "$GITHUB_SHA" --tag "$GITHUB_SHA"
       - name: Verify deployed storage and version
         env:

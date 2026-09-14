@@ -59,7 +59,7 @@ pub(super) async fn get_seat_status(
         return conservative;
     }
     let member_count = match count_workspace_members(contact_data, outbound, ws_id).await {
-        Ok(count) if count >= 0 && count <= 9_007_199_254_740_991 => count,
+        Ok(count) if (0..=9_007_199_254_740_991).contains(&count) => count,
         _ => return conservative,
     };
 
@@ -83,7 +83,7 @@ pub(super) async fn get_seat_status(
         .and_then(|s| s.seat_count.as_ref())
         .and_then(|v| v.as_i64())
     {
-        Some(count) if count >= 1 && count <= 9_007_199_254_740_991 => count,
+        Some(count) if (1..=9_007_199_254_740_991).contains(&count) => count,
         _ => return conservative,
     };
     let available_seats = (seat_count - member_count).max(0);

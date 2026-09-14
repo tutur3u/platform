@@ -206,6 +206,12 @@
   },
   "common": {
     "back": "Quay lại",
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    },
     "completed": "Đã hoàn thành",
     "continue": "Tiếp tục",
     "empty": "Chưa có nội dung.",

@@ -3,26 +3,34 @@ import { BookOpen } from '@tuturuuu/icons';
 import type { LettinPublicWorld } from '@tuturuuu/internal-api/lettin';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+
 import { Link } from '@/i18n/navigation';
-export function PublicExplorer({ worlds }: { worlds: LettinPublicWorld[] }) {
+export function PublicExplorer({
+  worlds,
+  page = 1,
+  search = '',
+}: {
+  worlds: LettinPublicWorld[];
+  page?: number;
+  search?: string;
+}) {
   const t = useTranslations('lettin');
-  const [search, setSearch] = useState('');
-  const filtered = worlds.filter((w) =>
-    `${w.published.title} ${w.published.description} ${w.published.credit}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const filtered = worlds.slice(0, 24);
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
       <p className="text-muted-foreground text-xs uppercase tracking-widest">
         {t('publicLibrary')}
       </p>
       <h1 className="my-5 text-5xl">{t('exploreWorlds')}</h1>
-      <label className="mb-10 block max-w-md space-y-2 text-sm">
-        {t('searchWorlds')}
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} />
-      </label>
+      <form method="get">
+        <label className="mb-10 block max-w-md space-y-2 text-sm">
+          {t('searchWorlds')}
+          <Input name="q" defaultValue={search} maxLength={200} />
+          <button type="submit" className="mt-2 underline">
+            {t('searchWorlds')}
+          </button>
+        </label>
+      </form>
       {!filtered.length && (
         <p className="notebook-paper rounded-xl p-10">
           {t(worlds.length ? 'noResults' : 'emptyPublic')}
@@ -58,6 +66,18 @@ export function PublicExplorer({ worlds }: { worlds: LettinPublicWorld[] }) {
           </Link>
         ))}
       </div>
+      <nav className="mt-8 flex gap-6" aria-label={t('pagination')}>
+        {page > 1 && (
+          <Link href={`?page=${page - 1}&q=${encodeURIComponent(search)}`}>
+            {t('previousPage')}
+          </Link>
+        )}
+        {worlds.length > 24 && (
+          <Link href={`?page=${page + 1}&q=${encodeURIComponent(search)}`}>
+            {t('nextPage')}
+          </Link>
+        )}
+      </nav>
     </main>
   );
 }

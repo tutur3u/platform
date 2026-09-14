@@ -477,7 +477,13 @@
     "write_something": "Hãy viết gì đó...",
     "years_old": "tuổi",
     "yellow": "Vàng",
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    }
   },
   "lettin": {
     "accept": "Chấp nhận lời mời",
@@ -585,7 +591,10 @@
     "workspace": "Không gian làm việc",
     "workspaceSettings": "Thành viên và vai trò",
     "worldDetails": "Sổ tay thế giới",
-    "worldWaiting": "Một thế giới đang chờ hé mở."
+    "worldWaiting": "Một thế giới đang chờ hé mở.",
+    "pagination": "Trang thư viện",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang tiếp"
   },
   "workspace-invitation": {
     "accept": "Chấp nhận lời mời",

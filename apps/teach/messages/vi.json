@@ -158,6 +158,12 @@
     "attempt": "Lượt làm",
     "back": "Quay lại",
     "cancel": "Hủy",
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    },
     "clear": "Xóa bỏ",
     "close": "Đóng",
     "completed": "Hoàn thành",

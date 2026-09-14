@@ -477,7 +477,13 @@
     "write_something": "Write something",
     "years_old": "years old",
     "yellow": "Yellow",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    }
   },
   "lettin": {
     "accept": "Accept invitation",
@@ -585,7 +591,10 @@
     "workspace": "Workspace",
     "workspaceSettings": "Workspace members & roles",
     "worldDetails": "World notebook",
-    "worldWaiting": "A world waiting to unfold."
+    "worldWaiting": "A world waiting to unfold.",
+    "pagination": "Library pages",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
   },
   "workspace-invitation": {
     "accept": "Accept invitation",

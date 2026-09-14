@@ -5,7 +5,7 @@ import { Link } from '@/i18n/navigation';
 export default async function Page() {
   const t = await getTranslations('lettin');
   return (
-    <>
+    <div className="notebook-theme min-h-screen">
       <Brand />
       <main className="mx-auto max-w-6xl px-6 py-16 md:py-24">
         <div className="grid items-center gap-14 md:grid-cols-[1.15fr_1fr]">
@@ -66,6 +66,6 @@ export default async function Page() {
           )}
         </section>
       </main>
-    </>
+    </div>
   );
 }

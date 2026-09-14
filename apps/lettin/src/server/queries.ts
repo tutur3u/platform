@@ -50,13 +50,16 @@ export async function readWorld(
           .all<{ user_id: string }>()
       ).results.map((c) => c.user_id)
     );
-    for (const member of names) {
-      if (
-        member.user_id !== world.owner_id &&
-        creators.has(member.user_id) &&
-        (await actor.eligibleMember(member.user_id))
-      )
-        eligibleMembers.push(member);
+    const candidates = names.filter(
+      (member) =>
+        member.user_id !== world.owner_id && creators.has(member.user_id)
+    );
+    for (let offset = 0; offset < candidates.length; offset += 5) {
+      const batch = candidates.slice(offset, offset + 5);
+      const eligible = await Promise.all(
+        batch.map((member) => actor.eligibleMember(member.user_id))
+      );
+      eligibleMembers.push(...batch.filter((_, index) => eligible[index]));
     }
   }
   return {
@@ -127,42 +130,78 @@ export async function readOverview(
     creators,
   };
 }
+export const PUBLIC_PAGE_SIZE = 24;
+export type PublicFilters = {
+  creatorId?: string;
+  page?: number;
+  search?: string;
+};
 export async function readPublic(
   db: Store,
-  worldId?: string
+  worldId?: string,
+  filters: PublicFilters = {}
 ): Promise<LettinPublicWorld[]> {
+  const conditions = ['published IS NOT NULL'];
+  const values: (string | number)[] = [];
+  if (worldId) {
+    conditions.push('id=?');
+    values.push(worldId);
+  }
+  if (filters.creatorId) {
+    conditions.push('owner_id=?');
+    values.push(filters.creatorId);
+  }
+  if (filters.search) {
+    conditions.push(
+      "(json_extract(published,'$.title') LIKE ? OR json_extract(published,'$.description') LIKE ? OR json_extract(published,'$.credit') LIKE ?)"
+    );
+    values.push(...Array<string>(3).fill(`%${filters.search}%`));
+  }
+  // Catalogue pages contain only card fields; documents are loaded for one world.
+  const projection = worldId
+    ? 'published'
+    : "json_remove(published,'$.content','$.links','$.tags') AS published";
   const rows = await db
     .prepare(
-      `SELECT id,owner_id,published FROM worlds WHERE published IS NOT NULL AND (? IS NULL OR id=?) ORDER BY published_at DESC`
+      `SELECT id,owner_id,${projection} FROM worlds WHERE ${conditions.join(' AND ')} ORDER BY published_at DESC,id LIMIT ? OFFSET ?`
     )
-    .bind(worldId ?? null, worldId ?? null)
+    .bind(
+      ...values,
+      worldId ? 1 : PUBLIC_PAGE_SIZE + 1,
+      worldId ? 0 : Math.max(0, (filters.page ?? 1) - 1) * PUBLIC_PAGE_SIZE
+    )
     .all<{ id: string; owner_id: string; published: string }>();
-  const worlds: LettinPublicWorld[] = [];
-  for (const row of rows.results) {
-    const entries = (
-      await db
-        .prepare(
-          "SELECT id,published FROM entries WHERE world_id=? AND published IS NOT NULL ORDER BY json_extract(published,'$.title')"
-        )
-        .bind(row.id)
-        .all<{ id: string; published: string }>()
-    ).results.map((e) => ({
-      id: e.id,
-      published: JSON.parse(e.published) as LettinPublicWorld['published'],
-    }));
-    const publicIds = new Set(entries.map((e) => e.id));
-    worlds.push({
-      id: row.id,
-      creatorId: row.owner_id,
-      published: { ...JSON.parse(row.published), links: [] },
-      entries: entries.map((e) => ({
-        ...e,
-        published: {
-          ...e.published,
-          links: e.published.links.filter((id) => publicIds.has(id)),
-        },
-      })),
-    });
-  }
-  return worlds;
+  const entries = worldId
+    ? (
+        await db
+          .prepare(
+            "SELECT id,published FROM entries WHERE world_id=? AND published IS NOT NULL ORDER BY json_extract(published,'$.title')"
+          )
+          .bind(worldId)
+          .all<{ id: string; published: string }>()
+      ).results.map((entry) => ({
+        id: entry.id,
+        published: JSON.parse(
+          entry.published
+        ) as LettinPublicWorld['published'],
+      }))
+    : [];
+  const publicIds = new Set(entries.map((entry) => entry.id));
+  return rows.results.map((row) => ({
+    id: row.id,
+    creatorId: row.owner_id,
+    published: {
+      content: { type: 'doc', content: [] },
+      tags: [],
+      ...JSON.parse(row.published),
+      links: [],
+    },
+    entries: entries.map((entry) => ({
+      ...entry,
+      published: {
+        ...entry.published,
+        links: entry.published.links.filter((id) => publicIds.has(id)),
+      },
+    })),
+  }));
 }

@@ -1,18 +1,11 @@
 'use client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { type ReactNode, useState } from 'react';
+import { ClientProviders } from '@tuturuuu/satellite/client-providers';
+import type { ReactNode } from 'react';
+import { NavigationGuard } from './navigation-guard';
 export function Providers({ children }: { children: ReactNode }) {
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: 1,
-            refetchOnWindowFocus: false,
-            refetchOnReconnect: false,
-          },
-        },
-      })
+  return (
+    <ClientProviders currentApp="lettin">
+      <NavigationGuard>{children}</NavigationGuard>
+    </ClientProviders>
   );
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

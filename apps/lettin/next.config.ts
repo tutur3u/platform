@@ -20,5 +20,5 @@ export default createNextIntlPlugin()(
 );
 
 if (process.env.NODE_ENV === 'development') {
-  void initOpenNextCloudflareForDev();
+  await initOpenNextCloudflareForDev();
 }

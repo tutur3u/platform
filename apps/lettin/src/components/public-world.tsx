@@ -15,6 +15,13 @@ export function PublicWorld({
 }) {
   const t = useTranslations('lettin');
   const [selected, setSelected] = useState(initialEntry ?? '');
+  const select = (id: string) => {
+    setSelected(id);
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set('entry', id);
+    else url.searchParams.delete('entry');
+    window.history.replaceState(null, '', url);
+  };
   const [search, setSearch] = useState('');
   const entry = world.entries.find((e) => e.id === selected);
   const draft = entry?.published ?? world.published;
@@ -30,7 +37,7 @@ export function PublicWorld({
         <Button
           className="h-auto w-full whitespace-normal break-words text-left"
           variant="secondary"
-          onClick={() => setSelected('')}
+          onClick={() => select('')}
         >
           {world.published.title}
         </Button>
@@ -53,10 +60,7 @@ export function PublicWorld({
                 key={e.id}
                 variant={e.id === selected ? 'secondary' : 'ghost'}
                 className="h-auto w-full justify-start whitespace-normal break-words text-left"
-                onClick={() => {
-                  setSelected(e.id);
-                  window.history.replaceState(null, '', `?entry=${e.id}`);
-                }}
+                onClick={() => select(e.id)}
               >
                 {e.published.title}
               </Button>
@@ -86,7 +90,7 @@ export function PublicWorld({
                     <Button
                       key={e.id}
                       variant="outline"
-                      onClick={() => setSelected(e.id)}
+                      onClick={() => select(e.id)}
                     >
                       {e.published.title}
                     </Button>

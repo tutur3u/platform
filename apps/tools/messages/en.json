@@ -140,6 +140,12 @@
   "common": {
     "background": "Background",
     "characters": "characters",
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    },
     "download": "Download",
     "foreground": "Foreground",
     "formats": "Formats",

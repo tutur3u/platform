@@ -4,6 +4,7 @@ import { convertV4MiniflareOptions, Miniflare } from 'miniflare';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { type Actor, LettinError, type Store, worldRole } from './context';
 import { getMedia, uploadMedia } from './media';
+import { cleanupMedia } from './media-cleanup';
 import { mutate } from './mutations';
 import { readOverview, readPublic } from './queries';
 
@@ -49,18 +50,24 @@ beforeAll(async () => {
   db = await mf.getD1Database('DB');
   // Miniflare exposes Node stream types across its workerd proxy boundary.
   bucket = (await mf.getR2Bucket('MEDIA')) as unknown as R2Bucket;
-  const migration = await readFile(
-    new URL('../../migrations/0001_worldbuilding.sql', import.meta.url),
-    'utf8'
-  );
-  await db.batch(
-    migration
-      .replace(/^--.*$/gm, '')
-      .split(';')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((s) => db.prepare(s))
-  );
+  for (const name of [
+    '0001_worldbuilding.sql',
+    '0002_public_indexes.sql',
+    '0003_media_cleanup.sql',
+  ]) {
+    const migration = await readFile(
+      new URL(`../../migrations/${name}`, import.meta.url),
+      'utf8'
+    );
+    await db.batch(
+      migration
+        .replace(/^--.*$/gm, '')
+        .split(';')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => db.prepare(s))
+    );
+  }
 }, 30000);
 afterAll(async () => {
   await mf?.dispose();
@@ -305,6 +312,9 @@ describe('R2 artwork', () => {
       new File(['png-data'], 'art.png', { type: 'image/png' })
     );
     const id = uploaded.image.split('/').at(-1)!;
+    await expect(
+      getMedia(db, bucket, id, async () => ({ ...editor, id: 'outsider' }))
+    ).rejects.toMatchObject({ status: 404 });
     const anonymous = async () => {
       throw new LettinError(401);
     };
@@ -349,4 +359,106 @@ describe('R2 artwork', () => {
       )
     ).rejects.toMatchObject({ status: 403 });
   });
+});
+
+it('collects abandoned artwork while retaining draft and published references', async () => {
+  const unused = await uploadMedia(
+    db,
+    bucket,
+    owner,
+    worldId,
+    new File(['image'], 'art.png', { type: 'image/png' })
+  );
+  const used = await uploadMedia(
+    db,
+    bucket,
+    owner,
+    worldId,
+    new File(['image'], 'art.png', { type: 'image/png' })
+  );
+  await mutate(db, owner, {
+    action: 'saveWorld',
+    worldId,
+    version: 1,
+    draft: { ...draft, image: used.image },
+  });
+  await mutate(db, owner, { action: 'publishWorld', worldId, version: 2 });
+  await mutate(db, owner, { action: 'saveWorld', worldId, version: 3, draft });
+  await db
+    .prepare("UPDATE media SET created_at='2000-01-01T00:00:00.000Z'")
+    .run();
+  await cleanupMedia(db, bucket, worldId);
+  await expect(
+    getMedia(db, bucket, unused.image.split('/').at(-1)!, async () => owner)
+  ).rejects.toMatchObject({ status: 404 });
+  expect(
+    (
+      await getMedia(
+        db,
+        bucket,
+        used.image.split('/').at(-1)!,
+        async () => owner
+      )
+    ).status
+  ).toBe(200);
+  await expect(
+    mutate(db, owner, {
+      action: 'saveWorld',
+      worldId,
+      version: 4,
+      draft: { ...draft, image: unused.image },
+    })
+  ).rejects.toMatchObject({ status: 409 });
+});
+
+it('returns bounded creator catalogue summaries without entry documents', async () => {
+  for (let i = 0; i < 27; i++) {
+    const id = (
+      await mutate(db, owner, {
+        action: 'createWorld',
+        draft: { ...draft, title: `Catalogue ${i}` },
+      })
+    ).id;
+    await mutate(db, owner, {
+      action: 'publishWorld',
+      worldId: id,
+      version: 1,
+    });
+  }
+  const page = await readPublic(db, undefined, { creatorId: owner.id });
+  expect(page).toHaveLength(25);
+  expect(
+    page.every(
+      (world) =>
+        world.entries.length === 0 &&
+        world.published.content.content?.length === 0
+    )
+  ).toBe(true);
+  expect(
+    await readPublic(db, undefined, { page: 2, creatorId: owner.id })
+  ).toHaveLength(3);
+  expect(await readPublic(db, undefined, { creatorId: 'outsider' })).toEqual(
+    []
+  );
+});
+it('allows invitation owners to revoke after delegation is disabled', async () => {
+  await db
+    .prepare("UPDATE creators SET can_invite=1 WHERE user_id='editor'")
+    .run();
+  const invitation = await mutate(db, editor, {
+    action: 'invite',
+    email: 'reader@example.test',
+  });
+  await mutate(db, owner, {
+    action: 'setCreator',
+    userId: editor.id,
+    canInvite: false,
+    enabled: false,
+  });
+  await expect(
+    mutate(db, editor, {
+      action: 'revokeInvitation',
+      invitationId: invitation.id,
+    })
+  ).resolves.toEqual(invitation);
 });

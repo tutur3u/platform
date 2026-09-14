@@ -206,6 +206,12 @@
   },
   "common": {
     "back": "Back",
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    },
     "completed": "Completed",
     "continue": "Continue",
     "empty": "Nothing here yet.",

@@ -153,11 +153,16 @@ export function getLettinPublicWorlds(
     query: { worldId },
   });
 }
-export function uploadLettinArtwork(wsId: string, worldId: string, file: File) {
+export function uploadLettinArtwork(
+  wsId: string,
+  worldId: string,
+  file: File,
+  options?: InternalApiClientOptions
+) {
   const body = new FormData();
   body.set('worldId', worldId);
   body.set('file', file);
-  return client().json<{ image: string }>(`${path(wsId)}/media`, {
+  return client(options).json<{ image: string }>(`${path(wsId)}/media`, {
     method: 'POST',
     body,
   });

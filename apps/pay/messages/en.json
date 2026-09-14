@@ -423,6 +423,12 @@
     "attempt": "Attempt",
     "back": "Back",
     "cancel": "Cancel",
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    },
     "clear": "Clear",
     "close": "Close",
     "completed": "Completed",

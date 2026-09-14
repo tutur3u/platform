@@ -8,6 +8,7 @@ import {
   writeAccess,
 } from './context';
 import { mutateInvitation } from './invitations';
+import { validArtwork } from './media-cleanup';
 
 export async function mutate(
   db: Store,
@@ -25,9 +26,10 @@ export async function mutate(
     throw new LettinError(403);
   if (command.action === 'createWorld') {
     const id = crypto.randomUUID();
+    const image = validArtwork(command.draft.image, id);
     const result = await db
       .prepare(
-        `INSERT INTO worlds(id,ws_id,owner_id,draft) SELECT ?,?,?,? WHERE ?=1 OR EXISTS(SELECT 1 FROM creators WHERE user_id=? AND enabled=1) RETURNING id`
+        `INSERT INTO worlds(id,ws_id,owner_id,draft) SELECT ?,?,?,? WHERE (?=1 OR EXISTS(SELECT 1 FROM creators WHERE user_id=? AND enabled=1)) AND ${image.sql} RETURNING id`
       )
       .bind(
         id,
@@ -35,7 +37,8 @@ export async function mutate(
         actor.id,
         JSON.stringify(command.draft),
         Number(actor.isAdmin),
-        actor.id
+        actor.id,
+        ...image.values
       )
       .first();
     if (!result) throw new LettinError(403);
@@ -89,16 +92,18 @@ export async function mutate(
   const access = writeAccess(actor, command.worldId, publishing);
   if (command.action === 'createEntry') {
     const id = crypto.randomUUID();
+    const image = validArtwork(command.draft.image, command.worldId);
     const result = await db
       .prepare(
-        `INSERT INTO entries(id,ws_id,world_id,draft) SELECT ?,?,?,? WHERE ${access.sql} RETURNING id`
+        `INSERT INTO entries(id,ws_id,world_id,draft) SELECT ?,?,?,? WHERE ${access.sql} AND ${image.sql} RETURNING id`
       )
       .bind(
         id,
         actor.wsId,
         command.worldId,
         JSON.stringify(command.draft),
-        ...access.values
+        ...access.values,
+        ...image.values
       )
       .first();
     if (!result) throw new LettinError(403);
@@ -118,10 +123,14 @@ export async function mutate(
   const value = saving ? JSON.stringify(command.draft) : publish ? now : null;
   // Reject cross-world link IDs inside the same atomic write as the revision check.
   const links = saving ? command.draft.links : [];
+  const image = validArtwork(
+    saving ? command.draft.image : '',
+    command.worldId
+  );
   const validLinks = `NOT EXISTS(SELECT 1 FROM json_each(?) link WHERE NOT EXISTS(SELECT 1 FROM entries e WHERE e.id=link.value AND e.ws_id=? AND e.world_id=?))`;
   const result = await db
     .prepare(`UPDATE ${table} SET ${assignments},version=version+1,updated_at=?
-    WHERE id=? AND ws_id=? ${isEntry ? 'AND world_id=?' : ''} AND version=? AND ${access.sql} AND ${validLinks} RETURNING id`)
+    WHERE id=? AND ws_id=? ${isEntry ? 'AND world_id=?' : ''} AND version=? AND ${access.sql} AND ${validLinks} AND ${image.sql} RETURNING id`)
     .bind(
       value,
       now,
@@ -132,7 +141,8 @@ export async function mutate(
       ...access.values,
       JSON.stringify(links),
       actor.wsId,
-      command.worldId
+      command.worldId,
+      ...image.values
     )
     .first();
   if (!result) {

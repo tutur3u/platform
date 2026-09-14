@@ -5,10 +5,11 @@ import { getLettinWorld } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import { Collaborators } from './collaborators';
 import { EntryEditor } from './entry-editor';
+import { useNavigationGuard } from './navigation-guard';
 import { emptyDraft, useLettinMutation } from './use-lettin';
 export function WorldStudio({
   wsId,
@@ -21,7 +22,8 @@ export function WorldStudio({
   const [selected, setSelected] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [search, setSearch] = useState('');
-  const [dirty, setDirty] = useState(false);
+  const { dirty, setDirty } = useNavigationGuard();
+  useEffect(() => () => setDirty(false), [setDirty]);
   const query = useQuery({
     queryKey: ['lettin', wsId, worldId],
     queryFn: () => getLettinWorld(wsId, worldId),
@@ -33,7 +35,7 @@ export function WorldStudio({
         {t('loading')}
       </p>
     );
-  if (query.isError)
+  if (query.isError && !query.data)
     return (
       <div role="alert" className="p-10">
         {t('requestFailed')}{' '}
@@ -41,9 +43,16 @@ export function WorldStudio({
       </div>
     );
   const data = query.data;
+  if (!data) return null;
   const record = data.entries.find((e) => e.id === selected) ?? data.world;
   return (
     <main className="mx-auto max-w-7xl px-5 py-8 md:px-10">
+      {query.isError && (
+        <p role="alert">
+          {t('requestFailed')}{' '}
+          <Button onClick={() => query.refetch()}>{t('retry')}</Button>
+        </p>
+      )}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <Link
           href={`/${wsId}`}

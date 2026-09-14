@@ -64,15 +64,9 @@ export async function mutateInvitation(
   }
   const result = await db
     .prepare(
-      `UPDATE invitations SET revoked=1 WHERE id=? AND (?=1 OR invited_by=?) AND ${allowed} RETURNING id`
+      `UPDATE invitations SET revoked=1 WHERE id=? AND (?=1 OR invited_by=?) RETURNING id`
     )
-    .bind(
-      command.invitationId,
-      Number(actor.isAdmin),
-      actor.id,
-      Number(actor.isAdmin),
-      actor.id
-    )
+    .bind(command.invitationId, Number(actor.isAdmin), actor.id)
     .first();
   if (!result) throw new LettinError(403);
   return { id: command.invitationId };

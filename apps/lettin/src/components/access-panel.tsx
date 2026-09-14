@@ -2,7 +2,7 @@
 import type { LettinOverview } from '@tuturuuu/internal-api/lettin';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useLettinMutation } from './use-lettin';
 export function AccessPanel({
@@ -13,6 +13,7 @@ export function AccessPanel({
   data: LettinOverview;
 }) {
   const t = useTranslations('lettin');
+  const locale = useLocale();
   const [email, setEmail] = useState('');
   const mutation = useLettinMutation(wsId);
   return (
@@ -22,27 +23,29 @@ export function AccessPanel({
       </summary>
       <div className="mt-5 space-y-5">
         <p className="text-muted-foreground text-sm">{t('delegationHint')}</p>
-        <form
-          className="flex flex-wrap items-end gap-3"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            try {
-              await mutation.mutateAsync({ action: 'invite', email });
-              setEmail('');
-            } catch {}
-          }}
-        >
-          <label className="min-w-0 flex-1 space-y-2">
-            {t('email')}
-            <Input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-          <Button disabled={mutation.isPending}>{t('invite')}</Button>
-        </form>
+        {data.canInvite && (
+          <form
+            className="flex flex-wrap items-end gap-3"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await mutation.mutateAsync({ action: 'invite', email });
+                setEmail('');
+              } catch {}
+            }}
+          >
+            <label className="min-w-0 flex-1 space-y-2">
+              {t('email')}
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
+            <Button disabled={mutation.isPending}>{t('invite')}</Button>
+          </form>
+        )}
         {data.invitations.map((invite) => (
           <div
             key={invite.id}
@@ -67,12 +70,15 @@ export function AccessPanel({
               {t('shareInvitation')}
               <Input
                 readOnly
-                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard?invitation=${invite.id}`}
+                value={`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://lettin.tuturuuu.com'}/dashboard?invitation=${invite.id}`}
                 onFocus={(e) => e.target.select()}
               />
             </label>
             <p className="text-xs">
-              {t('expires')}: {new Date(invite.expires_at).toLocaleDateString()}
+              {t('expires')}:{' '}
+              {new Date(invite.expires_at).toLocaleDateString(locale, {
+                timeZone: 'UTC',
+              })}
             </p>
           </div>
         ))}

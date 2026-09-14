@@ -1,85 +1,185 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import type { NodeViewProps } from '@tiptap/react';
-import { describe, expect, it, vi } from 'vitest';
-import { TaskItemCheckboxContent } from './task-item-checkbox-view';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { TaskList } from '@tiptap/extension-list';
+import { type Editor, EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { TaskItemCheckbox } from './task-item-checkbox-extension';
+import { TaskItemStatusPicker } from './task-item-status-picker';
 
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: vi.fn(),
+vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
+vi.mock('./task-item-checkbox', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./task-item-checkbox')>()),
+  useMentionedTaskStatuses: () => ({ data: [] }),
 }));
 
-vi.mock('./task-item-checkbox', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./task-item-checkbox')>();
-
-  return {
-    ...actual,
-    useMentionedTaskStatuses: () => ({ data: [] }),
-  };
-});
-
-function createNodeViewProps() {
-  const setNodeMarkup = vi.fn();
-  const command = vi.fn(
-    (
-      callback: (props: {
-        tr: { setNodeMarkup: typeof setNodeMarkup };
-      }) => boolean
-    ) => callback({ tr: { setNodeMarkup } })
-  );
-
-  const props = {
-    node: {
-      attrs: { checked: false },
-      descendants: vi.fn(),
-    },
-    getPos: () => 4,
-    editor: {
-      isEditable: true,
-      commands: { command },
-    },
-  } as unknown as NodeViewProps;
-
-  return { command, props, setNodeMarkup };
+let editor: Editor;
+function Harness({ editable = true }: { editable?: boolean }) {
+  const instance = useEditor({
+    extensions: [StarterKit, TaskList, TaskItemCheckbox],
+    content:
+      '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><p>Checklist text</p></li></ul>',
+    editable,
+  });
+  if (instance) editor = instance;
+  return <EditorContent editor={instance} />;
 }
+const checkbox = () => screen.getByRole('checkbox', { name: 'status' });
+const checked = () => editor.state.doc.firstChild?.firstChild?.attrs.checked;
+afterEach(() => vi.useRealTimers());
 
-describe('TaskItemCheckboxContent', () => {
-  it('cycles pointer interactions before the editor can replace the node view', () => {
-    const { props, setNodeMarkup } = createNodeViewProps();
-    render(<TaskItemCheckboxContent {...props} />);
-
-    const checkbox = screen.getByRole('checkbox', {
-      name: 'Task item status',
+describe('checklist editor interactions', () => {
+  it('cycles through all three persisted states with normal clicks', async () => {
+    await act(async () => {
+      render(<Harness />);
     });
-    expect(checkbox).toHaveAttribute('aria-checked', 'false');
-
-    fireEvent.pointerDown(checkbox, { button: 0, isPrimary: true });
-
-    expect(setNodeMarkup).toHaveBeenLastCalledWith(4, undefined, {
-      checked: 'indeterminate',
-    });
-    expect(checkbox).toHaveAttribute('aria-checked', 'mixed');
+    for (const state of ['indeterminate', true, false]) {
+      await act(async () => {
+        fireEvent.click(checkbox());
+      });
+      expect(checked()).toBe(state);
+      expect(checkbox()).toHaveAttribute(
+        'aria-checked',
+        state === 'indeterminate' ? 'mixed' : String(state)
+      );
+    }
   });
 
-  it('cycles all three states from the keyboard', () => {
-    const { props, setNodeMarkup } = createNodeViewProps();
-    render(<TaskItemCheckboxContent {...props} />);
-
-    const checkbox = screen.getByRole('checkbox', {
-      name: 'Task item status',
+  it('follows undo, redo, and external document updates', async () => {
+    await act(async () => {
+      render(<Harness />);
     });
-
-    fireEvent.keyDown(checkbox, { key: ' ' });
-    fireEvent.keyDown(checkbox, { key: 'Enter' });
-    fireEvent.keyDown(checkbox, { key: ' ' });
-
-    expect(setNodeMarkup).toHaveBeenNthCalledWith(1, 4, undefined, {
-      checked: 'indeterminate',
+    await act(async () => {
+      fireEvent.click(checkbox());
     });
-    expect(setNodeMarkup).toHaveBeenNthCalledWith(2, 4, undefined, {
-      checked: true,
+    await act(async () => {
+      editor.commands.undo();
     });
-    expect(setNodeMarkup).toHaveBeenNthCalledWith(3, 4, undefined, {
-      checked: false,
+    expect(checkbox()).toHaveAttribute('aria-checked', 'false');
+    await act(async () => {
+      editor.commands.redo();
     });
-    expect(checkbox).toHaveAttribute('aria-checked', 'false');
+    expect(checkbox()).toHaveAttribute('aria-checked', 'mixed');
+    await act(async () => {
+      editor.view.dispatch(
+        editor.state.tr.setNodeMarkup(1, undefined, { checked: true })
+      );
+    });
+    expect(checkbox()).toHaveAttribute('aria-checked', 'true');
   });
+
+  it('opens a delayed picker and selects a state without moving text selection', async () => {
+    vi.useFakeTimers();
+    await act(async () => {
+      render(<Harness />);
+    });
+    await act(async () => {
+      editor.commands.setTextSelection(4);
+    });
+    fireEvent.pointerEnter(checkbox().parentElement!);
+    await act(async () => {
+      vi.advanceTimersByTime(499);
+    });
+    expect(
+      screen.queryByRole('button', { name: 'completed' })
+    ).not.toBeInTheDocument();
+    await act(async () => {
+      vi.advanceTimersByTime(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'completed' }));
+    expect(checked()).toBe(true);
+    expect(editor.state.selection.from).toBe(4);
+  });
+
+  it('cancels a brief hover and closes the picker with Escape', async () => {
+    vi.useFakeTimers();
+    await act(async () => {
+      render(<Harness />);
+    });
+    fireEvent.pointerEnter(checkbox().parentElement!);
+    await act(async () => {
+      vi.advanceTimersByTime(200);
+    });
+    fireEvent.pointerLeave(checkbox().parentElement!);
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(
+      screen.queryByRole('button', { name: 'completed' })
+    ).not.toBeInTheDocument();
+    fireEvent.keyDown(checkbox(), { key: 'ArrowDown' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'completed' }), {
+      key: 'Escape',
+    });
+    expect(
+      screen.queryByRole('button', { name: 'completed' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps indeterminate state when serializing and reloading the checklist', async () => {
+    await act(async () => {
+      render(<Harness />);
+    });
+    await act(async () => {
+      fireEvent.click(checkbox());
+    });
+    const html = editor.getHTML();
+    await act(async () => {
+      editor.commands.setContent(html);
+    });
+    expect(checked()).toBe('indeterminate');
+    expect(checkbox()).toHaveAttribute('aria-checked', 'mixed');
+  });
+
+  it('opens the picker from the keyboard and prevents read-only changes', async () => {
+    let unmount = () => {};
+    await act(async () => {
+      ({ unmount } = render(<Harness />));
+    });
+    fireEvent.keyDown(checkbox(), { key: 'ArrowDown' });
+    expect(
+      screen.getByRole('button', { name: 'in_progress' })
+    ).toBeInTheDocument();
+    unmount();
+    await act(async () => {
+      render(<Harness editable={false} />);
+    });
+    await act(async () => {
+      fireEvent.click(checkbox());
+    });
+    fireEvent.keyDown(checkbox(), { key: 'ArrowDown' });
+    expect(checked()).toBe(false);
+    expect(
+      screen.queryByRole('button', { name: 'in_progress' })
+    ).not.toBeInTheDocument();
+  });
+  it.each([200, 500])(
+    'clears a pending or open picker when disabled after %i ms',
+    async (hoverMs) => {
+      vi.useFakeTimers();
+      const picker = (disabled: boolean) => (
+        <TaskItemStatusPicker
+          state={false}
+          disabled={disabled}
+          onSelect={vi.fn()}
+        >
+          <button type="button">Toggle</button>
+        </TaskItemStatusPicker>
+      );
+      const { rerender } = render(picker(false));
+      fireEvent.pointerEnter(
+        screen.getByRole('button', { name: 'Toggle' }).parentElement!
+      );
+      await act(async () => {
+        vi.advanceTimersByTime(hoverMs);
+      });
+      rerender(picker(true));
+      rerender(picker(false));
+      await act(async () => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(
+        screen.queryByRole('button', { name: 'completed' })
+      ).not.toBeInTheDocument();
+    }
+  );
 });

@@ -1,4 +1,5 @@
 ---
+updatedAt: "2026-09-14"
 title: "(Tu)lettin"
 description: "Workspace-based worldbuilding, creator invitations, and publishing."
 ---
@@ -140,3 +141,7 @@ central login, workspace switching, invite acceptance, collaborator roles,
 membership revocation, conflicting edits, artwork privacy, and anonymous published
 world browsing. Run `bun check` from the repository root before release; record
 unrelated repository blockers separately from Lettin's focused validation.
+
+Artwork cleanup runs before uploads and claims at most ten unused objects in that world per request after a seven-day grace period. Draft and published references are retained. Claimed objects cannot be newly referenced; failed R2 deletions remain queued for the next upload. A world with no further uploads retains its unused artwork.
+
+Public catalogues use 24-card pages with server-side search and creator filters; full entry documents are loaded only when opening one world.

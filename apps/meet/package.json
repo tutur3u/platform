@@ -31,8 +31,8 @@
     "cf:typegen": "wrangler types --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts && biome format --write cloudflare-env.d.ts"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.13",
-    "@google/genai": "^2.21.0",
+    "@formatjs/intl-localematcher": "^0.9.0",
+    "@google/genai": "^2.22.0",
     "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.102.8",
     "@tuturuuu/ai": "workspace:*",
@@ -53,29 +53,29 @@
     "dayjs": "^1.11.23",
     "nanoid": "^6.0.1",
     "negotiator": "^1.1.0",
-    "next": "^16.3.4",
-    "next-intl": "^4.14.2",
+    "next": "^16.3.5",
+    "next-intl": "^4.14.4",
     "next-themes": "^0.4.6",
     "nuqs": "^2.10.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-hook-form": "^7.87.0",
+    "react-hook-form": "^7.88.0",
     "remark-parse": "^11.0.0",
     "server-only": "^0.0.1",
     "unified": "^11.0.5",
-    "zod": "^4.5.4"
+    "zod": "^4.6.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
-    "@cloudflare/workers-types": "^5.20260908.1",
+    "@biomejs/biome": "2.5.13",
+    "@cloudflare/workers-types": "^5.20260914.1",
     "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/react": "^16.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.5.0",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
+    "@types/node": "^26.5.1",
+    "@types/react": "~19.2.18",
+    "@types/react-dom": "~19.2.7",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
@@ -83,7 +83,7 @@
     "postcss": "^8.5.28",
     "typescript": "7.0.2",
     "vitest": "^5.0.0",
-    "wrangler": "4.129.0"
+    "wrangler": "4.131.1"
   },
   "packageManager": "bun@1.4.1",
   "portless": {

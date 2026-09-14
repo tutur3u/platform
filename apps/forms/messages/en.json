@@ -1320,6 +1320,12 @@
     "cancel": "Cancel",
     "change_list_name": "Change the name of this list.",
     "characters": "characters",
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    },
     "choose_tasks": "Choose tasks",
     "clear": "Clear",
     "clear_all_filters": "Clear all filters",

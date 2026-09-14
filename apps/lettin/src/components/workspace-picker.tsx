@@ -1,6 +1,7 @@
 'use client';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
+import { useNavigationGuard } from './navigation-guard';
 export function WorkspacePicker({
   current,
   workspaces,
@@ -9,11 +10,13 @@ export function WorkspacePicker({
   workspaces: { id: string; name?: string | null }[];
 }) {
   const router = useRouter();
+  const { dirty } = useNavigationGuard();
   const t = useTranslations('lettin');
   return (
     <select
       aria-label={t('workspace')}
       value={current}
+      disabled={dirty}
       onChange={(e) => router.push(`/${e.target.value}`)}
       className="max-w-56 rounded-md border border-input bg-card px-3 py-2"
     >

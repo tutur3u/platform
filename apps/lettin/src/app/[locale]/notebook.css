@@ -1,4 +1,4 @@
-:root {
+.notebook-theme {
   --background: oklch(0.967 0.017 82);
   --foreground: oklch(0.29 0.035 48);
   --card: oklch(0.989 0.009 85);
@@ -18,14 +18,14 @@
   --ring: var(--primary);
   --radius: 0.65rem;
 }
-body {
+.notebook-theme {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, sans-serif;
 }
-h1,
-h2,
-h3,
+.notebook-theme h1,
+.notebook-theme h2,
+.notebook-theme h3,
 .notebook-title {
   font-family: Georgia, "Times New Roman", serif;
 }
@@ -81,16 +81,4 @@ h3,
   white-space: pre-wrap;
   background: var(--muted);
   padding: 1rem;
-}
-input,
-textarea,
-select,
-button,
-a {
-  touch-action: manipulation;
-}
-@media (prefers-reduced-motion: reduce) {
-  * {
-    scroll-behavior: auto;
-  }
 }

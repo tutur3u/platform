@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   actor: vi.fn(),
   mutate: vi.fn(),
   overview: vi.fn(),
+  world: vi.fn(),
 }));
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
@@ -14,7 +15,7 @@ vi.mock('@/server/identity', () => ({ resolveActor: mocks.actor }));
 vi.mock('@/server/mutations', () => ({ mutate: mocks.mutate }));
 vi.mock('@/server/queries', () => ({
   readOverview: mocks.overview,
-  readWorld: vi.fn(),
+  readWorld: mocks.world,
 }));
 
 import { LettinError } from '@/server/context';
@@ -78,4 +79,45 @@ it('returns revision conflicts and strips spoofed actor fields', async () => {
   });
   expect((await POST(request, context)).status).toBe(409);
   expect(mocks.mutate.mock.calls[0]?.[2]).not.toHaveProperty('actor');
+});
+
+it('validates and dispatches selected world reads', async () => {
+  const id = '00000000-0000-4000-8000-000000008401';
+  mocks.world.mockResolvedValue({ world: { id } });
+  const response = await GET(
+    new Request(`https://lettin.tuturuuu.com/api?worldId=${id}`),
+    context
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ world: { id } });
+  expect(mocks.world).toHaveBeenCalledWith(
+    {},
+    { id: 'actor', wsId: 'normalized' },
+    id
+  );
+  mocks.world.mockClear();
+  expect(
+    (
+      await GET(
+        new Request('https://lettin.tuturuuu.com/api?worldId=invalid'),
+        context
+      )
+    ).status
+  ).toBe(400);
+  expect(mocks.world).not.toHaveBeenCalled();
+});
+it('returns successful mutation results', async () => {
+  const response = await POST(
+    new Request('https://lettin.tuturuuu.com/api', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'publishWorld',
+        worldId: '00000000-0000-4000-8000-000000008401',
+        version: 1,
+      }),
+    }),
+    context
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ id: 'world' });
 });

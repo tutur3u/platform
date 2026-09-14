@@ -99,12 +99,12 @@
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "yaml": "^2.9.0",
-    "zod": "^4.5.4"
+    "yaml": "^2.9.1",
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.5.0",
+    "@types/node": "^26.5.1",
     "typescript": "7.0.2",
     "vitest": "^5.0.0"
   },

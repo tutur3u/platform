@@ -30,18 +30,18 @@
     "./styles.css": "./styles.css"
   },
   "dependencies": {
-    "@tiptap/core": "3.31.2",
-    "@tiptap/extension-color": "3.31.2",
-    "@tiptap/extension-highlight": "3.31.2",
-    "@tiptap/extension-image": "3.31.2",
-    "@tiptap/extension-link": "3.31.2",
-    "@tiptap/extension-placeholder": "3.31.2",
-    "@tiptap/extension-text-align": "3.31.2",
-    "@tiptap/extension-text-style": "3.31.2",
-    "@tiptap/pm": "3.31.2",
-    "@tiptap/react": "3.31.2",
-    "@tiptap/starter-kit": "3.31.2",
-    "lucide-react": "^1.43.0"
+    "@tiptap/core": "3.31.3",
+    "@tiptap/extension-color": "3.31.3",
+    "@tiptap/extension-highlight": "3.31.3",
+    "@tiptap/extension-image": "3.31.3",
+    "@tiptap/extension-link": "3.31.3",
+    "@tiptap/extension-placeholder": "3.31.3",
+    "@tiptap/extension-text-align": "3.31.3",
+    "@tiptap/extension-text-style": "3.31.3",
+    "@tiptap/pm": "3.31.3",
+    "@tiptap/react": "3.31.3",
+    "@tiptap/starter-kit": "3.31.3",
+    "lucide-react": "^1.45.0"
   },
   "peerDependencies": {
     "react": "^19.2.8",
@@ -50,7 +50,7 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/react": "^19.2.18",
+    "@types/react": "~19.2.18",
     "jsdom": "^30.0.1",
     "typescript": "7.0.2",
     "vitest": "^5.0.0"

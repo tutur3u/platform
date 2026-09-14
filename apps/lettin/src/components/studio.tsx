@@ -173,7 +173,7 @@ export function Studio({
         </div>
       )}
       {mutation.errorMessage && <p role="alert">{mutation.errorMessage}</p>}
-      {(data.canInvite || data.isAdmin) && (
+      {(data.canInvite || data.isAdmin || data.invitations.length > 0) && (
         <AccessPanel wsId={wsId} data={data} />
       )}
     </main>

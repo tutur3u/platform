@@ -17,11 +17,12 @@ export function RichEditor({
       StarterKit.configure({
         link: false,
         underline: false,
-        heading: { levels: [1, 2, 3] },
+        heading: { levels: [2, 3] },
       }),
     ],
     content: value,
     immediatelyRender: false,
+    shouldRerenderOnTransaction: true,
     onUpdate: ({ editor }) => onChange(editor.getJSON() as LettinNode),
     editorProps: {
       attributes: {
@@ -42,6 +43,7 @@ export function RichEditor({
           type="button"
           variant="ghost"
           size="sm"
+          aria-pressed={editor?.isActive('bold') ?? false}
           onClick={() => editor?.chain().focus().toggleBold().run()}
         >
           {t('bold')}
@@ -50,6 +52,7 @@ export function RichEditor({
           type="button"
           variant="ghost"
           size="sm"
+          aria-pressed={editor?.isActive('italic') ?? false}
           onClick={() => editor?.chain().focus().toggleItalic().run()}
         >
           {t('italic')}
@@ -58,6 +61,7 @@ export function RichEditor({
           type="button"
           variant="ghost"
           size="sm"
+          aria-pressed={editor?.isActive('heading', { level: 2 }) ?? false}
           onClick={() =>
             editor?.chain().focus().toggleHeading({ level: 2 }).run()
           }
@@ -68,6 +72,7 @@ export function RichEditor({
           type="button"
           variant="ghost"
           size="sm"
+          aria-pressed={editor?.isActive('bulletList') ?? false}
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
         >
           {t('list')}
@@ -76,6 +81,7 @@ export function RichEditor({
           type="button"
           variant="ghost"
           size="sm"
+          aria-pressed={editor?.isActive('blockquote') ?? false}
           onClick={() => editor?.chain().focus().toggleBlockquote().run()}
         >
           {t('quote')}

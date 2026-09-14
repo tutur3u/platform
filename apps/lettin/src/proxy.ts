@@ -240,9 +240,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     };
     const appSession = appSessionRefresh.ok
       ? appSessionRefresh.claims
-      : getAppSessionClaimsFromRequest(requestWithRefresh, {
-          targetApp: 'lettin',
-        });
+      : appSessionRefresh.error === 'MFA required'
+        ? null
+        : getAppSessionClaimsFromRequest(requestWithRefresh, {
+            targetApp: 'lettin',
+          });
     const hasWebAppSession =
       hasWebAppSessionTokenFromRequest(requestWithRefresh);
     const hasSupabaseSession =
@@ -253,6 +255,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
     if (!hasSatelliteSession) {
       const url = new URL('/login', request.url);
+      if (!appSessionRefresh.ok && appSessionRefresh.error === 'MFA required')
+        url.searchParams.set('refresh', '1');
       const next = getNextValue(request);
 
       if (next) url.searchParams.set('next', next);

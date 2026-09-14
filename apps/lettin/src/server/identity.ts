@@ -38,17 +38,25 @@ export async function resolveActor(wsId: string): Promise<Actor> {
     },
     async memberNames() {
       const admin = await createAdminClient();
-      const { data, error } = await admin
-        .from('workspace_members')
-        .select('user_id, users!inner(display_name)')
-        .eq('ws_id', permissions.wsId)
-        .eq('type', 'MEMBER')
-        .limit(500);
-      if (error) throw new LettinError(503);
-      return data.map((m) => ({
-        user_id: m.user_id,
-        name: m.users.display_name,
-      }));
+      const members: { user_id: string; name: string | null }[] = [];
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await admin
+          .from('workspace_members')
+          .select('user_id, users!inner(display_name)')
+          .eq('ws_id', permissions.wsId)
+          .eq('type', 'MEMBER')
+          .order('user_id')
+          .range(offset, offset + 499);
+        if (error) throw new LettinError(503);
+        members.push(
+          ...data.map((m) => ({
+            user_id: m.user_id,
+            name: m.users.display_name,
+          }))
+        );
+        if (data.length < 500) break;
+      }
+      return members;
     },
   };
   return actor;

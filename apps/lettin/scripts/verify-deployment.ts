@@ -23,6 +23,12 @@ for (let attempt = 0; attempt < 12; attempt++) {
       data.storage?.database === 'd1' &&
       data.storage?.artwork === 'r2'
     ) {
+      for (const path of ['/login', '/api/v1/lettin/worlds']) {
+        const response = await fetch(`${origin}${path}`, {
+          signal: AbortSignal.timeout(15_000),
+        });
+        if (!response.ok) throw new Error(`Lettin smoke check failed: ${path}`);
+      }
       verified = true;
       break;
     }
@@ -33,10 +39,4 @@ for (let attempt = 0; attempt < 12; attempt++) {
 }
 if (!verified)
   throw new Error('Lettin version and storage verification failed');
-for (const path of ['/login', '/api/v1/lettin/worlds']) {
-  const response = await fetch(`${origin}${path}`, {
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!response.ok) throw new Error(`Lettin smoke check failed: ${path}`);
-}
 console.info(`Verified Lettin Worker ${expected}, D1, R2, and public routes`);

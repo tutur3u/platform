@@ -159,6 +159,12 @@
     "workspaces": "Workspace"
   },
   "common": {
+    "checklist": {
+      "completed": "Hoàn tất",
+      "in_progress": "Đang làm",
+      "status": "Trạng thái mục",
+      "unchecked": "Cần làm"
+    },
     "hide_sidebar": "Ẩn thanh bên"
   },
   "finance": {

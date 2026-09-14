@@ -56,6 +56,11 @@ export function EntryEditor({
   };
   const upload = useMutation({
     mutationFn: (file: File) => uploadLettinArtwork(wsId, worldId, file),
+    onMutate: () => {
+      editGeneration.current += 1;
+      onDirty(true);
+    },
+    onError: () => onDirty(dirty),
     onSuccess: (result) => update({ image: result.image }),
   });
   const save = async () => {
@@ -199,6 +204,7 @@ export function EntryEditor({
           disabled={upload.isPending}
           onChange={(e) => {
             const file = e.target.files?.[0];
+            e.currentTarget.value = '';
             if (file) upload.mutate(file);
           }}
         />
@@ -241,7 +247,12 @@ export function EntryEditor({
       <div className="sticky bottom-3 space-y-2 rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <Button
-            disabled={mutation.isPending || !dirty || !draft.title.trim()}
+            disabled={
+              mutation.isPending ||
+              upload.isPending ||
+              !dirty ||
+              !draft.title.trim()
+            }
             onClick={save}
           >
             {t('saveDraft')}
@@ -250,7 +261,7 @@ export function EntryEditor({
             <>
               <Button
                 variant="outline"
-                disabled={mutation.isPending || dirty}
+                disabled={mutation.isPending || upload.isPending || dirty}
                 onClick={() => publish(true)}
               >
                 {t(record.published_at ? 'republish' : 'publish')}
@@ -258,7 +269,7 @@ export function EntryEditor({
               {record.published_at && (
                 <Button
                   variant="ghost"
-                  disabled={mutation.isPending || dirty}
+                  disabled={mutation.isPending || upload.isPending || dirty}
                   onClick={() => publish(false)}
                 >
                   {t('unpublish')}

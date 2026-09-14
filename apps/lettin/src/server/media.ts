@@ -5,6 +5,7 @@ import {
   worldRole,
   writeAccess,
 } from './context';
+import { cleanupMedia } from './media-cleanup';
 
 export const mediaTypes = new Set([
   'image/png',
@@ -26,6 +27,7 @@ export async function uploadMedia(
     file.size > 10 * 1024 * 1024
   )
     throw new LettinError(400, 'Invalid artwork');
+  await cleanupMedia(db, bucket, world);
   const id = crypto.randomUUID();
   const objectPath = `${actor.wsId}/${world}/${id}`;
   await bucket.put(objectPath, await file.arrayBuffer(), {
@@ -53,7 +55,9 @@ export async function getMedia(
   getActor: (wsId: string) => Promise<Actor>
 ) {
   const row = await db
-    .prepare('SELECT ws_id,world_id,object_path FROM media WHERE id=?')
+    .prepare(
+      'SELECT ws_id,world_id,object_path FROM media WHERE id=? AND deleting=0'
+    )
     .bind(id)
     .first<{ ws_id: string; world_id: string; object_path: string }>();
   if (!row) throw new LettinError(404);

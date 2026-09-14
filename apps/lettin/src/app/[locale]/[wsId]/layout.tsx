@@ -38,14 +38,14 @@ export default async function Layout({
     );
     if (invitation)
       return (
-        <>
+        <div className="notebook-theme min-h-screen">
           <Brand />
           <SatelliteWorkspaceInvitationCard
             invitation={invitation}
             afterDeclineHref="/dashboard"
             workspaceHref={`/${invitation.workspace.id}`}
           />
-        </>
+        </div>
       );
     redirect('/dashboard');
   }
@@ -54,7 +54,7 @@ export default async function Layout({
   );
   const t = await getTranslations('lettin');
   return (
-    <>
+    <div className="notebook-theme min-h-screen">
       <Brand />
       <div className="flex flex-wrap items-center gap-4 border-border border-b px-6 py-3 text-sm">
         <WorkspacePicker current={workspace.id} workspaces={workspaces} />
@@ -76,6 +76,6 @@ export default async function Layout({
         </a>
       </div>
       {children}
-    </>
+    </div>
   );
 }

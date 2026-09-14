@@ -15,9 +15,9 @@ export default async function Page({
   const world = (await publicWorlds(worldId))[0];
   if (!world) notFound();
   return (
-    <>
+    <div className="notebook-theme min-h-screen">
       <Brand />
       <PublicWorld world={world} initialEntry={(await searchParams).entry} />
-    </>
+    </div>
   );
 }
