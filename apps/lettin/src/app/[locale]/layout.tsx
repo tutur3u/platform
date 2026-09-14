@@ -13,12 +13,12 @@ import './notebook.css';
 const displayFont = Barlow_Condensed({
   subsets: ['latin', 'vietnamese'],
   variable: '--font-lettin-display',
-  weight: ['600', '700', '800', '900'],
+  weight: ['800', '900'],
 });
 const bodyFont = Be_Vietnam_Pro({
   subsets: ['latin', 'vietnamese'],
   variable: '--font-lettin-body',
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '600', '700'],
 });
 const editorialFont = Newsreader({
   subsets: ['latin', 'vietnamese'],

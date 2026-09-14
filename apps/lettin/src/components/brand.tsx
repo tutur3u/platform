@@ -13,7 +13,7 @@ export async function Brand() {
           <span className="lettin-wordmark">Lettin</span>
           <span className="lettin-wordmark-note">{t('wordmarkNote')}</span>
         </Link>
-        <p className="hidden border-primary-foreground/30 border-x px-6 font-bold text-[10px] uppercase tracking-[0.18em] lg:block">
+        <p className="hidden border-foreground/20 border-x px-6 font-bold text-[10px] uppercase tracking-[0.18em] lg:block">
           {t('masthead')}
         </p>
         <nav className="flex items-center gap-6">

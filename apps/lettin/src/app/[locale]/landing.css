@@ -51,12 +51,12 @@
   margin-top: clamp(1.8rem, 4vw, 3.5rem);
   font-size: clamp(4rem, 7.2vw, 7.8rem);
   line-height: 0.92;
-  text-wrap: balance;
 }
 
 .lettin-hero-title > span {
   display: block;
   padding-block: 0.035em;
+  text-wrap: balance;
 }
 
 .lettin-hero-title > span:nth-child(2) {

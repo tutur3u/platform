@@ -18,10 +18,12 @@ function WorldSignal({
 }) {
   return (
     <div className="lettin-signal-stage">
-      <div className="lettin-orbit lettin-orbit-one" />
-      <div className="lettin-orbit lettin-orbit-two" />
-      <span className="lettin-signal-tab">{bulletin}</span>
-      <div className="lettin-map-card">
+      <div aria-hidden="true" className="lettin-orbit lettin-orbit-one" />
+      <div aria-hidden="true" className="lettin-orbit lettin-orbit-two" />
+      <span aria-hidden="true" className="lettin-signal-tab">
+        {bulletin}
+      </span>
+      <div aria-hidden="true" className="lettin-map-card">
         <div className="lettin-map-card-topline">
           <span>{title}</span>
           <span>27° 19′ N</span>
