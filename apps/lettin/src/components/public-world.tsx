@@ -33,7 +33,7 @@ export function PublicWorld({
     : [];
   return (
     <main className="mx-auto grid max-w-[90rem] gap-10 px-5 py-10 md:grid-cols-[240px_minmax(0,1fr)] md:px-10">
-      <aside className="lettin-sidebar space-y-4 md:sticky md:top-6">
+      <aside className="lettin-sidebar space-y-4 md:sticky md:top-6 md:self-start">
         <Button
           className="h-auto w-full whitespace-normal break-words text-left"
           variant="secondary"
