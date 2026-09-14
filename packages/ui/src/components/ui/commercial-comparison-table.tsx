@@ -55,7 +55,7 @@ export function ComparisonTable({
                 <th
                   key={tier}
                   scope="col"
-                  className="sticky top-0 z-20 min-w-28 border-foreground/10 border-b bg-background px-3 py-4 text-center sm:min-w-32"
+                  className="sticky top-0 z-20 min-w-24 border-foreground/10 border-b bg-background px-3 py-4 text-center sm:min-w-32"
                 >
                   <span
                     className={`mx-auto mb-2 flex size-8 items-center justify-center rounded-lg border ${surface} ${color}`}

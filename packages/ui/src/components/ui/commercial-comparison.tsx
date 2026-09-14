@@ -136,13 +136,13 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
         aria-hidden
       />
       <div className="relative flex flex-wrap items-end justify-between gap-6 pb-3">
-        <div className="max-w-2xl space-y-4">
+        <div className="max-w-3xl space-y-4">
           <span className="inline-flex items-center gap-2 font-mono-ui text-[0.65rem] text-dynamic-blue uppercase tracking-[0.18em]">
             <SlidersHorizontal aria-hidden className="size-3.5" />
             {copy.tiers}
           </span>
           <h3
-            className="font-display font-semibold text-3xl leading-[1.1] tracking-[-0.035em] sm:text-4xl lg:text-5xl"
+            className="text-balance font-display font-semibold text-3xl leading-[1.1] tracking-[-0.035em] sm:text-4xl lg:text-5xl"
             id={`${id}-title`}
           >
             {copy.title}

@@ -31,6 +31,13 @@ import {
 } from '@tuturuuu/icons/lucide';
 import type { ComparisonTier } from '@tuturuuu/utils/commercial-comparison';
 
+interface ComparisonTierStyle {
+  Icon: typeof Rocket;
+  color: string;
+  surface: string;
+  column: string;
+}
+
 export const comparisonTierStyle = {
   free: {
     Icon: Rocket,
@@ -56,7 +63,7 @@ export const comparisonTierStyle = {
     surface: 'border-dynamic-orange/25 bg-dynamic-orange/10',
     column: 'bg-dynamic-orange/[0.025]',
   },
-} satisfies Record<ComparisonTier, object>;
+} satisfies Record<ComparisonTier, ComparisonTierStyle>;
 
 const appIcons: Record<string, typeof LayoutGrid> = {
   capacity: Gauge,
