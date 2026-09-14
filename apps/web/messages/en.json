@@ -4591,7 +4591,6 @@
     "included": "Included",
     "internal": "Show platform services",
     "internalValue": "Platform service",
-    "notice": "Approved capacity changes are awaiting rollout. Checkout and your workspace usage page remain authoritative for your current subscription. Preview access is not guaranteed by purchasing a tier.",
     "pending": "Approved · awaiting rollout",
     "preview": "Restricted preview",
     "pricesLoading": "Loading current prices…",
