@@ -1,42 +1,36 @@
+@import "./landing.css";
+
 .notebook-theme {
-  --background: oklch(0.94 0.025 86);
-  --foreground: oklch(0.18 0.018 72);
-  --card: oklch(0.975 0.018 88);
+  --background: oklch(0.955 0.018 92);
+  --foreground: oklch(0.19 0.04 285);
+  --card: oklch(0.985 0.012 92);
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.2 0.018 72);
-  --primary-foreground: oklch(0.97 0.02 88);
-  --secondary: oklch(0.84 0.14 88);
-  --secondary-foreground: oklch(0.17 0.018 72);
-  --muted: oklch(0.88 0.026 82);
-  --muted-foreground: oklch(0.4 0.025 62);
-  --accent: oklch(0.5 0.17 34);
-  --accent-foreground: oklch(0.98 0.015 88);
-  --border: oklch(0.24 0.019 70);
-  --input: oklch(0.38 0.025 68);
-  --ring: oklch(0.61 0.19 33);
-  --radius: 0.2rem;
+  --primary: oklch(0.23 0.055 284);
+  --primary-foreground: oklch(0.97 0.015 92);
+  --secondary: oklch(0.88 0.16 122);
+  --secondary-foreground: oklch(0.2 0.04 285);
+  --muted: oklch(0.9 0.025 290);
+  --muted-foreground: oklch(0.43 0.035 282);
+  --accent: oklch(0.65 0.21 31);
+  --accent-foreground: oklch(0.985 0.012 92);
+  --border: oklch(0.3 0.045 283);
+  --input: oklch(0.48 0.035 283);
+  --ring: oklch(0.65 0.21 31);
+  --lettin-lilac: oklch(0.77 0.12 296);
+  --lettin-sky: oklch(0.81 0.12 222);
+  --radius: 0.35rem;
   min-height: 100dvh;
   background-color: var(--background);
-  background-image:
-    radial-gradient(
-      circle at 12% 24%,
-      rgb(25 22 17 / 6%) 0 0.7px,
-      transparent 0.8px
-    ),
-    radial-gradient(
-      circle at 76% 64%,
-      rgb(25 22 17 / 4%) 0 0.65px,
-      transparent 0.75px
-    );
-  background-size:
-    4px 4px,
-    5px 5px;
+  background-image: radial-gradient(
+    circle at center,
+    rgb(29 27 49 / 9%) 0 0.6px,
+    transparent 0.7px
+  );
+  background-size: 5px 5px;
   color: var(--foreground);
-  font-family:
-    "Arial Narrow", "Avenir Next Condensed", "Roboto Condensed", Arial,
-    sans-serif;
+  font-family: var(--font-lettin-body), system-ui, sans-serif;
 }
 
 .notebook-theme ::selection {
@@ -49,26 +43,29 @@
 .notebook-theme h3,
 .notebook-title,
 .lettin-display {
-  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
-  font-weight: 900;
-  letter-spacing: -0.035em;
+  font-family: var(--font-lettin-display), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.025em;
 }
 
-.lettin-serif {
-  font-family: Georgia, "Times New Roman", serif;
+.lettin-serif,
+.lettin-prose,
+.lettin-editor .tiptap {
+  font-family: var(--font-lettin-editorial), Georgia, serif;
 }
 
 .notebook-theme [data-slot="button"] {
-  border-radius: 0.15rem;
-  border-color: var(--foreground);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  min-height: 2.65rem;
+  border: 1.5px solid var(--foreground);
+  border-radius: 0.3rem;
+  font-family: var(--font-lettin-body), sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.025em;
   box-shadow: 3px 3px 0 var(--foreground);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
-    background 160ms ease;
+    background-color 160ms ease;
 }
 
 .notebook-theme [data-slot="button"]:hover:not(:disabled) {
@@ -84,47 +81,84 @@
 .notebook-theme [data-slot="input"],
 .notebook-theme textarea,
 .notebook-theme select {
-  border-width: 2px;
-  border-radius: 0;
-  background-color: rgb(255 252 240 / 80%);
+  border-width: 1.5px;
+  border-radius: 0.3rem;
+  background-color: color-mix(in oklch, var(--card) 92%, transparent);
   box-shadow: 2px 2px 0 var(--foreground);
+  font-family: var(--font-lettin-body), sans-serif;
 }
 
 .lettin-masthead {
   position: relative;
   z-index: 20;
-  border-bottom: 3px solid var(--foreground);
-  background: var(--foreground);
-  color: var(--primary-foreground);
+  border-bottom: 1.5px solid var(--foreground);
+  background: color-mix(in oklch, var(--background) 94%, transparent);
+  backdrop-filter: blur(14px);
+  color: var(--foreground);
 }
 
 .lettin-masthead::after {
   position: absolute;
   right: 0;
-  bottom: -0.45rem;
+  bottom: -0.28rem;
   left: 0;
-  height: 0.3rem;
-  background: var(--secondary);
+  height: 0.22rem;
+  background: linear-gradient(
+    90deg,
+    var(--accent) 0 34%,
+    var(--secondary) 34% 67%,
+    var(--lettin-lilac) 67%
+  );
   content: "";
+}
+
+.lettin-logo {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 0.7rem;
 }
 
 .lettin-brand-mark {
   display: grid;
-  width: 2.8rem;
-  height: 2.8rem;
+  grid-row: span 2;
+  width: 2.75rem;
+  height: 2.75rem;
   place-items: center;
-  border: 2px solid currentColor;
-  background: var(--accent);
-  box-shadow: 4px 4px 0 var(--secondary);
-  transform: rotate(-4deg);
+  border: 1.5px solid var(--foreground);
+  border-radius: 50% 50% 42% 58%;
+  background: var(--secondary);
+  font-family: var(--font-lettin-display), sans-serif;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  box-shadow: 3px 3px 0 var(--foreground);
+  transform: rotate(-7deg);
+}
+
+.lettin-wordmark {
+  align-self: end;
+  font-family: var(--font-lettin-display), sans-serif;
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 0.82;
+  letter-spacing: -0.04em;
+}
+
+.lettin-wordmark-note {
+  align-self: start;
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .lettin-nav-link {
   position: relative;
-  padding-block: 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
+  padding-block: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
@@ -133,361 +167,81 @@
   right: 0;
   bottom: 0;
   left: 0;
-  height: 0.2rem;
-  background: var(--secondary);
+  height: 0.25rem;
+  border-radius: 1rem;
+  background: var(--accent);
   content: "";
-  transform: scaleX(0) rotate(-1deg);
+  transform: scaleX(0);
+  transform-origin: left;
   transition: transform 180ms ease;
 }
 
 .lettin-nav-link:hover::after,
 .lettin-nav-link:focus-visible::after {
-  transform: scaleX(1) rotate(-1deg);
+  transform: scaleX(1);
 }
 
-.lettin-hero {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border-bottom: 3px solid var(--foreground);
-}
-
-.lettin-hero::before {
-  position: absolute;
-  inset: 0 0 auto 52%;
-  z-index: -1;
-  height: 100%;
-  background-image: radial-gradient(
-    var(--foreground) 1.25px,
-    transparent 1.25px
-  );
-  background-size: 9px 9px;
-  content: "";
-  opacity: 0.22;
-  transform: skewX(-8deg);
-}
-
-.lettin-hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
-  align-items: stretch;
-  max-width: 90rem;
-  min-height: calc(100dvh - 5rem);
-  margin-inline: auto;
-}
-
-.lettin-hero-copy {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: clamp(4rem, 8vw, 8.5rem) clamp(1.5rem, 6vw, 6rem);
-}
-
-.lettin-kicker {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.65rem;
-  background: var(--secondary);
-  color: var(--secondary-foreground);
-  font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  transform: rotate(-1deg);
-}
-
-.lettin-hero-title {
-  max-width: 12ch;
-  margin-top: 1.5rem;
-  font-size: clamp(4.2rem, 9.5vw, 9.5rem);
-  line-height: 0.78;
-  text-wrap: balance;
-  text-transform: uppercase;
-}
-
-.lettin-hero-title em {
-  display: inline-block;
-  color: var(--accent);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.72em;
-  font-weight: 700;
-  text-transform: none;
-  transform: rotate(-2deg);
-}
-
-.lettin-deck {
-  max-width: 38rem;
-  margin-top: 2rem;
-  border-left: 0.5rem solid var(--accent);
-  padding-left: 1.25rem;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
-  line-height: 1.55;
-}
-
-.lettin-primary-link,
-.lettin-secondary-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-  border: 2px solid var(--foreground);
-  padding: 0.9rem 1.2rem;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  box-shadow: 4px 4px 0 var(--foreground);
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.lettin-primary-link {
-  background: var(--foreground);
-  color: var(--primary-foreground);
-}
-
-.lettin-secondary-link {
+.notebook-paper,
+.notebook-cover,
+.lettin-sidebar {
+  border: 1.5px solid var(--foreground);
+  border-radius: 0.55rem;
   background: var(--card);
-}
-
-.lettin-primary-link:hover,
-.lettin-secondary-link:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 7px 7px 0 var(--accent);
-}
-
-.lettin-primary-link:focus-visible,
-.lettin-secondary-link:focus-visible,
-.lettin-nav-link:focus-visible {
-  outline: 3px solid var(--ring);
-  outline-offset: 4px;
-}
-
-.lettin-hero-collage {
-  position: relative;
-  display: grid;
-  min-height: 36rem;
-  place-items: center;
-  border-left: 3px solid var(--foreground);
-  background: var(--secondary);
-  padding: clamp(2rem, 5vw, 5rem);
-}
-
-.lettin-poster {
-  position: relative;
-  width: min(100%, 31rem);
-  border: 3px solid var(--foreground);
-  background: var(--card);
-  padding: clamp(2rem, 5vw, 4.5rem) clamp(1.5rem, 4vw, 3.5rem);
-  box-shadow: 16px 16px 0 var(--foreground);
-  transform: rotate(2deg);
-}
-
-.lettin-poster::before,
-.lettin-poster::after {
-  position: absolute;
-  width: 6rem;
-  height: 1.45rem;
-  background: rgb(237 224 185 / 82%);
-  content: "";
-}
-
-.lettin-poster::before {
-  top: -0.7rem;
-  left: 10%;
-  transform: rotate(-7deg);
-}
-
-.lettin-poster::after {
-  right: 8%;
-  bottom: -0.6rem;
-  transform: rotate(6deg);
-}
-
-.lettin-poster-icon {
-  display: grid;
-  width: 5rem;
-  height: 5rem;
-  place-items: center;
-  border: 3px solid var(--foreground);
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-foreground);
-}
-
-.lettin-poster-rule {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  border-top: 3px solid var(--foreground);
-  padding-top: 1.25rem;
-}
-
-.lettin-burst {
-  position: absolute;
-  top: 8%;
-  right: 5%;
-  display: grid;
-  width: 7rem;
-  height: 7rem;
-  place-items: center;
-  background: var(--accent);
-  color: var(--accent-foreground);
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-transform: uppercase;
-  clip-path: polygon(
-    50% 0%,
-    61% 27%,
-    85% 15%,
-    73% 39%,
-    100% 50%,
-    73% 61%,
-    85% 85%,
-    61% 73%,
-    50% 100%,
-    39% 73%,
-    15% 85%,
-    27% 61%,
-    0% 50%,
-    27% 39%,
-    15% 15%,
-    39% 27%
-  );
-  transform: rotate(9deg);
-}
-
-.lettin-edition-strip {
-  overflow: hidden;
-  border-block: 3px solid var(--foreground);
-  background: var(--foreground);
-  color: var(--primary-foreground);
-  white-space: nowrap;
-}
-
-.lettin-edition-strip span {
-  display: inline-block;
-  padding: 0.75rem 2rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.lettin-features {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr 1fr;
-  max-width: 90rem;
-  margin-inline: auto;
-}
-
-.lettin-feature {
-  min-height: 20rem;
-  border-right: 2px solid var(--foreground);
-  padding: clamp(2rem, 5vw, 4.5rem);
-}
-
-.lettin-feature:last-child {
-  border-right: 0;
-}
-
-.lettin-feature:nth-child(2) {
-  background: var(--accent);
-  color: var(--accent-foreground);
-}
-
-.lettin-feature-number {
-  display: inline-block;
-  border-bottom: 0.35rem solid currentColor;
-  font-size: 0.75rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-}
-
-.lettin-feature h2 {
-  margin-top: 3rem;
-  font-size: clamp(2.7rem, 5vw, 5.3rem);
-  line-height: 0.86;
-  text-transform: uppercase;
-}
-
-.lettin-feature p:last-child {
-  margin-top: 1.5rem;
-  max-width: 28rem;
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.65;
+  box-shadow: 5px 5px 0 var(--foreground);
 }
 
 .notebook-paper {
   position: relative;
-  border: 2px solid var(--foreground);
-  border-radius: 0;
-  background-color: var(--card);
-  background-image: linear-gradient(var(--muted) 1px, transparent 1px);
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(2rem - 1px),
+    color-mix(in oklch, var(--muted) 70%, transparent) 2rem
+  );
   background-size: 100% 2rem;
-  box-shadow: 7px 7px 0 var(--foreground);
 }
 
 .notebook-cover {
-  position: relative;
-  border: 2px solid var(--foreground);
-  border-radius: 0;
-  background: var(--card);
-  box-shadow: 7px 7px 0 var(--foreground);
+  overflow: hidden;
   transition:
     transform 180ms ease,
     box-shadow 180ms ease;
 }
 
-.notebook-cover:nth-child(3n + 1) {
-  transform: rotate(-0.5deg);
-}
-
-.notebook-cover:nth-child(3n + 2) {
-  transform: rotate(0.65deg);
-}
-
 .notebook-cover:hover {
   z-index: 1;
-  transform: translate(-2px, -4px) rotate(0);
-  box-shadow: 11px 12px 0 var(--accent);
+  transform: translate(-2px, -3px);
+  box-shadow: 8px 9px 0 var(--accent);
 }
 
 .lettin-section-heading {
-  border-block: 3px solid var(--foreground);
-  padding-block: 1.2rem;
+  border-bottom: 1.5px solid var(--foreground);
+  padding-bottom: 1.4rem;
 }
 
 .lettin-section-heading h1 {
-  font-size: clamp(3.8rem, 9vw, 8rem);
-  line-height: 0.82;
-  text-transform: uppercase;
+  max-width: 12ch;
+  font-size: clamp(3.2rem, 7vw, 6.5rem);
+  line-height: 0.98;
+  text-wrap: balance;
 }
 
 .lettin-sidebar {
-  border: 2px solid var(--foreground);
   background: var(--secondary);
   padding: 1rem;
-  box-shadow: 6px 6px 0 var(--foreground);
 }
 
 .lettin-workspace-bar {
-  border-bottom: 3px solid var(--foreground);
-  background: var(--secondary);
-  font-weight: 700;
+  border-bottom: 1.5px solid var(--foreground);
+  background: var(--lettin-lilac);
+  font-weight: 600;
 }
 
 .lettin-editor .tiptap {
   min-height: 20rem;
   outline: none;
   padding: 1rem;
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.9;
+  font-size: 1.05rem;
+  line-height: 1.8;
 }
 
 .lettin-editor .tiptap:focus {
@@ -496,26 +250,32 @@
 
 .lettin-prose {
   overflow-wrap: anywhere;
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.9;
+  font-size: 1.03rem;
+  line-height: 1.8;
 }
 
 .lettin-prose > h1 {
-  border-block: 3px solid var(--foreground);
-  padding-block: 0.65rem;
-  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
-  line-height: 0.94;
-  text-transform: uppercase;
+  border-bottom: 1.5px solid var(--foreground);
+  padding-bottom: 0.7rem;
+  font-family: var(--font-lettin-display), sans-serif;
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1.02;
+}
+
+:lang(vi) .lettin-section-heading h1 {
+  font-size: clamp(2.8rem, 6vw, 5.4rem);
+  line-height: 1.04;
 }
 
 .lettin-prose p {
-  margin-block: 0.75rem;
+  margin-block: 0.8rem;
 }
 
 .lettin-prose h2,
 .lettin-prose h3 {
-  margin-block: 1.25rem 0.5rem;
-  font-size: 1.5rem;
+  margin-block: 1.5rem 0.5rem;
+  font-size: 1.6rem;
+  line-height: 1.15;
 }
 
 .lettin-prose ul {
@@ -530,68 +290,23 @@
 
 .lettin-prose blockquote {
   margin-block: 1.5rem;
-  border-left: 0.5rem solid var(--accent);
-  padding: 0.75rem 0 0.75rem 1rem;
+  border-left: 0.35rem solid var(--accent);
+  padding: 0.6rem 0 0.6rem 1rem;
   font-size: 1.15em;
   font-style: italic;
 }
 
 .lettin-prose pre {
-  border: 2px solid var(--foreground);
+  overflow-x: auto;
+  border: 1.5px solid var(--foreground);
+  border-radius: 0.35rem;
   background: var(--muted);
   padding: 1rem;
   white-space: pre-wrap;
 }
 
 .lettin-prose img {
-  border: 3px solid var(--foreground);
-  border-radius: 0;
-  box-shadow: 8px 8px 0 var(--secondary);
-}
-
-@media (max-width: 800px) {
-  .lettin-hero-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .lettin-hero-collage {
-    min-height: 31rem;
-    border-top: 3px solid var(--foreground);
-    border-left: 0;
-  }
-
-  .lettin-burst {
-    top: 3%;
-    right: 1rem;
-    width: 5.5rem;
-    height: 5.5rem;
-    font-size: 0.58rem;
-  }
-
-  .lettin-features {
-    grid-template-columns: 1fr;
-  }
-
-  .lettin-feature {
-    min-height: 0;
-    border-right: 0;
-    border-bottom: 2px solid var(--foreground);
-  }
-
-  .lettin-feature:last-child {
-    border-bottom: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  .notebook-theme *,
-  .notebook-theme *::before,
-  .notebook-theme *::after {
-    scroll-behavior: auto;
-    transition-duration: 0.01ms;
-  }
+  border: 1.5px solid var(--foreground);
+  border-radius: 0.55rem;
+  box-shadow: 7px 7px 0 var(--secondary);
 }
