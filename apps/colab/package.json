@@ -19,8 +19,8 @@
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "next-themes": "^0.4.6",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "~19.2.8",
+    "react-dom": "~19.2.8",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {

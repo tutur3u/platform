@@ -92,6 +92,11 @@ locks aligned with Flutter plugins and retain stable versions when a registry's
 `latest` tag points at a prerelease. The configured npm release-age policy still
 applies. Run `bun check` and affected app builds through `ttr resources run`.
 
+Keep React and React DOM aligned at 19.2.8 while React Three Fiber 9.7.0
+requires versions below 19.3. The root overrides also prevent transitive peer
+dependencies from selecting a second runtime; revisit both overrides and
+workspace constraints when Fiber supports the next React minor.
+
 React-PDF 11 requires Node.js 22.13 or newer; CI uses Node.js 24. Its default
 Suspense behavior differs from version 10, so the shared PDF viewer explicitly
 keeps its existing loading and error handling with `suspense={false}`. Mermaid 12

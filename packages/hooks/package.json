@@ -20,8 +20,8 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.102.8",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react": "~19.2.8",
+    "react-dom": "~19.2.8"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
