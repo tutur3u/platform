@@ -17,8 +17,6 @@
   --input: var(--border);
   --ring: var(--primary);
   --radius: 0.65rem;
-}
-.notebook-theme {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, sans-serif;

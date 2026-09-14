@@ -20,7 +20,10 @@ vi.mock('@tuturuuu/ui/button', () => ({
   Button: ({
     variant: _variant,
     ...props
-  }: ComponentProps<'button'> & { variant?: string }) => <button {...props} />,
+  }: ComponentProps<'button'> & { variant?: string }) => {
+    void _variant;
+    return <button {...props} />;
+  },
 }));
 vi.mock('@tuturuuu/ui/input', () => ({
   Input: (props: ComponentProps<'input'>) => <input {...props} />,
