@@ -48,6 +48,7 @@ COPY apps/git/package.json ./apps/git/package.json
 COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
+COPY apps/lettin/package.json ./apps/lettin/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/ai/package.json ./packages/ai/package.json
 COPY packages/apis/package.json ./packages/apis/package.json

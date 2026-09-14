@@ -1,0 +1,59 @@
+{
+  "name": "@tuturuuu/lettin",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node ../../scripts/portless-safe-dev.js",
+    "dev:app": "node ../../scripts/portless-dev-banner.js && next dev -p ${PORT:-7833} --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "type-check": "node ../../scripts/run-tsc-build.js --build",
+    "test": "vitest run",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "deploy:cloudflare": "opennextjs-cloudflare deploy",
+    "preview:cloudflare": "opennextjs-cloudflare preview",
+    "cf:typegen": "wrangler types --include-runtime=false --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "db:migrate:local": "wrangler d1 migrations apply LETTIN_DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply LETTIN_DB --remote"
+  },
+  "portless": {
+    "name": "lettin.tuturuuu",
+    "script": "dev:app"
+  },
+  "dependencies": {
+    "@formatjs/intl-localematcher": "^0.8.13",
+    "@tanstack/react-query": "^5.102.8",
+    "@tiptap/react": "3.31.2",
+    "@tiptap/starter-kit": "3.31.2",
+    "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "negotiator": "^1.1.0",
+    "next": "^16.3.4",
+    "next-intl": "^4.14.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260908.1",
+    "@opennextjs/cloudflare": "^1.20.6",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/negotiator": "^0.6.5",
+    "@types/node": "^26.5.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "miniflare": "5.20260908.0-alpha",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.0",
+    "wrangler": "4.130.0"
+  },
+  "packageManager": "bun@1.4.1"
+}

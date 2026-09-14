@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 /**
  * i18n Cross-App Namespace & Key Checker
  *
@@ -55,6 +54,7 @@ const APPS = [
   { name: 'apps/cms', dir: 'apps/cms' },
   { name: 'apps/contacts', dir: 'apps/contacts' },
   { name: 'apps/forms', dir: 'apps/forms' },
+  { name: 'apps/lettin', dir: 'apps/lettin' },
   { name: 'apps/git', dir: 'apps/git' },
   { name: 'apps/drive', dir: 'apps/drive' },
   { name: 'apps/finance', dir: 'apps/finance' },

@@ -322,6 +322,10 @@
     "packages/workflows": {
       "component": "workflows",
       "package-name": "@tuturuuu/workflows"
+    },
+    "apps/lettin": {
+      "component": "lettin",
+      "package-name": "@tuturuuu/lettin"
     }
   }
 }

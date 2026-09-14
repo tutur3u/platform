@@ -1,0 +1,35 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-lettin",
+  "account_id": "e8912e2867beecc673d171907bf09649",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-14",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "tuturuuu-lettin" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "LETTIN_DB",
+      "database_name": "tuturuuu-lettin",
+      "database_id": "f03b16a0-6699-4f32-85a8-9a42e0d86c17",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    { "binding": "LETTIN_MEDIA", "bucket_name": "tuturuuu-lettin-media" },
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "tuturuuu-lettin-cache"
+    }
+  ],
+  "observability": { "enabled": true, "head_sampling_rate": 0.05 },
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "workers_dev": true,
+  "routes": [{ "pattern": "lettin.tuturuuu.com", "custom_domain": true }],
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://lettin.tuturuuu.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com"
+  }
+}

@@ -17,6 +17,7 @@ export const ci = {
   'rust-backend.yml': false,
   'tanstack-route-manifest.yaml': false,
   'i18n-check.yaml': true,
+  'lettin-cloudflare.yaml': true,
   'meet-cloudflare.yaml': true,
   'mobile.yaml': true,
   'release-ai-package.yaml': true,

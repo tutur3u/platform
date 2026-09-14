@@ -109,6 +109,7 @@ const MISSIONS = [
     'confirmation_required',
     ['store', 'preview', 'checkout'],
   ],
+  ['lettin', 'build', 'confirmation_required', ['world', 'write', 'publish']],
   ['learn', 'learn', 'reversible', ['courses', 'study', 'progress']],
   ['mail', 'focus', 'confirmation_required', ['inbox', 'compose', 'follow_up']],
   ['meet', 'collaborate', 'confirmation_required', ['room', 'invite', 'meet']],

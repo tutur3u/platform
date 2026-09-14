@@ -10,6 +10,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'drive',
   'finance',
   'forms',
+  'lettin',
   'hive',
   'infra',
   'inventory',

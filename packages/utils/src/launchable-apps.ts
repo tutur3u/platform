@@ -399,6 +399,19 @@ export const LAUNCHABLE_APPS = [
     slug: 'colab',
     title: 'Colab',
   },
+  {
+    aliases: ['Worldbuilding', 'Wiki', 'Characters', 'Stories', 'Bulletin'],
+    appRoot: 'apps/lettin',
+    category: 'productivity',
+    defaultPath: '/dashboard',
+    localhostOrigin: 'http://localhost:7833',
+    packageName: '@tuturuuu/lettin',
+    portlessApp: 'lettin',
+    productionUrl: 'https://lettin.tuturuuu.com',
+    slug: 'lettin',
+    title: '(Tu)lettin',
+    workspacePathResolver: workspaceRootPath,
+  },
 ] as const satisfies readonly LaunchableApp[];
 
 export type LaunchableAppSlug = (typeof LAUNCHABLE_APPS)[number]['slug'];

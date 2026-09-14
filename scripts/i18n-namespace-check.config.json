@@ -156,5 +156,42 @@
       "ws-task-boards.*",
       "ws-tasks.*"
     ]
-  }
+  },
+  "apps/lettin": [
+    "account_switcher",
+    "calendar",
+    "certificates",
+    "chat",
+    "command_launcher",
+    "experimental-notice",
+    "finance",
+    "finance-analytics",
+    "finance-budgets",
+    "finance-command-center",
+    "finance-overview",
+    "finance-recurring",
+    "finance-transactions",
+    "inventory-finance-reconciliation",
+    "invoice-analytics",
+    "meet-together",
+    "meet-together-plan-details",
+    "onboarding_guide",
+    "satellite-workspace-settings",
+    "settings",
+    "settings-account",
+    "transaction-category-data-table",
+    "transaction-data-table",
+    "version-badge",
+    "wallet-checkpoints",
+    "wallet-data-table",
+    "wallet-interest",
+    "workspace-finance-tabs",
+    "workspace-finance-transactions",
+    "ws-course-modules",
+    "ws-courses",
+    "ws-debt-loan",
+    "ws-members",
+    "ws-polls",
+    "ws-settings"
+  ]
 }

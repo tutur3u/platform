@@ -1,4 +1,4 @@
-pub(super) const CURRENT_USER_APP_SESSION_TARGETS: [&str; 19] = [
+pub(super) const CURRENT_USER_APP_SESSION_TARGETS: [&str; 20] = [
     "calendar",
     "chat",
     "cms",
@@ -8,6 +8,7 @@ pub(super) const CURRENT_USER_APP_SESSION_TARGETS: [&str; 19] = [
     "hive",
     "inventory",
     "learn",
+    "lettin",
     "mail",
     "meet",
     "mind",

@@ -123,6 +123,10 @@
     "apps/web": {
       "name": "tuturuuu",
       "script": "dev:app"
+    },
+    "apps/lettin": {
+      "name": "lettin.tuturuuu",
+      "script": "dev:app"
     }
   }
 }
