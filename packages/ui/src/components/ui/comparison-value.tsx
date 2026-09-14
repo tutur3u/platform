@@ -46,7 +46,7 @@ export function ComparisonValue({
         <button
           type="button"
           aria-label={`${context}: ${label}`}
-          className={`inline-flex min-h-8 min-w-8 items-center justify-center rounded-md px-1.5 align-middle transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring ${value === 'excluded' ? 'text-muted-foreground' : value === 'included' ? 'text-dynamic-green' : 'font-medium text-foreground'}`}
+          className={`inline-flex min-h-8 min-w-8 items-center justify-center rounded-md px-1.5 align-middle transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring ${value === 'excluded' ? 'text-foreground/25' : value === 'included' ? 'bg-dynamic-green/[0.08] text-dynamic-green' : value === 'preview' || value === 'pending' ? 'bg-dynamic-orange/[0.08] text-dynamic-orange' : value === 'info' ? 'text-foreground/35' : 'font-mono-ui text-foreground/80 text-xs tabular-nums'}`}
           onClick={(event) => {
             event.preventDefault();
             setOpen(!open);

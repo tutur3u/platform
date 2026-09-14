@@ -30,6 +30,18 @@ describe('commercial comparison', () => {
       )
     ).toBeTruthy();
   });
+  it('resets the explanation toggle with the other filters', () => {
+    render(<CommercialComparison copy={en.commercialComparison} />);
+    const details = screen.getByRole('checkbox', {
+      name: en.commercialComparison.details,
+    });
+    fireEvent.click(details);
+    expect(details).toBeChecked();
+    fireEvent.click(
+      screen.getByRole('button', { name: en.commercialComparison.reset })
+    );
+    expect(details).not.toBeChecked();
+  });
   it('searches displayed capacity values', () => {
     render(<CommercialComparison copy={en.commercialComparison} />);
     fireEvent.change(

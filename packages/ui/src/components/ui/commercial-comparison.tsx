@@ -1,6 +1,12 @@
 'use client';
 
-import { Check, Search, SlidersHorizontal } from '@tuturuuu/icons/lucide';
+import {
+  Check,
+  FlaskConical,
+  ListFilter,
+  SearchX,
+  SlidersHorizontal,
+} from '@tuturuuu/icons/lucide';
 import {
   COMPARISON_FEATURES,
   COMPARISON_TIERS,
@@ -8,8 +14,8 @@ import {
 } from '@tuturuuu/utils/commercial-comparison';
 import { useId, useState } from 'react';
 import { Button } from './button';
-import { ComparisonValue } from './comparison-value';
-import { Input } from './input';
+import { ComparisonTable } from './commercial-comparison-table';
+import { ComparisonToolbar } from './commercial-comparison-toolbar';
 
 export interface ComparisonCopy {
   title: string;
@@ -27,7 +33,6 @@ export interface ComparisonCopy {
   results: string;
   feature: string;
   tiers: string;
-  notice: string;
   pending: string;
   included: string;
   excluded: string;
@@ -93,6 +98,7 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
     setApp('all');
     setCategory('all');
     setDifferences(false);
+    setDetails(false);
     setInternal(false);
     setTiers(COMPARISON_TIERS);
   }
@@ -122,230 +128,96 @@ export function CommercialComparison({ copy }: { copy: ComparisonCopy }) {
   return (
     <section
       aria-labelledby={`${id}-title`}
-      className="mt-12 min-w-0 space-y-6"
+      className="relative mt-16 min-w-0 scroll-mt-28 space-y-6 sm:mt-24"
       id="compare-plans"
     >
-      <div className="max-w-2xl space-y-3">
-        <span className="inline-flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-widest">
-          <SlidersHorizontal aria-hidden="true" size={14} />
-          {copy.tiers}
-        </span>
-        <h3
-          className="font-semibold text-2xl tracking-tight sm:text-3xl"
-          id={`${id}-title`}
-        >
-          {copy.title}
-        </h3>
-        <p className="text-muted-foreground leading-relaxed">
-          {copy.description}
-        </p>
-      </div>
-      <p className="rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm leading-relaxed">
-        {copy.notice}
-      </p>
-      <div className="space-y-4 rounded-2xl border bg-background p-4 sm:p-5">
-        <div className="grid gap-3 md:grid-cols-[2fr_1fr_1fr]">
-          <label className="relative block">
-            <span className="sr-only">{copy.search}</span>
-            <Search
-              aria-hidden="true"
-              className="absolute top-3 left-3 size-4 text-muted-foreground"
-            />
-            <Input
-              className="pl-9"
-              placeholder={copy.search}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
-          <label className="block">
-            <span className="sr-only">{copy.app}</span>
-            <select
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              value={app}
-              onChange={(e) => setApp(e.target.value)}
-            >
-              <option value="all">{copy.allApps}</option>
-              {appIds.map((key) => (
-                <option key={key} value={key}>
-                  {copy.apps[key]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="sr-only">{copy.category}</span>
-            <select
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="all">{copy.allCategories}</option>
-              {Object.entries(copy.categories)
-                .filter(([key]) => internal || key !== 'internal')
-                .map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-            </select>
-          </label>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={differences}
-              onChange={(e) => setDifferences(e.target.checked)}
-            />
-            {copy.differences}
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={details}
-              onChange={(e) => setDetails(e.target.checked)}
-            />
-            {copy.details}
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={internal}
-              onChange={(e) => {
-                setInternal(e.target.checked);
-                setApp('all');
-                setCategory('all');
-              }}
-            />
-            {copy.internal}
-          </label>
-          <Button variant="ghost" size="sm" onClick={reset}>
-            {copy.reset}
-          </Button>
-        </div>
-        <fieldset className="flex flex-wrap gap-2 border-t pt-4">
-          <legend className="px-1 text-muted-foreground text-xs">
+      <div
+        className="pointer-events-none absolute -top-8 right-0 h-64 w-2/3 rounded-full bg-dynamic-blue/[0.04] blur-3xl"
+        aria-hidden
+      />
+      <div className="relative flex flex-wrap items-end justify-between gap-6 pb-3">
+        <div className="max-w-2xl space-y-4">
+          <span className="inline-flex items-center gap-2 font-mono-ui text-[0.65rem] text-dynamic-blue uppercase tracking-[0.18em]">
+            <SlidersHorizontal aria-hidden className="size-3.5" />
             {copy.tiers}
-          </legend>
-          {COMPARISON_TIERS.map((tier) => (
-            <Button
-              key={tier}
-              variant={tiers.includes(tier) ? 'secondary' : 'ghost'}
-              size="sm"
-              aria-pressed={tiers.includes(tier)}
-              disabled={tiers.length === 1 && tiers.includes(tier)}
-              onClick={() => toggleTier(tier)}
-            >
-              {tiers.includes(tier) && <Check aria-hidden="true" size={14} />}{' '}
-              {copy.tierNames[tier]}
-            </Button>
-          ))}
-        </fieldset>
+          </span>
+          <h3
+            className="font-display font-semibold text-3xl leading-[1.1] tracking-[-0.035em] sm:text-4xl lg:text-5xl"
+            id={`${id}-title`}
+          >
+            {copy.title}
+          </h3>
+          <p className="max-w-xl text-foreground/55 text-sm leading-relaxed sm:text-base">
+            {copy.description}
+          </p>
+        </div>
       </div>
-      <p aria-live="polite" className="text-muted-foreground text-sm">
-        {visible.length} {copy.results}
-      </p>
+      <ComparisonToolbar
+        copy={copy}
+        query={query}
+        app={app}
+        category={category}
+        differences={differences}
+        internal={internal}
+        details={details}
+        tiers={tiers}
+        appIds={appIds}
+        onQuery={setQuery}
+        onApp={setApp}
+        onCategory={setCategory}
+        onDifferences={setDifferences}
+        onDetails={setDetails}
+        onTier={toggleTier}
+        onReset={reset}
+        onInternal={(value) => {
+          setInternal(value);
+          setApp('all');
+          setCategory('all');
+        }}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+        <p
+          aria-live="polite"
+          className="inline-flex items-center gap-2 text-foreground/55 text-xs"
+        >
+          <ListFilter aria-hidden className="size-3.5 text-dynamic-blue" />
+          {visible.length} {copy.results}
+        </p>
+        <div className="flex flex-wrap items-center gap-4 text-[0.65rem] text-foreground/50">
+          <span className="inline-flex items-center gap-1.5">
+            <Check aria-hidden className="size-3.5 text-dynamic-green" />
+            {copy.included}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <FlaskConical
+              aria-hidden
+              className="size-3.5 text-dynamic-orange"
+            />
+            {copy.preview}
+          </span>
+        </div>
+      </div>
       {visible.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-10 text-center">
-          <p>{copy.empty}</p>
-          <Button variant="outline" className="mt-4" onClick={reset}>
+        <div className="flex flex-col items-center rounded-2xl border border-foreground/10 border-dashed bg-foreground/[0.02] px-6 py-16 text-center">
+          <SearchX aria-hidden className="mb-4 size-8 text-foreground/30" />
+          <p className="text-foreground/65 text-sm">{copy.empty}</p>
+          <Button
+            variant="outline"
+            className="mt-5 rounded-full"
+            onClick={reset}
+          >
             {copy.reset}
           </Button>
         </div>
       ) : (
-        <section
-          className="max-h-[70vh] overflow-auto rounded-xl border"
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users must scroll the comparison region.
-          tabIndex={0}
-          aria-label={copy.title}
-        >
-          <table className="w-full border-separate border-spacing-0 text-left text-sm">
-            <caption className="sr-only">{copy.description}</caption>
-            <thead>
-              <tr>
-                <th
-                  scope="col"
-                  className="sticky top-0 left-0 z-30 min-w-44 border-b bg-background p-4 sm:min-w-72"
-                >
-                  {copy.feature}
-                </th>
-                {tiers.map((tier) => (
-                  <th
-                    scope="col"
-                    key={tier}
-                    className="sticky top-0 z-20 min-w-24 border-b bg-background px-3 py-3 text-center font-semibold"
-                  >
-                    {copy.tierNames[tier]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            {appIds.map((appId) => {
-              const rows = visible.filter((row) => row.app === appId);
-              if (!rows.length) return null;
-              return (
-                <tbody key={appId}>
-                  <tr>
-                    <th
-                      scope="rowgroup"
-                      colSpan={tiers.length + 1}
-                      className="border-b bg-muted px-4 py-3 font-semibold"
-                    >
-                      <span className="sticky left-4">{copy.apps[appId]}</span>
-                    </th>
-                  </tr>
-                  {rows.map((row) => (
-                    <tr key={row.id} className="group">
-                      <th
-                        scope="row"
-                        className="sticky left-0 z-10 max-w-80 border-b bg-background px-4 py-2 font-normal group-hover:bg-muted"
-                      >
-                        <div className="flex items-start gap-2">
-                          <span>{copy.features[row.id]}</span>
-                          <ComparisonValue
-                            value={row.pending ? 'pending' : 'info'}
-                            label={
-                              row.pending
-                                ? copy.pending
-                                : (copy.features[row.id] ?? row.id)
-                            }
-                            context={copy.details}
-                            explanation={copy.explanations[row.detail]}
-                          />
-                        </div>
-
-                        {details && (
-                          <p className="mt-2 text-muted-foreground text-xs leading-relaxed">
-                            {copy.explanations[row.detail]}
-                          </p>
-                        )}
-                      </th>
-                      {tiers.map((tier) => {
-                        const value =
-                          row.values[COMPARISON_TIERS.indexOf(tier)] ??
-                          'excluded';
-                        return (
-                          <td
-                            key={tier}
-                            className="border-b px-3 py-2 text-center align-middle group-hover:bg-muted/30"
-                          >
-                            <ComparisonValue
-                              value={value}
-                              label={valueLabel(value)}
-                              context={`${copy.tierNames[tier]}: ${copy.features[row.id]}`}
-                              explanation={copy.explanations[row.detail]}
-                            />
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              );
-            })}
-          </table>
-        </section>
+        <ComparisonTable
+          copy={copy}
+          visible={visible}
+          tiers={tiers}
+          appIds={appIds}
+          details={details}
+          valueLabel={valueLabel}
+        />
       )}
     </section>
   );
