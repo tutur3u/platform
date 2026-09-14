@@ -9900,7 +9900,7 @@
       },
       "hive": {
         "description": "A lab for swarm agents: build workflows, run simulations, study the results.",
-        "label": "Agent lab"
+        "label": "Agents"
       },
       "inventory": {
         "description": "Products, stock, suppliers, and warehouses.",
@@ -9916,11 +9916,11 @@
       },
       "meet": {
         "description": "Find a time that works for everyone, fast.",
-        "label": "Tuturuuu Meet"
+        "label": "Meet"
       },
       "qr": {
         "description": "Codes for links, events, menus, and payments.",
-        "label": "QR generator"
+        "label": "QR"
       },
       "storefront": {
         "description": "A buyer-facing shop sitting on top of your inventory.",
@@ -9932,7 +9932,7 @@
       },
       "track": {
         "description": "Start a timer and see where the week actually went.",
-        "label": "Time tracking"
+        "label": "Timekeeping"
       },
       "workflows": {
         "description": "Automate the handoffs between your tools.",

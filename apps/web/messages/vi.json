@@ -9900,7 +9900,7 @@
       },
       "hive": {
         "description": "Phòng thí nghiệm cho tác tử bầy đàn: dựng quy trình, chạy mô phỏng, xem kết quả.",
-        "label": "Phòng thí nghiệm tác tử"
+        "label": "Tác tử"
       },
       "inventory": {
         "description": "Sản phẩm, tồn kho, nhà cung cấp và kho bãi.",
@@ -9916,11 +9916,11 @@
       },
       "meet": {
         "description": "Tìm thời gian phù hợp cho tất cả mọi người.",
-        "label": "Họp cùng nhau"
+        "label": "Meet"
       },
       "qr": {
         "description": "Mã QR cho liên kết, sự kiện, thực đơn và thanh toán.",
-        "label": "Tạo mã QR"
+        "label": "QR"
       },
       "storefront": {
         "description": "Cửa hàng cho người mua, dựng ngay trên kho hàng của bạn.",
