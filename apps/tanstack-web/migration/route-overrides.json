@@ -13,7 +13,7 @@
     "api:/api/v1/users/me/avatar/upload-url:apps/web/src/legacy-api-routes/v1/users/me/avatar/upload-url/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Current-user avatar upload URL creation remains on Next.js pending Rust parity. The future Rust handler must preserve session and scoped external app authorization with users:profile:write, the current-user target-app allowlist, the 10 requests per minute rate limit, and the app-session step-up bypass used for delegated profile editing."
+      "note": "Current-user avatar upload URL creation remains on Next.js pending Rust parity. The future Rust handler must preserve session and scoped external app authorization with users:profile:write, the current-user target-app allowlist, the 10 requests per minute rate limit, and the app-session step-up bypass used for delegated profile editing. The shared current-user app-session audience includes Lettin; retain that audience when porting."
     },
     "api:/api/v1/auth/app-token/invitation-decision:apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts": {
       "status": "legacy-next",
@@ -418,7 +418,7 @@
     "api:/api/v1/users/me/hive-access:apps/web/src/legacy-api-routes/v1/users/me/hive-access/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/users/me/hive-access by preserving the legacy app-session-first auth behavior for current-user app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only hive_members.enabled and platform_user_roles.enabled/allow_role_management for the authenticated user through the server-owned Supabase REST adapter, returning the derived legacy hasAccess/isAdmin/isMember payload, and keeping the legacy private cache directive on successful responses."
+      "note": "Rust backend handle_backend_request handles GET /api/v1/users/me/hive-access by preserving the legacy app-session-first auth behavior for current-user app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only hive_members.enabled and platform_user_roles.enabled/allow_role_management for the authenticated user through the server-owned Supabase REST adapter, returning the derived legacy hasAccess/isAdmin/isMember payload, and keeping the legacy private cache directive on successful responses. The shared current-user app-session audience includes Lettin; retain that audience when porting."
     },
     "api:/api/v1/nova/me/team:apps/web/src/legacy-api-routes/v1/nova/me/team/route.ts": {
       "status": "migrated",
@@ -594,12 +594,12 @@
     "api:/api/v1/users/me/full-name:apps/web/src/legacy-api-routes/v1/users/me/full-name/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles PATCH /api/v1/users/me/full-name through scoped current-user app-session auth, requires same-origin confirmation for cookie mutations, validates a JSON full_name string with trimmed length 1..100, and upserts user_private_details with user_id fixed to the authenticated actor through the server-owned Supabase REST adapter and on_conflict=user_id."
+      "note": "Rust backend handle_backend_request handles PATCH /api/v1/users/me/full-name through scoped current-user app-session auth, requires same-origin confirmation for cookie mutations, validates a JSON full_name string with trimmed length 1..100, and upserts user_private_details with user_id fixed to the authenticated actor through the server-owned Supabase REST adapter and on_conflict=user_id. The shared current-user app-session audience includes Lettin; retain that audience when porting."
     },
     "api:/api/v1/users/me/default-workspace:apps/web/src/legacy-api-routes/v1/users/me/default-workspace/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/me/default-workspace. GET accepts current-user app-session tokens or revalidated browser Supabase sessions, reads the saved default workspace, falls back to the personal workspace when the saved workspace is missing or inaccessible, and preserves the legacy null fallback for unresolved workspace data. PATCH revalidates the browser Supabase session, validates workspaceId as a UUID or null, verifies workspace_members access before setting a UUID, and writes user_private_details.default_workspace_id with the caller token."
+      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/me/default-workspace. GET accepts current-user app-session tokens or revalidated browser Supabase sessions, reads the saved default workspace, falls back to the personal workspace when the saved workspace is missing or inaccessible, and preserves the legacy null fallback for unresolved workspace data. PATCH revalidates the browser Supabase session, validates workspaceId as a UUID or null, verifies workspace_members access before setting a UUID, and writes user_private_details.default_workspace_id with the caller token. The shared current-user app-session audience includes Lettin; retain that audience when porting."
     },
     "api:/api/v1/users/me/identities:apps/web/src/legacy-api-routes/v1/users/me/identities/route.ts": {
       "status": "migrated",
@@ -609,7 +609,7 @@
     "api:/api/v1/users/me/profile:apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
+      "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work. The shared current-user app-session audience includes Lettin; retain that audience when porting."
     },
     "api:/api/v1/auth/password-login:apps/web/src/legacy-api-routes/v1/auth/password-login/route.ts": {
       "methods": {

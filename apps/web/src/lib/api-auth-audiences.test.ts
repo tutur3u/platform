@@ -17,6 +17,7 @@ describe('shared app-session API audiences', () => {
         'drive',
         'finance',
         'forms',
+        'lettin',
         'hive',
         'infra',
         'inventory',

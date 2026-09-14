@@ -56,6 +56,7 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   drive: Folder,
   finance: Wallet,
   forms: ClipboardList,
+  lettin: ClipboardList,
   hive: Server,
   inventory: Package,
   learn: GraduationCap,

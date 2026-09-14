@@ -1,0 +1,147 @@
+---
+updatedAt: "2026-09-14"
+title: "(Tu)lettin"
+description: "Workspace-based worldbuilding, creator invitations, and publishing."
+---
+
+(Tu)lettin is the creator worldbuilding app at `lettin.tuturuuu.com`. Creators
+organize worlds, characters, locations, lore, stories, and linked wiki pages in
+a private notebook, then explicitly publish revisions for readers.
+
+## Access and roles
+
+Lettin uses the platform's central login and satellite app-session exchange,
+refresh, and logout. Accounts and workspace membership are not duplicated.
+
+Private world access requires all three conditions:
+
+1. An enabled Lettin creator account, or root-workspace administrator status.
+2. Current `MEMBER` membership in the world's workspace. Guests are excluded.
+3. The existing `manage_documents` workspace permission, plus ownership or a
+   collaborator role on that world.
+
+The world owner manages collaborators. Editors save drafts; publishers can also
+publish and unpublish. Workspace administrators do not automatically gain access
+to somebody else's private world. Changing workspace roles or removing membership
+is effective on the next request.
+
+A platform administrator is a root-workspace member with the existing `admin`
+permission. They can invite creators and individually enable or revoke the
+`can_invite` grant. Delegated inviters can create and revoke their own invitations,
+but cannot delegate invitation privileges. Invite acceptance never grants workspace
+membership, workspace permissions, or invitation privileges.
+
+Use Creator invitations & access in the studio to create an email-bound invitation.
+Share the resulting link with its recipient. Lettin does not send invitation emails.
+The recipient must sign in with that verified email and accept within seven days.
+World collaborators must already be approved creators and eligible workspace members;
+manage workspace membership and roles through the existing platform settings.
+
+## Drafts and publishing
+
+Saving never changes the public revision. Publish a world's notebook to make its
+public page visible, and publish entries separately. Unpublishing a world hides all
+its entries from public reads. Publishing it again exposes entries that remain
+published, so unpublish those entries too if they should remain hidden.
+
+Rich text accepts a bounded node vocabulary with no raw HTML, scripts, arbitrary
+embeds, or private resource mentions. Public reads project only published revisions
+and filter relationships to unpublished entries. An optimistic version check rejects
+stale writes with HTTP 409, preserving the editor's local text for manual merging.
+
+Artwork uploads use the private Cloudflare R2 bucket `tuturuuu-lettin-media`.
+Stored references point to a stable application URL. The Worker streams artwork
+only to world collaborators or when a published page in its world references it.
+Unpublishing revokes future public reads; previously downloaded copies cannot be
+revoked. PNG, JPEG, WebP, and GIF uploads are limited to 10 MB. External HTTPS
+artwork links are also supported and remain subject to their host's availability.
+
+## Cloudflare architecture
+
+Lettin deploys as `tuturuuu-lettin` on Cloudflare Workers at
+`lettin.tuturuuu.com`. OpenNext builds the Next.js frontend and its API handlers
+into the Worker. There is no Vercel deployment or central-web content API.
+
+| Binding                    | Resource                   | Purpose                                                                         |
+| -------------------------- | -------------------------- | ------------------------------------------------------------------------------- |
+| `LETTIN_DB`                | D1 `tuturuuu-lettin`       | Creator grants, invitations, worlds, revisions, collaborators, media references |
+| `LETTIN_MEDIA`             | R2 `tuturuuu-lettin-media` | Private uploaded artwork                                                        |
+| `NEXT_INC_CACHE_R2_BUCKET` | R2 `tuturuuu-lettin-cache` | OpenNext incremental cache                                                      |
+| `WORKER_SELF_REFERENCE`    | `tuturuuu-lettin`          | OpenNext internal requests                                                      |
+| `CF_VERSION_METADATA`      | Worker version             | Deployment verification                                                         |
+
+Shared Tuturuuu login, verified email, workspace membership, and workspace
+permissions remain authoritative in the platform. Lettin does not duplicate
+accounts or store worldbuilding content in Supabase. Identity checks use the
+satellite session user and existing workspace permission helpers on every request.
+
+All content APIs live in `apps/lettin/src/app/api/v1`. Shared client access uses
+`@tuturuuu/internal-api/lettin`. Local API handlers take precedence over central
+platform API fallbacks. The public health route
+`/api/v1/lettin/health` checks D1 schema and R2 access and reports the Worker version.
+
+D1 schema migrations live in `apps/lettin/migrations`. Writes use parameterized
+statements with revision and role predicates; invitation acceptance uses an atomic
+D1 batch. Request-scoped D1 sessions start on the primary so access decisions see
+current creator grants. API and artwork responses use `private, no-store`.
+
+## Development and rollout
+
+The app uses Portless name `lettin.tuturuuu` and fallback port 7833.
+Run these commands from `apps/lettin` through the shared resource queue:
+
+```sh
+bun run cf:typegen
+ttr resources run -- bun run db:migrate:local
+ttr resources run -- bun run test
+ttr resources run -- bun run type-check
+ttr resources run -- bun run build:cloudflare
+```
+
+Local development initializes Cloudflare bindings through OpenNext. For runtime
+verification, `bun run preview:cloudflare` serves the built Worker in workerd.
+The storage tests use disposable Miniflare D1 and R2 resources and cover creator
+access, invitation delegation, conflicting writes, published snapshots, private
+relationships, and artwork publication/revocation.
+
+Set production shared-identity configuration as Worker secrets using the existing
+production values: `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SECRET_KEY`. If the platform
+uses a dedicated app-coordination signing secret, configure that same
+`TUTURUUU_APP_COORDINATION_SECRET` or `APP_COORDINATION_TOKEN_SECRET` too.
+The public Supabase URL and publishable key are also build inputs. Never copy a
+devbox's local Supabase settings to the production Worker.
+
+Register Lettin's shared app domain and session audience in the central platform
+before verifying cross-app login. Central identity registration and the Lettin
+Worker are separate deployment surfaces; a public homepage is not proof that
+login works.
+
+The `Lettin Cloudflare` workflow validates pull requests and builds on `main` and
+`production`. Only its production-branch job uploads secrets, applies Lettin's D1
+migrations, and deploys the built artifact. It maps GitHub's
+`PRODUCTION_SUPABASE_URL`, `PRODUCTION_SUPABASE_PUBLISHABLE_KEY`, and
+`PRODUCTION_SUPABASE_SECRET_KEY` into the Worker secret names above. Optional
+coordination signing secrets retain their names. Use `LETTIN_CLOUDFLARE_API_TOKEN`
+for a dedicated deployment credential; the existing account credential is the
+bootstrap fallback. Secrets are passed over stdin without temporary files.
+The workflow checks the deployed version tag against the exact source SHA.
+
+For an authorized manual rollout after local validation, apply only Lettin's D1
+migration and deploy its Worker:
+
+```sh
+bun run db:migrate:remote
+bun run deploy:cloudflare
+```
+
+`wrangler.jsonc` pins the Tuturuuu account, the dedicated resources, and the custom
+domain. Verify the active Worker version and `/api/v1/lettin/health`, then verify
+central login, workspace switching, invite acceptance, collaborator roles,
+membership revocation, conflicting edits, artwork privacy, and anonymous published
+world browsing. Run `bun check` from the repository root before release; record
+unrelated repository blockers separately from Lettin's focused validation.
+
+Artwork cleanup runs before uploads and claims at most ten unused objects in that world per request after a seven-day grace period. Draft and published references are retained. Claimed objects cannot be newly referenced; failed R2 deletions remain queued for the next upload. A world with no further uploads retains its unused artwork.
+
+Public catalogues use 24-card pages with server-side search and creator filters; full entry documents are loaded only when opening one world.

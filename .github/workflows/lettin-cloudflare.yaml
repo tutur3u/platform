@@ -1,0 +1,126 @@
+name: Lettin Cloudflare
+
+on:
+  pull_request:
+    paths:
+      - "apps/lettin/**"
+      - "packages/**"
+      - "package.json"
+      - "turbo.json"
+      - "bun.lock"
+      - "tuturuuu.ts"
+      - "tuturuuu.ci.ts"
+      - ".github/workflows/ci-check.yml"
+      - ".github/actions/**"
+      - ".github/workflows/lettin-cloudflare.yaml"
+  push:
+    branches: [main, production]
+    paths:
+      - "apps/lettin/**"
+      - "packages/**"
+      - "bun.lock"
+      - "package.json"
+      - "turbo.json"
+      - "tuturuuu.ts"
+      - "tuturuuu.ci.ts"
+      - ".github/workflows/ci-check.yml"
+      - ".github/actions/**"
+      - ".github/workflows/lettin-cloudflare.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: lettin-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: lettin-cloudflare.yaml
+  validate:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun run test
+        working-directory: apps/lettin
+      - name: Build the frontend for Workers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'pull_request' && 'https://lettin-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.event_name == 'pull_request' && 'sb_publishable_lettin_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_APP_URL: https://lettin.tuturuuu.com
+          NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+        with:
+          command: cd apps/lettin && bun run build:cloudflare
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+      - name: Validate Worker bundle
+        run: bun x --no-install wrangler deploy --dry-run -c apps/lettin/wrangler.jsonc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lettin-worker-${{ github.sha }}
+          path: apps/lettin/.open-next
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    environment: lettin-production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: lettin-worker-${{ github.sha }}
+          path: apps/lettin/.open-next
+      - name: Configure shared Tuturuuu identity on Cloudflare
+        working-directory: apps/lettin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.LETTIN_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
+          TUTURUUU_APP_COORDINATION_SECRET: ${{ secrets.TUTURUUU_APP_COORDINATION_SECRET }}
+          APP_COORDINATION_TOKEN_SECRET: ${{ secrets.APP_COORDINATION_TOKEN_SECRET }}
+        run: bun scripts/configure-identity.ts
+      - name: Apply Lettin schema
+        working-directory: apps/lettin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.LETTIN_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: bun run db:migrate:remote
+      - name: Deploy verified Worker
+        working-directory: apps/lettin
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.LETTIN_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+        run: bun run deploy:cloudflare -- --message "$GITHUB_SHA" --tag "$GITHUB_SHA"
+      - name: Verify deployed storage and version
+        env:
+          EXPECTED_VERSION_TAG: ${{ github.sha }}
+        run: bun apps/lettin/scripts/verify-deployment.ts

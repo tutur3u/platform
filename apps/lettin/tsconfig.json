@@ -1,0 +1,28 @@
+{
+  "extends": "@tuturuuu/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@tuturuuu/types/*": ["../../packages/types/src/*"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
+  },
+  "include": [
+    "src",
+    "scripts",
+    ".next/types/**/*.ts",
+    "global.d.ts",
+    "messages",
+    "cloudflare-env.d.ts",
+    "cloudflare-runtime.d.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}

@@ -1,6 +1,13 @@
 import type { ComparisonFeature } from './commercial-comparison-types';
 export const features2: ComparisonFeature[] = [
   {
+    id: 'lettin_0',
+    app: 'lettin',
+    category: 'learning',
+    values: ['preview', 'preview', 'preview', 'preview'],
+    detail: 'standard',
+  },
+  {
     id: 'colab_0',
     app: 'colab',
     category: 'learning',

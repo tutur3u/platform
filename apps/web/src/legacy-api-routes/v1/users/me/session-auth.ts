@@ -12,6 +12,7 @@ const CURRENT_USER_APP_SESSION_TARGETS = [
   'hive',
   'infra',
   'inventory',
+  'lettin',
   'learn',
   'mail',
   'meet',

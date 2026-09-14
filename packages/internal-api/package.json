@@ -27,6 +27,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./lettin": {
+      "types": "./dist/lettin.d.ts",
+      "import": "./dist/lettin.js",
+      "require": "./dist/lettin.js"
+    },
     "./ai": {
       "types": "./dist/ai.d.ts",
       "import": "./dist/ai.js",

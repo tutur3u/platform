@@ -4,6 +4,7 @@ import {
 } from './portless';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
+  { name: 'lettin', url: 'https://lettin.tuturuuu.com' },
   { name: 'colab', url: 'https://colab.tuturuuu.com' },
   {
     name: 'ai',
@@ -132,6 +133,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [
+  { name: 'lettin', url: getTuturuuuPortlessAppOrigin('lettin') },
   { name: 'colab', url: getTuturuuuPortlessAppOrigin('colab') },
   {
     name: 'ai',
@@ -252,6 +254,7 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const LOCALHOST_INTERNAL_APP_DOMAINS = [
+  { name: 'lettin', url: 'http://localhost:7833' },
   { name: 'colab', url: 'http://localhost:8795' },
   {
     name: 'ai',

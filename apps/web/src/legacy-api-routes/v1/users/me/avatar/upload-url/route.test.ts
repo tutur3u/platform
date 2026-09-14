@@ -34,6 +34,7 @@ describe('current user avatar upload URL route', () => {
             'hive',
             'infra',
             'inventory',
+            'lettin',
             'learn',
             'mail',
             'meet',

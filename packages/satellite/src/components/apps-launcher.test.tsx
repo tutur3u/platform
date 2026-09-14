@@ -279,24 +279,12 @@ describe('AppsLauncherDialog', () => {
     const trackCard = screen.getByRole('link', { name: 'Track' });
     trackCard.focus();
 
-    fireEvent.keyDown(trackCard, { key: 'ArrowDown' });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Inventory' })
-    );
-
-    fireEvent.keyDown(document.activeElement as HTMLElement, {
-      key: 'ArrowDown',
-    });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Contacts' })
-    );
-
-    fireEvent.keyDown(document.activeElement as HTMLElement, {
-      key: 'ArrowDown',
-    });
-    expect(document.activeElement).toBe(
-      screen.getByRole('link', { name: 'Forms' })
-    );
+    for (const name of ['(Tu)lettin', 'CMS', 'Storefront', 'Forms']) {
+      fireEvent.keyDown(document.activeElement as HTMLElement, {
+        key: 'ArrowDown',
+      });
+      expect(document.activeElement).toBe(screen.getByRole('link', { name }));
+    }
   });
 
   it('uses the responsive two-column grid for vertical movement', () => {

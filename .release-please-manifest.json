@@ -73,5 +73,6 @@
   "packages/users-ui": "0.7.6",
   "packages/utils": "0.28.0",
   "packages/vercel": "0.1.0",
-  "packages/workflows": "0.0.1"
+  "packages/workflows": "0.0.1",
+  "apps/lettin": "0.0.0"
 }
