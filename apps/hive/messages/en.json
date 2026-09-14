@@ -184,6 +184,12 @@
     "workspaces": "Workspaces"
   },
   "common": {
+    "checklist": {
+      "completed": "Done",
+      "in_progress": "In progress",
+      "status": "Checklist status",
+      "unchecked": "To do"
+    },
     "hide_sidebar": "Hide sidebar"
   },
   "dashboard": {
