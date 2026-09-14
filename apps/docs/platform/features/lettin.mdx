@@ -125,6 +125,9 @@ migrations, and deploys the built artifact. It maps GitHub's
 coordination signing secrets retain their names. Use `LETTIN_CLOUDFLARE_API_TOKEN`
 for a dedicated deployment credential; the existing account credential is the
 bootstrap fallback. Secrets are passed over stdin without temporary files.
+Production pushes apply D1 migrations only when the promoted range changes
+`apps/lettin/migrations`; those schema releases require D1 Edit permission on the
+deployment token. Manual production dispatches apply migrations defensively.
 The workflow checks the deployed version tag against the exact source SHA.
 
 For an authorized manual rollout after local validation, apply only Lettin's D1

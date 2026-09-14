@@ -32,8 +32,8 @@ export function PublicWorld({
     ? world.entries.filter((e) => e.published.links.includes(entry.id))
     : [];
   return (
-    <main className="mx-auto grid max-w-6xl gap-10 px-5 py-10 md:grid-cols-[220px_minmax(0,1fr)] md:px-10">
-      <aside className="space-y-4">
+    <main className="mx-auto grid max-w-[90rem] gap-10 px-5 py-10 md:grid-cols-[240px_minmax(0,1fr)] md:px-10">
+      <aside className="lettin-sidebar space-y-4 md:sticky md:top-6">
         <Button
           className="h-auto w-full whitespace-normal break-words text-left"
           variant="secondary"
@@ -67,7 +67,7 @@ export function PublicWorld({
             ))}
         </nav>
       </aside>
-      <div className="notebook-paper min-w-0 rounded-xl p-6 md:p-10">
+      <div className="notebook-paper min-w-0 p-6 md:p-10">
         <Link
           href={`/creators/${world.creatorId}`}
           className="mb-6 inline-block text-sm underline"

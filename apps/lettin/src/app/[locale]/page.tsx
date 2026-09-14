@@ -7,61 +7,67 @@ export default async function Page() {
   return (
     <div className="notebook-theme min-h-screen">
       <Brand />
-      <main className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-        <div className="grid items-center gap-14 md:grid-cols-[1.15fr_1fr]">
-          <section>
-            <p className="mb-6 text-muted-foreground text-xs uppercase tracking-[0.23em]">
-              {t('tagline')}
-            </p>
-            <h1 className="text-5xl leading-[1.12] md:text-7xl">
-              {t('heroTitle')}
-            </h1>
-            <p className="mt-7 max-w-lg text-lg text-muted-foreground leading-relaxed">
-              {t('heroDescription')}
-            </p>
-            <div className="mt-9 flex flex-wrap gap-4">
-              <Link
-                className="rounded-lg bg-primary px-6 py-3 text-primary-foreground"
-                href="/worlds"
-              >
-                {t('exploreWorlds')}
-              </Link>
-              <Link
-                className="rounded-lg border border-border bg-card px-6 py-3"
-                href="/dashboard"
-              >
-                {t('openNotebook')}
-              </Link>
+      <main>
+        <section className="lettin-hero">
+          <div className="lettin-hero-grid">
+            <div className="lettin-hero-copy">
+              <p className="lettin-kicker">
+                <Sparkles className="size-4" />
+                {t('edition')}
+              </p>
+              <h1 className="lettin-hero-title">{t('heroTitle')}</h1>
+              <p className="lettin-deck">{t('heroDescription')}</p>
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link className="lettin-primary-link" href="/worlds">
+                  {t('exploreWorlds')}
+                  <MapIcon className="size-4" />
+                </Link>
+                <Link className="lettin-secondary-link" href="/dashboard">
+                  {t('openNotebook')}
+                  <Feather className="size-4" />
+                </Link>
+              </div>
+              <p className="mt-6 max-w-lg font-bold text-xs uppercase tracking-[0.14em]">
+                {t('inviteOnlyShort')}
+              </p>
             </div>
-            <p className="mt-5 text-muted-foreground text-sm">
-              {t('inviteOnlyShort')}
-            </p>
-          </section>
-          <div
-            className="notebook-paper relative rotate-2 rounded-xl px-8 py-12 md:px-12"
-            aria-hidden="true"
-          >
-            <Feather className="ml-auto size-12 -rotate-12 text-primary" />
-            <p className="notebook-title my-10 text-3xl italic">
-              {t('notebookQuote')}
-            </p>
-            <div className="flex justify-between border-border border-t pt-6">
-              <BookOpen className="size-9" />
-              <MapIcon className="size-9" />
-              <Sparkles className="size-9" />
+            <div className="lettin-hero-collage" aria-hidden="true">
+              <span className="lettin-burst">{t('bulletin')}</span>
+              <div className="lettin-poster">
+                <div className="lettin-poster-icon">
+                  <Feather className="size-10 -rotate-12" />
+                </div>
+                <p className="mt-10 border-foreground border-y-3 py-3 font-black text-xs uppercase tracking-[0.2em]">
+                  {t('tagline')}
+                </p>
+                <p className="lettin-serif my-10 font-bold text-4xl italic leading-tight">
+                  “{t('notebookQuote')}”
+                </p>
+                <div className="lettin-poster-rule">
+                  <BookOpen className="size-9" />
+                  <MapIcon className="size-9 justify-self-center" />
+                  <Sparkles className="size-9 justify-self-end" />
+                </div>
+              </div>
             </div>
           </div>
+        </section>
+        <div className="lettin-edition-strip" aria-hidden="true">
+          <span>
+            {t('tagline')} · {t('charactersFeature')} · {t('placesFeature')} ·{' '}
+            {t('loreFeature')} · {t('tagline')} · {t('charactersFeature')}
+          </span>
         </div>
-        <section className="mt-24 grid gap-8 border-border border-t pt-10 sm:grid-cols-3">
+        <section className="lettin-features">
           {(['charactersFeature', 'placesFeature', 'loreFeature'] as const).map(
             (key, i) => (
-              <div key={key}>
-                <p className="mb-3 text-muted-foreground text-xs">0{i + 1}</p>
-                <h2 className="text-2xl">{t(key)}</h2>
-                <p className="mt-3 text-muted-foreground leading-relaxed">
-                  {t(`${key}Hint`)}
+              <article className="lettin-feature" key={key}>
+                <p className="lettin-feature-number">
+                  {t('fileNumber', { number: `0${i + 1}` })}
                 </p>
-              </div>
+                <h2>{t(key)}</h2>
+                <p>{t(`${key}Hint`)}</p>
+              </article>
             )
           )}
         </section>
