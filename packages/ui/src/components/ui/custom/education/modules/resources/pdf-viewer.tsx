@@ -54,6 +54,7 @@ export function PDFViewer({
   return (
     <div ref={containerRef} className="relative">
       <Document
+        suspense={false}
         file={url}
         onLoadError={onLoadError}
         onLoadSuccess={onDocumentLoadSuccess}

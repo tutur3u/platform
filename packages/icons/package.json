@@ -15,8 +15,8 @@
     "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {
-    "@lucide/lab": "^0.2.0",
-    "lucide-react": "^1.43.0"
+    "@lucide/lab": "^0.7.0",
+    "lucide-react": "^1.45.0"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

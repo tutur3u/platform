@@ -25,8 +25,8 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.5.0",
-    "@types/react": "^19.2.18",
+    "@types/node": "^26.5.1",
+    "@types/react": "~19.2.18",
     "@vitejs/plugin-react": "^6.1.1",
     "typescript": "7.0.2"
   },

@@ -107,18 +107,18 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "@tuturuuu/types": "workspace:*",
-    "next": "^16.3.4",
+    "next": "^16.3.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "zod": "^4.5.4"
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.5.0",
-    "@types/react": "^19.2.18",
-    "next": "^16.3.4",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "@types/node": "^26.5.1",
+    "@types/react": "~19.2.18",
+    "next": "^16.3.5",
+    "react": "~19.2.8",
+    "react-dom": "~19.2.8",
     "typescript": "7.0.2",
     "vitest": "^5.0.0"
   },
