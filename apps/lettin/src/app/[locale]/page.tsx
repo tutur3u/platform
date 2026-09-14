@@ -6,16 +6,18 @@ import { Link } from '@/i18n/navigation';
 function WorldSignal({
   bulletin,
   caption,
+  fieldNote,
   quote,
   title,
 }: {
   bulletin: string;
   caption: string;
+  fieldNote: string;
   quote: string;
   title: string;
 }) {
   return (
-    <div className="lettin-signal-stage" aria-hidden="true">
+    <div className="lettin-signal-stage">
       <div className="lettin-orbit lettin-orbit-one" />
       <div className="lettin-orbit lettin-orbit-two" />
       <span className="lettin-signal-tab">{bulletin}</span>
@@ -70,7 +72,7 @@ function WorldSignal({
         </div>
       </div>
       <div className="lettin-field-note">
-        <span>FIELD NOTE / 01</span>
+        <span>{fieldNote}</span>
         <p>“{quote}”</p>
       </div>
     </div>
@@ -114,6 +116,7 @@ export default async function Page() {
             <WorldSignal
               bulletin={t('bulletin')}
               caption={t('signalCaption')}
+              fieldNote={t('fieldNote')}
               quote={t('notebookQuote')}
               title={t('signalTitle')}
             />

@@ -11,7 +11,7 @@ export async function Brand() {
             <span>TL</span>
           </span>
           <span className="lettin-wordmark">Lettin</span>
-          <span className="lettin-wordmark-note">world atlas</span>
+          <span className="lettin-wordmark-note">{t('wordmarkNote')}</span>
         </Link>
         <p className="hidden border-primary-foreground/30 border-x px-6 font-bold text-[10px] uppercase tracking-[0.18em] lg:block">
           {t('masthead')}
