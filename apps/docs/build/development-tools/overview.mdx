@@ -95,7 +95,10 @@ applies. Run `bun check` and affected app builds through `ttr resources run`.
 Keep React and React DOM aligned at 19.2.8 while React Three Fiber 9.7.0
 requires versions below 19.3. The root overrides also prevent transitive peer
 dependencies from selecting a second runtime; revisit both overrides and
-workspace constraints when Fiber supports the next React minor.
+Hive workspace constraints when Fiber supports the next React minor. Keep
+`@types/react` and `@types/react-dom` on the matching runtime minor as well.
+Other packages retain compatible consumer ranges so the repository overrides do
+not force a second React copy into published-package consumers.
 
 React-PDF 11 requires Node.js 22.13 or newer; CI uses Node.js 24. Its default
 Suspense behavior differs from version 10, so the shared PDF viewer explicitly

@@ -8,10 +8,14 @@ lockfile, and 24 resolved Flutter dependencies. The review follow-up retains Rea
 Mind dependency as detailed below. Resolution and frozen-install verification use the repository's pinned Bun 1.4.1.
 
 Major JavaScript updates include Jotai 3, Mermaid 12, React-PDF 11, and the
-Mattermost adapter 2. React and React DOM remain aligned on `~19.2.8` because
+Mattermost adapter 2. React and React DOM resolve together to 19.2.8 because
 React Three Fiber 9.7.0 requires React below 19.3; its latest published release
 does not yet support 19.3. Root React/React DOM overrides at 19.2.8 also keep
-transitive peer consumers on the same runtime instance. Next.js and its root override move together to 16.3.5.
+transitive peer consumers on the same runtime instance. Hive keeps `~19.2.8`
+constraints; other runtime/peer consumers retain compatible `^19.2.8` ranges
+so published packages can reuse an external consumer's newer React version.
+React types are aligned to 19.2.18 and React DOM types to 19.2.7, including
+root overrides, so type declarations match the runtime minor. Next.js and its root override move together to 16.3.5.
 
 ## Compatibility
 
@@ -36,8 +40,9 @@ Mermaid 11.17.2 copy for Streamdown consumers. This increases installed and
 potential client bundle size; the plugin is not forced onto an unsupported major.
 The explicit dagre/classic settings apply to the direct chat renderers.
 
-The unused direct locale-matcher dependency was removed from Mind. Rewise keeps
-locale-matcher 0.9.0 while next-intl resolves 0.8.14. Comparing both implementations
+The unused direct `@formatjs/intl-localematcher` dependency was removed from
+Mind. Rewise keeps `@formatjs/intl-localematcher` 0.9.0 while next-intl resolves
+`@formatjs/intl-localematcher` 0.8.14. Comparing both implementations
 passed 1,684 cases for the supported `en`/`vi` locales, both fallback languages,
 and lookup/best-fit modes, including regional and Unicode-extension inputs.
 Version 0.9 adds Unicode extension alias canonicalization; this comparison does

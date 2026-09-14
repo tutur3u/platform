@@ -90,8 +90,8 @@
     "dayjs": "^1.11.23",
     "next": "^16.3.5",
     "qrcode": "^1.5.4",
-    "react": "~19.2.8",
-    "react-dom": "~19.2.8",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "remark-parse": "^11.0.0",
     "streamdown": "^2.6.0",
     "unified": "^11.0.5",
@@ -104,7 +104,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.5.1",
     "@types/qrcode": "^1.5.6",
-    "@types/react": "^19.3.0",
+    "@types/react": "~19.2.18",
     "typescript": "7.0.2"
   },
   "exports": {
