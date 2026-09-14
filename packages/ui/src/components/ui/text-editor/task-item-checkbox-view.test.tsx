@@ -4,6 +4,7 @@ import { type Editor, EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TaskItemCheckbox } from './task-item-checkbox-extension';
+import { TaskItemStatusPicker } from './task-item-status-picker';
 
 vi.mock('next-intl', () => ({ useTranslations: () => (key: string) => key }));
 vi.mock('./task-item-checkbox', async (importOriginal) => ({
@@ -151,4 +152,34 @@ describe('checklist editor interactions', () => {
       screen.queryByRole('button', { name: 'in_progress' })
     ).not.toBeInTheDocument();
   });
+  it.each([200, 500])(
+    'clears a pending or open picker when disabled after %i ms',
+    async (hoverMs) => {
+      vi.useFakeTimers();
+      const picker = (disabled: boolean) => (
+        <TaskItemStatusPicker
+          state={false}
+          disabled={disabled}
+          onSelect={vi.fn()}
+        >
+          <button type="button">Toggle</button>
+        </TaskItemStatusPicker>
+      );
+      const { rerender } = render(picker(false));
+      fireEvent.pointerEnter(
+        screen.getByRole('button', { name: 'Toggle' }).parentElement!
+      );
+      await act(async () => {
+        vi.advanceTimersByTime(hoverMs);
+      });
+      rerender(picker(true));
+      rerender(picker(false));
+      await act(async () => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(
+        screen.queryByRole('button', { name: 'completed' })
+      ).not.toBeInTheDocument();
+    }
+  );
 });

@@ -32,6 +32,13 @@ export function TaskItemStatusPicker({
     },
     []
   );
+  useEffect(() => {
+    if (!disabled) return;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    keyboardOpen.current = false;
+    setOpen(false);
+  }, [disabled]);
   const closeSoon = () => {
     cancelTimer();
     if (keyboardOpen.current) return;
