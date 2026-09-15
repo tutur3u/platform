@@ -4,6 +4,12 @@ on:
   push:
   workflow_dispatch:
 
+# Release Please pushes generated files, then amends them with Biome formatting.
+# Only the latest commit on each ref should validate or publish follow-up actions.
+concurrency:
+  group: biome-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
@@ -186,7 +192,7 @@ jobs:
     name: Apply Format
     runs-on: ubuntu-latest
     needs: [format]
-    if: ${{ needs.format.outputs.has_issues == 'true' }}
+    if: ${{ needs.format.outputs.has_issues == 'true' && !startsWith(github.ref_name, 'release-please--') }}
     permissions:
       contents: write
       pull-requests: write
@@ -249,7 +255,7 @@ jobs:
     name: Close Outdated Format PR
     runs-on: ubuntu-latest
     needs: [format]
-    if: ${{ needs.format.outputs.has_issues == 'false' }}
+    if: ${{ needs.format.outputs.has_issues == 'false' && !startsWith(github.ref_name, 'release-please--') }}
     permissions:
       contents: write
       pull-requests: write
@@ -322,7 +328,7 @@ jobs:
     name: Comment on PR
     runs-on: ubuntu-latest
     needs: [format, lint]
-    if: always()
+    if: ${{ !cancelled() && (needs.format.result == 'success' || needs.format.result == 'failure') && (needs.lint.result == 'success' || needs.lint.result == 'failure') }}
     permissions:
       contents: write
       pull-requests: write
