@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/utils-v0.28.0...utils-v0.29.0) (2026-09-15)
+
+
+### Features
+
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
+* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **meet:** publish invite previews and extend paid call limits ([7cf3d6b](https://github.com/tutur3u/platform/commit/7cf3d6b97b0f353e83e894dcc8c83e0d2b6d7a3b))
+* **meet:** turn notes into reviewed calendar and task follow-ups ([#5359](https://github.com/tutur3u/platform/issues/5359)) ([3914a41](https://github.com/tutur3u/platform/commit/3914a41828e6e837add7f55a3f05a5b42e31f98e))
+* **meet:** unlock hosting for verified paid accounts ([00a0168](https://github.com/tutur3u/platform/commit/00a016891845b43ba0297730937fa68d6e465de8))
+* **meet:** unlock paid hosting, longer calls and public previews ([#5364](https://github.com/tutur3u/platform/issues/5364)) ([a6687ff](https://github.com/tutur3u/platform/commit/a6687ffccda096f2ab9da850bf0ddfe8e04c3cf2))
+* **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
+* **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
+
+
+### Bug Fixes
+
+* **billing:** fail closed on unknown usage and subscription capacity ([ccfcba4](https://github.com/tutur3u/platform/commit/ccfcba46f236981b1d4e59e1c389bee8472b2ca8))
+* **billing:** fail closed on unknown usage and subscription capacity ([#5333](https://github.com/tutur3u/platform/issues/5333)) ([a308a89](https://github.com/tutur3u/platform/commit/a308a8996f17a81c76c8fb0d498a14d8dbf289c3))
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **meet:** fail closed and release rejected follow-up receipts ([c13a295](https://github.com/tutur3u/platform/commit/c13a295c1fabcf8605fb05b2d6a5042db3213426))
+* **payment:** protect webhook ingress and restore order cron ([e059fc7](https://github.com/tutur3u/platform/commit/e059fc74f4eff9e938823b1bd02b42093adc632e))
+* **payment:** restore catalog webhook delivery and guard publication ([#5342](https://github.com/tutur3u/platform/issues/5342)) ([b5f61ec](https://github.com/tutur3u/platform/commit/b5f61ec25617b09245c117e47081544edafa454a))
+* **pricing:** reconcile live catalog displays and tier comparisons ([3aa65c2](https://github.com/tutur3u/platform/commit/3aa65c2221d0d099ff5bd50de0c90bb4237d1bbd))
+* **tasks:** align filtered counts and local task visibility ([913388b](https://github.com/tutur3u/platform/commit/913388b78767f927685df695398da030ad73bf82))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+* **utils:** declare server-only runtime dependency ([172674d](https://github.com/tutur3u/platform/commit/172674d9168092acf1270fb09050a59d9efcbed6))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/utils-v0.27.1...utils-v0.28.0) (2026-09-07)
 
 

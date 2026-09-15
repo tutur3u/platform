@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/realtime-v0.7.0...realtime-v0.8.0) (2026-09-15)
+
+
+### Features
+
+* **meet:** attribute transcripts and review task assignees ([cac7eb0](https://github.com/tutur3u/platform/commit/cac7eb00cf444d55ef97fb7894711f0f1c71ec74))
+* **meet:** identify transcript sources and assign note follow-ups ([#5362](https://github.com/tutur3u/platform/issues/5362)) ([40c4a29](https://github.com/tutur3u/platform/commit/40c4a297e6d63a2bd31cd0ede609452d1615c14c))
+* **meet:** publish invite previews and extend paid call limits ([7cf3d6b](https://github.com/tutur3u/platform/commit/7cf3d6b97b0f353e83e894dcc8c83e0d2b6d7a3b))
+* **meet:** turn notes into reviewed calendar and task follow-ups ([#5359](https://github.com/tutur3u/platform/issues/5359)) ([3914a41](https://github.com/tutur3u/platform/commit/3914a41828e6e837add7f55a3f05a5b42e31f98e))
+* **meet:** unlock paid hosting, longer calls and public previews ([#5364](https://github.com/tutur3u/platform/issues/5364)) ([a6687ff](https://github.com/tutur3u/platform/commit/a6687ffccda096f2ab9da850bf0ddfe8e04c3cf2))
+
+
+### Bug Fixes
+
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **meet:** clean confirmed publications and bound legacy rooms ([1eb344f](https://github.com/tutur3u/platform/commit/1eb344f368e1152ed6a5ca7e0b603580d4c7d506))
+* **meet:** enforce room resource budgets and recover SFU cleanup ([5db8a3c](https://github.com/tutur3u/platform/commit/5db8a3cd903b91dcf569e7aad9c4808019c1de58))
+* **meet:** enforce room resource budgets and recover SFU cleanup ([#5334](https://github.com/tutur3u/platform/issues/5334)) ([e692ef8](https://github.com/tutur3u/platform/commit/e692ef8db4d68f2ed312caa6fd0bca55bbc66568))
+* **meet:** fail closed and release rejected follow-up receipts ([c13a295](https://github.com/tutur3u/platform/commit/c13a295c1fabcf8605fb05b2d6a5042db3213426))
+* **meet:** preserve prompt cleanup for new obligations ([ffea936](https://github.com/tutur3u/platform/commit/ffea93653533204896273810a9f37ec1e4667824))
+* **meet:** reconcile partial and legacy provider cleanup ([0b3a945](https://github.com/tutur3u/platform/commit/0b3a94555624ac1b4efb068deb920ea232c3c081))
+* **meet:** recover cleanup after interrupted persistence ([592b41d](https://github.com/tutur3u/platform/commit/592b41d011e9dd834b26417f56763095a321b111))
+* **meet:** retain cleanup by provider track identity ([aab1809](https://github.com/tutur3u/platform/commit/aab1809874eb2bd92684ac4eaddb707e0fdef0e0))
+* **meet:** retain late media cleanup and preserve usage accounting ([5af4c73](https://github.com/tutur3u/platform/commit/5af4c73296d5c3581e50053d765242ea7a04f217))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/realtime-v0.6.0...realtime-v0.7.0) (2026-09-10)
 
 

@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/ui-v0.32.0...ui-v0.33.0) (2026-09-15)
+
+
+### Features
+
+* **calendar:** automatically refresh connected calendars ([03584af](https://github.com/tutur3u/platform/commit/03584af0d9b7135b90953e9f81f7e971968679ff))
+* **calendar:** automatically refresh connected calendars ([#5311](https://github.com/tutur3u/platform/issues/5311)) ([e52894f](https://github.com/tutur3u/platform/commit/e52894fd746b76fee1c76efab40c9e398c95b5a4))
+* **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
+* **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
+* **pricing:** redesign the product comparison experience ([6adc1cf](https://github.com/tutur3u/platform/commit/6adc1cf3388c4f02c4375695377778c25696b775))
+* **pricing:** redesign the product comparison experience ([#5348](https://github.com/tutur3u/platform/issues/5348)) ([2232af1](https://github.com/tutur3u/platform/commit/2232af1738475629d2fb9a8a5b4578f8ce6ec77e))
+
+
+### Bug Fixes
+
+* **calendar:** clear recovered sync attention state ([bbf22be](https://github.com/tutur3u/platform/commit/bbf22bed0034518cd62d6dc063c30dd210ed2adb))
+* **calendar:** coordinate sync requests and recovery timing ([a1ddf89](https://github.com/tutur3u/platform/commit/a1ddf89570ec0f917d4bcb3cd0f9a1302e9d72c1))
+* **calendar:** preserve recovery alerts during automatic sync ([04b2a1d](https://github.com/tutur3u/platform/commit/04b2a1d22400d20b922edf8d8372700ab490b9af))
+* **calendar:** refresh cached events after remote synchronization ([f59f126](https://github.com/tutur3u/platform/commit/f59f12646c255bbc8a0944701299102d6ff14fe7))
+* **calendar:** use public calendar API type exports ([ac23511](https://github.com/tutur3u/platform/commit/ac23511863ae7c2713da411651cd6e67fa92d153))
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** recover stalled invoice loading ([#5310](https://github.com/tutur3u/platform/issues/5310)) ([a5c6a37](https://github.com/tutur3u/platform/commit/a5c6a3765008e1fb503d6e2ceadec9c43b1e23e5))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **mail:** preview and download PDF attachments ([#5339](https://github.com/tutur3u/platform/issues/5339)) ([cc0ca86](https://github.com/tutur3u/platform/commit/cc0ca865269e9a43fbb88a513998a4c6243b773b))
+* **mail:** render PDF previews safely ([7f9f9c9](https://github.com/tutur3u/platform/commit/7f9f9c987523cea173fc96213028ee52e0e488af))
+* **mira:** preserve conversation chronology and open requested artifacts ([f8d4f86](https://github.com/tutur3u/platform/commit/f8d4f8616919baf6f878c6eb71836acc48c8933f))
+* **mira:** preserve conversation chronology and open requested artifacts ([#5331](https://github.com/tutur3u/platform/issues/5331)) ([40155bd](https://github.com/tutur3u/platform/commit/40155bd97ebe23b3c4ccbcde88c998c173b2bf7f))
+* **pricing:** polish comparison sizing and style types ([404f3f8](https://github.com/tutur3u/platform/commit/404f3f854ef6c59c015f41256687cbf920806a08))
+* **pricing:** reconcile live catalog displays and tier comparisons ([3aa65c2](https://github.com/tutur3u/platform/commit/3aa65c2221d0d099ff5bd50de0c90bb4237d1bbd))
+* **reports:** clarify delivery and streamline review filters ([b790cb3](https://github.com/tutur3u/platform/commit/b790cb38e48cf7429a698d6360977e35a9aa2617))
+* **reports:** clarify delivery and streamline review filters ([#5314](https://github.com/tutur3u/platform/issues/5314)) ([e9af5a5](https://github.com/tutur3u/platform/commit/e9af5a58f0c133764e91c745b183eae24e512270))
+* **reports:** validate filters and legacy approval states ([d86bd68](https://github.com/tutur3u/platform/commit/d86bd6814986895962fc72dec7dee89570c9269b))
+* **ui:** explain offline installation state in settings ([17b8936](https://github.com/tutur3u/platform/commit/17b89364510266d459e8836c92a2b39a6923c4d5))
+* **ui:** move app installation into settings ([ffa82a1](https://github.com/tutur3u/platform/commit/ffa82a12e0eba196cc800cf1c2f1ef78819d5d70))
+* **ui:** move app installation into settings ([#5327](https://github.com/tutur3u/platform/issues/5327)) ([17034ef](https://github.com/tutur3u/platform/commit/17034efe29de99bdbf4d6ee76ed9bf1c5f1d4ff7))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573))
+* **ui:** repair checklist caret and status controls ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+* **ui:** reset disabled checklist picker ([c059cae](https://github.com/tutur3u/platform/commit/c059cae8d9c46f4ac15a35ccebac2738eeb1f565))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/ui-v0.31.0...ui-v0.32.0) (2026-09-09)
 
 
