@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { encodeMeetWav } from '../audio';
 
-const mocks = vi.hoisted(() => ({ access: vi.fn(), generate: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  access: vi.fn(),
+  generate: vi.fn(),
+  speaker: vi.fn(),
+}));
+vi.mock('./transcript-speaker', () => ({
+  resolveTranscriptSpeaker: mocks.speaker,
+}));
 vi.mock('server-only', () => ({}));
 // Authorization is covered separately; avoid loading built auth packages here.
 vi.mock('@tuturuuu/satellite/auth', () => ({}));
@@ -46,7 +53,10 @@ function request(audio = encodeMeetWav(new Float32Array(16000))) {
   });
 }
 describe('Meet chunk idempotency', () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.speaker.mockResolvedValue(null);
+  });
   afterEach(() => vi.restoreAllMocks());
   it('rejects malformed audio before touching transcript storage', async () => {
     const from = vi.fn();
@@ -81,6 +91,8 @@ describe('Meet chunk idempotency', () => {
   });
   it('retries transcript persistence without repeating a paid Gemini call', async () => {
     const saved = { id, status: 'completed', transcript: 'Saved after retry' };
+    const speaker = { accountId: id, displayName: 'Alice', kind: 'microphone' };
+    mocks.speaker.mockResolvedValue(speaker);
     const from = vi
       .fn()
       .mockReturnValueOnce(
@@ -111,6 +123,12 @@ describe('Meet chunk idempotency', () => {
     });
     expect(await transcribeMeetChunk(request(), params)).toEqual(saved);
     expect(mocks.generate).toHaveBeenCalledTimes(1);
+    expect(from.mock.results[3]?.value.update).toHaveBeenCalledWith(
+      expect.objectContaining({ usage: { speaker } })
+    );
+    expect(from.mock.results[4]?.value.update).toHaveBeenCalledWith(
+      expect.objectContaining({ usage: { speaker } })
+    );
   });
   it.each([
     { ended: true, elapsed: 0, lookupError: false, status: 409 },
