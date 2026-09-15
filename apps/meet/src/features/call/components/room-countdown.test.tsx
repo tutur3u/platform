@@ -44,10 +44,11 @@ it('shows a compact countdown and exposes the localized deadline on click', () =
       </TooltipProvider>
     </NextIntlClientProvider>
   );
-  const button = screen.getByRole('button', { name: /2 min remaining/ });
+  const button = screen.getByRole('button', {
+    name: 'View meeting time limit',
+  });
   expect(container.querySelector('[role="alert"]')).toBeNull();
   act(() => vi.advanceTimersByTime(90_000));
-  expect(button.getAttribute('aria-label')).toContain('30s remaining');
   expect(
     container
       .querySelector('[stroke-dashoffset]')
@@ -55,9 +56,10 @@ it('shows a compact countdown and exposes the localized deadline on click', () =
   ).toBe('75');
   fireEvent.click(button);
   expect(screen.getByRole('dialog').textContent).toContain('30s remaining');
-  expect(button.getAttribute('aria-label')).toMatch(/5:02|17:02/);
+  expect(screen.getByRole('dialog').textContent).toMatch(/5:02|17:02/);
+  expect(button.getAttribute('aria-label')).toBe('View meeting time limit');
   act(() => vi.advanceTimersByTime(30_000));
-  expect(button.getAttribute('aria-label')).toContain(
+  expect(screen.getByRole('dialog').textContent).toContain(
     'Meeting time limit reached'
   );
 });

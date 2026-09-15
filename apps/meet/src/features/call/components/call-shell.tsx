@@ -43,6 +43,7 @@ import { SidePanel } from './side-panel';
 
 type Device = 'microphone' | 'camera' | 'screen';
 
+/** Compose the active meeting, including protected audio and compact room controls. */
 export function ConnectedCallShell({
   accountId,
   defaultDisplayName,

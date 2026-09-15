@@ -71,7 +71,7 @@ export function RoomCountdown({ expiresAt }: { expiresAt?: string }) {
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
             <Button
-              aria-label={`${label}. ${deadlineLabel}`}
+              aria-label={t('room_time_action')}
               className={cn(
                 'relative size-9 shrink-0 rounded-full',
                 remaining !== null &&

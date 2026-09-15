@@ -1,6 +1,7 @@
 'use client';
 import { useTranslations } from 'next-intl';
 
+/** Limit call-wide notices to actionable room resource errors. */
 export function resourceErrorKey(error: string | null) {
   return error === 'participant_limit_reached' ||
     error === 'publisher_limit_reached' ||
@@ -8,6 +9,7 @@ export function resourceErrorKey(error: string | null) {
     ? error
     : null;
 }
+/** Render resource failures without a persistent duration warning banner. */
 export function CallResourceNotice({ error }: { error: string | null }) {
   const t = useTranslations('meet.call');
   const key = resourceErrorKey(error);

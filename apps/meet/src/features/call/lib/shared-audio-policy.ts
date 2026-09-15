@@ -12,6 +12,7 @@ export function audioDeviceOrder(
   );
 }
 
+/** Find an active device on the same verified account, preserving one primary mic. */
 export function existingAccountAudio(state: CallState, joining = false) {
   const self = state.selfUserId ? state.participants[state.selfUserId] : null;
   if (!self?.accountId) return null;
@@ -53,6 +54,7 @@ export function overlapPeers(state: CallState, remote: RemoteMedia) {
     }));
 }
 
+/** Scope a manual override to the currently observed microphone pair. */
 export function overlapPairKey(
   local: MediaStreamTrack | undefined,
   remote: MediaStreamTrack | undefined

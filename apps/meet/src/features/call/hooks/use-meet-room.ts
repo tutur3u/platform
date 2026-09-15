@@ -70,6 +70,7 @@ import {
 import type { SfuTracksResponse } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
 /** One signaling socket and separate publishing/subscribing SFU connections. */
+/** Coordinate room signaling, local capture, and recoverable media transport. */
 export function useMeetRoom({
   meetingId,
   realtimeUrl,

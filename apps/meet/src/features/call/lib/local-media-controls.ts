@@ -10,6 +10,7 @@ import { SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
 type Ref<T> = { current: T };
 type Setter<T> = Dispatch<SetStateAction<T>>;
+/** Serialize microphone intent and device changes while keeping mute immediate. */
 export function createLocalMediaControls({
   activeRef,
   effects,

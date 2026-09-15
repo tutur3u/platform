@@ -50,7 +50,7 @@ export function SharedAudioControl({
               type="button"
               size="icon"
               variant="ghost"
-              aria-label={label}
+              aria-label={t('audio_options_action')}
               className={cn(
                 'relative size-9 shrink-0 rounded-full',
                 audio.shared && 'bg-muted text-foreground',
