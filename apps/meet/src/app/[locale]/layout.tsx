@@ -52,6 +52,7 @@ export function generateStaticParams() {
   return supportedLocales.map((locale) => ({ locale }));
 }
 
+/** Keep the startup fallback independent of the still-loading intl provider. */
 export default async function RootLayout({ children }: Props) {
   const locale = await resolveRootLocale(
     supportedLocales,
