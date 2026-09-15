@@ -4,6 +4,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   insert: vi.fn(),
+  lookup: vi.fn(),
   auth: vi.fn(),
 }));
 vi.mock('@/lib/mail/auth', () => ({ resolveMailRouteContext: mocks.auth }));
@@ -12,7 +13,16 @@ vi.mock('@/lib/mail/repository/blacklist', () => ({
   MAIL_BLACKLIST_REASONS: { inactive: 'Inactive/Abandoned' },
 }));
 
-import { POST } from './route';
+vi.mock('next/server', async (original) => ({
+  ...(await original<typeof import('next/server')>()),
+  connection: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/next-config', () => ({
+  resolveTuturuuuInfrastructureAppUrl: () =>
+    'https://infra.staging.example.com',
+}));
+
+import { GET, POST } from './route';
 
 const params = {
   params: Promise.resolve({
@@ -34,10 +44,16 @@ beforeEach(() => {
     context: { user: { id: 'viewer' } },
   });
   mocks.access.mockResolvedValue({
-    admin: { from: () => ({ insert: mocks.insert }) },
+    admin: {
+      from: () => ({
+        insert: mocks.insert,
+        select: () => ({ eq: () => ({ ilike: mocks.lookup }) }),
+      }),
+    },
     recipients: ['failed@example.com'],
   });
   mocks.insert.mockResolvedValue({ error: null });
+  mocks.lookup.mockResolvedValue({ data: [], error: null });
 });
 it('denies non-Infrastructure users without writing global blacklist data', async () => {
   mocks.access.mockResolvedValue(null);
@@ -67,4 +83,37 @@ it('treats existing entries as success without overwriting their reason or actor
     blocked: true,
     alreadyBlocked: true,
   });
+});
+
+it('recognizes existing differently cased entries and preserves their metadata', async () => {
+  mocks.lookup.mockResolvedValue({
+    data: [{ value: 'Failed@Example.com' }],
+    error: null,
+  });
+  expect(await (await POST(request(), params)).json()).toEqual({
+    blocked: true,
+    alreadyBlocked: true,
+  });
+  expect(mocks.insert).not.toHaveBeenCalled();
+  const result = await (await GET(request(), params)).json();
+  expect(result.recipients).toEqual([
+    { email: 'failed@example.com', blocked: true },
+  ]);
+  expect(result.infrastructureOrigin).toBe('https://infra.staging.example.com');
+});
+it('escapes LIKE wildcards when looking up exact email entries', async () => {
+  mocks.access.mockResolvedValue({
+    admin: {
+      from: () => ({
+        insert: mocks.insert,
+        select: () => ({ eq: () => ({ ilike: mocks.lookup }) }),
+      }),
+    },
+    recipients: ['failed_100%tag@example.com'],
+  });
+  await POST(request('failed_100%tag@example.com'), params);
+  expect(mocks.lookup).toHaveBeenCalledWith(
+    'value',
+    'failed\\_100\\%tag@example.com'
+  );
 });

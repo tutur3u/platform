@@ -20,6 +20,7 @@ export function getMailBlacklistRecipients(
 ) {
   return getInternalApiClient(withMailApiBaseUrl(options)).json<{
     canManage: boolean;
+    infrastructureOrigin?: string;
     recipients: Array<{ email: string; blocked: boolean }>;
   }>(path(workspaceId, mailboxId, messageId), {
     cache: 'no-store',

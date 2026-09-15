@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { MailIconButton } from './mail-icon-button';
 
@@ -40,6 +41,7 @@ export function MailBlacklistControl({
   compact?: boolean;
 }) {
   const t = useTranslations('mail');
+  const locale = useLocale();
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState('');
@@ -185,7 +187,7 @@ export function MailBlacklistControl({
             </>
           )}
           <a
-            href="https://infrastructure.tuturuuu.com/internal/email-blacklist"
+            href={`${query.data.infrastructureOrigin}/${locale}/${ROOT_WORKSPACE_ID}/email-blacklist`}
             target="_blank"
             rel="noopener noreferrer"
             className="block text-muted-foreground text-xs underline-offset-4 hover:underline"

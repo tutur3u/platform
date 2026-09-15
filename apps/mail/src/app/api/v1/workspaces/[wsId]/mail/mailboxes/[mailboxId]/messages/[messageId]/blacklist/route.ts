@@ -1,11 +1,13 @@
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { EMAIL_BLACKLIST_REGEX } from '@tuturuuu/utils/email/validation';
+import { resolveTuturuuuInfrastructureAppUrl } from '@tuturuuu/utils/next-config';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   getMailBlacklistContext,
   MAIL_BLACKLIST_REASONS,
 } from '@/lib/mail/repository/blacklist';
+import type { AnyRecord } from '@/lib/mail/repository/shared';
 import { parseJsonBody, withMailContext } from '@/lib/mail/route-utils';
 
 type Params = {
@@ -35,17 +37,10 @@ export async function GET(request: NextRequest, { params }: Params) {
     if (!access) return NextResponse.json({ canManage: false, recipients: [] });
     if (!access.recipients.length)
       return NextResponse.json({ canManage: true, recipients: [] });
-    const { data, error } = await access.admin
-      .from('email_blacklist')
-      .select('value')
-      .eq('entry_type', 'email')
-      .in('value', access.recipients);
-    if (error) throw new Error(`Failed to check blacklist: ${error.message}`);
-    const blocked = new Set(
-      (data ?? []).map((entry: { value: string }) => entry.value.toLowerCase())
-    );
+    const blocked = await existingRecipients(access.admin, access.recipients);
     return NextResponse.json({
       canManage: true,
+      infrastructureOrigin: resolveTuturuuuInfrastructureAppUrl(),
       recipients: access.recipients.map((email) => ({
         email,
         blocked: blocked.has(email),
@@ -67,6 +62,9 @@ export async function POST(request: NextRequest, { params }: Params) {
         { error: 'Not a failed recipient of this message' },
         { status: 400 }
       );
+    const existing = await existingRecipients(access.admin, [body.data.email]);
+    if (existing.has(body.data.email))
+      return NextResponse.json({ blocked: true, alreadyBlocked: true });
     const { error } = await access.admin.from('email_blacklist').insert({
       entry_type: 'email',
       value: body.data.email,
@@ -80,4 +78,21 @@ export async function POST(request: NextRequest, { params }: Params) {
       alreadyBlocked: error?.code === '23505',
     });
   });
+}
+
+async function existingRecipients(admin: AnyRecord, recipients: string[]) {
+  const matches = await Promise.all(
+    recipients.map(async (email) => {
+      const { data, error } = await admin
+        .from('email_blacklist')
+        .select('value')
+        .eq('entry_type', 'email')
+        .ilike('value', email.replace(/[\\%_]/gu, '\\$&'));
+      if (error) throw new Error(`Failed to check blacklist: ${error.message}`);
+      return (data ?? []).map((entry: { value: string }) =>
+        entry.value.toLowerCase()
+      );
+    })
+  );
+  return new Set<string>(matches.flat());
 }

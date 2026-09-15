@@ -8,7 +8,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
-import { getFailedMailRecipients } from '@/lib/mail/failed-recipients';
+import { isMailDeliveryFailure } from '@/lib/mail/failed-recipients';
 import { MailBlacklistControl } from './mail-blacklist-control';
 import type { MailFolder } from './mail-folders';
 import { visibleMailLabels } from './mail-visible-labels';
@@ -162,10 +162,7 @@ export function MailThreadRow({
       </button>
       {workspaceId &&
       thread.latestMessageId &&
-      getFailedMailRecipients({
-        subject: thread.subject,
-        bodyText: thread.latestSnippet,
-      }).length > 0 ? (
+      isMailDeliveryFailure(thread.subject, thread.latestSnippet ?? '') ? (
         <div className="absolute right-2 bottom-2">
           <MailBlacklistControl
             compact
