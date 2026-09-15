@@ -50,7 +50,7 @@ export function useMailViewedThreadRead({
           .sort()
           .join(',') ||
         (detail.thread.unreadCount > 0
-          ? `count:${detail.thread.unreadCount}`
+          ? `count:${detail.thread.unreadCount}:${detail.thread.messageCount}:${detail.thread.lastMessageAt}`
           : '')
       : '';
   const pending = useMutationState({

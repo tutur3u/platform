@@ -179,3 +179,37 @@ it('marks the next viewed thread optimistically while the previous read is still
     ])?.messages[0]?.unread
   ).toBe(false);
 });
+
+it('marks a new unread message beyond the reader cap even when the unread count repeats', async () => {
+  const first = {
+    ...detail(),
+    thread: {
+      id: 'a',
+      unreadCount: 1,
+      messageCount: 201,
+      mailboxId: 'mailbox',
+      status: 'active',
+      subject: 'Thread',
+      lastMessageAt: '2026-09-15T00:00:00Z',
+    },
+    messages: [],
+  } as MailThreadDetail;
+  const { rerender } = setup({ ...base, detail: first });
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+  rerender({
+    ...base,
+    detail: { ...first, thread: { ...first.thread, unreadCount: 0 } },
+  });
+  rerender({
+    ...base,
+    detail: {
+      ...first,
+      thread: {
+        ...first.thread,
+        messageCount: 202,
+        lastMessageAt: '2026-09-15T00:01:00Z',
+      },
+    },
+  });
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+});

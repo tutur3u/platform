@@ -307,7 +307,7 @@ export async function snapshotMailThreads({
       summary?.inboundCount ??
       detail?.messages.filter((message) => message.direction === 'inbound')
         .length ??
-      unread;
+      Math.max(1, unread);
     unreadCount += unread;
     markUnreadDelta += Math.max(0, inbound - unread);
   }

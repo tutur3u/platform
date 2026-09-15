@@ -14,7 +14,7 @@ export async function loadThreadActionRows(
   let cursor: string | undefined;
   for (;;) {
     let query = mailMessageTable(access, ctx)
-      .select('id,direction')
+      .select('id,direction,thread_id')
       .eq('mailbox_id', mailboxId)
       .in('thread_id', threadIds)
       .lte('created_at', before)
