@@ -13,6 +13,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
+import { reconcileMailWhenIdle } from './mail-action-coordination';
 import type { MailFolder } from './mail-folders';
 import {
   restoreMailThreads,
@@ -60,12 +61,20 @@ export function useMailViewedThreadRead({
     },
     select: (mutation) => ({
       kind: mutation.options.mutationKey?.at(-1),
-      threadId: (mutation.state.variables as { threadId?: string } | undefined)
-        ?.threadId,
+      ...((mutation.state.variables ?? {}) as {
+        threadId?: string;
+        targetThreadId?: string;
+        threadIds?: string[];
+      }),
     }),
   });
   const actionBlocked = pending.some(
-    (mutation) => mutation.kind !== 'viewed-read'
+    (mutation) =>
+      mutation.kind !== 'viewed-read' &&
+      (mutation.kind === 'folder-read' ||
+        mutation.threadId === threadId ||
+        mutation.targetThreadId === threadId ||
+        Boolean(threadId && mutation.threadIds?.includes(threadId)))
   );
   const readPending = pending.some(
     (mutation) =>
@@ -100,29 +109,20 @@ export function useMailViewedThreadRead({
       restoreMailThreads(client, context);
       toast.error(t('update_failed'));
     },
-    onSettled: async (_data, _error, target) => {
-      if (
-        client.isMutating({
-          mutationKey: [
-            'mail',
-            target.workspaceId,
-            target.mailboxId,
-            'actions',
-          ],
-        }) > 1
-      )
-        return;
-      await Promise.all([
-        client.invalidateQueries({
-          queryKey: ['mail', target.workspaceId, target.mailboxId],
-        }),
-        client.invalidateQueries({
-          queryKey: ['mail', target.workspaceId, 'bootstrap'],
-        }),
-        client.invalidateQueries({
-          queryKey: ['mail', target.workspaceId, 'bootstrap-counts'],
-        }),
-      ]);
+    onSettled: (_data, _error, target) => {
+      reconcileMailWhenIdle(client, target.workspaceId, target.mailboxId, () =>
+        Promise.all([
+          client.invalidateQueries({
+            queryKey: ['mail', target.workspaceId, target.mailboxId],
+          }),
+          client.invalidateQueries({
+            queryKey: ['mail', target.workspaceId, 'bootstrap'],
+          }),
+          client.invalidateQueries({
+            queryKey: ['mail', target.workspaceId, 'bootstrap-counts'],
+          }),
+        ])
+      );
     },
   });
 

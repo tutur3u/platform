@@ -4,6 +4,7 @@ import { CheckCheck, Loader2 } from '@tuturuuu/icons';
 import { markMailFolderRead } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { reconcileMailWhenIdle } from './mail-action-coordination';
 import { MailIconButton } from './mail-icon-button';
 
 export function MailMarkFolderRead({
@@ -45,18 +46,20 @@ export function MailMarkFolderRead({
     // Earlier batches may have succeeded. Reconcile with the server even on failure.
     onError: () => toast.error(t('update_failed')),
     onSuccess: () => toast.success(t('all_marked_read')),
-    onSettled: async (_data, _error, target) => {
-      await Promise.all([
-        client.invalidateQueries({
-          queryKey: ['mail', target.workspaceId, target.mailboxId],
-        }),
-        client.invalidateQueries({
-          queryKey: ['mail', target.workspaceId, 'bootstrap'],
-        }),
-        client.invalidateQueries({
-          queryKey: ['mail', target.workspaceId, 'bootstrap-counts'],
-        }),
-      ]);
+    onSettled: (_data, _error, target) => {
+      reconcileMailWhenIdle(client, target.workspaceId, target.mailboxId, () =>
+        Promise.all([
+          client.invalidateQueries({
+            queryKey: ['mail', target.workspaceId, target.mailboxId],
+          }),
+          client.invalidateQueries({
+            queryKey: ['mail', target.workspaceId, 'bootstrap'],
+          }),
+          client.invalidateQueries({
+            queryKey: ['mail', target.workspaceId, 'bootstrap-counts'],
+          }),
+        ])
+      );
     },
   });
   return (

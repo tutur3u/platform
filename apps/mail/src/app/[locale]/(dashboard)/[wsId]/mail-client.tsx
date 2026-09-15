@@ -547,9 +547,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       <ThreadDetail
         workspaceId={workspaceId}
         folder={folder}
-        actionPending={
-          actionsPending || actionPending || deleteDraftMutation.isPending
-        }
+        actionPending={actionPending || deleteDraftMutation.isPending}
         isDraft={folder === 'drafts'}
         labelActions={
           activeMailboxId && threadId ? (

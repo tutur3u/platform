@@ -13,6 +13,10 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import {
+  reconcileMailWhenIdle,
+  waitForMailBackgroundReads,
+} from './mail-action-coordination';
 import type { MailFolder } from './mail-folders';
 import {
   getMailArchiveBehavior,
@@ -69,7 +73,12 @@ export function useMailThreadActions({
   };
   const actionKey = ['mail', workspaceId, activeMailboxId, 'actions'];
   const pendingActions = useMutationState({
-    filters: { mutationKey: actionKey, status: 'pending' },
+    filters: {
+      mutationKey: actionKey,
+      status: 'pending',
+      predicate: (mutation) =>
+        mutation.options.mutationKey?.at(-1) !== 'viewed-read',
+    },
     select: (mutation) =>
       (mutation.state.variables ?? {}) as {
         threadId?: string;
@@ -93,7 +102,13 @@ export function useMailThreadActions({
     operations.current.set(operationScope, remaining);
     if (!remaining) {
       operations.current.delete(operationScope);
-      await invalidateMailbox();
+      if (activeMailboxId)
+        reconcileMailWhenIdle(
+          queryClient,
+          workspaceId,
+          activeMailboxId,
+          invalidateMailbox
+        );
     }
   };
   const actionsPending = pendingActions.length > 0;
@@ -122,7 +137,7 @@ export function useMailThreadActions({
 
   const stateMutation = useMutation({
     mutationKey: [...actionKey, 'state'],
-    mutationFn: ({
+    mutationFn: async ({
       action,
       targetThreadId,
       mailboxId,
@@ -132,10 +147,20 @@ export function useMailThreadActions({
       targetThreadId: string;
       mailboxId: string;
       targetWorkspaceId: string;
-    }) =>
-      updateMailThreadState(targetWorkspaceId, mailboxId, targetThreadId, {
-        action,
-      }),
+    }) => {
+      await waitForMailBackgroundReads(
+        queryClient,
+        targetWorkspaceId,
+        mailboxId,
+        [targetThreadId]
+      );
+      return updateMailThreadState(
+        targetWorkspaceId,
+        mailboxId,
+        targetThreadId,
+        { action }
+      );
+    },
     onMutate: async (variables) => {
       const { action, targetThreadId } = variables;
       beginOperation();
@@ -187,7 +212,7 @@ export function useMailThreadActions({
 
   const bulkMutation = useMutation({
     mutationKey: [...actionKey, 'bulk'],
-    mutationFn: ({
+    mutationFn: async ({
       action,
       threadIds,
       mailboxId,
@@ -197,11 +222,18 @@ export function useMailThreadActions({
       threadIds: string[];
       mailboxId: string;
       targetWorkspaceId: string;
-    }) =>
-      bulkUpdateMailThreads(targetWorkspaceId, mailboxId, {
+    }) => {
+      await waitForMailBackgroundReads(
+        queryClient,
+        targetWorkspaceId,
+        mailboxId,
+        threadIds
+      );
+      return bulkUpdateMailThreads(targetWorkspaceId, mailboxId, {
         action,
         threadIds,
-      }),
+      });
+    },
     onMutate: async (variables) => {
       const { action, threadIds } = variables;
       beginOperation();
@@ -263,18 +295,13 @@ export function useMailThreadActions({
     },
   });
 
-  const readOperationPending = () =>
-    queryClient.isMutating({ mutationKey: [...actionKey, 'viewed-read'] }) >
-      0 ||
-    queryClient.isMutating({ mutationKey: [...actionKey, 'folder-read'] }) > 0;
-
   return {
     actionPending,
     actionsPending,
     bulkMutation: {
       ...bulkMutation,
       mutate: (action: BulkAction) => {
-        if (!activeMailboxId || readOperationPending()) return;
+        if (!activeMailboxId) return;
         const threadIds = [...selectedThreads].filter(
           (id) => !inFlight.current.has(id)
         );
@@ -289,7 +316,7 @@ export function useMailThreadActions({
       },
     },
     mutateThread: (action: ThreadAction, targetThreadId = threadId) => {
-      if (!activeMailboxId || readOperationPending()) return;
+      if (!activeMailboxId) return;
       if (!targetThreadId || inFlight.current.has(targetThreadId)) return;
       inFlight.current.add(targetThreadId);
       stateMutation.mutate({

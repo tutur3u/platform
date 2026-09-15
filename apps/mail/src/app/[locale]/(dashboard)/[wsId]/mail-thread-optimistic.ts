@@ -10,6 +10,10 @@ import type {
   MailThreadsResponse,
   UpdateMailMessageStatePayload,
 } from '@tuturuuu/internal-api';
+import {
+  claimMailOptimisticRevision,
+  currentMailOptimisticIds,
+} from './mail-action-coordination';
 import type { MailFolder } from './mail-folders';
 import { restoreThreadPages } from './mail-thread-rollback';
 
@@ -22,6 +26,7 @@ export type OptimisticContext = {
   workspaceId: string;
   ids: Set<string>;
   unreadDelta: number;
+  revision: symbol;
   details: Array<readonly [string, MailThreadDetail | undefined]>;
   threadCaches: ThreadCacheSnapshot;
 };
@@ -256,6 +261,9 @@ export async function snapshotMailThreads({
   await Promise.all([
     queryClient.cancelQueries({
       queryKey: ['mail', workspaceId, activeMailboxId],
+      predicate: (query) =>
+        query.queryKey[3] !== 'thread' ||
+        (ids.has(String(query.queryKey[4])) && query.state.data !== undefined),
     }),
     queryClient.cancelQueries({
       queryKey: ['mail', workspaceId, 'bootstrap-counts'],
@@ -264,6 +272,12 @@ export async function snapshotMailThreads({
       queryKey: ['mail', workspaceId, 'bootstrap'],
     }),
   ]);
+  const revision = claimMailOptimisticRevision(
+    queryClient,
+    workspaceId,
+    activeMailboxId,
+    ids
+  );
   const threadCaches = queryClient.getQueriesData<
     InfiniteData<MailThreadsResponse>
   >({ queryKey: ['mail', workspaceId, activeMailboxId, 'threads'] });
@@ -358,6 +372,7 @@ export async function snapshotMailThreads({
     mailboxId: activeMailboxId,
     workspaceId,
     unreadDelta: beforeUnread - afterUnread,
+    revision,
     details,
     threadCaches,
   };
@@ -369,10 +384,20 @@ export function restoreMailThreads(
 ) {
   if (!context) return;
   const { mailboxId: activeMailboxId, workspaceId } = context;
+  const ids = currentMailOptimisticIds(
+    queryClient,
+    workspaceId,
+    activeMailboxId,
+    context.ids,
+    context.revision
+  );
+  // A newer action owns these rows. Reconciliation will recover their server state.
+  if (!ids.size) return;
+  const unreadDelta = ids.size === context.ids.size ? context.unreadDelta : 0;
   for (const [key, data] of context.threadCaches as ThreadCacheSnapshot) {
     queryClient.setQueryData<InfiniteData<MailThreadsResponse>>(
       key,
-      (current) => restoreThreadPages(current, data, context.ids)
+      (current) => restoreThreadPages(current, data, ids)
     );
   }
   queryClient.setQueryData<MailBootstrapResponse>(
@@ -388,7 +413,7 @@ export function restoreMailThreads(
                     unreadCount:
                       mailbox.unreadCount === null
                         ? null
-                        : mailbox.unreadCount + context.unreadDelta,
+                        : mailbox.unreadCount + unreadDelta,
                   }
                 : mailbox
             ),
@@ -401,11 +426,12 @@ export function restoreMailThreads(
       current && current[activeMailboxId] != null
         ? {
             ...current,
-            [activeMailboxId]: current[activeMailboxId] + context.unreadDelta,
+            [activeMailboxId]: current[activeMailboxId] + unreadDelta,
           }
         : current
   );
   for (const [id, detail] of context.details) {
+    if (!ids.has(id)) continue;
     queryClient.setQueryData(
       ['mail', workspaceId, activeMailboxId, 'thread', id],
       detail

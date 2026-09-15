@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { MailThreadSummary } from '@tuturuuu/internal-api';
+import type {
+  MailThreadDetail,
+  MailThreadSummary,
+} from '@tuturuuu/internal-api';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -69,3 +72,39 @@ it('does not show a misleading retry-backed compose action when no message is se
   expect(screen.queryByRole('button', { name: 'compose' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'retry' })).toBeNull();
 });
+
+vi.mock('./thread-message-card', () => ({
+  ThreadMessageCard: () => createElement('p', null, 'Loaded email body'),
+}));
+it.each([
+  { loading: true, error: false },
+  { loading: false, error: true },
+])(
+  'keeps cached body visible during refresh $loading / error $error',
+  (state) => {
+    render(
+      createElement(ThreadDetail, {
+        ...state,
+        thread: {
+          thread: { id: 'a', subject: 'Cached email' },
+          messages: [{ id: 'm', attachments: [] }],
+        } as unknown as MailThreadDetail,
+        isDraft: false,
+        actionPending: false,
+        onArchive: vi.fn(),
+        onBack: vi.fn(),
+        onForward: vi.fn(),
+        onReply: vi.fn(),
+        onReplyAll: vi.fn(),
+        onStar: vi.fn(),
+        onTrash: vi.fn(),
+      })
+    );
+    expect(screen.getByText('Loaded email body')).toBeTruthy();
+    expect(screen.queryByRole('status', { name: 'loading' })).toBeNull();
+    expect(
+      (screen.getByRole('button', { name: 'archive' }) as HTMLButtonElement)
+        .disabled
+    ).toBe(false);
+  }
+);

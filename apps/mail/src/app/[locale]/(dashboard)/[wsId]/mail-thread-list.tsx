@@ -90,6 +90,7 @@ export function MailThreadRow({
         onFocus={onPrefetch}
         onPointerEnter={schedulePrefetch}
         onPointerLeave={cancelPrefetch}
+        onPointerDown={onPrefetch}
         type="button"
       >
         <div className="mb-1 flex items-center gap-2">
