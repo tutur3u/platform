@@ -28,109 +28,157 @@ export function encodeMeetWav(samples: Float32Array): Blob {
   return new Blob([data], { type: 'audio/wav' });
 }
 
-/** Captures the host's local and received audio without opening another mic. */
+export type MeetAudioSource = {
+  stream: MediaStream;
+  accountId?: string;
+  kind: 'microphone' | 'shared_audio';
+};
+type CaptureSource = {
+  identity: string;
+  source: MediaStreamAudioSourceNode;
+  node: AudioWorkletNode;
+  cleanup: () => void;
+  flush: () => Promise<boolean>;
+};
+
+/** Keep microphone sources separate; never acquire another microphone or replay audio. */
 export class MeetAudioCapture {
-  private context!: AudioContext;
-  private node: AudioWorkletNode | null = null;
-  private sources = new Map<string, MediaStreamAudioSourceNode>();
-  private sourceCleanup = new Map<string, () => void>();
-  private chunkSourceCount = 1;
-  private elapsed = 0;
-  private mixer: GainNode | null = null;
-  constructor(private onChunk: (audio: Blob, startSeconds: number) => void) {}
+  private context: AudioContext | null = null;
+  private silent: GainNode | null = null;
+  private sources = new Map<string, CaptureSource>();
+  private draining = new Set<Promise<boolean>>();
+  private stopping = false;
+  private incomplete = false;
+  private nodes = new Set<AudioWorkletNode>();
+  private origin = 0;
+  constructor(
+    private onChunk: (
+      audio: Blob,
+      startSeconds: number,
+      source?: Omit<MeetAudioSource, 'stream'>
+    ) => void
+  ) {}
   async start() {
-    this.elapsed = 0;
-    this.chunkSourceCount = 1;
-    this.context = new AudioContext({ sampleRate: 16000 });
-    if (this.context.sampleRate !== 16000)
+    this.stopping = false;
+    this.incomplete = false;
+    const context = new AudioContext({ sampleRate: 16000 });
+    this.context = context;
+    if (context.sampleRate !== 16000)
       throw new Error('Unsupported audio sample rate');
-    await this.context.audioWorklet.addModule('/meet-audio-processor.js');
-    this.node = new AudioWorkletNode(this.context, 'meet-audio', {
-      channelCount: 1,
-      channelCountMode: 'explicit',
-    });
-    this.mixer = this.context.createGain();
-    this.mixer.connect(this.node);
-    // A silent output keeps the graph processing without replaying call audio.
-    const silent = this.context.createGain();
-    silent.gain.value = 0;
-    this.node.connect(silent).connect(this.context.destination);
-    this.node.port.onmessage = ({
-      data,
-    }: MessageEvent<{ samples?: Float32Array }>) => {
-      if (!data.samples) return;
-      const start = this.elapsed;
-      this.elapsed += data.samples.length / 16000;
-      const energy =
-        data.samples.reduce((sum, value) => sum + value * value, 0) /
-        data.samples.length;
-      const unscaledEnergy = energy * this.chunkSourceCount ** 2;
-      this.chunkSourceCount = Math.max(1, this.sources.size);
-      if (unscaledEnergy > 0.000001)
-        this.onChunk(encodeMeetWav(data.samples), start);
-    };
-    await this.context.resume();
+    await context.audioWorklet.addModule('/meet-audio-processor.js');
+    this.silent = context.createGain();
+    this.silent.gain.value = 0;
+    this.silent.connect(context.destination);
+    await context.resume();
+    this.origin = context.currentTime;
   }
-  update(streams: MediaStream[]) {
-    if (!this.node) return;
-    const tracks = streams
-      .flatMap((stream) => stream.getAudioTracks())
-      .filter((track) => track.readyState === 'live');
-    const ids = new Set(tracks.map((track) => track.id));
+  update(inputs: MeetAudioSource[]) {
+    const context = this.context;
+    if (!context || !this.silent || this.stopping) return;
+    const tracks = inputs.flatMap((input) =>
+      input.stream
+        .getAudioTracks()
+        .filter((track) => track.readyState === 'live')
+        .map((track) => ({ track, input }))
+    );
+    const ids = new Set(tracks.map(({ track }) => track.id));
     for (const id of this.sources.keys())
       if (!ids.has(id)) this.removeSource(id);
-    for (const track of tracks)
-      if (!this.sources.has(track.id)) {
-        const source = this.context.createMediaStreamSource(
-          new MediaStream([track])
-        );
-        source.connect(this.mixer!);
-        this.sources.set(track.id, source);
-        const ended = () => this.removeSource(track.id);
-        track.addEventListener('ended', ended, { once: true });
-        this.sourceCleanup.set(track.id, () =>
-          track.removeEventListener('ended', ended)
-        );
-      }
-    this.chunkSourceCount = Math.max(this.chunkSourceCount, this.sources.size);
-    if (this.mixer) this.mixer.gain.value = 1 / Math.max(1, this.sources.size);
-  }
-  private removeSource(id: string) {
-    this.sources.get(id)?.disconnect();
-    this.sources.delete(id);
-    this.sourceCleanup.get(id)?.();
-    this.sourceCleanup.delete(id);
-    if (this.mixer) this.mixer.gain.value = 1 / Math.max(1, this.sources.size);
-  }
-  async stop() {
-    let flushed = true;
-    if (this.node) {
-      const node = this.node;
-      flushed = await new Promise<boolean>((resolve) => {
-        const timeout = setTimeout(() => resolve(false), 1000);
-        node.port.addEventListener(
-          'message',
-          ({ data }) => {
-            if (data.flushed) {
-              clearTimeout(timeout);
+    for (const { track, input } of tracks) {
+      const identity = JSON.stringify([input.accountId, input.kind]);
+      if (this.sources.get(track.id)?.identity === identity) continue;
+      this.removeSource(track.id);
+      const source = context.createMediaStreamSource(new MediaStream([track]));
+      const node = new AudioWorkletNode(context, 'meet-audio', {
+        channelCount: 1,
+        channelCountMode: 'explicit',
+      });
+      this.nodes.add(node);
+      let elapsed = Math.max(0, context.currentTime - this.origin);
+      let acknowledge: (() => void) | undefined;
+      node.port.onmessage = ({
+        data,
+      }: MessageEvent<{ samples?: Float32Array; flushed?: boolean }>) => {
+        if (data.samples?.length) {
+          const start = elapsed;
+          elapsed += data.samples.length / 16000;
+          const energy =
+            data.samples.reduce((sum, value) => sum + value * value, 0) /
+            data.samples.length;
+          if (energy > 0.000001)
+            this.onChunk(encodeMeetWav(data.samples), start, {
+              accountId: input.accountId,
+              kind: input.kind,
+            });
+        }
+        if (data.flushed) acknowledge?.();
+      };
+      source.connect(node);
+      node.connect(this.silent);
+      const ended = () => this.removeSource(track.id);
+      track.addEventListener('ended', ended, { once: true });
+      this.sources.set(track.id, {
+        identity,
+        source,
+        node,
+        cleanup: () => track.removeEventListener('ended', ended),
+        flush: () =>
+          new Promise<boolean>((resolve) => {
+            const timer = setTimeout(() => resolve(false), 1000);
+            acknowledge = () => {
+              clearTimeout(timer);
               resolve(true);
-            }
-          },
-          { once: false }
-        );
-        node.port.postMessage('flush');
+            };
+            node.port.postMessage('flush');
+          }),
       });
     }
+  }
+  private removeSource(id: string) {
+    const entry = this.sources.get(id);
+    if (!entry) return;
+    this.sources.delete(id);
+    entry.source.disconnect();
+    entry.cleanup();
+    const drain = entry
+      .flush()
+      .then((ok) => {
+        if (!ok) this.incomplete = true;
+        return ok;
+      })
+      .finally(() => {
+        entry.node.port.onmessage = null;
+        entry.node.disconnect();
+        this.nodes.delete(entry.node);
+        this.draining.delete(drain);
+      });
+    this.draining.add(drain);
+  }
+  async stop() {
+    this.stopping = true;
+    for (const id of this.sources.keys()) this.removeSource(id);
+    const results = await Promise.all(this.draining);
     this.dispose();
-    return flushed;
+    return !this.incomplete && results.every(Boolean);
   }
   dispose() {
-    for (const id of this.sources.keys()) this.removeSource(id);
-    this.mixer?.disconnect();
-    this.mixer = null;
-    this.node?.disconnect();
-    this.node = null;
+    this.stopping = true;
+    for (const entry of this.sources.values()) {
+      entry.cleanup();
+      entry.source.disconnect();
+      entry.node.disconnect();
+      entry.node.port.onmessage = null;
+    }
+    this.sources.clear();
+    for (const node of this.nodes) {
+      node.port.onmessage = null;
+      node.disconnect();
+    }
+    this.nodes.clear();
+    this.silent?.disconnect();
+    this.silent = null;
     if (this.context && this.context.state !== 'closed')
       void this.context.close();
+    this.context = null;
   }
 }

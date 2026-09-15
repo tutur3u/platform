@@ -11,6 +11,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { MeetingFollowups } from './meeting-followups';
+import { MeetingTranscript } from './meeting-transcript';
 import type { useMeetingAi } from './use-meeting-ai';
 
 export function MeetingAiPanel({
@@ -105,34 +106,7 @@ export function MeetingAiPanel({
               </TabsTrigger>
             </TabsList>
             <TabsContent value="transcript">
-              <section
-                className="max-h-80 space-y-2 overflow-y-auto"
-                aria-label={t('transcript')}
-              >
-                <h3 className="font-medium text-sm">{t('transcript')}</h3>
-                {data.chunks.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">{t('empty')}</p>
-                ) : null}
-                {data.chunks.map((chunk) => (
-                  <p key={chunk.id} className="text-sm">
-                    <span className="mr-2 text-muted-foreground text-xs">
-                      {Math.floor(chunk.start_seconds / 60)}:
-                      {String(Math.floor(chunk.start_seconds % 60)).padStart(
-                        2,
-                        '0'
-                      )}
-                    </span>
-                    {chunk.transcript ||
-                      t(
-                        chunk.status === 'processing'
-                          ? 'processing'
-                          : chunk.status === 'failed'
-                            ? 'missing'
-                            : 'silence'
-                      )}
-                  </p>
-                ))}
-              </section>
+              <MeetingTranscript chunks={data.chunks} />
             </TabsContent>
             <TabsContent value="notes">
               {!data.sessions.some((session) => session.notes) && (

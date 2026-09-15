@@ -365,3 +365,34 @@ it('distinguishes a confirmed failed personal receipt from an uncertain pending 
     roomService(failed.state, token, { ...begin, id: crypto.randomUUID() }).body
   ).toEqual({ started: true });
 });
+
+it('limits transcript identities to signed host requests and admitted accounts', () => {
+  const command = { action: 'transcription.speaker', accountId: account };
+  expect(roomService(initial(), token, command).status).toBe(403);
+  expect(
+    roomService(initial(), { ...token, role: 'host', scopes: [] }, command)
+      .status
+  ).toBe(403);
+  expect(
+    roomService(initial(), { ...token, role: 'host' }, command).body
+  ).toEqual({ accountId: account });
+  const stranger = '11111111-1111-4111-8111-111111111111';
+  expect(
+    roomService(
+      initial(),
+      { ...token, role: 'host' },
+      { ...command, accountId: stranger }
+    ).status
+  ).toBe(403);
+  const snapshot = {
+    ...initial(),
+    approved: { [stranger]: { userId: stranger, displayName: 'Guest' } },
+  };
+  expect(
+    roomService(
+      snapshot,
+      { ...token, role: 'host' },
+      { ...command, accountId: stranger }
+    ).body
+  ).toEqual({ accountId: stranger });
+});

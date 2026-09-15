@@ -97,3 +97,28 @@ it('reads old meeting notes and includes a grounded time reference for new sugge
   });
   expect(request.system).toContain('Never invent a duration');
 });
+
+it('transcribes a batch in one provider call and preserves file indices', async () => {
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic-test-key');
+  mocks.generateText.mockResolvedValue({
+    text: '',
+    output: {
+      transcripts: [
+        { index: 1, text: 'Second' },
+        { index: 0, text: 'First' },
+      ],
+    },
+    providerMetadata: {},
+  });
+  const audioSegments = [new Uint8Array([1]), new Uint8Array([2])];
+  const result = await generateMeetArtifact({ audioSegments });
+  expect(result.transcripts).toEqual(['First', 'Second']);
+  expect(result.notes).toBeNull();
+  expect(mocks.generateText).toHaveBeenCalledOnce();
+  const content = mocks.generateText.mock.calls[0]?.[0].messages[0].content;
+  expect(
+    content
+      .filter((part: { type: string }) => part.type === 'file')
+      .map((part: { data: Uint8Array }) => part.data)
+  ).toEqual(audioSegments);
+});

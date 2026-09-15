@@ -4,6 +4,7 @@ export type MeetingFollowup = {
   title: string;
   evidence: string;
   owner: string | null;
+  ownerId?: string | null;
   timeText: string | null;
   startLocal: string | null;
   endLocal: string | null;

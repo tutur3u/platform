@@ -2,7 +2,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { createMeetFollowup, InternalApiError } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -19,10 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { FollowupConflicts } from './followup-conflicts';
 import { FollowupDestination } from './followup-destination';
+import { FollowupPicker } from './followup-picker';
 import { buildFollowupPayload, type FollowupSaveInput } from './followup-save';
 import { suggestedLocalTime } from './followup-time';
 import type { MeetingFollowup } from './followup-types';
@@ -61,7 +62,13 @@ export function FollowupReviewForm({
   const [destination, setDestination] = useState('personal');
   const [boardId, setBoardId] = useState('');
   const [listId, setListId] = useState('');
-  const [assignToMe, setAssignToMe] = useState(false);
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [calendarId, setCalendarId] = useState('');
+  const [location, setLocation] = useState('');
+  const [priority, setPriority] = useState<
+    'low' | 'normal' | 'high' | 'critical'
+  >('normal');
+  const [description, setDescription] = useState(suggestion.evidence);
   const [validationError, setValidationError] = useState(false);
   const [rejected, setRejected] = useState(false);
   const [uncertain, setUncertain] = useState(false);
@@ -91,7 +98,7 @@ export function FollowupReviewForm({
     const input = {
       kind: suggestion.kind,
       title,
-      description: `${suggestion.evidence}\n\n${sourceUrl}`,
+      description: `${description}\n\n${sourceUrl}`,
       workspaceId,
       userId: user.id,
       listId,
@@ -99,7 +106,11 @@ export function FollowupReviewForm({
       start,
       end,
       due,
-      assignToMe,
+      assignToMe: false,
+      assigneeIds,
+      priority,
+      calendarId: calendarId || undefined,
+      location,
     };
     try {
       buildFollowupPayload(input);
@@ -181,8 +192,7 @@ export function FollowupReviewForm({
           <>
             <p className="break-words text-sm">
               {t('followup_identity', {
-                name:
-                  user.display_name || user.full_name || user.email || user.id,
+                name: user.display_name || user.email || user.id,
               })}
             </p>
             <fieldset
@@ -199,39 +209,43 @@ export function FollowupReviewForm({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="followup-workspace">
-                  {t('followup_workspace')}
+                <Label htmlFor="followup-description">
+                  {t('followup_description')}
                 </Label>
-                <Select
-                  value={destination}
-                  onValueChange={(value) => {
-                    setDestination(value);
-                    setBoardId('');
-                    setListId('');
-                  }}
-                >
-                  <SelectTrigger id="followup-workspace">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">
-                      {t('followup_personal')}
-                    </SelectItem>
-                    {workspaces.data
-                      .filter(
-                        (workspace) =>
-                          !workspace.personal &&
-                          workspace.access_type === 'member'
-                      )
-                      .map((workspace) => (
-                        <SelectItem key={workspace.id} value={workspace.id}>
-                          {workspace.name ?? workspace.id}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <Textarea
+                  id="followup-description"
+                  value={description}
+                  maxLength={9000}
+                  onChange={(event) => setDescription(event.target.value)}
+                  rows={3}
+                />
               </div>
-              {task && workspaceId && (
+              <FollowupPicker
+                id="followup-workspace"
+                label={t('followup_workspace')}
+                value={destination}
+                options={[
+                  { id: 'personal', label: t('followup_personal') },
+                  ...workspaces.data
+                    .filter(
+                      (workspace) =>
+                        !workspace.personal &&
+                        workspace.access_type === 'member'
+                    )
+                    .map((workspace) => ({
+                      id: workspace.id,
+                      label: workspace.name || workspace.id,
+                    })),
+                ]}
+                onChange={(value) => {
+                  setDestination(value);
+                  setBoardId('');
+                  setListId('');
+                  setAssigneeIds([]);
+                  setCalendarId('');
+                }}
+              />
+              {workspaceId && (
                 <FollowupDestination
                   workspaceId={workspaceId}
                   sourceWsId={wsId}
@@ -240,6 +254,13 @@ export function FollowupReviewForm({
                   listId={listId}
                   onBoard={setBoardId}
                   onList={setListId}
+                  task={task}
+                  assigneeIds={assigneeIds}
+                  onAssignees={setAssigneeIds}
+                  calendarId={calendarId}
+                  onCalendar={setCalendarId}
+                  suggestion={suggestion}
+                  userId={user.id}
                 />
               )}
               <div className="space-y-1">
@@ -289,16 +310,42 @@ export function FollowupReviewForm({
                   </div>
                 </div>
               )}
-              {task && (
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="followup-assign"
-                    checked={assignToMe}
-                    onCheckedChange={(value) => setAssignToMe(value === true)}
-                  />
-                  <Label htmlFor="followup-assign">
-                    {t('followup_assign_me')}
+              {task ? (
+                <div className="space-y-1">
+                  <Label htmlFor="followup-priority">
+                    {t('followup_priority')}
                   </Label>
+                  <Select
+                    value={priority}
+                    onValueChange={(value) =>
+                      setPriority(value as typeof priority)
+                    }
+                  >
+                    <SelectTrigger id="followup-priority">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(['low', 'normal', 'high', 'critical'] as const).map(
+                        (value) => (
+                          <SelectItem key={value} value={value}>
+                            {t(`followup_priority_${value}`)}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Label htmlFor="followup-location">
+                    {t('followup_location')}
+                  </Label>
+                  <Input
+                    id="followup-location"
+                    value={location}
+                    maxLength={1000}
+                    onChange={(event) => setLocation(event.target.value)}
+                  />
                 </div>
               )}
               {!task && (
@@ -316,7 +363,7 @@ export function FollowupReviewForm({
                 disabled={
                   !workspaceId ||
                   !title.trim() ||
-                  (task ? !listId || !assignToMe : !start || !end)
+                  (task ? !listId : !calendarId || !start || !end)
                 }
                 onClick={() => void submit()}
               >

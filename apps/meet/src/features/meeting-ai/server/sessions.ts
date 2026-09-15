@@ -1,3 +1,9 @@
+import {
+  formatTranscriptChunk,
+  readTranscriptSegments,
+  readTranscriptSpeaker,
+  transcriptSpeakers,
+} from '@tuturuuu/ai/meetings/transcript';
 import { readMeetingRoomPolicy } from './room-access';
 import 'server-only';
 import {
@@ -77,6 +83,14 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
     (sum, session) => sum + session.notes_unpriced_attempts,
     0
   );
+  const sessionOrder = new Map(ids.map((id, index) => [id, index]));
+  chunks.sort(
+    (a, b) =>
+      (sessionOrder.get(a.session_id) ?? 0) -
+        (sessionOrder.get(b.session_id) ?? 0) ||
+      a.start_seconds - b.start_seconds ||
+      a.sequence - b.sequence
+  );
   return {
     configured: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     canManage,
@@ -97,6 +111,8 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       start_seconds: chunk.start_seconds,
       duration_seconds: chunk.duration_seconds,
       transcript: chunk.transcript,
+      speaker: readTranscriptSpeaker(chunk.usage),
+      segments: readTranscriptSegments(chunk.usage),
       cost_usd: canManage ? chunk.cost_usd : null,
       status:
         chunk.status === 'processing' &&
@@ -268,11 +284,11 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       (incomplete
         ? '[This transcript is incomplete. Audio was lost or capture was interrupted.]\n'
         : '') +
-      chunks
-        .map(
-          (chunk) =>
-            `[${chunk.start_seconds}s] ${chunk.transcript ?? '[Missing audio segment]'}`
+      [...chunks]
+        .sort(
+          (a, b) => a.start_seconds - b.start_seconds || a.sequence - b.sequence
         )
+        .map((chunk) => formatTranscriptChunk(chunk))
         .join('\n');
     if (transcript.length > 500_000)
       throw new MeetAiError(413, 'Transcript exceeds notes limit');
@@ -284,6 +300,23 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
           timezone: parsed.data.timezone,
         })
       : null;
+    if (result?.notes) {
+      const roster = new Map(
+        chunks.flatMap((chunk) =>
+          transcriptSpeakers(chunk.usage).map(
+            (speaker) => [speaker.accountId, speaker.displayName] as const
+          )
+        )
+      );
+      result.notes.actionItems = result.notes.actionItems.map((item) => ({
+        ...item,
+        ownerId: item.ownerId && roster.has(item.ownerId) ? item.ownerId : null,
+        owner:
+          item.ownerId && roster.has(item.ownerId)
+            ? roster.get(item.ownerId)!
+            : item.owner,
+      }));
+    }
     const saved = await db
       .from('meet_ai_sessions')
       .update({

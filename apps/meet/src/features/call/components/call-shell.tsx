@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MeetLivePanel } from '@/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@/features/live-assistant/room-audio';
+import { meetingAudioSources } from '@/features/meeting-ai/audio-sources';
 import { MeetingAiPanel } from '@/features/meeting-ai/meeting-ai-panel';
 import { NotesSharingControl } from '@/features/meeting-ai/notes-sharing-control';
 import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
@@ -112,10 +113,27 @@ export function ConnectedCallShell({
     ],
     [room.localStream, room.screenStream, room.remoteStreams]
   );
+  const transcriptionSources = useMemo(
+    () =>
+      meetingAudioSources({
+        localStream: room.localStream,
+        screenStream: room.screenStream,
+        remoteMedia: room.remoteMedia,
+        participants: state.participants,
+        selfUserId: state.selfUserId,
+      }),
+    [
+      room.localStream,
+      room.screenStream,
+      room.remoteMedia,
+      state.participants,
+      state.selfUserId,
+    ]
+  );
   const ai = useMeetingAi(
     wsId,
     meetingId,
-    audioStreams,
+    transcriptionSources,
     !left && Object.keys(state.participants).length > 1,
     canReadNotes
   );

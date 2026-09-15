@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
+import { readFollowupMembers } from './followup-members';
 
 export async function followupAccess(
   request: Request,
@@ -128,7 +129,21 @@ export async function readFollowupContext(
     if (result.error) throw new MeetAiError(503, 'Task lists unavailable');
     lists = result.data;
   }
+  const [members, calendars] = await Promise.all([
+    readFollowupMembers(db, workspaceId),
+    db
+      .schema('private')
+      .from('workspace_calendars')
+      .select('id, name, calendar_type')
+      .eq('ws_id', workspaceId)
+      .eq('is_enabled', true)
+      .order('position')
+      .limit(200),
+  ]);
+  if (calendars.error) throw new MeetAiError(503, 'Calendars unavailable');
   return {
+    members,
+    calendars: calendars.data,
     user: {
       id: user.id,
       display_name: profile.data?.display_name ?? null,

@@ -2,18 +2,23 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
+  MEET_AUDIO_PENDING_MAX_BYTES,
+  MEET_AUDIO_SESSION_MAX_BATCHES,
+} from '@tuturuuu/ai/meetings/audio-contract';
+import {
   getMeetAiState,
   updateMeetAiSession,
   uploadMeetAiChunk,
 } from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MeetAudioCapture } from './audio';
+import { MeetAudioCapture, type MeetAudioSource } from './audio';
+import { MeetAudioBatcher } from './audio-batches';
 import { recoverMeetChunk } from './chunk-recovery';
 
 export function useMeetingAi(
   wsId: string,
   meetingId: string,
-  streams: MediaStream[] = [],
+  streams: MeetAudioSource[] = [],
   live = true,
   enabled = true
 ) {
@@ -59,9 +64,12 @@ export function useMeetingAi(
   const [recovering, setRecovering] = useState(false);
   const [pendingChunks, setPendingChunks] = useState(0);
   const capture = useRef<MeetAudioCapture | null>(null);
+  const durationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const session = useRef<string | null>(null);
   const queue = useRef(Promise.resolve());
   const pending = useRef(0);
+  const pendingBytes = useRef(0);
+  const batches = useRef<MeetAudioBatcher | null>(null);
   const recovery = useRef(new AbortController());
   const sequence = useRef(0);
   const finishRef = useRef<(() => Promise<void>) | null>(null);
@@ -80,6 +88,8 @@ export function useMeetingAi(
     if (current?.ended_at) {
       recovery.current.abort();
       capture.current?.dispose();
+      batches.current?.dispose();
+      if (durationTimer.current) clearTimeout(durationTimer.current);
       capture.current = null;
       setCapturing(false);
       session.current = null;
@@ -92,6 +102,8 @@ export function useMeetingAi(
       mounted.current = false;
       recovery.current.abort();
       capture.current?.dispose();
+      batches.current?.dispose();
+      if (durationTimer.current) clearTimeout(durationTimer.current);
     };
   }, []);
 
@@ -109,32 +121,56 @@ export function useMeetingAi(
     setCaptureError(false);
     errorRef.current = false;
     autoFinishRequested.current = false;
-    const recorder = new MeetAudioCapture((audio, startSeconds) => {
+    const overflow = () => {
+      recorder.dispose();
+      batcher.dispose();
+      capture.current = null;
+      setCapturing(false);
+      setCaptureError(true);
+      errorRef.current = true;
+      if (!autoFinishRequested.current) {
+        autoFinishRequested.current = true;
+        void queue.current
+          .then(() => finishRef.current?.())
+          .catch(() => {
+            // Keep the partial session recoverable when finalization fails.
+            setCaptureError(true);
+          });
+      }
+    };
+    const batcher = new MeetAudioBatcher((clips) => {
       const sessionId = session.current;
       if (!sessionId) return;
-      if (pending.current >= 30 || sequence.current >= 1080) {
-        recorder.dispose();
-        capture.current = null;
-        setCapturing(false);
-        setCaptureError(true);
-        errorRef.current = true;
-        if (!autoFinishRequested.current) {
-          autoFinishRequested.current = true;
-          void queue.current
-            .then(() => finishRef.current?.())
-            .catch(() => {
-              // Keep the partial session recoverable when finalization fails.
-              setCaptureError(true);
-            });
-        }
+      const bytes = clips.reduce((sum, clip) => sum + clip.audio.size, 0);
+      if (
+        pendingBytes.current + bytes > MEET_AUDIO_PENDING_MAX_BYTES ||
+        sequence.current >= MEET_AUDIO_SESSION_MAX_BATCHES
+      ) {
+        overflow();
         return;
       }
       const data = new FormData();
-      data.set('audio', audio, 'chunk.wav');
+      clips.forEach((clip, index) => {
+        data.set(`audio_${index}`, clip.audio, `source-${index}.wav`);
+      });
+      data.set(
+        'sources',
+        JSON.stringify(
+          clips.map((clip) => ({
+            speakerAccountId: clip.accountId,
+            sourceKind: clip.kind,
+            startSeconds: clip.startSeconds,
+          }))
+        )
+      );
       data.set('sessionId', sessionId);
       data.set('id', crypto.randomUUID());
       data.set('sequence', String(sequence.current++));
-      data.set('startSeconds', String(startSeconds));
+      data.set(
+        'startSeconds',
+        String(Math.min(...clips.map((clip) => clip.startSeconds)))
+      );
+      pendingBytes.current += bytes;
       pending.current++;
       setPendingChunks(pending.current);
       const recoverySignal = recovery.current.signal;
@@ -153,13 +189,22 @@ export function useMeetingAi(
           errorRef.current = true;
         } finally {
           pending.current--;
+          pendingBytes.current -= bytes;
           if (mounted.current) {
             setPendingChunks(pending.current);
             setRecovering(false);
           }
         }
       });
-    });
+    }, overflow);
+    const recorder = new MeetAudioCapture((audio, startSeconds, source) =>
+      batcher.add({
+        audio,
+        startSeconds,
+        kind: source?.kind ?? 'microphone',
+        accountId: source?.accountId,
+      })
+    );
     try {
       // Establish browser support before allocating the server session.
       await recorder.start();
@@ -183,11 +228,24 @@ export function useMeetingAi(
       setOwnsSession(true);
       sequence.current = 0;
       capture.current = recorder;
+      batches.current = batcher;
+      batcher.start();
+      // Flush before the database's three-hour reservation expiry.
+      durationTimer.current = setTimeout(
+        () => {
+          void finishRef.current?.().catch(() => {
+            errorRef.current = true;
+            if (mounted.current) setCaptureError(true);
+          });
+        },
+        3 * 60 * 60 * 1000 - 15_000
+      );
       recorder.update(streamsRef.current);
       setCapturing(true);
       await query.refetch();
     } catch (error) {
       recorder.dispose();
+      batcher.dispose();
       throw error;
     } finally {
       busyRef.current = false;
@@ -207,11 +265,16 @@ export function useMeetingAi(
       setBusy(true);
       try {
         if (target === session.current) {
+          if (durationTimer.current) clearTimeout(durationTimer.current);
+          durationTimer.current = null;
+          batches.current?.flush();
           if (capture.current && !(await capture.current.stop())) {
             errorRef.current = true;
             setCaptureError(true);
           }
           capture.current = null;
+          batches.current?.stop();
+          batches.current = null;
           setCapturing(false);
           await queue.current;
         }

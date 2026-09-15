@@ -20,8 +20,8 @@ stay unspecified; incomplete transcripts remain visibly marked.
 The review defaults to the signed-in user's personal workspace and saved calendar
 timezone, falling back to the browser timezone for an automatic setting. The user
 can choose another workspace where they are a full member. Tasks require a chosen
-active board and list plus an explicit **Assign this task to me** confirmation.
-Events require a reviewed start and end and are saved to the destination workspace’s enabled primary calendar. The review checks overlap with saved
+active board and list. Search destination members and select one or more assignees, use the suggested owner when uniquely matched, or leave the task unassigned. A suggested name alone never silently assigns a person. Priority, description and deadline are editable.
+Events require a reviewed start and end and are saved to the selected enabled native calendar. Calendar and location are editable. The review checks overlap with saved
 events in the selected workspace and reports when availability is unknown;
 unsynced external calendars are outside that check. All created items include a source link
 to the meeting notes; this does not grant recipients access to private notes.
@@ -32,12 +32,36 @@ event intervals are rejected. The user can select another local time or enter th
 intended instant explicitly in UTC. Changing the timezone reinterprets the displayed
 wall times, as explained in the form.
 
+## Speaker attribution
+
+New capture keeps microphone and shared-audio tracks separate in one audio context.
+Each new segment carries a source kind and may carry a source account ID. The server verifies supplied accounts against
+room admission before resolving the saved display name, falling back to email.
+Segments display the source name and whether the source is a microphone or shared
+audio. Historical mixed recordings remain unattributed. A source identifies a
+device owner: it cannot distinguish several people speaking into the same microphone.
+Notes must preserve that uncertainty rather than infer identity from voice.
+
+Speaker clips are sent together in one upload window every ten seconds. One batch
+uses one database reservation, retaining the existing sequence/rate contract and
+three-hour session boundary. Capture stops 15 seconds before expiry to flush pending audio. Individual timestamps and source labels survive batching.
+The provider returns one indexed transcript per file; missing or duplicate indices
+fail validation rather than silently mixing speakers. Batches are bounded to 48 clips
+and 12 MB, with at most 48 MB awaiting upload. These are explicit upload-capacity
+limits; exceeding them marks the session incomplete. They do not multiply the
+sequence counter by participant count.
+
+Source metadata is stored alongside chunk usage without a schema migration. Notes
+receive stable source IDs; generated owner IDs are checked against that roster.
+The review matches those IDs against the chosen destination's actual members.
+Changing workspace clears board, list, calendar and assignee selections.
+
 ## Server boundary
 
 `/api/meet-ai/[wsId]/[meetingId]/followups` runs inside Meet. It verifies the Meet app
 session and source-note sharing policy, then separately verifies full membership and
 existing task/calendar permissions in the destination. Actor IDs come from the
-verified session. A changed account invalidates an open review. Tasks use the existing workspace executor. Calendar writes resolve the native primary calendar and use the existing encryption helper before inserting. Meet performs these authorized writes with its own verified session. Calendar encryption runs in strict mode: a key lookup, configuration or decryption failure rejects the write; only a workspace with no encryption key can store unencrypted fields.
+verified session. A changed account invalidates an open review. Tasks call the shared Tasks creation handler with injectable Meet authentication, retaining task sorting, rich-text description formatting, relation writes, quotas and actor-aware access checks. Selected assignees must still be full destination members. Workspace member-name and email privacy settings are respected in the picker. Calendar writes resolve the selected enabled native calendar and use the existing encryption helper before inserting. Meet performs these authorized writes with its own verified session. Calendar encryption runs in strict mode: a key lookup, configuration or decryption failure rejects the write; only a workspace with no encryption key can store unencrypted fields.
 
 A creation request has a UUID, timestamp and payload fingerprint. Existing private
 room receipts prevent replaying the same request within the one-hour receipt window;

@@ -14,6 +14,13 @@ export type MeetFollowupContext = {
     personal: boolean | null;
     access_type: 'member';
   }>;
+  members?: Array<{
+    id: string;
+    displayName: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+  }>;
+  calendars?: Array<{ id: string; name: string; calendar_type: string }>;
   boards: Array<{ id: string; name: string | null }>;
   lists: Array<{ id: string; name: string | null; status: string | null }>;
 };
@@ -32,6 +39,10 @@ export type MeetFollowupInput = {
   end: string;
   due: string;
   assignToMe: boolean;
+  assigneeIds?: string[];
+  priority?: 'low' | 'normal' | 'high' | 'critical';
+  calendarId?: string;
+  location?: string;
 };
 function endpoint(wsId: string, meetingId: string) {
   return `/api/meet-ai/${encodePathSegment(wsId)}/${encodePathSegment(meetingId)}/followups`;

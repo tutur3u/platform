@@ -1,5 +1,4 @@
 import 'server-only';
-import { executeMeetWorkspaceTool } from '@tuturuuu/ai/meetings/workspace-tool-handlers';
 import { createMeetWorkspaceTools } from '@tuturuuu/ai/meetings/workspace-tools';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
@@ -10,6 +9,7 @@ import { buildFollowupPayload } from '../followup-save';
 import { MeetAiError, type MeetAiParams } from './access';
 import { followupAccess } from './followup-context';
 import { prepareCalendarFollowup } from './followup-event';
+import { prepareTaskFollowup } from './followup-task';
 
 export const followupInputSchema = z.object({
   requestId: z.uuid(),
@@ -36,6 +36,10 @@ export const followupInputSchema = z.object({
   end: z.string().max(30),
   due: z.string().max(30),
   assignToMe: z.boolean(),
+  assigneeIds: z.array(z.uuid()).max(100).optional(),
+  priority: z.enum(['low', 'normal', 'high', 'critical']).optional(),
+  calendarId: z.uuid().optional(),
+  location: z.string().max(1000).optional(),
 });
 
 export async function createFollowup(request: Request, params: MeetAiParams) {
@@ -98,25 +102,11 @@ async function createFollowupAttempt(
   );
   if (!allowed[name])
     throw new MeetAiError(403, 'Destination permission denied');
-  const args = task
-    ? {
-        name: payload.name,
-        description: payload.description,
-        boardId: input.boardId,
-        listId: payload.listId,
-        assignToSelf: true,
-        endDate: payload.end_date,
-      }
-    : {
-        title: payload.title,
-        description: payload.description,
-        startAt: payload.start_at,
-        endAt: payload.end_at,
-      };
-  const saveEvent =
-    payload.start_at !== undefined
-      ? await prepareCalendarFollowup(access.db, access.workspaceId, payload)
-      : null;
+  const args = { ...payload, ...(task ? { boardId: input.boardId } : {}) };
+  const save =
+    payload.listId !== undefined
+      ? await prepareTaskFollowup(access, input.boardId, payload)
+      : await prepareCalendarFollowup(access.db, access.workspaceId, payload);
   const room = await getMeetCallAccess(access.meetingId, 'Participant');
   if (room.user.id !== access.user.id)
     throw new MeetAiError(409, 'Account changed');
@@ -155,9 +145,7 @@ async function createFollowupAttempt(
   }
   if (!receipt.started)
     throw new MeetAiError(409, 'Follow-up already attempted');
-  const result = saveEvent
-    ? await saveEvent()
-    : await executeMeetWorkspaceTool(name, args, context);
+  const result: unknown = await save();
   if (!result || typeof result !== 'object' || 'error' in result) {
     const rejected =
       result &&
@@ -176,15 +164,18 @@ async function createFollowupAttempt(
       rejected ? 'FOLLOWUP_NOT_SAVED' : undefined
     );
   }
+  const confirmed = (
+    task
+      ? z.object({ task: z.object({ id: z.uuid() }) })
+      : z.object({ event: z.object({ id: z.uuid() }) })
+  ).safeParse(result);
+  if (!confirmed.success)
+    throw new MeetAiError(
+      502,
+      'Follow-up result unavailable; check the destination'
+    );
   const resultId =
-    task &&
-    'task' in result &&
-    result.task &&
-    typeof result.task === 'object' &&
-    'id' in result.task &&
-    typeof result.task.id === 'string'
-      ? result.task.id
-      : null;
+    'task' in confirmed.data ? confirmed.data.task.id : confirmed.data.event.id;
   const base = `https://${task ? 'tasks' : 'calendar'}.tuturuuu.com/${encodeURIComponent(access.workspaceId)}`;
   const saved = {
     url:
