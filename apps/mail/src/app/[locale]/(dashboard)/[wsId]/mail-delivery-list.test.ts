@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { MailThreadSummary } from '@tuturuuu/internal-api';
 import { createElement as h } from 'react';
@@ -40,7 +41,10 @@ it('collapses similar deliveries and preserves recipient-specific open actions',
     onPrefetch: () => {},
     onSelect: () => {},
   };
-  const { container, rerender } = render(h(MailDeliveryList, props));
+  const { container, rerender } = render(h(MailDeliveryList, props), {
+    wrapper: ({ children }) =>
+      h(QueryClientProvider, { client: new QueryClient() }, children),
+  });
   expect(container.querySelector('details')?.open).toBe(false);
   expect(screen.getByText('similar_deliveries 2')).toBeTruthy();
   expect(
@@ -65,12 +69,18 @@ it('retains keyboard expansion through selection and unrelated rerenders', () =>
     onPrefetch: () => {},
     onSelect: () => {},
   };
-  const { container, rerender } = render(h(MailDeliveryList, props));
+  const { container, rerender } = render(h(MailDeliveryList, props), {
+    wrapper: ({ children }) =>
+      h(QueryClientProvider, { client: new QueryClient() }, children),
+  });
   const details = container.querySelector('details')!;
   fireEvent(details, new Event(MAIL_EXPAND_DELIVERIES_EVENT));
   expect(details.open).toBe(true);
   rerender(h(MailDeliveryList, { ...props, selectedThreads: new Set(['b']) }));
-  rerender(h(MailDeliveryList, props));
+  rerender(h(MailDeliveryList, props), {
+    wrapper: ({ children }) =>
+      h(QueryClientProvider, { client: new QueryClient() }, children),
+  });
   expect(details.open).toBe(true);
   expect(container.querySelector('details')).toBe(details);
 });

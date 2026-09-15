@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { MailEmailText } from './mail-email-text';
 import { splitMailQuotedText } from './mail-quoted-history';
 import { readableMailText } from './mail-readable-text';
 
@@ -10,7 +11,7 @@ export function MailPlainTextBody({ content }: { content: string }) {
   return (
     <div className="px-4 pb-6 md:px-6">
       <pre className="whitespace-pre-wrap break-words font-sans text-sm leading-6">
-        {readableMailText(authored)}
+        <MailEmailText text={readableMailText(authored)} />
       </pre>
       {quoted ? (
         <details className="mt-3">
@@ -18,7 +19,7 @@ export function MailPlainTextBody({ content }: { content: string }) {
             {t('quoted_text')}
           </summary>
           <pre className="mt-3 whitespace-pre-wrap break-words border-l-2 pl-3 font-sans text-sm leading-6">
-            {readableMailText(quoted)}
+            <MailEmailText text={readableMailText(quoted)} />
           </pre>
         </details>
       ) : null}

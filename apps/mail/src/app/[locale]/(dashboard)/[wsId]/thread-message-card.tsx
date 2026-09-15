@@ -14,13 +14,17 @@ import { useLocale, useTranslations } from 'next-intl';
 import { getFailedMailRecipients } from '@/lib/mail/failed-recipients';
 import { MailAttachmentCard } from './mail-attachment-card';
 import { MailBlacklistControl } from './mail-blacklist-control';
+import { MailEmailText } from './mail-email-text';
 import type { MailFolder } from './mail-folders';
+import { MailLabelBadges } from './mail-label-badges';
 import {
   formatMailRecipients,
   formatMailSender,
 } from './mail-message-addresses';
 import { MailMessagePreview } from './mail-message-preview';
+import { MailParticipantAvatar } from './mail-participant-avatar';
 import { MailPlainTextBody } from './mail-plain-text-body';
+import { mailSnippetText } from './mail-snippet-text';
 import { visibleMailLabels } from './mail-visible-labels';
 
 function formatDate(value: string | null, locale: string) {
@@ -44,6 +48,7 @@ export function ThreadMessageCard({
   const locale = useLocale();
   const sender = formatMailSender(message);
   const recipient = formatMailRecipients(message, 'to');
+  const firstRecipient = message.recipients.find((item) => item.kind === 'to');
 
   return (
     <AccordionItem
@@ -59,6 +64,11 @@ export function ThreadMessageCard({
                 aria-label={`${t('message_details')}: ${sender}${recipient ? ` → ${recipient}` : ''}`}
                 className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md text-left outline-ring/50 transition-colors hover:bg-muted/50 focus-visible:outline-2"
               >
+                <MailParticipantAvatar
+                  workspaceId={workspaceId}
+                  address={message.fromAddress}
+                  name={message.fromName}
+                />
                 <Address
                   value={sender}
                   label={message.fromName?.trim() || message.fromAddress}
@@ -69,7 +79,18 @@ export function ThreadMessageCard({
                       aria-hidden="true"
                       className="size-3 shrink-0 text-muted-foreground"
                     />
-                    <Address value={recipient} muted />
+                    {firstRecipient ? (
+                      <MailParticipantAvatar
+                        workspaceId={workspaceId}
+                        address={firstRecipient.address}
+                        name={firstRecipient.displayName}
+                      />
+                    ) : null}
+                    <Address
+                      value={recipient}
+                      label={formatMailRecipients(message, 'to', true)}
+                      muted
+                    />
                   </>
                 ) : null}
                 <ChevronDown
@@ -122,21 +143,9 @@ export function ThreadMessageCard({
                 {t('catch_all')}
               </Badge>
             ) : null}
-            {visibleMailLabels(message.labels, folder).map((label) => (
-              <Badge
-                className="max-w-40 gap-1 px-1.5 py-0 text-[10px]"
-                key={label.id}
-                variant="secondary"
-              >
-                <span
-                  className="size-1 shrink-0 rounded-full bg-foreground/30"
-                  style={
-                    label.color ? { backgroundColor: label.color } : undefined
-                  }
-                />
-                <span className="truncate">{label.name}</span>
-              </Badge>
-            ))}
+            <MailLabelBadges
+              labels={visibleMailLabels(message.labels, folder)}
+            />
           </div>
           <span className="hidden shrink-0 text-muted-foreground text-xs sm:block">
             {formatDate(message.receivedAt ?? message.sentAt, locale)}
@@ -147,7 +156,7 @@ export function ThreadMessageCard({
           />
         </div>
         <div className="mt-1 line-clamp-2 whitespace-normal break-words text-muted-foreground text-xs group-data-[state=open]/message:hidden">
-          {message.snippet || message.bodyText}
+          {mailSnippetText(message.snippet || message.bodyText || '')}
         </div>
       </div>
       <AccordionContent className="p-0 pb-0">
@@ -198,7 +207,7 @@ function Address({
     <Tooltip>
       <TooltipTrigger asChild>
         <span
-          className={`min-w-0 truncate ${muted ? 'shrink font-normal text-muted-foreground text-xs' : 'shrink font-semibold text-sm'}`}
+          className={`min-w-0 truncate text-dynamic-blue underline-offset-2 hover:underline ${muted ? 'shrink font-normal text-xs' : 'shrink font-semibold text-sm'}`}
         >
           {label}
         </span>
@@ -213,7 +222,9 @@ function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1 sm:grid-cols-[8rem_minmax(0,1fr)]">
       <dt className="font-medium text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-all">{value}</dd>
+      <dd className="min-w-0 break-all">
+        <MailEmailText text={value} />
+      </dd>
     </div>
   );
 }

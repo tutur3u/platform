@@ -21,7 +21,11 @@ export function getMailBlacklistRecipients(
   return getInternalApiClient(withMailApiBaseUrl(options)).json<{
     canManage: boolean;
     infrastructureOrigin?: string;
-    recipients: Array<{ email: string; blocked: boolean }>;
+    recipients: Array<{
+      email: string;
+      blocked: boolean;
+      reason?: string | null;
+    }>;
   }>(path(workspaceId, mailboxId, messageId), {
     cache: 'no-store',
     credentials: 'include',

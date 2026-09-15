@@ -87,7 +87,7 @@ it('treats existing entries as success without overwriting their reason or actor
 
 it('recognizes existing differently cased entries and preserves their metadata', async () => {
   mocks.lookup.mockResolvedValue({
-    data: [{ value: 'Failed@Example.com' }],
+    data: [{ value: 'Failed@Example.com', reason: 'Inactive/Abandoned' }],
     error: null,
   });
   expect(await (await POST(request(), params)).json()).toEqual({
@@ -97,7 +97,11 @@ it('recognizes existing differently cased entries and preserves their metadata',
   expect(mocks.insert).not.toHaveBeenCalled();
   const result = await (await GET(request(), params)).json();
   expect(result.recipients).toEqual([
-    { email: 'failed@example.com', blocked: true },
+    {
+      email: 'failed@example.com',
+      blocked: true,
+      reason: 'Inactive/Abandoned',
+    },
   ]);
   expect(result.infrastructureOrigin).toBe('https://infra.staging.example.com');
 });
