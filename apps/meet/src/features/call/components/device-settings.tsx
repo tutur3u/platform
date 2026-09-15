@@ -14,6 +14,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
+import { AudioProcessingSettings } from './audio-processing-settings';
 
 export function DeviceSettings({
   room,
@@ -48,6 +49,7 @@ export function DeviceSettings({
   }, [devices.refetch]);
   return (
     <div className="space-y-5">
+      <AudioProcessingSettings room={room} />
       {[
         {
           kind: 'audioinput',

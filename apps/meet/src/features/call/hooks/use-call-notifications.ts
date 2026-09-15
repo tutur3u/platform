@@ -10,7 +10,8 @@ export function useCallNotifications(
   enabled: boolean,
   connected: boolean,
   openPanel: (panel: 'chat' | 'participants') => void,
-  activePanel: 'chat' | 'participants' | null
+  activePanel: 'chat' | 'participants' | null,
+  audioSuppressed = false
 ) {
   const t = useTranslations('meet.call');
   const previous = useRef(state);
@@ -77,6 +78,7 @@ export function useCallNotifications(
     if (
       !notices.length ||
       !sound ||
+      audioSuppressed ||
       context?.state !== 'running' ||
       Date.now() - lastSound.current < 1200
     )
@@ -101,6 +103,15 @@ export function useCallNotifications(
       oscillator.disconnect();
       gain.disconnect();
     };
-  }, [state, enabled, connected, sound, openPanel, activePanel, t]);
+  }, [
+    state,
+    enabled,
+    connected,
+    sound,
+    audioSuppressed,
+    openPanel,
+    activePanel,
+    t,
+  ]);
   return { sound, toggleSound: () => setSound((value) => !value) };
 }

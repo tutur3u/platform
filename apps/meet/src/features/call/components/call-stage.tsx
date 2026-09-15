@@ -22,12 +22,14 @@ function columns(count: number) {
 export function CallStage({
   room,
   outputDeviceId,
+  audioSuppressed = false,
   layout,
   focus,
   onFocus,
 }: {
   room: MeetRoomController;
   outputDeviceId?: string;
+  audioSuppressed?: boolean;
   layout: CallLayout;
   focus: string | null;
   onFocus: (key: string | null) => void;
@@ -108,6 +110,7 @@ export function CallStage({
   const render = (tile: Tile, className: string) => (
     <ParticipantTile
       outputDeviceId={outputDeviceId}
+      audioSuppressed={audioSuppressed}
       key={tile.key}
       className={className}
       kind={tile.kind}

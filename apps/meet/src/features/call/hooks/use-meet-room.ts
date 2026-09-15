@@ -602,13 +602,7 @@ export function useMeetRoom({
     [effects, publishPresence, queueLocalTracks, resetPublisher]
   );
 
-  const {
-    toggleMicrophone,
-    toggleCamera,
-    toggleScreenShare,
-    selectDevice,
-    getSelectedDevices,
-  } = useMemo(
+  const localControls = useMemo(
     () =>
       createLocalMediaControls({
         activeRef,
@@ -691,10 +685,6 @@ export function useMeetRoom({
     media,
     remoteStreams,
     state,
-    toggleCamera,
-    toggleMicrophone,
-    toggleScreenShare,
-    selectDevice,
-    getSelectedDevices,
+    ...localControls,
   };
 }

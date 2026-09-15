@@ -19,6 +19,11 @@ export interface UseMeetRoomOptions {
 
 export interface MeetRoomController
   extends ReturnType<typeof createRoomActions> {
+  getAudioProcessing: () => import('./audio-processing').AudioProcessing;
+  getAudioProcessingSettings: () => MediaTrackSettings | null;
+  setAudioProcessing: (
+    settings: import('./audio-processing').AudioProcessing
+  ) => Promise<void>;
   getSelectedDevices: () => {
     audio: string;
     video: string;

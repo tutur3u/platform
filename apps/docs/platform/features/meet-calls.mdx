@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updated: '2026-09-11'
+updated: '2026-09-15'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 ---
 
@@ -865,3 +865,37 @@ request or poll the realtime Worker. Active and unknown rooms still refresh.
 The cache is only a display hint: opening notes or transcripts always performs
 server permission checks. No room names, chat, transcripts, or access grants are
 stored in this cache, and unavailable browser storage does not block navigation.
+
+## Echo and microphone processing
+
+Settings → Devices exposes native echo cancellation, background noise reduction,
+and automatic voice leveling. All three default on. Changes apply to the current
+microphone and subsequent device switches in that call, without unmuting it.
+The status under each control comes from the captured track's `getSettings()`;
+a requested setting is not proof that a browser or device applied it.
+
+Screen capture excludes whole-system audio and requests `restrictOwnAudio` to
+avoid returning meeting playback to peers. These are browser hints, so browser
+compatibility still matters. Share a browser tab with audio when presenting media.
+Each remote camera or screen feed also has a local mute control: it silences only
+that feed on the listener's device, without changing room participant permissions.
+
+For persistent echo, identify the participant or shared-audio feed returning the
+sound. Enable echo cancellation on the source device, use headphones, or mute
+additional microphones and speakers in the same physical room. Native processing
+cannot guarantee cancellation across multiple nearby devices. Verify actual
+speaker/microphone calls separately from synthetic audio and unit tests.
+
+### Nearby participants and same-room audio
+
+When people share a physical room, choose one device for their microphone and
+speakers. On every secondary device, select **Use a nearby device for audio**.
+This mutes that device's microphone, incoming camera/screen audio, voice assistants,
+and notification sounds while keeping video, chat and notes available. Replacement
+microphone tracks remain muted after reconnection. Leaving the mode restores
+playback but never opens the microphone automatically.
+
+This explicit acoustic setup consolidates nearby voices through the selected
+primary microphone. It does not infer proximity from IP addresses or attempt to
+merge independently captured voices after they reach the server. For two active
+nearby microphones, native AEC alone cannot guarantee removal of duplicated speech.
