@@ -4261,6 +4261,11 @@
       "voice": "Mira’s voice",
       "you": "You"
     },
+    "loading": {
+      "hint": "Your next conversation starts here.",
+      "status": "Getting things ready",
+      "title": "Meet"
+    },
     "meetings": {
       "calendar_hint": "Adds the meeting to Tuturuuu Calendar with a link back to this room.",
       "cancel": "Cancel",

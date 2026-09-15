@@ -12,6 +12,9 @@ import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
+import { MeetLoading } from '@/features/loading/meet-loading';
+import enMessages from '../../../messages/en.json';
+import viMessages from '../../../messages/vi.json';
 import { Providers } from './providers';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
@@ -49,6 +52,7 @@ export function generateStaticParams() {
   return supportedLocales.map((locale) => ({ locale }));
 }
 
+/** Keep the startup fallback independent of the still-loading intl provider. */
 export default async function RootLayout({ children }: Props) {
   const locale = await resolveRootLocale(
     supportedLocales,
@@ -67,20 +71,11 @@ export default async function RootLayout({ children }: Props) {
           <Providers
             appName={siteConfig.name}
             loadingFallback={
-              <div
-                className="flex min-h-dvh items-center justify-center bg-background"
-                role="progressbar"
-                aria-label="Tuturuuu Meet"
-              >
-                <div className="flex flex-col items-center gap-5">
-                  <span className="font-semibold text-xl tracking-tight">
-                    Tuturuuu Meet
-                  </span>
-                  <span className="h-1 w-24 overflow-hidden rounded-full bg-muted">
-                    <span className="block h-full w-1/2 rounded-full bg-foreground/30 motion-safe:animate-pulse" />
-                  </span>
-                </div>
-              </div>
+              <MeetLoading
+                labels={
+                  (locale === 'vi' ? viMessages : enMessages).meet.loading
+                }
+              />
             }
           >
             {children}

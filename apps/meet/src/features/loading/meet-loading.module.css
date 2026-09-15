@@ -1,0 +1,44 @@
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--foreground) 4%, transparent),
+    transparent 65%
+  );
+}
+
+.track {
+  width: 8rem;
+  height: 0.1875rem;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.indicator {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--foreground);
+  opacity: 0.55;
+  transform: translateX(75%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .indicator {
+    animation: travel 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes travel {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}

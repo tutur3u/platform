@@ -4261,6 +4261,11 @@
       "voice": "Giọng nói của Mira",
       "you": "Bạn"
     },
+    "loading": {
+      "hint": "Sẵn sàng cho cuộc trò chuyện tiếp theo.",
+      "status": "Đang chuẩn bị",
+      "title": "Meet"
+    },
     "meetings": {
       "calendar_hint": "Thêm cuộc họp vào Lịch Tuturuuu kèm liên kết trở lại phòng này.",
       "cancel": "Hủy",
