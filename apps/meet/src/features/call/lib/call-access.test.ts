@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  tier: vi.fn(),
   user: vi.fn(),
   admin: vi.fn(),
   membership: vi.fn(),
@@ -11,6 +12,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.user,
+}));
+vi.mock('@tuturuuu/utils/meet-duration', () => ({
+  getHostMeetingTier: mocks.tier,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
@@ -24,6 +28,7 @@ import { getMeetCallAccess } from './call-access';
 const meetingId = '00000000-0000-4000-8000-000000000001';
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.tier.mockResolvedValue('FREE');
   const query = { select: vi.fn(), eq: vi.fn(), maybeSingle: mocks.meeting };
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
@@ -222,5 +227,47 @@ it('suggests an account name but saves a preferred display name before future jo
   expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
     needsDisplayName: true,
     suggestedDisplayName: 'Account name',
+  });
+});
+
+it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+  'admits invitees of a verified external %s host without workspace access',
+  async (tier) => {
+    mocks.host.mockResolvedValue({
+      data: {
+        user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+      },
+      error: null,
+    });
+    mocks.tier.mockResolvedValue(tier);
+    expect(await getMeetCallAccess(meetingId, 'Guest')).toMatchObject({
+      isHost: false,
+      canReadWorkspace: false,
+    });
+    expect(mocks.tier).toHaveBeenCalledWith('host');
+  }
+);
+it('rejects an unverified paid host', async () => {
+  mocks.host.mockResolvedValue({
+    data: { user: { email: 'paid@example.test', email_confirmed_at: null } },
+    error: null,
+  });
+  mocks.tier.mockResolvedValue('PLUS');
+  await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
+    status: 403,
+  });
+  expect(mocks.tier).not.toHaveBeenCalled();
+});
+
+it('fails closed with retryable status when host entitlement is unavailable', async () => {
+  mocks.host.mockResolvedValue({
+    data: {
+      user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+    },
+    error: null,
+  });
+  mocks.tier.mockRejectedValueOnce(new Error('Unavailable'));
+  await expect(getMeetCallAccess(meetingId, 'Guest')).rejects.toMatchObject({
+    status: 503,
   });
 });

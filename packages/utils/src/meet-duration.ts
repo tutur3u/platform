@@ -1,5 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { extractTierFromSubscriptions } from './workspace-helper';
 export class MeetDurationError extends Error {
   readonly status = 503;
@@ -13,7 +14,9 @@ export function meetingDurationSeconds(tier: string) {
 }
 
 /** Entitlements belong to the host's personal account, never the joining guest. */
-export async function getHostMeetingDurationSeconds(hostId: string) {
+export async function getHostMeetingTier(
+  hostId: string
+): Promise<WorkspaceProductTier> {
   const db = await createAdminClient({ noCookie: true });
   const { data, error } = await db
     .from('workspaces')
@@ -23,7 +26,7 @@ export async function getHostMeetingDurationSeconds(hostId: string) {
     .or('deleted.is.null,deleted.eq.false')
     .maybeSingle();
   if (error) throw new MeetDurationError('Meeting entitlement lookup failed');
-  if (!data) return meetingDurationSeconds('FREE');
+  if (!data) return 'FREE';
   const subscriptions = await db
     .from('workspace_subscriptions')
     .select('created_at, status, product_id')
@@ -38,7 +41,7 @@ export async function getHostMeetingDurationSeconds(hostId: string) {
         .filter((id): id is string => !!id)
     ),
   ];
-  if (!ids.length) return meetingDurationSeconds('FREE');
+  if (!ids.length) return 'FREE';
   const products = await db
     .schema('private')
     .from('workspace_subscription_products')
@@ -60,5 +63,9 @@ export async function getHostMeetingDurationSeconds(hostId: string) {
     }))
   );
 
-  return meetingDurationSeconds(tier ?? 'FREE');
+  return tier ?? 'FREE';
+}
+
+export async function getHostMeetingDurationSeconds(hostId: string) {
+  return meetingDurationSeconds(await getHostMeetingTier(hostId));
 }

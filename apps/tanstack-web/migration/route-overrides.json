@@ -2375,7 +2375,7 @@
         "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "Company-only creation, current confirmed identity checks, and native Calendar scheduling remain on Next.js; unported Rust POST falls through."
+          "note": "Verified Plus/Pro/Enterprise accounts and verified company accounts can create meetings; personal subscription entitlement, current confirmed identity checks, and native Calendar scheduling remain on Next.js; unported Rust POST falls through."
         }
       }
     },

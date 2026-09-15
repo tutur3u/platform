@@ -1,6 +1,12 @@
-/** Apply only to an authenticated account email, never editable profile metadata. */
+/** Use a current authenticated email and server-resolved personal subscription tier. */
 export function canCreateOnlineMeeting(
-  email: string | null | undefined
+  email: string | null | undefined,
+  tier: string = 'FREE'
 ): boolean {
-  return typeof email === 'string' && /^[^\s@]+@tuturuuu\.com$/iu.test(email);
+  if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+$/u.test(email))
+    return false;
+  return (
+    /^[^\s@]+@tuturuuu\.com$/iu.test(email) ||
+    ['PLUS', 'PRO', 'ENTERPRISE'].includes(tier)
+  );
 }
