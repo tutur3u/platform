@@ -65,7 +65,7 @@ export function FollowupDestination({
           <SelectContent>
             {boards.data?.boards.map((board) => (
               <SelectItem key={board.id} value={board.id}>
-                {board.name}
+                {board.name?.trim() || board.id}
               </SelectItem>
             ))}
           </SelectContent>
@@ -84,7 +84,7 @@ export function FollowupDestination({
               )
               .map((list) => (
                 <SelectItem key={list.id} value={list.id}>
-                  {list.name}
+                  {list.name?.trim() || list.id}
                 </SelectItem>
               ))}
           </SelectContent>

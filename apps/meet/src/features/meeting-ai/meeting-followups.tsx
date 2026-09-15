@@ -41,7 +41,16 @@ export function MeetingFollowups({
     }));
     const seen = new Set<string>();
     return [...tasks, ...events].filter((item) => {
-      const key = `${item.kind}:${item.title.trim().toLocaleLowerCase()}`;
+      const key = JSON.stringify([
+        item.kind,
+        item.title.trim().toLocaleLowerCase(),
+        item.evidence,
+        item.owner,
+        item.timeText,
+        item.startLocal,
+        item.endLocal,
+        item.timezone,
+      ]);
       if (seen.has(key) || !item.title.trim()) return false;
       seen.add(key);
       return true;

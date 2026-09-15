@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   getPermissions,
+  resolveWorkspaceIdForPrincipal,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
@@ -13,14 +14,23 @@ export async function followupAccess(
 ) {
   const access = await meetAiAccess(request, params);
   const { db, user } = access;
-  const personal = await db
-    .from('workspaces')
-    .select('id')
-    .eq('creator_id', user.id)
-    .eq('personal', true)
-    .eq('deleted', false)
-    .maybeSingle();
-  const workspaceId = destination ?? personal.data?.id;
+  let workspaceId = destination;
+  if (workspaceId === undefined) {
+    try {
+      workspaceId = await resolveWorkspaceIdForPrincipal({
+        authorizationClient: db,
+        principal: { id: user.id, email: user.email ?? null },
+        wsId: 'personal',
+      });
+    } catch (error) {
+      throw new MeetAiError(
+        error instanceof Error && error.name === 'WorkspaceNotFoundError'
+          ? 404
+          : 503,
+        'Personal destination unavailable'
+      );
+    }
+  }
   if (!workspaceId || !z.uuid().safeParse(workspaceId).success)
     throw new MeetAiError(400, 'Invalid destination');
   const member = await verifyWorkspaceMembershipType({

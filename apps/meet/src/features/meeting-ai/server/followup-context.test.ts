@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   membership: vi.fn(),
   permissions: vi.fn(),
+  resolve: vi.fn(),
 }));
 vi.mock('./access', () => ({
   meetAiAccess: mocks.access,
@@ -20,6 +21,7 @@ vi.mock('./access', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: mocks.membership,
   getPermissions: mocks.permissions,
+  resolveWorkspaceIdForPrincipal: mocks.resolve,
 }));
 
 import { followupAccess, readFollowupContext } from './followup-context';
@@ -50,6 +52,7 @@ const request = new Request(
 );
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.resolve.mockReset().mockResolvedValue(wsId);
   mocks.membership.mockResolvedValue({ ok: true });
   mocks.permissions.mockResolvedValue({ withoutPermission: () => false });
 });
@@ -158,4 +161,36 @@ it('rejects reversed instants with different fractional-second precision', async
     status: 400,
   });
   expect(db.from).not.toHaveBeenCalledWith('workspace_calendar_events');
+});
+
+it('resolves the personal destination with the signed principal only when no destination was selected', async () => {
+  const db = { from: vi.fn() };
+  mocks.access.mockResolvedValue({
+    db,
+    user: { id: userId, email: 'member@example.com' },
+  });
+  await expect(followupAccess(request, params)).resolves.toMatchObject({
+    workspaceId: wsId,
+  });
+  expect(mocks.resolve).toHaveBeenCalledWith({
+    authorizationClient: db,
+    principal: { id: userId, email: 'member@example.com' },
+    wsId: 'personal',
+  });
+  mocks.resolve.mockClear();
+  await followupAccess(request, params, wsId);
+  expect(mocks.resolve).not.toHaveBeenCalled();
+});
+it.each([
+  ['WorkspaceNotFoundError', 404],
+  ['WorkspaceResolutionError', 503],
+])('preserves %s for the default destination', async (name, status) => {
+  mocks.access.mockResolvedValue({ db: {}, user: { id: userId } });
+  mocks.resolve.mockRejectedValue(
+    Object.assign(new Error('unavailable'), { name })
+  );
+  await expect(followupAccess(request, params)).rejects.toMatchObject({
+    status,
+  });
+  expect(mocks.membership).not.toHaveBeenCalled();
 });
