@@ -1,5 +1,5 @@
 'use client';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 export function resourceErrorKey(error: string | null) {
   return error === 'participant_limit_reached' ||
@@ -8,34 +8,16 @@ export function resourceErrorKey(error: string | null) {
     ? error
     : null;
 }
-export function CallResourceNotice({
-  error,
-  expiresAt,
-}: {
-  error: string | null;
-  expiresAt?: string;
-}) {
+export function CallResourceNotice({ error }: { error: string | null }) {
   const t = useTranslations('meet.call');
-  const format = useFormatter();
   const key = resourceErrorKey(error);
-  const deadline = expiresAt ? new Date(expiresAt) : null;
-  if (!key && (!deadline || !Number.isFinite(deadline.getTime()))) return null;
+  if (!key) return null;
   return (
     <aside
       className="border-b bg-muted/40 px-3 py-2 text-muted-foreground text-xs"
-      role={key ? 'alert' : undefined}
+      role="alert"
     >
-      {key
-        ? t(key)
-        : t('room_deadline', {
-            time: format.dateTime(deadline!, {
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
-              timeZoneName: 'short',
-            }),
-          })}
+      {t(key)}
     </aside>
   );
 }

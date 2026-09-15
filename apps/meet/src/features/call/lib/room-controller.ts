@@ -55,5 +55,8 @@ export interface MeetRoomController
   state: CallState;
   toggleCamera: () => Promise<void>;
   toggleMicrophone: () => Promise<void>;
+  /** Idempotent mute, including pending microphone acquisition. */
+  muteMicrophone: () => Promise<void>;
+  unmuteMicrophone: () => Promise<void>;
   toggleScreenShare: () => Promise<void>;
 }

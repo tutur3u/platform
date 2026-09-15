@@ -893,14 +893,36 @@ speaker/microphone calls separately from synthetic audio and unit tests.
 
 ### Nearby participants and same-room audio
 
-When people share a physical room, choose one device for their microphone and
-speakers. On every secondary device, select **Use a nearby device for audio**.
-This mutes that device's microphone, incoming camera/screen audio, voice assistants,
-and notification sounds while keeping video, chat and notes available. Replacement
-microphone tracks remain muted after reconnection. Leaving the mode restores
-playback but never opens the microphone automatically.
+Meet automatically pauses the later device's microphone when the same verified
+account already has an active microphone in the call. For different accounts, a
+local audio monitor looks for repeated matching speech dynamics and changing
+frequency patterns between existing microphone tracks. Only the later device
+backs off, using join time and device ID as a stable tie-breaker. This avoids two
+devices muting each other.
 
-This explicit acoustic setup consolidates nearby voices through the selected
-primary microphone. It does not infer proximity from IP addresses or attempt to
-merge independently captured voices after they reach the server. For two active
-nearby microphones, native AEC alone cannot guarantee removal of duplicated speech.
+The microphone is disabled before a compact audio-control popover suggests
+**Share nearby audio**. Closing the popover keeps the microphone paused. Confirming
+sharing also silences this device's meeting playback, voice assistant and
+notifications; video, chat and notes remain available. **Use my microphone**, or
+explicitly pressing the microphone control, restores this device's own audio.
+Device replacement and pending permission requests cannot reopen a paused mic.
+If the identified primary device leaves, local playback resumes and the microphone
+stays paused until the user chooses to speak.
+
+Analysis runs only on already-enabled microphone tracks, never screen-share audio.
+It creates no extra capture, cloned tracks, recordings or network payloads, and
+compares at most eight incoming microphones. Several consecutive matching windows
+are required; silence and steady tones are insufficient. An explicit override
+suppresses the current device pair. Unsupported Web Audio falls back to native
+browser echo cancellation and the manual sharing control.
+
+This is a conservative audio-overlap heuristic, not proof of physical proximity or
+speaker identity. It does not use IP addresses or merge independent recordings on
+the server. Headphones and one primary microphone/speaker pair remain useful for
+rooms where acoustic conditions defeat detection.
+
+The meeting deadline appears as a compact clock button with a circular countdown
+ring. Hover or focus shows the remaining time and localized deadline; tap opens
+the same details. The ring represents the time remaining when this device joined,
+while the deadline always follows the server's room expiry. Resource-limit errors
+still appear as actionable notices.
