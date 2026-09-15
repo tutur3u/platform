@@ -370,7 +370,10 @@ export async function bulkUpdateMail({
     if (payload.action === 'mark_unread') patch.read_at = null;
     if (payload.action === 'star') patch.starred_at = now;
     if (payload.action === 'unstar') patch.starred_at = null;
-    if (payload.action === 'archive') patch.archived_at = now;
+    if (payload.action === 'archive') {
+      patch.archived_at = now;
+      patch.read_at = now;
+    }
     if (payload.action === 'trash') patch.trashed_at = now;
     if (payload.action === 'restore') {
       patch.archived_at = null;

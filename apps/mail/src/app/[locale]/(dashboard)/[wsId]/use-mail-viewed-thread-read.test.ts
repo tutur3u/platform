@@ -41,7 +41,7 @@ function setup(props = base) {
     wrapper: ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client }, children),
   });
-  return { ...hook, invalidate };
+  return { ...hook, invalidate, client };
 }
 beforeEach(() => {
   vi.clearAllMocks();
@@ -100,4 +100,68 @@ describe('viewed thread read tracking', () => {
     rerender(base);
     await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
   });
+});
+
+it('clears list, reader and mailbox unread state before persistence and rolls back a failure', async () => {
+  let reject!: (error: Error) => void;
+  mocks.update.mockImplementation(
+    () =>
+      new Promise((_resolve, fail) => {
+        reject = fail;
+      })
+  );
+  const { client, rerender } = setup({ ...base, blocked: true });
+  const key = ['mail', 'ws', 'mailbox', 'threads', 'inbox', null, null, ''];
+  const original = {
+    pages: [
+      { pagination: { total: 1 }, threads: [{ id: 'a', unreadCount: 1 }] },
+    ],
+    pageParams: [1],
+  };
+  client.setQueryData(key, original);
+  client.setQueryData(['mail', 'ws', 'mailbox', 'thread', 'a'], detail());
+  client.setQueryData(['mail', 'ws', 'bootstrap-counts'], { mailbox: 3 });
+  rerender({ ...base, threads: [{ id: 'a', unreadCount: 1 }] } as typeof base);
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+  expect(
+    client.getQueryData<typeof original>(key)?.pages[0]?.threads[0]?.unreadCount
+  ).toBe(0);
+  expect(
+    client.getQueryData<MailThreadDetail>([
+      'mail',
+      'ws',
+      'mailbox',
+      'thread',
+      'a',
+    ])?.messages[0]?.unread
+  ).toBe(false);
+  expect(client.getQueryData(['mail', 'ws', 'bootstrap-counts'])).toEqual({
+    mailbox: 2,
+  });
+  await act(async () => reject(new Error('offline')));
+  await waitFor(() => expect(mocks.error).toHaveBeenCalledOnce());
+  expect(client.getQueryData(key)).toEqual(original);
+  expect(client.getQueryData(['mail', 'ws', 'bootstrap-counts'])).toEqual({
+    mailbox: 3,
+  });
+  rerender(base);
+  expect(mocks.update).toHaveBeenCalledOnce();
+});
+
+it('marks the next viewed thread optimistically while the previous read is still saving', async () => {
+  mocks.update.mockImplementation(() => new Promise(() => {}));
+  const { rerender, client } = setup();
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+  client.setQueryData(['mail', 'ws', 'mailbox', 'thread', 'b'], detail('b'));
+  rerender({ ...base, threadId: 'b', detail: detail('b') });
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+  expect(
+    client.getQueryData<MailThreadDetail>([
+      'mail',
+      'ws',
+      'mailbox',
+      'thread',
+      'b',
+    ])?.messages[0]?.unread
+  ).toBe(false);
 });

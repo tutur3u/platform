@@ -1,6 +1,6 @@
 ---
 title: Tuturuuu Mail
-updated: '2026-09-10'
+updated: '2026-09-15'
 description: Multi-mailbox client with permanent SES and Cloudflare transports.
 ---
 
@@ -9,6 +9,36 @@ description: Multi-mailbox client with permanent SES and Cloudflare transports.
 auth to `apps/web`, and preserves Tuturuuu workspace and mailbox-role checks.
 Platform operators may configure additional managed domains; a mailbox address
 must match its linked `private.mail_domains` row.
+
+## Read state and archive actions
+
+Opening a loaded conversation optimistically clears its unread indicators and
+updates cached Inbox counts. Failed writes restore that conversation's prior
+state. The reader's compact read/unread control closes the conversation when
+marking it unread, preventing automatic viewing from immediately clearing it.
+Archive actions persist both `archived_at` and `read_at` for the current user;
+users can explicitly mark an archived conversation unread afterward.
+
+Inbox and Archive each offer a folder-wide **Mark all as read** action. This
+covers the selected mailbox's entire folder, including unloaded messages, and
+ignores the current search and selection. The app-local POST endpoint
+`/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/read-all` scans 250 inbound
+messages per request. Clients continue with the returned `nextCursor` and
+`before` until the cursor is null. The timestamp excludes later arrivals;
+mailbox access and group-message visibility are checked for every batch.
+
+Batches persist independently. If a request fails, already completed batches
+remain read and the client refreshes the mailbox; retrying completes remaining
+unread messages. Thread and selected-thread actions also paginate message IDs
+and write bounded batches instead of silently truncating long conversations.
+
+## Similar deliveries
+
+The copy addressed to the active mailbox stays separate. Alternate-recipient
+copies with the same sender and normalized subject within ten minutes share a
+compact expandable summary. All original copies remain inside that group with
+their own selection, content, read state, and actions; personalized previews do
+not split otherwise matching deliveries.
 
 ## Architecture
 
@@ -55,8 +85,7 @@ the loaded list. Users can choose to return to the list instead. Bulk archive
 skips all selected conversations when choosing the next message. Loaded unread
 conversations are marked read even when opened through restored URLs or archive
 navigation. Read updates wait for pending archive/trash operations to settle.
-Archive controls track the affected conversation, so the next conversation remains
-actionable while earlier requests finish. Its header remains available from the
+Archive controls wait for read-state writes to settle before another mutation. Its header remains available from the
 inbox summary while the message body loads. Failed operations restore only their
 own conversations and counters; mailbox reconciliation waits for overlapping
 operations to finish. Catch-all headers fall back to the observed delivery

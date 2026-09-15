@@ -11,6 +11,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { MailIconButton } from './mail-icon-button';
 
 export function MailLabelMenu({
   mailboxId,
@@ -66,9 +67,13 @@ export function MailLabelMenu({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button aria-label={t('manage_labels')} size="icon" variant="ghost">
+        <MailIconButton
+          aria-label={t('manage_labels')}
+          size="icon"
+          variant="ghost"
+        >
           <Tag className="size-4" />
-        </Button>
+        </MailIconButton>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-2">
         <div className="px-2 py-1.5 font-medium text-sm">
@@ -89,7 +94,7 @@ export function MailLabelMenu({
               <span className="min-w-0 flex-1 truncate text-sm">
                 {label.name}
               </span>
-              <Button
+              <MailIconButton
                 aria-label={t('add_label_name', { name: label.name })}
                 disabled={update.isPending}
                 onClick={() =>
@@ -99,8 +104,8 @@ export function MailLabelMenu({
                 variant="ghost"
               >
                 <Plus className="size-3.5" />
-              </Button>
-              <Button
+              </MailIconButton>
+              <MailIconButton
                 aria-label={t('remove_label_name', { name: label.name })}
                 disabled={update.isPending}
                 onClick={() =>
@@ -110,7 +115,7 @@ export function MailLabelMenu({
                 variant="ghost"
               >
                 <X className="size-3.5" />
-              </Button>
+              </MailIconButton>
             </div>
           ))}
           {!organization.isLoading && labels.length === 0 ? (

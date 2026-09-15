@@ -273,22 +273,32 @@ export async function bulkUpdateMailThreads({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
-  const { data, error } = await mailMessageTable(access, ctx)
-    .select('id')
-    .eq('mailbox_id', mailboxId)
-    .in('thread_id', payload.threadIds)
-    .limit(500);
-  if (error)
-    throw new Error(`Failed to load thread messages: ${error.message}`);
-  return bulkUpdateMail({
-    ctx,
-    mailboxId,
-    payload: {
-      action: payload.action,
-      labelId: payload.labelId,
-      messageIds: (data ?? []).map((row: AnyRecord) => row.id),
-    },
-  });
+  const messages = await loadAllRows(
+    () =>
+      mailMessageTable(access, ctx)
+        .select('id')
+        .eq('mailbox_id', mailboxId)
+        .in('thread_id', payload.threadIds)
+        .order('id'),
+    'Failed to load thread messages'
+  );
+  let updated = 0;
+  for (let start = 0; start < messages.length; start += 250) {
+    const result = await bulkUpdateMail({
+      ctx,
+      mailboxId,
+      payload: {
+        action: payload.action,
+        labelId: payload.labelId,
+        messageIds: messages
+          .slice(start, start + 250)
+          .map((row: AnyRecord) => row.id),
+      },
+    });
+    if (!result) return null;
+    updated += result.updated;
+  }
+  return { updated };
 }
 
 export async function getMailThread({
@@ -348,13 +358,15 @@ export async function updateMailThreadState({
   const thread = await loadThread(access.admin, mailboxId, threadId);
   if (!thread) return null;
 
-  const { data: messages, error } = await mailMessageTable(access, ctx)
-    .select('id')
-    .eq('mailbox_id', mailboxId)
-    .eq('thread_id', threadId)
-    .limit(200);
-  if (error)
-    throw new Error(`Failed to load thread messages: ${error.message}`);
+  const messages = await loadAllRows(
+    () =>
+      mailMessageTable(access, ctx)
+        .select('id')
+        .eq('mailbox_id', mailboxId)
+        .eq('thread_id', threadId)
+        .order('id'),
+    'Failed to load thread messages'
+  );
 
   const now = new Date().toISOString();
   const statePatch: AnyRecord = {};
@@ -362,7 +374,10 @@ export async function updateMailThreadState({
   if (payload.action === 'mark_unread') statePatch.read_at = null;
   if (payload.action === 'star') statePatch.starred_at = now;
   if (payload.action === 'unstar') statePatch.starred_at = null;
-  if (payload.action === 'archive') statePatch.archived_at = now;
+  if (payload.action === 'archive') {
+    statePatch.archived_at = now;
+    statePatch.read_at = now;
+  }
   if (payload.action === 'trash') statePatch.trashed_at = now;
   if (payload.action === 'restore') {
     statePatch.archived_at = null;
@@ -375,11 +390,13 @@ export async function updateMailThreadState({
     message_id: message.id,
     user_id: ctx.user.id,
   }));
-  if (rows.length > 0) {
+  for (let start = 0; start < rows.length; start += 250) {
     const { error: updateError } = await privateTable(
       access.admin,
       'mail_message_user_state'
-    ).upsert(rows, { onConflict: 'message_id,user_id' });
+    ).upsert(rows.slice(start, start + 250), {
+      onConflict: 'message_id,user_id',
+    });
     if (updateError) {
       throw new Error(`Failed to update thread state: ${updateError.message}`);
     }

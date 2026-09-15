@@ -8,7 +8,6 @@ import {
 } from './client';
 import type {
   BulkUpdateMailPayload,
-  BulkUpdateMailThreadsPayload,
   CreateMailDraftPayload,
   CreateMailOrganizationPayload,
   GenerateMailAiDraftPayload,
@@ -41,6 +40,7 @@ import type {
 
 export { getMailAttachmentText } from './mail-attachment-preview';
 export { getMailBootstrap, getMailUnreadCounts } from './mail-bootstrap';
+export { bulkUpdateMailThreads, markMailFolderRead } from './mail-read';
 export * from './mail-types';
 
 function workspaceMailPath(workspaceId: string, suffix = '') {
@@ -180,25 +180,6 @@ export async function updateMailThreadState(
       credentials: 'include',
       headers: jsonHeaders(),
       method: 'PATCH',
-    }
-  );
-}
-
-export async function bulkUpdateMailThreads(
-  workspaceId: string,
-  mailboxId: string,
-  payload: BulkUpdateMailThreadsPayload,
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(withMailApiBaseUrl(options));
-  return client.json<{ updated: number }>(
-    mailboxPath(workspaceId, mailboxId, '/threads/bulk'),
-    {
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-      credentials: 'include',
-      headers: jsonHeaders(),
-      method: 'POST',
     }
   );
 }

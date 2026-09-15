@@ -43,6 +43,10 @@ it('collapses similar deliveries and preserves recipient-specific open actions',
   const { container, rerender } = render(h(MailDeliveryList, props));
   expect(container.querySelector('details')?.open).toBe(false);
   expect(screen.getByText('similar_deliveries 2')).toBeTruthy();
+  expect(
+    container.querySelector('[data-mail-thread-open="a"]')?.closest('details')
+  ).toBeTruthy();
+  expect(screen.queryByText('similar_deliveries_description')).toBeNull();
   expect(screen.getByText('delivery_unread_count 2')).toBeTruthy();
   rerender(h(MailDeliveryList, { ...props, threadId: 'b' }));
   expect(container.querySelector('details')?.open).toBe(true);
