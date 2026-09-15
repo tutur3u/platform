@@ -147,3 +147,15 @@ it('checks calendar permission and counts only overlapping events in the destina
   expect(events.lt).toHaveBeenCalledWith('start_at', '2026-09-15T03:00:00Z');
   expect(events.gt).toHaveBeenCalledWith('end_at', '2026-09-15T02:00:00Z');
 });
+
+it('rejects reversed instants with different fractional-second precision', async () => {
+  const db = { from: vi.fn(() => query({ id: wsId })) };
+  mocks.access.mockResolvedValue({ db, user: { id: userId } });
+  const interval = new Request(
+    `https://meet.tuturuuu.com/api/meet-ai/${wsId}/${boardId}/followups?workspaceId=${wsId}&startAt=2026-09-15T02:00:00.500Z&endAt=2026-09-15T02:00:00Z`
+  );
+  await expect(readFollowupContext(interval, params)).rejects.toMatchObject({
+    status: 400,
+  });
+  expect(db.from).not.toHaveBeenCalledWith('workspace_calendar_events');
+});

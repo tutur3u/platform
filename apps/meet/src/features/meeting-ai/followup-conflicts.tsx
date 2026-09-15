@@ -52,7 +52,7 @@ export function FollowupConflicts({
   return (
     <p role="status" className="text-muted-foreground text-xs">
       {t(
-        query.isPending
+        query.isFetching
           ? 'followup_conflicts_loading'
           : query.isError
             ? 'followup_conflicts_unknown'

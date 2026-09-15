@@ -15,9 +15,11 @@ it('keeps follow-ups on the Meet API origin and preserves the reviewed identity 
       )
   );
   vi.stubGlobal('fetch', fetch);
-  vi.stubGlobal('location', {
-    hostname: 'meet.tuturuuu.com',
-    origin: 'https://meet.tuturuuu.com',
+  vi.stubGlobal('window', {
+    location: {
+      hostname: 'meet.tuturuuu.com',
+      origin: 'https://meet.tuturuuu.com',
+    },
   });
   await getMeetFollowupContext(
     'workspace/id',
@@ -25,7 +27,7 @@ it('keeps follow-ups on the Meet API origin and preserves the reviewed identity 
     'destination',
     'board'
   );
-  expect(String(fetch.mock.calls[0]?.[0])).toContain(
+  expect(String(fetch.mock.calls[0]?.[0]).split('?')[0]).toBe(
     '/api/meet-ai/workspace%2Fid/meeting%2Fid/followups'
   );
   const input = {

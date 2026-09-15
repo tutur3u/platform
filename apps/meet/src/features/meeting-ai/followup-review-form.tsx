@@ -1,6 +1,6 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
-import { createMeetFollowup } from '@tuturuuu/internal-api';
+import { createMeetFollowup, InternalApiError } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -63,6 +63,7 @@ export function FollowupReviewForm({
   const [listId, setListId] = useState('');
   const [assignToMe, setAssignToMe] = useState(false);
   const [validationError, setValidationError] = useState(false);
+  const [rejected, setRejected] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
   const busy = useRef(false);
@@ -86,6 +87,7 @@ export function FollowupReviewForm({
   const submit = async () => {
     if (!user || !workspaceId || busy.current) return;
     setValidationError(false);
+    setRejected(false);
     const input = {
       kind: suggestion.kind,
       title,
@@ -131,8 +133,18 @@ export function FollowupReviewForm({
       const url = await mutation.mutateAsync(input);
       setSavedUrl(url);
       localStorage.setItem(key, JSON.stringify({ status: 'saved', url }));
-    } catch {
-      setUncertain(true);
+    } catch (error) {
+      if (
+        error instanceof InternalApiError &&
+        error.code === 'FOLLOWUP_NOT_SAVED'
+      ) {
+        try {
+          localStorage.removeItem(key);
+          setRejected(true);
+        } catch {
+          setUncertain(true);
+        }
+      } else setUncertain(true);
     } finally {
       busy.current = false;
     }
@@ -324,6 +336,7 @@ export function FollowupReviewForm({
             {t('followup_invalid_time')}
           </p>
         )}
+        {rejected && <p role="alert">{t('followup_not_saved')}</p>}
         {uncertain && (
           <p role="alert" className="text-sm">
             {t('followup_check_destination')}

@@ -4,7 +4,7 @@ import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
-  normalizeWorkspaceId,
+  resolveWorkspaceIdForPrincipal,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
@@ -12,7 +12,8 @@ import { z } from 'zod';
 export class MeetAiError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    public code?: string
   ) {
     super(message);
   }
@@ -42,7 +43,11 @@ export async function meetAiAccess(
   const db = await createAdminClient();
   let wsId: string;
   try {
-    wsId = await normalizeWorkspaceId(rawWsId, db);
+    wsId = await resolveWorkspaceIdForPrincipal({
+      authorizationClient: db,
+      principal: { id: user.id, email: user.email ?? null },
+      wsId: rawWsId,
+    });
   } catch (error) {
     const name = error instanceof Error ? error.name : '';
     throw new MeetAiError(
@@ -63,7 +68,7 @@ export async function meetAiAccess(
     throw new MeetAiError(500, 'Workspace access lookup failed');
   const { data: meeting, error } = await db
     .from('workspace_meetings')
-    .select('id, creator_id')
+    .select('id, creator_id, time')
     .eq('id', meetingId)
     .eq('ws_id', wsId)
     .maybeSingle();
@@ -94,7 +99,14 @@ export async function meetAiAccess(
         'The host has not shared meeting notes with you'
       );
   }
-  return { db, meetingId, wsId, user, canManage };
+  return {
+    db,
+    meetingId,
+    wsId,
+    user,
+    canManage,
+    meetingStartedAt: meeting.time,
+  };
 }
 
 export async function meetAiResponse(work: () => Promise<unknown>) {
@@ -105,6 +117,7 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
   } catch (error) {
     return Response.json(
       {
+        code: error instanceof MeetAiError ? error.code : undefined,
         error:
           error instanceof MeetAiError || error instanceof MeetAiGenerationError
             ? error.message

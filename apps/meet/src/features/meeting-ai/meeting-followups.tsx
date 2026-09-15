@@ -98,7 +98,7 @@ export function MeetingFollowups({
           suggestion={selected}
           wsId={wsId}
           meetingId={meetingId}
-          sourceUrl={`https://meet.tuturuuu.com/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`}
+          sourceUrl={`${typeof window === 'undefined' ? '' : window.location.origin}/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`}
           onClose={() => setSelected(null)}
         />
       )}

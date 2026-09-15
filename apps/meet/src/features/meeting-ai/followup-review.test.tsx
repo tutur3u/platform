@@ -13,7 +13,8 @@ import messages from '../../../messages/en.json';
 import { FollowupReview } from './followup-review';
 
 const mocks = vi.hoisted(() => ({ context: vi.fn(), create: vi.fn() }));
-vi.mock('@tuturuuu/internal-api', () => ({
+vi.mock('@tuturuuu/internal-api', async (original) => ({
+  ...(await original<typeof import('@tuturuuu/internal-api')>()),
   getMeetFollowupContext: mocks.context,
   getMeetFollowupConflicts: async () => ({ count: 0 }),
   createMeetFollowup: mocks.create,
@@ -112,4 +113,22 @@ it('does not submit an ambiguous daylight-saving time', async () => {
     expect(screen.getByRole('alert').textContent).toContain('daylight-saving')
   );
   expect(mocks.create).not.toHaveBeenCalled();
+});
+
+it('allows retry after a confirmed pre-write rejection', async () => {
+  const { InternalApiError } = await import('@tuturuuu/internal-api');
+  mocks.create.mockRejectedValueOnce(
+    new InternalApiError('Destination unavailable', 403, 'FOLLOWUP_NOT_SAVED')
+  );
+  view();
+  const add = await screen.findByRole('button', { name: 'Add to calendar' });
+  fireEvent.click(add);
+  await screen.findByText(
+    'Nothing was saved. Check the selected destination and try again.'
+  );
+  expect(
+    localStorage.getItem(`meet-followup:${userId}:${suggestion.key}`)
+  ).toBeNull();
+  fireEvent.click(add);
+  await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(2));
 });

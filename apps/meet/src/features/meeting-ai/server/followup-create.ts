@@ -9,6 +9,7 @@ import { callRoomService } from '@/features/call/server/room-service';
 import { buildFollowupPayload } from '../followup-save';
 import { MeetAiError, type MeetAiParams } from './access';
 import { followupAccess } from './followup-context';
+import { prepareCalendarFollowup } from './followup-event';
 
 export const followupInputSchema = z.object({
   requestId: z.uuid(),
@@ -38,6 +39,28 @@ export const followupInputSchema = z.object({
 });
 
 export async function createFollowup(request: Request, params: MeetAiParams) {
+  let mayHaveWritten = false;
+  try {
+    return await createFollowupAttempt(request, params, () => {
+      mayHaveWritten = true;
+    });
+  } catch (error) {
+    if (!mayHaveWritten)
+      throw new MeetAiError(
+        error instanceof MeetAiError ? error.status : 500,
+        error instanceof MeetAiError
+          ? error.message
+          : 'Could not prepare follow-up',
+        'FOLLOWUP_NOT_SAVED'
+      );
+    throw error;
+  }
+}
+async function createFollowupAttempt(
+  request: Request,
+  params: MeetAiParams,
+  onAttempt: () => void
+) {
   if (request.headers.get('origin') !== new URL(request.url).origin)
     throw new MeetAiError(403, 'Invalid origin');
   let input: z.infer<typeof followupInputSchema>;
@@ -90,6 +113,9 @@ export async function createFollowup(request: Request, params: MeetAiParams) {
         startAt: payload.start_at,
         endAt: payload.end_at,
       };
+  const saveEvent = task
+    ? null
+    : await prepareCalendarFollowup(access.db, access.workspaceId, payload);
   const room = await getMeetCallAccess(access.meetingId, 'Participant');
   if (room.user.id !== access.user.id)
     throw new MeetAiError(409, 'Account changed');
@@ -98,7 +124,9 @@ export async function createFollowup(request: Request, params: MeetAiParams) {
     new TextEncoder().encode(
       JSON.stringify({
         purpose: 'meeting_followup',
-        ...input,
+        name,
+        args,
+        workspaceId: access.workspaceId,
         userId: access.user.id,
       })
     )
@@ -106,6 +134,7 @@ export async function createFollowup(request: Request, params: MeetAiParams) {
   const fingerprint = Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, '0')
   ).join('');
+  onAttempt();
   const receipt = await callRoomService<{ started?: boolean; text?: string }>(
     room,
     {
@@ -125,11 +154,19 @@ export async function createFollowup(request: Request, params: MeetAiParams) {
   }
   if (!receipt.started)
     throw new MeetAiError(409, 'Follow-up already attempted');
-  const result = await executeMeetWorkspaceTool(name, args, context);
+  const result = saveEvent
+    ? await saveEvent()
+    : await executeMeetWorkspaceTool(name, args, context);
   if (!result || typeof result !== 'object' || 'error' in result)
     throw new MeetAiError(
       502,
-      'Could not confirm follow-up save; check the destination'
+      'Could not confirm follow-up save; check the destination',
+      result &&
+        typeof result === 'object' &&
+        'created' in result &&
+        result.created === false
+        ? 'FOLLOWUP_NOT_SAVED'
+        : undefined
     );
   const resultId =
     task &&

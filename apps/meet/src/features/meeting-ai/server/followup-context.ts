@@ -29,6 +29,8 @@ export async function followupAccess(
     wsId: workspaceId,
     requiredType: 'MEMBER',
   });
+  if (member.error === 'membership_lookup_failed')
+    throw new MeetAiError(500, 'Destination access lookup failed');
   if (!member.ok) throw new MeetAiError(403, 'Destination access denied');
   const permissions = await getPermissions({ wsId: workspaceId, user });
   return { ...access, workspaceId, permissions };
@@ -52,7 +54,10 @@ export async function readFollowupContext(
         startAt: url.searchParams.get('startAt'),
         endAt: url.searchParams.get('endAt'),
       });
-    if (!range.success || range.data.startAt >= range.data.endAt)
+    if (
+      !range.success ||
+      Date.parse(range.data.startAt) >= Date.parse(range.data.endAt)
+    )
       throw new MeetAiError(400, 'Invalid calendar interval');
     if (
       !access.permissions ||

@@ -1,6 +1,6 @@
 ---
 title: Meeting follow-ups
-updated: '2026-09-15'
+updatedAt: '2026-09-15'
 description: Review meeting-note suggestions and create personal tasks or calendar events with the correct identity and timezone.
 ---
 
@@ -12,8 +12,7 @@ for this** to schedule work on a task. The original owner and scheduling wording
 remain visible. Nothing is created when notes are generated or opened.
 
 Calendar suggestions are included in newly generated notes. Older saved notes still
-work and expose their existing action items. Dates resolve against the transcription
-session start and supplied timezone. Unspecified dates, times, durations and owners
+work and expose their existing action items. Dates resolve against the saved meeting start and supplied timezone. Unspecified dates, times, durations and owners
 stay unspecified; incomplete transcripts remain visibly marked.
 
 ## Identity, destination and time
@@ -22,7 +21,7 @@ The review defaults to the signed-in user's personal workspace and saved calenda
 timezone, falling back to the browser timezone for an automatic setting. The user
 can choose another workspace where they are a full member. Tasks require a chosen
 active board and list plus an explicit **Assign this task to me** confirmation.
-Events require a reviewed start and end. The review checks overlap with saved
+Events require a reviewed start and end and are saved to the destination workspace’s enabled primary calendar. The review checks overlap with saved
 events in the selected workspace and reports when availability is unknown;
 unsynced external calendars are outside that check. All created items include a source link
 to the meeting notes; this does not grant recipients access to private notes.
@@ -38,15 +37,13 @@ wall times, as explained in the form.
 `/api/meet-ai/[wsId]/[meetingId]/followups` runs inside Meet. It verifies the Meet app
 session and source-note sharing policy, then separately verifies full membership and
 existing task/calendar permissions in the destination. Actor IDs come from the
-verified session. A changed account invalidates an open review. The endpoint uses
-the existing workspace tool executors, including calendar encryption, rather than
-sending a Meet cookie directly to Tasks or Calendar.
+verified session. A changed account invalidates an open review. Tasks use the existing workspace executor. Calendar writes resolve the native primary calendar and use the existing encryption helper before inserting. Meet performs these authorized writes with its own verified session.
 
 A creation request has a UUID, timestamp and payload fingerprint. Existing private
 room receipts prevent replaying the same request within the one-hour receipt window;
 expired timestamps are rejected. The client also retains a per-user, per-suggestion
 attempt marker and saved result URL, without storing note text. After an uncertain
-write, check the destination before creating another copy. Receipt persistence can
+write, check the destination before creating another copy. Confirmed pre-write failures clear the local attempt marker so the user can correct the destination and retry. Receipt persistence can
 fail after a successful write, so the server never automatically retries creation.
 
 ## Verification

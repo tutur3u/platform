@@ -7,6 +7,10 @@ const mock = vi.hoisted(() => ({
   execute: vi.fn(),
   room: vi.fn(),
   receipt: vi.fn(),
+  prepareEvent: vi.fn(),
+}));
+vi.mock('./followup-event', () => ({
+  prepareCalendarFollowup: mock.prepareEvent,
 }));
 vi.mock('./followup-context', () => ({ followupAccess: mock.access }));
 vi.mock('@tuturuuu/ai/meetings/workspace-tools', () => ({
@@ -25,7 +29,8 @@ vi.mock('./access', () => ({
   MeetAiError: class extends Error {
     constructor(
       public status: number,
-      message: string
+      message: string,
+      public code?: string
     ) {
       super(message);
     }
@@ -78,6 +83,10 @@ beforeEach(() => {
   mock.room.mockResolvedValue({ user: { id: userId } });
   mock.receipt.mockResolvedValue({ started: true });
   mock.execute.mockResolvedValue({ success: true, task: { id: listId } });
+  mock.prepareEvent.mockResolvedValue(async () => ({
+    success: true,
+    event: { id: listId },
+  }));
 });
 it('uses the verified actor and reviewed destination, then stores a private receipt', async () => {
   const result = await createFollowup(request(), params);
@@ -155,4 +164,69 @@ it('rejects invalid event intervals before consuming a receipt', async () => {
     )
   ).rejects.toMatchObject({ status: 400 });
   expect(mock.receipt).not.toHaveBeenCalled();
+});
+
+it('rejects an account change during the second room identity lookup before claiming a receipt', async () => {
+  mock.room.mockResolvedValue({ user: { id: boardId } });
+  await expect(createFollowup(request(), params)).rejects.toMatchObject({
+    status: 409,
+    code: 'FOLLOWUP_NOT_SAVED',
+  });
+  expect(mock.receipt).not.toHaveBeenCalled();
+  expect(mock.execute).not.toHaveBeenCalled();
+});
+it('fingerprints normalized writes independently of retry metadata', async () => {
+  await createFollowup(request(), params);
+  const first = mock.receipt.mock.calls[0]?.[1].fingerprint;
+  mock.receipt.mockClear();
+  await createFollowup(
+    request({
+      ...input,
+      startedAt: input.startedAt + 100,
+      title: '  Review  ',
+    }),
+    params
+  );
+  expect(mock.receipt.mock.calls[0]?.[1].fingerprint).toBe(first);
+});
+it('marks confirmed pre-write failures retryable but keeps uncertain writes blocked', async () => {
+  mock.execute.mockResolvedValueOnce({
+    created: false,
+    error: 'List unavailable',
+  });
+  await expect(createFollowup(request(), params)).rejects.toMatchObject({
+    code: 'FOLLOWUP_NOT_SAVED',
+  });
+  mock.execute.mockResolvedValueOnce({ error: 'Connection lost' });
+  await expect(createFollowup(request(), params)).rejects.toMatchObject({
+    code: undefined,
+  });
+});
+
+it('prepares the reviewed UTC event for the primary calendar and saves it only after the receipt is claimed', async () => {
+  const save = vi.fn(async () => ({ success: true, event: { id: listId } }));
+  mock.prepareEvent.mockResolvedValue(save);
+  const result = await createFollowup(
+    request({
+      ...input,
+      kind: 'event',
+      start: '2026-09-15T09:00',
+      end: '2026-09-15T10:00',
+    }),
+    params
+  );
+  expect(mock.prepareEvent).toHaveBeenCalledWith(
+    expect.anything(),
+    wsId,
+    expect.objectContaining({
+      start_at: '2026-09-15T02:00:00.000Z',
+      end_at: '2026-09-15T03:00:00.000Z',
+    })
+  );
+  expect(save).toHaveBeenCalledOnce();
+  expect(mock.receipt.mock.invocationCallOrder[0]).toBeLessThan(
+    save.mock.invocationCallOrder[0]!
+  );
+  expect(mock.execute).not.toHaveBeenCalled();
+  expect(result.url).toBe(`https://calendar.tuturuuu.com/${wsId}`);
 });

@@ -147,7 +147,7 @@ const actionSchema = z.object({
   captureIncomplete: z.boolean().optional(),
 });
 export async function changeMeetAi(request: Request, params: MeetAiParams) {
-  const { db, meetingId, wsId, user } = await meetAiAccess(
+  const { db, meetingId, wsId, user, meetingStartedAt } = await meetAiAccess(
     request,
     params,
     true
@@ -280,7 +280,7 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     const result = transcript.trim()
       ? await generateMeetArtifact({
           transcript,
-          meetingStartedAt: session.created_at,
+          meetingStartedAt,
           timezone: parsed.data.timezone,
         })
       : null;
