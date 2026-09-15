@@ -35,6 +35,7 @@ export function getMeetRealtimeUrl() {
 
 export function signMeetJoinToken(input: {
   admission?: MeetRealtimeAdmission;
+  maxRoomDurationSeconds?: number;
   displayName?: string;
   meetingId: string;
   mode: MeetRealtimeRoomMode;
@@ -49,6 +50,7 @@ export function signMeetJoinToken(input: {
     displayName: input.displayName,
     exp: Math.floor(expiresAt.getTime() / 1000),
     limits: {
+      maxRoomDurationSeconds: input.maxRoomDurationSeconds,
       maxPublishers: input.mode === 'webinar' ? 12 : 8,
       maxViewers: input.mode === 'webinar' ? 250 : 96,
       video: {

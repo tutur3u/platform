@@ -2375,14 +2375,14 @@
         "POST": {
           "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "Company-only creation, current confirmed identity checks, and native Calendar scheduling remain on Next.js; unported Rust POST falls through."
+          "note": "Verified Plus/Pro/Enterprise accounts and verified company accounts can create meetings; personal subscription entitlement, current confirmed identity checks, and native Calendar scheduling remain on Next.js; unported Rust POST falls through."
         }
       }
     },
     "api:/api/v1/workspaces/:wsId/meetings/:meetingId/realtime-token:apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts."
+      "note": "Call reconnect preserves speaker role for workspace members; non-call modes remain viewer-only for non-hosts. Signed duration resolves the meeting creator personal subscription: Free 2h, Plus 10h, Pro/Enterprise 24h, consistently with Meet satellite tokens."
     },
     "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts": {
       "status": "legacy-next",

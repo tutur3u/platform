@@ -2,6 +2,7 @@ import type {
   MeetRealtimeRole,
   MeetRealtimeRoomMode,
 } from '@tuturuuu/realtime/meet';
+import { getHostMeetingDurationSeconds } from '@tuturuuu/utils/meet-duration';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -143,6 +144,9 @@ export async function POST(request: Request, { params }: Params) {
     });
 
     const signed = signMeetJoinToken({
+      maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
+        meeting.creator_id
+      ),
       displayName: getDisplayName(auth.user),
       meetingId,
       mode,

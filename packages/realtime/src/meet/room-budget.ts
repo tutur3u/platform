@@ -7,7 +7,7 @@ import { publicationCleanupKey } from './room-tracks';
 
 export { closeBudgetPublications } from './room-provider-cleanup';
 
-/** Operational preview ceilings, not a paid-plan entitlement or billing rate. */
+/** Free/legacy room duration; paid entitlements arrive in server-signed join tokens. */
 export const MEET_MAX_ROOM_DURATION_MS = 2 * 60 * 60_000;
 export const MEET_MAX_ROOM_PARTICIPANTS = 104;
 export interface RoomBudget {
@@ -30,7 +30,11 @@ export function startRoomBudget(
   return {
     ...state,
     budget: {
-      expiresAt: now + MEET_MAX_ROOM_DURATION_MS,
+      expiresAt:
+        now +
+        (token.limits.maxRoomDurationSeconds ??
+          MEET_MAX_ROOM_DURATION_MS / 1000) *
+          1000,
       accountedAt: now,
       participantMilliseconds: 0,
       maxPublishers: Math.min(32, token.limits.maxPublishers),

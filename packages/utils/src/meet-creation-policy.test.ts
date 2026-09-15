@@ -19,3 +19,14 @@ describe('online meeting creator domain', () => {
     expect(canCreateOnlineMeeting(email)).toBe(false);
   });
 });
+
+it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+  'allows verified external %s eligibility',
+  (tier) => {
+    expect(canCreateOnlineMeeting('host@example.test', tier)).toBe(true);
+    expect(canCreateOnlineMeeting('bad@@example.test', tier)).toBe(false);
+  }
+);
+it('does not unlock hosting for an unknown tier', () => {
+  expect(canCreateOnlineMeeting('host@example.test', 'UNKNOWN')).toBe(false);
+});

@@ -1,8 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
-import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
+import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { getMeetWorkspaceContext } from '../workspace-context';
 import { MeetingsContent } from './meetings-content';
@@ -36,11 +37,14 @@ export default async function MeetingsPage({
   const admin = await createAdminClient({ noCookie: true });
   const { data: identity, error: identityError } =
     await admin.auth.admin.getUserById(user.id);
+  let hostingUnavailable = Boolean(identityError);
   const canCreate =
-    canCreateOnlineMeeting(user.email) &&
     !identityError &&
-    Boolean(identity.user?.email_confirmed_at) &&
-    canCreateOnlineMeeting(identity.user?.email);
+    (await canVerifiedAccountHostMeeting(user.id, identity.user).catch(() => {
+      hostingUnavailable = true;
+      return false;
+    }));
+  const t = await getTranslations('meet.call');
 
   const resolvedSearchParams = await searchParams;
   const page = parseInt(resolvedSearchParams?.page || '1', 10);
@@ -52,15 +56,24 @@ export default async function MeetingsPage({
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-bold text-3xl tracking-tight">Meetings</h1>
-            <p className="text-muted-foreground">
-              Integrated video conferencing with AI-powered features to make
-              your meetings more productive.
-            </p>
+            <h1 className="font-bold text-3xl tracking-tight">
+              {t('meetings_title')}
+            </h1>
+            <p className="text-muted-foreground">{t('meetings_description')}</p>
           </div>
         </div>
       </div>
 
+      {!canCreate && (
+        <p
+          className="mb-6 rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm"
+          role={hostingUnavailable ? 'alert' : undefined}
+        >
+          {t(
+            hostingUnavailable ? 'hosting_unavailable' : 'creation_restricted'
+          )}
+        </p>
+      )}
       <Suspense
         fallback={
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

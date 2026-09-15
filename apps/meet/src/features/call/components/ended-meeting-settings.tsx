@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AiCosts } from './ai-costs';
 import { CloudflareCosts } from './cloudflare-costs';
+import { MeetingPublicSettings } from './meeting-public-settings';
 import { RecordingHistory } from './recording-history';
 export function EndedMeetingSettings({
   wsId,
@@ -45,6 +46,7 @@ export function EndedMeetingSettings({
           <DialogTitle>{t('settings_title')}</DialogTitle>
         </DialogHeader>
         <RecordingHistory meetingId={meetingId} />
+        {canManage && <MeetingPublicSettings meetingId={meetingId} />}
         {canManage && <CloudflareCosts meetingId={meetingId} />}
         {canManage && ai.data && <AiCosts data={ai.data} />}
       </DialogContent>

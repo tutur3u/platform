@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
+import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -248,17 +248,7 @@ export async function POST(
     }
     const { supabase, user } = auth;
 
-    if (!canCreateOnlineMeeting(user.email)) {
-      return NextResponse.json(
-        {
-          error: 'Only @tuturuuu.com accounts can create online meetings.',
-          code: 'MEET_CREATION_RESTRICTED',
-        },
-        { status: 403 }
-      );
-    }
-
-    // Handoff session metadata is not an authority for the creator domain.
+    // Verify the current account and personal subscription, never handoff claims.
     const admin = await createAdminClient({ noCookie: true });
     const { data: identity, error: identityError } =
       await admin.auth.admin.getUserById(user.id);
@@ -268,13 +258,21 @@ export async function POST(
         { status: 503 }
       );
     }
-    if (
-      !identity.user?.email_confirmed_at ||
-      !canCreateOnlineMeeting(identity.user.email)
-    ) {
+    const canHost = await canVerifiedAccountHostMeeting(
+      user.id,
+      identity.user
+    ).catch(() => null);
+    if (canHost === null) {
+      return NextResponse.json(
+        { error: 'Failed to verify hosting entitlement' },
+        { status: 503 }
+      );
+    }
+    if (!canHost) {
       return NextResponse.json(
         {
-          error: 'Only verified Tuturuuu accounts can create meetings',
+          error:
+            'Hosting requires a verified Plus, Pro, Enterprise or Tuturuuu account',
           code: 'MEET_CREATION_RESTRICTED',
         },
         { status: 403 }
@@ -406,8 +404,10 @@ export async function POST(
       });
     }
 
-    // Instant meetings do not create Calendar events.
-    const { data: meeting, error } = await supabase
+    // Current identity, paid entitlement and workspace membership are verified above.
+    // Use the same trusted writer as scheduling: the legacy direct-client RLS
+    // policy intentionally still restricts inserts to company accounts.
+    const { data: meeting, error } = await admin
       .from('workspace_meetings')
       .insert({
         ws_id: wsId,

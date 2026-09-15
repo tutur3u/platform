@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
   sign: vi.fn(),
   creator: 'host',
 }));
+vi.mock('@tuturuuu/utils/meet-duration', () => ({
+  getHostMeetingDurationSeconds: async () => 7200,
+}));
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: async () => 'workspace',

@@ -10,6 +10,7 @@ export const meetReactionSchema = z.enum([
 ]);
 export type MeetReaction = z.infer<typeof meetReactionSchema>;
 export const meetRoomSettingsPatchSchema = z.object({
+  publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
   shareNotes: z.boolean().optional(),
   shareRecordings: z.boolean().optional(),
@@ -17,6 +18,7 @@ export const meetRoomSettingsPatchSchema = z.object({
   shareNotesAfterMeeting: z.boolean().optional(),
 });
 export const meetRoomSettingsSchema = z.object({
+  publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
   shareNotes: z.boolean().default(false),
   shareRecordings: z.boolean().optional(),

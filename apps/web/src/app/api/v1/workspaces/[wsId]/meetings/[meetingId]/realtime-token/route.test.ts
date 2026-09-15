@@ -22,6 +22,7 @@ function createRouteMocks() {
       },
       error: null,
     },
+    duration: vi.fn().mockResolvedValue(36000),
     normalizeWorkspaceId: vi.fn(),
     resolveSessionAuthContext: vi.fn(),
     serverLogger: {
@@ -31,6 +32,9 @@ function createRouteMocks() {
   };
 }
 
+vi.mock('@tuturuuu/utils/meet-duration', () => ({
+  getHostMeetingDurationSeconds: (id: string) => mocks.duration(id),
+}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: (
     ...args: Parameters<typeof mocks.normalizeWorkspaceId>
@@ -191,4 +195,20 @@ describe('Meet realtime token route', () => {
     const body = await response.json();
     expect(body.realtimeUrl).toBe('wss://meet.example.com/realtime');
   });
+});
+
+it('resolves signed long-call limits from the creator rather than the requesting member', async () => {
+  mocks = createRouteMocks();
+  mocks.normalizeWorkspaceId.mockResolvedValue(WORKSPACE_ID);
+  mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+  mocks.resolveSessionAuthContext.mockResolvedValue({
+    ok: true,
+    user: { id: MEMBER_ID },
+    supabase: createSupabaseClient(),
+  });
+  const response = await requestToken({ mode: 'call' });
+  expect(response.status).toBe(200);
+  const data = await response.json();
+  expect(data.limits.maxRoomDurationSeconds).toBe(36000);
+  expect(mocks.duration).toHaveBeenCalledWith(CREATOR_ID);
 });

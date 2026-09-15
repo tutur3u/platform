@@ -32,3 +32,15 @@ test('independent changes preserve revocations in either arrival order', () => {
     false
   );
 });
+
+test('retains independent sharing settings when changing public link visibility', () => {
+  const parsed = parseMeetRoomSettingsPatch(
+    { publicLinkPreview: true },
+    { shareNotes: false, shareRecordings: false }
+  );
+  expect(parsed.success && parsed.data).toEqual({
+    publicLinkPreview: true,
+    shareNotes: false,
+    shareRecordings: false,
+  });
+});

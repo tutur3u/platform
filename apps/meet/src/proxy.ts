@@ -73,7 +73,8 @@ const authProxy = createCentralizedAuthProxy({
   publicPaths: AUTH_PUBLIC_PATHS,
   skipApiRoutes: true,
   excludeRootPath: true,
-  isPublicPath: isPublicLegacyPlanPath,
+  isPublicPath: (pathname) =>
+    isPublicLegacyPlanPath(pathname) || !!normalizeMeetInvite(pathname),
   mfa: { enabled: false },
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -251,6 +252,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   propagateAuthCookies(authRes, localeRes);
   if (hasSatelliteSession && normalizeMeetInvite(req.nextUrl.pathname))
     clearMeetInvite(localeRes);
+  if (!hasSatelliteSession) rememberMeetInvite(req, localeRes);
   return localeRes;
 }
 

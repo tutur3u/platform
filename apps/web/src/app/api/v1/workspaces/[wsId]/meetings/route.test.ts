@@ -1,7 +1,10 @@
+vi.mock('server-only', () => ({}));
+
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  tier: vi.fn(),
   adminFrom: vi.fn(),
   adminRpc: vi.fn(),
   auth: vi.fn(),
@@ -15,6 +18,9 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/utils/meet-duration', () => ({
+  getHostMeetingTier: mocks.tier,
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     auth: { admin: { getUserById: mocks.identity } },
@@ -74,6 +80,7 @@ function authenticatedContext(...args: [email?: string]) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.tier.mockResolvedValue('FREE');
   mocks.identity.mockResolvedValue({
     data: {
       user: { email: 'host@tuturuuu.com', email_confirmed_at: '2026-01-01' },
@@ -89,6 +96,7 @@ beforeEach(() => {
     is_encrypted: false,
   }));
   mocks.from.mockReturnValue({ insert: mocks.insert });
+  mocks.adminFrom.mockReturnValue({ insert: mocks.insert });
   mocks.insert.mockReturnValue({
     select: () => ({
       single: async () => ({ data: { id: 'meeting-id' }, error: null }),
@@ -115,6 +123,10 @@ describe('meeting creation authorization', () => {
     'denies %s before accessing database',
     async (email) => {
       mocks.auth.mockResolvedValue(authenticatedContext(email));
+      mocks.identity.mockResolvedValue({
+        data: { user: { email, email_confirmed_at: '2026-01-01' } },
+        error: null,
+      });
       const response = await POST(request(), params);
       expect(response.status).toBe(403);
       expect((await response.json()).code).toBe('MEET_CREATION_RESTRICTED');
@@ -284,4 +296,51 @@ describe('Calendar scheduling', () => {
     expect(mocks.adminRpc).toHaveBeenCalledOnce();
     expect(mocks.insert).not.toHaveBeenCalled();
   });
+});
+
+it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+  'allows a verified external %s host using current identity',
+  async (tier) => {
+    mocks.auth.mockResolvedValue(authenticatedContext('stale@example.test'));
+    mocks.identity.mockResolvedValue({
+      data: {
+        user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+      },
+      error: null,
+    });
+    mocks.tier.mockResolvedValue(tier);
+    expect((await POST(request(), params)).status).toBe(200);
+    expect(mocks.tier).toHaveBeenCalledWith('actor');
+    expect(mocks.adminFrom).toHaveBeenCalledWith('workspace_meetings');
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ creator_id: 'actor' })
+    );
+  }
+);
+it('does not bypass workspace membership for paid hosts', async () => {
+  mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
+  mocks.identity.mockResolvedValue({
+    data: {
+      user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+    },
+    error: null,
+  });
+  mocks.tier.mockResolvedValue('PLUS');
+  mocks.membership.mockResolvedValue({ ok: false });
+  expect((await POST(request(), params)).status).toBe(403);
+  expect(mocks.insert).not.toHaveBeenCalled();
+});
+
+it('fails closed with retryable status when paid entitlement is unavailable', async () => {
+  mocks.auth.mockResolvedValue(authenticatedContext('paid@example.test'));
+  mocks.identity.mockResolvedValue({
+    data: {
+      user: { email: 'paid@example.test', email_confirmed_at: '2026-01-01' },
+    },
+    error: null,
+  });
+  mocks.tier.mockRejectedValueOnce(new Error('Unavailable'));
+  expect((await POST(request(), params)).status).toBe(503);
+  expect(mocks.insert).not.toHaveBeenCalled();
 });

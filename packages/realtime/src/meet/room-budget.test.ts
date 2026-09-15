@@ -251,3 +251,35 @@ it('does not defer obligations added while an older cleanup attempt was in fligh
     now + 10_000
   );
 });
+
+it.each([36000, 86400])(
+  'persists a signed paid deadline of %s seconds across reconnects and guest joins',
+  (seconds) => {
+    const paid = token();
+    paid.limits.maxRoomDurationSeconds = seconds;
+    const started = admitOrHold(
+      createMeetRoomSnapshot(),
+      paid,
+      new Date(now).toISOString()
+    ).state;
+    expect(started.budget?.expiresAt).toBe(now + seconds * 1000);
+    const resumed = admitOrHold(
+      started,
+      token(),
+      new Date(now + 1000).toISOString()
+    ).state;
+    expect(resumed.budget?.expiresAt).toBe(now + seconds * 1000);
+    expect(expireRoomBudget(resumed, now + seconds * 1000 - 1)).toBeNull();
+    expect(expireRoomBudget(resumed, now + seconds * 1000)?.state.ended).toBe(
+      true
+    );
+  }
+);
+it('rejects signed room durations above the maximum supported entitlement', () => {
+  expect(
+    meetRealtimeTokenPayloadSchema.safeParse({
+      ...token(),
+      limits: { maxRoomDurationSeconds: 86401 },
+    }).success
+  ).toBe(false);
+});

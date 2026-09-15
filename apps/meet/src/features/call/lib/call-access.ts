@@ -2,7 +2,7 @@ import 'server-only';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
+import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
 
@@ -49,10 +49,16 @@ export async function getMeetCallAccess(
       await db.auth.admin.getUserById(meeting.creator_id);
     if (identityError)
       throw new MeetCallAccessError(500, 'Meeting host lookup failed');
-    if (
-      !identity.user?.email_confirmed_at ||
-      !canCreateOnlineMeeting(identity.user.email)
-    )
+    const canHost = await canVerifiedAccountHostMeeting(
+      meeting.creator_id,
+      identity.user
+    ).catch(() => {
+      throw new MeetCallAccessError(
+        503,
+        'Meeting host entitlement unavailable'
+      );
+    });
+    if (!canHost)
       throw new MeetCallAccessError(403, 'Guest access is unavailable');
   }
   const { data: profile, error: profileError } = await Promise.resolve(

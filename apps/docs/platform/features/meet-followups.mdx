@@ -77,3 +77,30 @@ Run the Meet meeting-ai tests, shared AI meeting-generation tests, internal API 
 inherits production mode. Verify authenticated task assignment, destination and
 calendar timestamps in a dedicated test workspace before claiming production
 end-to-end coverage. These changes require no database migration.
+
+## Public meeting details and long calls
+
+The host can enable **Public meeting details** from meeting details or call
+settings. It is off by default. When enabled, the invitation page and its
+Open Graph/Twitter metadata expose only the title, scheduled time and ended
+status. Anonymous visitors can read that projection, then sign in to request
+admission. Notes, recordings, calendar descriptions, host email and participant
+identities never enter the public metadata. Private meetings keep generic,
+non-indexable metadata. Policy failures also return the private projection.
+Disabling visibility affects the next server request; external search/social
+services may retain earlier previews. The sitemap contains only public Meet
+landing pages and does not enumerate invitation codes.
+
+Call duration follows the host's personal account subscription: Free has two
+hours, Plus ten hours, and Pro/Enterprise twenty-four hours. The join-token route
+resolves the host's active subscription on the server and signs the duration into
+the token for every participant. The realtime room fixes its deadline on first
+admission and retains it across reconnects and later tier changes. Existing rooms
+keep their original deadline. Entitlement lookup failures do not silently turn a
+paid host into a Free host. The UI displays the deadline with date and timezone.
+
+These are call limits. Each transcription session still uses the existing
+three-hour database reservation contract and ends just before expiry. Hosts can
+start another transcription session during a longer call; each keeps its own
+notes and usage. This change requires no production database migration. It does
+not change participant capacity, AI credits or storage allowances.

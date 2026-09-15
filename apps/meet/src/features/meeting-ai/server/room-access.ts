@@ -9,7 +9,11 @@ export async function readMeetingRoomPolicy(
     userId: string;
     isHost?: boolean;
   },
-  settings?: { shareNotes?: boolean; shareNotesAfterMeeting?: boolean }
+  settings?: {
+    shareNotes?: boolean;
+    shareNotesAfterMeeting?: boolean;
+    publicLinkPreview?: boolean;
+  }
 ) {
   const session = await getMeetCallSession({
     ...input,
@@ -35,7 +39,11 @@ export async function readMeetingRoomPolicy(
   return (await response.json()) as {
     canReadNotes: boolean;
     ended: boolean;
-    settings?: { shareNotes?: boolean; shareNotesAfterMeeting?: boolean };
+    settings?: {
+      shareNotes?: boolean;
+      shareNotesAfterMeeting?: boolean;
+      publicLinkPreview?: boolean;
+    };
   };
 }
 

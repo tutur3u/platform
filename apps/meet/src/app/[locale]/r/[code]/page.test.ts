@@ -3,8 +3,15 @@ import { encodeRoomCode } from '@/features/call/lib/room-code';
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
+  publicInfo: vi.fn(),
   session: vi.fn(),
   policy: vi.fn(),
+}));
+vi.mock('@/features/call/lib/meeting-public-info', () => ({
+  getMeetingPublicInfo: mocks.publicInfo,
+}));
+vi.mock('@/features/call/components/meeting-public-invite', () => ({
+  MeetingPublicInvite: () => null,
 }));
 vi.mock('@/features/meeting-ai/server/room-access', () => ({
   readMeetingRoomPolicy: mocks.policy,
@@ -52,6 +59,7 @@ const id = '00000000-0000-4000-8000-000000000001';
 const code = encodeRoomCode(id);
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.publicInfo.mockResolvedValue(null);
   mocks.policy.mockResolvedValue({ ended: false, canReadNotes: false });
   mocks.access.mockResolvedValue({
     user: { id, email: 'guest@example.com' },
@@ -177,5 +185,20 @@ it('opens an authorized ended-room notes deep link without joining', async () =>
     canReadNotes: true,
     initialShowNotes: true,
   });
+  expect(mocks.session).not.toHaveBeenCalled();
+});
+
+it('renders only opted-in public details before sign-in without granting room access', async () => {
+  mocks.access.mockRejectedValue(new MeetCallAccessError(401, 'Sign in'));
+  const info = {
+    title: 'Public demo',
+    scheduledAt: '2026-09-15T12:00:00Z',
+    ended: false,
+  };
+  mocks.publicInfo.mockResolvedValue(info);
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'vi' }),
+  });
+  expect(result.props).toEqual({ info, returnTo: `/vi/r/${code}` });
   expect(mocks.session).not.toHaveBeenCalled();
 });
