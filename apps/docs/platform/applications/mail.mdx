@@ -32,13 +32,23 @@ remain read and the client refreshes the mailbox; retrying completes remaining
 unread messages. Thread and selected-thread actions also paginate message IDs
 and write bounded batches instead of silently truncating long conversations.
 
-## Similar deliveries
+## Similar deliveries and failed recipients
 
 The copy addressed to the active mailbox stays separate. Alternate-recipient
 copies with the same sender and normalized subject within ten minutes share a
 compact expandable summary. All original copies remain inside that group with
 their own selection, content, read state, and actions; personalized previews do
 not split otherwise matching deliveries.
+
+Recognized delivery failures offer a blacklist shortcut in the list and reader.
+The reason defaults to **Inactive/Abandoned** and supports additional
+Infrastructure quick reasons. The action writes to the existing global
+`email_blacklist`, blocking platform outbound email to the chosen recipient.
+It requires Mail mailbox access, a root-workspace linked user, and
+`view_infrastructure`. The server derives allowed recipients from the authorized
+failure message, validates the submitted address, and records the current actor.
+Existing blacklist entries retain their reason and actor. Ordinary messages and
+delay notifications do not produce automatic blacklist suggestions.
 
 ## Architecture
 

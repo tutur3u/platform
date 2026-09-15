@@ -11,7 +11,9 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
+import { getFailedMailRecipients } from '@/lib/mail/failed-recipients';
 import { MailAttachmentCard } from './mail-attachment-card';
+import { MailBlacklistControl } from './mail-blacklist-control';
 import type { MailFolder } from './mail-folders';
 import {
   formatMailRecipients,
@@ -32,9 +34,11 @@ function formatDate(value: string | null, locale: string) {
 export function ThreadMessageCard({
   message,
   folder,
+  workspaceId,
 }: {
   message: MailMessageDetail;
   folder?: MailFolder;
+  workspaceId?: string;
 }) {
   const t = useTranslations('mail');
   const locale = useLocale();
@@ -147,6 +151,14 @@ export function ThreadMessageCard({
         </div>
       </div>
       <AccordionContent className="p-0 pb-0">
+        {workspaceId && getFailedMailRecipients(message).length > 0 ? (
+          <MailBlacklistControl
+            key={message.id}
+            workspaceId={workspaceId}
+            mailboxId={message.mailboxId}
+            messageId={message.id}
+          />
+        ) : null}
         <div className="min-w-0 max-w-full overflow-hidden">
           {message.sanitizedHtml ? (
             <MailMessagePreview
