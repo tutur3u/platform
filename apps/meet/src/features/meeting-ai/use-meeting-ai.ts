@@ -171,6 +171,7 @@ export function useMeetingAi(
       if (!mounted.current) {
         recorder.dispose();
         await finishSession({
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           action: 'finish',
           sessionId: result.sessionId,
           expectedChunks: 0,
@@ -215,6 +216,7 @@ export function useMeetingAi(
           await queue.current;
         }
         await finishSession({
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           action: 'finish',
           sessionId: target,
           expectedChunks:
@@ -236,6 +238,8 @@ export function useMeetingAi(
   );
   finishRef.current = finish;
   return {
+    meetingId,
+    wsId,
     ...query,
     busy,
     capturing,

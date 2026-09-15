@@ -1,6 +1,6 @@
 import { APICallError } from 'ai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { generateMeetArtifact } from './gemini';
+import { generateMeetArtifact, meetNotesSchema } from './gemini';
 
 const mocks = vi.hoisted(() => ({ generateText: vi.fn() }));
 vi.mock('ai', async (importOriginal) => ({
@@ -68,4 +68,32 @@ describe('Meet generation error boundary', () => {
       providerStatus: 400,
     });
   });
+});
+
+it('reads old meeting notes and includes a grounded time reference for new suggestions', async () => {
+  const notes = {
+    incomplete: false,
+    summary: 'Review on Friday',
+    decisions: [],
+    actionItems: [],
+    openQuestions: [],
+  };
+  expect(meetNotesSchema.parse(notes).calendarSuggestions).toEqual([]);
+  vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'synthetic-test-key');
+  mocks.generateText.mockResolvedValue({
+    text: '',
+    output: notes,
+    providerMetadata: {},
+  });
+  await generateMeetArtifact({
+    transcript: 'Review on Friday',
+    meetingStartedAt: '2026-09-15T02:00:00Z',
+    timezone: 'Asia/Ho_Chi_Minh',
+  });
+  const request = mocks.generateText.mock.calls[0]?.[0];
+  expect(JSON.parse(request.prompt)).toMatchObject({
+    meetingStartedAt: '2026-09-15T02:00:00Z',
+    timezone: 'Asia/Ho_Chi_Minh',
+  });
+  expect(request.system).toContain('Never invent a duration');
 });
