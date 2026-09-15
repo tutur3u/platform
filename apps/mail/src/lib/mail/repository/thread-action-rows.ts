@@ -14,7 +14,7 @@ export async function loadThreadActionRows(
   let cursor: string | undefined;
   for (;;) {
     let query = mailMessageTable(access, ctx)
-      .select('id,direction,thread_id')
+      .select('id,direction,thread_id,status')
       .eq('mailbox_id', mailboxId)
       .in('thread_id', threadIds)
       .lte('created_at', before)
@@ -37,6 +37,8 @@ export async function countThreadReadState(
 ) {
   const inbound = rows.filter((row) => row.direction === 'inbound');
   let unreadCount = 0;
+  let inboxInboundCount = 0;
+  let inboxUnreadCount = 0;
   for (let start = 0; start < inbound.length; start += 250) {
     const batch = inbound.slice(start, start + 250);
     const states = await getStatesByMessageId(
@@ -45,6 +47,33 @@ export async function countThreadReadState(
       userId
     );
     unreadCount += batch.filter((row) => !states.get(row.id)?.read_at).length;
+    const inbox = getInboxReadCounts(batch, states);
+    inboxInboundCount += inbox.inboxInboundCount;
+    inboxUnreadCount += inbox.inboxUnreadCount;
   }
-  return { inboundCount: inbound.length, unreadCount };
+  return {
+    inboundCount: inbound.length,
+    unreadCount,
+    inboxInboundCount,
+    inboxUnreadCount,
+  };
+}
+
+export function getInboxReadCounts(
+  rows: AnyRecord[],
+  states: Map<string, AnyRecord>
+) {
+  const inbox = rows.filter(
+    (row) =>
+      row.direction === 'inbound' &&
+      row.status !== 'draft' &&
+      row.status !== 'quarantined' &&
+      !states.get(row.id)?.archived_at &&
+      !states.get(row.id)?.trashed_at
+  );
+  return {
+    inboxInboundCount: inbox.length,
+    inboxUnreadCount: inbox.filter((row) => !states.get(row.id)?.read_at)
+      .length,
+  };
 }

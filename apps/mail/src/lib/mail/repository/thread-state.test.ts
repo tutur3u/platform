@@ -20,6 +20,7 @@ vi.mock('./shared', () => ({
   privateTable: mocks.table,
 }));
 
+import { getInboxReadCounts } from './thread-action-rows';
 import { bulkUpdateMailThreads, updateMailThreadState } from './threads';
 
 const ctx = { user: { id: 'viewer' } } as MailRouteContext;
@@ -107,4 +108,23 @@ it('bulk updates do not silently drop messages beyond the former 500-message lim
   expect(
     mocks.bulk.mock.calls.map(([args]) => args.payload.messageIds.length)
   ).toEqual([250, 250, 250, 250, 205]);
+});
+
+it('excludes archived, trashed, quarantined and sent messages from Inbox counters', () => {
+  const rows = ['unread', 'read', 'archived', 'trashed', 'spam', 'sent'].map(
+    (id) => ({
+      id,
+      direction: id === 'sent' ? 'outbound' : 'inbound',
+      status: id === 'spam' ? 'quarantined' : 'received',
+    })
+  );
+  const states = new Map<string, Record<string, string>>([
+    ['read', { read_at: 'date' }],
+    ['archived', { archived_at: 'date' }],
+    ['trashed', { trashed_at: 'date' }],
+  ]);
+  expect(getInboxReadCounts(rows, states)).toEqual({
+    inboxInboundCount: 2,
+    inboxUnreadCount: 1,
+  });
 });

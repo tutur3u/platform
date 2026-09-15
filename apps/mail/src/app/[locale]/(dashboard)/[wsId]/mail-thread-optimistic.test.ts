@@ -92,3 +92,48 @@ it('retains the one-message unread fallback for old list-only caches', async () 
     box: 1,
   });
 });
+
+it('adjusts only Inbox messages when a mixed-folder conversation is read from Starred', async () => {
+  const queryClient = new QueryClient();
+  const key = ['mail', 'ws', 'box', 'thread', 'thread'];
+  const thread = {
+    id: 'thread',
+    unreadCount: 8,
+    inboundCount: 10,
+    inboxUnreadCount: 2,
+    inboxInboundCount: 3,
+  };
+  queryClient.setQueryData(key, { thread, messages: [] });
+  queryClient.setQueryData(['mail', 'ws', 'bootstrap-counts'], { box: 5 });
+  const context = await snapshotMailThreads({
+    queryClient,
+    activeMailboxId: 'box',
+    workspaceId: 'ws',
+    ids: new Set(['thread']),
+    action: 'mark_read',
+    folder: 'starred',
+    threads: [],
+  });
+  expect(queryClient.getQueryData(['mail', 'ws', 'bootstrap-counts'])).toEqual({
+    box: 3,
+  });
+  expect(
+    queryClient.getQueryData<MailThreadDetail>(key)?.thread.unreadCount
+  ).toBe(0);
+  await snapshotMailThreads({
+    queryClient,
+    activeMailboxId: 'box',
+    workspaceId: 'ws',
+    ids: new Set(['thread']),
+    action: 'mark_unread',
+    folder: 'starred',
+    threads: [],
+  });
+  expect(queryClient.getQueryData(['mail', 'ws', 'bootstrap-counts'])).toEqual({
+    box: 6,
+  });
+  expect(
+    queryClient.getQueryData<MailThreadDetail>(key)?.thread.unreadCount
+  ).toBe(10);
+  expect(context?.unreadDelta).toBe(2);
+});
