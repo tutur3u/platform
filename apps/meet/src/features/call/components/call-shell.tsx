@@ -15,6 +15,7 @@ import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useMeetRoom } from '../hooks/use-meet-room';
 import { useRoomRecording } from '../hooks/use-room-recording';
 import { useRoomUsage } from '../hooks/use-room-usage';
+import { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
 import {
   countUnreadChatMessages,
   isHandRaised,
@@ -88,6 +89,7 @@ export function ConnectedCallShell({
   const pendingDevices = useRef(new Set<Device>());
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId, deviceId });
   const { state } = room;
+  const sharedAudio = useSharedRoomAudio(room);
   const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
     setPanel(next);
     setShowAi(false);
@@ -97,7 +99,8 @@ export function ConnectedCallShell({
     joined && !left,
     room.connectionStatus === 'open',
     openNoticePanel,
-    panel
+    panel,
+    sharedAudio.shared
   );
   const canManage = state.role === 'host';
   const canReadNotes = canManage || state.settings.shareNotes;
@@ -302,17 +305,30 @@ export function ConnectedCallShell({
             {t('reconnecting')}
           </span>
         )}
-        <RoomAssistantAudio
-          canManage={canManage}
-          meetingId={meetingId}
-          outputDeviceId={outputDeviceId}
-        />
+        {!sharedAudio.shared && (
+          <RoomAssistantAudio
+            canManage={canManage}
+            meetingId={meetingId}
+            outputDeviceId={outputDeviceId}
+          />
+        )}
         <MeetLivePanel
+          key="live-assistant"
           room={room}
           meetingId={meetingId}
           outputDeviceId={outputDeviceId}
           canManage={canManage}
+          audioSuppressed={sharedAudio.shared}
         />
+        <Button
+          variant="outline"
+          size="sm"
+          aria-pressed={sharedAudio.shared}
+          disabled={!!busyDevices.microphone}
+          onClick={() => void runMediaAction(sharedAudio.toggle, 'microphone')}
+        >
+          {t(sharedAudio.shared ? 'shared_audio_exit' : 'shared_audio_enter')}
+        </Button>
         <CallSettings
           meetingId={meetingId}
           room={room}
@@ -325,6 +341,11 @@ export function ConnectedCallShell({
           onOutput={setOutputDeviceId}
         />
       </header>
+      {sharedAudio.shared && (
+        <p role="status" className="border-b bg-muted px-4 py-2 text-sm">
+          {t('shared_audio_hint')}
+        </p>
+      )}
       <CallResourceNotice error={state.error} expiresAt={state.roomExpiresAt} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="relative min-h-0 flex-1 p-2 sm:p-3">
@@ -334,6 +355,7 @@ export function ConnectedCallShell({
             </div>
           )}
           <CallStage
+            audioSuppressed={sharedAudio.shared}
             outputDeviceId={outputDeviceId}
             room={room}
             layout={layout}
@@ -383,7 +405,7 @@ export function ConnectedCallShell({
       <ControlBar
         activePanel={panel}
         cameraOn={room.media.videoEnabled}
-        micOn={room.media.audioEnabled}
+        micOn={!sharedAudio.shared && room.media.audioEnabled}
         screenOn={room.media.screenEnabled}
         handRaised={
           state.selfUserId ? isHandRaised(state, state.selfUserId) : false
@@ -400,7 +422,9 @@ export function ConnectedCallShell({
         waitingCount={state.waiting.length}
         onLeave={() => (canManage ? setLeaveDialog(true) : leaveNow())}
         onToggleMic={() =>
-          void runMediaAction(room.toggleMicrophone, 'microphone')
+          sharedAudio.shared
+            ? toast.info(t('shared_audio_hint'))
+            : void runMediaAction(room.toggleMicrophone, 'microphone')
         }
         onToggleCamera={() => void runMediaAction(room.toggleCamera, 'camera')}
         onToggleScreen={() =>

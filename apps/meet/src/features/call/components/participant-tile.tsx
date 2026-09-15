@@ -7,6 +7,8 @@ import {
   MonitorUp,
   Pin,
   RefreshCw,
+  Volume2,
+  VolumeX,
 } from '@tuturuuu/icons';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -24,6 +26,9 @@ import {
 function ParticipantTileImpl({
   className,
   outputDeviceId,
+  audioSuppressed = false,
+  silenced: controlledSilence,
+  onSilence,
   resumePlaybackLabel,
   handRaised,
   isSelf,
@@ -39,6 +44,9 @@ function ParticipantTileImpl({
 }: {
   className?: string;
   outputDeviceId?: string;
+  audioSuppressed?: boolean;
+  silenced?: boolean;
+  onSilence?: (key: string) => void;
   resumePlaybackLabel: string;
   handRaised?: boolean;
   isSelf?: boolean;
@@ -54,6 +62,8 @@ function ParticipantTileImpl({
 }) {
   const t = useTranslations('meet.call');
   const [expanded, setExpanded] = useState(false);
+  const [localSilence, setLocalSilence] = useState(false);
+  const silenced = controlledSilence ?? localSilence;
   const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -133,6 +143,7 @@ function ParticipantTileImpl({
   return (
     <div
       ref={tileRef}
+      data-testid={`participant-${participant.userId}-${kind}`}
       className={cn(
         'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-dynamic-surface ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
@@ -143,7 +154,11 @@ function ParticipantTileImpl({
         expanded && 'fixed inset-0 z-50 h-dvh w-screen! rounded-none'
       )}
     >
-      <audio ref={audioRef} autoPlay />
+      <audio
+        ref={audioRef}
+        autoPlay
+        muted={silenced || isSelf || audioSuppressed}
+      />
       <video
         autoPlay
         playsInline
@@ -252,6 +267,29 @@ function ParticipantTileImpl({
           )}
       </div>
       <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+        {!isSelf && audioTrack && (
+          <Button
+            size="icon"
+            variant={silenced ? 'secondary' : 'ghost'}
+            className="size-8"
+            aria-label={t(
+              silenced ? 'audio_unmute_for_me' : 'audio_mute_for_me',
+              { name: participant.displayName }
+            )}
+            aria-pressed={silenced}
+            onClick={() =>
+              onSilence
+                ? onSilence(focusKey ?? `${participant.userId}:${kind}`)
+                : setLocalSilence((value) => !value)
+            }
+          >
+            {silenced ? (
+              <VolumeX className="size-4" />
+            ) : (
+              <Volume2 className="size-4" />
+            )}
+          </Button>
+        )}
         {onFocus && (
           <Button
             size="icon"
@@ -317,6 +355,9 @@ export const ParticipantTile = memo(
     a.stream === b.stream &&
     a.className === b.className &&
     a.outputDeviceId === b.outputDeviceId &&
+    a.audioSuppressed === b.audioSuppressed &&
+    a.silenced === b.silenced &&
+    a.onSilence === b.onSilence &&
     a.resumePlaybackLabel === b.resumePlaybackLabel &&
     a.kind === b.kind &&
     a.focused === b.focused &&

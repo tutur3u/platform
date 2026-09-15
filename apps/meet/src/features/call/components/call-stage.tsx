@@ -2,7 +2,7 @@
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
 import { ParticipantTile } from './participant-tile';
 export type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar';
@@ -22,17 +22,28 @@ function columns(count: number) {
 export function CallStage({
   room,
   outputDeviceId,
+  audioSuppressed = false,
   layout,
   focus,
   onFocus,
 }: {
   room: MeetRoomController;
   outputDeviceId?: string;
+  audioSuppressed?: boolean;
   layout: CallLayout;
   focus: string | null;
   onFocus: (key: string | null) => void;
 }) {
   const t = useTranslations('meet.call');
+  const [silenced, setSilenced] = useState<Set<string>>(() => new Set());
+  const toggleSilence = useCallback((key: string) => {
+    setSilenced((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
   const mute = useCallback(
     (userId: string) => room.muteParticipant(userId, ['audio']),
     [room.muteParticipant]
@@ -108,6 +119,9 @@ export function CallStage({
   const render = (tile: Tile, className: string) => (
     <ParticipantTile
       outputDeviceId={outputDeviceId}
+      audioSuppressed={audioSuppressed}
+      silenced={silenced.has(tile.key)}
+      onSilence={toggleSilence}
       key={tile.key}
       className={className}
       kind={tile.kind}

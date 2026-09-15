@@ -1,5 +1,10 @@
 import type { MeetMediaState } from '@tuturuuu/realtime/meet';
 import type { Dispatch, SetStateAction } from 'react';
+import {
+  enhanceMicrophone,
+  microphoneConstraints,
+  NativeAudioProcessing,
+} from './audio-processing';
 import type { CameraEffects } from './camera-effects';
 import { SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
@@ -28,7 +33,19 @@ export function createLocalMediaControls({
   ) => Promise<void>;
 }) {
   const deviceIds = { audio: '', video: '' };
+  const audioProcessing = new NativeAudioProcessing(
+    () => localStreamRef.current
+  );
   let microphoneRevision = 0;
+  let audioQueue = Promise.resolve();
+  const withAudio = <T>(operation: () => Promise<T>): Promise<T> => {
+    const result = audioQueue.then(operation);
+    audioQueue = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
+  };
   const selectDevice = async (kind: 'audio' | 'video', deviceId: string) => {
     const old = localStreamRef.current;
     const enabled =
@@ -50,11 +67,7 @@ export function createLocalMediaControls({
       [kind]: {
         deviceId: deviceId ? { exact: deviceId } : undefined,
         ...(kind === 'audio'
-          ? {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-            }
+          ? microphoneConstraints(audioProcessing.getPreferences())
           : {
               width: { ideal: 1280 },
               height: { ideal: 720 },
@@ -62,6 +75,11 @@ export function createLocalMediaControls({
             }),
       },
     });
+    if (kind === 'audio')
+      await enhanceMicrophone(
+        acquired.getAudioTracks?.()[0],
+        audioProcessing.getPreferences()
+      );
     if (!activeRef.current) {
       for (const track of acquired.getTracks()) track.stop();
       return;
@@ -111,13 +129,15 @@ export function createLocalMediaControls({
       !stream?.getAudioTracks().some((track) => track.readyState === 'live')
     ) {
       const audio = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          deviceId: deviceIds.audio ? { exact: deviceIds.audio } : undefined,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+        audio: microphoneConstraints(
+          audioProcessing.getPreferences(),
+          deviceIds.audio
+        ),
       });
+      await enhanceMicrophone(
+        audio.getAudioTracks?.()[0],
+        audioProcessing.getPreferences()
+      );
       if (!activeRef.current) {
         audio.getTracks().forEach((track) => {
           track.stop();
@@ -250,10 +270,18 @@ export function createLocalMediaControls({
   };
 
   return {
-    toggleMicrophone,
+    toggleMicrophone: () => withAudio(toggleMicrophone),
     toggleCamera,
     toggleScreenShare,
-    selectDevice,
+    selectDevice: (kind: 'audio' | 'video', deviceId: string) =>
+      kind === 'audio'
+        ? withAudio(() => selectDevice(kind, deviceId))
+        : selectDevice(kind, deviceId),
     getSelectedDevices: () => ({ ...deviceIds, microphoneRevision }),
+    getAudioProcessing: audioProcessing.getPreferences,
+    getAudioProcessingSettings: audioProcessing.getSettings,
+    setAudioProcessing: (
+      next: Parameters<typeof audioProcessing.setPreferences>[0]
+    ) => withAudio(() => audioProcessing.setPreferences(next)),
   };
 }

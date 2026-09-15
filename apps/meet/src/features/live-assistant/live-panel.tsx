@@ -45,11 +45,13 @@ export function MeetLivePanel({
   meetingId,
   outputDeviceId,
   canManage,
+  audioSuppressed = false,
 }: {
   room: MeetRoomController;
   meetingId: string;
   outputDeviceId: string;
   canManage: boolean;
+  audioSuppressed?: boolean;
 }) {
   const t = useTranslations('meet.live');
   const streams = [
@@ -61,6 +63,7 @@ export function MeetLivePanel({
     outputDeviceId,
     {
       streams,
+      suppressed: audioSuppressed,
       microphoneEnabled: room.media.audioEnabled,
     },
     room.getSelectedDevices().audio
@@ -78,6 +81,7 @@ export function MeetLivePanel({
   const currentRoom = useRef(room);
   currentRoom.current = room;
   const start = async (mode: 'personal' | 'room') => {
+    if (audioSuppressed) return;
     const restoreMicrophone = mode === 'personal' && room.media.audioEnabled;
     const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
     if (restoreMicrophone) await room.toggleMicrophone();
@@ -153,7 +157,8 @@ export function MeetLivePanel({
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
-                className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                disabled={audioSuppressed}
                 onClick={() => void start('personal')}
               >
                 <Headphones className="size-6" />
@@ -165,7 +170,8 @@ export function MeetLivePanel({
               {canManage && (
                 <button
                   type="button"
-                  className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+                  disabled={audioSuppressed}
                   onClick={() => void start('room')}
                 >
                   <Users className="size-6" />
@@ -251,7 +257,10 @@ export function MeetLivePanel({
               <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                 <Button
                   variant="outline"
-                  disabled={live.mode === 'personal' && room.media.audioEnabled}
+                  disabled={
+                    audioSuppressed ||
+                    (live.mode === 'personal' && room.media.audioEnabled)
+                  }
                   onClick={() =>
                     live.send({
                       type: 'pause',

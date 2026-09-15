@@ -578,6 +578,8 @@ export function useMeetRoom({
           ] as const)
             if (previous[key] !== next[key] && restored[key] === next[key])
               restored[key] = previous[key];
+          // A failed publish must never reopen a microphone the user muted.
+          restored.audioEnabled &&= next.audioEnabled;
           restored.screenEnabled &&=
             screenStreamRef.current
               ?.getVideoTracks()
@@ -602,13 +604,7 @@ export function useMeetRoom({
     [effects, publishPresence, queueLocalTracks, resetPublisher]
   );
 
-  const {
-    toggleMicrophone,
-    toggleCamera,
-    toggleScreenShare,
-    selectDevice,
-    getSelectedDevices,
-  } = useMemo(
+  const localControls = useMemo(
     () =>
       createLocalMediaControls({
         activeRef,
@@ -691,10 +687,6 @@ export function useMeetRoom({
     media,
     remoteStreams,
     state,
-    toggleCamera,
-    toggleMicrophone,
-    toggleScreenShare,
-    selectDevice,
-    getSelectedDevices,
+    ...localControls,
   };
 }
