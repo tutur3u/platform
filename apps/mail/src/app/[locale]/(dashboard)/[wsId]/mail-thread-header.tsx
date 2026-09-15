@@ -1,13 +1,15 @@
 'use client';
-import { Archive, Star, Trash2 } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { Archive, Mail, MailOpen, Star, Trash2 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { MailIconButton } from './mail-icon-button';
 
 export function MailThreadHeader({
   subject,
   messageCount,
   starred,
+  unread,
+  onRead,
   actionPending,
   isDraft,
   labelActions,
@@ -18,6 +20,8 @@ export function MailThreadHeader({
   subject: string;
   messageCount: number;
   starred: boolean;
+  unread: boolean;
+  onRead?: () => void;
   actionPending: boolean;
   isDraft: boolean;
   labelActions?: ReactNode;
@@ -39,7 +43,20 @@ export function MailThreadHeader({
         </div>
         <div className="flex items-center gap-1">
           {labelActions}
-          <Button
+          {!isDraft && onRead ? (
+            <MailIconButton
+              aria-label={t(unread ? 'mark_read' : 'mark_unread')}
+              disabled={actionPending}
+              onClick={onRead}
+            >
+              {unread ? (
+                <MailOpen className="size-4" />
+              ) : (
+                <Mail className="size-4" />
+              )}
+            </MailIconButton>
+          ) : null}
+          <MailIconButton
             aria-label={starred ? t('unstar') : t('star')}
             aria-pressed={Boolean(starred)}
             disabled={actionPending}
@@ -48,8 +65,8 @@ export function MailThreadHeader({
             variant="ghost"
           >
             <Star className={starred ? 'size-4 fill-current' : 'size-4'} />
-          </Button>
-          <Button
+          </MailIconButton>
+          <MailIconButton
             aria-label={t('archive')}
             disabled={actionPending}
             onClick={onArchive}
@@ -57,8 +74,8 @@ export function MailThreadHeader({
             variant="ghost"
           >
             <Archive className="size-4" />
-          </Button>
-          <Button
+          </MailIconButton>
+          <MailIconButton
             aria-label={isDraft ? t('delete_draft') : t('trash')}
             disabled={actionPending}
             onClick={onTrash}
@@ -66,7 +83,7 @@ export function MailThreadHeader({
             variant="ghost"
           >
             <Trash2 className="size-4" />
-          </Button>
+          </MailIconButton>
         </div>
       </div>
     </header>

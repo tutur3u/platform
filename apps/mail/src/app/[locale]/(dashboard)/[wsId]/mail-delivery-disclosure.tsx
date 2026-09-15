@@ -26,6 +26,7 @@ export function MailDeliveryDisclosure({
   }, []);
   return (
     <details
+      className="group/deliveries"
       ref={ref}
       open={expanded}
       onToggle={(event) => setExpanded(event.currentTarget.open)}

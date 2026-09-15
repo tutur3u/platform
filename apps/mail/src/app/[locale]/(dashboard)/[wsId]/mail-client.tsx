@@ -6,16 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import {
-  Archive,
-  CheckCheck,
-  Info,
-  Keyboard,
-  Loader2,
-  Search,
-  Trash2,
-  X,
-} from '@tuturuuu/icons';
+import { Info, Keyboard, Loader2, Search } from '@tuturuuu/icons';
 import {
   deleteMailDraft,
   getMailThread,
@@ -39,6 +30,7 @@ import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FloatingComposer } from './floating-composer';
+import { MailBulkToolbar } from './mail-bulk-toolbar';
 import type {
   ComposeInitialDraft,
   MailComposerHandle,
@@ -48,8 +40,10 @@ import { MailContentState } from './mail-content-state';
 import { MailDeliveryList } from './mail-delivery-list';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
+import { MailIconButton } from './mail-icon-button';
 import { MailKeyboardHelp } from './mail-keyboard-help';
 import { MailLabelMenu } from './mail-label-menu';
+import { MailMarkFolderRead } from './mail-mark-folder-read';
 import {
   getCurrentMailPaneLayout,
   normalizeMailPaneLayout,
@@ -238,7 +232,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     mailboxId: activeMailboxId,
     threadId,
     detail: detailQuery.data,
-    blocked: actionsPending || detailQuery.isError || folder === 'drafts',
+    folder,
+    threads,
+    blocked: detailQuery.isError || folder === 'drafts',
   });
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId: string) =>
@@ -321,7 +317,13 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         action === 'mark_unread' &&
         id === threadId &&
         queryClient.isMutating({
-          mutationKey: ['mail', workspaceId, activeMailboxId, 'viewed-read'],
+          mutationKey: [
+            'mail',
+            workspaceId,
+            activeMailboxId,
+            'actions',
+            'viewed-read',
+          ],
         })
       )
         return;
@@ -370,6 +372,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             {activeMailbox?.address}
           </p>
         </div>
+        {activeMailboxId && (folder === 'inbox' || folder === 'archive') ? (
+          <MailMarkFolderRead
+            workspaceId={workspaceId}
+            mailboxId={activeMailboxId}
+            folder={folder}
+            disabled={actionsPending}
+          />
+        ) : null}
         <MailSyncStatus
           state={syncState}
           refreshing={threadsQuery.isFetching || bootstrapQuery.isFetching}
@@ -393,14 +403,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           />
           <Popover>
             <PopoverTrigger asChild>
-              <Button
+              <MailIconButton
                 aria-label={t('search_help')}
                 className="absolute top-1/2 right-1 -translate-y-1/2"
                 size="icon"
                 variant="ghost"
               >
                 <Info className="size-4" />
-              </Button>
+              </MailIconButton>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 text-sm">
               <div className="font-medium">{t('advanced_search')}</div>
@@ -432,7 +442,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
                   : false
             }
           />
-          <Button
+          <MailIconButton
             aria-label={t('keyboard_shortcuts')}
             title={t('keyboard_shortcuts')}
             onClick={() => keyboard.setHelpOpen(true)}
@@ -441,7 +451,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             className="size-7 shrink-0"
           >
             <Keyboard className="size-3.5" />
-          </Button>
+          </MailIconButton>
         </div>
         {filterChips.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
@@ -453,55 +463,16 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           </div>
         ) : null}
         {selectedThreads.size > 0 ? (
-          <div className="flex flex-wrap items-center gap-1 rounded-xl bg-foreground/[0.04] p-1">
-            <span className="px-2 text-xs tabular-nums">
-              {t('selected_count', { count: selectedThreads.size })}
-            </span>
-            <Button
-              aria-label={t('mark_read')}
-              disabled={actionsPending}
-              onClick={() => bulkMutation.mutate('mark_read')}
-              size="icon"
-              variant="ghost"
-            >
-              <CheckCheck className="size-4" />
-            </Button>
-            <Button
-              aria-label={t('archive')}
-              disabled={actionsPending}
-              onClick={() => bulkMutation.mutate('archive')}
-              size="icon"
-              variant="ghost"
-            >
-              <Archive className="size-4" />
-            </Button>
-            {activeMailboxId ? (
-              <MailLabelMenu
-                mailboxId={activeMailboxId}
-                onChanged={invalidateMailbox}
-                threadIds={[...selectedThreads]}
-                workspaceId={workspaceId}
-              />
-            ) : null}
-            <Button
-              aria-label={t('trash')}
-              disabled={actionsPending}
-              onClick={() => bulkMutation.mutate('trash')}
-              size="icon"
-              variant="ghost"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-            <Button
-              aria-label={t('clear_selection')}
-              className="ml-auto"
-              onClick={() => setSelectedThreads(new Set())}
-              size="icon"
-              variant="ghost"
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
+          <MailBulkToolbar
+            folder={folder}
+            threadIds={[...selectedThreads]}
+            mailboxId={activeMailboxId}
+            workspaceId={workspaceId}
+            actionsPending={actionsPending}
+            onAction={bulkMutation.mutate}
+            onChanged={invalidateMailbox}
+            onClear={() => setSelectedThreads(new Set())}
+          />
         ) : null}
       </div>
       <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
@@ -522,6 +493,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           <div className="space-y-1 p-2">
             <MailDeliveryList
               threads={threads}
+              mailboxAddress={activeMailbox?.address}
               folder={folder}
               threadId={threadId}
               selectedThreads={selectedThreads}
@@ -573,7 +545,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     <section className="flex h-full min-h-0 min-w-0 max-w-full bg-muted/20">
       <ThreadDetail
         folder={folder}
-        actionPending={actionPending || deleteDraftMutation.isPending}
+        actionPending={
+          actionsPending || actionPending || deleteDraftMutation.isPending
+        }
         isDraft={folder === 'drafts'}
         labelActions={
           activeMailboxId && threadId ? (
@@ -588,6 +562,15 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         error={detailQuery.isError}
         onRetry={() => void detailQuery.refetch()}
         loading={detailQuery.isLoading}
+        onRead={() => {
+          const unread = Boolean(
+            detailQuery.data?.thread.unreadCount ||
+              selectedSummary?.unreadCount ||
+              detailQuery.data?.messages.some((message) => message.unread)
+          );
+          if (!unread) void setThreadId(null);
+          mutateThread(unread ? 'mark_read' : 'mark_unread');
+        }}
         onArchive={() => mutateThread('archive')}
         onBack={() => setThreadId(null)}
         onEditDraft={(message) => {

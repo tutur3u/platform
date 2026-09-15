@@ -3,7 +3,10 @@ import type { MailThreadSummary } from '@tuturuuu/internal-api';
 const WINDOW_MS = 10 * 60 * 1000;
 
 /** Presentation only: these are similar deliveries, never deduplicated records. */
-export function groupMailDeliveries(threads: MailThreadSummary[]) {
+export function groupMailDeliveries(
+  threads: MailThreadSummary[],
+  mailboxAddress?: string
+) {
   const groups: MailThreadSummary[][] = [];
   const candidates = new Map<string, MailThreadSummary[][]>();
   for (const thread of threads) {
@@ -12,10 +15,10 @@ export function groupMailDeliveries(threads: MailThreadSummary[]) {
     const sender = thread.participants[0]?.address?.trim().toLowerCase();
     const eligible =
       recipient &&
+      recipient !== mailboxAddress?.trim().toLowerCase() &&
       sender &&
       thread.messageCount === 1 &&
       thread.participants.length === 1 &&
-      thread.latestSnippet?.trim() &&
       thread.subject.trim() &&
       Number.isFinite(timestamp);
     if (!eligible) {
@@ -25,9 +28,11 @@ export function groupMailDeliveries(threads: MailThreadSummary[]) {
     const key = JSON.stringify([
       thread.mailboxId,
       sender,
-      thread.subject.trim(),
-      thread.latestSnippet?.trim(),
-      thread.hasAttachments,
+      thread.subject
+        .normalize('NFKC')
+        .trim()
+        .replace(/\s+/gu, ' ')
+        .toLowerCase(),
     ]);
     const matches = candidates.get(key) ?? [];
     const group = matches.find(

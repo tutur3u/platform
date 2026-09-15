@@ -21,9 +21,14 @@ import {
 import { bulkUpdateMail } from './organization';
 import { loadAllRows, queryMailMessageRows } from './search';
 import { type AnyRecord, mailMessageTable, privateTable } from './shared';
+import {
+  countThreadReadState,
+  getInboxReadCounts,
+  loadThreadActionRows,
+} from './thread-action-rows';
 
 const THREAD_PARTICIPANT_COLUMNS =
-  'direction,from_address,from_name,has_attachments,id,raw_message_id,thread_id';
+  'direction,from_address,from_name,has_attachments,id,raw_message_id,thread_id,status';
 const MAX_THREAD_PAGE = 25;
 
 export function normalizeThreadPagination({
@@ -236,6 +241,9 @@ export async function listMailThreads({
     const message = latestByThread.get(threadId);
     if (!thread || !message) return [];
     const state = states.get(message.id);
+    const threadRows = visibleMessageRows.filter(
+      (row) => row.thread_id === threadId
+    );
     return [
       {
         ...toThread(thread),
@@ -253,6 +261,9 @@ export async function listMailThreads({
         starred: Boolean(state?.starred_at),
         subject: resolveMailThreadSubject(thread.subject, message.subject),
         unreadCount: unreadByThread.get(threadId) ?? 0,
+        inboundCount: threadRows.filter((row) => row.direction === 'inbound')
+          .length,
+        ...getInboxReadCounts(threadRows, states),
       },
     ];
   });
@@ -273,22 +284,29 @@ export async function bulkUpdateMailThreads({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
-  const { data, error } = await mailMessageTable(access, ctx)
-    .select('id')
-    .eq('mailbox_id', mailboxId)
-    .in('thread_id', payload.threadIds)
-    .limit(500);
-  if (error)
-    throw new Error(`Failed to load thread messages: ${error.message}`);
-  return bulkUpdateMail({
+  const messages = await loadThreadActionRows(
+    access,
     ctx,
     mailboxId,
-    payload: {
-      action: payload.action,
-      labelId: payload.labelId,
-      messageIds: (data ?? []).map((row: AnyRecord) => row.id),
-    },
-  });
+    payload.threadIds
+  );
+  let updated = 0;
+  for (let start = 0; start < messages.length; start += 250) {
+    const result = await bulkUpdateMail({
+      ctx,
+      mailboxId,
+      payload: {
+        action: payload.action,
+        labelId: payload.labelId,
+        messageIds: messages
+          .slice(start, start + 250)
+          .map((row: AnyRecord) => row.id),
+      },
+    });
+    if (!result) return null;
+    updated += result.updated;
+  }
+  return { updated };
 }
 
 export async function getMailThread({
@@ -322,11 +340,17 @@ export async function getMailThread({
   );
   const newestSubject = hydratedMessages.at(-1)?.subject;
   const hydratedThread = toThread(thread);
+  const readState = await countThreadReadState(
+    access.admin,
+    ctx.user.id,
+    await loadThreadActionRows(access, ctx, mailboxId, [threadId])
+  );
 
   return {
     messages: hydratedMessages,
     thread: {
       ...hydratedThread,
+      ...readState,
       subject: resolveMailThreadSubject(hydratedThread.subject, newestSubject),
     },
   };
@@ -348,13 +372,9 @@ export async function updateMailThreadState({
   const thread = await loadThread(access.admin, mailboxId, threadId);
   if (!thread) return null;
 
-  const { data: messages, error } = await mailMessageTable(access, ctx)
-    .select('id')
-    .eq('mailbox_id', mailboxId)
-    .eq('thread_id', threadId)
-    .limit(200);
-  if (error)
-    throw new Error(`Failed to load thread messages: ${error.message}`);
+  const messages = await loadThreadActionRows(access, ctx, mailboxId, [
+    threadId,
+  ]);
 
   const now = new Date().toISOString();
   const statePatch: AnyRecord = {};
@@ -362,7 +382,10 @@ export async function updateMailThreadState({
   if (payload.action === 'mark_unread') statePatch.read_at = null;
   if (payload.action === 'star') statePatch.starred_at = now;
   if (payload.action === 'unstar') statePatch.starred_at = null;
-  if (payload.action === 'archive') statePatch.archived_at = now;
+  if (payload.action === 'archive') {
+    statePatch.archived_at = now;
+    statePatch.read_at = now;
+  }
   if (payload.action === 'trash') statePatch.trashed_at = now;
   if (payload.action === 'restore') {
     statePatch.archived_at = null;
@@ -375,11 +398,13 @@ export async function updateMailThreadState({
     message_id: message.id,
     user_id: ctx.user.id,
   }));
-  if (rows.length > 0) {
+  for (let start = 0; start < rows.length; start += 250) {
     const { error: updateError } = await privateTable(
       access.admin,
       'mail_message_user_state'
-    ).upsert(rows, { onConflict: 'message_id,user_id' });
+    ).upsert(rows.slice(start, start + 250), {
+      onConflict: 'message_id,user_id',
+    });
     if (updateError) {
       throw new Error(`Failed to update thread state: ${updateError.message}`);
     }

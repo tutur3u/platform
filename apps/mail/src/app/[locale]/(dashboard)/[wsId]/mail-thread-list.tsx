@@ -81,7 +81,7 @@ export function MailThreadRow({
       <button
         data-mail-thread-open={thread.id}
         aria-current={active ? 'true' : undefined}
-        className="block w-full min-w-0 max-w-full py-4 pr-4 pl-10 text-left focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className="block w-full min-w-0 max-w-full py-3 pr-3 pl-10 text-left focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         onClick={onClick}
         onFocus={onPrefetch}
         onPointerEnter={schedulePrefetch}
@@ -125,7 +125,7 @@ export function MailThreadRow({
           {thread.hasAttachments ? <Paperclip className="size-3.5" /> : null}
           {thread.starred ? <Star className="size-3.5" /> : null}
         </div>
-        <p className="line-clamp-2 break-words text-[0.8125rem] text-muted-foreground leading-5">
+        <p className="line-clamp-1 break-words text-muted-foreground text-xs leading-5">
           {thread.latestSnippet}
         </p>
         {thread.deliveryRecipient ? (
@@ -137,7 +137,7 @@ export function MailThreadRow({
           </p>
         ) : null}
         {labels.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-1.5 flex flex-wrap gap-1">
             {labels.slice(0, 3).map((label) => (
               <Badge
                 className="gap-1.5 text-[0.68rem]"

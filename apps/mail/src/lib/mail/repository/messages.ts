@@ -23,18 +23,17 @@ export async function getStatesByMessageId(
 ): Promise<Map<string, AnyRecord>> {
   if (messageIds.length === 0) return new Map<string, AnyRecord>();
 
-  const { data, error } = await privateTable(admin, 'mail_message_user_state')
-    .select('*')
-    .eq('user_id', userId)
-    .in('message_id', messageIds);
-
-  if (error) {
-    throw new Error(`Failed to load message state: ${error.message}`);
+  const states = new Map<string, AnyRecord>();
+  for (let start = 0; start < messageIds.length; start += 250) {
+    const { data, error } = await privateTable(admin, 'mail_message_user_state')
+      .select('*')
+      .eq('user_id', userId)
+      .in('message_id', messageIds.slice(start, start + 250));
+    if (error)
+      throw new Error(`Failed to load message state: ${error.message}`);
+    for (const row of data ?? []) states.set(row.message_id, row);
   }
-
-  return new Map<string, AnyRecord>(
-    (data ?? []).map((row: AnyRecord) => [row.message_id, row])
-  );
+  return states;
 }
 
 export async function getLabelsByMessageId(
@@ -112,6 +111,7 @@ export function rowToSummary({
     status: row.status,
     subject: row.subject || '(no subject)',
     threadId: row.thread_id ?? null,
+    direction: row.direction,
     unread: row.direction === 'inbound' && !state?.read_at,
   };
 }

@@ -29,7 +29,10 @@ export async function updateMailMessageState({
   if (payload.action === 'mark_unread') statePatch.read_at = null;
   if (payload.action === 'star') statePatch.starred_at = now;
   if (payload.action === 'unstar') statePatch.starred_at = null;
-  if (payload.action === 'archive') statePatch.archived_at = now;
+  if (payload.action === 'archive') {
+    statePatch.archived_at = now;
+    statePatch.read_at = now;
+  }
   if (payload.action === 'trash') statePatch.trashed_at = now;
   if (payload.action === 'restore') {
     statePatch.archived_at = null;

@@ -31,12 +31,9 @@ it.each([
   { deliveryRecipient: null },
   { deliveryRecipient: 'a@example.com' },
   { subject: 'Other' },
-  { latestSnippet: 'Other content' },
-  { latestSnippet: null },
   { lastMessageAt: '2026-09-10T08:35:00Z' },
   { messageCount: 2 },
   { mailboxId: 'other' },
-  { hasAttachments: false },
   { participants: [{ address: 'other@example.com', displayName: null }] },
 ])('keeps separate deliveries with different evidence: %j', (patch) => {
   expect(
@@ -51,4 +48,27 @@ it('bounds the full group time window, rather than chaining days of copies', () 
       delivery('c', { lastMessageAt: '2026-09-10T07:51:00Z' }),
     ]).map((group) => group.length)
   ).toEqual([2, 1]);
+});
+
+it('keeps a delivery addressed to the selected mailbox outside alternate-recipient groups', () => {
+  const rows = [
+    delivery('a'),
+    delivery('mine', { deliveryRecipient: 'ME@example.com' }),
+    delivery('b'),
+  ];
+  expect(groupMailDeliveries(rows, 'me@example.com')).toEqual([
+    [rows[0], rows[2]],
+    [rows[1]],
+  ]);
+});
+it('groups personalized copies with normalized subjects while retaining every original', () => {
+  const rows = [
+    delivery('a'),
+    delivery('b', {
+      subject: '  NEWSLETTER  ',
+      latestSnippet: 'Hi B, September news',
+      hasAttachments: false,
+    }),
+  ];
+  expect(groupMailDeliveries(rows)).toEqual([rows]);
 });

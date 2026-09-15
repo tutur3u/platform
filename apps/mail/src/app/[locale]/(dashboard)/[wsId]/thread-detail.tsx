@@ -33,6 +33,7 @@ import { MailAppearanceControls } from './mail-appearance-controls';
 import { MailAttachmentCard } from './mail-attachment-card';
 import { MailContentState } from './mail-content-state';
 import type { MailFolder } from './mail-folders';
+import { MailIconButton } from './mail-icon-button';
 import { MailThreadHeader } from './mail-thread-header';
 import { ThreadMessageCard } from './thread-message-card';
 
@@ -51,6 +52,7 @@ export function ThreadDetail({
   onReply,
   onReplyAll,
   onStar,
+  onRead,
   onTrash,
   thread,
   summary,
@@ -69,6 +71,7 @@ export function ThreadDetail({
   onReply: (message: MailMessageDetail) => void;
   onReplyAll: (message: MailMessageDetail) => void;
   onStar: () => void;
+  onRead?: () => void;
   onTrash: () => void;
   thread: MailThreadDetail | null;
   summary?: MailThreadSummary | null;
@@ -81,7 +84,7 @@ export function ThreadDetail({
     (message) => message.status === 'draft'
   );
   const mobileList = (
-    <Button
+    <MailIconButton
       className="lg:hidden"
       aria-label={t('back_to_messages')}
       onClick={onBack}
@@ -89,7 +92,7 @@ export function ThreadDetail({
       variant="ghost"
     >
       <List className="size-4" />
-    </Button>
+    </MailIconButton>
   );
   const newest = thread?.messages.at(-1);
   const threadInfo = thread?.thread ?? summary;
@@ -102,6 +105,12 @@ export function ThreadDetail({
       isDraft={isDraft}
       labelActions={labelActions}
       onStar={onStar}
+      onRead={onRead}
+      unread={Boolean(
+        thread?.thread.unreadCount ||
+          summary?.unreadCount ||
+          thread?.messages.some((message) => message.unread)
+      )}
       onArchive={onArchive}
       onTrash={() => (isDraft ? setDeleteDraftOpen(true) : onTrash())}
     />

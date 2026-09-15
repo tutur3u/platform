@@ -1,19 +1,13 @@
 'use client';
 
 import {
-  type InfiniteData,
-  type QueryClient,
-  type QueryKey,
   useMutation,
   useMutationState,
   useQueryClient,
 } from '@tanstack/react-query';
 import {
   bulkUpdateMailThreads,
-  type MailBootstrapResponse,
-  type MailThreadDetail,
   type MailThreadSummary,
-  type MailThreadsResponse,
   updateMailThreadState,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -24,193 +18,17 @@ import {
   getMailArchiveBehavior,
   nextMailThreadId,
 } from './mail-reading-preferences';
-import { restoreThreadPages } from './mail-thread-rollback';
+import {
+  type OptimisticContext,
+  restoreMailThreads,
+  snapshotMailThreads,
+} from './mail-thread-optimistic';
+
+export { updateThreadPages } from './mail-thread-optimistic';
 
 type ThreadAction = Parameters<typeof updateMailThreadState>[3]['action'];
 type BulkAction = 'archive' | 'mark_read' | 'trash';
 export type MailSyncState = 'idle' | 'syncing' | 'synced' | 'failed';
-
-type ThreadCacheSnapshot = Array<
-  [QueryKey, InfiniteData<MailThreadsResponse> | undefined]
->;
-type OptimisticContext = {
-  mailboxId: string;
-  workspaceId: string;
-  ids: Set<string>;
-  unreadDelta: number;
-  details: Array<readonly [string, MailThreadDetail | undefined]>;
-  threadCaches: ThreadCacheSnapshot;
-};
-
-function hasStateFilter(query: string, state: string) {
-  return new RegExp(`(?:^|\\s)is:(?:"${state}"|${state})(?:\\s|$)`, 'iu').test(
-    query
-  );
-}
-
-function shouldRemoveFromFolder(
-  action: ThreadAction,
-  folder: MailFolder,
-  query: string
-) {
-  if (action === 'trash') return folder !== 'trash';
-  if (action === 'archive') {
-    return folder === 'inbox' && !hasStateFilter(query, 'archived');
-  }
-  if (action === 'restore') {
-    return (
-      folder === 'archive' ||
-      folder === 'trash' ||
-      hasStateFilter(query, 'archived') ||
-      hasStateFilter(query, 'trash')
-    );
-  }
-  if (action === 'unstar') {
-    return folder === 'starred' || hasStateFilter(query, 'starred');
-  }
-  if (action === 'mark_read' && hasStateFilter(query, 'unread')) return true;
-  if (action === 'mark_unread' && hasStateFilter(query, 'read')) return true;
-  return false;
-}
-
-export function updateThreadPages(
-  current: InfiniteData<MailThreadsResponse> | undefined,
-  threadIds: Set<string>,
-  action: ThreadAction,
-  folder: MailFolder,
-  query = ''
-) {
-  if (!current) return current;
-  const remove = shouldRemoveFromFolder(action, folder, query);
-  const removedCount = remove
-    ? current.pages.reduce(
-        (count, page) =>
-          count +
-          page.threads.filter((thread) => threadIds.has(thread.id)).length,
-        0
-      )
-    : 0;
-
-  return {
-    ...current,
-    pages: current.pages.map((page) => ({
-      ...page,
-      pagination: {
-        ...page.pagination,
-        total:
-          page.pagination.total === null
-            ? null
-            : Math.max(0, page.pagination.total - removedCount),
-      },
-      threads: page.threads.flatMap((thread) => {
-        if (!threadIds.has(thread.id)) return [thread];
-        if (remove) return [];
-        return [
-          {
-            ...thread,
-            starred:
-              action === 'star'
-                ? true
-                : action === 'unstar'
-                  ? false
-                  : thread.starred,
-            unreadCount: action === 'mark_read' ? 0 : thread.unreadCount,
-          },
-        ];
-      }),
-    })),
-  };
-}
-
-function updateDetail(
-  current: MailThreadDetail | undefined,
-  action: ThreadAction
-) {
-  if (!current || (action !== 'star' && action !== 'unstar')) return current;
-  return {
-    ...current,
-    messages: current.messages.map((message) => ({
-      ...message,
-      starred: action === 'star',
-    })),
-  };
-}
-
-function applyOptimisticUpdate({
-  action,
-  activeFolder,
-  mailboxId,
-  queryClient,
-  threadIds,
-  unreadCount,
-  workspaceId,
-}: {
-  action: ThreadAction;
-  activeFolder: MailFolder;
-  mailboxId: string;
-  queryClient: QueryClient;
-  threadIds: Set<string>;
-  unreadCount: number;
-  workspaceId: string;
-}) {
-  const caches = queryClient.getQueriesData<InfiniteData<MailThreadsResponse>>({
-    queryKey: ['mail', workspaceId, mailboxId, 'threads'],
-  });
-  for (const [queryKey, current] of caches) {
-    queryClient.setQueryData(
-      queryKey,
-      updateThreadPages(
-        current,
-        threadIds,
-        action,
-        queryKey[4] as MailFolder,
-        String(queryKey[7] ?? '')
-      )
-    );
-  }
-  for (const threadId of threadIds) {
-    queryClient.setQueryData<MailThreadDetail>(
-      ['mail', workspaceId, mailboxId, 'thread', threadId],
-      (current) => updateDetail(current, action)
-    );
-  }
-  if (
-    activeFolder === 'inbox' &&
-    unreadCount > 0 &&
-    ['archive', 'mark_read', 'trash'].includes(action)
-  ) {
-    queryClient.setQueryData<Record<string, number | null>>(
-      ['mail', workspaceId, 'bootstrap-counts'],
-      (current) =>
-        current && current[mailboxId] != null
-          ? {
-              ...current,
-              [mailboxId]: Math.max(0, current[mailboxId] - unreadCount),
-            }
-          : current
-    );
-    queryClient.setQueryData<MailBootstrapResponse>(
-      ['mail', workspaceId, 'bootstrap'],
-      (current) =>
-        current
-          ? {
-              ...current,
-              mailboxes: current.mailboxes.map((mailbox) =>
-                mailbox.id === mailboxId
-                  ? {
-                      ...mailbox,
-                      unreadCount:
-                        mailbox.unreadCount === null
-                          ? null
-                          : Math.max(0, mailbox.unreadCount - unreadCount),
-                    }
-                  : mailbox
-              ),
-            }
-          : current
-    );
-  }
-}
 
 export function useMailThreadActions({
   activeMailboxId,
@@ -253,7 +71,8 @@ export function useMailThreadActions({
   const pendingActions = useMutationState({
     filters: { mutationKey: actionKey, status: 'pending' },
     select: (mutation) =>
-      mutation.state.variables as {
+      (mutation.state.variables ?? {}) as {
+        threadId?: string;
         targetThreadId?: string;
         threadIds?: string[];
       },
@@ -280,136 +99,26 @@ export function useMailThreadActions({
   const actionsPending = pendingActions.length > 0;
   const actionPending = pendingActions.some(
     (variables) =>
+      Object.keys(variables).length === 0 ||
+      variables.threadId === threadId ||
       variables.targetThreadId === threadId ||
       Boolean(threadId && variables.threadIds?.includes(threadId))
   );
   const selectedThreadIdRef = useRef(threadId);
   selectedThreadIdRef.current = threadId;
 
-  const snapshot = async (
-    ids: Set<string>,
-    action: ThreadAction
-  ): Promise<OptimisticContext | null> => {
-    if (!activeMailboxId) return null;
-    await Promise.all([
-      queryClient.cancelQueries({
-        queryKey: ['mail', workspaceId, activeMailboxId],
-      }),
-      queryClient.cancelQueries({
-        queryKey: ['mail', workspaceId, 'bootstrap-counts'],
-      }),
-    ]);
-    const threadCaches = queryClient.getQueriesData<
-      InfiniteData<MailThreadsResponse>
-    >({ queryKey: ['mail', workspaceId, activeMailboxId, 'threads'] });
-    const bootstrap = queryClient.getQueryData<MailBootstrapResponse>([
-      'mail',
-      workspaceId,
-      'bootstrap',
-    ]);
-    const beforeCounts = queryClient.getQueryData<
-      Record<string, number | null>
-    >(['mail', workspaceId, 'bootstrap-counts']);
-    const details = [...ids].map(
-      (id) =>
-        [
-          id,
-          queryClient.getQueryData<MailThreadDetail>([
-            'mail',
-            workspaceId,
-            activeMailboxId,
-            'thread',
-            id,
-          ]),
-        ] as const
-    );
-    const unreadCount = threads
-      .filter((thread) => ids.has(thread.id))
-      .reduce((total, thread) => total + thread.unreadCount, 0);
-    applyOptimisticUpdate({
-      action,
-      activeFolder: folder,
-      mailboxId: activeMailboxId,
+  const snapshot = (ids: Set<string>, action: ThreadAction) =>
+    snapshotMailThreads({
       queryClient,
-      threadIds: ids,
-      unreadCount,
+      activeMailboxId,
       workspaceId,
-    });
-    const nextBootstrap = queryClient.getQueryData<MailBootstrapResponse>([
-      'mail',
-      workspaceId,
-      'bootstrap',
-    ]);
-    const beforeUnread =
-      beforeCounts?.[activeMailboxId] ??
-      bootstrap?.mailboxes.find((mailbox) => mailbox.id === activeMailboxId)
-        ?.unreadCount ??
-      0;
-    const afterUnread =
-      queryClient.getQueryData<Record<string, number | null>>([
-        'mail',
-        workspaceId,
-        'bootstrap-counts',
-      ])?.[activeMailboxId] ??
-      nextBootstrap?.mailboxes.find((mailbox) => mailbox.id === activeMailboxId)
-        ?.unreadCount ??
-      0;
-    return {
       ids,
-      mailboxId: activeMailboxId,
-      workspaceId,
-      unreadDelta: beforeUnread - afterUnread,
-      details,
-      threadCaches,
-    };
-  };
-
-  const restore = (context: OptimisticContext | null | undefined) => {
-    if (!context) return;
-    const { mailboxId: activeMailboxId, workspaceId } = context;
-    for (const [key, data] of context.threadCaches as ThreadCacheSnapshot) {
-      queryClient.setQueryData<InfiniteData<MailThreadsResponse>>(
-        key,
-        (current) => restoreThreadPages(current, data, context.ids)
-      );
-    }
-    queryClient.setQueryData<MailBootstrapResponse>(
-      ['mail', workspaceId, 'bootstrap'],
-      (current) =>
-        current
-          ? {
-              ...current,
-              mailboxes: current.mailboxes.map((mailbox) =>
-                mailbox.id === activeMailboxId
-                  ? {
-                      ...mailbox,
-                      unreadCount:
-                        mailbox.unreadCount === null
-                          ? null
-                          : mailbox.unreadCount + context.unreadDelta,
-                    }
-                  : mailbox
-              ),
-            }
-          : current
-    );
-    queryClient.setQueryData<Record<string, number | null>>(
-      ['mail', workspaceId, 'bootstrap-counts'],
-      (current) =>
-        current && current[activeMailboxId] != null
-          ? {
-              ...current,
-              [activeMailboxId]: current[activeMailboxId] + context.unreadDelta,
-            }
-          : current
-    );
-    for (const [id, detail] of context.details) {
-      queryClient.setQueryData(
-        ['mail', workspaceId, activeMailboxId, 'thread', id],
-        detail
-      );
-    }
-  };
+      action,
+      folder,
+      threads,
+    });
+  const restore = (context: OptimisticContext | null | undefined) =>
+    restoreMailThreads(queryClient, context);
 
   const stateMutation = useMutation({
     mutationKey: [...actionKey, 'state'],
@@ -554,13 +263,18 @@ export function useMailThreadActions({
     },
   });
 
+  const readOperationPending = () =>
+    queryClient.isMutating({ mutationKey: [...actionKey, 'viewed-read'] }) >
+      0 ||
+    queryClient.isMutating({ mutationKey: [...actionKey, 'folder-read'] }) > 0;
+
   return {
     actionPending,
     actionsPending,
     bulkMutation: {
       ...bulkMutation,
       mutate: (action: BulkAction) => {
-        if (!activeMailboxId) return;
+        if (!activeMailboxId || readOperationPending()) return;
         const threadIds = [...selectedThreads].filter(
           (id) => !inFlight.current.has(id)
         );
@@ -575,7 +289,7 @@ export function useMailThreadActions({
       },
     },
     mutateThread: (action: ThreadAction, targetThreadId = threadId) => {
-      if (!activeMailboxId) return;
+      if (!activeMailboxId || readOperationPending()) return;
       if (!targetThreadId || inFlight.current.has(targetThreadId)) return;
       inFlight.current.add(targetThreadId);
       stateMutation.mutate({
