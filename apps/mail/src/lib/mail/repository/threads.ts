@@ -23,11 +23,12 @@ import { loadAllRows, queryMailMessageRows } from './search';
 import { type AnyRecord, mailMessageTable, privateTable } from './shared';
 import {
   countThreadReadState,
+  getInboxReadCounts,
   loadThreadActionRows,
 } from './thread-action-rows';
 
 const THREAD_PARTICIPANT_COLUMNS =
-  'direction,from_address,from_name,has_attachments,id,raw_message_id,thread_id';
+  'direction,from_address,from_name,has_attachments,id,raw_message_id,thread_id,status';
 const MAX_THREAD_PAGE = 25;
 
 export function normalizeThreadPagination({
@@ -235,24 +236,14 @@ export async function listMailThreads({
     (threads ?? []).map((thread: AnyRecord) => [thread.id as string, thread])
   );
   const unreadByThread = getThreadUnreadCounts(visibleMessageRows, states);
-  const inboundByThread = new Map<string, number>();
-  for (const row of await loadThreadActionRows(
-    access,
-    ctx,
-    mailboxId,
-    threadIds
-  )) {
-    if (row.direction === 'inbound')
-      inboundByThread.set(
-        row.thread_id,
-        (inboundByThread.get(row.thread_id) ?? 0) + 1
-      );
-  }
   const summaries: MailThreadSummary[] = threadIds.flatMap((threadId) => {
     const thread = threadById.get(threadId);
     const message = latestByThread.get(threadId);
     if (!thread || !message) return [];
     const state = states.get(message.id);
+    const threadRows = visibleMessageRows.filter(
+      (row) => row.thread_id === threadId
+    );
     return [
       {
         ...toThread(thread),
@@ -270,7 +261,9 @@ export async function listMailThreads({
         starred: Boolean(state?.starred_at),
         subject: resolveMailThreadSubject(thread.subject, message.subject),
         unreadCount: unreadByThread.get(threadId) ?? 0,
-        inboundCount: inboundByThread.get(threadId) ?? 0,
+        inboundCount: threadRows.filter((row) => row.direction === 'inbound')
+          .length,
+        ...getInboxReadCounts(threadRows, states),
       },
     ];
   });

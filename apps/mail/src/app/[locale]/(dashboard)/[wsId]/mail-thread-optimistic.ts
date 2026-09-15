@@ -96,6 +96,7 @@ export function updateThreadPages(
         return [
           {
             ...thread,
+            ...updateInboxMetadata(thread, action),
             starred:
               action === 'star'
                 ? true
@@ -124,6 +125,7 @@ function updateDetail(
     ...current,
     thread: {
       ...current.thread,
+      ...updateInboxMetadata(current.thread, action),
       unreadCount:
         action === 'mark_read' || action === 'archive'
           ? 0
@@ -160,6 +162,7 @@ export function applyOptimisticUpdate({
   threadIds,
   unreadCount,
   markUnreadDelta = 0,
+  updateInboxCounts = false,
   workspaceId,
 }: {
   action: ThreadAction;
@@ -169,6 +172,7 @@ export function applyOptimisticUpdate({
   threadIds: Set<string>;
   unreadCount: number;
   markUnreadDelta?: number;
+  updateInboxCounts?: boolean;
   workspaceId: string;
 }) {
   const caches = queryClient.getQueriesData<InfiniteData<MailThreadsResponse>>({
@@ -193,7 +197,7 @@ export function applyOptimisticUpdate({
     );
   }
   if (
-    activeFolder === 'inbox' &&
+    (activeFolder === 'inbox' || updateInboxCounts) &&
     ((unreadCount > 0 && ['archive', 'mark_read', 'trash'].includes(action)) ||
       (action === 'mark_unread' && markUnreadDelta > 0))
   ) {
@@ -308,8 +312,16 @@ export async function snapshotMailThreads({
       detail?.messages.filter((message) => message.direction === 'inbound')
         .length ??
       Math.max(1, unread);
-    unreadCount += unread;
-    markUnreadDelta += Math.max(0, inbound - unread);
+    const inboxUnread =
+      detail?.thread.inboxUnreadCount ??
+      summary?.inboxUnreadCount ??
+      (folder === 'inbox' ? unread : 0);
+    const inboxInbound =
+      detail?.thread.inboxInboundCount ??
+      summary?.inboxInboundCount ??
+      (folder === 'inbox' ? inbound : 0);
+    unreadCount += inboxUnread;
+    markUnreadDelta += Math.max(0, inboxInbound - inboxUnread);
   }
   applyOptimisticUpdate({
     action,
@@ -319,6 +331,7 @@ export async function snapshotMailThreads({
     threadIds: ids,
     unreadCount,
     markUnreadDelta,
+    updateInboxCounts: true,
     workspaceId,
   });
   const nextBootstrap = queryClient.getQueryData<MailBootstrapResponse>([
@@ -398,4 +411,16 @@ export function restoreMailThreads(
       detail
     );
   }
+}
+
+function updateInboxMetadata(
+  thread: { inboxInboundCount?: number; inboxUnreadCount?: number },
+  action: ThreadAction
+) {
+  if (action === 'archive' || action === 'trash')
+    return { inboxInboundCount: 0, inboxUnreadCount: 0 };
+  if (action === 'mark_read') return { inboxUnreadCount: 0 };
+  if (action === 'mark_unread' && thread.inboxInboundCount != null)
+    return { inboxUnreadCount: thread.inboxInboundCount };
+  return {};
 }

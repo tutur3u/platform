@@ -172,6 +172,8 @@ export interface MailMessageDetail extends MailMessageSummary {
 
 export interface MailThread {
   inboundCount?: number;
+  inboxInboundCount?: number;
+  inboxUnreadCount?: number;
   id: string;
   lastMessageAt: string | null;
   mailboxId: string;
