@@ -16,6 +16,10 @@ describe('safe attachment previews', () => {
     ['video/mp4', 'video'],
     ['audio/mpeg', 'audio'],
     ['application/pdf', 'pdf'],
+    [
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'docx',
+    ],
     ['text/plain; charset=utf-8', 'text'],
   ])('previews %s', (type, kind) => {
     expect(mailAttachmentPreviewType(type!, 'attachment')).toMatchObject({
@@ -33,4 +37,14 @@ describe('safe attachment previews', () => {
       '/attachment?mailbox=1&preview=1'
     );
   });
+});
+
+it('recognizes DOCX filenames only with the binary fallback MIME', () => {
+  expect(
+    mailAttachmentPreviewType('application/octet-stream', 'Report.DOCX')?.kind
+  ).toBe('docx');
+  expect(mailAttachmentPreviewType('text/html', 'Report.docx')).toBeNull();
+  expect(
+    mailAttachmentPreviewType('application/octet-stream', 'Report.docm')
+  ).toBeNull();
 });

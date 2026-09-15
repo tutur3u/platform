@@ -39,7 +39,10 @@ import type {
   UpsertMailMailboxMemberPayload,
 } from './mail-types';
 
-export { getMailAttachmentText } from './mail-attachment-preview';
+export {
+  getMailAttachmentDocx,
+  getMailAttachmentText,
+} from './mail-attachment-preview';
 export * from './mail-blacklist';
 export { getMailBootstrap, getMailUnreadCounts } from './mail-bootstrap';
 export { bulkUpdateMailThreads, markMailFolderRead } from './mail-read';
