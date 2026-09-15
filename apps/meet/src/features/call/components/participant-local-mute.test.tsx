@@ -4,7 +4,8 @@ import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../messages/en.json';
-import { ParticipantTile } from './participant-tile';
+import type { MeetRoomController } from '../lib/room-controller';
+import { type CallLayout, CallStage } from './call-stage';
 
 vi.mock('./media-receiving-status', () => ({
   useStreamReadiness: () => ({}),
@@ -26,6 +27,9 @@ it.each(['camera', 'screen'] as const)(
     const track = { kind: 'audio', enabled: true };
     class Stream {
       constructor(private tracks: (typeof track)[]) {}
+      getTracks() {
+        return this.tracks;
+      }
       getAudioTracks() {
         return this.tracks;
       }
@@ -39,22 +43,39 @@ it.each(['camera', 'screen'] as const)(
       displayName: 'Peer',
       media: { audioEnabled: true, videoEnabled: false, screenEnabled: true },
     } as MeetRealtimePresence;
-    const { container } = render(
+    const room = {
+      state: {
+        participants: { peer: participant },
+        selfUserId: 'self',
+        stage: { raisedHandUserIds: [] },
+      },
+      remoteMedia: {
+        peer: kind === 'screen' ? { screen_audio: track } : { audio: track },
+      },
+      localStream: null,
+      screenStream: null,
+    } as unknown as MeetRoomController;
+    const view = (layout: CallLayout) => (
       <NextIntlClientProvider locale="en" messages={messages}>
-        <ParticipantTile
-          participant={participant}
-          kind={kind}
-          stream={new Stream([track]) as unknown as MediaStream}
-          resumePlaybackLabel="Play"
-        />
+        <CallStage room={room} layout={layout} focus={null} onFocus={vi.fn()} />
       </NextIntlClientProvider>
     );
-    const audio = container.querySelector('audio')!;
+    const { rerender } = render(view('grid'));
+    const audioFor = (label: string) =>
+      screen
+        .getByRole('button', { name: label })
+        .closest('.group')!
+        .querySelector('audio')!;
+    const audio = audioFor('Mute Peer for me');
     expect(audio.muted).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Mute Peer for me' }));
     expect(audio.muted).toBe(true);
     expect(track.enabled).toBe(true);
+    rerender(view('spotlight'));
+    expect(audioFor('Unmute Peer for me').muted).toBe(true);
+    rerender(view('sidebar'));
+    expect(audioFor('Unmute Peer for me').muted).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Unmute Peer for me' }));
-    expect(audio.muted).toBe(false);
+    expect(audioFor('Mute Peer for me').muted).toBe(false);
   }
 );

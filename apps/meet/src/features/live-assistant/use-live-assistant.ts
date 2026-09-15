@@ -33,7 +33,11 @@ type Review = Extract<LiveAssistantEvent, { type: 'review' }>;
 export function useLiveAssistant(
   meetingId: string,
   outputDeviceId: string,
-  roomAudio: { streams: MediaStream[]; microphoneEnabled: boolean },
+  roomAudio: {
+    streams: MediaStream[];
+    microphoneEnabled: boolean;
+    suppressed?: boolean;
+  },
   inputDeviceId = ''
 ) {
   const [status, setStatus] = useState('idle');
@@ -54,12 +58,17 @@ export function useLiveAssistant(
     const current = active.current;
     if (!current) return;
     if (message.type === 'pause') {
+      if (!message.paused && roomAudioRef.current.suppressed) return;
       current.paused = message.paused;
+      current.microphone?.getTracks().forEach((track) => {
+        track.enabled = !message.paused;
+      });
       if (message.paused) current.player.interrupt();
     }
     if (
       message.type === 'audio' &&
-      (!current.ready ||
+      (roomAudioRef.current.suppressed ||
+        !current.ready ||
         current.paused ||
         (current.mode === 'personal' && roomAudioRef.current.microphoneEnabled))
     )
@@ -128,6 +137,7 @@ export function useLiveAssistant(
       }
       if (
         message.type === 'audio' &&
+        !roomAudioRef.current.suppressed &&
         !current.paused &&
         !(current.mode === 'personal' && roomAudioRef.current.microphoneEnabled)
       )
@@ -210,10 +220,13 @@ export function useLiveAssistant(
     workspaceId?: string,
     voice: MeetLiveVoice = 'Aoede'
   ) => {
-    if (active.current || starting.current) return false;
+    if (active.current || starting.current || roomAudioRef.current.suppressed)
+      return false;
     starting.current = true;
     const generation = ++startGeneration.current;
-    const cancelled = () => generation !== startGeneration.current;
+    const cancelled = () =>
+      generation !== startGeneration.current ||
+      !!roomAudioRef.current.suppressed;
     setStatus('connecting');
     setError(undefined);
     setMode(audience);
@@ -299,10 +312,10 @@ export function useLiveAssistant(
       microphone?.getTracks().forEach((track) => {
         track.stop();
       });
-      if (!cancelled()) {
-        setError('start_failed');
+      if (generation === startGeneration.current) {
+        if (!roomAudioRef.current.suppressed) setError('start_failed');
         await stop();
-        setStatus('error');
+        if (!roomAudioRef.current.suppressed) setStatus('error');
       }
       return false;
     } finally {
@@ -311,7 +324,11 @@ export function useLiveAssistant(
   };
   useEffect(() => {
     const current = active.current;
-    if (current?.mode !== 'personal' || current.inputDeviceId === inputDeviceId)
+    if (
+      roomAudio.suppressed ||
+      current?.mode !== 'personal' ||
+      current.inputDeviceId === inputDeviceId
+    )
       return;
     let cancelled = false;
     void navigator.mediaDevices
@@ -330,6 +347,9 @@ export function useLiveAssistant(
           });
           return;
         }
+        microphone.getTracks().forEach((track) => {
+          track.enabled = !current.paused && !roomAudioRef.current.suppressed;
+        });
         current.updateCapture?.([microphone]);
         current.microphone?.getTracks().forEach((track) => {
           track.stop();
@@ -346,7 +366,10 @@ export function useLiveAssistant(
     return () => {
       cancelled = true;
     };
-  }, [inputDeviceId]);
+  }, [inputDeviceId, roomAudio.suppressed]);
+  useEffect(() => {
+    if (roomAudio.suppressed) send({ type: 'pause', paused: true });
+  }, [roomAudio.suppressed, send]);
   useEffect(() => {
     const player = active.current?.player;
     if (player)

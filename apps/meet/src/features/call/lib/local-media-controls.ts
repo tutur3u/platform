@@ -37,6 +37,15 @@ export function createLocalMediaControls({
     () => localStreamRef.current
   );
   let microphoneRevision = 0;
+  let audioQueue = Promise.resolve();
+  const withAudio = <T>(operation: () => Promise<T>): Promise<T> => {
+    const result = audioQueue.then(operation);
+    audioQueue = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
+  };
   const selectDevice = async (kind: 'audio' | 'video', deviceId: string) => {
     const old = localStreamRef.current;
     const enabled =
@@ -261,13 +270,18 @@ export function createLocalMediaControls({
   };
 
   return {
-    toggleMicrophone,
+    toggleMicrophone: () => withAudio(toggleMicrophone),
     toggleCamera,
     toggleScreenShare,
-    selectDevice,
+    selectDevice: (kind: 'audio' | 'video', deviceId: string) =>
+      kind === 'audio'
+        ? withAudio(() => selectDevice(kind, deviceId))
+        : selectDevice(kind, deviceId),
     getSelectedDevices: () => ({ ...deviceIds, microphoneRevision }),
     getAudioProcessing: audioProcessing.getPreferences,
     getAudioProcessingSettings: audioProcessing.getSettings,
-    setAudioProcessing: audioProcessing.setPreferences,
+    setAudioProcessing: (
+      next: Parameters<typeof audioProcessing.setPreferences>[0]
+    ) => withAudio(() => audioProcessing.setPreferences(next)),
   };
 }

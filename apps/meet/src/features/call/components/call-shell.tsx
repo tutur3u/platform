@@ -306,20 +306,19 @@ export function ConnectedCallShell({
           </span>
         )}
         {!sharedAudio.shared && (
-          <>
-            <RoomAssistantAudio
-              canManage={canManage}
-              meetingId={meetingId}
-              outputDeviceId={outputDeviceId}
-            />
-            <MeetLivePanel
-              room={room}
-              meetingId={meetingId}
-              outputDeviceId={outputDeviceId}
-              canManage={canManage}
-            />
-          </>
+          <RoomAssistantAudio
+            canManage={canManage}
+            meetingId={meetingId}
+            outputDeviceId={outputDeviceId}
+          />
         )}
+        <MeetLivePanel
+          room={room}
+          meetingId={meetingId}
+          outputDeviceId={outputDeviceId}
+          canManage={canManage}
+          audioSuppressed={sharedAudio.shared}
+        />
         <Button
           variant="outline"
           size="sm"

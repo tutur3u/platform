@@ -86,3 +86,57 @@ it('keeps a replacement microphone alive when publishing fails so recovery can r
   expect(newTrack.stop).not.toHaveBeenCalled();
   expect(controls.getSelectedDevices().audio).toBe('new-microphone');
 });
+
+it('applies a processing change to the replacement microphone after acquisition finishes', async () => {
+  let resolve!: (stream: MediaStream) => void;
+  const capture = new Promise<MediaStream>((done) => {
+    resolve = done;
+  });
+  const replacement = {
+    kind: 'audio',
+    enabled: true,
+    readyState: 'live',
+    stop: vi.fn(),
+    applyConstraints: vi.fn(async () => undefined),
+  };
+  class Stream {
+    constructor(private tracks: (typeof replacement)[]) {}
+    getTracks() {
+      return this.tracks;
+    }
+    getAudioTracks() {
+      return this.tracks;
+    }
+  }
+  vi.stubGlobal('MediaStream', Stream);
+  vi.stubGlobal('navigator', { mediaDevices: { getUserMedia: () => capture } });
+  const localStreamRef = { current: new Stream([]) as unknown as MediaStream };
+  const controls = createLocalMediaControls({
+    activeRef: { current: true },
+    effects: new CameraEffects(),
+    localStreamRef,
+    screenStreamRef: { current: null },
+    mediaRef: {
+      current: {
+        audioEnabled: true,
+        videoEnabled: false,
+        screenEnabled: false,
+      },
+    },
+    setLocalStream: vi.fn(),
+    setScreenStream: vi.fn(),
+    applyMedia: vi.fn(async () => undefined),
+  });
+  const switching = controls.selectDevice('audio', 'new');
+  const preferences = {
+    echoCancellation: true,
+    noiseSuppression: false,
+    autoGainControl: false,
+  };
+  const processing = controls.setAudioProcessing(preferences);
+  expect(replacement.applyConstraints).not.toHaveBeenCalled();
+  resolve(new Stream([replacement]) as unknown as MediaStream);
+  await Promise.all([switching, processing]);
+  expect(replacement.applyConstraints).toHaveBeenCalledWith(preferences);
+  expect(controls.getAudioProcessing()).toEqual(preferences);
+});

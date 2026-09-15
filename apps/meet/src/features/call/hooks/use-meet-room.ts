@@ -578,6 +578,8 @@ export function useMeetRoom({
           ] as const)
             if (previous[key] !== next[key] && restored[key] === next[key])
               restored[key] = previous[key];
+          // A failed publish must never reopen a microphone the user muted.
+          restored.audioEnabled &&= next.audioEnabled;
           restored.screenEnabled &&=
             screenStreamRef.current
               ?.getVideoTracks()

@@ -149,3 +149,46 @@ it('replaces the reconnect transcript snapshot instead of duplicating existing t
   expect(result.current.transcript).toHaveLength(1);
   expect(result.current.transcript[0]?.text).toBe('Recovered reply');
 });
+
+it('pauses same-room audio while retaining the session and transcript until explicit resume', async () => {
+  vi.stubGlobal('WebSocket', Socket);
+  const microphone = { enabled: true, stop: vi.fn() };
+  vi.stubGlobal('navigator', {
+    mediaDevices: {
+      getUserMedia: async () => ({ getTracks: () => [microphone] }),
+    },
+  });
+  const { result, rerender } = renderHook(
+    ({ suppressed }) =>
+      useLiveAssistant('meeting', '', {
+        streams: [],
+        microphoneEnabled: false,
+        suppressed,
+      }),
+    { initialProps: { suppressed: false } }
+  );
+  await act(() => result.current.start('personal', [], ''));
+  const socket = Socket.current;
+  act(() =>
+    socket.receive({
+      type: 'transcript',
+      role: 'assistant',
+      text: 'Keep this reply',
+    })
+  );
+  rerender({ suppressed: true });
+  expect(microphone.enabled).toBe(false);
+  expect(calls.interrupt).toHaveBeenCalled();
+  expect(socket.close).not.toHaveBeenCalled();
+  act(() => {
+    result.current.send({ type: 'pause', paused: false });
+    socket.receive({ type: 'audio', data: 'AAAA', sampleRate: 24000 });
+  });
+  expect(calls.play).not.toHaveBeenCalled();
+  expect(result.current.transcript[0]?.text).toBe('Keep this reply');
+  rerender({ suppressed: false });
+  expect(microphone.enabled).toBe(false);
+  act(() => result.current.send({ type: 'pause', paused: false }));
+  expect(microphone.enabled).toBe(true);
+  expect(Socket.current).toBe(socket);
+});

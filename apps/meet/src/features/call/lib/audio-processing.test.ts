@@ -103,6 +103,12 @@ it('prefers advertised all-system AEC without making unsupported browsers lose c
     echoCancellation: { ideal: 'all' },
   });
   await expect(enhanceMicrophone(track, preferences)).resolves.toBeUndefined();
+  expect(track.applyConstraints).toHaveBeenCalledWith(
+    expect.objectContaining({ echoCancellation: { ideal: 'all' } })
+  );
+  vi.mocked(track.applyConstraints).mockResolvedValueOnce();
+  await enhanceMicrophone(track, preferences);
+  expect(track.applyConstraints).toHaveBeenCalledTimes(2);
   expect(
     trackProcessingConstraints(track, {
       ...preferences,

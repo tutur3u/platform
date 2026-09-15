@@ -16,9 +16,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
-it.each([false, true])(
-  'plays unlocked sounds and respects mute (legacy WebKit: %s)',
-  (legacy) => {
+it.each([
+  [false, false],
+  [true, false],
+  [false, true],
+])(
+  'plays unlocked sounds and respects mute (legacy WebKit: %s, shared audio: %s)',
+  (legacy, suppressed) => {
     const start = vi.fn();
     class Audio {
       state = 'running';
@@ -54,7 +58,8 @@ it.each([false, true])(
     };
     const open = vi.fn();
     const { result, rerender } = renderHook(
-      ({ state }) => useCallNotifications(state, true, true, open, null),
+      ({ state }) =>
+        useCallNotifications(state, true, true, open, null, suppressed),
       { initialProps: { state: initial } }
     );
     act(() => document.dispatchEvent(new Event('pointerdown')));
@@ -64,7 +69,7 @@ it.each([false, true])(
     } as MeetRealtimePresence;
     rerender({ state: { ...initial, participants: { peer } } });
     expect(mocks.info).toHaveBeenCalledTimes(1);
-    expect(start).toHaveBeenCalledTimes(1);
+    expect(start).toHaveBeenCalledTimes(suppressed ? 0 : 1);
     expect(mocks.info.mock.calls.at(-1)?.[1].id).toBeUndefined();
     act(() => result.current.toggleSound());
     now.mockReturnValue(13000);
@@ -76,7 +81,7 @@ it.each([false, true])(
       },
     });
     expect(mocks.info).toHaveBeenCalledTimes(2);
-    expect(start).toHaveBeenCalledTimes(1);
+    expect(start).toHaveBeenCalledTimes(suppressed ? 0 : 1);
     act(() => mocks.info.mock.calls[1]![1].action.onClick());
     expect(open).toHaveBeenCalledWith('participants');
     rerender({

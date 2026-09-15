@@ -27,6 +27,8 @@ function ParticipantTileImpl({
   className,
   outputDeviceId,
   audioSuppressed = false,
+  silenced = false,
+  onSilence,
   resumePlaybackLabel,
   handRaised,
   isSelf,
@@ -43,6 +45,8 @@ function ParticipantTileImpl({
   className?: string;
   outputDeviceId?: string;
   audioSuppressed?: boolean;
+  silenced?: boolean;
+  onSilence?: (key: string) => void;
   resumePlaybackLabel: string;
   handRaised?: boolean;
   isSelf?: boolean;
@@ -58,7 +62,6 @@ function ParticipantTileImpl({
 }) {
   const t = useTranslations('meet.call');
   const [expanded, setExpanded] = useState(false);
-  const [silenced, setSilenced] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -271,7 +274,9 @@ function ParticipantTileImpl({
               { name: participant.displayName }
             )}
             aria-pressed={silenced}
-            onClick={() => setSilenced((value) => !value)}
+            onClick={() =>
+              onSilence?.(focusKey ?? `${participant.userId}:${kind}`)
+            }
           >
             {silenced ? (
               <VolumeX className="size-4" />
@@ -346,6 +351,8 @@ export const ParticipantTile = memo(
     a.className === b.className &&
     a.outputDeviceId === b.outputDeviceId &&
     a.audioSuppressed === b.audioSuppressed &&
+    a.silenced === b.silenced &&
+    a.onSilence === b.onSilence &&
     a.resumePlaybackLabel === b.resumePlaybackLabel &&
     a.kind === b.kind &&
     a.focused === b.focused &&
