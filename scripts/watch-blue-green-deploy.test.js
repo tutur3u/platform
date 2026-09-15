@@ -4054,7 +4054,6 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
   const paths = getWatchPaths(tempDir);
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const receivedEnvs = [];
-
   try {
     fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
     fs.mkdirSync(paths.blueGreen.runtimeDir, { recursive: true });
@@ -4062,6 +4061,7 @@ test('resolveCurrentBlueGreenStatus reflects the active color and running servic
     fs.writeFileSync(paths.blueGreen.stateFile, 'green\n', 'utf8');
 
     const status = await resolveCurrentBlueGreenStatus({
+      env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
       paths,
