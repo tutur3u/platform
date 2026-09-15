@@ -200,3 +200,85 @@ describe('Meet chunk idempotency', () => {
     }
   );
 });
+
+it('reserves and charges once for a multi-source upload while persisting verified per-source text', async () => {
+  vi.resetAllMocks();
+  const speakers = [
+    { accountId: id, displayName: 'Alice', kind: 'microphone' },
+    null,
+  ];
+  mocks.speaker
+    .mockResolvedValueOnce(speakers[0])
+    .mockResolvedValueOnce(speakers[1]);
+  const persisted = query({ data: { id, status: 'completed' }, error: null });
+  const from = vi
+    .fn()
+    .mockReturnValueOnce(
+      query({ data: { id, created_at: new Date().toISOString() }, error: null })
+    )
+    .mockReturnValueOnce(query({ data: null, error: null }))
+    .mockReturnValueOnce(query({ data: { ended_at: null }, error: null }))
+    .mockReturnValue(persisted);
+  const rpc = vi.fn().mockResolvedValue({ data: { id }, error: null });
+  mocks.access.mockResolvedValue({
+    db: { from, rpc },
+    meetingId: id,
+    user: { id },
+  });
+  mocks.generate.mockResolvedValue({
+    text: '',
+    transcripts: ['Alice speaks', 'Shared audio'],
+    usage: { inputTokens: 10 },
+    costUsd: 0.001,
+  });
+  const body = new FormData();
+  for (const [key, value] of Object.entries({
+    id,
+    sessionId: id,
+    sequence: '0',
+    startSeconds: '0',
+  }))
+    body.set(key, value);
+  body.set(
+    'sources',
+    JSON.stringify([
+      { speakerAccountId: id, sourceKind: 'microphone', startSeconds: 0 },
+      { sourceKind: 'shared_audio', startSeconds: 3 },
+    ])
+  );
+  body.set('audio_0', encodeMeetWav(new Float32Array(160000)));
+  body.set('audio_1', encodeMeetWav(new Float32Array(160000)));
+  await transcribeMeetChunk(
+    new Request('https://meet.tuturuuu.com/api/meet-ai/test', {
+      method: 'POST',
+      headers: { 'X-Meet-Audio-Batch': '1' },
+      body,
+    }),
+    params
+  );
+  expect(rpc).toHaveBeenCalledOnce();
+  expect(mocks.generate).toHaveBeenCalledOnce();
+  expect(mocks.generate.mock.calls[0]?.[0].audioSegments).toHaveLength(2);
+  expect(persisted.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      transcript: 'Alice speaks\nShared audio',
+      usage: {
+        inputTokens: 10,
+        segments: [
+          {
+            speaker: speakers[0],
+            kind: 'microphone',
+            startSeconds: 0,
+            transcript: 'Alice speaks',
+          },
+          {
+            speaker: null,
+            kind: 'shared_audio',
+            startSeconds: 3,
+            transcript: 'Shared audio',
+          },
+        ],
+      },
+    })
+  );
+});

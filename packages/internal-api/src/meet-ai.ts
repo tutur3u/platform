@@ -36,6 +36,12 @@ export type MeetAiChunk = {
     displayName: string;
     kind: 'microphone' | 'shared_audio';
   } | null;
+  segments?: Array<{
+    speaker: NonNullable<MeetAiChunk['speaker']> | null;
+    kind: 'microphone' | 'shared_audio';
+    startSeconds: number;
+    transcript: string;
+  }>;
   cost_usd: number | null;
 };
 export type MeetAiSession = {
@@ -106,7 +112,12 @@ export function uploadMeetAiChunk(
 ) {
   return getInternalApiClient(options).json<MeetAiChunk>(
     `${path(wsId, meetingId)}/chunks`,
-    { method: 'POST', body: data, signal }
+    {
+      method: 'POST',
+      body: data,
+      signal,
+      headers: data.has('sources') ? { 'X-Meet-Audio-Batch': '1' } : undefined,
+    }
   );
 }
 

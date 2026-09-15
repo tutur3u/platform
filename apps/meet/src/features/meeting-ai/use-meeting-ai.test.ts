@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   update: vi.fn(),
@@ -34,6 +34,7 @@ vi.mock('./audio', () => ({
 
 import { useMeetingAi } from './use-meeting-ai';
 
+afterEach(() => vi.useRealTimers());
 beforeEach(() => {
   vi.resetAllMocks();
   mocks.update.mockResolvedValue({ sessionId: 'session' });
@@ -68,11 +69,11 @@ it('drains queued uploads and finalizes when capture overloads', async () => {
       action: 'finish',
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       sessionId: 'session',
-      expectedChunks: 30,
+      expectedChunks: 1,
       captureIncomplete: true,
     })
   );
-  expect(mocks.upload).toHaveBeenCalledTimes(30);
+  expect(mocks.upload).toHaveBeenCalledTimes(1);
   expect(hook.result.current.ownsSession).toBe(false);
   hook.unmount();
 });
@@ -100,5 +101,53 @@ it('waits for an in-flight start before finalizing for leave', async () => {
     captureIncomplete: false,
   });
   expect(hook.result.current.ownsSession).toBe(false);
+  hook.unmount();
+});
+
+it('counts simultaneous sources as one upload window and flushes final audio on finish', async () => {
+  vi.useFakeTimers();
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  await act(() => hook.result.current.start());
+  await act(async () => {
+    for (let index = 0; index < 12; index++)
+      mocks.onChunk?.(new Blob(['audio']), 0);
+    await vi.advanceTimersByTimeAsync(10_100);
+  });
+  expect(mocks.upload).toHaveBeenCalledTimes(1);
+  const data = mocks.upload.mock.calls[0]?.[2] as FormData;
+  expect(JSON.parse(String(data.get('sources')))).toHaveLength(12);
+  await act(async () => {
+    mocks.onChunk?.(new Blob(['final']), 10);
+    await hook.result.current.finish();
+  });
+  expect(mocks.upload).toHaveBeenCalledTimes(2);
+  expect(mocks.update).toHaveBeenLastCalledWith(
+    'workspace',
+    'meeting',
+    expect.objectContaining({
+      action: 'finish',
+      expectedChunks: 2,
+      captureIncomplete: false,
+    })
+  );
+  hook.unmount();
+});
+it('finishes before the wall-clock server expiry even when there is no speech', async () => {
+  vi.useFakeTimers();
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  await act(() => hook.result.current.start());
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(3 * 60 * 60 * 1000 - 15_000);
+  });
+  expect(mocks.update).toHaveBeenLastCalledWith(
+    'workspace',
+    'meeting',
+    expect.objectContaining({
+      action: 'finish',
+      expectedChunks: 0,
+      captureIncomplete: false,
+    })
+  );
+  expect(hook.result.current.capturing).toBe(false);
   hook.unmount();
 });

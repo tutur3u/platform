@@ -1,13 +1,14 @@
 import 'server-only';
+import { MEET_AUDIO_REQUEST_MAX_BYTES } from '@tuturuuu/ai/meetings/audio-contract';
 import { generateMeetArtifact } from '@tuturuuu/ai/meetings/gemini';
+import { Effect, Either } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
+import { readAudioParts } from './audio-input';
 import { readMeetAudioForm } from './body';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
 
 const schema = z.object({
-  speakerAccountId: z.uuid().optional(),
-  sourceKind: z.enum(['microphone', 'shared_audio']).optional(),
   sessionId: z.uuid(),
   id: z.uuid(),
   sequence: z.coerce.number().int().min(0).max(1080),
@@ -19,36 +20,14 @@ export async function transcribeMeetChunk(
   params: MeetAiParams
 ) {
   const { db, meetingId, user } = await meetAiAccess(request, params, true);
-  // The capture client emits canonical mono PCM WAV at 16 kHz, <= 15 seconds.
-  if (Number(request.headers.get('content-length') ?? 0) > 500_000)
+  const batched = request.headers.get('x-meet-audio-batch') === '1';
+  const maxBytes = batched ? MEET_AUDIO_REQUEST_MAX_BYTES : 500_000;
+  if (Number(request.headers.get('content-length') ?? 0) > maxBytes)
     throw new MeetAiError(413, 'Audio too large');
-  const body = await readMeetAudioForm(request);
+  const body = await readMeetAudioForm(request, maxBytes);
   const parsed = schema.safeParse(Object.fromEntries(body));
-  const audio = body.get('audio');
-  if (
-    !parsed.success ||
-    !(audio instanceof File) ||
-    audio.size <= 44 ||
-    audio.size > 480_044
-  )
-    throw new MeetAiError(400, 'Invalid audio');
-  const bytes = new Uint8Array(await audio.arrayBuffer());
-  const view = new DataView(bytes.buffer);
-  const ascii = (offset: number, size: number) =>
-    new TextDecoder().decode(bytes.subarray(offset, offset + size));
-  if (
-    ascii(0, 4) !== 'RIFF' ||
-    ascii(8, 8) !== 'WAVEfmt ' ||
-    ascii(36, 4) !== 'data' ||
-    view.getUint32(16, true) !== 16 ||
-    view.getUint16(20, true) !== 1 ||
-    view.getUint16(22, true) !== 1 ||
-    view.getUint32(24, true) !== 16000 ||
-    view.getUint16(34, true) !== 16 ||
-    view.getUint32(40, true) !== bytes.length - 44 ||
-    (bytes.length - 44) % 2 !== 0
-  )
-    throw new MeetAiError(400, 'Invalid PCM audio');
+  if (!parsed.success) throw new MeetAiError(400, 'Invalid audio');
+  const parts = await readAudioParts(body, batched);
   const { sessionId, id, sequence, startSeconds } = parsed.data;
   const { data: session, error } = await db
     .from('meet_ai_sessions')
@@ -72,13 +51,28 @@ export async function transcribeMeetChunk(
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
   )
     throw new MeetAiError(409, 'Transcription has ended');
-  const speaker = await resolveTranscriptSpeaker({
-    db,
-    meetingId,
-    actorId: user.id,
-    accountId: parsed.data.speakerAccountId,
-    kind: parsed.data.sourceKind,
-  });
+  const resolved = await Effect.runPromise(
+    Effect.either(
+      Effect.forEach(
+        parts,
+        (part) =>
+          Effect.tryPromise({
+            try: () =>
+              resolveTranscriptSpeaker({
+                db,
+                meetingId,
+                actorId: user.id,
+                accountId: part.speakerAccountId,
+                kind: part.sourceKind,
+              }),
+            catch: (error) => error,
+          }),
+        { concurrency: 4 }
+      )
+    )
+  );
+  if (Either.isLeft(resolved)) throw resolved.left;
+  const speakers = resolved.right;
   // Claim one provider attempt at a time, including recovery of failed attempts.
   const reservationStarted = performance.now();
   const inserted = await db.rpc('reserve_meet_ai_chunk', {
@@ -86,7 +80,7 @@ export async function transcribeMeetChunk(
     p_session_id: sessionId,
     p_sequence: sequence,
     p_start_seconds: startSeconds,
-    p_duration_seconds: (bytes.length - 44) / 32000,
+    p_duration_seconds: Math.max(...parts.map((part) => part.durationSeconds)),
   });
   if (inserted.error)
     throw new MeetAiError(
@@ -127,14 +121,35 @@ export async function transcribeMeetChunk(
         409,
         'Transcription has ended or reservation expired'
       );
-    const result = await generateMeetArtifact({ audio: bytes });
+    const result = await generateMeetArtifact(
+      batched
+        ? { audioSegments: parts.map((part) => part.bytes) }
+        : { audio: parts[0]!.bytes }
+    );
+    const segments = batched
+      ? parts.map((part, index) => ({
+          speaker: speakers[index] ?? null,
+          kind: part.sourceKind ?? 'microphone',
+          startSeconds: part.startSeconds,
+          transcript: result.transcripts?.[index] ?? '',
+        }))
+      : null;
+    if (batched && result.transcripts?.length !== parts.length)
+      throw new MeetAiError(502, 'Incomplete transcription result');
+    const transcript = segments
+      ? segments.map((segment) => segment.transcript).join('\n')
+      : result.text;
+    const speaker = speakers[0];
     const save = () => {
       let write = db
         .from('meet_ai_chunks')
         .update({
           status: 'completed',
-          transcript: result.text,
-          usage: { ...result.usage, ...(speaker ? { speaker } : {}) },
+          transcript,
+          usage: {
+            ...result.usage,
+            ...(segments ? { segments } : speaker ? { speaker } : {}),
+          },
           cost_usd: result.costUsd,
         })
         .eq('id', id);

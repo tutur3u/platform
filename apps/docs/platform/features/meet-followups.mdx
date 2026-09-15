@@ -35,12 +35,21 @@ wall times, as explained in the form.
 ## Speaker attribution
 
 New capture keeps microphone and shared-audio tracks separate in one audio context.
-Each segment carries a source account ID; the server verifies that account against
+Each new segment carries a source kind and may carry a source account ID. The server verifies supplied accounts against
 room admission before resolving the saved display name, falling back to email.
 Segments display the source name and whether the source is a microphone or shared
 audio. Historical mixed recordings remain unattributed. A source identifies a
 device owner: it cannot distinguish several people speaking into the same microphone.
 Notes must preserve that uncertainty rather than infer identity from voice.
+
+Speaker clips are sent together in one upload window every ten seconds. One batch
+uses one database reservation, retaining the existing sequence/rate contract and
+three-hour session boundary. Capture stops 15 seconds before expiry to flush pending audio. Individual timestamps and source labels survive batching.
+The provider returns one indexed transcript per file; missing or duplicate indices
+fail validation rather than silently mixing speakers. Batches are bounded to 48 clips
+and 12 MB, with at most 48 MB awaiting upload. These are explicit upload-capacity
+limits; exceeding them marks the session incomplete. They do not multiply the
+sequence counter by participant count.
 
 Source metadata is stored alongside chunk usage without a schema migration. Notes
 receive stable source IDs; generated owner IDs are checked against that roster.

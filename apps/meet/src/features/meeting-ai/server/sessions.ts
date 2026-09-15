@@ -1,6 +1,8 @@
 import {
   formatTranscriptChunk,
+  readTranscriptSegments,
   readTranscriptSpeaker,
+  transcriptSpeakers,
 } from '@tuturuuu/ai/meetings/transcript';
 import { readMeetingRoomPolicy } from './room-access';
 import 'server-only';
@@ -110,6 +112,7 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       duration_seconds: chunk.duration_seconds,
       transcript: chunk.transcript,
       speaker: readTranscriptSpeaker(chunk.usage),
+      segments: readTranscriptSegments(chunk.usage),
       cost_usd: canManage ? chunk.cost_usd : null,
       status:
         chunk.status === 'processing' &&
@@ -299,12 +302,11 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       : null;
     if (result?.notes) {
       const roster = new Map(
-        chunks.flatMap((chunk) => {
-          const speaker = readTranscriptSpeaker(chunk.usage);
-          return speaker
-            ? [[speaker.accountId, speaker.displayName] as const]
-            : [];
-        })
+        chunks.flatMap((chunk) =>
+          transcriptSpeakers(chunk.usage).map(
+            (speaker) => [speaker.accountId, speaker.displayName] as const
+          )
+        )
       );
       result.notes.actionItems = result.notes.actionItems.map((item) => ({
         ...item,
