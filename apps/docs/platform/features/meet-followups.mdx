@@ -37,13 +37,13 @@ wall times, as explained in the form.
 `/api/meet-ai/[wsId]/[meetingId]/followups` runs inside Meet. It verifies the Meet app
 session and source-note sharing policy, then separately verifies full membership and
 existing task/calendar permissions in the destination. Actor IDs come from the
-verified session. A changed account invalidates an open review. Tasks use the existing workspace executor. Calendar writes resolve the native primary calendar and use the existing encryption helper before inserting. Meet performs these authorized writes with its own verified session.
+verified session. A changed account invalidates an open review. Tasks use the existing workspace executor. Calendar writes resolve the native primary calendar and use the existing encryption helper before inserting. Meet performs these authorized writes with its own verified session. Calendar encryption runs in strict mode: a key lookup, configuration or decryption failure rejects the write; only a workspace with no encryption key can store unencrypted fields.
 
 A creation request has a UUID, timestamp and payload fingerprint. Existing private
 room receipts prevent replaying the same request within the one-hour receipt window;
 expired timestamps are rejected. The client also retains a per-user, per-suggestion
 attempt marker and saved result URL, without storing note text. After an uncertain
-write, check the destination before creating another copy. Confirmed pre-write failures clear the local attempt marker so the user can correct the destination and retry. Receipt persistence can
+write, check the destination before creating another copy. Confirmed pre-write failures release the matching pending room receipt and clear the local attempt marker so the user can correct the destination and retry. Receipt persistence can
 fail after a successful write, so the server never automatically retries creation.
 
 ## Verification

@@ -702,7 +702,6 @@ export async function resolveWorkspaceIdForPrincipal({
   if (wsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_SLUG) {
     return normalizeWorkspaceId(wsId, authorizationClient);
   }
-
   const { data: creatorWorkspace, error: creatorWorkspaceError } =
     await authorizationClient
       .from('workspaces')
@@ -710,7 +709,6 @@ export async function resolveWorkspaceIdForPrincipal({
       .eq('personal', true)
       .eq('creator_id', principal.id)
       .maybeSingle();
-
   if (!creatorWorkspaceError && creatorWorkspace?.id) {
     return creatorWorkspace.id;
   }
@@ -725,7 +723,9 @@ export async function resolveWorkspaceIdForPrincipal({
       .maybeSingle();
 
   if (memberWorkspaceError || !memberWorkspace?.id) {
-    throw new Error('Personal workspace not found');
+    throw creatorWorkspaceError || memberWorkspaceError
+      ? new WorkspaceResolutionError('Personal workspace lookup failed')
+      : new WorkspaceNotFoundError('Personal workspace not found');
   }
 
   return memberWorkspace.id;

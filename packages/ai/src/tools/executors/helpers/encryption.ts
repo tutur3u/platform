@@ -17,22 +17,22 @@ type CalendarEventRow = {
 
 /**
  * Retrieve the workspace encryption key (read-only).
- * Returns `null` when E2EE is not configured for the workspace.
+ * Strict mode throws on key/configuration failures; null means no workspace key.
  */
 export async function getWorkspaceKeyForTools(
-  wsId: string
+  wsId: string,
+  strict = false
 ): Promise<Buffer | null> {
   try {
     const { isEncryptionEnabled, getMasterKey, decryptWorkspaceKey } =
       await import('@tuturuuu/utils/encryption');
 
-    if (!isEncryptionEnabled()) return null;
+    if (!strict && !isEncryptionEnabled()) return null;
 
     const { createAdminClient } = await import(
       '@tuturuuu/supabase/next/server'
     );
     const sbAdmin = await createAdminClient();
-    const masterKey = getMasterKey();
 
     const { data, error } = await sbAdmin
       .from('workspace_encryption_keys')
@@ -40,13 +40,15 @@ export async function getWorkspaceKeyForTools(
       .eq('ws_id', wsId)
       .maybeSingle();
 
-    if (error || !data) return null;
+    if (error) throw error;
+    if (!data) return null;
 
     return await decryptWorkspaceKey(
       (data as { encrypted_key: string }).encrypted_key,
-      masterKey
+      getMasterKey()
     );
-  } catch {
+  } catch (error) {
+    if (strict) throw error;
     return null;
   }
 }
@@ -74,14 +76,15 @@ export async function decryptEventsForTools<T extends CalendarEventRow>(
  */
 export async function encryptEventFieldsForTools(
   fields: { title: string; description: string; location: string | null },
-  wsId: string
+  wsId: string,
+  strict = false
 ): Promise<{
   title: string;
   description: string;
   location: string | null;
   is_encrypted: boolean;
 }> {
-  const key = await getWorkspaceKeyForTools(wsId);
+  const key = await getWorkspaceKeyForTools(wsId, strict);
   if (!key) {
     return { ...fields, is_encrypted: false };
   }

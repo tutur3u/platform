@@ -25,7 +25,8 @@ export async function prepareCalendarFollowup(
     throw new MeetAiError(503, 'Workspace primary calendar is unavailable');
   const encrypted = await encryptEventFieldsForTools(
     { title: payload.title, description: payload.description, location: null },
-    workspaceId
+    workspaceId,
+    true
   );
   return async () => {
     const { data: event, error: insertError } = await db

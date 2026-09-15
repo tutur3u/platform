@@ -42,7 +42,12 @@ const request = (origin = 'https://meet.tuturuuu.com') =>
     { method: 'POST', headers: { origin } }
   );
 describe('Meet AI satellite authorization', () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.resolve.mockImplementation(async ({ wsId }) =>
+      wsId === 'personal' ? 'workspace' : wsId
+    );
+  });
   it('returns a configuration status separately from upstream failures', async () => {
     const response = await meetAiResponse(async () => {
       throw new MeetAiGenerationError('missing_configuration');
@@ -107,12 +112,13 @@ describe('Meet AI satellite authorization', () => {
       (await meetAiResponse(() => meetAiAccess(request(), params))).status
     ).toBe(403);
     mocks.shared.mockResolvedValue(true);
-    await meetAiAccess(request(), {
+    const personal = await meetAiAccess(request(), {
       params: Promise.resolve({
         wsId: 'personal',
         meetingId: '00000000-0000-4000-8000-000000000001',
       }),
     });
+    expect(personal.wsId).toBe('workspace');
     expect(mocks.resolve).toHaveBeenCalledWith(
       expect.objectContaining({
         wsId: 'personal',

@@ -113,9 +113,10 @@ async function createFollowupAttempt(
         startAt: payload.start_at,
         endAt: payload.end_at,
       };
-  const saveEvent = task
-    ? null
-    : await prepareCalendarFollowup(access.db, access.workspaceId, payload);
+  const saveEvent =
+    payload.start_at !== undefined
+      ? await prepareCalendarFollowup(access.db, access.workspaceId, payload)
+      : null;
   const room = await getMeetCallAccess(access.meetingId, 'Participant');
   if (room.user.id !== access.user.id)
     throw new MeetAiError(409, 'Account changed');
@@ -157,17 +158,24 @@ async function createFollowupAttempt(
   const result = saveEvent
     ? await saveEvent()
     : await executeMeetWorkspaceTool(name, args, context);
-  if (!result || typeof result !== 'object' || 'error' in result)
+  if (!result || typeof result !== 'object' || 'error' in result) {
+    const rejected =
+      result &&
+      typeof result === 'object' &&
+      'created' in result &&
+      result.created === false;
+    if (rejected)
+      await callRoomService(room, {
+        action: 'personal.release',
+        id: input.requestId,
+        fingerprint,
+      });
     throw new MeetAiError(
       502,
       'Could not confirm follow-up save; check the destination',
-      result &&
-        typeof result === 'object' &&
-        'created' in result &&
-        result.created === false
-        ? 'FOLLOWUP_NOT_SAVED'
-        : undefined
+      rejected ? 'FOLLOWUP_NOT_SAVED' : undefined
     );
+  }
   const resultId =
     task &&
     'task' in result &&

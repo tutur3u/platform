@@ -134,7 +134,8 @@ export function roomService(
   const message = parsed.data;
   if (
     message.action === 'personal.begin' ||
-    message.action === 'personal.finish'
+    message.action === 'personal.finish' ||
+    message.action === 'personal.release'
   ) {
     const result = personalChatReceipt(
       snapshot.personalChatReceipts,

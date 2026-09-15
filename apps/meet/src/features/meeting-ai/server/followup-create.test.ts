@@ -197,6 +197,11 @@ it('marks confirmed pre-write failures retryable but keeps uncertain writes bloc
   await expect(createFollowup(request(), params)).rejects.toMatchObject({
     code: 'FOLLOWUP_NOT_SAVED',
   });
+  expect(mock.receipt).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ action: 'personal.release', id: input.requestId })
+  );
+  mock.receipt.mockClear();
   mock.execute.mockResolvedValueOnce({ error: 'Connection lost' });
   await expect(createFollowup(request(), params)).rejects.toMatchObject({
     code: undefined,
