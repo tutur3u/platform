@@ -157,7 +157,7 @@ export function MeetLivePanel({
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
-                className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                 disabled={audioSuppressed}
                 onClick={() => void start('personal')}
               >
@@ -170,7 +170,7 @@ export function MeetLivePanel({
               {canManage && (
                 <button
                   type="button"
-                  className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="space-y-3 rounded-xl border p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                   disabled={audioSuppressed}
                   onClick={() => void start('room')}
                 >

@@ -313,6 +313,7 @@ export function ConnectedCallShell({
           />
         )}
         <MeetLivePanel
+          key="live-assistant"
           room={room}
           meetingId={meetingId}
           outputDeviceId={outputDeviceId}

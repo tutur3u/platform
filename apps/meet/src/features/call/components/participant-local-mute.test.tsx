@@ -6,6 +6,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../messages/en.json';
 import type { MeetRoomController } from '../lib/room-controller';
 import { type CallLayout, CallStage } from './call-stage';
+import { ParticipantTile } from './participant-tile';
 
 vi.mock('./media-receiving-status', () => ({
   useStreamReadiness: () => ({}),
@@ -61,11 +62,8 @@ it.each(['camera', 'screen'] as const)(
       </NextIntlClientProvider>
     );
     const { rerender } = render(view('grid'));
-    const audioFor = (label: string) =>
-      screen
-        .getByRole('button', { name: label })
-        .closest('.group')!
-        .querySelector('audio')!;
+    const audioFor = (_label: string) =>
+      screen.getByTestId(`participant-peer-${kind}`).querySelector('audio')!;
     const audio = audioFor('Mute Peer for me');
     expect(audio.muted).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Mute Peer for me' }));
@@ -79,3 +77,37 @@ it.each(['camera', 'screen'] as const)(
     expect(audioFor('Mute Peer for me').muted).toBe(false);
   }
 );
+
+it('supports local mute in direct tile consumers without a stage handler', () => {
+  class Stream {
+    getAudioTracks() {
+      return [{ kind: 'audio' }];
+    }
+    getVideoTracks() {
+      return [];
+    }
+  }
+  vi.stubGlobal('MediaStream', Stream);
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantTile
+        participant={
+          {
+            userId: 'peer',
+            displayName: 'Peer',
+            media: { audioEnabled: true },
+          } as MeetRealtimePresence
+        }
+        stream={new Stream() as unknown as MediaStream}
+        resumePlaybackLabel="Play"
+      />
+    </NextIntlClientProvider>
+  );
+  const audio = screen
+    .getByTestId('participant-peer-camera')
+    .querySelector('audio')!;
+  fireEvent.click(screen.getByRole('button', { name: 'Mute Peer for me' }));
+  expect(audio.muted).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: 'Unmute Peer for me' }));
+  expect(audio.muted).toBe(false);
+});

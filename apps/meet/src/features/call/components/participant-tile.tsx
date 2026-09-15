@@ -27,7 +27,7 @@ function ParticipantTileImpl({
   className,
   outputDeviceId,
   audioSuppressed = false,
-  silenced = false,
+  silenced: controlledSilence,
   onSilence,
   resumePlaybackLabel,
   handRaised,
@@ -62,6 +62,8 @@ function ParticipantTileImpl({
 }) {
   const t = useTranslations('meet.call');
   const [expanded, setExpanded] = useState(false);
+  const [localSilence, setLocalSilence] = useState(false);
+  const silenced = controlledSilence ?? localSilence;
   const [fullscreen, setFullscreen] = useState(false);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -141,6 +143,7 @@ function ParticipantTileImpl({
   return (
     <div
       ref={tileRef}
+      data-testid={`participant-${participant.userId}-${kind}`}
       className={cn(
         'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-dynamic-surface ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
@@ -275,7 +278,9 @@ function ParticipantTileImpl({
             )}
             aria-pressed={silenced}
             onClick={() =>
-              onSilence?.(focusKey ?? `${participant.userId}:${kind}`)
+              onSilence
+                ? onSilence(focusKey ?? `${participant.userId}:${kind}`)
+                : setLocalSilence((value) => !value)
             }
           >
             {silenced ? (
