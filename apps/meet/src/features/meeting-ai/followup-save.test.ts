@@ -47,3 +47,17 @@ it('serializes event instants and rejects reversed or missing intervals', () => 
   ).toThrow();
   expect(() => buildFollowupPayload({ ...event, start: '' })).toThrow();
 });
+
+it('uses the reviewed assignee set without silently assigning the creator', () => {
+  expect(
+    buildFollowupPayload({
+      ...input,
+      assignToMe: false,
+      assigneeIds: ['bob', 'alice', 'bob'],
+      priority: 'high',
+    })
+  ).toMatchObject({ assignee_ids: ['alice', 'bob'], priority: 'high' });
+  expect(
+    buildFollowupPayload({ ...input, assignToMe: false, assigneeIds: [] })
+  ).toMatchObject({ assignee_ids: [] });
+});

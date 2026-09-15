@@ -11,6 +11,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../messages/en.json';
 import { FollowupReview } from './followup-review';
+import type { MeetingFollowup } from './followup-types';
 
 const mocks = vi.hoisted(() => ({ context: vi.fn(), create: vi.fn() }));
 vi.mock('@tuturuuu/internal-api', async (original) => ({
@@ -32,7 +33,7 @@ const suggestion = {
   endLocal: '2026-09-15T10:00',
   timezone: 'Asia/Ho_Chi_Minh',
 };
-function view() {
+function view(selected: MeetingFollowup = suggestion) {
   return render(
     <QueryClientProvider
       client={
@@ -41,7 +42,7 @@ function view() {
     >
       <NextIntlClientProvider locale="en" messages={messages}>
         <FollowupReview
-          suggestion={suggestion}
+          suggestion={selected}
           sourceUrl="https://meet.tuturuuu.com/source"
           wsId={wsId}
           meetingId="meeting"
@@ -52,6 +53,15 @@ function view() {
   );
 }
 beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+  );
+  Element.prototype.scrollIntoView = vi.fn();
   localStorage.clear();
   vi.clearAllMocks();
   mocks.context.mockResolvedValue({
@@ -61,6 +71,8 @@ beforeEach(() => {
     workspaces: [
       { id: wsId, name: 'Personal', personal: true, access_type: 'member' },
     ],
+    members: [],
+    calendars: [{ id: wsId, name: 'My calendar', calendar_type: 'primary' }],
     boards: [],
     lists: [],
   });
@@ -68,7 +80,14 @@ beforeEach(() => {
     url: `https://calendar.tuturuuu.com/${wsId}`,
   });
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
+async function chooseCalendar() {
+  fireEvent.click(await screen.findByRole('combobox', { name: 'Calendar' }));
+  fireEvent.click(await screen.findByRole('option', { name: 'My calendar' }));
+}
 it('uses the verified account and saved timezone, creates only after review and blocks duplicate submission', async () => {
   const first = view();
   const add = await screen.findByRole('button', { name: 'Add to calendar' });
@@ -79,6 +98,7 @@ it('uses the verified account and saved timezone, creates only after review and 
   expect((screen.getByLabelText('Starts') as HTMLInputElement).value).toBe(
     '2026-09-14T22:00'
   );
+  await chooseCalendar();
   fireEvent.click(add);
   await screen.findByText('Saved. Open it below to review the result.');
   expect(mocks.create).toHaveBeenCalledWith(
@@ -93,6 +113,7 @@ it('uses the verified account and saved timezone, creates only after review and 
   );
   first.unmount();
   view();
+  await chooseCalendar();
   fireEvent.click(
     await screen.findByRole('button', { name: 'Add to calendar' })
   );
@@ -102,6 +123,7 @@ it('uses the verified account and saved timezone, creates only after review and 
 it('does not submit an ambiguous daylight-saving time', async () => {
   view();
   await screen.findByRole('button', { name: 'Add to calendar' });
+  await chooseCalendar();
   fireEvent.change(screen.getByLabelText('Starts'), {
     target: { value: '2026-11-01T01:30' },
   });
@@ -122,6 +144,7 @@ it('allows retry after a confirmed pre-write rejection', async () => {
   );
   view();
   const add = await screen.findByRole('button', { name: 'Add to calendar' });
+  await chooseCalendar();
   fireEvent.click(add);
   await screen.findByText(
     'Nothing was saved. Check the selected destination and try again.'
@@ -131,4 +154,63 @@ it('allows retry after a confirmed pre-write rejection', async () => {
   ).toBeNull();
   fireEvent.click(add);
   await waitFor(() => expect(mocks.create).toHaveBeenCalledTimes(2));
+});
+
+it('creates a task with a reviewed board, list and a different verified assignee', async () => {
+  const other = '33333333-3333-4333-8333-333333333333';
+  const board = '44444444-4444-4444-8444-444444444444';
+  const list = '55555555-5555-4555-8555-555555555555';
+  mocks.context.mockResolvedValue({
+    user: { id: userId, display_name: null, email: 'requester@example.com' },
+    timezone: 'Asia/Ho_Chi_Minh',
+    workspaceId: wsId,
+    workspaces: [
+      { id: wsId, name: 'Personal', personal: true, access_type: 'member' },
+    ],
+    boards: [{ id: board, name: 'Delivery' }],
+    lists: [{ id: list, name: 'Next up', status: 'not_started' }],
+    members: [
+      {
+        id: other,
+        displayName: 'Colleague',
+        email: 'colleague@example.com',
+        avatarUrl: null,
+      },
+    ],
+    calendars: [],
+  });
+  mocks.create.mockResolvedValue({
+    url: `https://tasks.tuturuuu.com/${wsId}/tasks/${list}`,
+  });
+  view({ ...suggestion, kind: 'task', owner: 'Colleague', ownerId: other });
+  await screen.findByText(/requester@example.com/);
+  fireEvent.click(await screen.findByRole('combobox', { name: 'Task board' }));
+  fireEvent.click(await screen.findByRole('option', { name: 'Delivery' }));
+  const lists = await screen.findByRole('combobox', { name: 'Task list' });
+  await waitFor(() =>
+    expect((lists as HTMLButtonElement).disabled).toBe(false)
+  );
+  fireEvent.click(lists);
+  fireEvent.click(await screen.findByRole('option', { name: 'Next up' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Assign suggested owner: Colleague' })
+  );
+  fireEvent.change(screen.getByLabelText('Description'), {
+    target: { value: 'Reviewed description' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Create task' }));
+  await waitFor(() => expect(mocks.create).toHaveBeenCalledOnce());
+  expect(mocks.create).toHaveBeenCalledWith(
+    wsId,
+    'meeting',
+    expect.objectContaining({
+      userId,
+      workspaceId: wsId,
+      boardId: board,
+      listId: list,
+      assigneeIds: [other],
+      description: 'Reviewed description\n\nhttps://meet.tuturuuu.com/source',
+      priority: 'normal',
+    })
+  );
 });

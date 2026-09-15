@@ -3,8 +3,11 @@ import { generateMeetArtifact } from '@tuturuuu/ai/meetings/gemini';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { readMeetAudioForm } from './body';
+import { resolveTranscriptSpeaker } from './transcript-speaker';
 
 const schema = z.object({
+  speakerAccountId: z.uuid().optional(),
+  sourceKind: z.enum(['microphone', 'shared_audio']).optional(),
   sessionId: z.uuid(),
   id: z.uuid(),
   sequence: z.coerce.number().int().min(0).max(1080),
@@ -69,6 +72,13 @@ export async function transcribeMeetChunk(
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
   )
     throw new MeetAiError(409, 'Transcription has ended');
+  const speaker = await resolveTranscriptSpeaker({
+    db,
+    meetingId,
+    actorId: user.id,
+    accountId: parsed.data.speakerAccountId,
+    kind: parsed.data.sourceKind,
+  });
   // Claim one provider attempt at a time, including recovery of failed attempts.
   const reservationStarted = performance.now();
   const inserted = await db.rpc('reserve_meet_ai_chunk', {
@@ -124,7 +134,7 @@ export async function transcribeMeetChunk(
         .update({
           status: 'completed',
           transcript: result.text,
-          usage: result.usage,
+          usage: { ...result.usage, ...(speaker ? { speaker } : {}) },
           cost_usd: result.costUsd,
         })
         .eq('id', id);

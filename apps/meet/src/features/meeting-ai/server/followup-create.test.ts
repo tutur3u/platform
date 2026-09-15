@@ -8,6 +8,7 @@ const mock = vi.hoisted(() => ({
   room: vi.fn(),
   receipt: vi.fn(),
   prepareEvent: vi.fn(),
+  prepareTask: vi.fn(),
 }));
 vi.mock('./followup-event', () => ({
   prepareCalendarFollowup: mock.prepareEvent,
@@ -16,9 +17,7 @@ vi.mock('./followup-context', () => ({ followupAccess: mock.access }));
 vi.mock('@tuturuuu/ai/meetings/workspace-tools', () => ({
   createMeetWorkspaceTools: mock.tools,
 }));
-vi.mock('@tuturuuu/ai/meetings/workspace-tool-handlers', () => ({
-  executeMeetWorkspaceTool: mock.execute,
-}));
+vi.mock('./followup-task', () => ({ prepareTaskFollowup: mock.prepareTask }));
 vi.mock('@/features/call/lib/call-access', () => ({
   getMeetCallAccess: mock.room,
 }));
@@ -82,6 +81,7 @@ beforeEach(() => {
   mock.tools.mockReturnValue({ create_task: {}, create_event: {} });
   mock.room.mockResolvedValue({ user: { id: userId } });
   mock.receipt.mockResolvedValue({ started: true });
+  mock.prepareTask.mockResolvedValue(mock.execute);
   mock.execute.mockResolvedValue({ success: true, task: { id: listId } });
   mock.prepareEvent.mockResolvedValue(async () => ({
     success: true,
@@ -90,15 +90,14 @@ beforeEach(() => {
 });
 it('uses the verified actor and reviewed destination, then stores a private receipt', async () => {
   const result = await createFollowup(request(), params);
-  expect(mock.execute).toHaveBeenCalledWith(
-    'create_task',
+  expect(mock.prepareTask).toHaveBeenCalledWith(
+    expect.objectContaining({ user: { id: userId }, workspaceId: wsId }),
+    boardId,
     expect.objectContaining({
       listId,
-      boardId,
-      assignToSelf: true,
-      endDate: '2026-09-15T02:00:00.000Z',
-    }),
-    expect.objectContaining({ userId, wsId })
+      assignee_ids: [userId],
+      end_date: '2026-09-15T02:00:00.000Z',
+    })
   );
   expect(result.url).toContain(`tasks.tuturuuu.com/${wsId}/tasks/`);
   expect(mock.receipt).toHaveBeenCalledWith(

@@ -7,13 +7,13 @@ import {
   uploadMeetAiChunk,
 } from '@tuturuuu/internal-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MeetAudioCapture } from './audio';
+import { MeetAudioCapture, type MeetAudioSource } from './audio';
 import { recoverMeetChunk } from './chunk-recovery';
 
 export function useMeetingAi(
   wsId: string,
   meetingId: string,
-  streams: MediaStream[] = [],
+  streams: MeetAudioSource[] = [],
   live = true,
   enabled = true
 ) {
@@ -109,7 +109,7 @@ export function useMeetingAi(
     setCaptureError(false);
     errorRef.current = false;
     autoFinishRequested.current = false;
-    const recorder = new MeetAudioCapture((audio, startSeconds) => {
+    const recorder = new MeetAudioCapture((audio, startSeconds, source) => {
       const sessionId = session.current;
       if (!sessionId) return;
       if (pending.current >= 30 || sequence.current >= 1080) {
@@ -135,6 +135,8 @@ export function useMeetingAi(
       data.set('id', crypto.randomUUID());
       data.set('sequence', String(sequence.current++));
       data.set('startSeconds', String(startSeconds));
+      if (source?.accountId) data.set('speakerAccountId', source.accountId);
+      if (source) data.set('sourceKind', source.kind);
       pending.current++;
       setPendingChunks(pending.current);
       const recoverySignal = recovery.current.signal;

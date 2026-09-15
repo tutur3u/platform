@@ -13,18 +13,24 @@ export async function prepareCalendarFollowup(
     { start_at: string }
   >
 ) {
-  const { data: calendar, error } = await db
+  let query = db
     .schema('private')
     .from('workspace_calendars')
     .select('id')
     .eq('ws_id', workspaceId)
-    .eq('calendar_type', 'primary')
-    .eq('is_enabled', true)
-    .maybeSingle();
+    .eq('is_enabled', true);
+  query = payload.calendarId
+    ? query.eq('id', payload.calendarId)
+    : query.eq('calendar_type', 'primary');
+  const { data: calendar, error } = await query.maybeSingle();
   if (error || !calendar)
-    throw new MeetAiError(503, 'Workspace primary calendar is unavailable');
+    throw new MeetAiError(503, 'Selected calendar is unavailable');
   const encrypted = await encryptEventFieldsForTools(
-    { title: payload.title, description: payload.description, location: null },
+    {
+      title: payload.title,
+      description: payload.description,
+      location: payload.location,
+    },
     workspaceId,
     true
   );

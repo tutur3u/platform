@@ -12,17 +12,23 @@ export type FollowupSaveInput = {
   end: string;
   due: string;
   assignToMe: boolean;
+  assigneeIds?: string[];
+  priority?: 'low' | 'normal' | 'high' | 'critical';
+  calendarId?: string;
+  location?: string;
 };
 export function buildFollowupPayload(input: FollowupSaveInput) {
   if (!input.title.trim() || !input.workspaceId || !input.userId)
     throw new Error('invalid_followup');
   if (input.kind === 'task') {
-    if (!input.listId || !input.assignToMe) throw new Error('invalid_followup');
+    if (!input.listId || (input.assigneeIds === undefined && !input.assignToMe))
+      throw new Error('invalid_followup');
     return {
       name: input.title.trim(),
       listId: input.listId,
       description: input.description,
-      assignee_ids: [input.userId],
+      assignee_ids: [...new Set(input.assigneeIds ?? [input.userId])].sort(),
+      priority: input.priority ?? 'normal',
       end_date: input.due ? localTimeToIso(input.due, input.timezone) : null,
     };
   }
@@ -32,6 +38,8 @@ export function buildFollowupPayload(input: FollowupSaveInput) {
   return {
     title: input.title.trim(),
     description: input.description,
+    calendarId: input.calendarId,
+    location: input.location?.trim() || null,
     start_at: start,
     end_at: end,
   };

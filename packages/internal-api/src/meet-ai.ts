@@ -8,7 +8,12 @@ export type MeetAiNotes = {
   incomplete: boolean;
   summary: string;
   decisions: string[];
-  actionItems: { task: string; owner: string | null; dueDate: string | null }[];
+  actionItems: {
+    task: string;
+    owner: string | null;
+    ownerId?: string | null;
+    dueDate: string | null;
+  }[];
   openQuestions: string[];
   calendarSuggestions?: Array<{
     title: string;
@@ -26,6 +31,11 @@ export type MeetAiChunk = {
   duration_seconds: number;
   status: string;
   transcript: string | null;
+  speaker?: {
+    accountId: string;
+    displayName: string;
+    kind: 'microphone' | 'shared_audio';
+  } | null;
   cost_usd: number | null;
 };
 export type MeetAiSession = {

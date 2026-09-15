@@ -122,6 +122,18 @@ export function MeetingAiPanel({
                         '0'
                       )}
                     </span>
+                    <span className="mb-1 block break-words font-medium">
+                      {chunk.speaker?.displayName ?? t('speaker_unknown')}
+                      {chunk.speaker && (
+                        <span className="ml-2 font-normal text-muted-foreground text-xs">
+                          {t(
+                            chunk.speaker.kind === 'shared_audio'
+                              ? 'speaker_shared_audio'
+                              : 'speaker_microphone'
+                          )}
+                        </span>
+                      )}
+                    </span>
                     {chunk.transcript ||
                       t(
                         chunk.status === 'processing'

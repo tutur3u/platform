@@ -1,6 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
+vi.mock('./followup-members', () => ({
+  readFollowupMembers: vi.fn().mockResolvedValue([]),
+}));
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   membership: vi.fn(),
@@ -91,7 +94,10 @@ it('scopes profile, timezone, workspace and board lookups to the verified actor 
     workspace_boards: query([{ id: boardId, name: 'Board' }]),
     task_lists: query([]),
   };
-  const db = { from: vi.fn((name: keyof typeof tables) => tables[name]) };
+  const db = {
+    from: vi.fn((name: keyof typeof tables) => tables[name]),
+    schema: () => ({ from: () => query([]) }),
+  };
   mocks.access.mockResolvedValue({ db, user: { id: userId } });
   const result = await readFollowupContext(request, params);
   if (!result.user) throw new Error('Expected context');
@@ -113,7 +119,10 @@ it('rejects a list request for a board outside the destination', async () => {
     workspace_members: query([]),
     workspace_boards: query([]),
   };
-  const db = { from: vi.fn((name: keyof typeof tables) => tables[name]) };
+  const db = {
+    from: vi.fn((name: keyof typeof tables) => tables[name]),
+    schema: () => ({ from: () => query([]) }),
+  };
   mocks.access.mockResolvedValue({ db, user: { id: userId } });
   await expect(readFollowupContext(request, params)).rejects.toMatchObject({
     status: 403,

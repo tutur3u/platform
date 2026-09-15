@@ -72,6 +72,10 @@ const command = z.union([
   personalChatReceiptCommand,
   z.discriminatedUnion('action', [
     z.object({ action: z.literal('read') }),
+    z.object({
+      action: z.literal('transcription.speaker'),
+      accountId: z.uuid(),
+    }),
     z.object({ action: z.literal('ai.review.list') }),
     z.object({ action: z.literal('costs') }),
     z.object({ action: z.literal('recording.list') }),
@@ -132,6 +136,17 @@ export function roomService(
     token.scopes.includes('meet:workspace-member');
   const admin = token.role === 'host';
   const message = parsed.data;
+  if (message.action === 'transcription.speaker') {
+    if (!admin) return fail('Only the host can attribute transcription');
+    const known =
+      message.accountId === accountId ||
+      !!snapshot.approved?.[message.accountId] ||
+      Object.values(snapshot.presence).some(
+        (person) => (person.accountId ?? person.userId) === message.accountId
+      );
+    if (!known) return fail('Unknown audio source');
+    return { state: snapshot, body: { accountId: message.accountId } };
+  }
   if (
     message.action === 'personal.begin' ||
     message.action === 'personal.finish' ||
