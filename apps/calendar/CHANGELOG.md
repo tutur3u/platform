@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/calendar-v0.28.0...calendar-v0.29.0) (2026-09-15)
+
+
+### Features
+
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
+* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
+* **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **i18n:** avoid unlimited Enterprise capacity claims ([6c513eb](https://github.com/tutur3u/platform/commit/6c513eb34fa71646b002886d9e545ee0bfc301da))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **pricing:** align localized amounts and plan change previews ([e0e7e3d](https://github.com/tutur3u/platform/commit/e0e7e3d0a07e43e298e9adae39a5a441b0945ab9))
+* **pricing:** reconcile live catalog displays and tier comparisons ([3aa65c2](https://github.com/tutur3u/platform/commit/3aa65c2221d0d099ff5bd50de0c90bb4237d1bbd))
+* **ui:** move app installation into settings ([ffa82a1](https://github.com/tutur3u/platform/commit/ffa82a12e0eba196cc800cf1c2f1ef78819d5d70))
+* **ui:** move app installation into settings ([#5327](https://github.com/tutur3u/platform/issues/5327)) ([17034ef](https://github.com/tutur3u/platform/commit/17034efe29de99bdbf4d6ee76ed9bf1c5f1d4ff7))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573))
+* **ui:** repair checklist caret and status controls ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/calendar-v0.27.5...calendar-v0.28.0) (2026-09-07)
 
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/forms-v0.14.0...forms-v0.15.0) (2026-09-15)
+
+
+### Features
+
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
+* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
+* **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** recover stalled invoice loading ([#5310](https://github.com/tutur3u/platform/issues/5310)) ([a5c6a37](https://github.com/tutur3u/platform/commit/a5c6a3765008e1fb503d6e2ceadec9c43b1e23e5))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573))
+* **ui:** repair checklist caret and status controls ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/forms-v0.13.3...forms-v0.14.0) (2026-09-07)
 
 

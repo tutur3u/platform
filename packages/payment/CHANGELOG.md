@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/payment-v0.4.1...payment-v0.4.2) (2026-09-15)
+
+
+### Bug Fixes
+
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **pay:** handle missing checkout references ([f1d00d8](https://github.com/tutur3u/platform/commit/f1d00d85d06fbd205eac96edefaf1ffe25752fac))
+* **pay:** verify checkout receipts and use Polar invoice history ([#5341](https://github.com/tutur3u/platform/issues/5341)) ([a7a7d15](https://github.com/tutur3u/platform/commit/a7a7d15dc9fa6c3c96a9d44d730134097afcd222))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/payment-v0.4.0...payment-v0.4.1) (2026-08-21)
 
 
