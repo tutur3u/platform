@@ -15,6 +15,7 @@ export function MailIconButton({
           size="icon"
           variant="ghost"
           {...props}
+          aria-describedby={undefined}
           className={cn('size-8 shrink-0', className)}
         />
       </TooltipTrigger>

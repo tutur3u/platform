@@ -18,7 +18,10 @@ beforeEach(() => {
   mocks.access.mockResolvedValue({ admin: {} });
   mocks.table.mockReturnValue({ upsert: mocks.upsert });
   mocks.upsert.mockResolvedValue({ error: null });
-  mocks.get.mockResolvedValue({ id: 'message', unread: false });
+  mocks.get.mockImplementation(async () => ({
+    id: 'message',
+    unread: !mocks.upsert.mock.calls.at(-1)?.[0]?.read_at,
+  }));
 });
 it('archives and marks read in one scoped state write', async () => {
   const result = await updateMailMessageState({

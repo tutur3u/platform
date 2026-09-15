@@ -108,11 +108,11 @@ export function ThreadDetail({
       labelActions={labelActions}
       onStar={onStar}
       onRead={onRead}
-      unread={
-        thread
-          ? thread.messages.some((message) => message.unread)
-          : Boolean(summary?.unreadCount)
-      }
+      unread={Boolean(
+        thread?.thread.unreadCount ||
+          summary?.unreadCount ||
+          thread?.messages.some((message) => message.unread)
+      )}
       onArchive={onArchive}
       onTrash={() => (isDraft ? setDeleteDraftOpen(true) : onTrash())}
     />

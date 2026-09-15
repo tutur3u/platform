@@ -1,9 +1,11 @@
 'use client';
 import { Archive, CheckCheck, Trash2, X } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
+import type { MailFolder } from './mail-folders';
 import { MailIconButton } from './mail-icon-button';
 import { MailLabelMenu } from './mail-label-menu';
 export function MailBulkToolbar({
+  folder,
   threadIds,
   mailboxId,
   workspaceId,
@@ -12,6 +14,7 @@ export function MailBulkToolbar({
   onChanged,
   onClear,
 }: {
+  folder: MailFolder;
   threadIds: string[];
   mailboxId: string | null;
   workspaceId: string;
@@ -28,7 +31,7 @@ export function MailBulkToolbar({
       </span>
       <MailIconButton
         aria-label={t('mark_read')}
-        disabled={actionsPending}
+        disabled={actionsPending || folder === 'drafts'}
         onClick={() => onAction('mark_read')}
         size="icon"
         variant="ghost"
@@ -37,14 +40,14 @@ export function MailBulkToolbar({
       </MailIconButton>
       <MailIconButton
         aria-label={t('archive')}
-        disabled={actionsPending}
+        disabled={actionsPending || folder === 'drafts'}
         onClick={() => onAction('archive')}
         size="icon"
         variant="ghost"
       >
         <Archive className="size-4" />
       </MailIconButton>
-      {mailboxId ? (
+      {mailboxId && folder !== 'drafts' ? (
         <MailLabelMenu
           mailboxId={mailboxId}
           onChanged={onChanged}
@@ -54,7 +57,7 @@ export function MailBulkToolbar({
       ) : null}
       <MailIconButton
         aria-label={t('trash')}
-        disabled={actionsPending}
+        disabled={actionsPending || folder === 'drafts'}
         onClick={() => onAction('trash')}
         size="icon"
         variant="ghost"

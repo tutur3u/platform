@@ -6,6 +6,7 @@ import {
   type InternalApiQueryValue,
   withMailApiBaseUrl,
 } from './client';
+import { jsonHeaders, mailboxPath, workspaceMailPath } from './mail-paths';
 import type {
   BulkUpdateMailPayload,
   CreateMailDraftPayload,
@@ -43,23 +44,6 @@ export * from './mail-blacklist';
 export { getMailBootstrap, getMailUnreadCounts } from './mail-bootstrap';
 export { bulkUpdateMailThreads, markMailFolderRead } from './mail-read';
 export * from './mail-types';
-
-function workspaceMailPath(workspaceId: string, suffix = '') {
-  return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/mail${suffix}`;
-}
-
-function mailboxPath(workspaceId: string, mailboxId: string, suffix = '') {
-  return workspaceMailPath(
-    workspaceId,
-    `/mailboxes/${encodePathSegment(mailboxId)}${suffix}`
-  );
-}
-
-function jsonHeaders() {
-  return {
-    'Content-Type': 'application/json',
-  };
-}
 
 function mailPlatformPath(suffix: string) {
   return `/api/v1/mail${suffix}`;

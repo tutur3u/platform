@@ -1,7 +1,7 @@
 import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { getStatesByMessageId } from './messages';
-import { type AnyRecord, mailMessageTable, privateTable } from './shared';
+import { type AnyRecord, privateTable } from './shared';
 
 const BATCH_SIZE = 250;
 
@@ -34,7 +34,7 @@ export async function markMailFolderRead({
   if (!access) return null;
   const now = new Date().toISOString();
   const before = payload.before && payload.before < now ? payload.before : now;
-  let query = mailMessageTable(access, ctx)
+  let query = privateTable(access.admin, 'mail_messages')
     .select('id,direction,status')
     .eq('mailbox_id', mailboxId)
     .eq('direction', 'inbound')

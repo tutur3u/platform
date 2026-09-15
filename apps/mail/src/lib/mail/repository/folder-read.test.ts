@@ -11,7 +11,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('./bootstrap', () => ({ requireMailboxAccess: mocks.access }));
 vi.mock('./messages', () => ({ getStatesByMessageId: mocks.states }));
 vi.mock('./shared', () => ({
-  mailMessageTable: mocks.table,
   privateTable: mocks.privateTable,
 }));
 
@@ -23,7 +22,9 @@ beforeEach(() => {
   mocks.access.mockResolvedValue({ admin: {}, mailbox: {} });
   mocks.states.mockResolvedValue(new Map());
   mocks.upsert.mockResolvedValue({ error: null });
-  mocks.privateTable.mockReturnValue({ upsert: mocks.upsert });
+  mocks.privateTable.mockImplementation((_admin, table) =>
+    table === 'mail_messages' ? mocks.table() : { upsert: mocks.upsert }
+  );
 });
 describe('folder-wide mark read', () => {
   it('includes only unread messages in the requested folder', () => {
@@ -76,12 +77,17 @@ describe('folder-wide mark read', () => {
       direction: 'inbound',
       status: 'received',
     }));
+    mocks.access.mockResolvedValue({ admin: {}, mailbox: { groupPolicy: {} } });
     const boundaries: string[] = [];
+    const filters: unknown[][] = [];
     mocks.table.mockImplementation(() => {
       let cursor = '';
       const query = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
+        eq: (...args: unknown[]) => {
+          filters.push(args);
+          return query;
+        },
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
         lte: (_key: string, value: string) => {
@@ -115,6 +121,8 @@ describe('folder-wide mark read', () => {
       before = result!.before;
     } while (cursor);
     expect(updated).toBe(603);
+    expect(filters.some(([key]) => key === 'created_by')).toBe(false);
+    expect(filters).toContainEqual(['mailbox_id', 'mailbox']);
     expect(mocks.upsert.mock.calls.map(([rows]) => rows.length)).toEqual([
       250, 250, 103,
     ]);

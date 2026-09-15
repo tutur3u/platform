@@ -320,3 +320,22 @@ it('separates mailbox discovery from unread counts without caching authenticated
     expect.objectContaining({ cache: 'no-store', credentials: 'include' })
   );
 });
+
+it('chunks bulk thread actions at the server limit without dropping selected IDs', async () => {
+  const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ updated: 1 }));
+  const ids = Array.from({ length: 205 }, (_, index) => `thread-${index}`);
+  await bulkUpdateMailThreads(
+    'ws',
+    'box',
+    { action: 'mark_read', threadIds: ids },
+    {
+      baseUrl: 'https://mail.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    }
+  );
+  const batches = fetchMock.mock.calls.map(
+    ([, init]) => JSON.parse(init.body).threadIds
+  );
+  expect(batches.map((batch) => batch.length)).toEqual([100, 100, 5]);
+  expect(batches.flat()).toEqual(ids);
+});

@@ -464,6 +464,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         ) : null}
         {selectedThreads.size > 0 ? (
           <MailBulkToolbar
+            folder={folder}
             threadIds={[...selectedThreads]}
             mailboxId={activeMailboxId}
             workspaceId={workspaceId}
@@ -564,9 +565,11 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         onRetry={() => void detailQuery.refetch()}
         loading={detailQuery.isLoading}
         onRead={() => {
-          const unread = detailQuery.data
-            ? detailQuery.data.messages.some((message) => message.unread)
-            : Boolean(selectedSummary?.unreadCount);
+          const unread = Boolean(
+            detailQuery.data?.thread.unreadCount ||
+              selectedSummary?.unreadCount ||
+              detailQuery.data?.messages.some((message) => message.unread)
+          );
           if (!unread) void setThreadId(null);
           mutateThread(unread ? 'mark_read' : 'mark_unread');
         }}

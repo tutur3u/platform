@@ -21,6 +21,10 @@ import {
 import { bulkUpdateMail } from './organization';
 import { loadAllRows, queryMailMessageRows } from './search';
 import { type AnyRecord, mailMessageTable, privateTable } from './shared';
+import {
+  countThreadReadState,
+  loadThreadActionRows,
+} from './thread-action-rows';
 
 const THREAD_PARTICIPANT_COLUMNS =
   'direction,from_address,from_name,has_attachments,id,raw_message_id,thread_id';
@@ -253,6 +257,9 @@ export async function listMailThreads({
         starred: Boolean(state?.starred_at),
         subject: resolveMailThreadSubject(thread.subject, message.subject),
         unreadCount: unreadByThread.get(threadId) ?? 0,
+        inboundCount: visibleMessageRows.filter(
+          (row) => row.thread_id === threadId && row.direction === 'inbound'
+        ).length,
       },
     ];
   });
@@ -273,14 +280,11 @@ export async function bulkUpdateMailThreads({
 }) {
   const access = await requireMailboxAccess(ctx, mailboxId);
   if (!access) return null;
-  const messages = await loadAllRows(
-    () =>
-      mailMessageTable(access, ctx)
-        .select('id')
-        .eq('mailbox_id', mailboxId)
-        .in('thread_id', payload.threadIds)
-        .order('id'),
-    'Failed to load thread messages'
+  const messages = await loadThreadActionRows(
+    access,
+    ctx,
+    mailboxId,
+    payload.threadIds
   );
   let updated = 0;
   for (let start = 0; start < messages.length; start += 250) {
@@ -332,11 +336,17 @@ export async function getMailThread({
   );
   const newestSubject = hydratedMessages.at(-1)?.subject;
   const hydratedThread = toThread(thread);
+  const readState = await countThreadReadState(
+    access.admin,
+    ctx.user.id,
+    await loadThreadActionRows(access, ctx, mailboxId, [threadId])
+  );
 
   return {
     messages: hydratedMessages,
     thread: {
       ...hydratedThread,
+      ...readState,
       subject: resolveMailThreadSubject(hydratedThread.subject, newestSubject),
     },
   };
@@ -358,15 +368,9 @@ export async function updateMailThreadState({
   const thread = await loadThread(access.admin, mailboxId, threadId);
   if (!thread) return null;
 
-  const messages = await loadAllRows(
-    () =>
-      mailMessageTable(access, ctx)
-        .select('id')
-        .eq('mailbox_id', mailboxId)
-        .eq('thread_id', threadId)
-        .order('id'),
-    'Failed to load thread messages'
-  );
+  const messages = await loadThreadActionRows(access, ctx, mailboxId, [
+    threadId,
+  ]);
 
   const now = new Date().toISOString();
   const statePatch: AnyRecord = {};

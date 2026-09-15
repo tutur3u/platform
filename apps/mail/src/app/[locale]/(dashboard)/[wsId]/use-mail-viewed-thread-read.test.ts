@@ -4,6 +4,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { MailThreadDetail } from '@tuturuuu/internal-api';
 import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getMailThreadsQueryKey } from './mail-thread-query';
 
 const mocks = vi.hoisted(() => ({ update: vi.fn(), error: vi.fn() }));
 vi.mock('@tuturuuu/internal-api', () => ({
@@ -111,7 +112,11 @@ it('clears list, reader and mailbox unread state before persistence and rolls ba
       })
   );
   const { client, rerender } = setup({ ...base, blocked: true });
-  const key = ['mail', 'ws', 'mailbox', 'threads', 'inbox', null, null, ''];
+  const key = getMailThreadsQueryKey({
+    workspaceId: 'ws',
+    mailboxId: 'mailbox',
+    folder: 'inbox',
+  });
   const original = {
     pages: [
       { pagination: { total: 1 }, threads: [{ id: 'a', unreadCount: 1 }] },
@@ -141,6 +146,15 @@ it('clears list, reader and mailbox unread state before persistence and rolls ba
   await act(async () => reject(new Error('offline')));
   await waitFor(() => expect(mocks.error).toHaveBeenCalledOnce());
   expect(client.getQueryData(key)).toEqual(original);
+  expect(
+    client.getQueryData<MailThreadDetail>([
+      'mail',
+      'ws',
+      'mailbox',
+      'thread',
+      'a',
+    ])?.messages[0]?.unread
+  ).toBe(true);
   expect(client.getQueryData(['mail', 'ws', 'bootstrap-counts'])).toEqual({
     mailbox: 3,
   });
