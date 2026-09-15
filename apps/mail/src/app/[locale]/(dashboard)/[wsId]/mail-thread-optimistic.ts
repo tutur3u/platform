@@ -121,7 +121,7 @@ export function updateThreadPages(
   };
 }
 
-function updateDetail(
+export function updateDetail(
   current: MailThreadDetail | undefined,
   action: ThreadAction
 ) {
