@@ -1,10 +1,20 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-06-21"
+updatedAt: "2026-09-15"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
+
+## Generated Release Formatting
+
+Release Please initially pushes generated manifests, then amends that commit
+with Biome formatting before approval. Biome cancels superseded runs per Git ref
+so the intermediate unformatted commit cannot keep running beside its replacement.
+Inspect the run for the current release PR head when diagnosing a failure.
+Cancelled or skipped runs do not publish PR reports. Generated release branches
+use the release workflow's formatter rather than separate automatic formatting
+PRs; their final commits still receive the normal format and lint checks.
 
 ## Branch-to-Environment Map
 
