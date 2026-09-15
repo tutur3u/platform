@@ -77,10 +77,7 @@ it('retains keyboard expansion through selection and unrelated rerenders', () =>
   fireEvent(details, new Event(MAIL_EXPAND_DELIVERIES_EVENT));
   expect(details.open).toBe(true);
   rerender(h(MailDeliveryList, { ...props, selectedThreads: new Set(['b']) }));
-  rerender(h(MailDeliveryList, props), {
-    wrapper: ({ children }) =>
-      h(QueryClientProvider, { client: new QueryClient() }, children),
-  });
+  rerender(h(MailDeliveryList, props));
   expect(details.open).toBe(true);
   expect(container.querySelector('details')).toBe(details);
 });
