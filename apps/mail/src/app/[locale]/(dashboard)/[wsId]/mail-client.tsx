@@ -9,7 +9,6 @@ import {
 import { Info, Keyboard, Loader2, Search } from '@tuturuuu/icons';
 import {
   deleteMailDraft,
-  getMailThread,
   listMailThreads,
   type MailThreadSummary,
   type SendMailMessagePayload,
@@ -52,6 +51,7 @@ import {
 import { MailQuickFilters } from './mail-quick-filters';
 import { createMailReplyActions } from './mail-reply-actions';
 import { MailSyncStatus } from './mail-sync-status';
+import { mailThreadDetailQuery } from './mail-thread-detail-query';
 import {
   getMailThreadsQueryKey,
   getNextMailThreadPage,
@@ -166,10 +166,12 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
   const detailQuery = useQuery({
     enabled: Boolean(activeMailboxId && threadId),
-    queryFn: () =>
-      getMailThread(workspaceId, activeMailboxId ?? '', threadId ?? ''),
-    queryKey: ['mail', workspaceId, activeMailboxId, 'thread', threadId],
-    staleTime: 30_000,
+    ...mailThreadDetailQuery(
+      queryClient,
+      workspaceId,
+      activeMailboxId ?? '',
+      threadId ?? ''
+    ),
   });
 
   const threads =
@@ -270,11 +272,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   };
   const prefetchThread = (nextThreadId: string) => {
     if (!activeMailboxId) return;
-    void queryClient.prefetchQuery({
-      queryFn: () => getMailThread(workspaceId, activeMailboxId, nextThreadId),
-      queryKey: ['mail', workspaceId, activeMailboxId, 'thread', nextThreadId],
-      staleTime: 30_000,
-    });
+    void queryClient.prefetchQuery(
+      mailThreadDetailQuery(
+        queryClient,
+        workspaceId,
+        activeMailboxId,
+        nextThreadId
+      )
+    );
   };
   const { handleReply, handleReplyAll, handleForward } = createMailReplyActions(
     t,
@@ -547,9 +552,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       <ThreadDetail
         workspaceId={workspaceId}
         folder={folder}
-        actionPending={
-          actionsPending || actionPending || deleteDraftMutation.isPending
-        }
+        actionPending={actionPending || deleteDraftMutation.isPending}
         isDraft={folder === 'drafts'}
         labelActions={
           activeMailboxId && threadId ? (
