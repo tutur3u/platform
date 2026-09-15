@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.10.0...hive-realtime-v0.11.0) (2026-09-15)
+
+
+### Features
+
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
+* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+
+
+### Bug Fixes
+
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.9.1...hive-realtime-v0.10.0) (2026-09-07)
 
 
