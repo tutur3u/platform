@@ -19,6 +19,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { MailBlacklistStatus } from './mail-blacklist-status';
+import { MailEmailText } from './mail-email-text';
 import { MailIconButton } from './mail-icon-button';
 
 const reasons: MailBlacklistReason[] = [
@@ -73,8 +75,29 @@ export function MailBlacklistControl({
         target.messageId,
         { email: target.email, reason: target.reason }
       ),
-    onSuccess: async (_result, target) => {
-      await client.invalidateQueries({
+    onSuccess: (result, target) => {
+      client.setQueriesData<
+        Awaited<ReturnType<typeof getMailBlacklistRecipients>>
+      >(
+        {
+          queryKey: ['mail', target.workspaceId],
+          predicate: (query) => query.queryKey[3] === 'blacklist',
+        },
+        (current) =>
+          current && {
+            ...current,
+            recipients: current.recipients.map((item) =>
+              item.email.toLowerCase() === target.email.toLowerCase()
+                ? {
+                    ...item,
+                    blocked: true,
+                    reason: result.alreadyBlocked ? item.reason : target.reason,
+                  }
+                : item
+            ),
+          }
+      );
+      void client.invalidateQueries({
         queryKey: ['mail', target.workspaceId, target.mailboxId, 'blacklist'],
       });
       toast.success(t('blacklist_added', { email: target.email }));
@@ -87,8 +110,8 @@ export function MailBlacklistControl({
     <div
       className={
         compact
-          ? ''
-          : 'flex min-w-0 items-center gap-2 border-dynamic border-t px-4 py-2 text-xs'
+          ? 'flex min-w-0 flex-wrap items-center justify-end gap-2'
+          : 'flex min-w-0 flex-wrap items-center gap-2 border-dynamic border-t px-4 py-2 text-xs'
       }
     >
       {!compact ? (
@@ -96,11 +119,23 @@ export function MailBlacklistControl({
           <span className="shrink-0 text-muted-foreground">
             {t('failed_recipient')}
           </span>
-          <span className="min-w-0 flex-1 truncate">
-            {recipients.map((item) => item.email).join(', ')}
-          </span>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
+            {recipients.map((item) => (
+              <div
+                key={item.email}
+                className="flex min-w-0 flex-wrap items-center gap-2"
+              >
+                <span className="break-all">
+                  <MailEmailText text={item.email} />
+                </span>
+                <MailBlacklistStatus recipients={[item]} />
+              </div>
+            ))}
+          </div>
         </>
-      ) : null}
+      ) : (
+        <MailBlacklistStatus recipients={recipients} compact />
+      )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <MailIconButton aria-label={t('blacklist_email')} className="size-7">

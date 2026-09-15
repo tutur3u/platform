@@ -44,6 +44,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       recipients: access.recipients.map((email) => ({
         email,
         blocked: blocked.has(email),
+        reason: blocked.get(email) ?? null,
       })),
     });
   });
@@ -85,14 +86,15 @@ async function existingRecipients(admin: AnyRecord, recipients: string[]) {
     recipients.map(async (email) => {
       const { data, error } = await admin
         .from('email_blacklist')
-        .select('value')
+        .select('value, reason')
         .eq('entry_type', 'email')
         .ilike('value', email.replace(/[\\%_]/gu, '\\$&'));
       if (error) throw new Error(`Failed to check blacklist: ${error.message}`);
-      return (data ?? []).map((entry: { value: string }) =>
-        entry.value.toLowerCase()
+      return (data ?? []).map(
+        (entry: { value: string; reason?: string | null }) =>
+          [entry.value.toLowerCase(), entry.reason ?? null] as const
       );
     })
   );
-  return new Set<string>(matches.flat());
+  return new Map<string, string | null>(matches.flat());
 }

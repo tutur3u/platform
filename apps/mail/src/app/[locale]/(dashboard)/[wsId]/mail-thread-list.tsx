@@ -2,7 +2,6 @@
 
 import { Paperclip, Star } from '@tuturuuu/icons';
 import type { MailThreadSummary } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
@@ -11,6 +10,9 @@ import { useEffect, useRef } from 'react';
 import { isMailDeliveryFailure } from '@/lib/mail/failed-recipients';
 import { MailBlacklistControl } from './mail-blacklist-control';
 import type { MailFolder } from './mail-folders';
+import { MailLabelBadges } from './mail-label-badges';
+import { MailParticipantAvatar } from './mail-participant-avatar';
+import { mailSnippetText } from './mail-snippet-text';
 import { visibleMailLabels } from './mail-visible-labels';
 
 function formatDate(value: string | null, locale: string) {
@@ -50,7 +52,9 @@ export function MailThreadRow({
   const labels = visibleMailLabels(thread.labels, folder);
   const participant = thread.participants[0];
   const participantLabel =
-    participant?.displayName || participant?.address || t('unknown_sender');
+    participant?.displayName?.trim() ||
+    participant?.address ||
+    t('unknown_sender');
   const cancelPrefetch = () => {
     if (prefetchTimer.current) clearTimeout(prefetchTimer.current);
     prefetchTimer.current = null;
@@ -94,13 +98,20 @@ export function MailThreadRow({
         type="button"
       >
         <div className="mb-1 flex items-center gap-2">
+          <MailParticipantAvatar
+            workspaceId={workspaceId}
+            address={participant?.address ?? ''}
+            name={participant?.displayName}
+          />
           {thread.unreadCount > 0 ? (
             <span className="size-2 shrink-0 rounded-full bg-foreground" />
           ) : null}
           <span
             className={cn(
               'min-w-0 flex-1 truncate text-sm',
-              thread.unreadCount > 0 ? 'font-semibold' : 'font-medium'
+              thread.unreadCount > 0 ? 'font-semibold' : 'font-medium',
+              !participant?.displayName?.trim() &&
+                'text-dynamic-blue underline-offset-2 hover:underline'
             )}
           >
             {participantLabel}
@@ -131,40 +142,26 @@ export function MailThreadRow({
           {thread.starred ? <Star className="size-3.5" /> : null}
         </div>
         <p className="line-clamp-1 break-words text-muted-foreground text-xs leading-5">
-          {thread.latestSnippet}
+          {mailSnippetText(thread.latestSnippet ?? '')}
         </p>
         {thread.deliveryRecipient ? (
           <p
             title={thread.deliveryRecipient}
-            className="mt-1 truncate text-muted-foreground text-xs"
+            className="mt-1 truncate text-dynamic-blue text-xs underline-offset-2 hover:underline"
           >
             {t('to')}: {thread.deliveryRecipient}
           </p>
         ) : null}
-        {labels.length > 0 ? (
-          <div className="mt-1.5 flex flex-wrap gap-1">
-            {labels.slice(0, 3).map((label) => (
-              <Badge
-                className="gap-1.5 text-[0.68rem]"
-                key={label.id}
-                variant="secondary"
-              >
-                <span
-                  className="size-1.5 rounded-full bg-foreground/30"
-                  style={
-                    label.color ? { backgroundColor: label.color } : undefined
-                  }
-                />
-                {label.name}
-              </Badge>
-            ))}
-          </div>
-        ) : null}
       </button>
+      {labels.length > 0 ? (
+        <div className="flex flex-wrap gap-1 px-3 pb-2 pl-10">
+          <MailLabelBadges labels={labels} />
+        </div>
+      ) : null}
       {workspaceId &&
       thread.latestMessageId &&
       isMailDeliveryFailure(thread.subject, thread.latestSnippet ?? '') ? (
-        <div className="absolute right-2 bottom-2">
+        <div className="px-3 pb-2 pl-10 empty:hidden">
           <MailBlacklistControl
             compact
             key={thread.latestMessageId}

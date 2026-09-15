@@ -47,3 +47,23 @@ describe('mail participants', () => {
     ).toBe('');
   });
 });
+
+it('uses names only in the compact header and email for unnamed recipients', () => {
+  const detail = {
+    ...message,
+    recipients: [
+      {
+        kind: 'to' as const,
+        address: 'named@example.com',
+        displayName: ' Named Person ',
+      },
+      { kind: 'to' as const, address: 'unnamed@example.com', displayName: ' ' },
+    ],
+  };
+  expect(formatMailRecipients(detail, 'to', true)).toBe(
+    'Named Person, unnamed@example.com'
+  );
+  expect(formatMailRecipients(detail, 'to')).toBe(
+    'Named Person <named@example.com>, unnamed@example.com'
+  );
+});

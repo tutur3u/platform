@@ -8,16 +8,20 @@ export function formatMailSender(message: MailMessageDetail) {
 
 export function formatMailRecipients(
   message: MailMessageDetail,
-  kind: 'bcc' | 'cc' | 'to'
+  kind: 'bcc' | 'cc' | 'to',
+  namesOnly = false
 ) {
   const recipients = message.recipients
     .filter((recipient) => recipient.kind === kind && recipient.address.trim())
     .map((recipient) =>
       recipient.displayName?.trim()
-        ? `${recipient.displayName.trim()} <${recipient.address.trim()}>`
+        ? namesOnly
+          ? recipient.displayName.trim()
+          : `${recipient.displayName.trim()} <${recipient.address.trim()}>`
         : recipient.address.trim()
     );
-  if (recipients.length) return [...new Set(recipients)].join(', ');
+  if (recipients.length)
+    return (namesOnly ? recipients : [...new Set(recipients)]).join(', ');
   // Catch-all delivery can have no parsed To header (including Bcc mail).
   // Use the recorded delivery address, never the catch-all mailbox owner.
   return kind === 'to'
