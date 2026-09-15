@@ -48,7 +48,10 @@ export function useMailViewedThreadRead({
           .filter((message) => message.unread)
           .map((message) => message.id)
           .sort()
-          .join(',')
+          .join(',') ||
+        (detail.thread.unreadCount > 0
+          ? `count:${detail.thread.unreadCount}`
+          : '')
       : '';
   const pending = useMutationState({
     filters: {

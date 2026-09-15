@@ -1,17 +1,11 @@
 import {
-  encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
   withMailApiBaseUrl,
 } from './client';
+import { jsonHeaders, mailboxPath } from './mail-paths';
 import type { BulkUpdateMailThreadsPayload } from './mail-types';
 
-function mailboxPath(workspaceId: string, mailboxId: string, suffix: string) {
-  return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/mail/mailboxes/${encodePathSegment(mailboxId)}${suffix}`;
-}
-function jsonHeaders() {
-  return { 'Content-Type': 'application/json' };
-}
 export async function bulkUpdateMailThreads(
   workspaceId: string,
   mailboxId: string,
@@ -19,16 +13,24 @@ export async function bulkUpdateMailThreads(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(withMailApiBaseUrl(options));
-  return client.json<{ updated: number }>(
-    mailboxPath(workspaceId, mailboxId, '/threads/bulk'),
-    {
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-      credentials: 'include',
-      headers: jsonHeaders(),
-      method: 'POST',
-    }
-  );
+  let updated = 0;
+  for (let start = 0; start < payload.threadIds.length; start += 100) {
+    const result = await client.json<{ updated: number }>(
+      mailboxPath(workspaceId, mailboxId, '/threads/bulk'),
+      {
+        body: JSON.stringify({
+          ...payload,
+          threadIds: payload.threadIds.slice(start, start + 100),
+        }),
+        cache: 'no-store',
+        credentials: 'include',
+        headers: jsonHeaders(),
+        method: 'POST',
+      }
+    );
+    updated += result.updated;
+  }
+  return { updated };
 }
 
 /** Marks one bounded batch; continue with nextCursor to include unloaded messages. */

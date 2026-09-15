@@ -136,6 +136,7 @@ export interface MailAttachment {
 }
 
 export interface MailMessageSummary {
+  direction?: 'inbound' | 'outbound';
   bodyText: string | null;
   createdAt: string;
   fromAddress: string;
@@ -170,6 +171,7 @@ export interface MailMessageDetail extends MailMessageSummary {
 }
 
 export interface MailThread {
+  inboundCount?: number;
   id: string;
   lastMessageAt: string | null;
   mailboxId: string;

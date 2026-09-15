@@ -60,3 +60,8 @@ it('returns the continuation cursor without claiming the whole folder is complet
     payload: { folder: 'archive' },
   });
 });
+
+it('returns a server error when the folder batch fails', async () => {
+  mocks.mark.mockRejectedValueOnce(new Error('offline'));
+  expect((await POST(request({ folder: 'inbox' }), params)).status).toBe(500);
+});

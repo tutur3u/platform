@@ -112,6 +112,7 @@ export function rowToSummary({
     status: row.status,
     subject: row.subject || '(no subject)',
     threadId: row.thread_id ?? null,
+    direction: row.direction,
     unread: row.direction === 'inbound' && !state?.read_at,
   };
 }
