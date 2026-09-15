@@ -39,6 +39,7 @@ import { ThreadMessageCard } from './thread-message-card';
 
 export function ThreadDetail({
   folder,
+  workspaceId,
   actionPending,
   isDraft,
   error,
@@ -58,6 +59,7 @@ export function ThreadDetail({
   summary,
 }: {
   folder?: MailFolder;
+  workspaceId?: string;
   actionPending: boolean;
   isDraft: boolean;
   error?: boolean;
@@ -175,6 +177,7 @@ export function ThreadDetail({
               {thread.messages.map((message) => (
                 <ThreadMessageCard
                   folder={folder}
+                  workspaceId={workspaceId}
                   key={message.id}
                   message={message}
                 />

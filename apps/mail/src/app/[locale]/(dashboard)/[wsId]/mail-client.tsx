@@ -494,6 +494,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             <MailDeliveryList
               threads={threads}
               mailboxAddress={activeMailbox?.address}
+              workspaceId={workspaceId}
               folder={folder}
               threadId={threadId}
               selectedThreads={selectedThreads}
@@ -544,6 +545,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const detailPanel = (
     <section className="flex h-full min-h-0 min-w-0 max-w-full bg-muted/20">
       <ThreadDetail
+        workspaceId={workspaceId}
         folder={folder}
         actionPending={
           actionsPending || actionPending || deleteDraftMutation.isPending

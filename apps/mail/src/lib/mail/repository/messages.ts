@@ -264,6 +264,7 @@ async function getSafeHeaders(admin: AnyRecord, rawMessageId?: string | null) {
     'reply-to',
     'subject',
     'to',
+    'x-failed-recipients',
   ]);
   return Object.fromEntries(
     Object.entries(headers)

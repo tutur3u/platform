@@ -11,6 +11,7 @@ import { MailThreadRow } from './mail-thread-list';
 export function MailDeliveryList({
   threads,
   mailboxAddress,
+  workspaceId,
   folder,
   threadId,
   selectedThreads,
@@ -20,6 +21,7 @@ export function MailDeliveryList({
 }: {
   threads: MailThreadSummary[];
   mailboxAddress?: string;
+  workspaceId?: string;
   folder: MailFolder;
   threadId: string | null;
   selectedThreads: Set<string>;
@@ -31,6 +33,7 @@ export function MailDeliveryList({
   const row = (thread: MailThreadSummary) => (
     <MailThreadRow
       key={thread.id}
+      workspaceId={workspaceId}
       folder={folder}
       active={thread.id === threadId}
       onClick={() => onOpen(thread)}

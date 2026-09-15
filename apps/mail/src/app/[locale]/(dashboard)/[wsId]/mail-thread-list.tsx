@@ -8,6 +8,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
+import { isMailDeliveryFailure } from '@/lib/mail/failed-recipients';
+import { MailBlacklistControl } from './mail-blacklist-control';
 import type { MailFolder } from './mail-folders';
 import { visibleMailLabels } from './mail-visible-labels';
 
@@ -25,6 +27,7 @@ function formatDate(value: string | null, locale: string) {
 
 export function MailThreadRow({
   active,
+  workspaceId,
   folder,
   onClick,
   onPrefetch,
@@ -33,6 +36,7 @@ export function MailThreadRow({
   thread,
 }: {
   active: boolean;
+  workspaceId?: string;
   folder?: MailFolder;
   onClick: () => void;
   onPrefetch: () => void;
@@ -156,6 +160,19 @@ export function MailThreadRow({
           </div>
         ) : null}
       </button>
+      {workspaceId &&
+      thread.latestMessageId &&
+      isMailDeliveryFailure(thread.subject, thread.latestSnippet ?? '') ? (
+        <div className="absolute right-2 bottom-2">
+          <MailBlacklistControl
+            compact
+            key={thread.latestMessageId}
+            workspaceId={workspaceId}
+            mailboxId={thread.mailboxId}
+            messageId={thread.latestMessageId}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
