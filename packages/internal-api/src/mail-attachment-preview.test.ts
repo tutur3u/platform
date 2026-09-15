@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getMailAttachmentText } from './mail-attachment-preview';
+import {
+  getMailAttachmentDocx,
+  getMailAttachmentText,
+} from './mail-attachment-preview';
 
 const path =
   '/api/v1/workspaces/ws/mail/mailboxes/box/messages/message/attachments/file';
@@ -66,5 +69,65 @@ describe('plain text attachment loading', () => {
       getMailAttachmentText('https://example.com/file', undefined, config)
     ).rejects.toThrow('Invalid Mail attachment path');
     expect(config.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('DOCX attachment loading', () => {
+  const mime =
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  it('loads bounded bytes using the authenticated attachment path', async () => {
+    const config = options(
+      new Response(new Uint8Array([80, 75, 3, 4]), {
+        headers: { 'content-type': mime },
+      })
+    );
+    expect(
+      new Uint8Array(await getMailAttachmentDocx(path, undefined, config))
+    ).toEqual(new Uint8Array([80, 75, 3, 4]));
+    expect(config.fetch).toHaveBeenCalledWith(
+      `https://mail.example.com${path}?preview=1`,
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' })
+    );
+  });
+  it('rejects external paths, error pages and oversized files', async () => {
+    const config = options(
+      new Response('error', { headers: { 'content-type': 'text/html' } })
+    );
+    await expect(
+      getMailAttachmentDocx(
+        'https://external.example/file.docx',
+        undefined,
+        config
+      )
+    ).rejects.toThrow('Invalid Mail attachment path');
+    expect(config.fetch).not.toHaveBeenCalled();
+    await expect(
+      getMailAttachmentDocx(path, undefined, config)
+    ).rejects.toThrow('cannot be previewed');
+    await expect(
+      getMailAttachmentDocx(
+        path,
+        undefined,
+        options(
+          new Response('partial', {
+            status: 206,
+            headers: {
+              'content-type': mime,
+              'content-range': 'bytes 0-10485759/20000000',
+            },
+          })
+        )
+      )
+    ).rejects.toThrow('cannot be previewed');
+  });
+  it('enforces the streaming limit even when the server omits size headers', async () => {
+    const config = options(
+      new Response(new Uint8Array(10 * 1024 * 1024 + 1), {
+        headers: { 'content-type': mime },
+      })
+    );
+    await expect(
+      getMailAttachmentDocx(path, undefined, config)
+    ).rejects.toThrow('too large');
   });
 });

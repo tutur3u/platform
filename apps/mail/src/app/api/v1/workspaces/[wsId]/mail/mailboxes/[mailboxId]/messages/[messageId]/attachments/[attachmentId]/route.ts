@@ -50,6 +50,7 @@ export async function GET(
     const inline =
       preview !== null &&
       preview.kind !== 'pdf' &&
+      preview.kind !== 'docx' &&
       (request.nextUrl.searchParams.get('preview') === '1' ||
         authorized.attachment.disposition === 'inline');
     const headers = new Headers({

@@ -30,6 +30,11 @@ const PDFViewer = dynamic(
   { ssr: false }
 );
 
+const DocxPreview = dynamic(
+  () => import('./mail-docx-preview').then((module) => module.MailDocxPreview),
+  { ssr: false }
+);
+
 export function MailAttachmentCard({
   attachment,
 }: {
@@ -135,6 +140,8 @@ export function MailAttachmentCard({
                   onLoadError={() => setFailed(true)}
                 />
               </div>
+            ) : open && preview?.kind === 'docx' && url ? (
+              <DocxPreview url={url} filename={attachment.filename} />
             ) : preview?.kind === 'text' ? (
               textPreview.isPending ? (
                 <p className="p-6 text-muted-foreground text-sm">

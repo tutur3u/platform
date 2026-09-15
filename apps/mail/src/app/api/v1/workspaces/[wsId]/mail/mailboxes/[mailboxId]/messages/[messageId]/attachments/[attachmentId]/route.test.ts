@@ -119,3 +119,26 @@ describe('attachment preview route', () => {
     expect(response.headers.get('content-range')).toBe('bytes 0-1/10');
   });
 });
+
+it('serves DOCX as a protected download for the sandboxed renderer', async () => {
+  const mime =
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  mocks.authorized.mockResolvedValue({
+    attachment: {
+      filename: 'Report.docx',
+      content_type: mime,
+      disposition: 'inline',
+    },
+    location: {},
+  });
+  mocks.stream.mockResolvedValue({
+    body: new Uint8Array([80, 75, 3, 4]),
+    contentType: mime,
+    contentLength: 4,
+  });
+  const response = await GET(request(true), { params });
+  expect(response.headers.get('content-disposition')).toMatch(/^attachment;/);
+  expect(response.headers.get('content-type')).toBe(mime);
+  expect(response.headers.get('cache-control')).toBe('private, no-store');
+  expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+});
