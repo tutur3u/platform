@@ -47,7 +47,7 @@ export function MailBulkToolbar({
       >
         <Archive className="size-4" />
       </MailIconButton>
-      {mailboxId && folder !== 'drafts' ? (
+      {mailboxId ? (
         <MailLabelMenu
           mailboxId={mailboxId}
           onChanged={onChanged}

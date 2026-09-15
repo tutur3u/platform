@@ -235,6 +235,19 @@ export async function listMailThreads({
     (threads ?? []).map((thread: AnyRecord) => [thread.id as string, thread])
   );
   const unreadByThread = getThreadUnreadCounts(visibleMessageRows, states);
+  const inboundByThread = new Map<string, number>();
+  for (const row of await loadThreadActionRows(
+    access,
+    ctx,
+    mailboxId,
+    threadIds
+  )) {
+    if (row.direction === 'inbound')
+      inboundByThread.set(
+        row.thread_id,
+        (inboundByThread.get(row.thread_id) ?? 0) + 1
+      );
+  }
   const summaries: MailThreadSummary[] = threadIds.flatMap((threadId) => {
     const thread = threadById.get(threadId);
     const message = latestByThread.get(threadId);
@@ -257,9 +270,7 @@ export async function listMailThreads({
         starred: Boolean(state?.starred_at),
         subject: resolveMailThreadSubject(thread.subject, message.subject),
         unreadCount: unreadByThread.get(threadId) ?? 0,
-        inboundCount: visibleMessageRows.filter(
-          (row) => row.thread_id === threadId && row.direction === 'inbound'
-        ).length,
+        inboundCount: inboundByThread.get(threadId) ?? 0,
       },
     ];
   });

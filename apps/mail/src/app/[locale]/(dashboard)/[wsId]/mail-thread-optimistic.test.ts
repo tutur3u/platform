@@ -75,3 +75,20 @@ it('marks only inbound messages unread and adds the full incoming count optimist
     box: 2,
   });
 });
+
+it('retains the one-message unread fallback for old list-only caches', async () => {
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(['mail', 'ws', 'bootstrap-counts'], { box: 0 });
+  await snapshotMailThreads({
+    queryClient,
+    activeMailboxId: 'box',
+    workspaceId: 'ws',
+    ids: new Set(['thread']),
+    action: 'mark_unread',
+    folder: 'inbox',
+    threads: [{ id: 'thread', unreadCount: 0 }] as never,
+  });
+  expect(queryClient.getQueryData(['mail', 'ws', 'bootstrap-counts'])).toEqual({
+    box: 1,
+  });
+});
