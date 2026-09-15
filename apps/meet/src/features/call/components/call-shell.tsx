@@ -36,11 +36,14 @@ import { Lobby } from './lobby';
 import { MeetingTitle } from './meeting-title';
 import { ReactionOverlay } from './reaction-overlay';
 import { ResizableCallPanel } from './resizable-call-panel';
+import { RoomCountdown } from './room-countdown';
 import { ScreenAudioStatus } from './screen-audio-status';
+import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
 
 type Device = 'microphone' | 'camera' | 'screen';
 
+/** Compose the active meeting, including protected audio and compact room controls. */
 export function ConnectedCallShell({
   accountId,
   defaultDisplayName,
@@ -90,7 +93,7 @@ export function ConnectedCallShell({
   const pendingDevices = useRef(new Set<Device>());
   const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId, deviceId });
   const { state } = room;
-  const sharedAudio = useSharedRoomAudio(room);
+  const sharedAudio = useSharedRoomAudio(room, joined && !left);
   const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
     setPanel(next);
     setShowAi(false);
@@ -256,12 +259,13 @@ export function ConnectedCallShell({
           router.push(backHref);
         }}
         onJoin={({ audioEnabled, videoEnabled, previewStream }) => {
+          const enableMicrophone = sharedAudio.prepareJoin(audioEnabled);
           setJoined(true);
           void room
             .adoptPreview(previewStream)
             .then(() =>
               Promise.all([
-                ...(audioEnabled
+                ...(enableMicrophone
                   ? [runMediaAction(room.toggleMicrophone, 'microphone')]
                   : []),
                 ...(videoEnabled
@@ -336,17 +340,17 @@ export function ConnectedCallShell({
           meetingId={meetingId}
           outputDeviceId={outputDeviceId}
           canManage={canManage}
-          audioSuppressed={sharedAudio.shared}
+          audioSuppressed={sharedAudio.microphonePaused}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          aria-pressed={sharedAudio.shared}
-          disabled={!!busyDevices.microphone}
-          onClick={() => void runMediaAction(sharedAudio.toggle, 'microphone')}
-        >
-          {t(sharedAudio.shared ? 'shared_audio_exit' : 'shared_audio_enter')}
-        </Button>
+        <RoomCountdown expiresAt={state.roomExpiresAt} />
+        <SharedAudioControl
+          audio={sharedAudio}
+          busy={!!busyDevices.microphone}
+          onShare={() => void runMediaAction(sharedAudio.share, 'microphone')}
+          onUseMicrophone={() =>
+            void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
+          }
+        />
         <CallSettings
           meetingId={meetingId}
           room={room}
@@ -359,12 +363,7 @@ export function ConnectedCallShell({
           onOutput={setOutputDeviceId}
         />
       </header>
-      {sharedAudio.shared && (
-        <p role="status" className="border-b bg-muted px-4 py-2 text-sm">
-          {t('shared_audio_hint')}
-        </p>
-      )}
-      <CallResourceNotice error={state.error} expiresAt={state.roomExpiresAt} />
+      <CallResourceNotice error={state.error} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="relative min-h-0 flex-1 p-2 sm:p-3">
           {room.screenStream && (
@@ -423,7 +422,7 @@ export function ConnectedCallShell({
       <ControlBar
         activePanel={panel}
         cameraOn={room.media.videoEnabled}
-        micOn={!sharedAudio.shared && room.media.audioEnabled}
+        micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}
         screenOn={room.media.screenEnabled}
         handRaised={
           state.selfUserId ? isHandRaised(state, state.selfUserId) : false
@@ -440,8 +439,8 @@ export function ConnectedCallShell({
         waitingCount={state.waiting.length}
         onLeave={() => (canManage ? setLeaveDialog(true) : leaveNow())}
         onToggleMic={() =>
-          sharedAudio.shared
-            ? toast.info(t('shared_audio_hint'))
+          sharedAudio.microphonePaused
+            ? void runMediaAction(sharedAudio.useOwnMicrophone, 'microphone')
             : void runMediaAction(room.toggleMicrophone, 'microphone')
         }
         onToggleCamera={() => void runMediaAction(room.toggleCamera, 'camera')}

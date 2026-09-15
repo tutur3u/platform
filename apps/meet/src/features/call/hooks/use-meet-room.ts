@@ -17,6 +17,7 @@ import { CameraEffects } from '../lib/camera-effects';
 import { createLocalMediaControls } from '../lib/local-media-controls';
 import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
 import { openPeerSession } from '../lib/open-peer-session';
+import { recoverMediaState } from '../lib/recover-media-state';
 import { createRoomActions } from '../lib/room-actions';
 import type {
   MeetRoomController,
@@ -69,6 +70,7 @@ import {
 import type { SfuTracksResponse } from '../lib/sfu-response';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
 /** One signaling socket and separate publishing/subscribing SFU connections. */
+/** Coordinate room signaling, local capture, and recoverable media transport. */
 export function useMeetRoom({
   meetingId,
   realtimeUrl,
@@ -108,7 +110,9 @@ export function useMeetRoom({
   stateRef.current = state;
   const mediaRef = useRef(media);
   mediaRef.current = media;
-  const syncForcedMediaRef = useRef<(next: MeetMediaState) => void>(() => {});
+  const syncForcedMediaRef = useRef<
+    (next: MeetMediaState, muteAudio: boolean) => void
+  >(() => {});
   const publishEpoch = useRef(0);
   const resetPublisher = useCallback((recover = false) => {
     publishEpoch.current++;
@@ -192,7 +196,7 @@ export function useMeetRoom({
           }
           mediaRef.current = next;
           setMedia(next);
-          syncForcedMediaRef.current(next);
+          syncForcedMediaRef.current(next, message.kinds.includes('audio'));
         }
         setState((current) => reduceCallState(current, message));
       },
@@ -430,7 +434,8 @@ export function useMeetRoom({
     resumeLocalMedia
   );
 
-  syncForcedMediaRef.current = (next) => {
+  syncForcedMediaRef.current = (next, muteAudio) => {
+    if (muteAudio) localControls.cancelPendingMicrophone();
     publishPresence(next);
     void queueLocalTracks(
       localStreamRef.current ?? new MediaStream(),
@@ -570,16 +575,14 @@ export function useMeetRoom({
         await queueLocalTracks(stream ?? new MediaStream(), next);
       } catch (error) {
         if (activeRef.current) {
-          const restored = { ...mediaRef.current };
-          for (const key of [
-            'audioEnabled',
-            'videoEnabled',
-            'screenEnabled',
-          ] as const)
-            if (previous[key] !== next[key] && restored[key] === next[key])
-              restored[key] = previous[key];
-          // A failed publish must never reopen a microphone the user muted.
-          restored.audioEnabled &&= next.audioEnabled;
+          const restored = recoverMediaState(
+            previous,
+            next,
+            mediaRef.current,
+            !!localStreamRef.current
+              ?.getAudioTracks()
+              .some((track) => track.enabled)
+          );
           restored.screenEnabled &&=
             screenStreamRef.current
               ?.getVideoTracks()

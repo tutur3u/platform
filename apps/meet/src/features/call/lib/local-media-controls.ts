@@ -10,6 +10,7 @@ import { SCREEN_CAPTURE_OPTIONS } from './screen-capture';
 
 type Ref<T> = { current: T };
 type Setter<T> = Dispatch<SetStateAction<T>>;
+/** Serialize microphone intent and device changes while keeping mute immediate. */
 export function createLocalMediaControls({
   activeRef,
   effects,
@@ -37,6 +38,7 @@ export function createLocalMediaControls({
     () => localStreamRef.current
   );
   let microphoneRevision = 0;
+  let requestedMicrophone: boolean | null = null;
   let audioQueue = Promise.resolve();
   const withAudio = <T>(operation: () => Promise<T>): Promise<T> => {
     const result = audioQueue.then(operation);
@@ -98,7 +100,7 @@ export function createLocalMediaControls({
       }
       const enabledNow =
         kind === 'audio'
-          ? mediaRef.current.audioEnabled
+          ? (requestedMicrophone ?? mediaRef.current.audioEnabled)
           : mediaRef.current.videoEnabled;
       if (selected) selected.enabled = enabledNow;
       if (kind === 'video') effects.setEnabled(enabledNow);
@@ -122,42 +124,52 @@ export function createLocalMediaControls({
       throw error;
     }
   };
-  const toggleMicrophone = async () => {
-    microphoneRevision++;
-    let stream = localStreamRef.current;
-    if (
-      !stream?.getAudioTracks().some((track) => track.readyState === 'live')
-    ) {
-      const audio = await navigator.mediaDevices.getUserMedia({
-        audio: microphoneConstraints(
-          audioProcessing.getPreferences(),
-          deviceIds.audio
-        ),
-      });
-      await enhanceMicrophone(
-        audio.getAudioTracks?.()[0],
-        audioProcessing.getPreferences()
-      );
-      if (!activeRef.current) {
-        audio.getTracks().forEach((track) => {
-          track.stop();
-        });
-        return;
+  const requestMicrophone = (enabled: boolean) => {
+    const revision = ++microphoneRevision;
+    requestedMicrophone = enabled;
+    // Cut capture immediately, even while a device acquisition is awaiting I/O.
+    if (!enabled)
+      for (const track of localStreamRef.current?.getAudioTracks() ?? [])
+        track.enabled = false;
+    return withAudio(async () => {
+      try {
+        if (!activeRef.current || revision !== microphoneRevision) return;
+        let stream = localStreamRef.current;
+        if (
+          enabled &&
+          !stream?.getAudioTracks().some((track) => track.readyState === 'live')
+        ) {
+          const audio = await navigator.mediaDevices.getUserMedia({
+            audio: microphoneConstraints(
+              audioProcessing.getPreferences(),
+              deviceIds.audio
+            ),
+          });
+          await enhanceMicrophone(
+            audio.getAudioTracks?.()[0],
+            audioProcessing.getPreferences()
+          );
+          if (!activeRef.current || revision !== microphoneRevision) {
+            for (const track of audio.getTracks()) track.stop();
+            return;
+          }
+          stream = new MediaStream([
+            ...(localStreamRef.current?.getVideoTracks() ?? []),
+            ...audio.getAudioTracks(),
+          ]);
+          localStreamRef.current = stream;
+          setLocalStream(stream);
+        }
+        for (const track of stream?.getAudioTracks() ?? [])
+          track.enabled = enabled;
+        await applyMedia(
+          { ...mediaRef.current, audioEnabled: enabled },
+          stream
+        );
+      } finally {
+        if (revision === microphoneRevision) requestedMicrophone = null;
       }
-      stream = new MediaStream([
-        ...(localStreamRef.current?.getVideoTracks() ?? []),
-        ...audio.getAudioTracks(),
-      ]);
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-    }
-    for (const track of stream.getAudioTracks()) {
-      track.enabled = !mediaRef.current.audioEnabled;
-    }
-    await applyMedia(
-      { ...mediaRef.current, audioEnabled: !mediaRef.current.audioEnabled },
-      stream
-    );
+    });
   };
 
   const toggleCamera = async () => {
@@ -270,7 +282,16 @@ export function createLocalMediaControls({
   };
 
   return {
-    toggleMicrophone: () => withAudio(toggleMicrophone),
+    toggleMicrophone: () =>
+      requestMicrophone(
+        !(requestedMicrophone ?? mediaRef.current.audioEnabled)
+      ),
+    muteMicrophone: () => requestMicrophone(false),
+    unmuteMicrophone: () => requestMicrophone(true),
+    cancelPendingMicrophone: () => {
+      microphoneRevision++;
+      requestedMicrophone = null;
+    },
     toggleCamera,
     toggleScreenShare,
     selectDevice: (kind: 'audio' | 'video', deviceId: string) =>

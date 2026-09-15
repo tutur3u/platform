@@ -36,6 +36,8 @@ it.each(['toggleMicrophone', 'toggleCamera', 'toggleScreenShare'] as const)(
       applyMedia,
     });
     const pending = controls[method]();
+    // Let the serialized microphone operation begin its permission request.
+    await Promise.resolve();
     activeRef.current = false;
     resolve({ getTracks: () => [{ stop }] } as unknown as MediaStream);
     await pending;
