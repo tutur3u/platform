@@ -10,6 +10,14 @@ export type MeetAiNotes = {
   decisions: string[];
   actionItems: { task: string; owner: string | null; dueDate: string | null }[];
   openQuestions: string[];
+  calendarSuggestions?: Array<{
+    title: string;
+    evidence: string;
+    timeText: string | null;
+    startLocal: string | null;
+    endLocal: string | null;
+    timezone: string | null;
+  }>;
 };
 export type MeetAiChunk = {
   id: string;
@@ -66,6 +74,7 @@ export function updateMeetAiSession(
     sessionId?: string;
     expectedChunks?: number;
     captureIncomplete?: boolean;
+    timezone?: string;
   },
   options?: InternalApiClientOptions
 ) {
@@ -105,3 +114,11 @@ export function updateMeetNotesSharing(
     }
   );
 }
+
+export {
+  createMeetFollowup,
+  getMeetFollowupConflicts,
+  getMeetFollowupContext,
+  type MeetFollowupContext,
+  type MeetFollowupInput,
+} from './meet-followups';

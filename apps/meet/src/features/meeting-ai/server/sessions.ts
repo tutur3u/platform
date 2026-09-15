@@ -127,6 +127,18 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
 }
 
 const actionSchema = z.object({
+  timezone: z
+    .string()
+    .max(100)
+    .refine((zone) => {
+      try {
+        new Intl.DateTimeFormat('en', { timeZone: zone });
+        return true;
+      } catch {
+        return false;
+      }
+    })
+    .optional(),
   action: z.enum(['start', 'finish', 'sharing']),
   shareNotes: z.boolean().optional(),
   shareNotesAfterMeeting: z.boolean().optional(),
@@ -135,7 +147,7 @@ const actionSchema = z.object({
   captureIncomplete: z.boolean().optional(),
 });
 export async function changeMeetAi(request: Request, params: MeetAiParams) {
-  const { db, meetingId, wsId, user } = await meetAiAccess(
+  const { db, meetingId, wsId, user, meetingStartedAt } = await meetAiAccess(
     request,
     params,
     true
@@ -266,7 +278,11 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       throw new MeetAiError(413, 'Transcript exceeds notes limit');
     providerStarted = !!transcript.trim();
     const result = transcript.trim()
-      ? await generateMeetArtifact({ transcript })
+      ? await generateMeetArtifact({
+          transcript,
+          meetingStartedAt,
+          timezone: parsed.data.timezone,
+        })
       : null;
     const saved = await db
       .from('meet_ai_sessions')

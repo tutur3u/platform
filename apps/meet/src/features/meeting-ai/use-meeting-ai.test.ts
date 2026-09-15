@@ -48,6 +48,7 @@ it('marks a missing final flush as incomplete', async () => {
   await act(() => hook.result.current.finish());
   expect(mocks.update).toHaveBeenLastCalledWith('workspace', 'meeting', {
     action: 'finish',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     sessionId: 'session',
     expectedChunks: 0,
     captureIncomplete: true,
@@ -65,6 +66,7 @@ it('drains queued uploads and finalizes when capture overloads', async () => {
   await waitFor(() =>
     expect(mocks.update).toHaveBeenLastCalledWith('workspace', 'meeting', {
       action: 'finish',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       sessionId: 'session',
       expectedChunks: 30,
       captureIncomplete: true,
@@ -92,6 +94,7 @@ it('waits for an in-flight start before finalizing for leave', async () => {
   });
   expect(mocks.update).toHaveBeenLastCalledWith('workspace', 'meeting', {
     action: 'finish',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     sessionId: 'session',
     expectedChunks: 0,
     captureIncomplete: false,

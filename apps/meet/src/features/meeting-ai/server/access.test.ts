@@ -6,6 +6,14 @@ const mocks = vi.hoisted(() => ({
   membership: vi.fn(),
   admin: vi.fn(),
   shared: vi.fn(),
+  resolve: vi.fn(
+    async ({
+      wsId,
+    }: {
+      wsId: string;
+      principal: { id: string; email: string | null };
+    }) => (wsId === 'personal' ? 'workspace' : wsId)
+  ),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('./room-access', () => ({ canReadSharedMeetingNotes: mocks.shared }));
@@ -16,7 +24,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.admin,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  normalizeWorkspaceId: async (id: string) => id,
+  resolveWorkspaceIdForPrincipal: mocks.resolve,
   verifyWorkspaceMembershipType: mocks.membership,
 }));
 
@@ -34,7 +42,12 @@ const request = (origin = 'https://meet.tuturuuu.com') =>
     { method: 'POST', headers: { origin } }
   );
 describe('Meet AI satellite authorization', () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.resolve.mockImplementation(async ({ wsId }) =>
+      wsId === 'personal' ? 'workspace' : wsId
+    );
+  });
   it('returns a configuration status separately from upstream failures', async () => {
     const response = await meetAiResponse(async () => {
       throw new MeetAiGenerationError('missing_configuration');
@@ -99,6 +112,19 @@ describe('Meet AI satellite authorization', () => {
       (await meetAiResponse(() => meetAiAccess(request(), params))).status
     ).toBe(403);
     mocks.shared.mockResolvedValue(true);
+    const personal = await meetAiAccess(request(), {
+      params: Promise.resolve({
+        wsId: 'personal',
+        meetingId: '00000000-0000-4000-8000-000000000001',
+      }),
+    });
+    expect(personal.wsId).toBe('workspace');
+    expect(mocks.resolve).toHaveBeenCalledWith(
+      expect.objectContaining({
+        wsId: 'personal',
+        principal: { id: 'actor', email: null },
+      })
+    );
     expect((await meetAiAccess(request(), params)).canManage).toBe(false);
     mocks.membership.mockResolvedValue({
       ok: false,

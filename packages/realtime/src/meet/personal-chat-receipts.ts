@@ -8,6 +8,11 @@ export const personalChatReceiptCommand = z.discriminatedUnion('action', [
     fingerprint: z.string().length(64),
   }),
   z.object({
+    action: z.literal('personal.release'),
+    id: z.uuid(),
+    fingerprint: z.string().length(64),
+  }),
+  z.object({
     action: z.literal('personal.finish'),
     id: z.uuid(),
     text: z.string().max(16000).optional(),
@@ -74,6 +79,18 @@ export function personalChatReceipt(
       },
     };
     return result({ started: true });
+  }
+  if (input.action === 'personal.release') {
+    if (!existing) return result({ ok: true });
+    if (
+      existing.status !== 'pending' ||
+      existing.fingerprint !== input.fingerprint
+    )
+      return result({ error: 'Request cannot be released' }, 409);
+    const next = { ...own };
+    delete next[input.id];
+    receipts[accountId] = next;
+    return result({ ok: true });
   }
   if (!existing) return result({ error: 'Request unavailable' }, 409);
   if (existing.status !== 'pending') return result({ ok: true });

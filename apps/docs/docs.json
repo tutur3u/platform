@@ -39,6 +39,7 @@
                   "platform/features/forms-embedding-and-seo",
                   "platform/features/forms-studio-layouts",
                   "platform/features/meet-calls",
+                  "platform/features/meet-followups",
                   "platform/features/meet-live-assistants",
                   "platform/features/meet-solo-mode",
                   "platform/features/meet-together",

@@ -1,0 +1,55 @@
+---
+title: Meeting follow-ups
+updatedAt: '2026-09-15'
+description: Review meeting-note suggestions and create personal tasks or calendar events with the correct identity and timezone.
+---
+
+## From notes to action
+
+Completed meeting notes show suggested next steps. Review an action item as a task,
+review a suggested follow-up meeting as a calendar event, or choose **Reserve time
+for this** to schedule work on a task. The original owner and scheduling wording
+remain visible. Nothing is created when notes are generated or opened.
+
+Calendar suggestions are included in newly generated notes. Older saved notes still
+work and expose their existing action items. Dates resolve against the saved meeting start and supplied timezone. Unspecified dates, times, durations and owners
+stay unspecified; incomplete transcripts remain visibly marked.
+
+## Identity, destination and time
+
+The review defaults to the signed-in user's personal workspace and saved calendar
+timezone, falling back to the browser timezone for an automatic setting. The user
+can choose another workspace where they are a full member. Tasks require a chosen
+active board and list plus an explicit **Assign this task to me** confirmation.
+Events require a reviewed start and end and are saved to the destination workspace’s enabled primary calendar. The review checks overlap with saved
+events in the selected workspace and reports when availability is unknown;
+unsynced external calendars are outside that check. All created items include a source link
+to the meeting notes; this does not grant recipients access to private notes.
+
+The review shows local wall times and converts them to UTC before persistence.
+Invalid dates, nonexistent DST times, repeated DST hours, invalid zones and reversed
+event intervals are rejected. The user can select another local time or enter the
+intended instant explicitly in UTC. Changing the timezone reinterprets the displayed
+wall times, as explained in the form.
+
+## Server boundary
+
+`/api/meet-ai/[wsId]/[meetingId]/followups` runs inside Meet. It verifies the Meet app
+session and source-note sharing policy, then separately verifies full membership and
+existing task/calendar permissions in the destination. Actor IDs come from the
+verified session. A changed account invalidates an open review. Tasks use the existing workspace executor. Calendar writes resolve the native primary calendar and use the existing encryption helper before inserting. Meet performs these authorized writes with its own verified session. Calendar encryption runs in strict mode: a key lookup, configuration or decryption failure rejects the write; only a workspace with no encryption key can store unencrypted fields.
+
+A creation request has a UUID, timestamp and payload fingerprint. Existing private
+room receipts prevent replaying the same request within the one-hour receipt window;
+expired timestamps are rejected. The client also retains a per-user, per-suggestion
+attempt marker and saved result URL, without storing note text. After an uncertain
+write, check the destination before creating another copy. Confirmed pre-write failures release the matching pending room receipt and clear the local attempt marker so the user can correct the destination and retry. Receipt persistence can
+fail after a successful write, so the server never automatically retries creation.
+
+## Verification
+
+Run the Meet meeting-ai tests, shared AI meeting-generation tests, internal API build,
+`bun check`, and the actual Meet build. Use `NODE_ENV=test` for tests when the shell
+inherits production mode. Verify authenticated task assignment, destination and
+calendar timestamps in a dedicated test workspace before claiming production
+end-to-end coverage. These changes require no database migration.

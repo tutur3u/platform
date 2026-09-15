@@ -10,6 +10,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { MeetingFollowups } from './meeting-followups';
 import type { useMeetingAi } from './use-meeting-ai';
 
 export function MeetingAiPanel({
@@ -181,6 +182,11 @@ export function MeetingAiPanel({
                             </li>
                           ))}
                         </ul>
+                        <MeetingFollowups
+                          session={session}
+                          meetingId={ai.meetingId}
+                          wsId={ai.wsId}
+                        />
                         <h4 className="font-medium">{t('questions')}</h4>
                         <ul className="list-inside list-disc">
                           {session.notes.openQuestions.map((value, index) => (
