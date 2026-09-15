@@ -1,5 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
-import type { MailThreadDetail } from '@tuturuuu/internal-api';
+import type {
+  MailThreadDetail,
+  MailThreadSummary,
+} from '@tuturuuu/internal-api';
 import { expect, it } from 'vitest';
 import {
   restoreMailThreads,
@@ -136,4 +139,44 @@ it('adjusts only Inbox messages when a mixed-folder conversation is read from St
     queryClient.getQueryData<MailThreadDetail>(key)?.thread.unreadCount
   ).toBe(10);
   expect(context?.unreadDelta).toBe(2);
+});
+
+it('restores counts only for failed bulk rows still owned by that operation', async () => {
+  const client = new QueryClient();
+  const threads = ['a', 'b'].map((id) => ({
+    id,
+    unreadCount: 1,
+    inboundCount: 1,
+  })) as MailThreadSummary[];
+  const key = ['mail', 'ws', 'box', 'threads', 'inbox', null, null, ''];
+  client.setQueryData(key, {
+    pages: [{ threads, pagination: { total: 2 } }],
+    pageParams: [1],
+  });
+  client.setQueryData(['mail', 'ws', 'bootstrap-counts'], { box: 2 });
+  const shared = {
+    queryClient: client,
+    workspaceId: 'ws',
+    activeMailboxId: 'box',
+    folder: 'inbox' as const,
+    threads,
+  };
+  const bulk = await snapshotMailThreads({
+    ...shared,
+    ids: new Set(['a', 'b']),
+    action: 'mark_read',
+  });
+  await snapshotMailThreads({ ...shared, ids: new Set(['b']), action: 'star' });
+  restoreMailThreads(client, bulk);
+  expect(client.getQueryData(['mail', 'ws', 'bootstrap-counts'])).toEqual({
+    box: 1,
+  });
+  const result = client.getQueryData<{
+    pages: { threads: MailThreadSummary[] }[];
+  }>(key)?.pages[0]?.threads;
+  expect(result?.find((thread) => thread.id === 'a')?.unreadCount).toBe(1);
+  expect(result?.find((thread) => thread.id === 'b')).toMatchObject({
+    unreadCount: 0,
+    starred: true,
+  });
 });

@@ -26,6 +26,7 @@ export type OptimisticContext = {
   workspaceId: string;
   ids: Set<string>;
   unreadDelta: number;
+  unreadDeltas: Map<string, number>;
   revision: symbol;
   details: Array<readonly [string, MailThreadDetail | undefined]>;
   threadCaches: ThreadCacheSnapshot;
@@ -311,6 +312,7 @@ export async function snapshotMailThreads({
         if (!summaries.has(thread.id)) summaries.set(thread.id, thread);
     }
   }
+  const requestedDeltas = new Map<string, number>();
   let unreadCount = 0;
   let markUnreadDelta = 0;
   for (const [id, detail] of details) {
@@ -334,6 +336,14 @@ export async function snapshotMailThreads({
       detail?.thread.inboxInboundCount ??
       summary?.inboxInboundCount ??
       (folder === 'inbox' ? inbound : 0);
+    requestedDeltas.set(
+      id,
+      action === 'mark_unread'
+        ? -Math.max(0, inboxInbound - inboxUnread)
+        : ['archive', 'mark_read', 'trash'].includes(action)
+          ? inboxUnread
+          : 0
+    );
     unreadCount += inboxUnread;
     markUnreadDelta += Math.max(0, inboxInbound - inboxUnread);
   }
@@ -367,7 +377,17 @@ export async function snapshotMailThreads({
     nextBootstrap?.mailboxes.find((mailbox) => mailbox.id === activeMailboxId)
       ?.unreadCount ??
     0;
+  let remainingDelta = beforeUnread - afterUnread;
+  const unreadDeltas = new Map<string, number>();
+  for (const [id, requested] of requestedDeltas) {
+    const delta =
+      Math.sign(remainingDelta) *
+      Math.min(Math.abs(requested), Math.abs(remainingDelta));
+    unreadDeltas.set(id, delta);
+    remainingDelta -= delta;
+  }
   return {
+    unreadDeltas,
     ids,
     mailboxId: activeMailboxId,
     workspaceId,
@@ -393,7 +413,10 @@ export function restoreMailThreads(
   );
   // A newer action owns these rows. Reconciliation will recover their server state.
   if (!ids.size) return;
-  const unreadDelta = ids.size === context.ids.size ? context.unreadDelta : 0;
+  const unreadDelta = [...ids].reduce(
+    (sum, id) => sum + (context.unreadDeltas.get(id) ?? 0),
+    0
+  );
   for (const [key, data] of context.threadCaches as ThreadCacheSnapshot) {
     queryClient.setQueryData<InfiniteData<MailThreadsResponse>>(
       key,
