@@ -4,18 +4,30 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CallEnded } from '@/features/call/components/call-ended';
 import { CallShell } from '@/features/call/components/device-session-gate';
+import { MeetingPublicInvite } from '@/features/call/components/meeting-public-invite';
 import { ParticipantNameForm } from '@/features/call/components/participant-name-form';
 import {
   getMeetCallAccess,
   MeetCallAccessError,
 } from '@/features/call/lib/call-access';
+import { meetingMetadata } from '@/features/call/lib/meeting-metadata';
+import { getMeetingPublicInfo } from '@/features/call/lib/meeting-public-info';
 import { decodeRoomCode } from '@/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@/features/meeting-ai/server/room-access';
 
-export const metadata: Metadata = {
-  title: 'Call',
-  description: 'Join a Tuturuuu Meet call.',
-};
+export async function generateMetadata({
+  params,
+}: RoomPageProps): Promise<Metadata> {
+  await connection();
+  const { code, locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'meet.public' });
+  return meetingMetadata(code, locale, await getMeetingPublicInfo(code), {
+    title: t('meta_title'),
+    privateDescription: t('meta_private'),
+    join: t('meta_join'),
+    ended: t('meta_ended'),
+  });
+}
 
 interface RoomPageProps {
   searchParams?: Promise<{ notes?: string }>;
@@ -41,10 +53,12 @@ export default async function RoomPage({
 
   const t = await getTranslations('meet.call');
   const access = await getMeetCallAccess(meetingId, t('guest')).catch(
-    (error: unknown) => {
+    async (error: unknown) => {
       if (error instanceof MeetCallAccessError) {
         if (error.status === 401) {
           const invite = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
+          const info = await getMeetingPublicInfo(code);
+          if (info) return { publicInvite: info, returnTo: invite };
           redirect(`/login?next=${encodeURIComponent(invite)}`);
         }
         if (error.status === 403 || error.status === 404) notFound();
@@ -52,6 +66,13 @@ export default async function RoomPage({
       throw error;
     }
   );
+  if ('publicInvite' in access)
+    return (
+      <MeetingPublicInvite
+        info={access.publicInvite}
+        returnTo={access.returnTo}
+      />
+    );
   const {
     user,
     meeting,

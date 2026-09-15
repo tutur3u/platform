@@ -29,6 +29,8 @@ export function CallResourceNotice({
         ? t(key)
         : t('room_deadline', {
             time: format.dateTime(deadline!, {
+              month: 'short',
+              day: 'numeric',
               hour: 'numeric',
               minute: '2-digit',
               timeZoneName: 'short',

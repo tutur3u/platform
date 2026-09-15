@@ -42,6 +42,7 @@ export async function getMeetCallSession({
   displayName,
   deviceId,
   service = false,
+  maxRoomDurationSeconds = 7200,
   workspaceMember = false,
   avatarUrl,
   admission = 'open',
@@ -53,6 +54,7 @@ export async function getMeetCallSession({
   displayName: string;
   deviceId?: string;
   service?: boolean;
+  maxRoomDurationSeconds?: number;
   workspaceMember?: boolean;
   avatarUrl?: string;
   admission?: MeetRealtimeAdmission;
@@ -71,6 +73,7 @@ export async function getMeetCallSession({
     displayName,
     exp: Math.floor((Date.now() + TOKEN_TTL_MS) / 1000),
     limits: {
+      maxRoomDurationSeconds,
       maxPublishers: 8,
       maxViewers: 96,
       video: {

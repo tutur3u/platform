@@ -4,6 +4,7 @@ import {
   MeetCallAccessError,
 } from '@/features/call/lib/call-access';
 import { getMeetCallSession } from '@/features/call/lib/call-session';
+import { getHostMeetingDurationSeconds } from '@/features/call/lib/meeting-duration';
 
 export async function POST(
   request: Request,
@@ -32,6 +33,9 @@ export async function POST(
     const { user, meeting, isHost, admission, displayName, avatarUrl } =
       await getMeetCallAccess(meetingId, t('guest'));
     const session = await getMeetCallSession({
+      maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
+        meeting.creator_id
+      ),
       deviceId,
       displayName,
       avatarUrl,

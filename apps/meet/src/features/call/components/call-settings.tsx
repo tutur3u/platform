@@ -22,6 +22,7 @@ import { ChatSettings } from './chat-settings';
 import { CloudflareCosts } from './cloudflare-costs';
 import { ConnectionPanel } from './connection-panel';
 import { DeviceSettings } from './device-settings';
+import { MeetingPublicSettings } from './meeting-public-settings';
 import { RecordingSettings } from './recording-settings';
 
 export function CallSettings({
@@ -128,6 +129,7 @@ export function CallSettings({
               meetingId={meetingId}
               canManage={canManage}
             />
+            {canManage && <MeetingPublicSettings meetingId={meetingId} />}
             {canManage && <CloudflareCosts meetingId={meetingId} />}
             {canManage && data?.canManage && <AiCosts data={data} />}
           </TabsContent>

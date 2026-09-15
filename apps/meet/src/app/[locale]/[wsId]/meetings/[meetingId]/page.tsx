@@ -23,7 +23,9 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CALENDAR_URL } from '@/constants/common';
 import { CallEnded } from '@/features/call/components/call-ended';
+import { MeetingDurationInfo } from '@/features/call/components/meeting-duration-info';
 import { MeetingLocalTime } from '@/features/call/components/meeting-local-time';
+import { MeetingPublicSettings } from '@/features/call/components/meeting-public-settings';
 import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
 import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
@@ -54,6 +56,7 @@ export default async function MeetingDetailPage({
   const { wsId: id, meetingId } = await params;
   const { user, workspaceSlug, wsId } = await getMeetWorkspaceContext(id);
   const t = await getTranslations('meet.call');
+  const details = await getTranslations('meet.details');
   const supabase = await createAdminClient({ noCookie: true });
 
   // Fetch meeting details
@@ -107,19 +110,19 @@ export default async function MeetingDetailPage({
     <div className="container mx-auto max-w-4xl p-6">
       {/* Header */}
       <div className="mb-8">
-        <Link href={`/${workspaceSlug}/meetings`}>
-          <Button variant="ghost" className="mb-4">
+        <Button asChild variant="ghost" className="mb-4">
+          <Link href={`/${workspaceSlug}/meetings`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Meetings
-          </Button>
-        </Link>
+            {details('back')}
+          </Link>
+        </Button>
 
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="font-bold text-3xl tracking-tight">
+            <h1 className="break-words font-bold text-3xl tracking-tight">
               {meeting.name}
             </h1>
-            <div className="mt-2 flex items-center gap-4 text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
                 <MeetingLocalTime value={meeting.time} pattern="PPP" />
@@ -147,27 +150,27 @@ export default async function MeetingDetailPage({
         {/* Meeting Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Meeting Information</CardTitle>
+            <CardTitle>{details('info')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-medium">Name</h4>
+              <h4 className="font-medium">{details('name')}</h4>
               <p className="text-muted-foreground">{meeting.name}</p>
             </div>
             <div>
-              <h4 className="font-medium">Scheduled Time</h4>
+              <h4 className="font-medium">{details('scheduled')}</h4>
               <p className="text-muted-foreground">
                 <MeetingLocalTime value={meeting.time} pattern="PPP p" />
               </p>
             </div>
             <div>
-              <h4 className="font-medium">Created By</h4>
+              <h4 className="font-medium">{details('creator')}</h4>
               <p className="text-muted-foreground">
                 {meeting.creator.display_name}
               </p>
             </div>
             <div>
-              <h4 className="font-medium">Created</h4>
+              <h4 className="font-medium">{details('created')}</h4>
               <p className="text-muted-foreground">
                 <MeetingLocalTime value={meeting.created_at} pattern="PPP p" />
               </p>
@@ -178,10 +181,8 @@ export default async function MeetingDetailPage({
         {/* Recording Sessions */}
         <Card>
           <CardHeader>
-            <CardTitle>Recordings</CardTitle>
-            <CardDescription>
-              Audio recordings and transcripts from this meeting
-            </CardDescription>
+            <CardTitle>{details('recordings')}</CardTitle>
+            <CardDescription>{details('recordings_hint')}</CardDescription>
           </CardHeader>
           <CardContent>
             <RecordingSessionsOverview wsId={wsId} meetingId={meetingId} />
@@ -189,6 +190,14 @@ export default async function MeetingDetailPage({
         </Card>
       </div>
 
+      <div className="mt-6">
+        <MeetingDurationInfo hostId={meeting.creator_id} />
+      </div>
+      {isHost && (
+        <div className="mt-6">
+          <MeetingPublicSettings meetingId={meetingId} />
+        </div>
+      )}
       {/* Actions */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Button asChild size="lg">

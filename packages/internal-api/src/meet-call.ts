@@ -222,3 +222,24 @@ export function askPersonalMeetAssistant(
     }
   );
 }
+
+export function getMeetPublicInfoSettings(meetingId: string) {
+  return getInternalApiClient().json<{
+    publicLinkPreview: boolean;
+    title: string;
+  }>(`/api/meet-call/${encodePathSegment(meetingId)}/public-info`, {
+    cache: 'no-store',
+  });
+}
+export function updateMeetPublicInfoSettings(
+  meetingId: string,
+  publicLinkPreview: boolean
+) {
+  return getInternalApiClient().json<{
+    publicLinkPreview: boolean;
+    title: string;
+  }>(`/api/meet-call/${encodePathSegment(meetingId)}/public-info`, {
+    method: 'PATCH',
+    body: JSON.stringify({ publicLinkPreview }),
+  });
+}

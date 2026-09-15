@@ -1,7 +1,14 @@
 import { verifyMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ access: vi.fn(), locale: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  access: vi.fn(),
+  locale: vi.fn(),
+  duration: vi.fn(),
+}));
+vi.mock('@/features/call/lib/meeting-duration', () => ({
+  getHostMeetingDurationSeconds: mocks.duration,
+}));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/constants', () => ({
   LOCALE_COOKIE_NAME: 'NEXT_LOCALE',
@@ -41,10 +48,15 @@ function request(origin = 'https://meet.tuturuuu.com') {
 }
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.duration.mockResolvedValue(36000);
   vi.stubEnv('MEET_REALTIME_TOKEN_SECRET', secret);
   mocks.access.mockResolvedValue({
     user: { id, email: 'external@example.com' },
-    meeting: { id, ws_id: id },
+    meeting: {
+      id,
+      ws_id: id,
+      creator_id: '00000000-0000-4000-8000-000000000002',
+    },
     isHost: false,
     canReadWorkspace: false,
     admission: 'lobby',
@@ -64,6 +76,7 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
   const { token } = await response.json();
   expect(verifyMeetRealtimeToken(token, secret)).toMatchObject({
     admission: 'lobby',
+    limits: expect.objectContaining({ maxRoomDurationSeconds: 36000 }),
     role: 'speaker',
     displayName: 'Guest Display Name',
     meetingId: id,
@@ -71,12 +84,19 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
     userId: id,
   });
   expect(mocks.access).toHaveBeenCalledWith(id, 'Guest');
+  expect(mocks.duration).toHaveBeenCalledWith(
+    '00000000-0000-4000-8000-000000000002'
+  );
 });
 
 it('keeps the host out of the lobby', async () => {
   mocks.access.mockResolvedValue({
     user: { id },
-    meeting: { id, ws_id: id },
+    meeting: {
+      id,
+      ws_id: id,
+      creator_id: '00000000-0000-4000-8000-000000000002',
+    },
     isHost: true,
     canReadWorkspace: true,
     admission: 'open',

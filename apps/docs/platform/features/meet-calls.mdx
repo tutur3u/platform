@@ -14,8 +14,10 @@ fixed; bandwidth and decoding work still grow with subscribed media tracks.
 
 ## Preview resource budgets
 
-Hosting remains a restricted preview. A room lasts at most two hours from its
-first admitted participant; reconnects keep the original deadline. Signed room
+Hosting remains a restricted preview. A room lasts up to two hours for Free hosts,
+ten hours for Plus, and twenty-four hours for Pro/Enterprise. The server resolves
+the host’s personal subscription in both Meet and the workspace token endpoint.
+The deadline starts with the first admitted participant; reconnects keep it. Signed room
 limits default to eight publishers and 96 viewers and may be lower. Server hard
 ceilings still apply to every role and tier. Each publisher can register at most
 six media tracks.

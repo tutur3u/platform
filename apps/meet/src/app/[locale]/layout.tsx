@@ -27,8 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Take control of your workflow, supercharged by AI.',
-        vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
+        en: 'Meet with clear audio, live transcription, and meeting notes connected to Tuturuuu Tasks and Calendar.',
+        vi: 'Họp với âm thanh rõ ràng, chép lời trực tiếp và ghi chú kết nối với Tuturuuu Tasks và Calendar.',
       },
       indexable: false,
       keywords: [
