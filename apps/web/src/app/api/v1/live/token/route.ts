@@ -12,7 +12,6 @@ import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
   ASSISTANT_LIVE_TOOL_CONFIG,
-  DASHBOARD_LIVE_SYSTEM_INSTRUCTION,
   DASHBOARD_LIVE_TOOL_DECLARATIONS,
 } from '@/lib/live/assistant-tools';
 import {
@@ -20,6 +19,7 @@ import {
   beginLiveBillingSession,
   LiveBillingError,
 } from '@/lib/live/billing';
+import { buildLiveMiraPrompt } from '@/lib/live/mira-prompt';
 import { getLiveModeScope, LIVE_MODELS } from '@/lib/live/models';
 import {
   createConstrainedLiveToken,
@@ -27,6 +27,7 @@ import {
 } from '@/lib/live/token-builder';
 
 const RequestSchema = z.object({
+  timezone: z.string().trim().min(1).max(100).optional(),
   mode: z.enum(['flash', 'pro']).default('flash'),
   creditSource: z.enum(['personal', 'workspace']),
   creditWsId: z.string().trim().min(1).max(128).optional(),
@@ -128,6 +129,12 @@ export async function POST(request: NextRequest) {
       creditWsId: normalizedCreditWsId,
       userId: user.id,
     });
+    const systemInstruction = await buildLiveMiraPrompt({
+      supabase,
+      user,
+      wsId: accessWsId,
+      timezone: parsed.data.timezone,
+    });
     const model = LIVE_MODELS[parsed.data.mode];
     const expiresAt = new Date(
       Date.now() + LIVE_TOKEN_LIFETIME_MS
@@ -144,7 +151,7 @@ export async function POST(request: NextRequest) {
     const token = await createConstrainedLiveToken({
       model,
       responseModalities: [Modality.AUDIO],
-      systemInstruction: DASHBOARD_LIVE_SYSTEM_INSTRUCTION,
+      systemInstruction,
       toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
       tools: [
         {

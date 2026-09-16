@@ -23,7 +23,7 @@
     "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Live session authorization, atomic AI credit reservation, and dashboard-specific Gemini tool constraints (calendar, time, session notes, approval guidance) remain on the live Next.js backend pending Rust parity. Calendar execution uses existing first-party APIs. Flash/Pro mode selects Gemini 3.8 Live or Extended Thinking, with NON_BLOCKING tools, mode-specific resumption scopes and matching billing model. Preserve mode validation and token constraints."
+      "note": "Live session authorization, atomic AI credit reservation, and dashboard-specific Gemini tool constraints (calendar, time, session notes, approval guidance) remain on the live Next.js backend pending Rust parity. Calendar execution uses existing first-party APIs. Flash/Pro mode selects Gemini 3.8 Live or Extended Thinking, with NON_BLOCKING tools, mode-specific resumption scopes and matching billing model. Preserve mode validation and token constraints. Load the same authenticated Mira identity, scoped memories and preferences as Chat through the shared prompt builder before reserving credits; keep Live tool/approval constraints."
     },
     "api:/api/v1/live/usage:apps/web/src/app/api/v1/live/usage/route.ts": {
       "status": "legacy-next",
@@ -2428,6 +2428,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Owner-scoped chat restoration returns chat and message created_at fields and uses stable created_at/id ordering for concurrent Live turns. First-class Next handler; Rust parity pending."
+    },
+    "api:/api/v1/assistant/live/token:apps/web/src/app/api/v1/assistant/live/token/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js route. Preserve temporary/session authentication, workspace membership and PRO tier checks, chat ownership, resumption and seed history. Load the shared Chat Mira identity, memories and preferences server-side before minting the constrained Live token. Rust parity pending."
     }
   }
 }

@@ -30,6 +30,7 @@ export interface GeminiLiveUsageSnapshot {
 }
 
 export interface CreateLiveSessionPayload {
+  timezone?: string;
   mode?: LiveMode;
   creditSource: LiveCreditSource;
   creditWsId?: string;

@@ -3,13 +3,13 @@ import type { PermissionId } from '@tuturuuu/types';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
-import { buildMiraContext } from '../../tools/context-builder';
 import {
   createMiraStreamTools,
   type MiraToolContext,
 } from '../../tools/mira-tools';
 import type { MiraWorkspaceContextState } from '../../tools/workspace-context';
 import { resolveWorkspaceContextState } from '../../tools/workspace-context';
+import { buildMiraPrompt } from '../mira-prompt';
 import { buildMiraSystemInstruction } from '../mira-system-instruction';
 import type { ChatRequestTaskBoardContext } from './chat-request-schema';
 
@@ -253,32 +253,20 @@ export async function prepareMiraRuntime({
 
   let miraSystemPrompt: string;
   try {
-    const { contextString, soul, isFirstInteraction } = await buildMiraContext({
+    const taskBoardInstruction = await buildTaskBoardContextInstruction({
+      resolvedWorkspaceContext,
+      supabase: miraSupabase,
+      taskBoardContext,
+    });
+    miraSystemPrompt = await buildMiraPrompt({
       userId,
       wsId: resolvedWorkspaceContext.wsId,
       supabase: miraSupabase,
       timezone,
       withoutPermission,
+      workspaceContext: resolvedWorkspaceContext,
+      taskBoardInstruction,
     });
-    const dynamicInstruction = buildMiraSystemInstruction({
-      soul,
-      isFirstInteraction,
-      withoutPermission,
-    });
-    const workspaceContextInstruction = `## Workspace Context\n\nCurrent task/calendar/finance workspace context: ${resolvedWorkspaceContext.name} (${resolvedWorkspaceContext.personal ? 'personal' : 'shared'} workspace).\nUse this workspace for "my tasks", "my calendar", and "my finance" requests. Only switch to another workspace when the user explicitly names a different workspace.`;
-    const taskBoardContextInstruction = await buildTaskBoardContextInstruction({
-      resolvedWorkspaceContext,
-      supabase: miraSupabase,
-      taskBoardContext,
-    });
-    miraSystemPrompt = [
-      contextString,
-      workspaceContextInstruction,
-      taskBoardContextInstruction,
-      dynamicInstruction,
-    ]
-      .filter(Boolean)
-      .join('\n\n');
   } catch (ctxErr) {
     console.error(
       'Failed to build Mira context (continuing with default instruction):',

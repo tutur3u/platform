@@ -1,6 +1,6 @@
 'use client';
 
-import { AudioLines, MessageSquare } from '@tuturuuu/icons';
+import { AudioLines } from '@tuturuuu/icons';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -112,10 +112,6 @@ export function MiraChatBottomBar({
             liveControls
           ) : (
             <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className="inline-flex shrink-0 items-center gap-1.5 px-1 font-medium text-sm">
-                <MessageSquare aria-hidden className="size-4 text-primary" />
-                {voiceT('chat_mode')}
-              </span>
               <div ref={toolbarContentRef} className="min-w-0 flex-1">
                 <MiraChatInputToolbar
                   activeCreditSource={activeCreditSource}

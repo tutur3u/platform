@@ -32,12 +32,11 @@ excerpts preserve original roles alongside recent turns and compact tool results
 This is deterministic compaction, not a generated summary. This bound does not remove older saved messages. Temporary session notes
 remain separate from workspace documents.
 
-While reading chat, downward scrolling or six seconds without composer activity
-compacts the composer into a right-aligned Chat/Live bar. Focused menus, drafts,
-and attachments keep it expanded. An empty input can compact after inactivity,
-with keyboard focus moving to the Chat button. The Chat button reopens and focuses the input.
-The expanded controls have a blurred background so messages remain legible behind
-them; hidden controls are removed from keyboard navigation.
+Chat and Live share a persistent composer panel in the page layout. Switching
+modes swaps the toolset and preserves the text draft. Chat shows its model and
+credit controls without a redundant mode label. Screen/camera sharing uses a
+compact thumbnail that expands on demand; the composer does not cover messages.
+Transitions respect reduced-motion preferences.
 
 The assistant opens tasks, calendar, finance, and meetings next to the conversation
 through tool calls. The chat toolbar has no product, sidebar, or layout controls. One artifact splits the available space in half; multiple
@@ -253,6 +252,13 @@ subject to the existing three-attempt artifact limit.
 
 ## Composer and session timeline
 
-Mira keeps Live controls in the chat composer. Voice starts with text entry collapsed; opening text entry hides the media controls until the user closes text entry again. The shared conversation stays visible at every artifact layout size. Session start/end notices are canonical `data-live-session` parts and are restored alongside text and tool results. They describe session state, not a guarantee that an outstanding save has completed; save failures retain the existing retry notification.
+Mira keeps Live controls in the chat composer. Voice starts with text entry collapsed; opening text entry adds the prompt below the Live controls without hiding them. The shared conversation stays visible at every artifact layout size. Session start/end notices are canonical `data-live-session` parts and are restored alongside text and tool results. They describe session state, not a guarantee that an outstanding save has completed; save failures retain the existing retry notification.
 
 Context bounds are described under [Experience](#experience); media verification remains covered under [Verification](#verification).
+
+
+### Shared Chat and Live personalization
+
+Chat and both Live token endpoints use `packages/ai/src/chat/mira-prompt.ts` for the same Mira identity, behavior, workspace context and scoped memory prompt. Live loads the authenticated user's saved name, personality, tone, boundaries and memories on session creation; saved language, accent and speaking-pace preferences are passed to the model as instructions. These are behavioral preferences, not a separate selectable provider voice ID.
+
+`apps/web/src/lib/live/mira-prompt.ts` adds only spoken-delivery and actual Live tool constraints. Do not restore a static “You are Mira” prompt or duplicate the Chat context loader. Live's smaller tool catalog does not support Chat's memory/settings writes: it must not claim to persist changes using session notes. Dashboard personalization is resolved before reserving credits, and a prompt-loading failure prevents an unpersonalized token from being minted. End and restart Live after changing saved preferences; an ongoing connection retains its session instructions.
