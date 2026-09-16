@@ -132,3 +132,48 @@ For rollout and recovery:
    entry. Do not recreate provider events manually.
 6. Use audited manual adjustments only when the provider has no supported
    event, such as a Polar chargeback.
+
+## Invoice history and recovery
+
+The invoice **Activity** tab requires both `view_invoices` and
+`manage_workspace_audit_logs`. It reads `audit.record_version` through a
+workspace-scoped, service-only RPC. The old `audit_logs` view filters out some
+DELETE events because it checks workspace membership using the new record.
+Do not use that view as evidence that a deleted invoice has no history.
+
+Apply `20260916130000_invoice_recovery_and_history.sql` before releasing the
+Finance handlers. Production migration application is user-operated. Until the
+RPC exists, the delete endpoint fails closed with 503; it never falls back to
+permanent deletion. Update/history/restore also depend on this migration.
+
+Deletions through the Finance invoice endpoint atomically preserve the invoice,
+its products, promotions, group links, payment transactions, and transaction tags in
+`private.finance_invoice_recovery`. Existing inventory and wallet triggers still
+run. The legacy automatic payment-creation trigger is skipped only inside the
+privileged restore transaction, so recovery cannot mint a second payment. Restore
+reuses original IDs and timestamps, restores the payment link, and runs in one
+transaction. Repeated requests cannot duplicate the payment.
+Restore requires `view_invoices`, `create_invoices`, and `delete_invoices`.
+Transactions linked to unrelated records block deletion and require review.
+An invalid or conflicting reference blocks the entire restore.
+
+Historical deletions do not automatically have a recovery snapshot. To investigate
+an older incident, use a read-only query against `audit.record_version`, filtering
+`table_name = 'finance_invoices'`, `op = 'DELETE'`, the workspace in
+`old_record->>'ws_id'`, and a bounded UTC time window. Inspect deleted line items
+and payment audit entries separately. Promotions and group links may not have
+been audited historically. Compare backups and related records before proposing
+a restore; a header alone is not a complete invoice. Do not recreate payments
+without proving the original payment is absent, and do not fabricate missing
+line items or discounts.
+
+Run focused database coverage with:
+
+```sh
+ttr resources run -- node apps/database/scripts/run-supabase-isolated.js \
+  --test supabase/tests/invoice-recovery.sql \
+  --typegen packages/types/src/supabase.ts
+```
+
+The isolated runner copies Git-tracked files, so register a new migration/test
+with `git add --intent-to-add` under the normal commit window before running it.

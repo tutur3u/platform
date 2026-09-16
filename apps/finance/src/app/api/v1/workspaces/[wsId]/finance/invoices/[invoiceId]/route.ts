@@ -38,7 +38,9 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const parsed = UpdateInvoiceSchema.safeParse(await req.json());
+  const parsed = UpdateInvoiceSchema.safeParse(
+    await req.json().catch(() => null)
+  );
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -104,18 +106,20 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const updatePayload = {
-    notice: payload.notice ?? null,
-    note: payload.note ?? null,
+    notice: payload.notice,
+    note: payload.note,
     wallet_id: payload.wallet_id ?? undefined,
   };
 
-  const { error } = await sbAdmin
-    .from('finance_invoices')
-    .update(updatePayload)
-    .eq('id', invoiceId)
-    .eq('ws_id', wsId)
-    .select('id')
-    .maybeSingle();
+  const { data: updated, error } = await sbAdmin.rpc(
+    'admin_update_finance_invoice',
+    {
+      p_ws_id: wsId,
+      p_invoice_id: invoiceId,
+      p_actor_id: access.context.user.id,
+      p_payload: updatePayload,
+    }
+  );
 
   if (error) {
     return NextResponse.json(
@@ -124,6 +128,8 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  if (!updated)
+    return NextResponse.json({ message: 'Invoice not found' }, { status: 404 });
   return NextResponse.json({ message: 'success' });
 }
 
@@ -148,60 +154,34 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { data: existingInvoice, error: existingInvoiceError } = await sbAdmin
-    .from('finance_invoices')
-    .select('id')
-    .eq('id', invoiceId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
-
-  if (existingInvoiceError) {
+  if (!z.guid().safeParse(invoiceId).success)
     return NextResponse.json(
-      { message: 'Error loading invoice' },
-      { status: 500 }
+      { message: 'Invalid invoice ID' },
+      { status: 400 }
     );
-  }
 
-  if (!existingInvoice) {
-    return NextResponse.json({ message: 'Invoice not found' }, { status: 404 });
-  }
-
-  const { error: productsError } = await sbAdmin
-    .from('finance_invoice_products')
-    .delete()
-    .eq('invoice_id', invoiceId);
-
-  if (productsError) {
-    return NextResponse.json(
-      { message: 'Error deleting invoice products' },
-      { status: 500 }
-    );
-  }
-
-  const { error: promotionsError } = await sbAdmin
-    .from('finance_invoice_promotions')
-    .delete()
-    .eq('invoice_id', invoiceId);
-
-  if (promotionsError) {
-    return NextResponse.json(
-      { message: 'Error deleting invoice promotions' },
-      { status: 500 }
-    );
-  }
-
-  const { error } = await sbAdmin
-    .from('finance_invoices')
-    .delete()
-    .eq('id', invoiceId)
-    .eq('ws_id', wsId);
+  const { data, error } = await sbAdmin.rpc('admin_delete_finance_invoice', {
+    p_ws_id: wsId,
+    p_invoice_id: invoiceId,
+    p_actor_id: access.context.user.id,
+  });
 
   if (error) {
+    const status =
+      error.code === '23503' ? 409 : error.code === 'PGRST202' ? 503 : 500;
     return NextResponse.json(
-      { message: 'Error deleting invoice' },
-      { status: 500 }
+      {
+        message:
+          status === 409
+            ? 'Invoice has linked records that must be reviewed before deletion'
+            : status === 503
+              ? 'Invoice recovery is not available yet. Nothing was deleted.'
+              : 'Error deleting invoice',
+      },
+      { status }
     );
   }
-
+  if (!data)
+    return NextResponse.json({ message: 'Invoice not found' }, { status: 404 });
   return NextResponse.json({ message: 'success' });
 }

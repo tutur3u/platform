@@ -11,6 +11,7 @@ const INVOICE_MUTATION_QUERY_ROOTS = new Set([
   'daily-chart',
   'infinite-user-invoices',
   'invoice-analytics',
+  'invoice-history',
   'monthly-chart',
   'monthly-closing-balance',
   'monthly-opening-balance',

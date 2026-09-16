@@ -4314,6 +4314,68 @@ export type Database = {
         };
         Relationships: [];
       };
+      finance_invoice_recovery: {
+        Row: {
+          deleted_at: string;
+          deleted_by: string | null;
+          invoice_id: string;
+          restore_history: string[];
+          restored_at: string | null;
+          restored_by: string | null;
+          snapshot: Json;
+          ws_id: string;
+        };
+        Insert: {
+          deleted_at?: string;
+          deleted_by?: string | null;
+          invoice_id: string;
+          restore_history?: string[];
+          restored_at?: string | null;
+          restored_by?: string | null;
+          snapshot: Json;
+          ws_id: string;
+        };
+        Update: {
+          deleted_at?: string;
+          deleted_by?: string | null;
+          invoice_id?: string;
+          restore_history?: string[];
+          restored_at?: string | null;
+          restored_by?: string | null;
+          snapshot?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_invoice_recovery_deleted_by_fkey';
+            columns: ['deleted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_recovery_deleted_by_fkey';
+            columns: ['deleted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_recovery_restored_by_fkey';
+            columns: ['restored_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_invoice_recovery_restored_by_fkey';
+            columns: ['restored_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       form_logic_rules: {
         Row: {
           action_type: string;
@@ -39807,22 +39869,7 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'record_version_auth_uid_fkey';
-            columns: ['auth_uid'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       distinct_invoice_creators: {
         Row: {
@@ -41291,6 +41338,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      admin_delete_finance_invoice: {
+        Args: { p_actor_id: string; p_invoice_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
       admin_delete_workspace_user_with_audit_actor: {
         Args: { p_actor_auth_uid?: string; p_user_id: string; p_ws_id: string };
         Returns: {
@@ -41326,6 +41377,18 @@ export type Database = {
       };
       admin_get_ai_credit_entity_detail: {
         Args: { p_user_id?: string; p_ws_id?: string };
+        Returns: Json;
+      };
+      admin_get_finance_invoice_history: {
+        Args: {
+          p_actor_id: string;
+          p_deleted_only?: boolean;
+          p_invoice_id?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+          p_ws_id: string;
+        };
         Returns: Json;
       };
       admin_list_ai_credit_transactions: {
@@ -41376,6 +41439,19 @@ export type Database = {
         }[];
       };
       admin_reset_rate_limits: { Args: never; Returns: number };
+      admin_restore_finance_invoice: {
+        Args: { p_actor_id: string; p_invoice_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      admin_update_finance_invoice: {
+        Args: {
+          p_actor_id: string;
+          p_invoice_id: string;
+          p_payload: Json;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
       admin_update_workspace_user_with_audit_actor: {
         Args: {
           p_actor_auth_uid?: string;

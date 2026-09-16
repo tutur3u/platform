@@ -25,6 +25,7 @@ import { Skeleton } from '../../skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
 import { InvoiceTotalsChartSkeleton } from './charts/invoice-totals-chart';
 import { InvoiceAnalytics } from './invoice-analytics';
+import { InvoiceHistory } from './invoice-history';
 import { InvoicesTable } from './invoices-table';
 import { PendingInvoicesTab } from './pending-invoices-tab';
 import { PendingInvoicesTable } from './pending-invoices-table';
@@ -245,7 +246,7 @@ export default async function InvoicesPage({
       </Suspense>
 
       <Tabs defaultValue="created" className="w-full">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 h-auto flex-wrap">
           <TabsTrigger value="created" className="gap-2">
             <FileCheck2 className="h-4 w-4" />
             {t('ws-invoices.created_invoices')}
@@ -254,12 +255,18 @@ export default async function InvoicesPage({
             wsId={wsId}
             label={t('ws-invoices.pending_invoices')}
           />
+          {containsPermission('manage_workspace_audit_logs') && (
+            <TabsTrigger value="activity">
+              {t('ws-invoices.activity')}
+            </TabsTrigger>
+          )}
         </TabsList>
         <TabsContent value="created">
           <Suspense fallback={<Skeleton className="h-125 w-full" />}>
             <InvoicesTable
               wsId={wsId}
               canDeleteInvoices={canDeleteInvoices}
+              canRestoreInvoices={canCreateInvoices && canDeleteInvoices}
               canExport={canExportFinanceData}
               deleteInvoiceAction={deleteInvoiceAction}
               initialData={initialData}
@@ -276,6 +283,14 @@ export default async function InvoicesPage({
             />
           </Suspense>
         </TabsContent>
+        {containsPermission('manage_workspace_audit_logs') && (
+          <TabsContent value="activity">
+            <InvoiceHistory
+              wsId={wsId}
+              canRestore={canCreateInvoices && canDeleteInvoices}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </>
   );
