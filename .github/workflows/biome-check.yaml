@@ -2,6 +2,10 @@ name: Biome Check
 
 on:
   push:
+    # Overflow notes briefly reuse the production SHA before their content commit.
+    # Exclude them before creating checks that a subsequent push would cancel.
+    branches-ignore:
+      - 'release-please--branches--**--release-notes'
   workflow_dispatch:
 
 # Release Please pushes generated files, then amends them with Biome formatting.

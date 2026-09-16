@@ -168,6 +168,11 @@ formatting behavior, or repo-wide verification.
   `apps/mobile/pubspec.yaml` on every release, so `touchesMobile()` is always
   true and `bun check:mobile` always runs; `flutter pub get` also covers the
   `generate: true` gen-l10n step that `flutter-analyze` needs.
+- Exclude `release-please--branches--**--release-notes` metadata branches from
+  Biome's native push trigger, while preserving validation for real release PR
+  branches and manual dispatch. Overflow branch creation briefly reuses the
+  production SHA; cancellation on its next push otherwise marks main/production
+  red too. Verify all check runs on the release SHA, not only branch-filtered runs.
 - Keep the Release Please overflow recovery step before
   `googleapis/release-please-action@v5`. It runs
   `node scripts/ci/release-please-overflow-recovery.js --target-branch production`

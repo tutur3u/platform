@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -11,6 +12,24 @@ const workflow = fs.readFileSync(
   path.join(repoRoot, '.github/workflows/biome-check.yaml'),
   'utf8'
 );
+
+test('overflow notes cannot attach cancelled Biome checks to a release SHA', () => {
+  const triggers = JSON.parse(
+    execFileSync(
+      'bun',
+      [
+        '-e',
+        'console.log(JSON.stringify(Bun.YAML.parse(await Bun.stdin.text()).on))',
+      ],
+      { input: workflow, encoding: 'utf8' }
+    )
+  );
+  // Parse the entire node so extra branches cannot hide behind YAML quoting.
+  assert.deepEqual(triggers.push, {
+    'branches-ignore': ['release-please--branches--**--release-notes'],
+  });
+  assert.ok(Object.hasOwn(triggers, 'workflow_dispatch'));
+});
 
 test('Biome supersedes obsolete commits without cancelling other branches', () => {
   assert.match(
