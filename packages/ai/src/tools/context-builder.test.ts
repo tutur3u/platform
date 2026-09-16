@@ -1,8 +1,22 @@
 import type { SupabaseClient } from '@tuturuuu/supabase';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildMiraContext } from './context-builder';
 
+const memories = vi.hoisted(() => vi.fn().mockResolvedValue(''));
+vi.mock('../memory', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../memory')>()),
+  buildAiMemoryContext: memories,
+}));
+
 class ContextBuilderSupabaseMock {
+  constructor(
+    private readonly soul: {
+      name: string;
+      personality: string;
+      tone: string;
+      chat_tone: string;
+    } | null = null
+  ) {}
   public readonly queriedTables: string[] = [];
 
   schema(_schema: string) {
@@ -15,7 +29,7 @@ class ContextBuilderSupabaseMock {
     const respond = async () => {
       switch (table) {
         case 'mira_soul':
-          return { data: null, error: null };
+          return { data: this.soul, error: null };
         case 'workspace_calendar_events':
           return {
             data: [
@@ -85,6 +99,43 @@ class ContextBuilderSupabaseMock {
 }
 
 describe('buildMiraContext', () => {
+  it('loads speaking preferences from persisted personality and scoped memories', async () => {
+    memories.mockResolvedValueOnce(
+      '## User Memories\n- Speak slowly with a Southern Vietnamese accent.'
+    );
+    const result = await buildMiraContext({
+      supabase: new ContextBuilderSupabaseMock({
+        name: 'Chachipiki',
+        personality: 'Speak Vietnamese with a warm voice.',
+        tone: 'warm',
+        chat_tone: 'detailed',
+      }) as unknown as SupabaseClient,
+      userId: 'user-1',
+      wsId: 'workspace-1',
+      withoutPermission: () => true,
+    });
+    expect(result.contextString).toContain('Your name is Chachipiki.');
+    expect(result.contextString).toContain(
+      'Speak Vietnamese with a warm voice.'
+    );
+    expect(result.contextString).toContain(
+      'Speak slowly with a Southern Vietnamese accent.'
+    );
+    expect(result.soul).toMatchObject({
+      name: 'Chachipiki',
+      tone: 'warm',
+      chat_tone: 'detailed',
+    });
+    expect(memories).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scope: expect.objectContaining({
+          userId: 'user-1',
+          wsId: 'workspace-1',
+        }),
+      })
+    );
+  });
+
   it('omits calendar and finance context when the user lacks those permissions', async () => {
     const supabase =
       new ContextBuilderSupabaseMock() as unknown as SupabaseClient;

@@ -1,12 +1,16 @@
 import { Modality, ThinkingLevel } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
+  resolveWorkspaceIdForPrincipal,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const tempAuth = await validateAiTempAuthRequest(request);
     if (tempAuth.status === 'revoked') {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -81,6 +85,9 @@ export async function POST(request: Request) {
     let user: SupabaseUser | null = null;
     if (tempAuth.status === 'valid') {
       user = tempAuth.context.user as SupabaseUser;
+      // The opaque AI token is not a Supabase JWT. All admin-backed reads below
+      // are explicitly scoped to this verified actor and checked workspace.
+      supabase = await createAdminClient({ noCookie: true });
     } else {
       const { user: sessionUser } =
         await resolveAuthenticatedSessionUser(supabase);
@@ -91,7 +98,24 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+    const normalizedWsId =
+      tempAuth.status === 'valid'
+        ? await resolveWorkspaceIdForPrincipal({
+            authorizationClient: supabase,
+            principal: { id: user.id, email: user.email ?? null },
+            wsId,
+          })
+        : await normalizeWorkspaceId(wsId, supabase);
+    if (
+      tempAuth.status === 'valid' &&
+      tempAuth.context.wsId &&
+      tempAuth.context.wsId !== normalizedWsId
+    ) {
+      return Response.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
     const membership = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
       userId: user.id,
@@ -150,39 +174,14 @@ export async function POST(request: Request) {
       dashboard: false,
     });
     const scopeKey = assistantChatScopeKey(chat.id);
-    const sessionHandlePromise = shouldForceFresh
-      ? Promise.resolve<string | null>(null)
-      : loadStoredSessionHandle({
+    const sessionHandle = shouldForceFresh
+      ? null
+      : await loadStoredSessionHandle({
           supabase,
           normalizedWsId,
           scopeKey,
           userId: user.id,
         });
-
-    let token: string;
-    let sessionHandle: string | null;
-    try {
-      [token, sessionHandle] = await Promise.all([
-        createConstrainedLiveToken({
-          model: resolvedModel,
-          systemInstruction,
-          tools: [
-            { functionDeclarations: ASSISTANT_LIVE_TOOL_DECLARATIONS },
-            { googleSearch: {} },
-          ],
-          toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
-          responseModalities: [Modality.AUDIO],
-          thinkingLevel: ThinkingLevel.MINIMAL,
-        }),
-        sessionHandlePromise,
-      ]);
-    } catch (error) {
-      console.error('Failed to provision assistant live token', error);
-      return Response.json(
-        { error: 'Failed to provision Gemini Live token' },
-        { status: 502 }
-      );
-    }
 
     const seedHistory =
       shouldForceFresh || sessionHandle == null
@@ -203,6 +202,27 @@ export async function POST(request: Request) {
       return Response.json(
         { error: 'Failed to restore assistant live history' },
         { status: 500 }
+      );
+    }
+
+    let token: string;
+    try {
+      token = await createConstrainedLiveToken({
+        model: resolvedModel,
+        systemInstruction,
+        tools: [
+          { functionDeclarations: ASSISTANT_LIVE_TOOL_DECLARATIONS },
+          { googleSearch: {} },
+        ],
+        toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
+        responseModalities: [Modality.AUDIO],
+        thinkingLevel: ThinkingLevel.MINIMAL,
+      });
+    } catch (error) {
+      console.error('Failed to provision assistant live token', error);
+      return Response.json(
+        { error: 'Failed to provision Gemini Live token' },
+        { status: 502 }
       );
     }
 

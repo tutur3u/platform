@@ -2432,7 +2432,7 @@
     "api:/api/v1/assistant/live/token:apps/web/src/app/api/v1/assistant/live/token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Next.js route. Preserve temporary/session authentication, workspace membership and PRO tier checks, chat ownership, resumption and seed history. Load the shared Chat Mira identity, memories and preferences server-side before minting the constrained Live token. Rust parity pending."
+      "note": "First-class Next.js route. Preserve temporary/session authentication, workspace membership and PRO tier checks, chat ownership, resumption and seed history. Load the shared Chat Mira identity, memories and preferences server-side before minting the constrained Live token. Valid temporary authentication uses server-validated actor-scoped queries and enforces its workspace scope; resolve required seed history before minting. Rust parity pending."
     }
   }
 }
