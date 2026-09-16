@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import {
   isTaskBoardCompletedStatus,
@@ -76,11 +73,10 @@ async function requireWorkspaceTaskAccess(
   rawParams: unknown
 ) {
   const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
-  const supabase = await createClient(request);
+  const { user, authError, supabase } =
+    await resolveAuthenticatedSessionUser(request);
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
+  if (authError || !user || !supabase) {
     return {
       error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     };
