@@ -2,7 +2,7 @@
 
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { Button } from '@tuturuuu/ui/button';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
@@ -23,6 +23,7 @@ import { LiveCalendarResult } from './components/live-calendar-result';
 import { LiveWorkspace } from './components/live-workspace';
 import VideoPreview from './components/video-panel/video-preview';
 import { VisualizationContainer } from './components/visualizations/visualization-container';
+import { LiveInteractionStatus } from './live-interaction-status';
 import type { ServerContent } from './multimodal-live';
 import { isModelTurn } from './multimodal-live';
 import { useVisualizationStore } from './stores/visualization-store';
@@ -38,6 +39,7 @@ export function stopMediaStream(stream: MediaStream | null) {
 }
 
 export function AssistantVoiceSession({
+  modeControl,
   onReturnToChat,
   onResultsChange,
   inputOpen,
@@ -49,6 +51,7 @@ export function AssistantVoiceSession({
   onRestartSession,
   wsId,
 }: {
+  modeControl?: ReactNode;
   onReturnToChat?: () => void;
   onResultsChange?: (results: ReactNode) => void;
   inputOpen?: boolean;
@@ -61,6 +64,7 @@ export function AssistantVoiceSession({
   wsId: string;
 }) {
   const t = useTranslations('dashboard.voice_assistant.studio');
+  const reducedMotion = useReducedMotion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [textChatOpen, setTextChatOpen] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -287,6 +291,7 @@ export function AssistantVoiceSession({
       <div className="min-w-0 max-w-full">
         <ControlTray
           compact
+          leading={modeControl}
           onReturnToChat={onReturnToChat}
           textChatOpen={inputOpen}
           onToggleChat={onToggleInput}
@@ -301,37 +306,54 @@ export function AssistantVoiceSession({
           onInputVolumeChange={setInputVolume}
           videoStopRequest={videoStopRequest}
         />
-        {activities
-          .filter((activity) => activity.status === 'approval')
-          .map((activity) => (
-            <div
-              key={activity.id}
-              className="max-h-40 overflow-auto rounded-lg border p-2"
-            >
-              <LiveActionPreview args={activity.args} />
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" onClick={() => decide(activity.id, true)}>
-                  {t('approve')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => decide(activity.id, false)}
-                >
-                  {t('decline')}
-                </Button>
+        <LiveInteractionStatus />
+        <div className="max-h-32 space-y-2 overflow-y-auto overscroll-contain empty:hidden">
+          {activities
+            .filter((activity) => activity.status === 'approval')
+            .map((activity) => (
+              <div
+                key={activity.id}
+                className="max-h-40 overflow-auto rounded-lg border p-2"
+              >
+                <LiveActionPreview args={activity.args} />
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => decide(activity.id, true)}>
+                    {t('approve')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => decide(activity.id, false)}
+                  >
+                    {t('decline')}
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        <VideoPreview
-          stream={activeVideoStream}
-          type={videoType}
-          onClose={() => {
-            setActiveVideoStream(null);
-            setVideoType(null);
-            setVideoStopRequest((request) => request + 1);
-          }}
-        />
+            ))}
+        </div>
+        <AnimatePresence initial={false}>
+          {activeVideoStream && (
+            <motion.div
+              key="media-preview"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.18 }}
+              className="overflow-hidden"
+            >
+              <VideoPreview
+                compact
+                stream={activeVideoStream}
+                type={videoType}
+                onClose={() => {
+                  setActiveVideoStream(null);
+                  setVideoType(null);
+                  setVideoStopRequest((request) => request + 1);
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
         <video ref={videoRef} autoPlay playsInline muted className="hidden" />
       </div>
     );

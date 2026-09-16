@@ -8,7 +8,6 @@ import type { MessageFileAttachment } from './file-preview-chips';
 
 interface MiraChatConversationProps {
   liveResults?: ReactNode;
-  voiceActive?: boolean;
   actionHandlers: ReturnType<
     typeof import('@/components/json-render/dashboard-registry').handlers
   >;
@@ -31,7 +30,6 @@ interface MiraChatConversationProps {
 
 export function MiraChatConversation({
   liveResults,
-  voiceActive,
   actionHandlers,
   assistantName,
   generativeUIStore,
@@ -75,7 +73,7 @@ export function MiraChatConversation({
         <ActionProvider handlers={actionHandlers}>
           <ChatMessageList
             footer={liveResults}
-            reserveComposerSpace={!voiceActive}
+            reserveComposerSpace={false}
             messages={renderedMessages}
             isStreaming={isBusy || !!pendingPrompt}
             assistantName={assistantName}
