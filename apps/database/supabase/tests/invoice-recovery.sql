@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(28);
+select plan(34);
 
 insert into public.workspaces (id, name, personal, creator_id)
 values (
@@ -130,14 +130,21 @@ insert into public.transaction_tags(id, ws_id, name) values ('00000000-0000-4000
 insert into public.wallet_transaction_tags(transaction_id, tag_id) values ('00000000-0000-4000-8000-000000010803', '00000000-0000-4000-8000-000000010806');
 
 select ok(not has_function_privilege('authenticated', 'public.admin_restore_finance_invoice(uuid,uuid,uuid)', 'execute'), 'Clients cannot impersonate a restore actor');
-select ok(not has_function_privilege('anon', 'public.admin_get_finance_invoice_history(uuid,uuid,uuid,boolean,integer,integer,text)', 'execute'), 'Anonymous callers cannot read history');
+select ok(not has_function_privilege('anon', 'public.admin_get_finance_invoice_history(uuid,uuid,uuid,boolean,integer,integer,text,text,text,timestamptz,timestamptz,text)', 'execute'), 'Anonymous callers cannot read history');
 select throws_ok($$select public.admin_delete_finance_invoice('00000000-0000-4000-8000-000000010001', '00000000-0000-4000-8000-000000010804', '00000000-0000-4000-8000-000000019999')$$, '42501', 'Insufficient permissions', 'Nonmember cannot delete');
 select ok(public.admin_update_finance_invoice('00000000-0000-4000-8000-000000010001', '00000000-0000-4000-8000-000000010804', '00000000-0000-0000-0000-000000000001', '{"note":"Updated note"}'), 'Update succeeds');
 select is((select notice from public.finance_invoices where id = '00000000-0000-4000-8000-000000010804'), 'Keep this notice', 'Partial updates preserve omitted fields');
+update public.finance_invoice_promotions set value=30 where invoice_id='00000000-0000-4000-8000-000000010804';
+select ok(exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 100, '', 'promotion', 'UPDATE')) e where e->'changes'->'value'->>'before'='25' and e->'changes'->'value'->>'after'='30'), 'Discount changes retain before and after values');
+select ok(exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 100, '', 'product')) e where e->>'entity_type'='product'), 'Line item history is available');
+select ok(exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 100, '', 'payment')) e where e->>'entity_type'='payment'), 'Original payment history is available');
+select is(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 25, '', null, null, now()+interval '1 day'), '[]'::jsonb, 'Date filters exclude older events');
+select ok((public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 100, '', null, null, null, null, 'asc')->0->>'id')::bigint < (public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 100, '', null, null, null, null, 'desc')->0->>'id')::bigint, 'Sort direction uses stable event IDs within equal timestamps');
 select ok(public.admin_delete_finance_invoice('00000000-0000-4000-8000-000000010001', '00000000-0000-4000-8000-000000010804', '00000000-0000-0000-0000-000000000001'), 'Atomic deletion succeeds');
 select is((select count(*) from public.finance_invoice_products where invoice_id = '00000000-0000-4000-8000-000000010804'), 0::bigint, 'Line items removed');
 select is((select count(*) from public.wallet_transactions where id = '00000000-0000-4000-8000-000000010803'), 0::bigint, 'Original payment removed');
 select ok(exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true)) e where e->>'operation' = 'DELETE' and (e->>'can_restore')::boolean and e->>'actor_id' = '00000000-0000-0000-0000-000000000001'), 'Deleted audit record retains actor and recovery availability');
+select ok(exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true)) e where (e->>'is_deleted')::boolean and (e->>'amount')::numeric = 100 and e->>'currency' is not null), 'Deletion review includes amount, currency, and current deletion state');
 select ok(public.admin_restore_finance_invoice('00000000-0000-4000-8000-000000010001', '00000000-0000-4000-8000-000000010804', '00000000-0000-0000-0000-000000000001'), 'Restore succeeds');
 select is((select note from public.finance_invoices where id = '00000000-0000-4000-8000-000000010804'), 'Updated note', 'Invoice values preserved');
 select is((select count(*) from public.finance_invoice_products where invoice_id = '00000000-0000-4000-8000-000000010804'), 1::bigint, 'Line items restored exactly once');

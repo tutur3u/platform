@@ -61,20 +61,41 @@ describe('invoice history access', () => {
       })
     );
   });
-  it.each(['limit=1000', 'offset=-1', 'invoiceId=invalid', 'deletedOnly=yes'])(
-    'rejects invalid query %s before querying',
-    async (query) => {
-      expect(
-        (
-          await GET(
-            new Request(`https://finance.test/history?${query}`),
-            params
-          )
-        ).status
-      ).toBe(400);
-      expect(mocks.rpc).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    'limit=1000',
+    'offset=-1',
+    'invoiceId=invalid',
+    'deletedOnly=yes',
+    'sort=bad',
+    'entity=users',
+    'action=TRUNCATE',
+    'from=invalid',
+    'from=2026-09-17T00:00:00Z&to=2026-09-16T00:00:00Z',
+  ])('rejects invalid query %s before querying', async (query) => {
+    expect(
+      (await GET(new Request(`https://finance.test/history?${query}`), params))
+        .status
+    ).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+  it('passes validated record, action, date, and sort filters to the scoped RPC', async () => {
+    await GET(
+      new Request(
+        'https://finance.test/history?entity=promotion&action=UPDATE&sort=asc&from=2026-09-16T00:00:00Z&to=2026-09-17T00:00:00Z'
+      ),
+      params
+    );
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'admin_get_finance_invoice_history',
+      expect.objectContaining({
+        p_entity: 'promotion',
+        p_action: 'UPDATE',
+        p_sort: 'asc',
+        p_from: '2026-09-16T00:00:00Z',
+        p_to: '2026-09-17T00:00:00Z',
+      })
+    );
+  });
   it('reports an unapplied migration without pretending the history is empty', async () => {
     mocks.rpc.mockResolvedValue({ error: { code: 'PGRST202' } });
     expect(

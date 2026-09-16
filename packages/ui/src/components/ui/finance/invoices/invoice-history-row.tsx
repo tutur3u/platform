@@ -4,6 +4,10 @@ import type { InvoiceHistoryEntry } from '@tuturuuu/internal-api/finance';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useFormatter, useTranslations } from 'next-intl';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 export function InvoiceHistoryRow({
   entry,
@@ -18,8 +22,23 @@ export function InvoiceHistoryRow({
 }) {
   const t = useTranslations('ws-invoices');
   const format = useFormatter();
+  const { isConfidential } = useFinanceConfidentialVisibility();
+  const displayValue = (
+    field: string,
+    value: string | number | boolean | null
+  ) => {
+    if (value == null) return '—';
+    if (
+      isConfidential &&
+      ['amount', 'price', 'paid_amount', 'total_diff', 'value'].includes(field)
+    )
+      return FINANCE_HIDDEN_AMOUNT;
+    return typeof value === 'number' ? format.number(value) : String(value);
+  };
   return (
-    <li className="flex flex-wrap items-start justify-between gap-3 p-4">
+    <li
+      className={`flex flex-wrap items-start justify-between gap-3 p-4 ${entry.entity_type === 'invoice' && entry.operation === 'DELETE' && entry.is_deleted ? 'border-l-2 border-l-destructive bg-destructive/5' : ''}`}
+    >
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <Badge
@@ -35,10 +54,32 @@ export function InvoiceHistoryRow({
                     : 'activity_created'
             )}
           </Badge>
+          <Badge variant="outline">
+            {t(`history_entities.${entry.entity_type}`)}
+          </Badge>
           <span className="font-medium text-sm">
             {entry.customer_name || t('activity_unknown_customer')}
           </span>
         </div>
+        {entry.amount != null && (
+          <p className="font-semibold text-sm tabular-nums">
+            {isConfidential
+              ? FINANCE_HIDDEN_AMOUNT
+              : format.number(entry.amount)}{' '}
+            {entry.currency?.toUpperCase()}
+          </p>
+        )}
+        {entry.entity_type === 'invoice' &&
+          entry.operation === 'DELETE' &&
+          entry.is_deleted && (
+            <Badge variant="outline">
+              {t(
+                entry.can_restore
+                  ? 'recovery_ready'
+                  : 'recovery_review_required'
+              )}
+            </Badge>
+          )}
         <p className="break-all font-mono text-muted-foreground text-xs">
           {entry.invoice_id}
         </p>
@@ -72,24 +113,28 @@ export function InvoiceHistoryRow({
               {Object.entries(entry.changes).map(([field, values]) => (
                 <div key={field} className="space-y-1">
                   <dt className="font-medium">
-                    {t(`history_fields.${field}`)}
+                    {t.has(`history_fields.${field}`)
+                      ? t(`history_fields.${field}`)
+                      : field}
                   </dt>
                   <dd className="whitespace-pre-wrap break-words text-muted-foreground text-xs">
-                    {t('activity_before')}: {values.before || '—'}
+                    {t('activity_before')}: {displayValue(field, values.before)}
                   </dd>
                   <dd className="whitespace-pre-wrap break-words text-xs">
-                    {t('activity_after')}: {values.after || '—'}
+                    {t('activity_after')}: {displayValue(field, values.after)}
                   </dd>
                 </div>
               ))}
             </dl>
           </details>
         )}
-        {entry.operation === 'DELETE' && !entry.can_restore && (
-          <p className="max-w-xl text-muted-foreground text-xs">
-            {t('recovery_unavailable')}
-          </p>
-        )}
+        {entry.entity_type === 'invoice' &&
+          entry.operation === 'DELETE' &&
+          !entry.can_restore && (
+            <p className="max-w-xl text-muted-foreground text-xs">
+              {t('recovery_unavailable')}
+            </p>
+          )}
       </div>
       {entry.can_restore && canRestore && (
         <Button

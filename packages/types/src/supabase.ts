@@ -41381,12 +41381,17 @@ export type Database = {
       };
       admin_get_finance_invoice_history: {
         Args: {
+          p_action?: string;
           p_actor_id: string;
           p_deleted_only?: boolean;
+          p_entity?: string;
+          p_from?: string;
           p_invoice_id?: string;
           p_limit?: number;
           p_offset?: number;
           p_query?: string;
+          p_sort?: string;
+          p_to?: string;
           p_ws_id: string;
         };
         Returns: Json;

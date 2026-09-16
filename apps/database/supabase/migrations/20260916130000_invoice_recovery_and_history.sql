@@ -17,9 +17,21 @@ grant all on private.finance_invoice_recovery to service_role;
 select audit.enable_tracking('public.finance_invoices'::regclass);
 select audit.enable_tracking('public.finance_invoice_products'::regclass);
 select audit.enable_tracking('public.finance_invoice_user_groups'::regclass);
+select audit.enable_tracking('public.wallet_transactions'::regclass);
+-- Promotions have no primary key. The audit trigger supports this by assigning
+-- event-local record IDs; do not impose a new uniqueness constraint on old data.
+create trigger audit_invoice_promotions_changes after insert or update or delete
+on public.finance_invoice_promotions for each row execute function audit.insert_update_delete_trigger();
 
-create index if not exists invoice_audit_workspace_time_idx
-on audit.record_version ((coalesce(record->>'ws_id', old_record->>'ws_id')), ts desc, id desc)
+create index if not exists invoice_related_audit_time_idx
+on audit.record_version ((coalesce(record->>'invoice_id', old_record->>'invoice_id')), ts desc, id desc)
+where table_name in ('finance_invoice_products', 'finance_invoice_promotions', 'finance_invoice_user_groups', 'wallet_transactions');
+create index if not exists invoice_payment_audit_time_idx
+on audit.record_version ((coalesce(record->>'id', old_record->>'id')), ts desc, id desc)
+where table_name = 'wallet_transactions';
+
+create index if not exists invoice_audit_workspace_invoice_time_idx
+on audit.record_version ((coalesce(record->>'ws_id', old_record->>'ws_id')), (coalesce(record->>'id', old_record->>'id')), ts desc, id desc)
 where table_name = 'finance_invoices';
 
 create or replace function public.admin_delete_finance_invoice(
@@ -137,11 +149,12 @@ begin
 end;
 $$;
 
--- Read the underlying audit table: the legacy view filters DELETE records out.
+-- Read underlying audit records, including deleted parents and related changes.
 create or replace function public.admin_get_finance_invoice_history(
   p_ws_id uuid, p_actor_id uuid, p_invoice_id uuid default null,
   p_deleted_only boolean default false, p_offset integer default 0, p_limit integer default 25,
-  p_query text default ''
+  p_query text default '', p_entity text default null, p_action text default null,
+  p_from timestamptz default null, p_to timestamptz default null, p_sort text default 'desc'
 ) returns jsonb
 language plpgsql security definer set search_path = '' as $$
 declare result jsonb;
@@ -150,45 +163,94 @@ begin
     or not public.has_workspace_permission(p_ws_id, p_actor_id, 'manage_workspace_audit_logs') then
     raise insufficient_privilege using message = 'Insufficient permissions';
   end if;
-  select coalesce(jsonb_agg(to_jsonb(entries)), '[]'::jsonb) into result from (
-    select a.id::text, a.ts as occurred_at, case when a.op = 'INSERT' and a.ts = any(r.restore_history) then 'RESTORE' else a.op::text end as operation,
-      coalesce(a.record->>'id', a.old_record->>'id') as invoice_id,
-      u.display_name as actor_name,
-      coalesce(a.auth_uid, case when a.op = 'INSERT' then (a.record->>'platform_creator_id')::uuid end) as actor_id,
-      coalesce(a.record->>'customer_id', a.old_record->>'customer_id') as customer_id,
-      customer.full_name as customer_name,
-      array(select key from jsonb_each(coalesce(a.record, a.old_record)) where
-        a.op <> 'UPDATE' or a.record->key is distinct from a.old_record->key) as changed_fields,
-      coalesce((select jsonb_object_agg(key, jsonb_build_object('before', a.old_record->key, 'after', a.record->key))
-        from jsonb_each(a.record) where a.op = 'UPDATE' and key in ('note', 'notice', 'wallet_id')
-          and a.record->key is distinct from a.old_record->key), '{}'::jsonb) as changes,
-      r.invoice_id is not null and r.restored_at is null and a.op = 'DELETE'
-        and not exists(select 1 from public.finance_invoices f where f.id = r.invoice_id)
-        and a.ts >= r.deleted_at as can_restore
+  with invoice_context as materialized (
+    select distinct on (coalesce(a.record->>'id', a.old_record->>'id'))
+      coalesce(a.record, a.old_record) as invoice
     from audit.record_version a
-    left join public.users u on u.id = coalesce(a.auth_uid, case when a.op = 'INSERT' then (a.record->>'platform_creator_id')::uuid end)
-    left join public.workspace_users customer on customer.id = coalesce(a.record->>'customer_id', a.old_record->>'customer_id')::uuid and customer.ws_id = p_ws_id
-    left join private.finance_invoice_recovery r on r.invoice_id = coalesce(a.record->>'id', a.old_record->>'id')::uuid and r.ws_id = p_ws_id
     where a.table_name = 'finance_invoices'
       and coalesce(a.record->>'ws_id', a.old_record->>'ws_id') = p_ws_id::text
       and (p_invoice_id is null or coalesce(a.record->>'id', a.old_record->>'id') = p_invoice_id::text)
-      and (not p_deleted_only or (a.op = 'DELETE' and not exists(
-        select 1 from public.finance_invoices f where f.id = (a.old_record->>'id')::uuid)))
+    order by coalesce(a.record->>'id', a.old_record->>'id'), a.ts desc, a.id desc
+  ), events as (
+    select a.*, context.invoice,
+      case a.table_name
+        when 'finance_invoices' then 'invoice'
+        when 'finance_invoice_products' then 'product'
+        when 'finance_invoice_promotions' then 'promotion'
+        when 'finance_invoice_user_groups' then 'group'
+        else 'payment' end as entity_type
+    from invoice_context context
+    cross join lateral (
+      select v.* from audit.record_version v
+      where v.table_name = 'finance_invoices'
+        and coalesce(v.record->>'ws_id', v.old_record->>'ws_id') = p_ws_id::text
+        and coalesce(v.record->>'id', v.old_record->>'id') = context.invoice->>'id'
+      union all
+      select v.* from audit.record_version v
+      where not p_deleted_only
+        and v.table_name in ('finance_invoice_products', 'finance_invoice_promotions', 'finance_invoice_user_groups', 'wallet_transactions')
+        and coalesce(v.record->>'invoice_id', v.old_record->>'invoice_id') = context.invoice->>'id'
+      union all
+      select v.* from audit.record_version v
+      where not p_deleted_only and v.table_name = 'wallet_transactions'
+        and coalesce(v.record->>'id', v.old_record->>'id') = context.invoice->>'transaction_id'
+        and coalesce(v.record->>'invoice_id', v.old_record->>'invoice_id') is distinct from context.invoice->>'id'
+    ) a
+    where (p_from is null or a.ts >= p_from) and (p_to is null or a.ts <= p_to)
+  ), entries as (
+    select a.id::text, a.ts as occurred_at,
+      case when a.table_name = 'finance_invoices' and a.op = 'INSERT' and a.ts = any(r.restore_history)
+        then 'RESTORE' else a.op::text end as operation,
+      a.entity_type, a.invoice->>'id' as invoice_id,
+      u.display_name as actor_name,
+      coalesce(a.auth_uid, case when a.table_name = 'finance_invoices' and a.op = 'INSERT' then (a.record->>'platform_creator_id')::uuid end) as actor_id,
+      a.invoice->>'customer_id' as customer_id, customer.full_name as customer_name,
+      (a.invoice->>'price')::numeric + coalesce((a.invoice->>'total_diff')::numeric, 0) as amount,
+      wallet.currency,
+      not exists(select 1 from public.finance_invoices f where f.id = (a.invoice->>'id')::uuid) as is_deleted,
+      array(select key from jsonb_each(coalesce(a.record, a.old_record)) where
+        a.op <> 'UPDATE' or a.record->key is distinct from a.old_record->key) as changed_fields,
+      coalesce((select jsonb_object_agg(key, jsonb_build_object('before', a.old_record->key, 'after', a.record->key))
+        from jsonb_each(coalesce(a.record, a.old_record))
+        where key in ('note', 'notice', 'wallet_id', 'category_id', 'customer_id', 'price', 'total_diff', 'paid_amount',
+          'completed_at', 'valid_until', 'product_name', 'product_unit', 'product_id', 'unit_id', 'warehouse_id',
+          'amount', 'owner_name', 'promo_id', 'value', 'use_ratio', 'name', 'code', 'description', 'user_group_id', 'taken_at')
+          and (a.op <> 'UPDATE' or a.record->key is distinct from a.old_record->key)), '{}'::jsonb) as changes,
+      r.invoice_id is not null and r.restored_at is null and a.table_name = 'finance_invoices' and a.op = 'DELETE'
+        and not exists(select 1 from public.finance_invoices f where f.id = r.invoice_id)
+        and a.ts >= r.deleted_at as can_restore
+    from events a
+    left join public.users u on u.id = coalesce(a.auth_uid,
+      case when a.table_name = 'finance_invoices' and a.op = 'INSERT' then (a.record->>'platform_creator_id')::uuid end)
+    left join public.workspace_users customer on customer.id = (a.invoice->>'customer_id')::uuid and customer.ws_id = p_ws_id
+    left join private.workspace_wallets wallet on wallet.id = (a.invoice->>'wallet_id')::uuid and wallet.ws_id = p_ws_id
+    left join private.finance_invoice_recovery r on r.invoice_id = (a.invoice->>'id')::uuid and r.ws_id = p_ws_id
+    where (p_entity is null or a.entity_type = p_entity)
       and (coalesce(p_query, '') = '' or customer.full_name ilike '%' || left(p_query, 120) || '%'
-        or coalesce(a.record->>'id', a.old_record->>'id') ilike '%' || left(p_query, 120) || '%')
-    order by a.ts desc, a.id desc
+        or a.invoice->>'id' ilike '%' || left(p_query, 120) || '%'
+        or u.display_name ilike '%' || left(p_query, 120) || '%')
+  )
+  select coalesce(jsonb_agg(to_jsonb(page) - 'sort_id'), '[]'::jsonb) into result from (
+    select *, id::bigint as sort_id from entries
+    where (p_action is null or operation = p_action)
+      and (not p_deleted_only or (entity_type = 'invoice' and operation = 'DELETE' and is_deleted))
+    order by
+      case when p_sort = 'asc' then occurred_at end asc,
+      case when p_sort = 'asc' then id::bigint end asc,
+      case when p_sort <> 'asc' then occurred_at end desc,
+      case when p_sort <> 'asc' then id::bigint end desc
     offset greatest(p_offset, 0) limit least(greatest(p_limit, 1), 100)
-  ) entries;
+  ) page;
   return result;
 end;
 $$;
 
 revoke all on function public.admin_delete_finance_invoice(uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function public.admin_restore_finance_invoice(uuid, uuid, uuid) from public, anon, authenticated;
-revoke all on function public.admin_get_finance_invoice_history(uuid, uuid, uuid, boolean, integer, integer, text) from public, anon, authenticated;
+revoke all on function public.admin_get_finance_invoice_history(uuid, uuid, uuid, boolean, integer, integer, text, text, text, timestamptz, timestamptz, text) from public, anon, authenticated;
 grant execute on function public.admin_delete_finance_invoice(uuid, uuid, uuid) to service_role;
 grant execute on function public.admin_restore_finance_invoice(uuid, uuid, uuid) to service_role;
-grant execute on function public.admin_get_finance_invoice_history(uuid, uuid, uuid, boolean, integer, integer, text) to service_role;
+grant execute on function public.admin_get_finance_invoice_history(uuid, uuid, uuid, boolean, integer, integer, text, text, text, timestamptz, timestamptz, text) to service_role;
 
 create or replace function public.admin_update_finance_invoice(
   p_ws_id uuid, p_invoice_id uuid, p_actor_id uuid, p_payload jsonb

@@ -135,7 +135,7 @@ For rollout and recovery:
 
 ## Invoice history and recovery
 
-The invoice **Activity** tab requires both `view_invoices` and
+The invoice **Audit trail** tab requires both `view_invoices` and
 `manage_workspace_audit_logs`. It reads `audit.record_version` through a
 workspace-scoped, service-only RPC. The old `audit_logs` view filters out some
 DELETE events because it checks workspace membership using the new record.
@@ -177,3 +177,12 @@ ttr resources run -- node apps/database/scripts/run-supabase-isolated.js \
 
 The isolated runner copies Git-tracked files, so register a new migration/test
 with `git add --intent-to-add` under the normal commit window before running it.
+
+The audit trail opens with currently deleted invoices highlighted for administrator review, including customer, amount, currency, deletion time, and recovery readiness. Older deletions without a verified snapshot are labeled as needing recovery review; opening the audit trail never restores records automatically.
+
+The full audit feed includes invoice details, line items, saved discounts, group
+links, and related payment records. Filter by record type, action, date range, or
+customer/invoice/actor search, and sort newest or oldest first. Before/after values
+are available for meaningful changed fields; Finance confidential mode masks
+amounts in the audit UI too. Promotion tracking begins with this migration;
+missing historical events and actor identities cannot be reconstructed by the UI.

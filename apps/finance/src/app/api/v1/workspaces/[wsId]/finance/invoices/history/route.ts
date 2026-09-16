@@ -3,13 +3,25 @@ import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-aut
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-const QuerySchema = z.object({
-  q: z.string().trim().max(120).default(''),
-  invoiceId: z.guid().optional(),
-  deletedOnly: z.enum(['true', 'false']).default('false'),
-  offset: z.coerce.number().int().min(0).max(100000).default(0),
-  limit: z.coerce.number().int().min(1).max(100).default(25),
-});
+const QuerySchema = z
+  .object({
+    entity: z
+      .enum(['invoice', 'product', 'promotion', 'group', 'payment'])
+      .optional(),
+    action: z.enum(['INSERT', 'UPDATE', 'DELETE', 'RESTORE']).optional(),
+    from: z.iso.datetime({ offset: true }).optional(),
+    to: z.iso.datetime({ offset: true }).optional(),
+    sort: z.enum(['asc', 'desc']).default('desc'),
+    q: z.string().trim().max(120).default(''),
+    invoiceId: z.guid().optional(),
+    deletedOnly: z.enum(['true', 'false']).default('false'),
+    offset: z.coerce.number().int().min(0).max(100000).default(0),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+  })
+  .refine(
+    (query) =>
+      !query.from || !query.to || Date.parse(query.from) <= Date.parse(query.to)
+  );
 
 export async function GET(
   req: Request,
@@ -45,6 +57,11 @@ export async function GET(
     'admin_get_finance_invoice_history',
     {
       p_ws_id: normalizedWsId,
+      p_entity: parsed.data.entity,
+      p_action: parsed.data.action,
+      p_from: parsed.data.from,
+      p_to: parsed.data.to,
+      p_sort: parsed.data.sort,
       p_query: parsed.data.q,
       p_actor_id: user.id,
       p_invoice_id: parsed.data.invoiceId,

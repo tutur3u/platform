@@ -24,6 +24,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  DEFAULT_HISTORY_FILTERS,
+  InvoiceHistoryFilterBar,
+} from './invoice-history-filters';
 import { InvoiceHistoryRow } from './invoice-history-row';
 import { invalidateInvoiceMutationQueries } from './query-invalidation';
 
@@ -39,16 +43,33 @@ export function InvoiceHistory({
   const t = useTranslations('ws-invoices');
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [deletedOnly, setDeletedOnly] = useState(false);
+  const [filters, setFilters] = useState(DEFAULT_HISTORY_FILTERS);
+  const [deletedOnly, setDeletedOnly] = useState(true);
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [submittedSearch, setSubmittedSearch] = useState('');
   const [selected, setSelected] = useState<InvoiceHistoryEntry | null>(null);
   const query = useQuery({
-    queryKey: ['invoice-history', wsId, deletedOnly, page, submittedSearch],
+    queryKey: [
+      'invoice-history',
+      wsId,
+      deletedOnly,
+      page,
+      submittedSearch,
+      filters,
+    ],
     queryFn: () =>
       getInvoiceHistory(wsId, {
         q: submittedSearch,
+        entity: filters.entity === 'all' ? undefined : filters.entity,
+        action: filters.action === 'all' ? undefined : filters.action,
+        from: filters.from
+          ? new Date(`${filters.from}T00:00:00`).toISOString()
+          : undefined,
+        to: filters.to
+          ? new Date(`${filters.to}T23:59:59.999`).toISOString()
+          : undefined,
+        sort: filters.sort,
         deletedOnly,
         offset: page * PAGE_SIZE,
         limit: PAGE_SIZE,
@@ -82,12 +103,21 @@ export function InvoiceHistory({
           aria-pressed={deletedOnly}
           onClick={() => {
             setDeletedOnly(!deletedOnly);
+            setFilters(DEFAULT_HISTORY_FILTERS);
             setPage(0);
           }}
         >
-          {t('deleted_invoices')}
+          {t(deletedOnly ? 'activity_show_all' : 'deleted_invoices')}
         </Button>
       </div>
+      {deletedOnly && !query.isError && !!query.data?.data.length && (
+        <div className="space-y-1 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <h3 className="font-medium text-sm">{t('recovery_review_title')}</h3>
+          <p className="text-muted-foreground text-sm">
+            {t('recovery_review_description')}
+          </p>
+        </div>
+      )}
       <form
         className="flex max-w-xl gap-2"
         onSubmit={(event) => {
@@ -107,6 +137,14 @@ export function InvoiceHistory({
           {t('activity_search_action')}
         </Button>
       </form>
+      <InvoiceHistoryFilterBar
+        value={filters}
+        onChange={(next) => {
+          setFilters(next);
+          setDeletedOnly(false);
+          setPage(0);
+        }}
+      />
       {query.isPending ? (
         <div role="status" aria-busy="true">
           <span className="sr-only">{t('loading')}</span>
