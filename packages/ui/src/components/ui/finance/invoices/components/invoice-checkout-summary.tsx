@@ -38,6 +38,8 @@ export function InvoiceCheckoutSummary({
   currency = 'VND',
 }: InvoiceCheckoutSummaryProps) {
   const t = useTranslations();
+  const displayedDiscount =
+    discountAmount ?? Math.max(0, subtotal - totalBeforeRounding);
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -51,15 +53,16 @@ export function InvoiceCheckoutSummary({
           />
         </div>
 
-        {discountAmount !== undefined && discountLabel && (
+        {displayedDiscount > 0 && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">
-              {t('ws-invoices.discount')} ({discountLabel})
+              {t('ws-invoices.discount')}
+              {discountLabel ? ` (${discountLabel})` : ''}
             </span>
             <FinanceDisplayAmount
               alwaysShow
               className={discountClassName}
-              value={`-${formatCurrency(discountAmount, currency)}`}
+              value={`-${formatCurrency(displayedDiscount, currency)}`}
             />
           </div>
         )}

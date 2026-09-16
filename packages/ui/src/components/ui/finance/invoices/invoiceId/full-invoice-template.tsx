@@ -8,6 +8,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
+import { getSavedInvoiceDiscount } from '../invoice-discount';
 
 export function FullInvoiceTemplate({
   invoice,
@@ -54,12 +55,7 @@ export function FullInvoiceTemplate({
     return total + product.price * product.amount;
   }, 0);
 
-  const discount_amount = promotions.reduce((total, promo) => {
-    if (promo.use_ratio) {
-      return total + (subtotal * promo.value) / 100;
-    }
-    return total + promo.value;
-  }, 0);
+  const discount_amount = getSavedInvoiceDiscount(products, invoice.price);
 
   return (
     <>
@@ -266,7 +262,7 @@ export function FullInvoiceTemplate({
             })}
           />
         </p>
-        {promotions.length > 0 && (
+        {discount_amount > 0 && (
           <p
             className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >

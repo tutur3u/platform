@@ -22,6 +22,7 @@ import 'dayjs/locale/vi';
 import moment from 'moment';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { getSavedInvoiceDiscount } from '../invoice-discount';
 import InvoiceCard from './invoice-card';
 import InvoiceEditForm from './invoice-edit-form';
 
@@ -50,6 +51,7 @@ export default async function InvoiceDetailsPage({
 
   const products = await getProducts(wsId, invoice.id);
   const promotions = await getPromotions(wsId, invoice.id);
+  const savedDiscount = getSavedInvoiceDiscount(products, invoice.price);
   const { data: configs } = await getConfigs(wsId);
 
   return (
@@ -205,6 +207,13 @@ export default async function InvoiceDetailsPage({
                       currency={currency}
                     />
                   ))}
+                </div>
+              ) : savedDiscount > 0 ? (
+                <div className="flex items-center justify-between gap-3 py-3">
+                  <span>{t('ws-invoices.discount')}</span>
+                  <FinanceDisplayAmount
+                    value={formatCurrency(savedDiscount, currency)}
+                  />
                 </div>
               ) : (
                 <div className="py-8 text-center text-muted-foreground">
