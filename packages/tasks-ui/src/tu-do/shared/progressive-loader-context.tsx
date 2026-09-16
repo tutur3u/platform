@@ -8,6 +8,8 @@ export interface ListPaginationState {
   page: number;
   hasMore: boolean;
   totalCount: number;
+  /** Actual first-page membership, independent of approximate external totals. */
+  firstPageTaskCount?: number;
   isLoading: boolean;
   isInitialLoad: boolean;
 }

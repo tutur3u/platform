@@ -17,13 +17,18 @@ export function useTaskColumnRecovery({
   enabled: boolean;
   loadColumnPage: (page: number) => Promise<unknown>;
 }) {
+  // Counts can include external tasks omitted from this response. Prefer the
+  // number actually loaded; only complete legacy snapshots imply membership.
+  const expectedCount =
+    listState?.firstPageTaskCount ??
+    (listState?.hasMore ? 0 : Math.min(listState?.totalCount ?? 0, 50));
   useQuery({
     queryKey: [
       'task-column-recovery',
       boardId,
       listId,
       taskCount,
-      listState?.totalCount,
+      expectedCount,
     ],
     queryFn: async () => {
       await loadColumnPage(0);
@@ -35,7 +40,10 @@ export function useTaskColumnRecovery({
         listState &&
           !listState.isLoading &&
           !listState.isInitialLoad &&
-          taskCount < Math.min(listState.totalCount, 50)
+          ((taskCount === 0 &&
+            listState.totalCount > 0 &&
+            listState.firstPageTaskCount === undefined) ||
+            taskCount < expectedCount)
       ),
     staleTime: 30_000,
     retry: false,
