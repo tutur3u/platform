@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
@@ -13,18 +14,21 @@ const workflow = fs.readFileSync(
 );
 
 test('overflow notes cannot attach cancelled Biome checks to a release SHA', () => {
-  const push = workflow.match(/\n {2}push:\n([\s\S]*?)(?=\n {2}\w)/)?.[1];
-  assert.ok(push);
-  const ignoredBranches = [...push.matchAll(/^ {6}- '([^']+)'$/gm)].map(
-    (match) => match[1]
+  const triggers = JSON.parse(
+    execFileSync(
+      'bun',
+      [
+        '-e',
+        'console.log(JSON.stringify(Bun.YAML.parse(await Bun.stdin.text()).on))',
+      ],
+      { input: workflow, encoding: 'utf8' }
+    )
   );
-  // Only metadata branches are excluded: actual release PRs still validate.
-  assert.deepEqual(ignoredBranches, [
-    'release-please--branches--**--release-notes',
-  ]);
-  assert.match(push, /branches-ignore:/);
-  assert.doesNotMatch(push, /(?:^|\n) {4}branches:/);
-  assert.match(workflow, /\n {2}workflow_dispatch:/);
+  // Parse the entire node so extra branches cannot hide behind YAML quoting.
+  assert.deepEqual(triggers.push, {
+    'branches-ignore': ['release-please--branches--**--release-notes'],
+  });
+  assert.ok(Object.hasOwn(triggers, 'workflow_dispatch'));
 });
 
 test('Biome supersedes obsolete commits without cancelling other branches', () => {
