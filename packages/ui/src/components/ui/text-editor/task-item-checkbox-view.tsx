@@ -4,7 +4,7 @@ import type { NodeViewProps } from '@tiptap/react';
 import { NodeViewContent } from '@tiptap/react';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import { DraggableNodeContainer } from './draggable-node-container';
 import {
   areAllMentionedTasksCompleted,
@@ -23,6 +23,23 @@ export function TaskItemCheckboxContent({
   editor,
 }: NodeViewProps) {
   const t = useTranslations('common.checklist');
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      // setEditable emits update without changing the document/node view.
+      editor.on('update', notify);
+      editor.on('transaction', notify);
+      return () => {
+        editor.off('update', notify);
+        editor.off('transaction', notify);
+      };
+    },
+    [editor]
+  );
+  const isEditable = useSyncExternalStore(
+    subscribe,
+    () => editor.isEditable,
+    () => false
+  );
   const taskMentionIds = useMemo(() => {
     return extractTaskMentionIds(node);
   }, [node]);
@@ -49,18 +66,30 @@ export function TaskItemCheckboxContent({
   const isIndeterminate = checkboxState === 'indeterminate';
 
   const setCheckboxState = useCallback(
-    (checked: TriStateChecked) => {
+    (
+      checked: TriStateChecked | ((current: TriStateChecked) => TriStateChecked)
+    ) => {
       if (!editor.isEditable) return;
       const pos = getPos();
       if (typeof pos !== 'number') return;
       editor.commands.command(({ tr }) => {
         const currentNode = tr.doc.nodeAt(pos);
         if (currentNode?.type.name !== 'taskItem') return false;
-        tr.setNodeMarkup(pos, undefined, { ...currentNode.attrs, checked });
+        // Node view props can lag behind a transaction (e.g. a picker click).
+        // Cycle from the document so rapid clicks never repeat a stale state.
+        const current = resolveCheckboxState({
+          manualOverride: null,
+          nodeChecked: currentNode.attrs.checked,
+          allMentionedTasksCompleted,
+        });
+        tr.setNodeMarkup(pos, undefined, {
+          ...currentNode.attrs,
+          checked: typeof checked === 'function' ? checked(current) : checked,
+        });
         return true;
       });
     },
-    [editor, getPos]
+    [editor, getPos, allMentionedTasksCompleted]
   );
 
   return (
@@ -71,7 +100,7 @@ export function TaskItemCheckboxContent({
       >
         <TaskItemStatusPicker
           state={checkboxState}
-          disabled={!editor.isEditable}
+          disabled={!isEditable}
           onSelect={setCheckboxState}
         >
           {/* biome-ignore lint/a11y/useSemanticElements: a button avoids native checkbox state changes while ProseMirror owns the tri-state document update */}
@@ -81,18 +110,18 @@ export function TaskItemCheckboxContent({
             aria-label={t('status')}
             aria-keyshortcuts="ArrowDown"
             aria-checked={isIndeterminate ? 'mixed' : isChecked}
-            aria-disabled={!editor.isEditable}
+            aria-disabled={!isEditable}
             onMouseDown={(event) => event.preventDefault()}
             onClick={(event) => {
               event.stopPropagation();
-              setCheckboxState(getNextTriState(checkboxState));
+              setCheckboxState(getNextTriState);
             }}
             className={cn(
               'task-list-checkbox flex size-5 items-center justify-center',
               'cursor-pointer rounded-md border-2 bg-background',
               'transition-[color,background-color,border-color,box-shadow,transform] duration-150 active:scale-95',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2',
-              !editor.isEditable && 'cursor-default opacity-70',
+              !isEditable && 'cursor-default opacity-70',
               !completedTaskColor && [
                 'border-muted-foreground/50',
                 'hover:scale-105 hover:border-dynamic-gray hover:bg-dynamic-gray/10',

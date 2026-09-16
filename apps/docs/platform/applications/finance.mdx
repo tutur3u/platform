@@ -186,3 +186,17 @@ customer/invoice/actor search, and sort newest or oldest first. Before/after val
 are available for meaningful changed fields; Finance confidential mode masks
 amounts in the audit UI too. Promotion tracking begins with this migration;
 missing historical events and actor identities cannot be reconstructed by the UI.
+
+## Notification refresh diagnostics
+
+The shared notification hook refreshes active notification API queries every 30
+seconds while the browser tab is visible and immediately when the tab becomes
+visible again. Consumers for the same user share one timer. Closed inbox queries
+remain lazy, and existing mutations invalidate the cache immediately.
+
+Do not subscribe directly to `public.notifications` with browser
+`postgres_changes` filters. Production notifications are server-owned; the
+`authenticated` role has no column SELECT privileges or client RLS policies.
+Realtime reports `P0001: invalid column for filter user_id` in that state even
+though the column exists. Check column privileges and policies before changing
+the schema; the authenticated notification APIs remain the access boundary.

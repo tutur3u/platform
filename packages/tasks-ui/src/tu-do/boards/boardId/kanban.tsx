@@ -574,6 +574,7 @@ export function KanbanBoard({
           onDragMove={onDragMove}
           onDragOver={onDragOver}
           onDragEnd={handleDragEnd}
+          onDragCancel={(event) => void onDragEnd({ ...event, over: null })}
           measuring={{
             droppable: {
               strategy: MeasuringStrategy.WhileDragging,
