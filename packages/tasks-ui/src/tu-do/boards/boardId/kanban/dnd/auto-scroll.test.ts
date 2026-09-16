@@ -1,8 +1,10 @@
 import type { DragMoveEvent } from '@dnd-kit/core';
-import { describe, expect, it } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getKanbanDragAutoScrollPointerX,
   getKanbanEdgeAutoScrollAmount,
+  useAutoScroll,
 } from './auto-scroll';
 
 const rect = {
@@ -115,4 +117,44 @@ describe('getKanbanEdgeAutoScrollAmount', () => {
       )
     ).toBe(420);
   });
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('suspends snapping and smooth scrolling throughout a drag and restores them', () => {
+  let frame: FrameRequestCallback = () => {};
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn((callback) => {
+      frame = callback;
+      return 1;
+    })
+  );
+  const cancel = vi.fn();
+  vi.stubGlobal('cancelAnimationFrame', cancel);
+  const container = document.createElement('div');
+  container.style.scrollSnapType = 'x mandatory';
+  container.style.scrollBehavior = 'smooth';
+  vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
+    left: 100,
+    right: 500,
+  } as DOMRect);
+  const { result, unmount } = renderHook(() =>
+    useAutoScroll({ current: container })
+  );
+  act(() => {
+    result.current.updateAutoScrollPointerX(490);
+    result.current.startAutoScroll();
+  });
+  expect(container.style.scrollSnapType).toBe('none');
+  expect(container.style.scrollBehavior).toBe('auto');
+  act(() => frame(16));
+  expect(container.scrollLeft).toBeGreaterThan(0);
+  act(() => result.current.stopAutoScroll());
+  expect(container.style.scrollSnapType).toBe('x mandatory');
+  expect(container.style.scrollBehavior).toBe('smooth');
+  act(() => result.current.startAutoScroll());
+  unmount();
+  expect(container.style.scrollSnapType).toBe('x mandatory');
+  expect(cancel).toHaveBeenCalled();
 });

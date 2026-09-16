@@ -23,6 +23,11 @@ const mocks = vi.hoisted(() => ({
   pagination: {} as Record<string, ListPaginationState>,
 }));
 
+vi.mock('@dnd-kit/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@dnd-kit/core')>()),
+  useDndMonitor: vi.fn(),
+}));
+
 vi.mock('@dnd-kit/sortable', () => ({
   useSortable: () => ({
     attributes: {},
@@ -298,6 +303,34 @@ describe('BoardColumn external lane retry behavior', () => {
     );
 
     expect(onTaskListCollapsedChange).toHaveBeenCalledWith('list-1', true);
+  });
+
+  it('recovers a partially missing list with one cached task out of seven', async () => {
+    mocks.pagination = {
+      [regularColumn.id]: {
+        ...loadedExternalState,
+        totalCount: 7,
+        hasMore: false,
+      },
+    };
+    mocks.loadListPage.mockResolvedValue({
+      tasks: regularTasks,
+      totalCount: 7,
+      hasMore: false,
+    });
+    renderWithQueryClient(
+      <BoardColumn
+        boardId="board-1"
+        column={regularColumn}
+        tasks={regularTasks.slice(0, 1)}
+        wsId="workspace-1"
+      />
+    );
+    await waitFor(() =>
+      expect(mocks.loadListPage).toHaveBeenCalledWith('list-1', 0)
+    );
+    await act(async () => {});
+    expect(mocks.loadListPage).toHaveBeenCalledTimes(1);
   });
 
   it('refreshes only the selected task list', async () => {

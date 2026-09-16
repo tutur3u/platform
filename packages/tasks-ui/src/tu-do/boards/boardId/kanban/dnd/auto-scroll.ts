@@ -107,10 +107,13 @@ export function useAutoScroll(
   const autoScrollRafRef = useRef<number | null>(null);
   const isAutoScrollActiveRef = useRef(false);
   const pointerXRef = useRef<number | null>(null);
+  const restoreScrollStylesRef = useRef<(() => void) | null>(null);
 
   const stopAutoScroll = useCallback(() => {
     isAutoScrollActiveRef.current = false;
     pointerXRef.current = null;
+    restoreScrollStylesRef.current?.();
+    restoreScrollStylesRef.current = null;
 
     if (autoScrollRafRef.current !== null) {
       cancelAnimationFrame(autoScrollRafRef.current);
@@ -138,12 +141,22 @@ export function useAutoScroll(
   }, [scrollContainerRef]);
 
   const startAutoScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (container && !restoreScrollStylesRef.current) {
+      const { scrollSnapType, scrollBehavior } = container.style;
+      container.style.scrollSnapType = 'none';
+      container.style.scrollBehavior = 'auto';
+      restoreScrollStylesRef.current = () => {
+        container.style.scrollSnapType = scrollSnapType;
+        container.style.scrollBehavior = scrollBehavior;
+      };
+    }
     isAutoScrollActiveRef.current = true;
 
     if (autoScrollRafRef.current === null) {
       autoScrollRafRef.current = requestAnimationFrame(autoScroll);
     }
-  }, [autoScroll]);
+  }, [autoScroll, scrollContainerRef]);
 
   const updateAutoScrollPointerX = useCallback((pointerX: number | null) => {
     pointerXRef.current = pointerX;
