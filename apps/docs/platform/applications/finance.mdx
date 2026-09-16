@@ -141,9 +141,12 @@ workspace-scoped, service-only RPC. The old `audit_logs` view filters out some
 DELETE events because it checks workspace membership using the new record.
 Do not use that view as evidence that a deleted invoice has no history.
 
-Apply `20260916130000_invoice_recovery_and_history.sql` before releasing the
-Finance handlers. Production migration application is user-operated. Until the
-RPC exists, the delete endpoint fails closed with 503; it never falls back to
+The Finance handlers require `20260916130000_invoice_recovery_and_history.sql`.
+After authorized production sync, the **Supabase Production Migration** workflow
+applies pending migrations once its same-commit staging and production deployment
+prerequisites pass. Verify that workflow actually applied the migration and then
+check the Finance audit route; a successful skipped job is not schema evidence.
+Until the RPC exists, deletion fails closed with 503 and never falls back to
 permanent deletion. Update/history/restore also depend on this migration.
 
 Deletions through the Finance invoice endpoint atomically preserve the invoice,
