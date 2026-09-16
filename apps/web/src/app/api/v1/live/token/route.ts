@@ -1,4 +1,4 @@
-import { Modality, ThinkingLevel } from '@google/genai';
+import { Behavior, Modality } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -11,7 +11,6 @@ import {
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
-  ASSISTANT_LIVE_MODEL,
   ASSISTANT_LIVE_TOOL_CONFIG,
   DASHBOARD_LIVE_SYSTEM_INSTRUCTION,
   DASHBOARD_LIVE_TOOL_DECLARATIONS,
@@ -21,13 +20,14 @@ import {
   beginLiveBillingSession,
   LiveBillingError,
 } from '@/lib/live/billing';
-import { WEB_ASSISTANT_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
+import { getLiveModeScope, LIVE_MODELS } from '@/lib/live/models';
 import {
   createConstrainedLiveToken,
   LIVE_TOKEN_LIFETIME_MS,
 } from '@/lib/live/token-builder';
 
 const RequestSchema = z.object({
+  mode: z.enum(['flash', 'pro']).default('flash'),
   creditSource: z.enum(['personal', 'workspace']),
   creditWsId: z.string().trim().min(1).max(128).optional(),
   wsId: z.string().trim().min(1).max(128),
@@ -128,6 +128,7 @@ export async function POST(request: NextRequest) {
       creditWsId: normalizedCreditWsId,
       userId: user.id,
     });
+    const model = LIVE_MODELS[parsed.data.mode];
     const expiresAt = new Date(
       Date.now() + LIVE_TOKEN_LIFETIME_MS
     ).toISOString();
@@ -135,19 +136,22 @@ export async function POST(request: NextRequest) {
       accessWsId,
       billingWsId,
       expiresAt,
-      model: ASSISTANT_LIVE_MODEL,
+      model,
       userId: user.id,
     });
     liveSessionId = billing.liveSessionId;
 
     const token = await createConstrainedLiveToken({
-      model: ASSISTANT_LIVE_MODEL,
+      model,
       responseModalities: [Modality.AUDIO],
       systemInstruction: DASHBOARD_LIVE_SYSTEM_INSTRUCTION,
-      thinkingLevel: ThinkingLevel.MINIMAL,
       toolConfig: ASSISTANT_LIVE_TOOL_CONFIG,
       tools: [
-        { functionDeclarations: DASHBOARD_LIVE_TOOL_DECLARATIONS },
+        {
+          functionDeclarations: DASHBOARD_LIVE_TOOL_DECLARATIONS.map(
+            (tool) => ({ ...tool, behavior: Behavior.NON_BLOCKING })
+          ),
+        },
         { googleSearch: {} },
       ],
     });
@@ -155,9 +159,9 @@ export async function POST(request: NextRequest) {
     return Response.json({
       expiresAt,
       liveSessionId,
-      model: ASSISTANT_LIVE_MODEL,
+      model,
       reservedCredits: billing.reservedCredits,
-      scopeKey: WEB_ASSISTANT_LIVE_SCOPE_KEY,
+      scopeKey: getLiveModeScope(parsed.data.mode),
       token,
     });
   } catch (error) {

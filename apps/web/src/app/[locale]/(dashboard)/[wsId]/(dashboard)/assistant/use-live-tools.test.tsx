@@ -81,6 +81,25 @@ describe('live tool approval and cancellation', () => {
     });
     expect(mocks.execute).toHaveBeenCalledOnce();
   });
+  it('runs an independent read while a mutation waits for approval', async () => {
+    const { result } = renderHook(() => useLiveTools('workspace-a'), {
+      wrapper,
+    });
+    act(() => {
+      client.emit('toolcall', {
+        functionCalls: [
+          call('approval', 'create_task'),
+          call('read', 'get_my_tasks'),
+        ],
+      });
+    });
+    await waitFor(() => expect(mocks.respond).toHaveBeenCalledOnce());
+    expect(
+      result.current.activities.find((item) => item.id === 'approval')?.status
+    ).toBe('approval');
+    expect(mocks.execute).toHaveBeenCalledTimes(1);
+    expect(mocks.execute.mock.calls[0]?.[0].functionName).toBe('get_my_tasks');
+  });
   it('declining never invokes a mutation', async () => {
     const { result } = renderHook(() => useLiveTools('workspace-a'), {
       wrapper,

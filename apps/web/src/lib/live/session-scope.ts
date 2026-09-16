@@ -8,6 +8,8 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 
 const fixedLiveSessionScopeKeys = new Set([
+  'assistant:web-dashboard:3.8:flash',
+  'assistant:web-dashboard:3.8:pro',
   MIRA_LIVE_SCOPE_KEY,
   WEB_ASSISTANT_LIVE_SCOPE_KEY,
 ]);

@@ -138,8 +138,8 @@ export function useLiveConversation(
     client
       .on('inputtranscription', input)
       .on('transcription', output)
-      .on('turncomplete', finish)
-      .on('interrupted', interrupted)
+      .on('interactioncomplete', finish)
+      .on('interrupted', finish)
       .on('close', closed)
       .on('toolcall', call)
       .on('toolresponse', result)
@@ -150,8 +150,8 @@ export function useLiveConversation(
       client
         .off('inputtranscription', input)
         .off('transcription', output)
-        .off('turncomplete', finish)
-        .off('interrupted', interrupted)
+        .off('interactioncomplete', finish)
+        .off('interrupted', finish)
         .off('close', closed)
         .off('toolcall', call)
         .off('toolresponse', result)

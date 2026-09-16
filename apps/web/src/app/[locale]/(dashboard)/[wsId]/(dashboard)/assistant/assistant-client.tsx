@@ -1,6 +1,7 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
+import type { LiveMode } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
@@ -13,8 +14,11 @@ import type { LiveConversationChange } from '../assistant/use-live-conversation'
 import type { LiveComposer } from '../components/mira-voice-mode-switcher';
 import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 import { AssistantVoiceSession } from './assistant-voice-session';
+import { LiveInteractionStatus } from './live-interaction-status';
 
 export interface AssistantClientProps {
+  mode?: LiveMode;
+  onInitializingChange?: (initializing: boolean) => void;
   onResultsChange?: (results: ReactNode) => void;
   onBeforeStart?: () => void | Promise<void>;
   inputOpen?: boolean;
@@ -29,6 +33,8 @@ export interface AssistantClientProps {
 }
 
 export default function AssistantClient({
+  mode = 'flash',
+  onInitializingChange,
   onResultsChange,
   onBeforeStart,
   inputOpen,
@@ -54,7 +60,11 @@ export default function AssistantClient({
     liveSessionId,
     model,
     refreshToken,
-  } = useEphemeralToken({ creditSource, creditWsId, wsId });
+  } = useEphemeralToken({ mode, creditSource, creditWsId, wsId });
+
+  useEffect(() => {
+    onInitializingChange?.(isLoading || isRestarting);
+  }, [isLoading, isRestarting, onInitializingChange]);
 
   useEffect(() => {
     if (error) {
@@ -136,6 +146,7 @@ export default function AssistantClient({
         wsId={wsId}
         scopeKey={scopeKey}
       >
+        <LiveInteractionStatus />
         <AssistantVoiceSession
           onReturnToChat={onReturnToChat}
           onResultsChange={onResultsChange}

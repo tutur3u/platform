@@ -1,4 +1,4 @@
-import { Modality } from '@google/genai';
+import { Modality, ThinkingLevel } from '@google/genai';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildCreateAuthTokenConfig,
@@ -10,6 +10,37 @@ describe('buildLiveConnectConfig', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+  });
+
+  it.each(['gemini-3.8-live', 'gemini-3.8-live-extended-thinking'])(
+    'uses the expanded context window for %s',
+    (model) => {
+      expect(
+        buildLiveConnectConfig({ model }).config?.contextWindowCompression
+      ).toEqual({
+        triggerTokens: '100000',
+        slidingWindow: { targetTokens: '64000' },
+      });
+    }
+  );
+
+  it('omits unsupported Flash reasoning and uses high background reasoning for Pro', () => {
+    expect(
+      buildLiveConnectConfig({
+        model: 'gemini-3.8-live',
+        thinkingLevel: ThinkingLevel.HIGH,
+      }).config
+    ).not.toHaveProperty('thinkingConfig');
+    expect(
+      buildLiveConnectConfig({ model: 'gemini-3.8-live-extended-thinking' })
+        .config?.thinkingConfig
+    ).toEqual({ thinkingLevel: ThinkingLevel.HIGH });
+    expect(
+      buildLiveConnectConfig({
+        model: 'gemini-3.8-live-extended-thinking',
+        thinkingLevel: ThinkingLevel.MINIMAL,
+      }).config?.thinkingConfig
+    ).toEqual({ thinkingLevel: ThinkingLevel.HIGH });
   });
 
   it('defaults Gemini Live tokens to audio output only', () => {

@@ -104,6 +104,51 @@ describe('MultimodalLiveClient protocol', () => {
       'complete',
     ]);
   });
+  it('keeps Pro processing across utterances and completes after final content', async () => {
+    const client = new MultimodalLiveClient({ apiKey: 'auth_tokens/test' });
+    const events: string[] = [];
+    client.on('interactionstatus', (status) => events.push(status));
+    client.on('transcription', (text) => events.push(text));
+    client.on('interactioncomplete', () => events.push('complete'));
+    client.on('toolcall', () => events.push('tool'));
+    await client.connect({ model: 'gemini-3.8-live-extended-thinking' });
+    callbacks.onmessage({
+      serverContent: {
+        interactionStatus: 'IN_PROGRESS',
+        outputTranscription: { text: 'Checking' },
+        turnComplete: true,
+      },
+    });
+    expect(events).toEqual(['IN_PROGRESS', 'Checking']);
+    callbacks.onmessage({
+      toolCall: { functionCalls: [{ id: 'one', name: 'get_tasks', args: {} }] },
+    });
+    callbacks.onmessage({
+      serverContent: {
+        interactionStatus: 'IDLE',
+        outputTranscription: { text: 'Done' },
+        turnComplete: true,
+      },
+    });
+    expect(events).toEqual([
+      'IN_PROGRESS',
+      'Checking',
+      'tool',
+      'IDLE',
+      'Done',
+      'complete',
+    ]);
+  });
+
+  it('completes Flash interactions at the turn boundary', async () => {
+    const client = new MultimodalLiveClient({ apiKey: 'auth_tokens/test' });
+    const complete = vi.fn();
+    client.on('interactioncomplete', complete);
+    await client.connect({ model: 'gemini-3.8-live' });
+    callbacks.onmessage({ serverContent: { turnComplete: true } });
+    expect(complete).toHaveBeenCalledOnce();
+  });
+
   it('ends audio input and ignores a stale connection close', async () => {
     const client = new MultimodalLiveClient({ apiKey: 'auth_tokens/test' });
     await client.connect({ model: 'gemini-3.1-flash-live-preview' });

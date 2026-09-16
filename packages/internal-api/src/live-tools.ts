@@ -14,6 +14,8 @@ export interface ExecuteLiveToolResponse {
   result: Record<string, unknown>;
 }
 
+export type LiveMode = 'flash' | 'pro';
+
 export type LiveCreditSource = 'personal' | 'workspace';
 
 export interface GeminiLiveUsageSnapshot {
@@ -28,6 +30,7 @@ export interface GeminiLiveUsageSnapshot {
 }
 
 export interface CreateLiveSessionPayload {
+  mode?: LiveMode;
   creditSource: LiveCreditSource;
   creditWsId?: string;
   wsId: string;

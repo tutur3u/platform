@@ -29,6 +29,10 @@ vi.mock('@/hooks/use-live-api', () => ({
   LiveAPIProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
+vi.mock('./live-interaction-status', () => ({
+  LiveInteractionStatus: () => null,
+}));
+
 vi.mock('./assistant-voice-session', () => ({
   AssistantVoiceSession: ({
     onRestartSession,

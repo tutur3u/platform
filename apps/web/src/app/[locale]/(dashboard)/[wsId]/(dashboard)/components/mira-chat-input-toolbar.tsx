@@ -1,6 +1,6 @@
 'use client';
 
-import { Brain, Coins, User, Users, Zap } from '@tuturuuu/icons';
+import { Coins, Sparkles, User, Users, Zap } from '@tuturuuu/icons';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -89,7 +89,7 @@ export default function MiraChatInputToolbar({
                 aria-label={t('thinking_mode_label')}
               >
                 {thinkingMode === 'thinking' ? (
-                  <Brain className="h-3.5 w-3.5" />
+                  <Sparkles className="h-3.5 w-3.5" />
                 ) : (
                   <Zap className="h-3.5 w-3.5" />
                 )}
@@ -127,7 +127,7 @@ export default function MiraChatInputToolbar({
               title={t('thinking_mode_thinking_desc')}
               className="gap-2"
             >
-              <Brain className="h-3.5 w-3.5" />
+              <Sparkles className="h-3.5 w-3.5" />
               {t('thinking_mode_thinking')}
               <span className="ml-auto text-muted-foreground text-xs">
                 {hotkeyLabels.thinkingMode}

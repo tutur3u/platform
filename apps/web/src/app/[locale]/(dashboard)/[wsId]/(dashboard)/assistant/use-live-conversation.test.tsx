@@ -80,3 +80,28 @@ it('records intentional disconnect and reconnect even without a socket close eve
   expect(statuses).toEqual(['started', 'ended', 'started']);
   unmount();
 });
+
+it('keeps background tools pending when speech is interrupted', () => {
+  const onChange = vi.fn();
+  state.connected = true;
+  const { unmount } = renderHook(() => useLiveConversation(onChange));
+  act(() => {
+    state.listeners.get('toolcall')?.forEach((callback) => {
+      callback({
+        functionCalls: [{ id: 'read', name: 'get_my_tasks', args: {} }],
+      });
+    });
+    state.listeners.get('interrupted')?.forEach((callback) => {
+      callback();
+    });
+  });
+  const tools = onChange.mock.lastCall?.[0]
+    .flatMap(
+      (message: { parts: { type: string; state?: string }[] }) => message.parts
+    )
+    .filter((part: { type: string }) => part.type === 'dynamic-tool');
+  expect(tools).toEqual([
+    expect.objectContaining({ state: 'input-available' }),
+  ]);
+  unmount();
+});

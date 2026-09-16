@@ -11,6 +11,17 @@ import {
 const CHAT_ID = '123e4567-e89b-42d3-a456-426614174000';
 
 describe('live session scope validation', () => {
+  it.each(['flash', 'pro'])(
+    'accepts the versioned %s dashboard scope',
+    (mode) => {
+      const scopeKey = `assistant:web-dashboard:3.8:${mode}`;
+      expect(validateLiveSessionScopeKey(scopeKey)).toEqual({
+        kind: 'fixed',
+        scopeKey,
+        valid: true,
+      });
+    }
+  );
   it('accepts fixed server-minted scope keys', () => {
     expect(validateLiveSessionScopeKey(MIRA_LIVE_SCOPE_KEY)).toEqual({
       kind: 'fixed',

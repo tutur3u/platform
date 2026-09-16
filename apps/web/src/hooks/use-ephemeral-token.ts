@@ -5,6 +5,7 @@ import {
   createLiveSession,
   InternalApiError,
   type LiveCreditSource,
+  type LiveMode,
 } from '@tuturuuu/internal-api';
 import { useCallback } from 'react';
 import { LiveClientError } from '@/lib/live/errors';
@@ -63,10 +64,12 @@ export function classifyLiveInitializationError(
 }
 
 export function useEphemeralToken({
+  mode = 'flash',
   creditSource,
   creditWsId,
   wsId,
 }: {
+  mode?: LiveMode;
   creditSource: LiveCreditSource;
   creditWsId?: string;
   wsId: string;
@@ -74,6 +77,7 @@ export function useEphemeralToken({
   const queryClient = useQueryClient();
   const queryKey = [
     'ephemeral-token',
+    mode,
     wsId,
     creditSource,
     creditWsId ?? null,
@@ -81,7 +85,7 @@ export function useEphemeralToken({
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey,
-    queryFn: () => createLiveSession({ creditSource, creditWsId, wsId }),
+    queryFn: () => createLiveSession({ mode, creditSource, creditWsId, wsId }),
     enabled: Boolean(wsId && (creditSource === 'personal' || creditWsId)),
     staleTime: 0,
     gcTime: 0,

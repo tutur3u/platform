@@ -139,9 +139,10 @@ export function AssistantVoiceSession({
         connectionStatus === 'connecting' ||
         connectionStatus === 'reconnecting',
       sendText,
+      disconnect,
     });
     return () => onComposerChange?.(null);
-  }, [connected, connectionStatus, sendText, onComposerChange]);
+  }, [connected, connectionStatus, sendText, disconnect, onComposerChange]);
   const { addVisualization } = useVisualizationStore();
   const hasVisualizations = useVisualizationStore(
     (state) =>

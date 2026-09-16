@@ -261,11 +261,11 @@ export function useLiveTools(wsId: string) {
         pending.current.set(fc.id, { controller: new AbortController() });
         return true;
       });
-      for (const fc of calls) {
+      const executeCall = async (fc: ToolCall['functionCalls'][number]) => {
         const item = pending.current.get(fc.id);
         if (!item || item.controller.signal.aborted || !active.current) {
           pending.current.delete(fc.id);
-          continue;
+          return;
         }
         const { controller } = item;
         const needsApproval = LIVE_MUTATION_TOOLS.has(fc.name);
@@ -284,7 +284,7 @@ export function useLiveTools(wsId: string) {
             (await new Promise<boolean>((resolve) => {
               item.approve = resolve;
             }));
-          if (controller.signal.aborted || !active.current) continue;
+          if (controller.signal.aborted || !active.current) return;
           if (!approved) {
             update(fc.id, 'cancelled');
             if (client.ws)
@@ -300,7 +300,7 @@ export function useLiveTools(wsId: string) {
                   },
                 ],
               });
-            continue;
+            return;
           }
           update(fc.id, 'running');
           const result = await executeFunction({
@@ -310,7 +310,7 @@ export function useLiveTools(wsId: string) {
               AbortSignal.timeout(15000),
             ]),
           });
-          if (controller.signal.aborted || !active.current) continue;
+          if (controller.signal.aborted || !active.current) return;
           update(
             fc.id,
             'error' in result.response ||
@@ -340,7 +340,18 @@ export function useLiveTools(wsId: string) {
         } finally {
           pending.current.delete(fc.id);
         }
-      }
+      };
+      // A slow read or pending approval must not block unrelated background tools.
+      const queue = [...calls];
+      await Promise.all(
+        Array.from({ length: Math.min(4, queue.length) }, async () => {
+          let next = queue.shift();
+          while (next) {
+            await executeCall(next);
+            next = queue.shift();
+          }
+        })
+      );
     };
     client
       .on('toolcall', handle)
