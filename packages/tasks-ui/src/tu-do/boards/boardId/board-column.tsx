@@ -49,6 +49,7 @@ import {
 } from '../../shared/progressive-loader-context';
 import { getListTextColorClass } from '../../utils/taskColorUtils';
 import { normalizeBoardText } from './board-text-utils';
+import { useExpandDragTarget } from './kanban/dnd/use-expand-drag-target';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { isKanbanColumnCollapsed } from './kanban/kanban-column-collapse';
 import { ListActions } from './list-actions';
@@ -62,6 +63,7 @@ import {
 import type { TaskFilters } from './task-filter';
 import { VirtualizedTaskList } from './task-list';
 import { TaskListLoadingSkeleton } from './task-list-loading-skeleton';
+import { useTaskColumnRecovery } from './use-task-column-recovery';
 
 // Color mappings for visual consistency
 const colorClasses: Record<SupportedColor, string> = {
@@ -276,11 +278,12 @@ export function BoardColumn({
       filters.projects.length > 0 ||
       filters.priorities.length > 0 ||
       !!filters.dueDateRange?.from ||
+      !!filters.dueDateRange?.to ||
+      typeof filters.estimationRange?.min === 'number' ||
+      typeof filters.estimationRange?.max === 'number' ||
       !!filters.searchQuery?.trim() ||
       filters.includeMyTasks ||
-      filters.includeUnassigned ||
-      !!filters.sortBy);
-  const recoveryRequestedRef = useRef(false);
+      filters.includeUnassigned);
   const externalOptionsSignature = `${externalIncludeDocuments}:${externalIncludeDoneClosed}:${externalSortBy}`;
   const loadedExternalOptionsSignatureRef = useRef<string | null>(null);
   const externalLoadOptions = useMemo(
@@ -357,36 +360,21 @@ export function BoardColumn({
     loadColumnPage,
   ]);
 
-  // Recovery path: if the list metadata says tasks exist but the shared tasks
-  // cache was cleared, refetch page 0 for this list so cards reappear.
-  useEffect(() => {
-    if (
-      isColumnCollapsed ||
-      !listState ||
-      listState.isLoading ||
-      hasActiveFilters
-    )
-      return;
-
-    if (listState.totalCount > 0 && tasks.length === 0) {
-      if (recoveryRequestedRef.current) return;
-      recoveryRequestedRef.current = true;
-      loadColumnPage(0).finally(() => {
-        recoveryRequestedRef.current = false;
-      });
-      return;
-    }
-
-    recoveryRequestedRef.current = false;
-  }, [
-    hasActiveFilters,
-    isColumnCollapsed,
+  useTaskColumnRecovery({
+    boardId,
+    listId: column.id,
+    taskCount: tasks.length,
     listState,
-    listState?.isLoading,
-    listState?.totalCount,
+    enabled: !readOnly && !isColumnCollapsed && !hasActiveFilters,
     loadColumnPage,
-    tasks.length,
-  ]);
+  });
+
+  useExpandDragTarget({
+    column,
+    readOnly,
+    onExternalTasksCollapsedChange,
+    onTaskListCollapsedChange,
+  });
 
   // Load more pages (infinite scroll callback)
   const handleLoadMore = useCallback(() => {

@@ -113,6 +113,7 @@ export function useProgressiveBoardLoader(
             page,
             hasMore: current?.hasMore ?? true,
             totalCount: current?.totalCount ?? 0,
+            firstPageTaskCount: current?.firstPageTaskCount,
             isLoading: true,
             isInitialLoad: page === 0 && !current,
           },
@@ -188,6 +189,10 @@ export function useProgressiveBoardLoader(
             page,
             hasMore: result.hasMore,
             totalCount: result.totalCount,
+            firstPageTaskCount:
+              page === 0
+                ? result.tasks.length
+                : prev[listId]?.firstPageTaskCount,
             isLoading: false,
             isInitialLoad: false,
           },
@@ -351,6 +356,7 @@ export function useProgressiveBoardLoader(
           page: targetPage,
           hasMore,
           totalCount,
+          firstPageTaskCount: pageResults[0]?.tasks?.length ?? 0,
           isLoading: false,
           isInitialLoad: false,
         },

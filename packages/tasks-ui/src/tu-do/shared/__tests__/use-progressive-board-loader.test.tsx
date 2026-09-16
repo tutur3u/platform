@@ -164,6 +164,7 @@ describe('useProgressiveBoardLoader', () => {
     expect(result.current.pagination['list-1']).toEqual(
       expect.objectContaining({
         totalCount: 21,
+        firstPageTaskCount: 1,
         hasMore: true,
       })
     );

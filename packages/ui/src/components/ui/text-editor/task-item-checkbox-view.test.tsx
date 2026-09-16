@@ -44,6 +44,29 @@ describe('checklist editor interactions', () => {
     }
   });
 
+  it('enables the status picker after task collaboration finishes syncing', async () => {
+    await act(async () => {
+      render(<Harness editable={false} />);
+    });
+    await act(async () => {
+      editor.setEditable(true);
+    });
+    expect(checkbox()).toHaveAttribute('aria-disabled', 'false');
+    fireEvent.keyDown(checkbox(), { key: 'ArrowDown' });
+    fireEvent.click(screen.getByRole('button', { name: 'in_progress' }));
+    expect(checked()).toBe('indeterminate');
+    for (const state of [true, false, 'indeterminate']) {
+      await act(async () => {
+        fireEvent.click(checkbox());
+      });
+      expect(checked()).toBe(state);
+    }
+    await act(async () => {
+      editor.setEditable(false);
+    });
+    expect(checkbox()).toHaveAttribute('aria-disabled', 'true');
+  });
+
   it('follows undo, redo, and external document updates', async () => {
     await act(async () => {
       render(<Harness />);
