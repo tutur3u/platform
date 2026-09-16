@@ -874,11 +874,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/assistant/live/token:apps/web/src/legacy-api-routes/v1/assistant/live/token/route.ts",
+      "id": "api:/api/v1/assistant/live/token:apps/web/src/app/api/v1/assistant/live/token/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/assistant/live/token",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/assistant/live/token/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },

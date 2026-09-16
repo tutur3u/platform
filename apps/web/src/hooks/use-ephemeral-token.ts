@@ -75,17 +75,26 @@ export function useEphemeralToken({
   wsId: string;
 }) {
   const queryClient = useQueryClient();
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const queryKey = [
     'ephemeral-token',
     mode,
     wsId,
     creditSource,
     creditWsId ?? null,
+    timezone,
   ] as const;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey,
-    queryFn: () => createLiveSession({ mode, creditSource, creditWsId, wsId }),
+    queryFn: () =>
+      createLiveSession({
+        mode,
+        creditSource,
+        creditWsId,
+        wsId,
+        timezone,
+      }),
     enabled: Boolean(wsId && (creditSource === 'personal' || creditWsId)),
     staleTime: 0,
     gcTime: 0,

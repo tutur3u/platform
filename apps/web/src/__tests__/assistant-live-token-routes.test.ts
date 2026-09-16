@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   assistantChatScopeKey: vi.fn((chatId: string) => `assistant:${chatId}`),
   abortLiveBillingSession: vi.fn(),
   beginLiveBillingSession: vi.fn(),
+  buildLiveMiraPrompt: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   createConstrainedLiveToken: vi.fn(),
@@ -12,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   isFeatureAvailable: vi.fn(),
   loadAssistantLiveSeedHistory: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
+  resolveWorkspaceIdForPrincipal: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   serverLoggerError: vi.fn(),
   settleLiveBillingSession: vi.fn(),
@@ -30,6 +32,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createAdminClient(...args),
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
+}));
+
+vi.mock('@/lib/live/mira-prompt', () => ({
+  buildLiveMiraPrompt: (...args: unknown[]) =>
+    mocks.buildLiveMiraPrompt(...args),
 }));
 
 vi.mock('@/lib/live/billing', () => ({
@@ -65,6 +72,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: (
     ...args: Parameters<typeof mocks.normalizeWorkspaceId>
   ) => mocks.normalizeWorkspaceId(...args),
+  resolveWorkspaceIdForPrincipal: (...args: unknown[]) =>
+    mocks.resolveWorkspaceIdForPrincipal(...args),
   verifyWorkspaceMembershipType: (
     ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
   ) => mocks.verifyWorkspaceMembershipType(...args),
@@ -116,9 +125,9 @@ vi.mock('@/lib/live/token-builder', () => ({
   LIVE_TOKEN_LIFETIME_MS: 5 * 60 * 1000,
 }));
 
+import { POST as assistantLiveTokenPOST } from '@/app/api/v1/assistant/live/token/route';
 import { POST as webLiveTokenPOST } from '@/app/api/v1/live/token/route';
 import { POST as webLiveUsagePOST } from '@/app/api/v1/live/usage/route';
-import { POST as assistantLiveTokenPOST } from '@/legacy-api-routes/v1/assistant/live/token/route';
 
 function postRequest(path: string, body: unknown) {
   return new Request(`http://localhost${path}`, {
@@ -134,6 +143,9 @@ describe('assistant live token routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createClient.mockResolvedValue(requestSupabase);
+    mocks.buildLiveMiraPrompt.mockResolvedValue(
+      'Personalized shared Chat prompt'
+    );
     mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1', email: 'user@example.com' },
@@ -141,6 +153,9 @@ describe('assistant live token routes', () => {
     });
     mocks.validateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
     mocks.normalizeWorkspaceId.mockResolvedValue('personal-workspace-id');
+    mocks.resolveWorkspaceIdForPrincipal.mockResolvedValue(
+      'personal-workspace-id'
+    );
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getWorkspaceTier.mockResolvedValue('PRO');
     mocks.isFeatureAvailable.mockReturnValue(true);
@@ -216,6 +231,7 @@ describe('assistant live token routes', () => {
       expect(mocks.createConstrainedLiveToken).toHaveBeenCalledWith(
         expect.objectContaining({
           model,
+          systemInstruction: 'Personalized shared Chat prompt',
           tools: [
             {
               functionDeclarations: [
@@ -228,6 +244,41 @@ describe('assistant live token routes', () => {
       );
     }
   );
+
+  it('loads personalization for the authenticated actor and access workspace before billing', async () => {
+    const response = await webLiveTokenPOST(
+      postRequest('/api/v1/live/token', {
+        creditSource: 'workspace',
+        wsId: 'personal',
+        timezone: 'Asia/Ho_Chi_Minh',
+      }) as Parameters<typeof webLiveTokenPOST>[0]
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.buildLiveMiraPrompt).toHaveBeenCalledWith({
+      supabase: requestSupabase,
+      user: { id: 'user-1', email: 'user@example.com' },
+      wsId: 'personal-workspace-id',
+      timezone: 'Asia/Ho_Chi_Minh',
+    });
+    expect(mocks.buildLiveMiraPrompt.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.beginLiveBillingSession.mock.invocationCallOrder[0]!
+    );
+  });
+
+  it('does not reserve credits or mint an unpersonalized token when context fails', async () => {
+    mocks.buildLiveMiraPrompt.mockRejectedValueOnce(
+      new Error('Context unavailable')
+    );
+    const response = await webLiveTokenPOST(
+      postRequest('/api/v1/live/token', {
+        creditSource: 'workspace',
+        wsId: 'personal',
+      }) as Parameters<typeof webLiveTokenPOST>[0]
+    );
+    expect(response.status).toBe(500);
+    expect(mocks.beginLiveBillingSession).not.toHaveBeenCalled();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+  });
 
   it('rejects unsupported modes before billing', async () => {
     const response = await webLiveTokenPOST(
@@ -269,6 +320,70 @@ describe('assistant live token routes', () => {
       chatId: undefined,
       model: 'gemini-3.1-flash-live-preview',
     });
+  });
+
+  it('scopes temporary-auth personalization to the verified actor without cookie auth', async () => {
+    const admin = { from: vi.fn() };
+    mocks.createAdminClient.mockResolvedValueOnce(admin);
+    mocks.validateAiTempAuthRequest.mockResolvedValueOnce({
+      status: 'valid',
+      context: { user: { id: 'temp-user' }, wsId: 'personal-workspace-id' },
+    });
+    const response = await assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', {
+        wsId: 'personal',
+        forceFresh: true,
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(mocks.resolveWorkspaceIdForPrincipal).toHaveBeenCalledWith({
+      authorizationClient: admin,
+      principal: { id: 'temp-user', email: null },
+      wsId: 'personal',
+    });
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith({
+      supabase: admin,
+      userId: 'temp-user',
+      wsId: 'personal-workspace-id',
+    });
+    expect(mocks.buildLiveMiraPrompt).toHaveBeenCalledWith({
+      supabase: admin,
+      user: { id: 'temp-user' },
+      wsId: 'personal-workspace-id',
+      dashboard: false,
+    });
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
+  });
+
+  it('rejects temporary-auth workspace scope mismatches before chat or prompt reads', async () => {
+    mocks.validateAiTempAuthRequest.mockResolvedValueOnce({
+      status: 'valid',
+      context: { user: { id: 'temp-user' }, wsId: 'other-workspace' },
+    });
+    const response = await assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', {
+        wsId: 'personal',
+        forceFresh: true,
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.ensureAssistantLiveChat).not.toHaveBeenCalled();
+    expect(mocks.buildLiveMiraPrompt).not.toHaveBeenCalled();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+  });
+
+  it('does not mint a token when required seed history fails', async () => {
+    mocks.loadAssistantLiveSeedHistory.mockRejectedValueOnce(
+      new Error('History unavailable')
+    );
+    const response = await assistantLiveTokenPOST(
+      postRequest('/api/v1/assistant/live/token', {
+        wsId: 'personal',
+        forceFresh: true,
+      })
+    );
+    expect(response.status).toBe(500);
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
   });
 
   it('settles authenticated cumulative Live usage without caching', async () => {
