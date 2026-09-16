@@ -206,3 +206,33 @@ it('reverses direction using viewport pointer coordinates after a long left scro
   expect(container.scrollLeft).toBeGreaterThan(3000);
   unmount();
 });
+
+it('keeps keyboard drag coordinates independent of incidental pointer movement', () => {
+  let frame: FrameRequestCallback = () => {};
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn((callback) => {
+      frame = callback;
+      return 1;
+    })
+  );
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const container = document.createElement('div');
+  vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
+    left: 100,
+    right: 500,
+  } as DOMRect);
+  const { result, unmount } = renderHook(() =>
+    useAutoScroll({ current: container })
+  );
+  act(() =>
+    result.current.startAutoScroll(new KeyboardEvent('keydown', { key: ' ' }))
+  );
+  fireEvent.mouseMove(document, { clientX: 110 });
+  act(() => {
+    result.current.updateAutoScrollPointerX(490);
+    frame(16);
+  });
+  expect(container.scrollLeft).toBeGreaterThan(0);
+  unmount();
+});

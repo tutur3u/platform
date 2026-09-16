@@ -148,12 +148,12 @@ export function useAutoScroll(
 
   const startAutoScroll = useCallback(
     (activatorEvent?: Event) => {
-      if (activatorEvent) {
-        const initialX = getPointerEventClientX(activatorEvent);
-        if (initialX !== null) {
-          pointerXRef.current = initialX;
-          hasNativePointerRef.current = true;
-        }
+      const initialX = activatorEvent
+        ? getPointerEventClientX(activatorEvent)
+        : null;
+      if (initialX !== null) {
+        pointerXRef.current = initialX;
+        hasNativePointerRef.current = true;
       }
       const container = scrollContainerRef.current;
       if (container && !restoreScrollStylesRef.current) {
@@ -165,7 +165,11 @@ export function useAutoScroll(
           container.style.scrollBehavior = scrollBehavior;
         };
       }
-      if (container && !removePointerListenersRef.current) {
+      if (
+        container &&
+        initialX !== null &&
+        !removePointerListenersRef.current
+      ) {
         // Dnd-kit delta includes scroll displacement, not just pointer movement.
         // Keep real viewport coordinates so scrolling cannot feed back into itself.
         const ownerDocument = container.ownerDocument;
