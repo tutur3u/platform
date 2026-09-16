@@ -125,3 +125,34 @@ it('reveals settings for attachment-only drafts in view-only mode', () => {
     screen.getByRole('button', { name: 'Model control' }).closest('[inert]')
   ).toBeNull();
 });
+
+it('reserves layout space for Live controls and preserves the prompt when toggled', () => {
+  const { container, rerender } = render(
+    <MiraChatBottomBar
+      {...props}
+      voiceActive
+      liveInputOpen
+      input="Draft"
+      liveControls={<button type="button">Microphone</button>}
+    />
+  );
+  const composer = container.querySelector('[data-mira-composer]');
+  expect(composer).toHaveClass('relative', 'shrink-0', 'gap-2');
+  expect(composer).not.toHaveClass('absolute');
+  const input = screen.getByRole('textbox');
+  expect(input).toHaveValue('Draft');
+  rerender(
+    <MiraChatBottomBar
+      {...props}
+      voiceActive
+      liveInputOpen={false}
+      input="Draft"
+    />
+  );
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  rerender(
+    <MiraChatBottomBar {...props} voiceActive liveInputOpen input="Draft" />
+  );
+  expect(screen.getByRole('textbox')).toBe(input);
+  expect(input).toHaveValue('Draft');
+});

@@ -85,3 +85,31 @@ describe('compact live composer exit', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+it('keeps microphone, sharing and end-session controls available while typing', () => {
+  live.connected = true;
+  live.connectionStatus = 'connected';
+  render(
+    <ControlTray
+      compact
+      videoRef={createRef()}
+      supportsVideo
+      textChatOpen
+      onToggleChat={vi.fn()}
+    />
+  );
+  for (const name of [
+    'mute_microphone',
+    'share_screen',
+    'enable_camera',
+    'end_session',
+  ]) {
+    expect(screen.getByRole('button', { name })).toBeVisible();
+  }
+  fireEvent.click(screen.getByRole('button', { name: 'mute_microphone' }));
+  expect(
+    screen.getByRole('button', { name: 'unmute_microphone' })
+  ).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.click(screen.getByRole('button', { name: 'end_session' }));
+  expect(live.disconnect).toHaveBeenCalled();
+});

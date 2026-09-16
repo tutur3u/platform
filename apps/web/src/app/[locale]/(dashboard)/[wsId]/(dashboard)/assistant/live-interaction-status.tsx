@@ -18,8 +18,10 @@ export function LiveInteractionStatus() {
       client.off('interactionstatus', status).off('close', reset);
     };
   }, [client]);
+  if (!connected || !working) return null;
+
   return (
-    <div role="status" className="min-h-5 px-3 text-muted-foreground text-xs">
+    <div role="status" className="px-2 pb-1 text-muted-foreground text-xs">
       {connected && working && (
         <span className="inline-flex items-center gap-1.5">
           <LoaderCircle aria-hidden className="size-3 animate-spin" />

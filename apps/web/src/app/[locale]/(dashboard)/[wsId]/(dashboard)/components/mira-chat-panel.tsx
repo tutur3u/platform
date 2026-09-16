@@ -415,6 +415,7 @@ export default function MiraChatPanel({
             {hasMessages ? (
               <MiraChatConversation
                 liveResults={live.results}
+                voiceActive={voiceActive}
                 actionHandlers={actionHandlers}
                 assistantName={assistantName}
                 generativeUIStore={generativeUIStore}
