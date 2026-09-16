@@ -110,6 +110,7 @@ import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
 import { TaskShareDialog } from '../../../shared/task-share-dialog';
 import { TaskTimerMenuItem } from '../../../shared/task-timer-menu-item';
+import { useCachedBoardTasks } from '../../../shared/use-cached-board-tasks';
 import { TaskViewerAvatarsComponent } from '../../../shared/user-presence-avatars';
 import { useTasksHref } from '../../../tasks-route-context';
 import {
@@ -605,11 +606,9 @@ function TaskCardInner({
 
   const summaryParentTaskId = relationshipSummary.parent_task_id;
   const summaryParentTask = relationshipSummary.parent_task ?? null;
-  const { data: cachedBoardParentTask } = useQuery({
-    queryKey: ['tasks', boardId],
-    queryFn: async () => [] as Task[],
-    enabled: false,
-    select: (tasks: Task[]) => {
+  const { data: cachedBoardParentTask } = useCachedBoardTasks(
+    boardId,
+    (tasks) => {
       if (!summaryParentTaskId) {
         return null;
       }
@@ -630,8 +629,8 @@ function TaskCardInner({
             ? match.ticket_prefix
             : (boardConfig?.ticket_prefix ?? null),
       };
-    },
-  });
+    }
+  );
   const shouldHydrateParentTask =
     isInViewport &&
     !!effectiveWorkspaceId &&
@@ -1759,11 +1758,7 @@ function TaskCardInner({
   const showBlockedByUnderTitle =
     showBlockedByCallout && !showBlockedByInlineWithCheckbox;
 
-  const { data: allTasksFromQuery } = useQuery({
-    queryKey: ['tasks', boardId],
-    queryFn: () => [], // No-op function - we only want to read from cache
-    enabled: false, // Don't fetch, just subscribe to cache
-  });
+  const { data: allTasksFromQuery } = useCachedBoardTasks(boardId);
 
   const {
     displayLabels,

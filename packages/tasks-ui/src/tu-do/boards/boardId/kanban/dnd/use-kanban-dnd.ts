@@ -772,7 +772,7 @@ export function useKanbanDnd({
 
     isDraggingRef.current = true;
     updateAutoScrollFromDragEvent(event);
-    startAutoScroll();
+    startAutoScroll(event.activatorEvent);
 
     const { type } = active.data.current;
     if (type === 'Column') {
@@ -866,6 +866,7 @@ export function useKanbanDnd({
   }
 
   async function onDragEnd(event: DragEndEvent) {
+    stopAutoScroll();
     const { active, over } = event;
 
     const originalListId = pickedUpTaskColumn.current;
@@ -951,13 +952,7 @@ export function useKanbanDnd({
           }
         }
       }
-      setActiveColumn(null);
-      setActiveTask(null);
-      setHoverTargetListId(null);
-      setDragPreviewPosition(null);
-      pickedUpTaskColumn.current = null;
-      lastTargetListIdRef.current = null;
-      setOptimisticUpdateInProgress(new Set());
+      resetDragState(true);
       return;
     }
 

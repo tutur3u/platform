@@ -109,9 +109,15 @@ export function useAutoScroll(
   const pointerXRef = useRef<number | null>(null);
   const restoreScrollStylesRef = useRef<(() => void) | null>(null);
 
+  const removePointerListenersRef = useRef<(() => void) | null>(null);
+  const hasNativePointerRef = useRef(false);
+
   const stopAutoScroll = useCallback(() => {
     isAutoScrollActiveRef.current = false;
     pointerXRef.current = null;
+    hasNativePointerRef.current = false;
+    removePointerListenersRef.current?.();
+    removePointerListenersRef.current = null;
     restoreScrollStylesRef.current?.();
     restoreScrollStylesRef.current = null;
 
@@ -140,26 +146,62 @@ export function useAutoScroll(
     autoScrollRafRef.current = requestAnimationFrame(autoScroll);
   }, [scrollContainerRef]);
 
-  const startAutoScroll = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (container && !restoreScrollStylesRef.current) {
-      const { scrollSnapType, scrollBehavior } = container.style;
-      container.style.scrollSnapType = 'none';
-      container.style.scrollBehavior = 'auto';
-      restoreScrollStylesRef.current = () => {
-        container.style.scrollSnapType = scrollSnapType;
-        container.style.scrollBehavior = scrollBehavior;
-      };
-    }
-    isAutoScrollActiveRef.current = true;
+  const startAutoScroll = useCallback(
+    (activatorEvent?: Event) => {
+      const initialX = activatorEvent
+        ? getPointerEventClientX(activatorEvent)
+        : null;
+      if (initialX !== null) {
+        pointerXRef.current = initialX;
+        hasNativePointerRef.current = true;
+      }
+      const container = scrollContainerRef.current;
+      if (container && !restoreScrollStylesRef.current) {
+        const { scrollSnapType, scrollBehavior } = container.style;
+        container.style.scrollSnapType = 'none';
+        container.style.scrollBehavior = 'auto';
+        restoreScrollStylesRef.current = () => {
+          container.style.scrollSnapType = scrollSnapType;
+          container.style.scrollBehavior = scrollBehavior;
+        };
+      }
+      if (
+        container &&
+        initialX !== null &&
+        !removePointerListenersRef.current
+      ) {
+        // Dnd-kit delta includes scroll displacement, not just pointer movement.
+        // Keep real viewport coordinates so scrolling cannot feed back into itself.
+        const ownerDocument = container.ownerDocument;
+        const trackPointer = (event: Event) => {
+          const clientX = getPointerEventClientX(event);
+          if (clientX === null) return;
+          hasNativePointerRef.current = true;
+          pointerXRef.current = clientX;
+        };
+        const events = ['pointermove', 'mousemove', 'touchmove'] as const;
+        for (const type of events) {
+          ownerDocument.addEventListener(type, trackPointer, {
+            capture: true,
+            passive: true,
+          });
+        }
+        removePointerListenersRef.current = () => {
+          for (const type of events)
+            ownerDocument.removeEventListener(type, trackPointer, true);
+        };
+      }
+      isAutoScrollActiveRef.current = true;
 
-    if (autoScrollRafRef.current === null) {
-      autoScrollRafRef.current = requestAnimationFrame(autoScroll);
-    }
-  }, [autoScroll, scrollContainerRef]);
+      if (autoScrollRafRef.current === null) {
+        autoScrollRafRef.current = requestAnimationFrame(autoScroll);
+      }
+    },
+    [autoScroll, scrollContainerRef]
+  );
 
   const updateAutoScrollPointerX = useCallback((pointerX: number | null) => {
-    pointerXRef.current = pointerX;
+    if (!hasNativePointerRef.current) pointerXRef.current = pointerX;
   }, []);
 
   useEffect(() => stopAutoScroll, [stopAutoScroll]);
