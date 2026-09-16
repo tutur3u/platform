@@ -1,3 +1,4 @@
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import InvoiceDetailsPage from './invoice-details-page.js';
 
@@ -10,6 +11,7 @@ type QueryOperation = {
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  omitPromotions: false,
   invoice: null as Record<string, unknown> | null,
   notFound: vi.fn(() => {
     throw new Error('not-found');
@@ -47,6 +49,7 @@ function resultForTable(table: string) {
   }
 
   if (table === 'finance_invoice_promotions') {
+    if (mocks.omitPromotions) return { data: [], error: null };
     return {
       data: [
         {
@@ -142,6 +145,7 @@ describe('InvoiceDetailsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.operations.length = 0;
+    mocks.omitPromotions = false;
     mocks.invoice = {
       created_at: '2026-05-01T00:00:00.000Z',
       customer_avatar_url: null,
@@ -207,6 +211,18 @@ describe('InvoiceDetailsPage', () => {
         }),
       ])
     );
+  });
+
+  it('shows the stored discount after reopening even without promotion metadata', async () => {
+    mocks.omitPromotions = true;
+    render(
+      await InvoiceDetailsPage({
+        invoiceId: 'invoice-1',
+        locale: 'en',
+        wsId: 'workspace-1',
+      })
+    );
+    expect(screen.getByText('ws-invoices.discount')).toBeInTheDocument();
   });
 
   it('does not load invoice children when the invoice is outside the workspace', async () => {
