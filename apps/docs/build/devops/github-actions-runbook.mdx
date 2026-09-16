@@ -517,6 +517,16 @@ uses required-file behavior, one-day retention, and compression level 0 because
 through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
 cannot bypass the shared cache wrapper.
 
+Biome's automatic push trigger excludes only
+`release-please--branches--**--release-notes` metadata branches. Their creation
+briefly points at the production SHA before the notes commit is pushed; running
+Biome on both pushes leaves cancelled checks on that shared SHA, which GitHub
+also displays on main and production. Keep this exclusion at the trigger level:
+a job-level skip does not prevent the cancelled workflow checks. Actual release
+PR branches still receive lint and format validation, and manual dispatch remains
+available. When verifying a release, inspect all check runs for its SHA in addition
+to branch-filtered workflow runs.
+
 Release Please can move an oversized generated pull request body into
 `release-notes.md` on a companion
 `release-please--branches--<branch>--release-notes` branch. The workflow runs

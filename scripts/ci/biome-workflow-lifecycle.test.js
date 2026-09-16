@@ -12,6 +12,21 @@ const workflow = fs.readFileSync(
   'utf8'
 );
 
+test('overflow notes cannot attach cancelled Biome checks to a release SHA', () => {
+  const push = workflow.match(/\n {2}push:\n([\s\S]*?)(?=\n {2}\w)/)?.[1];
+  assert.ok(push);
+  const ignoredBranches = [...push.matchAll(/^ {6}- '([^']+)'$/gm)].map(
+    (match) => match[1]
+  );
+  // Only metadata branches are excluded: actual release PRs still validate.
+  assert.deepEqual(ignoredBranches, [
+    'release-please--branches--**--release-notes',
+  ]);
+  assert.match(push, /branches-ignore:/);
+  assert.doesNotMatch(push, /(?:^|\n) {4}branches:/);
+  assert.match(workflow, /\n {2}workflow_dispatch:/);
+});
+
 test('Biome supersedes obsolete commits without cancelling other branches', () => {
   assert.match(
     workflow,
