@@ -95,7 +95,7 @@ export function MiraChatBottomBar({
     <div
       ref={composerRef}
       data-mira-composer=""
-      className="relative z-10 flex min-w-0 max-w-full shrink-0 flex-col gap-2 border-border/50 border-t bg-background/95 p-3 sm:p-4"
+      className="relative z-10 flex min-w-0 max-w-full shrink-0 flex-col gap-2 p-3 sm:p-4"
     >
       <div
         data-mira-toolset=""
@@ -160,7 +160,7 @@ export function MiraChatBottomBar({
         )}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="relative min-w-0 rounded-2xl bg-background shadow-sm">
+          <div className="relative min-w-0 rounded-2xl">
             <ChatInputBar
               input={input}
               setInput={setInput}
