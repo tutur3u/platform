@@ -150,7 +150,7 @@ export function MiraVoiceModeSwitcher({
   }, [exitVoice, voiceActive]);
 
   const liveContent = voiceActive ? (
-    <>
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
       <MiraLiveModeControl
         mode={liveMode}
         disabled={initializingLive || liveComposer?.connecting}
@@ -183,7 +183,7 @@ export function MiraVoiceModeSwitcher({
         onComposerChange={setLiveComposer}
         wsId={wsId}
       />
-    </>
+    </div>
   ) : null;
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">

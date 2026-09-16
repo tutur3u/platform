@@ -60,6 +60,7 @@ export async function runLiveSessionAction({
 }
 
 function MediaStreamButton({
+  compact,
   active,
   activeIcon,
   activeLabel,
@@ -70,6 +71,7 @@ function MediaStreamButton({
   start,
   stop,
 }: {
+  compact?: boolean;
   active: boolean;
   activeIcon: ReactNode;
   activeLabel: string;
@@ -89,6 +91,7 @@ function MediaStreamButton({
       size="icon"
       className={cn(
         'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+        compact && 'size-9 rounded-xl',
         active && 'bg-primary/10 text-primary'
       )}
       disabled={disabled}
@@ -275,7 +278,7 @@ function ControlTray({
   };
 
   return (
-    <div className="flex w-full min-w-0 max-w-full flex-col items-center justify-center gap-2">
+    <div className="flex w-full min-w-0 max-w-full flex-col items-stretch justify-center gap-2">
       {mediaError && (
         <p role="alert" className="text-center text-dynamic-red text-xs">
           {t('studio.media_error')}
@@ -291,7 +294,6 @@ function ControlTray({
         {connected && (
           <>
             <Button
-              hidden={compact && textChatOpen}
               aria-label={muted ? t('unmute_microphone') : t('mute_microphone')}
               title={muted ? t('unmute_microphone') : t('mute_microphone')}
               aria-pressed={muted}
@@ -299,6 +301,7 @@ function ControlTray({
               size="icon"
               className={cn(
                 'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+                compact && 'size-9 rounded-xl',
                 muted && 'bg-destructive/10 text-dynamic-red'
               )}
               onClick={() => {
@@ -313,9 +316,10 @@ function ControlTray({
               )}
             </Button>
 
-            {supportsVideo && !(compact && textChatOpen) && (
+            {supportsVideo && (
               <>
                 <MediaStreamButton
+                  compact={compact}
                   active={Boolean(screenCapture?.isStreaming)}
                   activeIcon={<MonitorX className="size-4" />}
                   activeLabel={t('stop_sharing')}
@@ -326,6 +330,7 @@ function ControlTray({
                   stop={changeStreams()}
                 />
                 <MediaStreamButton
+                  compact={compact}
                   active={Boolean(webcam?.isStreaming)}
                   activeIcon={<VideoOff className="size-4" />}
                   activeLabel={t('disable_camera')}
@@ -338,9 +343,7 @@ function ControlTray({
               </>
             )}
 
-            {!(compact && textChatOpen) && (
-              <span className="mx-0.5 h-6 w-px bg-border/60" />
-            )}
+            <span aria-hidden className="mx-0.5 h-5 w-px bg-border/60" />
           </>
         )}
 
@@ -363,6 +366,7 @@ function ControlTray({
             size="icon"
             className={cn(
               'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+              compact && 'size-9 rounded-xl',
               textChatOpen && 'bg-primary/10 text-primary'
             )}
             onClick={onToggleChat}
@@ -372,7 +376,6 @@ function ControlTray({
         ) : null}
 
         <Button
-          hidden={compact && textChatOpen && connected}
           ref={sessionButtonRef}
           aria-label={connected ? t('end_session') : t('new_session')}
           title={connected ? t('end_session') : t('new_session')}
@@ -384,7 +387,7 @@ function ControlTray({
           }
           variant={connected ? 'destructive' : 'default'}
           size="icon"
-          className="size-11 rounded-xl shadow-sm"
+          className={cn('size-11 rounded-xl shadow-sm', compact && 'size-9')}
           onClick={() =>
             void runLiveSessionAction({
               connected,

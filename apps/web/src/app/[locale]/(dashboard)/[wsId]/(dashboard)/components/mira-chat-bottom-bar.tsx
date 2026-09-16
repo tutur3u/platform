@@ -146,11 +146,14 @@ export function MiraChatBottomBar({
       }}
       className={cn(
         'pointer-events-none z-10 flex min-w-0 max-w-full flex-col items-end p-3 sm:p-4',
-        floating ? 'absolute right-0 bottom-0 left-0' : 'relative shrink-0'
+        floating && !voiceActive
+          ? 'absolute right-0 bottom-0 left-0'
+          : 'relative shrink-0',
+        voiceActive && 'gap-2 border-border/50 border-t bg-background/95 pt-3'
       )}
     >
       {voiceActive && (
-        <div className="pointer-events-auto max-w-full rounded-2xl border bg-background/90 p-1 shadow-lg backdrop-blur-xl">
+        <div className="pointer-events-auto max-h-[40dvh] w-full min-w-0 overflow-y-auto overscroll-contain rounded-2xl border border-border/60 bg-muted/20 p-2 shadow-xs">
           {liveControls}
         </div>
       )}

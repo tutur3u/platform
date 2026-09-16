@@ -2,6 +2,7 @@
 
 import type { UIMessage } from '@tuturuuu/ai/types';
 import type { LiveMode } from '@tuturuuu/internal-api';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
@@ -164,7 +165,14 @@ export default function AssistantClient({
   }
 
   return (
-    <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
+    <div
+      className={cn(
+        'relative flex min-h-0 min-w-0 flex-col',
+        onConversationChange
+          ? 'grow basis-60'
+          : 'w-full flex-1 overflow-hidden rounded-lg'
+      )}
+    >
       {content}
     </div>
   );
