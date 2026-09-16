@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 
@@ -8,6 +8,7 @@ const disconnect = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('../assistant/assistant-client', () => ({
   default: ({
     mode,
+    modeControl,
     onInitializingChange,
     onComposerChange,
     onReturnToChat,
@@ -15,6 +16,7 @@ vi.mock('../assistant/assistant-client', () => ({
     onToggleInput,
   }: {
     mode: string;
+    modeControl: ReactNode;
     onInitializingChange: (value: boolean) => void;
     onComposerChange: (value: unknown) => void;
     onReturnToChat: () => void;
@@ -28,6 +30,7 @@ vi.mock('../assistant/assistant-client', () => ({
     }, [onComposerChange]);
     return (
       <div data-testid="voice-canvas" data-mode={mode}>
+        {modeControl}
         <button type="button" onClick={onReturnToChat}>
           return_to_chat
         </button>

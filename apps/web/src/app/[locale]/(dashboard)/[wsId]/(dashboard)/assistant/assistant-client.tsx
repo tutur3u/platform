@@ -15,10 +15,10 @@ import type { LiveConversationChange } from '../assistant/use-live-conversation'
 import type { LiveComposer } from '../components/mira-voice-mode-switcher';
 import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 import { AssistantVoiceSession } from './assistant-voice-session';
-import { LiveInteractionStatus } from './live-interaction-status';
 
 export interface AssistantClientProps {
   mode?: LiveMode;
+  modeControl?: ReactNode;
   onInitializingChange?: (initializing: boolean) => void;
   onResultsChange?: (results: ReactNode) => void;
   onBeforeStart?: () => void | Promise<void>;
@@ -35,6 +35,7 @@ export interface AssistantClientProps {
 
 export default function AssistantClient({
   mode = 'flash',
+  modeControl,
   onInitializingChange,
   onResultsChange,
   onBeforeStart,
@@ -147,8 +148,8 @@ export default function AssistantClient({
         wsId={wsId}
         scopeKey={scopeKey}
       >
-        <LiveInteractionStatus />
         <AssistantVoiceSession
+          modeControl={modeControl}
           onReturnToChat={onReturnToChat}
           onResultsChange={onResultsChange}
           inputOpen={inputOpen}
@@ -169,11 +170,24 @@ export default function AssistantClient({
       className={cn(
         'relative flex min-h-0 min-w-0 flex-col',
         onConversationChange
-          ? 'grow basis-60'
+          ? 'w-full'
           : 'w-full flex-1 overflow-hidden rounded-lg'
       )}
     >
-      {content}
+      {(isLoading ||
+        isRestarting ||
+        effectiveError ||
+        !token ||
+        !scopeKey ||
+        !liveSessionId) &&
+      modeControl ? (
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+          {modeControl}
+          {content}
+        </div>
+      ) : (
+        content
+      )}
     </div>
   );
 }

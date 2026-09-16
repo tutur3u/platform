@@ -415,7 +415,6 @@ export default function MiraChatPanel({
             {hasMessages ? (
               <MiraChatConversation
                 liveResults={live.results}
-                voiceActive={voiceActive}
                 actionHandlers={actionHandlers}
                 assistantName={assistantName}
                 generativeUIStore={generativeUIStore}
@@ -449,8 +448,6 @@ export default function MiraChatPanel({
               assistantName={assistantName}
               attachedFiles={attachedFiles}
               bottomBarVisible={!viewOnly}
-              floating={hasMessages}
-              scrollContainerRef={scrollContainerRef}
               canUploadFiles={supportsFileInput && !voiceActive}
               input={input}
               inputRef={inputRef}

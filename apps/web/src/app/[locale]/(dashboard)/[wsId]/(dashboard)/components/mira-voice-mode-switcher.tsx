@@ -149,41 +149,42 @@ export function MiraVoiceModeSwitcher({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [exitVoice, voiceActive]);
 
+  const modeControl = (
+    <MiraLiveModeControl
+      mode={liveMode}
+      disabled={initializingLive || liveComposer?.connecting}
+      onChange={async (nextMode) => {
+        if (nextMode === liveMode) return;
+        setInitializingLive(true);
+        try {
+          // Release the old reservation before requesting the next model.
+          await liveComposer?.disconnect?.();
+          if (voiceActiveRef.current) setLiveMode(nextMode);
+        } catch {
+          setInitializingLive(false);
+          toast.error(t('connection_error_fallback'));
+        }
+      }}
+    />
+  );
   const liveContent = voiceActive ? (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-      <MiraLiveModeControl
-        mode={liveMode}
-        disabled={initializingLive || liveComposer?.connecting}
-        onChange={async (nextMode) => {
-          if (nextMode === liveMode) return;
-          setInitializingLive(true);
-          try {
-            // Release the old reservation before requesting the next model.
-            await liveComposer?.disconnect?.();
-            if (voiceActiveRef.current) setLiveMode(nextMode);
-          } catch {
-            setInitializingLive(false);
-            toast.error(t('connection_error_fallback'));
-          }
-        }}
-      />
-      <AssistantVoiceClient
-        key={liveMode}
-        mode={liveMode}
-        onInitializingChange={setInitializingLive}
-        onResultsChange={setResults}
-        onBeforeStart={onBeforeVoiceStart}
-        inputOpen={inputOpen}
-        onToggleInput={() => setInputOpen((open) => !open)}
-        history={history}
-        onConversationChange={onConversationChange}
-        creditSource={creditSource}
-        creditWsId={creditWsId}
-        onReturnToChat={exitVoice}
-        onComposerChange={setLiveComposer}
-        wsId={wsId}
-      />
-    </div>
+    <AssistantVoiceClient
+      key={liveMode}
+      mode={liveMode}
+      modeControl={modeControl}
+      onInitializingChange={setInitializingLive}
+      onResultsChange={setResults}
+      onBeforeStart={onBeforeVoiceStart}
+      inputOpen={inputOpen}
+      onToggleInput={() => setInputOpen((open) => !open)}
+      history={history}
+      onConversationChange={onConversationChange}
+      creditSource={creditSource}
+      creditWsId={creditWsId}
+      onReturnToChat={exitVoice}
+      onComposerChange={setLiveComposer}
+      wsId={wsId}
+    />
   ) : null;
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">

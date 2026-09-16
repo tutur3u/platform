@@ -24,13 +24,16 @@ vi.mock('./chat-input-bar', () => ({
     input: string;
   }) => <textarea ref={inputRef} aria-label="Message" value={input} readOnly />,
 }));
+vi.mock('framer-motion', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('framer-motion')>()),
+  useReducedMotion: () => true,
+}));
 afterEach(() => vi.useRealTimers());
 
 const props = {
   assistantName: 'Mira',
   attachedFiles: [],
   bottomBarVisible: true,
-  floating: true,
   canUploadFiles: false,
   input: '',
   inputRef: createRef<HTMLTextAreaElement>(),
@@ -58,20 +61,42 @@ const props = {
   },
 };
 
-it('replaces the idle composer with Chat and Live controls and restores focus on reopen', () => {
+it('retains the panel and prompt after idle time', () => {
   vi.useFakeTimers();
   render(<MiraChatBottomBar {...props} />);
   const input = screen.getByRole('textbox');
   act(() => input.focus());
-  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
-  expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Live' })).toBeVisible();
-  expect(screen.getByRole('button', { name: 'Chat' })).toHaveFocus();
-  fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
-  act(() => vi.advanceTimersByTime(20));
-  expect(screen.getByRole('textbox')).toBe(input);
+  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS * 2));
+  expect(input).toBeVisible();
   expect(input).toHaveFocus();
   expect(screen.getByRole('button', { name: 'Model control' })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Live' }));
+  expect(props.onVoiceToggle).toHaveBeenCalled();
+});
+
+it('swaps Live tools for Chat tools without replacing the panel or draft', () => {
+  const { container, rerender } = render(
+    <MiraChatBottomBar
+      {...props}
+      voiceActive
+      liveInputOpen
+      input="Draft"
+      liveControls={<button type="button">Microphone</button>}
+    />
+  );
+  const panel = container.querySelector('[data-mira-toolset]');
+  const composer = container.querySelector('[data-mira-composer]');
+  const input = screen.getByRole('textbox');
+  rerender(<MiraChatBottomBar {...props} input="Draft" />);
+  expect(container.querySelector('[data-mira-toolset]')).toBe(panel);
+  expect(container.querySelector('[data-mira-composer]')).toBe(composer);
+  expect(composer).not.toHaveClass('absolute');
+  expect(
+    screen.queryByRole('button', { name: 'Microphone' })
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Model control' })).toBeVisible();
+  expect(screen.getByRole('textbox')).toBe(input);
+  expect(input).toHaveValue('Draft');
 });
 
 it('reveals settings when composing from view-only mode', () => {
@@ -81,27 +106,14 @@ it('reveals settings when composing from view-only mode', () => {
   expect(
     screen
       .getByRole('button', { name: 'Model control', hidden: true })
-      .closest('[inert]')
+      .closest('[hidden]')
   ).not.toBeNull();
   rerender(
     <MiraChatBottomBar {...props} bottomBarVisible={false} input="New draft" />
   );
   expect(
-    screen.getByRole('button', { name: 'Model control' }).closest('[inert]')
+    screen.getByRole('button', { name: 'Model control' }).closest('[hidden]')
   ).toBeNull();
-});
-
-it('keeps focused toolbar controls accessible until focus returns to the empty input', () => {
-  vi.useFakeTimers();
-  render(<MiraChatBottomBar {...props} />);
-  const control = screen.getByRole('button', { name: 'Model control' });
-  act(() => control.focus());
-  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
-  expect(control).toHaveFocus();
-  expect(screen.getByRole('textbox')).toBeVisible();
-  act(() => screen.getByRole('textbox').focus());
-  act(() => vi.advanceTimersByTime(COMPOSER_IDLE_MS));
-  expect(screen.getByRole('button', { name: 'Chat' })).toHaveFocus();
 });
 
 it('reveals settings for attachment-only drafts in view-only mode', () => {
@@ -122,7 +134,7 @@ it('reveals settings for attachment-only drafts in view-only mode', () => {
     />
   );
   expect(
-    screen.getByRole('button', { name: 'Model control' }).closest('[inert]')
+    screen.getByRole('button', { name: 'Model control' }).closest('[hidden]')
   ).toBeNull();
 });
 

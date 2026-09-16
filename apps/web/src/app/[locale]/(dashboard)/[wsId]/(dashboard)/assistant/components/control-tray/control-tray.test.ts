@@ -30,3 +30,24 @@ describe('runLiveSessionAction', () => {
     expect(disconnect).not.toHaveBeenCalled();
   });
 });
+
+it('returns to Chat only after the Live session has disconnected', async () => {
+  let finish!: () => void;
+  const disconnect = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      })
+  );
+  const onReturnToChat = vi.fn();
+  const pending = runLiveSessionAction({
+    connected: true,
+    disconnect,
+    onRestartSession: vi.fn(),
+    onReturnToChat,
+  });
+  expect(onReturnToChat).not.toHaveBeenCalled();
+  finish();
+  await pending;
+  expect(onReturnToChat).toHaveBeenCalledOnce();
+});

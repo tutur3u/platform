@@ -30,6 +30,7 @@ import { AudioRecorder } from '../../audio/audio-recorder';
 
 export type ControlTrayProps = {
   compact?: boolean;
+  leading?: ReactNode;
   videoRef: RefObject<HTMLVideoElement | null>;
   children?: ReactNode;
   supportsVideo: boolean;
@@ -50,13 +51,17 @@ export async function runLiveSessionAction({
   connected,
   disconnect,
   onRestartSession,
+  onReturnToChat,
 }: {
   connected: boolean;
   disconnect: () => Promise<void>;
   onRestartSession: () => Promise<void>;
+  onReturnToChat?: () => void;
 }) {
-  if (connected) await disconnect();
-  else await onRestartSession();
+  if (connected) {
+    await disconnect();
+    onReturnToChat?.();
+  } else await onRestartSession();
 }
 
 function MediaStreamButton({
@@ -111,6 +116,7 @@ function MediaStreamButton({
 
 function ControlTray({
   compact = false,
+  leading,
   videoRef,
   children,
   onInputVolumeChange = () => {},
@@ -130,6 +136,7 @@ function ControlTray({
     useState<MediaStream | null>(null);
   const [audioRecorder] = useState(() => new AudioRecorder());
   const [muted, setMuted] = useState(false);
+  const [sessionActionPending, setSessionActionPending] = useState(false);
   const [mediaError, setMediaError] = useState(false);
   const captureGeneration = useRef(0);
   const connectedRef = useRef(false);
@@ -284,126 +291,144 @@ function ControlTray({
           {t('studio.media_error')}
         </p>
       )}
-      <div
-        className={cn(
-          'flex max-w-full flex-wrap items-center justify-end gap-1',
-          !compact &&
-            'rounded-2xl border bg-background/70 p-1.5 shadow-lg backdrop-blur-xl'
-        )}
-      >
-        {connected && (
-          <>
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        {leading}
+        <div
+          className={cn(
+            'motion-safe:[&>button]:fade-in motion-safe:[&>button]:slide-in-from-bottom-1 ml-auto flex max-w-full flex-wrap items-center justify-end gap-1 motion-safe:[&>button:nth-child(2)]:[animation-delay:30ms] motion-safe:[&>button:nth-child(3)]:[animation-delay:60ms] motion-safe:[&>button:nth-child(5)]:[animation-delay:90ms] motion-safe:[&>button]:animate-in motion-safe:[&>button]:duration-200',
+            !compact &&
+              'rounded-2xl border bg-background/70 p-1.5 shadow-lg backdrop-blur-xl'
+          )}
+        >
+          {connected && (
+            <>
+              <Button
+                aria-label={
+                  muted ? t('unmute_microphone') : t('mute_microphone')
+                }
+                title={muted ? t('unmute_microphone') : t('mute_microphone')}
+                aria-pressed={muted}
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+                  compact && 'size-9 rounded-xl',
+                  muted && 'bg-destructive/10 text-dynamic-red'
+                )}
+                onClick={() => {
+                  setMediaError(false);
+                  setMuted((value) => !value);
+                }}
+              >
+                {muted ? (
+                  <MicOff className="size-4" />
+                ) : (
+                  <Mic className="size-4" />
+                )}
+              </Button>
+
+              {supportsVideo && (
+                <>
+                  <MediaStreamButton
+                    compact={compact}
+                    active={Boolean(screenCapture?.isStreaming)}
+                    activeIcon={<MonitorX className="size-4" />}
+                    activeLabel={t('stop_sharing')}
+                    inactiveIcon={<MonitorUp className="size-4" />}
+                    inactiveLabel={t('share_screen')}
+                    onError={() => setMediaError(true)}
+                    start={changeStreams(screenCapture)}
+                    stop={changeStreams()}
+                  />
+                  <MediaStreamButton
+                    compact={compact}
+                    active={Boolean(webcam?.isStreaming)}
+                    activeIcon={<VideoOff className="size-4" />}
+                    activeLabel={t('disable_camera')}
+                    inactiveIcon={<Video className="size-4" />}
+                    inactiveLabel={t('enable_camera')}
+                    onError={() => setMediaError(true)}
+                    start={changeStreams(webcam)}
+                    stop={changeStreams()}
+                  />
+                </>
+              )}
+
+              <span aria-hidden className="mx-0.5 h-5 w-px bg-border/60" />
+            </>
+          )}
+
+          {!connected && onReturnToChat ? (
             <Button
-              aria-label={muted ? t('unmute_microphone') : t('mute_microphone')}
-              title={muted ? t('unmute_microphone') : t('mute_microphone')}
-              aria-pressed={muted}
+              variant="ghost"
+              size="sm"
+              className="h-10 gap-2 rounded-full px-3"
+              onClick={onReturnToChat}
+            >
+              <MessageSquareText className="size-4" />
+              {t('return_to_chat')}
+            </Button>
+          ) : typeof onToggleChat === 'function' ? (
+            <Button
+              aria-label={textChatOpen ? t('close_chat') : t('open_chat')}
+              title={textChatOpen ? t('close_chat') : t('open_chat')}
+              aria-pressed={Boolean(textChatOpen)}
               variant="ghost"
               size="icon"
               className={cn(
                 'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
                 compact && 'size-9 rounded-xl',
-                muted && 'bg-destructive/10 text-dynamic-red'
+                textChatOpen && 'bg-primary/10 text-primary'
               )}
-              onClick={() => {
-                setMediaError(false);
-                setMuted((value) => !value);
-              }}
+              onClick={onToggleChat}
             >
-              {muted ? (
-                <MicOff className="size-4" />
-              ) : (
-                <Mic className="size-4" />
-              )}
+              <MessageSquareText className="size-4" />
             </Button>
+          ) : null}
 
-            {supportsVideo && (
-              <>
-                <MediaStreamButton
-                  compact={compact}
-                  active={Boolean(screenCapture?.isStreaming)}
-                  activeIcon={<MonitorX className="size-4" />}
-                  activeLabel={t('stop_sharing')}
-                  inactiveIcon={<MonitorUp className="size-4" />}
-                  inactiveLabel={t('share_screen')}
-                  onError={() => setMediaError(true)}
-                  start={changeStreams(screenCapture)}
-                  stop={changeStreams()}
-                />
-                <MediaStreamButton
-                  compact={compact}
-                  active={Boolean(webcam?.isStreaming)}
-                  activeIcon={<VideoOff className="size-4" />}
-                  activeLabel={t('disable_camera')}
-                  inactiveIcon={<Video className="size-4" />}
-                  inactiveLabel={t('enable_camera')}
-                  onError={() => setMediaError(true)}
-                  start={changeStreams(webcam)}
-                  stop={changeStreams()}
-                />
-              </>
-            )}
-
-            <span aria-hidden className="mx-0.5 h-5 w-px bg-border/60" />
-          </>
-        )}
-
-        {!connected && onReturnToChat ? (
           <Button
-            variant="ghost"
-            size="sm"
-            className="h-10 gap-2 rounded-full px-3"
-            onClick={onReturnToChat}
-          >
-            <MessageSquareText className="size-4" />
-            {t('return_to_chat')}
-          </Button>
-        ) : typeof onToggleChat === 'function' ? (
-          <Button
-            aria-label={textChatOpen ? t('close_chat') : t('open_chat')}
-            title={textChatOpen ? t('close_chat') : t('open_chat')}
-            aria-pressed={Boolean(textChatOpen)}
-            variant="ghost"
+            ref={sessionButtonRef}
+            aria-label={connected ? t('end_session') : t('new_session')}
+            title={connected ? t('end_session') : t('new_session')}
+            disabled={
+              sessionActionPending ||
+              (!connected &&
+                (!canRestart ||
+                  connectionStatus === 'connecting' ||
+                  connectionStatus === 'reconnecting'))
+            }
+            variant={connected ? 'destructive' : 'default'}
             size="icon"
-            className={cn(
-              'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
-              compact && 'size-9 rounded-xl',
-              textChatOpen && 'bg-primary/10 text-primary'
-            )}
-            onClick={onToggleChat}
+            className={cn('size-11 rounded-xl shadow-sm', compact && 'size-9')}
+            aria-busy={sessionActionPending}
+            onClick={async () => {
+              setSessionActionPending(true);
+              try {
+                await runLiveSessionAction({
+                  connected,
+                  disconnect,
+                  onRestartSession:
+                    onRestartSession ?? (() => Promise.resolve()),
+                  onReturnToChat,
+                });
+              } catch (error) {
+                onError(
+                  error instanceof Error ? error : new Error(String(error))
+                );
+              } finally {
+                setSessionActionPending(false);
+              }
+            }}
           >
-            <MessageSquareText className="size-4" />
+            {connected ? (
+              <PhoneOff className="size-4" />
+            ) : (
+              <Play className="size-4" />
+            )}
           </Button>
-        ) : null}
 
-        <Button
-          ref={sessionButtonRef}
-          aria-label={connected ? t('end_session') : t('new_session')}
-          title={connected ? t('end_session') : t('new_session')}
-          disabled={
-            !connected &&
-            (!canRestart ||
-              connectionStatus === 'connecting' ||
-              connectionStatus === 'reconnecting')
-          }
-          variant={connected ? 'destructive' : 'default'}
-          size="icon"
-          className={cn('size-11 rounded-xl shadow-sm', compact && 'size-9')}
-          onClick={() =>
-            void runLiveSessionAction({
-              connected,
-              disconnect,
-              onRestartSession: onRestartSession ?? (() => Promise.resolve()),
-            }).catch(onError)
-          }
-        >
-          {connected ? (
-            <PhoneOff className="size-4" />
-          ) : (
-            <Play className="size-4" />
-          )}
-        </Button>
-
-        {children}
+          {children}
+        </div>
       </div>
       <canvas className="hidden" ref={renderCanvasRef} />
     </div>
