@@ -1,5 +1,5 @@
 import type { DragMoveEvent } from '@dnd-kit/core';
-import { act, renderHook } from '@testing-library/react';
+import { act, fireEvent, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getKanbanDragAutoScrollPointerX,
@@ -157,4 +157,52 @@ it('suspends snapping and smooth scrolling throughout a drag and restores them',
   unmount();
   expect(container.style.scrollSnapType).toBe('x mandatory');
   expect(cancel).toHaveBeenCalled();
+});
+
+it('reverses direction using viewport pointer coordinates after a long left scroll', () => {
+  let frame: FrameRequestCallback = () => {};
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn((callback) => {
+      frame = callback;
+      return 1;
+    })
+  );
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const container = document.createElement('div');
+  container.scrollLeft = 3000;
+  vi.spyOn(container, 'getBoundingClientRect').mockReturnValue({
+    left: 100,
+    right: 500,
+  } as DOMRect);
+  const { result, unmount } = renderHook(() =>
+    useAutoScroll({ current: container })
+  );
+  act(() => {
+    result.current.startAutoScroll(
+      new MouseEvent('mousedown', { clientX: 110 })
+    );
+    result.current.updateAutoScrollPointerX(3490);
+  });
+  fireEvent.mouseMove(document, { clientX: 110 });
+  act(() => frame(16));
+  expect(container.scrollLeft).toBeLessThan(3000);
+  const leftPosition = container.scrollLeft;
+  fireEvent.mouseMove(document, { clientX: 490 });
+  // Dnd-kit reports a scroll-adjusted delta, which can still be far left.
+  act(() => {
+    result.current.updateAutoScrollPointerX(-2510);
+    frame(32);
+  });
+  expect(container.scrollLeft).toBeGreaterThan(leftPosition);
+  act(() => result.current.stopAutoScroll());
+  // The next drag must not retain pointer coordinates from the previous drag.
+  fireEvent.mouseMove(document, { clientX: 110 });
+  act(() => {
+    result.current.updateAutoScrollPointerX(490);
+    result.current.startAutoScroll();
+    frame(48);
+  });
+  expect(container.scrollLeft).toBeGreaterThan(3000);
+  unmount();
 });

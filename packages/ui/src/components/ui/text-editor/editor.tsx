@@ -443,10 +443,18 @@ export function RichTextEditor({
     ).updateUser?.(collaborationUser);
   }, [editor, allowCollaboration, yjsProvider, collaborationUser]);
 
-  // Update editor's editable state when props change
+  // useEditor keeps options from creation when its dependency array is stable.
+  // Sync the DOM classes too: setEditable alone leaves sync-time pointer blockers.
   useEffect(() => {
-    if (editor) editor.setEditable(!readOnly);
-  }, [editor, readOnly]);
+    if (!editor) return;
+    editor.setOptions({
+      editorProps: {
+        ...editor.options.editorProps,
+        attributes: { class: getEditorClasses },
+      },
+    });
+    editor.setEditable(!readOnly);
+  }, [editor, readOnly, getEditorClasses]);
 
   // Update editor content when the content prop changes externally
   useEffect(() => {

@@ -772,7 +772,7 @@ export function useKanbanDnd({
 
     isDraggingRef.current = true;
     updateAutoScrollFromDragEvent(event);
-    startAutoScroll();
+    startAutoScroll(event.activatorEvent);
 
     const { type } = active.data.current;
     if (type === 'Column') {
