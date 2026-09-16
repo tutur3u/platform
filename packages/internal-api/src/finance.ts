@@ -1,4 +1,10 @@
 export {
+  deleteInvoice,
+  getInvoiceHistory,
+  type InvoiceHistoryEntry,
+  restoreInvoice,
+} from './finance-invoice-history';
+export {
   getSubscriptionInvoiceContext,
   type SubscriptionInvoiceContextQuery,
   type SubscriptionInvoiceContextResponse,
@@ -1349,21 +1355,6 @@ export async function updateFinanceInvoice(
         'Content-Type': 'application/json',
       },
       method: 'PUT',
-    }
-  );
-}
-
-export async function deleteInvoice(
-  workspaceId: string,
-  invoiceId: string,
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
-  return client.json<{ message: string }>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/${encodePathSegment(invoiceId)}`,
-    {
-      method: 'DELETE',
-      cache: 'no-store',
     }
   );
 }

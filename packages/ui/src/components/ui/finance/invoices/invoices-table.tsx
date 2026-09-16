@@ -32,6 +32,7 @@ type DeleteInvoiceAction = (
 interface Props {
   wsId: string;
   canDeleteInvoices?: boolean;
+  canRestoreInvoices?: boolean;
   canExport?: boolean;
   invoiceType?: 'created' | 'pending';
   deleteInvoiceAction?: DeleteInvoiceAction;
@@ -42,6 +43,7 @@ interface Props {
 export function InvoicesTable({
   wsId,
   canDeleteInvoices = false,
+  canRestoreInvoices = false,
   canExport = false,
   invoiceType = 'created',
   deleteInvoiceAction,
@@ -149,6 +151,7 @@ export function InvoicesTable({
 
   const extraData = {
     canDeleteInvoices,
+    canRestoreInvoices,
     deleteInvoiceAction,
     currency,
   };

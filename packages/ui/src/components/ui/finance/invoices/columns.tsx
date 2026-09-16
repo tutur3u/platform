@@ -30,6 +30,7 @@ type DeleteInvoiceAction = (
 
 interface InvoiceExtraData {
   canDeleteInvoices?: boolean;
+  canRestoreInvoices?: boolean;
   deleteInvoiceAction?: DeleteInvoiceAction;
   currency?: string;
 }
@@ -359,6 +360,7 @@ export const invoiceColumns = ({
           row={row}
           href={row.original.href}
           canDeleteInvoices={extraData?.canDeleteInvoices}
+          canRestoreInvoices={extraData?.canRestoreInvoices}
           deleteInvoiceAction={extraData?.deleteInvoiceAction}
         />
       ),

@@ -2,7 +2,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
-import { deleteInvoice } from '@tuturuuu/internal-api/finance';
+import { InternalApiError } from '@tuturuuu/internal-api';
+import { deleteInvoice, restoreInvoice } from '@tuturuuu/internal-api/finance';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import {
   AlertDialog,
@@ -40,6 +41,7 @@ interface InvoiceRowActionsProps {
   row: Row<Invoice>;
   href?: string;
   canDeleteInvoices?: boolean;
+  canRestoreInvoices?: boolean;
   deleteInvoiceAction?: DeleteInvoiceAction;
 }
 
@@ -47,6 +49,7 @@ export function InvoiceRowActions({
   row,
   href,
   canDeleteInvoices = false,
+  canRestoreInvoices = false,
   deleteInvoiceAction,
 }: InvoiceRowActionsProps) {
   const t = useTranslations();
@@ -74,13 +77,41 @@ export function InvoiceRowActions({
 
       if (result.success) {
         await invalidateInvoiceMutationQueries(queryClient, data.ws_id);
-        toast.success(t('ws-invoices.invoice_deleted'));
+        toast.success(t('ws-invoices.invoice_deleted'), {
+          action:
+            deleteInvoiceAction || !canRestoreInvoices
+              ? undefined
+              : {
+                  label: t('ws-invoices.recovery_undo'),
+                  onClick: async () => {
+                    try {
+                      await restoreInvoice(data.ws_id!, data.id!);
+                      await invalidateInvoiceMutationQueries(
+                        queryClient,
+                        data.ws_id!
+                      );
+                      toast.success(t('ws-invoices.recovery_success'));
+                      router.refresh();
+                    } catch {
+                      toast.error(t('ws-invoices.recovery_error'));
+                    }
+                  },
+                },
+        });
         router.refresh();
       } else {
         toast.error(result.message || t('ws-invoices.failed_delete_invoice'));
       }
-    } catch {
-      toast.error(t('ws-invoices.failed_delete_invoice'));
+    } catch (error) {
+      toast.error(
+        t(
+          error instanceof InternalApiError && error.status === 409
+            ? 'ws-invoices.delete_linked_records'
+            : error instanceof InternalApiError && error.status === 503
+              ? 'ws-invoices.delete_unavailable'
+              : 'ws-invoices.failed_delete_invoice'
+        )
+      );
     } finally {
       setIsDeleting(false);
     }
