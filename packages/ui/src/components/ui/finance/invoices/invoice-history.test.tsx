@@ -6,11 +6,13 @@ const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),
   refetch: vi.fn(),
   confidential: false,
+  toggleConfidential: vi.fn(),
 }));
 vi.mock('../shared/use-finance-confidential-visibility', () => ({
   FINANCE_HIDDEN_AMOUNT: '•••••',
   useFinanceConfidentialVisibility: () => ({
     isConfidential: mocks.confidential,
+    toggleConfidential: mocks.toggleConfidential,
   }),
 }));
 vi.mock('@tanstack/react-query', () => ({
@@ -74,6 +76,8 @@ describe('InvoiceHistory', () => {
     render(<InvoiceHistory wsId="workspace" canRestore />);
     expect(screen.queryByText('100 VND')).not.toBeInTheDocument();
     expect(screen.getByText('••••• VND')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'show_confidential' }));
+    expect(mocks.toggleConfidential).toHaveBeenCalledOnce();
   });
   it('requires confirmation before restoring the invoice and payment', () => {
     render(<InvoiceHistory wsId="workspace" canRestore />);

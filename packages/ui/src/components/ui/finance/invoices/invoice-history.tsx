@@ -24,6 +24,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { FinanceNumbersVisibilityToggle } from '../shared/numbers-visibility-toggle';
 import {
   DEFAULT_HISTORY_FILTERS,
   InvoiceHistoryFilterBar,
@@ -98,17 +99,20 @@ export function InvoiceHistory({
             {t('activity_description')}
           </p>
         </div>
-        <Button
-          variant={deletedOnly ? 'secondary' : 'outline'}
-          aria-pressed={deletedOnly}
-          onClick={() => {
-            setDeletedOnly(!deletedOnly);
-            setFilters(DEFAULT_HISTORY_FILTERS);
-            setPage(0);
-          }}
-        >
-          {t(deletedOnly ? 'activity_show_all' : 'deleted_invoices')}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <FinanceNumbersVisibilityToggle />
+          <Button
+            variant={deletedOnly ? 'secondary' : 'outline'}
+            aria-pressed={deletedOnly}
+            onClick={() => {
+              setDeletedOnly(!deletedOnly);
+              setFilters(DEFAULT_HISTORY_FILTERS);
+              setPage(0);
+            }}
+          >
+            {t(deletedOnly ? 'activity_show_all' : 'deleted_invoices')}
+          </Button>
+        </div>
       </div>
       {deletedOnly && !query.isError && !!query.data?.data.length && (
         <div className="space-y-1 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
