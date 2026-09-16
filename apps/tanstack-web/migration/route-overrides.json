@@ -23,7 +23,7 @@
     "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Live session authorization, atomic AI credit reservation, and dashboard-specific Gemini tool constraints (calendar, time, session notes, approval guidance) remain on the live Next.js backend pending Rust parity. Calendar execution uses existing first-party APIs."
+      "note": "Live session authorization, atomic AI credit reservation, and dashboard-specific Gemini tool constraints (calendar, time, session notes, approval guidance) remain on the live Next.js backend pending Rust parity. Calendar execution uses existing first-party APIs. Flash/Pro mode selects Gemini 3.8 Live or Extended Thinking, with NON_BLOCKING tools, mode-specific resumption scopes and matching billing model. Preserve mode validation and token constraints."
     },
     "api:/api/v1/live/usage:apps/web/src/app/api/v1/live/usage/route.ts": {
       "status": "legacy-next",

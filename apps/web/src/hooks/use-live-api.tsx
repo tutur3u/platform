@@ -114,7 +114,7 @@ export function useLiveAPI({
   liveSessionId,
   wsId,
   scopeKey,
-  model = 'gemini-3.1-flash-live-preview',
+  model = 'gemini-3.8-live',
 }: {
   model?: string;
   apiKey: string;

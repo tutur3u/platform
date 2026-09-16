@@ -384,6 +384,7 @@ export default function MiraChatPanel({
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <MiraVoiceModeSwitcher
         key={stableChatId}
+        initialLiveMode={thinkingMode === 'thinking' ? 'pro' : 'flash'}
         historyReady={!isRestoring}
         history={messages}
         onConversationChange={onLiveConversationChange}

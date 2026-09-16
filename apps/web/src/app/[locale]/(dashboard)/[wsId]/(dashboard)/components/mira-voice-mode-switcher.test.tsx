@@ -1,27 +1,42 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 
+const disconnect = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
 vi.mock('../assistant/assistant-client', () => ({
   default: ({
+    mode,
+    onInitializingChange,
+    onComposerChange,
     onReturnToChat,
     inputOpen,
     onToggleInput,
   }: {
+    mode: string;
+    onInitializingChange: (value: boolean) => void;
+    onComposerChange: (value: unknown) => void;
     onReturnToChat: () => void;
     inputOpen: boolean;
     onToggleInput: () => void;
-  }) => (
-    <div data-testid="voice-canvas">
-      <button type="button" onClick={onReturnToChat}>
-        return_to_chat
-      </button>
-      <button type="button" onClick={onToggleInput}>
-        {inputOpen ? 'Close input' : 'Open input'}
-      </button>
-    </div>
-  ),
+  }) => {
+    useEffect(() => onInitializingChange(false), [onInitializingChange]);
+    useEffect(() => {
+      onComposerChange({ connected: true, disconnect, sendText: vi.fn() });
+      return () => onComposerChange(null);
+    }, [onComposerChange]);
+    return (
+      <div data-testid="voice-canvas" data-mode={mode}>
+        <button type="button" onClick={onReturnToChat}>
+          return_to_chat
+        </button>
+        <button type="button" onClick={onToggleInput}>
+          {inputOpen ? 'Close input' : 'Open input'}
+        </button>
+      </div>
+    );
+  },
 }));
 
 vi.mock('next-intl', () => ({
@@ -91,6 +106,54 @@ describe('MiraVoiceModeSwitcher', () => {
     expect(screen.getByTestId('composer')).toContainElement(panel);
     fireEvent.click(screen.getByRole('button', { name: 'Open input' }));
     expect(screen.getByRole('button', { name: 'Close input' })).toBeVisible();
+  });
+  it('switches the live engine without losing the chat draft', async () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(await screen.findByTestId('voice-canvas')).toHaveAttribute(
+      'data-mode',
+      'flash'
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'pro_mode' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('voice-canvas')).toHaveAttribute(
+        'data-mode',
+        'pro'
+      )
+    );
+    expect(disconnect).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'pro_mode' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    expect(screen.getByRole('textbox', { name: 'Message' })).toHaveValue(
+      'Keep this draft'
+    );
+  });
+  it('waits for credit settlement before opening the replacement mode', async () => {
+    let settled!: () => void;
+    disconnect.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          settled = resolve;
+        })
+    );
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    await screen.findByTestId('voice-canvas');
+    fireEvent.click(screen.getByRole('button', { name: 'pro_mode' }));
+    expect(screen.getByTestId('voice-canvas')).toHaveAttribute(
+      'data-mode',
+      'flash'
+    );
+    expect(screen.getByRole('button', { name: 'pro_mode' })).toBeDisabled();
+    settled();
+    await waitFor(() =>
+      expect(screen.getByTestId('voice-canvas')).toHaveAttribute(
+        'data-mode',
+        'pro'
+      )
+    );
   });
   it('opens Live when ResizeObserver is unavailable', async () => {
     vi.stubGlobal('ResizeObserver', undefined);

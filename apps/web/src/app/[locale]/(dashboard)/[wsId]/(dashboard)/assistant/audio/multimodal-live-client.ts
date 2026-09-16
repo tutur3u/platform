@@ -93,6 +93,8 @@ interface MultimodalLiveClientEventTypes {
   interrupted: () => void;
   setupcomplete: () => void;
   turncomplete: () => void;
+  interactionstatus: (status: 'IN_PROGRESS' | 'IDLE') => void;
+  interactioncomplete: () => void;
   toolcall: (toolCall: ToolCall) => void;
   toolresponse: (response: ToolResponseMessage['toolResponse']) => void;
   toolcallcancellation: (toolcallCancellation: ToolCallCancellation) => void;
@@ -386,6 +388,14 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
     }
 
     // Handle server content
+    const interactionStatus =
+      message.serverContent?.interactionStatus ??
+      (message as LiveServerMessage & { interactionStatus?: string })
+        .interactionStatus;
+    if (interactionStatus === 'IN_PROGRESS' || interactionStatus === 'IDLE') {
+      this.emit('interactionstatus', interactionStatus);
+    }
+
     if (message.serverContent) {
       const serverContent = message.serverContent;
 
@@ -472,6 +482,9 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       if (serverContent.turnComplete) {
         this.log('server.turncomplete', 'turn complete');
         this.emit('turncomplete');
+        if (this.config?.model !== 'gemini-3.8-live-extended-thinking') {
+          this.emit('interactioncomplete');
+        }
       }
 
       // Check for generation complete (model finished generating all output)
@@ -482,6 +495,12 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
         this.log('server.generationcomplete', 'generation complete');
         this.emit('generationcomplete');
       }
+    }
+    if (
+      interactionStatus === 'IDLE' &&
+      this.config?.model === 'gemini-3.8-live-extended-thinking'
+    ) {
+      this.emit('interactioncomplete');
     }
   }
 

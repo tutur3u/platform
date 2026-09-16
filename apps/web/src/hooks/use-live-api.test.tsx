@@ -82,7 +82,7 @@ describe('live connection recovery', () => {
     await act(async () => result.current.connect());
     expect(mocks.read).not.toHaveBeenCalled();
     expect(mocks.connect).toHaveBeenCalledWith({
-      model: 'gemini-3.1-flash-live-preview',
+      model: 'gemini-3.8-live',
     });
   });
   it('recovers using the last resumable handle', async () => {

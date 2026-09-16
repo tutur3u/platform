@@ -1,6 +1,6 @@
 ---
 title: "Assistant Live"
-updatedAt: "2026-09-13"
+updatedAt: "2026-09-16"
 description: "Gemini voice, screen context, workspace tools, and session recovery in the dashboard assistant."
 ---
 
@@ -76,6 +76,40 @@ Search sources stay in the message timeline. Temporary notes are not workspace
 documents. The existing five-minute credit authorization limit remains in force;
 expiration ends media capture and keeps the saved conversation available.
 
+## Flash and Pro
+
+Flash uses `gemini-3.8-live`; Pro uses `gemini-3.8-live-extended-thinking`
+with high background reasoning. The chat response labels are now Flash/Pro;
+existing saved Fast/Thinking preferences remain compatible. Live starts with that
+preference and offers its own Flash/Pro control. Switching restarts authorization
+and media capture, preserves the shared conversation, and uses a separate
+resumption scope for each model.
+
+Both models declare tools as `NON_BLOCKING`. Each incoming tool batch runs up to
+four calls concurrently, so pending approval does not hold up independent reads.
+Speech interruptions stop audio without falsely cancelling background tools;
+provider cancellation IDs or disconnects end those calls. Flash omits `thinkingConfig`;
+Pro never uses `MINIMAL` or function-response scheduling. Pro's `turnComplete`
+ends an utterance, while `interactionStatus: IDLE` finalizes the interaction.
+The UI shows background work until that signal, allowing further speech and tools.
+Both modes compress context at 100,000 tokens toward a 64,000-token window,
+using more of the new models’ 131,072-token input capacity.
+Proactive audio stays enabled by the provider. Camera and screen frames remain
+opt-in, and mutation approval/cancellation checks still apply.
+
+Before deploying this upgrade, apply
+`20260916100000_mira_live_38_models.sql` through the database release process.
+It registers model pricing and extends existing Live model allowlists. Without
+these rows new sessions fail closed; they do not silently bill another model.
+Production migration application is user-operated. Existing sessions keep their
+original pricing snapshot. The installed `@google/genai` 2.22 SDK already supports
+interaction status and asynchronous tool declarations.
+
+Google's [migration guide](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-live)
+and [Thinking guide](https://ai.google.dev/gemini-api/docs/live-api/thinking)
+define the session contract. Rates come from the
+[pricing table](https://ai.google.dev/gemini-api/docs/pricing).
+
 ## First-party tools
 
 | Capability | Execution boundary |
@@ -89,8 +123,8 @@ expiration ends media capture and keeps the saved conversation available.
 Calendar reads require an explicit ISO date range of at most 31 days and return
 at most 50 events to Gemini. Event creation validates timestamps and text lengths.
 Model arguments cannot select a different workspace or calendar provider. Existing
-calendar APIs enforce authentication and workspace permissions. No database
-migration or production schema change is required.
+calendar APIs enforce authentication and workspace permissions. Calendar tools
+themselves require no additional schema changes.
 
 The dashboard token has its own expanded tool declarations and instructions.
 Legacy assistant voice clients retain their original tool catalog.
@@ -128,7 +162,8 @@ in `apps/web`.
 Authenticated runtime acceptance requires a configured Gemini key, available AI
 credits, and microphone permissions. Verify spoken input/output, interruption,
 mute, camera/screen stop, task and calendar permission failures, approval/decline,
-provider cancellation, reconnect, expiration, and export at desktop and mobile
+provider cancellation, reconnect, expiration, Flash/Pro switching, Pro background
+status after an utterance, and export at desktop and mobile
 sizes. Component or mocked protocol checks do not prove provider audio quality,
 credit settlement, or authenticated production delivery.
 

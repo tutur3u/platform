@@ -98,7 +98,7 @@ vi.mock('@/lib/live/assistant-tools', () => ({
   },
   ASSISTANT_LIVE_TOOL_DECLARATIONS: [],
   ASSISTANT_SYSTEM_INSTRUCTION: 'assistant instruction',
-  DASHBOARD_LIVE_TOOL_DECLARATIONS: [],
+  DASHBOARD_LIVE_TOOL_DECLARATIONS: [{ name: 'get_tasks' }],
   DASHBOARD_LIVE_SYSTEM_INSTRUCTION: 'assistant instruction',
 }));
 
@@ -173,9 +173,9 @@ describe('assistant live token routes', () => {
     await expect(response.json()).resolves.toEqual(
       expect.objectContaining({
         liveSessionId: '00000000-0000-4000-8000-000000000001',
-        model: 'gemini-3.1-flash-live-preview',
+        model: 'gemini-3.8-live',
         reservedCredits: 1000,
-        scopeKey: 'web-assistant-live',
+        scopeKey: 'assistant:web-dashboard:3.8:flash',
         token: 'ephemeral-token',
       })
     );
@@ -189,6 +189,57 @@ describe('assistant live token routes', () => {
       userId: 'user-1',
       supabase: requestSupabase,
     });
+  });
+
+  it.each(['flash', 'pro'] as const)(
+    'binds %s to the same billing and token model',
+    async (mode) => {
+      const response = await webLiveTokenPOST(
+        postRequest('/api/v1/live/token', {
+          creditSource: 'workspace',
+          wsId: 'personal',
+          mode,
+        }) as Parameters<typeof webLiveTokenPOST>[0]
+      );
+      const model =
+        mode === 'pro'
+          ? 'gemini-3.8-live-extended-thinking'
+          : 'gemini-3.8-live';
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({
+        model,
+        scopeKey: `assistant:web-dashboard:3.8:${mode}`,
+      });
+      expect(mocks.beginLiveBillingSession).toHaveBeenCalledWith(
+        expect.objectContaining({ model })
+      );
+      expect(mocks.createConstrainedLiveToken).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model,
+          tools: [
+            {
+              functionDeclarations: [
+                { name: 'get_tasks', behavior: 'NON_BLOCKING' },
+              ],
+            },
+            { googleSearch: {} },
+          ],
+        })
+      );
+    }
+  );
+
+  it('rejects unsupported modes before billing', async () => {
+    const response = await webLiveTokenPOST(
+      postRequest('/api/v1/live/token', {
+        creditSource: 'workspace',
+        wsId: 'personal',
+        mode: 'unknown',
+      }) as Parameters<typeof webLiveTokenPOST>[0]
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.beginLiveBillingSession).not.toHaveBeenCalled();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
   });
 
   it('normalizes the assistant live token workspace with the request Supabase client', async () => {

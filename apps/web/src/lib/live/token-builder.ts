@@ -1,5 +1,9 @@
-import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
+import { GoogleGenAI, Modality, type ThinkingLevel } from '@google/genai';
 import { GEMINI_LIVE_API_VERSION } from './api-version';
+import {
+  getLiveContextWindowCompression,
+  getLiveThinkingConfig,
+} from './models';
 
 type AuthTokenCreateParams = Parameters<GoogleGenAI['authTokens']['create']>[0];
 type AuthTokenConfig = NonNullable<AuthTokenCreateParams['config']>;
@@ -56,7 +60,7 @@ export function buildLiveConnectConfig({
   toolConfig,
   responseModalities = [Modality.AUDIO],
   voiceName = 'Aoede',
-  thinkingLevel = ThinkingLevel.MINIMAL,
+  thinkingLevel,
   sessionHandle,
 }: LiveTokenBuilderParams): LiveConnectConstraints {
   return {
@@ -65,14 +69,9 @@ export function buildLiveConnectConfig({
       responseModalities,
       inputAudioTranscription: {},
       outputAudioTranscription: {},
-      contextWindowCompression: {
-        triggerTokens: '25000',
-        slidingWindow: { targetTokens: '8000' },
-      },
+      contextWindowCompression: getLiveContextWindowCompression(model),
       sessionResumption: sessionHandle == null ? {} : { handle: sessionHandle },
-      thinkingConfig: {
-        thinkingLevel,
-      },
+      ...getLiveThinkingConfig(model, thinkingLevel),
       speechConfig: {
         voiceConfig: {
           prebuiltVoiceConfig: {
