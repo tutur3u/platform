@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
@@ -19,6 +19,7 @@ vi.mock('@tuturuuu/internal-api', () => ({
 import { forwardPromotionMutation } from './promotion-mutations';
 
 describe('Finance promotion mutations', () => {
+  afterEach(() => vi.unstubAllEnvs());
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.access.mockResolvedValue({
@@ -52,6 +53,51 @@ describe('Finance promotion mutations', () => {
       request.headers,
       expect.objectContaining({ baseUrl: expect.stringContaining('inventory') })
     );
+  });
+  it.each(['https://unregistered.example', 'http://unregistered.example'])(
+    'rejects credentials to %s',
+    async (origin) => {
+      vi.stubEnv('INVENTORY_APP_URL', origin);
+      const response = await forwardPromotionMutation(
+        new Request('http://localhost/promotions', {
+          method: 'POST',
+          body: '{}',
+        }),
+        'workspace-1'
+      );
+      expect(response.status).toBe(503);
+      expect(mocks.options).not.toHaveBeenCalled();
+      expect(mocks.fetch).not.toHaveBeenCalled();
+    }
+  );
+  it('rejects production HTTP loopback but permits registered development loopback', async () => {
+    vi.stubEnv('INVENTORY_APP_URL', 'http://localhost:7815');
+    vi.stubEnv('NODE_ENV', 'production');
+    const request = () =>
+      new Request('http://localhost/promotions', {
+        method: 'POST',
+        body: '{}',
+      });
+    expect(
+      (await forwardPromotionMutation(request(), 'workspace-1')).status
+    ).toBe(503);
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(
+      (await forwardPromotionMutation(request(), 'workspace-1')).status
+    ).toBe(409);
+  });
+  it('cancels the upstream request when the caller disconnects', async () => {
+    const controller = new AbortController();
+    const request = new Request('http://localhost/promotions', {
+      method: 'DELETE',
+      signal: controller.signal,
+    });
+    await forwardPromotionMutation(request, 'workspace-1', 'promotion-1');
+    const signal = mocks.fetch.mock.calls[0]?.[1].signal as AbortSignal;
+    expect(signal.aborted).toBe(false);
+    controller.abort();
+    expect(signal.aborted).toBe(true);
   });
   it('never forwards a mutation when the corresponding permission is denied', async () => {
     mocks.access.mockResolvedValue({

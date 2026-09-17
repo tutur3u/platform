@@ -5,7 +5,10 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import {
+  getInternalAppDomainByUrl,
+  getLocalInternalAppUrl,
+} from '@tuturuuu/utils/internal-domains';
 import { NextResponse } from 'next/server';
 
 /** Keep promotion validation, usage limits and commerce sync in Inventory. */
@@ -43,6 +46,24 @@ export async function forwardPromotionMutation(
         ? 'https://inventory.tuturuuu.com'
         : getLocalInternalAppUrl('inventory', 'http://localhost:7815'),
   });
+  const target = new URL(baseUrl);
+  const isLoopback =
+    target.hostname === 'localhost' ||
+    target.hostname === '127.0.0.1' ||
+    target.hostname === '[::1]' ||
+    target.hostname.endsWith('.localhost');
+  if (
+    getInternalAppDomainByUrl(baseUrl)?.name !== 'inventory' ||
+    target.username ||
+    target.password ||
+    (target.protocol !== 'https:' &&
+      !(process.env.NODE_ENV !== 'production' && isLoopback))
+  ) {
+    return NextResponse.json(
+      { message: 'Promotion service origin is not trusted' },
+      { status: 503 }
+    );
+  }
   const client = createInternalApiClient(
     withForwardedInternalApiAuth(request.headers, { baseUrl })
   );
@@ -54,6 +75,7 @@ export async function forwardPromotionMutation(
         headers: { 'Content-Type': 'application/json' },
         body: request.method === 'DELETE' ? undefined : await request.text(),
         cache: 'no-store',
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(10_000)]),
       }
     );
     return new Response(response.body, {

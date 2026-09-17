@@ -236,7 +236,9 @@ members with `view_inventory` or `create_invoices`; mutations require the matchi
 inventory create, update, or delete permission. Finance forwards promotion
 mutations to Inventory using the authenticated session, retaining one owner for
 validation and commerce synchronization. Configure `INVENTORY_APP_URL` for a
-nonstandard local or deployed Inventory origin. The list is paginated and shared
+registered Inventory origin. Unregistered destinations and non-loopback HTTP
+origins are rejected before credentials are forwarded; requests also have a
+10-second deadline and inherit caller cancellation. The list is paginated and shared
 invoice promotion queries are invalidated after mutations.
 ## Audit actor attribution
 

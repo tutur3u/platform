@@ -172,8 +172,8 @@
     "other-categories": "Danh mục khác",
     "previous-period": "Kỳ trước",
     "show-all-categories": "Xem tất cả danh mục",
-    "show-top-categories": "Xem danh mục lớn nhất",
-    "top-categories-description": "Ưu tiên danh mục có tổng tiền lớn nhất. Các danh mục nhỏ hơn được gộp lại.",
+    "show-top-categories": "Xem các danh mục lớn nhất",
+    "top-categories-description": "Ưu tiên các danh mục có tổng tiền lớn nhất. Các danh mục nhỏ hơn được gộp lại.",
     "week-of": "Tuần bắt đầu {date}"
   },
   "finance-recurring": {
