@@ -190,6 +190,25 @@ are available for meaningful changed fields; Finance confidential mode masks
 amounts in the audit UI too. Promotion tracking begins with this migration;
 missing historical events and actor identities cannot be reconstructed by the UI.
 
+### Audit history performance
+
+Invoice audit history loads bounded pages of 10, 25, or 50 events. The API fetches
+one additional event to determine whether a next page exists, without counting
+the entire audit log. Search, record type, action, date range, and time ordering
+are applied on the server. Dates and timestamps use the browser timezone shown
+above the results. Changing page size or filters starts at the first page; sorting
+and date changes preserve the deleted-invoice review mode.
+
+The history RPC reads matching audit events directly instead of materializing
+every invoice's complete history. Partial indexes support workspace/time reads,
+deletions, child events, and legacy payment links. Both audit-log and invoice-view
+permissions remain required. Deploy the additive performance migration through
+the normal automatic database workflow; existing RPC callers remain compatible.
+Each supporting index has its own single-statement concurrent migration so audit
+writes remain available during index construction. Keep those index files separate
+from the RPC replacement and do not add transaction wrappers.
+
+
 ## Notification refresh diagnostics
 
 The shared notification hook refreshes active notification API queries every 30

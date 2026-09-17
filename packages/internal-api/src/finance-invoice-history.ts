@@ -47,6 +47,7 @@ export function getInvoiceHistory(
 ) {
   return getInternalApiClient(withFinanceApiBaseUrl(options)).json<{
     data: InvoiceHistoryEntry[];
+    hasMore: boolean;
   }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/history`,
     { query, cache: 'no-store' }

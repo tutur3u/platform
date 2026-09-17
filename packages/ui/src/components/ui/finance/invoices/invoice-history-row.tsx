@@ -11,11 +11,13 @@ import {
 
 export function InvoiceHistoryRow({
   entry,
+  timeZone,
   canRestore,
   restoring,
   onRestore,
 }: {
   entry: InvoiceHistoryEntry;
+  timeZone?: string;
   canRestore: boolean;
   restoring: boolean;
   onRestore: () => void;
@@ -88,7 +90,8 @@ export function InvoiceHistoryRow({
           <time dateTime={entry.occurred_at}>
             {format.dateTime(new Date(entry.occurred_at), {
               dateStyle: 'medium',
-              timeStyle: 'short',
+              timeStyle: 'medium',
+              timeZone,
             })}
           </time>
         </p>

@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(34);
+select plan(42);
 
 insert into public.workspaces (id, name, personal, creator_id)
 values (
@@ -167,5 +167,25 @@ insert into public.finance_invoices(id, ws_id, wallet_id, category_id, price) va
 delete from public.finance_invoices where id = '00000000-0000-4000-8000-000000010807';
 select ok(exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', '00000000-0000-4000-8000-000000010807', true)) e where e->>'operation' = 'DELETE' and not (e->>'can_restore')::boolean), 'Historical deletions without snapshots remain visible without offering unsafe restore');
 select throws_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-4000-8000-000000019999')$$, '42501', 'Insufficient permissions', 'History rejects unrelated actors');
+-- A large historical population must not be expanded into decorated JSON before
+-- selecting one page. Equal timestamps also exercise deterministic page boundaries.
+insert into audit.record_version(record_id, old_record_id, op, ts, table_oid, table_schema, table_name, old_record)
+select null, gen_random_uuid(), 'DELETE', '2025-01-01'::timestamptz,
+ 'public.finance_invoices'::regclass, 'public', 'finance_invoices',
+ jsonb_build_object('id', gen_random_uuid(), 'ws_id', '00000000-0000-4000-8000-000000010001', 'price', n)
+from generate_series(1, 20000) n;
+analyze audit.record_version;
+create temporary table history_pages as
+select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 26) first_page,
+ public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 25, 26) second_page,
+ public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 26, '', null, null, null, null, 'asc') oldest_page;
+select is((select jsonb_array_length(first_page) from history_pages), 26, 'Page includes one lookahead event');
+select is((select first_page->25->>'id' from history_pages), (select second_page->0->>'id' from history_pages), 'Lookahead becomes the first event of the next page');
+select ok(not exists(select 1 from history_pages, jsonb_array_elements(first_page - 25) a, jsonb_array_elements(second_page) b where a->>'id'=b->>'id'), 'Adjacent pages do not repeat events');
+select ok((select (oldest_page->0->>'id')::bigint < (oldest_page->1->>'id')::bigint from history_pages), 'Oldest first uses a stable ID tiebreaker');
+select is(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 101)), 101, 'Maximum page supports lookahead at 100 rows');
+select is(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 25, '', null, null, '2025-02-01', '2025-03-01'), '[]'::jsonb, 'Date range excludes historical rows');
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 26)$$, 1000, 'Deleted history page remains below one second with 20000 historical invoices');
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26)$$, 1000, 'All activity page remains below one second with 20000 historical invoices');
 select * from finish();
 rollback;

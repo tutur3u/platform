@@ -57,7 +57,7 @@ describe('invoice history access', () => {
         p_actor_id: 'actor-id',
         p_deleted_only: true,
         p_offset: 25,
-        p_limit: 25,
+        p_limit: 26,
       })
     );
   });
@@ -95,6 +95,31 @@ describe('invoice history access', () => {
         p_to: '2026-09-17T00:00:00Z',
       })
     );
+  });
+  it.each([0, 25, 26])(
+    'returns a bounded page and accurate lookahead for %s results',
+    async (count) => {
+      const rows = Array.from({ length: count }, (_, id) => ({
+        id: String(id),
+      }));
+      mocks.rpc.mockResolvedValue({ data: rows, error: null });
+      const response = await GET(
+        new Request('https://finance.test/history?limit=25'),
+        params
+      );
+      expect(await response.json()).toEqual({
+        data: rows.slice(0, 25),
+        hasMore: count > 25,
+      });
+    }
+  );
+  it('does not turn a malformed history response into an empty audit trail', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: null });
+    const response = await GET(
+      new Request('https://finance.test/history'),
+      params
+    );
+    expect(response.status).toBe(500);
   });
   it('reports an unapplied migration without pretending the history is empty', async () => {
     mocks.rpc.mockResolvedValue({ error: { code: 'PGRST202' } });
