@@ -1,4 +1,5 @@
 import {
+  BadgePercent,
   ChartArea,
   ChartColumn,
   CreditCard,
@@ -55,6 +56,14 @@ export async function getNavigationLinks({
       href: `/${personalOrWsId}/invoices`,
       icon: <FileText className="h-4 w-4" />,
       disabled: withoutPermission('view_invoices'),
+    },
+    {
+      title: t('sidebar_tabs.promotions'),
+      href: `/${personalOrWsId}/promotions`,
+      icon: <BadgePercent className="h-4 w-4" />,
+      disabled:
+        withoutPermission('view_inventory') &&
+        withoutPermission('create_invoices'),
     },
     null,
     {

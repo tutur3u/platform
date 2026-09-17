@@ -511,7 +511,9 @@
     "./custom/satellite-settings-dialog-shell": "./src/components/ui/custom/satellite-settings-dialog-shell.tsx",
     "./custom/satellite-onboarding-settings-panel": "./src/components/ui/custom/satellite-onboarding-settings-panel.tsx",
     "./custom/satellite-notification-popover": "./src/components/ui/custom/satellite-notification-popover.tsx",
-    "./custom/notification-runtime": "./src/components/ui/custom/notification-runtime.tsx"
+    "./custom/notification-runtime": "./src/components/ui/custom/notification-runtime.tsx",
+    "./finance/invoices/query-invalidation": "./src/components/ui/finance/invoices/query-invalidation.ts",
+    "./finance/shared/charts/use-finance-confidential-visibility": "./src/components/ui/finance/shared/charts/use-finance-confidential-visibility.ts"
   },
   "packageManager": "bun@1.4.1"
 }

@@ -3,6 +3,8 @@ export type TransactionType = 'expense' | 'income';
 export type ChartInterval = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface CategoryBreakdownCategory {
+  key: string;
+  total: number;
   color: string;
   id: string | null;
   name: string;

@@ -348,9 +348,14 @@
     "unknown_user": "Unknown user"
   },
   "finance-analytics": {
+    "all-categories-description": "Select a category in the legend to show or hide it.",
     "failed-to-load-data": "Failed to load data",
     "next-period": "Next period",
+    "other-categories": "Other categories",
     "previous-period": "Previous period",
+    "show-all-categories": "Show all categories",
+    "show-top-categories": "Show largest categories",
+    "top-categories-description": "Largest categories shown first. Smaller categories are grouped together.",
     "week-of": "Week of {date}"
   },
   "finance-recurring": {

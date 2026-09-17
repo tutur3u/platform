@@ -348,9 +348,14 @@
     "unknown_user": "Người dùng không xác định"
   },
   "finance-analytics": {
+    "all-categories-description": "Chọn danh mục trong chú giải để hiện hoặc ẩn trên biểu đồ.",
     "failed-to-load-data": "Không thể tải dữ liệu",
     "next-period": "Kỳ tiếp theo",
+    "other-categories": "Danh mục khác",
     "previous-period": "Kỳ trước",
+    "show-all-categories": "Xem tất cả danh mục",
+    "show-top-categories": "Xem danh mục lớn nhất",
+    "top-categories-description": "Ưu tiên danh mục có tổng tiền lớn nhất. Các danh mục nhỏ hơn được gộp lại.",
     "week-of": "Tuần bắt đầu {date}"
   },
   "finance-recurring": {

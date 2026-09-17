@@ -222,3 +222,19 @@ Do not subscribe directly to `public.notifications` with browser
 Realtime reports `P0001: invalid column for filter user_id` in that state even
 though the column exists. Check column privileges and policies before changing
 the schema; the authenticated notification APIs remain the access boundary.
+
+## Category charts and promotions
+
+Category breakdown charts keep the plotting area separate from the legend. By
+default they show the seven largest categories and combine the remaining amounts
+under Other categories. Show all categories restores the complete list; legend
+buttons toggle individual series. Category IDs, rather than names, identify
+series so repeated names cannot overwrite each other.
+
+Finance owns the `/[wsId]/promotions` management page. The sidebar and page allow
+members with `view_inventory` or `create_invoices`; mutations require the matching
+inventory create, update, or delete permission. Finance forwards promotion
+mutations to Inventory using the authenticated session, retaining one owner for
+validation and commerce synchronization. Configure `INVENTORY_APP_URL` for a
+nonstandard local or deployed Inventory origin. The list is paginated and shared
+invoice promotion queries are invalidated after mutations.

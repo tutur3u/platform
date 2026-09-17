@@ -6,6 +6,7 @@ import type {
 
 interface TooltipPayloadItem {
   name: string;
+  dataKey?: string;
   value: number;
   color?: string;
 }
@@ -36,7 +37,7 @@ export function CategoryBreakdownTooltipContent({
   if (!active || !payload || payload.length === 0) return null;
 
   const sortedPayload = [...payload]
-    .filter((item) => !hiddenCategories.has(item.name))
+    .filter((item) => !hiddenCategories.has(item.dataKey ?? item.name))
     .sort((a, b) => (b.value || 0) - (a.value || 0));
 
   if (sortedPayload.length === 0) return null;
@@ -78,16 +79,16 @@ export function CategoryBreakdownTooltipContent({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl">
+    <div className="max-w-sm rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl">
       <p className="mb-2 font-semibold">{formattedLabel}</p>
-      <div className="space-y-1">
+      <div className="max-h-64 space-y-1 overflow-y-auto">
         {sortedPayload.map((item) => {
-          const category = categories.find((c) => c.name === item.name);
+          const category = categories.find((c) => c.key === item.dataKey);
           const color = category?.color || item.color;
 
           return (
             <div
-              key={item.name}
+              key={item.dataKey ?? item.name}
               className="flex items-center justify-between gap-4"
             >
               <div className="flex items-center gap-2">
@@ -95,7 +96,9 @@ export function CategoryBreakdownTooltipContent({
                   className="h-3 w-3 rounded-sm"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-sm">{item.name}</span>
+                <span className="line-clamp-2 break-words text-sm">
+                  {item.name}
+                </span>
               </div>
               <span className="font-semibold text-sm" style={{ color }}>
                 {formatValue(item.value)}

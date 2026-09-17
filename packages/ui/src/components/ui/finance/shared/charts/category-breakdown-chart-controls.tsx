@@ -50,7 +50,7 @@ export function CategoryBreakdownChartControls({
   const t = useTranslations();
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <CardTitle className="text-base sm:text-lg">{chartTitle}</CardTitle>
         <ToggleGroup
@@ -103,6 +103,7 @@ export function CategoryBreakdownChartControls({
                 onClick={onPreviousPeriod}
                 className="h-7 w-7"
                 title={t('finance-analytics.previous-period')}
+                aria-label={t('finance-analytics.previous-period')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -116,6 +117,7 @@ export function CategoryBreakdownChartControls({
                 disabled={dateOffset === 0}
                 className="h-7 w-7"
                 title={t('finance-analytics.next-period')}
+                aria-label={t('finance-analytics.next-period')}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
