@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(46);
+select plan(54);
 
 insert into public.workspaces (id, name, personal, creator_id)
 values (
@@ -201,5 +201,26 @@ select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0
 select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'promotion', 'INSERT')$$, 1000, 'Discount filtering remains fast with 20000 linked events');
 select is(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'promotion', 'INSERT')), 26, 'Discount page includes a lookahead event');
 select ok(not exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'promotion', 'INSERT')) e where e->>'entity_type' <> 'promotion' or e->>'operation' <> 'INSERT'), 'Linked page preserves entity and action filters');
+-- Production has sparse discount/group events mixed with many line-item writes.
+-- A page must not sort and decorate this entire population, or scan unrelated
+-- tables merely because a rare entity cannot fill a page.
+insert into audit.record_version(record_id, op, ts, table_oid, table_schema, table_name, record)
+select gen_random_uuid(), 'INSERT', '2026-01-01'::timestamptz + n * interval '1 millisecond',
+ 'public.finance_invoice_products'::regclass, 'public', 'finance_invoice_products',
+ jsonb_build_object('invoice_id', '00000000-0000-4000-8000-000000010804',
+   'product_name', repeat('Mixed audit fixture ', 20), 'price', n, 'amount', 1)
+from generate_series(1, 150000) n;
+analyze audit.record_version;
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26)$$, 1000, 'All activity stops before expanding 150000 line-item events');
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'group')$$, 1000, 'Sparse group history does not scan unrelated line-item events');
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'promotion', 'UPDATE')$$, 1000, 'Sparse discount changes avoid the mixed-table time index');
+create temporary table mixed_history_pages as
+select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26) first_page,
+ public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 25, 26) second_page;
+select is((select first_page->25->>'id' from mixed_history_pages), (select second_page->0->>'id' from mixed_history_pages), 'Mixed source lookahead becomes the next page first event');
+select ok(not exists(select 1 from mixed_history_pages, jsonb_array_elements(first_page - 25) a, jsonb_array_elements(second_page) b where a->>'id'=b->>'id'), 'Mixed source pages do not repeat events');
+select ok(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 1, '00000000-0000-4000-8000-000000010807')) = 1, 'Search is applied before limiting each source');
+select ok(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 1, '', null, 'RESTORE')) = 1, 'Restore action filtering is applied before pagination');
+select is(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 26, '', 'promotion'), '[]'::jsonb, 'Deleted-only review never admits child events');
 select * from finish();
 rollback;
