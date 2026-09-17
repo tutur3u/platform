@@ -204,6 +204,9 @@ every invoice's complete history. Partial indexes support workspace/time reads,
 deletions, child events, and legacy payment links. Both audit-log and invoice-view
 permissions remain required. Deploy the additive performance migration through
 the normal automatic database workflow; existing RPC callers remain compatible.
+Each supporting index has its own single-statement concurrent migration so audit
+writes remain available during index construction. Keep those index files separate
+from the RPC replacement and do not add transaction wrappers.
 
 
 ## Notification refresh diagnostics

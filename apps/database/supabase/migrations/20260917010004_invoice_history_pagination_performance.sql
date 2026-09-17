@@ -1,23 +1,5 @@
--- Event-first reads: do not materialize every invoice's full history before paging.
--- Keep the existing RPC contract for rolling deployments; 101 supports one-row
--- lookahead for a public page size capped at 100.
-create index if not exists invoice_audit_workspace_time_idx
-on audit.record_version ((coalesce(record->>'ws_id', old_record->>'ws_id')), ts desc, id desc)
-where table_name = 'finance_invoices';
-
-create index if not exists invoice_deleted_audit_workspace_time_idx
-on audit.record_version ((coalesce(record->>'ws_id', old_record->>'ws_id')), ts desc, id desc)
-where table_name = 'finance_invoices' and op = 'DELETE';
-
-create index if not exists invoice_child_audit_time_idx
-on audit.record_version (ts desc, id desc)
-where table_name in ('finance_invoice_products', 'finance_invoice_promotions', 'finance_invoice_user_groups', 'wallet_transactions');
-
-create index if not exists invoice_audit_workspace_payment_time_idx
-on audit.record_version ((coalesce(record->>'ws_id', old_record->>'ws_id')),
-  (coalesce(record->>'transaction_id', old_record->>'transaction_id')), ts desc, id desc)
-where table_name = 'finance_invoices';
-
+-- Event-first reads keep the existing RPC contract during rolling deployments.
+-- A limit of 101 supports lookahead for a public page size capped at 100.
 create or replace function public.admin_get_finance_invoice_history(
   p_ws_id uuid, p_actor_id uuid, p_invoice_id uuid default null,
   p_deleted_only boolean default false, p_offset integer default 0, p_limit integer default 25,
