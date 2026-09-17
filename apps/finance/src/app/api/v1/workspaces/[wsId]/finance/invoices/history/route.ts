@@ -67,16 +67,19 @@ export async function GET(
       p_invoice_id: parsed.data.invoiceId,
       p_deleted_only: parsed.data.deletedOnly === 'true',
       p_offset: parsed.data.offset,
-      p_limit: parsed.data.limit,
+      p_limit: parsed.data.limit + 1,
     }
   );
-  if (error)
+  if (error || !Array.isArray(data))
     return NextResponse.json(
       { message: 'Invoice history is unavailable' },
-      { status: error.code === 'PGRST202' ? 503 : 500 }
+      { status: error?.code === 'PGRST202' ? 503 : 500 }
     );
   return NextResponse.json(
-    { data },
+    {
+      data: data.slice(0, parsed.data.limit),
+      hasMore: data.length > parsed.data.limit,
+    },
     { headers: { 'Cache-Control': 'no-store' } }
   );
 }

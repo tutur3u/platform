@@ -19052,6 +19052,13 @@
     "view-users": "View Users"
   },
   "ws-invoices": {
+    "activity_clear_filters": "Clear filters",
+    "activity_loading": "Loading history…",
+    "activity_page": "Page {page}",
+    "activity_pagination": "Audit history pagination",
+    "activity_refresh": "Refresh history",
+    "activity_rows_per_page": "Rows per page",
+    "activity_timezone": "Times shown in {timeZone}",
     "absent": "Absent",
     "add": "Add",
     "additional_notes_placeholder": "Additional notes...",

@@ -1,4 +1,4 @@
-import { FileCheck2, Plus } from '@tuturuuu/icons';
+import { FileCheck2, History, Plus } from '@tuturuuu/icons';
 import {
   createAdminClient,
   createClient,
@@ -256,7 +256,8 @@ export default async function InvoicesPage({
             label={t('ws-invoices.pending_invoices')}
           />
           {containsPermission('manage_workspace_audit_logs') && (
-            <TabsTrigger value="activity">
+            <TabsTrigger value="activity" className="gap-2">
+              <History className="size-4" aria-hidden="true" />
               {t('ws-invoices.activity')}
             </TabsTrigger>
           )}

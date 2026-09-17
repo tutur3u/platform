@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { History } from '@tuturuuu/icons';
+import { History, Loader2, RotateCcw, Search } from '@tuturuuu/icons';
 import {
   getInvoiceHistory,
   type InvoiceHistoryEntry,
@@ -29,10 +29,9 @@ import {
   DEFAULT_HISTORY_FILTERS,
   InvoiceHistoryFilterBar,
 } from './invoice-history-filters';
+import { InvoiceHistoryPagination } from './invoice-history-pagination';
 import { InvoiceHistoryRow } from './invoice-history-row';
 import { invalidateInvoiceMutationQueries } from './query-invalidation';
-
-const PAGE_SIZE = 25;
 
 export function InvoiceHistory({
   wsId,
@@ -47,6 +46,10 @@ export function InvoiceHistory({
   const [filters, setFilters] = useState(DEFAULT_HISTORY_FILTERS);
   const [deletedOnly, setDeletedOnly] = useState(true);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [timeZone] = useState(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
   const [search, setSearch] = useState('');
   const [submittedSearch, setSubmittedSearch] = useState('');
   const [selected, setSelected] = useState<InvoiceHistoryEntry | null>(null);
@@ -56,9 +59,14 @@ export function InvoiceHistory({
       wsId,
       deletedOnly,
       page,
+      pageSize,
       submittedSearch,
       filters,
     ],
+    placeholderData: (previous, previousQuery) =>
+      previousQuery?.queryKey[1] === wsId ? previous : undefined,
+    staleTime: 30_000,
+    retry: 1,
     queryFn: () =>
       getInvoiceHistory(wsId, {
         q: submittedSearch,
@@ -72,8 +80,8 @@ export function InvoiceHistory({
           : undefined,
         sort: filters.sort,
         deletedOnly,
-        offset: page * PAGE_SIZE,
-        limit: PAGE_SIZE,
+        offset: page * pageSize,
+        limit: pageSize,
       }),
   });
   const restore = useMutation({
@@ -86,6 +94,36 @@ export function InvoiceHistory({
     },
     onError: () => toast.error(t('recovery_error')),
   });
+
+  const resetFilters = () => {
+    setFilters(DEFAULT_HISTORY_FILTERS);
+    setSearch('');
+    setSubmittedSearch('');
+    setPage(0);
+  };
+  const hasFilters = !!(
+    submittedSearch ||
+    filters.entity !== 'all' ||
+    filters.action !== 'all' ||
+    filters.from ||
+    filters.to ||
+    filters.sort !== 'desc'
+  );
+
+  const pagination = (
+    <InvoiceHistoryPagination
+      page={page}
+      pageSize={pageSize}
+      hasMore={!!query.data?.hasMore}
+      busy={query.isFetching}
+      failed={query.isError}
+      onPageChange={setPage}
+      onPageSizeChange={(size) => {
+        setPageSize(size);
+        setPage(0);
+      }}
+    />
+  );
 
   return (
     <section className="space-y-4" aria-label={t('activity')}>
@@ -102,11 +140,22 @@ export function InvoiceHistory({
         <div className="flex flex-wrap items-center gap-2">
           <FinanceNumbersVisibilityToggle />
           <Button
+            variant="outline"
+            size="icon"
+            aria-label={t('activity_refresh')}
+            title={t('activity_refresh')}
+            disabled={query.isFetching}
+            onClick={() => query.refetch()}
+          >
+            <RotateCcw className="size-4" />
+          </Button>
+          <Button
             variant={deletedOnly ? 'secondary' : 'outline'}
             aria-pressed={deletedOnly}
             onClick={() => {
               setDeletedOnly(!deletedOnly);
-              setFilters(DEFAULT_HISTORY_FILTERS);
+              if (!deletedOnly)
+                setFilters({ ...filters, entity: 'all', action: 'all' });
               setPage(0);
             }}
           >
@@ -123,7 +172,7 @@ export function InvoiceHistory({
         </div>
       )}
       <form
-        className="flex max-w-xl gap-2"
+        className="flex flex-wrap gap-2"
         onSubmit={(event) => {
           event.preventDefault();
           setSubmittedSearch(search.trim());
@@ -131,6 +180,7 @@ export function InvoiceHistory({
         }}
       >
         <Input
+          className="min-w-48 flex-1"
           value={search}
           maxLength={120}
           onChange={(event) => setSearch(event.target.value)}
@@ -138,21 +188,44 @@ export function InvoiceHistory({
           placeholder={t('activity_search')}
         />
         <Button variant="outline" type="submit">
+          <Search className="size-4" aria-hidden="true" />
           {t('activity_search_action')}
         </Button>
+        {hasFilters && (
+          <Button type="button" variant="ghost" onClick={resetFilters}>
+            {t('activity_clear_filters')}
+          </Button>
+        )}
       </form>
       <InvoiceHistoryFilterBar
         value={filters}
         onChange={(next) => {
           setFilters(next);
-          setDeletedOnly(false);
+          if (next.entity !== filters.entity || next.action !== filters.action)
+            setDeletedOnly(false);
           setPage(0);
         }}
       />
+      {pagination}
+      <div
+        className="flex min-h-5 flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs"
+        role="status"
+        aria-live="polite"
+      >
+        <span>{t('activity_timezone', { timeZone })}</span>
+        {query.isFetching && (
+          <span className="flex items-center gap-1.5">
+            <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+            {t('activity_loading')}
+          </span>
+        )}
+      </div>
       {query.isPending ? (
         <div role="status" aria-busy="true">
           <span className="sr-only">{t('loading')}</span>
-          <Skeleton className="h-48 w-full" />
+          {[0, 1, 2].map((index) => (
+            <Skeleton key={index} className="mb-2 h-32 w-full" />
+          ))}
         </div>
       ) : query.isError ? (
         <div role="alert" className="space-y-3 rounded-lg border p-6">
@@ -163,44 +236,35 @@ export function InvoiceHistory({
         </div>
       ) : !query.data.data.length ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground text-sm">
-          {t('activity_empty')}
+          <History
+            className="mx-auto mb-3 size-8 opacity-50"
+            aria-hidden="true"
+          />
+          <p>{t('activity_empty')}</p>
+          {hasFilters && (
+            <Button variant="link" onClick={resetFilters}>
+              {t('activity_clear_filters')}
+            </Button>
+          )}
         </div>
       ) : (
-        <ol className="divide-y rounded-lg border">
+        <ol
+          className={`divide-y rounded-lg border transition-opacity ${query.isPlaceholderData ? 'opacity-60' : ''}`}
+          aria-busy={query.isFetching}
+        >
           {query.data.data.map((entry) => (
             <InvoiceHistoryRow
               key={entry.id}
               entry={entry}
+              timeZone={timeZone}
               canRestore={canRestore}
-              restoring={restore.isPending}
+              restoring={restore.isPending || query.isPlaceholderData}
               onRestore={() => setSelected(entry)}
             />
           ))}
         </ol>
       )}
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={page === 0 || query.isFetching}
-          onClick={() => setPage(page - 1)}
-        >
-          {t('activity_previous')}
-        </Button>
-        <span className="text-muted-foreground text-sm">{page + 1}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={
-            query.isFetching ||
-            query.isError ||
-            (query.data?.data.length ?? 0) < PAGE_SIZE
-          }
-          onClick={() => setPage(page + 1)}
-        >
-          {t('activity_next')}
-        </Button>
-      </div>
+      {pagination}
       <AlertDialog
         open={!!selected}
         onOpenChange={(open) => {

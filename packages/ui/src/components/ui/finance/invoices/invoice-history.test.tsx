@@ -16,6 +16,7 @@ vi.mock('../shared/use-finance-confidential-visibility', () => ({
   }),
 }));
 vi.mock('@tanstack/react-query', () => ({
+  keepPreviousData: (data: unknown) => data,
   useQuery: mocks.query,
   useMutation: () => ({ mutate: mocks.mutate, isPending: false }),
   useQueryClient: () => ({}),
@@ -55,7 +56,7 @@ describe('InvoiceHistory', () => {
     vi.clearAllMocks();
     mocks.confidential = false;
     mocks.query.mockReturnValue({
-      data: { data: [entry] },
+      data: { data: [entry], hasMore: false },
       isPending: false,
       isError: false,
       refetch: mocks.refetch,
@@ -106,6 +107,58 @@ describe('InvoiceHistory', () => {
     expect(
       screen.queryByRole('button', { name: 'restore_invoice' })
     ).not.toBeInTheDocument();
+  });
+  it('uses server lookahead instead of guessing from a full page', () => {
+    mocks.query.mockReturnValue({
+      data: {
+        data: Array.from({ length: 25 }, (_, id) => ({
+          ...entry,
+          id: String(id),
+        })),
+        hasMore: false,
+      },
+    });
+    render(<InvoiceHistory wsId="workspace" canRestore />);
+    expect(
+      screen.getAllByRole('button', { name: 'activity_next' })[0]!
+    ).toBeDisabled();
+  });
+  it('pages forward and resets to the first page when searching', () => {
+    mocks.query.mockReturnValue({ data: { data: [entry], hasMore: true } });
+    render(<InvoiceHistory wsId="workspace" canRestore />);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'activity_next' })[0]!
+    );
+    expect(mocks.query.mock.lastCall?.[0].queryKey[3]).toBe(1);
+    fireEvent.change(screen.getByRole('textbox', { name: 'activity_search' }), {
+      target: { value: 'Customer' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'activity_search_action' })
+    );
+    expect(mocks.query.mock.lastCall?.[0].queryKey[3]).toBe(0);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'activity_clear_filters' })
+    );
+    expect(
+      screen.getByRole('textbox', { name: 'activity_search' })
+    ).toHaveValue('');
+  });
+  it('keeps results visible but blocks stale restoration and paging while fetching', () => {
+    mocks.query.mockReturnValue({
+      data: { data: [entry], hasMore: true },
+      isFetching: true,
+      isPlaceholderData: true,
+    });
+    render(<InvoiceHistory wsId="workspace" canRestore />);
+    expect(screen.getByText('Customer')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'restore_invoice' })
+    ).toBeDisabled();
+    expect(
+      screen.getAllByRole('button', { name: 'activity_next' })[0]!
+    ).toBeDisabled();
+    expect(screen.getByText('activity_loading')).toBeInTheDocument();
   });
   it('offers retry rather than presenting an error as empty history', () => {
     mocks.query.mockReturnValue({ isError: true, refetch: mocks.refetch });

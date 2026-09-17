@@ -7757,6 +7757,13 @@
     "view-users": "Xem người dùng"
   },
   "ws-invoices": {
+    "activity_clear_filters": "Xóa bộ lọc",
+    "activity_loading": "Đang tải lịch sử…",
+    "activity_page": "Trang {page}",
+    "activity_pagination": "Phân trang lịch sử thay đổi",
+    "activity_refresh": "Tải lại lịch sử",
+    "activity_rows_per_page": "Số dòng mỗi trang",
+    "activity_timezone": "Thời gian theo múi giờ {timeZone}",
     "absent": "Vắng Mặt",
     "activity": "Nhật ký hóa đơn",
     "activity_after": "Sau",
