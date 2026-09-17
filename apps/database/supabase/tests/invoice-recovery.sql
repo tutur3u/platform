@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(54);
+select plan(59);
 
 insert into public.workspaces (id, name, personal, creator_id)
 values (
@@ -222,5 +222,38 @@ select ok(not exists(select 1 from mixed_history_pages, jsonb_array_elements(fir
 select ok(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 1, '00000000-0000-4000-8000-000000010807')) = 1, 'Search is applied before limiting each source');
 select ok(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 1, '', null, 'RESTORE')) = 1, 'Restore action filtering is applied before pagination');
 select is(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 26, '', 'promotion'), '[]'::jsonb, 'Deleted-only review never admits child events');
+
+-- Legacy payments without invoice_id still resolve through the invoice's
+-- transaction_id. Directly linked payments must never enter that fallback.
+insert into audit.record_version(record_id, op, ts, table_oid, table_schema, table_name, record)
+values (gen_random_uuid(), 'INSERT', '2024-01-01', 'public.finance_invoices'::regclass, 'public', 'finance_invoices',
+ '{"id":"00000000-0000-4000-8000-000000010999","ws_id":"00000000-0000-4000-8000-000000010001","transaction_id":"00000000-0000-4000-8000-000000011000","price":40}');
+insert into audit.record_version(record_id, old_record_id, op, ts, table_oid, table_schema, table_name, record, old_record)
+select case when op <> 'DELETE' then gen_random_uuid() end, case when op <> 'INSERT' then gen_random_uuid() end, op::audit.operation, '2024-01-02'::timestamptz + n * interval '1 second',
+ 'public.wallet_transactions'::regclass, 'public', 'wallet_transactions',
+ case when op <> 'DELETE' then '{"id":"00000000-0000-4000-8000-000000011000","amount":40}'::jsonb end,
+ case when op <> 'INSERT' then '{"id":"00000000-0000-4000-8000-000000011000","amount":30}'::jsonb end
+from (values (1, 'INSERT'), (2, 'UPDATE'), (3, 'DELETE')) events(n, op);
+create temporary table legacy_payment_history as
+select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', '00000000-0000-4000-8000-000000010999', false, 0, 26, '', 'payment') events;
+select is((select jsonb_array_length(events) from legacy_payment_history), 3, 'Legacy payments remain visible without a direct invoice link');
+select is((select array_agg(e->>'operation' order by e->>'operation') from legacy_payment_history, jsonb_array_elements(events) e), array['DELETE', 'INSERT', 'UPDATE'], 'Legacy payment create, update and delete history remains complete');
+select ok(exists(select 1 from legacy_payment_history, jsonb_array_elements(events) e where e->>'operation' = 'UPDATE' and e->'changes'->'amount'->>'before' = '30' and e->'changes'->'amount'->>'after' = '40'), 'Legacy payment updates preserve before and after amounts');
+insert into audit.record_version(record_id, op, ts, table_oid, table_schema, table_name, record)
+select gen_random_uuid(), 'INSERT', '2026-01-02'::timestamptz + n * interval '1 millisecond',
+ 'public.wallet_transactions'::regclass, 'public', 'wallet_transactions',
+ jsonb_build_object('id', '00000000-0000-4000-8000-000000010803', 'invoice_id', '00000000-0000-4000-8000-000000010804', 'amount', n)
+from generate_series(1, 100000) n;
+-- Unlinked wallet events may be unrelated to invoices. They must not produce
+-- phantom history or force the fallback to scan the directly-linked population.
+insert into audit.record_version(record_id, op, ts, table_oid, table_schema, table_name, record)
+select gen_random_uuid(), 'INSERT', '2026-01-03'::timestamptz + n * interval '1 millisecond',
+ 'public.wallet_transactions'::regclass, 'public', 'wallet_transactions',
+ jsonb_build_object('id', gen_random_uuid(), 'amount', n, 'description', repeat('Unrelated wallet event ', 20))
+from generate_series(1, 10000) n;
+analyze audit.record_version;
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26)$$, 1000, 'All activity does not rescan 100000 directly linked payments as legacy payments');
+select is((select count(distinct e->>'id') from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'payment')) e), 26::bigint, 'Direct and legacy payment pages contain unique events');
+
 select * from finish();
 rollback;
