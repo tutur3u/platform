@@ -1,5 +1,6 @@
 'use client';
 
+import { Receipt, Tags } from '@tuturuuu/icons';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CategoryBreakdownChart } from '@tuturuuu/ui/finance/shared/charts/category-breakdown-chart';
 import { TagManager } from '@tuturuuu/ui/finance/tags/tag-manager';
@@ -58,9 +59,11 @@ export default function CategoriesTagsTabs({
     >
       <TabsList>
         <TabsTrigger value="categories">
+          <Receipt className="size-4" />
           {t('ws-transaction-categories.plural')}
         </TabsTrigger>
         <TabsTrigger value="tags">
+          <Tags className="size-4" />
           {t('ws-transaction-tags.plural')}
         </TabsTrigger>
       </TabsList>

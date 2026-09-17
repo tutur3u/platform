@@ -36,6 +36,7 @@ export const FINANCE_ROUTE_OPTIONS = [
   },
   { value: '/wallets', labelKey: 'wallets', routeSuffix: '/wallets' },
   { value: '/invoices', labelKey: 'invoices', routeSuffix: '/invoices' },
+  { value: '/promotions', labelKey: 'promotions', routeSuffix: '/promotions' },
   {
     value: '/transactions/categories',
     labelKey: 'categories',

@@ -100,10 +100,10 @@ export function PromotionForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       id: data?.id,
-      name: data?.name,
-      description: data?.description,
-      code: data?.code,
-      value: data?.value ? parseInt(data?.value.toString(), 10) : undefined,
+      name: data?.name ?? '',
+      description: data?.description ?? '',
+      code: data?.code ?? '',
+      value: data?.value != null ? Number(data.value) : undefined,
       unit: data?.use_ratio ? 'percentage' : 'currency',
       max_uses: data?.max_uses,
     },
@@ -222,6 +222,7 @@ export function PromotionForm({
                 <FormControl>
                   <Input
                     type="number"
+                    step="any"
                     placeholder={t('ws-inventory-promotions.form.value')}
                     onChange={(e) => field.onChange(e.target.valueAsNumber)}
                     onBlur={field.onBlur}

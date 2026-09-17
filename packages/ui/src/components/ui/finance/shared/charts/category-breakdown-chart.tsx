@@ -5,7 +5,7 @@ import { listFinanceCategoryBreakdown } from '@tuturuuu/internal-api/finance';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
-import type { LegendPayload } from 'recharts';
+import { Button } from '../../../button';
 import { Card, CardContent, CardHeader } from '../../../card';
 import type { ChartConfig } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
@@ -47,6 +47,7 @@ export function CategoryBreakdownChart({
   const { isConfidential, toggleConfidential } =
     useFinanceConfidentialVisibility();
   const shouldHideAmounts = isConfidential || !includeConfidential;
+  const [showAll, setShowAll] = useState(false);
   const [dateOffset, setDateOffset] = useState(0);
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(
     new Set()
@@ -110,8 +111,14 @@ export function CategoryBreakdownChart({
   );
 
   const { chartData, categories } = useMemo(
-    () => buildCategoryBreakdownChartData(rawData),
-    [rawData]
+    () =>
+      buildCategoryBreakdownChartData(
+        rawData,
+        showAll
+          ? undefined
+          : { limit: 7, otherLabel: t('finance-analytics.other-categories') }
+      ),
+    [rawData, showAll, t]
   );
 
   const intervalLabels: Record<ChartInterval, string> = useMemo(
@@ -133,7 +140,7 @@ export function CategoryBreakdownChart({
 
   const chartConfig = useMemo<ChartConfig>(() => {
     return categories.reduce((config, category) => {
-      config[category.name] = {
+      config[category.key] = {
         label: category.name,
         color: category.color,
       };
@@ -166,8 +173,7 @@ export function CategoryBreakdownChart({
     [shouldHideAmounts, locale]
   );
 
-  const handleLegendClick = useCallback((entry: LegendPayload) => {
-    const categoryName = entry.value as string;
+  const handleLegendClick = useCallback((categoryName: string) => {
     setHiddenCategories((prev) => {
       const next = new Set(prev);
       if (next.has(categoryName)) {
@@ -246,7 +252,31 @@ export function CategoryBreakdownChart({
   }
 
   return renderCard(
-    <CardContent className="px-2 pb-4">
+    <CardContent className="min-w-0 space-y-3 px-4 pb-4 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">
+        <p>
+          {t(
+            showAll
+              ? 'finance-analytics.all-categories-description'
+              : 'finance-analytics.top-categories-description'
+          )}
+        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setShowAll(!showAll);
+            setHiddenCategories(new Set());
+          }}
+          aria-expanded={showAll}
+        >
+          {t(
+            showAll
+              ? 'finance-analytics.show-top-categories'
+              : 'finance-analytics.show-all-categories'
+          )}
+        </Button>
+      </div>
       <CategoryBreakdownChartBody
         categories={categories}
         chartConfig={chartConfig}

@@ -131,50 +131,64 @@ export function getActualCategoryBreakdownDisplayRange(
 }
 
 export function buildCategoryBreakdownChartData(
-  rawData: FinanceCategoryBreakdownPoint[]
+  rawData: FinanceCategoryBreakdownPoint[],
+  options?: { limit: number; otherLabel: string }
 ): {
   categories: CategoryBreakdownCategory[];
   chartData: CategoryBreakdownChartDatum[];
 } {
-  if (rawData.length === 0) {
-    return { chartData: [], categories: [] };
-  }
-
   const categoryMap = new Map<string, CategoryBreakdownCategory>();
-  let colorIndex = 0;
-
-  rawData.forEach((item) => {
-    const key = item.category_id || 'uncategorized';
-    if (categoryMap.has(key)) return;
-
-    const color =
-      item.category_color ||
-      DEFAULT_CATEGORY_COLORS[colorIndex % DEFAULT_CATEGORY_COLORS.length] ||
-      DEFAULT_CATEGORY_COLORS[0]!;
-
-    categoryMap.set(key, {
-      id: item.category_id,
-      name: item.category_name,
-      color,
-    });
-    colorIndex += 1;
-  });
-
-  const periodMap = new Map<string, CategoryBreakdownChartDatum>();
-
-  rawData.forEach((item) => {
-    if (!periodMap.has(item.period)) {
-      periodMap.set(item.period, { period: item.period });
+  for (const item of rawData) {
+    const key = `category_${item.category_id ?? 'uncategorized'}`;
+    const existing = categoryMap.get(key);
+    if (existing) {
+      existing.total += Number(item.total) || 0;
+    } else {
+      categoryMap.set(key, {
+        key,
+        id: item.category_id,
+        name: item.category_name,
+        total: Number(item.total) || 0,
+        color:
+          item.category_color ||
+          DEFAULT_CATEGORY_COLORS[
+            categoryMap.size % DEFAULT_CATEGORY_COLORS.length
+          ]!,
+      });
     }
-    const periodData = periodMap.get(item.period)!;
-    periodData[item.category_name] = Number(item.total) || 0;
-  });
-
-  const chartData = Array.from(periodMap.values()).sort((a, b) => {
-    return new Date(a.period).getTime() - new Date(b.period).getTime();
-  });
-
-  return { chartData, categories: Array.from(categoryMap.values()) };
+  }
+  const ranked = [...categoryMap.values()].sort(
+    (a, b) => b.total - a.total || a.key.localeCompare(b.key)
+  );
+  const visible = options ? ranked.slice(0, options.limit) : ranked;
+  const visibleKeys = new Set(visible.map((category) => category.key));
+  const remainder = ranked.slice(visible.length);
+  const categories =
+    remainder.length > 0
+      ? [
+          ...visible,
+          {
+            key: 'other_categories',
+            id: null,
+            name: options!.otherLabel,
+            total: remainder.reduce((sum, category) => sum + category.total, 0),
+            color: 'var(--muted-foreground)',
+          },
+        ]
+      : visible;
+  const periodMap = new Map<string, CategoryBreakdownChartDatum>();
+  for (const item of rawData) {
+    if (!periodMap.has(item.period))
+      periodMap.set(item.period, { period: item.period });
+    const period = periodMap.get(item.period)!;
+    const categoryKey = `category_${item.category_id ?? 'uncategorized'}`;
+    const key = visibleKeys.has(categoryKey) ? categoryKey : 'other_categories';
+    period[key] = Number(period[key] || 0) + (Number(item.total) || 0);
+  }
+  const chartData = [...periodMap.values()].sort(
+    (a, b) => new Date(a.period).getTime() - new Date(b.period).getTime()
+  );
+  return { categories, chartData };
 }
 
 export function formatCategoryBreakdownXAxisTick(
