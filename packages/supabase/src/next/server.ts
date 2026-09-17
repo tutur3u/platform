@@ -219,9 +219,31 @@ function createAppSessionIsolatedRequestClient<T = Database>() {
 
 export function createAdminClient<T = Database>({
   noCookie = false,
+  auditActorId,
 }: {
   noCookie?: boolean;
+  /** Verified server-side actor; never copy this from an incoming header. */
+  auditActorId?: string;
 } = {}): SupabaseClient<T> | Promise<SupabaseClient<T>> {
+  if (auditActorId !== undefined) {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        auditActorId
+      )
+    ) {
+      throw new Error('Invalid audit actor id');
+    }
+    const { url, key } = checkEnvVariables({ useSecretKey: true });
+    return createBrowserClient<T>(url, key, {
+      isSingleton: false,
+      global: { headers: { 'x-ttr-audit-actor-id': auditActorId } },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    });
+  }
   if (noCookie) {
     const { url, key } = checkEnvVariables({ useSecretKey: true });
     return createBrowserClient<T>(url, key);

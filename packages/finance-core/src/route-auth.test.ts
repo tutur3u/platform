@@ -56,7 +56,10 @@ describe('resolveFinanceRouteAuthContext', () => {
         id: 'user-1',
       })
     );
-    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({
+      noCookie: true,
+      auditActorId: 'user-1',
+    });
 
     await expect(context?.supabase.auth.getUser()).resolves.toEqual({
       data: {
@@ -87,6 +90,9 @@ describe('resolveFinanceRouteAuthContext', () => {
         id: 'user-1',
       })
     );
-    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({
+      noCookie: true,
+      auditActorId: 'user-1',
+    });
   });
 });

@@ -97,7 +97,10 @@ export async function getFinanceRouteContext(
 
   return createContextForUser({
     rawWsId,
-    sbAdmin: (await createAdminClient()) as TypedSupabaseClient,
+    sbAdmin: (await createAdminClient({
+      noCookie: true,
+      auditActorId: user.id,
+    })) as TypedSupabaseClient,
     supabase,
     user,
   });
