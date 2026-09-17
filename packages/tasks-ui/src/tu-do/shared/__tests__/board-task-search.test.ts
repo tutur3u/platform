@@ -229,6 +229,69 @@ describe('listBoardTasksForSearch', () => {
   const ticketMatch = buildTask({ display_number: 115, id: 'task-ticket' });
   const nameMatch = buildTask({ id: 'task-name', name: 'Sprint 115 planning' });
 
+  it('loads tasks beyond the first sorted page before returning the board', async () => {
+    const firstPage = Array.from({ length: 200 }, (_, index) =>
+      buildTask({ id: `closed-${index}`, list_id: 'closed' })
+    );
+    const someday = buildTask({ id: 'someday', list_id: 'someday' });
+    const nextWeek = buildTask({ id: 'next-week', list_id: 'next-week' });
+    listWorkspaceTasksMock
+      .mockResolvedValueOnce({ tasks: firstPage, count: 202 })
+      .mockResolvedValueOnce({ tasks: [someday, nextWeek], count: 202 });
+
+    const options: ListWorkspaceTasksOptions = {
+      boardId: 'board-1',
+      limit: 200,
+      sortBy: 'priority-high',
+      sourceScope: 'all_visible',
+      labelIds: ['label-1'],
+    };
+    await expect(listBoardTasksForSearch('ws-1', options)).resolves.toEqual([
+      ...firstPage,
+      someday,
+      nextWeek,
+    ]);
+    expect(listWorkspaceTasksMock).toHaveBeenNthCalledWith(2, 'ws-1', {
+      ...options,
+      includeCount: true,
+      offset: 200,
+    });
+  });
+
+  it('rejects a later-page failure instead of caching a partial board', async () => {
+    listWorkspaceTasksMock
+      .mockResolvedValueOnce({ tasks: [nameMatch], count: 2 })
+      .mockRejectedValueOnce(new Error('Next page failed'));
+
+    await expect(
+      listBoardTasksForSearch('ws-1', { boardId: 'board-1', limit: 1 })
+    ).rejects.toThrow('Next page failed');
+  });
+
+  it('keeps identifier hits ahead of every name-search page', async () => {
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => {
+        if (options.identifier) return { tasks: [ticketMatch] };
+        return options.offset
+          ? { tasks: [ticketMatch], count: 2 }
+          : { tasks: [nameMatch], count: 2 };
+      }
+    );
+
+    await expect(
+      listBoardTasksForSearch('ws-1', {
+        boardId: 'board-1',
+        q: '115',
+        limit: 1,
+      })
+    ).resolves.toEqual([ticketMatch, nameMatch]);
+    expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(3);
+    expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({ q: '115', offset: 1, includeCount: true })
+    );
+  });
+
   it('uses one request for a plain-text search', async () => {
     listWorkspaceTasksMock.mockResolvedValue({ tasks: [nameMatch] });
 

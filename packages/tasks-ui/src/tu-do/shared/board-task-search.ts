@@ -133,25 +133,57 @@ export function mergeListCountsByListId(
   return [...merged.entries()].map(([list_id, count]) => ({ list_id, count }));
 }
 
-/** Loads and merges the name and exact-identifier task-search legs. */
+/** Sorted and filtered boards must not treat one page as the full task set. */
+async function listAllBoardTaskPages(
+  workspaceId: string,
+  options: ListWorkspaceTasksOptions
+): Promise<Task[]> {
+  const limit = Math.min(200, Math.max(1, options.limit ?? 200));
+  let offset = options.offset ?? 0;
+  const tasks: Task[] = [];
+
+  while (true) {
+    const response = await listWorkspaceTasks(workspaceId, {
+      ...options,
+      includeCount: true,
+      limit,
+      offset,
+    });
+    tasks.push(...response.tasks);
+    offset += response.tasks.length;
+
+    if (response.tasks.length === 0) break;
+    if (
+      typeof response.count === 'number'
+        ? offset >= response.count
+        : response.tasks.length < limit
+    ) {
+      break;
+    }
+  }
+
+  return mergeTasksById(tasks, []);
+}
+
+/** Loads every name-search page and merges exact-identifier hits first. */
 export async function listBoardTasksForSearch(
   workspaceId: string,
   options: ListWorkspaceTasksOptions
 ): Promise<Task[]> {
   const { nameQuery, identifierQuery } = buildTaskSearchQueryVariants(options);
   if (!identifierQuery) {
-    return (await listWorkspaceTasks(workspaceId, nameQuery)).tasks;
+    return listAllBoardTaskPages(workspaceId, nameQuery);
   }
 
   const [nameResult, identifierResult] = await Promise.all([
-    listWorkspaceTasks(workspaceId, nameQuery),
+    listAllBoardTaskPages(workspaceId, nameQuery),
     listWorkspaceTasks(workspaceId, {
       ...identifierQuery,
       limit: TICKET_IDENTIFIER_SEARCH_LIMIT,
     }),
   ]);
 
-  return mergeTasksById(identifierResult.tasks, nameResult.tasks);
+  return mergeTasksById(identifierResult.tasks, nameResult);
 }
 
 /** Loads list visibility counts across both task-search legs. */
