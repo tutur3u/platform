@@ -1,0 +1,37 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(11);
+
+select set_config('audit.override_auth_uid', '', true);
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select set_config('request.headers', '{"x-ttr-audit-actor-id":"00000000-0000-0000-0000-000000000001"}', true);
+select is(audit.resolve_actor_auth_uid(), '00000000-0000-0000-0000-000000000001'::uuid, 'Service writes carry the verified request actor');
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-0000-0000-000000000002"}', true);
+select is(audit.resolve_actor_auth_uid(), '00000000-0000-0000-0000-000000000002'::uuid, 'User headers cannot impersonate another actor');
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+select is(audit.resolve_actor_auth_uid(), null::uuid, 'Anonymous headers cannot supply an actor');
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select set_config('request.headers', '{"x-ttr-audit-actor-id":"invalid"}', true);
+select is(audit.resolve_actor_auth_uid(), null::uuid, 'Malformed actor headers do not break writes');
+select set_config('request.headers', '{"x-ttr-audit-actor-id":"00000000-0000-0000-0000-000000000002"}', true);
+select set_config('audit.override_auth_uid', '00000000-0000-0000-0000-000000000001', true);
+select is(audit.resolve_actor_auth_uid(), '00000000-0000-0000-0000-000000000001'::uuid, 'Explicit atomic RPC actor takes precedence');
+select set_config('audit.override_auth_uid', '', true);
+select set_config('request.headers', '{"x-ttr-audit-actor-id":"00000000-0000-0000-0000-000000000001"}', true);
+
+insert into public.workspaces(id, name, personal, creator_id) values ('00000000-0000-4000-8000-000000020001', 'Audit actor test', false, '00000000-0000-0000-0000-000000000001');
+insert into private.workspace_wallets(id, ws_id, name) values ('00000000-0000-4000-8000-000000020002', '00000000-0000-4000-8000-000000020001', 'Audit wallet');
+insert into public.transaction_categories(id, ws_id, name, is_expense) values ('00000000-0000-4000-8000-000000020003', '00000000-0000-4000-8000-000000020001', 'Audit category', false);
+insert into public.finance_invoices(id, ws_id, wallet_id, category_id, price) values ('00000000-0000-4000-8000-000000020004', '00000000-0000-4000-8000-000000020001', '00000000-0000-4000-8000-000000020002', '00000000-0000-4000-8000-000000020003', 100);
+update public.finance_invoices set note = 'Changed by verified actor' where id = '00000000-0000-4000-8000-000000020004';
+delete from public.finance_invoices where id = '00000000-0000-4000-8000-000000020004';
+select ok(exists(select 1 from audit.record_version where table_name = 'finance_invoices' and op = 'INSERT' and record->>'id' = '00000000-0000-4000-8000-000000020004' and auth_uid = '00000000-0000-0000-0000-000000000001'), 'Create events retain the actor');
+select ok(exists(select 1 from audit.record_version where table_name = 'finance_invoices' and op = 'UPDATE' and record->>'id' = '00000000-0000-4000-8000-000000020004' and auth_uid = '00000000-0000-0000-0000-000000000001'), 'Update events retain the actor');
+select ok(exists(select 1 from audit.record_version where table_name = 'finance_invoices' and op = 'DELETE' and old_record->>'id' = '00000000-0000-4000-8000-000000020004' and auth_uid = '00000000-0000-0000-0000-000000000001'), 'Delete events retain the actor');
+select ok(exists(select 1 from audit.record_version where table_name = 'wallet_transactions' and record->>'invoice_id' = '00000000-0000-4000-8000-000000020004' and auth_uid = '00000000-0000-0000-0000-000000000001'), 'Linked payment events inherit the request actor');
+select ok(exists(select 1 from audit.record_version where table_name = 'finance_invoices' and op = 'UPDATE' and record->>'id' = '00000000-0000-4000-8000-000000020004' and old_record->>'note' is null and record->>'note' = 'Changed by verified actor'), 'Update events preserve before and after values');
+select set_config('request.headers', '{}', true);
+select is(audit.resolve_actor_auth_uid(), null::uuid, 'Missing historical/system actor stays unknown instead of becoming the creator');
+select * from finish();
+rollback;

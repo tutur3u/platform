@@ -86,7 +86,11 @@ export function InvoiceHistoryRow({
           {entry.invoice_id}
         </p>
         <p className="text-muted-foreground text-xs">
-          {entry.actor_name || t('activity_unknown_actor')} ·{' '}
+          {entry.actor_name ||
+            (entry.actor_id
+              ? t('activity_recorded_actor', { id: entry.actor_id })
+              : t('activity_unknown_actor'))}{' '}
+          ·{' '}
           <time dateTime={entry.occurred_at}>
             {format.dateTime(new Date(entry.occurred_at), {
               dateStyle: 'medium',

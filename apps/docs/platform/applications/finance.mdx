@@ -222,3 +222,18 @@ Do not subscribe directly to `public.notifications` with browser
 Realtime reports `P0001: invalid column for filter user_id` in that state even
 though the column exists. Check column privileges and policies before changing
 the schema; the authenticated notification APIs remain the access boundary.
+
+## Audit actor attribution
+
+Finance resolves the authenticated app, CLI, or Supabase session before creating
+an isolated admin client with a trusted audit actor header. The database accepts
+that header only for service-role requests. Direct user requests keep their own
+JWT actor, and the explicit actor in atomic update/delete/restore RPCs takes
+precedence. This also attributes linked payment, line-item and discount writes
+made through the Finance route context. Create, update and delete events remain
+in the audit feed; reads are not logged.
+
+An event with an actor ID but no display name shows the recorded user ID. Events
+written before actor propagation, or by actorless maintenance processes, may have
+no actor. Do not infer an update/delete actor from the invoice creator or rewrite
+historical audit records to fill that gap.
