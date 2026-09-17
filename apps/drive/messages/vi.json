@@ -12024,6 +12024,7 @@
     "activity_pagination": "Phân trang lịch sử thay đổi",
     "activity_previous": "Trước",
     "activity_record_type": "Loại dữ liệu",
+    "activity_recorded_actor": "Người dùng {id}",
     "activity_refresh": "Tải lại lịch sử",
     "activity_restored": "Đã khôi phục",
     "activity_retry": "Thử lại",

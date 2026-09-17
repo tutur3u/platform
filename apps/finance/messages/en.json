@@ -12196,6 +12196,7 @@
     "activity_pagination": "Audit history pagination",
     "activity_previous": "Previous",
     "activity_record_type": "Record type",
+    "activity_recorded_actor": "User {id}",
     "activity_refresh": "Refresh history",
     "activity_restored": "Restored",
     "activity_retry": "Try again",

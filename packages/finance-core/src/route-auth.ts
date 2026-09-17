@@ -23,6 +23,7 @@ async function createFinanceAuthContext(
 ): Promise<FinanceRouteAuthContext> {
   const sbAdmin = (await createAdminClient({
     noCookie: true,
+    auditActorId: user.id,
   })) as TypedSupabaseClient;
 
   return {

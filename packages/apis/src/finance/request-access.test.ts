@@ -98,8 +98,11 @@ describe('finance request access', () => {
     );
 
     expect(result.response).toBeUndefined();
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({
+      noCookie: true,
+      auditActorId: 'user-1',
+    });
     expect(mocks.createClient).toHaveBeenCalled();
-    expect(mocks.createAdminClient).toHaveBeenCalledWith();
     expect(mocks.getPermissions).toHaveBeenCalledWith({
       wsId: 'workspace-1',
       user: {

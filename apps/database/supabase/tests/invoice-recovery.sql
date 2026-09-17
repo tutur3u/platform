@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(42);
+select plan(46);
 
 insert into public.workspaces (id, name, personal, creator_id)
 values (
@@ -187,5 +187,19 @@ select is(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-
 select is(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 25, '', null, null, '2025-02-01', '2025-03-01'), '[]'::jsonb, 'Date range excludes historical rows');
 select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, true, 0, 26)$$, 1000, 'Deleted history page remains below one second with 20000 historical invoices');
 select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26)$$, 1000, 'All activity page remains below one second with 20000 historical invoices');
+-- Exercise linked-event fanout, not only invoice snapshots. Without a matching
+-- workspace + invoice id index each child rescans thousands of parent versions.
+insert into audit.record_version(record_id, op, ts, table_oid, table_schema, table_name, record)
+select gen_random_uuid(), 'INSERT', v.ts + interval '1 second',
+ 'public.finance_invoice_promotions'::regclass, 'public', 'finance_invoice_promotions',
+ jsonb_build_object('invoice_id', v.old_record->>'id', 'value', 10, 'use_ratio', true)
+from audit.record_version v
+where v.table_name = 'finance_invoices' and v.ts = '2025-01-01'::timestamptz
+ and v.old_record->>'ws_id' = '00000000-0000-4000-8000-000000010001';
+analyze audit.record_version;
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26)$$, 1000, 'All activity remains fast with 20000 linked discount events');
+select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'promotion', 'INSERT')$$, 1000, 'Discount filtering remains fast with 20000 linked events');
+select is(jsonb_array_length(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'promotion', 'INSERT')), 26, 'Discount page includes a lookahead event');
+select ok(not exists(select 1 from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'promotion', 'INSERT')) e where e->>'entity_type' <> 'promotion' or e->>'operation' <> 'INSERT'), 'Linked page preserves entity and action filters');
 select * from finish();
 rollback;

@@ -238,3 +238,17 @@ mutations to Inventory using the authenticated session, retaining one owner for
 validation and commerce synchronization. Configure `INVENTORY_APP_URL` for a
 nonstandard local or deployed Inventory origin. The list is paginated and shared
 invoice promotion queries are invalidated after mutations.
+## Audit actor attribution
+
+Finance resolves the authenticated app, CLI, or Supabase session before creating
+an isolated admin client with a trusted audit actor header. The database accepts
+that header only for service-role requests. Direct user requests keep their own
+JWT actor, and the explicit actor in atomic update/delete/restore RPCs takes
+precedence. This also attributes linked payment, line-item and discount writes
+made through the Finance route context. Create, update and delete events remain
+in the audit feed; reads are not logged.
+
+An event with an actor ID but no display name shows the recorded user ID. Events
+written before actor propagation, or by actorless maintenance processes, may have
+no actor. Do not infer an update/delete actor from the invoice creator or rewrite
+historical audit records to fill that gap.
