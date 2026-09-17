@@ -244,6 +244,13 @@ select gen_random_uuid(), 'INSERT', '2026-01-02'::timestamptz + n * interval '1 
  'public.wallet_transactions'::regclass, 'public', 'wallet_transactions',
  jsonb_build_object('id', '00000000-0000-4000-8000-000000010803', 'invoice_id', '00000000-0000-4000-8000-000000010804', 'amount', n)
 from generate_series(1, 100000) n;
+-- Unlinked wallet events may be unrelated to invoices. They must not produce
+-- phantom history or force the fallback to scan the directly-linked population.
+insert into audit.record_version(record_id, op, ts, table_oid, table_schema, table_name, record)
+select gen_random_uuid(), 'INSERT', '2026-01-03'::timestamptz + n * interval '1 millisecond',
+ 'public.wallet_transactions'::regclass, 'public', 'wallet_transactions',
+ jsonb_build_object('id', gen_random_uuid(), 'amount', n, 'description', repeat('Unrelated wallet event ', 20))
+from generate_series(1, 10000) n;
 analyze audit.record_version;
 select performs_ok($$select public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26)$$, 1000, 'All activity does not rescan 100000 directly linked payments as legacy payments');
 select is((select count(distinct e->>'id') from jsonb_array_elements(public.admin_get_finance_invoice_history('00000000-0000-4000-8000-000000010001', '00000000-0000-0000-0000-000000000001', null, false, 0, 26, '', 'payment')) e), 26::bigint, 'Direct and legacy payment pages contain unique events');
