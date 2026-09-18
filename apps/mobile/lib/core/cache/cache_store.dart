@@ -45,8 +45,55 @@ class CacheStore {
   late Box<dynamic> _resourceBox;
   late Box<dynamic> _mutationBox;
   bool _initialized = false;
+  Future<void>? _initialization;
+  final Map<String, Future<Object?>> _inFlight = {};
+  final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
+  final Map<String, int> _keyRevisions = {};
+  int _revision = 0;
+  final Map<(String?, String?), int> _scopeRevisions = {};
+  final Map<(String?, String?), int> _clearingScopes = {};
 
-  Future<void> init() async {
+  Iterable<(String?, String?)> _scopes(CacheKey key) => {
+    (null, null),
+    (key.userId, null),
+    (null, key.workspaceId),
+    (key.userId, key.workspaceId),
+  };
+
+  int _revisionFor(CacheKey key) {
+    var revision = _keyRevisions[key.value] ?? 0;
+    for (final scope in _scopes(key)) {
+      final scoped = _scopeRevisions[scope] ?? 0;
+      if (scoped > revision) revision = scoped;
+    }
+    return revision;
+  }
+
+  bool _isClearing(CacheKey key) =>
+      _scopes(key).any((scope) => (_clearingScopes[scope] ?? 0) > 0);
+
+  void _advanceKey(String key) => _keyRevisions[key] = ++_revision;
+
+  void _invalidateFlights(
+    bool Function(CacheKey key, List<String> tags) matches,
+  ) {
+    for (final scope in _flightScopes.values) {
+      if (matches(scope.key, scope.tags)) _advanceKey(scope.key.value);
+    }
+  }
+
+  Future<void> init() {
+    if (_initialized) return Future<void>.value();
+    return _initialization ??= _initialize().catchError((
+      Object error,
+      StackTrace stack,
+    ) {
+      _initialization = null;
+      return Future<void>.error(error, stack);
+    });
+  }
+
+  Future<void> _initialize() async {
     if (_initialized) return;
     WidgetsFlutterBinding.ensureInitialized();
     final dir = await _resolveHiveDirectory();
@@ -212,6 +259,7 @@ class CacheStore {
     await _mutationBox.close();
     _memory.clear();
     _initialized = false;
+    _initialization = null;
   }
 
   Future<CacheReadResult<T>> read<T>({
@@ -283,8 +331,14 @@ class CacheStore {
     required Object? payload,
     String? etag,
     List<String> tags = const <String>[],
+    int? expectedRevision,
   }) async {
     await init();
+    if (_isClearing(key)) return;
+    if (expectedRevision != null && expectedRevision != _revisionFor(key)) {
+      return;
+    }
+    if (expectedRevision == null) _advanceKey(key.value);
     if (_nonPersistentResourceNamespaces.contains(key.namespace)) {
       _memory.remove(key.value);
       await _resourceBox.delete(key.value);
@@ -311,6 +365,7 @@ class CacheStore {
   }
 
   Future<void> remove(CacheKey key) async {
+    _advanceKey(key.value);
     await init();
     _memory.remove(key.value);
     await _resourceBox.delete(key.value);
@@ -323,6 +378,12 @@ class CacheStore {
   }) async {
     await init();
     final tagSet = tags.toSet();
+    _invalidateFlights(
+      (key, flightTags) =>
+          (workspaceId == null || key.workspaceId == workspaceId) &&
+          (userId == null || key.userId == userId) &&
+          flightTags.any(tagSet.contains),
+    );
     final now = DateTime.now();
     final recordsToInvalidate = <String, CachedResourceRecord>{};
 
@@ -345,37 +406,50 @@ class CacheStore {
   }
 
   Future<void> clearScope({String? userId, String? workspaceId}) async {
-    await init();
-    final keysToDelete = <String>[];
-    for (final entry in _memory.entries) {
-      final record = entry.value;
-      final matchesUser = userId == null || record.userId == userId;
-      final matchesWorkspace =
-          workspaceId == null || record.workspaceId == workspaceId;
-      if (matchesUser && matchesWorkspace) {
-        keysToDelete.add(entry.key);
+    final scope = (userId, workspaceId);
+    _scopeRevisions[scope] = ++_revision;
+    _clearingScopes[scope] = (_clearingScopes[scope] ?? 0) + 1;
+    try {
+      await init();
+      final keysToDelete = <String>[];
+      for (final entry in _memory.entries) {
+        final record = entry.value;
+        final matchesUser = userId == null || record.userId == userId;
+        final matchesWorkspace =
+            workspaceId == null || record.workspaceId == workspaceId;
+        if (matchesUser && matchesWorkspace) {
+          keysToDelete.add(entry.key);
+        }
       }
-    }
 
-    for (final key in keysToDelete) {
-      _memory.remove(key);
-      await _resourceBox.delete(key);
-    }
-
-    final mutationIds = <dynamic>[];
-    for (final dynamic key in _mutationBox.keys) {
-      final raw = _mutationBox.get(key);
-      if (raw is! Map<dynamic, dynamic>) continue;
-      final record = PendingMutationRecord.fromJson(raw);
-      final matchesUser = userId == null || record.userId == userId;
-      final matchesWorkspace =
-          workspaceId == null || record.workspaceId == workspaceId;
-      if (matchesUser && matchesWorkspace) {
-        mutationIds.add(key);
+      for (final key in keysToDelete) {
+        _memory.remove(key);
+        await _resourceBox.delete(key);
       }
-    }
-    for (final id in mutationIds) {
-      await _mutationBox.delete(id);
+
+      final mutationIds = <dynamic>[];
+      for (final dynamic key in _mutationBox.keys) {
+        final raw = _mutationBox.get(key);
+        if (raw is! Map<dynamic, dynamic>) continue;
+        final record = PendingMutationRecord.fromJson(raw);
+        final matchesUser = userId == null || record.userId == userId;
+        final matchesWorkspace =
+            workspaceId == null || record.workspaceId == workspaceId;
+        if (matchesUser && matchesWorkspace) {
+          mutationIds.add(key);
+        }
+      }
+      for (final id in mutationIds) {
+        await _mutationBox.delete(id);
+      }
+    } finally {
+      _scopeRevisions[scope] = ++_revision;
+      final remaining = _clearingScopes[scope]! - 1;
+      if (remaining == 0) {
+        _clearingScopes.remove(scope);
+      } else {
+        _clearingScopes[scope] = remaining;
+      }
     }
   }
 
@@ -410,30 +484,56 @@ class CacheStore {
     bool forceRefresh = false,
     List<String> tags = const <String>[],
   }) async {
+    final revision = _revisionFor(key);
+    if (_isClearing(key)) {
+      return CacheReadResult<T>(state: CacheEntryState.missing);
+    }
     final cached = await read<T>(key: key, decode: decode);
+    if (_isClearing(key) || revision != _revisionFor(key)) {
+      return CacheReadResult<T>(state: CacheEntryState.missing);
+    }
     final shouldFetch = forceRefresh || !cached.hasValue || !cached.isFresh;
     if (!shouldFetch) {
       return cached;
     }
 
-    if (cached.hasValue && !forceRefresh && policy.allowBackgroundRefresh) {
-      unawaited(
-        fetch()
-            .then((payload) {
-              return write(
+    final flightKey = '$revision:${key.value}';
+    Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
+      _flightScopes[flightKey] = (key: key, tags: tags);
+      return Future<Object?>.sync(fetch)
+          .then((payload) async {
+            // Never resurrect data invalidated by a mutation or account logout.
+            if (revision == _revisionFor(key)) {
+              await write(
                 key: key,
                 policy: policy,
                 payload: payload,
                 tags: tags,
+                expectedRevision: revision,
               );
-            })
-            .catchError((_) {}),
-      );
+            }
+            return payload;
+          })
+          .whenComplete(() {
+            // Remove the reference without returning/awaiting this same future.
+            // ignore: discarded_futures
+            _inFlight.remove(flightKey);
+            _flightScopes.remove(flightKey);
+          });
+    });
+
+    if (cached.hasValue &&
+        !cached.isExpired &&
+        !forceRefresh &&
+        policy.allowBackgroundRefresh) {
+      unawaited(refresh().then<void>((_) {}, onError: (Object _) {}));
       return cached;
     }
 
-    final payload = await fetch();
-    await write(key: key, policy: policy, payload: payload, tags: tags);
+    final payload = await refresh();
+    if (_isClearing(key) || revision != _revisionFor(key)) {
+      return CacheReadResult<T>(state: CacheEntryState.missing);
+    }
 
     return CacheReadResult<T>(
       state: CacheEntryState.fresh,
@@ -449,9 +549,7 @@ class CacheStore {
   }) {
     return record.copyWith(
       staleAt: now.subtract(const Duration(milliseconds: 1)),
-      expireAt: record.expireAt.isAfter(now)
-          ? record.expireAt
-          : now.add(const Duration(hours: 1)),
+      expireAt: record.expireAt,
     );
   }
 
