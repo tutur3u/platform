@@ -96,6 +96,58 @@ void main() {
     ).called(1);
   });
 
+  test(
+    'scope clearing blocks requests waiting for cache initialization',
+    () async {
+      final directory = Completer<Directory>();
+      cacheStore = CacheStore.forTesting(
+        secureStorage: secureStorage,
+        directoryResolver: () => directory.future,
+      );
+      var requests = 0;
+      Future<Object?> fetch() async {
+        requests++;
+        return 'private inbox';
+      }
+
+      final before = cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        fetch: fetch,
+      );
+      final clearing = cacheStore.clearScope(userId: 'a');
+      final during = cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        fetch: fetch,
+      );
+      directory.complete(tempDir);
+      await clearing;
+      expect((await before).hasValue, isFalse);
+      expect((await during).hasValue, isFalse);
+      expect(requests, 0);
+      expect(
+        (await cacheStore.read(key: key, decode: decode)).hasValue,
+        isFalse,
+      );
+      await cacheStore.closeForTesting();
+      expect(
+        (await cacheStore.read(key: key, decode: decode)).hasValue,
+        isFalse,
+      );
+      final after = await cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        fetch: fetch,
+      );
+      expect(after.data, 'private inbox');
+      expect(requests, 1);
+    },
+  );
+
   test('failed fetch can be retried', () async {
     await expectLater(
       cacheStore.prefetch(
@@ -166,7 +218,7 @@ void main() {
     await started.future;
     await cacheStore.clearScope(userId: 'a');
     response.complete('private inbox');
-    await pending;
+    expect((await pending).hasValue, isFalse);
     expect((await cacheStore.read(key: key, decode: decode)).hasValue, isFalse);
   });
 
@@ -199,7 +251,7 @@ void main() {
         fetch: () async => 'updated',
       );
       response.complete('old');
-      await pending;
+      expect((await pending).hasValue, isFalse);
       expect((await cacheStore.read(key: key, decode: decode)).data, 'updated');
     },
   );
@@ -257,7 +309,7 @@ void main() {
       payload: 'new name',
     );
     response.complete('old name');
-    await pending;
+    expect((await pending).hasValue, isFalse);
     expect((await cacheStore.read(key: key, decode: decode)).data, 'new name');
   });
 
