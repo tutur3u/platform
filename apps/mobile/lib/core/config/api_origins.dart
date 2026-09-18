@@ -127,13 +127,15 @@ class ApiOrigins {
     if (RegExp(r'^/api/v1/users/me/tasks(?:/|$)').hasMatch(path) ||
         _matchesWorkspaceV1(
           path,
-          r'(?:tasks|task-boards|boards|labels|task-projects|task-initiatives|habit-trackers)(?:/|$)',
+          r'(?:tasks|task-boards|boards|labels|task-projects|task-initiatives|habit-trackers|habits)(?:/|$)',
         )) {
       return ApiOrigin.tasks;
     }
     if (_matchesWorkspaceV1(path, r'users(?:/|$)') &&
         !_matchesWorkspaceV1(path, r'users/feedbacks(?:/|$)')) {
-      return ApiOrigin.contacts;
+      // Contacts authenticates browser app sessions. The platform keeps these
+      // shared handlers available to the mobile Supabase Bearer session.
+      return ApiOrigin.platform;
     }
     if (RegExp(r'^/api/v1/calendar(?:/|$)').hasMatch(path) ||
         _matchesWorkspaceV1(path, r'calendar(?:/|$)')) {
@@ -146,7 +148,9 @@ class ApiOrigins {
       return ApiOrigin.teach;
     }
     if (_matchesWorkspaceV1(path, r'time-tracking(?:/|$)')) {
-      return ApiOrigin.track;
+      // Track intentionally accepts app-session credentials only. Mobile uses
+      // Supabase Bearer sessions; the live platform retains that API contract.
+      return ApiOrigin.platform;
     }
     if (RegExp(r'^/api/v1/infrastructure(?:/|$)').hasMatch(path)) {
       return ApiOrigin.infrastructure;

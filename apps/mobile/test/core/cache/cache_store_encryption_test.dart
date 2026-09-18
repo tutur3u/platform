@@ -62,6 +62,76 @@ void main() {
   const key = CacheKey(namespace: 'mail.list', userId: 'a', workspaceId: 'one');
   String decode(Object? value) => value! as String;
 
+  test('long mail query keys persist, reopen, and invalidate', () async {
+    const user = '11111111-1111-4111-8111-111111111111';
+    const workspace = '22222222-2222-4222-8222-222222222222';
+    final path = Uri.encodeComponent(
+      '/api/v1/workspaces/$workspace/mail/mailboxes/'
+      '33333333-3333-4333-8333-333333333333/threads'
+      '?folder=inbox&query=${List.filled(60, 'thư').join()}&page=1&pageSize=30',
+    );
+    final mailKey = CacheKey(
+      namespace: 'mail.list',
+      userId: user,
+      workspaceId: workspace,
+      params: {'path': path},
+    );
+    expect(mailKey.value.length, lessThanOrEqualTo(255));
+    for (final otherKey in [
+      CacheKey(
+        namespace: 'mail.list',
+        userId: 'other',
+        workspaceId: workspace,
+        params: {'path': path},
+      ),
+      CacheKey(
+        namespace: 'mail.list',
+        userId: user,
+        workspaceId: 'other',
+        params: {'path': path},
+      ),
+      CacheKey(
+        namespace: 'mail.list',
+        userId: user,
+        workspaceId: workspace,
+        params: {'path': '$path&label=other'},
+      ),
+    ]) {
+      expect(otherKey.value, isNot(mailKey.value));
+    }
+    final result = await cacheStore.prefetch(
+      key: mailKey,
+      policy: CachePolicies.detail,
+      decode: decode,
+      fetch: () async => 'inbox data',
+      tags: ['mail'],
+    );
+    expect(result.data, 'inbox data');
+    await cacheStore.closeForTesting();
+    cacheStore = CacheStore.forTesting(
+      secureStorage: secureStorage,
+      directoryResolver: () async => tempDir,
+    );
+    expect(
+      (await cacheStore.read(key: mailKey, decode: decode)).data,
+      'inbox data',
+    );
+    await cacheStore.invalidateTags(
+      ['mail'],
+      userId: user,
+      workspaceId: workspace,
+    );
+    expect(
+      (await cacheStore.read(key: mailKey, decode: decode)).isFresh,
+      isFalse,
+    );
+    await cacheStore.remove(mailKey);
+    expect(
+      (await cacheStore.read(key: mailKey, decode: decode)).hasValue,
+      isFalse,
+    );
+  });
+
   test('concurrent startup and requests share one fetch', () async {
     final gate = Completer<Object?>();
     var requests = 0;

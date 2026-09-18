@@ -1537,6 +1537,12 @@ abstract class AppLocalizations {
   /// **'Run products, stock, sales, and booth operations in one place.'**
   String get appsHubInventoryDescription;
 
+  /// No description provided for @appsHubMailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Read and send email, manage drafts, and organize your inbox.'**
+  String get appsHubMailDescription;
+
   /// No description provided for @appsHubMeetDescription.
   ///
   /// In en, this message translates to:

@@ -39,16 +39,26 @@ class _MailHtmlViewState extends State<MailHtmlView> {
           useShouldOverrideUrlLoading: true,
         ),
         initialData: InAppWebViewInitialData(
+          baseUrl: WebUri('about:blank'),
           data:
               '''
 <!doctype html><html><head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src $imageSources; form-action 'none'; base-uri 'none'">
-<style>body{font-family:system-ui;padding:12px;overflow-wrap:anywhere}img{max-width:100%;height:auto}</style>
+<style>
+html,body{margin:0;max-width:100%;font-family:system-ui;overflow-wrap:anywhere}
+body{padding:12px;box-sizing:border-box}img{max-width:100%;height:auto}
+@media(max-width:600px){table{width:100%!important;max-width:100%!important;table-layout:fixed}td,th{min-width:0!important;overflow-wrap:anywhere}}
+</style>
 </head><body>${widget.html}</body></html>''',
         ),
         shouldOverrideUrlLoading: (_, action) async {
           final uri = action.request.url;
+          // WKWebView asks permission even for the initial in-memory document.
+          // Keep all other navigation outside this isolated email renderer.
+          if (uri?.toString() == 'about:blank' && action.isForMainFrame) {
+            return NavigationActionPolicy.ALLOW;
+          }
           if (uri != null &&
               ['https', 'http', 'mailto'].contains(uri.scheme) &&
               action.isForMainFrame) {

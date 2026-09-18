@@ -167,6 +167,22 @@ class ChatCubit extends Cubit<ChatState> {
       ),
     );
 
+    final selected = state.selectedConversation;
+    if (selected?.isReadOnlyAgent ?? false) {
+      emit(
+        state.copyWith(
+          messageStatus: ChatMessageStatus.loaded,
+          messages: {
+            ...state.messages,
+            conversationId: [
+              if (selected!.latestMessage != null) selected.latestMessage!,
+            ],
+          },
+        ),
+      );
+      return;
+    }
+
     try {
       final messages = await _repository.listMessages(wsId, conversationId);
       if (isClosed || state.selectedConversationId != conversationId) return;

@@ -1,4 +1,7 @@
 import 'dart:collection';
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 
 class CacheKey {
   const CacheKey({
@@ -48,6 +51,12 @@ class CacheKey {
         );
     }
 
-    return buffer.toString();
+    final value = buffer.toString();
+    // Hive rejects string keys longer than 255 characters. Hash the complete
+    // identity so long URLs/searches still retain user and workspace isolation.
+    // Keep existing short keys stable for already persisted cache entries.
+    return value.length <= 255
+        ? value
+        : 'sha256:${sha256.convert(utf8.encode(value))}';
   }
 }

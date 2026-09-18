@@ -68,6 +68,8 @@ class ChatConversation extends Equatable {
 
   bool get isPinned => members.any((member) => member.isPinned);
   bool get isMuted => members.any((member) => member.isMuted);
+  bool get isReadOnlyAgent =>
+      metadata['source'] == 'ai-agent' && metadata['readOnly'] == true;
 
   String displayTitle({String fallback = 'Untitled chat'}) {
     final candidate = title?.trim();

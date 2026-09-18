@@ -13,6 +13,7 @@ import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -28,6 +29,7 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'dashboard_summary_cards.dart';
 part 'dashboard_sections.dart';
 part 'dashboard_rows.dart';
 
@@ -99,6 +101,18 @@ class DashboardPage extends StatelessWidget {
     unawaited(cubit.loadEvents(workspace.id));
   }
 }
+
+const _dashboardPaletteOrder = ['crm', 'calendar', 'drive', 'finance'];
+
+String _dashboardModuleId(int index) =>
+    _dashboardPaletteOrder[index % _dashboardPaletteOrder.length];
+
+AppCardPalette _dashboardPalette(BuildContext context, int index) =>
+    AppCardPalette.resolve(
+      context,
+      index: index,
+      moduleId: _dashboardModuleId(index),
+    );
 
 class _DashboardView extends StatelessWidget {
   const _DashboardView({required this.replayToken});
@@ -177,6 +191,18 @@ class _DashboardView extends StatelessWidget {
                 builder: (context, calendarState) {
                   final focusTasks = _focusTasks(taskState);
                   final upcomingEvents = _upcomingEvents(calendarState.events);
+                  final showInitialLoading =
+                      !taskState.hasLoadedOnce &&
+                      taskState.status == TaskListStatus.loading &&
+                      !calendarState.hasLoadedOnce &&
+                      calendarState.status == CalendarStatus.loading;
+
+                  if (showInitialLoading) {
+                    return const shad.Scaffold(
+                      child: Center(child: NovaLoadingIndicator()),
+                    );
+                  }
+
                   return shad.Scaffold(
                     child: RefreshIndicator(
                       onRefresh: () => _refresh(context, workspace),
@@ -215,15 +241,10 @@ class _DashboardView extends StatelessWidget {
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 70),
                                       child: _TodaySummaryCard(
-                                        activeTasks: taskState.hasLoadedOnce
-                                            ? taskState.totalActiveTasks
-                                            : null,
-                                        overdueTasks: taskState.hasLoadedOnce
-                                            ? taskState.overdueTasks.length
-                                            : null,
-                                        nextEvents: calendarState.hasLoadedOnce
-                                            ? upcomingEvents.length
-                                            : null,
+                                        activeTasks: taskState.totalActiveTasks,
+                                        overdueTasks:
+                                            taskState.overdueTasks.length,
+                                        nextEvents: upcomingEvents.length,
                                       ),
                                     ),
                                     const SizedBox(height: 14),
@@ -237,7 +258,7 @@ class _DashboardView extends StatelessWidget {
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 210),
                                       child: _SectionCard(
-                                        accentModuleId: 'tasks',
+                                        accentModuleId: _dashboardModuleId(3),
                                         title:
                                             context.l10n.dashboardAssignedToMe,
                                         icon: Icons.checklist_rounded,
@@ -247,7 +268,9 @@ class _DashboardView extends StatelessWidget {
                                         child: _AssignedTasksBlock(
                                           state: taskState,
                                           tasks: focusTasks,
-                                          paletteModuleId: 'tasks',
+                                          paletteModuleId: _dashboardModuleId(
+                                            3,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -256,7 +279,7 @@ class _DashboardView extends StatelessWidget {
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 280),
                                       child: _SectionCard(
-                                        accentModuleId: 'calendar',
+                                        accentModuleId: _dashboardModuleId(4),
                                         title: context
                                             .l10n
                                             .dashboardUpcomingEvents,
@@ -271,7 +294,9 @@ class _DashboardView extends StatelessWidget {
                                               calendarState.hasLoadedOnce,
                                           error: calendarState.error,
                                           events: upcomingEvents,
-                                          paletteModuleId: 'calendar',
+                                          paletteModuleId: _dashboardModuleId(
+                                            4,
+                                          ),
                                         ),
                                       ),
                                     ),

@@ -1,211 +1,335 @@
 part of 'dashboard_page.dart';
 
-class _AssignedTasksBlock extends StatelessWidget {
-  const _AssignedTasksBlock({
-    required this.state,
-    required this.tasks,
-    required this.paletteModuleId,
-  });
-  final TaskListState state;
-  final List<UserTask> tasks;
-  final String paletteModuleId;
-  @override
-  Widget build(BuildContext context) {
-    if (!state.hasLoadedOnce && state.status == TaskListStatus.loading) {
-      return const _DashboardLoadingRows();
-    }
-    if (tasks.isEmpty) {
-      return ListTile(
-        contentPadding: const EdgeInsets.all(20),
-        leading: Icon(
-          state.status == TaskListStatus.error
-              ? Icons.cloud_off_outlined
-              : Icons.task_alt,
-        ),
-        title: Text(
-          state.status == TaskListStatus.error
-              ? context.l10n.commonSomethingWentWrong
-              : context.l10n.dashboardNoAssignedTasks,
-        ),
-        trailing: state.status == TaskListStatus.error
-            ? IconButton(
-                tooltip: context.l10n.commonRetry,
-                icon: const Icon(Icons.refresh),
-                onPressed: () =>
-                    unawaited(context.read<TaskListCubit>().reload()),
-              )
-            : null,
-        subtitle: state.status == TaskListStatus.error
-            ? null
-            : Text(context.l10n.dashboardNoAssignedTasksDescription),
-      );
-    }
-    return Column(
-      children: [
-        for (var i = 0; i < tasks.length; i++) ...[
-          if (i > 0) const Divider(height: 1, indent: 48),
-          _TaskRow(task: tasks[i]),
-        ],
-      ],
-    );
-  }
-}
-
 class _TaskRow extends StatelessWidget {
-  const _TaskRow({required this.task});
+  const _TaskRow({required this.task, required this.paletteModuleId});
+
   final UserTask task;
+  final String paletteModuleId;
+
   @override
   Widget build(BuildContext context) {
-    final location = [
-      task.list?.board?.name,
-      task.list?.name,
-    ].whereType<String>().where((s) => s.isNotEmpty).join(' · ');
-    final date = task.endDate?.toLocal();
-    final today = DateUtils.dateOnly(DateTime.now());
-    final overdue = date != null && DateUtils.dateOnly(date).isBefore(today);
-    final dateLabel = date == null
-        ? null
-        : overdue
-        ? context.l10n.dashboardTaskOverdue
-        : DateUtils.isSameDay(date, today)
-        ? context.l10n.dashboardTaskToday
-        : DateFormat.MMMd(
-            Localizations.localeOf(context).toLanguageTag(),
-          ).format(date);
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      leading: const Icon(Icons.radio_button_unchecked, size: 20),
-      title: Text(
-        task.name ?? context.l10n.tasksUntitled,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      subtitle: Text(
-        [
-          if (location.isNotEmpty) location,
-          if (dateLabel != null) dateLabel,
-        ].join(' · '),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: const Icon(Icons.chevron_right, size: 18),
-      onTap: () => unawaited(
-        openUserTaskBoardDetailWithWorkspace(
-          context,
-          task,
-          workspaceCubit: context.read<WorkspaceCubit>(),
+    final theme = Theme.of(context);
+    final palette = AppCardPalette.resolve(
+      context,
+      index: 0,
+      moduleId: paletteModuleId,
+    );
+    final boardName = task.list?.board?.name;
+    final listName = task.list?.name;
+    final locationLabel = [boardName, listName]
+        .where((value) => value != null && value.isNotEmpty)
+        .cast<String>()
+        .join(' • ');
+    final dueLabel = _dueLabel(context, task.endDate);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => unawaited(
+          openUserTaskBoardDetailWithWorkspace(
+            context,
+            task,
+            workspaceCubit: context.read<WorkspaceCubit>(),
+          ),
+        ),
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Color.alphaBlend(
+              palette.iconBackground.withValues(alpha: 0.5),
+              palette.background,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: palette.border.withValues(alpha: 0.46)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task.name ?? context.l10n.tasksUntitled,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: palette.textColor,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (locationLabel.isNotEmpty)
+                              _DashboardTaskPill(
+                                icon: Icons.view_kanban_outlined,
+                                label: locationLabel,
+                                palette: palette,
+                              ),
+                            if (task.endDate != null)
+                              _DashboardTaskPill(
+                                icon: Icons.schedule_outlined,
+                                label: dueLabel,
+                                palette: palette,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  String _dueLabel(BuildContext context, DateTime? date) {
+    final l10n = context.l10n;
+    if (date == null) return l10n.dashboardTaskNoDate;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(date.year, date.month, date.day);
+    final delta = dueDay.difference(today).inDays;
+
+    if (delta < 0) return l10n.dashboardTaskOverdue;
+    if (delta == 0) return l10n.dashboardTaskToday;
+    if (delta == 1) return l10n.dashboardTaskTomorrow;
+    final formattedDate = DateFormat('EEE, d MMM').format(date);
+    return '${l10n.dashboardTaskUpcoming} • $formattedDate';
+  }
 }
 
-class _UpcomingEventsBlock extends StatelessWidget {
-  const _UpcomingEventsBlock({
-    required this.status,
-    required this.hasLoadedOnce,
-    required this.error,
-    required this.events,
-    required this.paletteModuleId,
+class _DashboardTaskPill extends StatelessWidget {
+  const _DashboardTaskPill({
+    required this.icon,
+    required this.label,
+    required this.palette,
   });
-  final CalendarStatus status;
-  final bool hasLoadedOnce;
-  final String? error;
-  final List<CalendarEvent> events;
-  final String paletteModuleId;
+
+  final IconData icon;
+  final String label;
+  final AppCardPalette palette;
+
   @override
   Widget build(BuildContext context) {
-    if (!hasLoadedOnce && status == CalendarStatus.loading) {
-      return const _DashboardLoadingRows();
-    }
-    if (events.isEmpty) {
-      return ListTile(
-        contentPadding: const EdgeInsets.all(20),
-        leading: Icon(
-          status == CalendarStatus.error
-              ? Icons.cloud_off_outlined
-              : Icons.event_available_outlined,
-        ),
-        title: Text(
-          status == CalendarStatus.error
-              ? context.l10n.commonSomethingWentWrong
-              : context.l10n.dashboardNoUpcomingEvents,
-        ),
-        subtitle: status == CalendarStatus.error
-            ? null
-            : Text(context.l10n.dashboardNoUpcomingEventsDescription),
-      );
-    }
-    return Column(
-      children: [
-        for (var i = 0; i < events.length; i++) ...[
-          if (i > 0) const Divider(height: 1, indent: 64),
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: palette.iconBackground.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: palette.border.withValues(alpha: 0.46)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: palette.iconColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: palette.textColor,
+              fontWeight: FontWeight.w700,
             ),
-            leading: SizedBox(
-              width: 48,
-              child: Text(
-                events[i].startAt == null
-                    ? context.l10n.dashboardEventAllDay
-                    : DateFormat.Hm().format(events[i].startAt!.toLocal()),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            title: Text(
-              events[i].title ?? context.l10n.calendarTitle,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
-            subtitle: events[i].startAt == null
-                ? null
-                : Text(
-                    DateFormat.MMMEd(
-                      Localizations.localeOf(context).toLanguageTag(),
-                    ).format(events[i].startAt!.toLocal()),
-                  ),
-            trailing: const Icon(Icons.chevron_right, size: 18),
-            onTap: () => context.go(Routes.calendar),
           ),
         ],
-      ],
+      ),
     );
   }
 }
 
-class _DashboardLoadingRows extends StatelessWidget {
-  const _DashboardLoadingRows();
+class _EventRow extends StatelessWidget {
+  const _EventRow({required this.event, required this.paletteModuleId});
+
+  final CalendarEvent event;
+  final String paletteModuleId;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: context.l10n.commonLoading,
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+  Widget build(BuildContext context) {
+    final start = event.startAt;
+    final theme = Theme.of(context);
+    final palette = AppCardPalette.resolve(
+      context,
+      index: 0,
+      moduleId: paletteModuleId,
+    );
+    final dateLabel = start == null
+        ? context.l10n.dashboardEventAllDay
+        : '${DateFormat('EEE, d MMM').format(start)}'
+              ' • ${DateFormat('HH:mm').format(start)}';
+    final dayLabel = start == null ? '--' : DateFormat('d').format(start);
+    final monthLabel = start == null
+        ? context.l10n.dashboardEventAllDay
+        : DateFormat('MMM').format(start);
+    final detail = event.description?.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          palette.iconBackground.withValues(alpha: 0.5),
+          palette.background,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.border.withValues(alpha: 0.46)),
+      ),
+      child: Row(
         children: [
-          for (final width in [double.infinity, 180.0, double.infinity])
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  height: 14,
-                  width: width,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(4),
+          Container(
+            width: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            decoration: BoxDecoration(
+              color: palette.background.withValues(alpha: 0.84),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: palette.border.withValues(alpha: 0.44)),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  dayLabel,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: palette.iconColor,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
                   ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  monthLabel.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: palette.iconColor.withValues(alpha: 0.92),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  event.title ?? 'Untitled event',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: palette.textColor,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  dateLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: palette.iconColor.withValues(alpha: 0.92),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (detail != null && detail.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    detail,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: palette.textColor.withValues(alpha: 0.74),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
-    ),
-  );
+    );
+  }
+}
+
+class _EmptyHint extends StatelessWidget {
+  const _EmptyHint({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.tone,
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final _Tone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            tone.background,
+            Color.alphaBlend(
+              tone.foreground.withValues(alpha: isDark ? 0.08 : 0.04),
+              tone.background,
+            ),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tone.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: tone.foreground, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(description, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tone {
+  const _Tone({
+    required this.background,
+    required this.border,
+    required this.foreground,
+  });
+
+  final Color background;
+  final Color border;
+  final Color foreground;
 }

@@ -11,16 +11,18 @@ The mobile app now ships first-party workspace surfaces for:
 - CRM at `Routes.crm`
 - Education at `Routes.education`
 
-Both modules are registered in the Apps hub and available through the mini-app navigation system.
+These modules are registered in the Apps hub and available through the mini-app navigation system.
 
-The mobile Apps hub now uses a compact grouped list with restrained icons and clear descriptions. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
+The mobile Apps hub uses the v0.9.2 colored cards with consistent icons and clear descriptions. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
 
 - `ShellMiniNav` for mode or section switching
 - `ShellChromeActions` for quick actions such as filters, create, sort, and view toggles
 - A compact overview with a small number of relevant metrics
-- Neutral grouped lists, consistent separators, readable labels, and primary color reserved for actions and selection
+- The v0.9.2 AppCardPalette gradient cards, consistent icon blocks, readable labels, and shared theme colors
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
+
+Meet is a standard launcher module, with meeting search, scheduling, editing, and deletion. Workspace visibility flags still apply. Every launcher module includes an English and Vietnamese description.
 
 ## Responsive Loading And Cache Verification
 
@@ -32,6 +34,9 @@ staggered entrance animations. Opening Apps does not prefetch every product.
 Expired entries wait for replacement; eligible stale entries can refresh in the
 background. Invalidation and logout prevent older in-flight requests from writing
 back into the cache. Keys must include user, workspace, and all query filters.
+Keys longer than Hive's 255-character limit use a SHA-256 digest of the complete
+scoped identity. Keep short keys stable, and test persistence/reopening with real
+UUIDs and long search filters; short mock IDs can hide storage failures.
 
 Mail list snapshots use the existing encrypted Hive store, with a one-minute
 freshness window and a twenty-minute expiry. Cached rows appear while refresh is
@@ -47,6 +52,31 @@ pull-to-refresh, slow/failed requests, rapid search changes, and switching accou
 or workspaces. Run the focused cache, Mail workspace, lazy tab, and shell back
 navigation tests, followed by `bun check:mobile`. Use an iOS simulator to inspect
 light/dark appearance, larger text, keyboard interaction, and narrow layouts.
+
+Time Tracking and CRM user mobile calls stay on the live platform origin: Track and Contacts require
+app-session credentials, while mobile currently uses Supabase Bearer sessions.
+Do not move those paths to their satellites until mobile supports that authentication contract.
+
+### Native API requests and hosting challenges
+
+An HTTP 429 HTML response with `x-vercel-mitigated: challenge` is a Vercel browser
+challenge, not the application's JSON rate-limit response. Native HTTP clients
+cannot complete that challenge. Calendar has a scoped custom WAF rule
+for its mobile API paths with an `Authorization: Bearer ` header:
+
+- Calendar: `^/api/v1/(workspaces/[^/]+/calendar|calendar)(/|$)`
+
+This rule bypasses subsequent custom/managed WAF rules for matching requests.
+The header only selects the native API path; it does not authenticate a caller.
+Application Bearer-token validation, workspace authorization, and application
+rate limits still apply. Website traffic and requests without the header keep
+their existing challenge policy. Do not embed a hosting bypass secret in mobile.
+
+Inspect `vercel firewall overview --json` and `vercel firewall diff` for the exact
+Tuturuuu project before publishing a rule. Verify an invalid Bearer token returns
+JSON 401, ordinary website traffic retains its policy, and the signed-in mobile
+view loads real data. Review existing rules before introducing any exception,
+since a bypass also skips managed WAF rules beyond bot protection.
 
 ## Mobile App Lock And Web QR Approval
 

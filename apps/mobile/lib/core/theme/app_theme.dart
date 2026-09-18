@@ -41,10 +41,10 @@ abstract final class AppTheme {
       ).copyWith(
         surface: AppColors.backgroundLight,
         surfaceContainerLowest: AppColors.surfaceLight,
-        surfaceContainerLow: const Color(0xFFF7F7FA),
-        surfaceContainer: const Color(0xFFF2F2F7),
-        surfaceContainerHigh: const Color(0xFFEAEAF0),
-        surfaceContainerHighest: const Color(0xFFE2E2E8),
+        surfaceContainerLow: const Color(0xFFF9F6F0),
+        surfaceContainer: const Color(0xFFF4EFE7),
+        surfaceContainerHigh: const Color(0xFFEDE7DD),
+        surfaceContainerHighest: const Color(0xFFE5DED2),
       );
 
   static final ColorScheme _darkScheme =

@@ -74,6 +74,7 @@ extension ChatCubitActions on ChatCubit {
     final trimmed = content.trim();
     if (wsId == null ||
         conversation == null ||
+        conversation.isReadOnlyAgent ||
         (trimmed.isEmpty && state.pendingAttachments.isEmpty) ||
         state.isSending) {
       return;
@@ -123,7 +124,11 @@ extension ChatCubitActions on ChatCubit {
   Future<void> uploadAttachment(PlatformFile file) async {
     final wsId = state.wsId;
     final conversationId = state.selectedConversationId;
-    if (wsId == null || conversationId == null) return;
+    if (wsId == null ||
+        conversationId == null ||
+        (state.selectedConversation?.isReadOnlyAgent ?? false)) {
+      return;
+    }
 
     _emitState(state.copyWith(isUploadingAttachment: true, clearError: true));
     try {
@@ -160,7 +165,10 @@ extension ChatCubitActions on ChatCubit {
 
   Future<void> toggleReaction(ChatMessage message, String emoji) async {
     final wsId = state.wsId;
-    if (wsId == null) return;
+    if (wsId == null ||
+        (state.selectedConversation?.isReadOnlyAgent ?? false)) {
+      return;
+    }
     try {
       final updated = await _repository.toggleReaction(
         wsId,
@@ -176,7 +184,7 @@ extension ChatCubitActions on ChatCubit {
 
   Future<void> togglePin(ChatConversation conversation) async {
     final wsId = state.wsId;
-    if (wsId == null) return;
+    if (wsId == null || conversation.isReadOnlyAgent) return;
     try {
       final updated = await _repository.updateConversation(
         wsId,
@@ -191,7 +199,7 @@ extension ChatCubitActions on ChatCubit {
 
   Future<void> deleteConversation(ChatConversation conversation) async {
     final wsId = state.wsId;
-    if (wsId == null) return;
+    if (wsId == null || conversation.isReadOnlyAgent) return;
     try {
       await _repository.deleteConversation(wsId, conversation.id);
       _removeConversation(conversation.id);
@@ -278,7 +286,9 @@ extension ChatCubitActions on ChatCubit {
   Future<void> loadConversationPanels() async {
     final wsId = state.wsId;
     final conversation = state.selectedConversation;
-    if (wsId == null || conversation == null) return;
+    if (wsId == null || conversation == null || conversation.isReadOnlyAgent) {
+      return;
+    }
 
     try {
       final sharedContentFuture = _repository.getSharedContent(
@@ -320,7 +330,9 @@ extension ChatCubitActions on ChatCubit {
   }) async {
     final wsId = state.wsId;
     final conversation = state.selectedConversation;
-    if (wsId == null || conversation == null) return;
+    if (wsId == null || conversation == null || conversation.isReadOnlyAgent) {
+      return;
+    }
     try {
       final settings = await _repository.updateAiSettings(
         wsId,

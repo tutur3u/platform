@@ -59,28 +59,40 @@ class ChatThreadView extends StatelessWidget {
           onPin: onPin,
         ),
         Expanded(
-          child: switch (messageStatus) {
-            ChatMessageStatus.loading => const NovaLoadingIndicator(size: 42),
-            ChatMessageStatus.error => _ThreadEmpty(
-              title: context.l10n.commonSomethingWentWrong,
-              description: context.l10n.chatMessagesLoadError,
-            ),
-            _ => _MessageList(
-              messages: messages,
-              currentUserId: currentUserId,
-              streamingAssistantText: streamingAssistantText,
-              onReaction: onReaction,
-            ),
-          },
+          child: selected.isReadOnlyAgent
+              ? SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    selected.latestMessage?.content ??
+                        selected.description ??
+                        '',
+                  ),
+                )
+              : switch (messageStatus) {
+                  ChatMessageStatus.loading => const NovaLoadingIndicator(
+                    size: 42,
+                  ),
+                  ChatMessageStatus.error => _ThreadEmpty(
+                    title: context.l10n.commonSomethingWentWrong,
+                    description: context.l10n.chatMessagesLoadError,
+                  ),
+                  _ => _MessageList(
+                    messages: messages,
+                    currentUserId: currentUserId,
+                    streamingAssistantText: streamingAssistantText,
+                    onReaction: onReaction,
+                  ),
+                },
         ),
-        ChatComposer(
-          pendingAttachments: pendingAttachments,
-          isSending: isSending,
-          isUploadingAttachment: isUploadingAttachment,
-          onSend: onSend,
-          onPickAttachment: onPickAttachment,
-          onRemoveAttachment: onRemoveAttachment,
-        ),
+        if (!selected.isReadOnlyAgent)
+          ChatComposer(
+            pendingAttachments: pendingAttachments,
+            isSending: isSending,
+            isUploadingAttachment: isUploadingAttachment,
+            onSend: onSend,
+            onPickAttachment: onPickAttachment,
+            onRemoveAttachment: onRemoveAttachment,
+          ),
       ],
     );
   }
@@ -137,25 +149,27 @@ class _ThreadHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              Tooltip(
-                message: context.l10n.chatPinned,
-                child: shad.IconButton.ghost(
-                  icon: Icon(
-                    conversation.isPinned
-                        ? shad.LucideIcons.pinOff
-                        : shad.LucideIcons.pin,
-                    size: 18,
+              if (!conversation.isReadOnlyAgent)
+                Tooltip(
+                  message: context.l10n.chatPinned,
+                  child: shad.IconButton.ghost(
+                    icon: Icon(
+                      conversation.isPinned
+                          ? shad.LucideIcons.pinOff
+                          : shad.LucideIcons.pin,
+                      size: 18,
+                    ),
+                    onPressed: onPin,
                   ),
-                  onPressed: onPin,
                 ),
-              ),
-              Tooltip(
-                message: context.l10n.chatDetails,
-                child: shad.IconButton.ghost(
-                  icon: const Icon(shad.LucideIcons.panelRight, size: 18),
-                  onPressed: onDetails,
+              if (!conversation.isReadOnlyAgent)
+                Tooltip(
+                  message: context.l10n.chatDetails,
+                  child: shad.IconButton.ghost(
+                    icon: const Icon(shad.LucideIcons.panelRight, size: 18),
+                    onPressed: onDetails,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
