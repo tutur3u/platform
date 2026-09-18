@@ -42,14 +42,19 @@ class _MailNavigator extends StatefulWidget {
 class _MailNavigatorState extends State<_MailNavigator> {
   final _navigator = GlobalKey<NavigatorState>();
   @override
-  Widget build(BuildContext context) => NavigatorPopHandler<Object?>(
-    onPopWithResult: (result) {
-      unawaited(_navigator.currentState?.maybePop(result));
-    },
-    child: Navigator(
-      key: _navigator,
-      onGenerateRoute: (_) => MaterialPageRoute<void>(
-        builder: (_) => MailWorkspace(workspaceId: widget.workspaceId),
+  Widget build(BuildContext context) => MediaQuery.removePadding(
+    context: context,
+    // The shared shell already reserves the status bar above its app header.
+    removeTop: true,
+    child: NavigatorPopHandler<Object?>(
+      onPopWithResult: (result) {
+        unawaited(_navigator.currentState?.maybePop(result));
+      },
+      child: Navigator(
+        key: _navigator,
+        onGenerateRoute: (_) => MaterialPageRoute<void>(
+          builder: (_) => MailWorkspace(workspaceId: widget.workspaceId),
+        ),
       ),
     ),
   );
@@ -67,6 +72,7 @@ class MailWorkspace extends StatefulWidget {
 class _MailWorkspaceState extends State<MailWorkspace> {
   late final MailRepository _repository;
   final _search = TextEditingController();
+  final _searchFocus = FocusNode();
   List<Map<String, dynamic>> _mailboxes = [];
   List<Map<String, dynamic>> _items = [];
   List<Map<String, dynamic>> _labels = [];
@@ -107,14 +113,20 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   void initState() {
     super.initState();
     _repository = widget.repository ?? MailRepository();
+    _searchFocus.addListener(_onSearchFocusChanged);
     unawaited(_bootstrap());
   }
+
+  void _onSearchFocusChanged() => setState(() {});
 
   @override
   void dispose() {
     _generation++;
     _organizationGeneration++;
     _searchDebounce?.cancel();
+    _searchFocus
+      ..removeListener(_onSearchFocusChanged)
+      ..dispose();
     _search.dispose();
     if (widget.repository == null) _repository.dispose();
     super.dispose();
@@ -423,7 +435,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             ),
         ],
       ),
-      floatingActionButton: _mailboxId != null && _canSend
+      floatingActionButton:
+          _mailboxId != null && _canSend && !_searchFocus.hasFocus
           ? FloatingActionButton.extended(
               onPressed: _mutating ? null : _compose,
               icon: const Icon(Icons.edit_outlined),
@@ -470,6 +483,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _search,
+                    focusNode: _searchFocus,
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: l10n.mailSearch,
