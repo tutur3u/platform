@@ -21,13 +21,107 @@ test('mobile store deployment workflow is production-only beta delivery with ver
     'mobile store deployment workflow must be registered in the CI config'
   );
 
-  execFileSync(
-    'ruby',
-    ['-e', "require 'yaml'; YAML.load_file(ARGV.fetch(0))", workflowPath],
-    {
-      cwd: repoRoot,
-      stdio: 'pipe',
-    }
+  const parsed = JSON.parse(
+    execFileSync(
+      'ruby',
+      [
+        '-e',
+        "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV.fetch(0)))",
+        workflowPath,
+      ],
+      {
+        cwd: repoRoot,
+        stdio: 'pipe',
+        encoding: 'utf8',
+      }
+    )
+  );
+
+  // Ruby's YAML 1.1 parser represents the unquoted `on` key as true.
+  assert.deepEqual(Object.keys(parsed.true), ['push']);
+  assert.deepEqual(parsed.true.push.branches, ['production']);
+  assert.deepEqual(parsed.permissions, {
+    contents: 'read',
+    deployments: 'read',
+    'id-token': 'write',
+  });
+  const preflight = parsed.jobs['mobile-credentials-preflight'];
+  assert.equal(preflight.environment, 'mobile-store-beta');
+  assert.equal(
+    preflight.steps[0].run,
+    'test "$GITHUB_REF" = refs/heads/production'
+  );
+  const step = (job, name) => {
+    const matches = job.steps.filter((entry) => entry.name === name);
+    assert.equal(matches.length, 1, `Expected exactly one ${name} step`);
+    return matches[0];
+  };
+  for (const [platform, jobId] of [
+    ['android', 'publish-android-internal'],
+    ['ios', 'publish-ios-testflight'],
+  ]) {
+    const job = parsed.jobs[jobId];
+    assert.deepEqual(job.needs, ['check-ci', 'mobile-credentials-preflight']);
+    assert.equal(
+      job.if,
+      "needs.check-ci.outputs.should_run == 'true' && needs.mobile-credentials-preflight.outputs.has_ci_token == 'true'"
+    );
+    assert.equal(job.environment, 'mobile-store-beta');
+    assert.equal(job.defaults.run['working-directory'], 'apps/mobile');
+    assert.equal(
+      job.permissions,
+      undefined,
+      'Publish jobs must inherit workflow OIDC permissions'
+    );
+    const fetchStep = step(
+      job,
+      `Fetch ${platform === 'ios' ? 'iOS' : 'Android'} deployment bundle from Tuturuuu`
+    );
+    assert.ok(
+      fetchStep.run.includes(
+        `https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=${platform}`
+      )
+    );
+    assert.ok(fetchStep.run.includes('audience=tuturuuu-mobile-deployment'));
+    assert.ok(fetchStep.run.includes('X-GitHub-OIDC-Token'));
+    assert.ok(fetchStep.run.includes('hydrate-bundle.mjs'));
+    assert.equal(
+      step(
+        job,
+        `Cleanup ${platform === 'ios' ? 'iOS' : 'Android'} release files`
+      ).if,
+      'always()'
+    );
+  }
+  const android = parsed.jobs['publish-android-internal'];
+  const publish = step(
+    android,
+    'Publish Android App Bundle to Google Play internal'
+  );
+  assert.equal(publish.with.track, 'internal');
+  assert.equal(publish.with.status, 'completed');
+  assert.equal(
+    publish.with.releaseFiles,
+    'apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab'
+  );
+  assert.match(
+    step(android, 'Verify committed Google Play internal release').run,
+    /verify-store\.mjs android/
+  );
+  const ios = parsed.jobs['publish-ios-testflight'];
+  assert.match(
+    step(ios, 'Upload iOS IPA to TestFlight').run,
+    /xcrun altool --upload-app/
+  );
+  assert.match(
+    step(ios, 'Verify TestFlight processing and internal beta availability')
+      .run,
+    /verify-store\.mjs ios/
+  );
+  assert.equal(
+    step(ios, 'Upload iOS IPA artifact').with.path,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
+    '${{ steps.ios-ipa.outputs.path }}'
   );
 
   assert.match(workflow, /^on:\n {2}push:\n/m);
