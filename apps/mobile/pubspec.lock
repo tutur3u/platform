@@ -907,7 +907,7 @@ packages:
     source: hosted
     version: "11.5.1"
   flutter_quill_delta_from_html:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_quill_delta_from_html
       sha256: "0eb801ea8dd498cadc057507af5da794d4c9599ce58b2569cb3d4bb53ba8bed2"
@@ -1124,6 +1124,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.15.7"
+  html_unescape:
+    dependency: transitive
+    description:
+      name: html_unescape
+      sha256: "15362d7a18f19d7b742ef8dcb811f5fd2a2df98db9f80ea393c075189e0b61e3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   http:
     dependency: "direct main"
     description:
@@ -2433,6 +2441,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "15.3.0"
+  vsc_quill_delta_to_html:
+    dependency: "direct main"
+    description:
+      name: vsc_quill_delta_to_html
+      sha256: "9aca60d53ed1b700e922dabff8cd8b3490daecbf99c258f19eb45820b794fa45"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.5"
   watcher:
     dependency: transitive
     description:

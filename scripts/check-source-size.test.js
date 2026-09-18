@@ -90,6 +90,8 @@ test('excludes only the specified generated and vendor paths', () => {
     'apps/mobile/model.g.dart',
     'apps/mobile/model.freezed.dart',
     'apps/mobile/model.gen.dart',
+    'apps/mobile/lib/l10n/gen/app_localizations.dart',
+    'apps/mobile/lib/l10n/gen/app_localizations_vi.dart',
   ]) {
     assert.equal(isAuthoredSourcePath(filePath), false, filePath);
   }
@@ -98,6 +100,11 @@ test('excludes only the specified generated and vendor paths', () => {
   assert.equal(isAuthoredSourcePath('scripts/example.test.js'), true);
   assert.equal(isAuthoredSourcePath('fixtures/authored-example.ts'), true);
   assert.equal(isAuthoredSourcePath('src/distinct/file.ts'), true);
+  assert.equal(isAuthoredSourcePath('apps/mobile/lib/l10n/l10n.dart'), true);
+  assert.equal(
+    isAuthoredSourcePath('apps/mobile/lib/l10n/gen/custom.dart'),
+    true
+  );
 });
 
 test('counts physical lines for LF, CRLF, and missing trailing newline', () => {

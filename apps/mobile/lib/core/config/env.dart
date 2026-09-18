@@ -40,6 +40,7 @@ class Env {
   static const teachApiBaseUrl = String.fromEnvironment('TEACH_API_BASE_URL');
 
   static const trackApiBaseUrl = String.fromEnvironment('TRACK_API_BASE_URL');
+  static const mailApiBaseUrl = String.fromEnvironment('MAIL_API_BASE_URL');
 
   static const infrastructureApiBaseUrl = String.fromEnvironment(
     'INFRASTRUCTURE_API_BASE_URL',

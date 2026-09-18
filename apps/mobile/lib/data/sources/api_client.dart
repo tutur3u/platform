@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -21,6 +22,41 @@ class ApiClient {
 
   Uri _url(String path) =>
       Uri.parse('${_baseUrl ?? ApiConfig.baseUrlForPath(path)}$path');
+
+  /// Bounded authenticated download. Redirects never receive a Bearer token.
+  Future<Uint8List> getBytes(
+    String path, {
+    int maxBytes = 25 * 1024 * 1024,
+  }) async {
+    final response = await _performStreamedRequest(() async {
+      final request = http.Request('GET', _url(path))
+        ..followRedirects = false
+        ..headers.addAll(await _getHeaders(accept: '*/*'));
+      return await _client.send(request);
+    });
+    if (response.statusCode != 200 ||
+        (response.contentLength != null &&
+            response.contentLength! > maxBytes)) {
+      await response.stream.listen(null).cancel();
+      throw ApiException(
+        message: 'Download failed',
+        statusCode: response.statusCode,
+      );
+    }
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk in response.stream.timeout(
+      const Duration(seconds: 30),
+    )) {
+      if (bytes.length + chunk.length > maxBytes) {
+        throw const ApiException(
+          message: 'Attachment exceeds download limit',
+          statusCode: 0,
+        );
+      }
+      bytes.add(chunk);
+    }
+    return bytes.takeBytes();
+  }
 
   Future<void> _ensureValidSession({bool forceRefresh = false}) async {
     final session = supabase.auth.currentSession;
@@ -310,12 +346,19 @@ class ApiClient {
 
       for (final file in files) {
         request.files.add(
-          await http.MultipartFile.fromPath(
-            file.field,
-            file.filePath,
-            filename: file.filename,
-            contentType: file.contentType,
-          ),
+          file.bytes != null
+              ? http.MultipartFile.fromBytes(
+                  file.field,
+                  file.bytes!,
+                  filename: file.filename,
+                  contentType: file.contentType,
+                )
+              : await http.MultipartFile.fromPath(
+                  file.field,
+                  file.filePath!,
+                  filename: file.filename,
+                  contentType: file.contentType,
+                ),
         );
       }
 
@@ -461,10 +504,18 @@ class ApiMultipartFile {
     required this.filePath,
     this.filename,
     this.contentType,
-  });
+  }) : bytes = null;
+
+  const ApiMultipartFile.bytes({
+    required this.field,
+    required this.bytes,
+    this.filename,
+    this.contentType,
+  }) : filePath = null;
 
   final String field;
-  final String filePath;
+  final String? filePath;
+  final Uint8List? bytes;
   final String? filename;
   final MediaType? contentType;
 }

@@ -15,6 +15,7 @@ import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
+import 'package:mobile/features/mail/mail_module.dart';
 import 'package:mobile/features/meet/view/meet_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
@@ -49,6 +50,7 @@ class AppRegistry {
   };
 
   static const List<AppModule> allModules = [
+    mailModule,
     AppModule(
       id: 'habits',
       route: Routes.habits,
