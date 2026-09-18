@@ -7629,4 +7629,223 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connectedOnboardingSettingsDescription => 'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.';
+
+  @override
+  String get mailTitle => 'Mail';
+
+  @override
+  String get mailAccessRequired => 'Mail requires a @tuturuuu.com account.';
+
+  @override
+  String get mailInbox => 'Inbox';
+
+  @override
+  String get mailSent => 'Sent';
+
+  @override
+  String get mailDrafts => 'Drafts';
+
+  @override
+  String get mailStarred => 'Starred';
+
+  @override
+  String get mailArchive => 'Archive';
+
+  @override
+  String get mailSpam => 'Spam';
+
+  @override
+  String get mailTrash => 'Trash';
+
+  @override
+  String get mailCompose => 'Compose';
+
+  @override
+  String get mailMailbox => 'Mailbox';
+
+  @override
+  String get mailSearch => 'Search mail';
+
+  @override
+  String get mailEmpty => 'No messages here';
+
+  @override
+  String get mailNoSubject => '(No subject)';
+
+  @override
+  String get mailLoadMore => 'Load more';
+
+  @override
+  String get mailTo => 'To';
+
+  @override
+  String get mailCc => 'Cc';
+
+  @override
+  String get mailBcc => 'Bcc';
+
+  @override
+  String get mailSubject => 'Subject';
+
+  @override
+  String get mailBody => 'Message';
+
+  @override
+  String get mailSaveDraft => 'Save draft';
+
+  @override
+  String get mailSend => 'Send';
+
+  @override
+  String get mailAttach => 'Attach file';
+
+  @override
+  String get mailRemoveAttachment => 'Remove attachment';
+
+  @override
+  String get mailActionFailed => 'Could not complete the action. Your draft is retained; please try again.';
+
+  @override
+  String get mailInvalidRecipient => 'Enter valid recipient email addresses.';
+
+  @override
+  String get mailMarkUnread => 'Mark unread';
+
+  @override
+  String get mailRestore => 'Move to inbox';
+
+  @override
+  String get mailStar => 'Star';
+
+  @override
+  String get mailUnstar => 'Remove star';
+
+  @override
+  String get mailReply => 'Reply';
+
+  @override
+  String get mailReplyAll => 'Reply all';
+
+  @override
+  String get mailForward => 'Forward';
+
+  @override
+  String get mailAiDraft => 'Write with AI';
+
+  @override
+  String get mailAiInstructions => 'What would you like to say?';
+
+  @override
+  String get mailGenerate => 'Generate';
+
+  @override
+  String get mailViewOriginal => 'View formatted message';
+
+  @override
+  String get mailDownload => 'Download or share attachment';
+
+  @override
+  String get mailLoadImages => 'Load remote images';
+
+  @override
+  String get mailSettings => 'Mail settings';
+
+  @override
+  String get mailSenderName => 'Sender name';
+
+  @override
+  String get mailSignature => 'Signature';
+
+  @override
+  String get mailAutoDraft => 'Automatically draft replies';
+
+  @override
+  String get mailDeliveryProvider => 'Delivery provider';
+
+  @override
+  String get mailDomainDefault => 'Domain default';
+
+  @override
+  String get mailSmartLabels => 'Smart labels';
+
+  @override
+  String get mailForwarding => 'Forwarding';
+
+  @override
+  String get mailForwardingOff => 'Off';
+
+  @override
+  String get mailCatchAll => 'Catch-all mailbox';
+
+  @override
+  String get mailForwardTo => 'Forward to mailbox address';
+
+  @override
+  String get mailGroupPosting => 'Who can post to the group';
+
+  @override
+  String get mailGroupAttachments => 'Who can send attachments';
+
+  @override
+  String get mailGroupSendAs => 'Who can send as the group';
+
+  @override
+  String get mailAnyone => 'Anyone';
+
+  @override
+  String get mailOrganization => 'Organization';
+
+  @override
+  String get mailMembers => 'Members';
+
+  @override
+  String get mailManagers => 'Managers';
+
+  @override
+  String get mailLabels => 'Labels';
+
+  @override
+  String get mailFolders => 'Folders';
+
+  @override
+  String get mailEmail => 'Email address';
+
+  @override
+  String get mailName => 'Name';
+
+  @override
+  String get mailViewer => 'Viewer';
+
+  @override
+  String get mailSender => 'Sender';
+
+  @override
+  String get mailAdmin => 'Admin';
+
+  @override
+  String get mailOwner => 'Owner';
+
+  @override
+  String get mailDescription => 'Description';
+
+  @override
+  String get mailAutoApply => 'Apply automatically';
+
+  @override
+  String get mailDeleteConfirm => 'Remove this item? This cannot be undone.';
+
+  @override
+  String get mailMarkAllRead => 'Mark all read';
+
+  @override
+  String get mailAllLabels => 'All labels and folders';
+
+  @override
+  String get mailSelectAll => 'Select all loaded messages';
+
+  @override
+  String get mailDeleteDraft => 'Delete draft';
+
+  @override
+  String get mailDeleteDraftConfirmation => 'Permanently delete this draft and its attachments?';
 }

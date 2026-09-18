@@ -14556,6 +14556,444 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.'**
   String get connectedOnboardingSettingsDescription;
+
+  /// No description provided for @mailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail'**
+  String get mailTitle;
+
+  /// No description provided for @mailAccessRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail requires a @tuturuuu.com account.'**
+  String get mailAccessRequired;
+
+  /// No description provided for @mailInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox'**
+  String get mailInbox;
+
+  /// No description provided for @mailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get mailSent;
+
+  /// No description provided for @mailDrafts.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts'**
+  String get mailDrafts;
+
+  /// No description provided for @mailStarred.
+  ///
+  /// In en, this message translates to:
+  /// **'Starred'**
+  String get mailStarred;
+
+  /// No description provided for @mailArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get mailArchive;
+
+  /// No description provided for @mailSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get mailSpam;
+
+  /// No description provided for @mailTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash'**
+  String get mailTrash;
+
+  /// No description provided for @mailCompose.
+  ///
+  /// In en, this message translates to:
+  /// **'Compose'**
+  String get mailCompose;
+
+  /// No description provided for @mailMailbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Mailbox'**
+  String get mailMailbox;
+
+  /// No description provided for @mailSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search mail'**
+  String get mailSearch;
+
+  /// No description provided for @mailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages here'**
+  String get mailEmpty;
+
+  /// No description provided for @mailNoSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'(No subject)'**
+  String get mailNoSubject;
+
+  /// No description provided for @mailLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get mailLoadMore;
+
+  /// No description provided for @mailTo.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get mailTo;
+
+  /// No description provided for @mailCc.
+  ///
+  /// In en, this message translates to:
+  /// **'Cc'**
+  String get mailCc;
+
+  /// No description provided for @mailBcc.
+  ///
+  /// In en, this message translates to:
+  /// **'Bcc'**
+  String get mailBcc;
+
+  /// No description provided for @mailSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get mailSubject;
+
+  /// No description provided for @mailBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get mailBody;
+
+  /// No description provided for @mailSaveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save draft'**
+  String get mailSaveDraft;
+
+  /// No description provided for @mailSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get mailSend;
+
+  /// No description provided for @mailAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach file'**
+  String get mailAttach;
+
+  /// No description provided for @mailRemoveAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove attachment'**
+  String get mailRemoveAttachment;
+
+  /// No description provided for @mailActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete the action. Your draft is retained; please try again.'**
+  String get mailActionFailed;
+
+  /// No description provided for @mailInvalidRecipient.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter valid recipient email addresses.'**
+  String get mailInvalidRecipient;
+
+  /// No description provided for @mailMarkUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark unread'**
+  String get mailMarkUnread;
+
+  /// No description provided for @mailRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to inbox'**
+  String get mailRestore;
+
+  /// No description provided for @mailStar.
+  ///
+  /// In en, this message translates to:
+  /// **'Star'**
+  String get mailStar;
+
+  /// No description provided for @mailUnstar.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove star'**
+  String get mailUnstar;
+
+  /// No description provided for @mailReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get mailReply;
+
+  /// No description provided for @mailReplyAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply all'**
+  String get mailReplyAll;
+
+  /// No description provided for @mailForward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get mailForward;
+
+  /// No description provided for @mailAiDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Write with AI'**
+  String get mailAiDraft;
+
+  /// No description provided for @mailAiInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like to say?'**
+  String get mailAiInstructions;
+
+  /// No description provided for @mailGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate'**
+  String get mailGenerate;
+
+  /// No description provided for @mailViewOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'View formatted message'**
+  String get mailViewOriginal;
+
+  /// No description provided for @mailDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download or share attachment'**
+  String get mailDownload;
+
+  /// No description provided for @mailLoadImages.
+  ///
+  /// In en, this message translates to:
+  /// **'Load remote images'**
+  String get mailLoadImages;
+
+  /// No description provided for @mailSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail settings'**
+  String get mailSettings;
+
+  /// No description provided for @mailSenderName.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender name'**
+  String get mailSenderName;
+
+  /// No description provided for @mailSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Signature'**
+  String get mailSignature;
+
+  /// No description provided for @mailAutoDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically draft replies'**
+  String get mailAutoDraft;
+
+  /// No description provided for @mailDeliveryProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivery provider'**
+  String get mailDeliveryProvider;
+
+  /// No description provided for @mailDomainDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Domain default'**
+  String get mailDomainDefault;
+
+  /// No description provided for @mailSmartLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart labels'**
+  String get mailSmartLabels;
+
+  /// No description provided for @mailForwarding.
+  ///
+  /// In en, this message translates to:
+  /// **'Forwarding'**
+  String get mailForwarding;
+
+  /// No description provided for @mailForwardingOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mailForwardingOff;
+
+  /// No description provided for @mailCatchAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch-all mailbox'**
+  String get mailCatchAll;
+
+  /// No description provided for @mailForwardTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward to mailbox address'**
+  String get mailForwardTo;
+
+  /// No description provided for @mailGroupPosting.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can post to the group'**
+  String get mailGroupPosting;
+
+  /// No description provided for @mailGroupAttachments.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can send attachments'**
+  String get mailGroupAttachments;
+
+  /// No description provided for @mailGroupSendAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can send as the group'**
+  String get mailGroupSendAs;
+
+  /// No description provided for @mailAnyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone'**
+  String get mailAnyone;
+
+  /// No description provided for @mailOrganization.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get mailOrganization;
+
+  /// No description provided for @mailMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get mailMembers;
+
+  /// No description provided for @mailManagers.
+  ///
+  /// In en, this message translates to:
+  /// **'Managers'**
+  String get mailManagers;
+
+  /// No description provided for @mailLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'Labels'**
+  String get mailLabels;
+
+  /// No description provided for @mailFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders'**
+  String get mailFolders;
+
+  /// No description provided for @mailEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get mailEmail;
+
+  /// No description provided for @mailName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get mailName;
+
+  /// No description provided for @mailViewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewer'**
+  String get mailViewer;
+
+  /// No description provided for @mailSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender'**
+  String get mailSender;
+
+  /// No description provided for @mailAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get mailAdmin;
+
+  /// No description provided for @mailOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get mailOwner;
+
+  /// No description provided for @mailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get mailDescription;
+
+  /// No description provided for @mailAutoApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply automatically'**
+  String get mailAutoApply;
+
+  /// No description provided for @mailDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this item? This cannot be undone.'**
+  String get mailDeleteConfirm;
+
+  /// No description provided for @mailMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get mailMarkAllRead;
+
+  /// No description provided for @mailAllLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'All labels and folders'**
+  String get mailAllLabels;
+
+  /// No description provided for @mailSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all loaded messages'**
+  String get mailSelectAll;
+
+  /// No description provided for @mailDeleteDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete draft'**
+  String get mailDeleteDraft;
+
+  /// No description provided for @mailDeleteDraftConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this draft and its attachments?'**
+  String get mailDeleteDraftConfirmation;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -7599,4 +7599,223 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get connectedOnboardingSettingsDescription => 'Xem lại vai trò, lộ trình mục tiêu và hệ sinh thái ứng dụng kết nối mà không thay đổi dữ liệu của bạn.';
+
+  @override
+  String get mailTitle => 'Thư';
+
+  @override
+  String get mailAccessRequired => 'Bạn cần tài khoản @tuturuuu.com để dùng Thư.';
+
+  @override
+  String get mailInbox => 'Hộp thư đến';
+
+  @override
+  String get mailSent => 'Đã gửi';
+
+  @override
+  String get mailDrafts => 'Thư nháp';
+
+  @override
+  String get mailStarred => 'Đã gắn sao';
+
+  @override
+  String get mailArchive => 'Lưu trữ';
+
+  @override
+  String get mailSpam => 'Thư rác';
+
+  @override
+  String get mailTrash => 'Thùng rác';
+
+  @override
+  String get mailCompose => 'Soạn thư';
+
+  @override
+  String get mailMailbox => 'Hộp thư';
+
+  @override
+  String get mailSearch => 'Tìm thư';
+
+  @override
+  String get mailEmpty => 'Chưa có thư';
+
+  @override
+  String get mailNoSubject => '(Không có tiêu đề)';
+
+  @override
+  String get mailLoadMore => 'Xem thêm';
+
+  @override
+  String get mailTo => 'Đến';
+
+  @override
+  String get mailCc => 'Cc';
+
+  @override
+  String get mailBcc => 'Bcc';
+
+  @override
+  String get mailSubject => 'Tiêu đề';
+
+  @override
+  String get mailBody => 'Nội dung';
+
+  @override
+  String get mailSaveDraft => 'Lưu thư nháp';
+
+  @override
+  String get mailSend => 'Gửi';
+
+  @override
+  String get mailAttach => 'Đính kèm tệp';
+
+  @override
+  String get mailRemoveAttachment => 'Xóa tệp đính kèm';
+
+  @override
+  String get mailActionFailed => 'Không thể hoàn tất thao tác. Thư nháp vẫn được giữ lại, vui lòng thử lại.';
+
+  @override
+  String get mailInvalidRecipient => 'Vui lòng nhập địa chỉ email người nhận hợp lệ.';
+
+  @override
+  String get mailMarkUnread => 'Đánh dấu chưa đọc';
+
+  @override
+  String get mailRestore => 'Chuyển về hộp thư đến';
+
+  @override
+  String get mailStar => 'Gắn sao';
+
+  @override
+  String get mailUnstar => 'Bỏ gắn sao';
+
+  @override
+  String get mailReply => 'Trả lời';
+
+  @override
+  String get mailReplyAll => 'Trả lời tất cả';
+
+  @override
+  String get mailForward => 'Chuyển tiếp';
+
+  @override
+  String get mailAiDraft => 'Soạn thư với AI';
+
+  @override
+  String get mailAiInstructions => 'Bạn muốn viết nội dung gì?';
+
+  @override
+  String get mailGenerate => 'Tạo nội dung';
+
+  @override
+  String get mailViewOriginal => 'Xem thư có định dạng';
+
+  @override
+  String get mailDownload => 'Tải xuống hoặc chia sẻ tệp';
+
+  @override
+  String get mailLoadImages => 'Hiển thị ảnh từ bên ngoài';
+
+  @override
+  String get mailSettings => 'Cài đặt thư';
+
+  @override
+  String get mailSenderName => 'Tên người gửi';
+
+  @override
+  String get mailSignature => 'Chữ ký';
+
+  @override
+  String get mailAutoDraft => 'Tự động soạn thư trả lời';
+
+  @override
+  String get mailDeliveryProvider => 'Dịch vụ gửi thư';
+
+  @override
+  String get mailDomainDefault => 'Mặc định của tên miền';
+
+  @override
+  String get mailSmartLabels => 'Nhãn thông minh';
+
+  @override
+  String get mailForwarding => 'Chuyển tiếp tự động';
+
+  @override
+  String get mailForwardingOff => 'Tắt';
+
+  @override
+  String get mailCatchAll => 'Hộp thư nhận mọi địa chỉ';
+
+  @override
+  String get mailForwardTo => 'Chuyển tiếp đến địa chỉ hộp thư';
+
+  @override
+  String get mailGroupPosting => 'Ai được gửi thư đến nhóm';
+
+  @override
+  String get mailGroupAttachments => 'Ai được gửi tệp đính kèm';
+
+  @override
+  String get mailGroupSendAs => 'Ai được gửi thư thay mặt nhóm';
+
+  @override
+  String get mailAnyone => 'Mọi người';
+
+  @override
+  String get mailOrganization => 'Thành viên tổ chức';
+
+  @override
+  String get mailMembers => 'Thành viên';
+
+  @override
+  String get mailManagers => 'Người quản lý';
+
+  @override
+  String get mailLabels => 'Nhãn';
+
+  @override
+  String get mailFolders => 'Thư mục';
+
+  @override
+  String get mailEmail => 'Địa chỉ email';
+
+  @override
+  String get mailName => 'Tên';
+
+  @override
+  String get mailViewer => 'Người xem';
+
+  @override
+  String get mailSender => 'Người gửi';
+
+  @override
+  String get mailAdmin => 'Quản trị viên';
+
+  @override
+  String get mailOwner => 'Chủ sở hữu';
+
+  @override
+  String get mailDescription => 'Mô tả';
+
+  @override
+  String get mailAutoApply => 'Tự động áp dụng';
+
+  @override
+  String get mailDeleteConfirm => 'Xóa mục này? Bạn không thể hoàn tác thao tác này.';
+
+  @override
+  String get mailMarkAllRead => 'Đánh dấu tất cả đã đọc';
+
+  @override
+  String get mailAllLabels => 'Tất cả nhãn và thư mục';
+
+  @override
+  String get mailSelectAll => 'Chọn tất cả thư đã tải';
+
+  @override
+  String get mailDeleteDraft => 'Xóa bản nháp';
+
+  @override
+  String get mailDeleteDraftConfirmation => 'Xóa vĩnh viễn bản nháp này và các tệp đính kèm?';
 }

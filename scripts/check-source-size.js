@@ -58,6 +58,9 @@ function isAuthoredSourcePath(filePath) {
     EXACT_EXCLUSIONS.has(normalized) ||
     components.some((component) => EXCLUDED_COMPONENTS.has(component)) ||
     basename === 'routeTree.gen.ts' ||
+    /^apps\/[^/]+\/lib\/l10n\/gen\/app_localizations(?:_[a-z_]+)?\.dart$/u.test(
+      normalized
+    ) ||
     GENERATED_DART_SUFFIXES.some((suffix) => basename.endsWith(suffix))
   ) {
     return false;

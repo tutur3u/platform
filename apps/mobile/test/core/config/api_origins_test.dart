@@ -76,6 +76,10 @@ void main() {
         '/api/v1/workspaces/ws/education/attempts': ApiOrigin.teach,
         '/api/v1/workspaces/ws/time-tracking/sessions': ApiOrigin.track,
         '/api/v1/infrastructure/mobile-versions': ApiOrigin.infrastructure,
+        '/api/v1/workspaces/ws/mail/bootstrap': ApiOrigin.mail,
+        '/api/v1/workspaces/ws/mail/mailboxes/box/threads?page=2':
+            ApiOrigin.mail,
+        '/api/v1/mail/domains': ApiOrigin.mail,
       };
 
       for (final entry in expectations.entries) {

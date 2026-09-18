@@ -13,7 +13,10 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import {
+  guardApiProxyRequest,
+  hasAuthenticatedBearerToken,
+} from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
@@ -105,12 +108,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'mail',
-        });
+    const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
+    const appSessionRefresh =
+      isLocalAuthApi || hasBearerApiSession
+        ? null
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'mail',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return withMailApiCors(

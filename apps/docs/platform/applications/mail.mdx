@@ -1,6 +1,6 @@
 ---
 title: Tuturuuu Mail
-updatedAt: '2026-09-15'
+updatedAt: '2026-09-18'
 description: Multi-mailbox client with permanent SES and Cloudflare transports.
 ---
 
@@ -9,6 +9,37 @@ description: Multi-mailbox client with permanent SES and Cloudflare transports.
 auth to `apps/web`, and preserves Tuturuuu workspace and mailbox-role checks.
 Platform operators may configure additional managed domains; a mailbox address
 must match its linked `private.mail_domains` row.
+
+## Flutter Mail
+
+The mobile Apps hub exposes Mail to exact `@tuturuuu.com` accounts. Its API client
+routes workspace Mail requests directly to `mail.tuturuuu.com` (port 7820 in
+development), with an optional `MAIL_API_BASE_URL` build override. Bearer API
+requests skip browser-cookie refresh in the Mail proxy but still pass the API
+guard and route-level workspace and mailbox authorization.
+
+The native client supports mailbox switching, paginated conversations, search,
+standard folders, labels and custom folders, read/star/archive/trash actions,
+bounded bulk actions, and folder-wide mark-read. Drafts retain their server ID,
+recipients, reply headers and attachments. Closing saves pending edits; a failed
+save keeps the editor open. Composer attachments use bounded authenticated
+uploads, and forwarding copies attachments through the authorized draft API.
+
+Rich-text composition uses Quill and exports email HTML through the same draft
+and send contracts as the web client. Untouched saved HTML is preserved. AI
+results require review before replacing the editor content and never send mail
+automatically. Owners and admins can manage mailbox settings, forwarding,
+smart-label configuration, custom folders/labels and group membership.
+
+Account or workspace changes dispose the entire Mail navigation stack. Attachment
+downloads reject redirects and oversized responses. Original HTML renders in an
+isolated, script-disabled web view; remote images require an explicit action.
+Downloaded attachments use the device's native share sheet.
+
+Run `ttr resources run -- bun check:mobile` after native changes, and the Mail
+proxy auth tests plus the actual Mail build after auth-routing changes. Unit and
+widget checks do not prove real-provider sending, receiving, or store delivery;
+verify those separately with the intended authenticated account.
 
 ## Read state and archive actions
 

@@ -10,6 +10,7 @@ enum ApiOrigin {
   teach,
   track,
   infrastructure,
+  mail,
 }
 
 /// Resolves each mobile API path to the app that owns it.
@@ -32,6 +33,7 @@ class ApiOrigins {
     String? teachOverride,
     String? trackOverride,
     String? infrastructureOverride,
+    String? mailOverride,
   }) {
     final production = flavor != AppFlavor.development;
     String resolve(String? override, String localUrl, String productionUrl) =>
@@ -89,6 +91,11 @@ class ApiOrigins {
           'http://localhost:7823',
           'https://infrastructure.tuturuuu.com',
         ),
+        ApiOrigin.mail: resolve(
+          mailOverride,
+          'http://localhost:7820',
+          'https://mail.tuturuuu.com',
+        ),
       },
     )..validate();
   }
@@ -102,6 +109,10 @@ class ApiOrigins {
 
   ApiOrigin ownerForPath(String rawPath) {
     final path = rawPath.split('?').first;
+    if (_matchesWorkspaceV1(path, r'mail(?:/|$)') ||
+        RegExp(r'^/api/v1/mail(?:/|$)').hasMatch(path)) {
+      return ApiOrigin.mail;
+    }
 
     if (_matchesWorkspace(path, r'(?:wallets|transactions)(?:/|$)') ||
         _matchesWorkspaceV1(path, r'finance(?:/|$)')) {

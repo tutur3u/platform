@@ -4,7 +4,6 @@ import 'package:mobile/core/config/api_origins.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/env.dart';
 
-/// API endpoint constants ported from apps/native/lib/config/api.ts.
 class ApiConfig {
   const ApiConfig._();
 
@@ -25,6 +24,7 @@ class ApiConfig {
     teachOverride: Env.teachApiBaseUrl,
     trackOverride: Env.trackApiBaseUrl,
     infrastructureOverride: Env.infrastructureApiBaseUrl,
+    mailOverride: Env.mailApiBaseUrl,
   );
 
   /// Base URL with Android emulator localhost rewriting.

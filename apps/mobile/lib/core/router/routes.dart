@@ -16,6 +16,7 @@ abstract final class Routes {
   static const apps = '/apps';
   static const assistant = '/assistant';
   static const chat = '/chat';
+  static const mail = '/mail';
   static const notifications = '/notifications';
   static const notificationsArchive = '/notifications/archive';
   static const profileRoot = '/profile';
@@ -139,6 +140,8 @@ abstract final class Routes {
 
   static String? miniAppRootForLocation(String location) {
     final normalized = normalizeLocation(location);
+
+    if (normalized == mail || normalized.startsWith('$mail/')) return mail;
 
     if (normalized == tasks || normalized.startsWith('$tasks/')) {
       return tasks;

@@ -70,6 +70,8 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
+  hasAuthenticatedBearerToken: (headers: Headers) =>
+    headers.get('authorization')?.startsWith('Bearer ') ?? false,
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
@@ -105,6 +107,35 @@ describe('Mail proxy auth handoff', () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+  });
+
+  it('passes mobile Bearer requests through the API guard without cookie refresh', async () => {
+    const request = new NextRequest(
+      'https://mail.tuturuuu.localhost/api/v1/workspaces/personal/mail/bootstrap',
+      { headers: { authorization: 'Bearer mobile-session' } }
+    );
+    const response = await proxy(request);
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:mail:api',
+    });
+  });
+
+  it('preserves API guard rejection for Bearer requests', async () => {
+    const rejection = NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValueOnce(rejection);
+    const response = await proxy(
+      new NextRequest(
+        'https://mail.tuturuuu.localhost/api/v1/workspaces/personal/mail/bootstrap',
+        { headers: { authorization: 'Bearer invalid-session' } }
+      )
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
   it('consumes verify-token requests before centralized auth redirects', async () => {
