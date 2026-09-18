@@ -50,6 +50,27 @@ class CacheStore {
   final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
   final Map<String, int> _keyRevisions = {};
   int _revision = 0;
+  final Map<(String?, String?), int> _scopeRevisions = {};
+  final Map<(String?, String?), int> _clearingScopes = {};
+
+  Iterable<(String?, String?)> _scopes(CacheKey key) => {
+    (null, null),
+    (key.userId, null),
+    (null, key.workspaceId),
+    (key.userId, key.workspaceId),
+  };
+
+  int _revisionFor(CacheKey key) {
+    var revision = _keyRevisions[key.value] ?? 0;
+    for (final scope in _scopes(key)) {
+      final scoped = _scopeRevisions[scope] ?? 0;
+      if (scoped > revision) revision = scoped;
+    }
+    return revision;
+  }
+
+  bool _isClearing(CacheKey key) =>
+      _scopes(key).any((scope) => (_clearingScopes[scope] ?? 0) > 0);
 
   void _advanceKey(String key) => _keyRevisions[key] = ++_revision;
 
@@ -313,8 +334,8 @@ class CacheStore {
     int? expectedRevision,
   }) async {
     await init();
-    if (expectedRevision != null &&
-        expectedRevision != (_keyRevisions[key.value] ?? 0)) {
+    if (_isClearing(key)) return;
+    if (expectedRevision != null && expectedRevision != _revisionFor(key)) {
       return;
     }
     if (expectedRevision == null) _advanceKey(key.value);
@@ -385,42 +406,50 @@ class CacheStore {
   }
 
   Future<void> clearScope({String? userId, String? workspaceId}) async {
-    _invalidateFlights(
-      (key, _) =>
-          (userId == null || key.userId == userId) &&
-          (workspaceId == null || key.workspaceId == workspaceId),
-    );
-    await init();
-    final keysToDelete = <String>[];
-    for (final entry in _memory.entries) {
-      final record = entry.value;
-      final matchesUser = userId == null || record.userId == userId;
-      final matchesWorkspace =
-          workspaceId == null || record.workspaceId == workspaceId;
-      if (matchesUser && matchesWorkspace) {
-        keysToDelete.add(entry.key);
+    final scope = (userId, workspaceId);
+    _scopeRevisions[scope] = ++_revision;
+    _clearingScopes[scope] = (_clearingScopes[scope] ?? 0) + 1;
+    try {
+      await init();
+      final keysToDelete = <String>[];
+      for (final entry in _memory.entries) {
+        final record = entry.value;
+        final matchesUser = userId == null || record.userId == userId;
+        final matchesWorkspace =
+            workspaceId == null || record.workspaceId == workspaceId;
+        if (matchesUser && matchesWorkspace) {
+          keysToDelete.add(entry.key);
+        }
       }
-    }
 
-    for (final key in keysToDelete) {
-      _memory.remove(key);
-      await _resourceBox.delete(key);
-    }
-
-    final mutationIds = <dynamic>[];
-    for (final dynamic key in _mutationBox.keys) {
-      final raw = _mutationBox.get(key);
-      if (raw is! Map<dynamic, dynamic>) continue;
-      final record = PendingMutationRecord.fromJson(raw);
-      final matchesUser = userId == null || record.userId == userId;
-      final matchesWorkspace =
-          workspaceId == null || record.workspaceId == workspaceId;
-      if (matchesUser && matchesWorkspace) {
-        mutationIds.add(key);
+      for (final key in keysToDelete) {
+        _memory.remove(key);
+        await _resourceBox.delete(key);
       }
-    }
-    for (final id in mutationIds) {
-      await _mutationBox.delete(id);
+
+      final mutationIds = <dynamic>[];
+      for (final dynamic key in _mutationBox.keys) {
+        final raw = _mutationBox.get(key);
+        if (raw is! Map<dynamic, dynamic>) continue;
+        final record = PendingMutationRecord.fromJson(raw);
+        final matchesUser = userId == null || record.userId == userId;
+        final matchesWorkspace =
+            workspaceId == null || record.workspaceId == workspaceId;
+        if (matchesUser && matchesWorkspace) {
+          mutationIds.add(key);
+        }
+      }
+      for (final id in mutationIds) {
+        await _mutationBox.delete(id);
+      }
+    } finally {
+      _scopeRevisions[scope] = ++_revision;
+      final remaining = _clearingScopes[scope]! - 1;
+      if (remaining == 0) {
+        _clearingScopes.remove(scope);
+      } else {
+        _clearingScopes[scope] = remaining;
+      }
     }
   }
 
@@ -455,20 +484,26 @@ class CacheStore {
     bool forceRefresh = false,
     List<String> tags = const <String>[],
   }) async {
+    final revision = _revisionFor(key);
+    if (_isClearing(key)) {
+      return CacheReadResult<T>(state: CacheEntryState.missing);
+    }
     final cached = await read<T>(key: key, decode: decode);
+    if (_isClearing(key) || revision != _revisionFor(key)) {
+      return CacheReadResult<T>(state: CacheEntryState.missing);
+    }
     final shouldFetch = forceRefresh || !cached.hasValue || !cached.isFresh;
     if (!shouldFetch) {
       return cached;
     }
 
-    final revision = _keyRevisions[key.value] ?? 0;
     final flightKey = '$revision:${key.value}';
     Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
       _flightScopes[flightKey] = (key: key, tags: tags);
       return Future<Object?>.sync(fetch)
           .then((payload) async {
             // Never resurrect data invalidated by a mutation or account logout.
-            if (revision == (_keyRevisions[key.value] ?? 0)) {
+            if (revision == _revisionFor(key)) {
               await write(
                 key: key,
                 policy: policy,
@@ -496,6 +531,9 @@ class CacheStore {
     }
 
     final payload = await refresh();
+    if (_isClearing(key) || revision != _revisionFor(key)) {
+      return CacheReadResult<T>(state: CacheEntryState.missing);
+    }
 
     return CacheReadResult<T>(
       state: CacheEntryState.fresh,
