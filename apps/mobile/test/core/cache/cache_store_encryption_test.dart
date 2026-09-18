@@ -238,6 +238,63 @@ void main() {
     },
   );
 
+  test('a direct write wins over an older fetch for the same key', () async {
+    final response = Completer<Object?>();
+    final started = Completer<void>();
+    final pending = cacheStore.prefetch(
+      key: key,
+      policy: CachePolicies.detail,
+      decode: decode,
+      fetch: () {
+        started.complete();
+        return response.future;
+      },
+    );
+    await started.future;
+    await cacheStore.write(
+      key: key,
+      policy: CachePolicies.detail,
+      payload: 'new name',
+    );
+    response.complete('old name');
+    await pending;
+    expect((await cacheStore.read(key: key, decode: decode)).data, 'new name');
+  });
+
+  test('unrelated writes and scoped invalidations preserve a fetch', () async {
+    final response = Completer<Object?>();
+    final started = Completer<void>();
+    final pending = cacheStore.prefetch(
+      key: key,
+      policy: CachePolicies.detail,
+      decode: decode,
+      tags: ['mail'],
+      fetch: () {
+        started.complete();
+        return response.future;
+      },
+    );
+    await started.future;
+    const other = CacheKey(
+      namespace: 'assistant.soul',
+      userId: 'b',
+      workspaceId: 'two',
+    );
+    await cacheStore.write(
+      key: other,
+      policy: CachePolicies.detail,
+      payload: 'other',
+    );
+    await cacheStore.remove(other);
+    await cacheStore.invalidateTags(['mail'], userId: 'b');
+    await cacheStore.invalidateTags(['mail'], workspaceId: 'two');
+    await cacheStore.invalidateTags(['finance'], userId: 'a');
+    await cacheStore.clearScope(userId: 'b');
+    response.complete('fresh');
+    await pending;
+    expect((await cacheStore.read(key: key, decode: decode)).data, 'fresh');
+  });
+
   test('encrypts cached resources and pending mutations at rest', () async {
     const resourceSecret = 'finance-wallet-secret-amount-123456789';
     const mutationSecret = 'pending-mutation-secret-description-987654321';

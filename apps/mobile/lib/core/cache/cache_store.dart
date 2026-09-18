@@ -47,7 +47,19 @@ class CacheStore {
   bool _initialized = false;
   Future<void>? _initialization;
   final Map<String, Future<Object?>> _inFlight = {};
+  final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
+  final Map<String, int> _keyRevisions = {};
   int _revision = 0;
+
+  void _advanceKey(String key) => _keyRevisions[key] = ++_revision;
+
+  void _invalidateFlights(
+    bool Function(CacheKey key, List<String> tags) matches,
+  ) {
+    for (final scope in _flightScopes.values) {
+      if (matches(scope.key, scope.tags)) _advanceKey(scope.key.value);
+    }
+  }
 
   Future<void> init() {
     if (_initialized) return Future<void>.value();
@@ -301,7 +313,11 @@ class CacheStore {
     int? expectedRevision,
   }) async {
     await init();
-    if (expectedRevision != null && expectedRevision != _revision) return;
+    if (expectedRevision != null &&
+        expectedRevision != (_keyRevisions[key.value] ?? 0)) {
+      return;
+    }
+    if (expectedRevision == null) _advanceKey(key.value);
     if (_nonPersistentResourceNamespaces.contains(key.namespace)) {
       _memory.remove(key.value);
       await _resourceBox.delete(key.value);
@@ -328,7 +344,7 @@ class CacheStore {
   }
 
   Future<void> remove(CacheKey key) async {
-    _revision++;
+    _advanceKey(key.value);
     await init();
     _memory.remove(key.value);
     await _resourceBox.delete(key.value);
@@ -340,8 +356,13 @@ class CacheStore {
     String? userId,
   }) async {
     await init();
-    _revision++;
     final tagSet = tags.toSet();
+    _invalidateFlights(
+      (key, flightTags) =>
+          (workspaceId == null || key.workspaceId == workspaceId) &&
+          (userId == null || key.userId == userId) &&
+          flightTags.any(tagSet.contains),
+    );
     final now = DateTime.now();
     final recordsToInvalidate = <String, CachedResourceRecord>{};
 
@@ -364,7 +385,11 @@ class CacheStore {
   }
 
   Future<void> clearScope({String? userId, String? workspaceId}) async {
-    _revision++;
+    _invalidateFlights(
+      (key, _) =>
+          (userId == null || key.userId == userId) &&
+          (workspaceId == null || key.workspaceId == workspaceId),
+    );
     await init();
     final keysToDelete = <String>[];
     for (final entry in _memory.entries) {
@@ -436,13 +461,14 @@ class CacheStore {
       return cached;
     }
 
-    final flightKey = '$_revision:${key.value}';
+    final revision = _keyRevisions[key.value] ?? 0;
+    final flightKey = '$revision:${key.value}';
     Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
-      final revision = _revision;
+      _flightScopes[flightKey] = (key: key, tags: tags);
       return Future<Object?>.sync(fetch)
           .then((payload) async {
             // Never resurrect data invalidated by a mutation or account logout.
-            if (revision == _revision) {
+            if (revision == (_keyRevisions[key.value] ?? 0)) {
               await write(
                 key: key,
                 policy: policy,
@@ -457,6 +483,7 @@ class CacheStore {
             // Remove the reference without returning/awaiting this same future.
             // ignore: discarded_futures
             _inFlight.remove(flightKey);
+            _flightScopes.remove(flightKey);
           });
     });
 
