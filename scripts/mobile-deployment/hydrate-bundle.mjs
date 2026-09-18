@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 
 const EXPECTED_ANDROID_PACKAGE = 'com.tuturuuu.app.mobile';
@@ -35,7 +35,11 @@ function sha256Hex(buffer) {
 
 function addMask(value) {
   if (value) {
-    process.stdout.write(`::add-mask::${String(value)}\n`);
+    const escaped = String(value)
+      .replaceAll('%', '%25')
+      .replaceAll('\r', '%0D')
+      .replaceAll('\n', '%0A');
+    process.stdout.write(`::add-mask::${escaped}\n`);
   }
 }
 
@@ -44,14 +48,16 @@ function exportEnv(name, value) {
     return;
   }
 
-  appendFileSync(process.env.GITHUB_ENV, `${name}<<__MOBILE_DEPLOY__\n`);
+  const delimiter = `MOBILE_DEPLOY_${randomUUID()}`;
+  appendFileSync(process.env.GITHUB_ENV, `${name}<<${delimiter}\n`);
   appendFileSync(process.env.GITHUB_ENV, `${value ?? ''}\n`);
-  appendFileSync(process.env.GITHUB_ENV, '__MOBILE_DEPLOY__\n');
+  appendFileSync(process.env.GITHUB_ENV, `${delimiter}\n`);
 }
 
 async function writeSecureFile(path, buffer) {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   await writeFile(path, buffer, { mode: 0o600 });
+  await chmod(path, 0o600);
 }
 
 async function writeBundleFile(bundle, kind, path) {
@@ -61,7 +67,7 @@ async function writeBundleFile(bundle, kind, path) {
   }
 
   const buffer = Buffer.from(file.base64, 'base64');
-  if (sha256Hex(buffer) !== file.sha256) {
+  if (buffer.byteLength !== file.size || sha256Hex(buffer) !== file.sha256) {
     fail(`SHA-256 mismatch for ${kind}`);
   }
 
@@ -194,13 +200,19 @@ async function main() {
     join(runnerTemp, 'mobile-deployment/app-store.mobileprovision')
   );
   const keyId = bundle.scalarValues.APP_STORE_CONNECT_API_KEY_ID;
+  if (!/^[A-Z0-9]{10}$/u.test(keyId ?? '')) {
+    fail(
+      'APP_STORE_CONNECT_API_KEY_ID must contain 10 uppercase letters or digits'
+    );
+  }
+  const privateKeysDirectory = join(
+    runnerTemp,
+    'mobile-deployment/private_keys'
+  );
   const p8Path = await writeBundleFile(
     bundle,
     'app_store_connect_private_key_p8',
-    join(
-      process.env.HOME || runnerTemp,
-      `.appstoreconnect/private_keys/AuthKey_${keyId}.p8`
-    )
+    join(privateKeysDirectory, `AuthKey_${keyId}.p8`)
   );
 
   exportEnv('APPLE_BUNDLE_ID', EXPECTED_IOS_BUNDLE);
@@ -217,6 +229,7 @@ async function main() {
     bundle.scalarValues.APP_STORE_CONNECT_ISSUER_ID
   );
   exportEnv('APP_STORE_CONNECT_PRIVATE_KEY_PATH', p8Path);
+  exportEnv('API_PRIVATE_KEYS_DIR', privateKeysDirectory);
 }
 
 await main();

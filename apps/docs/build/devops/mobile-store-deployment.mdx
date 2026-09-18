@@ -1,7 +1,7 @@
 ---
 title: "Mobile Store Deployment Vault"
 description: "What every Mobile Deployment vault field is, what it does in the store release workflow, and where to obtain its value."
-updatedAt: "2026-06-15"
+updatedAt: "2026-09-18"
 ---
 
 This runbook explains each field on the **Infrastructure → Mobile Deployment**
@@ -14,6 +14,17 @@ Each field on the settings page has an inline help tooltip with a short summary
 and the console URL; this page is the full reference with clickable links.
 
 ## How The Vault Is Organized
+
+The Infrastructure deployment must have the existing `ENCRYPTION_MASTER_KEY`
+that encrypted the vault's data keys. Link the team's shared variable to the
+Infrastructure project and redeploy for environment changes to take effect.
+Do not generate a replacement key for an existing vault: it would make stored
+versions unreadable. A server-render error with a missing master-key message in
+the deployment logs indicates this configuration is absent.
+
+Vault administration uses the signed-in Infrastructure app session and checks
+the root workspace's `manage_mobile_deployment_vault` permission. CI reads use
+the separately scoped CI token and GitHub OIDC identity.
 
 - **Secrets** — short scalar values (passwords, IDs, names) and preset
   environment variables baked into the build.
@@ -93,3 +104,50 @@ Edits land in a **draft** version. Use **Verify** to re-run readiness checks,
 **Activate draft** to promote it to the active bundle the workflow reads, and
 **Roll back** to return to the previous active version. Fix any readiness issues
 listed on the Overview tab before activating.
+
+## Automatic beta rollout
+
+The workflow runs after relevant pushes to `production`. Retry the latest push
+run for recovery; vault OIDC validation permits production push events only.
+Other refs fail the preflight check.
+Configure the `mobile-store-beta` GitHub environment to allow only the
+`production` branch, and store the issued vault token as its
+`MOBILE_DEPLOYMENT_CI_TOKEN` secret. A missing token fails the run instead of
+silently skipping both publishing jobs.
+
+Both jobs fetch the active encrypted vault bundle from
+`https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle`, with the
+CI bearer token and GitHub OIDC attestation. Signing files, private keys, and
+build environment files are hydrated only into temporary runner paths and
+cleaned up afterward. Do not copy signing values into repository secrets or
+commit them to source. The App Store private key uses `API_PRIVATE_KEYS_DIR`.
+
+Each workflow run assigns both platforms the build number
+`100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT`. Retrying a job receives
+a fresh number. Release Please continues to own the marketing version. Retry
+the newest release workflow rather than an older source revision after a more
+recent build has already been published.
+
+Android uploads a signed AAB to the **internal** track with completed status.
+The verification step reads that track using a temporary Play API edit and
+requires the exact version code. It deletes the edit without committing it.
+
+iOS validates the profile's expiration, exact team and bundle ID, App Store
+distribution type, and production push entitlement. CI uses a temporary
+keychain and an ignored `ios/Flutter/StoreSigning.xcconfig` for manual
+distribution signing. Export uses the profile UUID and App Store Connect export
+method. Local development keeps its existing signing settings when that file
+does not exist.
+
+Create or reuse an internal TestFlight group with automatic distribution enabled.
+After upload, verification waits up to 30 minutes for the exact build to become
+valid and available for internal beta testing. An accepted upload alone does
+not pass verification. Missing export compliance, processing failures, and
+missing internal distribution must be resolved in App Store Connect; rerunning
+verification cannot resolve those account requirements.
+
+Run focused release checks with `node --test scripts/mobile-deployment/*.test.mjs
+scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
+for repository validation and `ttr resources run -- bun check:mobile` for the
+Flutter checks. Store availability still requires an authenticated release run
+with the active production vault and real signing assets.
