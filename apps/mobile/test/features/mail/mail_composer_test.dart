@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
@@ -25,6 +28,51 @@ Widget app(
 );
 
 void main() {
+  testWidgets('failed back-save keeps the draft and locks edits while saving', (
+    tester,
+  ) async {
+    final repository = MockMailRepository();
+    final saving = Completer<Map<String, dynamic>>();
+    when(
+      () => repository.saveDraft(
+        any(),
+        any(),
+        any(),
+        draftId: any(named: 'draftId'),
+      ),
+    ).thenAnswer((_) => saving.future);
+    await tester.pumpWidget(app(repository));
+    await tester.enterText(find.byType(TextField).at(3), 'Keep this draft');
+    unawaited(
+      Navigator.of(tester.element(find.byType(MailComposer))).maybePop(),
+    );
+    await tester.pump();
+    expect(
+      tester.widget<TextField>(find.byType(TextField).at(3)).enabled,
+      isFalse,
+    );
+    expect(
+      tester.widget<QuillEditor>(find.byType(QuillEditor)).controller.readOnly,
+      isTrue,
+    );
+    saving.completeError(StateError('offline'));
+    await tester.pumpAndSettle();
+    expect(find.text('Keep this draft'), findsOneWidget);
+    expect(find.byType(MailComposer), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField).at(3)).enabled,
+      isTrue,
+    );
+    verify(
+      () => repository.saveDraft(
+        any(),
+        any(),
+        any(),
+        draftId: any(named: 'draftId'),
+      ),
+    ).called(1);
+  });
+
   testWidgets('save failure preserves editor and does not send', (
     tester,
   ) async {

@@ -202,6 +202,7 @@ class _MailComposerState extends State<MailComposer> {
   }
 
   Future<void> _perform(Future<void> Function() action) async {
+    _body.quill.readOnly = true;
     setState(() => _busy = true);
     try {
       await action();
@@ -212,7 +213,10 @@ class _MailComposerState extends State<MailComposer> {
         ).showSnackBar(SnackBar(content: Text(context.l10n.mailActionFailed)));
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        _body.quill.readOnly = false;
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -458,11 +462,13 @@ class _MailComposerState extends State<MailComposer> {
               ])
                 TextField(
                   controller: field.$1,
+                  enabled: !_busy,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(labelText: field.$2),
                 ),
               TextField(
                 controller: _subject,
+                enabled: !_busy,
                 decoration: InputDecoration(labelText: l10n.mailSubject),
               ),
               MailBodyEditor(controller: _body),

@@ -42,7 +42,9 @@ class _MailNavigatorState extends State<_MailNavigator> {
   final _navigator = GlobalKey<NavigatorState>();
   @override
   Widget build(BuildContext context) => NavigatorPopHandler<Object?>(
-    onPopWithResult: (result) => _navigator.currentState?.pop(result),
+    onPopWithResult: (result) {
+      unawaited(_navigator.currentState?.maybePop(result));
+    },
     child: Navigator(
       key: _navigator,
       onGenerateRoute: (_) => MaterialPageRoute<void>(
