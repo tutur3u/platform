@@ -1,10 +1,7 @@
 import 'server-only';
 
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -108,8 +105,7 @@ function resolveMutationRequestOrigins(request: Request) {
 export async function authorizeMobileDeploymentAdmin(
   request: Request
 ): Promise<MobileDeploymentAdminAccess> {
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const user = await getSatelliteAppSessionUser('infra');
 
   if (!user) {
     return {
@@ -124,6 +120,7 @@ export async function authorizeMobileDeploymentAdmin(
 
   const permissions = await getPermissions({
     request,
+    user,
     wsId: ROOT_WORKSPACE_ID,
   });
 

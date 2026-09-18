@@ -15,6 +15,17 @@ and the console URL; this page is the full reference with clickable links.
 
 ## How The Vault Is Organized
 
+The Infrastructure deployment must have the existing `ENCRYPTION_MASTER_KEY`
+that encrypted the vault's data keys. Link the team's shared variable to the
+Infrastructure project and redeploy for environment changes to take effect.
+Do not generate a replacement key for an existing vault: it would make stored
+versions unreadable. A server-render error with a missing master-key message in
+the deployment logs indicates this configuration is absent.
+
+Vault administration uses the signed-in Infrastructure app session and checks
+the root workspace's `manage_mobile_deployment_vault` permission. CI reads use
+the separately scoped CI token and GitHub OIDC identity.
+
 - **Secrets** — short scalar values (passwords, IDs, names) and preset
   environment variables baked into the build.
 - **Files** — signing certificates, keystores, and Firebase/Play config files.

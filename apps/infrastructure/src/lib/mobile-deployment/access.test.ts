@@ -2,19 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
-  createClient: vi.fn(),
   getPermissions: vi.fn(),
-  resolveAuthenticatedSessionUser: vi.fn(),
+  getSatelliteAppSessionUser: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
-  createClient: (...args: unknown[]) => mocks.createClient(...args),
 }));
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: (...args: unknown[]) =>
-    mocks.resolveAuthenticatedSessionUser(...args),
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: (...args: unknown[]) =>
+    mocks.getSatelliteAppSessionUser(...args),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: unknown[]) => mocks.getPermissions(...args),
@@ -39,10 +37,9 @@ function mutationRequest(headers: HeadersInit = {}) {
 describe('mobile deployment access guards', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createClient.mockResolvedValue({ auth: {} });
     mocks.createAdminClient.mockResolvedValue({ schema: vi.fn() });
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
-      user: { id: 'user-1' },
+    mocks.getSatelliteAppSessionUser.mockResolvedValue({
+      id: 'user-1',
     });
   });
 
@@ -150,7 +147,20 @@ describe('mobile deployment access guards', () => {
     const access = await authorizeMobileDeploymentAdmin(mutationRequest());
 
     expect(access.ok).toBe(true);
+    expect(mocks.getSatelliteAppSessionUser).toHaveBeenCalledWith('infra');
+    expect(mocks.getPermissions).toHaveBeenCalledWith(
+      expect.objectContaining({ user: { id: 'user-1' } })
+    );
     expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
+  it('rejects unauthenticated callers before creating an admin client', async () => {
+    mocks.getSatelliteAppSessionUser.mockResolvedValue(null);
+    const access = await authorizeMobileDeploymentAdmin(mutationRequest());
+    expect(access.ok).toBe(false);
+    if (!access.ok) expect(access.response.status).toBe(401);
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('rejects root secret managers without the mobile deployment vault permission', async () => {
