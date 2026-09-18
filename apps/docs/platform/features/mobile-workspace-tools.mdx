@@ -61,22 +61,46 @@ Do not move those paths to their satellites until mobile supports that authentic
 
 An HTTP 429 HTML response with `x-vercel-mitigated: challenge` is a Vercel browser
 challenge, not the application's JSON rate-limit response. Native HTTP clients
-cannot complete that challenge. Calendar has a scoped custom WAF rule
-for its mobile API paths with an `Authorization: Bearer ` header:
+cannot complete that challenge.
 
-- Calendar: `^/api/v1/(workspaces/[^/]+/calendar|calendar)(/|$)`
+Production mobile Calendar requests use the infrastructure app's
+`/api/v1/mobile-calendar/api/v1/…` gateway. Development uses the local Calendar
+app directly. The gateway validates the Bearer session with Supabase before
+reading any forwarding credential. It forwards only event CRUD, connected-account
+list/disconnect, calendar connection list/toggle, and OAuth URL discovery to the
+fixed `https://calendar.tuturuuu.com` origin. Calendar validates the original
+session again and enforces workspace permissions. Incoming cookies, forwarding
+headers, and client-supplied gateway credentials are never relayed. Redirects and
+non-JSON upstream responses are rejected; mutations are never automatically retried.
 
-This rule bypasses subsequent custom/managed WAF rules for matching requests.
-The header only selects the native API path; it does not authenticate a caller.
-Application Bearer-token validation, workspace authorization, and application
-rate limits still apply. Website traffic and requests without the header keep
-their existing challenge policy. Do not embed a hosting bypass secret in mobile.
+The server credential is stored as a versioned encrypted envelope in the root
+workspace's `workspace_secrets` row named `mobile_calendar_gateway:v1`. Its data
+key is encrypted with the infrastructure app's existing `ENCRYPTION_MASTER_KEY`.
+The envelope contains `version: 1`, `encryptedDataKey`, and `encryptedSecret`.
+Only the server decrypts it; it must never enter mobile build configuration,
+logs, source control, or the signing bundle.
 
-Inspect `vercel firewall overview --json` and `vercel firewall diff` for the exact
-Tuturuuu project before publishing a rule. Verify an invalid Bearer token returns
-JSON 401, ordinary website traffic retains its policy, and the signed-in mobile
-view loads real data. Review existing rules before introducing any exception,
-since a bypass also skips managed WAF rules beyond bot protection.
+Configure Calendar's custom WAF exception to require both its API path and an
+exact `x-tuturuuu-calendar-gateway` header value matching that private credential.
+Do not accept the mere presence of an Authorization header as a WAF bypass.
+The private credential allows verified gateway traffic through hosting challenges;
+it does not replace Calendar's application authentication or authorization.
+
+For cutover, deploy and verify the gateway, then publish clients using it. Replace
+the old path-plus-Bearer exception with the server-credential rule once both store
+builds are available. Verify invalid sessions return JSON 401 from the gateway
+without an upstream request, a signed-in Calendar loads real events, and direct
+Calendar requests with a forged Bearer or gateway header still receive the hosting
+challenge. Older clients that call Calendar directly need the mobile update.
+Keep publication on hold if gateway verification fails. Inspect the exact project's
+active rules and unpublished draft before changing or publishing its WAF config.
+
+For credential rotation, create a new encrypted envelope, temporarily allow both
+old and new **server credentials** at the WAF, update the secret row, verify a live
+Calendar read, then remove the old credential. Never restore the public Bearer
+exception as a fallback. Missing or invalid secret configuration fails closed with
+JSON 503. Responses use `private, no-store`; request bodies are limited to 512 KiB,
+response bodies to 8 MiB, and forwarding to 20 seconds.
 
 ## Mobile App Lock And Web QR Approval
 

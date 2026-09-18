@@ -30,6 +30,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/lazy_indexed_stack.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'shell_page_actions.dart';
 part 'shell_page_interactions.dart';
 part 'shell_page_layout.dart';
 part 'shell_page_navigation.dart';

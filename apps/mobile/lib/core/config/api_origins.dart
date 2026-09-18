@@ -105,7 +105,15 @@ class ApiOrigins {
 
   String urlFor(ApiOrigin origin) => _urls[origin]!;
 
-  String baseUrlForPath(String path) => urlFor(ownerForPath(path));
+  String baseUrlForPath(String path) {
+    final owner = ownerForPath(path);
+    if (owner == ApiOrigin.calendar && flavor != AppFlavor.development) {
+      // The infrastructure gateway verifies our session before attaching its
+      // private Calendar hosting credential. No bypass credential ships here.
+      return '${urlFor(ApiOrigin.infrastructure)}/api/v1/mobile-calendar';
+    }
+    return urlFor(owner);
+  }
 
   ApiOrigin ownerForPath(String rawPath) {
     final path = rawPath.split('?').first;

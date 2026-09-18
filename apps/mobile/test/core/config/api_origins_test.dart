@@ -30,6 +30,30 @@ void main() {
       );
     });
 
+    test(
+      'routes production Calendar requests through authenticated gateway',
+      () {
+        final origins = ApiOrigins.forFlavor(
+          AppFlavor.production,
+          calendarOverride: 'https://calendar.example.com',
+          infrastructureOverride: 'https://infra.example.com',
+        );
+        for (final path in [
+          '/api/v1/calendar/connections?wsId=personal',
+          '/api/v1/workspaces/personal/calendar/events',
+        ]) {
+          expect(
+            origins.baseUrlForPath(path),
+            'https://infra.example.com/api/v1/mobile-calendar',
+          );
+          expect(
+            ApiOrigins.forFlavor(AppFlavor.development).baseUrlForPath(path),
+            'http://localhost:7806',
+          );
+        }
+      },
+    );
+
     test('uses local app ports in development', () {
       final origins = ApiOrigins.forFlavor(AppFlavor.development);
 
