@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -25,49 +24,6 @@ class AppsHubPage extends StatefulWidget {
 }
 
 class _AppsHubPageState extends State<AppsHubPage> {
-  Timer? _tapShieldTimer;
-  var _tapShieldActive = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(CacheWarmupCoordinator.instance.prewarmModule('apps'));
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      final routeAnimation = ModalRoute.of(context)?.animation;
-      final isTransitioning =
-          routeAnimation != null &&
-          (routeAnimation.isAnimating ||
-              routeAnimation.status == AnimationStatus.forward);
-      if (!isTransitioning) {
-        return;
-      }
-
-      setState(() {
-        _tapShieldActive = true;
-      });
-
-      _tapShieldTimer = Timer(const Duration(milliseconds: 600), () {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _tapShieldActive = false;
-        });
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _tapShieldTimer?.cancel();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final modules = _orderedModules(AppRegistry.modules(context));
@@ -79,7 +35,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
         child: ResponsiveWrapper(
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
           child: IgnorePointer(
-            ignoring: _tapShieldActive,
+            ignoring: false,
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(
                 parent: AlwaysScrollableScrollPhysics(),
@@ -267,6 +223,7 @@ String _moduleDescription(BuildContext context, String moduleId) {
     'tasks' => context.l10n.appsHubTasksDescription,
     'chat' => context.l10n.appsHubChatDescription,
     'calendar' => context.l10n.appsHubCalendarDescription,
+    'mail' => context.l10n.appsHubMailDescription,
     'cms' => context.l10n.appsHubCmsDescription,
     'finance' => context.l10n.appsHubFinanceDescription,
     'drive' => context.l10n.appsHubDriveDescription,

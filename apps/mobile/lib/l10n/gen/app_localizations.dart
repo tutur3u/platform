@@ -97,6 +97,12 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @commonLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get commonLoading;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
@@ -1530,6 +1536,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Run products, stock, sales, and booth operations in one place.'**
   String get appsHubInventoryDescription;
+
+  /// No description provided for @appsHubMailDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Read and send email, manage drafts, and organize your inbox.'**
+  String get appsHubMailDescription;
 
   /// No description provided for @appsHubMeetDescription.
   ///

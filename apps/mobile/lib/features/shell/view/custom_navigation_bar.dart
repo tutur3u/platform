@@ -114,9 +114,9 @@ class _CustomNavItem extends StatelessWidget {
           curve: Curves.easeOutCubic,
           padding: EdgeInsetsDirectional.fromSTEB(
             compact ? 4 : (isFirst ? 6 : 12),
-            compact ? 6 : 10,
+            compact ? 4 : 10,
             compact ? 4 : (isLast ? 6 : 12),
-            compact ? 6 : 10,
+            compact ? 4 : 10,
           ),
           decoration: BoxDecoration(
             color: isSelected

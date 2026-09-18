@@ -50,14 +50,14 @@ class CacheStore {
   final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
   final Map<String, int> _keyRevisions = {};
   int _revision = 0;
-  final Map<(String?, String?), int> _scopeRevisions = {};
-  final Map<(String?, String?), int> _clearingScopes = {};
+  final Map<(String?, String?, String?), int> _scopeRevisions = {};
+  final Map<(String?, String?, String?), int> _clearingScopes = {};
 
-  Iterable<(String?, String?)> _scopes(CacheKey key) => {
-    (null, null),
-    (key.userId, null),
-    (null, key.workspaceId),
-    (key.userId, key.workspaceId),
+  Iterable<(String?, String?, String?)> _scopes(CacheKey key) => {
+    for (final user in {null, key.userId})
+      for (final workspace in {null, key.workspaceId})
+        for (final namespace in {null, key.namespace})
+          (user, workspace, namespace),
   };
 
   int _revisionFor(CacheKey key) {
@@ -405,8 +405,12 @@ class CacheStore {
     }
   }
 
-  Future<void> clearScope({String? userId, String? workspaceId}) async {
-    final scope = (userId, workspaceId);
+  Future<void> clearScope({
+    String? userId,
+    String? workspaceId,
+    String? namespace,
+  }) async {
+    final scope = (userId, workspaceId, namespace);
     _scopeRevisions[scope] = ++_revision;
     _clearingScopes[scope] = (_clearingScopes[scope] ?? 0) + 1;
     try {
@@ -417,7 +421,9 @@ class CacheStore {
         final matchesUser = userId == null || record.userId == userId;
         final matchesWorkspace =
             workspaceId == null || record.workspaceId == workspaceId;
-        if (matchesUser && matchesWorkspace) {
+        if (matchesUser &&
+            matchesWorkspace &&
+            (namespace == null || record.namespace == namespace)) {
           keysToDelete.add(entry.key);
         }
       }
@@ -427,6 +433,8 @@ class CacheStore {
         await _resourceBox.delete(key);
       }
 
+      // Resource-only purges must preserve unrelated queued offline changes.
+      if (namespace != null) return;
       final mutationIds = <dynamic>[];
       for (final dynamic key in _mutationBox.keys) {
         final raw = _mutationBox.get(key);

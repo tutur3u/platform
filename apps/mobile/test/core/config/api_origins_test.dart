@@ -30,6 +30,30 @@ void main() {
       );
     });
 
+    test(
+      'routes production Calendar requests through authenticated gateway',
+      () {
+        final origins = ApiOrigins.forFlavor(
+          AppFlavor.production,
+          calendarOverride: 'https://calendar.example.com',
+          infrastructureOverride: 'https://infra.example.com',
+        );
+        for (final path in [
+          '/api/v1/calendar/connections?wsId=personal',
+          '/api/v1/workspaces/personal/calendar/events',
+        ]) {
+          expect(
+            origins.baseUrlForPath(path),
+            'https://infra.example.com/api/v1/mobile-calendar',
+          );
+          expect(
+            ApiOrigins.forFlavor(AppFlavor.development).baseUrlForPath(path),
+            'http://localhost:7806',
+          );
+        }
+      },
+    );
+
     test('uses local app ports in development', () {
       final origins = ApiOrigins.forFlavor(AppFlavor.development);
 
@@ -69,12 +93,14 @@ void main() {
         '/api/v1/workspaces/ws/products/options': ApiOrigin.inventory,
         '/api/v1/workspaces/ws/task-boards?page=1': ApiOrigin.tasks,
         '/api/v1/users/me/tasks': ApiOrigin.tasks,
-        '/api/v1/workspaces/ws/users/database': ApiOrigin.contacts,
+        '/api/v1/workspaces/ws/users/database': ApiOrigin.platform,
+        '/api/v1/workspaces/ws/habits/access': ApiOrigin.tasks,
+        '/api/v1/workspaces/ws/users/audit-logs': ApiOrigin.platform,
         '/api/v1/workspaces/ws/calendar/events': ApiOrigin.calendar,
         '/api/v1/calendar/connections?wsId=ws': ApiOrigin.calendar,
         '/api/v1/workspaces/ws/courses': ApiOrigin.teach,
         '/api/v1/workspaces/ws/education/attempts': ApiOrigin.teach,
-        '/api/v1/workspaces/ws/time-tracking/sessions': ApiOrigin.track,
+        '/api/v1/workspaces/ws/time-tracking/sessions': ApiOrigin.platform,
         '/api/v1/infrastructure/mobile-versions': ApiOrigin.infrastructure,
         '/api/v1/workspaces/ws/mail/bootstrap': ApiOrigin.mail,
         '/api/v1/workspaces/ws/mail/mailboxes/box/threads?page=2':

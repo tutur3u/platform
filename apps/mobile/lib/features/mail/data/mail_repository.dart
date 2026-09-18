@@ -1,11 +1,16 @@
 import 'dart:typed_data';
 
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mail/data/mail_cache.dart';
 
 /// Uses the same authenticated, workspace-scoped contract as apps/mail.
 class MailRepository {
   MailRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
   final ApiClient _api;
+  final _cache = MailCache();
+
+  Map<String, dynamic>? cachedList(String wsId, String path) =>
+      _cache.peek(wsId, path);
 
   static String workspacePath(String wsId) =>
       '/api/v1/workspaces/${Uri.encodeComponent(wsId)}/mail';
@@ -23,6 +28,7 @@ class MailRepository {
     int page = 1,
     String? label,
     String? folderId,
+    bool forceRefresh = false,
   }) {
     final kind = folder == 'drafts' || folder == 'sent'
         ? 'messages'
@@ -37,7 +43,13 @@ class MailRepository {
         if (folderId != null) 'folderId': folderId,
       },
     ).query;
-    return _api.getJson('${mailboxPath(wsId, mailboxId)}/$kind?$params');
+    final path = '${mailboxPath(wsId, mailboxId)}/$kind?$params';
+    return _cache.read(
+      wsId,
+      path,
+      () => _api.getJson(path),
+      forceRefresh: forceRefresh,
+    );
   }
 
   Future<Map<String, dynamic>> detail(
@@ -58,7 +70,10 @@ class MailRepository {
   }) async {
     final path =
         '${mailboxPath(wsId, mailboxId)}/${thread ? 'threads' : 'messages'}/${Uri.encodeComponent(id)}';
-    await _api.patchJson(thread ? path : '$path/state', {'action': action});
+    await _cache.mutate(
+      wsId,
+      () => _api.patchJson(thread ? path : '$path/state', {'action': action}),
+    );
   }
 
   Future<Map<String, dynamic>> saveDraft(
@@ -67,10 +82,17 @@ class MailRepository {
     Map<String, dynamic> payload, {
     String? draftId,
   }) => draftId == null
-      ? _api.postJson('${mailboxPath(wsId, mailboxId)}/drafts', payload)
-      : _api.patchJson(
-          '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}',
-          payload,
+      ? _cache.mutate(
+          wsId,
+          () =>
+              _api.postJson('${mailboxPath(wsId, mailboxId)}/drafts', payload),
+        )
+      : _cache.mutate(
+          wsId,
+          () => _api.patchJson(
+            '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}',
+            payload,
+          ),
         );
 
   Future<void> deleteDraft(
@@ -78,8 +100,11 @@ class MailRepository {
     String mailboxId,
     String draftId,
   ) async {
-    await _api.deleteJson(
-      '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}',
+    await _cache.mutate(
+      wsId,
+      () => _api.deleteJson(
+        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}',
+      ),
     );
   }
 
@@ -87,7 +112,10 @@ class MailRepository {
     String wsId,
     String mailboxId,
     Map<String, dynamic> payload,
-  ) => _api.postJson('${mailboxPath(wsId, mailboxId)}/messages', payload);
+  ) => _cache.mutate(
+    wsId,
+    () => _api.postJson('${mailboxPath(wsId, mailboxId)}/messages', payload),
+  );
 
   Future<Map<String, dynamic>> uploadAttachment(
     String wsId,
@@ -109,8 +137,11 @@ class MailRepository {
     String draftId,
     String attachmentId,
   ) async {
-    await _api.deleteJson(
-      '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments/${Uri.encodeComponent(attachmentId)}',
+    await _cache.mutate(
+      wsId,
+      () => _api.deleteJson(
+        '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments/${Uri.encodeComponent(attachmentId)}',
+      ),
     );
   }
 
@@ -122,7 +153,10 @@ class MailRepository {
     String mailboxId,
     Map<String, dynamic> payload,
   ) async {
-    await _api.patchJson('${mailboxPath(wsId, mailboxId)}/settings', payload);
+    await _cache.mutate(
+      wsId,
+      () => _api.patchJson('${mailboxPath(wsId, mailboxId)}/settings', payload),
+    );
   }
 
   Future<Map<String, dynamic>> organization(String wsId, String mailboxId) =>
@@ -150,9 +184,9 @@ class MailRepository {
       final path =
           '${mailboxPath(wsId, mailboxId)}/${threads ? 'threads' : 'messages'}/bulk';
       if (threads) {
-        await _api.postJson(path, body);
+        await _cache.mutate(wsId, () => _api.postJson(path, body));
       } else {
-        await _api.patchJson(path, body);
+        await _cache.mutate(wsId, () => _api.patchJson(path, body));
       }
     }
   }
@@ -185,9 +219,12 @@ class MailRepository {
   }) async {
     final path = '${mailboxPath(wsId, mailboxId)}/$kind';
     if (id == null) {
-      await _api.postJson(path, payload);
+      await _cache.mutate(wsId, () => _api.postJson(path, payload));
     } else {
-      await _api.patchJson('$path/${Uri.encodeComponent(id)}', payload);
+      await _cache.mutate(
+        wsId,
+        () => _api.patchJson('$path/${Uri.encodeComponent(id)}', payload),
+      );
     }
   }
 
@@ -197,8 +234,11 @@ class MailRepository {
     String kind,
     String id,
   ) async {
-    await _api.deleteJson(
-      '${mailboxPath(wsId, mailboxId)}/$kind/${Uri.encodeComponent(id)}',
+    await _cache.mutate(
+      wsId,
+      () => _api.deleteJson(
+        '${mailboxPath(wsId, mailboxId)}/$kind/${Uri.encodeComponent(id)}',
+      ),
     );
   }
 
@@ -210,10 +250,13 @@ class MailRepository {
     String email,
     String role,
   ) async {
-    await _api.postJson('${mailboxPath(wsId, mailboxId)}/members', {
-      'email': email,
-      'role': role,
-    });
+    await _cache.mutate(
+      wsId,
+      () => _api.postJson('${mailboxPath(wsId, mailboxId)}/members', {
+        'email': email,
+        'role': role,
+      }),
+    );
   }
 
   Future<void> removeMember(
@@ -221,8 +264,11 @@ class MailRepository {
     String mailboxId,
     String userId,
   ) async {
-    await _api.deleteJson(
-      '${mailboxPath(wsId, mailboxId)}/members/${Uri.encodeComponent(userId)}',
+    await _cache.mutate(
+      wsId,
+      () => _api.deleteJson(
+        '${mailboxPath(wsId, mailboxId)}/members/${Uri.encodeComponent(userId)}',
+      ),
     );
   }
 
@@ -241,16 +287,22 @@ class MailRepository {
     String draftId,
     String sourceMessageId,
     List<String> ids,
-  ) => _api.postJson(
-    '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments',
-    {'sourceMessageId': sourceMessageId, 'attachmentIds': ids},
+  ) => _cache.mutate(
+    wsId,
+    () => _api.postJson(
+      '${mailboxPath(wsId, mailboxId)}/drafts/${Uri.encodeComponent(draftId)}/attachments',
+      {'sourceMessageId': sourceMessageId, 'attachmentIds': ids},
+    ),
   );
 
   Future<Map<String, dynamic>> aiDraft(
     String wsId,
     String mailboxId,
     Map<String, dynamic> payload,
-  ) => _api.postJson('${mailboxPath(wsId, mailboxId)}/ai/draft', payload);
+  ) => _cache.mutate(
+    wsId,
+    () => _api.postJson('${mailboxPath(wsId, mailboxId)}/ai/draft', payload),
+  );
 }
 
 List<Map<String, dynamic>> mailRows(Object? value) =>

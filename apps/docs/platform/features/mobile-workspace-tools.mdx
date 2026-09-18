@@ -11,16 +11,96 @@ The mobile app now ships first-party workspace surfaces for:
 - CRM at `Routes.crm`
 - Education at `Routes.education`
 
-Both modules are registered in the Apps hub and available through the mini-app navigation system.
+These modules are registered in the Apps hub and available through the mini-app navigation system.
 
-The mobile Apps hub now uses a single-column list of equal-priority app cards instead of the older grid treatment. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
+The mobile Apps hub uses the v0.9.2 colored cards with consistent icons and clear descriptions. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
 
 - `ShellMiniNav` for mode or section switching
 - `ShellChromeActions` for quick actions such as filters, create, sort, and view toggles
-- A finance-style overview hero card inside the page body for stats and search
-- Compact panel sections in the page body instead of raw admin `Card/ListTile` stacks, so module pages read like first-class mobile products rather than direct dashboard ports
+- A compact overview with a small number of relevant metrics
+- The v0.9.2 AppCardPalette gradient cards, consistent icon blocks, readable labels, and shared theme colors
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
+
+Meet is a standard launcher module, with meeting search, scheduling, editing, and deletion. Workspace visibility flags still apply. Every launcher module includes an English and Vietnamese description.
+
+## Responsive Loading And Cache Verification
+
+Root tabs initialize on their first visit and retain their state afterward. Hidden
+tabs stop ticking animations. Page content and navigation no longer wait for
+staggered entrance animations. Opening Apps does not prefetch every product.
+
+`CacheStore` shares initialization and concurrent fetches for the same scoped key.
+Expired entries wait for replacement; eligible stale entries can refresh in the
+background. Invalidation and logout prevent older in-flight requests from writing
+back into the cache. Keys must include user, workspace, and all query filters.
+Keys longer than Hive's 255-byte UTF-8 limit use a SHA-256 digest of the complete
+scoped identity. Keep short keys stable, and test persistence/reopening with real
+UUIDs and long search filters; short mock IDs can hide storage failures.
+
+Mail list snapshots use the existing encrypted Hive store, with a one-minute
+freshness window and a twenty-minute expiry. Cached rows appear while refresh is
+in progress. Pull-to-refresh bypasses freshness, and successful mutations
+invalidate the workspace's Mail variants. Permissions and message detail are
+fetched from the server; attachments, credentials, and active compose buffers are
+not cached. Authorization failures discard the displayed list. Search waits 300ms
+after typing, and list rows are built lazily. Folder metadata loads independently
+so it cannot hold up the inbox.
+
+When changing this behavior, verify cold launch, returning to a visited tab,
+pull-to-refresh, slow/failed requests, rapid search changes, and switching accounts
+or workspaces. Run the focused cache, Mail workspace, lazy tab, and shell back
+navigation tests, followed by `bun check:mobile`. Use an iOS simulator to inspect
+light/dark appearance, larger text, keyboard interaction, and narrow layouts.
+
+Time Tracking and CRM user mobile calls stay on the live platform origin: Track and Contacts require
+app-session credentials, while mobile currently uses Supabase Bearer sessions.
+Do not move those paths to their satellites until mobile supports that authentication contract.
+
+### Native API requests and hosting challenges
+
+An HTTP 429 HTML response with `x-vercel-mitigated: challenge` is a Vercel browser
+challenge, not the application's JSON rate-limit response. Native HTTP clients
+cannot complete that challenge.
+
+Production mobile Calendar requests use the infrastructure app's
+`/api/v1/mobile-calendar/api/v1/…` gateway. Development uses the local Calendar
+app directly. The gateway validates the Bearer session with Supabase before
+reading any forwarding credential. It forwards only event CRUD, connected-account
+list/disconnect, calendar connection list/toggle, and OAuth URL discovery to the
+fixed `https://calendar.tuturuuu.com` origin. Calendar validates the original
+session again and enforces workspace permissions. Incoming cookies, forwarding
+headers, and client-supplied gateway credentials are never relayed. Redirects and
+non-JSON upstream responses are rejected; mutations are never automatically retried.
+
+The server credential is stored as a versioned encrypted envelope in the root
+workspace's `workspace_secrets` row named `mobile_calendar_gateway:v1`. Its data
+key is encrypted with the infrastructure app's existing `ENCRYPTION_MASTER_KEY`.
+The envelope contains `version: 1`, `encryptedDataKey`, and `encryptedSecret`.
+Only the server decrypts it; it must never enter mobile build configuration,
+logs, source control, or the signing bundle.
+
+Configure Calendar's custom WAF exception to require both its API path and an
+exact `x-tuturuuu-calendar-gateway` header value matching that private credential.
+Do not accept the mere presence of an Authorization header as a WAF bypass.
+The private credential allows verified gateway traffic through hosting challenges;
+it does not replace Calendar's application authentication or authorization.
+
+For cutover, deploy and verify the gateway, then publish clients using it. Replace
+the old path-plus-Bearer exception with the server-credential rule once both store
+builds are available. Verify invalid sessions return JSON 401 from the gateway
+without an upstream request, a signed-in Calendar loads real events, and direct
+Calendar requests with a forged Bearer or gateway header still receive the hosting
+challenge. Older clients that call Calendar directly need the mobile update.
+Keep publication on hold if gateway verification fails. Inspect the exact project's
+active rules and unpublished draft before changing or publishing its WAF config.
+
+For credential rotation, create a new encrypted envelope, temporarily allow both
+old and new **server credentials** at the WAF, update the secret row, verify a live
+Calendar read, then remove the old credential. Never restore the public Bearer
+exception as a fallback. Missing or invalid secret configuration fails closed with
+JSON 503. Responses use `private, no-store`; request bodies are limited to 512 KiB,
+response bodies to 8 MiB, and forwarding to 20 seconds.
 
 ## Mobile App Lock And Web QR Approval
 

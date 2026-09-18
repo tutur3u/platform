@@ -71,16 +71,20 @@ extension _ShellPageLayout on _ShellPageState {
       return MediaQuery.removePadding(
         context: context,
         removeTop: true,
-        child: IndexedStack(
+        child: LazyIndexedStack(
           index: _ShellPageState._calculateSelectedIndex(
             widget.matchedLocation,
           ),
-          children: [
-            DashboardPage(replayToken: _rootTabReplayTokens[Routes.home] ?? 0),
-            AssistantPage(
+          builders: [
+            (_) => DashboardPage(
+              replayToken: _rootTabReplayTokens[Routes.home] ?? 0,
+            ),
+            (_) => AssistantPage(
               replayToken: _rootTabReplayTokens[Routes.assistant] ?? 0,
             ),
-            AppsHubPage(replayToken: _rootTabReplayTokens[Routes.apps] ?? 0),
+            (_) => AppsHubPage(
+              replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
+            ),
           ],
         ),
       );
@@ -142,7 +146,13 @@ extension _ShellPageLayout on _ShellPageState {
     if (isCompact) {
       return SizedBox(
         width: double.infinity,
-        height: _ShellPageState._compactBottomNavHeight,
+        height:
+            _ShellPageState._compactBottomNavHeight +
+            (MediaQuery.textScalerOf(context).scale(10) - 10).clamp(
+                  0,
+                  double.infinity,
+                ) *
+                1.6,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
@@ -656,82 +666,6 @@ extension _ShellPageLayout on _ShellPageState {
 
     return items[_miniSelectedIndex(widget.matchedLocation, items)].label(
       context.l10n,
-    );
-  }
-}
-
-class _ShellTrailingActions extends StatelessWidget {
-  const _ShellTrailingActions({required this.matchedLocation});
-
-  final String matchedLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    final titleOverrideCubit = lookupShellTitleOverrideCubit(context);
-    if (titleOverrideCubit == null) {
-      return _buildActions();
-    }
-
-    return BlocBuilder<ShellTitleOverrideCubit, ShellTitleOverrideState>(
-      bloc: titleOverrideCubit,
-      buildWhen: (previous, current) =>
-          previous.showAvatarForLocation(matchedLocation) !=
-          current.showAvatarForLocation(matchedLocation),
-      builder: (context, state) {
-        if (!state.showAvatarForLocation(matchedLocation)) {
-          return const SizedBox.shrink();
-        }
-
-        return _buildActions();
-      },
-    );
-  }
-
-  Widget _buildActions() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ShellInjectedActionsHost(
-          matchedLocation: matchedLocation,
-          includeNotifications: true,
-        ),
-        const SizedBox(width: 6),
-        _ShellAvatarSlot(matchedLocation: matchedLocation),
-      ],
-    );
-  }
-}
-
-class _ShellAvatarSlot extends StatelessWidget {
-  const _ShellAvatarSlot({required this.matchedLocation});
-
-  final String matchedLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    final titleOverrideCubit = lookupShellTitleOverrideCubit(context);
-    if (titleOverrideCubit == null) {
-      return const KeyedSubtree(
-        key: _ShellPageState._shellAvatarKey,
-        child: RepaintBoundary(child: AvatarDropdown()),
-      );
-    }
-
-    return BlocBuilder<ShellTitleOverrideCubit, ShellTitleOverrideState>(
-      bloc: titleOverrideCubit,
-      buildWhen: (previous, current) =>
-          previous.showAvatarForLocation(matchedLocation) !=
-          current.showAvatarForLocation(matchedLocation),
-      builder: (context, state) {
-        if (!state.showAvatarForLocation(matchedLocation)) {
-          return const SizedBox.shrink();
-        }
-
-        return const KeyedSubtree(
-          key: _ShellPageState._shellAvatarKey,
-          child: RepaintBoundary(child: AvatarDropdown()),
-        );
-      },
     );
   }
 }

@@ -9,8 +9,8 @@ class CacheWarmupCoordinator {
 
   final Map<String, CacheWarmupTask> _tasks = {};
   final Map<String, List<String>> _groups = {
-    'boot': <String>['home_payload', 'assistant_metadata', 'apps_registry'],
-    'home': <String>['assistant_metadata', 'apps_registry'],
+    'boot': <String>['apps_registry', 'assistant_metadata'],
+    'home': <String>['apps_registry', 'assistant_metadata'],
     'tasks': <String>[
       'tasks_list',
       'task_boards',
@@ -56,7 +56,11 @@ class CacheWarmupCoordinator {
         chunk.map((id) async {
           final task = _tasks[id];
           if (task == null) return;
-          await task(forceRefresh: forceRefresh);
+          try {
+            await task(forceRefresh: forceRefresh);
+          } on Object {
+            // Prefetch is optional; visible screens own errors and retry.
+          }
         }),
       );
     }

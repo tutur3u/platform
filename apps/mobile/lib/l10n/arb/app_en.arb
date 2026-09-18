@@ -1,4 +1,5 @@
 {
+  "commonLoading": "Loading",
     "@@locale": "en",
     "appTitle": "Tuturuuu",
     "chatAccept": "Accept",
@@ -283,6 +284,7 @@
     "appsHubEducationDescription": "Manage courses, question banks, flashcards, and learner attempts.",
     "appsHubFinanceDescription": "Manage wallets, categories, tags, and transaction history.",
     "appsHubInventoryDescription": "Run products, stock, sales, and booth operations in one place.",
+    "appsHubMailDescription": "Read and send email, manage drafts, and organize your inbox.",
     "appsHubMeetDescription": "Plan meetings, review schedules, and keep recordings visible.",
     "appsHubNotificationsDescription": "Review inbox activity, alerts, and archived updates.",
     "appsHubSettingsDescription": "Adjust app, workspace, and personal preferences.",

@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get commonLoading => 'Loading';
+
+  @override
   String get appTitle => 'Tuturuuu';
 
   @override
@@ -747,6 +750,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appsHubInventoryDescription => 'Run products, stock, sales, and booth operations in one place.';
+
+  @override
+  String get appsHubMailDescription => 'Read and send email, manage drafts, and organize your inbox.';
 
   @override
   String get appsHubMeetDescription => 'Plan meetings, review schedules, and keep recordings visible.';

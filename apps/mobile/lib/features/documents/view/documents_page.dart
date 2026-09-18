@@ -7,6 +7,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -342,6 +343,8 @@ class _DocumentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
+    final preview =
+        parseTipTapTaskDescription(document.content)?.plainText ?? '';
     return FinancePanel(
       onTap: onTap,
       padding: const EdgeInsets.all(16),
@@ -376,10 +379,10 @@ class _DocumentTile extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (document.content.trim().isNotEmpty) ...[
+                if (preview.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    document.content.trim(),
+                    preview,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(color: theme.colorScheme.mutedForeground),

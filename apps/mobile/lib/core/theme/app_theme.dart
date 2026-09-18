@@ -34,7 +34,7 @@ abstract final class AppTheme {
     );
   }
 
-  static ColorScheme get _lightScheme =>
+  static final ColorScheme _lightScheme =
       ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         surface: AppColors.backgroundLight,
@@ -47,7 +47,7 @@ abstract final class AppTheme {
         surfaceContainerHighest: const Color(0xFFE5DED2),
       );
 
-  static ColorScheme get _darkScheme =>
+  static final ColorScheme _darkScheme =
       ColorScheme.fromSeed(
         seedColor: AppColors.primaryDark,
         brightness: Brightness.dark,
@@ -61,7 +61,7 @@ abstract final class AppTheme {
         surfaceContainerHighest: const Color(0xFF31353C),
       );
 
-  static ThemeData get light => ThemeData(
+  static final ThemeData light = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: _lightScheme,
@@ -88,7 +88,7 @@ abstract final class AppTheme {
     ),
   );
 
-  static ThemeData get dark => ThemeData(
+  static final ThemeData dark = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: _darkScheme,

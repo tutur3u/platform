@@ -34,6 +34,7 @@ class AppRegistry {
     'chat',
     'calendar',
     'finance',
+    'meet',
   };
 
   static const Set<String> experimentalModuleIds = {
@@ -43,7 +44,6 @@ class AppRegistry {
     'cms',
     'education',
     'crm',
-    'meet',
     'inventory',
     'notifications',
     'timer',
@@ -489,7 +489,7 @@ class AppRegistry {
       _isExperimentalModuleAvailable(context, 'crm');
 
   static bool _showMeetModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'meet');
+      !_isModuleHiddenByWorkspaceSecret(context, 'meet');
 
   static bool _showHabitsModule(BuildContext context) {
     if (!_isExperimentalModuleAvailable(context, 'habits')) {

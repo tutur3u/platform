@@ -12,6 +12,9 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String get commonLoading => 'Đang tải';
+
+  @override
   String get appTitle => 'Tuturuuu';
 
   @override
@@ -747,6 +750,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appsHubInventoryDescription => 'Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.';
+
+  @override
+  String get appsHubMailDescription => 'Đọc và gửi email, quản lý thư nháp và sắp xếp hộp thư đến.';
 
   @override
   String get appsHubMeetDescription => 'Lên lịch họp, xem lịch trình và theo dõi bản ghi.';

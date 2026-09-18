@@ -91,6 +91,7 @@ AppCardPalette? _paletteForModule(String? moduleId, {required bool isDark}) {
               textColor: Color(0xFF2A184B),
             );
     case 'calendar':
+    case 'meet':
       return isDark
           ? const AppCardPalette(
               background: Color(0xFF1C2C37),
@@ -109,6 +110,7 @@ AppCardPalette? _paletteForModule(String? moduleId, {required bool isDark}) {
               textColor: Color(0xFF163347),
             );
     case 'chat':
+    case 'mail':
       return isDark
           ? const AppCardPalette(
               background: Color(0xFF1B2D2F),
@@ -163,6 +165,7 @@ AppCardPalette? _paletteForModule(String? moduleId, {required bool isDark}) {
               textColor: Color(0xFF4E173A),
             );
     case 'drive':
+    case 'documents':
       return isDark
           ? const AppCardPalette(
               background: Color(0xFF1B3225),
@@ -181,6 +184,7 @@ AppCardPalette? _paletteForModule(String? moduleId, {required bool isDark}) {
               textColor: Color(0xFF163221),
             );
     case 'education':
+    case 'cms':
       return isDark
           ? const AppCardPalette(
               background: Color(0xFF1C2A3B),
