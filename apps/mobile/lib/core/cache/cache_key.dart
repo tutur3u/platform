@@ -52,11 +52,10 @@ class CacheKey {
     }
 
     final value = buffer.toString();
-    // Hive rejects string keys longer than 255 characters. Hash the complete
+    final bytes = utf8.encode(value);
+    // Hive stores the UTF-8 key length in one byte. Hash the complete
     // identity so long URLs/searches still retain user and workspace isolation.
     // Keep existing short keys stable for already persisted cache entries.
-    return value.length <= 255
-        ? value
-        : 'sha256:${sha256.convert(utf8.encode(value))}';
+    return bytes.length <= 255 ? value : 'sha256:${sha256.convert(bytes)}';
   }
 }

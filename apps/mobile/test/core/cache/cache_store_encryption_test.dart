@@ -365,6 +365,32 @@ void main() {
     expect((await cacheStore.read(key: key, decode: decode)).data, 'fresh');
   });
 
+  test('multibyte search keys survive encrypted cache reopening', () async {
+    final unicodeKey = CacheKey(
+      namespace: 'mail.search',
+      userId: 'a',
+      workspaceId: 'one',
+      params: {'query': '界' * 90},
+    );
+    expect(unicodeKey.value, startsWith('sha256:'));
+    await cacheStore.write(
+      key: unicodeKey,
+      policy: CachePolicies.detail,
+      payload: 'unicode search',
+    );
+    await cacheStore.closeForTesting();
+    await Hive.close();
+    final reopened = CacheStore.forTesting(
+      secureStorage: secureStorage,
+      directoryResolver: () async => tempDir,
+    );
+    addTearDown(reopened.closeForTesting);
+    expect(
+      (await reopened.read(key: unicodeKey, decode: decode)).data,
+      'unicode search',
+    );
+  });
+
   test('encrypts cached resources and pending mutations at rest', () async {
     const resourceSecret = 'finance-wallet-secret-amount-123456789';
     const mutationSecret = 'pending-mutation-secret-description-987654321';
