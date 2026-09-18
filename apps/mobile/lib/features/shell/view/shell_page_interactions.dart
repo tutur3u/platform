@@ -179,9 +179,6 @@ extension _ShellPageInteractions on _ShellPageState {
       'rootNav.tap',
       'index=$index route=$route selectedApp=${appTabCubit.state.selectedId}',
     );
-    if (index == 1) {
-      _triggerAssistantTabSpin();
-    }
     if (route == Routes.apps) {
       _suppressPointerEventsDuringTransition();
     }

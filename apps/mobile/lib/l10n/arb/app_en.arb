@@ -1,4 +1,5 @@
 {
+  "commonLoading": "Loading",
     "@@locale": "en",
     "appTitle": "Tuturuuu",
     "chatAccept": "Accept",

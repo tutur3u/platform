@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get commonLoading => 'Loading';
+
+  @override
   String get appTitle => 'Tuturuuu';
 
   @override

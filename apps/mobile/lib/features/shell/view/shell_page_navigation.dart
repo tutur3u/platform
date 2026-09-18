@@ -112,6 +112,7 @@ extension _ShellPageNavigation on _ShellPageState {
     required IconData icon,
     required String semanticLabel,
     required int itemIndex,
+    bool showLabel = true,
     double iconSize = _ShellPageState._navIconSize,
   }) {
     return _buildAnimatedNavElement(
@@ -120,7 +121,26 @@ extension _ShellPageNavigation on _ShellPageState {
       child: Semantics(
         label: semanticLabel,
         button: true,
-        child: ExcludeSemantics(child: Icon(icon, size: iconSize)),
+        child: ExcludeSemantics(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: iconSize.clamp(18, 24)),
+              if (showLabel) ...[
+                const SizedBox(height: 2),
+                Text(
+                  semanticLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -128,28 +148,11 @@ extension _ShellPageNavigation on _ShellPageState {
   Widget _buildAssistantNavIcon({
     required String semanticLabel,
     required int itemIndex,
-  }) {
-    return _buildAnimatedNavElement(
-      itemIndex: itemIndex,
-      slotDelay: 0,
-      child: Semantics(
-        label: semanticLabel,
-        button: true,
-        child: ExcludeSemantics(
-          child: RotationTransition(
-            turns: _assistantSpinTurns,
-            child: Image.asset(
-              'assets/logos/nova-transparent.png',
-              width: _ShellPageState._assistantNavIconSize,
-              height: _ShellPageState._assistantNavIconSize,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  }) => _buildCompactNavIcon(
+    icon: Icons.auto_awesome_outlined,
+    semanticLabel: semanticLabel,
+    itemIndex: itemIndex,
+  );
 
   List<shad.NavigationItem> _buildMiniAppNavItems(
     BuildContext context,
@@ -178,6 +181,7 @@ extension _ShellPageNavigation on _ShellPageState {
             : null,
         child: isCompact
             ? _buildCompactNavIcon(
+                showLabel: false,
                 icon: Icons.chevron_left,
                 semanticLabel: l10n.navBack,
                 itemIndex: 0,
@@ -208,6 +212,7 @@ extension _ShellPageNavigation on _ShellPageState {
               : null,
           child: isCompact
               ? _buildCompactNavIcon(
+                  showLabel: false,
                   icon: entry.$2.icon,
                   semanticLabel: entry.$2.label(l10n),
                   itemIndex: entry.$1 + 1,
@@ -228,11 +233,7 @@ extension _ShellPageNavigation on _ShellPageState {
     required double slotDelay,
     required Widget child,
   }) {
-    return _StaggeredNavElement(
-      itemIndex: itemIndex,
-      slotDelay: slotDelay,
-      child: child,
-    );
+    return child;
   }
 
   ValueKey<String> _miniNavKey(String moduleId, String itemId) =>
@@ -313,6 +314,7 @@ extension _ShellPageNavigation on _ShellPageState {
                 : null,
             child: isCompact
                 ? _buildCompactNavIcon(
+                    showLabel: false,
                     icon: item.icon,
                     semanticLabel: item.label,
                     itemIndex: entry.$1,
@@ -382,97 +384,5 @@ extension _ShellPageNavigation on _ShellPageState {
     return location == Routes.home ||
         location == Routes.assistant ||
         location == Routes.apps;
-  }
-}
-
-class _StaggeredNavElement extends StatefulWidget {
-  const _StaggeredNavElement({
-    required this.itemIndex,
-    required this.slotDelay,
-    required this.child,
-  });
-
-  static const _duration = Duration(milliseconds: 220);
-  static const _baseDelayMs = 90;
-  static const _itemDelayMs = 65;
-
-  final int itemIndex;
-  final double slotDelay;
-  final Widget child;
-
-  @override
-  State<_StaggeredNavElement> createState() => _StaggeredNavElementState();
-}
-
-class _StaggeredNavElementState extends State<_StaggeredNavElement>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _curvedAnimation;
-  late final Animation<Offset> _offsetAnimation;
-  late final Animation<double> _scaleAnimation;
-  Timer? _startTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: _StaggeredNavElement._duration,
-    );
-    _curvedAnimation = _controller.drive(
-      CurveTween(curve: Curves.easeOutCubic),
-    );
-    _offsetAnimation = _curvedAnimation.drive(
-      Tween<Offset>(begin: const Offset(0, 0.18), end: Offset.zero),
-    );
-    _scaleAnimation = _curvedAnimation.drive(
-      Tween<double>(begin: 0.98, end: 1),
-    );
-    _scheduleEntrance();
-  }
-
-  Duration get _delay => Duration(
-    milliseconds:
-        _StaggeredNavElement._baseDelayMs +
-        (widget.itemIndex * _StaggeredNavElement._itemDelayMs) +
-        (widget.slotDelay * 1000).round(),
-  );
-
-  void _scheduleEntrance() {
-    _startTimer?.cancel();
-    _controller.value = 0;
-    _startTimer = Timer(_delay, () {
-      if (!mounted) {
-        return;
-      }
-      unawaited(_controller.forward(from: 0));
-    });
-  }
-
-  @override
-  void didUpdateWidget(covariant _StaggeredNavElement oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.itemIndex != widget.itemIndex ||
-        oldWidget.slotDelay != widget.slotDelay) {
-      _scheduleEntrance();
-    }
-  }
-
-  @override
-  void dispose() {
-    _startTimer?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _curvedAnimation,
-      child: SlideTransition(
-        position: _offsetAnimation,
-        child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
-      ),
-    );
   }
 }

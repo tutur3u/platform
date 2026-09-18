@@ -97,6 +97,12 @@ abstract class AppLocalizations {
     Locale('vi')
   ];
 
+  /// No description provided for @commonLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get commonLoading;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:

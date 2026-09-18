@@ -7,8 +7,8 @@ abstract final class AppColors {
   static const primaryDark = Color(0xFF818CF8); // indigo-400
 
   // Surfaces
-  static const backgroundLight = Color(0xFFFCFAF6); // light neutral pastel
-  static const backgroundDark = Color(0xFF0D0E10); // deeper premium dark gray
+  static const backgroundLight = Color(0xFFF2F2F7); // light neutral pastel
+  static const backgroundDark = Color(0xFF101114); // deeper premium dark gray
   static const surfaceLight = Color(0xFFFFFFFF); // lifted neutral surface
   static const surfaceDark = Color(0xFF17191C); // raised dark surface
 

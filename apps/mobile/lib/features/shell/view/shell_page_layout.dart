@@ -71,16 +71,20 @@ extension _ShellPageLayout on _ShellPageState {
       return MediaQuery.removePadding(
         context: context,
         removeTop: true,
-        child: IndexedStack(
+        child: LazyIndexedStack(
           index: _ShellPageState._calculateSelectedIndex(
             widget.matchedLocation,
           ),
-          children: [
-            DashboardPage(replayToken: _rootTabReplayTokens[Routes.home] ?? 0),
-            AssistantPage(
+          builders: [
+            (_) => DashboardPage(
+              replayToken: _rootTabReplayTokens[Routes.home] ?? 0,
+            ),
+            (_) => AssistantPage(
               replayToken: _rootTabReplayTokens[Routes.assistant] ?? 0,
             ),
-            AppsHubPage(replayToken: _rootTabReplayTokens[Routes.apps] ?? 0),
+            (_) => AppsHubPage(
+              replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
+            ),
           ],
         ),
       );

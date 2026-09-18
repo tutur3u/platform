@@ -13,7 +13,7 @@ import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/theme/colors.dart';
+import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -704,22 +704,8 @@ class _AppState extends State<App> {
               builder: (context, themeState) {
                 return shad.ShadcnApp.router(
                   debugShowCheckedModeBanner: false,
-                  theme: shad.ThemeData(
-                    colorScheme: shad.ColorSchemes.lightZinc.copyWith(
-                      destructive: () => AppColors.destructiveLight,
-                    ),
-                    typography: const shad.Typography.geist().copyWith(
-                      sans: () => const TextStyle(fontFamily: 'NotoSans'),
-                    ),
-                  ),
-                  darkTheme: shad.ThemeData.dark(
-                    colorScheme: shad.ColorSchemes.darkZinc.copyWith(
-                      destructive: () => AppColors.destructiveDark,
-                    ),
-                    typography: const shad.Typography.geist().copyWith(
-                      sans: () => const TextStyle(fontFamily: 'NotoSans'),
-                    ),
-                  ),
+                  theme: MobileShadTheme.light,
+                  darkTheme: MobileShadTheme.dark,
                   themeMode: themeState.themeMode,
                   locale: localeState.locale,
                   localizationsDelegates: const [

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
@@ -81,6 +82,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   bool _failed = false;
   int _page = 1;
   int _generation = 0;
+  String? _visibleListKey;
+  String? _openingId;
+  Timer? _searchDebounce;
 
   bool get _threads => _folder != 'drafts' && _folder != 'sent';
   Map<String, dynamic> get _mailbox => _mailboxes.firstWhere(
@@ -108,6 +112,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   @override
   void dispose() {
     _generation++;
+    _searchDebounce?.cancel();
     _search.dispose();
     if (widget.repository == null) _repository.dispose();
     super.dispose();
@@ -125,7 +130,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         _mailboxes = mailRows(result['mailboxes']);
         _mailboxId = _mailboxes.firstOrNull?['id'] as String?;
       });
-      await _load();
+      await _load(forceRefresh: false);
     } on Object {
       if (mounted) {
         setState(() {
@@ -136,7 +141,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     }
   }
 
-  Future<void> _load({bool more = false}) async {
+  Future<void> _load({bool more = false, bool forceRefresh = true}) async {
     final box = _mailboxId;
     final generation = ++_generation;
     if (box == null) {
@@ -144,13 +149,38 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       return;
     }
     final page = more ? _page + 1 : 1;
+    final params = Uri(
+      queryParameters: {
+        'folder': _folder,
+        'query': _search.text.trim(),
+        'page': '$page',
+        'pageSize': '30',
+        if (_labelId != null) 'label': _labelId,
+        if (_folderId != null) 'folderId': _folderId,
+      },
+    ).query;
+    final path =
+        '${MailRepository.mailboxPath(widget.workspaceId, box)}'
+        '/${_threads ? 'threads' : 'messages'}?$params';
+    final cached = !more
+        ? _repository.cachedList(widget.workspaceId, path)
+        : null;
     setState(() {
       _loading = true;
       _failed = false;
-      if (!more) _items = [];
-      if (!more) _selected.clear();
+      if (!more && _visibleListKey != path) {
+        _hasMore = false;
+        _items = mailRows(cached?[_threads ? 'threads' : 'messages']);
+        _labels = [];
+        _folders = [];
+      }
+      if (!more) {
+        _visibleListKey = path;
+        _selected.clear();
+      }
     });
     try {
+      if (!more) unawaited(_loadOrganization(box, generation));
       final result = await _repository.list(
         widget.workspaceId,
         box,
@@ -159,10 +189,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         page: page,
         label: _labelId,
         folderId: _folderId,
-      );
-      final organization = await _repository.organization(
-        widget.workspaceId,
-        box,
+        forceRefresh: forceRefresh,
       );
       if (!mounted || generation != _generation) return;
       final pagination = result['pagination'] as Map<String, dynamic>;
@@ -170,24 +197,44 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         final items = mailRows(result[_threads ? 'threads' : 'messages']);
         _items = more ? [..._items, ...items] : items;
         _page = page;
-        _labels = mailRows(organization['labels']);
-        _folders = mailRows(
-          organization['folders'],
-        ).where((f) => f['kind'] == 'custom').toList();
-        if (!_labels.any((label) => label['id'] == _labelId)) _labelId = null;
-        if (!_folders.any((folder) => folder['id'] == _folderId)) {
-          _folderId = null;
-        }
         _hasMore =
             pagination['hasMore'] as bool? ??
             page * 30 < (pagination['total'] as int? ?? 0);
       });
-    } on Object {
-      if (mounted && generation == _generation) setState(() => _failed = true);
+    } on Object catch (error) {
+      if (mounted && generation == _generation) {
+        setState(() {
+          _failed = true;
+          if (error is ApiException &&
+              (error.statusCode == 401 || error.statusCode == 403)) {
+            _items = [];
+            _selected.clear();
+            _hasMore = false;
+          }
+        });
+      }
     } finally {
       if (mounted && generation == _generation) {
         setState(() => _loading = false);
       }
+    }
+  }
+
+  Future<void> _loadOrganization(String box, int generation) async {
+    try {
+      final organization = await _repository.organization(
+        widget.workspaceId,
+        box,
+      );
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _labels = mailRows(organization['labels']);
+        _folders = mailRows(
+          organization['folders'],
+        ).where((folder) => folder['kind'] == 'custom').toList();
+      });
+    } on Object {
+      // Folder metadata must not delay or hide a successfully loaded inbox.
     }
   }
 
@@ -267,6 +314,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _open(Map<String, dynamic> item) async {
+    if (_openingId != null) return;
+    setState(() => _openingId = item['id'] as String);
     final box = _mailboxId!;
     final generation = _generation;
     try {
@@ -303,6 +352,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           SnackBar(content: Text(context.l10n.commonSomethingWentWrong)),
         );
       }
+    } finally {
+      if (mounted) setState(() => _openingId = null);
     }
   }
 
@@ -320,7 +371,34 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     };
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.mailTitle),
+        title: PopupMenuButton<String>(
+          tooltip: l10n.mailFolders,
+          onSelected: (folder) {
+            if (_folder == folder) return;
+            setState(() {
+              _folder = folder;
+              _labelId = null;
+              _folderId = null;
+            });
+            unawaited(_load(forceRefresh: false));
+          },
+          itemBuilder: (_) => [
+            for (final folder in folders.entries)
+              CheckedPopupMenuItem(
+                value: folder.key,
+                checked: _folder == folder.key,
+                child: Text(folder.value),
+              ),
+          ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(folders[_folder] ?? l10n.mailTitle),
+              const SizedBox(width: 4),
+              const Icon(Icons.expand_more, size: 20),
+            ],
+          ),
+        ),
         actions: [
           if (_mailboxId != null && ['inbox', 'archive'].contains(_folder))
             IconButton(
@@ -355,7 +433,11 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                     DropdownButtonFormField<String>(
                       initialValue: _mailboxId,
                       isExpanded: true,
-                      decoration: InputDecoration(labelText: l10n.mailMailbox),
+                      decoration: InputDecoration(
+                        labelText: l10n.mailMailbox,
+                        isDense: true,
+                        border: InputBorder.none,
+                      ),
                       items: _mailboxes
                           .map(
                             (box) => DropdownMenuItem(
@@ -381,7 +463,16 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                     controller: _search,
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
-                      labelText: l10n.mailSearch,
+                      hintText: l10n.mailSearch,
+                      filled: true,
+                      fillColor: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.5),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: IconButton(
                         tooltip: l10n.mailSearch,
@@ -389,27 +480,18 @@ class _MailWorkspaceState extends State<MailWorkspace> {
                         icon: const Icon(Icons.arrow_forward),
                       ),
                     ),
-                    onSubmitted: (_) => _load(),
+                    onChanged: (_) {
+                      _searchDebounce?.cancel();
+                      _searchDebounce = Timer(
+                        const Duration(milliseconds: 300),
+                        () => unawaited(_load(forceRefresh: false)),
+                      );
+                    },
+                    onSubmitted: (_) {
+                      _searchDebounce?.cancel();
+                      unawaited(_load());
+                    },
                   ),
-                ],
-              ),
-            ),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (final folder in folders.entries)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: ChoiceChip(
-                        label: Text(folder.value),
-                        selected: _folder == folder.key,
-                        onSelected: (_) {
-                          setState(() => _folder = folder.key);
-                          unawaited(_load());
-                        },
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -518,41 +600,51 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _load,
-                child: ListView(
+                child: ListView.separated(
+                  separatorBuilder: (_, index) =>
+                      const Divider(height: 1, indent: 36),
+                  itemCount: _items.length + 1,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 100),
-                  children: [
-                    if (!_loading && !_failed && _items.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Center(child: Text(l10n.mailEmpty)),
-                      ),
-                    for (final item in _items)
-                      MailMessageTile(
-                        item: item,
-                        thread: _threads,
-                        selected: _selected.contains(item['id']),
-                        onSelect: () => setState(() {
-                          final id = item['id'] as String;
-                          if (!_selected.remove(id)) _selected.add(id);
-                        }),
-                        onTap: () {
-                          if (_selected.isEmpty) {
-                            unawaited(_open(item));
-                          } else {
-                            setState(() {
-                              final id = item['id'] as String;
-                              if (!_selected.remove(id)) _selected.add(id);
-                            });
-                          }
-                        },
-                      ),
-                    if (_hasMore)
-                      TextButton(
-                        onPressed: _loading ? null : () => _load(more: true),
-                        child: Text(l10n.mailLoadMore),
-                      ),
-                  ],
+                  itemBuilder: (context, index) {
+                    if (index == _items.length) {
+                      if (_hasMore) {
+                        return TextButton(
+                          onPressed: _loading ? null : () => _load(more: true),
+                          child: Text(l10n.mailLoadMore),
+                        );
+                      }
+                      if (!_loading && !_failed && _items.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Center(child: Text(l10n.mailEmpty)),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }
+                    final item = _items[index];
+                    return MailMessageTile(
+                      key: ValueKey(item['id']),
+                      loading: _openingId == item['id'],
+                      item: item,
+                      thread: _threads,
+                      selected: _selected.contains(item['id']),
+                      onSelect: () => setState(() {
+                        final id = item['id'] as String;
+                        if (!_selected.remove(id)) _selected.add(id);
+                      }),
+                      onTap: () {
+                        if (_selected.isEmpty) {
+                          unawaited(_open(item));
+                        } else {
+                          setState(() {
+                            final id = item['id'] as String;
+                            if (!_selected.remove(id)) _selected.add(id);
+                          });
+                        }
+                      },
+                    );
+                  },
                 ),
               ),
             ),

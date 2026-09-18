@@ -10,16 +10,19 @@ class MailMessageTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
     required this.onSelect,
+    this.loading = false,
     super.key,
   });
   final Map<String, dynamic> item;
   final bool thread;
   final bool selected;
+  final bool loading;
   final VoidCallback onTap;
   final VoidCallback onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final unread =
         item['unread'] == true || (item['unreadCount'] as int? ?? 0) > 0;
     final subject = item['subject'] as String?;
@@ -36,61 +39,151 @@ class MailMessageTile extends StatelessWidget {
               as String? ??
           '',
     )?.toLocal();
-    return ListTile(
+    final now = DateTime.now();
+    final today = date != null && DateUtils.isSameDay(date, now);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return Semantics(
       selected: selected,
-      onTap: onTap,
-      onLongPress: onSelect,
-      leading: IconButton(
-        tooltip: context.l10n.mailSelectAll,
-        onPressed: onSelect,
-        icon: Icon(
-          selected
-              ? Icons.check_circle
-              : item['starred'] == true
-              ? Icons.star
-              : Icons.mail_outline,
-        ),
-      ),
-      title: Text(
-        subject?.isNotEmpty == true ? subject! : context.l10n.mailNoSubject,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontWeight: unread ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(sender, maxLines: 1, overflow: TextOverflow.ellipsis),
-          if (date != null)
-            Text(
-              DateFormat.yMd(
-                Localizations.localeOf(context).languageCode,
-              ).add_jm().format(date),
+      child: Material(
+        color: selected
+            ? colors.primary.withValues(alpha: 0.08)
+            : colors.surfaceContainerLowest,
+        child: InkWell(
+          onTap: loading ? null : onTap,
+          onLongPress: onSelect,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 14, 18, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 20,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: loading
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 1.5),
+                          )
+                        : selected
+                        ? Icon(
+                            Icons.check_circle,
+                            size: 16,
+                            color: colors.primary,
+                          )
+                        : Icon(
+                            Icons.circle,
+                            size: 7,
+                            color: unread ? colors.primary : Colors.transparent,
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              sender,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: unread
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (date != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              (today
+                                      ? DateFormat.Hm(locale)
+                                      : DateFormat.MMMd(locale))
+                                  .format(date),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          if (item['starred'] == true) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: colors.primary,
+                            ),
+                          ],
+                          if (item['hasAttachments'] == true) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.attach_file,
+                              size: 13,
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subject?.isNotEmpty == true
+                            ? subject!
+                            : context.l10n.mailNoSubject,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: unread
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        (item[thread ? 'latestSnippet' : 'snippet']
+                                as String?) ??
+                            '',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.35,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                      if (item['deliveryRecipient'] != null)
+                        Text(
+                          item['deliveryRecipient'] as String,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      if (mailRows(item['labels']).isNotEmpty)
+                        Text(
+                          mailRows(
+                            item['labels'],
+                          ).map((label) => label['name']).join(' · '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 12, color: colors.primary),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          Text(
-            (item[thread ? 'latestSnippet' : 'snippet'] as String?) ?? '',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
-          if (item['deliveryRecipient'] != null)
-            Text(
-              item['deliveryRecipient'] as String,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          if (mailRows(item['labels']).isNotEmpty)
-            Text(
-              mailRows(item['labels']).map((label) => label['name']).join(', '),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-        ],
+        ),
       ),
-      trailing: item['hasAttachments'] == true
-          ? const Icon(Icons.attach_file)
-          : null,
     );
   }
 }

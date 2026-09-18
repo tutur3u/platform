@@ -569,44 +569,45 @@ void main() {
       expect(find.text(l10n.taskPortfolioTitle), findsNothing);
     });
 
-    testWidgets('compact bottom navigation uses icon-only reduced chrome', (
-      tester,
-    ) async {
-      tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = const Size(390, 844);
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
+    testWidgets(
+      'compact bottom navigation uses clear labels and restrained icons',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 844);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
 
-      final router = _buildRouter(initialLocation: Routes.apps);
-      addTearDown(router.dispose);
+        final router = _buildRouter(initialLocation: Routes.apps);
+        addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        _buildTestApp(
-          router: router,
-          appTabCubit: appTabCubit,
-          authCubit: authCubit,
-          workspaceCubit: workspaceCubit,
-          shellProfileCubit: shellProfileCubit,
-        ),
-      );
-      await _pumpForTransitions(tester);
+        await tester.pumpWidget(
+          _buildTestApp(
+            router: router,
+            appTabCubit: appTabCubit,
+            authCubit: authCubit,
+            workspaceCubit: workspaceCubit,
+            shellProfileCubit: shellProfileCubit,
+          ),
+        );
+        await _pumpForTransitions(tester);
 
-      final footerRect = tester.getRect(
-        find.byKey(const ValueKey('compact-shell-footer')),
-      );
-      final compactNavItems = tester
-          .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
-          .children
-          .whereType<shad.NavigationItem>();
+        final footerRect = tester.getRect(
+          find.byKey(const ValueKey('compact-shell-footer')),
+        );
+        final compactNavItems = tester
+            .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
+            .children
+            .whereType<shad.NavigationItem>();
 
-      expect(footerRect.height, 54);
-      expect(compactNavItems, hasLength(3));
-      expect(compactNavItems.every((item) => item.label == null), isTrue);
-      expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 27);
-      expect(tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size, 27);
-    });
+        expect(footerRect.height, 54);
+        expect(compactNavItems, hasLength(3));
+        expect(compactNavItems.every((item) => item.label == null), isTrue);
+        expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 24);
+        expect(tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size, 24);
+      },
+    );
 
     testWidgets('six-item compact mini nav stays within a narrow viewport', (
       tester,
@@ -1350,7 +1351,7 @@ void main() {
       expect(prefs.getString('last-tab-route'), Routes.home);
     });
 
-    testWidgets('animates same-owner mini nav item set updates', (
+    testWidgets('updates same-owner mini nav items without staggered delays', (
       tester,
     ) async {
       tester.view.devicePixelRatio = 1;
@@ -1391,52 +1392,6 @@ void main() {
       expect(_textDataCount(tester, 'Beta nav'), 1);
       expect(_textDataCount(tester, 'Gamma nav'), 0);
       expect(_textDataCount(tester, 'Delta nav'), 0);
-      expect(
-        _nearestFadeOpacitiesForIcon(
-          tester,
-          Icons.bolt_outlined,
-        ).any((opacity) => opacity < 0.1),
-        isTrue,
-      );
-
-      await tester.pump(const Duration(milliseconds: 80));
-
-      expect(
-        _nearestFadeOpacitiesForIcon(
-          tester,
-          Icons.bolt_outlined,
-        ).any((opacity) => opacity < 0.1),
-        isTrue,
-      );
-      expect(
-        _nearestFadeOpacitiesForIcon(
-          tester,
-          Icons.insights_outlined,
-        ).any((opacity) => opacity < 0.1),
-        isTrue,
-      );
-      expect(
-        _nearestFadeOpacitiesForIcon(
-          tester,
-          Icons.layers_outlined,
-        ).any((opacity) => opacity < 0.1),
-        isTrue,
-      );
-
-      for (var i = 0; i < 4; i++) {
-        await tester.pump(const Duration(milliseconds: 45));
-      }
-
-      expect(
-        _maxNearestFadeOpacityForIcon(tester, Icons.bolt_outlined) >
-            _maxNearestFadeOpacityForIcon(tester, Icons.insights_outlined),
-        isTrue,
-      );
-      expect(
-        _maxNearestFadeOpacityForIcon(tester, Icons.layers_outlined) < 0.1,
-        isTrue,
-      );
-
       await _pumpForTransitions(tester);
 
       expect(_textDataCount(tester, 'Alpha nav'), 0);
@@ -1452,40 +1407,4 @@ int _textDataCount(WidgetTester tester, String value) {
       .widgetList<Text>(find.byType(Text, skipOffstage: false))
       .where((widget) => widget.data == value)
       .length;
-}
-
-List<double> _nearestFadeOpacitiesForIcon(WidgetTester tester, IconData icon) {
-  final opacities = <double>[];
-  for (final element in tester.elementList(
-    find.byType(Icon, skipOffstage: false),
-  )) {
-    final widget = element.widget;
-    if (widget is! Icon || !_sameIconData(widget.icon, icon)) {
-      continue;
-    }
-    element.visitAncestorElements((ancestor) {
-      final ancestorWidget = ancestor.widget;
-      if (ancestorWidget is FadeTransition) {
-        opacities.add(ancestorWidget.opacity.value);
-        return false;
-      }
-      return true;
-    });
-  }
-  return opacities;
-}
-
-double _maxNearestFadeOpacityForIcon(WidgetTester tester, IconData icon) {
-  final opacities = _nearestFadeOpacitiesForIcon(tester, icon);
-  if (opacities.isEmpty) {
-    return 0;
-  }
-  return opacities.reduce((a, b) => a > b ? a : b);
-}
-
-bool _sameIconData(IconData? left, IconData right) {
-  return left?.codePoint == right.codePoint &&
-      left?.fontFamily == right.fontFamily &&
-      left?.fontPackage == right.fontPackage &&
-      left?.matchTextDirection == right.matchTextDirection;
 }

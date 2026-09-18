@@ -13,14 +13,40 @@ The mobile app now ships first-party workspace surfaces for:
 
 Both modules are registered in the Apps hub and available through the mini-app navigation system.
 
-The mobile Apps hub now uses a single-column list of equal-priority app cards instead of the older grid treatment. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
+The mobile Apps hub now uses a compact grouped list with restrained icons and clear descriptions. Keep module ordering explicit in the hub view rather than relying on registry insertion order. For workspace modules that need dense controls, prefer the same shell-owned chrome used by Calendar:
 
 - `ShellMiniNav` for mode or section switching
 - `ShellChromeActions` for quick actions such as filters, create, sort, and view toggles
-- A finance-style overview hero card inside the page body for stats and search
-- Compact panel sections in the page body instead of raw admin `Card/ListTile` stacks, so module pages read like first-class mobile products rather than direct dashboard ports
+- A compact overview with a small number of relevant metrics
+- Neutral grouped lists, consistent separators, readable labels, and primary color reserved for actions and selection
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
+
+## Responsive Loading And Cache Verification
+
+Root tabs initialize on their first visit and retain their state afterward. Hidden
+tabs stop ticking animations. Page content and navigation no longer wait for
+staggered entrance animations. Opening Apps does not prefetch every product.
+
+`CacheStore` shares initialization and concurrent fetches for the same scoped key.
+Expired entries wait for replacement; eligible stale entries can refresh in the
+background. Invalidation and logout prevent older in-flight requests from writing
+back into the cache. Keys must include user, workspace, and all query filters.
+
+Mail list snapshots use the existing encrypted Hive store, with a one-minute
+freshness window and a twenty-minute expiry. Cached rows appear while refresh is
+in progress. Pull-to-refresh bypasses freshness, and successful mutations
+invalidate the workspace's Mail variants. Permissions and message detail are
+fetched from the server; attachments, credentials, and active compose buffers are
+not cached. Authorization failures discard the displayed list. Search waits 300ms
+after typing, and list rows are built lazily. Folder metadata loads independently
+so it cannot hold up the inbox.
+
+When changing this behavior, verify cold launch, returning to a visited tab,
+pull-to-refresh, slow/failed requests, rapid search changes, and switching accounts
+or workspaces. Run the focused cache, Mail workspace, lazy tab, and shell back
+navigation tests, followed by `bun check:mobile`. Use an iOS simulator to inspect
+light/dark appearance, larger text, keyboard interaction, and narrow layouts.
 
 ## Mobile App Lock And Web QR Approval
 

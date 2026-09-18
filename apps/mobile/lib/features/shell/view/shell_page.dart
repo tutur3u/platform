@@ -27,6 +27,7 @@ import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/lazy_indexed_stack.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'shell_page_interactions.dart';
@@ -55,8 +56,7 @@ class ShellPage extends StatefulWidget {
   State<ShellPage> createState() => _ShellPageState();
 }
 
-class _ShellPageState extends State<ShellPage>
-    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _homeKey = ValueKey('home');
   static const ValueKey<String> _appsKey = ValueKey('apps');
   static const ValueKey<String> _assistantKey = ValueKey('assistant');
@@ -66,13 +66,11 @@ class _ShellPageState extends State<ShellPage>
   static const ValueKey<String> _shellAvatarKey = ValueKey('shell-avatar');
   static const double _navIconSize = 22;
   static const double _compactPrimaryNavIconSize = 27;
-  static const double _assistantNavIconSize = 34;
   static const double _navItemSpacing = 2;
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 96;
   static const double _compactBottomNavHeight = 54;
   static const Duration _exitConfirmationWindow = Duration(seconds: 2);
-  static const Duration _assistantSpinDuration = Duration(milliseconds: 680);
   static const Duration _navSwitcherDuration = Duration(milliseconds: 320);
   static const Duration _navSwitcherReverseDuration = Duration(
     milliseconds: 220,
@@ -107,8 +105,6 @@ class _ShellPageState extends State<ShellPage>
     Routes.apps: 0,
   };
   shad.ToastOverlay? _exitConfirmationToast;
-  late final AnimationController _assistantSpinController;
-  late final Animation<double> _assistantSpinTurns;
 
   void _markBackDispatch({required String source}) {
     _lastBackDispatchAt = DateTime.now();
@@ -152,20 +148,6 @@ class _ShellPageState extends State<ShellPage>
     WidgetsBinding.instance.addObserver(this);
     unawaited(SystemNavigator.setFrameworkHandlesBack(true));
     _layerController = PageController(initialPage: 1);
-    _assistantSpinController = AnimationController(
-      vsync: this,
-      duration: _assistantSpinDuration,
-    );
-    _assistantSpinTurns = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _assistantSpinController,
-        curve: Curves.easeInOutCubicEmphasized,
-      ),
-    );
-  }
-
-  void _triggerAssistantTabSpin() {
-    unawaited(_assistantSpinController.forward(from: 0));
   }
 
   @override
@@ -556,7 +538,6 @@ class _ShellPageState extends State<ShellPage>
     _stopLongPressTimer();
     _dismissExitConfirmationToast();
     _suppressPointerTimer?.cancel();
-    _assistantSpinController.dispose();
     _layerController.dispose();
     super.dispose();
   }

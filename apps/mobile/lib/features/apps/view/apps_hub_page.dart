@@ -1,122 +1,22 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
-import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/staggered_entrance.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class AppsHubPage extends StatefulWidget {
+/// A lightweight launcher. Modules load when opened, not while browsing apps.
+class AppsHubPage extends StatelessWidget {
   const AppsHubPage({this.replayToken = 0, super.key});
-
   final int replayToken;
 
   @override
-  State<AppsHubPage> createState() => _AppsHubPageState();
-}
-
-class _AppsHubPageState extends State<AppsHubPage> {
-  Timer? _tapShieldTimer;
-  var _tapShieldActive = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(CacheWarmupCoordinator.instance.prewarmModule('apps'));
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      final routeAnimation = ModalRoute.of(context)?.animation;
-      final isTransitioning =
-          routeAnimation != null &&
-          (routeAnimation.isAnimating ||
-              routeAnimation.status == AnimationStatus.forward);
-      if (!isTransitioning) {
-        return;
-      }
-
-      setState(() {
-        _tapShieldActive = true;
-      });
-
-      _tapShieldTimer = Timer(const Duration(milliseconds: 600), () {
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _tapShieldActive = false;
-        });
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    _tapShieldTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final modules = _orderedModules(AppRegistry.modules(context));
-
-    return shad.Scaffold(
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: IgnorePointer(
-            ignoring: _tapShieldActive,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    ResponsivePadding.horizontal(context.deviceClass),
-                    10,
-                    ResponsivePadding.horizontal(context.deviceClass),
-                    24 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: index == modules.length - 1 ? 0 : 14,
-                        ),
-                        child: _AppEditorialCard(
-                          module: modules[index],
-                          index: index,
-                          replayToken: widget.replayToken,
-                        ),
-                      );
-                    }, childCount: modules.length),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<AppModule> _orderedModules(List<AppModule> modules) {
-    const preferredOrder = <String>[
+    final modules = AppRegistry.modules(context);
+    const order = [
       'tasks',
       'chat',
       'calendar',
@@ -127,129 +27,67 @@ class _AppsHubPageState extends State<AppsHubPage> {
       'inventory',
       'crm',
     ];
-
-    final moduleById = {for (final module in modules) module.id: module};
-    final ordered = <AppModule>[];
-    final seen = <String>{};
-
-    for (final id in preferredOrder) {
-      final module = moduleById[id];
-      if (module != null && seen.add(module.id)) {
-        ordered.add(module);
-      }
-    }
-
-    for (final module in modules) {
-      if (seen.add(module.id)) {
-        ordered.add(module);
-      }
-    }
-
-    return ordered;
-  }
-}
-
-class _AppEditorialCard extends StatelessWidget {
-  const _AppEditorialCard({
-    required this.module,
-    required this.index,
-    required this.replayToken,
-  });
-
-  final AppModule module;
-  final int index;
-  final int replayToken;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = AppCardPalette.resolve(
-      context,
-      index: index,
-      moduleId: module.id,
-    );
-    final surfaceColor = Color.alphaBlend(
-      palette.shadow.withValues(alpha: 0.22),
-      palette.background,
-    );
-
-    return StaggeredEntrance(
-      replayKey: '$replayToken-$index',
-      delay: Duration(milliseconds: 40 + (index * 28)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(26),
-        onTap: () => _openModule(context, module),
-        child: Material(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(26),
-          clipBehavior: Clip.antiAlias,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 126),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(26),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.alphaBlend(
-                    palette.iconBackground.withValues(alpha: 0.14),
-                    palette.background,
-                  ),
-                  surfaceColor,
-                ],
+    final ordered = [
+      for (final id in order) ...modules.where((module) => module.id == id),
+      ...modules.where((module) => !order.contains(module.id)),
+    ];
+    final colors = Theme.of(context).colorScheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 720),
+        child: ListView.separated(
+          key: const PageStorageKey('apps-launcher'),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          itemCount: ordered.length,
+          separatorBuilder: (_, _) =>
+              Divider(height: 1, indent: 64, color: colors.outlineVariant),
+          itemBuilder: (context, index) {
+            final module = ordered[index];
+            final description = _moduleDescription(context, module.id);
+            return Material(
+              color: colors.surfaceContainerLowest,
+              borderRadius: BorderRadius.vertical(
+                top: index == 0 ? const Radius.circular(16) : Radius.zero,
+                bottom: index == ordered.length - 1
+                    ? const Radius.circular(16)
+                    : Radius.zero,
               ),
-              border: Border.all(color: palette.border.withValues(alpha: 0.95)),
-              boxShadow: [
-                BoxShadow(
-                  color: palette.shadow,
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
+              clipBehavior: Clip.antiAlias,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
+                minLeadingWidth: 36,
+                leading: Container(
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: palette.iconBackground,
-                    borderRadius: BorderRadius.circular(18),
+                    color: colors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(module.icon, color: palette.iconColor, size: 28),
+                  child: Icon(module.icon, size: 20, color: colors.primary),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        module.label(context.l10n),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: palette.textColor,
-                          fontWeight: FontWeight.w900,
-                          height: 1.05,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _moduleDescription(context, module.id),
+                title: Text(
+                  module.label(context.l10n),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: description.isEmpty
+                    ? null
+                    : Text(
+                        description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: palette.textColor.withValues(alpha: 0.8),
-                          height: 1.34,
-                        ),
                       ),
-                    ],
-                  ),
+                trailing: Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: colors.onSurfaceVariant,
                 ),
-              ],
-            ),
-          ),
+                onTap: () => _openModule(context, module),
+              ),
+            );
+          },
         ),
       ),
     );
