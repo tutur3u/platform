@@ -9,8 +9,8 @@ class CacheWarmupCoordinator {
 
   final Map<String, CacheWarmupTask> _tasks = {};
   final Map<String, List<String>> _groups = {
-    'boot': <String>['apps_registry'],
-    'home': <String>['apps_registry'],
+    'boot': <String>['apps_registry', 'assistant_metadata'],
+    'home': <String>['apps_registry', 'assistant_metadata'],
     'tasks': <String>[
       'tasks_list',
       'task_boards',

@@ -82,6 +82,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   bool _failed = false;
   int _page = 1;
   int _generation = 0;
+  int _organizationGeneration = 0;
   String? _visibleListKey;
   String? _openingId;
   Timer? _searchDebounce;
@@ -112,6 +113,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   @override
   void dispose() {
     _generation++;
+    _organizationGeneration++;
     _searchDebounce?.cancel();
     _search.dispose();
     if (widget.repository == null) _repository.dispose();
@@ -180,7 +182,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       }
     });
     try {
-      if (!more) unawaited(_loadOrganization(box, generation));
+      if (!more) unawaited(_loadOrganization(box));
       final result = await _repository.list(
         widget.workspaceId,
         box,
@@ -220,13 +222,20 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     }
   }
 
-  Future<void> _loadOrganization(String box, int generation) async {
+  Future<void> _loadOrganization(String box) async {
+    final generation = ++_organizationGeneration;
+    final workspaceId = widget.workspaceId;
     try {
       final organization = await _repository.organization(
         widget.workspaceId,
         box,
       );
-      if (!mounted || generation != _generation) return;
+      if (!mounted ||
+          generation != _organizationGeneration ||
+          widget.workspaceId != workspaceId ||
+          _mailboxId != box) {
+        return;
+      }
       setState(() {
         _labels = mailRows(organization['labels']);
         _folders = mailRows(

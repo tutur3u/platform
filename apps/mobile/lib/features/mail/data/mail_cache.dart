@@ -8,7 +8,12 @@ import 'package:mobile/data/sources/api_client.dart';
 /// Encrypted, account/workspace-scoped mail lists. Never caches attachments,
 /// credentials, permissions, or compose buffers.
 class MailCache {
-  MailCache() : _userId = currentCacheUserId();
+  MailCache({CacheStore? store, String? Function()? currentUserId})
+    : _store = store ?? CacheStore.instance,
+      _currentUserId = currentUserId ?? currentCacheUserId,
+      _userId = (currentUserId ?? currentCacheUserId)();
+  final CacheStore _store;
+  final String? Function() _currentUserId;
   final String? _userId;
   static const _policy = CachePolicy(
     staleAfter: Duration(minutes: 1),
@@ -16,7 +21,7 @@ class MailCache {
     allowBackgroundRefresh: false,
   );
 
-  bool get _usable => _userId != null && _userId == currentCacheUserId();
+  bool get _usable => _userId != null && _userId == _currentUserId();
   CacheKey _key(String wsId, String path) => CacheKey(
     namespace: 'mail.list',
     userId: _userId,
@@ -28,10 +33,7 @@ class MailCache {
 
   Map<String, dynamic>? peek(String wsId, String path) {
     if (!_usable) return null;
-    final cached = CacheStore.instance.peek(
-      key: _key(wsId, path),
-      decode: _decode,
-    );
+    final cached = _store.peek(key: _key(wsId, path), decode: _decode);
     return cached.isExpired ? null : cached.data;
   }
 
@@ -45,12 +47,12 @@ class MailCache {
     // Cache availability must never prevent a network read. Only catch the
     // initialization here, so API failures are not retried or hidden.
     try {
-      await CacheStore.instance.init();
+      await _store.init();
     } on Object {
       return await fetch();
     }
     try {
-      final result = await CacheStore.instance.prefetch(
+      final result = await _store.prefetch(
         key: _key(wsId, path),
         policy: _policy,
         decode: _decode,
@@ -58,10 +60,17 @@ class MailCache {
         forceRefresh: forceRefresh,
         tags: ['mail'],
       );
+      if (!result.hasValue || result.data == null) {
+        throw StateError('Mail request was invalidated');
+      }
       return result.data!;
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        await CacheStore.instance.remove(_key(wsId, path));
+        await _store.clearScope(
+          userId: _userId,
+          workspaceId: wsId,
+          namespace: 'mail.list',
+        );
       }
       rethrow;
     }
@@ -73,7 +82,7 @@ class MailCache {
     } finally {
       if (_usable) {
         try {
-          await CacheStore.instance.invalidateTags(
+          await _store.invalidateTags(
             ['mail'],
             workspaceId: wsId,
             userId: _userId,

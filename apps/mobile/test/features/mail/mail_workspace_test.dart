@@ -88,6 +88,38 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('pagination preserves pending organization metadata', (
+    tester,
+  ) async {
+    final metadata = Completer<Map<String, dynamic>>();
+    when(
+      () => repository.organization('ws', 'box'),
+    ).thenAnswer((_) => metadata.future);
+    var requests = 0;
+    respond(
+      (_) async => {
+        ...inbox('Page ${++requests}'),
+        'pagination': {'hasMore': requests == 1},
+      },
+    );
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Load more'));
+    await tester.pumpAndSettle();
+    expect(find.text('Page 2'), findsOneWidget);
+    metadata.complete({
+      'labels': [
+        {'id': 'label', 'name': 'Important'},
+      ],
+      'folders': [
+        {'id': 'folder', 'name': 'Projects', 'kind': 'custom'},
+      ],
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('All labels and folders'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('search debounces typing and ignores older responses', (
     tester,
   ) async {

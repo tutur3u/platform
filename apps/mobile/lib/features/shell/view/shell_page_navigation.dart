@@ -125,7 +125,7 @@ extension _ShellPageNavigation on _ShellPageState {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: iconSize.clamp(18, 24)),
+              Icon(icon, size: iconSize.clamp(18.0, 24.0)),
               if (showLabel) ...[
                 const SizedBox(height: 2),
                 Text(
