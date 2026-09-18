@@ -198,6 +198,7 @@ export const getUserColumns = ({
         const primaryName = fullName || displayName || '-';
         const secondaryName =
           displayName && displayName !== primaryName ? displayName : null;
+        const note = hasPrivateInfo ? row.original.note?.trim() : null;
         const avatarUrl = normalizeAvatarImageSrc(
           row.original.avatar_url as string | undefined
         );
@@ -261,6 +262,11 @@ export const getUserColumns = ({
               {secondaryName ? (
                 <span className="truncate text-muted-foreground text-xs">
                   {secondaryName}
+                </span>
+              ) : null}
+              {note ? (
+                <span className="wrap-break-word max-w-80 whitespace-pre-wrap text-muted-foreground text-xs">
+                  {note}
                 </span>
               ) : null}
             </span>
