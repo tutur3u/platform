@@ -35,7 +35,11 @@ jobs:
     environment: mobile-store-beta
     outputs:
       has_ci_token: ${{ steps.credentials.outputs.has_ci_token }}
+      build_number: ${{ steps.credentials.outputs.build_number }}
     steps:
+      - name: Require production branch
+        run: test "$GITHUB_REF" = refs/heads/production
+
       - name: Check mobile deployment CI token
         id: credentials
         shell: bash
@@ -44,11 +48,15 @@ jobs:
         run: |
           if [ -z "${MOBILE_DEPLOYMENT_CI_TOKEN:-}" ]; then
             echo "has_ci_token=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Mobile store deployment skipped::MOBILE_DEPLOYMENT_CI_TOKEN is not configured in the mobile-store-beta environment."
-            exit 0
+            echo "::error title=Mobile store deployment blocked::MOBILE_DEPLOYMENT_CI_TOKEN is not configured in the mobile-store-beta environment."
+            exit 1
           fi
 
           echo "has_ci_token=true" >> "$GITHUB_OUTPUT"
+          build_number=$((100000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT))
+          test "$GITHUB_RUN_ATTEMPT" -lt 1000
+          test "$build_number" -le 2100000000
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
 
   publish-android-internal:
     name: Publish Android to Google Play internal
@@ -107,7 +115,7 @@ jobs:
           curl -fsSL \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
-            "https://tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=android" \
+            "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=android" \
             -o "$bundle_path"
 
           node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
@@ -135,7 +143,7 @@ jobs:
         env:
           MOBILE_DART_DEFINE_FILE: .env.github
         with:
-          command: bun build:android
+          command: bun build:android --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }}
 
       - name: Upload Android App Bundle artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -154,6 +162,9 @@ jobs:
           serviceAccountJson: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH }}
           status: completed
           track: internal
+
+      - name: Verify committed Google Play internal release
+        run: node ../../scripts/mobile-deployment/verify-store.mjs android "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
 
       - name: Cleanup Android release files
         if: always()
@@ -217,7 +228,7 @@ jobs:
           curl -fsSL \
             -H "Authorization: Bearer ${MOBILE_DEPLOYMENT_CI_TOKEN}" \
             -H "X-GitHub-OIDC-Token: ${oidc_token}" \
-            "https://tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
+            "https://infrastructure.tuturuuu.com/api/v1/mobile-deployment/bundle?environment=production&platform=ios" \
             -o "$bundle_path"
 
           node ../../scripts/mobile-deployment/hydrate-bundle.mjs \
@@ -237,22 +248,25 @@ jobs:
           set -euo pipefail
 
           keychain_path="$RUNNER_TEMP/mobile-deployment/mobile-deployment.keychain-db"
-          security create-keychain -p "$RUNNER_TEMP" "$keychain_path"
+          keychain_password="$(openssl rand -hex 32)"
+          echo "::add-mask::$keychain_password"
+          security create-keychain -p "$keychain_password" "$keychain_path"
           security set-keychain-settings -lut 21600 "$keychain_path"
-          security unlock-keychain -p "$RUNNER_TEMP" "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
           security import "$APPLE_DISTRIBUTION_CERTIFICATE_P12_PATH" \
             -P "$APPLE_DISTRIBUTION_CERTIFICATE_PASSWORD" \
-            -A \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security \
             -t cert \
             -f pkcs12 \
             -k "$keychain_path"
           security list-keychains -d user -s "$keychain_path" login.keychain-db
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$RUNNER_TEMP" "$keychain_path"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain_path"
 
           profile_plist="$RUNNER_TEMP/mobile-deployment/profile.plist"
           security cms -D -i "$APPLE_PROVISIONING_PROFILE_PATH" > "$profile_plist"
+          swift ../../scripts/mobile-deployment/verify-profile.swift "$profile_plist"
           profile_uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "$profile_plist")"
-          profile_name="$(/usr/libexec/PlistBuddy -c 'Print Name' "$profile_plist")"
           profile_team="$(/usr/libexec/PlistBuddy -c 'Print TeamIdentifier:0' "$profile_plist")"
           app_identifier="$(/usr/libexec/PlistBuddy -c 'Print Entitlements:application-identifier' "$profile_plist")"
 
@@ -260,6 +274,13 @@ jobs:
           test "$app_identifier" = "$APPLE_TEAM_ID.$APPLE_BUNDLE_ID"
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           cp "$APPLE_PROVISIONING_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${profile_uuid}.mobileprovision"
+          echo "MOBILE_PROFILE_UUID=$profile_uuid" >> "$GITHUB_ENV"
+          cat > ios/Flutter/StoreSigning.xcconfig <<EOF
+          CODE_SIGN_STYLE = Manual
+          CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
+          DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}
+          PROVISIONING_PROFILE_SPECIFIER = ${profile_uuid}
+          EOF
 
           cat > ios/ExportOptions.plist <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
@@ -267,7 +288,7 @@ jobs:
           <plist version="1.0">
           <dict>
             <key>method</key>
-            <string>app-store</string>
+            <string>app-store-connect</string>
             <key>signingStyle</key>
             <string>manual</string>
             <key>teamID</key>
@@ -275,7 +296,7 @@ jobs:
             <key>provisioningProfiles</key>
             <dict>
               <key>${APPLE_BUNDLE_ID}</key>
-              <string>${profile_name}</string>
+              <string>${profile_uuid}</string>
             </dict>
             <key>stripSwiftSymbols</key>
             <true/>
@@ -286,7 +307,7 @@ jobs:
           EOF
 
       - name: Build iOS IPA
-        run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --export-options-plist=ios/ExportOptions.plist
+        run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
 
       - name: Resolve iOS IPA path
         id: ios-ipa
@@ -302,6 +323,29 @@ jobs:
 
           echo "path=apps/mobile/$ipa_path" >> "$GITHUB_OUTPUT"
           echo "local_path=$ipa_path" >> "$GITHUB_OUTPUT"
+
+      - name: Verify exported iOS signature and build identity
+        shell: bash
+        env:
+          EXPECTED_BUILD_NUMBER: ${{ needs.mobile-credentials-preflight.outputs.build_number }}
+          IPA_PATH: ${{ steps.ios-ipa.outputs.local_path }}
+        run: |
+          set -euo pipefail
+          verify_dir="$RUNNER_TEMP/mobile-deployment/ipa-verification"
+          mkdir -p "$verify_dir"
+          ditto -x -k "$IPA_PATH" "$verify_dir"
+          shopt -s nullglob
+          apps=("$verify_dir"/Payload/*.app)
+          test "${#apps[@]}" -eq 1
+          app_path="${apps[0]}"
+          codesign --verify --deep --strict "$app_path"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app_path/Info.plist")" = "$APPLE_BUNDLE_ID"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app_path/Info.plist")" = "$EXPECTED_BUILD_NUMBER"
+          codesign -d --entitlements :- "$app_path" > "$verify_dir/entitlements.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print application-identifier' "$verify_dir/entitlements.plist")" = "$APPLE_TEAM_ID.$APPLE_BUNDLE_ID"
+          test "$(/usr/libexec/PlistBuddy -c 'Print get-task-allow' "$verify_dir/entitlements.plist")" = false
+          security cms -D -i "$app_path/embedded.mobileprovision" > "$verify_dir/profile.plist"
+          swift ../../scripts/mobile-deployment/verify-profile.swift "$verify_dir/profile.plist"
 
       - name: Upload iOS IPA artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -323,12 +367,24 @@ jobs:
             --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
 
+      - name: Verify TestFlight processing and internal beta availability
+        timeout-minutes: 35
+        run: node ../../scripts/mobile-deployment/verify-store.mjs ios "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
+
       - name: Cleanup iOS release files
         if: always()
         shell: bash
         run: |
+          security delete-keychain "$RUNNER_TEMP/mobile-deployment/mobile-deployment.keychain-db" || true
+          if [ -n "${MOBILE_PROFILE_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${MOBILE_PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY_PATH:-}" ]; then
+            rm -f "$APP_STORE_CONNECT_PRIVATE_KEY_PATH"
+          fi
           rm -f .env.github
           rm -f ios/ExportOptions.plist
+          rm -f ios/Flutter/StoreSigning.xcconfig
           rm -f ios/Runner/GoogleService-Info.plist
           rm -f ios/Runner/GoogleService-Info-production.plist
           rm -rf "$RUNNER_TEMP/mobile-deployment"

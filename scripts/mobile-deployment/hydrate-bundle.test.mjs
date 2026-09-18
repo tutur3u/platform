@@ -122,3 +122,71 @@ test('hydrate-bundle writes Android files and exports fixed env paths', async ()
   assert.match(readFileSync(githubEnv, 'utf8'), /ANDROID_KEYSTORE_PATH/);
   assert.match(readFileSync(githubEnv, 'utf8'), /GOOGLE_PLAY_TRACK/);
 });
+
+test('iOS API keys stay in runner temp and traversal key ids are rejected', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'mobile-ios-hydrate-'));
+  const mobileRoot = join(root, 'mobile');
+  const runnerTemp = join(root, 'runner-temp');
+  const githubEnv = join(root, 'github-env');
+  const files = Object.fromEntries(
+    [
+      'ios_google_service_info_plist',
+      'apple_distribution_certificate_p12',
+      'apple_app_store_provisioning_profile',
+      'app_store_connect_private_key_p8',
+    ].map((kind) => {
+      const bytes = Buffer.from(`fixture-${kind}`);
+      return [
+        kind,
+        {
+          base64: bytes.toString('base64'),
+          size: bytes.length,
+          sha256: sha256Hex(bytes),
+        },
+      ];
+    })
+  );
+  const bundle = {
+    environment: 'production',
+    platform: 'ios',
+    envFile: 'API_BASE_URL=https://tuturuuu.com\n',
+    files,
+    scalarValues: {
+      APPLE_BUNDLE_ID: 'com.tuturuuu.app.mobile',
+      APPLE_TEAM_ID: 'ABCDE12345',
+      APP_STORE_CONNECT_API_KEY_ID: 'ABCDE12345',
+    },
+  };
+  const bundlePath = join(root, 'bundle.json');
+  writeFileSync(bundlePath, JSON.stringify(bundle));
+  const run = () =>
+    execFileSync(
+      'node',
+      [
+        'scripts/mobile-deployment/hydrate-bundle.mjs',
+        '--platform',
+        'ios',
+        '--bundle',
+        bundlePath,
+        '--mobile-root',
+        mobileRoot,
+      ],
+      {
+        env: { ...process.env, GITHUB_ENV: githubEnv, RUNNER_TEMP: runnerTemp },
+        stdio: 'pipe',
+      }
+    );
+  run();
+  const keyPath = join(
+    runnerTemp,
+    'mobile-deployment/private_keys/AuthKey_ABCDE12345.p8'
+  );
+  assert.equal(
+    readFileSync(keyPath, 'utf8'),
+    'fixture-app_store_connect_private_key_p8'
+  );
+  assert.match(readFileSync(githubEnv, 'utf8'), /API_PRIVATE_KEYS_DIR/);
+  bundle.scalarValues.APP_STORE_CONNECT_API_KEY_ID = '../../escape';
+  writeFileSync(bundlePath, JSON.stringify(bundle));
+  assert.throws(run, /APP_STORE_CONNECT_API_KEY_ID must contain/);
+});
