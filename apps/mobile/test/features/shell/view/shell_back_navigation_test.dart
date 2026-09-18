@@ -609,6 +609,49 @@ void main() {
       },
     );
 
+    testWidgets(
+      'compact root navigation accommodates larger accessibility text',
+      (tester) async {
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 844);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final router = _buildRouter(initialLocation: Routes.apps);
+        addTearDown(router.dispose);
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            router: router,
+            appTabCubit: appTabCubit,
+            authCubit: authCubit,
+            workspaceCubit: workspaceCubit,
+            shellProfileCubit: shellProfileCubit,
+          ),
+        );
+        await _pumpForTransitions(tester);
+
+        final footerRect = tester.getRect(
+          find.byKey(const ValueKey('compact-shell-footer')),
+        );
+        final compactNavItems = tester
+            .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
+            .children
+            .whereType<shad.NavigationItem>();
+
+        expect(footerRect.height, greaterThanOrEqualTo(70));
+        expect(tester.takeException(), isNull);
+        expect(compactNavItems, hasLength(3));
+        expect(compactNavItems.every((item) => item.label == null), isTrue);
+        expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 24);
+        expect(tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size, 24);
+      },
+    );
+
     testWidgets('six-item compact mini nav stays within a narrow viewport', (
       tester,
     ) async {

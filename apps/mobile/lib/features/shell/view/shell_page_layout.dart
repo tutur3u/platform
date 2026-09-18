@@ -146,7 +146,13 @@ extension _ShellPageLayout on _ShellPageState {
     if (isCompact) {
       return SizedBox(
         width: double.infinity,
-        height: _ShellPageState._compactBottomNavHeight,
+        height:
+            _ShellPageState._compactBottomNavHeight +
+            (MediaQuery.textScalerOf(context).scale(10) - 10).clamp(
+                  0,
+                  double.infinity,
+                ) *
+                1.6,
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
