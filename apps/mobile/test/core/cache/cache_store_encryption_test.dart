@@ -137,6 +137,20 @@ void main() {
     },
   );
 
+  test('invalidation never extends the lifetime of expired data', () async {
+    await cacheStore.write(
+      key: key,
+      policy: const CachePolicy(
+        staleAfter: Duration(seconds: -2),
+        expireAfter: Duration(seconds: -1),
+      ),
+      payload: 'expired',
+      tags: ['mail'],
+    );
+    await cacheStore.invalidateTags(['mail']);
+    expect((await cacheStore.read(key: key, decode: decode)).isExpired, isTrue);
+  });
+
   test('logout cannot be undone by a pending response', () async {
     final started = Completer<void>();
     final response = Completer<Object?>();
