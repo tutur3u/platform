@@ -248,12 +248,24 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           _mailboxId != box) {
         return;
       }
+      var clearedFilter = false;
       setState(() {
         _labels = mailRows(organization['labels']);
         _folders = mailRows(
           organization['folders'],
         ).where((folder) => folder['kind'] == 'custom').toList();
+        if (_labelId != null &&
+            !_labels.any((label) => label['id'] == _labelId)) {
+          _labelId = null;
+          clearedFilter = true;
+        }
+        if (_folderId != null &&
+            !_folders.any((folder) => folder['id'] == _folderId)) {
+          _folderId = null;
+          clearedFilter = true;
+        }
       });
+      if (clearedFilter) unawaited(_load());
     } on Object {
       // Folder metadata must not delay or hide a successfully loaded inbox.
     }
