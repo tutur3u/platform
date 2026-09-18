@@ -484,9 +484,7 @@ class CacheStore {
   }) {
     return record.copyWith(
       staleAt: now.subtract(const Duration(milliseconds: 1)),
-      expireAt: record.expireAt.isAfter(now)
-          ? record.expireAt
-          : now.add(const Duration(hours: 1)),
+      expireAt: record.expireAt,
     );
   }
 
