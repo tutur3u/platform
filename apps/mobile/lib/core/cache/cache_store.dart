@@ -45,8 +45,22 @@ class CacheStore {
   late Box<dynamic> _resourceBox;
   late Box<dynamic> _mutationBox;
   bool _initialized = false;
+  Future<void>? _initialization;
+  final Map<String, Future<Object?>> _inFlight = {};
+  int _revision = 0;
 
-  Future<void> init() async {
+  Future<void> init() {
+    if (_initialized) return Future<void>.value();
+    return _initialization ??= _initialize().catchError((
+      Object error,
+      StackTrace stack,
+    ) {
+      _initialization = null;
+      return Future<void>.error(error, stack);
+    });
+  }
+
+  Future<void> _initialize() async {
     if (_initialized) return;
     WidgetsFlutterBinding.ensureInitialized();
     final dir = await _resolveHiveDirectory();
@@ -212,6 +226,7 @@ class CacheStore {
     await _mutationBox.close();
     _memory.clear();
     _initialized = false;
+    _initialization = null;
   }
 
   Future<CacheReadResult<T>> read<T>({
@@ -283,8 +298,10 @@ class CacheStore {
     required Object? payload,
     String? etag,
     List<String> tags = const <String>[],
+    int? expectedRevision,
   }) async {
     await init();
+    if (expectedRevision != null && expectedRevision != _revision) return;
     if (_nonPersistentResourceNamespaces.contains(key.namespace)) {
       _memory.remove(key.value);
       await _resourceBox.delete(key.value);
@@ -311,6 +328,7 @@ class CacheStore {
   }
 
   Future<void> remove(CacheKey key) async {
+    _revision++;
     await init();
     _memory.remove(key.value);
     await _resourceBox.delete(key.value);
@@ -322,6 +340,7 @@ class CacheStore {
     String? userId,
   }) async {
     await init();
+    _revision++;
     final tagSet = tags.toSet();
     final now = DateTime.now();
     final recordsToInvalidate = <String, CachedResourceRecord>{};
@@ -345,6 +364,7 @@ class CacheStore {
   }
 
   Future<void> clearScope({String? userId, String? workspaceId}) async {
+    _revision++;
     await init();
     final keysToDelete = <String>[];
     for (final entry in _memory.entries) {
@@ -416,24 +436,39 @@ class CacheStore {
       return cached;
     }
 
-    if (cached.hasValue && !forceRefresh && policy.allowBackgroundRefresh) {
-      unawaited(
-        fetch()
-            .then((payload) {
-              return write(
+    final flightKey = '$_revision:${key.value}';
+    Future<Object?> refresh() => _inFlight.putIfAbsent(flightKey, () {
+      final revision = _revision;
+      return Future<Object?>.sync(fetch)
+          .then((payload) async {
+            // Never resurrect data invalidated by a mutation or account logout.
+            if (revision == _revision) {
+              await write(
                 key: key,
                 policy: policy,
                 payload: payload,
                 tags: tags,
+                expectedRevision: revision,
               );
-            })
-            .catchError((_) {}),
-      );
+            }
+            return payload;
+          })
+          .whenComplete(() {
+            // Remove the reference without returning/awaiting this same future.
+            // ignore: discarded_futures
+            _inFlight.remove(flightKey);
+          });
+    });
+
+    if (cached.hasValue &&
+        !cached.isExpired &&
+        !forceRefresh &&
+        policy.allowBackgroundRefresh) {
+      unawaited(refresh().then<void>((_) {}, onError: (Object _) {}));
       return cached;
     }
 
-    final payload = await fetch();
-    await write(key: key, policy: policy, payload: payload, tags: tags);
+    final payload = await refresh();
 
     return CacheReadResult<T>(
       state: CacheEntryState.fresh,

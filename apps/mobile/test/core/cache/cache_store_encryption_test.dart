@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -57,6 +58,171 @@ void main() {
       tempDir.deleteSync(recursive: true);
     }
   });
+
+  const key = CacheKey(namespace: 'mail.list', userId: 'a', workspaceId: 'one');
+  String decode(Object? value) => value! as String;
+
+  test('concurrent startup and requests share one fetch', () async {
+    final gate = Completer<Object?>();
+    var requests = 0;
+    Future<Object?> fetch() {
+      requests++;
+      return gate.future;
+    }
+
+    final first = cacheStore.prefetch(
+      key: key,
+      policy: CachePolicies.detail,
+      decode: decode,
+      fetch: fetch,
+    );
+    final second = cacheStore.prefetch(
+      key: key,
+      policy: CachePolicies.detail,
+      decode: decode,
+      fetch: fetch,
+    );
+    await cacheStore.init();
+    await Future<void>.delayed(Duration.zero);
+    expect(requests, 1);
+    gate.complete('inbox');
+    expect((await first).data, 'inbox');
+    expect((await second).data, 'inbox');
+    verify(
+      () => secureStorage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).called(1);
+  });
+
+  test('failed fetch can be retried', () async {
+    await expectLater(
+      cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        fetch: () async => throw StateError('offline'),
+      ),
+      throwsStateError,
+    );
+    final result = await cacheStore.prefetch(
+      key: key,
+      policy: CachePolicies.detail,
+      decode: decode,
+      fetch: () async => 'retry',
+    );
+    expect(result.data, 'retry');
+  });
+
+  test(
+    'expired data waits for replacement rather than appearing fresh',
+    () async {
+      await cacheStore.write(
+        key: key,
+        policy: const CachePolicy(
+          staleAfter: Duration(seconds: -2),
+          expireAfter: Duration(seconds: -1),
+        ),
+        payload: 'old',
+      );
+      final result = await cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        fetch: () async => 'new',
+      );
+      expect(result.data, 'new');
+      expect(result.isFromCache, isFalse);
+    },
+  );
+
+  test('logout cannot be undone by a pending response', () async {
+    final started = Completer<void>();
+    final response = Completer<Object?>();
+    final pending = cacheStore.prefetch(
+      key: key,
+      policy: CachePolicies.detail,
+      decode: decode,
+      fetch: () {
+        started.complete();
+        return response.future;
+      },
+    );
+    await started.future;
+    await cacheStore.clearScope(userId: 'a');
+    response.complete('private inbox');
+    await pending;
+    expect((await cacheStore.read(key: key, decode: decode)).hasValue, isFalse);
+  });
+
+  test(
+    'mutation starts a new request and old response cannot overwrite it',
+    () async {
+      final started = Completer<void>();
+      final response = Completer<Object?>();
+      final pending = cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        tags: ['mail'],
+        fetch: () {
+          started.complete();
+          return response.future;
+        },
+      );
+      await started.future;
+      await cacheStore.invalidateTags(
+        ['mail'],
+        userId: 'a',
+        workspaceId: 'one',
+      );
+      await cacheStore.prefetch(
+        key: key,
+        policy: CachePolicies.detail,
+        decode: decode,
+        tags: ['mail'],
+        fetch: () async => 'updated',
+      );
+      response.complete('old');
+      await pending;
+      expect((await cacheStore.read(key: key, decode: decode)).data, 'updated');
+    },
+  );
+
+  test(
+    'identical resources remain isolated by account and workspace',
+    () async {
+      const otherUser = CacheKey(
+        namespace: 'mail.list',
+        userId: 'b',
+        workspaceId: 'one',
+      );
+      const otherWorkspace = CacheKey(
+        namespace: 'mail.list',
+        userId: 'a',
+        workspaceId: 'two',
+      );
+      for (final scoped in [key, otherUser, otherWorkspace]) {
+        await cacheStore.write(
+          key: scoped,
+          policy: CachePolicies.detail,
+          payload: scoped.value,
+        );
+      }
+      await cacheStore.clearScope(userId: 'a', workspaceId: 'one');
+      expect(
+        (await cacheStore.read(key: key, decode: decode)).hasValue,
+        isFalse,
+      );
+      for (final scoped in [otherUser, otherWorkspace]) {
+        expect(
+          (await cacheStore.read(key: scoped, decode: decode)).data,
+          scoped.value,
+        );
+      }
+    },
+  );
 
   test('encrypts cached resources and pending mutations at rest', () async {
     const resourceSecret = 'finance-wallet-secret-amount-123456789';
