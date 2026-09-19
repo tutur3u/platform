@@ -4,6 +4,7 @@ import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-atte
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { ContactNote, type ContactNoteLabels } from '../contact-note';
 import { ResolvedUserAvatar } from './resolved-user-avatar';
 import type { UserDetail, UserDetailMetric } from './types';
 
@@ -11,6 +12,7 @@ export function ProfileHeader({
   wsId,
   user,
   isGuest,
+  noteLabels,
   metrics,
   actions,
   labels,
@@ -18,6 +20,7 @@ export function ProfileHeader({
   wsId: string;
   user: UserDetail;
   isGuest: boolean;
+  noteLabels?: ContactNoteLabels;
   metrics: UserDetailMetric[];
   actions?: ReactNode;
   labels: {
@@ -93,17 +96,19 @@ export function ProfileHeader({
               )}
             </div>
 
-            <h1 className="truncate font-semibold text-2xl tracking-normal md:text-3xl">
+            <h1 className="font-semibold text-2xl tracking-tight [overflow-wrap:anywhere] md:text-3xl">
               <RequireAttentionName
                 name={primaryName}
                 requireAttention={!!user.has_require_attention_feedback}
               />
             </h1>
             {secondaryName && (
-              <p className="mt-1 truncate text-muted-foreground text-sm">
+              <p className="mt-1 text-muted-foreground text-sm [overflow-wrap:anywhere]">
                 {secondaryName}
               </p>
             )}
+
+            {noteLabels && <ContactNote note={user.note} labels={noteLabels} />}
 
             {contactItems.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">

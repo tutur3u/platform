@@ -51,6 +51,7 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
   await connection();
 
   const t = await getTranslations('user-data-table');
+  const tNotes = await getTranslations('ws-users');
   const { wsId: id, userId } = await params;
   const workspace = await getContactsWorkspace(id);
   if (!workspace) notFound();
@@ -349,6 +350,15 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
         wsId={wsId}
         user={data}
         isGuest={isGuest}
+        noteLabels={
+          hasPrivateInfo
+            ? {
+                note: t('note'),
+                expand: tNotes('expand_note'),
+                collapse: tNotes('collapse_note'),
+              }
+            : undefined
+        }
         metrics={metrics}
         actions={
           canUpdateUsers ? <EditUserDialog wsId={wsId} data={data} /> : null

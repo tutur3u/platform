@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,14 +12,19 @@ vi.mock('@tuturuuu/users-ui/components/require-attention-name', () => ({
   RequireAttentionName: ({ name }: { name: string }) => <span>{name}</span>,
 }));
 
-function renderName(note?: string, hasPrivateInfo?: boolean) {
+function renderName(
+  note?: string,
+  hasPrivateInfo?: boolean,
+  nameKey = 'full_name',
+  overrides: Partial<WorkspaceUser> = {}
+) {
   const columns = getUserColumns({
     t: ((key: string) => key) as ColumnGeneratorOptions<WorkspaceUser>['t'],
     namespace: 'ws-users',
     extraData: { hasPublicInfo: true, hasPrivateInfo },
   });
   const column = columns.find(
-    (column) => 'accessorKey' in column && column.accessorKey === 'full_name'
+    (column) => 'accessorKey' in column && column.accessorKey === nameKey
   );
   const Cell = column?.cell;
   if (typeof Cell !== 'function') throw new Error('Missing name cell');
@@ -30,6 +35,7 @@ function renderName(note?: string, hasPrivateInfo?: boolean) {
     linked_users: [],
     href: '/workspace/users/database/contact-1',
     note,
+    ...overrides,
   };
   const context = {
     row: {
@@ -46,8 +52,8 @@ describe('contact name notes', () => {
     const link = screen.getByRole('link');
     expect(link).toHaveTextContent('Test Contact');
     expect(link).toHaveTextContent('Preferred name');
-    expect(link).toHaveTextContent('Không học thứ 6');
-    expect(link).toHaveTextContent('Liên hệ trước');
+    expect(screen.getByText(/Không học thứ 6/)).toBeInTheDocument();
+    expect(screen.getByText(/Liên hệ trước/)).toBeInTheDocument();
     expect(link).toHaveAttribute('href', '/workspace/users/database/contact-1');
   });
 
@@ -67,4 +73,50 @@ describe('contact name notes', () => {
     expect(container.querySelector('.whitespace-pre-wrap')).toBeNull();
     expect(screen.getByText('Test Contact')).toBeInTheDocument();
   });
+});
+
+describe.each(['full_name', 'display_name'])('%s identity cell', (nameKey) => {
+  it('shows notes independently of visible columns', () => {
+    renderName('Không học thứ 6', true, nameKey);
+    expect(screen.getByText('Không học thứ 6')).toBeInTheDocument();
+  });
+
+  it('never exposes private notes or note controls without permission', () => {
+    renderName('Private note '.repeat(30), false, nameKey);
+    expect(screen.queryByText(/Private note/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('expands and collapses long notes without navigating', () => {
+    renderName('Long contact note '.repeat(30), true, nameKey);
+    const expand = screen.getByRole('button', { name: 'ws-users.expand_note' });
+    expect(expand.closest('a')).toBeNull();
+    expect(expand).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(expand);
+    expect(
+      screen.getByRole('button', { name: 'ws-users.collapse_note' })
+    ).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(expand);
+    expect(expand).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('does not nest a tooltip button inside a linked contact link', () => {
+    renderName('Note', true, nameKey, {
+      linked_users: [{ id: 'linked-1', display_name: 'Linked person' }],
+    });
+    expect(screen.getByRole('link').querySelector('button')).toBeNull();
+  });
+
+  it('renders missing destinations as text instead of a dead link', () => {
+    renderName('Note', true, nameKey, { href: undefined });
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+});
+
+it('makes the standalone note column readable and expandable', () => {
+  renderName('Detailed note '.repeat(30), true, 'note');
+  expect(
+    screen.getByRole('button', { name: 'ws-users.expand_note' })
+  ).toBeInTheDocument();
+  expect(screen.getByText(/Detailed note/)).toBeInTheDocument();
 });
