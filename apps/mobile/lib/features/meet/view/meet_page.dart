@@ -156,12 +156,13 @@ class _MeetPageState extends State<MeetPage> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
           final formattedTime = DateFormat.yMMMd().add_jm().format(
             selectedTime.toLocal(),
           );
-          return Padding(
+          return SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               20,
               20,
