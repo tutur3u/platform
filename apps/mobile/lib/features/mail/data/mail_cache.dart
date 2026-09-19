@@ -5,8 +5,8 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
-/// Encrypted, account/workspace-scoped mail lists. Never caches attachments,
-/// credentials, permissions, or compose buffers.
+/// Encrypted, account/workspace-scoped mail lists and thread details.
+/// Never caches attachment bytes, credentials, permissions, or compose buffers.
 class MailCache {
   MailCache({CacheStore? store, String? Function()? currentUserId})
     : _store = store ?? CacheStore.instance,

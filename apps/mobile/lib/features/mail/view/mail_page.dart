@@ -2,16 +2,25 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/mail/data/mail_optimistic.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+
+part 'mail_workspace_layout.dart';
+part 'mail_workspace_controls.dart';
+part 'mail_shell_actions.dart';
 
 class MailPage extends StatelessWidget {
   const MailPage({super.key});
@@ -70,6 +79,8 @@ class MailWorkspace extends StatefulWidget {
 }
 
 class _MailWorkspaceState extends State<MailWorkspace> {
+  void _updateState(VoidCallback update) => setState(update);
+
   late final MailRepository _repository;
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
@@ -302,20 +313,39 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _bulk(String action, {String? labelId, String? folderId}) async {
-    if (_mutating || _selected.isEmpty) return;
-    setState(() => _mutating = true);
+    final box = _mailboxId;
+    if (_mutating || _selected.isEmpty || box == null) return;
+    final selected = Set<String>.of(_selected);
+    final previous = _items;
+    final generation = ++_generation;
+    setState(() {
+      _mutating = true;
+      _loading = false;
+      _items = optimisticMailItems(
+        _items,
+        selected,
+        action: action,
+        folder: _folder,
+        query: _search.text,
+      );
+      _selected.clear();
+    });
     try {
       await _repository.bulk(
         widget.workspaceId,
-        _mailboxId!,
-        _selected.toList(),
+        box,
+        selected.toList(),
         action,
         threads: _threads,
         labelId: labelId,
         folderId: folderId,
       );
     } on Object {
-      if (mounted) {
+      if (mounted && generation == _generation) {
+        setState(() {
+          _items = previous;
+          _selected.addAll(selected);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.l10n.commonSomethingWentWrong)),
         );
@@ -391,301 +421,5 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final folders = {
-      'inbox': l10n.mailInbox,
-      'sent': l10n.mailSent,
-      'drafts': l10n.mailDrafts,
-      'starred': l10n.mailStarred,
-      'archive': l10n.mailArchive,
-      'spam': l10n.mailSpam,
-      'trash': l10n.mailTrash,
-    };
-    return Scaffold(
-      appBar: AppBar(
-        title: PopupMenuButton<String>(
-          tooltip: l10n.mailFolders,
-          onSelected: (folder) {
-            if (_folder == folder) return;
-            setState(() {
-              _folder = folder;
-              _labelId = null;
-              _folderId = null;
-            });
-            unawaited(_load(forceRefresh: false));
-          },
-          itemBuilder: (_) => [
-            for (final folder in folders.entries)
-              CheckedPopupMenuItem(
-                value: folder.key,
-                checked: _folder == folder.key,
-                child: Text(folder.value),
-              ),
-          ],
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(folders[_folder] ?? l10n.mailTitle),
-              const SizedBox(width: 4),
-              const Icon(Icons.expand_more, size: 20),
-            ],
-          ),
-        ),
-        actions: [
-          if (_mailboxId != null && ['inbox', 'archive'].contains(_folder))
-            IconButton(
-              tooltip: l10n.mailMarkAllRead,
-              onPressed: _mutating ? null : _markAllRead,
-              icon: const Icon(Icons.mark_email_read_outlined),
-            ),
-          if (['owner', 'admin'].contains(_mailbox['role']))
-            IconButton(
-              tooltip: l10n.mailSettings,
-              onPressed: _mutating ? null : _manage,
-              icon: const Icon(Icons.settings_outlined),
-            ),
-        ],
-      ),
-      floatingActionButton:
-          _mailboxId != null && _canSend && !_searchFocus.hasFocus
-          ? FloatingActionButton.extended(
-              onPressed: _mutating ? null : _compose,
-              icon: const Icon(Icons.edit_outlined),
-              label: Text(l10n.mailCompose),
-            )
-          : null,
-      body: AbsorbPointer(
-        absorbing: _mutating,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  if (_mailboxes.isNotEmpty)
-                    DropdownButtonFormField<String>(
-                      initialValue: _mailboxId,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: l10n.mailMailbox,
-                        isDense: true,
-                        border: InputBorder.none,
-                      ),
-                      items: _mailboxes
-                          .map(
-                            (box) => DropdownMenuItem(
-                              value: box['id'] as String,
-                              child: Text(
-                                box['address'] as String,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _mailboxId = value;
-                          _labelId = null;
-                          _folderId = null;
-                        });
-                        unawaited(_load());
-                      },
-                    ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _search,
-                    focusNode: _searchFocus,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: l10n.mailSearch,
-                      filled: true,
-                      fillColor: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
-                        tooltip: l10n.mailSearch,
-                        onPressed: _load,
-                        icon: const Icon(Icons.arrow_forward),
-                      ),
-                    ),
-                    onChanged: (_) {
-                      _searchDebounce?.cancel();
-                      _searchDebounce = Timer(
-                        const Duration(milliseconds: 300),
-                        () => unawaited(_load(forceRefresh: false)),
-                      );
-                    },
-                    onSubmitted: (_) {
-                      _searchDebounce?.cancel();
-                      unawaited(_load());
-                    },
-                  ),
-                ],
-              ),
-            ),
-            if (_loading) const LinearProgressIndicator(),
-            if (_mutating) const LinearProgressIndicator(),
-            if (_labels.isNotEmpty || _folders.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: DropdownButton<String>(
-                  value: _labelId != null
-                      ? 'label:$_labelId'
-                      : _folderId != null
-                      ? 'folder:$_folderId'
-                      : '',
-                  isExpanded: true,
-                  items: [
-                    DropdownMenuItem(
-                      value: '',
-                      child: Text(l10n.mailAllLabels),
-                    ),
-                    for (final label in _labels)
-                      DropdownMenuItem(
-                        value: 'label:${label['id']}',
-                        child: Text(label['name'] as String),
-                      ),
-                    for (final folder in _folders)
-                      DropdownMenuItem(
-                        value: 'folder:${folder['id']}',
-                        child: Text(folder['name'] as String),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    setState(() {
-                      _labelId = v?.startsWith('label:') == true
-                          ? v!.substring(6)
-                          : null;
-                      _folderId = v?.startsWith('folder:') == true
-                          ? v!.substring(7)
-                          : null;
-                    });
-                    unawaited(_load());
-                  },
-                ),
-              ),
-            if (_selected.isNotEmpty)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Text('${_selected.length}'),
-                    ),
-                    IconButton(
-                      tooltip: l10n.mailSelectAll,
-                      onPressed: () => setState(
-                        () => _selected.addAll(
-                          _items.map((i) => i['id'] as String),
-                        ),
-                      ),
-                      icon: const Icon(Icons.select_all),
-                    ),
-                    IconButton(
-                      tooltip: l10n.mailArchive,
-                      onPressed: () => _bulk('archive'),
-                      icon: const Icon(Icons.archive_outlined),
-                    ),
-                    IconButton(
-                      tooltip: l10n.mailTrash,
-                      onPressed: () => _bulk('trash'),
-                      icon: const Icon(Icons.delete_outline),
-                    ),
-                    IconButton(
-                      tooltip: l10n.mailMarkAllRead,
-                      onPressed: () => _bulk('mark_read'),
-                      icon: const Icon(Icons.mark_email_read_outlined),
-                    ),
-                    if (_labels.isNotEmpty)
-                      PopupMenuButton<String>(
-                        tooltip: l10n.mailLabels,
-                        icon: const Icon(Icons.label_outline),
-                        onSelected: (id) => _bulk('add_label', labelId: id),
-                        itemBuilder: (_) => _labels
-                            .map(
-                              (l) => PopupMenuItem(
-                                value: l['id'] as String,
-                                child: Text(l['name'] as String),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    IconButton(
-                      tooltip: l10n.commonCancel,
-                      onPressed: () => setState(_selected.clear),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
-            if (_failed)
-              TextButton.icon(
-                onPressed: _mailboxId == null ? _bootstrap : _load,
-                icon: const Icon(Icons.refresh),
-                label: Text(l10n.commonSomethingWentWrong),
-              ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: _load,
-                child: ListView.separated(
-                  separatorBuilder: (_, index) =>
-                      const Divider(height: 1, indent: 36),
-                  itemCount: _items.length + 1,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 100),
-                  itemBuilder: (context, index) {
-                    if (index == _items.length) {
-                      if (_hasMore) {
-                        return TextButton(
-                          onPressed: _loading ? null : () => _load(more: true),
-                          child: Text(l10n.mailLoadMore),
-                        );
-                      }
-                      if (!_loading && !_failed && _items.isEmpty) {
-                        return Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Center(child: Text(l10n.mailEmpty)),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    }
-                    final item = _items[index];
-                    return MailMessageTile(
-                      key: ValueKey(item['id']),
-                      loading: _openingId == item['id'],
-                      item: item,
-                      thread: _threads,
-                      selected: _selected.contains(item['id']),
-                      onSelect: () => setState(() {
-                        final id = item['id'] as String;
-                        if (!_selected.remove(id)) _selected.add(id);
-                      }),
-                      onTap: () {
-                        if (_selected.isEmpty) {
-                          unawaited(_open(item));
-                        } else {
-                          setState(() {
-                            final id = item['id'] as String;
-                            if (!_selected.remove(id)) _selected.add(id);
-                          });
-                        }
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _buildWorkspace(context);
 }

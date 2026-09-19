@@ -57,6 +57,55 @@ void main() {
     );
   }
 
+  testWidgets('archive updates immediately and rolls back a failed request', (
+    tester,
+  ) async {
+    final mutation = Completer<void>();
+    respond((_) async => inbox('First'));
+    when(
+      () => repository.bulk('ws', 'box', any(), 'archive', threads: true),
+    ).thenAnswer((_) => mutation.future);
+    await mount(tester);
+    await tester.pumpAndSettle();
+    await tester.longPress(find.text('First'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Archive'));
+    await tester.pump();
+    expect(find.text('First'), findsNothing);
+    mutation.completeError(StateError('Failed'));
+    await tester.pumpAndSettle();
+    expect(find.text('First'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('tablet Mail controls scroll away with the message list', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(1024, 768);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    respond(
+      (_) async => {
+        'threads': [
+          for (var i = 0; i < 40; i++)
+            {'id': '$i', 'subject': 'Subject $i', 'participants': <dynamic>[]},
+        ],
+        'pagination': {'hasMore': false},
+      },
+    );
+    await mount(tester);
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField).hitTestable(), findsOneWidget);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -650));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField).hitTestable(), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('slow folder metadata does not block inbox or refresh', (
     tester,
   ) async {

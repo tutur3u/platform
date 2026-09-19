@@ -57,9 +57,13 @@ class MailRepository {
     String mailboxId,
     String id, {
     required bool thread,
-  }) => _api.getJson(
-    '${mailboxPath(wsId, mailboxId)}/${thread ? 'threads' : 'messages'}/${Uri.encodeComponent(id)}',
-  );
+  }) {
+    final path =
+        '${mailboxPath(wsId, mailboxId)}/${thread ? 'threads' : 'messages'}/${Uri.encodeComponent(id)}';
+    // Editable drafts always use the network.
+    if (!thread) return _api.getJson(path);
+    return _cache.read(wsId, path, () => _api.getJson(path));
+  }
 
   Future<void> changeState(
     String wsId,
