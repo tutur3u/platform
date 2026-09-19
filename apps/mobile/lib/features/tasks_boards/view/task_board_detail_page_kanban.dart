@@ -122,7 +122,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
 
     final columnHeight = context.isCompact
         ? viewportHeight.clamp(280.0, 2000.0)
-        : math.max<double>(280, viewportHeight - bottomPadding);
+        : math.max<double>(280, viewportHeight);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -135,7 +135,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
           return ListView(
             controller: kanbanVerticalScrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.only(bottom: bottomPadding),
+            padding: EdgeInsets.zero,
             children: [
               SizedBox(
                 height: columnHeight,
@@ -161,7 +161,17 @@ class _TaskBoardKanbanView extends StatelessWidget {
                     itemCount: lists.length,
                     itemBuilder: (context, index) => Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: _buildColumn(index, pageSizeHint, columnHeight),
+                      child: _buildColumn(
+                        index,
+                        pageSizeHint,
+                        columnHeight,
+                        contentBottomPadding:
+                            math.max<double>(
+                              96,
+                              MediaQuery.paddingOf(context).bottom,
+                            ) +
+                            8,
+                      ),
                     ),
                   ),
                 ),
@@ -196,7 +206,17 @@ class _TaskBoardKanbanView extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: SizedBox(
                         width: columnWidth,
-                        child: _buildColumn(index, pageSizeHint, columnHeight),
+                        child: _buildColumn(
+                          index,
+                          pageSizeHint,
+                          columnHeight,
+                          contentBottomPadding:
+                              math.max<double>(
+                                96,
+                                MediaQuery.paddingOf(context).bottom,
+                              ) +
+                              8,
+                        ),
                       ),
                     ),
                   );
@@ -209,7 +229,12 @@ class _TaskBoardKanbanView extends StatelessWidget {
     );
   }
 
-  Widget _buildColumn(int index, int pageSizeHint, double columnHeight) {
+  Widget _buildColumn(
+    int index,
+    int pageSizeHint,
+    double columnHeight, {
+    double contentBottomPadding = 8,
+  }) {
     final list = lists[index];
     onRequestInitialLoad(list.id, pageSizeHint, state);
     final hasLoadError = state.listLoadErrorById.containsKey(list.id);
@@ -220,6 +245,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
       tasks: listTasks,
       isTasksLoaded: state.loadedListIds.contains(list.id),
       height: columnHeight,
+      contentBottomPadding: contentBottomPadding,
       isLoadingTasks: state.loadingListIds.contains(list.id),
       hasLoadError: hasLoadError,
       hasMoreTasks: state.listHasMoreById[list.id] ?? true,

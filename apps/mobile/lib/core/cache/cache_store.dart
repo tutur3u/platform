@@ -512,13 +512,19 @@ class CacheStore {
           .then((payload) async {
             // Never resurrect data invalidated by a mutation or account logout.
             if (revision == _revisionFor(key)) {
-              await write(
-                key: key,
-                policy: policy,
-                payload: payload,
-                tags: tags,
-                expectedRevision: revision,
-              );
+              try {
+                await write(
+                  key: key,
+                  policy: policy,
+                  payload: payload,
+                  tags: tags,
+                  expectedRevision: revision,
+                );
+              } on Object {
+                debugPrint(
+                  'Cache persistence unavailable; using network data.',
+                );
+              }
             }
             return payload;
           })

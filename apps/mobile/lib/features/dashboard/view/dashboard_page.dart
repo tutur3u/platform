@@ -231,12 +231,12 @@ class _DashboardView extends StatelessWidget {
                                   24 + MediaQuery.paddingOf(context).bottom,
                                 ),
                                 sliver: SliverResponsiveCards(
+                                  leading: StaggeredEntrance(
+                                    replayKey: replayToken,
+                                    child:
+                                        const _DashboardWorkspacePickerCard(),
+                                  ),
                                   children: [
-                                    StaggeredEntrance(
-                                      replayKey: replayToken,
-                                      child:
-                                          const _DashboardWorkspacePickerCard(),
-                                    ),
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 70),

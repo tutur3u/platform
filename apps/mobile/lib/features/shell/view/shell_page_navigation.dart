@@ -11,7 +11,7 @@ extension _ShellPageNavigation on _ShellPageState {
       fontSize: 12,
       fontWeight: FontWeight.w600,
     );
-    final isCompact = context.isCompact;
+    final isCompact = _usesCompactNavigation(context);
 
     return [
       shad.NavigationItem(
@@ -173,7 +173,7 @@ extension _ShellPageNavigation on _ShellPageState {
       fontWeight: FontWeight.w600,
     );
     final l10n = context.l10n;
-    final isCompact = context.isCompact;
+    final isCompact = _usesCompactNavigation(context);
     final miniLabelStyle = labelStyle.copyWith(fontSize: 10);
     const miniItemSpacing = _ShellPageState._miniNavItemSpacing;
 
@@ -288,7 +288,7 @@ extension _ShellPageNavigation on _ShellPageState {
       fontSize: 12,
       fontWeight: FontWeight.w600,
     );
-    final isCompact = context.isCompact;
+    final isCompact = _usesCompactNavigation(context);
     final miniLabelStyle = labelStyle.copyWith(fontSize: 10);
     const miniItemSpacing = _ShellPageState._miniNavItemSpacing;
 

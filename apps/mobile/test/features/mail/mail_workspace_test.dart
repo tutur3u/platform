@@ -1,9 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
+import 'package:mobile/features/mail/view/mail_reader.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -56,6 +61,48 @@ void main() {
       (invocation) => callback(invocation.namedArguments[#query] as String),
     );
   }
+
+  testWidgets('inbox actions clear while a reader is open and return on back', (
+    tester,
+  ) async {
+    respond((_) async => inbox('First'));
+    when(
+      () => repository.detail('ws', 'box', 'First', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'First', 'subject': 'First'},
+        'messages': <dynamic>[],
+      },
+    );
+    final actions = ShellChromeActionsCubit();
+    final titles = ShellTitleOverrideCubit();
+    addTearDown(actions.close);
+    addTearDown(titles.close);
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: actions),
+          BlocProvider.value(value: titles),
+        ],
+        child: MaterialApp(
+          navigatorKey: navigator,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: MailWorkspace(workspaceId: 'ws', repository: repository),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
+    await tester.tap(find.text('First'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MailReader), findsOneWidget);
+    expect(actions.state.resolveForLocation(Routes.mail), isEmpty);
+    navigator.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
+  });
 
   testWidgets('archive updates immediately and rolls back a failed request', (
     tester,

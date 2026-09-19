@@ -1,10 +1,11 @@
 import 'package:flutter/widgets.dart';
 
-/// Content-sized card rows that adapt to the space actually available.
-/// Unlike fixed grid extents, longer translations and larger text can grow.
+/// Content-sized columns that adapt to the available window width.
+/// Each column flows independently so short cards do not create empty rows.
 class SliverResponsiveCards extends StatelessWidget {
   const SliverResponsiveCards({
     required this.children,
+    this.leading,
     this.minColumnWidth = 360,
     this.maxColumns = 3,
     this.spacing = 14,
@@ -12,6 +13,7 @@ class SliverResponsiveCards extends StatelessWidget {
   });
 
   final List<Widget> children;
+  final Widget? leading;
   final double minColumnWidth;
   final int maxColumns;
   final double spacing;
@@ -22,23 +24,36 @@ class SliverResponsiveCards extends StatelessWidget {
       final columns = (constraints.crossAxisExtent / minColumnWidth)
           .floor()
           .clamp(1, maxColumns);
-      return SliverList.builder(
-        itemCount: (children.length / columns).ceil(),
-        itemBuilder: (context, row) => Padding(
-          padding: EdgeInsets.only(bottom: spacing),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var column = 0; column < columns; column++) ...[
-                if (column > 0) SizedBox(width: spacing),
-                Expanded(
-                  child: row * columns + column < children.length
-                      ? children[row * columns + column]
-                      : const SizedBox.shrink(),
-                ),
+      return SliverToBoxAdapter(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (leading != null) ...[leading!, SizedBox(height: spacing)],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var column = 0; column < columns; column++) ...[
+                  if (column > 0) SizedBox(width: spacing),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (
+                          var index = column;
+                          index < children.length;
+                          index += columns
+                        )
+                          Padding(
+                            padding: EdgeInsets.only(bottom: spacing),
+                            child: children[index],
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
+            ),
+          ],
         ),
       );
     },

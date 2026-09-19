@@ -4,7 +4,6 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -52,7 +51,9 @@ class _MeetPageState extends State<MeetPage> {
   void initState() {
     super.initState();
     _repository = widget.repository ?? MeetRepository();
-    unawaited(Future<void>.delayed(Duration.zero, _reload));
+    unawaited(
+      Future<void>.delayed(Duration.zero, () => _reload(forceRefresh: false)),
+    );
   }
 
   @override
@@ -65,16 +66,32 @@ class _MeetPageState extends State<MeetPage> {
     super.dispose();
   }
 
-  Future<void> _reload({bool append = false}) async {
-    final wsId = _wsId;
-    if (wsId == null || wsId.isEmpty) return;
-
+  Future<void> _reload({bool append = false, bool forceRefresh = true}) async {
+    if (!mounted) return;
     final requestToken = ++_requestToken;
+    final wsId = _wsId;
+    if (wsId == null || wsId.isEmpty) {
+      setState(() {
+        _meetings = const [];
+        _total = 0;
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+      return;
+    }
+
+    final cached = append
+        ? null
+        : _repository.cachedMeetings(wsId, search: _searchController.text);
     final nextPage = append ? _page + 1 : 1;
     setState(() {
       if (append) {
         _isLoadingMore = true;
       } else {
+        if (cached != null) {
+          _meetings = cached.meetings;
+          _total = cached.totalCount;
+        }
         _isLoading = true;
         _error = null;
       }
@@ -85,6 +102,7 @@ class _MeetPageState extends State<MeetPage> {
         wsId,
         search: _searchController.text,
         page: nextPage,
+        forceRefresh: forceRefresh,
       );
       if (!mounted || requestToken != _requestToken) return;
       setState(() {
@@ -96,7 +114,13 @@ class _MeetPageState extends State<MeetPage> {
       });
     } on ApiException catch (error) {
       if (!mounted || requestToken != _requestToken) return;
-      setState(() => _error = error.message);
+      setState(() {
+        _error = error.message;
+        if (error.statusCode == 401 || error.statusCode == 403) {
+          _meetings = const [];
+          _total = 0;
+        }
+      });
     } on Object {
       if (!mounted || requestToken != _requestToken) return;
       setState(() => _error = context.l10n.commonSomethingWentWrong);
@@ -113,7 +137,7 @@ class _MeetPageState extends State<MeetPage> {
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-      unawaited(_reload());
+      unawaited(_reload(forceRefresh: false));
     });
   }
 
@@ -132,12 +156,13 @@ class _MeetPageState extends State<MeetPage> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
           final formattedTime = DateFormat.yMMMd().add_jm().format(
             selectedTime.toLocal(),
           );
-          return Padding(
+          return SingleChildScrollView(
             padding: EdgeInsets.fromLTRB(
               20,
               20,
@@ -319,14 +344,6 @@ class _MeetPageState extends State<MeetPage> {
               locations: const {Routes.meet},
               actions: [
                 ShellActionSpec(
-                  id: 'meet-refresh',
-                  icon: Icons.refresh_rounded,
-                  tooltip: context.l10n.commonRefresh,
-                  callbackToken: _isLoading,
-                  enabled: hasWorkspace && !_isLoading,
-                  onPressed: _reload,
-                ),
-                ShellActionSpec(
                   id: 'meet-create',
                   icon: Icons.add_rounded,
                   tooltip: context.l10n.meetNewMeeting,
@@ -334,10 +351,18 @@ class _MeetPageState extends State<MeetPage> {
                   enabled: hasWorkspace,
                   onPressed: _showMeetingEditor,
                 ),
+                ShellActionSpec(
+                  id: 'meet-refresh',
+                  icon: Icons.refresh_rounded,
+                  tooltip: context.l10n.commonRefresh,
+                  callbackToken: _isLoading,
+                  enabled: hasWorkspace && !_isLoading,
+                  onPressed: _reload,
+                ),
               ],
             ),
             ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              maxWidth: context.isCompact ? null : 1440,
               child: RefreshIndicator(
                 onRefresh: _reload,
                 child: ListView(
@@ -374,15 +399,30 @@ class _MeetPageState extends State<MeetPage> {
                         message: context.l10n.meetEmptyDescription,
                       )
                     else
-                      ..._meetings.map(
-                        (meeting) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _MeetingTile(
-                            meeting: meeting,
-                            onTap: () => _showMeetingEditor(meeting),
-                            onDelete: () => _deleteMeeting(meeting),
-                          ),
-                        ),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final columns = (constraints.maxWidth / 360)
+                              .floor()
+                              .clamp(1, 3);
+                          final width =
+                              (constraints.maxWidth - 12 * (columns - 1)) /
+                              columns;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              for (final meeting in _meetings)
+                                SizedBox(
+                                  width: width,
+                                  child: _MeetingTile(
+                                    meeting: meeting,
+                                    onTap: () => _showMeetingEditor(meeting),
+                                    onDelete: () => _deleteMeeting(meeting),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                     if (_hasMore) ...[
                       const SizedBox(height: 8),

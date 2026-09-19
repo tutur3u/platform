@@ -47,8 +47,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (sharedShell && (ModalRoute.of(context)?.isCurrent ?? true))
-          _buildMailShellActions(),
+        if (sharedShell && !_childRouteOpen) _buildMailShellActions(),
         Scaffold(
           appBar: sharedShell
               ? null

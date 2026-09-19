@@ -80,6 +80,19 @@ class MailWorkspace extends StatefulWidget {
 
 class _MailWorkspaceState extends State<MailWorkspace> {
   void _updateState(VoidCallback update) => setState(update);
+  bool _childRouteOpen = false;
+
+  Future<void> _pushChild(Route<void> route) async {
+    setState(() => _childRouteOpen = true);
+    // Unregister inbox actions before its route becomes offstage.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    try {
+      await Navigator.of(context).push<void>(route);
+    } finally {
+      if (mounted) setState(() => _childRouteOpen = false);
+    }
+  }
 
   late final MailRepository _repository;
   final _search = TextEditingController();
@@ -283,7 +296,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _compose([Map<String, dynamic>? draft]) async {
-    await Navigator.of(context).push<void>(
+    await _pushChild(
       MaterialPageRoute(
         builder: (_) => MailComposer(
           repository: _repository,
@@ -300,7 +313,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _manage() async {
-    await Navigator.of(context).push<void>(
+    await _pushChild(
       MaterialPageRoute(
         builder: (_) => MailSettingsPage(
           repository: _repository,
@@ -393,7 +406,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         await _compose(detail);
         return;
       }
-      await Navigator.of(context).push<void>(
+      await _pushChild(
         MaterialPageRoute(
           builder: (_) => MailReader(
             repository: _repository,
