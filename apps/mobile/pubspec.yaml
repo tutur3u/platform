@@ -43,6 +43,7 @@ dependencies:
   go_router: ^18.0.0
   google_sign_in: ^7.2.0
   hive: ^2.2.3
+  html: ^0.15.7
   http: ^1.6.0
   http_parser: ^4.1.2
   image: ^4.8.0

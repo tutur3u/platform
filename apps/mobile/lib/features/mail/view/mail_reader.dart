@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
-import 'package:mobile/features/mail/view/mail_html_view.dart';
+import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -48,7 +48,9 @@ class _MailReaderState extends State<MailReader> {
   void initState() {
     super.initState();
     _starred = _messages.any((m) => m['starred'] == true);
-    unawaited(_action('mark_read'));
+    if (_messages.any((message) => message['unread'] == true)) {
+      unawaited(_action('mark_read'));
+    }
   }
 
   Future<void> _action(String action, {bool close = false}) async {
@@ -134,11 +136,16 @@ class _MailReaderState extends State<MailReader> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          bottom: 16 + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           if (_busy) const LinearProgressIndicator(),
           for (final message in _messages)
             Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              elevation: 0,
+              shape: const RoundedRectangleBorder(),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -163,22 +170,12 @@ class _MailReaderState extends State<MailReader> {
                           .join(', '),
                     ),
                     const Divider(),
-                    if ((message['sanitizedHtml'] as String?)?.isNotEmpty ==
-                        true)
-                      TextButton(
-                        onPressed: () => Navigator.of(context).push<void>(
-                          MaterialPageRoute(
-                            builder: (_) => MailHtmlView(
-                              html: message['sanitizedHtml'] as String,
-                            ),
-                          ),
-                        ),
-                        child: Text(l10n.mailViewOriginal),
-                      ),
-                    SelectableText(
-                      message['bodyText'] as String? ??
-                          message['snippet'] as String? ??
-                          '',
+                    MailMessageContent(
+                      key: ValueKey(message['id']),
+                      repository: widget.repository,
+                      workspaceId: widget.workspaceId,
+                      mailboxId: widget.mailboxId,
+                      message: message,
                     ),
                     for (final file in mailRows(message['attachments']))
                       ListTile(
