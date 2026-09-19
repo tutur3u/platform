@@ -136,6 +136,17 @@ class _ChatPageState extends State<ChatPage> {
       ownerId: 'chat-root',
       locations: const {Routes.chat},
       actions: [
+        if (state.selectedConversationId != null &&
+            MediaQuery.sizeOf(context).width < 900)
+          ShellActionSpec(
+            id: 'chat-back',
+            icon: shad.LucideIcons.arrowLeft,
+            tooltip: l10n.navBack,
+            onPressed: () {
+              _chatCubit.clearSelection();
+              context.go(Routes.chat);
+            },
+          ),
         ShellActionSpec(
           id: 'chat-new',
           icon: shad.LucideIcons.messageSquarePlus,

@@ -44,11 +44,7 @@ class _CompactChatSurface extends StatelessWidget {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 180),
       child: hasSelected
-          ? _ThreadPane(
-              key: const ValueKey('thread'),
-              state: state,
-              showBack: true,
-            )
+          ? _ThreadPane(key: const ValueKey('thread'), state: state)
           : _ConversationPane(key: const ValueKey('list'), state: state),
     );
   }
@@ -181,64 +177,34 @@ class _ChatOverviewCard extends StatelessWidget {
 }
 
 class _ThreadPane extends StatelessWidget {
-  const _ThreadPane({required this.state, this.showBack = false, super.key});
+  const _ThreadPane({required this.state, super.key});
 
   final ChatState state;
-  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ChatCubit>();
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final showBackButton = showBack && constraints.maxHeight >= 300;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (showBackButton)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: shad.OutlineButton(
-                  onPressed: () {
-                    context.read<ChatCubit>().clearSelection();
-                    context.go(Routes.chat);
-                  },
-                  leading: const Icon(shad.LucideIcons.arrowLeft, size: 16),
-                  child: Text(context.l10n.navBack),
-                ),
-              ),
-            if (showBackButton) const SizedBox(height: 8),
-            Expanded(
-              child: ChatThreadView(
-                conversation: state.selectedConversation,
-                messages: state.selectedMessages,
-                messageStatus: state.messageStatus,
-                currentUserId: context.select<AuthCubit, String?>(
-                  (cubit) => cubit.state.user?.id,
-                ),
-                pendingAttachments: state.pendingAttachments,
-                streamingAssistantText: state.streamingAssistantText,
-                isSending: state.isSending,
-                isUploadingAttachment: state.isUploadingAttachment,
-                onSend: (content) => unawaited(cubit.sendMessage(content)),
-                onPickAttachment: (file) =>
-                    unawaited(cubit.uploadAttachment(file)),
-                onRemoveAttachment: cubit.removePendingAttachment,
-                onReaction: (message, reaction) =>
-                    unawaited(cubit.toggleReaction(message, reaction)),
-                onDetails: () => unawaited(
-                  showChatDetailsSheet(context: context, cubit: cubit),
-                ),
-                onPin: state.selectedConversation == null
-                    ? () {}
-                    : () => unawaited(
-                        cubit.togglePin(state.selectedConversation!),
-                      ),
-              ),
-            ),
-          ],
-        );
-      },
+    return ChatThreadView(
+      conversation: state.selectedConversation,
+      messages: state.selectedMessages,
+      messageStatus: state.messageStatus,
+      currentUserId: context.select<AuthCubit, String?>(
+        (cubit) => cubit.state.user?.id,
+      ),
+      pendingAttachments: state.pendingAttachments,
+      streamingAssistantText: state.streamingAssistantText,
+      isSending: state.isSending,
+      isUploadingAttachment: state.isUploadingAttachment,
+      onSend: (content) => unawaited(cubit.sendMessage(content)),
+      onPickAttachment: (file) => unawaited(cubit.uploadAttachment(file)),
+      onRemoveAttachment: cubit.removePendingAttachment,
+      onReaction: (message, reaction) =>
+          unawaited(cubit.toggleReaction(message, reaction)),
+      onDetails: () =>
+          unawaited(showChatDetailsSheet(context: context, cubit: cubit)),
+      onPin: state.selectedConversation == null
+          ? () {}
+          : () => unawaited(cubit.togglePin(state.selectedConversation!)),
     );
   }
 }
