@@ -68,6 +68,8 @@ part 'task_board_detail_page_board_layout_move_status_dialog.dart';
 part 'task_board_detail_page_board_layout_status_section.dart';
 part 'task_board_detail_page_board_layout_widgets.dart';
 part 'task_board_detail_page_cards.dart';
+part 'task_board_detail_page_kanban.dart';
+part 'task_board_detail_page_kanban_column.dart';
 part 'task_board_detail_page_detail_sheet.dart';
 part 'task_board_detail_page_detail_sheet_description.dart';
 part 'task_board_detail_page_detail_sheet_shared_widgets.dart';

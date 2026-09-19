@@ -21,7 +21,7 @@ void main() {
       workspaceCubit = _MockWorkspaceCubit();
     });
 
-    testWidgets('shows logo and Home title on home', (tester) async {
+    testWidgets('shows app picker and Home title on home', (tester) async {
       const state = WorkspaceState(status: WorkspaceStatus.loaded);
       when(() => workspaceCubit.state).thenReturn(state);
       whenListen(
@@ -40,7 +40,11 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(Image), findsOneWidget);
+      expect(find.byTooltip('Apps'), findsOneWidget);
+      expect(
+        tester.widget<Image>(find.byType(Image)).image,
+        const AssetImage('assets/logos/transparent.png'),
+      );
       expect(find.text('Home'), findsOneWidget);
     });
   });

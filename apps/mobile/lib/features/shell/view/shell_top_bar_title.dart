@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_config.dart';
@@ -80,7 +81,9 @@ class _ShellTopBarTitleContent extends StatelessWidget {
               height: mobileSectionAppBarLogoSize,
               fit: BoxFit.contain,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 4),
+            const AppsDropdownPicker(),
+            const SizedBox(width: 4),
           ],
           Expanded(
             child: Align(

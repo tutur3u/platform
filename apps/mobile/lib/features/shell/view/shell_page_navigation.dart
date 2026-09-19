@@ -112,6 +112,7 @@ extension _ShellPageNavigation on _ShellPageState {
     required IconData icon,
     required String semanticLabel,
     required int itemIndex,
+    Widget? image,
     bool showLabel = true,
     double iconSize = _ShellPageState._navIconSize,
   }) {
@@ -125,7 +126,7 @@ extension _ShellPageNavigation on _ShellPageState {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: iconSize.clamp(18.0, 24.0)),
+              image ?? Icon(icon, size: iconSize.clamp(18.0, 24.0)),
               if (showLabel) ...[
                 const SizedBox(height: 2),
                 Text(
@@ -150,6 +151,12 @@ extension _ShellPageNavigation on _ShellPageState {
     required int itemIndex,
   }) => _buildCompactNavIcon(
     icon: Icons.auto_awesome_outlined,
+    image: Image.asset(
+      'assets/logos/nova-transparent.png',
+      width: 24,
+      height: 24,
+      fit: BoxFit.contain,
+    ),
     semanticLabel: semanticLabel,
     itemIndex: itemIndex,
   );

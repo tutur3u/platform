@@ -167,6 +167,7 @@ extension _ShellPageLayout on _ShellPageState {
     return SizedBox(
       width: double.infinity,
       child: Center(
+        heightFactor: 1,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth > 0 ? maxWidth : 0),
           child: IntrinsicWidth(child: child),

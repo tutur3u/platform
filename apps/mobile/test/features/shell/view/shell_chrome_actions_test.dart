@@ -176,9 +176,16 @@ void main() {
       expect(find.byIcon(Icons.filter_alt_outlined), findsNothing);
     });
 
-    testWidgets('collapses multiple top-bar actions into an overflow menu', (
+    testWidgets('keeps the primary action visible on compact screens', (
       tester,
     ) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
       await tester.pumpApp(
         BlocProvider(
           create: (_) => ShellChromeActionsCubit(),
@@ -191,13 +198,13 @@ void main() {
       await _pumpFrames(tester);
 
       expect(find.byKey(const ValueKey('shell-actions-overflow')), findsOne);
-      expect(find.byIcon(Icons.filter_alt_outlined), findsNothing);
+      expect(find.byIcon(Icons.filter_alt_outlined), findsOneWidget);
       expect(find.byIcon(Icons.search_rounded), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('shell-actions-overflow')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Filter requests'), findsOneWidget);
+      expect(find.text('Filter requests'), findsNothing);
       expect(find.text('Search requests'), findsOneWidget);
     });
 
