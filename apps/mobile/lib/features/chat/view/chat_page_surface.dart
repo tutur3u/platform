@@ -58,28 +58,26 @@ class _ConversationPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ChatCubit>();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _ChatOverviewCard(state: state),
-        const SizedBox(height: 10),
-        _ChatFilters(state: state),
-        const SizedBox(height: 10),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: cubit.refresh,
-            child: ChatConversationList(
-              conversations: state.visibleConversations,
-              selectedConversationId: state.selectedConversationId,
-              isLoadingMore: state.isLoadingMore,
-              hasMore: state.nextOffset != null,
-              onLoadMore: () => unawaited(cubit.loadMoreConversations()),
-              onSelected: (conversationId) =>
-                  unawaited(cubit.selectConversation(conversationId)),
-            ),
-          ),
+    return RefreshIndicator(
+      onRefresh: cubit.refresh,
+      child: ChatConversationList(
+        header: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ChatOverviewCard(state: state),
+            const SizedBox(height: 10),
+            _ChatFilters(state: state),
+            const SizedBox(height: 10),
+          ],
         ),
-      ],
+        conversations: state.visibleConversations,
+        selectedConversationId: state.selectedConversationId,
+        isLoadingMore: state.isLoadingMore,
+        hasMore: state.nextOffset != null,
+        onLoadMore: () => unawaited(cubit.loadMoreConversations()),
+        onSelected: (conversationId) =>
+            unawaited(cubit.selectConversation(conversationId)),
+      ),
     );
   }
 }
