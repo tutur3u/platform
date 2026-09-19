@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/tutur3u/platform/compare/turnstile-v0.1.2...turnstile-v0.1.3) (2026-09-19)
+
+
+### Bug Fixes
+
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+
 ## [0.1.2](https://github.com/tutur3u/platform/compare/turnstile-v0.1.1...turnstile-v0.1.2) (2026-08-31)
 
 

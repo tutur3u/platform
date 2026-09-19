@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/tasks-v0.33.0...tasks-v0.34.0) (2026-09-19)
+
+
+### Features
+
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09))
+* **finance:** clarify category charts and add promotions management ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
+* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
+* **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** restrict promotion forwarding and clarify chart labels ([30d3f05](https://github.com/tutur3u/platform/commit/30d3f053df12360beab94cbdcb0a9fd3a84d38f7))
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0))
+* **finance:** retain actors across invoice audit writes ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5))
+* **finance:** speed up invoice audit history and improve pagination ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **i18n:** avoid unlimited Enterprise capacity claims ([6c513eb](https://github.com/tutur3u/platform/commit/6c513eb34fa71646b002886d9e545ee0bfc301da))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **pricing:** align localized amounts and plan change previews ([e0e7e3d](https://github.com/tutur3u/platform/commit/e0e7e3d0a07e43e298e9adae39a5a441b0945ab9))
+* **pricing:** reconcile live catalog displays and tier comparisons ([3aa65c2](https://github.com/tutur3u/platform/commit/3aa65c2221d0d099ff5bd50de0c90bb4237d1bbd))
+* **tasks:** authorize bulk archive with app session client ([f2f33fc](https://github.com/tutur3u/platform/commit/f2f33fce848c61f1ed079cb7fe7bc7f05d29afe7))
+* **tasks:** authorize bulk archive with app session client ([#5369](https://github.com/tutur3u/platform/issues/5369)) ([cf276d3](https://github.com/tutur3u/platform/commit/cf276d3e507a937f2f6c0b81346d83ad7727ce97))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+* **ui:** move app installation into settings ([ffa82a1](https://github.com/tutur3u/platform/commit/ffa82a12e0eba196cc800cf1c2f1ef78819d5d70))
+* **ui:** move app installation into settings ([#5327](https://github.com/tutur3u/platform/issues/5327)) ([17034ef](https://github.com/tutur3u/platform/commit/17034efe29de99bdbf4d6ee76ed9bf1c5f1d4ff7))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573))
+* **ui:** repair checklist caret and status controls ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+
 ## [0.33.0](https://github.com/tutur3u/platform/compare/tasks-v0.32.1...tasks-v0.33.0) (2026-09-07)
 
 

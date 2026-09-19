@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.16.2](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.1...tasks-ui-v0.16.2) (2026-09-19)
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **mira:** align artifacts with compact product cards ([df6c55d](https://github.com/tutur3u/platform/commit/df6c55d3b770c8922c1fb261c45966f1da3fb76a))
+* **mira:** align artifacts with compact product cards ([#5325](https://github.com/tutur3u/platform/issues/5325)) ([df0c799](https://github.com/tutur3u/platform/commit/df0c799b1bbded5e3f4e7ece0fca02a92371fda2))
+* **mira:** complete artifact tasks and improve contrast ([8b47eab](https://github.com/tutur3u/platform/commit/8b47eab033c06b16e946ac860d72724c8f9d02e0))
+* **mira:** complete artifact tasks and improve contrast ([#5337](https://github.com/tutur3u/platform/issues/5337)) ([b3ed416](https://github.com/tutur3u/platform/commit/b3ed41654c7a693ad0a6f3683cd5704b4b8fd8c2))
+* **mira:** preserve card tooltips and clarify source expansion ([4c95c0d](https://github.com/tutur3u/platform/commit/4c95c0d8e668d28a39b9275a899e1c84d31fed72))
+* **mira:** preserve pagination focus and require action labels ([947904a](https://github.com/tutur3u/platform/commit/947904ab18370b58afa80c4ecea25f89f1fe37ad))
+* **mira:** prioritize artifact space and expose source previews ([570e599](https://github.com/tutur3u/platform/commit/570e5992a70a4d3fc70d4c6d06ed7f6ea3507377))
+* **tasks:** align filtered counts and local task visibility ([913388b](https://github.com/tutur3u/platform/commit/913388b78767f927685df695398da030ad73bf82))
+* **tasks:** clean up drag scrolling for all sensors ([fe9bbdc](https://github.com/tutur3u/platform/commit/fe9bbdc97f0d8aa3f0267891221a489736e9bdbe))
+* **tasks:** handle viewport and refresh review edge cases ([7ee889a](https://github.com/tutur3u/platform/commit/7ee889abe44103434f5b4b4b60587f1318820a0a))
+* **tasks:** keep synced checklists and board state interactive ([63761b5](https://github.com/tutur3u/platform/commit/63761b59aa8abe99c0e48f1694a1fa0573bdcffa))
+* **tasks:** keep synced checklists and board state interactive ([#5379](https://github.com/tutur3u/platform/issues/5379)) ([c647460](https://github.com/tutur3u/platform/commit/c64746019a2e18798e71f0c5cfbf8bff13a58485))
+* **tasks:** limit search loading state to text queries ([b0129fc](https://github.com/tutur3u/platform/commit/b0129fcb33092600b5b46657b8bda806ec18f2f0))
+* **tasks:** load every page for sorted boards ([ad915a7](https://github.com/tutur3u/platform/commit/ad915a7d25871cedf498925f5c33b7064f69bafb))
+* **tasks:** load every page for sorted boards ([#5381](https://github.com/tutur3u/platform/issues/5381)) ([b56ef01](https://github.com/tutur3u/platform/commit/b56ef01fa866fee3cf82123f657606c7b936d4d8))
+* **tasks:** preserve saved tasks and preload visible lists ([f25cfc5](https://github.com/tutur3u/platform/commit/f25cfc59b75abce8ba7adb5e8c8a2836e2c28276))
+* **tasks:** preserve saved tasks and preload visible lists ([#5308](https://github.com/tutur3u/platform/issues/5308)) ([a6aec2f](https://github.com/tutur3u/platform/commit/a6aec2f3f702c48b7cf9e356a98af2cdcc2d8ee7))
+* **tasks:** preserve search loading and error recovery ([56547de](https://github.com/tutur3u/platform/commit/56547deef18649f067f670c608f04d74448c3b63))
+* **tasks:** recover lists from observed page membership ([214f571](https://github.com/tutur3u/platform/commit/214f571ab1c2bf7253d650759291a857ea78f5f6))
+* **tasks:** replace empty smart columns with search recovery ([#5328](https://github.com/tutur3u/platform/issues/5328)) ([06c3e46](https://github.com/tutur3u/platform/commit/06c3e4604267f84be7330c1b8d0336557ca8fab8))
+* **tasks:** restore checklist controls and board drag UX ([72d2495](https://github.com/tutur3u/platform/commit/72d2495717f7550f2ca4c26234abd2ceebbc280c))
+* **tasks:** restore checklist controls and board drag UX ([#5375](https://github.com/tutur3u/platform/issues/5375)) ([fd9ed4e](https://github.com/tutur3u/platform/commit/fd9ed4ef63272cc2a434ad72aa1081fa641055c2))
+* **tasks:** show a useful empty search state ([38f3509](https://github.com/tutur3u/platform/commit/38f3509a873a80f470e44acd23b62c7a103294c2))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+
+
+### Performance Improvements
+
+* **tasks:** bound missing-task verification per refresh ([37599dc](https://github.com/tutur3u/platform/commit/37599dc20a03a6ed425f0fe2bb8b0aecf293c2d7))
+
 ## [0.16.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.16.0...tasks-ui-v0.16.1) (2026-09-08)
 
 
