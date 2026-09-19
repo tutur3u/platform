@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/mobile-v0.9.2...mobile-v0.10.0) (2026-09-19)
+
+
+### Features
+
+* **infrastructure:** authenticate native Calendar gateway ([e225ec7](https://github.com/tutur3u/platform/commit/e225ec73f3f5dd958bbe7dacab986271e877728e))
+* **mobile:** add workspace Mail client ([6b1054b](https://github.com/tutur3u/platform/commit/6b1054bf37479570118ee70c5301ca452a5d03ee))
+* **mobile:** add workspace Mail client ([#5388](https://github.com/tutur3u/platform/issues/5388)) ([ebfed37](https://github.com/tutur3u/platform/commit/ebfed377ce643a48c470553b40bff6ca8def5fd8))
+* **mobile:** compact Mail and render isolated HTML ([7d0e4f8](https://github.com/tutur3u/platform/commit/7d0e4f8cf800ad8fd588002279b3d5ecdb6d40b6))
+* **mobile:** compact Mail and render isolated HTML ([#5396](https://github.com/tutur3u/platform/issues/5396)) ([9545e89](https://github.com/tutur3u/platform/commit/9545e89822ee4f71563a2be9ee491ff3c9d484b6))
+* **mobile:** simplify navigation and keep cached screens responsive ([583bec6](https://github.com/tutur3u/platform/commit/583bec69a1a5fcce050a0950bedfd5919a9807ee))
+
+
+### Bug Fixes
+
+* **ci:** enable and verify signed mobile beta releases ([#5387](https://github.com/tutur3u/platform/issues/5387)) ([3b34df6](https://github.com/tutur3u/platform/commit/3b34df69b5565924180b18b3a41152a8bb80366e))
+* **ci:** verify signed mobile beta releases ([f6985a6](https://github.com/tutur3u/platform/commit/f6985a6fb462c40629c7a719ef135f7aecd8c476))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **mobile:** accommodate larger navigation labels ([d49e0b0](https://github.com/tutur3u/platform/commit/d49e0b00543be6d31ca95d7171cb3f3bb42f645c))
+* **mobile:** adapt shell and boards to tablet windows ([1990cb6](https://github.com/tutur3u/platform/commit/1990cb625bfc318a47af2343ad364b40fb4ebcc5))
+* **mobile:** adapt shell and boards to tablet windows ([#5395](https://github.com/tutur3u/platform/issues/5395)) ([9be8a79](https://github.com/tutur3u/platform/commit/9be8a79eae646c08dc596a65839a258c08739546))
+* **mobile:** avoid duplicate Chat composer dock clearance ([d3ffd80](https://github.com/tutur3u/platform/commit/d3ffd8021092b525f5216e98e9f30ffaa2abe2b6))
+* **mobile:** bound cache keys by encoded size ([1b7dcea](https://github.com/tutur3u/platform/commit/1b7dcea320401cb5288df27a9a127ea3320562d8))
+* **mobile:** clear deleted Mail filters after metadata refresh ([b2497b5](https://github.com/tutur3u/platform/commit/b2497b5f71eb2852df8cddbdc4b186b4405ad340))
+* **mobile:** clear inbox actions for nested Mail routes ([701bf18](https://github.com/tutur3u/platform/commit/701bf182c4245fa59f68ecdfa38abc9b431d1a14))
+* **mobile:** coalesce scoped cache refreshes safely ([09f1ee1](https://github.com/tutur3u/platform/commit/09f1ee19d9fb8a8811a8c21dfbd65d4904613249))
+* **mobile:** coalesce scoped cache refreshes safely ([#5389](https://github.com/tutur3u/platform/issues/5389)) ([fdb8077](https://github.com/tutur3u/platform/commit/fdb80779737a45ebbd67dbbcc2ea6ba35c8ada75))
+* **mobile:** correct nested Mail spacing and search controls ([e444e01](https://github.com/tutur3u/platform/commit/e444e01d586920a9260e31b7c075507341710e40))
+* **mobile:** expand Chat panes on tablet screens ([28a237d](https://github.com/tutur3u/platform/commit/28a237dd37f9093e79ab241c0bb962b4f3ee0c28))
+* **mobile:** fill tablet work surfaces without empty rows ([57468b0](https://github.com/tutur3u/platform/commit/57468b03143048e9e66cd9c11473d4ad86a67442))
+* **mobile:** finish tablet layouts and Meet caching ([#5397](https://github.com/tutur3u/platform/issues/5397)) ([1f37e59](https://github.com/tutur3u/platform/commit/1f37e59f86d8cf6258bdacbf81cec5a39dd45256))
+* **mobile:** keep Chat usable in short landscape windows ([1b351de](https://github.com/tutur3u/platform/commit/1b351de31b18b727a0a834c3eb25101df095231b))
+* **mobile:** keep Meet editor reachable in landscape ([d6f1c0d](https://github.com/tutur3u/platform/commit/d6f1c0daa96b2aa24e7381302b5e098c472ec540))
+* **mobile:** move conversation navigation into Chat toolbar ([77bef52](https://github.com/tutur3u/platform/commit/77bef52a435aacdc1dea0bbcd6232d4493095656))
+* **mobile:** preserve cache expiry during invalidation ([7c04655](https://github.com/tutur3u/platform/commit/7c04655d71cda2dd34ccb07c24b44c4d5c84c1e0))
+* **mobile:** preserve Mail drafts during back and save ([18796f8](https://github.com/tutur3u/platform/commit/18796f89b1082354a3576cd673d8135b00d8ffa1))
+* **mobile:** preserve network results across cache failures ([f883098](https://github.com/tutur3u/platform/commit/f883098367837774704750b097bdd54a2296f828))
+* **mobile:** preserve scoped mail cache and background metadata ([40d64f6](https://github.com/tutur3u/platform/commit/40d64f61c7940834929b845c6a00e58e65303197))
+* **mobile:** reject invalidated cache responses ([cc19910](https://github.com/tutur3u/platform/commit/cc19910349e02c7b968b279e0a1960123f09b754))
+* **mobile:** restore colorful design and repair app access ([a5b6ea3](https://github.com/tutur3u/platform/commit/a5b6ea3012e6f9d6a45de51c9a5c792747d6b9ff))
+* **mobile:** restore v0.9.2 design, responsive loading, and app access ([#5390](https://github.com/tutur3u/platform/issues/5390)) ([30987f9](https://github.com/tutur3u/platform/commit/30987f9c1706445bafc24186129f4646d0363009))
+* **mobile:** scope cache mutation generations ([761f3a3](https://github.com/tutur3u/platform/commit/761f3a3c3a99b6e9ec8bd90ba9c49a1377254146))
+* **mobile:** scroll Chat filters with conversation lists ([741ab8f](https://github.com/tutur3u/platform/commit/741ab8fc23a86da151091f6e7f384e88aa6f5fb6))
+* **mobile:** use compact navigation in short windows ([82d0422](https://github.com/tutur3u/platform/commit/82d0422c8fda0c1c2a14ed6414c1a145dd4b1c5c))
+
+
+### Performance Improvements
+
+* **mobile:** cache Meet pages and adapt meeting layouts ([f7483c1](https://github.com/tutur3u/platform/commit/f7483c162f67dbb47cac533c320e108e3bf17e07))
+
 ## [0.9.2](https://github.com/tutur3u/platform/compare/mobile-v0.9.1...mobile-v0.9.2) (2026-09-03)
 
 

@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.33.0](https://github.com/tutur3u/platform/compare/database-v1.32.0...database-v1.33.0) (2026-09-19)
+
+
+### Features
+
+* **contacts:** familiar report statuses and branded monthly emails ([#5309](https://github.com/tutur3u/platform/issues/5309)) ([88d74a8](https://github.com/tutur3u/platform/commit/88d74a828ce4deb2047906c66452d17ae50e7b61))
+* **contacts:** track and automate approved report delivery ([5a73577](https://github.com/tutur3u/platform/commit/5a73577fd404f223d025f88daa04b16002a11e81))
+* **contacts:** track and automate approved report delivery ([#5300](https://github.com/tutur3u/platform/issues/5300)) ([b69c22f](https://github.com/tutur3u/platform/commit/b69c22f433df8a1aa7cea18b538c1a3016582b9e))
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **mira:** add Gemini 3.8 Live Flash and Pro modes ([ae47967](https://github.com/tutur3u/platform/commit/ae479679fb85e8785a2012816d38e8bd2a1f8a76))
+* **mira:** add Gemini 3.8 Live Flash and Pro modes ([#5370](https://github.com/tutur3u/platform/issues/5370)) ([c3bf878](https://github.com/tutur3u/platform/commit/c3bf87887a70c30f419d1ee4c27e5a1653bc769b))
+
+
+### Bug Fixes
+
+* **contacts:** fence report delivery leases and completion ([b692e20](https://github.com/tutur3u/platform/commit/b692e20c95d9d0112b68dbf7afc809f8769c7f5d))
+* **contacts:** harden delivery action boundaries ([1b2969d](https://github.com/tutur3u/platform/commit/1b2969d74d92f2b981610b5665c7255f90742904))
+* **contacts:** make report delivery transitions atomic ([72cffb9](https://github.com/tutur3u/platform/commit/72cffb94ac34702bd9f53fa055209c575c967829))
+* **contacts:** preserve cancellation on delivery retries ([2c84cda](https://github.com/tutur3u/platform/commit/2c84cdae2288d49ca3b2952f44e23911e44f12a0))
+* **contacts:** preserve unknown delivery outcomes on blocked retry ([f68bf6c](https://github.com/tutur3u/platform/commit/f68bf6c04170c36676349a1ffbf4c864a3c92c5e))
+* **contacts:** recover abandoned monthly delivery claims ([1c46a20](https://github.com/tutur3u/platform/commit/1c46a20eca3e1ab4c9b910ed71eaab578e9a0a8f))
+* **contacts:** serialize approval and delivery requests safely ([caafe51](https://github.com/tutur3u/platform/commit/caafe517131bfa8693f46ae41f27b34fc3d3f129))
+* **contacts:** unify report stages and skip legacy unsent reports ([0f7fce8](https://github.com/tutur3u/platform/commit/0f7fce8cd1841f777ba18db6e335946ed2fb80bb))
+* **contacts:** unify report stages and skip legacy unsent reports ([#5322](https://github.com/tutur3u/platform/issues/5322)) ([dd9dc1b](https://github.com/tutur3u/platform/commit/dd9dc1bfd3ca6d1ddb113105381387c9f690137e))
+* **database:** build invoice audit indexes concurrently ([4bd9235](https://github.com/tutur3u/platform/commit/4bd923508f3650407ef1d86d94abda49e751f25a))
+* **database:** validate report constraint separately ([a0c2a01](https://github.com/tutur3u/platform/commit/a0c2a0136d94c06e737fd590afd46287abf7e495))
+* **finance:** bound invoice audit scans before pagination ([76a0a72](https://github.com/tutur3u/platform/commit/76a0a72814150e71395c7ddf1c06e19ffa8c275b))
+* **finance:** bound invoice audit scans before pagination ([#5385](https://github.com/tutur3u/platform/issues/5385)) ([cbc461c](https://github.com/tutur3u/platform/commit/cbc461cf1a1776148e9d3b725b1613dc6a7a1db9))
+* **finance:** index linked invoice audit lookups ([b5069ff](https://github.com/tutur3u/platform/commit/b5069ff7ef1dcad2f4153f680ab6e034eff32832))
+* **finance:** index linked invoice audit lookups ([#5382](https://github.com/tutur3u/platform/issues/5382)) ([bb314f8](https://github.com/tutur3u/platform/commit/bb314f8e17e2377c8b725423b82ae8da101bf815))
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0))
+* **finance:** retain actors across invoice audit writes ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+* **finance:** skip linked payments in legacy audit scan ([3b759ec](https://github.com/tutur3u/platform/commit/3b759ece4e71ec162f3a014691be341de693498a))
+* **finance:** skip linked payments in legacy invoice audit scan ([#5386](https://github.com/tutur3u/platform/issues/5386)) ([c48dcdc](https://github.com/tutur3u/platform/commit/c48dcdc15cca85f316492846edbee5efe0967f21))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5))
+* **finance:** speed up invoice audit history and improve pagination ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **reports:** clarify delivery states and protect active sends ([e8396f2](https://github.com/tutur3u/platform/commit/e8396f269a42703aac3852c1b86ff2299324819e))
+* **reports:** expose draft filters and freeze approval metadata ([58469b2](https://github.com/tutur3u/platform/commit/58469b2092d975deaf4d140cf2a8766bafb1e5da))
+* **reports:** guard skipped deliveries and share stage metadata ([9744b3e](https://github.com/tutur3u/platform/commit/9744b3e8315ff70596a811fad42742dcdcbfc809))
+
 ## [1.32.0](https://github.com/tutur3u/platform/compare/database-v1.31.1...database-v1.32.0) (2026-09-10)
 
 

@@ -1,5 +1,66 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/ai-v0.13.0...ai-v0.14.0) (2026-09-19)
+
+
+### Features
+
+* **meet:** attribute transcripts and review task assignees ([cac7eb0](https://github.com/tutur3u/platform/commit/cac7eb00cf444d55ef97fb7894711f0f1c71ec74))
+* **meet:** identify transcript sources and assign note follow-ups ([#5362](https://github.com/tutur3u/platform/issues/5362)) ([40c4a29](https://github.com/tutur3u/platform/commit/40c4a297e6d63a2bd31cd0ede609452d1615c14c))
+* **meet:** turn notes into reviewed calendar and task follow-ups ([b853512](https://github.com/tutur3u/platform/commit/b85351280ac9075883db1fcdbd849e2f06c900ef))
+* **meet:** turn notes into reviewed calendar and task follow-ups ([#5359](https://github.com/tutur3u/platform/issues/5359)) ([3914a41](https://github.com/tutur3u/platform/commit/3914a41828e6e837add7f55a3f05a5b42e31f98e))
+* **mira:** discover capabilities and verify task operations ([e09e1da](https://github.com/tutur3u/platform/commit/e09e1dab4f4b822f0d2a552cf530bfccc35701a4))
+* **mira:** discover tools, verify task writes, and automate calendar planning ([#5326](https://github.com/tutur3u/platform/issues/5326)) ([b911ca7](https://github.com/tutur3u/platform/commit/b911ca73fea05ab3bb35bff388716b55ddccb6fe))
+* **mira:** manage contextual artifacts through assistant tools ([e7fc89a](https://github.com/tutur3u/platform/commit/e7fc89a52723ad1d05b8a14f6dfa01fa708b09fc))
+* **mira:** manage contextual artifacts through assistant tools ([#5323](https://github.com/tutur3u/platform/issues/5323)) ([40d652e](https://github.com/tutur3u/platform/commit/40d652e5f7089373c12884c3f89a2c764121ec87))
+* **mira:** unify live chat controls and artifact workspace ([d8dfa1e](https://github.com/tutur3u/platform/commit/d8dfa1e47def97af3bfa725c03948b905f057713))
+* **mira:** unify live chat controls and artifact workspace ([#5318](https://github.com/tutur3u/platform/issues/5318)) ([dc2af8c](https://github.com/tutur3u/platform/commit/dc2af8ce8748c144de3b076ef963eb5ceff5fabc))
+
+
+### Bug Fixes
+
+* **ai:** preserve step telemetry and identify retired image models ([9ac0235](https://github.com/tutur3u/platform/commit/9ac0235f1a48371fcf267982ffa834b54a3dbc4d))
+* **ai:** refine native search units and tool discovery ([2351e8c](https://github.com/tutur3u/platform/commit/2351e8c81dfa744a74e15687b2142f48b368ee57))
+* **billing:** fail closed on unknown usage and subscription capacity ([ccfcba4](https://github.com/tutur3u/platform/commit/ccfcba46f236981b1d4e59e1c389bee8472b2ca8))
+* **billing:** fail closed on unknown usage and subscription capacity ([#5333](https://github.com/tutur3u/platform/issues/5333)) ([a308a89](https://github.com/tutur3u/platform/commit/a308a8996f17a81c76c8fb0d498a14d8dbf289c3))
+* **billing:** preserve revocation recovery and validate currency codes ([e75cdda](https://github.com/tutur3u/platform/commit/e75cdda47a4dd4020103b08dce2af99209448d9f))
+* **billing:** reject unavailable provider budgets at request boundaries ([5fb8a9c](https://github.com/tutur3u/platform/commit/5fb8a9c5351488bca1fdf4d66b887ccece9665af))
+* **billing:** reject unverifiable seat assignments and budget overflow ([af834a3](https://github.com/tutur3u/platform/commit/af834a39c1f85e455400c2f4785e60f960103bc1))
+* **billing:** validate untrusted credit balances before narrowing ([17e79bd](https://github.com/tutur3u/platform/commit/17e79bdd5b9abf6d5202ad45650230c958567a7f))
+* **colab:** reliable tool runs, 50-call defaults, and sponsored artwork ([#5303](https://github.com/tutur3u/platform/issues/5303)) ([805311a](https://github.com/tutur3u/platform/commit/805311a2bdef20200b5f7ab06563b2a42ccfd95e))
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **meet:** batch source audio within session limits ([fd707a7](https://github.com/tutur3u/platform/commit/fd707a7fb896e53241bfa985f97cc454aca8f2a2))
+* **meet:** fail closed and release rejected follow-up receipts ([c13a295](https://github.com/tutur3u/platform/commit/c13a295c1fabcf8605fb05b2d6a5042db3213426))
+* **meet:** recover sources-only assistant answers ([3b660d3](https://github.com/tutur3u/platform/commit/3b660d36ac8681b00d5741e5819bd11313251373))
+* **meet:** recover sources-only assistant answers ([#5304](https://github.com/tutur3u/platform/issues/5304)) ([249b171](https://github.com/tutur3u/platform/commit/249b17158379b5a6909328b489ef9b935592316a))
+* **mira:** align artifacts with compact product cards ([df6c55d](https://github.com/tutur3u/platform/commit/df6c55d3b770c8922c1fb261c45966f1da3fb76a))
+* **mira:** align artifacts with compact product cards ([#5325](https://github.com/tutur3u/platform/issues/5325)) ([df0c799](https://github.com/tutur3u/platform/commit/df0c799b1bbded5e3f4e7ece0fca02a92371fda2))
+* **mira:** allow native search to finish with an answer ([8c19af1](https://github.com/tutur3u/platform/commit/8c19af10b1e43b3a9edd1383b43f48f76ef356e8))
+* **mira:** authorize current workspace and verify product outcomes ([6e1f49f](https://github.com/tutur3u/platform/commit/6e1f49ffdc167dbd40f265408800395eec4929a2))
+* **mira:** bind task reads to workspace and clarify tool outcomes ([ab798fc](https://github.com/tutur3u/platform/commit/ab798fcb302b78680adae58d769eadc294590d91))
+* **mira:** bound artifact retries and honor presentation preferences ([41f40f9](https://github.com/tutur3u/platform/commit/41f40f99c5838bb828459f13bc6b0e70b9cdc6fb))
+* **mira:** clarify artifact tool completion and grounding ([6d51402](https://github.com/tutur3u/platform/commit/6d51402d097c2780818bef61e65b972ddb0f55a4))
+* **mira:** clarify artifact tool completion and grounding ([#5324](https://github.com/tutur3u/platform/issues/5324)) ([1f75bc8](https://github.com/tutur3u/platform/commit/1f75bc83d61f671ff8e9c5ae41bafc186d6a7996))
+* **mira:** distinguish date clears and rejected task inserts ([f211745](https://github.com/tutur3u/platform/commit/f211745702b3129db31ba741bcba9b3faa6d69a8))
+* **mira:** distinguish UI completion from data retrieval ([410df80](https://github.com/tutur3u/platform/commit/410df80325c752a6ee9be51afe4d219f4d72bd57))
+* **mira:** harden task receipts and calendar tool outcomes ([58db00f](https://github.com/tutur3u/platform/commit/58db00f8a867e698beed51058784e30250aca034))
+* **mira:** let native web search finish with an answer ([#5329](https://github.com/tutur3u/platform/issues/5329)) ([5b458c1](https://github.com/tutur3u/platform/commit/5b458c1d0174dc971eb481dda76e4863e51d6aef))
+* **mira:** preserve bounded search executor and required tool policies ([5bd5359](https://github.com/tutur3u/platform/commit/5bd5359249c9144d52348331e51529d764644e83))
+* **mira:** preserve conversation chronology and open requested artifacts ([f8d4f86](https://github.com/tutur3u/platform/commit/f8d4f8616919baf6f878c6eb71836acc48c8933f))
+* **mira:** preserve conversation chronology and open requested artifacts ([#5331](https://github.com/tutur3u/platform/issues/5331)) ([40155bd](https://github.com/tutur3u/platform/commit/40155bd97ebe23b3c4ccbcde88c998c173b2bf7f))
+* **mira:** preserve retry recovery across visual tools ([7f2a85c](https://github.com/tutur3u/platform/commit/7f2a85c2ab69197fc8be26a17f1eff24d73ccc49))
+* **mira:** recognize completed native Google searches ([c18da41](https://github.com/tutur3u/platform/commit/c18da415f6b94fe55fa9d023e389db4e20c4f99f))
+* **mira:** recover artifact presentation and retried action summaries ([d1eec3d](https://github.com/tutur3u/platform/commit/d1eec3dca1b9005f0b97d28407147f11b88622b6))
+* **mira:** recover artifact presentation and retried action summaries ([#5340](https://github.com/tutur3u/platform/issues/5340)) ([0b00daa](https://github.com/tutur3u/platform/commit/0b00daa170bfb133d404bed2047f07e1f1b94696))
+* **mira:** respect explicit artifact exclusions ([05906c6](https://github.com/tutur3u/platform/commit/05906c6ca70a265dcff3962bb760b603f3851803))
+* **mira:** scope Live token provisioning to validated context ([6ea6766](https://github.com/tutur3u/platform/commit/6ea6766c1cd8808bfe571a6c5360943ac8f8eeb8))
+* **mira:** share Chat personalization with Live ([9a7dc02](https://github.com/tutur3u/platform/commit/9a7dc02392126287889a5395c08bfeff217ad7e7))
+* **mira:** share Chat personalization with Live ([#5374](https://github.com/tutur3u/platform/issues/5374)) ([93cd871](https://github.com/tutur3u/platform/commit/93cd871611b1a5dc56e07f1a56b6c8d55620a458))
+* **mira:** use configured Google connection for search ([657ddda](https://github.com/tutur3u/platform/commit/657ddda4f1ecb0f42a2504e3e0110ebc904f6a8d))
+* **mira:** use configured Google connection for search ([#5330](https://github.com/tutur3u/platform/issues/5330)) ([d65c9a3](https://github.com/tutur3u/platform/commit/d65c9a35b642b4050b3ed34675894abc9b124017))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/ai-v0.12.0...ai-v0.13.0) (2026-09-11)
 
 
