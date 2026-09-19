@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/types-v0.30.0...types-v0.31.0) (2026-09-19)
+
+
+### Features
+
+* **contacts:** track and automate approved report delivery ([#5300](https://github.com/tutur3u/platform/issues/5300)) ([b69c22f](https://github.com/tutur3u/platform/commit/b69c22f433df8a1aa7cea18b538c1a3016582b9e))
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+
+
+### Bug Fixes
+
+* **contacts:** fence report delivery leases and completion ([b692e20](https://github.com/tutur3u/platform/commit/b692e20c95d9d0112b68dbf7afc809f8769c7f5d))
+* **contacts:** harden delivery action boundaries ([1b2969d](https://github.com/tutur3u/platform/commit/1b2969d74d92f2b981610b5665c7255f90742904))
+* **contacts:** serialize approval and delivery requests safely ([caafe51](https://github.com/tutur3u/platform/commit/caafe517131bfa8693f46ae41f27b34fc3d3f129))
+* **contacts:** unify report stages and skip legacy unsent reports ([0f7fce8](https://github.com/tutur3u/platform/commit/0f7fce8cd1841f777ba18db6e335946ed2fb80bb))
+* **contacts:** unify report stages and skip legacy unsent reports ([#5322](https://github.com/tutur3u/platform/issues/5322)) ([dd9dc1b](https://github.com/tutur3u/platform/commit/dd9dc1bfd3ca6d1ddb113105381387c9f690137e))
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/types-v0.29.1...types-v0.30.0) (2026-09-10)
 
 
