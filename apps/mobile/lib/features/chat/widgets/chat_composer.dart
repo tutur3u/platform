@@ -62,12 +62,8 @@ class _ChatComposerState extends State<ChatComposer> {
         border: Border(top: BorderSide(color: colorScheme.border)),
       ),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          12,
-          10,
-          12,
-          10 + MediaQuery.paddingOf(context).bottom,
-        ),
+        // The chat surface already reserves the system and floating dock inset.
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
