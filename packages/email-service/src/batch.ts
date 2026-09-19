@@ -70,7 +70,7 @@ export interface BatchItemResult {
 }
 
 export interface BatchOptions {
-  /** Maximum concurrent sends (default: 5) */
+  /** Maximum concurrent sends; must be a positive safe integer (default: 5). */
   concurrency?: number;
   /** Delay between sends in ms (default: 100) */
   delayMs?: number;
@@ -100,9 +100,15 @@ export class EmailBatch {
   };
 
   constructor(wsId: string, options: BatchOptions = {}) {
+    const concurrency = options.concurrency ?? 5;
+    if (!Number.isSafeInteger(concurrency) || concurrency <= 0) {
+      throw new RangeError(
+        'Email batch concurrency must be a positive safe integer'
+      );
+    }
     this.wsId = wsId;
     this.options = {
-      concurrency: options.concurrency ?? 5,
+      concurrency,
       delayMs: options.delayMs ?? 100,
       stopOnError: options.stopOnError ?? false,
       onProgress: options.onProgress,
