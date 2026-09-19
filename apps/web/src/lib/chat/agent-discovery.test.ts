@@ -9,9 +9,14 @@ import {
 vi.mock('server-only', () => ({}));
 
 const mocks = {
+  createAdminClient: vi.fn(),
   listAiChatAttachmentsByMessage: vi.fn(),
   listAiAgents: vi.fn(),
 };
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
+}));
 
 vi.mock('@/lib/ai-agents/registry', () => ({
   listAiAgents: (...args: Parameters<typeof mocks.listAiAgents>) =>
@@ -152,6 +157,8 @@ describe('AI agent chat discovery', () => {
         table === 'ai_chats' ? chatQuery : messagesQuery
       ),
     };
+    const adminFrom = vi.fn(() => messagesQuery);
+    mocks.createAdminClient.mockResolvedValue({ from: adminFrom });
 
     await listAiChatMessages({
       conversationId: 'ai-chat-chat-1',
@@ -169,5 +176,34 @@ describe('AI agent chat discovery', () => {
     expect(contains).toHaveBeenCalledWith('metadata', {
       requestId: '11111111-1111-4111-8111-111111111111',
     });
+    expect(supabase.from).toHaveBeenCalledTimes(1);
+    expect(supabase.from).toHaveBeenCalledWith('ai_chats');
+    expect(chatQuery.eq).toHaveBeenCalledWith('creator_id', 'user-1');
+    expect(adminFrom).toHaveBeenCalledWith('ai_chat_messages');
+    expect(messagesQuery.eq).toHaveBeenCalledWith('chat_id', 'chat-1');
   });
+
+  it.each([null, { message: 'authorization unavailable' }])(
+    'never opens the admin client when ownership is absent or fails: %j',
+    async (error) => {
+      const query = {
+        eq: vi.fn(() => query),
+        select: vi.fn(() => query),
+        maybeSingle: vi.fn(async () => ({ data: null, error })),
+      };
+      const result = listAiChatMessages({
+        conversationId: 'ai-chat-chat-1',
+        supabase: { from: vi.fn(() => query) } as never,
+        user: { id: 'user-1' } as never,
+        wsId: 'workspace-1',
+      });
+      if (error) {
+        await expect(result).rejects.toThrow(error.message);
+      } else {
+        await expect(result).resolves.toBeNull();
+      }
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      expect(mocks.listAiChatAttachmentsByMessage).not.toHaveBeenCalled();
+    }
+  );
 });
