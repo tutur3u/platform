@@ -75,7 +75,8 @@ class _ThreadEmpty extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = shad.Theme.of(context).colorScheme;
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
+        primary: false,
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

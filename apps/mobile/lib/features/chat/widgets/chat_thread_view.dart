@@ -51,49 +51,52 @@ class ChatThreadView extends StatelessWidget {
       return _NoConversationSelected();
     }
 
-    return Column(
-      children: [
-        _ThreadHeader(
-          conversation: selected,
-          onDetails: onDetails,
-          onPin: onPin,
-        ),
-        Expanded(
-          child: selected.isReadOnlyAgent
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    selected.latestMessage?.content ??
-                        selected.description ??
-                        '',
-                  ),
-                )
-              : switch (messageStatus) {
-                  ChatMessageStatus.loading => const NovaLoadingIndicator(
-                    size: 42,
-                  ),
-                  ChatMessageStatus.error => _ThreadEmpty(
-                    title: context.l10n.commonSomethingWentWrong,
-                    description: context.l10n.chatMessagesLoadError,
-                  ),
-                  _ => _MessageList(
-                    messages: messages,
-                    currentUserId: currentUserId,
-                    streamingAssistantText: streamingAssistantText,
-                    onReaction: onReaction,
-                  ),
-                },
-        ),
-        if (!selected.isReadOnlyAgent)
-          ChatComposer(
-            pendingAttachments: pendingAttachments,
-            isSending: isSending,
-            isUploadingAttachment: isUploadingAttachment,
-            onSend: onSend,
-            onPickAttachment: onPickAttachment,
-            onRemoveAttachment: onRemoveAttachment,
+    return LayoutBuilder(
+      builder: (context, constraints) => Column(
+        children: [
+          if (constraints.maxHeight >= 240)
+            _ThreadHeader(
+              conversation: selected,
+              onDetails: onDetails,
+              onPin: onPin,
+            ),
+          Expanded(
+            child: selected.isReadOnlyAgent
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      selected.latestMessage?.content ??
+                          selected.description ??
+                          '',
+                    ),
+                  )
+                : switch (messageStatus) {
+                    ChatMessageStatus.loading => const NovaLoadingIndicator(
+                      size: 42,
+                    ),
+                    ChatMessageStatus.error => _ThreadEmpty(
+                      title: context.l10n.commonSomethingWentWrong,
+                      description: context.l10n.chatMessagesLoadError,
+                    ),
+                    _ => _MessageList(
+                      messages: messages,
+                      currentUserId: currentUserId,
+                      streamingAssistantText: streamingAssistantText,
+                      onReaction: onReaction,
+                    ),
+                  },
           ),
-      ],
+          if (!selected.isReadOnlyAgent)
+            ChatComposer(
+              pendingAttachments: pendingAttachments,
+              isSending: isSending,
+              isUploadingAttachment: isUploadingAttachment,
+              onSend: onSend,
+              onPickAttachment: onPickAttachment,
+              onRemoveAttachment: onRemoveAttachment,
+            ),
+        ],
+      ),
     );
   }
 }
