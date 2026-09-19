@@ -478,14 +478,16 @@ export function paginateReportBlocks({
               Math.max(1, refineSplitBoundary(forcedSegment.text, 48))
             )
           );
+        // Consume the head we actually emitted. When nothing fits, the split
+        // result retains the entire source as its tail; reusing that tail here
+        // would repeat the same segment forever and freeze the report editor.
         const tailSegment =
-          forcedSplit.tailSegment ??
-          (headSegment.text.length < forcedSegment.text.length
+          headSegment.text.length < forcedSegment.text.length
             ? cloneSegment(
                 forcedSegment,
                 forcedSegment.text.slice(headSegment.text.length)
               )
-            : null);
+            : null;
         const forcedHeight =
           forcedSplit.height ||
           measureBlock({
