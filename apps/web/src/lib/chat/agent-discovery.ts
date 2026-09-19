@@ -430,7 +430,7 @@ export async function listAiChatMessages({
   if (chatError) throw new Error(chatError.message);
   if (!chat) return null;
 
-  const messagesQuery = supabase
+  const messagesQuery = (await createAdminClient({ noCookie: true }))
     .from('ai_chat_messages')
     .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
     .eq('chat_id', chatId)
