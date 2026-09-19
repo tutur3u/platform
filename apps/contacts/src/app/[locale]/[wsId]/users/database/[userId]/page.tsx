@@ -349,6 +349,15 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
         wsId={wsId}
         user={data}
         isGuest={isGuest}
+        noteLabels={
+          hasPrivateInfo
+            ? {
+                note: t('note'),
+                expand: t('expand_note'),
+                collapse: t('collapse_note'),
+              }
+            : undefined
+        }
         metrics={metrics}
         actions={
           canUpdateUsers ? <EditUserDialog wsId={wsId} data={data} /> : null

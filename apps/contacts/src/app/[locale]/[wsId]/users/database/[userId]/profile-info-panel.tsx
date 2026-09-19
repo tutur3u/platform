@@ -94,7 +94,7 @@ export function ProfileInfoPanel({
               }
             >
               <dt className="text-muted-foreground text-xs">{field.label}</dt>
-              <dd className="mt-1 break-words font-medium text-sm">
+              <dd className="mt-1 whitespace-pre-wrap font-medium text-sm [overflow-wrap:anywhere]">
                 {field.value}
               </dd>
             </div>

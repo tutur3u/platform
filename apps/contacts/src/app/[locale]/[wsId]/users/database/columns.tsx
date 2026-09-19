@@ -6,22 +6,13 @@ import type {
   ColumnGeneratorOptions,
 } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
-import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
 import moment from 'moment';
-import Link from 'next/link';
-import { Fragment } from 'react';
+import { ContactIdentityCell } from './contact-identity-cell';
+import { ContactNote } from './contact-note';
 import { UserRowActions } from './row-actions';
-import { UserAvatarCell } from './user-avatar-cell';
 
 interface UserColumnsExtraData {
   hasPrivateInfo?: boolean;
@@ -179,162 +170,34 @@ export const getUserColumns = ({
         );
       },
     },
-    {
-      accessorKey: 'full_name',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          t={t}
-          column={column}
-          title={t(`${namespace}.full_name`)}
-        />
-      ),
-      cell: ({ row }) => {
-        const linkedUsers = Array.isArray(row.getValue('linked_users'))
-          ? row.getValue<WorkspaceUser[]>('linked_users')
-          : [];
-        const isLinked = linkedUsers.length !== 0;
-        const fullName = row.getValue<string>('full_name');
-        const displayName = row.getValue<string>('display_name');
-        const primaryName = fullName || displayName || '-';
-        const secondaryName =
-          displayName && displayName !== primaryName ? displayName : null;
-        const note = hasPrivateInfo ? row.original.note?.trim() : null;
-        const avatarUrl = normalizeAvatarImageSrc(
-          row.original.avatar_url as string | undefined
-        );
-
-        const nameNode = (
-          <RequireAttentionName
-            name={primaryName}
-            requireAttention={!!row.original.has_require_attention_feedback}
-          />
-        );
-
-        return (
-          <Link
-            href={row.original.href || '#'}
-            className="flex min-w-48 items-center gap-3"
-          >
-            <UserAvatarCell avatarUrl={avatarUrl} name={primaryName} />
-            <span className="flex min-w-0 flex-col">
-              <span className="flex items-center gap-1.5">
-                {isLinked ? (
-                  <TooltipProvider>
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger className="truncate font-semibold underline">
-                        {nameNode}
-                      </TooltipTrigger>
-                      <TooltipContent className="text-center">
-                        {t(`${namespace}.linked_to`)}{' '}
-                        <div>
-                          {linkedUsers.map((u, idx) => (
-                            <Fragment key={`${u.id}-combo`}>
-                              <span className="font-semibold hover:underline">
-                                {u.display_name}
-                              </span>
-                              {idx !== linkedUsers.length - 1 && (
-                                <span>, </span>
-                              )}
-                            </Fragment>
-                          ))}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ) : (
-                  <span className="truncate font-semibold hover:underline">
-                    {nameNode}
-                  </span>
-                )}
-                <span
-                  className={cn(
-                    'shrink-0 rounded-full border px-1.5 py-0.5 font-medium text-[10px]',
-                    isLinked
-                      ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
-                      : 'border-border bg-foreground/5 text-muted-foreground'
-                  )}
-                >
-                  {isLinked
-                    ? t('ws-users.linked_badge')
-                    : t('ws-users.virtual_badge')}
-                </span>
-              </span>
-              {secondaryName ? (
-                <span className="truncate text-muted-foreground text-xs">
-                  {secondaryName}
-                </span>
-              ) : null}
-              {note ? (
-                <span className="wrap-break-word max-w-80 whitespace-pre-wrap text-muted-foreground text-xs">
-                  {note}
-                </span>
-              ) : null}
-            </span>
-          </Link>
-        );
-      },
-    },
-    {
-      accessorKey: 'display_name',
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          t={t}
-          column={column}
-          title={t(`${namespace}.display_name`)}
-        />
-      ),
-      cell: ({ row }) => (
-        <Link href={row.original.href || '#'} className="min-w-32">
-          {Array.isArray(row.getValue('linked_users')) &&
-          row.getValue<WorkspaceUser[]>('linked_users').length !== 0 ? (
-            <TooltipProvider>
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger className="font-semibold underline">
-                  <RequireAttentionName
-                    name={
-                      row.getValue('display_name') ||
-                      row.getValue('full_name') ||
-                      '-'
-                    }
-                    requireAttention={
-                      !!row.original.has_require_attention_feedback
-                    }
-                  />
-                </TooltipTrigger>
-                <TooltipContent className="text-center">
-                  {t(`${namespace}.linked_to`)}{' '}
-                  <div>
-                    {row
-                      .getValue<WorkspaceUser[]>('linked_users')
-                      .map((u, idx) => (
-                        <>
-                          <span
-                            key={u.id}
-                            className="font-semibold hover:underline"
-                          >
-                            {u.display_name}
-                          </span>
-                          {idx !==
-                            row.getValue<WorkspaceUser[]>('linked_users')
-                              .length -
-                              1 && <span>, </span>}
-                        </>
-                      ))}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <RequireAttentionName
-              name={
-                row.getValue('display_name') || row.getValue('full_name') || '-'
-              }
-              requireAttention={!!row.original.has_require_attention_feedback}
+    ...(['full_name', 'display_name'] as const).map(
+      (nameKey) =>
+        ({
+          accessorKey: nameKey,
+          header: ({ column }) => (
+            <DataTableColumnHeader
+              t={t}
+              column={column}
+              title={t(`${namespace}.${nameKey}`)}
             />
-          )}
-        </Link>
-      ),
-    },
+          ),
+          cell: ({ row }) => (
+            <ContactIdentityCell
+              user={row.original}
+              preferDisplayName={nameKey === 'display_name'}
+              hasPrivateInfo={hasPrivateInfo}
+              labels={{
+                note: t(`${namespace}.note`),
+                expand: t('ws-users.expand_note'),
+                collapse: t('ws-users.collapse_note'),
+                linked: t('ws-users.linked_badge'),
+                virtual: t('ws-users.virtual_badge'),
+                linkedTo: t(`${namespace}.linked_to`),
+              }}
+            />
+          ),
+        }) satisfies ColumnDef<WorkspaceUser>
+    ),
     {
       accessorKey: 'email',
       header: ({ column }) => (
@@ -495,7 +358,20 @@ export const getUserColumns = ({
         />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1 w-32">{row.getValue('note') || '-'}</div>
+        <div className="w-64 max-w-[calc(100vw-5rem)] whitespace-normal">
+          {row.original.note?.trim() ? (
+            <ContactNote
+              note={row.original.note}
+              labels={{
+                note: t(`${namespace}.note`),
+                expand: t('ws-users.expand_note'),
+                collapse: t('ws-users.collapse_note'),
+              }}
+            />
+          ) : (
+            '-'
+          )}
+        </div>
       ),
     },
     {
