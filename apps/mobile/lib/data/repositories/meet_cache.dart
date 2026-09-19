@@ -15,7 +15,9 @@ class MeetCache {
   final CacheStore _store;
   final String? Function() _currentUserId;
   final String? _userId;
-  bool get _usable => _userId != null && _userId == _currentUserId();
+  bool _disabled = false;
+  bool get _usable =>
+      !_disabled && _userId != null && _userId == _currentUserId();
 
   CacheKey _key(String wsId, String path) => CacheKey(
     namespace: 'meet.list',
@@ -66,11 +68,16 @@ class MeetCache {
       return result.data!;
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        await _store.clearScope(
-          userId: _userId,
-          workspaceId: wsId,
-          namespace: 'meet.list',
-        );
+        try {
+          await _store.clearScope(
+            userId: _userId,
+            workspaceId: wsId,
+            namespace: 'meet.list',
+          );
+        } on Object {
+          _disabled = true;
+          debugPrint('Meet cache cleanup unavailable; cache disabled');
+        }
       }
       rethrow;
     }

@@ -34,6 +34,8 @@ staggered entrance animations. Opening Apps does not prefetch every product.
 Expired entries wait for replacement; eligible stale entries can refresh in the
 background. Invalidation and logout prevent older in-flight requests from writing
 back into the cache. Keys must include user, workspace, and all query filters.
+Failed disk writes do not hide successful network responses. Mail and Meet retain
+the original authorization error and disable their cache if denied-data cleanup fails.
 Keys longer than Hive's 255-byte UTF-8 limit use a SHA-256 digest of the complete
 scoped identity. Keep short keys stable, and test persistence/reopening with real
 UUIDs and long search filters; short mock IDs can hide storage failures.

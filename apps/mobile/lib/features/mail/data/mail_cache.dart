@@ -21,7 +21,9 @@ class MailCache {
     allowBackgroundRefresh: false,
   );
 
-  bool get _usable => _userId != null && _userId == _currentUserId();
+  bool _disabled = false;
+  bool get _usable =>
+      !_disabled && _userId != null && _userId == _currentUserId();
   CacheKey _key(String wsId, String path) => CacheKey(
     namespace: 'mail.list',
     userId: _userId,
@@ -66,11 +68,16 @@ class MailCache {
       return result.data!;
     } on ApiException catch (error) {
       if (error.statusCode == 401 || error.statusCode == 403) {
-        await _store.clearScope(
-          userId: _userId,
-          workspaceId: wsId,
-          namespace: 'mail.list',
-        );
+        try {
+          await _store.clearScope(
+            userId: _userId,
+            workspaceId: wsId,
+            namespace: 'mail.list',
+          );
+        } on Object {
+          _disabled = true;
+          debugPrint('Mail cache cleanup unavailable; cache disabled');
+        }
       }
       rethrow;
     }
