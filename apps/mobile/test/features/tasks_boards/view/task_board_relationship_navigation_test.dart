@@ -285,6 +285,7 @@ void main() {
           const PageStorageKey<String>('task-board-wide-kanban-board-a'),
         );
         expect(tester.getSize(board).width, size.width);
+        expect(tester.getSize(board).height, greaterThan(size.height - 24));
         expect(find.text('Task A1').hitTestable(), findsOneWidget);
         expect(find.text('Task A2').hitTestable(), findsOneWidget);
         expect(tester.takeException(), isNull);

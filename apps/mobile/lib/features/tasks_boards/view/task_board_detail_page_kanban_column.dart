@@ -16,6 +16,7 @@ class _KanbanColumn extends StatelessWidget {
     required this.selectedTaskIds,
     required this.onToggleTaskSelection,
     required this.onCreateTask,
+    this.contentBottomPadding = 8,
     this.onLoadMoreTasks,
     this.onEditList,
   });
@@ -25,6 +26,7 @@ class _KanbanColumn extends StatelessWidget {
   final List<TaskBoardTask> tasks;
   final bool isTasksLoaded;
   final double height;
+  final double contentBottomPadding;
   final bool isLoadingTasks;
   final bool hasLoadError;
   final bool hasMoreTasks;
@@ -191,11 +193,11 @@ class _KanbanColumn extends StatelessWidget {
                                   primary: false,
                                   physics:
                                       const AlwaysScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.fromLTRB(
+                                  padding: EdgeInsets.fromLTRB(
                                     8,
                                     8,
                                     8,
-                                    8,
+                                    contentBottomPadding,
                                   ),
                                   itemCount:
                                       tasks.length +
