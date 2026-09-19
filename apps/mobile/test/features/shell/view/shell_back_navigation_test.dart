@@ -28,6 +28,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/helpers.dart';
+import 'shell_viewport_checks.dart';
 
 part 'shell_navigation_harness.dart';
 
@@ -69,53 +70,20 @@ void main() {
       await shellProfileCubit.close();
     });
 
-    for (final size in [
-      const Size(768, 1024),
-      const Size(1024, 768),
-      const Size(1366, 1024),
-      const Size(1032, 1376),
-      const Size(1376, 1032),
-      const Size(744, 500),
-    ]) {
-      testWidgets(
-        'tablet shell reserves content space and keeps a compact dock at $size',
-        (tester) async {
-          tester.view
-            ..devicePixelRatio = 1
-            ..physicalSize = size;
-          addTearDown(() {
-            tester.view.resetPhysicalSize();
-            tester.view.resetDevicePixelRatio();
-          });
-          final router = _buildRouter(initialLocation: Routes.apps);
-          addTearDown(router.dispose);
-          await tester.pumpWidget(
-            _buildTestApp(
-              router: router,
-              appTabCubit: appTabCubit,
-              authCubit: authCubit,
-              workspaceCubit: workspaceCubit,
-              shellProfileCubit: shellProfileCubit,
-            ),
-          );
-          await _pumpForTransitions(tester);
-          final dock = tester.getRect(find.byType(CustomNavigationBar));
-          expect(dock.height, lessThan(100));
-          expect(dock.top, greaterThan(size.height - 180));
-          expect(dock.width, lessThan(size.width));
-          expect(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget is Image &&
-                  widget.image ==
-                      const AssetImage('assets/logos/nova-transparent.png'),
-            ),
-            findsOneWidget,
-          );
-          expect(tester.takeException(), isNull);
-        },
+    registerShellViewportChecks((tester) async {
+      final router = _buildRouter(initialLocation: Routes.apps);
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+          shellProfileCubit: shellProfileCubit,
+        ),
       );
-    }
+      await _pumpForTransitions(tester);
+    });
     testWidgets('system back navigates through in-session route history', (
       tester,
     ) async {

@@ -258,7 +258,7 @@ extension _ShellPageLayout on _ShellPageState {
         ? activeModule?.miniAppNavItemsFor(context) ?? const <MiniAppNavItem>[]
         : const <MiniAppNavItem>[];
     final useInjectedMiniNav = injectedMiniNavRegistration != null;
-    final isCompact = context.isCompact;
+    final isCompact = _usesCompactNavigation(context);
     final selectedKey = useInjectedMiniNav
         ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
@@ -474,7 +474,7 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final miniSelectedKey = _miniSelectedKey(context, activeMiniNavItems);
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
-    final isCompact = context.isCompact;
+    final isCompact = _usesCompactNavigation(context);
     final showBottomNav = MediaQuery.viewInsetsOf(context).bottom <= 0;
     final compactMiniItems = <Widget>[
       ConstrainedBox(

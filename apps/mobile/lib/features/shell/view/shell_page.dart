@@ -81,6 +81,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   );
   static const double _compactMiniBackButtonMinWidth = 52;
 
+  bool _usesCompactNavigation(BuildContext context) =>
+      context.isCompact || MediaQuery.sizeOf(context).height < 600;
+
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;
   Timer? _longPressTimer;
