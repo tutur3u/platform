@@ -4,7 +4,6 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -588,7 +587,7 @@ class _CmsPageState extends State<CmsPage> {
               ],
             ),
             ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              maxWidth: context.isCompact ? null : 1440,
               child: RefreshIndicator(
                 onRefresh: _reload,
                 child: ListView(

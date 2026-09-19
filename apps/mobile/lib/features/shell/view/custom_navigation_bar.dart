@@ -126,7 +126,7 @@ class _CustomNavItem extends StatelessWidget {
                 : Colors.transparent,
             borderRadius: _resolvedBorderRadius(context),
           ),
-          child: Center(child: content),
+          child: Center(heightFactor: compact ? null : 1, child: content),
         ),
       ),
     );

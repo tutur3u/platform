@@ -7,6 +7,7 @@ import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/models/app_description.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
@@ -33,7 +34,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
         top: false,
         bottom: false,
         child: ResponsiveWrapper(
-          maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+          maxWidth: context.isCompact ? null : 1600,
           child: IgnorePointer(
             ignoring: false,
             child: CustomScrollView(
@@ -48,19 +49,44 @@ class _AppsHubPageState extends State<AppsHubPage> {
                     ResponsivePadding.horizontal(context.deviceClass),
                     24 + MediaQuery.paddingOf(context).bottom,
                   ),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      return Padding(
-                        padding: EdgeInsets.only(
-                          bottom: index == modules.length - 1 ? 0 : 14,
-                        ),
-                        child: _AppEditorialCard(
-                          module: modules[index],
-                          index: index,
-                          replayToken: widget.replayToken,
-                        ),
+                  sliver: SliverLayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = (constraints.crossAxisExtent / 360)
+                          .floor()
+                          .clamp(1, 4);
+                      return SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (
+                                  var column = 0;
+                                  column < columns;
+                                  column++
+                                ) ...[
+                                  if (column > 0) const SizedBox(width: 14),
+                                  Expanded(
+                                    child:
+                                        index * columns + column <
+                                            modules.length
+                                        ? _AppEditorialCard(
+                                            module:
+                                                modules[index * columns +
+                                                    column],
+                                            index: index * columns + column,
+                                            replayToken: widget.replayToken,
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          );
+                        }, childCount: (modules.length / columns).ceil()),
                       );
-                    }, childCount: modules.length),
+                    },
                   ),
                 ),
               ],
@@ -192,7 +218,7 @@ class _AppEditorialCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _moduleDescription(context, module.id),
+                        appDescription(context, module.id),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -215,26 +241,4 @@ class _AppEditorialCard extends StatelessWidget {
 void _openModule(BuildContext context, AppModule module) {
   unawaited(context.read<AppTabCubit>().select(module));
   context.go(module.route);
-}
-
-String _moduleDescription(BuildContext context, String moduleId) {
-  return switch (moduleId) {
-    'habits' => context.l10n.appsHubHabitsDescription,
-    'tasks' => context.l10n.appsHubTasksDescription,
-    'chat' => context.l10n.appsHubChatDescription,
-    'calendar' => context.l10n.appsHubCalendarDescription,
-    'mail' => context.l10n.appsHubMailDescription,
-    'cms' => context.l10n.appsHubCmsDescription,
-    'finance' => context.l10n.appsHubFinanceDescription,
-    'drive' => context.l10n.appsHubDriveDescription,
-    'documents' => context.l10n.appsHubDocumentsDescription,
-    'education' => context.l10n.appsHubEducationDescription,
-    'crm' => context.l10n.appsHubCrmDescription,
-    'meet' => context.l10n.appsHubMeetDescription,
-    'inventory' => context.l10n.appsHubInventoryDescription,
-    'notifications' => context.l10n.appsHubNotificationsDescription,
-    'settings' => context.l10n.appsHubSettingsDescription,
-    'timer' => context.l10n.appsHubTimerDescription,
-    _ => '',
-  };
 }

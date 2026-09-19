@@ -197,9 +197,19 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
         final extraActionCount = actions.length + (showNotifications ? 1 : 0);
 
         if (extraActionCount > 1) {
-          return _ShellActionsOverflow(
-            actions: actions,
-            showNotifications: showNotifications,
+          final width = MediaQuery.sizeOf(context).width;
+          final visibleCount = width >= 840 ? 3 : (width >= 600 ? 2 : 1);
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final action in actions.take(visibleCount))
+                _ShellActionButton(action: action),
+              if (actions.length > visibleCount || showNotifications)
+                _ShellActionsOverflow(
+                  actions: actions.skip(visibleCount).toList(),
+                  showNotifications: showNotifications,
+                ),
+            ],
           );
         }
 

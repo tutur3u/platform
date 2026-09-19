@@ -262,6 +262,34 @@ void main() {
       router.dispose();
     });
 
+    for (final size in [
+      const Size(768, 1024),
+      const Size(1024, 768),
+      const Size(1366, 1024),
+      const Size(1032, 1376),
+      const Size(1376, 1032),
+      const Size(744, 500),
+    ]) {
+      testWidgets('tablet board uses the viewport at $size', (tester) async {
+        setTestViewport(tester, size);
+        await tester.pumpWidget(
+          buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
+        );
+        await pumpTaskBoardTransition(tester);
+        BlocProvider.of<TaskBoardDetailCubit>(
+          tester.element(find.text('Task A1').first),
+        ).setView(TaskBoardDetailView.kanban);
+        await pumpTaskBoardTransition(tester);
+        expect(find.byType(PageView), findsNothing);
+        final board = find.byKey(
+          const PageStorageKey<String>('task-board-wide-kanban-board-a'),
+        );
+        expect(tester.getSize(board).width, size.width);
+        expect(find.text('Task A1').hitTestable(), findsOneWidget);
+        expect(find.text('Task A2').hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
     testWidgets('opens initial task detail from cold-start taskId query', (
       tester,
     ) async {
@@ -346,7 +374,7 @@ void main() {
     testWidgets(
       'keeps the in-view kanban list after opening and closing task',
       (tester) async {
-        setTestViewport(tester, const Size(900, 1200));
+        setTestViewport(tester, const Size(390, 844));
 
         await tester.pumpWidget(
           buildTestApp(routerConfig: router, workspaceCubit: workspaceCubit),
@@ -357,7 +385,7 @@ void main() {
         ).setView(TaskBoardDetailView.kanban);
         await pumpTaskBoardTransition(tester);
 
-        await tester.drag(find.byType(PageView).first, const Offset(-820, 0));
+        await tester.drag(find.byType(PageView).first, const Offset(-350, 0));
         await pumpTaskBoardTransition(tester);
 
         expect(find.text('Doing'), findsOneWidget);
@@ -386,7 +414,7 @@ void main() {
         expect(find.text('Doing'), findsOneWidget);
         expect(find.text('Task A2'), findsWidgets);
 
-        await tester.drag(find.byType(PageView).first, const Offset(820, 0));
+        await tester.drag(find.byType(PageView).first, const Offset(350, 0));
         await pumpTaskBoardTransition(tester);
 
         expect(find.text('Todo'), findsOneWidget);

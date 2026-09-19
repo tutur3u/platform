@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/user_task.dart';
@@ -30,7 +31,9 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'dashboard_summary_cards.dart';
+
 part 'dashboard_sections.dart';
+
 part 'dashboard_rows.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -210,9 +213,7 @@ class _DashboardView extends StatelessWidget {
                         top: false,
                         bottom: false,
                         child: ResponsiveWrapper(
-                          maxWidth: ResponsivePadding.maxContentWidth(
-                            context.deviceClass,
-                          ),
+                          maxWidth: context.isCompact ? null : 1440,
                           child: CustomScrollView(
                             physics: const AlwaysScrollableScrollPhysics(
                               parent: BouncingScrollPhysics(),
@@ -229,14 +230,13 @@ class _DashboardView extends StatelessWidget {
                                   ),
                                   24 + MediaQuery.paddingOf(context).bottom,
                                 ),
-                                sliver: SliverList.list(
+                                sliver: SliverResponsiveCards(
                                   children: [
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       child:
                                           const _DashboardWorkspacePickerCard(),
                                     ),
-                                    const SizedBox(height: 12),
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 70),
@@ -247,13 +247,11 @@ class _DashboardView extends StatelessWidget {
                                         nextEvents: upcomingEvents.length,
                                       ),
                                     ),
-                                    const SizedBox(height: 14),
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 140),
                                       child: const _DashboardQuickLaunchCard(),
                                     ),
-                                    const SizedBox(height: 12),
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 210),
@@ -274,7 +272,6 @@ class _DashboardView extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 12),
                                     StaggeredEntrance(
                                       replayKey: replayToken,
                                       delay: const Duration(milliseconds: 280),

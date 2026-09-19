@@ -1,6 +1,3 @@
-// This screen keeps app-local imports adjacent for scanability.
-// ignore_for_file: directives_ordering
-
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
@@ -11,7 +8,6 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mime/mime.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -27,8 +23,8 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DrivePage extends StatefulWidget {
@@ -720,7 +716,7 @@ class _DrivePageState extends State<DrivePage> {
               ],
             ),
             ResponsiveWrapper(
-              maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+              maxWidth: context.isCompact ? null : 1440,
               child: _isLoading && _entries.isEmpty
                   ? const Center(child: NovaLoadingIndicator())
                   : RefreshIndicator(
@@ -1078,8 +1074,8 @@ class _DriveGrid extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: entries.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 280,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
         childAspectRatio: 1.1,
