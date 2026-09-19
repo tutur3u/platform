@@ -11,7 +11,7 @@ class _ChatSurface extends StatelessWidget {
     final bottomPadding = MediaQuery.paddingOf(context).bottom + 16;
 
     return ResponsiveWrapper(
-      maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
+      maxWidth: 1440,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           ResponsivePadding.horizontal(context.deviceClass),
