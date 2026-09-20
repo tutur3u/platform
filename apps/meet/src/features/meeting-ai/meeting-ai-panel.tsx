@@ -47,8 +47,7 @@ export function MeetingAiPanel({
               {t('recovering', { count: ai.pendingChunks })}
             </p>
           ) : null}
-          {ai.captureError ||
-          data.chunks.some((chunk) => chunk.status === 'failed') ? (
+          {active && ai.captureError ? (
             <p role="alert" className="text-destructive text-sm">
               {t('partial')}
             </p>

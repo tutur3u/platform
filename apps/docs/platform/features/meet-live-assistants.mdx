@@ -140,3 +140,12 @@ and reject non-success statuses. Cloudflare's workerd runtime does not implement
 can fail the Live WebSocket upgrade. Do not replace this with `follow`, which
 could forward credentials to a redirect target. Verify the deployed upgrade in
 addition to the Next.js start-session route and provider-only tests.
+
+### Continuous speech playback
+
+Live output is scheduled consecutively on the browser audio clock with an 80 ms
+startup/underrun buffer. Provider bursts longer than three seconds do not interrupt
+speech. Explicit pause, interruption, mute, and session teardown still clear the
+queue. Room transport preserves generation and sequence fences, stamps freshness
+at dispatch, and bounds queued PCM to 120 seconds. Test slow delivery and a burst
+of at least twelve seconds before releasing playback changes.

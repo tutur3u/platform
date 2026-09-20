@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
 import { AudioProcessingSettings } from './audio-processing-settings';
+import { MicrophoneRecovery } from './microphone-recovery';
 
 export function DeviceSettings({
   room,
@@ -50,6 +51,7 @@ export function DeviceSettings({
   return (
     <div className="space-y-5">
       <AudioProcessingSettings room={room} />
+      <MicrophoneRecovery room={room} disabled={busy} />
       {[
         {
           kind: 'audioinput',

@@ -1,11 +1,9 @@
 'use client';
 
 import {
-  Clock3,
   Loader2,
   Mic,
   MicOff,
-  ShieldCheck,
   TriangleAlert,
   Video,
   VideoOff,
@@ -15,6 +13,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { AdmissionNotice } from './admission-notice';
 
 /**
  * Pre-join check. Nothing is published until the user presses join, so the
@@ -177,31 +176,7 @@ export function Lobby({
               {transcriptionNotice}
             </p>
           ) : null}
-          <div
-            role="status"
-            aria-live="polite"
-            className="mt-5 flex gap-3 rounded-xl border bg-muted/30 p-4"
-          >
-            {isJoining ? (
-              <Loader2 className="mt-0.5 size-5 shrink-0 animate-spin text-primary" />
-            ) : waiting ? (
-              <Clock3 className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-            ) : (
-              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
-            )}
-            <div className="space-y-1">
-              <p className="font-medium text-sm">
-                {isJoining
-                  ? t('connecting')
-                  : waiting
-                    ? t('request_sent')
-                    : t('ready_to_join')}
-              </p>
-              <p className="text-muted-foreground text-sm">
-                {waiting ? t('waiting_explanation') : t('lobby_hint')}
-              </p>
-            </div>
-          </div>
+          <AdmissionNotice waiting={waiting} connecting={isJoining} />
 
           {connectionError ? (
             <p className="mt-4 flex items-start gap-2 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">

@@ -41,7 +41,7 @@ export function CopyInvite({
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          className="h-8 gap-1.5 text-xs"
+          className="h-8 gap-1.5 rounded-full text-xs"
           onClick={() => void copy()}
           size="sm"
           type="button"

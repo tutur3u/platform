@@ -47,6 +47,8 @@ export class LiveAudioPlayer {
         this.pendingBytes -= this.pending.shift()!.data.length;
       return;
     }
+    // Bound pathological provider output without interrupting audible speech.
+    if (this.nextTime > context.currentTime + 120) return;
     let bytes: Uint8Array;
     try {
       bytes = Uint8Array.from(atob(data), (value) => value.charCodeAt(0));
@@ -62,11 +64,13 @@ export class LiveAudioPlayer {
     const source = context.createBufferSource();
     source.buffer = buffer;
     source.connect(context.destination);
-    // Never accumulate delayed speech after a suspended tab or output interruption.
-    if (this.nextTime > context.currentTime + 3) this.interrupt();
-    this.nextTime = Math.max(context.currentTime + 0.025, this.nextTime);
+    // Provider bursts can contain a complete sentence. Preserve its queue.
+    this.nextTime = Math.max(context.currentTime + 0.08, this.nextTime);
     this.sources.add(source);
-    source.onended = () => this.sources.delete(source);
+    source.onended = () => {
+      this.sources.delete(source);
+      source.disconnect();
+    };
     source.start(this.nextTime);
     this.nextTime += buffer.duration;
   }

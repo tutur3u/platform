@@ -20,7 +20,7 @@ it('keeps unknown and private meetings generic and out of search indexes', () =>
     `https://meet.tuturuuu.com/r/${encodeRoomCode(id)}`
   );
 });
-it('publishes only approved title, explicit UTC time and status with localized canonical links', () => {
+it('publishes approved title once and status without guessing the recipient timezone', () => {
   const metadata = meetingMetadata(
     id,
     'vi',
@@ -28,7 +28,15 @@ it('publishes only approved title, explicit UTC time and status with localized c
     copy
   );
   expect(metadata.title).toBe('Public demo');
-  expect(metadata.description).toContain('UTC');
+  expect(metadata.description).not.toContain('UTC');
+  expect(metadata.description).not.toContain('Public demo');
+  expect(metadata.openGraph).toMatchObject({
+    images: [
+      {
+        url: `https://meet.tuturuuu.com/vi/r/${encodeRoomCode(id)}/preview?lang=vi`,
+      },
+    ],
+  });
   expect(metadata.description).toContain('Meeting ended.');
   expect(metadata.robots).toMatchObject({
     index: true,

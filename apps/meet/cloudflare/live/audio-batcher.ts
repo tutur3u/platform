@@ -1,7 +1,8 @@
-/** Batch PCM transport at 200 ms and discard stale speech instead of replaying a backlog. */
+/** Ordered, bounded PCM delivery. Explicit interruption fences obsolete speech. */
 export class LiveAudioBatcher {
   private chunks: Uint8Array[] = [];
   private bytes = 0;
+  private queuedBytes = 0;
   private timer?: ReturnType<typeof setTimeout>;
   private chain = Promise.resolve();
   private sequence = 0;
@@ -20,10 +21,15 @@ export class LiveAudioBatcher {
     this.sequence = initialSequence;
   }
   push(encoded: string) {
+    if (encoded.length > 128000) return;
     const chunk = Uint8Array.from(atob(encoded), (value) =>
       value.charCodeAt(0)
     );
     if (chunk.length % 2 || chunk.length > 96000) return;
+    if (this.queuedBytes + this.bytes + chunk.length > 5_760_000) {
+      this.failed();
+      return;
+    }
     this.chunks.push(chunk);
     this.bytes += chunk.length;
     if (!this.timer) this.timer = setTimeout(() => this.flush(), 200);
@@ -41,7 +47,6 @@ export class LiveAudioBatcher {
     }
     this.chunks = [];
     this.bytes = 0;
-    const at = Date.now();
     const generation = this.generation;
     const signal = this.controller.signal;
     for (let start = 0; start < bytes.length; start += 24000) {
@@ -50,13 +55,18 @@ export class LiveAudioBatcher {
         binary += String.fromCharCode(byte);
       const data = btoa(binary),
         sequence = this.sequence++;
+      const length = Math.min(24000, bytes.length - start);
+      this.queuedBytes += length;
       this.chain = this.chain
         .then(async () => {
-          if (generation === this.generation && Date.now() - at < 2000)
-            await this.deliver(data, sequence, at, signal);
+          if (generation === this.generation)
+            await this.deliver(data, sequence, Date.now(), signal);
         })
         .catch(() => {
           if (!signal.aborted) this.failed();
+        })
+        .finally(() => {
+          if (generation === this.generation) this.queuedBytes -= length;
         });
     }
   }
@@ -69,6 +79,7 @@ export class LiveAudioBatcher {
     this.controller.abort();
     this.controller = new AbortController();
     this.chain = Promise.resolve();
+    this.queuedBytes = 0;
     clearTimeout(this.timer);
     this.timer = undefined;
     this.chunks = [];

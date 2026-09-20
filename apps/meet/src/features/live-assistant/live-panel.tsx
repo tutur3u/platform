@@ -107,7 +107,7 @@ export function MeetLivePanel({
         <Button
           variant={active ? 'secondary' : 'outline'}
           size="sm"
-          className="gap-2 rounded-full"
+          className="h-8 gap-1.5 rounded-full text-xs"
         >
           <MiraAvatar size={18} />
           <span>{t('title')}</span>

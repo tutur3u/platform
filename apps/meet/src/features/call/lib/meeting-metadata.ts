@@ -17,17 +17,13 @@ export function meetingMetadata(
   const id = decodeRoomCode(code);
   const url = `https://meet.tuturuuu.com${language === 'vi' ? '/vi' : ''}/r/${id ? encodeRoomCode(id) : encodeURIComponent(code)}`;
   const title = info?.title || copy.title;
-  const date =
-    info && Number.isFinite(Date.parse(info.scheduledAt))
-      ? `${new Intl.DateTimeFormat(language, {
-          dateStyle: 'long',
-          timeStyle: 'short',
-          timeZone: 'UTC',
-        }).format(new Date(info.scheduledAt))} UTC`
-      : null;
+  // Link crawlers have no recipient timezone. Localize time on the landing page.
   const description = info
-    ? `${title}${date ? ` · ${date}` : ''}. ${info.ended ? copy.ended : copy.join}`
+    ? info.ended
+      ? copy.ended
+      : copy.join
     : copy.privateDescription;
+  const image = `${url}/preview?lang=${language}`;
   return {
     title,
     description,
@@ -46,7 +42,7 @@ export function meetingMetadata(
       locale: language === 'vi' ? 'vi_VN' : 'en_US',
       images: [
         {
-          url: 'https://meet.tuturuuu.com/media/logos/og-image.png',
+          url: image,
           width: 1200,
           height: 630,
           alt: 'Tuturuuu Meet',
@@ -57,7 +53,7 @@ export function meetingMetadata(
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://meet.tuturuuu.com/media/logos/og-image.png'],
+      images: [image],
     },
   };
 }

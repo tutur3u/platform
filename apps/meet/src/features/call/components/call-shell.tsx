@@ -342,7 +342,6 @@ export function ConnectedCallShell({
           canManage={canManage}
           audioSuppressed={sharedAudio.microphonePaused}
         />
-        <RoomCountdown expiresAt={state.roomExpiresAt} />
         <SharedAudioControl
           audio={sharedAudio}
           busy={!!busyDevices.microphone}
@@ -362,7 +361,29 @@ export function ConnectedCallShell({
           outputDeviceId={outputDeviceId}
           onOutput={setOutputDeviceId}
         />
+        <RoomCountdown expiresAt={state.roomExpiresAt} />
       </header>
+      {canManage && state.waiting.length > 0 && (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2"
+        >
+          <span className="text-sm">
+            {t('waiting_room', { count: state.waiting.length })}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 rounded-full"
+            onClick={() => {
+              setPanel('participants');
+              setShowAi(false);
+            }}
+          >
+            {t('participants')}
+          </Button>
+        </div>
+      )}
       <CallResourceNotice error={state.error} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main className="relative min-h-0 flex-1 p-2 sm:p-3">

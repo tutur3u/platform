@@ -189,6 +189,13 @@ describe('Meet proxy auth handoff', () => {
     expect(options?.isPublicPath?.('/vi/r/pmfe4p67f-s4z33jjmr-vv1zmrer')).toBe(
       true
     );
+    expect(
+      options?.isPublicPath?.('/vi/r/pmfe4p67f-s4z33jjmr-vv1zmrer/preview')
+    ).toBe(true);
+    expect(options?.isPublicPath?.('/r/invalid/preview')).toBe(false);
+    expect(
+      options?.isPublicPath?.('/r/pmfe4p67f-s4z33jjmr-vv1zmrer/preview/private')
+    ).toBe(false);
     expect(options?.isPublicPath?.('/r/invalid')).toBe(false);
     expect(options?.isPublicPath?.('/personal/plans')).toBe(false);
     expect(options?.isPublicPath?.('/personal/meetings')).toBe(false);

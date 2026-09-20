@@ -926,3 +926,21 @@ ring. Hover or focus shows the remaining time and localized deadline; tap opens
 the same details. The ring represents the time remaining when this device joined,
 while the deadline always follows the server's room expiry. Resource-limit errors
 still appear as actionable notices.
+
+### Audio recovery and meeting previews
+
+In call settings, **Restart microphone** reacquires the selected input and
+reconnects media without leaving the room. The control remains disabled while
+muted and never intentionally unmutes the user. Use this when the browser input
+degrades; synthetic playback tests do not verify physical microphone acoustics.
+
+Transcription retries receive their five-minute window when the upload starts,
+not while waiting behind another upload. The per-session notes warning identifies
+incomplete results without repeating a global warning after the call.
+
+Room preview images are generated from the same explicitly public meeting policy
+as link metadata. Image responses use `private, no-store`; revoked public access
+falls back to generic branding on the next request. External chat clients can
+retain their own old previews. Preview descriptions omit repeated titles and UTC
+times because crawlers cannot know the recipient's timezone. Opened meeting pages
+and the rightmost call timer use the viewer's browser timezone and locale.
