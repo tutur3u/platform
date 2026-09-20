@@ -79,7 +79,11 @@ test('exactly one simultaneous registration acquires the lease', async () => {
 test('a different owner cannot check, release, or complete a lease', async () => {
   const input = { ...request('meeting'), fingerprint: digest('details') };
   await result({ ...input, action: 'acquire' });
-  const { fingerprint: _, ...lease } = input;
+  const lease = {
+    namespace: input.namespace,
+    key: input.key,
+    owner: input.owner,
+  };
   for (const action of ['check', 'release', 'complete']) {
     assert.equal(
       (await result({ ...lease, owner: randomUUID(), action })).outcome,
@@ -96,7 +100,11 @@ test('completed meeting state survives release, eviction, and retry', async () =
     fresh: true,
     completed: false,
   });
-  const { fingerprint: _, ...lease } = input;
+  const lease = {
+    namespace: input.namespace,
+    key: input.key,
+    owner: input.owner,
+  };
   await result({ ...lease, action: 'complete' });
   await result({ ...lease, action: 'release' });
   await server
@@ -111,7 +119,11 @@ test('completed meeting state survives release, eviction, and retry', async () =
 test('failed meeting retries retain payload binding without marking complete', async () => {
   const input = { ...request('meeting'), fingerprint: digest('details') };
   await result({ ...input, action: 'acquire' });
-  const { fingerprint: _, ...lease } = input;
+  const lease = {
+    namespace: input.namespace,
+    key: input.key,
+    owner: input.owner,
+  };
   await result({ ...lease, action: 'release' });
   assert.equal(
     (
@@ -141,7 +153,11 @@ test('expired lease cannot mutate its successor', async () => {
     (await result({ ...successor, action: 'acquire' })).outcome,
     'acquired'
   );
-  const { fingerprint: _, ...lease } = input;
+  const lease = {
+    namespace: input.namespace,
+    key: input.key,
+    owner: input.owner,
+  };
   for (const action of ['release', 'complete'])
     assert.equal((await result({ ...lease, action })).outcome, 'lost');
   const rows = await sql.exec('SELECT owner, completed FROM coordination');
@@ -160,7 +176,11 @@ test('expiry removes old records and namespaces do not collide', async () => {
     await result({ ...input, fingerprint: digest('new'), action: 'acquire' }),
     { outcome: 'acquired', fresh: true, completed: false }
   );
-  const { fingerprint: _, ...lease } = input;
+  const lease = {
+    namespace: input.namespace,
+    key: input.key,
+    owner: input.owner,
+  };
   assert.equal(
     (await result({ ...lease, namespace: 'authenticator', action: 'acquire' }))
       .outcome,
