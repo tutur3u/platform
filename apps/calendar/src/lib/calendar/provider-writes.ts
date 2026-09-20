@@ -1,6 +1,13 @@
+import { createHash } from 'node:crypto';
 import { type calendar_v3, google, OAuth2Client } from '@tuturuuu/google';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { MeetingInvitationInput } from '@tuturuuu/utils/meeting-invitations';
+import {
+  googleMeetingGuests,
+  microsoftMeetingGuests,
+  microsoftUtcDateTime,
+} from './meeting-provider-payloads';
 import type { ResolvedCalendarSource } from './source-resolver';
 
 type ExternalProvider = 'google' | 'microsoft';
@@ -14,7 +21,7 @@ export type ProviderEventWriteResult = {
 type ProviderEventInput = Pick<
   CalendarEvent,
   'title' | 'description' | 'location' | 'start_at' | 'end_at' | 'color'
->;
+> & { invitation?: MeetingInvitationInput };
 
 type ExistingExternalEvent = {
   provider?: string | null;
@@ -81,7 +88,7 @@ function assertExternalSource(
   }
 }
 
-function createGoogleAuthClient(source: ResolvedCalendarSource) {
+export function createGoogleAuthClient(source: ResolvedCalendarSource) {
   const oauth2Client = new OAuth2Client({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -98,20 +105,24 @@ function createGoogleAuthClient(source: ResolvedCalendarSource) {
 
 function toGoogleEvent(event: ProviderEventInput): calendar_v3.Schema$Event {
   return {
+    ...googleMeetingGuests(event.invitation),
     summary: event.title || 'Untitled Event',
     description: event.description || '',
     location: event.location || undefined,
     start: {
       dateTime: event.start_at,
+      ...(event.invitation ? { timeZone: event.invitation.timeZone } : {}),
     },
     end: {
       dateTime: event.end_at,
+      ...(event.invitation ? { timeZone: event.invitation.timeZone } : {}),
     },
   };
 }
 
 function toMicrosoftEvent(event: ProviderEventInput) {
   return {
+    ...microsoftMeetingGuests(event.invitation),
     subject: event.title || 'Untitled Event',
     body: {
       contentType: 'text',
@@ -120,14 +131,8 @@ function toMicrosoftEvent(event: ProviderEventInput) {
     location: {
       displayName: event.location || '',
     },
-    start: {
-      dateTime: event.start_at,
-      timeZone: 'UTC',
-    },
-    end: {
-      dateTime: event.end_at,
-      timeZone: 'UTC',
-    },
+    start: microsoftUtcDateTime(event.start_at),
+    end: microsoftUtcDateTime(event.end_at),
   };
 }
 
@@ -156,6 +161,7 @@ function normalizeExistingProviderEvent(event: ExistingExternalEvent) {
 export async function createProviderEvent(args: {
   source: ResolvedCalendarSource;
   event: ProviderEventInput;
+  idempotencyKey?: string;
 }): Promise<ProviderEventWriteResult | null> {
   const { source, event } = args;
   if (source.provider === 'tuturuuu') return null;
@@ -167,10 +173,43 @@ export async function createProviderEvent(args: {
       auth: createGoogleAuthClient(source),
     });
 
-    const response = await calendar.events.insert({
-      calendarId: source.externalCalendarId,
-      requestBody: toGoogleEvent(event),
-    });
+    const stableId = args.idempotencyKey?.replaceAll('-', '').toLowerCase();
+    const payload = toGoogleEvent(event);
+    const requestHash = createHash('sha256')
+      .update(JSON.stringify(payload))
+      .digest('hex');
+    let response: { data: calendar_v3.Schema$Event };
+    try {
+      response = await calendar.events.insert({
+        calendarId: source.externalCalendarId,
+        sendUpdates: 'all',
+        requestBody: {
+          ...payload,
+          ...(stableId
+            ? {
+                id: stableId,
+                extendedProperties: {
+                  private: { tuturuuu_request_hash: requestHash },
+                },
+              }
+            : {}),
+        },
+      });
+    } catch (error) {
+      if (!stableId || providerErrorStatus(error) !== 409) throw error;
+      response = await calendar.events.get({
+        calendarId: source.externalCalendarId,
+        eventId: stableId,
+      });
+      if (
+        response.data.status === 'cancelled' ||
+        response.data.id !== stableId ||
+        response.data.extendedProperties?.private?.tuturuuu_request_hash !==
+          requestHash
+      ) {
+        throw error;
+      }
+    }
 
     if (!response.data.id) {
       throw new Error('Google Calendar did not return an event id');
@@ -187,7 +226,10 @@ export async function createProviderEvent(args: {
   const response = await client
     .api(`/me/calendars/${source.externalCalendarId}/events`)
     .header('Prefer', 'IdType="ImmutableId"')
-    .post(toMicrosoftEvent(event));
+    .post({
+      ...toMicrosoftEvent(event),
+      ...(args.idempotencyKey ? { transactionId: args.idempotencyKey } : {}),
+    });
 
   if (!response?.id) {
     throw new Error('Microsoft Calendar did not return an event id');
@@ -223,6 +265,7 @@ export async function updateProviderEvent(args: {
     await calendar.events.patch({
       calendarId: existing.externalCalendarId,
       eventId: existing.externalEventId,
+      sendUpdates: 'all',
       requestBody: toGoogleEvent(event),
     });
 
@@ -261,6 +304,7 @@ export async function deleteProviderEvent(args: {
       await calendar.events.delete({
         calendarId: existing.externalCalendarId,
         eventId: existing.externalEventId,
+        sendUpdates: 'all',
       });
     } catch (error) {
       // Provider deletions are idempotent. Google returns 410 when a synced
@@ -315,6 +359,7 @@ export async function moveProviderEvent(args: {
         calendarId: existing.externalCalendarId,
         eventId: existing.externalEventId,
         destination: toSource.externalCalendarId,
+        sendUpdates: 'all',
       });
 
       if (response.data.id) {

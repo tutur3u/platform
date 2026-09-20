@@ -81,6 +81,7 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.28",
+    "server-only": "^0.0.1",
     "typescript": "7.0.2"
   },
   "packageManager": "bun@1.4.1",

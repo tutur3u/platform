@@ -4,8 +4,13 @@ import {
   MAX_COLOR_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { MeetingInvitationInputSchema } from '@tuturuuu/utils/meeting-invitations';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  createInvitedMeeting,
+  MeetingCreateError,
+} from '@/lib/calendar/create-invited-meeting';
 import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
@@ -52,6 +57,8 @@ const CreateEventSchema = z.object({
   locked: z.boolean().optional(),
   task_id: z.guid().nullable().optional(),
   source: CalendarSourceSchema.optional(),
+  invitation: MeetingInvitationInputSchema.optional(),
+  requestId: z.uuidv7().optional(),
 });
 
 interface Params {
@@ -181,6 +188,28 @@ export async function POST(request: Request, { params }: Params) {
       userId,
       source: event.source ?? null,
     });
+    if (event.invitation) {
+      if (!event.requestId)
+        return NextResponse.json(
+          { error: 'A meeting request ID is required' },
+          { status: 400 }
+        );
+      const created = await createInvitedMeeting({
+        sbAdmin,
+        wsId,
+        userId,
+        source,
+        input: {
+          ...event,
+          invitation: event.invitation,
+          requestId: event.requestId,
+        },
+      });
+      return NextResponse.json(created, {
+        status: 201,
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
     const syncPreferences = await getCalendarSyncPreferences({
       sbAdmin,
       wsId,
@@ -294,6 +323,14 @@ export async function POST(request: Request, { params }: Params) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof MeetingCreateError)
+      return NextResponse.json(
+        { error: error.message },
+        {
+          status: error.status,
+          headers: { 'Cache-Control': 'private, no-store' },
+        }
+      );
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.issues },
@@ -303,7 +340,7 @@ export async function POST(request: Request, { params }: Params) {
     const message =
       error instanceof Error ? error.message : 'Calendar event creation failed';
     const isSourceError = message.toLowerCase().includes('calendar source');
-    console.error('Calendar events API error', { wsId, error });
+    console.error('Calendar events API error', { wsId });
     return NextResponse.json(
       {
         error: isSourceError

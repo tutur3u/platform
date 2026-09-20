@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  createInvitedMeeting: vi.fn(),
   createProviderEvent: vi.fn(),
   decryptEvents: vi.fn(),
   deduplicateEvents: vi.fn(),
@@ -44,6 +47,12 @@ vi.mock('@/lib/workspace-encryption', () => ({
   getWorkspaceKey: mocks.getWorkspaceKey,
 }));
 
+vi.mock('@/lib/calendar/create-invited-meeting', async (original) => ({
+  ...(await original<typeof import('@/lib/calendar/create-invited-meeting')>()),
+  createInvitedMeeting: mocks.createInvitedMeeting,
+}));
+
+import { MeetingCreateError } from '@/lib/calendar/create-invited-meeting';
 import { GET, POST } from './route';
 
 const WS_ID = '00000000-0000-4000-8000-000000008611';
@@ -127,6 +136,68 @@ describe('workspace calendar event collection authorization', () => {
       ...event,
       is_encrypted: false,
     }));
+  });
+
+  const invitationBody = {
+    title: 'Planning',
+    start_at: '2026-11-01T05:30:00.000Z',
+    end_at: '2026-11-01T07:30:00.000Z',
+    requestId: '01996d00-0000-7000-8000-000000000001',
+    invitation: {
+      guests: [{ email: 'guest@example.com', optional: true }],
+      timeZone: 'America/New_York',
+    },
+    source: {
+      provider: 'google',
+      connectionId: '00000000-0000-4000-8000-000000008631',
+    },
+  };
+
+  it('routes explicit invitations through the durable send operation', async () => {
+    const admin = { from: vi.fn() };
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.createInvitedMeeting.mockResolvedValue({ id: 'created' });
+    const response = await POST(request('POST', invitationBody), params());
+    expect(response.status).toBe(201);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(mocks.createInvitedMeeting).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sbAdmin: admin,
+        userId: USER_ID,
+        wsId: WS_ID,
+        input: expect.objectContaining({
+          requestId: invitationBody.requestId,
+          invitation: invitationBody.invitation,
+        }),
+      })
+    );
+    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+    expect(admin.from).not.toHaveBeenCalled();
+  });
+
+  it('rejects invitations without a retry identity before sending', async () => {
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+    const response = await POST(
+      request('POST', { ...invitationBody, requestId: undefined }),
+      params()
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.createInvitedMeeting).not.toHaveBeenCalled();
+    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+  });
+
+  it('preserves safe delivery error status and disables response caching', async () => {
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+    mocks.createInvitedMeeting.mockRejectedValueOnce(
+      new MeetingCreateError(
+        409,
+        'This meeting request is already being processed'
+      )
+    );
+    const response = await POST(request('POST', invitationBody), params());
+    expect(response.status).toBe(409);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(mocks.createProviderEvent).not.toHaveBeenCalled();
   });
 
   it.each([
