@@ -213,7 +213,7 @@ class _CalendarViewState extends State<_CalendarView> {
                   return _ErrorView(error: state.error);
                 }
 
-                return RefreshIndicator(
+                return NovaRefreshIndicator(
                   onRefresh: () async => _reload(context),
                   child: Column(
                     children: [

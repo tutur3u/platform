@@ -206,7 +206,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
 
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: RefreshIndicator(
+              child: NovaRefreshIndicator(
                 onRefresh: () => _loadInitial(forceRefresh: true),
                 child: ListView(
                   controller: _scrollController,
@@ -255,9 +255,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                       if (_isLoadingMore)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(
-                            child: shad.CircularProgressIndicator(),
-                          ),
+                          child: Center(child: NovaLoadingIndicator(size: 20)),
                         ),
                     ],
                   ],

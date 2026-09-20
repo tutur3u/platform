@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AuthLoadingIndicator extends StatelessWidget {
@@ -15,7 +16,7 @@ class AuthLoadingIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox.square(
       dimension: size,
-      child: shad.CircularProgressIndicator(strokeWidth: strokeWidth),
+      child: NovaLoadingIndicator(size: size),
     );
   }
 }
@@ -39,6 +40,7 @@ class AuthPrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final button = shad.PrimaryButton(
+      alignment: Alignment.center,
       onPressed: isLoading ? null : onPressed,
       child: _AuthButtonContent(
         label: label,
@@ -83,10 +85,12 @@ class AuthSecondaryButton extends StatelessWidget {
 
     final button = switch (variant) {
       AuthSecondaryButtonVariant.outline => shad.OutlineButton(
+        alignment: Alignment.center,
         onPressed: isLoading ? null : onPressed,
         child: child,
       ),
       AuthSecondaryButtonVariant.ghost => shad.GhostButton(
+        alignment: Alignment.center,
         onPressed: isLoading ? null : onPressed,
         child: child,
       ),

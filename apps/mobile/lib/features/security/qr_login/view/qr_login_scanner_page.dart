@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/features/security/qr_login/data/qr_login_repository.dart';
 import 'package:mobile/features/security/qr_login/qr_login_payload.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -134,10 +136,12 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
         ),
         actions: [
           shad.OutlineButton(
+            alignment: Alignment.center,
             onPressed: () => Navigator.of(context).pop(),
             child: Text(context.l10n.commonCancel),
           ),
           shad.PrimaryButton(
+            alignment: Alignment.center,
             onPressed: () => Navigator.of(context).pop(controller.text),
             child: Text(context.l10n.deviceMfaReview),
           ),
@@ -177,6 +181,7 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
               child: Row(
                 children: [
                   shad.OutlineButton(
+                    alignment: Alignment.center,
                     onPressed: () => context.pop(),
                     child: const Icon(Icons.arrow_back_rounded),
                   ),
@@ -246,6 +251,7 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
                             _ScannerHint(error: _error),
                             const shad.Gap(12),
                             shad.OutlineButton(
+                              alignment: Alignment.center,
                               onPressed: _enterLink,
                               child: Text(l10n.deviceMfaQrPaste),
                             ),
@@ -362,6 +368,7 @@ class _ApprovalPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: shad.OutlineButton(
+                  alignment: Alignment.center,
                   enabled: !approving,
                   onPressed: onScanAgain,
                   child: Text(l10n.qrLoginScanAgain),
@@ -370,13 +377,14 @@ class _ApprovalPanel extends StatelessWidget {
               const shad.Gap(12),
               Expanded(
                 child: shad.PrimaryButton(
+                  alignment: Alignment.center,
                   enabled: !approving,
                   onPressed: () => unawaited(onApprove()),
                   child: approving
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: NovaLoadingIndicator(size: 20),
                         )
                       : Text(l10n.qrLoginApproveAction),
                 ),

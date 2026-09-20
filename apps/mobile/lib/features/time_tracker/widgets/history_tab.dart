@@ -149,7 +149,7 @@ class _HistoryTabState extends State<HistoryTab> {
                 ),
               ],
             ),
-            RefreshIndicator(
+            NovaRefreshIndicator(
               onRefresh: () async {
                 await cubit.refreshHistory(
                   wsId,
@@ -222,7 +222,7 @@ class _HistoryTabState extends State<HistoryTab> {
                       const SliverToBoxAdapter(
                         child: Padding(
                           padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                          child: LinearProgressIndicator(minHeight: 2),
+                          child: NovaLoadingIndicator(size: 20),
                         ),
                       ),
                     if (sessions.isEmpty)

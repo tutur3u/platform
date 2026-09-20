@@ -3,6 +3,7 @@ import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/widgets/assistant_status_badge.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class AssistantLiveStatusPanel extends StatelessWidget {
   const AssistantLiveStatusPanel({
@@ -75,11 +76,7 @@ class AssistantLiveStatusPanel extends StatelessWidget {
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  minHeight: 5,
-                  color: toneColor,
-                  backgroundColor: toneColor.withValues(alpha: 0.12),
-                ),
+                child: const NovaLoadingIndicator(size: 20),
               ),
             ],
             if (_showRetryAction) ...[

@@ -213,7 +213,7 @@ class _HabitsViewState extends State<_HabitsView> {
                         maxWidth: ResponsivePadding.maxContentWidth(
                           context.deviceClass,
                         ),
-                        child: RefreshIndicator(
+                        child: NovaRefreshIndicator(
                           onRefresh: _refreshCurrentSection,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -279,9 +279,7 @@ class _HabitsViewState extends State<_HabitsView> {
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(999),
-                                    child: const LinearProgressIndicator(
-                                      minHeight: 4,
-                                    ),
+                                    child: const NovaLoadingIndicator(size: 20),
                                   ),
                                 ),
                               ],

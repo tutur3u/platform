@@ -149,7 +149,7 @@ class _AccountTile extends StatelessWidget {
                         child: SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: NovaLoadingIndicator(size: 20),
                         ),
                       ),
                     )
@@ -318,7 +318,7 @@ class _ConnectionToggle extends StatelessWidget {
           ? const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: NovaLoadingIndicator(size: 20),
             )
           : Switch.adaptive(value: connection.isEnabled, onChanged: onChanged),
     );

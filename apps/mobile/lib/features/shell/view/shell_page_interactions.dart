@@ -24,6 +24,11 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
 
+    if (selected.id == 'back' &&
+        registration.deepLinkBackRoute == Routes.apps) {
+      unawaited(_openAppsDrawerFromAppsTab());
+      return;
+    }
     selected.onPressed?.call();
   }
 
@@ -138,34 +143,24 @@ extension _ShellPageInteractions on _ShellPageState {
   void _handleAppsLongPress() {
     if (!mounted) return;
     _debugBack('rootNav.longPressApps');
-    unawaited(context.read<AppTabCubit>().openWithSearch());
-    context.go(Routes.apps);
+    unawaited(showAppsPicker(context, searchInitially: true));
   }
 
   Future<void> _openAppsDrawerFromAppsTab() async {
     final currentContext = context;
     final appTabCubit = currentContext.read<AppTabCubit>();
     _debugBack('rootNav.openAppsDrawer');
-    _suppressPointerEventsDuringTransition();
     await appTabCubit.clearSelection();
-    if (!currentContext.mounted) {
-      return;
-    }
-    currentContext.go(Routes.apps);
-    _lastTabIndex = 2;
-    _tapStopwatch
-      ..reset()
-      ..start();
+    if (!currentContext.mounted) return;
+    currentContext.go(Routes.home);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(showAppsPicker(context));
+    });
   }
 
   Future<void> _onItemTapped(int index, BuildContext context) async {
     final appTabCubit = context.read<AppTabCubit>();
-    final isDoubleTap =
-        _lastTabIndex == index &&
-        _tapStopwatch.isRunning &&
-        _tapStopwatch.elapsed < const Duration(milliseconds: 300);
-
-    if (index == 2 && isDoubleTap) {
+    if (index == 2) {
       await _openAppsDrawerFromAppsTab();
       return;
     }
@@ -190,7 +185,6 @@ extension _ShellPageInteractions on _ShellPageState {
     if (!context.mounted) {
       return;
     }
-    _lastTabIndex = index;
     _tapStopwatch
       ..reset()
       ..start();

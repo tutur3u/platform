@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/data/models/time_tracking/period_stats.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryStatsAccordion extends StatelessWidget {
@@ -92,7 +93,7 @@ class _Body extends StatelessWidget {
       return const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
-          child: shad.CircularProgressIndicator(),
+          child: NovaLoadingIndicator(size: 20),
         ),
       );
     }

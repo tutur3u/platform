@@ -166,7 +166,7 @@ class _TaskBoardEnhancedListViewState
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: shad.CircularProgressIndicator(strokeWidth: 2),
+                      child: NovaLoadingIndicator(size: 20),
                     )
                   : shad.OutlineButton(
                       onPressed: widget.onLoadMore,

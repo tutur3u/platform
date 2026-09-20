@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -12,7 +13,6 @@ import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppsHubPage extends StatefulWidget {
   const AppsHubPage({
@@ -44,74 +44,70 @@ class _AppsHubPageState extends State<AppsHubPage> {
         )
         .toList();
 
-    return shad.Scaffold(
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: ResponsiveWrapper(
-          maxWidth: context.isCompact ? null : 1600,
-          child: IgnorePointer(
-            ignoring: false,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              slivers: [
-                if (modules.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: Text(context.l10n.appsNoMatches)),
-                  ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    ResponsivePadding.horizontal(context.deviceClass),
-                    10,
-                    ResponsivePadding.horizontal(context.deviceClass),
-                    24 + MediaQuery.paddingOf(context).bottom,
-                  ),
-                  sliver: SliverLayoutBuilder(
-                    builder: (context, constraints) {
-                      final columns = (constraints.crossAxisExtent / 360)
-                          .floor()
-                          .clamp(1, 4);
-                      return SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                for (
-                                  var column = 0;
-                                  column < columns;
-                                  column++
-                                ) ...[
-                                  if (column > 0) const SizedBox(width: 14),
-                                  Expanded(
-                                    child:
-                                        index * columns + column <
-                                            modules.length
-                                        ? _AppEditorialCard(
-                                            module:
-                                                modules[index * columns +
-                                                    column],
-                                            index: index * columns + column,
-                                            replayToken: widget.replayToken,
-                                            onSelected: widget.onSelected,
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          );
-                        }, childCount: (modules.length / columns).ceil()),
-                      );
-                    },
-                  ),
-                ),
-              ],
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: ResponsiveWrapper(
+        maxWidth: context.isCompact ? null : 1600,
+        child: IgnorePointer(
+          ignoring: false,
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
+            slivers: [
+              if (modules.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: Text(context.l10n.appsNoMatches)),
+                ),
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  ResponsivePadding.horizontal(context.deviceClass),
+                  10,
+                  ResponsivePadding.horizontal(context.deviceClass),
+                  24 + MediaQuery.paddingOf(context).bottom,
+                ),
+                sliver: SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    final columns = (constraints.crossAxisExtent / 360)
+                        .floor()
+                        .clamp(1, 4);
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (
+                                var column = 0;
+                                column < columns;
+                                column++
+                              ) ...[
+                                if (column > 0) const SizedBox(width: 14),
+                                Expanded(
+                                  child:
+                                      index * columns + column < modules.length
+                                      ? _AppEditorialCard(
+                                          module:
+                                              modules[index * columns + column],
+                                          index: index * columns + column,
+                                          replayToken: widget.replayToken,
+                                          onSelected: widget.onSelected,
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }, childCount: (modules.length / columns).ceil()),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

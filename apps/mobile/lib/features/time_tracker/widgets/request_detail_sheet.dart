@@ -13,7 +13,10 @@ import 'package:mobile/features/time_tracker/widgets/request_detail_actions.dart
 import 'package:mobile/features/time_tracker/widgets/request_detail_shared.dart';
 import 'package:mobile/features/time_tracker/widgets/request_image_gallery.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'request_detail_sheet_widgets.dart';
 
 class RequestDetailSheet extends StatefulWidget {
   const RequestDetailSheet({
@@ -367,7 +370,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                         ),
                         child: _isLoadingComments
                             ? const Center(
-                                child: shad.CircularProgressIndicator(),
+                                child: NovaLoadingIndicator(size: 20),
                               )
                             : CommentsSection(
                                 comments: _comments,
@@ -519,7 +522,7 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: shad.CircularProgressIndicator(),
+                                  child: NovaLoadingIndicator(size: 20),
                                 )
                               : Text(l10n.timerRequestResubmit),
                         ),
@@ -682,67 +685,5 @@ class _RequestDetailSheetState extends State<RequestDetailSheet> {
     final elapsed = DateTime.now().toUtc().difference(changedAt.toUtc());
     final allowed = Duration(minutes: graceMinutes);
     return elapsed <= allowed;
-  }
-}
-
-class _ExpandableSection extends StatelessWidget {
-  const _ExpandableSection({
-    required this.title,
-    required this.isExpanded,
-    required this.onToggle,
-    required this.child,
-    this.count,
-  });
-
-  final String title;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-  final Widget child;
-  final int? count;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Column(
-      children: [
-        InkWell(
-          onTap: onToggle,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border.all(color: theme.colorScheme.border),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Text(title, style: theme.typography.semiBold),
-                if (count != null) ...[
-                  const shad.Gap(8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.muted,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text('$count', style: theme.typography.small),
-                  ),
-                ],
-                const Spacer(),
-                Icon(
-                  isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (isExpanded) ...[const shad.Gap(16), child],
-      ],
-    );
   }
 }

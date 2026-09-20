@@ -10,6 +10,7 @@ import 'package:mobile/data/repositories/version_check_repository.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -45,13 +46,13 @@ void main() {
       unawaited(cubit.checkVersion());
       await tester.pump();
 
-      expect(find.byType(shad.CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
       expect(find.text('Home'), findsNothing);
 
       versionCheck.complete(null);
       await tester.pumpAndSettle();
 
-      expect(find.byType(shad.CircularProgressIndicator), findsNothing);
+      expect(find.byType(NovaLoadingIndicator), findsNothing);
       expect(find.text('Home'), findsOneWidget);
     });
 

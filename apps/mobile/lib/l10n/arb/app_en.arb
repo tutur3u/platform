@@ -3269,5 +3269,6 @@
   "deviceMfaSessionExpired": "Your session could not be verified. Sign in again before changing authenticators.",
   "deviceMfaRateLimited": "Too many attempts. Wait a minute before trying again.",
   "deviceMfaUnavailable": "Authenticator registration is temporarily unavailable. Try again shortly.",
-  "deviceMfaOffline": "Could not reach Tuturuuu. Check your connection and try again."
+  "deviceMfaOffline": "Could not reach Tuturuuu. Check your connection and try again.",
+  "securityCheckTitle": "Security check"
 }

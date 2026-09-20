@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter/services.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppLockGate extends StatelessWidget {
@@ -110,7 +111,7 @@ class _LockCard extends StatelessWidget {
                   if (authenticating)
                     const SizedBox.square(
                       dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: NovaLoadingIndicator(size: 20),
                     )
                   else
                     const Icon(Icons.fingerprint_rounded, size: 21),

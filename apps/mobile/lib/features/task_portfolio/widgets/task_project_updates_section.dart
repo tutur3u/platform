@@ -232,7 +232,7 @@ class _TaskProjectUpdatesSectionState extends State<TaskProjectUpdatesSection> {
                   const shad.SizedBox(
                     width: 16,
                     height: 16,
-                    child: shad.CircularProgressIndicator(),
+                    child: NovaLoadingIndicator(size: 20),
                   ),
                 ],
               ],

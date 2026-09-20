@@ -7,6 +7,7 @@ import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:share_plus/share_plus.dart';
 
 class MailReader extends StatefulWidget {
@@ -141,7 +142,7 @@ class _MailReaderState extends State<MailReader> {
           bottom: 16 + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          if (_busy) const LinearProgressIndicator(),
+          if (_busy) const NovaLoadingIndicator(size: 20),
           for (final message in _messages)
             Card(
               margin: const EdgeInsets.only(bottom: 12),

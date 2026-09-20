@@ -154,7 +154,7 @@ void main() {
       );
 
       expect(find.text('Unlocking...'), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(NovaLoadingIndicator), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -8,6 +9,7 @@ import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 Future<bool?> showMfaApprovalDialog(
   BuildContext context,
@@ -114,17 +116,19 @@ class _MfaApprovalDialogState extends State<MfaApprovalDialog> {
       maxWidth: 420,
       actions: [
         shad.OutlineButton(
+          alignment: Alignment.center,
           onPressed: _busy || _expired
               ? null
               : () => unawaited(_submit(reject: true)),
           child: Text(l10n.deviceMfaDeny),
         ),
         shad.PrimaryButton(
+          alignment: Alignment.center,
           onPressed: _busy || _expired || _code.text.length != 6
               ? null
               : () => unawaited(_submit()),
           child: _busy
-              ? const shad.CircularProgressIndicator(size: 16)
+              ? const NovaLoadingIndicator(size: 16)
               : Text(l10n.mfaApprovalApproveAction),
         ),
       ],

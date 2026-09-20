@@ -68,24 +68,26 @@ extension _ShellPageLayout on _ShellPageState {
 
   Widget _buildGlobalBody() {
     if (_isRootTabLocation(widget.matchedLocation)) {
-      return MediaQuery.removePadding(
-        context: context,
-        removeTop: true,
-        child: LazyIndexedStack(
-          index: _ShellPageState._calculateSelectedIndex(
-            widget.matchedLocation,
+      return Builder(
+        builder: (bodyContext) => MediaQuery.removePadding(
+          context: bodyContext,
+          removeTop: true,
+          child: LazyIndexedStack(
+            index: _ShellPageState._calculateSelectedIndex(
+              widget.matchedLocation,
+            ),
+            builders: [
+              (_) => DashboardPage(
+                replayToken: _rootTabReplayTokens[Routes.home] ?? 0,
+              ),
+              (_) => AssistantPage(
+                replayToken: _rootTabReplayTokens[Routes.assistant] ?? 0,
+              ),
+              (_) => AppsHubPage(
+                replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
+              ),
+            ],
           ),
-          builders: [
-            (_) => DashboardPage(
-              replayToken: _rootTabReplayTokens[Routes.home] ?? 0,
-            ),
-            (_) => AssistantPage(
-              replayToken: _rootTabReplayTokens[Routes.assistant] ?? 0,
-            ),
-            (_) => AppsHubPage(
-              replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
-            ),
-          ],
         ),
       );
     }
@@ -199,19 +201,17 @@ extension _ShellPageLayout on _ShellPageState {
     double bodyBottomInset = 0,
   }) {
     final mediaQuery = MediaQuery.of(context);
-    final effectiveBody = bodyBottomInset > 0
-        ? MediaQuery(
-            data: mediaQuery.copyWith(
-              padding: mediaQuery.padding.copyWith(
-                bottom: mediaQuery.padding.bottom + bodyBottomInset,
-              ),
-              viewPadding: mediaQuery.viewPadding.copyWith(
-                bottom: mediaQuery.viewPadding.bottom + bodyBottomInset,
-              ),
-            ),
-            child: body,
-          )
-        : body;
+    final effectiveBody = MediaQuery(
+      data: mediaQuery.copyWith(
+        padding: mediaQuery.padding.copyWith(
+          bottom: mediaQuery.padding.bottom + bodyBottomInset,
+        ),
+        viewPadding: mediaQuery.viewPadding.copyWith(
+          bottom: mediaQuery.viewPadding.bottom + bodyBottomInset,
+        ),
+      ),
+      child: body,
+    );
 
     return Stack(
       fit: StackFit.expand,
@@ -270,15 +270,9 @@ extension _ShellPageLayout on _ShellPageState {
             context,
             injectedMiniNavRegistration,
             isCompact,
-            showCompactLabels: false,
           )
         : activeModule != null
-        ? _buildMiniAppNavItems(
-            context,
-            activeModule,
-            activeMiniNavItems,
-            showCompactLabels: false,
-          )
+        ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -415,13 +409,14 @@ extension _ShellPageLayout on _ShellPageState {
               ),
             ]
           : const [],
-      child: showBottomNav && !isCompact
-          ? _buildBodyWithFloatingNav(
-              body: globalBody,
-              navigationBar: navigationBar,
-              bodyBottomInset: floatingNavInset,
-            )
-          : globalBody,
+      // Preserve Assistant state when keyboard/fullscreen hides navigation.
+      child: _buildBodyWithFloatingNav(
+        body: globalBody,
+        navigationBar: showBottomNav && !isCompact
+            ? navigationBar
+            : const SizedBox.shrink(),
+        bodyBottomInset: floatingNavInset,
+      ),
     );
   }
 
@@ -470,7 +465,6 @@ extension _ShellPageLayout on _ShellPageState {
       context,
       activeModule,
       activeMiniNavItems,
-      showCompactLabels: false,
     );
     final miniSelectedKey = _miniSelectedKey(context, activeMiniNavItems);
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);

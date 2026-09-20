@@ -135,14 +135,12 @@ class _WorkspaceListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
     final sections = splitWorkspaceSections(state.workspaces);
 
     return ResponsiveWrapper(
       maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-      child: RefreshIndicator(
+      child: NovaRefreshIndicator(
         onRefresh: onRefresh,
-        color: theme.colorScheme.primary,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(
@@ -305,13 +303,9 @@ class _WorkspaceTile extends StatelessWidget {
             ),
             const shad.Gap(8),
             if (isLoading)
-              const shad.CircularProgressIndicator(size: 16)
+              const NovaLoadingIndicator(size: 16)
             else if (isSelected)
-              Icon(
-                Icons.check_circle_rounded,
-                color: theme.colorScheme.primary,
-                size: 22,
-              )
+              const Icon(Icons.check_circle_rounded, size: 22)
             else
               Icon(
                 Icons.chevron_right_rounded,

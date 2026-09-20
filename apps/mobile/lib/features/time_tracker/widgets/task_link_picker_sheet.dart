@@ -321,7 +321,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
                         const SizedBox(
                           width: 14,
                           height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: NovaLoadingIndicator(size: 20),
                         )
                       else
                         Text(
@@ -423,7 +423,7 @@ class _TaskLinkPickerSheetState extends State<TaskLinkPickerSheet> {
               child: SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: NovaLoadingIndicator(size: 20),
               ),
             ),
           );

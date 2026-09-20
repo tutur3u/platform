@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
+import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
@@ -207,7 +209,7 @@ class _DashboardView extends StatelessWidget {
                   }
 
                   return shad.Scaffold(
-                    child: RefreshIndicator(
+                    child: NovaRefreshIndicator(
                       onRefresh: () => _refresh(context, workspace),
                       child: SafeArea(
                         top: false,

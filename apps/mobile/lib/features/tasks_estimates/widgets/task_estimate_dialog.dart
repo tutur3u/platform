@@ -7,6 +7,7 @@ import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart'
 import 'package:mobile/features/tasks_estimates/utils/estimation_type_meta.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class TaskEstimateDialog extends StatefulWidget {
   const TaskEstimateDialog({required this.board, super.key});
@@ -168,7 +169,7 @@ class _TaskEstimateDialogState extends State<TaskEstimateDialog> {
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: shad.CircularProgressIndicator(),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               : Text(l10n.taskEstimatesDialogSave),
         ),

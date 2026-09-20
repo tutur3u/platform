@@ -133,6 +133,7 @@ class _DeviceMfaSuggestionState extends State<DeviceMfaSuggestion>
                       runSpacing: 8,
                       children: [
                         shad.PrimaryButton(
+                          alignment: Alignment.center,
                           onPressed: () => _snooze(openSettings: true),
                           child: Text(context.l10n.deviceMfaManage),
                         ),

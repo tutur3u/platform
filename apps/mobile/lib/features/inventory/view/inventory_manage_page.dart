@@ -20,6 +20,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryManagePage extends StatefulWidget {
@@ -224,7 +225,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
 
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: RefreshIndicator(
+              child: NovaRefreshIndicator(
                 onRefresh: () => _reload(forceRefresh: true),
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
@@ -493,7 +494,7 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
           child: _saving
               ? const SizedBox.square(
                   dimension: 16,
-                  child: shad.CircularProgressIndicator(strokeWidth: 2),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               : Text(widget.confirmLabel),
         ),

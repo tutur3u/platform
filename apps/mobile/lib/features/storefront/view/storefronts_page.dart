@@ -17,6 +17,7 @@ import 'package:mobile/features/storefront/view/storefront_editor_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class StorefrontsPage extends StatefulWidget {
@@ -124,7 +125,7 @@ class _StorefrontsPageState extends State<StorefrontsPage> {
         listener: (context, state) => unawaited(_reload()),
         child: ResponsiveWrapper(
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: RefreshIndicator(
+          child: NovaRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               padding: EdgeInsets.fromLTRB(

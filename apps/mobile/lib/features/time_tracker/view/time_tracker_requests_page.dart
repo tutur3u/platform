@@ -504,7 +504,7 @@ class _RequestsViewState extends State<_RequestsView> {
                         );
                       }
 
-                      return RefreshIndicator(
+                      return NovaRefreshIndicator(
                         onRefresh: () => _loadRequests(forceRefresh: true),
                         child: state.requests.isEmpty
                             ? ListView(

@@ -121,7 +121,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      _expectAppsPickerOnHome(tester, router);
     });
 
     testWidgets(
@@ -419,7 +419,7 @@ void main() {
       expect(find.text(l10n.navBack), findsNothing);
       expect(find.text(l10n.taskPortfolioProjectsTab), findsOneWidget);
       expect(find.text(l10n.taskPortfolioInitiativesTab), findsNothing);
-      expect(find.text(l10n.taskBoardsTitle), findsNothing);
+      await _verifyInjectedPickerExit(tester, router);
     });
 
     testWidgets(
@@ -495,7 +495,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
 
-      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      _expectAppsPickerOnHome(tester, router);
     });
 
     testWidgets('apps root requires double back to exit', (tester) async {
@@ -705,7 +705,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.apps_outlined).first);
       await _pumpForTransitions(tester);
 
-      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      _expectAppsPickerOnHome(tester, router);
     });
 
     testWidgets(
@@ -777,7 +777,7 @@ void main() {
 
         final context = tester.element(shellFinder);
         final l10n = AppLocalizations.of(context);
-        expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+        _expectAppsPickerOnHome(tester, router);
         expect(systemPopCalls, 0);
         expect(find.text(l10n.commonPressBackAgainToExit), findsNothing);
         expect(shellState.mounted, isTrue);
@@ -869,7 +869,7 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      _expectAppsPickerOnHome(tester, router);
     });
 
     testWidgets(

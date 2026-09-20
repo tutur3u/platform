@@ -5,6 +5,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskLabelFormValue {
@@ -233,7 +234,7 @@ class _TaskLabelDialogState extends State<TaskLabelDialog> {
                         child: _isSubmitting
                             ? const SizedBox.square(
                                 dimension: 16,
-                                child: shad.CircularProgressIndicator(),
+                                child: NovaLoadingIndicator(size: 20),
                               )
                             : Text(widget.submitLabel),
                       ),

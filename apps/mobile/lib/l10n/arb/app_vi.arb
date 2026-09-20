@@ -3273,5 +3273,6 @@
   "deviceMfaSessionExpired": "Không thể xác minh phiên đăng nhập. Hãy đăng nhập lại trước khi thay đổi trình xác thực.",
   "deviceMfaRateLimited": "Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.",
   "deviceMfaUnavailable": "Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.",
-  "deviceMfaOffline": "Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại."
+  "deviceMfaOffline": "Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.",
+  "securityCheckTitle": "Kiểm tra bảo mật"
 }

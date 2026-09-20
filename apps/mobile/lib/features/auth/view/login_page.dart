@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
     hide AppBar, FilledButton, Scaffold, TextButton, TextField;
@@ -19,6 +18,7 @@ import 'package:mobile/features/auth/widgets/auth_google_button.dart';
 import 'package:mobile/features/auth/widgets/auth_otp_field.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/features/auth/widgets/auth_section_card.dart';
+import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -53,7 +53,6 @@ class _LoginPageState extends State<LoginPage> {
 
   _LoginStage _stage = _LoginStage.identify;
   int _retryAfter = 0;
-  String? _captchaToken;
   Timer? _retryAfterTimer;
   Timer? _otpAvailabilityGraceTimer;
   bool _otpAvailabilityGraceExpired = false;
@@ -134,12 +133,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _clearCaptcha() {
-    if (_captchaToken != null) {
-      setState(() => _captchaToken = null);
-    }
-  }
-
   bool _isOtpCooldownError(String? error) {
     if (error == null) {
       return false;
@@ -201,7 +194,6 @@ class _LoginPageState extends State<LoginPage> {
       _stage = _LoginStage.password;
       _retryAfter = 0;
     });
-    _clearCaptcha();
     Future<void>.delayed(const Duration(milliseconds: 180), () {
       if (mounted && _isPasswordStage) {
         _passwordFocusNode.requestFocus();
@@ -216,7 +208,6 @@ class _LoginPageState extends State<LoginPage> {
       _stage = _LoginStage.identify;
       _retryAfter = 0;
     });
-    _clearCaptcha();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _emailFocusNode.requestFocus();
@@ -231,8 +222,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final captcha = _captchaToken;
-    _clearCaptcha();
+    final captcha = await showSecurityCheck(context);
+    if (!mounted || (Env.isTurnstileConfigured && captcha == null)) return;
 
     final result = await context.read<AuthCubit>().sendOtp(
       email,
@@ -277,8 +268,8 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final captcha = _captchaToken;
-    _clearCaptcha();
+    final captcha = await showSecurityCheck(context);
+    if (!mounted || (Env.isTurnstileConfigured && captcha == null)) return;
 
     await context.read<AuthCubit>().signInWithPassword(
       email,
@@ -354,35 +345,6 @@ class _LoginPageState extends State<LoginPage> {
       context: toastContext,
       builder: (ctx, _) => shad.Alert.destructive(
         title: Text(message ?? ctx.l10n.authSwitchAccountFailed),
-      ),
-    );
-  }
-
-  Widget _buildTurnstile({required bool enabled}) {
-    final theme = shad.Theme.of(context);
-
-    if (!Env.isTurnstileConfigured) {
-      return const SizedBox.shrink();
-    }
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 312),
-        child: CloudflareTurnstile(
-          siteKey: Env.turnstileSiteKey,
-          baseUrl: Env.turnstileBaseUrl,
-          options: TurnstileOptions(
-            size: TurnstileSize.flexible,
-            theme: theme.brightness == Brightness.dark
-                ? TurnstileTheme.dark
-                : TurnstileTheme.light,
-          ),
-          onTokenReceived: enabled
-              ? (token) {
-                  setState(() => _captchaToken = token);
-                }
-              : (_) {},
-        ),
       ),
     );
   }
@@ -546,20 +508,11 @@ class _LoginPageState extends State<LoginPage> {
                 },
               ),
               const shad.Gap(16),
-              if (!isResolvingOtpEnablement && otpEnabled) ...[
-                if (Env.isTurnstileConfigured) ...[
-                  _buildTurnstile(enabled: !state.isLoading),
-                  const shad.Gap(8),
-                ],
-              ],
               AuthPrimaryButton(
                 label: context.l10n.loginContinueWithEmail,
                 onPressed:
                     isResolvingOtpEnablement ||
-                        _emailController.text.trim().isEmpty ||
-                        (otpEnabled &&
-                            Env.isTurnstileConfigured &&
-                            _captchaToken == null)
+                        _emailController.text.trim().isEmpty
                     ? null
                     : (otpEnabled ? _handleSendOtp : _showPasswordStage),
                 isLoading: state.isLoading || isResolvingOtpEnablement,
@@ -635,19 +588,12 @@ class _LoginPageState extends State<LoginPage> {
                     : _handleVerifyOtp,
                 isLoading: state.isLoading,
               ),
-              if (Env.isTurnstileConfigured) ...[
-                const shad.Gap(10),
-                _buildTurnstile(enabled: !state.isLoading),
-              ],
               const shad.Gap(10),
               AuthSecondaryButton(
                 variant: AuthSecondaryButtonVariant.ghost,
                 onPressed: state.isLoading
                     ? null
-                    : ((otpEnabled &&
-                              _retryAfter <= 0 &&
-                              (!Env.isTurnstileConfigured ||
-                                  _captchaToken != null))
+                    : ((otpEnabled && _retryAfter <= 0)
                           ? _handleSendOtp
                           : null),
                 label: _retryAfter > 0
@@ -723,15 +669,9 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const shad.Gap(8),
-              if (Env.isTurnstileConfigured) ...[
-                _buildTurnstile(enabled: !state.isLoading),
-                const shad.Gap(8),
-              ],
               AuthPrimaryButton(
                 label: context.l10n.loginSignIn,
-                onPressed: (Env.isTurnstileConfigured && _captchaToken == null)
-                    ? null
-                    : _handlePasswordLogin,
+                onPressed: _handlePasswordLogin,
                 isLoading: state.isLoading,
               ),
               if (otpEnabled) ...[

@@ -213,7 +213,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
 
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: RefreshIndicator(
+              child: NovaRefreshIndicator(
                 onRefresh: () => _reload(context),
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(16, 12, 16, listBottomPadding),

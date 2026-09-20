@@ -7,6 +7,7 @@ import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/features/security/device_mfa/trusted_authenticators_panel.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DeviceMfaPanel extends StatefulWidget {
@@ -110,7 +111,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
           if (_busy) ...[
             Row(
               children: [
-                const shad.CircularProgressIndicator(size: 18),
+                const NovaLoadingIndicator(size: 18),
                 const shad.Gap(12),
                 Expanded(child: Text(l10n.deviceMfaWorking)),
               ],
@@ -127,6 +128,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
             ),
             const shad.Gap(8),
             shad.OutlineButton(
+              alignment: Alignment.center,
               onPressed: _busy
                   ? null
                   : () => unawaited(_run(_retry ?? _refresh)),
@@ -149,6 +151,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
             ),
             const shad.Gap(12),
             shad.PrimaryButton(
+              alignment: Alignment.center,
               onPressed: _busy
                   ? null
                   : () => unawaited(
@@ -183,6 +186,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
               runSpacing: 8,
               children: [
                 shad.PrimaryButton(
+                  alignment: Alignment.center,
                   onPressed: _busy
                       ? null
                       : () {
@@ -210,6 +214,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
                   ),
                 ),
                 shad.OutlineButton(
+                  alignment: Alignment.center,
                   onPressed: _busy
                       ? null
                       : () =>
@@ -223,6 +228,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
               Text(l10n.deviceMfaRemoveHint),
               const shad.Gap(8),
               shad.DestructiveButton(
+                alignment: Alignment.center,
                 onPressed: _busy
                     ? null
                     : () => unawaited(

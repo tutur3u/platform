@@ -22,6 +22,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StorefrontDetailPage extends StatefulWidget {
@@ -229,7 +230,7 @@ class _StorefrontDetailPageState extends State<StorefrontDetailPage> {
         listener: (context, state) => unawaited(_reload()),
         child: ResponsiveWrapper(
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: RefreshIndicator(
+          child: NovaRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),

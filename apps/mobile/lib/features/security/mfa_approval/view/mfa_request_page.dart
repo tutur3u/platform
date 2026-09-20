@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_approval_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -83,7 +85,7 @@ class _MfaRequestPageState extends State<MfaRequestPage> {
                   ),
                   const shad.Gap(16),
                   if (_loading)
-                    const shad.CircularProgressIndicator()
+                    const NovaLoadingIndicator(size: 20)
                   else if (_failed)
                     Text(l10n.deviceMfaError)
                   else if (_requiresMfa)
@@ -92,6 +94,7 @@ class _MfaRequestPageState extends State<MfaRequestPage> {
                     Text(l10n.deviceMfaExpired)
                   else
                     shad.PrimaryButton(
+                      alignment: Alignment.center,
                       onPressed: () async {
                         await showMfaApprovalDialog(
                           context,
@@ -104,6 +107,7 @@ class _MfaRequestPageState extends State<MfaRequestPage> {
                     ),
                   const shad.Gap(16),
                   shad.OutlineButton(
+                    alignment: Alignment.center,
                     onPressed: () => context.go(Routes.settingsSession),
                     child: Text(l10n.deviceMfaTitle),
                   ),

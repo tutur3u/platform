@@ -91,7 +91,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
             else if (summary == null || summary.wallets.isEmpty)
               _CheckpointEmpty(onBatchCheck: _openBatchSheet)
             else
-              RefreshIndicator(
+              NovaRefreshIndicator(
                 onRefresh: () => _load(showLoader: false),
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(

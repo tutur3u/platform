@@ -140,7 +140,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
               ),
             )
           else
-            RefreshIndicator(
+            NovaRefreshIndicator(
               onRefresh: () => _load(forceRefresh: true),
               child: ListView(
                 padding: const EdgeInsets.only(top: 16, bottom: 96),
@@ -208,7 +208,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                     const shad.Gap(12),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: LinearProgressIndicator(minHeight: 2),
+                      child: NovaLoadingIndicator(size: 20),
                     ),
                   ],
                   const shad.Gap(16),

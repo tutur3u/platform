@@ -58,7 +58,7 @@ class _ConversationPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ChatCubit>();
-    return RefreshIndicator(
+    return NovaRefreshIndicator(
       onRefresh: cubit.refresh,
       child: ChatConversationList(
         header: Column(

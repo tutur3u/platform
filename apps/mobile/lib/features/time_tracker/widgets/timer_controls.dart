@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerControls extends StatelessWidget {
@@ -122,7 +123,7 @@ class _CircleButton extends StatelessWidget {
       return SizedBox(
         width: iconSize,
         height: iconSize,
-        child: const CircularProgressIndicator(strokeWidth: 2.5),
+        child: const NovaLoadingIndicator(size: 20),
       );
     }
     return Icon(icon, size: iconSize);

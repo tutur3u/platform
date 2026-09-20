@@ -3,6 +3,7 @@ import 'package:flutter/material.dart'
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ThresholdSettingsDialog extends StatefulWidget {
@@ -53,7 +54,7 @@ class _ThresholdSettingsDialogState extends State<ThresholdSettingsDialog> {
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: shad.CircularProgressIndicator(),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               : Text(l10n.timerSave),
         ),

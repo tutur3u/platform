@@ -222,13 +222,10 @@ class _NotificationsViewState extends State<NotificationsView> {
                       _selectedTab == NotificationsTab.inbox &&
                           state.unreadCount > 0
                       ? state.isArchivingAll
-                            ? SizedBox(
+                            ? const SizedBox(
                                 width: 14,
                                 height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: colorScheme.primary,
-                                ),
+                                child: NovaLoadingIndicator(size: 20),
                               )
                             : Text(
                                 context.l10n.notificationsArchiveAll,
@@ -674,7 +671,7 @@ class _NotificationsListState extends State<_NotificationsList> {
       );
     }
 
-    return RefreshIndicator(
+    return NovaRefreshIndicator(
       onRefresh: widget.onRefresh,
       child: widget.pageMode ? child : _NotificationsSurface(child: child),
     );
@@ -823,13 +820,10 @@ class _NotificationTile extends StatelessWidget {
                   IconButton(
                     onPressed: isPending ? null : onToggleRead,
                     icon: isPending
-                        ? SizedBox(
+                        ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: colorScheme.primary,
-                            ),
+                            child: NovaLoadingIndicator(size: 20),
                           )
                         : Icon(
                             notification.isUnread

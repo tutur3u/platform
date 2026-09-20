@@ -175,7 +175,7 @@ class _WalletsViewState extends State<_WalletsView> {
               ownerId: 'finance-wallets-amount-visibility',
               locations: {Routes.wallets},
             ),
-            RefreshIndicator(
+            NovaRefreshIndicator(
               onRefresh: () => _loadWallets(forceRefresh: true),
               child: _buildBody(listBottomPadding, showAmounts: showAmounts),
             ),

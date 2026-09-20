@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_utils.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_video_controls.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_video_url_resolver.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:video_player/video_player.dart';
 
@@ -263,7 +264,7 @@ class _TaskDescriptionVideoPlayerState
             child: const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: NovaLoadingIndicator(size: 20),
             ),
           );
         }

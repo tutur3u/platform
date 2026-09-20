@@ -10,6 +10,7 @@ import 'package:mobile/features/security/mfa_approval/data/mfa_approval_reposito
 import 'package:mobile/features/security/mfa_approval/view/mfa_approval_dialog.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SessionSettingsSection extends StatefulWidget {
@@ -199,7 +200,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: NovaLoadingIndicator(size: 20),
                         )
                       : Text(l10n.deviceMfaReview),
                 )
@@ -207,7 +208,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               : null,
           onTap: pendingApproval != null

@@ -243,7 +243,7 @@ class _TransactionCategoriesViewState
                 ),
               ],
             ),
-            RefreshIndicator(
+            NovaRefreshIndicator(
               onRefresh: () => _loadCurrentTab(forceRefresh: true),
               child: _activeTab == _tabCategories
                   ? _buildCategoriesContent(

@@ -395,12 +395,7 @@ class _TaskProjectSheetState extends State<TaskProjectSheet> {
                           ? const SizedBox(
                               height: 16,
                               width: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
+                              child: NovaLoadingIndicator(size: 20),
                             )
                           : Text(
                               isEditing

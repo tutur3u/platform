@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cloudflare_turnstile/cloudflare_turnstile.dart';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +9,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/features/auth/widgets/auth_section_card.dart';
+import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
 import 'package:mobile/features/security/qr_login/data/qr_login_repository.dart';
 import 'package:mobile/features/security/qr_login/qr_login_payload.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -33,18 +33,17 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
   Timer? _pollTimer;
   QrLoginChallenge? _challenge;
   String? _secret;
-  String? _captchaToken;
   String? _error;
   bool _creating = false;
   bool _signingIn = false;
-  int _turnstileAttempt = 0;
+  bool _polling = false;
 
   @override
   void initState() {
     super.initState();
     _repository = widget._repository ?? QrLoginRepository();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || Env.isTurnstileConfigured) {
+      if (!mounted) {
         return;
       }
       unawaited(_createChallenge());
@@ -70,10 +69,16 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
     });
     _pollTimer?.cancel();
 
+    final captcha = await showSecurityCheck(context);
+    if (!mounted) return;
+    if (Env.isTurnstileConfigured && captcha == null) {
+      setState(() => _creating = false);
+      return;
+    }
     final result = await _repository.createLoginChallenge(
       locale: context.l10n.localeName,
       origin: ApiConfig.baseUrl,
-      captchaToken: _captchaToken,
+      captchaToken: captcha,
     );
 
     if (!mounted) {
@@ -109,7 +114,7 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
   Future<void> _pollChallenge() async {
     final challenge = _challenge;
     final secret = _secret;
-    if (challenge == null || secret == null || _signingIn) {
+    if (challenge == null || secret == null || _signingIn || _polling) {
       return;
     }
 
@@ -122,101 +127,57 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
       return;
     }
 
-    final result = await _repository.pollLoginChallenge(
-      challengeId: challenge.id,
-      secret: secret,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (result.status == QrLoginChallengeStatus.pending) {
-      return;
-    }
-
-    if (result.status == QrLoginChallengeStatus.expired) {
-      _pollTimer?.cancel();
-      setState(() => _error = context.l10n.qrLoginMobileExpired);
-      return;
-    }
-
-    final session = result.session;
-    if (result.status == QrLoginChallengeStatus.approved && session != null) {
-      _pollTimer?.cancel();
-      setState(() {
-        _signingIn = true;
-        _error = null;
-      });
-      final ok = await context.read<AuthCubit>().signInWithQrLoginSession(
-        session,
+    _polling = true;
+    try {
+      final result = await _repository.pollLoginChallenge(
+        challengeId: challenge.id,
+        secret: secret,
       );
-      if (!mounted || ok) {
+
+      if (!mounted || _challenge?.id != challenge.id) {
         return;
       }
+
+      if (result.status == QrLoginChallengeStatus.pending) {
+        return;
+      }
+
+      if (result.status == QrLoginChallengeStatus.expired) {
+        _pollTimer?.cancel();
+        setState(() => _error = context.l10n.qrLoginMobileExpired);
+        return;
+      }
+
+      final session = result.session;
+      if (result.status == QrLoginChallengeStatus.approved && session != null) {
+        _pollTimer?.cancel();
+        setState(() {
+          _signingIn = true;
+          _error = null;
+        });
+        final ok = await context.read<AuthCubit>().signInWithQrLoginSession(
+          session,
+        );
+        if (!mounted || ok) {
+          return;
+        }
+        setState(() {
+          _signingIn = false;
+          _error = context.read<AuthCubit>().state.error;
+        });
+        return;
+      }
+
+      _pollTimer?.cancel();
       setState(() {
-        _signingIn = false;
-        _error = context.read<AuthCubit>().state.error;
+        _error = result.error ?? context.l10n.qrLoginApproveFailed;
       });
-      return;
+    } finally {
+      _polling = false;
     }
-
-    _pollTimer?.cancel();
-    setState(() {
-      _error = result.error ?? context.l10n.qrLoginApproveFailed;
-    });
   }
 
-  void _resetChallengeState() {
-    _pollTimer?.cancel();
-    setState(() {
-      _captchaToken = null;
-      _challenge = null;
-      _secret = null;
-      _error = null;
-      _creating = false;
-      _turnstileAttempt += 1;
-    });
-  }
-
-  void _handleRetry() {
-    if (Env.isTurnstileConfigured) {
-      _resetChallengeState();
-      return;
-    }
-
-    setState(() => _captchaToken = null);
-    unawaited(_createChallenge());
-  }
-
-  Widget _buildTurnstile() {
-    final theme = shad.Theme.of(context);
-
-    if (!Env.isTurnstileConfigured || _challenge != null) {
-      return const SizedBox.shrink();
-    }
-
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 312),
-        child: CloudflareTurnstile(
-          key: ValueKey(_turnstileAttempt),
-          siteKey: Env.turnstileSiteKey,
-          baseUrl: Env.turnstileBaseUrl,
-          options: TurnstileOptions(
-            size: TurnstileSize.flexible,
-            theme: theme.brightness == Brightness.dark
-                ? TurnstileTheme.dark
-                : TurnstileTheme.light,
-          ),
-          onTokenReceived: (token) {
-            setState(() => _captchaToken = token);
-            unawaited(_createChallenge());
-          },
-        ),
-      ),
-    );
-  }
+  void _handleRetry() => unawaited(_createChallenge());
 
   @override
   Widget build(BuildContext context) {
@@ -226,7 +187,8 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
     final hasExpired =
         challenge != null &&
         DateTime.now().toUtc().isAfter(challenge.expiresAt.toUtc());
-    final showRetry = !_creating && (_error != null || hasExpired);
+    final showRetry =
+        !_creating && (_challenge == null || _error != null || hasExpired);
 
     return AuthScaffold(
       title: l10n.qrLoginMobileTitle,
@@ -246,21 +208,16 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
               ),
             ),
             const shad.Gap(20),
-            if (challenge == null) ...[
-              _buildTurnstile(),
-              if (_creating) ...[
-                const shad.Gap(16),
-                const Center(child: AuthLoadingIndicator()),
-                const shad.Gap(10),
-                Text(
-                  l10n.qrLoginMobileLoading,
-                  textAlign: TextAlign.center,
-                  style: theme.typography.small.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
+            if (challenge == null || hasExpired)
+              SizedBox.square(
+                dimension: 248,
+                child: Center(
+                  child: _creating
+                      ? const AuthLoadingIndicator(size: 48)
+                      : const Icon(Icons.qr_code_2_rounded, size: 64),
                 ),
-              ],
-            ] else ...[
+              )
+            else ...[
               Center(
                 child: Container(
                   decoration: BoxDecoration(
@@ -279,16 +236,10 @@ class _QrLoginSignInPageState extends State<QrLoginSignInPage> {
                   ),
                 ),
               ),
-              const shad.Gap(16),
-              Text(
-                _signingIn
-                    ? l10n.qrLoginMobileApproved
-                    : l10n.qrLoginMobileWaiting,
-                textAlign: TextAlign.center,
-                style: theme.typography.small.copyWith(
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ),
+              if (_signingIn) ...[
+                const shad.Gap(16),
+                const AuthLoadingIndicator(),
+              ],
             ],
             if (_error != null) ...[
               const shad.Gap(12),

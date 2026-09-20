@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Native rendering isolated from the app's authenticated browser state.
@@ -111,7 +112,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
         ? SingleChildScrollView(
             child: Column(
               children: [
-                if (!_failed) const LinearProgressIndicator(),
+                if (!_failed) const NovaLoadingIndicator(size: 20),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: SelectableText(

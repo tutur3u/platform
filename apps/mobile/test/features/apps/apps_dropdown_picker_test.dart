@@ -5,6 +5,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../helpers/helpers.dart';
 
 void main() {
@@ -37,6 +38,13 @@ void main() {
         ),
       );
       await tester.tap(find.byType(AppsDropdownPicker));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      final screen = tester.getRect(
+        find.byKey(const ValueKey('apps-picker-fullscreen')),
+      );
+      expect(screen.size, size);
+      await tester.tap(find.byIcon(Icons.search_rounded));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'calendar');
       await tester.pumpAndSettle();

@@ -14,6 +14,7 @@ import 'package:mobile/features/time_tracker/widgets/workspace_stats_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerStatsScope { personal, workspace }
@@ -193,7 +194,7 @@ class _StatsTabState extends State<StatsTab> {
                   else
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(child: shad.CircularProgressIndicator()),
+                      child: Center(child: NovaLoadingIndicator(size: 20)),
                     ),
                 ],
               ),

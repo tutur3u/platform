@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AsyncDeleteConfirmationDialog extends StatefulWidget {
@@ -51,7 +52,7 @@ class _AsyncDeleteConfirmationDialogState
           child: _isDeleting
               ? const SizedBox.square(
                   dimension: 16,
-                  child: shad.CircularProgressIndicator(),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               : Text(widget.confirmLabel),
         ),

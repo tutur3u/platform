@@ -7,6 +7,7 @@ import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/duration.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class EditSessionDialog extends StatefulWidget {
@@ -279,7 +280,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: shad.CircularProgressIndicator(),
+                      child: NovaLoadingIndicator(size: 20),
                     )
                   : Text(l10n.timerSave),
             ),

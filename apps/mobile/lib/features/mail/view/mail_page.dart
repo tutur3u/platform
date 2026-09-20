@@ -19,6 +19,7 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 part 'mail_workspace_layout.dart';
 part 'mail_workspace_controls.dart';

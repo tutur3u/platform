@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_utils.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskDescriptionImageEmbedBuilder extends EmbedBuilder {
@@ -95,7 +96,7 @@ class _TaskDescriptionImagePreview extends StatelessWidget {
                       child: const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: NovaLoadingIndicator(size: 20),
                       ),
                     );
                   },

@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/features/finance/utils/wallet_images.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WalletImagePickerSheet extends StatefulWidget {
@@ -131,8 +132,7 @@ class _WalletImagePickerSheetState extends State<WalletImagePickerSheet> {
                                         child: SizedBox(
                                           width: 16,
                                           height: 16,
-                                          child:
-                                              shad.CircularProgressIndicator(),
+                                          child: NovaLoadingIndicator(size: 20),
                                         ),
                                       ),
                                       errorBuilder:
@@ -161,8 +161,7 @@ class _WalletImagePickerSheetState extends State<WalletImagePickerSheet> {
                                         child: SizedBox(
                                           width: 16,
                                           height: 16,
-                                          child:
-                                              shad.CircularProgressIndicator(),
+                                          child: NovaLoadingIndicator(size: 20),
                                         ),
                                       ),
                                       errorBuilder:

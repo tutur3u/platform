@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
@@ -41,7 +42,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AssistantPage extends StatefulWidget {
@@ -367,8 +367,8 @@ class _AssistantPageState extends State<AssistantPage> {
                                               top: 0,
                                               left: 0,
                                               right: 0,
-                                              child: LinearProgressIndicator(
-                                                minHeight: 2,
+                                              child: NovaLoadingIndicator(
+                                                size: 20,
                                               ),
                                             ),
                                         ],
@@ -376,7 +376,11 @@ class _AssistantPageState extends State<AssistantPage> {
                                       Positioned(
                                         left: 0,
                                         right: 0,
-                                        bottom: 0,
+                                        bottom: isFullscreen
+                                            ? 0
+                                            : MediaQuery.paddingOf(
+                                                context,
+                                              ).bottom,
                                         child: IgnorePointer(
                                           ignoring: !_isComposerVisible,
                                           child: AnimatedSlide(
@@ -395,68 +399,57 @@ class _AssistantPageState extends State<AssistantPage> {
                                               opacity: _isComposerVisible
                                                   ? 1
                                                   : 0,
-                                              child: StaggeredEntrance(
-                                                replayKey:
-                                                    'assistant-composer-'
-                                                    '${currentWorkspace.id}-'
-                                                    '${widget.replayToken}',
-                                                delay: const Duration(
-                                                  milliseconds: 220,
-                                                ),
-                                                offset: const Offset(0, 0.12),
-                                                child: AssistantComposerDock(
-                                                  chatState: chatState,
-                                                  liveState: liveState,
-                                                  liveUiState: liveUiState,
-                                                  creditSource:
-                                                      shellState.creditSource,
-                                                  isFullscreen: isFullscreen,
-                                                  bottomInset: isFullscreen
-                                                      ? MediaQuery.paddingOf(
-                                                          context,
-                                                        ).bottom
-                                                      : 0,
-                                                  isPersonalWorkspace:
-                                                      isPersonalWorkspace,
-                                                  thinkingMode:
-                                                      shellState.thinkingMode,
-                                                  onOpenCreditSourceSheet: () =>
-                                                      _showCreditSourceSheet(
+                                              child: AssistantComposerDock(
+                                                chatState: chatState,
+                                                liveState: liveState,
+                                                liveUiState: liveUiState,
+                                                creditSource:
+                                                    shellState.creditSource,
+                                                isFullscreen: isFullscreen,
+                                                bottomInset: isFullscreen
+                                                    ? MediaQuery.paddingOf(
                                                         context,
-                                                        shellState: shellState,
-                                                        isPersonalWorkspace:
-                                                            isPersonalWorkspace,
-                                                      ),
-                                                  onThinkingModeChanged:
-                                                      _shellCubit
-                                                          .setThinkingMode,
-                                                  controller: _inputController,
-                                                  focusNode: _inputFocusNode,
-                                                  onOpenAttachments: () =>
-                                                      _showAttachmentSheet(
-                                                        context,
-                                                        currentWorkspace.id,
-                                                      ),
-                                                  onToggleFullscreen: () =>
-                                                      _toggleFullscreen(
-                                                        !isFullscreen,
-                                                      ),
-                                                  onMicrophoneTap: () =>
-                                                      _handleMicrophoneTap(
-                                                        currentWorkspace.id,
-                                                        shellState,
-                                                        chatState,
-                                                        liveState,
-                                                      ),
-                                                  onSend: () => _handleSend(
-                                                    currentWorkspace.id,
-                                                    shellState,
-                                                    chatState,
-                                                    liveState,
-                                                  ),
-                                                  onRemoveAttachment:
-                                                      removeComposerAttachment,
+                                                      ).bottom
+                                                    : 0,
+                                                isPersonalWorkspace:
+                                                    isPersonalWorkspace,
+                                                thinkingMode:
+                                                    shellState.thinkingMode,
+                                                onOpenCreditSourceSheet: () =>
+                                                    _showCreditSourceSheet(
+                                                      context,
+                                                      shellState: shellState,
+                                                      isPersonalWorkspace:
+                                                          isPersonalWorkspace,
+                                                    ),
+                                                onThinkingModeChanged:
+                                                    _shellCubit.setThinkingMode,
+                                                controller: _inputController,
+                                                focusNode: _inputFocusNode,
+                                                onOpenAttachments: () =>
+                                                    _showAttachmentSheet(
+                                                      context,
+                                                      currentWorkspace.id,
+                                                    ),
+                                                onToggleFullscreen: () =>
+                                                    _toggleFullscreen(
+                                                      !isFullscreen,
+                                                    ),
+                                                onMicrophoneTap: () =>
+                                                    _handleMicrophoneTap(
+                                                      currentWorkspace.id,
+                                                      shellState,
+                                                      chatState,
+                                                      liveState,
+                                                    ),
+                                                onSend: () => _handleSend(
+                                                  currentWorkspace.id,
+                                                  shellState,
+                                                  chatState,
+                                                  liveState,
                                                 ),
+                                                onRemoveAttachment:
+                                                    removeComposerAttachment,
                                               ),
                                             ),
                                           ),
@@ -685,7 +678,9 @@ class _AssistantPageState extends State<AssistantPage> {
     final anchorOffset = _composerVisibilityAnchorOffset ?? position.pixels;
     _composerVisibilityAnchorOffset = anchorOffset;
     final distanceFromAnchor = (position.pixels - anchorOffset).abs();
-    if (_isComposerVisible && distanceFromAnchor >= _composerFabThreshold) {
+    if (_isComposerVisible &&
+        position.userScrollDirection != ScrollDirection.idle &&
+        distanceFromAnchor >= _composerFabThreshold) {
       _setComposerVisible(false);
       _composerVisibilityAnchorOffset = position.pixels;
     }

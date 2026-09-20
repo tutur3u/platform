@@ -48,7 +48,7 @@ void main() {
                       ),
                       shad.NavigationItem(
                         key: ValueKey('apps'),
-                        child: Text('Apps'),
+                        child: SizedBox(height: 40, child: Text('Apps')),
                       ),
                     ],
                   ),
@@ -58,6 +58,20 @@ void main() {
           ],
         ),
       );
+      final items = tester
+          .widgetList<AnimatedContainer>(
+            find.descendant(
+              of: find.byType(CustomNavigationBar),
+              matching: find.byType(AnimatedContainer),
+            ),
+          )
+          .toList();
+      expect(items, hasLength(2));
+      final bounds = items
+          .map((item) => tester.getRect(find.byWidget(item)))
+          .toList();
+      expect(bounds[0].height, bounds[1].height);
+      expect(bounds[0].top, bounds[1].top);
       final bar = tester.getRect(find.byType(CustomNavigationBar));
       expect(bar.height, lessThan(100));
       expect(bar.bottom, closeTo(size.height, 1));

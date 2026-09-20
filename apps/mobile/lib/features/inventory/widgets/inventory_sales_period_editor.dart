@@ -8,6 +8,7 @@ import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<InventorySalesPeriod?> showCreateInventorySalesPeriod({
@@ -109,7 +110,7 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
           child: _saving
               ? const SizedBox.square(
                   dimension: 16,
-                  child: shad.CircularProgressIndicator(strokeWidth: 2),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               : Text(action),
         ),
@@ -364,7 +365,7 @@ class _ProductRuleEditorState extends State<_ProductRuleEditor> {
               SizedBox(
                 height: 210,
                 child: widget.loading
-                    ? const Center(child: shad.CircularProgressIndicator())
+                    ? const Center(child: NovaLoadingIndicator(size: 20))
                     : ListView.builder(
                         itemCount: products.length,
                         itemBuilder: (context, index) {

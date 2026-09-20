@@ -67,7 +67,7 @@ class _SettingsWorkspaceRolesViewState
           previous.currentWorkspace?.id != current.currentWorkspace?.id,
       listener: (context, state) => unawaited(_loadData()),
       child: shad.Scaffold(
-        child: RefreshIndicator.adaptive(
+        child: NovaRefreshIndicator(
           onRefresh: _loadData,
           child: ResponsiveWrapper(
             maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),

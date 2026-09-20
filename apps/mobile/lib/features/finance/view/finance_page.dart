@@ -110,7 +110,7 @@ class _FinanceView extends StatelessWidget {
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
                   ),
-                  child: RefreshIndicator(
+                  child: NovaRefreshIndicator(
                     onRefresh: () => _reload(context),
                     child: ListView(
                       padding: EdgeInsets.fromLTRB(
