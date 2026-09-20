@@ -1,7 +1,6 @@
 import {
   MAX_CALENDAR_EVENT_DESCRIPTION_LENGTH,
   MAX_CALENDAR_EVENT_TITLE_LENGTH,
-  MAX_COLOR_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { MeetingInvitationInputSchema } from '@tuturuuu/utils/meeting-invitations';
@@ -11,6 +10,7 @@ import {
   createInvitedMeeting,
   MeetingCreateError,
 } from '@/lib/calendar/create-invited-meeting';
+import { DefaultCalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
@@ -53,7 +53,7 @@ const CreateEventSchema = z.object({
   location: z.string().max(MAX_SEARCH_LENGTH).nullable().optional(),
   start_at: z.string().datetime(),
   end_at: z.string().datetime(),
-  color: z.string().max(MAX_COLOR_LENGTH).optional(),
+  color: DefaultCalendarEventColorSchema,
   locked: z.boolean().optional(),
   task_id: z.guid().nullable().optional(),
   source: CalendarSourceSchema.optional(),
@@ -290,7 +290,7 @@ export async function POST(request: Request, { params }: Params) {
         location: encryptedFields.location,
         start_at: event.start_at,
         end_at: event.end_at,
-        color: event.color || 'blue',
+        color: event.color,
         locked: event.locked || false,
         task_id: event.task_id ?? null,
         ws_id: wsId,

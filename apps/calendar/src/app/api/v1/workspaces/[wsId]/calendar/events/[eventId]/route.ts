@@ -1,12 +1,12 @@
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
-  MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { CalendarEventColorSchema } from '@/lib/calendar/event-color';
 import { upsertHabitSkip } from '@/lib/calendar/habit-skips';
 import {
   createProviderEvent,
@@ -51,7 +51,7 @@ const updateEventSchema = z.object({
   location: z.string().max(MAX_SEARCH_LENGTH).optional(),
   start_at: z.string().datetime().optional(),
   end_at: z.string().datetime().optional(),
-  color: z.string().max(MAX_COLOR_LENGTH).optional(),
+  color: CalendarEventColorSchema.optional(),
   locked: z.boolean().optional(),
   source: CalendarSourceSchema.optional(),
 });

@@ -6,6 +6,7 @@ import {
   encryptEventForStorage,
   getWorkspaceKey,
 } from '@/lib/workspace-encryption';
+import { DefaultCalendarEventColorSchema } from './event-color';
 import { MeetingCreateError, withMeetingRequest } from './meeting-request';
 import { createProviderEvent } from './provider-writes';
 import type { ResolvedCalendarSource } from './source-resolver';
@@ -60,6 +61,7 @@ export async function createInvitedMeeting({
   if (new Date(input.start_at) >= new Date(input.end_at)) {
     throw new MeetingCreateError(400, 'Meeting end must be after its start');
   }
+  const color = DefaultCalendarEventColorSchema.parse(input.color);
   const id = meetingRequestIdentity(wsId, userId, input.requestId);
   const requestHash = createHash('sha256')
     .update(
@@ -69,7 +71,7 @@ export async function createInvitedMeeting({
         location: input.location ?? '',
         start: new Date(input.start_at).toISOString(),
         end: new Date(input.end_at).toISOString(),
-        color: input.color ?? 'blue',
+        color,
         locked: input.locked ?? false,
         timeZone: input.invitation.timeZone,
         guests: [...input.invitation.guests].sort((a, b) =>
@@ -121,7 +123,7 @@ export async function createInvitedMeeting({
             ...fields,
             start_at: input.start_at,
             end_at: input.end_at,
-            color: input.color ?? 'blue',
+            color,
             locked: input.locked ?? false,
             provider: source.provider,
             source_calendar_id: source.workspaceCalendarId,

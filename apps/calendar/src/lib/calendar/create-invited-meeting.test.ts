@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { SUPPORTED_COLORS } from '@tuturuuu/types/primitives/SupportedColors';
 import { v7 } from 'uuid';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -50,6 +51,8 @@ function database() {
     const filters: Row = {};
     const result = async () => {
       if (operation === 'insert') {
+        if (!SUPPORTED_COLORS.includes(value.color as never))
+          return { error: { code: '23503' }, data: null };
         if (control.insertError)
           return { error: control.insertError, data: null };
         if (rows.has(String(value.id)))
@@ -146,6 +149,7 @@ describe('durable invitation creation', () => {
     expect(event.title).toBe('Planning');
     const stored = [...db.rows.values()][0]!;
     expect(stored.title).toBe('encrypted:Planning');
+    expect(stored.color).toBe('BLUE');
     expect(stored.external_event_id).toBe('provider-event');
     expect(stored).toHaveProperty(
       'scheduling_metadata.meeting_delivery',
@@ -157,6 +161,20 @@ describe('durable invitation creation', () => {
         event: expect.objectContaining({ invitation: input.invitation }),
       })
     );
+  });
+  it('canonicalizes color before reserving and hashing a retry', async () => {
+    input.color = ' blue ';
+    const first = await create();
+    input.color = 'BLUE';
+    mocks.state = { fresh: false, completed: true };
+    expect(await create()).toEqual(first);
+    expect(mocks.provider).toHaveBeenCalledTimes(1);
+  });
+  it('rejects unknown colors before reserving or sending', async () => {
+    input.color = 'ultraviolet';
+    await expect(create()).rejects.toThrow();
+    expect(db.rows.size).toBe(0);
+    expect(mocks.provider).not.toHaveBeenCalled();
   });
   it('returns an already-created event without sending again', async () => {
     const first = await create();
