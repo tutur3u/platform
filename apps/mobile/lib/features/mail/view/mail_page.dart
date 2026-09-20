@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_optimistic.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
@@ -21,6 +23,7 @@ import 'package:mobile/l10n/l10n.dart';
 part 'mail_workspace_layout.dart';
 part 'mail_workspace_controls.dart';
 part 'mail_shell_actions.dart';
+part 'mail_workspace_cache.dart';
 
 class MailPage extends StatelessWidget {
   const MailPage({super.key});
@@ -34,7 +37,7 @@ class MailPage extends StatelessWidget {
       (cubit) => cubit.state.currentWorkspace?.id,
     );
     if (user == null || wsId == null) return const SizedBox.shrink();
-    if (!(user.email?.toLowerCase().endsWith('@tuturuuu.com') ?? false)) {
+    if (!canDiscoverMail(user.email)) {
       return Center(child: Text(context.l10n.mailAccessRequired));
     }
     return _MailNavigator(key: ValueKey('${user.id}:$wsId'), workspaceId: wsId);
@@ -108,10 +111,14 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   String? _mailboxId;
   String _folder = 'inbox';
   bool _loading = true;
+  bool _accessVerified = false;
+  bool _cacheRestored = false;
+  bool _accessDenied = false;
   bool _hasMore = false;
   bool _failed = false;
   int _page = 1;
   int _generation = 0;
+  int _bootstrapGeneration = 0;
   int _organizationGeneration = 0;
   String? _visibleListKey;
   String? _openingId;
@@ -123,7 +130,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     orElse: () => <String, dynamic>{},
   );
   bool get _canSend {
-    if (_mailbox['status'] != 'active') return false;
+    if (!_accessVerified || _mailbox['status'] != 'active') return false;
     final group = _mailbox['groupPolicy'] as Map<String, dynamic>?;
     final roles = group == null
         ? ['owner', 'admin', 'sender']
@@ -146,6 +153,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   @override
   void dispose() {
     _generation++;
+    _bootstrapGeneration++;
     _organizationGeneration++;
     _searchDebounce?.cancel();
     _searchFocus
@@ -157,19 +165,38 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   }
 
   Future<void> _bootstrap() async {
+    final generation = ++_bootstrapGeneration;
     setState(() {
       _loading = true;
       _failed = false;
     });
+    await _restoreView(generation);
     try {
       final result = await _repository.bootstrap(widget.workspaceId);
-      if (!mounted) return;
+      if (!mounted || generation != _bootstrapGeneration) return;
       setState(() {
         _mailboxes = mailRows(result['mailboxes']);
-        _mailboxId = _mailboxes.firstOrNull?['id'] as String?;
+        _accessVerified = true;
+        if (!_mailboxes.any((box) => box['id'] == _mailboxId)) {
+          _mailboxId = _mailboxes.firstOrNull?['id'] as String?;
+          _items = [];
+          _labelId = null;
+          _folderId = null;
+        }
       });
-      await _load(forceRefresh: false);
-    } on Object {
+      if (_mailboxes.isEmpty) {
+        await _repository.saveView(widget.workspaceId, {
+          'mailboxes': <Map<String, dynamic>>[],
+          'items': <Map<String, dynamic>>[],
+        });
+      }
+      await _load();
+    } on Object catch (error) {
+      if (!mounted || generation != _bootstrapGeneration) return;
+      if (error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403)) {
+        await _denyCachedAccess();
+      }
       if (mounted) {
         setState(() {
           _failed = true;
@@ -209,8 +236,14 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       if (!more && _visibleListKey != path) {
         _hasMore = false;
         _items = mailRows(cached?[_threads ? 'threads' : 'messages']);
-        _labels = [];
-        _folders = [];
+        final organization = _repository.cachedList(
+          widget.workspaceId,
+          '${MailRepository.mailboxPath(widget.workspaceId, box)}/organization',
+        );
+        _labels = mailRows(organization?['labels']);
+        _folders = mailRows(
+          organization?['folders'],
+        ).where((folder) => folder['kind'] == 'custom').toList();
       }
       if (!more) {
         _visibleListKey = path;
@@ -219,6 +252,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     });
     try {
       if (!more) unawaited(_loadOrganization(box));
+      _saveView();
       final result = await _repository.list(
         widget.workspaceId,
         box,
@@ -239,12 +273,14 @@ class _MailWorkspaceState extends State<MailWorkspace> {
             pagination['hasMore'] as bool? ??
             page * 30 < (pagination['total'] as int? ?? 0);
       });
+      _saveView();
     } on Object catch (error) {
       if (mounted && generation == _generation) {
         setState(() {
           _failed = true;
           if (error is ApiException &&
               (error.statusCode == 401 || error.statusCode == 403)) {
+            unawaited(_denyCachedAccess());
             _items = [];
             _selected.clear();
             _hasMore = false;
@@ -289,8 +325,15 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           clearedFilter = true;
         }
       });
+      _saveView();
       if (clearedFilter) unawaited(_load());
-    } on Object {
+    } on Object catch (error) {
+      if (mounted &&
+          generation == _organizationGeneration &&
+          error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403)) {
+        await _denyCachedAccess();
+      }
       // Folder metadata must not delay or hide a successfully loaded inbox.
     }
   }

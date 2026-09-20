@@ -52,7 +52,7 @@ class MailMessageTile extends StatelessWidget {
           onTap: loading ? null : onTap,
           onLongPress: onSelect,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 14, 18, 14),
+            padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -92,7 +92,7 @@ class MailMessageTile extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 15,
                                 fontWeight: unread
                                     ? FontWeight.w700
                                     : FontWeight.w500,

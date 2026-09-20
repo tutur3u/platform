@@ -363,18 +363,12 @@ class _AssistantPageState extends State<AssistantPage> {
                                           ),
                                           if (chatState.status ==
                                               AssistantChatStatus.restoring)
-                                            Positioned.fill(
-                                              child: AbsorbPointer(
-                                                child: ColoredBox(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .surface
-                                                      .withValues(alpha: 0.72),
-                                                  child: const Center(
-                                                    child:
-                                                        NovaLoadingIndicator(),
-                                                  ),
-                                                ),
+                                            const Positioned(
+                                              top: 0,
+                                              left: 0,
+                                              right: 0,
+                                              child: LinearProgressIndicator(
+                                                minHeight: 2,
                                               ),
                                             ),
                                         ],

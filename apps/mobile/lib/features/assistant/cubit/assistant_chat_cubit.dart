@@ -15,6 +15,7 @@ import '../data/assistant_stream_parser.dart';
 import '../models/assistant_models.dart';
 
 part 'assistant_chat_state.dart';
+part 'assistant_chat_restore.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantChatCubit({
@@ -56,177 +57,15 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     emit(nextState);
   }
 
-  Future<void> loadWorkspace(String wsId) async {
-    final workspaceVersion = ++_workspaceVersion;
-    final preserveState = state.workspaceId == wsId && state.hasLoadedOnce;
-    await _streamSubscription?.cancel();
-    _queueDebounce?.cancel();
-    _queue.clear();
-    _activeAssistantMessageId = null;
-    _activeTextBlockId = null;
-    _activeReasoningBlockId = null;
+  Future<void> loadWorkspace(String wsId) => _loadWorkspace(wsId);
 
-    if (preserveState) {
-      _emitIfOpen(
-        state.copyWith(
-          workspaceId: wsId,
-          fallbackChatId: _repository.generateUuid(),
-          composerAttachments: const [],
-          queuedMessages: const [],
-          status: AssistantChatStatus.restoring,
-          clearError: true,
-        ),
-      );
-    } else {
-      _emitIfOpen(
-        AssistantChatState(
-          workspaceId: wsId,
-          fallbackChatId: _repository.generateUuid(),
-          status: AssistantChatStatus.restoring,
-        ),
-      );
-    }
+  Future<void> openChat(String wsId, AssistantChatRecord chat) =>
+      _openChat(wsId, chat);
 
-    try {
-      final storedChatId = await _preferences.loadChatId(wsId);
-      final history = await _repository.fetchRecentChats(wsId: wsId);
+  Future<void> openChatById(String wsId, String chatId) =>
+      _openChatById(wsId, chatId);
 
-      if (storedChatId == null) {
-        if (isClosed || workspaceVersion != _workspaceVersion) return;
-        _emitIfOpen(
-          state.copyWith(
-            status: AssistantChatStatus.idle,
-            hasLoadedOnce: true,
-            history: history,
-            storedChatId: null,
-          ),
-        );
-        await _onChatRestored(null);
-        return;
-      }
-
-      final restored = await _repository.restoreChat(
-        wsId: wsId,
-        chatId: storedChatId,
-      );
-      if (isClosed || workspaceVersion != _workspaceVersion) return;
-
-      if (restored == null) {
-        await _preferences.clearChatId(wsId);
-        _emitIfOpen(
-          state.copyWith(
-            status: AssistantChatStatus.idle,
-            hasLoadedOnce: true,
-            chat: null,
-            storedChatId: null,
-            messages: const [],
-            attachmentsByMessageId: const {},
-            history: history,
-          ),
-        );
-        await _onChatRestored(null);
-        return;
-      }
-
-      _emitIfOpen(
-        state.copyWith(
-          status: AssistantChatStatus.idle,
-          hasLoadedOnce: true,
-          chat: restored.chat,
-          storedChatId: restored.chat?.id,
-          messages: restored.messages,
-          attachmentsByMessageId: restored.attachmentsByMessageId,
-          history: history,
-        ),
-      );
-      await _onChatRestored(restored.chat?.model);
-    } on Exception catch (error) {
-      if (isClosed || workspaceVersion != _workspaceVersion) return;
-      _emitIfOpen(
-        state.copyWith(
-          status: AssistantChatStatus.error,
-          error: error.toString(),
-        ),
-      );
-    }
-  }
-
-  Future<void> openChat(String wsId, AssistantChatRecord chat) async {
-    emit(
-      state.copyWith(status: AssistantChatStatus.restoring, clearError: true),
-    );
-    final restored = await _repository.restoreChat(wsId: wsId, chatId: chat.id);
-    if (isClosed) {
-      return;
-    }
-    if (restored == null) {
-      emit(
-        state.copyWith(
-          status: AssistantChatStatus.error,
-          error: 'Failed to load chat history.',
-        ),
-      );
-      return;
-    }
-
-    final history = await _repository.fetchRecentChats(wsId: wsId);
-    if (isClosed) {
-      return;
-    }
-    await _preferences.saveChatId(wsId, chat.id);
-    emit(
-      state.copyWith(
-        status: AssistantChatStatus.idle,
-        chat: restored.chat,
-        storedChatId: chat.id,
-        messages: restored.messages,
-        attachmentsByMessageId: restored.attachmentsByMessageId,
-        history: history,
-      ),
-    );
-    await _onChatRestored(restored.chat?.model);
-  }
-
-  Future<void> openChatById(String wsId, String chatId) async {
-    emit(
-      state.copyWith(status: AssistantChatStatus.restoring, clearError: true),
-    );
-    final restored = await _repository.restoreChat(wsId: wsId, chatId: chatId);
-    if (isClosed) {
-      return;
-    }
-    if (restored == null) {
-      emit(
-        state.copyWith(
-          status: AssistantChatStatus.error,
-          error: 'Failed to load chat history.',
-        ),
-      );
-      return;
-    }
-
-    final history = await _repository.fetchRecentChats(wsId: wsId);
-    if (isClosed) {
-      return;
-    }
-    await _preferences.saveChatId(wsId, chatId);
-    emit(
-      state.copyWith(
-        status: AssistantChatStatus.idle,
-        chat: restored.chat,
-        storedChatId: chatId,
-        messages: restored.messages,
-        attachmentsByMessageId: restored.attachmentsByMessageId,
-        history: history,
-      ),
-    );
-    await _onChatRestored(restored.chat?.model);
-  }
-
-  Future<void> refreshHistory() async {
-    final history = await _repository.fetchRecentChats(wsId: state.workspaceId);
-    emit(state.copyWith(history: history));
-  }
+  Future<void> refreshHistory() => _refreshHistory();
 
   List<AssistantAttachment> takeUploadedComposerAttachments() {
     final uploaded = state.composerAttachments
@@ -347,6 +186,13 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       return;
     }
 
+    if (state.status == AssistantChatStatus.restoring) {
+      // A deliberate new submission wins over a late cached-chat restore.
+      _workspaceVersion++;
+      emit(
+        state.copyWith(status: AssistantChatStatus.idle, hasLoadedOnce: true),
+      );
+    }
     final queueMessage = trimmed.isEmpty
         ? 'Please analyze the attached file(s).'
         : trimmed;
@@ -457,10 +303,13 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }
 
   Future<void> resetConversation(String wsId) async {
+    final version = ++_workspaceVersion;
     await stopStreaming();
+    if (isClosed || version != _workspaceVersion) return;
     _queue.clear();
     await _preferences.clearChatId(wsId);
     await _preferences.saveWorkspaceContextId(wsId, 'personal');
+    if (isClosed || version != _workspaceVersion) return;
     emit(
       state.copyWith(
         status: AssistantChatStatus.idle,

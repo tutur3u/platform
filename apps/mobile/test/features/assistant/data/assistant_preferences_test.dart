@@ -9,7 +9,7 @@ void main() {
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
-      preferences = AssistantPreferences();
+      preferences = AssistantPreferences(currentUserId: () => 'user-a');
     });
 
     test('stores values with workspace-scoped keys', () async {
@@ -38,6 +38,33 @@ void main() {
         AssistantCreditSource.personal,
       );
     });
+
+    test(
+      'does not adopt another account or legacy workspace preferences',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          '${assistantChatStorageKeyPrefix}shared': 'legacy-private-chat',
+        });
+        var userId = 'user-a';
+        final scoped = AssistantPreferences(currentUserId: () => userId);
+        expect(await scoped.loadChatId('shared'), isNull);
+        await scoped.saveChatId('shared', 'a-chat');
+        userId = 'user-b';
+        expect(await scoped.loadChatId('shared'), isNull);
+        await scoped.saveChatId('shared', 'b-chat');
+        userId = 'user-a';
+        expect(await scoped.loadChatId('shared'), 'a-chat');
+      },
+    );
+
+    test(
+      'anonymous callers neither persist nor restore chat selection',
+      () async {
+        final anonymous = AssistantPreferences(currentUserId: () => null);
+        await anonymous.saveChatId('shared', 'private-chat');
+        expect(await anonymous.loadChatId('shared'), isNull);
+      },
+    );
 
     test('restores serialized models', () async {
       const model = AssistantGatewayModel(

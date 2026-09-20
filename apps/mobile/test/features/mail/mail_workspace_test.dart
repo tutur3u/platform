@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
@@ -25,6 +26,9 @@ void main() {
   late _Repository repository;
   setUp(() {
     repository = _Repository();
+    when(() => repository.savedView(any())).thenAnswer((_) async => null);
+    when(() => repository.saveView(any(), any())).thenAnswer((_) async {});
+    when(() => repository.denyAccess(any())).thenAnswer((_) async {});
     when(() => repository.bootstrap('ws')).thenAnswer(
       (_) async => {
         'mailboxes': [
@@ -61,6 +65,76 @@ void main() {
       (invocation) => callback(invocation.namedArguments[#query] as String),
     );
   }
+
+  Map<String, dynamic> savedInbox() => {
+    'mailboxes': [
+      {'id': 'box', 'address': 'me@tuturuuu.com'},
+    ],
+    'mailboxId': 'box',
+    'folder': 'inbox',
+    'items': inbox('Cached message')['threads'],
+    'labels': <Map<String, dynamic>>[],
+    'folders': <Map<String, dynamic>>[],
+  };
+
+  for (final size in [
+    const Size(390, 844),
+    const Size(844, 390),
+    const Size(834, 1194),
+    const Size(1194, 834),
+  ]) {
+    testWidgets('cached inbox stays visible during refresh at $size', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final bootstrap = Completer<Map<String, dynamic>>();
+      when(
+        () => repository.savedView('ws'),
+      ).thenAnswer((_) async => savedInbox());
+      when(
+        () => repository.bootstrap('ws'),
+      ).thenAnswer((_) => bootstrap.future);
+      respond((_) async => inbox('Fresh message'));
+      await mount(tester);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Cached message'), findsOneWidget);
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(tester.takeException(), isNull);
+      bootstrap.complete({
+        'mailboxes': [
+          {'id': 'box', 'address': 'me@tuturuuu.com'},
+        ],
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Fresh message'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('access denial removes cached messages immediately', (
+    tester,
+  ) async {
+    final bootstrap = Completer<Map<String, dynamic>>();
+    when(
+      () => repository.savedView('ws'),
+    ).thenAnswer((_) async => savedInbox());
+    when(() => repository.bootstrap('ws')).thenAnswer((_) => bootstrap.future);
+    await mount(tester);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Cached message'), findsOneWidget);
+    bootstrap.completeError(
+      const ApiException(message: 'Denied', statusCode: 403),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Cached message'), findsNothing);
+    verify(() => repository.denyAccess('ws')).called(1);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('inbox actions clear while a reader is open and return on back', (
     tester,
@@ -102,6 +176,7 @@ void main() {
     navigator.currentState!.pop();
     await tester.pumpAndSettle();
     expect(actions.state.resolveForLocation(Routes.mail), isNotEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('archive updates immediately and rolls back a failed request', (

@@ -30,6 +30,7 @@ class AppRegistry {
   const AppRegistry._();
 
   static const Set<String> coreModuleIds = {
+    'mail',
     'tasks',
     'chat',
     'calendar',

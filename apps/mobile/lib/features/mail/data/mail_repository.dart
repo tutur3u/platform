@@ -5,9 +5,17 @@ import 'package:mobile/features/mail/data/mail_cache.dart';
 
 /// Uses the same authenticated, workspace-scoped contract as apps/mail.
 class MailRepository {
-  MailRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
+  MailRepository({ApiClient? apiClient, MailCache? cache})
+    : _api = apiClient ?? ApiClient(),
+      _cache = cache ?? MailCache();
   final ApiClient _api;
-  final _cache = MailCache();
+  final MailCache _cache;
+
+  Future<Map<String, dynamic>?> savedView(String wsId) =>
+      _cache.snapshot(wsId, 'view-state');
+  Future<void> saveView(String wsId, Map<String, dynamic> view) =>
+      _cache.saveSnapshot(wsId, 'view-state', view);
+  Future<void> denyAccess(String wsId) => _cache.denyAccess(wsId);
 
   Map<String, dynamic>? cachedList(String wsId, String path) =>
       _cache.peek(wsId, path);
@@ -163,8 +171,15 @@ class MailRepository {
     );
   }
 
-  Future<Map<String, dynamic>> organization(String wsId, String mailboxId) =>
-      _api.getJson('${mailboxPath(wsId, mailboxId)}/organization');
+  Future<Map<String, dynamic>> organization(String wsId, String mailboxId) {
+    final path = '${mailboxPath(wsId, mailboxId)}/organization';
+    return _cache.read(
+      wsId,
+      path,
+      () => _api.getJson(path),
+      forceRefresh: true,
+    );
+  }
 
   void dispose() => _api.dispose();
 
