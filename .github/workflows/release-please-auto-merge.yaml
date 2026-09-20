@@ -38,9 +38,14 @@ jobs:
     # `bun git-release-please` runs the full repo check before committing, and
     # every release bumps apps/mobile/pubspec.yaml, so the Flutter suite runs
     # too.
-    timeout-minutes: 120
+    timeout-minutes: 240
+    env:
+      TURBO_CONCURRENCY: "2"
+      VITEST_MAX_WORKERS: "2"
     permissions:
       contents: write
+      actions: read
+      pull-requests: read
     steps:
       - name: Checkout main
         uses: actions/checkout@v7
@@ -138,6 +143,13 @@ jobs:
           echo "::error::RELEASE_PLEASE_TOKEN is not configured, so this run fell back to GITHUB_TOKEN and its push to main would be rejected. Add a repository secret named RELEASE_PLEASE_TOKEN holding a personal access token (repo + workflow scopes) owned by an organization admin, then re-run this workflow."
           exit 1
 
+      - name: Wait for generated release PR readiness
+        if: steps.plan.outputs.should_merge == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
+        run: node scripts/ci/wait-release-pr.mjs
+
       - name: Install dependencies
         if: steps.plan.outputs.should_merge == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -188,16 +200,33 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
       - name: Merge release-please branch into main
+        id: merge
         if: steps.plan.outputs.should_merge == 'true'
-        run: bun git-release-please
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
+        run: |
+          node scripts/ci/wait-release-pr.mjs
+          bun git-release-please --skip-fetch
+
+      - name: Push verified release merge to main
+        if: steps.plan.outputs.should_merge == 'true' && inputs.dry_run != true
+        run: git push origin HEAD:main
+
+      - name: Wait for exact main CI before production
+        if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+        run: node scripts/ci/wait-release-main.mjs
 
       - name: Sync main and production
+        id: sync
         if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true
-        run: bun git-sync
+        run: bun git-sync --current-branch --only-branch production
 
       - name: Sync main and production (dry run)
         if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run == true
-        run: bun git-sync --no-push
+        run: bun git-sync --current-branch --only-branch production --no-push
 
       - name: Verify main and production point at the same commit
         if: inputs.dry_run != true
@@ -283,16 +312,26 @@ jobs:
         env:
           MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
           SHOULD_MERGE: ${{ steps.plan.outputs.should_merge }}
+          MERGE_OUTCOME: ${{ steps.merge.outcome }}
+          SYNC_OUTCOME: ${{ steps.sync.outcome }}
+          DRY_RUN: ${{ inputs.dry_run == true }}
         run: |
           set -euo pipefail
 
           {
             echo "### Release Please Auto Merge"
             echo
-            if [ "${SHOULD_MERGE:-}" = "true" ]; then
-              echo "- Merged \`${MERGED_BRANCH}\` into \`main\`."
+            if [ "${MERGE_OUTCOME:-}" = success ]; then
+              echo "- Release branch \`${MERGED_BRANCH}\` merged and validated locally."
+            elif [ "${SHOULD_MERGE:-}" = "true" ]; then
+              echo "- Release merge did not complete. Inspect the failed step before retrying."
             else
               echo "- Nothing to merge (no unmerged release-please branch)."
+            fi
+            if [ "${DRY_RUN:-}" = true ]; then
+              echo '- Dry run: no changes were pushed.'
+            elif [ "${SYNC_OUTCOME:-}" != success ] && [ "${SHOULD_MERGE:-}" = true ]; then
+              echo '- Production promotion did not complete.'
             fi
             if [ -n "${aligned_sha:-}" ]; then
               echo "- \`main\` and \`production\` are aligned at \`${aligned_sha}\`."

@@ -33,6 +33,9 @@ const entry = resolve('src/cli/resources-entry.ts');
 const bun = realExecutable('bun', '/nonexistent-shim-dir');
 const children: ChildProcess[] = [];
 const dirs: string[] = [];
+// These integration tests start multiple runtimes and real process groups.
+// Hosted runners can spend several seconds scheduling each child under load.
+const processTimeout = 15_000;
 async function temporary() {
   const path = await mkdtemp(join(tmpdir(), 'ttr-resources-'));
   dirs.push(path);
@@ -64,7 +67,7 @@ function launch(home: string, args: string[], cwd?: string) {
   return { child, done };
 }
 async function until(check: () => Promise<boolean>) {
-  const deadline = Date.now() + 5000;
+  const deadline = Date.now() + processTimeout;
   while (Date.now() < deadline) {
     if (await check()) return;
     await new Promise((resolve) => setTimeout(resolve, 25));
@@ -252,7 +255,7 @@ describe('resource policy', () => {
   );
 });
 
-describe('resource admission', () => {
+describe('resource admission', { timeout: 45_000 }, () => {
   it('serializes jobs across checkouts and preserves their exit codes', async () => {
     const home = await temporary();
     const a = join(home, 'a');
@@ -378,13 +381,13 @@ describe('resource admission', () => {
     expect(result.out).toContain(
       `WORKERS=${defaultResourceConfig().vitestWorkers}`
     );
-  }, 20_000);
+  }, 45_000);
   it('does not deadlock nested commands after an environment marker is removed', async () => {
     const home = await temporary();
     const source = await script(
       home,
       'nested',
-      `delete process.env.TTR_RESOURCE_OWNER;require('child_process').execFileSync(${JSON.stringify(bun)},[${JSON.stringify(entry)},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:4000});`
+      `delete process.env.TTR_RESOURCE_OWNER;require('child_process').execFileSync(${JSON.stringify(bun)},[${JSON.stringify(entry)},'run','--','node','-e','console.log(42)'],{stdio:'inherit',timeout:${processTimeout}});`
     );
     const result = await launch(home, ['run', '--', 'node', source]).done;
     expect(result.code, result.err).toBe(0);

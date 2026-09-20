@@ -569,6 +569,25 @@ drift. Those scripts own the merge rules — platform version sync, conflict
 detection, `bun check`, and fast-forward safety — and are covered by
 `scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
+The generated PR must have passing checks, no unresolved active review threads,
+and a 30-minute quiet period after its latest update or generated commit. This
+is checked before dependency setup and again immediately before merging the
+pinned generated head. Failed PR checks stop the daily run for investigation.
+After local validation, it pushes the release merge to `main` and waits for all
+other workflows on that exact SHA to finish successfully. A failed, missing, or
+unfinished check blocks production. The waiter observes the same green run set
+twice and rejects a changed main head. Production sync uses
+`bun git-sync --current-branch --only-branch production`, pinning the validated
+commit instead of silently adopting newer work. The run summary distinguishes
+planned work, a completed local merge, dry runs, and completed promotion.
+
+Validation runs at two Turbo tasks and two Vitest workers, with the worker limit
+preserved through Turbo's strict environment. SDK resource-admission tests start
+real child processes and use bounded integration-test deadlines, rather than the
+five-second unit-test default that repeatedly failed on hosted runners. These
+limits retain the serialization, nested-command, cancellation, and surviving-child
+assertions; they do not skip tests or retry a failed merge blindly.
+
 The workflow resolves what to do before it installs anything. It prefers
 `origin/release-please--branches--production`, ignores the companion
 `--release-notes` overflow branch, and skips the merge entirely when the release
