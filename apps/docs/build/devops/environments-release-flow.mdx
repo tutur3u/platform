@@ -16,6 +16,11 @@ Cancelled or skipped runs do not publish PR reports. Generated release branches
 use the release workflow's formatter rather than separate automatic formatting
 PRs; their final commits still receive the normal format and lint checks.
 
+After formatting, `scripts/ci/normalize-release-description.js` also consolidates
+identical bullets in each component section of the generated PR description. It
+preserves source references, distinct wording, component summaries, and review
+bot content. This runs even when generated files need no formatting changes.
+
 Before formatting, `scripts/ci/normalize-release-notes.js` combines repeated
 descriptions within each new release section, retaining every distinct commit
 and PR link. It excludes narrowly identified integration-only merge commits.

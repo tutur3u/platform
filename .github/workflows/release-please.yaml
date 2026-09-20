@@ -111,6 +111,11 @@ jobs:
           git push origin "HEAD:refs/heads/${RELEASE_BRANCH}" \
             --force-with-lease="refs/heads/${RELEASE_BRANCH}:${release_sha}"
 
+      - name: Normalize generated release description
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+        run: node scripts/ci/normalize-release-description.js
+
       # Overflow notes are still needed while the merged PR carries
       # `autorelease: pending`. Release Please has consumed them once it reports
       # releases_created=true, so this is the first safe owner and moment for
