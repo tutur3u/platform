@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/core/config/api_config.dart';
@@ -31,6 +31,8 @@ class MultiAccountStorageService {
 
   static const int _multiAccountStoreVersion = 1;
   static const int _maxStoredAccounts = 5;
+  Future<void>? _syncInFlight;
+  bool _syncRequested = false;
 
   Future<MultiAccountStore> _loadMultiAccountStore() async {
     try {
@@ -61,10 +63,6 @@ class MultiAccountStorageService {
 
   Future<void> clearMultiAccountStore() async {
     await _secureStorage.delete(key: StorageKeys.multiAccountStore);
-  }
-
-  Future<String?> _readCurrentPersistedSessionJson() async {
-    return await _secureStorage.read(key: supabasePersistSessionKey);
   }
 
   String? _readDisplayName(User user) {
@@ -172,18 +170,38 @@ class MultiAccountStorageService {
 
   Future<void> syncCurrentSessionToMultiAccountStore({
     bool switchImmediately = true,
+  }) {
+    _syncRequested = true;
+    return _syncInFlight ??= _drainSessionSync(
+      switchImmediately,
+    ).whenComplete(() => _syncInFlight = null);
+  }
+
+  Future<void> _drainSessionSync(bool switchImmediately) async {
+    while (_syncRequested) {
+      _syncRequested = false;
+      await _syncCurrentSessionToMultiAccountStore(
+        switchImmediately: switchImmediately,
+      );
+    }
+  }
+
+  Future<void> _syncCurrentSessionToMultiAccountStore({
+    bool switchImmediately = true,
   }) async {
+    final initialUserId = _client.auth.currentUser?.id;
+    if (initialUserId == null) return;
+    final apiProfile = await _fetchCurrentUserProfile();
+    final store = await _loadMultiAccountStore();
     final session = _client.auth.currentSession;
     final user = _client.auth.currentUser;
-    if (session == null || user == null) {
+    if (session == null || user == null || user.id != initialUserId) {
       return;
     }
 
-    final sessionJson = await _readCurrentPersistedSessionJson();
-    final store = await _loadMultiAccountStore();
+    final sessionJson = jsonEncode(session.toJson());
     final now = DateTime.now().millisecondsSinceEpoch;
     final existingIndex = store.accounts.indexWhere((a) => a.id == user.id);
-    final apiProfile = await _fetchCurrentUserProfile();
 
     final List<StoredAuthAccount> updated;
     if (existingIndex >= 0) {
@@ -229,17 +247,18 @@ class MultiAccountStorageService {
 
   Future<({bool success, String? error})> completeAddAccountFlow() async {
     try {
+      final initialUserId = _client.auth.currentUser?.id;
+      final apiProfile = await _fetchCurrentUserProfile();
+      final store = await _loadMultiAccountStore();
       final session = _client.auth.currentSession;
       final user = _client.auth.currentUser;
-      if (session == null || user == null) {
+      if (session == null || user == null || user.id != initialUserId) {
         return (success: false, error: 'No active session found');
       }
 
-      final sessionJson = await _readCurrentPersistedSessionJson();
-      final store = await _loadMultiAccountStore();
+      final sessionJson = jsonEncode(session.toJson());
       final now = DateTime.now().millisecondsSinceEpoch;
       final existingIndex = store.accounts.indexWhere((a) => a.id == user.id);
-      final apiProfile = await _fetchCurrentUserProfile();
 
       final List<StoredAuthAccount> updated;
       if (existingIndex >= 0) {
@@ -297,12 +316,12 @@ class MultiAccountStorageService {
       final authResponse = target.sessionJson != null
           ? await _client.auth.recoverSession(target.sessionJson!)
           : await _client.auth.setSession(target.refreshToken);
-      final session = authResponse.session;
-      final user = authResponse.user;
-      if (session == null || user == null) {
+      final restoredSession = authResponse.session;
+      final restoredUser = authResponse.user;
+      if (restoredSession == null || restoredUser == null) {
         return (success: false, error: 'Failed to restore session');
       }
-      if (user.id != accountId) {
+      if (restoredUser.id != accountId) {
         return (
           success: false,
           error: 'Session restore returned a different account',
@@ -310,16 +329,25 @@ class MultiAccountStorageService {
       }
 
       final now = DateTime.now().millisecondsSinceEpoch;
-      final restoredSessionJson = await _readCurrentPersistedSessionJson();
       final apiProfile = await _fetchCurrentUserProfile();
-      final updatedAccounts = store.accounts.map((account) {
+      final latestStore = await _loadMultiAccountStore();
+      final session = _client.auth.currentSession;
+      final user = _client.auth.currentUser;
+      if (session == null || user?.id != accountId) {
+        return (
+          success: false,
+          error: 'Account changed during session restore',
+        );
+      }
+      final restoredSessionJson = jsonEncode(session.toJson());
+      final updatedAccounts = latestStore.accounts.map((account) {
         if (account.id != accountId) {
           return account;
         }
         return _accountFromCurrentSession(
-          user: user,
+          user: user!,
           session: session,
-          sessionJson: restoredSessionJson ?? target.sessionJson,
+          sessionJson: restoredSessionJson,
           addedAt: account.addedAt,
           lastActiveAt: now,
           lastWorkspaceId: account.lastWorkspaceId,
@@ -330,7 +358,7 @@ class MultiAccountStorageService {
       }).toList();
 
       await _saveMultiAccountStore(
-        store.copyWith(
+        latestStore.copyWith(
           accounts: _sortAccountsByRecent(updatedAccounts),
           activeAccountId: accountId,
         ),
@@ -464,8 +492,9 @@ class MultiAccountStorageService {
   Future<({bool success, String? error})> signOutAllAccounts() async {
     final store = await _loadMultiAccountStore();
     for (final account in store.accounts) {
+      if (account.id == _client.auth.currentUser?.id) continue;
       try {
-        await _revokeRefreshTokenGlobally(account.refreshToken);
+        await _revokeStoredDeviceSession(account.refreshToken);
       } on Object catch (error, stackTrace) {
         developer.log(
           'Failed to revoke stored account refresh token',
@@ -508,7 +537,7 @@ class MultiAccountStorageService {
     }
   }
 
-  Future<void> _revokeRefreshTokenGlobally(String refreshToken) async {
+  Future<void> _revokeStoredDeviceSession(String refreshToken) async {
     if (refreshToken.trim().isEmpty) {
       return;
     }
@@ -544,7 +573,7 @@ class MultiAccountStorageService {
     }
 
     final logoutUri = Uri.parse(
-      '${Env.supabaseUrl}/auth/v1/logout?scope=global',
+      '${Env.supabaseUrl}/auth/v1/logout?scope=local',
     );
     final logoutResponse = await http.post(
       logoutUri,
@@ -557,7 +586,7 @@ class MultiAccountStorageService {
     );
     if (logoutResponse.statusCode < 200 || logoutResponse.statusCode >= 300) {
       throw AuthException(
-        'Failed to revoke refresh token globally '
+        'Failed to revoke stored device session '
         '(${logoutResponse.statusCode}): ${logoutResponse.body}',
       );
     }

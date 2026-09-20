@@ -1,3 +1,7 @@
+vi.mock('./device-mfa/registry', () => ({
+  isTrustedAuthenticator: vi.fn().mockResolvedValue(true),
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -28,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   userClient: {
     auth: {
       getUser: vi.fn(),
+      mfa: { getAuthenticatorAssuranceLevel: vi.fn() },
     },
   },
   checkRateLimit: vi.fn(),
@@ -77,6 +82,10 @@ function createMaybeSingleBuilder<T>(value: T, error: unknown = null) {
 describe('QR login helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.userClient.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue({
+      data: { currentLevel: 'aal2', nextLevel: 'aal2' },
+      error: null,
+    });
 
     mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
     mocks.createClient.mockResolvedValue(mocks.userClient);

@@ -150,41 +150,79 @@ setting is stored in secure storage and uses the OS local authentication prompt
 with device PIN/passcode fallback allowed. When enabled, the app locks on an
 authenticated cold launch and after at least 30 seconds in the background.
 
-QR session handoff approval is gated by this setting:
+### Device authenticators and trusted registrations
 
-- The scanner lives at `Routes.settingsQrLoginScan`.
-- The scanner only accepts `tuturuuu://auth/qr-login` payloads from trusted
-  Tuturuuu or local development origins.
-- The QR challenge must have been created by the same account that is active in
-  the mobile app. Public unauthenticated QR sign-in is not supported because it
-  would let an attacker poll a victim-approved challenge.
-- Before approval, mobile runs local authentication and then calls
-  `/api/v1/auth/qr-login/challenges/:id/approve` with the current Bearer
-  session.
+Home suggests registering the current device when local authentication is
+available, the account has no verified authenticator on that device, and new
+registrations are unlocked. “Not now” suppresses this invitation for seven days
+per account. A failed policy lookup never produces a misleading invitation.
+Settings > Session always provides the explicit management entry point.
 
-If a user wants to approve QR session handoff for a different account, both the
-creator session and the mobile app must be using that account before scanning.
+Registration creates a Supabase TOTP factor and a separate random device proof.
+The mobile app saves both in account-scoped secure storage before verifying the
+factor. iOS uses a non-synchronizing, this-device-only Keychain item. Each code
+reveal, approval and management change requires fresh OS authentication; PIN or
+passcode fallback is allowed. Codes disappear when the app backgrounds.
 
-The mobile app can approve web MFA challenges when the active mobile Supabase
-session is already at `aal2`:
+`/api/v1/auth/mfa/devices` uses request-scoped authentication for web cookies and
+mobile Bearer tokens. Server-owned `app_metadata.tuturuuu_device_authenticators`
+contains the registration policy and proof hashes, never TOTP secrets. The
+registry API serializes writes with a bounded Upstash lease and fails closed if
+`UPSTASH_REDIS_REST_URL` or `UPSTASH_REDIS_REST_TOKEN` is unavailable. Do not log
+registration response bodies, proofs, TOTP secrets, or session tokens.
 
-- The web MFA screen creates an `/api/v1/auth/mfa/mobile/challenges` request and
-  shows a pair code.
-- `MobileMfaApprovalListener` is mounted at the app shell and polls
-  `/api/v1/auth/mfa/mobile/approvals` while the user is authenticated, the app is
-  in the foreground, and app lock is not covering the UI.
-- Pending pair codes open an app-level approval dialog. The Settings > Session
-  tile remains a manual fallback surface for the same pending approvals.
-- Mobile approves through
-  `/api/v1/auth/mfa/mobile/challenges/:id/approve`.
-- The web poller consumes the approved challenge and sets an HTTP-only
-  `ttr_mfa_mobile_approval` cookie. The central auth proxy accepts that cookie
-  only for the same user, the hidden web challenge secret, and an unexpired
-  consumed `mfa_mobile_approval` challenge.
-- After a mobile TOTP challenge succeeds, `AuthCubit.verifyMfa` must sync the
-  refreshed `aal2` Supabase session into the active multi-account store. Without
-  that sync, later mobile API calls can restore/send an older `aal1` token and
-  the approvals endpoint will respond with `requiresMobileMfa`.
+The trusted-device list supports revocation and locking new registrations.
+Enabling the lock requires two currently verified trusted factors. Unlocking
+requires a current trusted-device proof and AAL2; the last trusted device cannot
+remove itself while locked. Keep a backup trusted device: there is no automatic
+lost-all-devices recovery bypass. The lock governs Tuturuuu device registrations;
+it does not disable third-party enrollment through Supabase's own MFA APIs.
+Only canonical, verified registry entries with valid proofs can approve Tuturuuu
+sign-ins. A client-supplied device identifier or editable profile cannot grant
+trust. Provider-level MFA enrollment can invalidate other sessions, so setup
+explains that other devices may need to sign in again.
+
+### QR and number-matching approvals
+
+The scanner at `Routes.settingsQrLoginScan` accepts Tuturuuu QR payloads from
+allowlisted origins; manual link entry supports devices without a camera.
+Approval requires fresh local authentication, a trusted-device proof and a
+verified mobile MFA session. The server checks the challenge secret, origin,
+protocol kind, expiry and one-time consumption. QR handoff creates a new session;
+Supabase MFA requirements still apply to that new session.
+
+The web MFA screen creates a session-bound
+`/api/v1/auth/mfa/mobile/challenges` request and shows a six-digit number.
+The mobile user must enter that number. The pending-approval API never returns
+it to the approving device. Approvals are rate-limited, expire after their short
+challenge lifetime, and cannot be approved by the requesting session itself.
+Users can explicitly deny an unexpected request.
+
+`MobileMfaApprovalListener` polls while authenticated, foregrounded and unlocked.
+Push receipt triggers an immediate refresh. A notification contains only account
+and challenge identifiers plus expiry, never a code or credential. Tapping it
+opens a page that re-fetches the authorized request. Notifications do not approve
+from the lock screen. Polling remains the fallback when notification permission
+or provider delivery is unavailable.
+
+After consumption, the web poller sets the HTTP-only
+`ttr_mfa_mobile_approval` cookie, bound to the same user, web session, hidden
+challenge secret and unexpired canonical approval. This is an application-level
+web approval; it does not mint a Supabase AAL2 token. Mobile AAL2 still comes from
+Supabase MFA verification.
+
+### Sessions and account connections
+
+Settings > Session > Devices and connections lists active sessions and linked
+sign-in identities. Users can revoke another session, revoke other sessions,
+connect a supported OAuth provider, or disconnect an identity while retaining
+another sign-in method. Destructive actions require confirmation and local
+verification. Account changes during an asynchronous operation fail closed.
+
+Multi-account persistence snapshots the current session after profile loading,
+so a refresh during that request cannot save an older token. Authenticated API
+retries are account-scoped and refuse to replay after an account switch.
+
 - Multi-account removal and all-account logout must treat Supabase
   `auth.signOut()` as required before clearing the local account store or
   emitting an unauthenticated Cubit state. Google/provider logout and stored

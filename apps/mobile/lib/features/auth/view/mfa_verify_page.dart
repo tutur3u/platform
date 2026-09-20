@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart'
     hide AlertDialog, AppBar, FilledButton, Scaffold, TextButton;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +7,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/features/auth/widgets/auth_otp_field.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -21,15 +21,28 @@ class MfaVerifyPage extends StatefulWidget {
 class _MfaVerifyPageState extends State<MfaVerifyPage> {
   final _codeController = TextEditingController();
   final _otpFocusNode = FocusNode();
+  bool _deviceBusy = false;
+  bool _hasDevice = false;
+  bool _deviceFailed = false;
 
   @override
   void initState() {
     super.initState();
+    unawaited(_loadDevice());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _otpFocusNode.requestFocus();
       }
     });
+  }
+
+  Future<void> _loadDevice() async {
+    try {
+      final registered = await DeviceMfaService().isRegistered();
+      if (mounted) setState(() => _hasDevice = registered);
+    } on Object {
+      // Other authenticators remain available if local storage fails.
+    }
   }
 
   @override
@@ -44,6 +57,22 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
     if (code.length != 6) return;
 
     await context.read<AuthCubit>().verifyMfa(code);
+  }
+
+  Future<void> _verifyDevice() async {
+    if (_deviceBusy) return;
+    final reason = context.l10n.deviceMfaVerifyReason;
+    setState(() {
+      _deviceBusy = true;
+      _deviceFailed = false;
+    });
+    try {
+      await DeviceMfaService().verify(reason: reason);
+    } on Object {
+      if (mounted) setState(() => _deviceFailed = true);
+    } finally {
+      if (mounted) setState(() => _deviceBusy = false);
+    }
   }
 
   @override
@@ -129,6 +158,15 @@ class _MfaVerifyPageState extends State<MfaVerifyPage> {
                     isLoading: state.isLoading,
                     onPressed: _handleVerify,
                   ),
+                  const shad.Gap(12),
+                  if (_hasDevice)
+                    AuthSecondaryButton(
+                      label: l10n.deviceMfaUseDevice,
+                      onPressed: state.isLoading || _deviceBusy
+                          ? null
+                          : _verifyDevice,
+                    ),
+                  if (_deviceFailed) Text(l10n.deviceMfaError),
                   const shad.Gap(12),
                   Center(
                     child: _SignOutButton(l10n: l10n, isBusy: state.isLoading),

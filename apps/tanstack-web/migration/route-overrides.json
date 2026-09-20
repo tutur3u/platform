@@ -679,7 +679,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/challenges/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -688,7 +688,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -697,7 +697,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -706,7 +706,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/approvals/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -715,7 +715,7 @@
         }
       }
     },
-    "api:/api/v1/auth/qr-login/challenges:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/route.ts": {
+    "api:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -724,7 +724,7 @@
         }
       }
     },
-    "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/route.ts": {
+    "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -733,7 +733,7 @@
         }
       }
     },
-    "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts": {
+    "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -2433,6 +2433,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "First-class Next.js route. Preserve temporary/session authentication, workspace membership and PRO tier checks, chat ownership, resumption and seed history. Load the shared Chat Mira identity, memories and preferences server-side before minting the constrained Live token. Valid temporary authentication uses server-validated actor-scoped queries and enforces its workspace scope; resolve required seed history before minting. Rust parity pending."
+    },
+    "api:/api/v1/auth/mfa/devices:apps/web/src/app/api/v1/auth/mfa/devices/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Trusted authenticator registry: Bearer/cookie auth, AAL2 and secret proof checks, server-owned app_metadata, serialized mutations, verified backup requirement, registration lock and revocation. GET/POST remain Next-owned pending Rust parity."
     }
   }
 }

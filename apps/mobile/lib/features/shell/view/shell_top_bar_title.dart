@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
@@ -69,6 +68,12 @@ class _ShellTopBarTitleContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (showLeadingBrand && onTitleSubmitted == null) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: AppsDropdownPicker(title: title),
+      );
+    }
     return SizedBox(
       height: mobileSectionAppBarHeight,
       width: double.infinity,
@@ -81,8 +86,6 @@ class _ShellTopBarTitleContent extends StatelessWidget {
               height: mobileSectionAppBarLogoSize,
               fit: BoxFit.contain,
             ),
-            const SizedBox(width: 4),
-            const AppsDropdownPicker(),
             const SizedBox(width: 4),
           ],
           Expanded(

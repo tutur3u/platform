@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/constants/storage_keys.dart';
@@ -72,6 +71,9 @@ void main() {
     when(() => goTrueClient.currentSession).thenReturn(session);
     when(() => goTrueClient.currentUser).thenReturn(_user('current-user'));
     when(() => session.refreshToken).thenReturn('session-refresh-token');
+    when(
+      () => session.toJson(),
+    ).thenReturn({'refresh_token': 'session-refresh-token'});
     when(() => goTrueClient.signOut()).thenAnswer((_) async {});
     when(() => googleIdentityClient.signOut()).thenAnswer((_) async {});
     when(
@@ -109,6 +111,43 @@ void main() {
       googleIdentityClient: googleIdentityClient,
     );
   });
+
+  test(
+    'saves the refreshed token after profile lookup, not the old snapshot',
+    () async {
+      final refreshed = _MockSession();
+      when(() => refreshed.refreshToken).thenReturn('new-refresh');
+      when(refreshed.toJson).thenReturn({'refresh_token': 'new-refresh'});
+      when(() => apiClient.getJson(any())).thenAnswer((_) async {
+        when(() => goTrueClient.currentSession).thenReturn(refreshed);
+        return <String, dynamic>{};
+      });
+      await service.syncCurrentSessionToMultiAccountStore();
+      final stored =
+          jsonDecode(secureStorageValues[StorageKeys.multiAccountStore]!)
+              as Map<String, dynamic>;
+      final account =
+          (stored['accounts'] as List<dynamic>).single as Map<String, dynamic>;
+      expect(account['refreshToken'], 'new-refresh');
+      expect(jsonDecode(account['sessionJson'] as String), {
+        'refresh_token': 'new-refresh',
+      });
+    },
+  );
+
+  test(
+    'does not persist a profile for an account changed during lookup',
+    () async {
+      when(() => apiClient.getJson(any())).thenAnswer((_) async {
+        when(
+          () => goTrueClient.currentUser,
+        ).thenReturn(_user('different-user'));
+        return <String, dynamic>{};
+      });
+      await service.syncCurrentSessionToMultiAccountStore();
+      expect(secureStorageValues[StorageKeys.multiAccountStore], isNull);
+    },
+  );
 
   test('syncCurrentSessionToMultiAccountStore keeps '
       'active account valid after trim', () async {

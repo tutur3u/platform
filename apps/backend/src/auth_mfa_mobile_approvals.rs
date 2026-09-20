@@ -143,7 +143,7 @@ async fn list_pending_approvals_response(
 fn approval_entry(row: ApprovalRow) -> Option<Value> {
     let metadata = as_record(row.request_metadata.as_ref());
 
-    let pair_code = metadata.get("pairCode").and_then(Value::as_str)?;
+    let _pair_code = metadata.get("pairCode").and_then(Value::as_str)?;
 
     if metadata.get("kind").and_then(Value::as_str) != Some(MFA_MOBILE_APPROVAL_KIND) {
         return None;
@@ -155,7 +155,8 @@ fn approval_entry(row: ApprovalRow) -> Option<Value> {
         "createdAt": row.created_at,
         "expiresAt": row.expires_at,
         "id": row.id,
-        "pairCode": pair_code,
+        "numberMatching": true,
+        "browser": metadata.get("userAgent"),
         "status": challenge_status(status),
     }))
 }

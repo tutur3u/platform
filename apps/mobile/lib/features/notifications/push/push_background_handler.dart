@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mobile/features/notifications/push/login_notification_actions.dart';
 
 const _pushNotificationChannelId = 'tuturuuu_notifications';
 const _pushNotificationChannelName = 'Notifications';
@@ -31,6 +31,8 @@ String? _payloadFromMessageData(Map<String, dynamic> data) {
     'wsId': wsId,
     'entityId': entityId,
     'boardId': boardId,
+    'userId': data['userId'],
+    'expiresAt': data['expiresAt'],
   });
 }
 
@@ -89,9 +91,10 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   final plugin = FlutterLocalNotificationsPlugin();
   await plugin.initialize(
-    settings: const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    settings: InitializationSettings(
+      android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(
+        notificationCategories: loginNotificationCategories(),
         requestAlertPermission: false,
         requestBadgePermission: false,
         requestSoundPermission: false,
@@ -104,15 +107,22 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     id: message.messageId.hashCode,
     title: title,
     body: body.isEmpty ? null : body,
-    notificationDetails: const NotificationDetails(
+    notificationDetails: NotificationDetails(
       android: AndroidNotificationDetails(
         _pushNotificationChannelId,
         _pushNotificationChannelName,
         channelDescription: _pushNotificationChannelDescription,
         importance: Importance.high,
         priority: Priority.high,
+        actions: message.data['openTarget'] == 'mfa_approval'
+            ? loginNotificationActions()
+            : null,
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(
+        categoryIdentifier: message.data['openTarget'] == 'mfa_approval'
+            ? loginApprovalCategory
+            : null,
+      ),
     ),
     payload: _payloadFromMessageData(message.data),
   );

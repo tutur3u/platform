@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/notifications/push/login_notification_actions.dart';
 
 enum PushNotificationEventType { received, opened }
 
@@ -26,6 +26,8 @@ class PushNavigationRequest {
     this.boardId,
     this.conversationId,
     this.messageId,
+    this.userId,
+    this.expiresAt,
   });
 
   final String notificationId;
@@ -35,6 +37,11 @@ class PushNavigationRequest {
   final String? boardId;
   final String? conversationId;
   final String? messageId;
+  final String? userId;
+  final DateTime? expiresAt;
+
+  bool get opensMfaApproval =>
+      openTarget == 'mfa_approval' && entityId != null && userId != null;
 
   bool get opensTask =>
       openTarget == 'task' &&
@@ -86,6 +93,8 @@ PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
         _stringFromPushData(data, 'conversationId') ??
         (openTarget == 'chat' ? entityId : null),
     messageId: _stringFromPushData(data, 'messageId'),
+    userId: _stringFromPushData(data, 'userId'),
+    expiresAt: DateTime.tryParse(_stringFromPushData(data, 'expiresAt') ?? ''),
   );
 }
 
@@ -118,6 +127,9 @@ String? payloadFromPushRequest(PushNavigationRequest request) {
     'boardId': request.boardId,
     'conversationId': request.conversationId,
     'messageId': request.messageId,
+    if (request.userId != null) 'userId': request.userId,
+    if (request.expiresAt != null)
+      'expiresAt': request.expiresAt!.toIso8601String(),
   });
 }
 
@@ -143,6 +155,7 @@ class PushNotificationService {
   StreamSubscription<RemoteMessage>? _messageOpenedSubscription;
   StreamSubscription<String>? _tokenRefreshSubscription;
   String? _currentUserId;
+  PushNavigationRequest? _pendingApproval;
   String? _cachedDeviceId;
   bool _initialized = false;
   bool _isDisposed = false;
@@ -165,6 +178,8 @@ class PushNotificationService {
     _currentUserId = userId;
     await _ensureInitialized();
     await _syncRegistrationIfAuthorized();
+    final pending = _pendingApproval;
+    if (pending != null) await _openRequest(pending);
   }
 
   Future<void> stopSession() async {
@@ -231,14 +246,15 @@ class PushNotificationService {
     const androidSettings = AndroidInitializationSettings(
       _androidNotificationIcon,
     );
-    const darwinSettings = DarwinInitializationSettings(
+    final darwinSettings = DarwinInitializationSettings(
+      notificationCategories: loginNotificationCategories(),
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
 
     await _localNotifications.initialize(
-      settings: const InitializationSettings(
+      settings: InitializationSettings(
         android: androidSettings,
         iOS: darwinSettings,
       ),
@@ -310,6 +326,23 @@ class PushNotificationService {
     );
   }
 
+  Future<void> _openRequest(PushNavigationRequest request) async {
+    if (request.opensMfaApproval) {
+      if (request.expiresAt == null ||
+          !request.expiresAt!.isAfter(DateTime.now())) {
+        _pendingApproval = null;
+        return;
+      }
+      if (_currentUserId == null) {
+        _pendingApproval = request;
+        return;
+      }
+      if (request.userId != _currentUserId) return;
+      _pendingApproval = null;
+    }
+    await _navigationHandler?.call(request);
+  }
+
   Future<void> _handleRemoteMessageOpened(RemoteMessage message) async {
     final request = _requestFromData(message.data);
     if (!request.hasNavigationMetadata) {
@@ -321,7 +354,7 @@ class PushNotificationService {
         request: request,
       ),
     );
-    await _navigationHandler?.call(request);
+    await _openRequest(request);
   }
 
   Future<void> _handleLocalNotificationPayload(String payload) async {
@@ -334,7 +367,7 @@ class PushNotificationService {
         request: request,
       ),
     );
-    await _navigationHandler?.call(request);
+    await _openRequest(request);
   }
 
   Future<void> _showForegroundNotification(
@@ -354,16 +387,21 @@ class PushNotificationService {
       id: message.messageId.hashCode,
       title: title,
       body: body.isEmpty ? null : body,
-      notificationDetails: const NotificationDetails(
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _pushNotificationChannelId,
           _pushNotificationChannelName,
           channelDescription: _pushNotificationChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
+          actions: request.opensMfaApproval ? loginNotificationActions() : null,
           icon: _androidNotificationIcon,
         ),
-        iOS: DarwinNotificationDetails(),
+        iOS: DarwinNotificationDetails(
+          categoryIdentifier: request.opensMfaApproval
+              ? loginApprovalCategory
+              : null,
+        ),
       ),
       payload: payloadFromPushRequest(request),
     );

@@ -7824,4 +7824,160 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailDeleteDraftConfirmation => 'Xóa vĩnh viễn bản nháp này và các tệp đính kèm?';
+
+  @override
+  String get deviceMfaTitle => 'Trình xác thực trên thiết bị';
+
+  @override
+  String get deviceMfaDescription => 'Dùng thiết bị này để xác minh đăng nhập, xem mã dùng một lần hoặc phê duyệt thiết bị khác.';
+
+  @override
+  String get deviceMfaEnroll => 'Đăng ký thiết bị này';
+
+  @override
+  String get deviceMfaEnrollWarning => 'Giữ một trình xác thực khác để dự phòng. Sau khi đăng ký, bạn có thể cần đăng nhập lại trên các thiết bị khác. Khóa bí mật chỉ được lưu trong bộ nhớ bảo mật của thiết bị này.';
+
+  @override
+  String get deviceMfaName => 'Tên thiết bị';
+
+  @override
+  String get deviceMfaDefaultName => 'Tuturuuu di động';
+
+  @override
+  String get deviceMfaReady => 'Thiết bị này đã được đăng ký';
+
+  @override
+  String get deviceMfaShowCode => 'Hiện mã xác minh';
+
+  @override
+  String get deviceMfaCodeHint => 'Nhập mã này trên thiết bị khác. Mã thay đổi mỗi 30 giây.';
+
+  @override
+  String get deviceMfaVerifyReason => 'Xác minh danh tính để dùng trình xác thực Tuturuuu';
+
+  @override
+  String get deviceMfaRemove => 'Gỡ trình xác thực này';
+
+  @override
+  String get deviceMfaRemoveHint => 'Thiết bị này sẽ ngừng tạo mã hợp lệ. Hãy đảm bảo bạn còn phương thức đăng nhập khác.';
+
+  @override
+  String get deviceMfaError => 'Không thể hoàn tất xác minh. Kiểm tra kết nối và trình xác thực rồi thử lại.';
+
+  @override
+  String get deviceMfaUseDevice => 'Xác minh bằng thiết bị này';
+
+  @override
+  String get deviceMfaNumberTitle => 'Bạn đang đăng nhập?';
+
+  @override
+  String get deviceMfaNumberHint => 'Nhập số gồm sáu chữ số hiển thị trên thiết bị bạn đang đăng nhập. Chỉ phê duyệt yêu cầu do bạn tạo.';
+
+  @override
+  String get deviceMfaDeny => 'Từ chối yêu cầu';
+
+  @override
+  String get deviceMfaExpired => 'Yêu cầu đã hết hạn. Hãy bắt đầu lại trên thiết bị khác.';
+
+  @override
+  String get deviceMfaReview => 'Xem yêu cầu đăng nhập';
+
+  @override
+  String get deviceMfaNoRequests => 'Không có yêu cầu đăng nhập. Hãy đăng nhập trên thiết bị khác.';
+
+  @override
+  String get deviceMfaHideCode => 'Ẩn mã';
+
+  @override
+  String get deviceMfaQrPaste => 'Nhập liên kết đăng nhập';
+
+  @override
+  String get deviceMfaQrPasteHint => 'Dán liên kết QR đăng nhập Tuturuuu từ thiết bị khác.';
+
+  @override
+  String get appsShowBottomTab => 'Hiện Ứng dụng trên thanh điều hướng dưới';
+
+  @override
+  String get appsNoMatches => 'Không có ứng dụng phù hợp';
+
+  @override
+  String get securitySessionsTitle => 'Phiên đăng nhập và kết nối';
+
+  @override
+  String get securitySessionsDescription => 'Xem các thiết bị đang đăng nhập. Đăng xuất phiên khác không làm đăng xuất thiết bị này.';
+
+  @override
+  String get securityUnknownDevice => 'Thiết bị không xác định';
+
+  @override
+  String get securityCurrentSession => 'Phiên hiện tại';
+
+  @override
+  String get securityRevokeSession => 'Đăng xuất phiên này';
+
+  @override
+  String get securityRevokeOthers => 'Đăng xuất các phiên khác';
+
+  @override
+  String get securityRevokeDescription => 'Các thiết bị được chọn sẽ cần đăng nhập lại.';
+
+  @override
+  String get securityConnectionsTitle => 'Tài khoản đã kết nối';
+
+  @override
+  String get securityConnectionsDescription => 'Chọn cách đăng nhập. Giữ ít nhất một tài khoản đã kết nối.';
+
+  @override
+  String get securityDisconnect => 'Ngắt kết nối';
+
+  @override
+  String get securityDisconnectDescription => 'Bạn sẽ không thể đăng nhập bằng tài khoản đã kết nối này nữa.';
+
+  @override
+  String get securityConnect => 'Kết nối';
+
+  @override
+  String get deviceMfaTrustedTitle => 'Thiết bị xác thực tin cậy';
+
+  @override
+  String get deviceMfaLockTitle => 'Khóa đăng ký mới';
+
+  @override
+  String get deviceMfaLockHint => 'Chỉ thiết bị đã đăng ký mới có thể phê duyệt đăng nhập. Mở khóa tại đây trước khi đăng ký thiết bị khác.';
+
+  @override
+  String get deviceMfaLocked => 'Đăng ký mới đã bị khóa. Mở cài đặt này trên một thiết bị tin cậy để mở khóa.';
+
+  @override
+  String get deviceMfaLockRecoveryHint => 'Hãy đăng ký thêm một thiết bị tin cậy trước khi khóa. Nếu mất tất cả thiết bị tin cậy, bạn không thể mở khóa cài đặt này từ thiết bị mới.';
+
+  @override
+  String get deviceMfaCurrentDevice => 'Thiết bị này';
+
+  @override
+  String get deviceMfaPending => 'Chưa hoàn tất thiết lập';
+
+  @override
+  String get deviceMfaRemoveTrusted => 'Xóa thiết bị tin cậy';
+
+  @override
+  String get deviceMfaSuggestTitle => 'Dùng thiết bị này để xác thực?';
+
+  @override
+  String get deviceMfaSuggestBody => 'Phê duyệt đăng nhập bằng xác minh thiết bị và tạo mã cho thiết bị khác. Bạn có thể quản lý thiết bị tin cậy trong cài đặt bảo mật.';
+
+  @override
+  String get deviceMfaNotNow => 'Để sau';
+
+  @override
+  String get deviceMfaManage => 'Thiết lập xác thực';
+
+  @override
+  String get deviceMfaRemoveDeviceHint => 'Thiết bị này sẽ không thể phê duyệt đăng nhập hoặc tạo mã hợp lệ nữa.';
+
+  @override
+  String get deviceMfaNeedBackup => 'Đăng ký thêm một thiết bị tin cậy trước khi khóa đăng ký mới.';
+
+  @override
+  String get mfaReviewSignIn => 'Xem yêu cầu đăng nhập';
 }

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -37,6 +36,8 @@ import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
+import 'package:mobile/features/security/account/account_security_page.dart';
+import 'package:mobile/features/security/mfa_approval/view/mfa_request_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_scanner_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
@@ -543,6 +544,17 @@ GoRouter createAppRouter(
             path: Routes.settingsSession,
             builder: (context, state) =>
                 const SettingsPage(section: SettingsSectionDestination.session),
+          ),
+          GoRoute(
+            path: Routes.settingsAccountSecurity,
+            builder: (context, state) => const AccountSecurityPage(),
+          ),
+          GoRoute(
+            path: Routes.settingsMfaApproval,
+            builder: (context, state) => MfaRequestPage(
+              challengeId: state.uri.queryParameters['challengeId'] ?? '',
+              userId: state.uri.queryParameters['userId'] ?? '',
+            ),
           ),
           GoRoute(
             path: Routes.settingsQrLoginScan,

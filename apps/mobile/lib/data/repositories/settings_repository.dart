@@ -29,6 +29,16 @@ class SettingsRepository {
   static const _pushPermissionPromptedPrefix =
       'push-notification-permission-prompted';
 
+  Future<bool> getShowAppsTab() async =>
+      (await SharedPreferences.getInstance()).getBool('show-apps-tab') ?? false;
+
+  Future<void> setShowAppsTab({required bool value}) async {
+    await (await SharedPreferences.getInstance()).setBool(
+      'show-apps-tab',
+      value,
+    );
+  }
+
   Future<String> getThemeMode() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_themeModeKey) ?? 'system';

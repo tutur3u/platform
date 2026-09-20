@@ -1,14 +1,16 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
+import 'package:mobile/features/security/mfa_approval/view/mfa_approval_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/app_dialog_scaffold.dart';
 
 class MobileMfaApprovalListener extends StatefulWidget {
   const MobileMfaApprovalListener({
@@ -33,6 +35,7 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
       widget.repository ?? MfaApprovalRepository();
   final Set<String> _dismissedChallengeIds = <String>{};
   Timer? _pollTimer;
+  StreamSubscription<PushNotificationEvent>? _pushSubscription;
   bool _dialogOpen = false;
   bool _foreground = true;
   bool _polling = false;
@@ -41,6 +44,14 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _pushSubscription = PushNotificationService.instance.events.listen((event) {
+      if (!mounted) return;
+      if (event.type == PushNotificationEventType.received &&
+          event.request.opensMfaApproval &&
+          event.request.userId == context.read<AuthCubit>().state.user?.id) {
+        unawaited(_loadPendingApproval());
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncPolling(pollNow: true);
     });
@@ -50,6 +61,7 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _stopPolling();
+    unawaited(_pushSubscription?.cancel());
     super.dispose();
   }
 
@@ -93,7 +105,11 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
     final authState = context.read<AuthCubit>().state;
     final appLockState = context.read<AppLockCubit>().state;
 
-    return _foreground &&
+    return GoRouter.maybeOf(
+              context,
+            )?.routerDelegate.currentConfiguration.uri.path !=
+            Routes.settingsMfaApproval &&
+        _foreground &&
         authState.status == AuthStatus.authenticated &&
         (!appLockState.enabled || !appLockState.locked);
   }
@@ -103,10 +119,13 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
       return;
     }
 
+    final userId = context.read<AuthCubit>().state.user?.id;
     _polling = true;
     try {
       final result = await _repository.listPending();
-      if (!mounted || !_shouldPoll()) {
+      if (!mounted ||
+          !_shouldPoll() ||
+          context.read<AuthCubit>().state.user?.id != userId) {
         return;
       }
 
@@ -132,10 +151,10 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
 
     final rootNavigator = Navigator.of(context, rootNavigator: true);
     _dialogOpen = true;
-    final approved = await shad.showDialog<bool>(
-      context: context,
-      builder: (_) =>
-          _MfaApprovalDialog(approval: approval, repository: _repository),
+    final approved = await showMfaApprovalDialog(
+      context,
+      approval,
+      _repository,
     );
 
     if (!mounted) {
@@ -180,125 +199,6 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
         ),
       ],
       child: widget.child,
-    );
-  }
-}
-
-class _MfaApprovalDialog extends StatefulWidget {
-  const _MfaApprovalDialog({required this.approval, required this.repository});
-
-  final PendingMfaApproval approval;
-  final MfaApprovalRepository repository;
-
-  @override
-  State<_MfaApprovalDialog> createState() => _MfaApprovalDialogState();
-}
-
-class _MfaApprovalDialogState extends State<_MfaApprovalDialog> {
-  String? _error;
-  bool _approving = false;
-
-  Future<void> _approve() async {
-    if (_approving) {
-      return;
-    }
-
-    setState(() {
-      _approving = true;
-      _error = null;
-    });
-
-    final result = await widget.repository.approve(widget.approval);
-    if (!mounted) {
-      return;
-    }
-
-    if (result.success) {
-      Navigator.of(context).pop(true);
-      return;
-    }
-
-    setState(() {
-      _approving = false;
-      _error = result.error ?? context.l10n.mfaApprovalFailed;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
-
-    return AppDialogScaffold(
-      title: l10n.mfaApprovalSettingsTitle,
-      description: l10n.mfaApprovalDialogDescription,
-      icon: Icons.verified_user_outlined,
-      maxWidth: 420,
-      actions: [
-        shad.OutlineButton(
-          onPressed: _approving ? null : () => Navigator.of(context).pop(false),
-          child: Text(l10n.commonCancel),
-        ),
-        shad.PrimaryButton(
-          onPressed: _approving ? null : () => unawaited(_approve()),
-          child: _approving
-              ? const shad.CircularProgressIndicator(size: 16)
-              : Text(l10n.mfaApprovalApproveAction),
-        ),
-      ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            l10n.mfaApprovalPendingDescription(widget.approval.pairCode),
-            style: theme.typography.textSmall.copyWith(
-              color: theme.colorScheme.mutedForeground,
-            ),
-          ),
-          const shad.Gap(14),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: theme.colorScheme.border.withValues(alpha: 0.8),
-              ),
-              borderRadius: BorderRadius.circular(18),
-              color: theme.colorScheme.card.withValues(alpha: 0.72),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.mfaApprovalPairCodeLabel,
-                  style: theme.typography.small.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-                const shad.Gap(6),
-                Text(
-                  widget.approval.pairCode,
-                  style: theme.typography.h2.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_error != null) ...[
-            const shad.Gap(12),
-            Text(
-              _error!,
-              style: theme.typography.textSmall.copyWith(
-                color: theme.colorScheme.destructive,
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

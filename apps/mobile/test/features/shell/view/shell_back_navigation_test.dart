@@ -254,10 +254,10 @@ void main() {
             .whereType<shad.NavigationItem>();
 
         expect(footerRect.height, 54);
-        expect(compactNavItems, hasLength(3));
+        expect(compactNavItems, hasLength(2));
         expect(compactNavItems.every((item) => item.label == null), isTrue);
         expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 24);
-        expect(tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size, 24);
+        expect(find.byIcon(Icons.apps_outlined), findsNothing);
       },
     );
 
@@ -297,10 +297,10 @@ void main() {
 
         expect(footerRect.height, greaterThanOrEqualTo(70));
         expect(tester.takeException(), isNull);
-        expect(compactNavItems, hasLength(3));
+        expect(compactNavItems, hasLength(2));
         expect(compactNavItems.every((item) => item.label == null), isTrue);
         expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 24);
-        expect(tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size, 24);
+        expect(find.byIcon(Icons.apps_outlined), findsNothing);
       },
     );
 
@@ -690,6 +690,7 @@ void main() {
         fail('AppRegistry.moduleById("timer") returned null.');
       }
       await appTabCubit.select(timerModule);
+      await appTabCubit.setShowAppsTab(value: true);
 
       await tester.pumpWidget(
         _buildTestApp(

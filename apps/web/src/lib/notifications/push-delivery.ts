@@ -29,6 +29,8 @@ export interface CustomPushMessageInput {
   body: string;
   data?: Record<string, string>;
   dataOnly?: boolean;
+  expiresAt?: string;
+  category?: string;
 }
 
 const INVALID_TOKEN_CODES = new Set([
@@ -126,6 +128,9 @@ export async function sendCustomPushMessageBatch({
     data: message.data,
     android: {
       priority: 'high',
+      ...(message.expiresAt
+        ? { ttl: Math.max(0, Date.parse(message.expiresAt) - Date.now()) }
+        : {}),
       notification: message.dataOnly
         ? undefined
         : {
@@ -135,10 +140,21 @@ export async function sendCustomPushMessageBatch({
     apns: {
       headers: {
         'apns-priority': '10',
+        ...(message.expiresAt
+          ? {
+              'apns-expiration': String(
+                Math.floor(Date.parse(message.expiresAt) / 1000)
+              ),
+            }
+          : {}),
       },
       payload: {
+        ...(message.category === 'tuturuuu_login_approval'
+          ? { payload: JSON.stringify(message.data) }
+          : {}),
         aps: {
           sound: 'default',
+          ...(message.category ? { category: message.category } : {}),
         },
       },
     },

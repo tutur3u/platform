@@ -1,131 +1,143 @@
 import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
-import 'package:mobile/features/apps/models/app_description.dart';
+import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
-import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Switch apps without leaving the current page first.
+/// The whole brand/name control opens the same Apps surface as the Apps page.
 class AppsDropdownPicker extends StatelessWidget {
-  const AppsDropdownPicker({super.key});
+  const AppsDropdownPicker({this.title, super.key});
+  final String? title;
 
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    return MenuAnchor(
-      consumeOutsideTap: true,
-      menuChildren: [
-        SizedBox(
-          width: math.min(380, size.width - 32),
-          height: math.min(
-            520,
-            (size.height - MediaQuery.viewInsetsOf(context).bottom) * 0.65,
-          ),
-          child: _AppChoices(
-            modules: AppRegistry.modules(context),
+  Future<void> _open(BuildContext context) async {
+    final router = GoRouter.of(context);
+    final tabs = context.read<AppTabCubit>();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (dialogContext) => BlocProvider.value(
+          value: tabs,
+          child: _AppsPickerScreen(
             onSelected: (module) {
-              unawaited(context.read<AppTabCubit>().select(module));
-              context.go(module.route);
+              Navigator.of(dialogContext).pop();
+              unawaited(tabs.select(module));
+              router.go(module.route);
             },
           ),
         ),
-      ],
-      builder: (context, controller, child) => IconButton(
-        tooltip: context.l10n.navApps,
-        onPressed: () =>
-            controller.isOpen ? controller.close() : controller.open(),
-        icon: const Icon(Icons.apps_rounded),
       ),
     );
   }
-}
-
-class _AppChoices extends StatefulWidget {
-  const _AppChoices({required this.modules, required this.onSelected});
-
-  final List<AppModule> modules;
-  final ValueChanged<AppModule> onSelected;
 
   @override
-  State<_AppChoices> createState() => _AppChoicesState();
-}
-
-class _AppChoicesState extends State<_AppChoices> {
-  String _query = '';
-  final _scrollController = ScrollController();
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final modules = widget.modules.where((module) {
-      final text =
-          '${module.label(context.l10n)} '
-          '${appDescription(context, module.id)} ${module.id}';
-      return text.toLowerCase().contains(_query);
-    }).toList();
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: context.l10n.appsHubSearchHint,
-              prefixIcon: const Icon(Icons.search_rounded),
-              isDense: true,
-            ),
-            onChanged: (value) =>
-                setState(() => _query = value.trim().toLowerCase()),
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label:
+        '${title ?? context.l10n.navApps}, ${context.l10n.appsHubSearchHint}',
+    child: Tooltip(
+      message: context.l10n.navApps,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => unawaited(_open(context)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/logos/transparent.png',
+                width: 28,
+                height: 28,
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  title ?? context.l10n.navApps,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
+            ],
           ),
         ),
-        Expanded(
-          child: modules.isEmpty
-              ? Center(child: Text(context.l10n.appsHubEmpty))
-              : ListView.builder(
-                  controller: _scrollController,
-                  primary: false,
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  itemCount: modules.length,
-                  itemBuilder: (context, index) {
-                    final module = modules[index];
-                    return MenuItemButton(
-                      leadingIcon: Icon(module.icon, size: 22),
-                      onPressed: () => widget.onSelected(module),
-                      child: SizedBox(
-                        width: math.min(
-                          280,
-                          MediaQuery.sizeOf(context).width - 112,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(module.label(context.l10n)),
-                              Text(
-                                appDescription(context, module.id),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+      ),
+    ),
+  );
+}
+
+class _AppsPickerScreen extends StatefulWidget {
+  const _AppsPickerScreen({required this.onSelected});
+  final ValueChanged<AppModule> onSelected;
+  @override
+  State<_AppsPickerScreen> createState() => _AppsPickerScreenState();
+}
+
+class _AppsPickerScreenState extends State<_AppsPickerScreen> {
+  String _query = '';
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      automaticallyImplyLeading: false,
+      title: Row(
+        children: [
+          Image.asset('assets/logos/transparent.png', width: 28, height: 28),
+          const SizedBox(width: 12),
+          Text(context.l10n.navApps),
+        ],
+      ),
+      actions: [
+        IconButton(
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close_rounded),
         ),
       ],
-    );
-  }
+    ),
+    body: SafeArea(
+      top: false,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: TextField(
+                onChanged: (value) => setState(() => _query = value),
+                decoration: InputDecoration(
+                  hintText: context.l10n.appsHubSearchHint,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: AppsHubPage(query: _query, onSelected: widget.onSelected),
+          ),
+          if (MediaQuery.viewInsetsOf(context).bottom == 0)
+            BlocBuilder<AppTabCubit, AppTabState>(
+              builder: (context, state) => SwitchListTile(
+                dense: true,
+                title: Text(context.l10n.appsShowBottomTab),
+                value: state.showAppsTab,
+                onChanged: (value) => unawaited(
+                  context.read<AppTabCubit>().setShowAppsTab(value: value),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }

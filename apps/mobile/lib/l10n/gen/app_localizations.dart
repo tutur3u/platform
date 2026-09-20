@@ -15006,6 +15006,318 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Permanently delete this draft and its attachments?'**
   String get mailDeleteDraftConfirmation;
+
+  /// No description provided for @deviceMfaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device authenticator'**
+  String get deviceMfaTitle;
+
+  /// No description provided for @deviceMfaDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this device to verify sign-ins, show a one-time code, or approve another device.'**
+  String get deviceMfaDescription;
+
+  /// No description provided for @deviceMfaEnroll.
+  ///
+  /// In en, this message translates to:
+  /// **'Register this device'**
+  String get deviceMfaEnroll;
+
+  /// No description provided for @deviceMfaEnrollWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep another authenticator as a backup. Registration may require signing in again on your other devices. This device’s secret stays in its secure storage.'**
+  String get deviceMfaEnrollWarning;
+
+  /// No description provided for @deviceMfaName.
+  ///
+  /// In en, this message translates to:
+  /// **'Device name'**
+  String get deviceMfaName;
+
+  /// No description provided for @deviceMfaDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu mobile'**
+  String get deviceMfaDefaultName;
+
+  /// No description provided for @deviceMfaReady.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is registered'**
+  String get deviceMfaReady;
+
+  /// No description provided for @deviceMfaShowCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Show verification code'**
+  String get deviceMfaShowCode;
+
+  /// No description provided for @deviceMfaCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter this code on your other device. It changes every 30 seconds.'**
+  String get deviceMfaCodeHint;
+
+  /// No description provided for @deviceMfaVerifyReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your identity to use your Tuturuuu authenticator'**
+  String get deviceMfaVerifyReason;
+
+  /// No description provided for @deviceMfaRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this authenticator'**
+  String get deviceMfaRemove;
+
+  /// No description provided for @deviceMfaRemoveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This device will stop generating valid codes. Keep another sign-in method available.'**
+  String get deviceMfaRemoveHint;
+
+  /// No description provided for @deviceMfaError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete verification. Check your connection and authenticator, then try again.'**
+  String get deviceMfaError;
+
+  /// No description provided for @deviceMfaUseDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify with this device'**
+  String get deviceMfaUseDevice;
+
+  /// No description provided for @deviceMfaNumberTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this your sign-in?'**
+  String get deviceMfaNumberTitle;
+
+  /// No description provided for @deviceMfaNumberHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the six-digit number shown on the device you are signing in to. Only approve a request you started.'**
+  String get deviceMfaNumberHint;
+
+  /// No description provided for @deviceMfaDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Deny request'**
+  String get deviceMfaDeny;
+
+  /// No description provided for @deviceMfaExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This request expired. Start again on the other device.'**
+  String get deviceMfaExpired;
+
+  /// No description provided for @deviceMfaReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review sign-in request'**
+  String get deviceMfaReview;
+
+  /// No description provided for @deviceMfaNoRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No sign-in requests. Start a sign-in on your other device.'**
+  String get deviceMfaNoRequests;
+
+  /// No description provided for @deviceMfaHideCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide code'**
+  String get deviceMfaHideCode;
+
+  /// No description provided for @deviceMfaQrPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a sign-in link'**
+  String get deviceMfaQrPaste;
+
+  /// No description provided for @deviceMfaQrPasteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the Tuturuuu sign-in QR link from your other device.'**
+  String get deviceMfaQrPasteHint;
+
+  /// No description provided for @appsShowBottomTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Apps in bottom navigation'**
+  String get appsShowBottomTab;
+
+  /// No description provided for @appsNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching apps'**
+  String get appsNoMatches;
+
+  /// No description provided for @securitySessionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions and connections'**
+  String get securitySessionsTitle;
+
+  /// No description provided for @securitySessionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Review devices signed in to your account. Signing out another session keeps this device signed in.'**
+  String get securitySessionsDescription;
+
+  /// No description provided for @securityUnknownDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown device'**
+  String get securityUnknownDevice;
+
+  /// No description provided for @securityCurrentSession.
+  ///
+  /// In en, this message translates to:
+  /// **'This session'**
+  String get securityCurrentSession;
+
+  /// No description provided for @securityRevokeSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out this session'**
+  String get securityRevokeSession;
+
+  /// No description provided for @securityRevokeOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out other sessions'**
+  String get securityRevokeOthers;
+
+  /// No description provided for @securityRevokeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected devices will need to sign in again.'**
+  String get securityRevokeDescription;
+
+  /// No description provided for @securityConnectionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected accounts'**
+  String get securityConnectionsTitle;
+
+  /// No description provided for @securityConnectionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how you sign in. Keep at least one connected account.'**
+  String get securityConnectionsDescription;
+
+  /// No description provided for @securityDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get securityDisconnect;
+
+  /// No description provided for @securityDisconnectDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You will no longer be able to sign in with this connected account.'**
+  String get securityDisconnectDescription;
+
+  /// No description provided for @securityConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get securityConnect;
+
+  /// No description provided for @deviceMfaTrustedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trusted authenticators'**
+  String get deviceMfaTrustedTitle;
+
+  /// No description provided for @deviceMfaLockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock new registrations'**
+  String get deviceMfaLockTitle;
+
+  /// No description provided for @deviceMfaLockHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your registered devices can approve sign-ins. Unlock here before registering another device.'**
+  String get deviceMfaLockHint;
+
+  /// No description provided for @deviceMfaLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'New registrations are locked. Open these settings on an existing trusted device to unlock them.'**
+  String get deviceMfaLocked;
+
+  /// No description provided for @deviceMfaLockRecoveryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a second trusted device before locking registrations. If you lose every trusted device, you cannot unlock this setting from a new device.'**
+  String get deviceMfaLockRecoveryHint;
+
+  /// No description provided for @deviceMfaCurrentDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get deviceMfaCurrentDevice;
+
+  /// No description provided for @deviceMfaPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup incomplete'**
+  String get deviceMfaPending;
+
+  /// No description provided for @deviceMfaRemoveTrusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove trusted device'**
+  String get deviceMfaRemoveTrusted;
+
+  /// No description provided for @deviceMfaSuggestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make this your authenticator?'**
+  String get deviceMfaSuggestTitle;
+
+  /// No description provided for @deviceMfaSuggestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve your sign-ins with device verification and generate codes for your other devices. You can manage trusted devices in Security settings.'**
+  String get deviceMfaSuggestBody;
+
+  /// No description provided for @deviceMfaNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get deviceMfaNotNow;
+
+  /// No description provided for @deviceMfaManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up authenticator'**
+  String get deviceMfaManage;
+
+  /// No description provided for @deviceMfaRemoveDeviceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This device will no longer approve sign-ins or generate valid codes.'**
+  String get deviceMfaRemoveDeviceHint;
+
+  /// No description provided for @deviceMfaNeedBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Register a second trusted device before locking new registrations.'**
+  String get deviceMfaNeedBackup;
+
+  /// No description provided for @mfaReviewSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Review sign-in'**
+  String get mfaReviewSignIn;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
