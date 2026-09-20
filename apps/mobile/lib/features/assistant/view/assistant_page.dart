@@ -363,18 +363,12 @@ class _AssistantPageState extends State<AssistantPage> {
                                           ),
                                           if (chatState.status ==
                                               AssistantChatStatus.restoring)
-                                            Positioned.fill(
-                                              child: AbsorbPointer(
-                                                child: ColoredBox(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .surface
-                                                      .withValues(alpha: 0.72),
-                                                  child: const Center(
-                                                    child:
-                                                        NovaLoadingIndicator(),
-                                                  ),
-                                                ),
+                                            const Positioned(
+                                              top: 0,
+                                              left: 0,
+                                              right: 0,
+                                              child: LinearProgressIndicator(
+                                                minHeight: 2,
                                               ),
                                             ),
                                         ],
@@ -777,6 +771,7 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantChatState chatState,
     AssistantLiveState liveState,
   ) async {
+    if (_chatCubit.state.status == AssistantChatStatus.restoring) return;
     if (chatState.composerAttachments.any(
       (attachment) =>
           attachment.uploadState == AssistantAttachmentUploadState.uploading,
@@ -806,7 +801,9 @@ class _AssistantPageState extends State<AssistantPage> {
       _chatCubit.takeUploadedComposerAttachments();
     } else {
       final timezone = await getCurrentTimezoneIdentifier();
-      if (!mounted) {
+      if (!mounted ||
+          _chatCubit.state.status == AssistantChatStatus.restoring ||
+          _chatCubit.state.workspaceId != wsId) {
         return;
       }
       await _chatCubit.submit(

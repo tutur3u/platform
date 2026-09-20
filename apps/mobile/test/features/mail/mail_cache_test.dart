@@ -15,6 +15,85 @@ import 'package:mocktail/mocktail.dart';
 class _SecureStorage extends Mock implements FlutterSecureStorage {}
 
 void main() {
+  Future<CacheStore> createStore() async {
+    final directory = await Directory.systemTemp.createTemp('mail-view-test-');
+    final storage = _SecureStorage();
+    when(
+      () => storage.read(key: any(named: 'key')),
+    ).thenAnswer((_) async => null);
+    when(
+      () => storage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((_) async {});
+    final store = CacheStore.forTesting(
+      secureStorage: storage,
+      directoryResolver: () async => directory,
+    );
+    addTearDown(() async {
+      await store.closeForTesting();
+      await Hive.close();
+      await directory.delete(recursive: true);
+    });
+    return store;
+  }
+
+  test(
+    'rapid mailbox selections persist the last view, scoped by account',
+    () async {
+      final store = await createStore();
+      var user = 'a';
+      final mail = MailCache(store: store, currentUserId: () => user);
+      await Future.wait([
+        mail.saveSnapshot('ws', 'view', {'mailbox': 'first'}),
+        mail.saveSnapshot('ws', 'view', {
+          'mailbox': 'last',
+          'label': 'important',
+        }),
+      ]);
+      final reopened = MailCache(store: store, currentUserId: () => user);
+      expect((await reopened.snapshot('ws', 'view'))?['mailbox'], 'last');
+      expect((await reopened.snapshot('ws', 'view'))?['label'], 'important');
+      expect(await reopened.snapshot('other', 'view'), isNull);
+      user = 'b';
+      expect(await reopened.snapshot('ws', 'view'), isNull);
+      final other = MailCache(store: store, currentUserId: () => user);
+      expect(await other.snapshot('ws', 'view'), isNull);
+    },
+  );
+
+  test(
+    'denied access clears snapshots and suppresses queued late writes',
+    () async {
+      final store = await createStore();
+      final mail = MailCache(store: store, currentUserId: () => 'a');
+      await mail.saveSnapshot('ws', 'view', {'mailbox': 'private'});
+      final pending = mail.saveSnapshot('ws', 'view', {'mailbox': 'late'});
+      await mail.denyAccess('ws');
+      await pending;
+      await mail.saveSnapshot('ws', 'view', {'mailbox': 'later'});
+      final reopened = MailCache(store: store, currentUserId: () => 'a');
+      expect(await reopened.snapshot('ws', 'view'), isNull);
+    },
+  );
+
+  test('old account cache rejects network work after account switch', () async {
+    final store = await createStore();
+    var user = 'a';
+    final mail = MailCache(store: store, currentUserId: () => user);
+    user = 'b';
+    var fetched = false;
+    await expectLater(
+      mail.read('ws', 'inbox', () async {
+        fetched = true;
+        return {'private': true};
+      }),
+      throwsA(isA<ApiException>()),
+    );
+    expect(fetched, isFalse);
+  });
+
   for (final status in [401, 403]) {
     test('$status purges scoped mail and pending responses', () async {
       final directory = await Directory.systemTemp.createTemp(

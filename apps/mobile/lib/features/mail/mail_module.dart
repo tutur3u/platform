@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -29,5 +30,5 @@ bool _visible(BuildContext context) {
   final email = context.select<AuthCubit?, String?>(
     (cubit) => cubit?.state.user?.email,
   );
-  return email?.toLowerCase().endsWith('@tuturuuu.com') ?? false;
+  return canDiscoverMail(email);
 }

@@ -715,3 +715,16 @@ message counts, search, permissions and per-delivery actions remain independent.
 Expanding a group exposes recipient rows; keyboard navigation opens a collapsed
 group as focus reaches those rows. Filtering and loading additional pages may
 change group membership. No grouping occurs across mailbox access boundaries.
+
+### Mobile inbox restoration
+
+Mail is a core mobile app for accounts whose email domain is exactly
+`tuturuuu.com`; other accounts do not see its launcher or direct-route content.
+API authorization still controls mailbox access.
+
+The mobile inbox restores its last mailbox, folder, search, labels, and message
+list from encrypted, account- and workspace-scoped storage. Snapshots expire
+after seven days. Opening Mail rechecks access and refreshes messages; cached
+send permissions are never trusted. A denied access response clears the cached
+view and prevents late requests from restoring it. Draft editing and attachment
+downloads continue to use authenticated network requests.

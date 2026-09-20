@@ -4,10 +4,11 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
   Widget _buildMailControls(Widget folderPicker, bool sharedShell) {
     final l10n = context.l10n;
     final mailbox = DropdownButtonFormField<String>(
+      key: ValueKey(_mailboxId),
       initialValue: _mailboxId,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: l10n.mailMailbox,
+        hintText: l10n.mailMailbox,
         isDense: true,
         border: InputBorder.none,
       ),
@@ -37,6 +38,11 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: l10n.mailSearch,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
         filled: true,
         fillColor: Theme.of(
           context,
@@ -78,12 +84,40 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
             ],
           );
         }
+        final palette = AppCardPalette.resolve(
+          context,
+          index: 0,
+          moduleId: 'mail',
+        );
         return Column(
           children: [
-            if (sharedShell)
-              Align(alignment: Alignment.centerLeft, child: folderPicker),
-            if (_mailboxes.isNotEmpty) mailbox,
-            const SizedBox(height: 6),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    palette.background,
+                    palette.background.withValues(alpha: 0.35),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: palette.border.withValues(alpha: 0.5),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    if (sharedShell) ...[
+                      folderPicker,
+                      const SizedBox(width: 12),
+                    ],
+                    if (_mailboxes.isNotEmpty) Expanded(child: mailbox),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             search,
           ],
         );

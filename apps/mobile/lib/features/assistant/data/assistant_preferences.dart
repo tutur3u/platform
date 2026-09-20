@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/assistant_models.dart';
@@ -22,24 +23,56 @@ String _normalizeStoredModelId(String value) =>
     value.replaceFirst(_flashLitePreviewModel, _flashLiteStableModel);
 
 class AssistantPreferences {
+  AssistantPreferences({String? Function()? currentUserId})
+    : _currentUserId = currentUserId ?? currentCacheUserId;
+
+  final String? Function() _currentUserId;
+
+  String? _key(String prefix, String wsId) {
+    final userId = _currentUserId();
+    return userId == null ? null : '$userId::$prefix$wsId';
+  }
+
   Future<String?> loadChatId(String wsId) async {
+    final key = _key(assistantChatStorageKeyPrefix, wsId);
+    if (key == null) return null;
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('$assistantChatStorageKeyPrefix$wsId');
+    if (key != _key(assistantChatStorageKeyPrefix, wsId)) return null;
+    return prefs.getString(key);
   }
 
-  Future<void> saveChatId(String wsId, String chatId) async {
+  Future<void> saveChatId(
+    String wsId,
+    String chatId, {
+    bool Function()? shouldWrite,
+  }) async {
+    final key = _key(assistantChatStorageKeyPrefix, wsId);
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('$assistantChatStorageKeyPrefix$wsId', chatId);
+    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
+    await prefs.setString(key, chatId);
   }
 
-  Future<void> clearChatId(String wsId) async {
+  Future<void> clearChatId(String wsId, {bool Function()? shouldWrite}) async {
+    final key = _key(assistantChatStorageKeyPrefix, wsId);
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('$assistantChatStorageKeyPrefix$wsId');
+    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
+    await prefs.remove(key);
   }
 
   Future<AssistantGatewayModel?> loadModel(String wsId) async {
+    final key = _key(assistantModelStorageKeyPrefix, wsId);
+    if (key == null) return null;
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('$assistantModelStorageKeyPrefix$wsId');
+    if (key != _key(assistantModelStorageKeyPrefix, wsId)) return null;
+    final raw = prefs.getString(key);
     if (raw == null || raw.isEmpty) return null;
 
     try {
@@ -73,16 +106,19 @@ class AssistantPreferences {
   }
 
   Future<void> saveModel(String wsId, AssistantGatewayModel model) async {
+    final key = _key(assistantModelStorageKeyPrefix, wsId);
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      '$assistantModelStorageKeyPrefix$wsId',
-      jsonEncode(model.toJson()),
-    );
+    if (key != _key(assistantModelStorageKeyPrefix, wsId)) return;
+    await prefs.setString(key, jsonEncode(model.toJson()));
   }
 
   Future<AssistantThinkingMode?> loadThinkingMode(String wsId) async {
+    final key = _key(assistantThinkingModeStorageKeyPrefix, wsId);
+    if (key == null) return null;
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('$assistantThinkingModeStorageKeyPrefix$wsId');
+    if (key != _key(assistantThinkingModeStorageKeyPrefix, wsId)) return null;
+    final raw = prefs.getString(key);
     for (final mode in AssistantThinkingMode.values) {
       if (mode.name == raw) {
         return mode;
@@ -92,16 +128,19 @@ class AssistantPreferences {
   }
 
   Future<void> saveThinkingMode(String wsId, AssistantThinkingMode mode) async {
+    final key = _key(assistantThinkingModeStorageKeyPrefix, wsId);
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      '$assistantThinkingModeStorageKeyPrefix$wsId',
-      mode.name,
-    );
+    if (key != _key(assistantThinkingModeStorageKeyPrefix, wsId)) return;
+    await prefs.setString(key, mode.name);
   }
 
   Future<AssistantCreditSource?> loadCreditSource(String wsId) async {
+    final key = _key(assistantCreditSourceStorageKeyPrefix, wsId);
+    if (key == null) return null;
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('$assistantCreditSourceStorageKeyPrefix$wsId');
+    if (key != _key(assistantCreditSourceStorageKeyPrefix, wsId)) return null;
+    final raw = prefs.getString(key);
     for (final source in AssistantCreditSource.values) {
       if (source.name == raw) {
         return source;
@@ -114,28 +153,43 @@ class AssistantPreferences {
     String wsId,
     AssistantCreditSource source,
   ) async {
+    final key = _key(assistantCreditSourceStorageKeyPrefix, wsId);
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      '$assistantCreditSourceStorageKeyPrefix$wsId',
-      source.name,
-    );
+    if (key != _key(assistantCreditSourceStorageKeyPrefix, wsId)) return;
+    await prefs.setString(key, source.name);
   }
 
   Future<String?> loadWorkspaceContextId(String wsId) async {
+    final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
+    if (key == null) return null;
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('$assistantWorkspaceContextStorageKeyPrefix$wsId');
+    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId)) {
+      return null;
+    }
+    return prefs.getString(key);
   }
 
-  Future<void> saveWorkspaceContextId(String wsId, String contextId) async {
+  Future<void> saveWorkspaceContextId(
+    String wsId,
+    String contextId, {
+    bool Function()? shouldWrite,
+  }) async {
+    final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      '$assistantWorkspaceContextStorageKeyPrefix$wsId',
-      contextId,
-    );
+    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
+    await prefs.setString(key, contextId);
   }
 
   Future<void> clearWorkspaceContextId(String wsId) async {
+    final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
+    if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('$assistantWorkspaceContextStorageKeyPrefix$wsId');
+    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId)) return;
+    await prefs.remove(key);
   }
 }

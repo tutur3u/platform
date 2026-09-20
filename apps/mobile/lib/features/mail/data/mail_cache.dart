@@ -17,7 +17,7 @@ class MailCache {
   final String? _userId;
   static const _policy = CachePolicy(
     staleAfter: Duration(minutes: 1),
-    expireAfter: Duration(minutes: 20),
+    expireAfter: Duration(days: 7),
     allowBackgroundRefresh: false,
   );
 
@@ -45,6 +45,9 @@ class MailCache {
     Future<Map<String, dynamic>> Function() fetch, {
     bool forceRefresh = false,
   }) async {
+    if (_userId != null && _userId != _currentUserId()) {
+      throw const ApiException(message: 'Account changed', statusCode: 401);
+    }
     if (!_usable) return await fetch();
     // Cache availability must never prevent a network read. Only catch the
     // initialization here, so API failures are not retried or hidden.
@@ -80,6 +83,63 @@ class MailCache {
         }
       }
       rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>?> snapshot(String wsId, String path) async {
+    if (!_usable) return null;
+    try {
+      final cached = await _store.read(key: _key(wsId, path), decode: _decode);
+      if (!_usable || cached.isExpired) return null;
+      return cached.data;
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<void> _snapshotWrites = Future<void>.value();
+
+  Future<void> saveSnapshot(
+    String wsId,
+    String path,
+    Map<String, dynamic> payload,
+  ) {
+    // Serialize local writes: request deduplication must not discard the latest
+    // mailbox/filter selection when several UI updates happen together.
+    final write = _snapshotWrites.then((_) async {
+      if (!_usable) return;
+      try {
+        await _store.prefetch(
+          key: _key(wsId, path),
+          policy: _policy,
+          decode: _decode,
+          forceRefresh: true,
+          tags: const ['mail'],
+          fetch: () async {
+            if (!_usable) throw StateError('Mail snapshot invalidated');
+            return payload;
+          },
+        );
+      } on Object {
+        // Persistence cannot make a successful inbox action appear to fail.
+      }
+    });
+    _snapshotWrites = write;
+    return write;
+  }
+
+  Future<void> denyAccess(String wsId) async {
+    if (!_usable) return;
+    // Suppress late snapshots before clearing the encrypted store.
+    _disabled = true;
+    try {
+      await _store.clearScope(
+        userId: _userId,
+        workspaceId: wsId,
+        namespace: 'mail.list',
+      );
+    } on Object {
+      debugPrint('Mail cache cleanup unavailable; cache disabled');
     }
   }
 

@@ -78,7 +78,9 @@ class AssistantComposerDock extends StatelessWidget {
             minLines: 1,
             maxLines: 4,
             textInputAction: TextInputAction.send,
-            onSubmitted: (_) => onSend(),
+            onSubmitted: chatState.status == AssistantChatStatus.restoring
+                ? null
+                : (_) => onSend(),
             onTapOutside: (_) => focusNode.unfocus(),
             decoration: InputDecoration(
               hintText: context.l10n.assistantAskPlaceholder,
@@ -127,7 +129,10 @@ class AssistantComposerDock extends StatelessWidget {
                   if (hasPrompt) {
                     return _GhostActionButton(
                       tooltip: context.l10n.assistantSendAction,
-                      onPressed: onSend,
+                      onPressed:
+                          chatState.status == AssistantChatStatus.restoring
+                          ? null
+                          : onSend,
                       icon: Icons.arrow_upward_rounded,
                       isActive: true,
                     );
@@ -204,7 +209,7 @@ class _GhostActionButton extends StatelessWidget {
   });
 
   final String tooltip;
-  final Future<void> Function() onPressed;
+  final Future<void> Function()? onPressed;
   final IconData icon;
   final bool isActive;
 
