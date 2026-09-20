@@ -60,3 +60,24 @@ it('does not truncate singular words ending in s', () => {
   expect(searchMiraTools({ query: 'basis' }).selectedTools).toEqual([]);
   expect(searchMiraTools({ query: 'bias' }).selectedTools).toEqual([]);
 });
+
+it('activates native SDK search results and ignores malformed entries', () => {
+  expect(
+    extractSelectedToolsFromSteps([
+      {
+        toolResults: [
+          {
+            toolName: 'search_tools',
+            output: {
+              tools: [
+                { name: 'create_event', description: 'Create an event' },
+                null,
+                { name: 123 },
+              ],
+            },
+          },
+        ],
+      },
+    ])
+  ).toEqual(['create_event']);
+});

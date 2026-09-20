@@ -3,6 +3,7 @@ import type { PermissionId } from '@tuturuuu/types';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
+import { createMiraSdkToolSearch } from '../../tools/mira-sdk-tool-search';
 import {
   createMiraStreamTools,
   type MiraToolContext,
@@ -172,6 +173,9 @@ export async function prepareMiraRuntime({
 }: PrepareMiraRuntimeParams): Promise<{
   miraSystemPrompt?: string;
   miraTools?: ReturnType<typeof createMiraStreamTools>;
+  prepareMiraDiscoveryStep?: ReturnType<
+    typeof createMiraSdkToolSearch
+  >['prepareStep'];
 }> {
   if (!isMiraMode || !wsId) {
     return {};
@@ -275,8 +279,14 @@ export async function prepareMiraRuntime({
     miraSystemPrompt = buildMiraSystemInstruction({ withoutPermission });
   }
 
+  const discovery = createMiraSdkToolSearch(
+    createMiraStreamTools(ctx, withoutPermission, getSteps),
+    ctx,
+    withoutPermission
+  );
   return {
     miraSystemPrompt,
-    miraTools: createMiraStreamTools(ctx, withoutPermission, getSteps),
+    miraTools: discovery.tools,
+    prepareMiraDiscoveryStep: discovery.prepareStep,
   };
 }

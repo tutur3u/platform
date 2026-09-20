@@ -262,3 +262,25 @@ Context bounds are described under [Experience](#experience); media verification
 Chat and both Live token endpoints use `packages/ai/src/chat/mira-prompt.ts` for the same Mira identity, behavior, workspace context and scoped memory prompt. Live loads the authenticated user's saved name, personality, tone, boundaries and memories on session creation; saved language, accent and speaking-pace preferences are passed to the model as instructions. These are behavioral preferences, not a separate selectable provider voice ID.
 
 `apps/web/src/lib/live/mira-prompt.ts` adds only spoken-delivery and actual Live tool constraints. Do not restore a static “You are Mira” prompt or duplicate the Chat context loader. Live's smaller tool catalog does not support Chat's memory/settings writes: it must not claim to persist changes using session notes. Dashboard personalization is resolved before reserving credits, and a prompt-loading failure prevents an unpersonalized token from being minted. End and restart Live after changing saved preferences; an ongoing connection retains its session instructions.
+
+
+## Mira chat tool discovery
+
+Mira chat uses AI SDK `toolSearch()` with deferred tool definitions (AI SDK
+7.0.107 or later). The first step exposes only the selected control tools.
+Search results make matching capabilities available on the next model step;
+searching does not perform the operation or approve a mutation. Explicit tool
+selection remains supported for clients that already know the tool names.
+
+The per-generation discovery adapter rechecks workspace permissions before each
+step, while the existing executors authorize writes independently. A workspace
+change during permission resolution fails closed. Forced artifact/workspace
+steps and terminal loop guards retain their restricted tool sets. Definitions
+are never mutated in the shared registry. This change applies to streamed Mira
+chat; live voice retains its separate tool protocol.
+
+Run the SDK-backed tests in `packages/ai/src/tools/mira-sdk-tool-search.test.ts`
+when changing discovery. They exercise real SDK model steps with a mock provider,
+including deferred loading, denied permissions, workspace changes, explicit
+selection, and approval-gated writes. These tests do not replace authenticated
+provider or meeting-invitation round trips.

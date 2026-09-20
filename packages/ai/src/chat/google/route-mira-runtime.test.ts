@@ -171,7 +171,13 @@ describe('prepareMiraRuntime', () => {
     expect(result).toEqual({
       miraSystemPrompt:
         'ctx\n\n## Workspace Context\n\nCurrent task/calendar/finance workspace context: Workspace Two (shared workspace).\nUse this workspace for "my tasks", "my calendar", and "my finance" requests. Only switch to another workspace when the user explicitly names a different workspace.\n\ninstruction',
-      miraTools: tools,
+      miraTools: Object.fromEntries(
+        Object.entries(tools).map(([name, definition]) => [
+          name,
+          { ...definition, deferLoading: true },
+        ])
+      ),
+      prepareMiraDiscoveryStep: expect.any(Function),
     });
   });
 
