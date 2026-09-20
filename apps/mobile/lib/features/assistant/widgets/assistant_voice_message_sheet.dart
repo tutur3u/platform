@@ -11,7 +11,14 @@ import 'package:video_player/video_player.dart';
 /// A recording is uploaded only after explicit confirmation. Temporary audio
 /// is deleted on dismissal, cancellation, or after copying the confirmed bytes.
 class AssistantVoiceMessageSheet extends StatefulWidget {
-  const AssistantVoiceMessageSheet({super.key});
+  const AssistantVoiceMessageSheet({
+    this.recorder,
+    this.temporaryDirectory = getTemporaryDirectory,
+    super.key,
+  });
+
+  final AudioRecorder? recorder;
+  final Future<Directory> Function() temporaryDirectory;
 
   @override
   State<AssistantVoiceMessageSheet> createState() => _VoiceMessageState();
@@ -19,7 +26,7 @@ class AssistantVoiceMessageSheet extends StatefulWidget {
 
 class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
     with WidgetsBindingObserver {
-  final _recorder = AudioRecorder();
+  late final AudioRecorder _recorder = widget.recorder ?? AudioRecorder();
   VideoPlayerController? _preview;
   Timer? _timer;
   Future<void>? _operation;
@@ -38,7 +45,10 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed && _recording) {
+    if ((state == AppLifecycleState.paused ||
+            state == AppLifecycleState.hidden ||
+            state == AppLifecycleState.detached) &&
+        _recording) {
       unawaited(_stop());
     }
   }
@@ -57,7 +67,7 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
         return;
       }
       if (!mounted) return;
-      final directory = await getTemporaryDirectory();
+      final directory = await widget.temporaryDirectory();
       if (!mounted) return;
       final path =
           '${directory.path}/mira-voice-${DateTime.now().microsecondsSinceEpoch}.m4a';
@@ -97,13 +107,28 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
       await _recorder.stop();
       final path = _path;
       if (!mounted || path == null) return;
-      _hasRecording = await File(path).length() > 0;
-      if (!mounted || !_hasRecording) return;
+      if (await File(path).length() == 0) {
+        throw const FormatException('Empty voice recording');
+      }
+      if (!mounted) return;
       final preview = VideoPlayerController.file(File(path));
       _preview = preview;
       await preview.initialize();
+      if (preview.value.duration <= Duration.zero) {
+        throw const FormatException('Voice recording has no audio');
+      }
+      _hasRecording = true;
       if (mounted) preview.addListener(_updatePreview);
     } on Exception {
+      _hasRecording = false;
+      final preview = _preview;
+      _preview = null;
+      try {
+        await preview?.dispose();
+      } on Exception {
+        // A failed native player must not prevent retrying capture.
+      }
+      await _deleteRecording();
       if (mounted) setState(() => _error = context.l10n.voiceRecordingError);
     } finally {
       if (mounted) setState(() => _busy = false);
