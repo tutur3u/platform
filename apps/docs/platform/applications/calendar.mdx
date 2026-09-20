@@ -328,9 +328,10 @@ stable event ID and a private request fingerprint; Graph uses `transactionId`.
 A duplicate Google event with a different fingerprint is rejected. A timeout
 does not authorize a fresh send or a new request ID.
 
-Calendar requires `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` from
-the infrastructure vault for the request lease. Missing storage fails closed.
-Only request hashes and completion state enter Redis; provider credentials and
+Calendar requires server-only `CLOUDFLARE_COORDINATION_URL` and
+`CLOUDFLARE_COORDINATION_TOKEN` for its Durable Object request lease. The token
+has an encrypted backup in the Infrastructure vault. Missing storage fails closed.
+Only request hashes and completion state enter the Durable Object; provider credentials and
 guest lists do not. Requests are accepted for 15 minutes, with one minute of
 forward clock tolerance. A 409 or ambiguous failure must leave the client in a
 review/retry state. Check the calendar before creating a replacement request.

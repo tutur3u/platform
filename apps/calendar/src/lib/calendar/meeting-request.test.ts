@@ -1,43 +1,25 @@
-import type { UpstashRatelimitRedisClient } from '@tuturuuu/utils/upstash-rest';
+import type { coordinate } from '@tuturuuu/utils/coordination';
 import { v7 } from 'uuid';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   assertRecentMeetingRequest,
   withMeetingRequest,
 } from './meeting-request';
 
-function memoryRedis() {
-  const values = new Map<string, unknown>();
-  const set = vi.fn(
-    async (key: string, value: unknown, options?: { nx?: boolean }) => {
-      if (options?.nx && values.has(key)) return null;
-      values.set(key, value);
-      return 'OK';
-    }
-  );
-  const get = vi.fn(async (key: string) => values.get(key) ?? null);
-  const evalCommand = vi.fn(
-    async (_script: string, keys: string[], args: unknown[]) => {
-      if (values.get(keys[0]!) !== args[0]) return 0;
-      if (keys.length === 1) values.delete(keys[0]!);
-      else values.set(keys[1]!, JSON.parse(args[1] as string));
-      return 1;
-    }
-  );
-  return { values, set, get, eval: evalCommand, evalsha: vi.fn() };
-}
-let redis: ReturnType<typeof memoryRedis>;
-let args: { id: string; hash: string; requestId: string };
-const load = async () => redis as unknown as UpstashRatelimitRedisClient;
-beforeEach(() => {
-  redis = memoryRedis();
-  args = {
-    id: 'actor-workspace-bound-event',
-    hash: 'payload-hash',
-    requestId: v7(),
-  };
+vi.mock('server-only', () => ({}));
+const args = () => ({
+  id: 'actor-workspace-bound-event',
+  hash: 'a'.repeat(64),
+  requestId: v7(),
 });
-
+function client() {
+  return vi.fn<typeof coordinate>().mockImplementation(async ({ action }) => {
+    if (action === 'acquire')
+      return { outcome: 'acquired', fresh: true, completed: false };
+    if (action === 'complete') return { outcome: 'completed' };
+    return { outcome: 'released' };
+  });
+}
 describe('meeting delivery retry guard', () => {
   it('accepts recent UUIDv7 requests and rejects old/future/untimestamped identifiers', () => {
     const now = Date.now();
@@ -48,111 +30,88 @@ describe('meeting delivery retry guard', () => {
       v7({ msecs: now - 16 * 60_000 }),
       v7({ msecs: now + 61_000 }),
       'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    ]) {
+    ])
       expect(() => assertRecentMeetingRequest(request, now)).toThrow();
+  });
+  it('passes persisted retry state and hashes the entity identity', async () => {
+    const send = client();
+    send.mockResolvedValueOnce({
+      outcome: 'acquired',
+      fresh: false,
+      completed: true,
+    });
+    const run = vi.fn(async () => 'already handled');
+    await expect(withMeetingRequest(args(), run, send)).resolves.toBe(
+      'already handled'
+    );
+    expect(run).toHaveBeenCalledWith({ fresh: false, completed: true });
+    expect(send).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        namespace: 'meeting',
+        key: expect.stringMatching(/^[a-f0-9]{64}$/),
+        fingerprint: 'a'.repeat(64),
+      })
+    );
+    expect(send.mock.calls.map(([input]) => input.action)).toEqual([
+      'acquire',
+      'complete',
+      'release',
+    ]);
+  });
+  it('blocks simultaneous sends and changed meeting details', async () => {
+    for (const outcome of ['busy', 'conflict'] as const) {
+      const send = client().mockResolvedValueOnce({ outcome });
+      const run = vi.fn();
+      await expect(withMeetingRequest(args(), run, send)).rejects.toMatchObject(
+        { status: 409 }
+      );
+      expect(run).not.toHaveBeenCalled();
     }
   });
-  it('retains completion after the event is deleted instead of treating a retry as fresh', async () => {
-    const states: unknown[] = [];
-    await withMeetingRequest(
-      args,
-      async (state) => {
-        states.push(state);
-        return 'created';
-      },
-      load
+  it('fails closed when coordination is unavailable', async () => {
+    const send = client().mockRejectedValueOnce(
+      new Error('private provider error')
     );
-    await withMeetingRequest(
-      args,
-      async (state) => {
-        states.push(state);
-        return 'already handled';
-      },
-      load
-    );
-    expect(states).toEqual([
-      { fresh: true, completed: false },
-      { fresh: false, completed: true },
-    ]);
-    const recordCall = redis.set.mock.calls.find(
-      ([key]) => !key.endsWith(':lease')
-    );
-    expect(recordCall?.[2]).toMatchObject({ ex: 7200 });
-    expect(JSON.stringify([...redis.values.values()])).not.toContain('guest');
-  });
-  it('blocks simultaneous sends and keeps a pending record after ambiguous provider failure', async () => {
-    let finish!: () => void;
-    const pending = new Promise<void>((resolve) => {
-      finish = resolve;
-    });
-    let started!: () => void;
-    const entered = new Promise<void>((resolve) => {
-      started = resolve;
-    });
-    const first = withMeetingRequest(
-      args,
-      async () => {
-        started();
-        await pending;
-        throw new Error('provider timeout');
-      },
-      load
-    );
-    await entered;
-    const duplicate = vi.fn();
-    await expect(
-      withMeetingRequest(args, duplicate, load)
-    ).rejects.toMatchObject({ status: 409 });
-    expect(duplicate).not.toHaveBeenCalled();
-    finish();
-    await expect(first).rejects.toThrow('provider timeout');
-    const retry = vi.fn(async () => 'reconciled');
-    await withMeetingRequest(args, retry, load);
-    expect(retry).toHaveBeenCalledWith({ fresh: false, completed: false });
-  });
-  it('rejects changed meeting details under the same identity', async () => {
-    await withMeetingRequest(args, async () => 'created', load);
-    const changed = vi.fn();
-    await expect(
-      withMeetingRequest({ ...args, hash: 'changed-guests' }, changed, load)
-    ).rejects.toMatchObject({ status: 409 });
-    expect(changed).not.toHaveBeenCalled();
-  });
-  it('fails closed when the store is missing, unavailable or corrupt', async () => {
-    const send = vi.fn();
-    await expect(
-      withMeetingRequest(args, send, async () => null)
-    ).rejects.toMatchObject({ status: 503 });
-    redis.set.mockRejectedValueOnce(new Error('offline'));
-    await expect(withMeetingRequest(args, send, load)).rejects.toThrow(
-      'offline'
-    );
-    redis.values.set(`calendar:meeting-request:v1:${args.id}`, {
-      hash: args.hash,
-    });
-    await expect(withMeetingRequest(args, send, load)).rejects.toMatchObject({
+    const run = vi.fn();
+    await expect(withMeetingRequest(args(), run, send)).rejects.toMatchObject({
       status: 503,
+      message: 'Meeting delivery is temporarily unavailable',
     });
-    expect(send).not.toHaveBeenCalled();
+    expect(run).not.toHaveBeenCalled();
   });
-  it('never removes another attempt lease after its own lease expires', async () => {
-    await withMeetingRequest(
-      args,
-      async () => {
-        redis.values.set(
-          `calendar:meeting-request:v1:${args.id}:lease`,
-          'new-owner'
-        );
-        return 'created';
-      },
-      load
-    );
-    expect(
-      redis.values.get(`calendar:meeting-request:v1:${args.id}:lease`)
-    ).toBe('new-owner');
-    expect(redis.values.get(`calendar:meeting-request:v1:${args.id}`)).toEqual({
-      hash: args.hash,
-      completed: false,
-    });
+  it('releases the same owner after provider failure without recording completion', async () => {
+    const send = client();
+    await expect(
+      withMeetingRequest(
+        args(),
+        async () => {
+          throw new Error('provider timeout');
+        },
+        send
+      )
+    ).rejects.toThrow('provider timeout');
+    expect(send.mock.calls.map(([input]) => input.action)).toEqual([
+      'acquire',
+      'release',
+    ]);
+    expect(send.mock.calls[1]?.[0].owner).toBe(send.mock.calls[0]?.[0].owner);
+  });
+  it('preserves a completed provider result when its lease expires or cleanup fails', async () => {
+    for (const expired of [false, true]) {
+      const send = client();
+      send.mockResolvedValueOnce({
+        outcome: 'acquired',
+        fresh: true,
+        completed: false,
+      });
+      if (expired) send.mockResolvedValueOnce({ outcome: 'lost' });
+      else send.mockRejectedValueOnce(new Error('offline'));
+      send.mockRejectedValueOnce(new Error('cleanup failed'));
+      await expect(
+        withMeetingRequest(args(), async () => 'created', send)
+      ).resolves.toBe('created');
+      expect(send).toHaveBeenCalledTimes(3);
+    }
   });
 });

@@ -1,8 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import {
-  getUpstashRatelimitRedisClient,
-  type UpstashRatelimitRedisClient,
-} from '@tuturuuu/utils/upstash-rest';
+import { coordinate, coordinationKey } from '@tuturuuu/utils/coordination';
 
 export class MeetingCreateError extends Error {
   constructor(
@@ -14,11 +11,6 @@ export class MeetingCreateError extends Error {
 }
 
 const ACCEPT_WINDOW_MS = 15 * 60_000;
-const RECORD_SECONDS = 2 * 60 * 60;
-const LEASE_SECONDS = 10 * 60;
-const RELEASE =
-  "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
-type RecordState = { hash: string; completed: boolean };
 
 export function assertRecentMeetingRequest(
   requestId: string,
@@ -51,68 +43,56 @@ export function assertRecentMeetingRequest(
 export async function withMeetingRequest<T>(
   args: { id: string; hash: string; requestId: string },
   run: (state: { fresh: boolean; completed: boolean }) => Promise<T>,
-  loadRedis: () => Promise<UpstashRatelimitRedisClient | null> = getUpstashRatelimitRedisClient
+  send: typeof coordinate = coordinate
 ): Promise<T> {
   assertRecentMeetingRequest(args.requestId);
-  const redis = await loadRedis();
-  if (!redis)
+  const lease = {
+    namespace: 'meeting' as const,
+    key: coordinationKey(args.id),
+    owner: randomUUID(),
+  };
+  const acquired = await send({
+    ...lease,
+    action: 'acquire',
+    fingerprint: args.hash,
+  }).catch(() => {
     throw new MeetingCreateError(
       503,
       'Meeting delivery is temporarily unavailable'
     );
-  const key = `calendar:meeting-request:v1:${args.id}`;
-  const leaseKey = `${key}:lease`;
-  const owner = randomUUID();
-  const acquired = await redis.set(leaseKey, owner, {
-    nx: true,
-    ex: LEASE_SECONDS,
   });
-  if (!acquired)
+  if (acquired.outcome === 'conflict')
+    throw new MeetingCreateError(
+      409,
+      'This meeting request was already used with different details'
+    );
+  if (acquired.outcome === 'busy')
     throw new MeetingCreateError(
       409,
       'This meeting request is already being processed'
     );
+  if (acquired.outcome !== 'acquired')
+    throw new MeetingCreateError(503, 'Meeting delivery status is unavailable');
   try {
-    const initial: RecordState = { hash: args.hash, completed: false };
-    const fresh = Boolean(
-      await redis.set(key, initial, { nx: true, ex: RECORD_SECONDS })
-    );
-    const record = await redis.get<RecordState>(key);
-    if (
-      !record ||
-      typeof record.hash !== 'string' ||
-      typeof record.completed !== 'boolean'
-    ) {
-      throw new MeetingCreateError(
-        503,
-        'Meeting delivery status is unavailable'
-      );
+    const result = await run({
+      fresh: acquired.fresh,
+      completed: acquired.completed,
+    });
+    // Provider idempotency and the encrypted DB reservation remain authoritative.
+    // A failed cleanup/status write must not turn a successful send into a new send.
+    try {
+      const completion = await send({ ...lease, action: 'complete' });
+      if (completion.outcome !== 'completed')
+        console.warn('Meeting completion lease expired');
+    } catch {
+      console.warn('Could not record meeting completion');
     }
-    if (record.hash !== args.hash) {
-      throw new MeetingCreateError(
-        409,
-        'This meeting request was already used with different details'
-      );
-    }
-    const result = await run({ fresh, completed: record.completed });
-    // A lease must still be ours before recording completion. Never overwrite a
-    // newer attempt after a stalled provider request has exceeded its lease.
-    await redis.eval(
-      "if redis.call('get', KEYS[1]) == ARGV[1] then redis.call('set', KEYS[2], ARGV[2], 'EX', ARGV[3]); return 1 else return 0 end",
-      [leaseKey, key],
-      [
-        owner,
-        JSON.stringify({ hash: args.hash, completed: true }),
-        RECORD_SECONDS,
-      ]
-    );
     return result;
   } finally {
-    // Cleanup failure must not turn a completed invitation into a retryable send.
     try {
-      await redis.eval(RELEASE, [leaseKey], [owner]);
+      await send({ ...lease, action: 'release' });
     } catch {
-      /* lease expires */
+      /* The bounded lease expires automatically. */
     }
   }
 }

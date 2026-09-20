@@ -2,6 +2,8 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { v7 } from 'uuid';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 const mocks = vi.hoisted(() => ({
   provider: vi.fn(),
   state: { fresh: true, completed: false },
@@ -35,7 +37,7 @@ import {
 } from './create-invited-meeting';
 import type { ResolvedCalendarSource } from './source-resolver';
 
-type Row = Record<string, any>;
+type Row = Record<string, unknown>;
 function database() {
   const rows = new Map<string, Row>();
   const control = {
@@ -50,22 +52,23 @@ function database() {
       if (operation === 'insert') {
         if (control.insertError)
           return { error: control.insertError, data: null };
-        if (rows.has(value.id)) return { error: { code: '23505' }, data: null };
-        rows.set(value.id, { ...value });
-        return { data: rows.get(value.id), error: null };
+        if (rows.has(String(value.id)))
+          return { error: { code: '23505' }, data: null };
+        rows.set(String(value.id), { ...value });
+        return { data: rows.get(String(value.id)), error: null };
       }
-      const row = rows.get(filters.id);
+      const row = rows.get(String(filters.id));
       if (!row || row.ws_id !== filters.ws_id)
         return { data: null, error: null };
       if (operation === 'update') {
         if (control.updateError)
           return { data: null, error: control.updateError };
-        rows.set(filters.id, { ...row, ...value });
+        rows.set(String(filters.id), { ...row, ...value });
       }
-      return { data: rows.get(filters.id), error: null };
+      return { data: rows.get(String(filters.id)), error: null };
     };
     const builder = {
-      select: (_fields: string) => builder,
+      select: () => builder,
       eq: (key: string, expected: unknown) => {
         filters[key] = expected;
         return builder;
@@ -128,7 +131,8 @@ beforeEach(() => {
     },
   };
   mocks.provider.mockImplementation(async () => {
-    expect([...db.rows.values()][0]?.scheduling_metadata.meeting_delivery).toBe(
+    expect([...db.rows.values()][0]).toHaveProperty(
+      'scheduling_metadata.meeting_delivery',
       'pending'
     );
     return { externalEventId: 'provider-event', externalCalendarId: 'primary' };
@@ -142,7 +146,10 @@ describe('durable invitation creation', () => {
     const stored = [...db.rows.values()][0]!;
     expect(stored.title).toBe('encrypted:Planning');
     expect(stored.external_event_id).toBe('provider-event');
-    expect(stored.scheduling_metadata.meeting_delivery).toBe('sent');
+    expect(stored).toHaveProperty(
+      'scheduling_metadata.meeting_delivery',
+      'sent'
+    );
     expect(mocks.provider).toHaveBeenCalledWith(
       expect.objectContaining({
         idempotencyKey: stored.id,
@@ -181,7 +188,8 @@ describe('durable invitation creation', () => {
     mocks.provider.mockRejectedValueOnce(new Error('timeout'));
     await expect(create()).rejects.toThrow('timeout');
     const id = [...db.rows.keys()][0];
-    expect(db.rows.get(id!)?.scheduling_metadata.meeting_delivery).toBe(
+    expect(db.rows.get(id!)).toHaveProperty(
+      'scheduling_metadata.meeting_delivery',
       'pending'
     );
     mocks.state = { fresh: false, completed: false };
@@ -200,7 +208,10 @@ describe('durable invitation creation', () => {
     expect(
       mocks.provider.mock.calls.map(([args]) => args.idempotencyKey)
     ).toEqual([id, id]);
-    expect(db.rows.get(id!)?.scheduling_metadata.meeting_delivery).toBe('sent');
+    expect(db.rows.get(id!)).toHaveProperty(
+      'scheduling_metadata.meeting_delivery',
+      'sent'
+    );
   });
   it('does not send if the durable reservation cannot be persisted', async () => {
     db.control.insertError = new Error('database unavailable');
