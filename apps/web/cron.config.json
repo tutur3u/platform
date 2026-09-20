@@ -26,14 +26,16 @@
       "enabled": true,
       "id": "calendar-provider-sync",
       "path": "/api/cron/calendar/provider-sync",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/15 * * * *",
+      "vercel": false
     },
     {
       "description": "Run the calendar smart scheduling worker.",
       "enabled": true,
       "id": "calendar-smart-schedule",
       "path": "/api/cron/calendar/smart-schedule",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 */6 * * *",
+      "vercel": false
     },
     {
       "description": "Send task deadline reminders.",

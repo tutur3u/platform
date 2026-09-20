@@ -225,6 +225,13 @@ export const features2: ComparisonFeature[] = [
     detail: 'standard',
   },
   {
+    id: 'coordination_0',
+    app: 'coordination',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'meet-realtime_0',
     app: 'meet-realtime',
     category: 'internal',

@@ -485,3 +485,47 @@ See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-mig
 - [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) - How the boundary moves into the Rust backend
 - [Encapsulation Patterns](/platform/architecture/system-design/encapsulation-patterns) - Service boundary enforcement
 - [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) - Trigger.dev v4 tasks and background workflows
+
+## Authenticator and meeting coordination
+
+Authenticator registry mutations use the `apps/coordination` Cloudflare Worker
+and SQLite Durable Objects. One object per hashed user serializes changes to
+server-owned Supabase app metadata. Meeting delivery uses a separate namespace
+with payload fingerprints and completion records, so retries preserve their
+original identity. Login approval challenges remain in Supabase; this service
+never stores authenticator secrets, session tokens, email addresses, or meeting
+contents. Upstash is not required for these operations.
+
+Provision `COORDINATION_TOKEN` as a Worker secret. Store its value in the
+Infrastructure root-workspace secret `cloudflare_coordination:v1` as an
+envelope (`version`, `encryptedDataKey`, `encryptedSecret`) using the existing
+mobile deployment encryption helpers, then provision the same value as the server-only
+`CLOUDFLARE_COORDINATION_TOKEN` in the web and Calendar deployment environments.
+Set `CLOUDFLARE_COORDINATION_URL` to the deployed Worker's HTTPS origin. Never
+expose these credentials in Flutter defines, public environment variables, URLs,
+or logs. Missing credentials and network failures fail closed. Deploy the Worker
+and verify its authenticated endpoint before enabling the server callers.
+
+Registry leases expire after five minutes. Meeting leases expire after ten
+minutes, while request fingerprints and completion records remain for two hours.
+An expired owner cannot complete or release a newer owner's operation. The
+calling service must still enforce request age and provider idempotency: a lease
+alone cannot prevent an external provider request from finishing after a timeout.
+Alarms clean up expired state. Arbitrary payloads and unbounded TTLs are rejected.
+
+Validate changes with:
+
+```sh
+bun x --no-install wrangler types --env-interface CoordinationEnv apps/coordination/worker-configuration.d.ts -c apps/coordination/wrangler.jsonc
+bun x --no-install tsc --project apps/coordination/tsconfig.json
+node --test apps/coordination/src/worker.test.mjs
+bun x --no-install wrangler deploy --dry-run -c apps/coordination/wrangler.jsonc
+```
+
+The Coordination Cloudflare workflow runs these checks and deploys only the
+production branch. Pre-provision `COORDINATION_TOKEN` on the Worker and configure
+`COORDINATION_CLOUDFLARE_API_TOKEN` in the GitHub `coordination-production`
+environment (the existing account deployment credential is a bootstrap fallback).
+Inspect secret names only during deployment checks. A successful `/health`
+response proves routing; also verify an authenticated acquire/check/release cycle
+and rejection of unauthenticated requests before declaring coordination ready.

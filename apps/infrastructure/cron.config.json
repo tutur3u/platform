@@ -20,6 +20,20 @@
       "id": "infrastructure-sync-trust-cache",
       "path": "/api/cron/infrastructure/sync-trust-cache",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "description": "Run Calendar provider synchronization through the authenticated gateway.",
+      "enabled": true,
+      "id": "calendar-provider-sync",
+      "path": "/api/cron/calendar/provider-sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "description": "Run Calendar smart scheduling through the authenticated gateway.",
+      "enabled": true,
+      "id": "calendar-smart-schedule",
+      "path": "/api/cron/calendar/smart-schedule",
+      "schedule": "0 */6 * * *"
     }
   ]
 }
