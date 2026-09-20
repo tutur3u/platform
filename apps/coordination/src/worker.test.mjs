@@ -187,3 +187,27 @@ test('expiry removes old records and namespaces do not collide', async () => {
     'acquired'
   );
 });
+
+test('a late retry keeps its fingerprint until its entire lease expires', async () => {
+  const input = { ...request('meeting'), fingerprint: digest('details') };
+  await result({ ...input, action: 'acquire' });
+  const sql = await server
+    .getWorker()
+    .getDurableObjectStorage('COORDINATION', { name: `meeting:${input.key}` });
+  await sql.exec(
+    'UPDATE coordination SET lease_until = 0, expires_at = ?',
+    Date.now() + 60_000
+  );
+  const successor = { ...input, owner: randomUUID() };
+  assert.deepEqual(await result({ ...successor, action: 'acquire' }), {
+    outcome: 'acquired',
+    fresh: false,
+    completed: false,
+  });
+  const rows = await sql.exec(
+    'SELECT lease_until, expires_at FROM coordination'
+  );
+  assert.ok(rows[0].expires_at >= rows[0].lease_until);
+  assert.ok(rows[0].lease_until > Date.now() + 9 * 60_000);
+  assert.equal((await result({ ...input, action: 'acquire' })).outcome, 'busy');
+});

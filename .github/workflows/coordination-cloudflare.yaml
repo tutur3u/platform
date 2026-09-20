@@ -53,7 +53,6 @@ jobs:
     environment: coordination-production
     env:
       CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
-      CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -66,8 +65,12 @@ jobs:
           node-version: 24
       - run: bun install --frozen-lockfile
       - name: Require pre-provisioned server credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           bun x --no-install wrangler secret list -c apps/coordination/wrangler.jsonc > "$RUNNER_TEMP/coordination-secrets.json"
           jq -e 'any(.[]; .name == "COORDINATION_TOKEN")' "$RUNNER_TEMP/coordination-secrets.json" > /dev/null
       - run: bun x --no-install wrangler deploy -c apps/coordination/wrangler.jsonc --message "$GITHUB_SHA"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}

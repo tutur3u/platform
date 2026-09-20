@@ -507,7 +507,8 @@ or logs. Missing credentials and network failures fail closed. Deploy the Worker
 and verify its authenticated endpoint before enabling the server callers.
 
 Registry leases expire after five minutes. Meeting leases expire after ten
-minutes, while request fingerprints and completion records remain for two hours.
+minutes, while request fingerprints and completion records remain for at least two hours
+and never expire before an active lease.
 An expired owner cannot complete or release a newer owner's operation. The
 calling service must still enforce request age and provider idempotency: a lease
 alone cannot prevent an external provider request from finishing after a timeout.
