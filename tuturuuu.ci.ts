@@ -9,6 +9,7 @@ export const ci = {
   'check-migrations.yml': true,
   'codecov.yaml': true,
   'colab-cloudflare.yaml': true,
+  'coordination-cloudflare.yaml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
   'docker-setup-check.yaml': true,

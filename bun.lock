@@ -11,6 +11,7 @@
         "@biomejs/biome": "^2.5.13",
         "@lingual/i18n-check": "0.9.5",
         "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.5.1",
         "@vitest/coverage-v8": "^5.0.0",
         "lucide-static": "^1.45.0",
         "portless": "^0.15.6",
