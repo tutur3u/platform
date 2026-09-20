@@ -351,8 +351,14 @@ void main() {
       ).thenAnswer((_) => unlock.future);
       final first = service.enroll(name: 'Phone', reason: 'verify');
       final firstResult = expectLater(first, throwsA(isA<AuthException>()));
+      final reopened = DeviceMfaService(
+        client: client,
+        store: store,
+        localAuth: local,
+        repository: repository,
+      );
       await expectLater(
-        service.enroll(name: 'Phone', reason: 'verify'),
+        reopened.enroll(name: 'Phone', reason: 'verify'),
         throwsA(isA<AuthException>()),
       );
       unlock.complete(false);

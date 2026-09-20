@@ -60,6 +60,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
   }
 
   Future<void> _refresh() async {
+    _retry = _refresh;
     final status = await _service.status();
     if (!mounted) return;
     _registry = status.registry;
@@ -70,6 +71,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
   }
 
   Future<void> _run(Future<void> Function() action) async {
+    _retry = action;
     setState(() {
       _busy = true;
       _error = null;
@@ -80,7 +82,6 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
       if (mounted) {
         setState(() {
           _error = error;
-          _retry = action;
         });
       }
     } finally {

@@ -53,6 +53,15 @@ void main() {
       await open(tester, size);
       expect(find.text('Device authenticator'), findsOneWidget);
       expect(find.text('Trusted authenticators'), findsNothing);
+      if (size.width >= 600) {
+        final surface = find
+            .ancestor(
+              of: find.text('Device authenticator'),
+              matching: find.byType(Material),
+            )
+            .first;
+        expect(tester.getSize(surface).height, lessThan(600));
+      }
       expect(tester.takeException(), isNull);
       await tester.tap(find.byTooltip('Close authenticator'));
       await tester.pumpAndSettle();
@@ -92,6 +101,40 @@ void main() {
       ),
     ).called(2);
     verify(service.status).called(1);
+    await tester.tap(find.byTooltip('Close authenticator'));
+    await tester.pumpAndSettle();
+  });
+  testWidgets('a failed refresh after enrollment does not enroll twice', (
+    tester,
+  ) async {
+    var reads = 0;
+    when(service.status).thenAnswer((_) async {
+      if (++reads == 2) {
+        throw const ApiException(message: 'offline', statusCode: 0);
+      }
+      return (
+        registry: const DeviceMfaRegistry(locked: false, devices: []),
+        currentFactorId: null,
+      );
+    });
+    when(
+      () => service.enroll(
+        name: any(named: 'name'),
+        reason: any(named: 'reason'),
+      ),
+    ).thenAnswer((_) async {});
+    await open(tester, const Size(390, 844));
+    await tester.tap(find.text('Register this device'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    verify(
+      () => service.enroll(
+        name: any(named: 'name'),
+        reason: any(named: 'reason'),
+      ),
+    ).called(1);
+    expect(reads, 3);
     await tester.tap(find.byTooltip('Close authenticator'));
     await tester.pumpAndSettle();
   });

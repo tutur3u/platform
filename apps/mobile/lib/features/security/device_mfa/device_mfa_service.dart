@@ -78,7 +78,8 @@ class DeviceMfaService {
   final DeviceMfaStore _store;
   final LocalAuthService _localAuth;
   final DateTime Function() _now;
-  bool _busy = false;
+  // Dismissing and reopening setup must not start a competing enrollment.
+  static final Set<String> _enrollingAccounts = {};
 
   String get _userId {
     final id = _client.auth.currentUser?.id;
@@ -108,10 +109,11 @@ class DeviceMfaService {
   /// Persist before verifying: a storage failure must never activate a factor
   /// whose secret the user cannot recover. An interrupted setup is resumable.
   Future<void> enroll({required String name, required String reason}) async {
-    if (_busy) throw const AuthException('Verification already in progress');
-    _busy = true;
+    final userId = _userId;
+    if (!_enrollingAccounts.add(userId)) {
+      throw const AuthException('Verification already in progress');
+    }
     try {
-      final userId = _userId;
       await _unlock(userId, reason);
       var credential = await _store.read(userId);
       _checkUser(userId);
@@ -178,7 +180,7 @@ class DeviceMfaService {
         ),
       );
     } finally {
-      _busy = false;
+      _enrollingAccounts.remove(userId);
     }
   }
 
