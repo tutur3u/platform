@@ -10,6 +10,7 @@ ENV CI=1
 # application source files change.
 # Keep these manifest COPY lines in sync with scripts/check-docker-web.js.
 COPY package.json bun.lock turbo.json ./
+COPY patches ./patches
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
 COPY apps/ai/package.json ./apps/ai/package.json
 COPY apps/apps/package.json ./apps/apps/package.json
