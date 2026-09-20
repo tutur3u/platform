@@ -189,9 +189,13 @@ function prepare({ key, image }) {
       `${volume}:/baseline:ro`,
       '-v',
       `${directory}:/cache`,
+      '--env',
+      `BASELINE_UID=${process.getuid()}`,
+      '--env',
+      `BASELINE_GID=${process.getgid()}`,
       imageId,
       '-ec',
-      'tar -czf /cache/database.tar.gz -C /baseline . && chmod 644 /cache/database.tar.gz'
+      'tar -czf /cache/database.tar.gz -C /baseline . && chown "$BASELINE_UID:$BASELINE_GID" /cache/database.tar.gz && chmod 644 /cache/database.tar.gz'
     );
     fs.writeFileSync(
       manifestPath,
