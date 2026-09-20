@@ -85,6 +85,20 @@ PRs; their final commits still receive the normal format and lint checks.
   Environments and reject manual dispatches unless the selected branch is
   `production`.
 
+### Hosted Calendar schedules
+
+Infrastructure owns the hosted Calendar provider-sync (every 15 minutes) and
+smart-scheduling (every six hours) schedules in its `vercel.json` and
+`cron.config.json`. Requests enter `/api/cron/calendar/:job`, authenticate with
+`CRON_SECRET`, and use the encrypted gateway credential to reach Calendar.
+Calendar must not keep a second direct Vercel schedule: direct scheduler requests
+do not carry the private hosting header.
+
+Docker retains these jobs in `apps/web/cron.config.json` with `vercel: false`.
+That flag excludes them from generated web Vercel schedules while keeping the
+Docker runner enabled. After deployment, verify a fresh provider sync timestamp
+with all Calendar clients closed; a READY deployment alone is insufficient.
+
 ### Browser App Version Metadata
 
 - Browser apps share one platform version from

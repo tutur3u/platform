@@ -33,3 +33,42 @@ test('job paths cannot redirect or escape the configured origin', () => {
     assert.throws(() => resolveCronRequest(path, env), /Invalid cron route/);
   }
 });
+
+test('hosted Calendar jobs have exactly one owner and keep Docker execution', () => {
+  const { readFileSync } = require('node:fs');
+  const { join } = require('node:path');
+  const {
+    normalizeCronConfig,
+    getVercelCronsFromConfig,
+  } = require('./web-crons.js');
+  const read = (file) =>
+    JSON.parse(readFileSync(join(__dirname, '..', file), 'utf8'));
+  const infra = read('apps/infrastructure/vercel.json').crons;
+  const calendar = read('apps/calendar/vercel.json').crons ?? [];
+  const web = normalizeCronConfig(read('apps/web/cron.config.json'));
+  const generatedWeb = getVercelCronsFromConfig(web);
+  const monitored = read('apps/infrastructure/cron.config.json').jobs;
+  for (const [name, schedule] of [
+    ['provider-sync', '*/15 * * * *'],
+    ['smart-schedule', '0 */6 * * *'],
+  ]) {
+    const path = `/api/cron/calendar/${name}`;
+    assert.deepEqual(
+      infra.filter((job) => job.path === path),
+      [{ path, schedule }]
+    );
+    assert.equal(
+      calendar.some((job) => job.path === path),
+      false
+    );
+    assert.equal(
+      generatedWeb.some((job) => job.path === path),
+      false
+    );
+    assert.equal(web.jobs.find((job) => job.path === path)?.enabled, true);
+    assert.equal(
+      monitored.find((job) => job.path === path)?.schedule,
+      schedule
+    );
+  }
+});
