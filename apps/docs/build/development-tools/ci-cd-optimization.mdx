@@ -588,7 +588,7 @@ canceled before they occupy the queue indefinitely.
 
 Translation validation runs on every pull request (including forks and stacked
 PRs), plus direct pushes to `main` and `production`. Feature-branch pushes no
-longer create a duplicate copy of the same four translation checks alongside the
+longer duplicate the same four translation checks alongside the
 pull-request run. Manual dispatch remains available for work without a PR.
 Superseded feature-branch translation and E2E runs cancel; protected branch runs
 retain their exact-commit verification evidence.

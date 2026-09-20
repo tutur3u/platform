@@ -21,6 +21,9 @@ test('translation checks run once per PR update and still cover both protected b
   assert.deepEqual(workflow.on.push.branches, ['main', 'production']);
   assert.equal(workflow.on.pull_request, null);
   assert.ok(Object.hasOwn(workflow.on, 'workflow_dispatch'));
+  // PR merge refs isolate forks and preserve validation of the merged result.
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+  assert.equal(workflow.concurrency.group, 'i18n-${{ github.ref }}');
   for (const id of [
     'i18n-sort-check',
     'i18n-translation-check',
@@ -37,7 +40,11 @@ test('exactly one E2E matrix job is eligible to write the shared Docker cache', 
   const writer = job.steps.find(
     (step) => step.id === 'prepare-supabase-docker-cache'
   );
-  assert.match(writer.if, /matrix\.mode == 'shard' && matrix\.shard == 1/);
+  assert.equal(
+    writer.if,
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub expression
+    "${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.mode == 'shard' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}"
+  );
   const eligible = job.strategy.matrix.include.filter(
     (entry) => entry.mode === 'shard' && entry.shard === 1
   );

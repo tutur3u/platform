@@ -9,7 +9,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: i18n-${{ github.head_ref || github.ref }}
+  # PR merge refs are unique across forks and differ from manual branch runs.
+  group: i18n-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' }}
 
 jobs:
