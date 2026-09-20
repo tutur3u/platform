@@ -43,7 +43,7 @@ export class CoordinationObject extends DurableObject<CoordinationEnv> {
           now + (input.namespace === 'meeting' ? 600_000 : 300_000);
         const expiresAt =
           input.namespace === 'meeting'
-            ? (row?.expires_at ?? now + 7_200_000)
+            ? Math.max(row?.expires_at ?? now + 7_200_000, leaseUntil)
             : leaseUntil;
         this.ctx.storage.sql.exec(
           `INSERT INTO coordination VALUES (1, ?, ?, ?, ?, ?)
