@@ -59,11 +59,18 @@ export async function deviceMfaRequest(
   if (!('allowed' in limit))
     throw new DeviceMfaError(429, 'Please wait before trying again');
   if (!input) return publicRegistry(await loadDeviceRegistry(user.id));
+  // Bearer clients are stateless: no stored session exists for the SDK to
+  // inspect. Pass the token explicitly so it validates the user and reads AAL.
+  const authorization = request.headers.get('authorization');
+  const accessToken = authorization?.startsWith('Bearer ')
+    ? authorization.slice(7).trim()
+    : undefined;
   const { data: assurance, error: assuranceError } =
-    await client.auth.mfa.getAuthenticatorAssuranceLevel();
+    await client.auth.mfa.getAuthenticatorAssuranceLevel(accessToken);
   if (
     assuranceError ||
     !assurance ||
+    !assurance.currentLevel ||
     (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2')
   ) {
     throw new DeviceMfaError(403, 'Verify your existing authenticator first');

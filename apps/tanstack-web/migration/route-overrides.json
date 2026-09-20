@@ -2437,7 +2437,7 @@
     "api:/api/v1/auth/mfa/devices:apps/web/src/app/api/v1/auth/mfa/devices/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Trusted authenticator registry: Bearer/cookie auth, AAL2 and secret proof checks, server-owned app_metadata, serialized mutations, verified backup requirement, registration lock and revocation. GET/POST remain Next-owned pending Rust parity."
+      "note": "Trusted authenticator registry: Bearer/cookie auth with explicit JWT assurance on stateless mobile requests, AAL2 and secret proof checks, server-owned app_metadata, serialized mutations, verified backup requirement, registration lock and revocation. GET/POST remain Next-owned pending Rust parity."
     }
   }
 }

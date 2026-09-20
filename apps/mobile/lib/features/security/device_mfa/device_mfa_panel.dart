@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_error.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/features/security/device_mfa/trusted_authenticators_panel.dart';
@@ -21,7 +23,8 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
   Timer? _timer;
   bool _registered = false;
   bool _busy = true;
-  bool _failed = false;
+  Object? _error;
+  Future<void> Function()? _retry;
   bool _confirmRemoval = false;
   String? _code;
   late DateTime _codeExpires;
@@ -69,12 +72,17 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
   Future<void> _run(Future<void> Function() action) async {
     setState(() {
       _busy = true;
-      _failed = false;
+      _error = null;
     });
     try {
       await action();
-    } on Object {
-      if (mounted) setState(() => _failed = true);
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error;
+          _retry = action;
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -90,17 +98,33 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.phonelink_lock_rounded),
-              const shad.Gap(12),
-              Expanded(
-                child: Text(l10n.deviceMfaTitle, style: theme.typography.large),
+          if (_busy) ...[
+            Row(
+              children: [
+                const shad.CircularProgressIndicator(size: 18),
+                const shad.Gap(12),
+                Expanded(child: Text(l10n.deviceMfaWorking)),
+              ],
+            ),
+            const shad.Gap(16),
+          ],
+          if (_error != null) ...[
+            Semantics(
+              liveRegion: true,
+              child: shad.Alert(
+                title: Text(l10n.deviceMfaActionFailed),
+                content: Text(deviceMfaErrorMessage(_error!, l10n)),
               ),
-              if (_busy) const shad.CircularProgressIndicator(size: 18),
-            ],
-          ),
-          const shad.Gap(8),
+            ),
+            const shad.Gap(8),
+            shad.OutlineButton(
+              onPressed: _busy
+                  ? null
+                  : () => unawaited(_run(_retry ?? _refresh)),
+              child: Text(l10n.commonRetry),
+            ),
+            const shad.Gap(16),
+          ],
           Text(_registered ? l10n.deviceMfaReady : l10n.deviceMfaDescription),
           const shad.Gap(12),
           if (!_registered && _registry?.locked == true)
@@ -110,6 +134,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
             const shad.Gap(12),
             shad.TextField(
               controller: _name,
+              enabled: !_busy,
               placeholder: Text(l10n.deviceMfaName),
               maxLength: 40,
             ),
@@ -203,7 +228,8 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
               ),
             ],
           ],
-          if (_registry != null) ...[
+          if (_registry != null &&
+              (_registered || _registry!.devices.isNotEmpty)) ...[
             const shad.Gap(16),
             TrustedAuthenticatorsPanel(
               registry: _registry!,
@@ -224,19 +250,6 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
                   _code = null;
                   await _refresh();
                 }),
-              ),
-            ),
-          ],
-          if (_failed) ...[
-            const shad.Gap(12),
-            shad.OutlineButton(
-              onPressed: _busy ? null : () => unawaited(_run(_refresh)),
-              child: Text(l10n.commonRetry),
-            ),
-            Text(
-              l10n.deviceMfaError,
-              style: theme.typography.small.copyWith(
-                color: theme.colorScheme.destructive,
               ),
             ),
           ],

@@ -151,3 +151,21 @@ scripts/ci/mobile-store-workflow.test.js`. Use `ttr resources run -- bun check`
 for repository validation and `ttr resources run -- bun check:mobile` for the
 Flutter checks. Store availability still requires an authenticated release run
 with the active production vault and real signing assets.
+
+## Device authenticator smoke checks
+
+Open Settings → Session → Device authenticator. Setup opens above the shell in
+a dismissible phone sheet or tablet dialog; test both orientations, keyboard
+visibility, Close and system Back. Enroll only on a device with local identity
+verification configured. Verify registration, a generated code, and a second
+device approval separately from successful store upload.
+
+The devices API uses explicit JWT assurance checks for stateless mobile Bearer
+requests. A cookie-session-only assurance lookup returns no level for those
+clients and can reject confirmation after the provider activates the factor.
+An interrupted setup resumes from its account-scoped secure credential; never
+clear secure storage as a troubleshooting shortcut. Retry repeats the failed
+operation. Error messages distinguish network, session, rate-limit, service
+unavailability, and cancelled local verification without exposing provider
+payloads or credentials. Simulator biometric support varies by runtime; passing
+widget tests does not establish real-device biometric approval.

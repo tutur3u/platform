@@ -1,10 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
-import 'package:mobile/features/security/device_mfa/device_mfa_panel.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_sheet.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_approval_dialog.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
@@ -136,7 +137,12 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
       title: l10n.settingsDangerSectionTitle,
       description: l10n.settingsDangerSectionDescription,
       children: [
-        const DeviceMfaPanel(),
+        SettingsTile(
+          icon: Icons.phonelink_lock_rounded,
+          title: l10n.deviceMfaTitle,
+          subtitle: l10n.deviceMfaDescription,
+          onTap: () => unawaited(showDeviceMfaSheet(context)),
+        ),
         SettingsTile(
           icon: Icons.devices_rounded,
           title: l10n.securitySessionsTitle,

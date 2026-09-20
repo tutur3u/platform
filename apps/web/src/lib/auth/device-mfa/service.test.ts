@@ -74,6 +74,33 @@ beforeEach(() => {
 });
 
 describe('device registration policy', () => {
+  it('passes the mobile JWT to the stateless assurance check', async () => {
+    await deviceMfaRequest(request, {
+      action: 'confirm',
+      factorId,
+      proof: 'p'.repeat(32),
+    });
+    expect(mocks.assurance).toHaveBeenCalledWith('test-token');
+  });
+  it('rejects missing assurance instead of enrolling without verified AAL', async () => {
+    mocks.assurance.mockResolvedValueOnce({
+      data: { currentLevel: null, nextLevel: null },
+      error: null,
+    });
+    await expect(
+      deviceMfaRequest(request, { action: 'enroll', name: 'Phone' })
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.mutate).not.toHaveBeenCalled();
+  });
+  it('preserves cookie session assurance for web requests', async () => {
+    await deviceMfaRequest(new Request(request.url), {
+      action: 'confirm',
+      factorId,
+      proof: 'p'.repeat(32),
+    });
+    expect(mocks.assurance).toHaveBeenCalledWith(undefined);
+  });
+
   it('uses request-scoped authentication and rejects anonymous callers', async () => {
     mocks.getUser.mockResolvedValueOnce({ data: { user: null }, error: null });
     await expect(deviceMfaRequest(request)).rejects.toMatchObject({

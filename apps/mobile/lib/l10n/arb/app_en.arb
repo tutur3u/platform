@@ -3260,5 +3260,14 @@
   "deviceMfaManage": "Set up authenticator",
   "deviceMfaRemoveDeviceHint": "This device will no longer approve sign-ins or generate valid codes.",
   "deviceMfaNeedBackup": "Register a second trusted device before locking new registrations.",
-    "mfaReviewSignIn": "Review sign-in"
+    "mfaReviewSignIn": "Review sign-in",
+  "deviceMfaClose": "Close authenticator",
+  "deviceMfaWorking": "Checking device security…",
+  "deviceMfaActionFailed": "Could not finish this step",
+  "deviceMfaCancelled": "Device verification was cancelled. Try again and confirm with Face ID, fingerprint, or your device passcode.",
+  "deviceMfaExistingRequired": "Verify your existing authenticator in your account sign-in flow, then return here to finish setup.",
+  "deviceMfaSessionExpired": "Your session could not be verified. Sign in again before changing authenticators.",
+  "deviceMfaRateLimited": "Too many attempts. Wait a minute before trying again.",
+  "deviceMfaUnavailable": "Authenticator registration is temporarily unavailable. Try again shortly.",
+  "deviceMfaOffline": "Could not reach Tuturuuu. Check your connection and try again."
 }

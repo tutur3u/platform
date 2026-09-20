@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
@@ -96,7 +97,10 @@ class DeviceMfaService {
 
   Future<void> _unlock(String userId, String reason) async {
     if (!await _localAuth.authenticate(reason: reason)) {
-      throw const AuthException('Device verification cancelled');
+      throw const AuthException(
+        'Device verification cancelled',
+        code: 'device_verification_cancelled',
+      );
     }
     _checkUser(userId);
   }
@@ -109,13 +113,6 @@ class DeviceMfaService {
     try {
       final userId = _userId;
       await _unlock(userId, reason);
-      final assurance = _client.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (assurance.currentLevel != AuthenticatorAssuranceLevels.aal2 &&
-          assurance.nextLevel == AuthenticatorAssuranceLevels.aal2) {
-        throw const AuthException(
-          'Verify an existing authenticator before registering this device',
-        );
-      }
       var credential = await _store.read(userId);
       _checkUser(userId);
       if (credential != null) {
@@ -130,6 +127,14 @@ class DeviceMfaService {
         }
       }
       if (credential == null) {
+        final assurance = _client.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance.currentLevel != AuthenticatorAssuranceLevels.aal2 &&
+            assurance.nextLevel == AuthenticatorAssuranceLevels.aal2) {
+          throw const AuthException(
+            'Verify an existing authenticator before registering this device',
+            code: 'existing_mfa_required',
+          );
+        }
         final enrolled = await _repository.change({
           'action': 'enroll',
           'name': name.trim(),

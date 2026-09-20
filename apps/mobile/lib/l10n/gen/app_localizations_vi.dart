@@ -7980,4 +7980,31 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mfaReviewSignIn => 'Xem yêu cầu đăng nhập';
+
+  @override
+  String get deviceMfaClose => 'Đóng trình xác thực';
+
+  @override
+  String get deviceMfaWorking => 'Đang kiểm tra bảo mật thiết bị…';
+
+  @override
+  String get deviceMfaActionFailed => 'Không thể hoàn tất bước này';
+
+  @override
+  String get deviceMfaCancelled => 'Xác minh thiết bị đã bị hủy. Hãy thử lại và xác nhận bằng Face ID, vân tay hoặc mật mã thiết bị.';
+
+  @override
+  String get deviceMfaExistingRequired => 'Xác minh bằng trình xác thực hiện có khi đăng nhập tài khoản, rồi quay lại đây để hoàn tất thiết lập.';
+
+  @override
+  String get deviceMfaSessionExpired => 'Không thể xác minh phiên đăng nhập. Hãy đăng nhập lại trước khi thay đổi trình xác thực.';
+
+  @override
+  String get deviceMfaRateLimited => 'Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.';
+
+  @override
+  String get deviceMfaUnavailable => 'Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.';
+
+  @override
+  String get deviceMfaOffline => 'Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.';
 }

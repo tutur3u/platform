@@ -1,12 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -75,7 +75,6 @@ class _DeviceMfaSuggestionState extends State<DeviceMfaSuggestion>
 
   Future<void> _snooze({bool openSettings = false}) async {
     final userId = context.read<AuthCubit>().state.user?.id;
-    final router = GoRouter.of(context);
     ++_generation;
     setState(() => _visible = false);
     if (userId != null) {
@@ -92,7 +91,7 @@ class _DeviceMfaSuggestionState extends State<DeviceMfaSuggestion>
     if (mounted &&
         openSettings &&
         context.read<AuthCubit>().state.user?.id == userId) {
-      await router.push<void>(Routes.settingsSession);
+      await showDeviceMfaSheet(context);
       if (mounted) unawaited(_load());
     }
   }

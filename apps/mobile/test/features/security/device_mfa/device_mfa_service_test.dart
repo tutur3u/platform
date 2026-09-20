@@ -19,6 +19,8 @@ class _Store extends Mock implements DeviceMfaStore {}
 
 class _Local extends Mock implements LocalAuthService {}
 
+class _Verified extends Mock implements AuthMFAVerifyResponse {}
+
 void main() {
   late _Repository repository;
   late _Client client;
@@ -259,6 +261,84 @@ void main() {
           code: any(named: 'code'),
         ),
       );
+    },
+  );
+
+  test(
+    'resumes a locally stored verified factor before requiring other MFA',
+    () async {
+      final factor = Factor(
+        id: credential.factorId,
+        friendlyName: 'Phone',
+        factorType: FactorType.totp,
+        status: FactorStatus.verified,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+      when(mfa.listFactors).thenAnswer(
+        (_) async => AuthMFAListFactorsResponse(
+          all: [factor],
+          totp: [factor],
+          phone: [],
+        ),
+      );
+      when(() => mfa.getAuthenticatorAssuranceLevel()).thenReturn(
+        const AuthMFAGetAuthenticatorAssuranceLevelResponse(
+          currentLevel: AuthenticatorAssuranceLevels.aal1,
+          nextLevel: AuthenticatorAssuranceLevels.aal2,
+          currentAuthenticationMethods: [],
+        ),
+      );
+      when(
+        () => mfa.challengeAndVerify(
+          factorId: credential.factorId,
+          code: '287082',
+        ),
+      ).thenAnswer((_) async => _Verified());
+      when(() => repository.change(any())).thenAnswer((_) async => {});
+      when(() => store.write('user-1', any())).thenAnswer((_) async {});
+      await service.enroll(name: 'Phone', reason: 'verify');
+      verify(
+        () => mfa.challengeAndVerify(
+          factorId: credential.factorId,
+          code: '287082',
+        ),
+      ).called(1);
+      verify(
+        () => repository.change({
+          'action': 'confirm',
+          'factorId': credential.factorId,
+          'proof': credential.proof,
+        }),
+      ).called(1);
+      verifyNever(
+        () => repository.change({'action': 'enroll', 'name': 'Phone'}),
+      );
+    },
+  );
+
+  test(
+    'new devices still require an existing factor for an AAL1 session',
+    () async {
+      when(() => store.read('user-1')).thenAnswer((_) async => null);
+      when(() => mfa.getAuthenticatorAssuranceLevel()).thenReturn(
+        const AuthMFAGetAuthenticatorAssuranceLevelResponse(
+          currentLevel: AuthenticatorAssuranceLevels.aal1,
+          nextLevel: AuthenticatorAssuranceLevels.aal2,
+          currentAuthenticationMethods: [],
+        ),
+      );
+      await expectLater(
+        service.enroll(name: 'Phone', reason: 'verify'),
+        throwsA(
+          isA<AuthException>().having(
+            (e) => e.code,
+            'code',
+            'existing_mfa_required',
+          ),
+        ),
+      );
+      verifyNever(() => repository.change(any()));
     },
   );
 
