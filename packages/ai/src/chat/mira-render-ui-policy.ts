@@ -396,6 +396,20 @@ export function shouldForceWorkspaceMembersForLatestUserMessage(
   return false;
 }
 
+function selectedNames(output: Record<string, unknown> | undefined): string[] {
+  if (Array.isArray(output?.selectedTools)) {
+    return output.selectedTools.filter(
+      (name): name is string => typeof name === 'string'
+    );
+  }
+  if (Array.isArray(output?.tools)) {
+    return output.tools.flatMap((entry) =>
+      isRecord(entry) && typeof entry.name === 'string' ? [entry.name] : []
+    );
+  }
+  return [];
+}
+
 export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
   for (let i = steps.length - 1; i >= 0; i--) {
     const step = steps[i] as ToolStepLike | undefined;
@@ -410,12 +424,7 @@ export function extractSelectedToolsFromSteps(steps: unknown[]): string[] {
     const selectResult =
       step?.toolResults?.find((result) => result.toolName === 'select_tools') ??
       step?.toolResults?.find((result) => result.toolName === 'search_tools');
-    const selectedTools = selectResult?.output?.selectedTools;
-    if (Array.isArray(selectedTools)) {
-      return selectedTools.filter(
-        (tool): tool is string => typeof tool === 'string'
-      );
-    }
+    if (selectResult) return selectedNames(selectResult.output);
   }
   return [];
 }
@@ -444,11 +453,7 @@ export function wasToolEverSelectedInSteps(
         toolResult.toolName !== 'search_tools'
       )
         return false;
-      const selected = toolResult.output?.selectedTools;
-      return (
-        Array.isArray(selected) &&
-        selected.some((tool) => typeof tool === 'string' && tool === toolName)
-      );
+      return selectedNames(toolResult.output).includes(toolName);
     });
   });
 }

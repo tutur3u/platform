@@ -439,21 +439,22 @@ export function createPOST(
 
       const stepsRef: { current: unknown[] } = { current: [] };
 
-      const { miraSystemPrompt, miraTools } = await prepareMiraRuntime({
-        isMiraMode,
-        wsId: normalizedWsId ?? undefined,
-        workspaceContextId,
-        creditWsId: billingWsId ?? normalizedWsId ?? undefined,
-        request: req,
-        user,
-        userId: user.id,
-        chatId,
-        supabase,
-        toolSupabase: sbAdmin as typeof supabase,
-        timezone,
-        taskBoardContext,
-        getSteps: () => stepsRef.current,
-      });
+      const { miraSystemPrompt, miraTools, prepareMiraDiscoveryStep } =
+        await prepareMiraRuntime({
+          isMiraMode,
+          wsId: normalizedWsId ?? undefined,
+          workspaceContextId,
+          creditWsId: billingWsId ?? normalizedWsId ?? undefined,
+          request: req,
+          user,
+          userId: user.id,
+          chatId,
+          supabase,
+          toolSupabase: sbAdmin as typeof supabase,
+          timezone,
+          taskBoardContext,
+          getSteps: () => stepsRef.current,
+        });
 
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
 
@@ -494,9 +495,9 @@ export function createPOST(
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
       >;
-      const prepareStep: PrepareStep = ({ steps }) => {
+      const prepareStep: PrepareStep = async ({ steps }) => {
         stepsRef.current = steps;
-        return prepareMiraToolStep({
+        const policy = prepareMiraToolStep({
           forceWorkspaceArtifact,
           steps,
           forceGoogleSearch,
@@ -506,6 +507,9 @@ export function createPOST(
           needsWorkspaceMembersTool,
           preferMarkdownTables,
         });
+        return prepareMiraDiscoveryStep
+          ? prepareMiraDiscoveryStep(policy)
+          : policy;
       };
 
       const { lease: claimedLease, response: leaseResponse } =
