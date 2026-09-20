@@ -106,6 +106,39 @@ describe('workspace calendar event item authorization', () => {
     }
   );
 
+  it.each([
+    ['PUT', PUT],
+    ['DELETE', DELETE],
+  ])(
+    'blocks %s while invitation delivery is pending',
+    async (method, handler) => {
+      const existing = chainResult({
+        data: {
+          id: EVENT_ID,
+          provider: 'google',
+          scheduling_metadata: { meeting_delivery: 'pending' },
+        },
+        error: null,
+      });
+      const from = vi.fn(() => existing);
+      mocks.authorize.mockResolvedValue({
+        sbAdmin: { from },
+        userId: 'user-1',
+        wsId: WS_ID,
+      });
+      const response = await handler(
+        request(method, method === 'PUT' ? { locked: true } : undefined),
+        params()
+      );
+      expect(response.status).toBe(409);
+      expect(existing.update).not.toHaveBeenCalled();
+      expect(existing.delete).not.toHaveBeenCalled();
+      expect(mocks.deleteProviderEvent).not.toHaveBeenCalled();
+      expect(mocks.resolveEventSource).not.toHaveBeenCalled();
+      expect(from).toHaveBeenCalledTimes(1);
+    }
+  );
+
   it('preserves authorized GET response', async () => {
     const event = { id: EVENT_ID, provider: 'tuturuuu', title: 'Planning' };
     const existing = chainResult({ data: event, error: null });

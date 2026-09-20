@@ -201,3 +201,27 @@ describe('authenticated native Calendar gateway', () => {
     expect((await forwardCalendarRequest(request(), deps)).status).toBe(502);
   });
 });
+
+it('forwards only authenticated POST requests to meeting responses', async () => {
+  const deps = dependencies();
+  const path = `${events}/event-id/response`;
+  const response = await forwardCalendarRequest(
+    request(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{"response":"accepted"}',
+    }),
+    deps
+  );
+  expect(response.status).toBe(200);
+  expect(deps.verifyToken).toHaveBeenCalled();
+  expect(deps.fetch).toHaveBeenCalledTimes(1);
+  for (const method of ['GET', 'PUT', 'PATCH', 'DELETE']) {
+    const blocked = await forwardCalendarRequest(
+      request(path, { method }),
+      deps
+    );
+    expect(blocked.status).toBeGreaterThanOrEqual(400);
+  }
+  expect(deps.fetch).toHaveBeenCalledTimes(1);
+});

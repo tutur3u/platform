@@ -43,6 +43,13 @@ function allowedMethods(path: string): string[] {
   ) {
     return ['GET', 'PUT', 'DELETE'];
   }
+  if (
+    new RegExp(
+      `^/api/v1/workspaces/${id}/calendar/events/${id}/response$`
+    ).test(path)
+  ) {
+    return ['POST'];
+  }
   if (path === '/api/v1/calendar/auth/accounts') return ['GET', 'DELETE'];
   if (path === '/api/v1/calendar/connections') return ['GET', 'PATCH'];
   if (

@@ -309,7 +309,42 @@ tracing configuration.
 
 Calendar owns a workspace `test` script, so `bun test` and CI coverage include
 its provider, authorization, cron and event-route suites automatically. Run
-`ttr resources run -- bun --cwd apps/calendar run test --maxWorkers=2` for the
+`ttr resources run -- bun run --cwd apps/calendar test --maxWorkers=2` for the
 complete focused suite. Manual provider smoke tests supplement these regressions;
 they do not replace the automated suite or prove that closed-client scheduling
 is active in production.
+
+### Invitation delivery API
+
+Explicit invitations use the events collection POST with an `invitation`
+containing guest email addresses, optional-attendee flags and an IANA time zone,
+plus a UUIDv7 `requestId`. Choose a writable connected Google or Microsoft
+calendar. Provider-owned RSVP status is never accepted as organizer input.
+
+The same request ID must survive retries. The server binds it to the actor,
+workspace, source and complete invitation details. It reserves an encrypted
+local event before sending, then records the provider identity. Google uses a
+stable event ID and a private request fingerprint; Graph uses `transactionId`.
+A duplicate Google event with a different fingerprint is rejected. A timeout
+does not authorize a fresh send or a new request ID.
+
+Calendar requires `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` from
+the infrastructure vault for the request lease. Missing storage fails closed.
+Only request hashes and completion state enter Redis; provider credentials and
+guest lists do not. Requests are accepted for 15 minutes, with one minute of
+forward clock tolerance. A 409 or ambiguous failure must leave the client in a
+review/retry state. Check the calendar before creating a replacement request.
+Pending deliveries cannot be edited or deleted through the event API.
+
+POST `/api/v1/workspaces/:wsId/calendar/events/:eventId/response` accepts
+`accepted`, `declined` or `tentative`. The selected connected account must
+actually be an attendee; organizer identity, provider concurrency and workspace
+authorization are checked before writing. Native clients use the authenticated
+infrastructure gateway, which permits only POST on this route. Responses are
+private and uncached.
+
+This is the delivery foundation. Scheduling surfaces and assistant tools must
+present the exact meeting and recipients for user confirmation before calling
+the send operation. These API tests do not establish live Gmail/Outlook delivery;
+verify invitations and RSVP updates using explicitly authorized test accounts
+before claiming provider interoperability.

@@ -171,6 +171,19 @@ export async function PUT(request: Request, { params }: Params) {
       throw existingError;
     }
 
+    if (
+      (existingEvent.scheduling_metadata as Record<string, unknown> | null)
+        ?.meeting_delivery === 'pending'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'This invitation is still being delivered. Check its status before changing it',
+        },
+        { status: 409 }
+      );
+    }
+
     const decryptedExisting = await decryptEventFromStorage(
       existingEvent,
       wsId
@@ -472,6 +485,19 @@ export async function DELETE(request: Request, { params }: Params) {
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
       throw existingError;
+    }
+
+    if (
+      (existingEvent.scheduling_metadata as Record<string, unknown> | null)
+        ?.meeting_delivery === 'pending'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'This invitation is still being delivered. Check its status before changing it',
+        },
+        { status: 409 }
+      );
     }
 
     if (
