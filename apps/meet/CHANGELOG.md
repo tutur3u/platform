@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.1](https://github.com/tutur3u/platform/compare/meet-v0.30.0...meet-v0.30.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **meet:** diagnose audio stutter and harden playback checks ([c371b60](https://github.com/tutur3u/platform/commit/c371b60a25853ca7a7ff049105cfbb372a96016e))
+* **meet:** preserve live speech and improve call recovery ([efb0ef0](https://github.com/tutur3u/platform/commit/efb0ef01023090ce5d9e56a7f9959a631a1611c1)) ([#5416](https://github.com/tutur3u/platform/issues/5416)) ([ab8196c](https://github.com/tutur3u/platform/commit/ab8196c29b17476848dcb95bdfb852cb10a6093d))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/meet-v0.29.1...meet-v0.30.0) (2026-09-20)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/tanstack-web-v0.29.0...tanstack-web-v0.29.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **build:** include dependency patches in Docker installs ([bee5c8f](https://github.com/tutur3u/platform/commit/bee5c8fea7516fe96f708bbecd19492c2bb002d4))
+* **meet:** preserve prerender identity in Worker builds ([#5418](https://github.com/tutur3u/platform/issues/5418)) ([f3987be](https://github.com/tutur3u/platform/commit/f3987be14b05956823624b4b22bd2b652f77515a))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.28.1...tanstack-web-v0.29.0) (2026-09-20)
 
 

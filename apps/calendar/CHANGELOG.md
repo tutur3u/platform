@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/calendar-v0.29.0...calendar-v0.29.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **calendar:** normalize event colors before invitation delivery ([2e8de45](https://github.com/tutur3u/platform/commit/2e8de453043ca837104642f3bab3ba0bb82d5ef4)) ([#5415](https://github.com/tutur3u/platform/issues/5415)) ([dd82f5b](https://github.com/tutur3u/platform/commit/dd82f5bdefdf81557fb3ed794d69538cbaa3eae0))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/calendar-v0.28.0...calendar-v0.29.0) (2026-09-20)
 
 

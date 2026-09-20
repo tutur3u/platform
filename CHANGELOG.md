@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.52.1](https://github.com/tutur3u/platform/compare/platform-v0.52.0...platform-v0.52.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **build:** include dependency patches in Docker installs ([bee5c8f](https://github.com/tutur3u/platform/commit/bee5c8fea7516fe96f708bbecd19492c2bb002d4))
+* **calendar:** normalize event colors before invitation delivery ([2e8de45](https://github.com/tutur3u/platform/commit/2e8de453043ca837104642f3bab3ba0bb82d5ef4)) ([#5415](https://github.com/tutur3u/platform/issues/5415)) ([dd82f5b](https://github.com/tutur3u/platform/commit/dd82f5bdefdf81557fb3ed794d69538cbaa3eae0))
+* **ci:** normalize generated release PR descriptions ([cdf57bc](https://github.com/tutur3u/platform/commit/cdf57bcbbc4f25c068f36dbf71dcaa09646baeb5)) ([#5419](https://github.com/tutur3u/platform/issues/5419)) ([94c0632](https://github.com/tutur3u/platform/commit/94c06325c69f98b1cd312f86608e7220797b0b94))
+* **meet:** diagnose audio stutter and harden playback checks ([c371b60](https://github.com/tutur3u/platform/commit/c371b60a25853ca7a7ff049105cfbb372a96016e))
+* **meet:** preserve component names during Worker bundling ([4c9ed24](https://github.com/tutur3u/platform/commit/4c9ed24a5a1c282700b4aa87554520cddaa164fb))
+* **meet:** preserve live speech and improve call recovery ([efb0ef0](https://github.com/tutur3u/platform/commit/efb0ef01023090ce5d9e56a7f9959a631a1611c1)) ([#5416](https://github.com/tutur3u/platform/issues/5416)) ([ab8196c](https://github.com/tutur3u/platform/commit/ab8196c29b17476848dcb95bdfb852cb10a6093d))
+* **meet:** preserve prerender identity in Worker builds ([#5418](https://github.com/tutur3u/platform/issues/5418)) ([f3987be](https://github.com/tutur3u/platform/commit/f3987be14b05956823624b4b22bd2b652f77515a))
+* **mobile:** adapt Assistant starters to tablet layouts ([0c9e17c](https://github.com/tutur3u/platform/commit/0c9e17c881f3d8bfc8ab2e7bb42efcb1fd2f376a))
+* **mobile:** unify navigation, loading, and fullscreen flows ([5eb1747](https://github.com/tutur3u/platform/commit/5eb17472531da24c288ad6d2df302b1e687212df))
+* **mobile:** unify navigation, Nova loading, and fullscreen flows ([#5414](https://github.com/tutur3u/platform/issues/5414)) ([58da311](https://github.com/tutur3u/platform/commit/58da311b1ed0b11d1deb128e3a2e9b3a926f2b06))
+
 ## [0.52.0](https://github.com/tutur3u/platform/compare/platform-v0.51.1...platform-v0.52.0) (2026-09-20)
 
 
