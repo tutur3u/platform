@@ -44,9 +44,15 @@ test('release merge never races release generation or another merge run', () => 
 test('release merge reuses the local scripts instead of reimplementing them', () => {
   // The whole point of this workflow: the merge rules live in one place, and
   // the scheduled path exercises the same code the release flow runs locally.
-  assert.match(workflow, /^ {8}run: bun git-release-please$/m);
-  assert.match(workflow, /^ {8}run: bun git-sync$/m);
-  assert.match(workflow, /^ {8}run: bun git-sync --no-push$/m);
+  assert.match(workflow, /^ {10}bun git-release-please --skip-fetch$/m);
+  assert.match(
+    workflow,
+    /^ {8}run: bun git-sync --current-branch --only-branch production$/m
+  );
+  assert.match(
+    workflow,
+    /^ {8}run: bun git-sync --current-branch --only-branch production --no-push$/m
+  );
 });
 
 test('release merge skips cleanly when there is nothing to merge', () => {
@@ -61,6 +67,32 @@ test('release merge skips cleanly when there is nothing to merge', () => {
     /if: steps\.plan\.outputs\.should_merge == 'true'/,
     'the merge steps must be gated on the plan'
   );
+});
+
+test('production waits for the exact pushed main commit and never promotes a newer unchecked head', () => {
+  const push = workflow.indexOf('- name: Push verified release merge to main');
+  const wait = workflow.indexOf(
+    '- name: Wait for exact main CI before production'
+  );
+  const sync = workflow.indexOf('- name: Sync main and production');
+  assert.ok(push > 0 && wait > push && sync > wait);
+  assert.match(workflow, /run: node scripts\/ci\/wait-release-main\.mjs/);
+  assert.match(workflow, /actions: read/);
+  assert.match(
+    workflow,
+    /run: bun git-sync --current-branch --only-branch production/
+  );
+  assert.match(workflow, /MERGE_OUTCOME:/);
+  assert.match(workflow, /Release merge did not complete/);
+});
+
+test('release validation bounds both task and test worker concurrency', () => {
+  assert.match(workflow, /TURBO_CONCURRENCY: "2"/);
+  assert.match(workflow, /VITEST_MAX_WORKERS: "2"/);
+  const turbo = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'turbo.json'), 'utf8')
+  );
+  assert.ok(turbo.globalPassThroughEnv.includes('VITEST_MAX_WORKERS'));
 });
 
 test('release merge prefers the production release branch and ignores overflow notes', () => {

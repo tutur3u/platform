@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalPassThroughEnv": [
+    "VITEST_MAX_WORKERS",
     "BASE_REF",
     "CHANGED_FILES",
     "CHANGED_FILES_FILE",
