@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2](https://github.com/tutur3u/platform/compare/supabase-v0.5.1...supabase-v0.5.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0)) ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+
 ## [0.5.1](https://github.com/tutur3u/platform/compare/supabase-v0.5.0...supabase-v0.5.1) (2026-08-21)
 
 

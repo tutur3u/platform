@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.2](https://github.com/tutur3u/platform/compare/sdk-v0.22.1...sdk-v0.22.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **ci:** recover daily release merges with verified promotion ([56fcb8c](https://github.com/tutur3u/platform/commit/56fcb8c18ce3a22d2b7067229e5d8a46afc0db41)) ([#5406](https://github.com/tutur3u/platform/issues/5406)) ([c5abc4f](https://github.com/tutur3u/platform/commit/c5abc4fbd9ce4c6a2bf0b4f830927bb8736dd879))
+
 ## [0.22.1](https://github.com/tutur3u/platform/compare/sdk-v0.22.0...sdk-v0.22.1) (2026-09-11)
 
 

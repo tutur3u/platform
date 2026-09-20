@@ -11,8 +11,7 @@
 ### Bug Fixes
 
 * **billing:** confirm paid changes through supported Polar updates ([eedbd48](https://github.com/tutur3u/platform/commit/eedbd48744e3ff7e52a852ed562ca041980c8251))
-* **billing:** fail closed on unknown usage and subscription capacity ([ccfcba4](https://github.com/tutur3u/platform/commit/ccfcba46f236981b1d4e59e1c389bee8472b2ca8))
-* **billing:** fail closed on unknown usage and subscription capacity ([#5333](https://github.com/tutur3u/platform/issues/5333)) ([a308a89](https://github.com/tutur3u/platform/commit/a308a8996f17a81c76c8fb0d498a14d8dbf289c3))
+* **billing:** fail closed on unknown usage and subscription capacity ([ccfcba4](https://github.com/tutur3u/platform/commit/ccfcba46f236981b1d4e59e1c389bee8472b2ca8)) ([#5333](https://github.com/tutur3u/platform/issues/5333)) ([a308a89](https://github.com/tutur3u/platform/commit/a308a8996f17a81c76c8fb0d498a14d8dbf289c3))
 * **billing:** ignore stale subscription projections ([eab1e90](https://github.com/tutur3u/platform/commit/eab1e909c291d5288648daa20c384f965b4c9632))
 * **billing:** preserve revocation recovery and validate currency codes ([e75cdda](https://github.com/tutur3u/platform/commit/e75cdda47a4dd4020103b08dce2af99209448d9f))
 * **billing:** reconcile plan seats through reviewed checkout ([6f8e23a](https://github.com/tutur3u/platform/commit/6f8e23ac194e69f9d7e4daac06f1981a63af3fe4))
@@ -20,10 +19,8 @@
 * **billing:** reject unavailable provider budgets at request boundaries ([5fb8a9c](https://github.com/tutur3u/platform/commit/5fb8a9c5351488bca1fdf4d66b887ccece9665af))
 * **billing:** reject unverifiable seat assignments and budget overflow ([af834a3](https://github.com/tutur3u/platform/commit/af834a39c1f85e455400c2f4785e60f960103bc1))
 * **billing:** reserve invited seats in plan transitions ([9c9bcd0](https://github.com/tutur3u/platform/commit/9c9bcd06c5eaf8fe788c9c97541a162c9f709624))
-* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
 * **payment:** require raw catalog webhook payloads ([3bfbaf1](https://github.com/tutur3u/platform/commit/3bfbaf188fd24e349d2acddf9a4f75f20178a381))
-* **payment:** restore catalog webhook delivery and guard publication ([3300a82](https://github.com/tutur3u/platform/commit/3300a8225cf3f9d083e223339d628fb0989e0f35))
-* **payment:** restore catalog webhook delivery and guard publication ([#5342](https://github.com/tutur3u/platform/issues/5342)) ([b5f61ec](https://github.com/tutur3u/platform/commit/b5f61ec25617b09245c117e47081544edafa454a))
+* **payment:** restore catalog webhook delivery and guard publication ([3300a82](https://github.com/tutur3u/platform/commit/3300a8225cf3f9d083e223339d628fb0989e0f35)) ([#5342](https://github.com/tutur3u/platform/issues/5342)) ([b5f61ec](https://github.com/tutur3u/platform/commit/b5f61ec25617b09245c117e47081544edafa454a))
 * **pricing:** align localized amounts and plan change previews ([e0e7e3d](https://github.com/tutur3u/platform/commit/e0e7e3d0a07e43e298e9adae39a5a441b0945ab9))
 
 ## [0.5.0](https://github.com/tutur3u/platform/compare/payment-core-v0.4.0...payment-core-v0.5.0) (2026-08-14)

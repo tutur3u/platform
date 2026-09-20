@@ -5,10 +5,8 @@
 
 ### Features
 
-* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09))
-* **finance:** clarify category charts and add promotions management ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
-* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
-* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09)) ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf)) ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
 * **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
 * **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
 
@@ -30,19 +28,15 @@
 * **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
 * **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
 * **finance:** restrict promotion forwarding and clarify chart labels ([30d3f05](https://github.com/tutur3u/platform/commit/30d3f053df12360beab94cbdcb0a9fd3a84d38f7))
-* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
 * **pay:** handle invoice history access failures safely ([2de8b48](https://github.com/tutur3u/platform/commit/2de8b48eac2524c6b04c3a63bd324c972eb23a35))
 * **pay:** handle missing checkout references ([f1d00d8](https://github.com/tutur3u/platform/commit/f1d00d85d06fbd205eac96edefaf1ffe25752fac))
 * **payment:** protect webhook ingress and restore order cron ([e059fc7](https://github.com/tutur3u/platform/commit/e059fc74f4eff9e938823b1bd02b42093adc632e))
-* **payment:** restore catalog webhook delivery and guard publication ([3300a82](https://github.com/tutur3u/platform/commit/3300a8225cf3f9d083e223339d628fb0989e0f35))
-* **payment:** restore catalog webhook delivery and guard publication ([#5342](https://github.com/tutur3u/platform/issues/5342)) ([b5f61ec](https://github.com/tutur3u/platform/commit/b5f61ec25617b09245c117e47081544edafa454a))
-* **pay:** verify checkout receipts and use Polar invoice history ([1c36fca](https://github.com/tutur3u/platform/commit/1c36fca078635cb7674013169b5ef22f8c080e7e))
-* **pay:** verify checkout receipts and use Polar invoice history ([#5341](https://github.com/tutur3u/platform/issues/5341)) ([a7a7d15](https://github.com/tutur3u/platform/commit/a7a7d15dc9fa6c3c96a9d44d730134097afcd222))
+* **payment:** restore catalog webhook delivery and guard publication ([3300a82](https://github.com/tutur3u/platform/commit/3300a8225cf3f9d083e223339d628fb0989e0f35)) ([#5342](https://github.com/tutur3u/platform/issues/5342)) ([b5f61ec](https://github.com/tutur3u/platform/commit/b5f61ec25617b09245c117e47081544edafa454a))
+* **pay:** verify checkout receipts and use Polar invoice history ([1c36fca](https://github.com/tutur3u/platform/commit/1c36fca078635cb7674013169b5ef22f8c080e7e)) ([#5341](https://github.com/tutur3u/platform/issues/5341)) ([a7a7d15](https://github.com/tutur3u/platform/commit/a7a7d15dc9fa6c3c96a9d44d730134097afcd222))
 * **pricing:** align localized amounts and plan change previews ([e0e7e3d](https://github.com/tutur3u/platform/commit/e0e7e3d0a07e43e298e9adae39a5a441b0945ab9))
 * **pricing:** enforce checkout transitions and align catalog presentation ([acc1a0d](https://github.com/tutur3u/platform/commit/acc1a0d5430a156a5ca4729fa5ed1b95697e6292))
 * **pricing:** reconcile live catalog displays and tier comparisons ([3aa65c2](https://github.com/tutur3u/platform/commit/3aa65c2221d0d099ff5bd50de0c90bb4237d1bbd))
-* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573))
-* **ui:** repair checklist caret and status controls ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573)) ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
 
 ## [0.16.0](https://github.com/tutur3u/platform/compare/pay-v0.15.2...pay-v0.16.0) (2026-09-07)
 
