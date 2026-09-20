@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const crypto = require('node:crypto');
+const { resolveCronRequest } = require('./calendar-cron-target.js');
 const {
   parseContainerConsoleLogEntries,
 } = require('./watch-blue-green/telemetry.js');
@@ -831,7 +832,6 @@ async function executeJob({
 } = {}) {
   const startedAt = Date.now();
   const cronSecret = env.CRON_SECRET || env.VERCEL_CRON_SECRET;
-  const origin = env.INTERNAL_WEB_API_ORIGIN || DEFAULT_INTERNAL_WEB_API_ORIGIN;
   const timeoutMs = Number.parseInt(
     env.PLATFORM_CRON_REQUEST_TIMEOUT_MS || '',
     10
@@ -886,14 +886,13 @@ async function executeJob({
       throw new Error('CRON_SECRET or VERCEL_CRON_SECRET is not set.');
     }
 
-    const url = new URL(job.path, origin);
+    const { url, headers } = resolveCronRequest(job.path, env);
     const response = await fetchWithTimeout(
       url,
       {
-        headers: {
-          Authorization: `Bearer ${cronSecret}`,
-        },
+        headers,
         method: 'GET',
+        redirect: 'manual',
       },
       requestTimeoutMs,
       fetchImpl

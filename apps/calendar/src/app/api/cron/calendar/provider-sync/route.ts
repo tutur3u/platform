@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { Effect } from '@tuturuuu/utils/effect';
 import { NextRequest, NextResponse } from 'next/server';
 import { POST as syncWorkspaceCalendar } from '@/app/api/v1/workspaces/[wsId]/calendar/sync/route';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
@@ -34,21 +35,26 @@ async function handleGET(request: NextRequest) {
 
   try {
     const sbAdmin = await createAdminClient();
-    const { data: tokenRows, error } = await sbAdmin
-      .from('calendar_auth_tokens')
-      .select('ws_id')
-      .eq('is_active', true);
-
-    if (error) {
-      return NextResponse.json(
-        { ok: false, error: 'Failed to fetch connected workspaces' },
-        { status: 500 }
-      );
+    // Supabase caps unpaginated reads; walk stable pages before dispatching.
+    const workspaceSet = new Set<string>();
+    const pageSize = 500;
+    for (let offset = 0; ; offset += pageSize) {
+      const { data: tokenRows, error } = await sbAdmin
+        .from('calendar_auth_tokens')
+        .select('ws_id')
+        .eq('is_active', true)
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) {
+        return NextResponse.json(
+          { ok: false, error: 'Failed to fetch connected workspaces' },
+          { status: 500 }
+        );
+      }
+      for (const row of tokenRows ?? []) workspaceSet.add(row.ws_id);
+      if (!tokenRows || tokenRows.length < pageSize) break;
     }
-
-    const workspaceIds = [
-      ...new Set((tokenRows ?? []).map((row) => row.ws_id)),
-    ];
+    const workspaceIds = [...workspaceSet];
 
     const results: Array<{
       ws_id: string;
@@ -57,47 +63,64 @@ async function handleGET(request: NextRequest) {
       error?: string;
     }> = [];
 
-    for (const wsId of workspaceIds) {
-      try {
-        const response = await syncWorkspaceCalendar(
-          new NextRequest(
-            new URL(`/api/v1/workspaces/${wsId}/calendar/sync`, request.url),
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${cronSecret}`,
-              },
-              body: JSON.stringify({ direction: 'inbound', source: 'cron' }),
+    await Effect.runPromise(
+      Effect.forEach(
+        workspaceIds,
+        (wsId) =>
+          Effect.tryPromise(async () => {
+            try {
+              const response = await syncWorkspaceCalendar(
+                new NextRequest(
+                  new URL(
+                    `/api/v1/workspaces/${wsId}/calendar/sync`,
+                    request.url
+                  ),
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${cronSecret}`,
+                    },
+                    body: JSON.stringify({
+                      direction: 'inbound',
+                      source: 'cron',
+                    }),
+                  }
+                ),
+                { params: Promise.resolve({ wsId }) }
+              );
+
+              if (!response.ok) {
+                await response.body?.cancel();
+                throw new Error(
+                  `Workspace sync returned HTTP ${response.status}`
+                );
+              }
+
+              const body = await response.json().catch(() => null);
+
+              results.push({
+                ws_id: wsId,
+                success: body?.ok !== false,
+                summary: body?.summary ?? null,
+                ...(body?.ok === false
+                  ? { error: body.code || 'Calendar sync partially failed' }
+                  : {}),
+              });
+            } catch (syncError) {
+              results.push({
+                ws_id: wsId,
+                success: false,
+                error:
+                  syncError instanceof Error
+                    ? syncError.message
+                    : 'Unknown error',
+              });
             }
-          ),
-          { params: Promise.resolve({ wsId }) }
-        );
-
-        if (!response.ok) {
-          const body = await response.text();
-          throw new Error(body || `HTTP ${response.status}`);
-        }
-
-        const body = await response.json().catch(() => null);
-
-        results.push({
-          ws_id: wsId,
-          success: body?.ok !== false,
-          summary: body?.summary ?? null,
-          ...(body?.ok === false
-            ? { error: body.code || 'Calendar sync partially failed' }
-            : {}),
-        });
-      } catch (syncError) {
-        results.push({
-          ws_id: wsId,
-          success: false,
-          error:
-            syncError instanceof Error ? syncError.message : 'Unknown error',
-        });
-      }
-    }
+          }),
+        { concurrency: 3 }
+      )
+    );
 
     const allSucceeded = results.every((result) => result.success);
     return NextResponse.json(

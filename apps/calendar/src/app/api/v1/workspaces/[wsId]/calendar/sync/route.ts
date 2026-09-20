@@ -16,20 +16,22 @@ import {
   getCalendarSyncPreferences,
   resolveOutboundSyncSource,
 } from '@/lib/calendar/sync-preferences';
+import {
+  type CalendarAuthToken,
+  ensureValidToken,
+} from '@/lib/calendar/token-refresh';
 import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 
 interface RouteParams {
   wsId: string;
 }
 
-type SyncDirection = 'inbound' | 'outbound' | 'both';
 type DashboardRunRow = {
   id?: string;
   status: string | null;
   start_time: string | null;
   cooldown_remaining_seconds?: number | null;
 };
-type MicrosoftTokenRow = { id: string; access_token: string };
 type CalendarConnectionRow = {
   calendar_id: string;
   color?: string | null;
@@ -187,7 +189,7 @@ async function syncMicrosoftInbound(args: {
 }) {
   const { data: tokenRows, error: tokenError } = await args.sbAdmin
     .from('calendar_auth_tokens')
-    .select('id, access_token')
+    .select('*')
     .eq('ws_id', args.wsId)
     .eq('provider', 'microsoft')
     .eq('is_active', true);
@@ -196,7 +198,7 @@ async function syncMicrosoftInbound(args: {
     throw tokenError;
   }
 
-  const tokens = (tokenRows ?? []) as MicrosoftTokenRow[];
+  const tokens = (tokenRows ?? []) as CalendarAuthToken[];
   let inserted = 0;
   let updated = 0;
   let deleted = 0;
@@ -217,7 +219,11 @@ async function syncMicrosoftInbound(args: {
       throw connectionError;
     }
 
-    const graphClient = createGraphClient(token.access_token);
+    const refreshed = await ensureValidToken(args.sbAdmin, token);
+    if (refreshed.error) {
+      throw new Error('Microsoft calendar credential refresh failed');
+    }
+    const graphClient = createGraphClient(refreshed.accessToken);
     const enabledConnections = (
       (connections ?? []) as CalendarConnectionRow[]
     ).filter((connection) => connection.sync_inbound_enabled !== false);
@@ -473,8 +479,12 @@ export async function POST(
     }
 
     const body = await request.json().catch(() => ({}));
-    const direction = (body.direction ?? 'inbound') as SyncDirection;
-    const source = body.source === 'cron' ? 'vercel_cron' : 'manual';
+    const direction = body?.direction ?? 'inbound';
+    if (!['inbound', 'outbound', 'both'].includes(direction)) {
+      return jsonError('Invalid sync direction', 400);
+    }
+    // Background privileges come from verified server credentials, never JSON.
+    const source = access.isCronAuth ? 'vercel_cron' : 'manual';
 
     sbAdmin = (await createAdminClient()) as any;
     await clearStaleRunningSyncRuns(sbAdmin, wsId);

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  ensureValidTokenMock,
   dashboardUpdateMock,
   createAdminClientMock,
   createGraphClientMock,
@@ -9,6 +10,7 @@ const {
   resolveSessionAuthContextMock,
   verifyWorkspaceMembershipTypeMock,
 } = vi.hoisted(() => ({
+  ensureValidTokenMock: vi.fn(),
   dashboardUpdateMock: vi.fn(),
   createAdminClientMock: vi.fn(),
   createGraphClientMock: vi.fn(),
@@ -28,6 +30,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 vi.mock('@/lib/calendar/incremental-active-sync', () => ({
   performIncrementalActiveSync: performIncrementalActiveSyncMock,
+}));
+
+vi.mock('@/lib/calendar/token-refresh', () => ({
+  ensureValidToken: ensureValidTokenMock,
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -246,6 +252,11 @@ function createAdminSupabaseMock({
 
 describe('workspace calendar sync route', () => {
   beforeEach(() => {
+    ensureValidTokenMock.mockResolvedValue({
+      accessToken: 'refreshed-microsoft-token',
+      refreshed: true,
+      expiresAt: null,
+    });
     process.env.CRON_SECRET = 'cron-secret';
     vi.clearAllMocks();
     createAdminClientMock.mockResolvedValue(createAdminSupabaseMock());
@@ -348,6 +359,41 @@ describe('workspace calendar sync route', () => {
     expect(performIncrementalActiveSyncMock).not.toHaveBeenCalled();
   });
 
+  it('refreshes Microsoft credentials before background fetching', async () => {
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer cron-secret' },
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    expect(response.status).toBe(200);
+    expect(ensureValidTokenMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ id: 'microsoft-token-id' })
+    );
+    expect(createGraphClientMock).toHaveBeenCalledWith(
+      'refreshed-microsoft-token'
+    );
+  });
+
+  it('never fetches Microsoft events with credentials that failed refresh', async () => {
+    ensureValidTokenMock.mockResolvedValue({
+      accessToken: 'expired',
+      error: 'invalid_grant',
+    });
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer cron-secret' },
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    expect(response.status).toBeGreaterThanOrEqual(400);
+    expect(createGraphClientMock).not.toHaveBeenCalled();
+    expect(fetchMicrosoftEventsMock).not.toHaveBeenCalled();
+  });
+
   it('enforces the manual sync cooldown', async () => {
     createAdminClientMock.mockResolvedValue(
       createAdminSupabaseMock({
@@ -373,6 +419,49 @@ describe('workspace calendar sync route', () => {
     expect(body).toMatchObject({ code: 'sync_cooldown_active' });
     expect(performIncrementalActiveSyncMock).not.toHaveBeenCalled();
   });
+
+  it('does not let a workspace member impersonate cron to bypass cooldown', async () => {
+    createAdminClientMock.mockResolvedValue(
+      createAdminSupabaseMock({
+        recentRuns: [
+          {
+            id: 'recent',
+            start_time: new Date().toISOString(),
+            status: 'success',
+          },
+        ],
+      })
+    );
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direction: 'inbound', source: 'cron' }),
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    expect(response.status).toBe(429);
+    expect(performIncrementalActiveSyncMock).not.toHaveBeenCalled();
+  });
+
+  it.each(['invalid', 42, {}, []])(
+    'rejects invalid sync direction %j',
+    async (direction) => {
+      const response = await POST(
+        new Request(
+          `http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ direction }),
+          }
+        ) as never,
+        { params: Promise.resolve({ wsId: WS_ID }) }
+      );
+      expect(response.status).toBe(400);
+      expect(performIncrementalActiveSyncMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('does not report success when the completion record cannot be saved', async () => {
     createAdminClientMock.mockResolvedValue(
@@ -456,7 +545,7 @@ describe('workspace calendar sync route', () => {
     );
     expect(performIncrementalActiveSyncMock).toHaveBeenCalledTimes(1);
     expect(createGraphClientMock).toHaveBeenCalledWith(
-      'microsoft-access-token'
+      'refreshed-microsoft-token'
     );
     expect(fetchMicrosoftEventsMock).toHaveBeenCalledWith(
       'graph-client',

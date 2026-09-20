@@ -42,7 +42,7 @@ class CalendarPage extends StatelessWidget {
               ? CalendarCubit.cachedStateForWorkspace(wsId)
               : null,
         );
-        if (wsId != null) unawaited(cubit.loadEvents(wsId));
+        if (wsId != null) unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         return cubit;
       },
       child: const _CalendarView(),
@@ -50,8 +50,35 @@ class CalendarPage extends StatelessWidget {
   }
 }
 
-class _CalendarView extends StatelessWidget {
+class _CalendarView extends StatefulWidget {
   const _CalendarView();
+
+  @override
+  State<_CalendarView> createState() => _CalendarViewState();
+}
+
+class _CalendarViewState extends State<_CalendarView> {
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+        final cubit = context.read<CalendarCubit>();
+        if (wsId != null && !cubit.state.isRefreshing) {
+          unawaited(cubit.loadEvents(wsId, forceRefresh: true));
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
