@@ -7,9 +7,7 @@ export default defineConfig({
   test: {
     server: {
       deps: {
-        // Transform shared server modules so server-only mocks also apply
-        // with Bun's isolated CI dependency layout.
-        inline: ['next-intl', '@tuturuuu/utils'],
+        inline: ['next-intl'],
       },
     },
     environment: 'jsdom',
