@@ -1205,19 +1205,38 @@ queued until cron execution is enabled again. The runner also supports
 manual runs, restart-safe state, and log persistence without starting the
 long-running loop.
 
-Calendar cron routes should call workspace calendar APIs through
-`INTERNAL_WEB_API_ORIGIN` when it is present. In Docker production this keeps
-provider sync and smart scheduling traffic on the internal `web-proxy` origin
-instead of accidentally depending on a public app URL from inside the container.
-`calendar-provider-sync` intentionally calls the same
-`/api/v1/workspaces/:wsId/calendar/sync` route that the calendar page uses, but
-with cron auth and `source: "cron"` so dashboard runs stay manual and scheduled
-runs stay auditable. The workspace sync route is responsible for provider
-fan-out: Google connections are selected from active Google auth-token rows, and
-Microsoft connections are selected from active Microsoft auth-token rows. Do not
-reimplement provider-specific calendar fetching inside the cron wrapper.
-The job should run every 15 minutes from `apps/web/cron.config.json`; Calendar
-provider sync should not be scheduled through Trigger.dev in production.
+Calendar jobs run every 15 minutes (provider sync) and six hours (smart
+scheduling) from `apps/web/cron.config.json`. The Docker scheduler sends these
+two fixed paths to the infrastructure app's `/api/cron/calendar/:job` gateway;
+the old web-origin paths no longer have handlers. Other jobs continue using
+`INTERNAL_WEB_API_ORIGIN`.
+
+The infrastructure gateway authenticates `CRON_SECRET` (or `VERCEL_CRON_SECRET`)
+before loading the existing encrypted `mobile_calendar_gateway:v1` credential.
+It forwards only provider sync and smart scheduling to the fixed Calendar origin,
+attaching the private hosting header and server cron authentication. Deploy the
+infrastructure gateway before promoting the scheduler change. The scheduler,
+infrastructure, and Calendar must share cron authentication configuration.
+No new hosting credential is copied into scheduler environments or mobile builds.
+Missing credentials fail closed; redirects are never followed with credentials.
+Verify actual successful job executions after rollout, rather than relying on
+the next-run estimate. The gateway has a four-minute upstream deadline and a
+bounded JSON response; failures remain visible to the scheduler.
+
+The Calendar cron handler invokes its local workspace sync handler directly.
+That handler selects active Google and Microsoft connections, refreshes provider
+credentials on the server, and persists events independently of any open client.
+Background privileges are derived from verified cron authorization, never the
+JSON `source` field. Calendar should not also be scheduled through Trigger.dev.
+Microsoft OAuth connections now persist the account-bound refresh credential
+before their request-local MSAL cache is discarded. Existing Microsoft rows with
+an empty `refresh_token` need one reconnect: the old callback stored no durable
+credential, so a background job cannot recover it. Token refresh preserves the
+calendar write scopes needed for invitations. Never log the serialized MSAL
+cache, access tokens, refresh credentials, or provider sync tokens.
+
+Mobile renders its cached snapshot immediately and revalidates on opening or
+resuming Calendar; this fetch does not initiate provider synchronization.
 
 ## Auto-Deploy Watcher
 

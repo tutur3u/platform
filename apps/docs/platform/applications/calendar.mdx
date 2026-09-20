@@ -304,3 +304,12 @@ Verify worker registration, install manifest, cached asset reuse, offline
 fallback, and the absence of API/private-page entries in Cache Storage on both
 Calendar and Tasks. Re-run both app builds when changing the worker routes or
 tracing configuration.
+
+### Calendar regression tests
+
+Calendar owns a workspace `test` script, so `bun test` and CI coverage include
+its provider, authorization, cron and event-route suites automatically. Run
+`ttr resources run -- bun --cwd apps/calendar run test --maxWorkers=2` for the
+complete focused suite. Manual provider smoke tests supplement these regressions;
+they do not replace the automated suite or prove that closed-client scheduling
+is active in production.

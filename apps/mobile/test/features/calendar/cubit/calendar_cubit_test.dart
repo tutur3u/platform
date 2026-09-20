@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -39,6 +40,115 @@ void main() {
 
     tearDown(() async {
       await cubit.close();
+    });
+
+    test(
+      'a previous workspace response cannot replace the active calendar',
+      () async {
+        final oldResponse = Completer<List<CalendarEvent>>();
+        final newResponse = Completer<List<CalendarEvent>>();
+        when(
+          () => repository.getEvents(
+            'old',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenAnswer((_) => oldResponse.future);
+        when(
+          () => repository.getEvents(
+            'new',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenAnswer((_) => newResponse.future);
+        final first = cubit.loadEvents('old', forceRefresh: true);
+        await Future<void>.delayed(Duration.zero);
+        final second = cubit.loadEvents('new', forceRefresh: true);
+        await Future<void>.delayed(Duration.zero);
+        newResponse.complete([
+          _event(id: 'new', startAt: DateTime(2026, 3, 25)),
+        ]);
+        await second;
+        oldResponse.complete([
+          _event(id: 'old', startAt: DateTime(2026, 3, 25)),
+        ]);
+        await first;
+        expect(cubit.state.events.single.id, 'new');
+        expect(
+          CalendarCubit.cachedStateForWorkspace('new')!.events.single.id,
+          'new',
+        );
+      },
+    );
+
+    test(
+      'closing Calendar during a refresh does not emit or cache its response',
+      () async {
+        final response = Completer<List<CalendarEvent>>();
+        when(
+          () => repository.getEvents(
+            'closing',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenAnswer((_) => response.future);
+        final pending = cubit.loadEvents('closing', forceRefresh: true);
+        await Future<void>.delayed(Duration.zero);
+        await cubit.close();
+        response.complete([_event(id: 'late', startAt: DateTime(2026, 3, 25))]);
+        await pending;
+        expect(CalendarCubit.cachedStateForWorkspace('closing'), isNull);
+      },
+    );
+
+    test(
+      'a fresh cache does not suppress fetching a newly selected year',
+      () async {
+        when(
+          () => repository.getEvents(
+            'ws-1',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenAnswer((_) async => []);
+        await cubit.loadEvents('ws-1');
+        final nextYear = DateTime(DateTime.now().year + 1, 6);
+        cubit.selectDate(nextYear);
+        await cubit.ensureRangeLoaded('ws-1', nextYear);
+        expect(cubit.state.fetchedRange!.start.isBefore(nextYear), isTrue);
+        expect(cubit.state.fetchedRange!.end.isAfter(nextYear), isTrue);
+        verify(
+          () => repository.getEvents(
+            'ws-1',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).called(2);
+      },
+    );
+
+    test('revoked access clears visible and cached events', () async {
+      when(
+        () => repository.getEvents(
+          'ws-1',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenAnswer(
+        (_) async => [_event(id: 'private', startAt: DateTime(2026, 3, 25))],
+      );
+      await cubit.loadEvents('ws-1');
+      when(
+        () => repository.getEvents(
+          'ws-1',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenThrow(const ApiException(statusCode: 403, message: 'Forbidden'));
+      await cubit.loadEvents('ws-1', forceRefresh: true);
+      expect(cubit.state.events, isEmpty);
+      expect(cubit.state.status, CalendarStatus.error);
+      expect(CalendarCubit.cachedStateForWorkspace('ws-1'), isNull);
     });
 
     test('defaults to agenda view', () {

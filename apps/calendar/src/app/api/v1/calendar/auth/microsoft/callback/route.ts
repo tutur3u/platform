@@ -17,6 +17,7 @@ import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
 } from '@/lib/calendar/microsoft-config';
+import { microsoftRefreshCredential } from '@/lib/calendar/microsoft-refresh-credential';
 import {
   calendarOAuthDebug,
   calendarOAuthError,
@@ -179,10 +180,21 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
-    // Prepare token data
-    // Note: Microsoft doesn't return refresh_token directly in acquireTokenByCode
-    // We need to get it from the account cache or request offline_access scope
-    const refreshToken = ''; // Microsoft handles refresh internally via MSAL cache
+    // Persist the account-bound refresh credential before the request-local
+    // MSAL cache disappears. An access token alone cannot power scheduled sync.
+    const refreshToken = microsoftRefreshCredential(
+      cca.getTokenCache().serialize(),
+      tokenResponse.account?.homeAccountId,
+      config.clientId
+    );
+    if (!refreshToken) {
+      return NextResponse.json(
+        {
+          error: 'Microsoft offline access was not granted. Please reconnect.',
+        },
+        { status: 502 }
+      );
+    }
     const expiresAt = tokenResponse.expiresOn?.toISOString() || null;
 
     if (existingToken) {

@@ -252,7 +252,6 @@ export async function performIncrementalActiveSync(
     const syncToken = await getSyncToken(wsId, syncTokenKey);
     console.debug('🔍 [DEBUG] Sync token result:', {
       hasSyncToken: !!syncToken,
-      syncToken,
       calendarId,
     });
 

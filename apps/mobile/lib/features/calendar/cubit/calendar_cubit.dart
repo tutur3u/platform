@@ -8,6 +8,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/calendar_event_deduplication.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/calendar/calendar_cache.dart';
 
 part 'calendar_state.dart';
@@ -26,6 +27,7 @@ class CalendarCubit extends Cubit<CalendarState> {
   static const _cacheTag = 'calendar:events';
   static final Map<String, _CalendarCacheEntry> _cache = {};
   String? _wsId;
+  int _loadGeneration = 0;
 
   static Map<String, dynamic> _decodeCacheJson(Object? json) {
     if (json is! Map) {
@@ -116,6 +118,13 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   /// Loads events within a 3-month window around the selected date.
   Future<void> loadEvents(String wsId, {bool forceRefresh = false}) async {
+    final generation = ++_loadGeneration;
+    final userId = currentCacheUserId();
+    bool isCurrent() =>
+        !isClosed &&
+        generation == _loadGeneration &&
+        userId == currentCacheUserId() &&
+        _wsId == wsId;
     final memoryCacheKey = _memoryCacheKey(wsId);
     final hasVisibleData = _wsId == wsId && state.hasLoadedOnce;
     final cached =
@@ -152,6 +161,8 @@ class CalendarCubit extends Cubit<CalendarState> {
             decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
           )
         : null;
+
+    if (!isCurrent()) return;
 
     if (diskCached?.hasValue == true &&
         !hasVisibleData &&
@@ -220,6 +231,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         await _repo.getEvents(wsId, start: start, end: end),
       );
 
+      if (!isCurrent()) return;
       final nextState = state.copyWith(
         status: CalendarStatus.loaded,
         hasLoadedOnce: true,
@@ -239,6 +251,23 @@ class CalendarCubit extends Cubit<CalendarState> {
         tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
       );
     } on Exception catch (e) {
+      if (!isCurrent()) return;
+      if (e is ApiException && (e.statusCode == 401 || e.statusCode == 403)) {
+        _cache.remove(memoryCacheKey);
+        emit(
+          CalendarState(
+            selectedDate: state.selectedDate,
+            status: CalendarStatus.error,
+            error: e.toString(),
+          ),
+        );
+        try {
+          await CacheStore.instance.remove(cacheKey);
+        } on Exception {
+          // Keep access denied even when persistent storage is unavailable.
+        }
+        return;
+      }
       if (cached != null || hasVisibleData || (diskCached?.hasValue ?? false)) {
         emit(
           state.copyWith(
@@ -262,7 +291,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         !targetRange.end.isAfter(range.end)) {
       return;
     }
-    await loadEvents(wsId);
+    await loadEvents(wsId, forceRefresh: true);
   }
 
   /// Loads the next month of events beyond the current fetched range.

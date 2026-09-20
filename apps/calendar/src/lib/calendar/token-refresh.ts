@@ -15,8 +15,11 @@ import { OAuth2Client } from '@tuturuuu/google';
 import {
   ConfidentialClientApplication,
   createMsalConfig,
+  MICROSOFT_CALENDAR_SCOPES,
   type MicrosoftOAuthConfig,
 } from '@tuturuuu/microsoft';
+
+import { microsoftRefreshCredential } from './microsoft-refresh-credential';
 
 export interface CalendarAuthToken {
   id: string;
@@ -36,7 +39,22 @@ export interface TokenRefreshResult {
   accessToken: string;
   expiresAt: Date | null;
   refreshed: boolean;
+  refreshToken?: string;
   error?: string;
+}
+
+function refreshFailure(error: unknown, provider: string): string {
+  const candidate = error as {
+    errorCode?: unknown;
+    code?: unknown;
+    message?: unknown;
+  } | null;
+  const code = candidate?.errorCode ?? candidate?.code;
+  const message =
+    typeof candidate?.message === 'string' ? candidate.message : '';
+  return code === 'invalid_grant' || message.includes('invalid_grant')
+    ? 'invalid_grant'
+    : `${provider} token refresh failed`;
 }
 
 // Buffer time before token expiry to trigger refresh (5 minutes)
@@ -46,15 +64,12 @@ const REFRESH_BUFFER_MS = 5 * 60 * 1000;
  * Check if a token needs to be refreshed
  */
 export function tokenNeedsRefresh(expiresAt: string | null): boolean {
-  if (!expiresAt) {
-    // If no expiry info, assume token is valid but should be refreshed proactively
-    return false;
-  }
+  if (!expiresAt) return true;
 
   const expiryTime = new Date(expiresAt).getTime();
   const now = Date.now();
 
-  return expiryTime - now < REFRESH_BUFFER_MS;
+  return !Number.isFinite(expiryTime) || expiryTime - now < REFRESH_BUFFER_MS;
 }
 
 /**
@@ -95,13 +110,12 @@ async function refreshGoogleToken(
       refreshed: true,
     };
   } catch (error) {
-    console.error('[TokenRefresh] Google token refresh failed:', error);
+    console.error('[TokenRefresh] Google token refresh failed');
     return {
       accessToken: authToken.access_token,
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
       refreshed: false,
-      error:
-        error instanceof Error ? error.message : 'Google token refresh failed',
+      error: refreshFailure(error, 'Google'),
     };
   }
 }
@@ -134,10 +148,7 @@ async function refreshMicrosoftToken(
 
     const result = await cca.acquireTokenByRefreshToken({
       refreshToken: authToken.refresh_token,
-      scopes: [
-        'https://graph.microsoft.com/Calendars.Read',
-        'https://graph.microsoft.com/User.Read',
-      ],
+      scopes: MICROSOFT_CALENDAR_SCOPES,
     });
 
     if (!result) {
@@ -146,19 +157,22 @@ async function refreshMicrosoftToken(
 
     return {
       accessToken: result.accessToken,
+      refreshToken:
+        microsoftRefreshCredential(
+          cca.getTokenCache().serialize(),
+          result.account?.homeAccountId,
+          config.clientId
+        ) ?? undefined,
       expiresAt: result.expiresOn || null,
       refreshed: true,
     };
   } catch (error) {
-    console.error('[TokenRefresh] Microsoft token refresh failed:', error);
+    console.error('[TokenRefresh] Microsoft token refresh failed');
     return {
       accessToken: authToken.access_token,
       expiresAt: authToken.expires_at ? new Date(authToken.expires_at) : null,
       refreshed: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Microsoft token refresh failed',
+      error: refreshFailure(error, 'Microsoft'),
     };
   }
 }
@@ -171,6 +185,14 @@ export async function ensureValidToken(
   supabase: SupabaseClientLike,
   authToken: CalendarAuthToken
 ): Promise<TokenRefreshResult> {
+  if (!authToken.is_active) {
+    return {
+      accessToken: '',
+      expiresAt: null,
+      refreshed: false,
+      error: 'Connection is inactive',
+    };
+  }
   // Check if token needs refresh
   if (!tokenNeedsRefresh(authToken.expires_at)) {
     return {
@@ -180,9 +202,14 @@ export async function ensureValidToken(
     };
   }
 
-  console.log(
-    `[TokenRefresh] Refreshing ${authToken.provider} token for account ${authToken.account_email}`
-  );
+  if (!authToken.refresh_token) {
+    return {
+      accessToken: '',
+      expiresAt: null,
+      refreshed: false,
+      error: 'Reconnect calendar to grant offline access',
+    };
+  }
 
   // Refresh based on provider
   const result =
@@ -196,15 +223,14 @@ export async function ensureValidToken(
       .from('calendar_auth_tokens')
       .update({
         access_token: result.accessToken,
+        ...(result.refreshToken ? { refresh_token: result.refreshToken } : {}),
         expires_at: result.expiresAt?.toISOString() || null,
       })
       .eq('id', authToken.id);
 
     if (updateError) {
-      console.error(
-        '[TokenRefresh] Failed to update token in database:',
-        updateError
-      );
+      console.error('[TokenRefresh] Failed to persist refreshed credential');
+      return { ...result, error: 'Failed to persist refreshed credential' };
     } else {
       console.log(
         `[TokenRefresh] Successfully refreshed and stored ${authToken.provider} token`
@@ -214,9 +240,7 @@ export async function ensureValidToken(
 
   // If refresh failed, mark token as inactive
   if (result.error) {
-    console.warn(
-      `[TokenRefresh] Token refresh failed for ${authToken.account_email}: ${result.error}`
-    );
+    console.warn('[TokenRefresh] Provider credential refresh failed');
 
     // Don't mark as inactive immediately - the token might still be valid
     // Only mark inactive on specific errors like 'invalid_grant'
