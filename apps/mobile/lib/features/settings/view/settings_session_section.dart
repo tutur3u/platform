@@ -1,11 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_panel.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
+import 'package:mobile/features/security/mfa_approval/view/mfa_approval_dialog.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -82,12 +83,16 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
       _approvalError = null;
     });
 
-    final result = await _mfaApprovalRepository.approve(approval);
+    final approved = await showMfaApprovalDialog(
+      context,
+      approval,
+      _mfaApprovalRepository,
+    );
     if (!mounted) {
       return;
     }
 
-    if (result.success) {
+    if (approved == true) {
       _showToast(
         title: context.l10n.mfaApprovalApprovedTitle,
         description: context.l10n.mfaApprovalApprovedDescription,
@@ -101,7 +106,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
 
     setState(() {
       _approvingChallengeId = null;
-      _approvalError = result.error ?? context.l10n.mfaApprovalFailed;
+      _approvalError = null;
     });
   }
 
@@ -131,6 +136,13 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
       title: l10n.settingsDangerSectionTitle,
       description: l10n.settingsDangerSectionDescription,
       children: [
+        const DeviceMfaPanel(),
+        SettingsTile(
+          icon: Icons.devices_rounded,
+          title: l10n.securitySessionsTitle,
+          subtitle: l10n.securitySessionsDescription,
+          onTap: () => context.push(Routes.settingsAccountSecurity),
+        ),
         SettingsTile(
           icon: Icons.lock_outline_rounded,
           title: l10n.appLockSettingsTitle,
@@ -159,22 +171,17 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
         SettingsTile(
           icon: Icons.qr_code_scanner_rounded,
           title: l10n.qrLoginSettingsTitle,
-          subtitle: appLockEnabled
-              ? l10n.qrLoginSettingsDescription
-              : l10n.qrLoginSettingsDisabledDescription,
-          onTap: appLockEnabled
-              ? () => context.push(Routes.settingsQrLoginScan)
-              : null,
+          subtitle: l10n.qrLoginSettingsDescription,
+          onTap: () => context.push(Routes.settingsQrLoginScan),
         ),
         SettingsTile(
           icon: Icons.verified_user_outlined,
           title: l10n.mfaApprovalSettingsTitle,
           subtitle: pendingApproval != null
-              ? l10n.mfaApprovalPendingDescription(pendingApproval.pairCode)
+              ? l10n.deviceMfaReview
               : _requiresMobileMfa
               ? l10n.mfaApprovalRequiresMobileMfa
               : _approvalError ?? l10n.mfaApprovalSettingsIdle,
-          value: pendingApproval?.pairCode,
           showChevron: false,
           trailing: pendingApproval != null
               ? shad.PrimaryButton(
@@ -188,7 +195,7 @@ class _SessionSettingsSectionState extends State<SessionSettingsSection> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(l10n.mfaApprovalApproveAction),
+                      : Text(l10n.deviceMfaReview),
                 )
               : (_approvalLoading || _approvalRefreshing)
               ? const SizedBox(

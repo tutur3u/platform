@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
@@ -72,6 +71,8 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'app_push_navigation.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -540,53 +541,6 @@ class _AppState extends State<App> {
     });
   }
 
-  Future<void> _handlePushNavigation(PushNavigationRequest request) async {
-    final targetWorkspaceId = request.wsId;
-    if (targetWorkspaceId != null &&
-        targetWorkspaceId.isNotEmpty &&
-        _workspaceCubit.state.currentWorkspace?.id != targetWorkspaceId) {
-      if (_workspaceCubit.state.workspaces.isEmpty) {
-        await _workspaceCubit.loadWorkspaces();
-      }
-
-      Workspace? targetWorkspace;
-      for (final workspace in _workspaceCubit.state.workspaces) {
-        if (workspace.id == targetWorkspaceId) {
-          targetWorkspace = workspace;
-          break;
-        }
-      }
-
-      if (targetWorkspace == null) {
-        _router.go(Routes.notifications);
-        return;
-      }
-
-      await _workspaceCubit.selectWorkspace(targetWorkspace);
-    }
-
-    if (request.opensTask) {
-      _router.go(
-        taskBoardDetailLocation(
-          boardId: request.boardId!,
-          taskId: request.entityId!,
-        ),
-      );
-      return;
-    }
-
-    if (request.opensChat) {
-      _router.go(
-        request.conversationId == null
-            ? Routes.chat
-            : Routes.chatConversationPath(request.conversationId!),
-      );
-      return;
-    }
-
-    _router.go(Routes.notifications);
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
@@ -741,16 +695,5 @@ class _AppState extends State<App> {
         ),
       ),
     );
-  }
-}
-
-final class _AppLifecycleObserver extends WidgetsBindingObserver {
-  _AppLifecycleObserver(this._onStateChanged);
-
-  final ValueChanged<AppLifecycleState> _onStateChanged;
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    _onStateChanged(state);
   }
 }

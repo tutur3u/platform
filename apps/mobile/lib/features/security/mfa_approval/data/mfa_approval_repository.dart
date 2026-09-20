@@ -6,15 +6,17 @@ import 'package:mobile/data/sources/api_client.dart';
 class PendingMfaApproval {
   const PendingMfaApproval({
     required this.id,
-    required this.pairCode,
     required this.expiresAt,
     required this.createdAt,
+    this.pairCode = '',
+    this.browser,
   });
 
   factory PendingMfaApproval.fromJson(Map<String, dynamic> json) {
     return PendingMfaApproval(
       id: json['id'] as String? ?? '',
       pairCode: json['pairCode'] as String? ?? '',
+      browser: json['browser'] as String?,
       expiresAt:
           DateTime.tryParse(json['expiresAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
@@ -26,6 +28,7 @@ class PendingMfaApproval {
 
   final String id;
   final String pairCode;
+  final String? browser;
   final DateTime expiresAt;
   final DateTime createdAt;
 }
@@ -74,10 +77,7 @@ class MfaApprovalRepository {
           ? approvalsJson
                 .whereType<Map<String, dynamic>>()
                 .map(PendingMfaApproval.fromJson)
-                .where(
-                  (approval) =>
-                      approval.id.isNotEmpty && approval.pairCode.isNotEmpty,
-                )
+                .where((approval) => approval.id.isNotEmpty)
                 .toList(growable: false)
           : const <PendingMfaApproval>[];
 
@@ -102,13 +102,18 @@ class MfaApprovalRepository {
   }
 
   Future<({bool success, String? error})> approve(
-    PendingMfaApproval approval,
-  ) async {
+    PendingMfaApproval approval, {
+    required String pairCode,
+    bool reject = false,
+    Map<String, String> deviceProof = const {},
+  }) async {
     try {
       final deviceId = await getDeviceId();
       final response = await _apiClient
           .postJson(AuthEndpoints.mfaMobileApprovalApprove(approval.id), {
-            'pairCode': approval.pairCode,
+            'pairCode': pairCode,
+            'decision': reject ? 'reject' : 'approve',
+            ...deviceProof,
             if (deviceId != null) 'deviceId': deviceId,
             if (_platform != null) 'platform': _platform,
           });

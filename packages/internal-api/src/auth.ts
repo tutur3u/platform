@@ -132,6 +132,9 @@ export interface PollQrLoginChallengeResponse {
 }
 
 export interface ApproveQrLoginChallengePayload {
+  origin?: string;
+  factorId?: string;
+  proof?: string;
   deviceId?: string;
   platform?: InternalOtpPlatform;
   secret: string;
@@ -167,10 +170,12 @@ export interface PollMfaMobileApprovalChallengeResponse {
 }
 
 export interface PendingMfaMobileApproval {
+  numberMatching?: boolean;
+  browser?: string | null;
   createdAt: string;
   expiresAt: string;
   id: string;
-  pairCode: string;
+  pairCode?: string;
   status: QrLoginChallengeStatus;
 }
 
@@ -182,6 +187,9 @@ export interface ListPendingMfaMobileApprovalsResponse {
 }
 
 export interface ApproveMfaMobileApprovalPayload {
+  factorId?: string;
+  proof?: string;
+  decision?: 'approve' | 'reject';
   deviceId?: string;
   pairCode?: string;
   platform?: InternalOtpPlatform;

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +15,15 @@ import 'package:mobile/widgets/staggered_entrance.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppsHubPage extends StatefulWidget {
-  const AppsHubPage({this.replayToken = 0, super.key});
+  const AppsHubPage({
+    this.replayToken = 0,
+    this.query = '',
+    this.onSelected,
+    super.key,
+  });
+
+  final String query;
+  final ValueChanged<AppModule>? onSelected;
 
   final int replayToken;
 
@@ -27,7 +34,15 @@ class AppsHubPage extends StatefulWidget {
 class _AppsHubPageState extends State<AppsHubPage> {
   @override
   Widget build(BuildContext context) {
-    final modules = _orderedModules(AppRegistry.modules(context));
+    final modules = _orderedModules(AppRegistry.modules(context))
+        .where(
+          (module) =>
+              '${module.label(context.l10n)} '
+                      '${appDescription(context, module.id)} ${module.id}'
+                  .toLowerCase()
+                  .contains(widget.query.trim().toLowerCase()),
+        )
+        .toList();
 
     return shad.Scaffold(
       child: SafeArea(
@@ -42,6 +57,11 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 parent: AlwaysScrollableScrollPhysics(),
               ),
               slivers: [
+                if (modules.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: Text(context.l10n.appsNoMatches)),
+                  ),
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(
                     ResponsivePadding.horizontal(context.deviceClass),
@@ -77,6 +97,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
                                                     column],
                                             index: index * columns + column,
                                             replayToken: widget.replayToken,
+                                            onSelected: widget.onSelected,
                                           )
                                         : const SizedBox.shrink(),
                                   ),
@@ -136,9 +157,11 @@ class _AppEditorialCard extends StatelessWidget {
     required this.module,
     required this.index,
     required this.replayToken,
+    this.onSelected,
   });
 
   final AppModule module;
+  final ValueChanged<AppModule>? onSelected;
   final int index;
   final int replayToken;
 
@@ -159,7 +182,9 @@ class _AppEditorialCard extends StatelessWidget {
       delay: Duration(milliseconds: 40 + (index * 28)),
       child: InkWell(
         borderRadius: BorderRadius.circular(26),
-        onTap: () => _openModule(context, module),
+        onTap: () => onSelected != null
+            ? onSelected!(module)
+            : _openModule(context, module),
         child: Material(
           color: surfaceColor,
           borderRadius: BorderRadius.circular(26),

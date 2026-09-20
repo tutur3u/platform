@@ -22,6 +22,7 @@ import {
 import { INTERNAL_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { isTrustedAuthenticator } from './device-mfa/registry';
 
 export const QR_LOGIN_CHALLENGE_TTL_SECONDS = 120;
 export const QR_LOGIN_GENERIC_ERROR = 'Unable to process QR login right now.';
@@ -78,6 +79,9 @@ export const QrLoginPollQuerySchema = z.object({
 });
 
 export const QrLoginApproveRequestSchema = z.object({
+  factorId: z.string().uuid().optional(),
+  proof: z.string().min(32).max(256).optional(),
+  origin: z.string().url().max(MAX_LONG_TEXT_LENGTH).optional(),
   deviceId: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   platform: z.enum(['android', 'ios']).optional(),
   secret: z.string().min(16).max(MAX_LONG_TEXT_LENGTH),
@@ -215,6 +219,11 @@ async function getChallengeBySecret(input: {
     return null;
   }
 
+  if (
+    (data?.request_metadata as Record<string, unknown> | null)?.kind ===
+    'mfa_mobile_approval'
+  )
+    return null;
   return data;
 }
 
@@ -245,6 +254,7 @@ async function consumeApprovedChallenge(row: QrLoginChallengeRow) {
     })
     .eq('id', row.id)
     .eq('status', 'approved')
+    .gt('expires_at', consumedAt)
     .is('consumed_at', null)
     .select('*')
     .maybeSingle();
@@ -365,7 +375,10 @@ export async function pollQrLoginChallenge(
     return createInvalidChallengeResult();
   }
 
-  if (challengeStatus(row.status) === 'pending' && isExpired(row)) {
+  if (
+    ['pending', 'approved'].includes(challengeStatus(row.status)) &&
+    isExpired(row)
+  ) {
     await markExpired(row.id);
     return {
       body: {
@@ -449,7 +462,10 @@ export async function approveQrLoginChallenge(
     return createInvalidChallengeResult();
   }
 
-  if (challengeStatus(row.status) === 'pending' && isExpired(row)) {
+  if (
+    ['pending', 'approved'].includes(challengeStatus(row.status)) &&
+    isExpired(row)
+  ) {
     await markExpired(row.id);
     return {
       body: {
@@ -480,6 +496,30 @@ export async function approveQrLoginChallenge(
       status: 401,
     };
   }
+
+  const { data: assurance, error: assuranceError } =
+    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (
+    assuranceError ||
+    !assurance ||
+    (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2')
+  ) {
+    return {
+      body: { error: 'Verify MFA on this device before approving sign-in.' },
+      status: 403,
+    };
+  }
+  if (!(await isTrustedAuthenticator(user.id, input))) {
+    return {
+      body: { error: 'Register this device as a trusted authenticator first' },
+      status: 403,
+    };
+  }
+  const metadata = row.request_metadata as Record<string, unknown> | null;
+  if (input.origin && input.origin !== metadata?.origin)
+    return createInvalidChallengeResult();
+  if (metadata?.kind === 'mfa_mobile_approval')
+    return createInvalidChallengeResult();
 
   const ipAddress = extractIPFromHeaders(context.headers);
   const userAgent = extractUserAgentFromHeaders(context.headers);

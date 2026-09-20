@@ -39,23 +39,24 @@ extension _ShellPageNavigation on _ShellPageState {
           itemIndex: 1,
         ),
       ),
-      shad.NavigationItem(
-        key: _ShellPageState._appsKey,
-        spacing: _ShellPageState._navItemSpacing,
-        child: isCompact
-            ? _buildCompactNavIcon(
-                icon: Icons.apps_outlined,
-                semanticLabel: l10n.navApps,
-                itemIndex: 2,
-                iconSize: _ShellPageState._compactPrimaryNavIconSize,
-              )
-            : _buildHorizontalNavItem(
-                icon: Icons.apps_outlined,
-                label: l10n.navApps,
-                style: labelStyle,
-                itemIndex: 2,
-              ),
-      ),
+      if (state.showAppsTab)
+        shad.NavigationItem(
+          key: _ShellPageState._appsKey,
+          spacing: _ShellPageState._navItemSpacing,
+          child: isCompact
+              ? _buildCompactNavIcon(
+                  icon: Icons.apps_outlined,
+                  semanticLabel: l10n.navApps,
+                  itemIndex: 2,
+                  iconSize: _ShellPageState._compactPrimaryNavIconSize,
+                )
+              : _buildHorizontalNavItem(
+                  icon: Icons.apps_outlined,
+                  label: l10n.navApps,
+                  style: labelStyle,
+                  itemIndex: 2,
+                ),
+        ),
     ];
   }
 

@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
@@ -9,6 +8,8 @@ import 'package:mobile/features/workspace/widgets/workspace_avatar.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+part 'account_avatar.dart';
 
 enum AvatarMenuAction { workspace, profile, settings, switchAccount, logout }
 
@@ -73,14 +74,14 @@ class AvatarDropdownTrigger extends StatelessWidget {
                       name: data.name,
                       avatarUrl: data.avatarUrl,
                       avatarCacheKey: data.avatarIdentityKey,
-                      size: 28,
-                      rounded: 10,
+                      size: 40,
+                      rounded: 14,
                     ),
                   ),
                 ),
                 Positioned(
-                  right: 2,
-                  bottom: 2,
+                  right: -1,
+                  bottom: -1,
                   child: Container(
                     width: 10,
                     height: 10,
@@ -310,7 +311,7 @@ class _AvatarMenuContent extends StatelessWidget {
           compact: compact,
           onTap: () => onSelected(AvatarMenuAction.profile),
         ),
-        const shad.Gap(14),
+        const shad.Gap(10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
@@ -327,7 +328,7 @@ class _AvatarMenuContent extends StatelessWidget {
           data: data,
           onTap: () => onSelected(AvatarMenuAction.workspace),
         ),
-        const shad.Gap(16),
+        const shad.Gap(10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(
@@ -345,18 +346,16 @@ class _AvatarMenuContent extends StatelessWidget {
             _ActionTile(
               icon: Icons.switch_account_rounded,
               title: context.l10n.authSwitchAccount,
-              subtitle: context.l10n.authSwitchAccountDescription,
               onTap: () => onSelected(AvatarMenuAction.switchAccount),
             ),
             _ActionTile(
               icon: Icons.settings_outlined,
               title: context.l10n.settingsTitle,
-              subtitle: context.l10n.settingsPreferencesSectionDescription,
               onTap: () => onSelected(AvatarMenuAction.settings),
             ),
           ],
         ),
-        const shad.Gap(14),
+        const shad.Gap(10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Divider(
@@ -364,7 +363,7 @@ class _AvatarMenuContent extends StatelessWidget {
             color: colorScheme.outlineVariant.withValues(alpha: 0.18),
           ),
         ),
-        const shad.Gap(14),
+        const shad.Gap(10),
         _ActionGroup(
           children: [
             _ActionTile(
@@ -410,7 +409,7 @@ class _AccountHeader extends StatelessWidget {
               size: compact ? 54 : 52,
               rounded: 18,
             ),
-            const shad.Gap(14),
+            const shad.Gap(10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,14 +586,12 @@ class _ActionTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.onTap,
-    this.subtitle,
     this.destructive = false,
   });
 
   final IconData icon;
   final String title;
   final VoidCallback onTap;
-  final String? subtitle;
   final bool destructive;
 
   @override
@@ -610,7 +607,7 @@ class _ActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         onTap: onTap,
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: destructive
                 ? colorScheme.errorContainer.withValues(alpha: 0.30)
@@ -620,8 +617,8 @@ class _ActionTile extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: destructive ? 0.14 : 0.10),
                   borderRadius: BorderRadius.circular(14),
@@ -640,17 +637,6 @@ class _ActionTile extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (subtitle != null && subtitle!.trim().isNotEmpty) ...[
-                      const shad.Gap(3),
-                      Text(
-                        subtitle!,
-                        style: theme.typography.small.copyWith(
-                          color: destructive
-                              ? colorScheme.error.withValues(alpha: 0.82)
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -669,173 +655,5 @@ class _ActionTile extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _InteractiveCard extends StatelessWidget {
-  const _InteractiveCard({
-    required this.child,
-    required this.onTap,
-    this.padding = const EdgeInsets.all(14),
-  });
-
-  final Widget child;
-  final VoidCallback onTap;
-  final EdgeInsetsGeometry padding;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Ink(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.18),
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _UserAvatar extends StatefulWidget {
-  const _UserAvatar({
-    required this.name,
-    this.avatarUrl,
-    this.avatarCacheKey,
-    this.size = 36,
-    this.rounded = 12,
-  });
-
-  final String name;
-  final String? avatarUrl;
-  final String? avatarCacheKey;
-  final double size;
-  final double rounded;
-
-  @override
-  State<_UserAvatar> createState() => _UserAvatarState();
-}
-
-class _UserAvatarState extends State<_UserAvatar> {
-  ImageProvider<Object>? _imageProvider;
-  String? _resolvedAvatarUrl;
-  String? _resolvedAvatarCacheKey;
-
-  @override
-  void initState() {
-    super.initState();
-    _syncImageProvider();
-  }
-
-  @override
-  void didUpdateWidget(covariant _UserAvatar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _syncImageProvider();
-  }
-
-  void _syncImageProvider() {
-    final avatarUrl = widget.avatarUrl?.trim();
-    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
-    if (!hasAvatar) {
-      _imageProvider = null;
-      _resolvedAvatarUrl = null;
-      _resolvedAvatarCacheKey = null;
-      return;
-    }
-
-    final avatarCacheKey = widget.avatarCacheKey?.trim().isNotEmpty == true
-        ? widget.avatarCacheKey!.trim()
-        : avatarUrl;
-
-    if (avatarUrl == _resolvedAvatarUrl &&
-        avatarCacheKey == _resolvedAvatarCacheKey &&
-        _imageProvider != null) {
-      return;
-    }
-
-    _resolvedAvatarUrl = avatarUrl;
-    _resolvedAvatarCacheKey = avatarCacheKey;
-    _imageProvider = CachedNetworkImageProvider(
-      avatarUrl,
-      cacheKey: avatarCacheKey,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = shad.Theme.of(context);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(widget.rounded),
-      child: Container(
-        width: widget.size,
-        height: widget.size,
-        color: colorScheme.surfaceContainerHighest,
-        child: _imageProvider != null
-            ? Image(
-                image: _imageProvider!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                errorBuilder: (context, error, stackTrace) => _AvatarFallback(
-                  name: widget.name,
-                  textStyle: theme.typography.small,
-                ),
-              )
-            : _AvatarFallback(
-                name: widget.name,
-                textStyle: theme.typography.small,
-              ),
-      ),
-    );
-  }
-}
-
-class _AvatarFallback extends StatelessWidget {
-  const _AvatarFallback({required this.name, required this.textStyle});
-
-  final String name;
-  final TextStyle textStyle;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: Text(
-        _initials(name),
-        style: textStyle.copyWith(
-          color: colorScheme.onSurface,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  String _initials(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) {
-      return 'U';
-    }
-
-    final parts = trimmed.split(RegExp(r'\s+'));
-    if (parts.length == 1) {
-      return parts.first.characters.first.toUpperCase();
-    }
-
-    final first = parts.first.characters.first.toUpperCase();
-    final last = parts.last.characters.first.toUpperCase();
-    return '$first$last';
   }
 }

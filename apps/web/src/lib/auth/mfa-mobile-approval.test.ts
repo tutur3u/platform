@@ -1,3 +1,7 @@
+vi.mock('./device-mfa/registry', () => ({
+  isTrustedAuthenticator: vi.fn().mockResolvedValue(true),
+}));
+
 import { MFA_MOBILE_APPROVAL_KIND } from '@tuturuuu/auth/mfa-mobile-approval';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -33,6 +37,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: mocks.serverLogger,
 }));
+
+vi.mock('./mfa-approval-push', () => ({ sendMfaApprovalPush: vi.fn() }));
 
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: (...args: Parameters<typeof mocks.checkRateLimit>) =>
@@ -191,5 +197,145 @@ describe('mobile MFA approval helpers', () => {
       cookie: undefined,
       status: 200,
     });
+  });
+});
+
+const context = {
+  endpoint: '/api/v1/auth/mfa/mobile/challenges/test',
+  headers: new Headers(),
+};
+
+describe('number matching and request lifecycle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createAdminClient.mockResolvedValue(mocks.adminClient);
+    mocks.createClient.mockResolvedValue(mocks.userClient);
+    mocks.checkRateLimit.mockResolvedValue({ allowed: true });
+    mocks.userClient.auth.getUser.mockResolvedValue({
+      data: { user: { id: 'user-1', email: 'person@example.com' } },
+      error: null,
+    });
+    mocks.userClient.auth.getClaims.mockResolvedValue({
+      data: { claims: { session_id: 'mobile-session' } },
+      error: null,
+    });
+    mocks.userClient.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue({
+      data: { currentLevel: 'aal2', nextLevel: 'aal2' },
+      error: null,
+    });
+    mocks.adminClient.from.mockReset();
+  });
+  it.each([undefined, '', '999999'])(
+    'refuses missing or incorrect number %s',
+    async (pairCode) => {
+      const { approveMfaMobileApprovalChallenge } = await import(
+        './mfa-mobile-approval'
+      );
+      const row = createChallengeRow({
+        status: 'pending',
+        request_metadata: {
+          kind: MFA_MOBILE_APPROVAL_KIND,
+          pairCode: '123456',
+          requesterSessionId: 'desktop-session',
+        },
+      });
+      const builder = createBuilder(row);
+      mocks.adminClient.from.mockReturnValue(builder);
+      const result = await approveMfaMobileApprovalChallenge(
+        { challengeId: 'challenge-1', pairCode },
+        context
+      );
+      expect(result.status).toBe(400);
+      expect(builder.update).not.toHaveBeenCalled();
+    }
+  );
+  it('persists a denial without consuming or approving the challenge', async () => {
+    const { approveMfaMobileApprovalChallenge } = await import(
+      './mfa-mobile-approval'
+    );
+    const row = createChallengeRow({
+      status: 'pending',
+      request_metadata: { kind: MFA_MOBILE_APPROVAL_KIND, pairCode: '123456' },
+    });
+    const load = createBuilder(row);
+    const update = createBuilder({ ...row, status: 'rejected' });
+    mocks.adminClient.from
+      .mockReturnValueOnce(load)
+      .mockReturnValueOnce(update);
+    const result = await approveMfaMobileApprovalChallenge(
+      { challengeId: 'challenge-1', decision: 'reject' },
+      context
+    );
+    expect(result.body.status).toBe('rejected');
+    expect(update.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'rejected' })
+    );
+  });
+  it('rejects a poll from another session of the same account', async () => {
+    const { pollMfaMobileApprovalChallenge } = await import(
+      './mfa-mobile-approval'
+    );
+    const load = createBuilder(
+      createChallengeRow({
+        request_metadata: {
+          kind: MFA_MOBILE_APPROVAL_KIND,
+          requesterSessionId: 'desktop-session',
+        },
+      })
+    );
+    mocks.adminClient.from.mockReturnValue(load);
+    const result = await pollMfaMobileApprovalChallenge(
+      { challengeId: 'challenge-1', secret: 'request-secret' },
+      context
+    );
+    expect(result.status).toBe(404);
+    expect(load.update).not.toHaveBeenCalled();
+  });
+  it('does not consume an approval after its original deadline', async () => {
+    const { pollMfaMobileApprovalChallenge } = await import(
+      './mfa-mobile-approval'
+    );
+    const load = createBuilder(
+      createChallengeRow({ expires_at: '2000-01-01T00:00:00Z' })
+    );
+    mocks.adminClient.from.mockReturnValue(load);
+    const result = await pollMfaMobileApprovalChallenge(
+      { challengeId: 'challenge-1', secret: 'request-secret' },
+      context
+    );
+    expect(result.body.status).toBe('expired');
+    expect(load.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'consumed' })
+    );
+  });
+  it('never sends the matching number to the approving device', async () => {
+    const { listPendingMfaMobileApprovals } = await import(
+      './mfa-mobile-approval'
+    );
+    const row = createChallengeRow({
+      request_metadata: {
+        kind: MFA_MOBILE_APPROVAL_KIND,
+        pairCode: '123456',
+        userAgent: 'Browser',
+      },
+      status: 'pending',
+    });
+    const builder = {
+      ...createBuilder([row]),
+      contains: vi.fn(),
+      order: vi.fn(),
+      limit: vi.fn().mockResolvedValue({ data: [row], error: null }),
+    };
+    builder.contains.mockReturnValue(builder);
+    builder.order.mockReturnValue(builder);
+    builder.select.mockReturnValue(builder as never);
+    builder.eq.mockReturnValue(builder as never);
+    builder.gt.mockReturnValue(builder as never);
+    mocks.adminClient.from.mockReturnValue(builder);
+    const result = await listPendingMfaMobileApprovals(context);
+    expect(result.body.approvals).toEqual([
+      expect.objectContaining({ numberMatching: true, browser: 'Browser' }),
+    ]);
+    expect(JSON.stringify(result.body)).not.toContain('123456');
   });
 });

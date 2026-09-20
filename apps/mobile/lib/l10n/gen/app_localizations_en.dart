@@ -7854,4 +7854,160 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailDeleteDraftConfirmation => 'Permanently delete this draft and its attachments?';
+
+  @override
+  String get deviceMfaTitle => 'Device authenticator';
+
+  @override
+  String get deviceMfaDescription => 'Use this device to verify sign-ins, show a one-time code, or approve another device.';
+
+  @override
+  String get deviceMfaEnroll => 'Register this device';
+
+  @override
+  String get deviceMfaEnrollWarning => 'Keep another authenticator as a backup. Registration may require signing in again on your other devices. This device’s secret stays in its secure storage.';
+
+  @override
+  String get deviceMfaName => 'Device name';
+
+  @override
+  String get deviceMfaDefaultName => 'Tuturuuu mobile';
+
+  @override
+  String get deviceMfaReady => 'This device is registered';
+
+  @override
+  String get deviceMfaShowCode => 'Show verification code';
+
+  @override
+  String get deviceMfaCodeHint => 'Enter this code on your other device. It changes every 30 seconds.';
+
+  @override
+  String get deviceMfaVerifyReason => 'Verify your identity to use your Tuturuuu authenticator';
+
+  @override
+  String get deviceMfaRemove => 'Remove this authenticator';
+
+  @override
+  String get deviceMfaRemoveHint => 'This device will stop generating valid codes. Keep another sign-in method available.';
+
+  @override
+  String get deviceMfaError => 'Could not complete verification. Check your connection and authenticator, then try again.';
+
+  @override
+  String get deviceMfaUseDevice => 'Verify with this device';
+
+  @override
+  String get deviceMfaNumberTitle => 'Is this your sign-in?';
+
+  @override
+  String get deviceMfaNumberHint => 'Enter the six-digit number shown on the device you are signing in to. Only approve a request you started.';
+
+  @override
+  String get deviceMfaDeny => 'Deny request';
+
+  @override
+  String get deviceMfaExpired => 'This request expired. Start again on the other device.';
+
+  @override
+  String get deviceMfaReview => 'Review sign-in request';
+
+  @override
+  String get deviceMfaNoRequests => 'No sign-in requests. Start a sign-in on your other device.';
+
+  @override
+  String get deviceMfaHideCode => 'Hide code';
+
+  @override
+  String get deviceMfaQrPaste => 'Enter a sign-in link';
+
+  @override
+  String get deviceMfaQrPasteHint => 'Paste the Tuturuuu sign-in QR link from your other device.';
+
+  @override
+  String get appsShowBottomTab => 'Show Apps in bottom navigation';
+
+  @override
+  String get appsNoMatches => 'No matching apps';
+
+  @override
+  String get securitySessionsTitle => 'Sessions and connections';
+
+  @override
+  String get securitySessionsDescription => 'Review devices signed in to your account. Signing out another session keeps this device signed in.';
+
+  @override
+  String get securityUnknownDevice => 'Unknown device';
+
+  @override
+  String get securityCurrentSession => 'This session';
+
+  @override
+  String get securityRevokeSession => 'Sign out this session';
+
+  @override
+  String get securityRevokeOthers => 'Sign out other sessions';
+
+  @override
+  String get securityRevokeDescription => 'The selected devices will need to sign in again.';
+
+  @override
+  String get securityConnectionsTitle => 'Connected accounts';
+
+  @override
+  String get securityConnectionsDescription => 'Choose how you sign in. Keep at least one connected account.';
+
+  @override
+  String get securityDisconnect => 'Disconnect';
+
+  @override
+  String get securityDisconnectDescription => 'You will no longer be able to sign in with this connected account.';
+
+  @override
+  String get securityConnect => 'Connect';
+
+  @override
+  String get deviceMfaTrustedTitle => 'Trusted authenticators';
+
+  @override
+  String get deviceMfaLockTitle => 'Lock new registrations';
+
+  @override
+  String get deviceMfaLockHint => 'Only your registered devices can approve sign-ins. Unlock here before registering another device.';
+
+  @override
+  String get deviceMfaLocked => 'New registrations are locked. Open these settings on an existing trusted device to unlock them.';
+
+  @override
+  String get deviceMfaLockRecoveryHint => 'Keep a second trusted device before locking registrations. If you lose every trusted device, you cannot unlock this setting from a new device.';
+
+  @override
+  String get deviceMfaCurrentDevice => 'This device';
+
+  @override
+  String get deviceMfaPending => 'Setup incomplete';
+
+  @override
+  String get deviceMfaRemoveTrusted => 'Remove trusted device';
+
+  @override
+  String get deviceMfaSuggestTitle => 'Make this your authenticator?';
+
+  @override
+  String get deviceMfaSuggestBody => 'Approve your sign-ins with device verification and generate codes for your other devices. You can manage trusted devices in Security settings.';
+
+  @override
+  String get deviceMfaNotNow => 'Not now';
+
+  @override
+  String get deviceMfaManage => 'Set up authenticator';
+
+  @override
+  String get deviceMfaRemoveDeviceHint => 'This device will no longer approve sign-ins or generate valid codes.';
+
+  @override
+  String get deviceMfaNeedBackup => 'Register a second trusted device before locking new registrations.';
+
+  @override
+  String get mfaReviewSignIn => 'Review sign-in';
 }

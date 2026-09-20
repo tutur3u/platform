@@ -97,13 +97,16 @@ class QrLoginRepository {
   }
 
   Future<({bool success, String? error})> approve(
-    QrLoginPayload payload,
-  ) async {
+    QrLoginPayload payload, {
+    Map<String, String> deviceProof = const {},
+  }) async {
     try {
       final deviceId = await getDeviceId();
       final response = await _apiClient
           .postJson(AuthEndpoints.qrLoginApprove(payload.challengeId), {
             'secret': payload.secret,
+            'origin': payload.origin.origin,
+            ...deviceProof,
             if (deviceId != null) 'deviceId': deviceId,
             if (_platform != null) 'platform': _platform,
           });

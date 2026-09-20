@@ -9,7 +9,6 @@ import 'package:mobile/features/security/mfa_approval/data/mfa_approval_reposito
 import 'package:mobile/features/security/mfa_approval/view/mfa_approval_listener.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
-
 import '../../../helpers/helpers.dart';
 
 class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
@@ -93,8 +92,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Approve web MFA'), findsOneWidget);
-      expect(find.text('ABCD12'), findsOneWidget);
+      expect(find.text('Is this your sign-in?'), findsOneWidget);
+      expect(find.text('ABCD12'), findsNothing);
+      expect(find.text('Deny request'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
       verify(() => repository.listPending()).called(1);
     });
   });

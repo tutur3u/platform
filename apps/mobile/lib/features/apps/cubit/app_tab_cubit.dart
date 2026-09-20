@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:bloc/bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -36,8 +35,19 @@ class AppTabCubit extends Cubit<AppTabState> {
     emit(state.copyWith(shouldAutoFocus: false));
   }
 
+  Future<void> setShowAppsTab({required bool value}) async {
+    await _settings.setShowAppsTab(value: value);
+    if (!isClosed) emit(state.copyWith(showAppsTab: value));
+  }
+
   Future<void> loadLastApp() async {
     final requestVersion = ++_selectionRequestVersion;
+    try {
+      final visible = await _settings.getShowAppsTab();
+      if (!isClosed) emit(state.copyWith(showAppsTab: visible));
+    } on Object {
+      // Keep the compact default if preference storage is unavailable.
+    }
     String? route;
     try {
       route = await _settings.getLastAppRoute();

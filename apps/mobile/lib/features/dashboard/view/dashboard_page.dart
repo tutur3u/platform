@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +17,7 @@ import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_suggestion.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -219,6 +219,9 @@ class _DashboardView extends StatelessWidget {
                               parent: BouncingScrollPhysics(),
                             ),
                             slivers: [
+                              const SliverToBoxAdapter(
+                                child: DeviceMfaSuggestion(),
+                              ),
                               SliverPadding(
                                 padding: EdgeInsets.fromLTRB(
                                   ResponsivePadding.horizontal(

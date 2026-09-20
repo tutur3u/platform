@@ -2,21 +2,27 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:typed_data';
-
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Lightweight HTTP client for calling mobile API endpoints.
 ///
 /// Ported from apps/native/lib/api/client.ts.
 class ApiClient {
-  ApiClient({String? baseUrl, http.Client? httpClient})
-    : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
-      _client = httpClient ?? http.Client();
+  ApiClient({
+    String? baseUrl,
+    http.Client? httpClient,
+    SupabaseClient? authClient,
+  }) : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
+       _client = httpClient ?? http.Client(),
+       _authClient = authClient;
 
   final http.Client _client;
+  final SupabaseClient? _authClient;
+  GoTrueClient get _auth => (_authClient ?? supabase).auth;
   final String? _baseUrl;
   static const int _expiryBufferMs = 60 * 1000;
 
@@ -59,7 +65,7 @@ class ApiClient {
   }
 
   Future<void> _ensureValidSession({bool forceRefresh = false}) async {
-    final session = supabase.auth.currentSession;
+    final session = _auth.currentSession;
     final expiresAt = session?.expiresAt;
     if (!forceRefresh && session != null && expiresAt != null) {
       final expiresAtMs = expiresAt > 1000000000000
@@ -72,7 +78,7 @@ class ApiClient {
     }
 
     try {
-      final refreshed = await supabase.auth.refreshSession();
+      final refreshed = await _auth.refreshSession();
       if (refreshed.session?.accessToken == null) {
         throw const ApiException(
           message: 'Failed to refresh session',
@@ -95,14 +101,15 @@ class ApiClient {
     bool requiresAuth = true,
   }) async {
     String? token;
+    final userId = requiresAuth ? _auth.currentUser?.id : null;
 
     if (requiresAuth) {
-      token = supabase.auth.currentSession?.accessToken;
+      token = _auth.currentSession?.accessToken;
       final hadTokenBeforeRefresh = token != null && token.isNotEmpty;
 
       try {
         await _ensureValidSession();
-        token = supabase.auth.currentSession?.accessToken ?? token;
+        token = _auth.currentSession?.accessToken ?? token;
       } on ApiException catch (error, stackTrace) {
         if (!hadTokenBeforeRefresh) {
           rethrow;
@@ -116,10 +123,11 @@ class ApiClient {
           level: 500,
         );
 
-        token = supabase.auth.currentSession?.accessToken ?? token;
+        token = _auth.currentSession?.accessToken ?? token;
       }
     }
 
+    if (requiresAuth) _checkRequestUser(userId);
     return {
       if (contentType != null) 'Content-Type': contentType,
       'Accept': accept,
@@ -369,15 +377,29 @@ class ApiClient {
     return _handleResponse(response);
   }
 
+  void _checkRequestUser(String? userId) {
+    if (userId == null || _auth.currentUser?.id != userId) {
+      throw const ApiException(
+        message: 'Account changed during request',
+        statusCode: 401,
+      );
+    }
+  }
+
   Future<http.Response> _performRequest(
     Future<http.Response> Function() request, {
     bool requiresAuth = true,
   }) async {
     try {
+      final userId = requiresAuth ? _auth.currentUser?.id : null;
       final response = await request().timeout(const Duration(seconds: 30));
+      if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await _ensureValidSession(forceRefresh: true);
-        return await request().timeout(const Duration(seconds: 30));
+        _checkRequestUser(userId);
+        final retried = await request().timeout(const Duration(seconds: 30));
+        _checkRequestUser(userId);
+        return retried;
       }
       return response;
     } on ApiException {
@@ -394,10 +416,15 @@ class ApiClient {
     bool requiresAuth = true,
   }) async {
     try {
+      final userId = requiresAuth ? _auth.currentUser?.id : null;
       final response = await request().timeout(const Duration(seconds: 30));
+      if (requiresAuth) _checkRequestUser(userId);
       if (requiresAuth && response.statusCode == 401) {
         await _ensureValidSession(forceRefresh: true);
-        return await request().timeout(const Duration(seconds: 30));
+        _checkRequestUser(userId);
+        final retried = await request().timeout(const Duration(seconds: 30));
+        _checkRequestUser(userId);
+        return retried;
       }
       return response;
     } on ApiException {

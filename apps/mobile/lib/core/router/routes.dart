@@ -47,6 +47,8 @@ abstract final class Routes {
   static const settingsInfrastructure = '/settings/infrastructure';
   static const settingsAbout = '/settings/about';
   static const settingsSession = '/settings/session';
+  static const settingsAccountSecurity = '/settings/session/devices';
+  static const settingsMfaApproval = '/settings/session/approval';
   static const settingsQrLoginScan = '/settings/session/qr-login-scan';
   static const settingsWorkspace = '/settings/workspace';
   static const settingsWorkspaceSecrets = '/settings/workspace/secrets';

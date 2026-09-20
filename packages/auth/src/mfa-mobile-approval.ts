@@ -5,7 +5,7 @@ export const MFA_MOBILE_APPROVAL_SESSION_TTL_SECONDS = 12 * 60 * 60;
 export const MFA_MOBILE_APPROVAL_COOKIE_MAX_AGE_SECONDS =
   MFA_MOBILE_APPROVAL_SESSION_TTL_SECONDS;
 
-const PAIR_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const PAIR_CODE_ALPHABET = '0123456789';
 const SECRET_ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
@@ -38,7 +38,7 @@ export function generateMfaMobileApprovalSecret() {
 
 export function generateMfaMobileApprovalPairCode() {
   const code = randomString(6, PAIR_CODE_ALPHABET);
-  return `${code.slice(0, 3)}-${code.slice(3)}`;
+  return code;
 }
 
 export function normalizeMfaMobileApprovalPairCode(value: string) {

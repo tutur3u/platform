@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as compat;
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
+import 'package:mobile/features/security/device_mfa/device_mfa_service.dart';
 import 'package:mobile/features/security/qr_login/data/qr_login_repository.dart';
 import 'package:mobile/features/security/qr_login/qr_login_payload.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -74,34 +74,29 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
     }
 
     final l10n = context.l10n;
-    final appLockCubit = context.read<AppLockCubit>();
-    if (!appLockCubit.state.enabled) {
-      setState(() => _error = l10n.qrLoginRequiresAppLock);
-      return;
-    }
-
     setState(() {
       _approving = true;
       _error = null;
     });
 
-    final authenticated = await appLockCubit.authenticateForQrLogin(
-      reason: l10n.qrLoginLocalAuthReason,
-    );
-
-    if (!mounted) {
+    final userId = context.read<AuthCubit>().state.user?.id;
+    late final Map<String, String> proof;
+    try {
+      proof = await DeviceMfaService().approvalProof(
+        reason: l10n.qrLoginLocalAuthReason,
+      );
+    } on Object {
+      if (mounted) {
+        setState(() {
+          _approving = false;
+          _error = l10n.qrLoginLocalAuthFailed;
+        });
+      }
       return;
     }
+    if (!mounted || context.read<AuthCubit>().state.user?.id != userId) return;
 
-    if (!authenticated) {
-      setState(() {
-        _approving = false;
-        _error = l10n.qrLoginLocalAuthFailed;
-      });
-      return;
-    }
-
-    final result = await _repository.approve(payload);
+    final result = await _repository.approve(payload, deviceProof: proof);
     if (!mounted) {
       return;
     }
@@ -125,6 +120,38 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
       _approving = false;
       _error = result.error ?? l10n.qrLoginApproveFailed;
     });
+  }
+
+  Future<void> _enterLink() async {
+    final controller = TextEditingController();
+    final value = await compat.showDialog<String>(
+      context: context,
+      builder: (context) => compat.AlertDialog(
+        title: Text(context.l10n.deviceMfaQrPaste),
+        content: shad.TextField(
+          controller: controller,
+          placeholder: Text(context.l10n.deviceMfaQrPasteHint),
+        ),
+        actions: [
+          shad.OutlineButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(context.l10n.commonCancel),
+          ),
+          shad.PrimaryButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: Text(context.l10n.deviceMfaReview),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!mounted || value == null) return;
+    final parsed = QrLoginPayload.parse(value);
+    setState(() {
+      _payload = parsed;
+      _error = parsed == null ? context.l10n.qrLoginInvalidCode : null;
+    });
+    if (parsed != null) await _controller.stop();
   }
 
   void _scanAgain() {
@@ -208,18 +235,32 @@ class _QrLoginScannerPageState extends State<QrLoginScannerPage> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              child: _payload == null
-                  ? _ScannerHint(error: _error)
-                  : _ApprovalPanel(
-                      approving: _approving,
-                      error: _error,
-                      origin: _payload!.origin.origin,
-                      userEmail: user?.email ?? l10n.settingsNoEmail,
-                      onApprove: _approve,
-                      onScanAgain: _scanAgain,
-                    ),
+            Flexible(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: _payload == null
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _ScannerHint(error: _error),
+                            const shad.Gap(12),
+                            shad.OutlineButton(
+                              onPressed: _enterLink,
+                              child: Text(l10n.deviceMfaQrPaste),
+                            ),
+                          ],
+                        )
+                      : _ApprovalPanel(
+                          approving: _approving,
+                          error: _error,
+                          origin: _payload!.origin.origin,
+                          userEmail: user?.email ?? l10n.settingsNoEmail,
+                          onApprove: _approve,
+                          onScanAgain: _scanAgain,
+                        ),
+                ),
+              ),
             ),
           ],
         ),
