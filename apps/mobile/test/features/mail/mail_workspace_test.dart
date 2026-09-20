@@ -115,6 +115,32 @@ void main() {
     });
   }
 
+  for (final invalid in <Map<String, dynamic>>[
+    {'unreadCount': 'one'},
+    {'lastMessageAt': 123},
+    {'subject': <dynamic>[]},
+    {'deliveryRecipient': false},
+    {'id': null},
+    {'snippet': <String, dynamic>{}},
+  ]) {
+    testWidgets(
+      'malformed cached row is discarded and canonical inbox loads: $invalid',
+      (tester) async {
+        final saved = savedInbox();
+        saved['items'] = [
+          {'id': 'cached', 'subject': 'Cached message', ...invalid},
+        ];
+        when(() => repository.savedView('ws')).thenAnswer((_) async => saved);
+        respond((_) async => inbox('Fresh message'));
+        await mount(tester);
+        await tester.pumpAndSettle();
+        expect(find.text('Fresh message'), findsOneWidget);
+        expect(find.text('Cached message'), findsNothing);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets('access denial removes cached messages immediately', (
     tester,
   ) async {

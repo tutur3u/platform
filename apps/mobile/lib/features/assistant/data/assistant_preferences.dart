@@ -41,19 +41,29 @@ class AssistantPreferences {
     return prefs.getString(key);
   }
 
-  Future<void> saveChatId(String wsId, String chatId) async {
+  Future<void> saveChatId(
+    String wsId,
+    String chatId, {
+    bool Function()? shouldWrite,
+  }) async {
     final key = _key(assistantChatStorageKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId)) return;
+    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.setString(key, chatId);
   }
 
-  Future<void> clearChatId(String wsId) async {
+  Future<void> clearChatId(String wsId, {bool Function()? shouldWrite}) async {
     final key = _key(assistantChatStorageKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantChatStorageKeyPrefix, wsId)) return;
+    if (key != _key(assistantChatStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.remove(key);
   }
 
@@ -160,11 +170,18 @@ class AssistantPreferences {
     return prefs.getString(key);
   }
 
-  Future<void> saveWorkspaceContextId(String wsId, String contextId) async {
+  Future<void> saveWorkspaceContextId(
+    String wsId,
+    String contextId, {
+    bool Function()? shouldWrite,
+  }) async {
     final key = _key(assistantWorkspaceContextStorageKeyPrefix, wsId);
     if (key == null) return;
     final prefs = await SharedPreferences.getInstance();
-    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId)) return;
+    if (key != _key(assistantWorkspaceContextStorageKeyPrefix, wsId) ||
+        shouldWrite?.call() == false) {
+      return;
+    }
     await prefs.setString(key, contextId);
   }
 

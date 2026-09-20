@@ -771,6 +771,7 @@ class _AssistantPageState extends State<AssistantPage> {
     AssistantChatState chatState,
     AssistantLiveState liveState,
   ) async {
+    if (_chatCubit.state.status == AssistantChatStatus.restoring) return;
     if (chatState.composerAttachments.any(
       (attachment) =>
           attachment.uploadState == AssistantAttachmentUploadState.uploading,
@@ -800,7 +801,9 @@ class _AssistantPageState extends State<AssistantPage> {
       _chatCubit.takeUploadedComposerAttachments();
     } else {
       final timezone = await getCurrentTimezoneIdentifier();
-      if (!mounted) {
+      if (!mounted ||
+          _chatCubit.state.status == AssistantChatStatus.restoring ||
+          _chatCubit.state.workspaceId != wsId) {
         return;
       }
       await _chatCubit.submit(

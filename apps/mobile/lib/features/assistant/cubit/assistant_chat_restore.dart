@@ -58,7 +58,10 @@ extension _AssistantChatRestore on AssistantChatCubit {
       if (isClosed || workspaceVersion != _workspaceVersion) return;
 
       if (restored == null) {
-        await _preferences.clearChatId(wsId);
+        await _preferences.clearChatId(
+          wsId,
+          shouldWrite: () => !isClosed && workspaceVersion == _workspaceVersion,
+        );
         if (isClosed || workspaceVersion != _workspaceVersion) return;
         _emitIfOpen(
           state.copyWith(
@@ -134,7 +137,11 @@ extension _AssistantChatRestore on AssistantChatCubit {
           attachmentsByMessageId: restored.attachmentsByMessageId,
         ),
       );
-      await _preferences.saveChatId(wsId, chatId);
+      await _preferences.saveChatId(
+        wsId,
+        chatId,
+        shouldWrite: () => !isClosed && version == _workspaceVersion,
+      );
       if (isClosed || version != _workspaceVersion) return;
       await _onChatRestored(restored.chat?.model);
     } on Exception catch (error) {
@@ -152,9 +159,11 @@ extension _AssistantChatRestore on AssistantChatCubit {
       _refreshHistoryFor(state.workspaceId, _workspaceVersion);
 
   Future<void> _refreshHistoryFor(String? wsId, int version) async {
+    final historyVersion = ++_historyVersion;
     try {
       final history = await _repository.fetchRecentChats(wsId: wsId);
       if (isClosed || version != _workspaceVersion) return;
+      if (historyVersion != _historyVersion) return;
       _emitIfOpen(state.copyWith(history: history));
     } on Exception {
       // History is secondary; preserve the conversation and retry on next open.

@@ -26,10 +26,25 @@ void main() {
     preferences = _Preferences();
     when(repository.generateUuid).thenReturn('new-chat');
     when(() => preferences.loadChatId(any())).thenAnswer((_) async => 'cached');
-    when(() => preferences.saveChatId(any(), any())).thenAnswer((_) async {});
-    when(() => preferences.clearChatId(any())).thenAnswer((_) async {});
     when(
-      () => preferences.saveWorkspaceContextId(any(), any()),
+      () => preferences.saveChatId(
+        any(),
+        any(),
+        shouldWrite: any(named: 'shouldWrite'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => preferences.clearChatId(
+        any(),
+        shouldWrite: any(named: 'shouldWrite'),
+      ),
+    ).thenAnswer((_) async {});
+    when(
+      () => preferences.saveWorkspaceContextId(
+        any(),
+        any(),
+        shouldWrite: any(named: 'shouldWrite'),
+      ),
     ).thenAnswer((_) async {});
     when(
       () => repository.restoreChat(
@@ -115,4 +130,52 @@ void main() {
     expect(cubit.state.messages, isEmpty);
     expect(cubit.state.status, AssistantChatStatus.idle);
   });
+  test('older same-workspace history cannot replace a newer refresh', () async {
+    await cubit.loadWorkspace('ws');
+    final older = Completer<List<AssistantChatRecord>>();
+    var calls = 0;
+    when(() => repository.fetchRecentChats(wsId: 'ws')).thenAnswer((_) {
+      return calls++ == 0
+          ? older.future
+          : Future.value([const AssistantChatRecord(id: 'newest')]);
+    });
+    final first = cubit.refreshHistory();
+    await cubit.refreshHistory();
+    older.complete([const AssistantChatRecord(id: 'stale')]);
+    await first;
+    expect(cubit.state.history.single.id, 'newest');
+  });
+
+  test(
+    'submission during chat switch cannot enter the previous conversation',
+    () async {
+      await cubit.loadWorkspace('ws');
+      final pending = Completer<AssistantRestoredChat?>();
+      when(
+        () => repository.restoreChat(wsId: 'ws', chatId: 'next'),
+      ).thenAnswer((_) => pending.future);
+      final opening = cubit.openChatById('ws', 'next');
+      await cubit.submit(
+        wsId: 'ws',
+        message: 'private next chat message',
+        modelId: 'model',
+        thinkingMode: AssistantThinkingMode.fast,
+        creditSource: AssistantCreditSource.personal,
+        workspaceContextId: 'personal',
+        timezone: 'UTC',
+      );
+      expect(cubit.state.status, AssistantChatStatus.restoring);
+      expect(cubit.state.queuedMessages, isEmpty);
+      expect(cubit.state.messages, isEmpty);
+      pending.complete(
+        const AssistantRestoredChat(
+          chat: AssistantChatRecord(id: 'next'),
+          messages: [],
+          attachmentsByMessageId: {},
+        ),
+      );
+      await opening;
+      expect(cubit.state.chat?.id, 'next');
+    },
+  );
 }

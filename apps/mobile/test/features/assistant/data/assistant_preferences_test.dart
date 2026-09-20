@@ -97,4 +97,23 @@ void main() {
       );
     });
   });
+  test('invalidated operations cannot mutate same-account preferences '
+      'after awaiting storage', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = AssistantPreferences(currentUserId: () => 'user');
+    await prefs.saveChatId('ws', 'current');
+    await prefs.saveWorkspaceContextId('ws', 'current-context');
+    var active = true;
+    final save = prefs.saveChatId('ws', 'stale', shouldWrite: () => active);
+    final clear = prefs.clearChatId('ws', shouldWrite: () => active);
+    final context = prefs.saveWorkspaceContextId(
+      'ws',
+      'stale-context',
+      shouldWrite: () => active,
+    );
+    active = false;
+    await Future.wait([save, clear, context]);
+    expect(await prefs.loadChatId('ws'), 'current');
+    expect(await prefs.loadWorkspaceContextId('ws'), 'current-context');
+  });
 }

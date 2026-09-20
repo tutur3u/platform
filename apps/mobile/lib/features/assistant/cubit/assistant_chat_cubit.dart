@@ -46,6 +46,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   StreamSubscription<AssistantStreamEvent>? _streamSubscription;
   final List<AssistantQueuedSubmission> _queue = [];
   int _workspaceVersion = 0;
+  int _historyVersion = 0;
   String? _activeAssistantMessageId;
   String? _activeTextBlockId;
   String? _activeReasoningBlockId;
@@ -186,13 +187,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       return;
     }
 
-    if (state.status == AssistantChatStatus.restoring) {
-      // A deliberate new submission wins over a late cached-chat restore.
-      _workspaceVersion++;
-      emit(
-        state.copyWith(status: AssistantChatStatus.idle, hasLoadedOnce: true),
-      );
-    }
+    // Preserve the selected conversation until its identity and messages load.
+    if (state.status == AssistantChatStatus.restoring) return;
     final queueMessage = trimmed.isEmpty
         ? 'Please analyze the attached file(s).'
         : trimmed;
@@ -307,8 +303,15 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     await stopStreaming();
     if (isClosed || version != _workspaceVersion) return;
     _queue.clear();
-    await _preferences.clearChatId(wsId);
-    await _preferences.saveWorkspaceContextId(wsId, 'personal');
+    await _preferences.clearChatId(
+      wsId,
+      shouldWrite: () => !isClosed && version == _workspaceVersion,
+    );
+    await _preferences.saveWorkspaceContextId(
+      wsId,
+      'personal',
+      shouldWrite: () => !isClosed && version == _workspaceVersion,
+    );
     if (isClosed || version != _workspaceVersion) return;
     emit(
       state.copyWith(

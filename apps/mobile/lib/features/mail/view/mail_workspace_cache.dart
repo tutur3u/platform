@@ -20,7 +20,8 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
       final query = saved['query'] as String? ?? '';
       final items = mailRows(saved['items']);
       final listKey = saved['listKey'] as String?;
-      if (mailboxId == null ||
+      if (items.any((item) => !_validCachedItem(item)) ||
+          mailboxId == null ||
           !mailboxes.any((box) => box['id'] == mailboxId) ||
           mailboxes.any(
             (box) => box['id'] is! String || box['address'] is! String,
@@ -110,4 +111,24 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
     }
     await _repository.denyAccess(widget.workspaceId);
   }
+}
+
+bool _validCachedItem(Map<String, dynamic> item) {
+  if (item['id'] is! String) return false;
+  if (item['unreadCount'] != null && item['unreadCount'] is! int) return false;
+  for (final key in const [
+    'subject',
+    'fromName',
+    'fromAddress',
+    'lastMessageAt',
+    'sentAt',
+    'receivedAt',
+    'createdAt',
+    'latestSnippet',
+    'snippet',
+    'deliveryRecipient',
+  ]) {
+    if (item[key] != null && item[key] is! String) return false;
+  }
+  return true;
 }
