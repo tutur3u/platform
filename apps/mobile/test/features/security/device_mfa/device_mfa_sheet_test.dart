@@ -70,6 +70,68 @@ void main() {
     });
   }
 
+  for (final size in [const Size(390, 844), const Size(1024, 768)]) {
+    testWidgets('registration blocks dismissal until finished at $size', (
+      tester,
+    ) async {
+      final enrollment = Completer<void>();
+      when(
+        () => service.enroll(
+          name: any(named: 'name'),
+          reason: any(named: 'reason'),
+        ),
+      ).thenAnswer((_) => enrollment.future);
+      await open(tester, size);
+      await tester.tap(find.text('Register this device'));
+      await tester.pump();
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is IconButton &&
+                    widget.tooltip == 'Close authenticator',
+              ),
+            )
+            .onPressed,
+        isNull,
+      );
+      final context = tester.element(find.text('Device authenticator'));
+      await Navigator.of(context).maybePop();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Device authenticator'), findsOneWidget);
+      if (size.width >= 600) {
+        await tester.tapAt(const Offset(5, 5));
+      } else {
+        await tester.drag(
+          find.text('Device authenticator'),
+          const Offset(0, 700),
+        );
+      }
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Device authenticator'), findsOneWidget);
+      enrollment.completeError(
+        const ApiException(message: 'offline', statusCode: 0),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byWidgetPredicate(
+                (widget) =>
+                    widget is IconButton &&
+                    widget.tooltip == 'Close authenticator',
+              ),
+            )
+            .onPressed,
+        isNotNull,
+      );
+      await tester.tap(find.byTooltip('Close authenticator'));
+      await tester.pumpAndSettle();
+      expect(find.text('Device authenticator'), findsNothing);
+    });
+  }
+
   testWidgets('retry repeats enrollment and explains service failures', (
     tester,
   ) async {

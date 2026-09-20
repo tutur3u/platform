@@ -10,7 +10,8 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DeviceMfaPanel extends StatefulWidget {
-  const DeviceMfaPanel({this.service, super.key});
+  const DeviceMfaPanel({this.service, this.onBusyChanged, super.key});
+  final ValueChanged<bool>? onBusyChanged;
   final DeviceMfaService? service;
   @override
   State<DeviceMfaPanel> createState() => _DeviceMfaPanelState();
@@ -72,6 +73,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
 
   Future<void> _run(Future<void> Function() action) async {
     _retry = action;
+    widget.onBusyChanged?.call(true);
     setState(() {
       _busy = true;
       _error = null;
@@ -85,7 +87,10 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
         });
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() => _busy = false);
+        widget.onBusyChanged?.call(false);
+      }
     }
   }
 

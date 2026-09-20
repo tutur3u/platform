@@ -10,16 +10,38 @@ Future<void> showDeviceMfaSheet(
   BuildContext context, {
   DeviceMfaService? service,
 }) async {
-  await showAdaptiveSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    maxDialogWidth: 600,
-    builder: (context) => _DeviceMfaSheet(service: service),
-  );
+  final busy = ValueNotifier(true);
+  try {
+    await showAdaptiveSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      maxDialogWidth: 600,
+      enableDrag: false,
+      builder: (context) => ValueListenableBuilder<bool>(
+        valueListenable: busy,
+        builder: (context, isBusy, _) => PopScope(
+          canPop: !isBusy,
+          child: _DeviceMfaSheet(
+            service: service,
+            busy: isBusy,
+            onBusyChanged: (value) => busy.value = value,
+          ),
+        ),
+      ),
+    );
+  } finally {
+    busy.dispose();
+  }
 }
 
 class _DeviceMfaSheet extends StatelessWidget {
-  const _DeviceMfaSheet({this.service});
+  const _DeviceMfaSheet({
+    required this.busy,
+    required this.onBusyChanged,
+    this.service,
+  });
+  final bool busy;
+  final ValueChanged<bool> onBusyChanged;
   final DeviceMfaService? service;
 
   @override
@@ -64,7 +86,9 @@ class _DeviceMfaSheet extends StatelessWidget {
                         ),
                         IconButton(
                           tooltip: context.l10n.deviceMfaClose,
-                          onPressed: () => Navigator.of(context).pop(),
+                          onPressed: busy
+                              ? null
+                              : () => Navigator.of(context).maybePop(),
                           icon: const Icon(Icons.close_rounded),
                         ),
                       ],
@@ -76,7 +100,10 @@ class _DeviceMfaSheet extends StatelessWidget {
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                      child: DeviceMfaPanel(service: service),
+                      child: DeviceMfaPanel(
+                        service: service,
+                        onBusyChanged: onBusyChanged,
+                      ),
                     ),
                   ),
                 ],
