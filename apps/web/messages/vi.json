@@ -6624,6 +6624,7 @@
     "beta": "Beta",
     "beta_notice": "Tất cả bản tải xuống đều là phiên bản beta truy cập sớm. Các tính năng có thể thay đổi và ứng dụng có thể chưa phù hợp để sử dụng trong môi trường chính thức.",
     "checksum": "Mã kiểm tra SHA-256",
+    "coming_soon": "Sắp ra mắt",
     "description": "Không gian làm việc kết nối trên iPhone, iPad, Android, Windows, macOS và Linux.",
     "desktop_title": "Trên máy tính",
     "download_for": "Tải xuống cho {platform}",

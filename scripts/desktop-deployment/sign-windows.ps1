@@ -5,9 +5,13 @@ if (-not $env:WINDOWS_SIGNING_CERTIFICATE_PFX_B64 -or -not $env:WINDOWS_SIGNING_
 }
 $certificatePath = Join-Path $env:RUNNER_TEMP 'desktop-signing.pfx'
 $certificate = $null
+$password = [System.Security.SecureString]::new()
 try {
   [IO.File]::WriteAllBytes($certificatePath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE_PFX_B64))
-  $password = ConvertTo-SecureString $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD -AsPlainText -Force
+  foreach ($character in $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD.ToCharArray()) {
+    $password.AppendChar($character)
+  }
+  $password.MakeReadOnly()
   $certificates = @(Import-PfxCertificate -FilePath $certificatePath -CertStoreLocation Cert:\CurrentUser\My -Password $password | Where-Object { $_.HasPrivateKey })
   if ($certificates.Count -ne 1) { throw 'Expected exactly one signing key' }
   $certificate = $certificates[0]
@@ -24,6 +28,7 @@ try {
     }
   }
 } finally {
+  $password.Dispose()
   Remove-Item $certificatePath -Force -ErrorAction SilentlyContinue
   if ($certificate) { Remove-Item "Cert:\CurrentUser\My\$($certificate.Thumbprint)" -DeleteKey -Force -ErrorAction SilentlyContinue }
 }

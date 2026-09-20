@@ -6624,6 +6624,7 @@
     "beta": "Beta",
     "beta_notice": "All downloads are early-access beta versions. Features may change, and these builds may not be ready for production use.",
     "checksum": "SHA-256 checksum",
+    "coming_soon": "Coming soon",
     "description": "Your connected workspace on iPhone, iPad, Android, Windows, macOS, and Linux.",
     "desktop_title": "On your computer",
     "download_for": "Download for {platform}",

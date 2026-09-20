@@ -11,7 +11,12 @@ Apple or Google account; installing TestFlight alone does not grant access.
 ## Release workflow
 
 `.github/workflows/desktop-beta.yaml` runs on relevant production pushes or an
-explicit dispatch from `production`. Windows, macOS, and Linux build concurrently.
+explicit dispatch from `production`. Desktop publication is opt-in: keep the
+repository variable `DESKTOP_BETA_ENABLED` unset until signing and platform
+verification are ready. While disabled, the workflow reports **coming soon** and
+does not publish; this is a deferred release, not a successful desktop rollout.
+Set it to `true` only after completing the prerequisites below.
+Windows, macOS, and Linux then build concurrently.
 The `desktop-beta` GitHub environment owns the release configuration. Publication
 requires all three jobs to succeed; a missing certificate is a blocked release,
 not permission to publish unsigned packages.

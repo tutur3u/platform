@@ -23,10 +23,27 @@ jobs:
     with:
       workflow_name: desktop-beta.yaml
 
-  build:
-    name: Desktop beta (${{ matrix.platform }})
+  release-status:
+    name: Desktop beta availability
     needs: check-ci
     if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.status.outputs.enabled }}
+    steps:
+      - id: status
+        env:
+          ENABLED: ${{ vars.DESKTOP_BETA_ENABLED == 'true' }}
+        run: |
+          echo "enabled=$ENABLED" >> "$GITHUB_OUTPUT"
+          if [ "$ENABLED" != true ]; then
+            echo 'Desktop downloads are coming soon. Signing setup and platform verification are deferred; no desktop release was published.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    name: Desktop beta (${{ matrix.platform }})
+    needs: [check-ci, release-status]
+    if: needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production'
     environment: desktop-beta
     timeout-minutes: 60
     strategy:

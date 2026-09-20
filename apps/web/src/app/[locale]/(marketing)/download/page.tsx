@@ -63,7 +63,14 @@ export default async function DownloadPage() {
                 className="mb-6 size-7 text-dynamic-purple"
                 aria-hidden="true"
               />
-              <h2 className="font-semibold text-xl">{t(`${platform}.name`)}</h2>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="font-semibold text-xl">
+                  {t(`${platform}.name`)}
+                </h2>
+                <span className="rounded-full bg-dynamic-purple/10 px-2.5 py-1 font-medium text-dynamic-purple text-xs">
+                  {t(download ? 'beta' : 'coming_soon')}
+                </span>
+              </div>
               <p className="mt-2 text-muted-foreground text-sm">
                 {t(`${platform}.requirements`)}
               </p>
