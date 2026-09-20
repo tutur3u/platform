@@ -309,5 +309,8 @@
     "@typescript/typescript-sunos-x64": "7.0.2",
     "@typescript/typescript-win32-arm64": "7.0.2",
     "@typescript/typescript-win32-x64": "7.0.2"
+  },
+  "patchedDependencies": {
+    "@opennextjs/cloudflare@1.20.6": "patches/@opennextjs%2Fcloudflare@1.20.6.patch"
   }
 }
