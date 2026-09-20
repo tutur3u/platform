@@ -11,10 +11,7 @@ import {
 const mocks = vi.hoisted(() => ({
   getUserById: vi.fn(),
   updateUserById: vi.fn(),
-  set: vi.fn(),
-  get: vi.fn(),
-  eval: vi.fn(),
-  redis: vi.fn(),
+  coordinate: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -27,8 +24,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     },
   })),
 }));
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRatelimitRedisClient: mocks.redis,
+vi.mock('@tuturuuu/utils/coordination', () => ({
+  coordinate: mocks.coordinate,
+  coordinationKey: () => 'hashed-user',
 }));
 const proof = 'test-proof-with-at-least-thirty-two-characters';
 const device = {
@@ -56,16 +54,11 @@ beforeEach(() => {
     error: null,
   });
   mocks.updateUserById.mockResolvedValue({ error: null });
-  mocks.redis.mockResolvedValue({
-    set: mocks.set,
-    get: mocks.get,
-    eval: mocks.eval,
-  });
-  mocks.set.mockImplementation(async (_key, lease) => {
-    mocks.get.mockResolvedValue(lease);
-    return 'OK';
-  });
-  mocks.eval.mockResolvedValue(1);
+  mocks.coordinate.mockImplementation(async ({ action }) => ({
+    outcome: { acquire: 'acquired', check: 'owned', release: 'released' }[
+      action as 'acquire' | 'check' | 'release'
+    ],
+  }));
 });
 
 describe('trusted authenticator registry', () => {
@@ -114,12 +107,12 @@ describe('trusted authenticator registry', () => {
     ).toBe(true);
   });
   it('fails closed when shared locking is unavailable or already held', async () => {
-    mocks.redis.mockResolvedValueOnce(null);
+    mocks.coordinate.mockRejectedValueOnce(new Error('Unavailable'));
     const change = vi.fn();
     await expect(mutateDeviceRegistry('user', change)).rejects.toMatchObject({
       status: 503,
     });
-    mocks.set.mockResolvedValueOnce(null);
+    mocks.coordinate.mockResolvedValueOnce({ outcome: 'busy' });
     await expect(mutateDeviceRegistry('user', change)).rejects.toMatchObject({
       status: 409,
     });
@@ -130,11 +123,13 @@ describe('trusted authenticator registry', () => {
     await expect(
       mutateDeviceRegistry('user', async (value) => {
         value.locked = false;
-        mocks.get.mockResolvedValue('different-owner');
+        mocks.coordinate.mockResolvedValueOnce({ outcome: 'lost' });
       })
     ).rejects.toMatchObject({ status: 503 });
     expect(mocks.updateUserById).not.toHaveBeenCalled();
-    expect(mocks.eval).toHaveBeenCalledOnce();
+    expect(mocks.coordinate).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'release' })
+    );
   });
   it('saves only validated server-owned metadata and releases the lease', async () => {
     await mutateDeviceRegistry('user', async (value) => {
@@ -145,6 +140,8 @@ describe('trusted authenticator registry', () => {
         tuturuuu_device_authenticators: { ...registry(), locked: false },
       },
     });
-    expect(mocks.eval).toHaveBeenCalledOnce();
+    expect(mocks.coordinate).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'release' })
+    );
   });
 });

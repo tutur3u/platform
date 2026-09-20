@@ -1,8 +1,8 @@
 import 'server-only';
 
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getUpstashRatelimitRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { coordinate, coordinationKey } from '@tuturuuu/utils/coordination';
 import { z } from 'zod';
 
 const METADATA_KEY = 'tuturuuu_device_authenticators';
@@ -69,15 +69,20 @@ export async function mutateDeviceRegistry<T>(
   userId: string,
   action: (registry: DeviceRegistry) => Promise<T>
 ): Promise<T> {
-  const redis = await getUpstashRatelimitRedisClient();
-  if (!redis)
-    throw new DeviceMfaError(
-      503,
-      'Authenticator registration is temporarily unavailable'
-    );
-  const key = `auth:device-mfa:lock:${userId}`;
-  const lease = randomBytes(24).toString('hex');
-  if (!(await redis.set(key, lease, { nx: true, ex: 300 }))) {
+  const lease = {
+    namespace: 'authenticator' as const,
+    key: coordinationKey(userId),
+    owner: randomUUID(),
+  };
+  const acquired = await coordinate({ ...lease, action: 'acquire' }).catch(
+    () => {
+      throw new DeviceMfaError(
+        503,
+        'Authenticator registration is temporarily unavailable'
+      );
+    }
+  );
+  if (acquired.outcome !== 'acquired') {
     throw new DeviceMfaError(
       409,
       'Another authenticator change is in progress. Try again.'
@@ -87,7 +92,17 @@ export async function mutateDeviceRegistry<T>(
   try {
     const registry = await loadDeviceRegistry(userId);
     const result = await action(registry);
-    if (Date.now() - startedAt > 60_000 || (await redis.get(key)) !== lease) {
+    if (
+      Date.now() - startedAt > 60_000 ||
+      (
+        await coordinate({ ...lease, action: 'check' }).catch(() => {
+          throw new DeviceMfaError(
+            503,
+            'Authenticator registration is temporarily unavailable'
+          );
+        })
+      ).outcome !== 'owned'
+    ) {
       throw new DeviceMfaError(503, 'Authenticator registration timed out');
     }
     const admin = await createAdminClient({ noCookie: true });
@@ -98,16 +113,10 @@ export async function mutateDeviceRegistry<T>(
       throw new DeviceMfaError(503, 'Could not save authenticator settings');
     return result;
   } finally {
-    await redis
-      .eval(
-        "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-        [key],
-        [lease]
-      )
-      .catch(() => {
-        // The bounded lease expires automatically; do not mask a saved mutation.
-        console.warn('Could not release authenticator registry lease');
-      });
+    await coordinate({ ...lease, action: 'release' }).catch(() => {
+      // The bounded lease expires automatically; do not mask a saved mutation.
+      console.warn('Could not release authenticator registry lease');
+    });
   }
 }
 
