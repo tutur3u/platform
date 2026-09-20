@@ -1,0 +1,25 @@
+name: Setup migrated Supabase baseline
+description: Restore an exact pristine database snapshot or rebuild from migrations.
+runs:
+  using: composite
+  steps:
+    - name: Fingerprint Supabase inputs
+      id: baseline-key
+      shell: bash
+      run: node scripts/ci/supabase-baseline.js key
+    - name: Restore exact migrated database
+      id: baseline-cache
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ runner.temp }}/supabase-baseline
+        key: ${{ steps.baseline-key.outputs.key }}
+    - name: Prepare and verify migrated database
+      id: baseline
+      shell: bash
+      run: node scripts/ci/supabase-baseline.js prepare
+    - name: Save trusted pristine baseline
+      if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.baseline-cache.outputs.cache-hit != 'true' && steps.baseline.outputs.cache-ready == 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ runner.temp }}/supabase-baseline
+        key: ${{ steps.baseline-key.outputs.key }}

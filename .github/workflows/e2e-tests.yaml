@@ -8,6 +8,7 @@ on:
       - ".github/actions/run-with-turbo-remote-cache/**"
       - ".github/actions/setup-bun-with-retry/**"
       - ".github/actions/setup-supabase-cli-with-retry/**"
+      - ".github/actions/setup-supabase-baseline/**"
       - ".github/workflows/e2e-tests.yaml"
       - "apps/**/Dockerfile*"
       - "apps/**/e2e/**"
@@ -20,6 +21,7 @@ on:
       - "packages/*/package.json"
       - "packages/devbox/src/e2e-harness*"
       - "scripts/ci/e2e-*"
+      - "scripts/ci/supabase-baseline*"
       - "scripts/ci/run-with-backoff.sh"
       - "scripts/docker-web.js"
       - "scripts/e2e-*"
@@ -44,8 +46,7 @@ permissions:
   packages: read
 
 env:
-  # apps/backend is a paused migration target and is not part of the live
-  # Next.js E2E runtime.
+  # apps/backend is a paused migration target outside the live Next.js E2E runtime.
   DOCKER_BACKEND_ENABLED: "0"
   E2E_IMAGE_BUNDLE_REPOSITORY: ghcr.io/tutur3u/platform-e2e
   E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
@@ -168,8 +169,7 @@ jobs:
       - name: Build and publish E2E image bundle
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        # The TanStack/Rust migration is paused. Build only the live Next.js
-        # frontend bundle needed by the maintained Playwright matrix.
+        # Build only the live Next.js bundle while TanStack/Rust migration is paused.
         run: node scripts/ci/e2e-image-bundle.js publish --frontend next
 
       - name: Remove Turbo BuildKit secret files
@@ -282,7 +282,6 @@ jobs:
             /opt/hostedtoolcache/CodeQL || true
           df -h /
 
-      # --- Supabase local stack ---
       - name: Setup Supabase CLI
         uses: ./.github/actions/setup-supabase-cli-with-retry
         with:
@@ -306,7 +305,6 @@ jobs:
         if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && steps.cache-supabase.outputs.cache-matched-key != ''
         run: docker load -i /tmp/supabase-docker/images.tar || true
 
-      # --- Node / Bun ---
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -354,6 +352,8 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
 
+      - name: Reuse migrated Supabase baseline
+        uses: ./.github/actions/setup-supabase-baseline
       - name: Install Playwright browsers
         working-directory: apps/web
         run: bun x playwright install chromium
@@ -366,7 +366,6 @@ jobs:
       - name: Reuse prepared E2E image bundle
         run: node scripts/ci/e2e-image-bundle.js pull --frontend next
 
-      # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
         if: matrix.mode == 'shard'
         working-directory: apps/web
@@ -512,8 +511,7 @@ jobs:
 
       - name: Save Supabase Docker images for cache
         id: prepare-supabase-docker-cache
-        # Invitation cases also use shard=1; only the general first shard may
-        # serialize and upload the shared multi-GB image cache.
+        # Only the general first shard uploads the multi-GB cache, not invitation shards.
         if: ${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.mode == 'shard' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
         run: |
           mkdir -p /tmp/supabase-docker
@@ -532,7 +530,6 @@ jobs:
           path: /tmp/supabase-docker
           key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
 
-      # --- Upload one consolidated artifact per failed shard ---
       - name: Upload E2E failure artifact
         uses: actions/upload-artifact@v7
         if: ${{ failure() }}
@@ -545,7 +542,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      # --- Cleanup ---
       - name: Stop Docker web and Supabase
         if: always()
         run: |
@@ -627,6 +623,8 @@ jobs:
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
+      - name: Reuse migrated Supabase baseline
+        uses: ./.github/actions/setup-supabase-baseline
       - name: Install Playwright browser
         working-directory: apps/inventory
         run: bun x playwright install chromium
@@ -656,8 +654,7 @@ jobs:
   migration-e2e:
     name: Migration E2E (${{ matrix.mode }})
     needs: [prepare-e2e-images]
-    # Preserve the matrix for an intentional future restart, but do not spend
-    # CI capacity on the paused TanStack/Rust migration.
+    # Retain the paused migration matrix without consuming CI capacity.
     if: ${{ false }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -770,6 +767,8 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
 
+      - name: Reuse migrated Supabase baseline
+        uses: ./.github/actions/setup-supabase-baseline
       - name: Install Playwright browsers
         working-directory: ${{ matrix.playwright_workdir }}
         run: bun x playwright install chromium

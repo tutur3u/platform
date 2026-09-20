@@ -225,3 +225,23 @@ lives in
   production platform deployment and a completed successful `main` staging
   migration.
 - Do not use the in-place Docker path when you specifically need rebuild-before-restart semantics.
+
+## Migrated Supabase CI baseline
+
+E2E jobs share a pristine database-volume snapshot, in addition to the existing
+Supabase service image cache. The exact fingerprint includes migration contents,
+seed files, local configuration, setup code, CLI/service versions, and runner
+architecture. There are no partial restore keys. Only trusted `main` runs publish
+a snapshot, before tests create users or other mutable fixtures.
+
+The setup action refuses an existing database volume. It verifies archive integrity,
+the Postgres image digest, and migration history before using a restored database;
+a mismatch or corrupt snapshot rebuilds from migrations. Snapshots are copied only
+after PostgreSQL stops cleanly. Each job gets its own volume. Gateway model metadata
+is refreshed after restoring, so it is not frozen into the baseline. Production and
+staging database deployments do not use these local test snapshots.
+
+Keep an uncached migration run in validation when changing migrations or the cache
+format. Compare cold and warm setup times before claiming a performance gain. The
+helper refuses execution outside a fresh Linux GitHub Actions runner and must never
+be used to archive a developer or production database.

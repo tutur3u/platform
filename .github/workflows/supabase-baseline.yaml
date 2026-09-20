@@ -1,0 +1,54 @@
+name: Supabase baseline contract
+on:
+  push:
+    branches-ignore: [production]
+    paths:
+      - scripts/ci/supabase-baseline*
+      - .github/actions/setup-supabase-baseline/**
+      - .github/workflows/supabase-baseline.yaml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: supabase-baseline-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  cold-warm-corrupt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+      - name: Cold baseline from all migrations
+        id: cold
+        run: node scripts/ci/supabase-baseline.js prepare
+      - name: Verify cold setup and add disposable test data
+        run: |
+          test '${{ steps.cold.outputs.restored }}' = false
+          docker exec supabase_db_tuturuuu psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE TABLE public.baseline_contract_mutation(id integer);'
+          node apps/database/scripts/run-supabase.js stop --no-backup
+      - name: Restore pristine baseline
+        id: warm
+        run: node scripts/ci/supabase-baseline.js prepare
+      - name: Verify warm setup excludes prior test mutations
+        run: |
+          test '${{ steps.warm.outputs.restored }}' = true
+          test "$(docker exec supabase_db_tuturuuu psql -U postgres -d postgres -Atc "SELECT to_regclass('public.baseline_contract_mutation') IS NULL")" = t
+          node apps/database/scripts/run-supabase.js stop --no-backup
+          printf corrupt > "$RUNNER_TEMP/supabase-baseline/database.tar.gz"
+      - name: Rebuild corrupt baseline
+        id: corrupt
+        run: node scripts/ci/supabase-baseline.js prepare
+      - name: Verify corrupt cache falls back to migrations
+        run: test '${{ steps.corrupt.outputs.restored }}' = false
+      - name: Stop isolated test database
+        if: always()
+        run: node apps/database/scripts/run-supabase.js stop --no-backup
