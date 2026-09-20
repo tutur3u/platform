@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
@@ -77,7 +78,8 @@ class DeviceMfaService {
   final DeviceMfaStore _store;
   final LocalAuthService _localAuth;
   final DateTime Function() _now;
-  bool _busy = false;
+  // Dismissing and reopening setup must not start a competing enrollment.
+  static final Set<String> _enrollingAccounts = {};
 
   String get _userId {
     final id = _client.auth.currentUser?.id;
@@ -96,7 +98,10 @@ class DeviceMfaService {
 
   Future<void> _unlock(String userId, String reason) async {
     if (!await _localAuth.authenticate(reason: reason)) {
-      throw const AuthException('Device verification cancelled');
+      throw const AuthException(
+        'Device verification cancelled',
+        code: 'device_verification_cancelled',
+      );
     }
     _checkUser(userId);
   }
@@ -104,18 +109,12 @@ class DeviceMfaService {
   /// Persist before verifying: a storage failure must never activate a factor
   /// whose secret the user cannot recover. An interrupted setup is resumable.
   Future<void> enroll({required String name, required String reason}) async {
-    if (_busy) throw const AuthException('Verification already in progress');
-    _busy = true;
+    final userId = _userId;
+    if (!_enrollingAccounts.add(userId)) {
+      throw const AuthException('Verification already in progress');
+    }
     try {
-      final userId = _userId;
       await _unlock(userId, reason);
-      final assurance = _client.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (assurance.currentLevel != AuthenticatorAssuranceLevels.aal2 &&
-          assurance.nextLevel == AuthenticatorAssuranceLevels.aal2) {
-        throw const AuthException(
-          'Verify an existing authenticator before registering this device',
-        );
-      }
       var credential = await _store.read(userId);
       _checkUser(userId);
       if (credential != null) {
@@ -130,6 +129,14 @@ class DeviceMfaService {
         }
       }
       if (credential == null) {
+        final assurance = _client.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance.currentLevel != AuthenticatorAssuranceLevels.aal2 &&
+            assurance.nextLevel == AuthenticatorAssuranceLevels.aal2) {
+          throw const AuthException(
+            'Verify an existing authenticator before registering this device',
+            code: 'existing_mfa_required',
+          );
+        }
         final enrolled = await _repository.change({
           'action': 'enroll',
           'name': name.trim(),
@@ -173,7 +180,7 @@ class DeviceMfaService {
         ),
       );
     } finally {
-      _busy = false;
+      _enrollingAccounts.remove(userId);
     }
   }
 

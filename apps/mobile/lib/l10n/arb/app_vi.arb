@@ -3264,5 +3264,14 @@
   "deviceMfaManage": "Thiết lập xác thực",
   "deviceMfaRemoveDeviceHint": "Thiết bị này sẽ không thể phê duyệt đăng nhập hoặc tạo mã hợp lệ nữa.",
   "deviceMfaNeedBackup": "Đăng ký thêm một thiết bị tin cậy trước khi khóa đăng ký mới.",
-    "mfaReviewSignIn": "Xem yêu cầu đăng nhập"
+    "mfaReviewSignIn": "Xem yêu cầu đăng nhập",
+  "deviceMfaClose": "Đóng trình xác thực",
+  "deviceMfaWorking": "Đang kiểm tra bảo mật thiết bị…",
+  "deviceMfaActionFailed": "Không thể hoàn tất bước này",
+  "deviceMfaCancelled": "Xác minh thiết bị đã bị hủy. Hãy thử lại và xác nhận bằng Face ID, vân tay hoặc mật mã thiết bị.",
+  "deviceMfaExistingRequired": "Xác minh bằng trình xác thực hiện có khi đăng nhập tài khoản, rồi quay lại đây để hoàn tất thiết lập.",
+  "deviceMfaSessionExpired": "Không thể xác minh phiên đăng nhập. Hãy đăng nhập lại trước khi thay đổi trình xác thực.",
+  "deviceMfaRateLimited": "Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.",
+  "deviceMfaUnavailable": "Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.",
+  "deviceMfaOffline": "Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại."
 }

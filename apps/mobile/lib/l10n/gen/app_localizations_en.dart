@@ -8010,4 +8010,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mfaReviewSignIn => 'Review sign-in';
+
+  @override
+  String get deviceMfaClose => 'Close authenticator';
+
+  @override
+  String get deviceMfaWorking => 'Checking device security…';
+
+  @override
+  String get deviceMfaActionFailed => 'Could not finish this step';
+
+  @override
+  String get deviceMfaCancelled => 'Device verification was cancelled. Try again and confirm with Face ID, fingerprint, or your device passcode.';
+
+  @override
+  String get deviceMfaExistingRequired => 'Verify your existing authenticator in your account sign-in flow, then return here to finish setup.';
+
+  @override
+  String get deviceMfaSessionExpired => 'Your session could not be verified. Sign in again before changing authenticators.';
+
+  @override
+  String get deviceMfaRateLimited => 'Too many attempts. Wait a minute before trying again.';
+
+  @override
+  String get deviceMfaUnavailable => 'Authenticator registration is temporarily unavailable. Try again shortly.';
+
+  @override
+  String get deviceMfaOffline => 'Could not reach Tuturuuu. Check your connection and try again.';
 }

@@ -15318,6 +15318,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Review sign-in'**
   String get mfaReviewSignIn;
+
+  /// No description provided for @deviceMfaClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close authenticator'**
+  String get deviceMfaClose;
+
+  /// No description provided for @deviceMfaWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking device security…'**
+  String get deviceMfaWorking;
+
+  /// No description provided for @deviceMfaActionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not finish this step'**
+  String get deviceMfaActionFailed;
+
+  /// No description provided for @deviceMfaCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Device verification was cancelled. Try again and confirm with Face ID, fingerprint, or your device passcode.'**
+  String get deviceMfaCancelled;
+
+  /// No description provided for @deviceMfaExistingRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your existing authenticator in your account sign-in flow, then return here to finish setup.'**
+  String get deviceMfaExistingRequired;
+
+  /// No description provided for @deviceMfaSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session could not be verified. Sign in again before changing authenticators.'**
+  String get deviceMfaSessionExpired;
+
+  /// No description provided for @deviceMfaRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a minute before trying again.'**
+  String get deviceMfaRateLimited;
+
+  /// No description provided for @deviceMfaUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticator registration is temporarily unavailable. Try again shortly.'**
+  String get deviceMfaUnavailable;
+
+  /// No description provided for @deviceMfaOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach Tuturuuu. Check your connection and try again.'**
+  String get deviceMfaOffline;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
