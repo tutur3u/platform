@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.1](https://github.com/tutur3u/platform/compare/mobile-v0.10.0...mobile-v0.10.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **mobile:** adapt Assistant starters to tablet layouts ([0c9e17c](https://github.com/tutur3u/platform/commit/0c9e17c881f3d8bfc8ab2e7bb42efcb1fd2f376a))
+* **mobile:** unify navigation, loading, and fullscreen flows ([5eb1747](https://github.com/tutur3u/platform/commit/5eb17472531da24c288ad6d2df302b1e687212df))
+* **mobile:** unify navigation, Nova loading, and fullscreen flows ([#5414](https://github.com/tutur3u/platform/issues/5414)) ([58da311](https://github.com/tutur3u/platform/commit/58da311b1ed0b11d1deb128e3a2e9b3a926f2b06))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/mobile-v0.9.2...mobile-v0.10.0) (2026-09-20)
 
 
