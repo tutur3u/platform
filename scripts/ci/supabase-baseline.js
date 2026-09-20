@@ -139,7 +139,15 @@ function prepare({ key, image }) {
       const imageId = docker('image', 'inspect', image, '--format', '{{.Id}}');
       if (manifest.imageId !== imageId)
         throw new Error('Postgres image digest changed');
-      docker('volume', 'create', volume);
+      docker(
+        'volume',
+        'create',
+        '--label',
+        `com.supabase.cli.project=${project}`,
+        '--label',
+        `com.docker.compose.project=${project}`,
+        volume
+      );
       createdVolume = true;
       docker(
         'run',
