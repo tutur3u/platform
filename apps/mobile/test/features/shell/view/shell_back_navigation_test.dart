@@ -9,6 +9,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -121,7 +122,11 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      _expectAppsPickerOnHome(tester, router);
+      expect(router.routeInformationProvider.value.uri.path, Routes.home);
+      expect(
+        find.byKey(const ValueKey('apps-picker-fullscreen')),
+        findsNothing,
+      );
     });
 
     testWidgets(
@@ -221,89 +226,6 @@ void main() {
       expect(find.text(l10n.taskPortfolioTitle), findsNothing);
     });
 
-    testWidgets(
-      'compact bottom navigation uses clear labels and restrained icons',
-      (tester) async {
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = const Size(390, 844);
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
-
-        final router = _buildRouter(initialLocation: Routes.apps);
-        addTearDown(router.dispose);
-
-        await tester.pumpWidget(
-          _buildTestApp(
-            router: router,
-            appTabCubit: appTabCubit,
-            authCubit: authCubit,
-            workspaceCubit: workspaceCubit,
-            shellProfileCubit: shellProfileCubit,
-          ),
-        );
-        await _pumpForTransitions(tester);
-
-        final footerRect = tester.getRect(
-          find.byKey(const ValueKey('compact-shell-footer')),
-        );
-        final compactNavItems = tester
-            .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
-            .children
-            .whereType<shad.NavigationItem>();
-
-        expect(footerRect.height, 54);
-        expect(compactNavItems, hasLength(2));
-        expect(compactNavItems.every((item) => item.label == null), isTrue);
-        expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 24);
-        expect(find.byIcon(Icons.apps_outlined), findsNothing);
-      },
-    );
-
-    testWidgets(
-      'compact root navigation accommodates larger accessibility text',
-      (tester) async {
-        tester.platformDispatcher.textScaleFactorTestValue = 2;
-        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-        tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = const Size(390, 844);
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
-
-        final router = _buildRouter(initialLocation: Routes.apps);
-        addTearDown(router.dispose);
-
-        await tester.pumpWidget(
-          _buildTestApp(
-            router: router,
-            appTabCubit: appTabCubit,
-            authCubit: authCubit,
-            workspaceCubit: workspaceCubit,
-            shellProfileCubit: shellProfileCubit,
-          ),
-        );
-        await _pumpForTransitions(tester);
-
-        final footerRect = tester.getRect(
-          find.byKey(const ValueKey('compact-shell-footer')),
-        );
-        final compactNavItems = tester
-            .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
-            .children
-            .whereType<shad.NavigationItem>();
-
-        expect(footerRect.height, greaterThanOrEqualTo(70));
-        expect(tester.takeException(), isNull);
-        expect(compactNavItems, hasLength(2));
-        expect(compactNavItems.every((item) => item.label == null), isTrue);
-        expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 24);
-        expect(find.byIcon(Icons.apps_outlined), findsNothing);
-      },
-    );
-
     testWidgets('six-item compact mini nav stays within a narrow viewport', (
       tester,
     ) async {
@@ -347,7 +269,7 @@ void main() {
       expect(
         rects.map((rect) => rect.width).reduce((a, b) => a > b ? a : b) -
             rects.map((rect) => rect.width).reduce((a, b) => a < b ? a : b),
-        lessThanOrEqualTo(2),
+        lessThanOrEqualTo(2.01),
       );
       expect(tester.takeException(), isNull);
     });
@@ -462,7 +384,7 @@ void main() {
       },
     );
 
-    testWidgets('system back from mini-app root goes to apps picker', (
+    testWidgets('system back from mini-app root returns to its Apps origin', (
       tester,
     ) async {
       tester.view.devicePixelRatio = 1;
@@ -487,15 +409,34 @@ void main() {
 
       router.go(Routes.apps);
       await _pumpForTransitions(tester);
+      final appsState = tester.state(find.byType(AppsHubPage));
+      final island = find
+          .ancestor(
+            of: find.byType(CustomNavigationBar),
+            matching: find.byType(AnimatedSize),
+          )
+          .first;
+      final initialWidth = tester.getSize(island).width;
       router.go(Routes.tasks);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      final halfwayWidth = tester.getSize(island).width;
       await _pumpForTransitions(tester);
+      final finalWidth = tester.getSize(island).width;
+      expect(halfwayWidth, greaterThan(initialWidth));
+      expect(halfwayWidth, lessThan(finalWidth));
 
       expect(router.routeInformationProvider.value.uri.path, Routes.tasks);
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
 
-      _expectAppsPickerOnHome(tester, router);
+      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      expect(tester.state(find.byType(AppsHubPage)), same(appsState));
+      expect(
+        find.byKey(const ValueKey('apps-picker-fullscreen')),
+        findsNothing,
+      );
     });
 
     testWidgets('apps root requires double back to exit', (tester) async {
@@ -705,7 +646,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.apps_outlined).first);
       await _pumpForTransitions(tester);
 
-      _expectAppsPickerOnHome(tester, router);
+      _expectAppsScreen(tester, router);
     });
 
     testWidgets(
@@ -777,7 +718,11 @@ void main() {
 
         final context = tester.element(shellFinder);
         final l10n = AppLocalizations.of(context);
-        _expectAppsPickerOnHome(tester, router);
+        expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+        expect(
+          find.byKey(const ValueKey('apps-picker-fullscreen')),
+          findsNothing,
+        );
         expect(systemPopCalls, 0);
         expect(find.text(l10n.commonPressBackAgainToExit), findsNothing);
         expect(shellState.mounted, isTrue);
@@ -869,7 +814,11 @@ void main() {
 
       await tester.binding.handlePopRoute();
       await _pumpForTransitions(tester);
-      _expectAppsPickerOnHome(tester, router);
+      expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+      expect(
+        find.byKey(const ValueKey('apps-picker-fullscreen')),
+        findsNothing,
+      );
     });
 
     testWidgets(

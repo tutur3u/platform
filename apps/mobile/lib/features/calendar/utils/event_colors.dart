@@ -20,6 +20,7 @@ abstract final class EventColors {
     'ORANGE': Colors.orange,
     'DEEP_ORANGE': Colors.deepOrange,
     'BROWN': Colors.brown,
+    'GRAY': Colors.grey,
     'GREY': Colors.grey,
     'BLUE_GREY': Colors.blueGrey,
   };
@@ -46,5 +47,16 @@ abstract final class EventColors {
       fromString(color).withValues(alpha: 0.25);
 
   /// All available color names for the color picker.
-  static List<String> get allColors => _colorMap.keys.toList();
+  static List<String> get allColors => [
+    'RED',
+    'BLUE',
+    'GREEN',
+    'YELLOW',
+    'ORANGE',
+    'PURPLE',
+    'PINK',
+    'INDIGO',
+    'CYAN',
+    'GRAY',
+  ];
 }

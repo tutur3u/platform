@@ -416,6 +416,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     if (endAt != null) data['end_at'] = endAt.toUtc().toIso8601String();
     if (color != null) data['color'] = color;
 
+    final previousEvents = state.events;
     // Optimistic local update.
     final updatedEvents = state.events.map((e) {
       if (e.id != eventId) return e;
@@ -433,7 +434,14 @@ class CalendarCubit extends Cubit<CalendarState> {
     try {
       await _repo.updateEvent(wsId, eventId, data);
     } on Exception catch (e) {
-      emit(state.copyWith(error: e.toString()));
+      emit(
+        _storeAndReturn(
+          state.copyWith(
+            events: previousEvents,
+            error: e is ApiException ? e.message : e.toString(),
+          ),
+        ),
+      );
     }
   }
 
@@ -452,7 +460,14 @@ class CalendarCubit extends Cubit<CalendarState> {
       await _repo.deleteEvent(wsId, eventId);
     } on Exception catch (e) {
       // Rollback on failure.
-      emit(state.copyWith(events: previousEvents, error: e.toString()));
+      emit(
+        _storeAndReturn(
+          state.copyWith(
+            events: previousEvents,
+            error: e is ApiException ? e.message : e.toString(),
+          ),
+        ),
+      );
     }
   }
 

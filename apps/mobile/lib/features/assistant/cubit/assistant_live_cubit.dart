@@ -7,6 +7,7 @@ import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:image/image.dart' as img;
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/data/assistant_audio_buffer.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
 import 'package:mobile/features/assistant/data/assistant_live_config.dart';
@@ -17,6 +18,7 @@ import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 
 part 'assistant_live_state.dart';
+part 'assistant_live_microphone.dart';
 
 class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   AssistantLiveCubit({
@@ -54,6 +56,10 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   bool _manualDisconnect = false;
   bool _reconnectScheduled = false;
   Timer? _assistantSpeakingTimer;
+  final _startupAudio = AssistantAudioBuffer();
+  int _microphoneVersion = 0;
+  bool _startingMicrophone = false;
+  bool _drainingAudio = false;
 
   String? _currentTurnId;
   String _currentTypedInput = '';
@@ -63,6 +69,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   List<AssistantAttachment> _currentTurnAttachments = const [];
   final List<Map<String, dynamic>> _currentToolCalls = [];
   final List<Map<String, dynamic>> _currentToolResults = [];
+
+  void _emitMicrophoneState(AssistantLiveState next) => emit(next);
 
   CameraController? get cameraController => _cameraService.controller;
 
@@ -208,57 +216,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     }
   }
 
-  Future<void> toggleMicrophone() async {
-    if (state.isMicrophoneActive) {
-      await _recorder.stop();
-      emit(state.copyWith(isMicrophoneActive: false, audioLevel: 0));
-      return;
-    }
-
-    final granted = await _recorder.ensurePermission();
-    emit(
-      state.copyWith(
-        microphonePermission: granted
-            ? AssistantLivePermissionState.granted
-            : AssistantLivePermissionState.denied,
-      ),
-    );
-    if (!granted) {
-      _emitError('Microphone permission was denied.');
-      return;
-    }
-
-    final wsId = state.workspaceId;
-    if (wsId == null) {
-      _emitError('No workspace is selected.');
-      return;
-    }
-
-    if (state.status != AssistantLiveConnectionStatus.connected) {
-      await prepareSession(wsId: wsId, chatId: state.chatId);
-    }
-
-    await _recorder.start(
-      onData: (bytes) {
-        _ensureActiveTurn();
-        _socket.sendAudioChunk(bytes);
-      },
-      onAmplitude: (level) {
-        if (isClosed) {
-          return;
-        }
-        emit(state.copyWith(audioLevel: level));
-      },
-    );
-
-    emit(
-      state.copyWith(
-        isMicrophoneActive: true,
-        microphonePermission: AssistantLivePermissionState.granted,
-      ),
-    );
-  }
-
   Future<void> toggleCamera() async {
     if (state.isCameraActive) {
       await _cameraService.stopStreaming();
@@ -383,13 +340,16 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
           ),
         );
       case AssistantLiveSocketReady():
-        _readyCompleter?.complete();
+        if (!(_readyCompleter?.isCompleted ?? true)) {
+          _readyCompleter?.complete();
+        }
         emit(
           state.copyWith(
             status: AssistantLiveConnectionStatus.connected,
             clearError: true,
           ),
         );
+        unawaited(_drainStartupAudio());
       case AssistantLiveSocketClosed(:final reason):
         if (_manualDisconnect) {
           emit(
@@ -677,6 +637,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   }
 
   Future<void> _stopInputs() async {
+    _microphoneVersion++;
+    _startupAudio.clear();
     await _recorder.stop();
     await _cameraService.stopStreaming();
     emit(
@@ -824,12 +786,17 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       ),
     );
     if (!preserveDrafts) {
+      _microphoneVersion++;
+      _startupAudio.clear();
+      unawaited(_recorder.stop());
+      emit(state.copyWith(isMicrophoneActive: false, audioLevel: 0));
       _clearDrafts();
     }
   }
 
   @override
   Future<void> close() async {
+    _requestVersion++;
     _manualDisconnect = true;
     _assistantSpeakingTimer?.cancel();
     await _socketSubscription?.cancel();

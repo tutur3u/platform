@@ -11,6 +11,7 @@ import 'package:mobile/features/apps/models/app_description.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
+import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
 
@@ -34,15 +35,16 @@ class AppsHubPage extends StatefulWidget {
 class _AppsHubPageState extends State<AppsHubPage> {
   @override
   Widget build(BuildContext context) {
-    final modules = _orderedModules(AppRegistry.modules(context))
-        .where(
-          (module) =>
-              '${module.label(context.l10n)} '
-                      '${appDescription(context, module.id)} ${module.id}'
-                  .toLowerCase()
-                  .contains(widget.query.trim().toLowerCase()),
-        )
-        .toList();
+    final modules =
+        arrangeApps(AppRegistry.modules(context), context.watch<AppTabCubit>())
+            .where(
+              (module) =>
+                  '${module.label(context.l10n)} '
+                          '${appDescription(context, module.id)} ${module.id}'
+                      .toLowerCase()
+                      .contains(widget.query.trim().toLowerCase()),
+            )
+            .toList();
 
     return SafeArea(
       top: false,
@@ -112,39 +114,6 @@ class _AppsHubPageState extends State<AppsHubPage> {
         ),
       ),
     );
-  }
-
-  List<AppModule> _orderedModules(List<AppModule> modules) {
-    const preferredOrder = <String>[
-      'tasks',
-      'chat',
-      'calendar',
-      'finance',
-      'timer',
-      'drive',
-      'education',
-      'inventory',
-      'crm',
-    ];
-
-    final moduleById = {for (final module in modules) module.id: module};
-    final ordered = <AppModule>[];
-    final seen = <String>{};
-
-    for (final id in preferredOrder) {
-      final module = moduleById[id];
-      if (module != null && seen.add(module.id)) {
-        ordered.add(module);
-      }
-    }
-
-    for (final module in modules) {
-      if (seen.add(module.id)) {
-        ordered.add(module);
-      }
-    }
-
-    return ordered;
   }
 }
 

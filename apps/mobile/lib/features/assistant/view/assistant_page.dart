@@ -29,6 +29,7 @@ import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
@@ -36,6 +37,7 @@ import 'package:mobile/features/assistant/widgets/assistant_live_mode_view.dart'
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_starter_prompts.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
+import 'package:mobile/features/assistant/widgets/assistant_voice_message_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -119,6 +121,21 @@ class _AssistantPageState extends State<AssistantPage> {
     super.initState();
     _scrollController.addListener(_handleScroll);
     _inputFocusNode.addListener(_handleInputFocusChange);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TickerMode.valuesOf(context).enabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || TickerMode.valuesOf(context).enabled) return;
+        _inputFocusNode.unfocus();
+        if (_liveCubit.state.status !=
+            AssistantLiveConnectionStatus.disconnected) {
+          unawaited(_liveCubit.disconnect());
+        }
+      });
+    }
   }
 
   @override
@@ -249,7 +266,7 @@ class _AssistantPageState extends State<AssistantPage> {
                             ScrollViewKeyboardDismissBehavior.onDrag;
                         final scrollToBottomLabel =
                             context.l10n.assistantScrollToBottomAction;
-                        final scrollToBottomFab = _AssistantScrollToBottomFab(
+                        final scrollToBottomFab = AssistantScrollToBottomFab(
                           label: scrollToBottomLabel,
                           onPressed: _handleScrollToBottomPressed,
                         );
@@ -374,13 +391,14 @@ class _AssistantPageState extends State<AssistantPage> {
                                         ],
                                       ),
                                       Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: isFullscreen
-                                            ? 0
+                                        left: _horizontalPadding(context),
+                                        right: _horizontalPadding(context),
+                                        bottom: keyboardVisible
+                                            ? 8
                                             : MediaQuery.paddingOf(
-                                                context,
-                                              ).bottom,
+                                                    context,
+                                                  ).bottom +
+                                                  (isFullscreen ? 8 : 0),
                                         child: IgnorePointer(
                                           ignoring: !_isComposerVisible,
                                           child: AnimatedSlide(
@@ -406,11 +424,7 @@ class _AssistantPageState extends State<AssistantPage> {
                                                 creditSource:
                                                     shellState.creditSource,
                                                 isFullscreen: isFullscreen,
-                                                bottomInset: isFullscreen
-                                                    ? MediaQuery.paddingOf(
-                                                        context,
-                                                      ).bottom
-                                                    : 0,
+                                                bottomInset: 0,
                                                 isPersonalWorkspace:
                                                     isPersonalWorkspace,
                                                 thinkingMode:
@@ -436,11 +450,8 @@ class _AssistantPageState extends State<AssistantPage> {
                                                       !isFullscreen,
                                                     ),
                                                 onMicrophoneTap: () =>
-                                                    _handleMicrophoneTap(
+                                                    _recordVoiceMessage(
                                                       currentWorkspace.id,
-                                                      shellState,
-                                                      chatState,
-                                                      liveState,
                                                     ),
                                                 onSend: () => _handleSend(
                                                   currentWorkspace.id,
@@ -484,7 +495,7 @@ class _AssistantPageState extends State<AssistantPage> {
                                               opacity: _isComposerVisible
                                                   ? 0
                                                   : 1,
-                                              child: _AssistantComposerFab(
+                                              child: AssistantComposerFab(
                                                 label: context
                                                     .l10n
                                                     .assistantAskPlaceholder,
@@ -821,6 +832,17 @@ class _AssistantPageState extends State<AssistantPage> {
     _scheduleScrollToBottom();
   }
 
+  Future<void> _recordVoiceMessage(String wsId) async {
+    final recording = await showAdaptiveSheet<PlatformFile>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (_) => const AssistantVoiceMessageSheet(),
+    );
+    if (!mounted || recording == null) return;
+    await _chatCubit.addComposerAttachments(wsId: wsId, files: [recording]);
+  }
+
   Future<void> _pickFiles(String wsId) async {
     final result = await FilePicker.pickFiles();
     if (result.isEmpty) {
@@ -1130,11 +1152,16 @@ class _AssistantPageState extends State<AssistantPage> {
       liveState,
     );
     if (!isVisibleLiveSession || liveState.status.isDisconnectedOrErrored) {
-      await _liveCubit.prepareSession(
+      final connecting = _liveCubit.prepareSession(
         wsId: wsId,
         chatId: activeChatId,
         model: assistantLiveModelId,
       );
+      if (autoStartMicrophone && !_liveCubit.state.isMicrophoneActive) {
+        await Future.wait([connecting, _liveCubit.toggleMicrophone()]);
+      } else {
+        await connecting;
+      }
     }
 
     if (!mounted ||
@@ -1279,59 +1306,6 @@ class _AssistantPageState extends State<AssistantPage> {
     return shellState.creditSource == AssistantCreditSource.personal
         ? shellState.personalWorkspaceId
         : wsId;
-  }
-}
-
-class _AssistantComposerFab extends StatelessWidget {
-  const _AssistantComposerFab({required this.label, required this.onPressed});
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      button: true,
-      child: SizedBox(
-        width: 56,
-        height: 56,
-        child: shad.PrimaryButton(
-          onPressed: onPressed,
-          shape: shad.ButtonShape.circle,
-          density: shad.ButtonDensity.icon,
-          child: const Icon(Icons.chat_bubble_outline_rounded, size: 24),
-        ),
-      ),
-    );
-  }
-}
-
-class _AssistantScrollToBottomFab extends StatelessWidget {
-  const _AssistantScrollToBottomFab({
-    required this.label,
-    required this.onPressed,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      button: true,
-      child: SizedBox(
-        width: 48,
-        height: 48,
-        child: shad.PrimaryButton(
-          onPressed: onPressed,
-          shape: shad.ButtonShape.circle,
-          density: shad.ButtonDensity.icon,
-          child: const Icon(Icons.arrow_downward_rounded, size: 22),
-        ),
-      ),
-    );
   }
 }
 

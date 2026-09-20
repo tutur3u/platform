@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
@@ -26,24 +29,28 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final tabs = AppTabCubit(settingsRepository: SettingsRepository());
       addTearDown(tabs.close);
+      final chrome = ShellChromeActionsCubit();
+      addTearDown(chrome.close);
       await tester.pumpApp(
-        BlocProvider.value(
-          value: tabs,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: tabs),
+            BlocProvider.value(value: chrome),
+          ],
           child: const Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: AppsDropdownPicker(),
+            body: Column(
+              children: [
+                ShellInjectedActionsHost(matchedLocation: Routes.apps),
+                Expanded(child: AppsScreen()),
+              ],
             ),
           ),
         ),
       );
-      await tester.tap(find.byType(AppsDropdownPicker));
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsNothing);
-      final screen = tester.getRect(
-        find.byKey(const ValueKey('apps-picker-fullscreen')),
-      );
-      expect(screen.size, size);
+      expect(find.byType(Dialog), findsNothing);
+      expect(find.byKey(const ValueKey('apps-screen')), findsOneWidget);
       await tester.tap(find.byIcon(Icons.search_rounded));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'calendar');

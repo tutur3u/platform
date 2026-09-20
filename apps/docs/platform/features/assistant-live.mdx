@@ -75,6 +75,22 @@ Search sources stay in the message timeline. Temporary notes are not workspace
 documents. The existing five-minute credit authorization limit remains in force;
 expiration ends media capture and keeps the saved conversation available.
 
+## Mobile audio capture
+
+Starting mobile Live with the microphone enabled requests permission and captures
+speech while the connection initializes. A memory-only FIFO holds at most 30
+seconds of 16 kHz mono PCM. Once ready, chunks drain in order; cancelling capture
+or leaving the session discards unsent audio. Connection errors do not persist
+this buffer to disk.
+
+The normal mobile chat microphone opens a recording sheet. Record up to two
+minutes, stop, preview, and explicitly attach the voice message. Attaching uses
+the existing chat upload path; sending remains a separate composer action.
+Temporary recordings are deleted when the sheet closes. Backgrounding stops an
+active recording, and dismissal waits for outstanding recorder operations before
+releasing native resources. The tablet's collapsed composer includes its text
+prompt alongside the chat icon.
+
 ## Flash and Pro
 
 Flash uses `gemini-3.8-live`; Pro uses `gemini-3.8-live-extended-thinking`

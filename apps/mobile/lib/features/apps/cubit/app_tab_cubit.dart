@@ -18,6 +18,16 @@ class AppTabCubit extends Cubit<AppTabState> {
     _selectionRequestVersion += 1;
   }
 
+  Future<void> recordAppOrigin(String route) async {
+    final origin = route == Routes.apps ? Routes.apps : Routes.home;
+    emit(state.copyWith(appOrigin: origin));
+    try {
+      await _settings.setLastAppOrigin(origin);
+    } on Exception catch (error, stack) {
+      log('Failed to persist app origin', error: error, stackTrace: stack);
+    }
+  }
+
   Future<void> clearSelection() async {
     _bumpSelectionVersion();
     if (state.selectedId != null || state.shouldAutoFocus) {
@@ -40,6 +50,18 @@ class AppTabCubit extends Cubit<AppTabState> {
     if (!isClosed) emit(state.copyWith(showAppsTab: value));
   }
 
+  Future<void> setAppOrder(List<String> ids) async {
+    await _settings.setAppOrder(ids);
+    if (!isClosed) emit(state.copyWith(appOrder: List.unmodifiable(ids)));
+  }
+
+  Future<void> togglePinnedApp(String id) async {
+    final ids = [...state.pinnedApps];
+    if (!ids.remove(id)) ids.add(id);
+    await _settings.setPinnedApps(ids);
+    if (!isClosed) emit(state.copyWith(pinnedApps: List.unmodifiable(ids)));
+  }
+
   Future<void> loadLastApp() async {
     final requestVersion = ++_selectionRequestVersion;
     try {
@@ -47,6 +69,21 @@ class AppTabCubit extends Cubit<AppTabState> {
       if (!isClosed) emit(state.copyWith(showAppsTab: visible));
     } on Object {
       // Keep the compact default if preference storage is unavailable.
+    }
+    try {
+      final origin = await _settings.getLastAppOrigin();
+      if (!isClosed && requestVersion == _selectionRequestVersion) {
+        emit(
+          state.copyWith(
+            appOrigin: origin == Routes.apps ? Routes.apps : Routes.home,
+          ),
+        );
+      }
+      final order = await _settings.getAppOrder();
+      final pins = await _settings.getPinnedApps();
+      if (!isClosed) emit(state.copyWith(appOrder: order, pinnedApps: pins));
+    } on Object {
+      // Preferences are optional; keep the default app order on read failure.
     }
     String? route;
     try {

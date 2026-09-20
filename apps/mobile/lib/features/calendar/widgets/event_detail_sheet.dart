@@ -19,6 +19,8 @@ Future<String?> showEventDetailSheet(
 }) {
   return showAdaptiveSheet<String>(
     context: context,
+    useRootNavigator: true,
+    backgroundColor: Theme.of(context).colorScheme.surface,
     isScrollControlled: false,
     builder: (context) => _EventDetailContent(event: event),
   );

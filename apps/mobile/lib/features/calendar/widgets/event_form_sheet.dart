@@ -17,6 +17,8 @@ Future<Map<String, dynamic>?> showEventFormSheet(
 }) {
   return showAdaptiveSheet<Map<String, dynamic>>(
     context: context,
+    useRootNavigator: true,
+    backgroundColor: Theme.of(context).colorScheme.surface,
     builder: (context) =>
         _EventFormContent(event: event, initialStartTime: initialStartTime),
   );

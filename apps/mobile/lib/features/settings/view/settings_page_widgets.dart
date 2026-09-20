@@ -178,6 +178,21 @@ class _PreferencesSection extends StatelessWidget {
       title: l10n.settingsPreferencesSectionTitle,
       description: l10n.settingsPreferencesSectionDescription,
       children: [
+        BlocBuilder<AppTabCubit, AppTabState>(
+          builder: (context, state) => SettingsTile(
+            icon: Icons.apps_rounded,
+            title: l10n.appsShowBottomTab,
+            showChevron: false,
+            onTap: () => unawaited(
+              context.read<AppTabCubit>().setShowAppsTab(
+                value: !state.showAppsTab,
+              ),
+            ),
+            trailing: IgnorePointer(
+              child: shad.Switch(value: state.showAppsTab, onChanged: (_) {}),
+            ),
+          ),
+        ),
         SettingsTile(
           icon: Icons.palette_outlined,
           title: l10n.settingsTheme,

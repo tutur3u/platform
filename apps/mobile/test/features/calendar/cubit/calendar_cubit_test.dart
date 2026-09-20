@@ -42,6 +42,40 @@ void main() {
       await cubit.close();
     });
 
+    for (final deleting in [false, true]) {
+      test(
+        'failed ${deleting ? "deletion" : "edit"} restores cached event',
+        () async {
+          final event = _event(id: 'event', startAt: DateTime(2026, 3, 25));
+          when(
+            () => repository.getEvents(
+              'ws',
+              start: any(named: 'start'),
+              end: any(named: 'end'),
+            ),
+          ).thenAnswer((_) async => [event]);
+          await cubit.loadEvents('ws', forceRefresh: true);
+          if (deleting) {
+            when(
+              () => repository.deleteEvent('ws', 'event'),
+            ).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+            await cubit.deleteEvent('ws', 'event');
+          } else {
+            when(
+              () => repository.updateEvent('ws', 'event', any()),
+            ).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+            await cubit.updateEvent('ws', 'event', title: 'Rejected title');
+          }
+          expect(cubit.state.events.single.title, event.title);
+          expect(cubit.state.error, 'Denied');
+          expect(
+            CalendarCubit.cachedStateForWorkspace('ws')!.events.single.title,
+            event.title,
+          );
+        },
+      );
+    }
+
     test(
       'a previous workspace response cannot replace the active calendar',
       () async {

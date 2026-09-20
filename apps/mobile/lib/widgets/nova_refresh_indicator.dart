@@ -47,9 +47,14 @@ class _NovaRefreshIndicatorState extends State<NovaRefreshIndicator> {
                   context,
                 ).refreshIndicatorSemanticLabel,
                 liveRegion: _status == RefreshIndicatorStatus.refresh,
-                child: const SizedBox.square(
-                  dimension: 36,
-                  child: NovaLoadingIndicator(size: 32),
+                child: Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                  elevation: 4,
+                  shape: const CircleBorder(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: NovaLoadingIndicator(size: 28),
+                  ),
                 ),
               ),
             ),

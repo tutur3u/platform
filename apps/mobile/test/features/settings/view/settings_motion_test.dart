@@ -8,6 +8,7 @@ import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
@@ -133,6 +134,10 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider(
+              create: (_) =>
+                  AppTabCubit(settingsRepository: SettingsRepository()),
+            ),
             BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
             BlocProvider(
               create: (_) =>
@@ -186,6 +191,10 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider(
+              create: (_) =>
+                  AppTabCubit(settingsRepository: SettingsRepository()),
+            ),
             BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
             BlocProvider(
               create: (_) =>
@@ -261,6 +270,10 @@ void main() {
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
+            BlocProvider(
+              create: (_) =>
+                  AppTabCubit(settingsRepository: SettingsRepository()),
+            ),
             BlocProvider<AuthCubit>.value(value: authCubit),
             BlocProvider(
               create: (_) =>
