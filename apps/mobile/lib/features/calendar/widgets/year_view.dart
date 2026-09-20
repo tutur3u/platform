@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -28,6 +30,18 @@ class YearView extends StatelessWidget {
     final displayYear = focusedMonth.year;
     final eventColorsByDay = _buildEventColorsByDay(events);
     final isCompact = context.isCompact;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final dayHeight = math.max<double>(30, textScaler.scale(12) + 10);
+    // Every month must fit six weeks, including scaled text and event dots.
+    final monthHeight =
+        24 +
+        textScaler.scale(24) * 1.5 +
+        12 +
+        textScaler.scale(14) +
+        8 +
+        6 * (dayHeight + 4) +
+        20 +
+        4;
 
     return CustomScrollView(
       slivers: [
@@ -69,6 +83,7 @@ class YearView extends StatelessWidget {
                     return Padding(
                       padding: EdgeInsets.only(bottom: index == 11 ? 0 : 12),
                       child: _YearMonthCard(
+                        dayHeight: dayHeight,
                         month: DateTime(displayYear, index + 1),
                         selectedDate: selectedDate,
                         firstDayOfWeek: firstDayOfWeek,
@@ -81,6 +96,7 @@ class YearView extends StatelessWidget {
               : SliverGrid(
                   delegate: SliverChildBuilderDelegate((context, index) {
                     return _YearMonthCard(
+                      dayHeight: dayHeight,
                       month: DateTime(displayYear, index + 1),
                       selectedDate: selectedDate,
                       firstDayOfWeek: firstDayOfWeek,
@@ -88,11 +104,11 @@ class YearView extends StatelessWidget {
                       onDaySelected: onDaySelected,
                     );
                   }, childCount: 12),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 360,
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 360 * textScaler.scale(1),
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    mainAxisExtent: 286,
+                    mainAxisExtent: monthHeight,
                   ),
                 ),
         ),
@@ -155,6 +171,7 @@ class YearView extends StatelessWidget {
 
 class _YearMonthCard extends StatelessWidget {
   const _YearMonthCard({
+    required this.dayHeight,
     required this.month,
     required this.selectedDate,
     required this.firstDayOfWeek,
@@ -162,6 +179,7 @@ class _YearMonthCard extends StatelessWidget {
     required this.onDaySelected,
   });
 
+  final double dayHeight;
   final DateTime month;
   final DateTime selectedDate;
   final int firstDayOfWeek;
@@ -192,9 +210,17 @@ class _YearMonthCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            DateFormat.MMMM().format(month),
-            style: theme.typography.large.copyWith(fontWeight: FontWeight.w800),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              DateFormat.MMMM().format(month),
+              maxLines: 1,
+              softWrap: false,
+              style: theme.typography.large.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -230,6 +256,7 @@ class _YearMonthCard extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(2),
                     child: _YearDayCell(
+                      height: dayHeight,
                       date: date,
                       selectedDate: selectedDate,
                       eventColors: date == null
@@ -255,12 +282,14 @@ class _YearMonthCard extends StatelessWidget {
 
 class _YearDayCell extends StatelessWidget {
   const _YearDayCell({
+    required this.height,
     required this.date,
     required this.selectedDate,
     required this.eventColors,
     required this.onTap,
   });
 
+  final double height;
   final DateTime? date;
   final DateTime selectedDate;
   final List<Color> eventColors;
@@ -269,7 +298,7 @@ class _YearDayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (date == null) {
-      return const SizedBox(height: 30);
+      return SizedBox(height: height);
     }
 
     final theme = shad.Theme.of(context);
@@ -297,7 +326,7 @@ class _YearDayCell extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          height: 30,
+          height: height,
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(12),
@@ -310,15 +339,20 @@ class _YearDayCell extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '${date!.day}',
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1,
-                  color: textColor,
-                  fontWeight: isSelected || isToday
-                      ? FontWeight.w800
-                      : FontWeight.w600,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '${date!.day}',
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1,
+                    color: textColor,
+                    fontWeight: isSelected || isToday
+                        ? FontWeight.w800
+                        : FontWeight.w600,
+                  ),
                 ),
               ),
               if (eventColors.isNotEmpty) ...[
