@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.2](https://github.com/tutur3u/platform/compare/devbox-v0.3.1...devbox-v0.3.2) (2026-09-20)
+
+
+### Bug Fixes
+
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/devbox-v0.3.0...devbox-v0.3.1) (2026-06-17)
 
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/education-core-v0.4.1...education-core-v0.4.2) (2026-09-20)
+
+
+### Bug Fixes
+
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/education-core-v0.4.0...education-core-v0.4.1) (2026-08-21)
 
 

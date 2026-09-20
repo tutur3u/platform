@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.2](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.1...inventory-core-v0.8.2) (2026-09-20)
+
+
+### Bug Fixes
+
+
 ## [0.8.1](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.0...inventory-core-v0.8.1) (2026-08-21)
 
 

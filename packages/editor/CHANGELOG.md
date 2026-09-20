@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.2](https://github.com/tutur3u/platform/compare/editor-v0.8.1...editor-v0.8.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+
 ## [0.8.1](https://github.com/tutur3u/platform/compare/editor-v0.8.0...editor-v0.8.1) (2026-08-16)
 
 

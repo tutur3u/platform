@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.28.1...tanstack-web-v0.29.0) (2026-09-20)
+
+
+### Features
+
+* **auth:** add trusted mobile authenticators and login approvals ([55e4d79](https://github.com/tutur3u/platform/commit/55e4d792bde2c543c3be8204a980fa99069527e4))
+* **auth:** trusted mobile authenticators and desktop login approvals ([#5400](https://github.com/tutur3u/platform/issues/5400)) ([4e9e9d2](https://github.com/tutur3u/platform/commit/4e9e9d20fd6a65c07b9f83008ef5ccd7c4d60d7f))
+* **contacts:** familiar report statuses and branded monthly emails ([#5309](https://github.com/tutur3u/platform/issues/5309)) ([88d74a8](https://github.com/tutur3u/platform/commit/88d74a828ce4deb2047906c66452d17ae50e7b61))
+* **contacts:** track and automate approved report delivery ([#5300](https://github.com/tutur3u/platform/issues/5300)) ([b69c22f](https://github.com/tutur3u/platform/commit/b69c22f433df8a1aa7cea18b538c1a3016582b9e))
+* **contacts:** unify report status UX and branded email previews ([8d464ab](https://github.com/tutur3u/platform/commit/8d464ab47c3297b9846f5d768581a7091704f3a8))
+* **desktop:** add secure beta distributions and download page ([b034081](https://github.com/tutur3u/platform/commit/b034081273ee5967924bc319c0c9f99b406148c1)) ([#5405](https://github.com/tutur3u/platform/issues/5405)) ([105af8a](https://github.com/tutur3u/platform/commit/105af8aa003a791034fe1a0719dc2663a4b83e56))
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf)) ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **meet:** publish invite previews and extend paid call limits ([7cf3d6b](https://github.com/tutur3u/platform/commit/7cf3d6b97b0f353e83e894dcc8c83e0d2b6d7a3b))
+* **meet:** unlock hosting for verified paid accounts ([00a0168](https://github.com/tutur3u/platform/commit/00a016891845b43ba0297730937fa68d6e465de8))
+* **meet:** unlock paid hosting, longer calls and public previews ([#5364](https://github.com/tutur3u/platform/issues/5364)) ([a6687ff](https://github.com/tutur3u/platform/commit/a6687ffccda096f2ab9da850bf0ddfe8e04c3cf2))
+* **mira:** add Gemini 3.8 Live Flash and Pro modes ([ae47967](https://github.com/tutur3u/platform/commit/ae479679fb85e8785a2012816d38e8bd2a1f8a76)) ([#5370](https://github.com/tutur3u/platform/issues/5370)) ([c3bf878](https://github.com/tutur3u/platform/commit/c3bf87887a70c30f419d1ee4c27e5a1653bc769b))
+* **mira:** manage contextual artifacts through assistant tools ([e7fc89a](https://github.com/tutur3u/platform/commit/e7fc89a52723ad1d05b8a14f6dfa01fa708b09fc)) ([#5323](https://github.com/tutur3u/platform/issues/5323)) ([40d652e](https://github.com/tutur3u/platform/commit/40d652e5f7089373c12884c3f89a2c764121ec87))
+* **mira:** unify live chat controls and artifact workspace ([#5318](https://github.com/tutur3u/platform/issues/5318)) ([dc2af8c](https://github.com/tutur3u/platform/commit/dc2af8ce8748c144de3b076ef963eb5ceff5fabc))
+* **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
+* **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
+* **pricing:** redesign the product comparison experience ([6adc1cf](https://github.com/tutur3u/platform/commit/6adc1cf3388c4f02c4375695377778c25696b775)) ([#5348](https://github.com/tutur3u/platform/issues/5348)) ([2232af1](https://github.com/tutur3u/platform/commit/2232af1738475629d2fb9a8a5b4578f8ce6ec77e))
+
+
+### Bug Fixes
+
+* **auth:** repair mobile authenticator enrollment and setup sheet ([153321f](https://github.com/tutur3u/platform/commit/153321f1e9601126133c181f430fdb7bbedff9d4)) ([#5407](https://github.com/tutur3u/platform/issues/5407)) ([d0a95fd](https://github.com/tutur3u/platform/commit/d0a95fdd2a3768e5d185bfc135121b6c51834a6d))
+* **contacts:** unify report stages and skip legacy unsent reports ([0f7fce8](https://github.com/tutur3u/platform/commit/0f7fce8cd1841f777ba18db6e335946ed2fb80bb)) ([#5322](https://github.com/tutur3u/platform/issues/5322)) ([dd9dc1b](https://github.com/tutur3u/platform/commit/dd9dc1bfd3ca6d1ddb113105381387c9f690137e))
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **i18n:** avoid unlimited Enterprise capacity claims ([6c513eb](https://github.com/tutur3u/platform/commit/6c513eb34fa71646b002886d9e545ee0bfc301da))
+* **mira:** address workspace review edge cases ([8a96a32](https://github.com/tutur3u/platform/commit/8a96a32ceb4498915125739f8476ada69c7ca99d))
+* **mira:** keep live turns in the shared chat timeline ([dde2aea](https://github.com/tutur3u/platform/commit/dde2aea3e59fa219fa2cf82da0ff71f03a5a0af4))
+* **mira:** preserve history on restore errors and honor storage bounds ([36c1400](https://github.com/tutur3u/platform/commit/36c14002ad5403b859b91f636f7da288a55eccf7))
+* **mira:** preserve restore ordering and finalize cancelled turns ([b9967bb](https://github.com/tutur3u/platform/commit/b9967bbf2532be937a81bd377b3aaf1019efedae))
+* **mira:** scope Live token provisioning to validated context ([6ea6766](https://github.com/tutur3u/platform/commit/6ea6766c1cd8808bfe571a6c5360943ac8f8eeb8))
+* **mira:** share Chat personalization with Live ([9a7dc02](https://github.com/tutur3u/platform/commit/9a7dc02392126287889a5395c08bfeff217ad7e7)) ([#5374](https://github.com/tutur3u/platform/issues/5374)) ([93cd871](https://github.com/tutur3u/platform/commit/93cd871611b1a5dc56e07f1a56b6c8d55620a458))
+* **mira:** unify live and typed conversation history ([#5338](https://github.com/tutur3u/platform/issues/5338)) ([48fa204](https://github.com/tutur3u/platform/commit/48fa204c9ec441398b447aa8b72b8e570790fc62))
+* **mira:** unify live composer and responsive artifacts ([1e18232](https://github.com/tutur3u/platform/commit/1e182325a8dad13dd7add72829c3a3bd62c029b9)) ([#5344](https://github.com/tutur3u/platform/issues/5344)) ([438a2e3](https://github.com/tutur3u/platform/commit/438a2e3bd594a66816f5ac19af8c35ac5e3eaa12))
+* **pricing:** align localized amounts and plan change previews ([e0e7e3d](https://github.com/tutur3u/platform/commit/e0e7e3d0a07e43e298e9adae39a5a441b0945ab9))
+* **pricing:** enforce checkout transitions and align catalog presentation ([acc1a0d](https://github.com/tutur3u/platform/commit/acc1a0d5430a156a5ca4729fa5ed1b95697e6292))
+* **pricing:** reconcile live catalog displays and tier comparisons ([3aa65c2](https://github.com/tutur3u/platform/commit/3aa65c2221d0d099ff5bd50de0c90bb4237d1bbd))
+* **reports:** clarify delivery and streamline review filters ([b790cb3](https://github.com/tutur3u/platform/commit/b790cb38e48cf7429a698d6360977e35a9aa2617)) ([#5314](https://github.com/tutur3u/platform/issues/5314)) ([e9af5a5](https://github.com/tutur3u/platform/commit/e9af5a58f0c133764e91c745b183eae24e512270))
+* **reports:** clarify delivery states and protect active sends ([e8396f2](https://github.com/tutur3u/platform/commit/e8396f269a42703aac3852c1b86ff2299324819e))
+* **reports:** retain exact smart-search pagination totals ([67ef0b9](https://github.com/tutur3u/platform/commit/67ef0b9b1e199b4f4095107a021fdae0af1924a4)) ([#5312](https://github.com/tutur3u/platform/issues/5312)) ([fe8f826](https://github.com/tutur3u/platform/commit/fe8f82699581ce2aa0b2cee9962c3bde7fa48ca8))
+
 ## [0.28.1](https://github.com/tutur3u/platform/compare/tanstack-web-v0.28.0...tanstack-web-v0.28.1) (2026-09-11)
 
 

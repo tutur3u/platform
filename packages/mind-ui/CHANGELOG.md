@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/mind-ui-v0.2.2...mind-ui-v0.3.0) (2026-09-20)
+
+
+### Features
+
+* **mira:** integrate permission-scoped SDK tool search ([12a924c](https://github.com/tutur3u/platform/commit/12a924ce0688e621c1836b16ef7be519d222d478)) ([#5401](https://github.com/tutur3u/platform/issues/5401)) ([22ddc8e](https://github.com/tutur3u/platform/commit/22ddc8e046622d6a407575e20f6a1f757068e7eb))
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+
 ## [0.2.2](https://github.com/tutur3u/platform/compare/mind-ui-v0.2.1...mind-ui-v0.2.2) (2026-08-21)
 
 

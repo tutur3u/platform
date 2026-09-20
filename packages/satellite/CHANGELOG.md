@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/satellite-v0.19.1...satellite-v0.20.0) (2026-09-20)
+
+
+### Features
+
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf)) ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+
 ## [0.19.1](https://github.com/tutur3u/platform/compare/satellite-v0.19.0...satellite-v0.19.1) (2026-09-11)
 
 

@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/mail-v0.21.1...mail-v0.22.0) (2026-09-20)
+
+
+### Features
+
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf)) ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **mail:** blacklist failed recipients from delivery notices ([#5357](https://github.com/tutur3u/platform/issues/5357)) ([64861ee](https://github.com/tutur3u/platform/commit/64861eed338ab25104356cb4e51b67039feba966))
+* **mail:** blacklist failed recipients through Infrastructure ([032f0c2](https://github.com/tutur3u/platform/commit/032f0c2a0e7b543c885e2477f1db544669b136f0))
+* **mail:** clarify message metadata and blacklist status ([9d78824](https://github.com/tutur3u/platform/commit/9d7882451c1e4c6ae3fec3bffc4ba9ef507d0467)) ([#5366](https://github.com/tutur3u/platform/issues/5366)) ([c058be7](https://github.com/tutur3u/platform/commit/c058be743d6769726229f4ce08d833fa340b74f1))
+* **mail:** preview protected DOCX attachments ([2dd5e26](https://github.com/tutur3u/platform/commit/2dd5e26d9e6a8f7848473a8c8814f6681815f96f)) ([#5365](https://github.com/tutur3u/platform/issues/5365)) ([0743e79](https://github.com/tutur3u/platform/commit/0743e79754ce4dbca7ea8e0ae6280e04d65416c6))
+* **mobile:** add workspace Mail client ([6b1054b](https://github.com/tutur3u/platform/commit/6b1054bf37479570118ee70c5301ca452a5d03ee)) ([#5388](https://github.com/tutur3u/platform/issues/5388)) ([ebfed37](https://github.com/tutur3u/platform/commit/ebfed377ce643a48c470553b40bff6ca8def5fd8))
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **mail:** close bulk and unread state review gaps ([0d7ff38](https://github.com/tutur3u/platform/commit/0d7ff3802ea0001fdfb1e7fa842cc98b31ada83b))
+* **mail:** handle delivery failure review edge cases ([0ffccf1](https://github.com/tutur3u/platform/commit/0ffccf174c7a4ac0e7a38416235ee85893904646))
+* **mail:** instant read state and compact delivery groups ([#5356](https://github.com/tutur3u/platform/issues/5356)) ([c7680ab](https://github.com/tutur3u/platform/commit/c7680ab79790d96323a26350f42166030b8039ea))
+* **mail:** keep grouped email loading and actions responsive ([9d1d4b2](https://github.com/tutur3u/platform/commit/9d1d4b27f3fb23042db0170f340bb1e2dd01335d)) ([#5363](https://github.com/tutur3u/platform/issues/5363)) ([e2d2987](https://github.com/tutur3u/platform/commit/e2d298799d1c9c082ff7751e00a7035257a950c9))
+* **mail:** make read state immediate and compact similar deliveries ([15dc97d](https://github.com/tutur3u/platform/commit/15dc97d7e6bd8dd79191c7a46cde907ddc2c3b56))
+* **mail:** preserve actions when delayed bodies arrive ([4264805](https://github.com/tutur3u/platform/commit/4264805bcae8e0179241effa27ae19563014fda8))
+* **mail:** preserve complete read counts across new arrivals ([5f07188](https://github.com/tutur3u/platform/commit/5f07188ea4955a24fc04f197d240e2b21de92dbf))
+* **mail:** preview and download PDF attachments ([619c803](https://github.com/tutur3u/platform/commit/619c8030a7a76a486fc2e16d112051a0fb1641b7)) ([#5339](https://github.com/tutur3u/platform/issues/5339)) ([cc0ca86](https://github.com/tutur3u/platform/commit/cc0ca865269e9a43fbb88a513998a4c6243b773b))
+* **mail:** render PDF previews safely ([7f9f9c9](https://github.com/tutur3u/platform/commit/7f9f9c987523cea173fc96213028ee52e0e488af))
+* **mail:** restore unread counts after partial bulk rollback ([b01b6dc](https://github.com/tutur3u/platform/commit/b01b6dcbaf0cfa1373d4af5a5736b3f35aef416f))
+* **mail:** scope optimistic Inbox counts to Inbox messages ([d552c00](https://github.com/tutur3u/platform/commit/d552c000ad8064093ef0628d7a66d0750818723e))
+* **mail:** use available DOCX preview width ([f6b0bc9](https://github.com/tutur3u/platform/commit/f6b0bc9b01163445c22d7a1aff44199a95c5cdf0))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573)) ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+
 ## [0.21.1](https://github.com/tutur3u/platform/compare/mail-v0.21.0...mail-v0.21.1) (2026-09-10)
 
 

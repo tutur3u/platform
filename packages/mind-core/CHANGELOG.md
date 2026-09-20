@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2](https://github.com/tutur3u/platform/compare/mind-core-v0.2.1...mind-core-v0.2.2) (2026-09-20)
+
+
+### Bug Fixes
+
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/mind-core-v0.2.0...mind-core-v0.2.1) (2026-08-21)
 
 

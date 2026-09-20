@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/offline-v0.2.0...offline-v0.2.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/offline-v0.1.4...offline-v0.2.0) (2026-09-07)
 
 
