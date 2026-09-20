@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_repository.dart';
@@ -38,6 +40,7 @@ void main() {
     aud: 'authenticated',
     createdAt: '2026-01-01',
   );
+  setUpAll(() => registerFallbackValue(credential));
   setUp(() {
     repository = _Repository();
     client = _Client();
@@ -176,4 +179,106 @@ void main() {
     );
     verifyNever(() => store.delete(any()));
   });
+  test('anonymous users cannot begin biometric verification', () async {
+    when(() => auth.currentUser).thenReturn(null);
+    await expectLater(
+      service.code(reason: 'verify'),
+      throwsA(isA<AuthException>()),
+    );
+    verifyNever(() => local.authenticate(reason: any(named: 'reason')));
+    verifyNever(() => store.read(any()));
+  });
+
+  test(
+    'account change during secure storage read prevents code disclosure',
+    () async {
+      when(() => store.read('user-1')).thenAnswer((_) async {
+        when(() => auth.currentUser).thenReturn(null);
+        return credential;
+      });
+      await expectLater(
+        service.code(reason: 'verify'),
+        throwsA(isA<AuthException>()),
+      );
+    },
+  );
+
+  test('a pending enrollment cannot generate verification codes', () async {
+    when(() => store.read('user-1')).thenAnswer(
+      (_) async => const DeviceMfaCredential(
+        factorId: 'pending',
+        secret: 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
+      ),
+    );
+    await expectLater(
+      service.code(reason: 'verify'),
+      throwsA(isA<AuthException>()),
+    );
+  });
+
+  test(
+    'failed secret persistence cancels enrollment before factor activation',
+    () async {
+      when(() => mfa.getAuthenticatorAssuranceLevel()).thenReturn(
+        const AuthMFAGetAuthenticatorAssuranceLevelResponse(
+          currentLevel: AuthenticatorAssuranceLevels.aal1,
+          nextLevel: AuthenticatorAssuranceLevels.aal1,
+          currentAuthenticationMethods: [],
+        ),
+      );
+      when(() => store.read('user-1')).thenAnswer((_) async => null);
+      when(() => repository.change(any())).thenAnswer((invocation) async {
+        final payload =
+            invocation.positionalArguments.first as Map<String, dynamic>;
+        return payload['action'] == 'enroll'
+            ? {
+                'factorId': 'pending',
+                'secret': credential.secret,
+                'proof': 'proof',
+              }
+            : <String, dynamic>{};
+      });
+      when(
+        () => store.write('user-1', any()),
+      ).thenThrow(Exception('Secure storage unavailable'));
+      await expectLater(
+        service.enroll(name: 'Phone', reason: 'verify'),
+        throwsException,
+      );
+      verify(
+        () => repository.change({
+          'action': 'cancel',
+          'factorId': 'pending',
+          'proof': 'proof',
+        }),
+      ).called(1);
+      verifyNever(mfa.listFactors);
+      verifyNever(
+        () => mfa.challengeAndVerify(
+          factorId: any(named: 'factorId'),
+          code: any(named: 'code'),
+        ),
+      );
+    },
+  );
+
+  test(
+    'concurrent enrollment cannot create duplicate pending factors',
+    () async {
+      final unlock = Completer<bool>();
+      when(
+        () => local.authenticate(reason: any(named: 'reason')),
+      ).thenAnswer((_) => unlock.future);
+      final first = service.enroll(name: 'Phone', reason: 'verify');
+      final firstResult = expectLater(first, throwsA(isA<AuthException>()));
+      await expectLater(
+        service.enroll(name: 'Phone', reason: 'verify'),
+        throwsA(isA<AuthException>()),
+      );
+      unlock.complete(false);
+      await firstResult;
+      verify(() => local.authenticate(reason: 'verify')).called(1);
+      verifyNever(() => repository.change(any()));
+    },
+  );
 }
