@@ -954,3 +954,17 @@ Compare successive reports to distinguish ongoing loss from historical totals.
 This report includes no audio, addresses, SDP, or raw track identifiers. Stuttering
 is distinct from low microphone volume; reconnection is a recovery action, not
 proof of the underlying cause.
+
+### Worker rendering verification
+
+The pinned OpenNext adapter patch preserves component function names during its
+server bundling step. React uses these names to resume partially prerendered
+boundaries; renaming a component can trigger React 419 recovery even when the
+HTTP response is 200. Keep this patch when updating the adapter until its bundler
+preserves names upstream. `scripts/ci/meet-cloudflare-render.test.js` reproduces
+the failure with a real React prerender/resume cycle and checks the installed
+adapter configuration.
+
+After a Meet deployment, verify a fresh browser load as well as the signaling
+checks. Check page errors and the rendered interface; a successful HTTP response
+or a page that recovers after refreshing does not prove server rendering passed.

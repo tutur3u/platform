@@ -7,6 +7,7 @@ WORKDIR /workspace
 ENV NODE_ENV=production
 
 COPY package.json bun.lock turbo.json ./
+COPY patches ./patches
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
 COPY apps/ai/package.json ./apps/ai/package.json
 COPY apps/apps/package.json ./apps/apps/package.json

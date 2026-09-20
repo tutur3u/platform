@@ -8,6 +8,7 @@ ENV CI=1
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json bun.lock turbo.json ./
+COPY patches ./patches
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
 COPY scripts/run-web-docker-next-build.js ./scripts/run-web-docker-next-build.js
 COPY scripts/run-hive-docker-next-build.js ./scripts/run-hive-docker-next-build.js

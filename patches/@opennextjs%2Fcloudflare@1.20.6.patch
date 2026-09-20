@@ -1,0 +1,13 @@
+diff --git a/dist/cli/build/bundle-server.js b/dist/cli/build/bundle-server.js
+index f59e677181f1d0007993e36e05901f1f012689f9..2366120b8ed3e37f5075866017041027e62e4e30 100644
+--- a/dist/cli/build/bundle-server.js
++++ b/dist/cli/build/bundle-server.js
+@@ -68,6 +68,8 @@ export async function bundleServer(buildOpts, projectOpts) {
+         // Minify code as much as possible but stay safe by not renaming identifiers
+         minifyWhitespace: projectOpts.minify && !debug,
+         minifyIdentifiers: false,
++        // React PPR resume compares component names with the build-time shell.
++        keepNames: true,
+         minifySyntax: projectOpts.minify && !debug,
+         legalComments: "none",
+         metafile: true,

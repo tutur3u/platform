@@ -11,6 +11,8 @@ on:
       - 'package.json'
       - 'turbo.json'
       - 'bun.lock'
+      - 'patches/**'
+      - 'scripts/ci/meet-cloudflare-render.test.js'
       - 'tuturuuu.ts'
       - 'tuturuuu.ci.ts'
       - '.github/workflows/ci-check.yml'
@@ -25,6 +27,8 @@ on:
       - 'apps/web/src/app/api/v1/workspaces/*/meetings/**'
       - 'packages/**'
       - 'bun.lock'
+      - 'patches/**'
+      - 'scripts/ci/meet-cloudflare-render.test.js'
       - 'package.json'
       - 'turbo.json'
       - 'tuturuuu.ts'
@@ -67,6 +71,8 @@ jobs:
       - run: node --experimental-strip-types --test apps/meet-realtime/src/check-endpoint.test.ts apps/meet-realtime/src/turn-credentials.test.ts
       - run: bun run test
         working-directory: apps/meet
+      - name: Verify React prerender resume survives Worker bundling
+        run: node --test scripts/ci/meet-cloudflare-render.test.js
       - name: Build the frontend for Workers
         uses: ./.github/actions/run-with-turbo-remote-cache
         env:
