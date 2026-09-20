@@ -44,7 +44,11 @@ describe('meeting delivery retry guard', () => {
     await expect(withMeetingRequest(args(), run, send)).resolves.toBe(
       'already handled'
     );
-    expect(run).toHaveBeenCalledWith({ fresh: false, completed: true });
+    expect(run).toHaveBeenCalledWith({
+      fresh: false,
+      completed: true,
+      canCreate: true,
+    });
     expect(send).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({

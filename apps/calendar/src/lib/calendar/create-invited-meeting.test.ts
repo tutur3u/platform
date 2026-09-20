@@ -9,12 +9,12 @@ const mocks = vi.hoisted(() => ({
   state: { fresh: true, completed: false },
 }));
 vi.mock('./provider-writes', () => ({ createProviderEvent: mocks.provider }));
-vi.mock('./meeting-request', async (original) => ({
-  ...(await original<typeof import('./meeting-request')>()),
-  withMeetingRequest: async (
-    _args: unknown,
-    run: (state: typeof mocks.state) => Promise<unknown>
-  ) => run(mocks.state),
+vi.mock('@tuturuuu/utils/coordination', () => ({
+  coordinationKey: (id: string) => id,
+  coordinate: vi.fn(async ({ action }: { action: string }) => {
+    if (action === 'acquire') return { outcome: 'acquired', ...mocks.state };
+    return { outcome: action === 'complete' ? 'completed' : 'released' };
+  }),
 }));
 vi.mock('@/lib/workspace-encryption', () => ({
   getWorkspaceKey: vi.fn(async () => null),
@@ -116,6 +116,7 @@ const create = (
     ...overrides,
   });
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   mocks.state = { fresh: true, completed: false };
   db = database();
@@ -197,6 +198,42 @@ describe('durable invitation creation', () => {
     expect(
       mocks.provider.mock.calls.map(([args]) => args.idempotencyKey)
     ).toEqual([id, id]);
+  });
+  it.each(['exception', 'empty'])(
+    'recovers an existing reservation after expiration following %s',
+    async (outcome) => {
+      const now = Date.now();
+      if (outcome === 'exception')
+        mocks.provider.mockRejectedValueOnce(new Error('timeout'));
+      else mocks.provider.mockResolvedValueOnce(null);
+      await expect(create()).rejects.toThrow();
+      const id = [...db.rows.keys()][0];
+      // Even after the coordination record expires, the DB reservation is authoritative.
+      vi.spyOn(Date, 'now').mockReturnValue(now + 3 * 60 * 60_000);
+      await create();
+      expect(
+        mocks.provider.mock.calls.map(([args]) => args.idempotencyKey)
+      ).toEqual([id, id]);
+      expect(db.rows.get(id!)).toHaveProperty(
+        'scheduling_metadata.meeting_delivery',
+        'sent'
+      );
+    }
+  );
+  it('never recreates an expired reservation after deletion and coordination eviction', async () => {
+    const now = Date.now();
+    await create();
+    db.rows.clear();
+    vi.spyOn(Date, 'now').mockReturnValue(now + 3 * 60 * 60_000);
+    await expect(create()).rejects.toMatchObject({ status: 409 });
+    expect(db.rows.size).toBe(0);
+    expect(mocks.provider).toHaveBeenCalledTimes(1);
+  });
+  it('does not send a new request outside the creation window', async () => {
+    input.requestId = v7({ msecs: Date.now() - 16 * 60_000 });
+    await expect(create()).rejects.toMatchObject({ status: 409 });
+    expect(db.rows.size).toBe(0);
+    expect(mocks.provider).not.toHaveBeenCalled();
   });
   it('preserves provider idempotency when storing the provider response fails', async () => {
     db.control.updateError = new Error('database unavailable');

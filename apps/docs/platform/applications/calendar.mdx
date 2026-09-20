@@ -332,8 +332,12 @@ Calendar requires server-only `CLOUDFLARE_COORDINATION_URL` and
 `CLOUDFLARE_COORDINATION_TOKEN` for its Durable Object request lease. The token
 has an encrypted backup in the Infrastructure vault. Missing storage fails closed.
 Only request hashes and completion state enter the Durable Object; provider credentials and
-guest lists do not. Requests are accepted for 15 minutes, with one minute of
-forward clock tolerance. A 409 or ambiguous failure must leave the client in a
+guest lists do not. New reservations are accepted for 15 minutes, with one minute
+of forward clock tolerance. An older request can only resume its existing
+actor-bound reservation with identical details and the original provider
+idempotency key. This also recovers pending delivery after provider exceptions
+or missing responses; an expired request never recreates a deleted reservation.
+A 409 or ambiguous failure must leave the client in a
 review/retry state. Check the calendar before creating a replacement request.
 Pending deliveries cannot be edited or deleted through the event API.
 

@@ -12,10 +12,7 @@ export class MeetingCreateError extends Error {
 
 const ACCEPT_WINDOW_MS = 15 * 60_000;
 
-export function assertRecentMeetingRequest(
-  requestId: string,
-  now = Date.now()
-) {
+function canCreateMeetingRequest(requestId: string, now = Date.now()) {
   if (
     !/^[\da-f]{8}-[\da-f]{4}-7[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(
       requestId
@@ -30,22 +27,40 @@ export function assertRecentMeetingRequest(
     requestId.replaceAll('-', '').slice(0, 12),
     16
   );
-  if (createdAt > now + 60_000 || now - createdAt > ACCEPT_WINDOW_MS) {
+  if (createdAt > now + 60_000) {
     throw new MeetingCreateError(
       409,
       'This meeting request expired. Check your calendar before trying again'
     );
   }
+  return now - createdAt <= ACCEPT_WINDOW_MS;
+}
+
+export function assertRecentMeetingRequest(
+  requestId: string,
+  now = Date.now()
+) {
+  if (!canCreateMeetingRequest(requestId, now))
+    throw new MeetingCreateError(
+      409,
+      'This meeting request expired. Check your calendar before trying again'
+    );
 }
 
 /** A retry cannot recreate a deleted event. Only a hash and outcome are stored,
  * and the record outlives the timestamp-bound request acceptance window. */
 export async function withMeetingRequest<T>(
   args: { id: string; hash: string; requestId: string },
-  run: (state: { fresh: boolean; completed: boolean }) => Promise<T>,
+  run: (state: {
+    fresh: boolean;
+    completed: boolean;
+    canCreate: boolean;
+  }) => Promise<T>,
   send: typeof coordinate = coordinate
 ): Promise<T> {
-  assertRecentMeetingRequest(args.requestId);
+  // Expired IDs may reconcile an existing actor-bound reservation only. The
+  // caller must never insert a reservation when canCreate is false.
+  const canCreate = canCreateMeetingRequest(args.requestId);
   const lease = {
     namespace: 'meeting' as const,
     key: coordinationKey(args.id),
@@ -77,6 +92,7 @@ export async function withMeetingRequest<T>(
     const result = await run({
       fresh: acquired.fresh,
       completed: acquired.completed,
+      canCreate,
     });
     // Provider idempotency and the encrypted DB reservation remain authoritative.
     // A failed cleanup/status write must not turn a successful send into a new send.

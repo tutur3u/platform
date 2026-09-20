@@ -95,7 +95,7 @@ export async function createInvitedMeeting({
         return result.data;
       };
       let draft = await readDraft();
-      if (!draft && !requestState.fresh) {
+      if (!draft && (!requestState.fresh || !requestState.canCreate)) {
         throw new MeetingCreateError(
           409,
           'This meeting was removed or its original request did not complete. Check your calendar before trying again'
