@@ -2,7 +2,7 @@ name: mobile
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 on:
   push:
@@ -18,8 +18,14 @@ on:
       - "apps/mobile/**"
       - ".github/workflows/mobile.yaml"
 
+permissions:
+  contents: read
+
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: mobile.yaml
@@ -29,7 +35,8 @@ jobs:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
 
-  build:
+  quality:
+    name: Mobile Analysis
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
@@ -66,6 +73,41 @@ jobs:
           flutter pub global activate bloc_tools
           bloc lint .
 
-      - name: 🧪 Run Tests
-        timeout-minutes: 90
-        run: flutter test --concurrency=1 -r expanded
+  tests:
+    name: Mobile Tests (${{ matrix.shard }})
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+          pub-cache: true
+          cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Run test shard
+        run: flutter test --concurrency=2 --total-shards=4 --shard-index=${{ matrix.shard }} -r expanded
+
+  build:
+    name: build
+    needs: [check-ci, quality, tests]
+    if: always() && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every mobile check
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          TEST_RESULT: ${{ needs.tests.result }}
+        run: test "$QUALITY_RESULT" = success && test "$TEST_RESULT" = success

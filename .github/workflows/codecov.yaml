@@ -2,17 +2,32 @@ name: Run tests and upload coverage
 
 on: push
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' }}
+
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: codecov.yaml
 
-  test:
-    name: Run tests and collect coverage
+  test-shards:
+    name: Coverage shard (${{ matrix.shard }})
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -27,7 +42,7 @@ jobs:
       - name: Restore Turbo fallback cache
         uses: ./.github/actions/setup-turbo-fallback-cache
         with:
-          family: coverage
+          family: coverage-${{ matrix.shard }}
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -51,11 +66,36 @@ jobs:
           CI_RETRY_MAX_DELAY_SECONDS: "15"
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bash scripts/ci/run-with-backoff.sh bun turbo:local run test --concurrency=4 --filter='!@tuturuuu/tanstack-web' -- --coverage
+          command: bash scripts/ci/run-with-backoff.sh node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4 --coverage
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
-      - name: Upload results to Codecov
+      - name: Preserve complete workspace coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-shard-${{ matrix.shard }}
+          path: |
+            apps/*/coverage/**
+            packages/*/coverage/**
+          if-no-files-found: error
+          retention-days: 2
+
+  test:
+    name: Run tests and collect coverage
+    needs: [check-ci, test-shards]
+    if: always() && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all coverage shards
+        env:
+          TEST_RESULT: ${{ needs.test-shards.result }}
+        run: test "$TEST_RESULT" = success
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-shard-*
+          merge-multiple: true
+      - name: Upload complete results to Codecov
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
