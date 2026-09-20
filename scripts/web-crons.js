@@ -33,6 +33,7 @@ function normalizeCronConfig(rawConfig) {
       const normalized = {
         description: String(job.description ?? '').trim(),
         enabled: job.enabled !== false,
+        vercel: job.vercel !== false,
         id: String(job.id ?? '').trim(),
         path: String(job.path ?? '').trim(),
         schedule: String(job.schedule ?? '').trim(),
@@ -76,7 +77,7 @@ function readCronConfig({
 
 function getVercelCronsFromConfig(config) {
   return config.jobs
-    .filter((job) => job.enabled)
+    .filter((job) => job.enabled && job.vercel !== false)
     .map((job) => ({
       path: job.path,
       schedule: job.schedule,

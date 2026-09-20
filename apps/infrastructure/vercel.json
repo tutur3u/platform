@@ -21,6 +21,14 @@
     {
       "path": "/api/cron/infrastructure/sync-trust-cache",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/calendar/provider-sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/calendar/smart-schedule",
+      "schedule": "0 */6 * * *"
     }
   ]
 }
