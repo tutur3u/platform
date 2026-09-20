@@ -76,4 +76,6 @@ export const ci = {
   'mobile-build-windows.yaml': true,
   'mobile-build-macos.yaml': true,
   'mobile-deploy-stores.yaml': true,
+  'desktop-beta.yaml': true,
+  'mobile-build-linux.yaml': true,
 };

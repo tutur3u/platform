@@ -9,6 +9,7 @@ export const APP_PUBLIC_PATHS = [
   '/pricing',
   '/pitch',
   '/about',
+  '/download',
   '/contact',
   '/features',
   '/products',

@@ -1,0 +1,86 @@
+---
+title: "Desktop Beta Distribution"
+description: "Build, verify, and publish Windows, macOS, and Linux beta packages without exposing signing credentials."
+---
+
+`tuturuuu.com/download` lists iOS/TestFlight and Android/Google Play early access,
+plus verified desktop packages from GitHub Releases. Every distribution is beta
+and may not be production-ready. Mobile users may need an invitation using their
+Apple or Google account; installing TestFlight alone does not grant access.
+
+## Release workflow
+
+`.github/workflows/desktop-beta.yaml` runs on relevant production pushes or an
+explicit dispatch from `production`. Windows, macOS, and Linux build concurrently.
+The `desktop-beta` GitHub environment owns the release configuration. Publication
+requires all three jobs to succeed; a missing certificate is a blocked release,
+not permission to publish unsigned packages.
+
+Build inputs contain only allowlisted public URLs, publishable Supabase keys,
+OAuth client IDs, and feature flags. `DESKTOP_PUBLIC_CONFIG` is a JSON environment
+variable, validated by `scripts/desktop-deployment/public-config.mjs`. Never use a
+general `.env` file or a Supabase service-role key as a Dart define. The validator
+rejects unknown fields and elevated JWTs without logging their values.
+
+Signing credentials are available only to their OS-specific packaging step,
+after Flutter compilation. They are never passed into Turbo, Flutter, a source
+archive, or an artifact path.
+
+| Platform | Configuration |
+| --- | --- |
+| Windows | `WINDOWS_SIGNING_CERTIFICATE_PFX_B64`, `WINDOWS_SIGNING_CERTIFICATE_PASSWORD` secrets: trusted Authenticode code-signing certificate with private key. |
+| macOS | `MACOS_CERTIFICATE_P12_B64`, `MACOS_CERTIFICATE_PASSWORD` secrets: **Developer ID Application** certificate, not the App Store distribution certificate. |
+| macOS identity | `MACOS_SIGNING_IDENTITY`, `APPLE_TEAM_ID` environment variables identifying the intended Developer ID signer. |
+| Notarization | `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_PRIVATE_KEY_P8_B64` secrets. |
+
+Store the source signing material in the Infrastructure secrets/encrypted blob
+vault. Provision only the required credentials into the protected desktop CI
+environment, without printing or committing their values. Certificate issuance,
+rotation, and identity verification remain prerequisites for a real release.
+
+## Packages and trust
+
+- Windows: per-user Inno Setup installer with timestamped Authenticode signatures.
+  The installer registers and removes the browser-login callback protocol.
+- macOS: universal Apple silicon/Intel DMG. The app and image are Developer ID
+  signed, notarized, stapled, and assessed. Temporary keychain/P12/API-key files
+  are removed in `finally` cleanup.
+- Linux: Ubuntu 24.04+ amd64 `.deb`, containing the Flutter runtime dependencies
+  and desktop protocol registration. Install through a package manager so system
+  dependencies are resolved. GitHub provenance and checksums cover the package.
+
+`audit-bundle.mjs` scans the built app before packaging for credential files,
+private-key/token markers, service-role JWTs, and links escaping the bundle.
+This is an additional check, not a substitute for keeping secrets out of builds.
+Signing receipts bind the Windows and macOS verification to the package hash,
+source SHA, and workflow run. Publication rejects extra files, missing platforms,
+or mismatched receipts.
+
+Actions artifacts expire after seven days and are intended for CI inspection.
+Public downloads use persistent GitHub Release assets, which do not require a
+repository token in the browser. The workflow attests the packages, uploads a
+draft `desktop-v<version>-<run-id>` prerelease, then makes the complete prerelease
+visible. It never marks the desktop beta as the repository's latest stable
+release or overwrites an existing release tag. A failed draft needs inspection
+before rerunning; do not replace assets of a published tag.
+
+The download page caches public release metadata for five minutes and sends
+package downloads directly to GitHub's CDN. It validates the exact repository,
+tag format, filenames, uploaded state, positive sizes, and GitHub SHA-256 digests.
+Incomplete/unavailable releases show an honest unavailable state with a web-app
+alternative; they never produce guessed download URLs.
+
+## Verification
+
+```sh
+node --test scripts/desktop-deployment/*.test.mjs
+node scripts/desktop-deployment/prepare-macos.mjs
+bun check:mobile
+bun check
+```
+
+Also run the actual web production build and native release builds. Before
+publishing, verify installation, browser sign-in callbacks, workspace isolation,
+resizing, and core app flows on each supported OS. A passing macOS build does
+not prove Windows/Linux runtime compatibility. Never label missing platform
+runtime or signing verification as complete.

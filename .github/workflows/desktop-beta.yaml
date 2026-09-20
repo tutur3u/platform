@@ -1,0 +1,161 @@
+name: Desktop Beta Distribution
+
+on:
+  push:
+    branches: [production]
+    paths:
+      - "apps/mobile/**"
+      - "scripts/desktop-deployment/**"
+      - ".github/workflows/desktop-beta.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-beta-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: read
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: desktop-beta.yaml
+
+  build:
+    name: Desktop beta (${{ matrix.platform }})
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production'
+    environment: desktop-beta
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-latest
+          - platform: macos
+            runner: macos-latest
+          - platform: linux
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - name: Require desktop signing configuration
+        shell: bash
+        env:
+          SIGNING_READY: ${{ matrix.platform == 'linux' || (matrix.platform == 'windows' && secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 != '' && secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD != '') || (matrix.platform == 'macos' && secrets.MACOS_CERTIFICATE_P12_B64 != '' && secrets.MACOS_CERTIFICATE_PASSWORD != '' && vars.MACOS_SIGNING_IDENTITY != '' && vars.APPLE_TEAM_ID != '' && secrets.APP_STORE_CONNECT_API_KEY_ID != '' && secrets.APP_STORE_CONNECT_ISSUER_ID != '' && secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 != '') }}
+        run: |
+          if [ "$SIGNING_READY" != true ]; then
+            echo "::error::Desktop signing credentials are not configured. Public beta publication is blocked."
+            exit 1
+          fi
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+          pub-cache: true
+      - name: Validate public build configuration
+        shell: bash
+        env:
+          DESKTOP_PUBLIC_CONFIG: ${{ vars.DESKTOP_PUBLIC_CONFIG }}
+        run: |
+          node scripts/desktop-deployment/write-ci-config.mjs
+          node --test scripts/desktop-deployment/*.test.mjs
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+      - name: Prepare macOS Firebase inputs
+        if: matrix.platform == 'macos'
+        run: node scripts/desktop-deployment/prepare-macos.mjs
+      - name: Install Flutter dependencies
+        working-directory: apps/mobile
+        run: flutter pub get --enforce-lockfile
+      - name: Build Windows beta
+        if: matrix.platform == 'windows'
+        working-directory: apps/mobile
+        run: flutter build windows --release --target lib/main_production.dart --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+      - name: Build macOS beta
+        if: matrix.platform == 'macos'
+        working-directory: apps/mobile
+        run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+      - name: Build Linux beta
+        if: matrix.platform == 'linux'
+        working-directory: apps/mobile
+        run: flutter build linux --release --target lib/main_production.dart --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+      - name: Audit and package beta
+        if: matrix.platform == 'linux'
+        shell: bash
+        env:
+          DESKTOP_PLATFORM: ${{ matrix.platform }}
+        run: node scripts/desktop-deployment/package-ci.mjs
+      - name: Sign and package Windows beta
+        if: matrix.platform == 'windows'
+        env:
+          DESKTOP_PLATFORM: windows
+          WINDOWS_SIGNING_CERTIFICATE_PFX_B64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PFX_B64 }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: node scripts/desktop-deployment/package-ci.mjs
+      - name: Sign and notarize macOS beta
+        if: matrix.platform == 'macos'
+        env:
+          DESKTOP_PLATFORM: macos
+          MACOS_CERTIFICATE_P12_B64: ${{ secrets.MACOS_CERTIFICATE_P12_B64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGNING_IDENTITY: ${{ vars.MACOS_SIGNING_IDENTITY }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY_P8_B64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_P8_B64 }}
+        run: node scripts/desktop-deployment/package-ci.mjs
+      - name: Upload isolated beta package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: desktop-beta-${{ matrix.platform }}
+          path: ${{ runner.temp }}/desktop-artifacts/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - name: Remove public build input
+        if: always()
+        shell: bash
+        run: node -e 'require("node:fs").rmSync(require("node:path").join(process.env.RUNNER_TEMP,"desktop-public.json"),{force:true})'
+
+  publish:
+    name: Publish verified desktop beta
+    needs: build
+    if: github.ref == 'refs/heads/production'
+    environment: desktop-beta
+    runs-on: macos-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: desktop-beta-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/desktop-artifacts
+      - name: Verify publication prerequisites
+        run: node scripts/desktop-deployment/verify-publication.mjs
+      - name: Attest beta packages
+        uses: actions/attest-build-provenance@8beda2b7ed98355c0e97c0a63bec38ae472e66c4
+        with:
+          subject-path: ${{ runner.temp }}/desktop-artifacts/*
+      - name: Publish immutable beta release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/desktop-deployment/publish.mjs

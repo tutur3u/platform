@@ -123,7 +123,7 @@ describe('getPublicClientMessages', () => {
     }
   });
 
-  it('covers every literal common key used by the public shell', () => {
+  it('covers every literal common and download key used by the public shell', () => {
     const sources = [
       join('src/app/[locale]/marketing-nav/marketing-nav-menu.tsx'),
       join('src/app/[locale]/shared/navigation-config.tsx'),
@@ -131,7 +131,8 @@ describe('getPublicClientMessages', () => {
       join('src/app/[locale]/public-navbar-actions.tsx'),
       join('../../packages/ui/src/components/ui/custom/common-footer.tsx'),
     ];
-    const commonKeyPattern = /\bt\(['"](common\.[^'"]+)['"]/g;
+    const commonKeyPattern =
+      /\bt\(['"]((?:common|desktop_download)\.[^'"]+)['"]/g;
 
     for (const source of sources) {
       const contents = readFileSync(source, 'utf8');
