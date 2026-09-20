@@ -6619,6 +6619,50 @@
     "vs": "so với",
     "yesterday": "Hôm qua"
   },
+  "desktop_download": {
+    "badge": "Truy cập sớm Tuturuuu",
+    "beta": "Beta",
+    "beta_notice": "Tất cả bản tải xuống đều là phiên bản beta truy cập sớm. Các tính năng có thể thay đổi và ứng dụng có thể chưa phù hợp để sử dụng trong môi trường chính thức.",
+    "checksum": "Mã kiểm tra SHA-256",
+    "coming_soon": "Sắp ra mắt",
+    "description": "Không gian làm việc kết nối trên iPhone, iPad, Android, Windows, macOS và Linux.",
+    "desktop_title": "Trên máy tính",
+    "download_for": "Tải xuống cho {platform}",
+    "linux": {
+      "name": "Linux",
+      "requirements": "Ubuntu 24.04 trở lên · Intel / AMD 64-bit · .deb"
+    },
+    "macos": {
+      "name": "macOS",
+      "requirements": "macOS 12 trở lên · Apple silicon và Intel"
+    },
+    "mobile": {
+      "android": {
+        "action": "Tham gia bản beta Android",
+        "instructions": "Tham gia chương trình thử nghiệm trên Google Play bằng tài khoản Google được mời, sau đó cài đặt bản beta. Nếu không truy cập được trang thử nghiệm, hãy yêu cầu lời mời trước.",
+        "name": "Android"
+      },
+      "invitation": "Bạn có thể cần lời mời để truy cập bản beta trên thiết bị di động. Hãy sử dụng tài khoản Apple hoặc Google đã đăng ký truy cập sớm. Chỉ cài đặt TestFlight không đồng nghĩa với việc được cấp quyền truy cập bản beta Tuturuuu.",
+      "ios": {
+        "action": "Tải TestFlight",
+        "instructions": "Cài đặt TestFlight, sau đó mở email mời để chấp nhận lời mời và cài đặt Tuturuuu. Số lượng người thử nghiệm và khả năng truy cập bản beta có thể bị giới hạn.",
+        "name": "iPhone và iPad"
+      },
+      "request_invitation": "Yêu cầu truy cập sớm",
+      "title": "Trên điện thoại hoặc máy tính bảng"
+    },
+    "navigation_description": "Ứng dụng cho Windows, macOS và Linux",
+    "open_web": "Tiếp tục trên trình duyệt",
+    "package_size": "{size} MB · Beta",
+    "release_notes": "Ghi chú phát hành · {version}",
+    "security": "Các bản tải xuống được lưu trữ trên GitHub. Xem ghi chú phát hành và mã kiểm tra SHA-256 trước khi cài đặt. Ứng dụng máy tính hiện ở giai đoạn beta.",
+    "title": "Không gian làm việc ngay trên máy tính.",
+    "unavailable": "Bản beta cho máy tính đang được chuẩn bị. Bạn có thể sử dụng ứng dụng web ngay.",
+    "windows": {
+      "name": "Windows",
+      "requirements": "Windows 10 trở lên · Intel / AMD 64-bit"
+    }
+  },
   "devbox-control": {
     "actions": {
       "release": "Giải phóng",

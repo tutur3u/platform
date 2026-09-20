@@ -6619,6 +6619,50 @@
     "vs": "vs.",
     "yesterday": "Yesterday"
   },
+  "desktop_download": {
+    "badge": "Tuturuuu early access",
+    "beta": "Beta",
+    "beta_notice": "All downloads are early-access beta versions. Features may change, and these builds may not be ready for production use.",
+    "checksum": "SHA-256 checksum",
+    "coming_soon": "Coming soon",
+    "description": "Your connected workspace on iPhone, iPad, Android, Windows, macOS, and Linux.",
+    "desktop_title": "On your computer",
+    "download_for": "Download for {platform}",
+    "linux": {
+      "name": "Linux",
+      "requirements": "Ubuntu 24.04 or later · Intel / AMD 64-bit · .deb"
+    },
+    "macos": {
+      "name": "macOS",
+      "requirements": "macOS 12 or later · Apple silicon and Intel"
+    },
+    "mobile": {
+      "android": {
+        "action": "Join Android beta",
+        "instructions": "Join the Google Play testing program with your invited Google account, then install the beta. If the testing page is unavailable, request an invitation first.",
+        "name": "Android"
+      },
+      "invitation": "Mobile beta access may require an invitation. Use the Apple or Google account you provided for early access. Installing TestFlight alone does not grant access to the Tuturuuu beta.",
+      "ios": {
+        "action": "Get TestFlight",
+        "instructions": "Install TestFlight, then open your invitation email to accept the invitation and install Tuturuuu. Beta availability and testing slots may be limited.",
+        "name": "iPhone and iPad"
+      },
+      "request_invitation": "Request early access",
+      "title": "On your phone or tablet"
+    },
+    "navigation_description": "Windows, macOS, and Linux apps",
+    "open_web": "Continue in your browser",
+    "package_size": "{size} MB · Beta",
+    "release_notes": "Release notes · {version}",
+    "security": "Downloads are hosted on GitHub. Check the release notes and SHA-256 checksum before installing. Desktop builds are currently in beta.",
+    "title": "Your workspace, right at home.",
+    "unavailable": "Desktop beta is being prepared. You can use the web app now.",
+    "windows": {
+      "name": "Windows",
+      "requirements": "Windows 10 or later · Intel / AMD 64-bit"
+    }
+  },
   "devbox-control": {
     "actions": {
       "release": "Release",

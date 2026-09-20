@@ -295,6 +295,7 @@
                   "build/devops/github-actions-runbook",
                   "build/devops/vercel-cost-controls",
                   "build/devops/mobile-store-deployment",
+                  "build/devops/desktop-beta-distribution",
                   "build/devops/secrets-and-configuration",
                   "build/devops/sepay-testing-guide",
                   "build/devops/polar-storefront-integration",

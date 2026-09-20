@@ -18,12 +18,12 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 52,
+        "legacyNext": 53,
         "migrated": 99,
-        "percentComplete": 66.01,
-        "remaining": 52,
+        "percentComplete": 65.58,
+        "remaining": 53,
         "terminal": 101,
-        "total": 153,
+        "total": 154,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 74,
+        "legacyNext": 75,
         "migrated": 148,
-        "percentComplete": 66.96,
-        "remaining": 74,
+        "percentComplete": 66.67,
+        "remaining": 75,
         "terminal": 150,
-        "total": 224,
+        "total": 225,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 594,
+      "legacyNext": 595,
       "migrated": 215,
-      "percentComplete": 27.83,
-      "remaining": 594,
+      "percentComplete": 27.79,
+      "remaining": 595,
       "terminal": 229,
-      "total": 823,
+      "total": 824,
       "unknownStatus": 0
     }
   },
@@ -7201,6 +7201,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/download:apps/web/src/app/[locale]/(marketing)/download/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/download",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/download/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/facebook-mockup:apps/web/src/app/[locale]/(marketing)/facebook-mockup/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7853,7 +7862,7 @@
     "apiRoutes": 586,
     "cronRoutes": 8,
     "layouts": 67,
-    "pages": 153,
+    "pages": 154,
     "routeHandlers": 599,
     "methodCounts": {
       "GET": 299,
@@ -7864,6 +7873,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 823
+    "total": 824
   }
 }
