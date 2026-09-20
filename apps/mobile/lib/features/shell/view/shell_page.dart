@@ -13,6 +13,7 @@ import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
+import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
@@ -28,6 +29,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/lazy_indexed_stack.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'shell_page_actions.dart';
@@ -65,9 +67,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
   static const ValueKey<String> _shellAvatarKey = ValueKey('shell-avatar');
-  static const double _navIconSize = 22;
-  static const double _compactPrimaryNavIconSize = 27;
-  static const double _navItemSpacing = 2;
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 96;
   static const double _compactBottomNavHeight = 54;
@@ -85,7 +84,6 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       context.isCompact || MediaQuery.sizeOf(context).height < 600;
 
   final Stopwatch _tapStopwatch = Stopwatch();
-  int? _lastTabIndex;
   Timer? _longPressTimer;
   DateTime? _lastAppsTabPointerUpAt;
   late final PageController _layerController;
@@ -356,11 +354,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     }
 
     if (Routes.isMiniAppRootLocation(currentLocation)) {
-      _suppressPointerEventsDuringTransition();
-      _debugBack('handleBackNavigation.toApps');
-      _debugShellNav('[ShellNav] go ${Routes.apps} from back mini-app');
-      _isHandlingBackNavigation = true;
-      context.go(Routes.apps);
+      await _openAppsDrawerFromAppsTab();
       return;
     }
 

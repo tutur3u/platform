@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +8,7 @@ import 'package:mobile/features/security/account/account_security_repository.dar
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -118,12 +120,12 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1000),
-            child: RefreshIndicator(
+            child: NovaRefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  if (_loading) const LinearProgressIndicator(),
+                  if (_loading) const NovaLoadingIndicator(size: 20),
                   if (_failed)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16),
@@ -183,6 +185,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
                     Align(
                       alignment: Alignment.centerLeft,
                       child: shad.OutlineButton(
+                        alignment: Alignment.center,
                         onPressed: _busy
                             ? null
                             : () => unawaited(
@@ -241,6 +244,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
                           (identity) => identity.provider == entry.key.name,
                         ))
                           shad.OutlineButton(
+                            alignment: Alignment.center,
                             onPressed: _busy
                                 ? null
                                 : () async {

@@ -370,7 +370,7 @@ class _DashboardQuickLaunchCard extends StatelessWidget {
       _QuickLaunchAction(
         label: context.l10n.navApps,
         icon: Icons.grid_view_rounded,
-        onTap: () => context.go(Routes.apps),
+        onTap: () => showAppsPicker(context),
       ),
     ];
 

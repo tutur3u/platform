@@ -78,7 +78,7 @@ class _TaskBoardKanbanView extends StatelessWidget {
                   const SizedBox(
                     width: 16,
                     height: 16,
-                    child: shad.CircularProgressIndicator(strokeWidth: 2),
+                    child: NovaLoadingIndicator(size: 20),
                   ),
                   const shad.Gap(10),
                   Text(context.l10n.notificationsLoadingMore),

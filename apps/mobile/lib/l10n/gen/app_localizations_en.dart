@@ -8037,4 +8037,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceMfaOffline => 'Could not reach Tuturuuu. Check your connection and try again.';
+
+  @override
+  String get securityCheckTitle => 'Security check';
 }

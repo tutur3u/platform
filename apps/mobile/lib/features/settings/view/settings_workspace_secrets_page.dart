@@ -95,7 +95,7 @@ class _SettingsWorkspaceSecretsPageState
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => unawaited(_loadData(forceRefresh: true)),
-        child: RefreshIndicator.adaptive(
+        child: NovaRefreshIndicator(
           onRefresh: () => _loadData(forceRefresh: true),
           child: ResponsiveWrapper(
             maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
@@ -129,7 +129,7 @@ class _SettingsWorkspaceSecretsPageState
                 if (_isRefreshing)
                   const Padding(
                     padding: EdgeInsets.only(bottom: 12),
-                    child: LinearProgressIndicator(minHeight: 2),
+                    child: NovaLoadingIndicator(size: 20),
                   ),
                 if (_isLoading)
                   const Padding(

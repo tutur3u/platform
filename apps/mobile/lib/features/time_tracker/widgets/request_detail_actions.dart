@@ -6,6 +6,7 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class RequestReasonBox extends StatelessWidget {
   const RequestReasonBox({
@@ -109,7 +110,7 @@ class _RequestManagerActionsBarState extends State<RequestManagerActionsBar> {
                                       child: SizedBox(
                                         width: 16,
                                         height: 16,
-                                        child: shad.CircularProgressIndicator(),
+                                        child: NovaLoadingIndicator(size: 20),
                                       ),
                                     ),
                                   )
@@ -381,7 +382,7 @@ class _ReasonDialogContentState extends State<_ReasonDialogContent> {
               ? const SizedBox(
                   width: 16,
                   height: 16,
-                  child: shad.CircularProgressIndicator(),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               : Text(submitLabel),
         ),

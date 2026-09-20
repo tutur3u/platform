@@ -212,10 +212,9 @@ class _KanbanColumn extends StatelessWidget {
                                           child: SizedBox(
                                             width: 16,
                                             height: 16,
-                                            child:
-                                                shad.CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
+                                            child: NovaLoadingIndicator(
+                                              size: 20,
+                                            ),
                                           ),
                                         );
                                       }

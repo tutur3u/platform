@@ -14,6 +14,7 @@ import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/shell/view/account_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/staggered_entry.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -403,7 +404,7 @@ class _ManageAccountCard extends StatelessWidget {
                 const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               else
                 _AccountActionButton(

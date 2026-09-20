@@ -101,7 +101,7 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
               );
             }
 
-            return RefreshIndicator(
+            return NovaRefreshIndicator(
               onRefresh: _reload,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),

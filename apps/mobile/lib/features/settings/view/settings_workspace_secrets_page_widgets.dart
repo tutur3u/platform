@@ -515,7 +515,7 @@ class _BackendOverviewCard extends StatelessWidget {
                     children: [
                       const SizedBox.square(
                         dimension: 16,
-                        child: shad.CircularProgressIndicator(),
+                        child: NovaLoadingIndicator(size: 20),
                       ),
                       const shad.Gap(8),
                       Text(l10n.settingsWorkspaceSecretsMigrating),
@@ -882,7 +882,7 @@ class _WorkspaceSecretCard extends StatelessWidget {
               if (isUpdating)
                 const SizedBox.square(
                   dimension: 18,
-                  child: shad.CircularProgressIndicator(),
+                  child: NovaLoadingIndicator(size: 20),
                 ),
             ],
           ),
@@ -1051,7 +1051,7 @@ class _WorkspaceSecretEditorSheetState
                   children: [
                     const SizedBox.square(
                       dimension: 16,
-                      child: shad.CircularProgressIndicator(),
+                      child: NovaLoadingIndicator(size: 20),
                     ),
                     const shad.Gap(8),
                     Text(l10n.settingsWorkspaceSecretsSaving),

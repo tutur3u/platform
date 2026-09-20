@@ -1717,7 +1717,7 @@ class _MoveToBoardActionSectionState extends State<_MoveToBoardActionSection> {
                 const SizedBox(
                   width: 16,
                   height: 16,
-                  child: shad.CircularProgressIndicator(strokeWidth: 2),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               else
                 const Icon(Icons.compare_arrows_outlined, size: 16),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_organization_page.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class MailSettingsPage extends StatefulWidget {
   const MailSettingsPage({
@@ -131,7 +132,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
         ],
       ),
       body: _busy
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: NovaLoadingIndicator(size: 20))
           : _failed
           ? Center(
               child: TextButton(

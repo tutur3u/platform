@@ -140,7 +140,7 @@ class _AssistantMermaidDiagramCardState
   }
 
   Future<void> _openFullscreen() async {
-    await Navigator.of(context).push(
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute<void>(
         builder: (_) =>
             AssistantMermaidViewerPage(definition: widget.definition),

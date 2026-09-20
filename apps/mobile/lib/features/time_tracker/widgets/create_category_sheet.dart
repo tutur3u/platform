@@ -5,6 +5,7 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// The color tokens used for category color selection.
@@ -290,7 +291,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                             const SizedBox(
                               width: 16,
                               height: 16,
-                              child: shad.CircularProgressIndicator(),
+                              child: NovaLoadingIndicator(size: 20),
                             ),
                             const shad.Gap(8),
                             Text(l10n.timerCategoryCreateInProgress),

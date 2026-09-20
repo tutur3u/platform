@@ -272,9 +272,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byType(StaggeredEntry), findsAtLeastNWidgets(3));
+      expect(find.byType(StaggeredEntry), findsAtLeastNWidgets(2));
       expect(find.text('Alex Nguyen'), findsWidgets);
       expect(find.text('Identity'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Avatar'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Avatar'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Account status'),

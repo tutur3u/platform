@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class MailMessageTile extends StatelessWidget {
   const MailMessageTile({
@@ -54,7 +55,7 @@ class MailMessageTile extends StatelessWidget {
                         ? const SizedBox(
                             width: 12,
                             height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 1.5),
+                            child: NovaLoadingIndicator(size: 20),
                           )
                         : selected
                         ? Icon(

@@ -142,7 +142,7 @@ class _ChatCreateConversationSheetState
                         child: _creating
                             ? const SizedBox.square(
                                 dimension: 18,
-                                child: shad.CircularProgressIndicator(),
+                                child: NovaLoadingIndicator(size: 20),
                               )
                             : Text(context.l10n.chatCreate),
                       ),

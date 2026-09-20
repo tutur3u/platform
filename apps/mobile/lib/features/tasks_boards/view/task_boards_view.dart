@@ -203,7 +203,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
             _fabContentBottomPadding + MediaQuery.paddingOf(context).bottom;
         return ResponsiveWrapper(
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: RefreshIndicator(
+          child: NovaRefreshIndicator(
             onRefresh: _reload,
             child: ListView(
               controller: _scrollController,

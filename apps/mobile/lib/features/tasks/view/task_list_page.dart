@@ -392,7 +392,7 @@ class _TaskListViewState extends State<_TaskListView> {
 
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: RefreshIndicator(
+              child: NovaRefreshIndicator(
                 onRefresh: () => _reload(context),
                 child: ListView(
                   controller: _scrollController,

@@ -196,9 +196,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                             ? const Center(
                                 child: SizedBox.square(
                                   dimension: 18,
-                                  child: shad.CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                  ),
+                                  child: NovaLoadingIndicator(size: 20),
                                 ),
                               )
                             : Center(

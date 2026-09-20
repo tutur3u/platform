@@ -213,7 +213,7 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
 
         return ResponsiveWrapper(
           maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-          child: RefreshIndicator(
+          child: NovaRefreshIndicator(
             onRefresh: _reload,
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),

@@ -364,3 +364,36 @@ Future<void> _pumpForTransitions(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 60));
   }
 }
+
+void _expectAppsPickerOnHome(WidgetTester tester, GoRouter router) {
+  expect(router.routeInformationProvider.value.uri.path, Routes.home);
+  expect(find.byKey(const ValueKey('apps-picker-fullscreen')), findsOneWidget);
+}
+
+Future<void> _verifyInjectedPickerExit(
+  WidgetTester tester,
+  GoRouter router,
+) async {
+  final context = tester.element(find.byType(ShellPage));
+  expect(find.text(AppLocalizations.of(context).taskBoardsTitle), findsNothing);
+  var legacyBackCalled = false;
+  context.read<ShellMiniNavCubit>().register(
+    registrationId: 'picker-exit-test',
+    ownerId: 'picker-exit-test',
+    locations: {Routes.taskPortfolio},
+    deepLinkBackRoute: Routes.apps,
+    items: [
+      ShellMiniNavItemSpec(
+        id: 'back',
+        icon: Icons.chevron_left,
+        label: 'Back',
+        onPressed: () => legacyBackCalled = true,
+      ),
+    ],
+  );
+  await _pumpForTransitions(tester);
+  await tester.tap(find.byTooltip('Back'));
+  await _pumpForTransitions(tester);
+  expect(legacyBackCalled, isFalse);
+  _expectAppsPickerOnHome(tester, router);
+}

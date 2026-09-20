@@ -315,7 +315,7 @@ class _PaginatedPlaceholder extends StatelessWidget {
                 const SizedBox(
                   width: 22,
                   height: 22,
-                  child: shad.CircularProgressIndicator(strokeWidth: 2),
+                  child: NovaLoadingIndicator(size: 20),
                 )
               else if (isEmpty)
                 Icon(Icons.inbox_outlined, size: 28, color: style.accent)

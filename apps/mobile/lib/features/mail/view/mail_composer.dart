@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_body_editor.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class MailComposer extends StatefulWidget {
   const MailComposer({
@@ -453,7 +454,7 @@ class _MailComposerState extends State<MailComposer> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (_busy) const LinearProgressIndicator(),
+              if (_busy) const NovaLoadingIndicator(size: 20),
               Text(widget.fromAddress),
               for (final field in [
                 (_to, l10n.mailTo),

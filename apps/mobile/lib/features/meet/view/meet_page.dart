@@ -363,7 +363,7 @@ class _MeetPageState extends State<MeetPage> {
             ),
             ResponsiveWrapper(
               maxWidth: context.isCompact ? null : 1440,
-              child: RefreshIndicator(
+              child: NovaRefreshIndicator(
                 onRefresh: _reload,
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
@@ -433,9 +433,7 @@ class _MeetPageState extends State<MeetPage> {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                                  child: NovaLoadingIndicator(size: 20),
                                 )
                               : Text(context.l10n.commonLoadMore),
                         ),

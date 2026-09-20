@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
@@ -7,6 +8,7 @@ import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_config.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ShellTopBarTitle extends StatelessWidget {
@@ -364,7 +366,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
               icon: _isSaving
                   ? const SizedBox.square(
                       dimension: 18,
-                      child: shad.CircularProgressIndicator(strokeWidth: 2),
+                      child: NovaLoadingIndicator(size: 20),
                     )
                   : const Icon(Icons.check_rounded, size: 20),
             ),

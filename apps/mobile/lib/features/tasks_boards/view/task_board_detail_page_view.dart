@@ -428,7 +428,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                       }
                     }
 
-                    return RefreshIndicator(
+                    return NovaRefreshIndicator(
                       notificationPredicate: (notification) =>
                           state.currentView == TaskBoardDetailView.kanban &&
                               !context.isCompact

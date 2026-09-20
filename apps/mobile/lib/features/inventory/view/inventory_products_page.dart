@@ -242,7 +242,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: Stack(
                 children: [
-                  RefreshIndicator(
+                  NovaRefreshIndicator(
                     onRefresh: () => _loadInitial(forceRefresh: true),
                     child: ListView(
                       controller: _scrollController,
@@ -333,7 +333,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 16),
                               child: Center(
-                                child: shad.CircularProgressIndicator(),
+                                child: NovaLoadingIndicator(size: 20),
                               ),
                             ),
                         ],

@@ -732,7 +732,7 @@ class _EducationPageState extends State<EducationPage> {
                       _courses.isEmpty &&
                       _attemptPreview.isEmpty
                   ? const Center(child: NovaLoadingIndicator())
-                  : RefreshIndicator(
+                  : NovaRefreshIndicator(
                       onRefresh: _reloadCurrentTab,
                       child: ListView(
                         padding: EdgeInsets.fromLTRB(
@@ -764,9 +764,7 @@ class _EducationPageState extends State<EducationPage> {
                                     ? const SizedBox(
                                         width: 18,
                                         height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
+                                        child: NovaLoadingIndicator(size: 20),
                                       )
                                     : Text(l10n.commonLoadMore),
                               ),

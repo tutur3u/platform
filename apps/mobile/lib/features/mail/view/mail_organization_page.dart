@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class MailOrganizationPage extends StatefulWidget {
   const MailOrganizationPage({
@@ -149,7 +150,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
                     ),
                   ],
                   if (failed) Text(l10n.commonSomethingWentWrong),
-                  if (saving) const LinearProgressIndicator(),
+                  if (saving) const NovaLoadingIndicator(size: 20),
                 ],
               ),
             ),
@@ -284,7 +285,7 @@ class _MailOrganizationPageState extends State<MailOrganizationPage> {
         child: const Icon(Icons.add),
       ),
       body: _busy
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: NovaLoadingIndicator(size: 20))
           : _failed
           ? Center(
               child: TextButton(

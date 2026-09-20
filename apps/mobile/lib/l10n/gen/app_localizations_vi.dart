@@ -8007,4 +8007,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get deviceMfaOffline => 'Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.';
+
+  @override
+  String get securityCheckTitle => 'Kiểm tra bảo mật';
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+export 'nova_refresh_indicator.dart';
+
 class NovaLoadingIndicator extends StatefulWidget {
   const NovaLoadingIndicator({this.size = 56, super.key});
 
@@ -16,13 +18,25 @@ class _NovaLoadingIndicatorState extends State<NovaLoadingIndicator>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: NovaLoadingIndicator._spinDuration,
-  )..repeat();
+  );
   late final Animation<double> _turns = Tween<double>(begin: 0, end: 1).animate(
     CurvedAnimation(
       parent: _controller,
       curve: Curves.easeInOutCubicEmphasized,
     ),
   );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller
+        ..stop()
+        ..value = 0;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
 
   @override
   void dispose() {

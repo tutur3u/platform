@@ -262,7 +262,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 }
 
                 final repository = context.read<FinanceRepository>();
-                return RefreshIndicator(
+                return NovaRefreshIndicator(
                   onRefresh: _onRefresh,
                   child: GroupedTransactionAccordion(
                     lazy: true,

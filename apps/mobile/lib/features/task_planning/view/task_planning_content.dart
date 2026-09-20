@@ -50,7 +50,7 @@ extension _TaskPlanningContent on _TaskPlanningViewState {
                   maxWidth: ResponsivePadding.maxContentWidth(
                     context.deviceClass,
                   ),
-                  child: RefreshIndicator(
+                  child: NovaRefreshIndicator(
                     onRefresh: _reload,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),

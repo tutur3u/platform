@@ -1,5 +1,4 @@
 // This screen keeps app-local imports adjacent for scanability.
-// ignore_for_file: directives_ordering
 
 import 'dart:async';
 import 'dart:convert';
@@ -30,8 +29,8 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:share_plus/share_plus.dart';
 
 enum _CrmTab { users, audit }
 
@@ -966,7 +965,7 @@ class _CrmPageState extends State<CrmPage> {
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: _isLoading && (_users.isEmpty && _auditEvents.isEmpty)
                   ? const Center(child: NovaLoadingIndicator())
-                  : RefreshIndicator(
+                  : NovaRefreshIndicator(
                       onRefresh: _loadInitial,
                       child: ListView(
                         padding: EdgeInsets.fromLTRB(
@@ -1053,9 +1052,7 @@ class _CrmPageState extends State<CrmPage> {
                                       ? const SizedBox(
                                           width: 18,
                                           height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
+                                          child: NovaLoadingIndicator(size: 20),
                                         )
                                       : Text(l10n.commonLoadMore),
                                 ),
@@ -1665,7 +1662,7 @@ class _UserFormSheetState extends State<_UserFormSheet> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: NovaLoadingIndicator(size: 20),
                       )
                     : Text(l10n.commonSave),
               ),

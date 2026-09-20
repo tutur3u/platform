@@ -28,47 +28,50 @@ class CustomNavigationBar extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 4, vertical: compact ? 2 : 4),
-      child: Row(
-        mainAxisSize: expandItems ? MainAxisSize.max : MainAxisSize.min,
-        children: List.generate(children.length, (index) {
-          final child = children[index];
-          final isFirst = index == 0;
-          final isLast = index == children.length - 1;
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: expandItems ? MainAxisSize.max : MainAxisSize.min,
+          children: List.generate(children.length, (index) {
+            final child = children[index];
+            final isFirst = index == 0;
+            final isLast = index == children.length - 1;
 
-          Key? itemKey;
-          if (child is shad.NavigationItem) {
-            itemKey = child.key;
-          }
+            Key? itemKey;
+            if (child is shad.NavigationItem) {
+              itemKey = child.key;
+            }
 
-          final isSelected = itemKey == selectedKey;
+            final isSelected = itemKey == selectedKey;
 
-          final item = Padding(
-            padding: EdgeInsets.only(
-              left: isFirst ? 0 : 2,
-              right: isLast ? 0 : 2,
-            ),
-            child: _CustomNavItem(
-              key: itemKey,
-              isFirst: isFirst,
-              isLast: isLast,
-              isSelected: isSelected,
-              theme: theme,
-              isDark: isDark,
-              compact: compact,
-              onTap: () => onSelected?.call(itemKey),
-              child: child,
-            ),
-          );
+            final item = Padding(
+              padding: EdgeInsets.only(
+                left: isFirst ? 0 : 2,
+                right: isLast ? 0 : 2,
+              ),
+              child: _CustomNavItem(
+                key: itemKey,
+                isFirst: isFirst,
+                isLast: isLast,
+                isSelected: isSelected,
+                theme: theme,
+                isDark: isDark,
+                compact: compact,
+                onTap: () => onSelected?.call(itemKey),
+                child: child,
+              ),
+            );
 
-          if (expandItems) {
-            return Expanded(child: item);
-          }
+            if (expandItems) {
+              return Expanded(child: item);
+            }
 
-          return ConstrainedBox(
-            constraints: BoxConstraints(minWidth: minItemWidth),
-            child: item,
-          );
-        }),
+            return ConstrainedBox(
+              constraints: BoxConstraints(minWidth: minItemWidth),
+              child: item,
+            );
+          }),
+        ),
       ),
     );
   }
@@ -126,7 +129,8 @@ class _CustomNavItem extends StatelessWidget {
                 : Colors.transparent,
             borderRadius: _resolvedBorderRadius(context),
           ),
-          child: Center(heightFactor: compact ? null : 1, child: content),
+          constraints: const BoxConstraints(minHeight: 44),
+          child: Center(child: content),
         ),
       ),
     );

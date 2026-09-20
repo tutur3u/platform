@@ -104,9 +104,7 @@ class HabitTrackerDetailSheet extends StatelessWidget {
                             const SizedBox(height: 12),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(999),
-                              child: const LinearProgressIndicator(
-                                minHeight: 4,
-                              ),
+                              child: const NovaLoadingIndicator(size: 20),
                             ),
                           ],
                           const SizedBox(height: 16),

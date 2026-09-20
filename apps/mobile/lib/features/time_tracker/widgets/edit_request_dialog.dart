@@ -9,6 +9,7 @@ import 'package:mobile/data/models/time_tracking/request.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/time_tracker/widgets/request_image_editor.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class EditRequestDialog extends StatefulWidget {
@@ -156,7 +157,7 @@ class _EditRequestDialogState extends State<EditRequestDialog> {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: shad.CircularProgressIndicator(),
+                            child: NovaLoadingIndicator(size: 20),
                           )
                         : Text(l10n.timerSave),
                   ),

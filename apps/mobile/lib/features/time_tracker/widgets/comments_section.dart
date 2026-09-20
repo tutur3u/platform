@@ -6,6 +6,7 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/request_comment.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class CommentsSection extends StatelessWidget {
   const CommentsSection({
@@ -80,7 +81,7 @@ class CommentsSection extends StatelessWidget {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: shad.CircularProgressIndicator(),
+                      child: NovaLoadingIndicator(size: 20),
                     )
                   : Text(l10n.timerRequestPostComment),
             ),
@@ -204,7 +205,7 @@ class _CommentTileState extends State<_CommentTile> {
                   shad.PrimaryButton(
                     onPressed: _isSubmitting ? null : _saveEdit,
                     child: _isSubmitting
-                        ? const shad.CircularProgressIndicator()
+                        ? const NovaLoadingIndicator(size: 20)
                         : Text(l10n.timerSave),
                   ),
                 ],

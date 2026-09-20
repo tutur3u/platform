@@ -12,6 +12,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Shows a bottom sheet (compact) or dialog (medium+) for creating a new
@@ -167,7 +168,7 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
             shad.PrimaryButton(
               onPressed: (canCreate && !state.isCreating) ? _onSubmit : null,
               child: state.isCreating
-                  ? const shad.CircularProgressIndicator(size: 16)
+                  ? const NovaLoadingIndicator(size: 16)
                   : Text(l10n.workspaceCreateSubmit),
             ),
           ],

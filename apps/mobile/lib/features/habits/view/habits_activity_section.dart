@@ -59,7 +59,7 @@ class HabitsActivitySection extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(999),
-              child: const LinearProgressIndicator(minHeight: 4),
+              child: const NovaLoadingIndicator(size: 20),
             ),
           ),
         for (final group in groups) ...[

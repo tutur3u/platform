@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 
 void registerShellViewportChecks(
@@ -23,8 +24,18 @@ void registerShellViewportChecks(
         addTearDown(() {
           tester.view.resetPhysicalSize();
           tester.view.resetDevicePixelRatio();
+          tester.view.resetViewInsets();
         });
         await pumpShell(tester);
+        expect(
+          find.descendant(
+            of: find.byType(CustomNavigationBar),
+            matching: find.byType(Text),
+          ),
+          findsNothing,
+        );
+        expect(find.byTooltip('Home'), findsOneWidget);
+        expect(find.byTooltip('Assistant'), findsOneWidget);
         final dock = tester.getRect(find.byType(CustomNavigationBar));
         expect(dock.height, lessThan(100));
         if (size.height < 600) {
@@ -44,6 +55,23 @@ void registerShellViewportChecks(
           ),
           findsOneWidget,
         );
+        if (size.height >= 600) {
+          expect(
+            MediaQuery.paddingOf(
+              tester.element(find.byType(AppsHubPage)),
+            ).bottom,
+            greaterThan(dock.height),
+          );
+        }
+        final bodyState = tester.state(find.byType(AppsHubPage));
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+        tester.view.resetViewInsets();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
         expect(tester.takeException(), isNull);
       },
     );

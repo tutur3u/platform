@@ -24,6 +24,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsWorkspacePage extends StatefulWidget {
@@ -71,7 +72,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
         ),
       ],
       child: shad.Scaffold(
-        child: RefreshIndicator.adaptive(
+        child: NovaRefreshIndicator(
           onRefresh: () => _refresh(context),
           child: ResponsiveWrapper(
             maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),

@@ -18,6 +18,7 @@ import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryPage extends StatefulWidget {
@@ -88,7 +89,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: RefreshIndicator(
+              child: NovaRefreshIndicator(
                 onRefresh: () => _reload(forceRefresh: true),
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(

@@ -31,10 +31,12 @@ class TrustedAuthenticatorsPanel extends StatelessWidget {
         content: Text('${device.name}\n\n${l10n.deviceMfaRemoveDeviceHint}'),
         actions: [
           shad.OutlineButton(
+            alignment: Alignment.center,
             onPressed: () => Navigator.pop(context, false),
             child: Text(l10n.commonCancel),
           ),
           shad.DestructiveButton(
+            alignment: Alignment.center,
             onPressed: () => Navigator.pop(context, true),
             child: Text(l10n.deviceMfaRemoveTrusted),
           ),

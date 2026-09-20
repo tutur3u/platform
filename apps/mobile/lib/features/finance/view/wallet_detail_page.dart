@@ -22,6 +22,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WalletDetailPage extends StatelessWidget {
@@ -103,10 +104,10 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
             Column(
               children: [
                 Expanded(
-                  child: RefreshIndicator(
+                  child: NovaRefreshIndicator(
                     onRefresh: _onRefresh,
                     child: _isLoadingInitial && wallet == null
-                        ? const Center(child: shad.CircularProgressIndicator())
+                        ? const Center(child: NovaLoadingIndicator(size: 20))
                         : _error != null
                         ? ListView(
                             physics: const AlwaysScrollableScrollPhysics(),

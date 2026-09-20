@@ -8,6 +8,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ShellChromeActions extends StatefulWidget {
@@ -284,7 +285,7 @@ class _ShellActionsOverflow extends StatelessWidget {
                   child: action.isLoading
                       ? const Padding(
                           padding: EdgeInsets.all(3),
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: NovaLoadingIndicator(size: 20),
                         )
                       : Icon(
                           action.icon,
@@ -354,7 +355,7 @@ class _ShellActionButton extends StatelessWidget {
                 key: ValueKey<String>('loading'),
                 child: SizedBox.square(
                   dimension: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: NovaLoadingIndicator(size: 20),
                 ),
               )
             : Icon(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Circular FAB with icon (e.g. "Add Wallet").
@@ -55,7 +56,7 @@ class ExtendedFab extends StatelessWidget {
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: shad.CircularProgressIndicator(strokeWidth: 2.5),
+                      child: NovaLoadingIndicator(size: 20),
                     )
                   : Icon(icon, size: 24),
             ),

@@ -719,7 +719,7 @@ class _DrivePageState extends State<DrivePage> {
               maxWidth: context.isCompact ? null : 1440,
               child: _isLoading && _entries.isEmpty
                   ? const Center(child: NovaLoadingIndicator())
-                  : RefreshIndicator(
+                  : NovaRefreshIndicator(
                       onRefresh: _reload,
                       child: ListView(
                         padding: EdgeInsets.fromLTRB(
@@ -814,9 +814,7 @@ class _DrivePageState extends State<DrivePage> {
                                     ? const SizedBox(
                                         width: 18,
                                         height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
+                                        child: NovaLoadingIndicator(size: 20),
                                       )
                                     : Text(context.l10n.commonLoadMore),
                               ),

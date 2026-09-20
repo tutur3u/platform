@@ -8,7 +8,7 @@ import 'package:mobile/features/time_tracker/widgets/history_period_controls.dar
 import 'package:mobile/features/time_tracker/widgets/history_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 import '../../../helpers/helpers.dart';
 
@@ -61,7 +61,7 @@ void main() {
 
       expect(find.byType(HistoryPeriodControls), findsOneWidget);
       expect(find.byIcon(Icons.chevron_left), findsOneWidget);
-      expect(find.byType(shad.CircularProgressIndicator), findsWidgets);
+      expect(find.byType(NovaLoadingIndicator), findsWidgets);
     });
   });
 }

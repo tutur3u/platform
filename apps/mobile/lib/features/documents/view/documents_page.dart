@@ -259,7 +259,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             ),
             ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-              child: RefreshIndicator(
+              child: NovaRefreshIndicator(
                 onRefresh: _reload,
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
@@ -315,9 +315,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                               ? const SizedBox(
                                   width: 18,
                                   height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                                  child: NovaLoadingIndicator(size: 20),
                                 )
                               : Text(context.l10n.commonLoadMore),
                         ),

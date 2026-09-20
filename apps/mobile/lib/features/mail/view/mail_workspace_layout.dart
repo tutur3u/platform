@@ -80,7 +80,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                   label: Text(l10n.mailCompose),
                 )
               : null,
-          body: RefreshIndicator(
+          body: NovaRefreshIndicator(
             onRefresh: () async {
               if (!_mutating) await _load();
             },
@@ -95,8 +95,8 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                         child: _buildMailControls(folderPicker, sharedShell),
                       ),
-                      if (_loading) const LinearProgressIndicator(),
-                      if (_mutating) const LinearProgressIndicator(),
+                      if (_loading) const NovaLoadingIndicator(size: 20),
+                      if (_mutating) const NovaLoadingIndicator(size: 20),
                       if (_labels.isNotEmpty || _folders.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -6,6 +6,7 @@ import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/cubit/app_version_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AppVersionGate extends StatefulWidget {
@@ -112,7 +113,7 @@ class _InitialVersionCheckScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const shad.Scaffold(
-      child: Center(child: shad.CircularProgressIndicator()),
+      child: Center(child: NovaLoadingIndicator(size: 20)),
     );
   }
 }

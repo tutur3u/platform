@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ChatComposer extends StatefulWidget {
@@ -82,7 +83,7 @@ class _ChatComposerState extends State<ChatComposer> {
                     icon: widget.isUploadingAttachment
                         ? const SizedBox.square(
                             dimension: 18,
-                            child: shad.CircularProgressIndicator(),
+                            child: NovaLoadingIndicator(size: 20),
                           )
                         : const Icon(shad.LucideIcons.paperclip, size: 18),
                     onPressed: widget.isUploadingAttachment || widget.isSending
@@ -108,7 +109,7 @@ class _ChatComposerState extends State<ChatComposer> {
                   child: widget.isSending
                       ? const SizedBox.square(
                           dimension: 18,
-                          child: shad.CircularProgressIndicator(),
+                          child: NovaLoadingIndicator(size: 20),
                         )
                       : const Icon(shad.LucideIcons.send, size: 18),
                 ),

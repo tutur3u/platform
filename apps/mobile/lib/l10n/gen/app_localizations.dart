@@ -15372,6 +15372,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not reach Tuturuuu. Check your connection and try again.'**
   String get deviceMfaOffline;
+
+  /// No description provided for @securityCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Security check'**
+  String get securityCheckTitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

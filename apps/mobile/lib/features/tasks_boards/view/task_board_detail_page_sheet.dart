@@ -661,8 +661,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_isLoadingRelationships)
-          const LinearProgressIndicator(minHeight: 2),
+        if (_isLoadingRelationships) const NovaLoadingIndicator(size: 20),
         if (_relationshipsError != null) ...[
           const shad.Gap(8),
           Text(

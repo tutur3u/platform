@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class RequestImageGallery extends StatefulWidget {
@@ -58,7 +59,7 @@ class _RequestImageGalleryState extends State<RequestImageGallery> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
-            child: shad.LinearProgressIndicator(),
+            child: NovaLoadingIndicator(size: 20),
           );
         }
 

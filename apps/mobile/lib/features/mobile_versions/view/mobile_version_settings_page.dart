@@ -111,7 +111,7 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
         listener: (context, state) => unawaited(_loadScreenState()),
-        child: RefreshIndicator.adaptive(
+        child: NovaRefreshIndicator(
           onRefresh: _onRefresh,
           child: ResponsiveWrapper(
             maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
@@ -203,7 +203,7 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
                                 const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: shad.CircularProgressIndicator(),
+                                  child: NovaLoadingIndicator(size: 20),
                                 ),
                                 const shad.Gap(8),
                                 Text(l10n.settingsMobileVersionsSaving),
