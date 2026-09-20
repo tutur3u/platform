@@ -5,6 +5,7 @@ import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
+import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -156,13 +157,8 @@ class _MailReaderState extends State<MailReader> {
                           message['fromAddress'] as String,
                     ),
                     SelectableText(message['fromAddress'] as String),
-                    Text(
-                      (message['sentAt'] ??
-                                  message['receivedAt'] ??
-                                  message['createdAt'])
-                              as String? ??
-                          '',
-                    ),
+                    if (mailMessageDate(message) case final date?)
+                      Text(formatMailMessageDate(context, date)),
                     Text(
                       mailRows(message['recipients'])
                           .where((r) => r['kind'] == 'to' || r['kind'] == 'cc')

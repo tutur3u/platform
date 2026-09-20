@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class MailMessageTile extends StatelessWidget {
@@ -31,17 +31,7 @@ class MailMessageTile extends StatelessWidget {
             item['participants'],
           ).map((p) => p['displayName'] ?? p['address']).join(', ')
         : (item['fromName'] ?? item['fromAddress']) as String? ?? '';
-    final date = DateTime.tryParse(
-      (item['lastMessageAt'] ??
-                  item['sentAt'] ??
-                  item['receivedAt'] ??
-                  item['createdAt'])
-              as String? ??
-          '',
-    )?.toLocal();
-    final now = DateTime.now();
-    final today = date != null && DateUtils.isSameDay(date, now);
-    final locale = Localizations.localeOf(context).toLanguageTag();
+    final date = mailMessageDate(item, thread: thread);
     return Semantics(
       selected: selected,
       child: Material(
@@ -102,10 +92,11 @@ class MailMessageTile extends StatelessWidget {
                           if (date != null) ...[
                             const SizedBox(width: 8),
                             Text(
-                              (today
-                                      ? DateFormat.Hm(locale)
-                                      : DateFormat.MMMd(locale))
-                                  .format(date),
+                              formatMailMessageDate(
+                                context,
+                                date,
+                                compact: true,
+                              ),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: colors.onSurfaceVariant,
