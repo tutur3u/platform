@@ -22,7 +22,8 @@
     "sb:up": "cd ../database && bun sb:up",
     "sb:typegen": "cd ../database && bun sb:typegen",
     "ui:add": "bunx shadcn-ui@latest add",
-    "ui:diff": "bunx shadcn-ui@latest diff"
+    "ui:diff": "bunx shadcn-ui@latest diff",
+    "test": "vitest run"
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.9.0",
