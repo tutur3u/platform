@@ -2438,6 +2438,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Trusted authenticator registry: Bearer/cookie auth with explicit JWT assurance on stateless mobile requests, AAL2 and secret proof checks, server-owned app_metadata, serialized mutations, verified backup requirement, registration lock and revocation. GET/POST remain Next-owned pending Rust parity."
+    },
+    "page:/:locale/download:apps/web/src/app/[locale]/(marketing)/download/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Public desktop downloads with fixed GitHub release assets, complete-release validation, provider SHA-256 digests, bilingual metadata and cached public metadata. Port the same safe unavailable state and download URL allowlist."
     }
   }
 }

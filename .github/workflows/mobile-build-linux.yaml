@@ -1,0 +1,55 @@
+name: Mobile Build Linux
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build-linux.yaml"
+      - "scripts/desktop-deployment/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/mobile-build-linux.yaml"
+      - "scripts/desktop-deployment/**"
+
+permissions:
+  contents: read
+  deployments: read
+
+concurrency:
+  group: mobile-linux-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mobile-build-linux.yaml
+  build-linux:
+    name: Build Linux (Development)
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+          pub-cache: true
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+      - name: Build Linux
+        working-directory: apps/mobile
+        run: flutter build linux --release --target lib/main_development.dart
+      - name: Audit Linux bundle
+        run: node scripts/desktop-deployment/audit-bundle.mjs apps/mobile/build/linux/x64/release/bundle

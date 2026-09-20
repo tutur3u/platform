@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/config/auth_callback.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/platform/device_platform.dart';
 import 'package:mobile/core/utils/device_info.dart';
@@ -627,11 +628,7 @@ class AuthRepository {
 
   Future<String> _buildAuthRedirectUrl() async {
     final packageInfo = await _packageInfoLoader();
-    final packageName = packageInfo.packageName.trim();
-    final scheme = packageName.isEmpty
-        ? 'com.tuturuuu.app.mobile'
-        : packageName;
-    return '$scheme://login-callback';
+    return authCallbackUrl(packageInfo.packageName);
   }
 
   // ── Session management ──────────────────────────

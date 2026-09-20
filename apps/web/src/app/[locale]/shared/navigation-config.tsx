@@ -2,6 +2,7 @@
 
 import {
   BookText,
+  Download,
   FileText,
   Fingerprint,
   HeartHandshake,
@@ -53,6 +54,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   ];
 
   const resources: NavItem[] = [
+    {
+      href: '/download',
+      label: t('desktop_download.badge'),
+      description: t('desktop_download.navigation_description'),
+      icon: <Download className="h-4 w-4" />,
+    },
     {
       href: '/blog',
       label: t('common.blog'),

@@ -4,6 +4,7 @@
 export const ROOT_CLIENT_MESSAGE_NAMESPACES = [
   'common',
   'marketing-nav',
+  'desktop_download',
 ] as const;
 
 // ClientProviders is mounted by the root layout, so its global rate-limit
@@ -48,6 +49,8 @@ export const RATE_LIMIT_COMMON_MESSAGE_KEYS = [
 ] as const;
 
 export const ROOT_CLIENT_MESSAGE_PATHS = [
+  'desktop_download.badge',
+  'desktop_download.navigation_description',
   'common.apps',
   'common.blog-description',
   'common.branding-description',

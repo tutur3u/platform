@@ -7,6 +7,8 @@ class MainFlutterWindow: NSWindow {
     let windowFrame = self.frame
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
+    self.title = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Tuturuuu"
+    self.minSize = NSSize(width: 480, height: 600)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
