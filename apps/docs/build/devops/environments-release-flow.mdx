@@ -231,7 +231,8 @@ lives in
 E2E jobs share a pristine database-volume snapshot, in addition to the existing
 Supabase service image cache. The exact fingerprint includes migration contents,
 seed files, local configuration, setup code, CLI/service versions, and runner
-architecture. There are no partial restore keys. Only trusted `main` runs publish
+architecture. A UTC-day seed epoch bounds time-relative fixture staleness and stays
+fixed throughout a job. There are no partial restore keys. Only trusted `main` runs publish
 a snapshot, before tests create users or other mutable fixtures.
 
 The setup action refuses an existing database volume. It verifies archive integrity,

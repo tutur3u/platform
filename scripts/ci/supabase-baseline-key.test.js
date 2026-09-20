@@ -45,7 +45,7 @@ for (const file of [
     assert.notEqual(f.key(), before);
   });
 }
-for (const input of ['cliVersion', 'arch', 'platform']) {
+for (const input of ['cliVersion', 'arch', 'platform', 'seedEpoch']) {
   test(`baseline invalidates on ${input}`, (t) => {
     const f = fixture(t);
     assert.notEqual(

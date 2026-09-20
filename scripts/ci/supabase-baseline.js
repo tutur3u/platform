@@ -44,7 +44,19 @@ function identity() {
   );
   if (!postgres?.local || !/^[\w.-]+$/.test(postgres.local))
     throw new Error('Missing Postgres version');
+  const seedEpoch =
+    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct CI helper fixes its seed epoch for the job.
+    process.env.SUPABASE_BASELINE_EPOCH ||
+    new Date().toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(seedEpoch))
+    throw new Error('Invalid baseline seed epoch');
+  if (process.env.GITHUB_ENV)
+    fs.appendFileSync(
+      process.env.GITHUB_ENV,
+      `SUPABASE_BASELINE_EPOCH=${seedEpoch}\n`
+    );
   const key = baselineKey({
+    seedEpoch,
     root,
     cliVersion: cli('--version'),
     services,

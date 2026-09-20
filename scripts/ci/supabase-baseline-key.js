@@ -36,7 +36,14 @@ function inputFiles(root, inputs = INPUTS) {
   return files.sort();
 }
 
-function baselineKey({ root, cliVersion, services, arch, platform }) {
+function baselineKey({
+  root,
+  cliVersion,
+  services,
+  arch,
+  platform,
+  seedEpoch,
+}) {
   if (!cliVersion || !arch || !platform || !services.length) {
     throw new Error('Missing baseline runtime identity');
   }
@@ -45,6 +52,7 @@ function baselineKey({ root, cliVersion, services, arch, platform }) {
     JSON.stringify({
       format: FORMAT,
       cliVersion,
+      seedEpoch,
       arch,
       platform,
       services: services
