@@ -944,3 +944,13 @@ falls back to generic branding on the next request. External chat clients can
 retain their own old previews. Preview descriptions omit repeated titles and UTC
 times because crawlers cannot know the recipient's timezone. Opened meeting pages
 and the rightmost call timer use the viewer's browser timezone and locale.
+
+For intermittent outgoing speech stutter, capture connection diagnostics before
+refreshing. Audio streams include jitter (milliseconds), reported packet loss,
+and incoming concealment counters when the browser exposes them. Outgoing values
+come from the SFU's remote-receiver feedback; they describe that transport hop,
+not every listener's playback. Unsupported metrics remain unknown, not zero.
+Compare successive reports to distinguish ongoing loss from historical totals.
+This report includes no audio, addresses, SDP, or raw track identifiers. Stuttering
+is distinct from low microphone volume; reconnection is a recovery action, not
+proof of the underlying cause.

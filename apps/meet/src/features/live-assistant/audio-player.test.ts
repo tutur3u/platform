@@ -90,3 +90,16 @@ it('reschedules after an underrun and releases completed audio nodes', async () 
   expect(sources[0]?.stop).not.toHaveBeenCalled();
   expect(sources[1]?.stop).toHaveBeenCalledOnce();
 });
+
+it('bounds the scheduled end without stopping the sentence already queued', async () => {
+  const { sources, chunk } = audioHarness();
+  const player = new LiveAudioPlayer();
+  await player.unlock();
+  for (let index = 0; index < 122; index++) player.play(chunk);
+  expect(sources).toHaveLength(119);
+  expect(sources.at(-1)?.start).toHaveBeenCalledWith(118.08);
+  for (const source of sources) expect(source.stop).not.toHaveBeenCalled();
+  player.play(chunk, Number.NaN);
+  player.play(chunk, 0);
+  expect(sources).toHaveLength(119);
+});

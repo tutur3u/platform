@@ -380,7 +380,7 @@ export function ConnectedCallShell({
               setShowAi(false);
             }}
           >
-            {t('participants')}
+            {t('participants', { count: participants.length })}
           </Button>
         </div>
       )}

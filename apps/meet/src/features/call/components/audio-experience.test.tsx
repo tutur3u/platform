@@ -19,7 +19,7 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 afterEach(cleanup);
 it('shows host admission status ahead of a simultaneous reconnect state', () => {
   render(
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
       <AdmissionNotice waiting connecting />
     </NextIntlClientProvider>
   );
@@ -41,7 +41,7 @@ it('reacquires the selected microphone before reconnecting transport', async () 
     getSelectedDevices: () => ({ audio: 'selected-mic' }),
   } as unknown as MeetRoomController;
   const view = render(
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
       <MicrophoneRecovery room={room} />
     </NextIntlClientProvider>
   );
@@ -53,7 +53,7 @@ it('reacquires the selected microphone before reconnecting transport', async () 
   );
   room.media.audioEnabled = false;
   view.rerender(
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
       <MicrophoneRecovery room={room} />
     </NextIntlClientProvider>
   );
@@ -64,7 +64,7 @@ it('localizes date-only and time-only meeting metadata without duplicating them'
   const { MeetingLocalTime } = await import('./meeting-local-time');
   const value = '2026-09-20T13:21:00Z';
   const { container } = render(
-    <NextIntlClientProvider locale="vi" messages={messages}>
+    <NextIntlClientProvider locale="vi" timeZone="UTC" messages={messages}>
       <MeetingLocalTime value={value} pattern="PPP" />
       <MeetingLocalTime value={value} pattern="p" />
     </NextIntlClientProvider>
