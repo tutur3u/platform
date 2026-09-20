@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/finance-core-v0.4.1...finance-core-v0.4.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0))
+* **finance:** retain actors across invoice audit writes ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/finance-core-v0.4.0...finance-core-v0.4.1) (2026-08-21)
 
 

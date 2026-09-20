@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/email-service-v0.6.0...email-service-v0.6.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **email:** align non-content stripping across alternatives ([8c8f209](https://github.com/tutur3u/platform/commit/8c8f2093b82f73a1536e71afa5f86f8a0d805a4b))
+* **email:** discard hidden titles and preserve report table layout ([4d92181](https://github.com/tutur3u/platform/commit/4d921814d63e11153274db3ea46b8c5ebc05181d))
+* **email:** discard hidden titles and preserve report table layout ([#5313](https://github.com/tutur3u/platform/issues/5313)) ([b268300](https://github.com/tutur3u/platform/commit/b268300d9db0d219b5c365fe5e3bd3a97928ef06))
+* **email:** parse HTML before creating plaintext alternatives ([804c113](https://github.com/tutur3u/platform/commit/804c113997ba332e2a365dd6b401bdacc8ae2f7b))
+* **email:** preserve raw text exclusions during sanitization ([5f609b4](https://github.com/tutur3u/platform/commit/5f609b49b2ca99036b416d23dd3454db57e2943b))
+* **email:** reject non-progressing batch concurrency ([54699b6](https://github.com/tutur3u/platform/commit/54699b6be2a5cdcd14a63912cb74c6cceb51e99e))
+* **email:** reject non-progressing batch concurrency ([#5394](https://github.com/tutur3u/platform/issues/5394)) ([dc4d0cf](https://github.com/tutur3u/platform/commit/dc4d0cfadd33ec31cb5fdd42fa7995dcce51e3f8))
+* **email:** retain link addresses in plaintext conversion ([fab481f](https://github.com/tutur3u/platform/commit/fab481f7ab30f0d1a71f2cc90af38f10fd63cc3a))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/email-service-v0.5.0...email-service-v0.6.0) (2026-08-26)
 
 

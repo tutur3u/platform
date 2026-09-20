@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/infra-v0.23.0...infra-v0.24.0) (2026-09-20)
+
+
+### Features
+
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09))
+* **finance:** clarify category charts and add promotions management ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **infrastructure:** authenticate native Calendar gateway ([e225ec7](https://github.com/tutur3u/platform/commit/e225ec73f3f5dd958bbe7dacab986271e877728e))
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
+* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **pricing:** add full app comparison and evolving pitch deck ([c967e8d](https://github.com/tutur3u/platform/commit/c967e8d2db75fc65159c7dcb31ed1b27673ae924))
+* **pricing:** compare every app and add an evolving pitch deck ([#5335](https://github.com/tutur3u/platform/issues/5335)) ([962ed75](https://github.com/tutur3u/platform/commit/962ed75e086eb85a06a878720a5d30b747e7ba82))
+
+
+### Bug Fixes
+
+* **billing:** fail closed on unknown usage and subscription capacity ([ccfcba4](https://github.com/tutur3u/platform/commit/ccfcba46f236981b1d4e59e1c389bee8472b2ca8))
+* **billing:** fail closed on unknown usage and subscription capacity ([#5333](https://github.com/tutur3u/platform/issues/5333)) ([a308a89](https://github.com/tutur3u/platform/commit/a308a8996f17a81c76c8fb0d498a14d8dbf289c3))
+* **calendar:** admit authenticated scheduler requests through proxies ([ef00b7a](https://github.com/tutur3u/platform/commit/ef00b7ab2b2593888e05fb92010d613eeaa0614e))
+* **calendar:** admit authenticated schedulers through app proxies ([#5412](https://github.com/tutur3u/platform/issues/5412)) ([cc7c82a](https://github.com/tutur3u/platform/commit/cc7c82a913d9e59e73cf9e8be0b939b1f5d0435c))
+* **calendar:** restore background sync and mobile refresh ([#5402](https://github.com/tutur3u/platform/issues/5402)) ([98a6a29](https://github.com/tutur3u/platform/commit/98a6a2963f26eab0bf785829a76f04f892c05efd))
+* **calendar:** route scheduled jobs through the infrastructure vault ([f6a5287](https://github.com/tutur3u/platform/commit/f6a5287c674d39975a34c1caa4f9f654f5d75471))
+* **calendar:** schedule hosted sync through authenticated gateway ([522a494](https://github.com/tutur3u/platform/commit/522a49455f3d97bf9bec39c4a85727ab550abb3d))
+* **calendar:** schedule hosted sync through authenticated gateway ([#5408](https://github.com/tutur3u/platform/issues/5408)) ([96b09cd](https://github.com/tutur3u/platform/commit/96b09cd961de9cb9393b698df00a5d7428db4ffa))
+* **ci:** enable and verify signed mobile beta releases ([#5387](https://github.com/tutur3u/platform/issues/5387)) ([3b34df6](https://github.com/tutur3u/platform/commit/3b34df69b5565924180b18b3a41152a8bb80366e))
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** restrict promotion forwarding and clarify chart labels ([30d3f05](https://github.com/tutur3u/platform/commit/30d3f053df12360beab94cbdcb0a9fd3a84d38f7))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5))
+* **finance:** speed up invoice audit history and improve pagination ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **i18n:** avoid unlimited Enterprise capacity claims ([6c513eb](https://github.com/tutur3u/platform/commit/6c513eb34fa71646b002886d9e545ee0bfc301da))
+* **infrastructure:** authorize vault app sessions ([e6d0ab9](https://github.com/tutur3u/platform/commit/e6d0ab9aefd75b11609f1e4fcc357092ed4b67dc))
+* **infrastructure:** distinguish Calendar auth outages ([7854d76](https://github.com/tutur3u/platform/commit/7854d764f99844cb803e7f76671095c77f8f2829))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **mobile:** restore v0.9.2 design, responsive loading, and app access ([#5390](https://github.com/tutur3u/platform/issues/5390)) ([30987f9](https://github.com/tutur3u/platform/commit/30987f9c1706445bafc24186129f4646d0363009))
+* **pricing:** align localized amounts and plan change previews ([e0e7e3d](https://github.com/tutur3u/platform/commit/e0e7e3d0a07e43e298e9adae39a5a441b0945ab9))
+* **pricing:** reconcile live catalog displays and tier comparisons ([3aa65c2](https://github.com/tutur3u/platform/commit/3aa65c2221d0d099ff5bd50de0c90bb4237d1bbd))
+* **tasks:** show unprioritized tasks first across paginated views ([1a5dffc](https://github.com/tutur3u/platform/commit/1a5dffccf45fc1a9c20353d19d843d3c66c22379))
+* **tasks:** surface unprioritized tasks before paginating ([#5315](https://github.com/tutur3u/platform/issues/5315)) ([496627b](https://github.com/tutur3u/platform/commit/496627b85688b0030199310ad21bd21cf2a92f72))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573))
+* **ui:** repair checklist caret and status controls ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/infra-v0.22.6...infra-v0.23.0) (2026-09-07)
 
 

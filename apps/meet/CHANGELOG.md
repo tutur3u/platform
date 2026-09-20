@@ -1,5 +1,62 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/meet-v0.29.1...meet-v0.30.0) (2026-09-20)
+
+
+### Features
+
+* **finance:** add granular invoice audit trail and recovery review ([#5376](https://github.com/tutur3u/platform/issues/5376)) ([b8df666](https://github.com/tutur3u/platform/commit/b8df666804848d96d35ba693d126fe611a3ebf2b))
+* **finance:** add invoice history and recoverable deletion ([3d6dea5](https://github.com/tutur3u/platform/commit/3d6dea5bdbb055073b9b5d5680e391d094874ad2))
+* **finance:** clarify category charts and add promotions management ([88f85ea](https://github.com/tutur3u/platform/commit/88f85eaadb722b42b99537be3c75fabb1715bf09))
+* **finance:** clarify category charts and add promotions management ([#5384](https://github.com/tutur3u/platform/issues/5384)) ([b6fd666](https://github.com/tutur3u/platform/commit/b6fd666bccca6aa929166210fb1c6abdb91c1448))
+* **finance:** expand invoice audit review and filters ([c346cac](https://github.com/tutur3u/platform/commit/c346cac5a2dfcdcd944d1fcdfa72f40ec27aa720))
+* **lettin:** add Cloudflare worldbuilding satellite ([0c8cc22](https://github.com/tutur3u/platform/commit/0c8cc22168477440e326bdec08427daf9721d9bf))
+* **lettin:** add Cloudflare worldbuilding satellite ([#5351](https://github.com/tutur3u/platform/issues/5351)) ([2631103](https://github.com/tutur3u/platform/commit/263110318bb9bab6d26a1bdd539fc52a40b25bec))
+* **meet:** attribute transcripts and review task assignees ([cac7eb0](https://github.com/tutur3u/platform/commit/cac7eb00cf444d55ef97fb7894711f0f1c71ec74))
+* **meet:** automate echo protection and compact call controls ([0c2a9fe](https://github.com/tutur3u/platform/commit/0c2a9fe780f61a82b377cfc6897249593db8c015))
+* **meet:** automatic echo protection and compact call controls ([#5368](https://github.com/tutur3u/platform/issues/5368)) ([4aaceff](https://github.com/tutur3u/platform/commit/4aaceff7a65bad952ad5ffb0560fa79cb0b55398))
+* **meet:** brand the startup loading screen ([d8038e6](https://github.com/tutur3u/platform/commit/d8038e6cfd1aa3dceae86e8d07b9f69aae36c3d4))
+* **meet:** identify transcript sources and assign note follow-ups ([#5362](https://github.com/tutur3u/platform/issues/5362)) ([40c4a29](https://github.com/tutur3u/platform/commit/40c4a297e6d63a2bd31cd0ede609452d1615c14c))
+* **meet:** publish invite previews and extend paid call limits ([7cf3d6b](https://github.com/tutur3u/platform/commit/7cf3d6b97b0f353e83e894dcc8c83e0d2b6d7a3b))
+* **meet:** redesign the startup screen with Tuturuuu branding ([#5367](https://github.com/tutur3u/platform/issues/5367)) ([fd38331](https://github.com/tutur3u/platform/commit/fd38331a60b0e28dc42faae876705509440136e0))
+* **meet:** turn notes into reviewed calendar and task follow-ups ([b853512](https://github.com/tutur3u/platform/commit/b85351280ac9075883db1fcdbd849e2f06c900ef))
+* **meet:** turn notes into reviewed calendar and task follow-ups ([#5359](https://github.com/tutur3u/platform/issues/5359)) ([3914a41](https://github.com/tutur3u/platform/commit/3914a41828e6e837add7f55a3f05a5b42e31f98e))
+* **meet:** unlock hosting for verified paid accounts ([00a0168](https://github.com/tutur3u/platform/commit/00a016891845b43ba0297730937fa68d6e465de8))
+* **meet:** unlock paid hosting, longer calls and public previews ([#5364](https://github.com/tutur3u/platform/issues/5364)) ([a6687ff](https://github.com/tutur3u/platform/commit/a6687ffccda096f2ab9da850bf0ddfe8e04c3cf2))
+
+
+### Bug Fixes
+
+* **deps:** align React types and published consumer ranges ([3612cd8](https://github.com/tutur3u/platform/commit/3612cd81723fb5a6982152688227ed21bc4095fd))
+* **deps:** preserve React peer compatibility and clarify audit ([777b9ed](https://github.com/tutur3u/platform/commit/777b9ed7f42095bb9361e6bed94d989310c222de))
+* **finance:** complete invoice loading recovery ([5f4cd04](https://github.com/tutur3u/platform/commit/5f4cd049ab462e774d09c7060878bdedda164d12))
+* **finance:** recover stalled invoice loading ([e943337](https://github.com/tutur3u/platform/commit/e94333766ddf942f9c44347d6f7fc982f4f828a8))
+* **finance:** restrict promotion forwarding and clarify chart labels ([30d3f05](https://github.com/tutur3u/platform/commit/30d3f053df12360beab94cbdcb0a9fd3a84d38f7))
+* **finance:** retain actors across invoice audit writes ([75e1139](https://github.com/tutur3u/platform/commit/75e11390aa30493ee1f83f95660cfaf7547e13c0))
+* **finance:** retain actors across invoice audit writes ([#5383](https://github.com/tutur3u/platform/issues/5383)) ([a1fbb54](https://github.com/tutur3u/platform/commit/a1fbb54532f652116064ab7d7b8d11b217b2b9d4))
+* **finance:** speed up invoice audit history and improve pagination ([b6c165e](https://github.com/tutur3u/platform/commit/b6c165e88e8888facec7744ee16c1d9378bb90e5))
+* **finance:** speed up invoice audit history and improve pagination ([#5380](https://github.com/tutur3u/platform/issues/5380)) ([c829653](https://github.com/tutur3u/platform/commit/c8296532b5282324b28c09d3c06a64894694b46c))
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+* **meet:** batch source audio within session limits ([fd707a7](https://github.com/tutur3u/platform/commit/fd707a7fb896e53241bfa985f97cc454aca8f2a2))
+* **meet:** clarify accessible call control labels ([2d0d0cc](https://github.com/tutur3u/platform/commit/2d0d0cca1d23e3320b87340c77e615379fcabec5))
+* **meet:** enforce room resource budgets and recover SFU cleanup ([5db8a3c](https://github.com/tutur3u/platform/commit/5db8a3cd903b91dcf569e7aad9c4808019c1de58))
+* **meet:** enforce room resource budgets and recover SFU cleanup ([#5334](https://github.com/tutur3u/platform/issues/5334)) ([e692ef8](https://github.com/tutur3u/platform/commit/e692ef8db4d68f2ed312caa6fd0bca55bbc66568))
+* **meet:** fail closed and release rejected follow-up receipts ([c13a295](https://github.com/tutur3u/platform/commit/c13a295c1fabcf8605fb05b2d6a5042db3213426))
+* **meet:** harden calendar destinations and follow-up retries ([f15eac1](https://github.com/tutur3u/platform/commit/f15eac1a12cd0867315c1583b74b467884e8f4b0))
+* **meet:** normalize legacy launcher entry paths ([27049d6](https://github.com/tutur3u/platform/commit/27049d6923a7c0412fcfdd5911b13add8668f0e7))
+* **meet:** preserve audio state through device and layout changes ([ee01824](https://github.com/tutur3u/platform/commit/ee0182423016aa58912a427c0a59287d95f22af6))
+* **meet:** recover sources-only assistant answers ([3b660d3](https://github.com/tutur3u/platform/commit/3b660d36ac8681b00d5741e5819bd11313251373))
+* **meet:** recover sources-only assistant answers ([#5304](https://github.com/tutur3u/platform/issues/5304)) ([249b171](https://github.com/tutur3u/platform/commit/249b17158379b5a6909328b489ef9b935592316a))
+* **meet:** reduce audio feedback and add same-room mode ([54de2e2](https://github.com/tutur3u/platform/commit/54de2e2a482b45d6702a84320667d88741b15d70))
+* **meet:** reduce audio feedback and add same-room mode ([#5358](https://github.com/tutur3u/platform/issues/5358)) ([39ac06f](https://github.com/tutur3u/platform/commit/39ac06ff688235976a100b4d2ceba2baa20532bc))
+* **meet:** restore workspace switching and personal app entry ([8c0fa38](https://github.com/tutur3u/platform/commit/8c0fa389c5554bbe85debc3065aa9008639916a5))
+* **meet:** restore workspace switching and personal app entry ([#5307](https://github.com/tutur3u/platform/issues/5307)) ([c680c25](https://github.com/tutur3u/platform/commit/c680c251f26d5ba7899f4c41981228c2a9db7cde))
+* **meet:** retain direct tile mute and assistant identity ([b08716a](https://github.com/tutur3u/platform/commit/b08716a3d95a402144e8f0357c138f20c15485b0))
+* **meet:** retain distinct suggestions and personal destinations ([e4502aa](https://github.com/tutur3u/platform/commit/e4502aa6094ac7032f643d9897c1c940bda381eb))
+* **meet:** retain late media cleanup and preserve usage accounting ([5af4c73](https://github.com/tutur3u/platform/commit/5af4c73296d5c3581e50053d765242ea7a04f217))
+* **ui:** repair checklist caret and status controls ([a6472ce](https://github.com/tutur3u/platform/commit/a6472ce49c557992966e31ed2e92e2d7cb65b573))
+* **ui:** repair checklist caret and status controls ([#5350](https://github.com/tutur3u/platform/issues/5350)) ([c534362](https://github.com/tutur3u/platform/commit/c534362b5a68965a13403056568f975852213f45))
+
 ## [0.29.1](https://github.com/tutur3u/platform/compare/meet-v0.29.0...meet-v0.29.1) (2026-09-11)
 
 

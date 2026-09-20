@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.1...inventory-core-v0.8.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+
 ## [0.8.1](https://github.com/tutur3u/platform/compare/inventory-core-v0.8.0...inventory-core-v0.8.1) (2026-08-21)
 
 

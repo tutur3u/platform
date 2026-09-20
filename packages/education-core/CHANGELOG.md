@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/education-core-v0.4.1...education-core-v0.4.2) (2026-09-20)
+
+
+### Bug Fixes
+
+* **lettin:** address review and integrate current main ([8844716](https://github.com/tutur3u/platform/commit/88447164f0e557cf0992c2d2f7fdd6a965619390))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/education-core-v0.4.0...education-core-v0.4.1) (2026-08-21)
 
 
