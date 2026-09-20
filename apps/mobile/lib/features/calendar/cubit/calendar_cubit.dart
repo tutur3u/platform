@@ -120,7 +120,10 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   /// Loads events within a 3-month window around the selected date.
   Future<void> loadEvents(String wsId, {bool forceRefresh = false}) async {
+    if (isClosed) return;
     final generation = ++_loadGeneration;
+    // A refresh supersedes pending pagination, whose callback will be ignored.
+    if (state.isLoadingMore) emit(state.copyWith(isLoadingMore: false));
     final userId = currentCacheUserId();
     bool isCurrent() =>
         !isClosed &&
@@ -303,7 +306,16 @@ class CalendarCubit extends Cubit<CalendarState> {
   /// existing ones and extends the fetched range.
   Future<void> loadMoreForward(String wsId) async {
     final range = state.fetchedRange;
-    if (range == null || state.isLoadingMore) return;
+    if (range == null || state.isLoadingMore || _wsId != wsId || isClosed) {
+      return;
+    }
+    final generation = _loadGeneration;
+    final userId = currentCacheUserId();
+    bool isCurrent() =>
+        !isClosed &&
+        _wsId == wsId &&
+        generation == _loadGeneration &&
+        userId == currentCacheUserId();
 
     emit(state.copyWith(isLoadingMore: true));
 
@@ -317,6 +329,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         end: newEnd,
       );
 
+      if (!isCurrent()) return;
       emit(
         _storeAndReturn(
           state.copyWith(
@@ -327,6 +340,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         ),
       );
     } on Exception catch (e) {
+      if (!isCurrent()) return;
       emit(state.copyWith(error: e.toString(), isLoadingMore: false));
     }
   }
@@ -380,6 +394,9 @@ class CalendarCubit extends Cubit<CalendarState> {
     String? description,
     String? color,
   }) async {
+    if (isClosed || _wsId != wsId) return;
+    final userId = currentCacheUserId();
+    final cacheKey = _memoryCacheKey(wsId);
     try {
       final newEvent = await _repo.createEvent(wsId, {
         'title': title,
@@ -389,15 +406,20 @@ class CalendarCubit extends Cubit<CalendarState> {
         'color': color,
       });
 
-      // Optimistic add.
-      emit(
-        _storeAndReturn(
-          state.copyWith(
-            events: deduplicateCalendarEvents([...state.events, newEvent]),
-          ),
-        ),
+      if (userId != currentCacheUserId()) return;
+      final active = !isClosed && _wsId == wsId;
+      final current = active ? state : _cache[cacheKey]?.state;
+      if (current == null) return;
+      final nextState = current.copyWith(
+        events: deduplicateCalendarEvents([...current.events, newEvent]),
       );
+      _cache[cacheKey] = _CalendarCacheEntry(
+        state: nextState,
+        fetchedAt: DateTime.now(),
+      );
+      if (active) emit(nextState);
     } on Exception catch (e) {
+      if (isClosed || _wsId != wsId || userId != currentCacheUserId()) return;
       emit(state.copyWith(error: e.toString()));
     }
   }

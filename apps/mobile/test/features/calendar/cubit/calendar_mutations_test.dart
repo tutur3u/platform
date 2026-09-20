@@ -33,6 +33,49 @@ void main() {
   });
   tearDown(() => cubit.close());
 
+  test('late create updates only the originating workspace cache', () async {
+    final response = Completer<CalendarEvent>();
+    when(
+      () => repository.createEvent('origin', any()),
+    ).thenAnswer((_) => response.future);
+    final pending = cubit.createEvent(
+      'origin',
+      title: 'Created',
+      startAt: DateTime(2026),
+      endAt: DateTime(2026, 1, 1, 1),
+    );
+    await cubit.loadEvents('other', forceRefresh: true);
+    response.complete(const CalendarEvent(id: 'created', title: 'Created'));
+    await pending;
+    expect(cubit.state.events.map((event) => event.id), ['first', 'second']);
+    expect(
+      CalendarCubit.cachedStateForWorkspace('origin')!.events.last.id,
+      'created',
+    );
+    expect(CalendarCubit.cachedStateForWorkspace('other')!.events.length, 2);
+  });
+
+  test(
+    'late pagination cannot append events to a different workspace',
+    () async {
+      final response = Completer<List<CalendarEvent>>();
+      when(
+        () => repository.getEvents(
+          'origin',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenAnswer((_) => response.future);
+      final pending = cubit.loadMoreForward('origin');
+      await cubit.loadEvents('other', forceRefresh: true);
+      response.complete([const CalendarEvent(id: 'private', title: 'Private')]);
+      await pending;
+      expect(cubit.state.events.map((event) => event.id), ['first', 'second']);
+      expect(CalendarCubit.cachedStateForWorkspace('other')!.events.length, 2);
+      expect(cubit.state.isLoadingMore, isFalse);
+    },
+  );
+
   for (final deleting in [false, true]) {
     Future<void> startMutation(Completer<void> response) {
       if (deleting) {
