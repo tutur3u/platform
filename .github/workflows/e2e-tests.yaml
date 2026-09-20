@@ -36,7 +36,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' }}
 
 permissions:
   contents: read
@@ -512,7 +512,9 @@ jobs:
 
       - name: Save Supabase Docker images for cache
         id: prepare-supabase-docker-cache
-        if: ${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
+        # Invitation cases also use shard=1; only the general first shard may
+        # serialize and upload the shared multi-GB image cache.
+        if: ${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.mode == 'shard' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
         run: |
           mkdir -p /tmp/supabase-docker
           docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
@@ -535,7 +537,7 @@ jobs:
         uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
-          name: e2e-failure-${{ matrix.shard }}-of-${{ matrix.total_shards }}
+          name: e2e-failure-${{ matrix.id }}
           path: |
             tmp/e2e-diagnostics/
             apps/web/blob-report/

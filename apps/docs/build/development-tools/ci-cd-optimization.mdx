@@ -583,3 +583,25 @@ the commit-associated push run,
 platform preview retains its required staging signal without a second runner,
 manual previews never queue a redundant preflight, and superseded previews are
 canceled before they occupy the queue indefinitely.
+
+## Runner Queue Efficiency
+
+Translation validation runs on every pull request (including forks and stacked
+PRs), plus direct pushes to `main` and `production`. Feature-branch pushes no
+longer duplicate the same four translation checks alongside the
+pull-request run. Manual dispatch remains available for work without a PR.
+Superseded feature-branch translation and E2E runs cancel; protected branch runs
+retain their exact-commit verification evidence.
+
+E2E keeps all four general shards and all six isolated invitation cohorts. Only
+the first general shard writes the shared Supabase image cache on a cold main
+run. Invitation cohorts also have `shard: 1`, so checking only that field caused
+seven jobs to serialize and compete to upload the same multi-gigabyte archive.
+Failure artifacts use the unique matrix ID so separate invitation failures do
+not collide on the same artifact name.
+
+Run `node --test scripts/ci/runner-efficiency.test.js` to verify trigger coverage,
+the single cache writer, cohort preservation, artifact uniqueness, and protected
+branch cancellation policy. More matrix jobs are not automatically faster:
+runner queue time and repeated database/container startup must be considered
+alongside test duration.

@@ -784,7 +784,10 @@ test('E2E runs only for matching commit changes or explicit dispatch', () => {
     header,
     /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}/
   );
-  assert.match(header, /cancel-in-progress: true/);
+  assert.match(
+    header,
+    /cancel-in-progress:.*github\.ref != 'refs\/heads\/main' && github\.ref != 'refs\/heads\/production'/
+  );
   assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
   assert.doesNotMatch(workflow, /needs\.check-ci/);
 
@@ -1121,7 +1124,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   );
   assert.match(
     e2eJob,
-    /github\.ref == 'refs\/heads\/main' && matrix\.shard == 1 && steps\.cache-supabase\.outputs\.cache-matched-key == ''/u
+    /github\.ref == 'refs\/heads\/main' && matrix\.mode == 'shard' && matrix\.shard == 1 && steps\.cache-supabase\.outputs\.cache-matched-key == ''/u
   );
   assert.doesNotMatch(e2eJob, /github\.(?:run_id|run_attempt).*supabase/u);
   assert.match(
@@ -1181,10 +1184,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /sensitiveKeyValuePattern/u);
   assert.match(e2eJob, /Authorization:\\s\*Bearer/u);
   assert.match(e2eJob, /walkFiles\(diagnosticsDir\)/u);
-  assert.match(
-    e2eJob,
-    /name: e2e-failure-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}/u
-  );
+  assert.match(e2eJob, /name: e2e-failure-\$\{\{ matrix\.id \}\}/u);
   assert.match(e2eJob, /tmp\/e2e-diagnostics\//u);
   assert.match(e2eJob, /apps\/web\/blob-report\//u);
   assert.match(e2eJob, /apps\/web\/test-results\//u);
