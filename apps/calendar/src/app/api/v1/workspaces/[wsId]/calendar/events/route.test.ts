@@ -166,6 +166,7 @@ describe('workspace calendar event collection authorization', () => {
         userId: USER_ID,
         wsId: WS_ID,
         input: expect.objectContaining({
+          color: 'BLUE',
           requestId: invitationBody.requestId,
           invitation: invitationBody.invitation,
         }),
@@ -174,6 +175,39 @@ describe('workspace calendar event collection authorization', () => {
     expect(mocks.createProviderEvent).not.toHaveBeenCalled();
     expect(admin.from).not.toHaveBeenCalled();
   });
+
+  it.each(['blue', ' Blue ', 'BLUE'])(
+    'normalizes invitation color %s before delivery',
+    async (color) => {
+      mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+      mocks.createInvitedMeeting.mockResolvedValue({ id: 'created' });
+      const response = await POST(
+        request('POST', { ...invitationBody, color }),
+        params()
+      );
+      expect(response.status).toBe(201);
+      expect(mocks.createInvitedMeeting).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: expect.objectContaining({ color: 'BLUE' }),
+        })
+      );
+    }
+  );
+  it.each(['ultraviolet', '', '#0000ff'])(
+    'rejects invalid color %s before provider side effects',
+    async (color) => {
+      const admin = { from: vi.fn() };
+      mocks.createAdminClient.mockResolvedValue(admin);
+      const response = await POST(
+        request('POST', { ...invitationBody, color }),
+        params()
+      );
+      expect(response.status).toBe(400);
+      expect(mocks.createInvitedMeeting).not.toHaveBeenCalled();
+      expect(mocks.createProviderEvent).not.toHaveBeenCalled();
+      expect(admin.from).not.toHaveBeenCalled();
+    }
+  );
 
   it('rejects invitations without a retry identity before sending', async () => {
     mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
@@ -365,7 +399,11 @@ describe('workspace calendar event collection authorization', () => {
       expect.objectContaining({ id: 'event-1', title: 'Planning' })
     );
     expect(query.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ ws_id: WS_ID, title: 'Planning' })
+      expect.objectContaining({
+        ws_id: WS_ID,
+        title: 'Planning',
+        color: 'BLUE',
+      })
     );
   });
 });

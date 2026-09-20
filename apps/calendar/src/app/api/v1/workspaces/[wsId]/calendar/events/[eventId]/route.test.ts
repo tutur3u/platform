@@ -154,39 +154,60 @@ describe('workspace calendar event item authorization', () => {
     expect(await response.json()).toEqual(event);
   });
 
-  it('preserves authorized PUT response', async () => {
-    const existingEvent = {
-      id: EVENT_ID,
-      provider: 'tuturuuu',
-      title: 'Planning',
-      description: '',
-      location: '',
-      start_at: '2026-08-10T09:00:00.000Z',
-      end_at: '2026-08-10T10:00:00.000Z',
-      is_encrypted: false,
-    };
-    const existing = chainResult({ data: existingEvent, error: null });
-    const updated = chainResult({
-      data: { ...existingEvent, locked: true },
-      error: null,
-    });
-    const from = vi
-      .fn()
-      .mockReturnValueOnce(existing)
-      .mockReturnValueOnce(updated);
+  it.each([undefined, 'blue', ' Blue '])(
+    'preserves PUT and canonicalizes color %s',
+    async (color) => {
+      const existingEvent = {
+        id: EVENT_ID,
+        provider: 'tuturuuu',
+        title: 'Planning',
+        description: '',
+        location: '',
+        start_at: '2026-08-10T09:00:00.000Z',
+        end_at: '2026-08-10T10:00:00.000Z',
+        is_encrypted: false,
+      };
+      const existing = chainResult({ data: existingEvent, error: null });
+      const updated = chainResult({
+        data: { ...existingEvent, locked: true },
+        error: null,
+      });
+      const from = vi
+        .fn()
+        .mockReturnValueOnce(existing)
+        .mockReturnValueOnce(updated);
+      mocks.authorize.mockResolvedValue({
+        sbAdmin: { from },
+        userId: 'user-1',
+        wsId: WS_ID,
+      });
+
+      const response = await PUT(
+        request('PUT', { locked: true, color }),
+        params()
+      );
+
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual(
+        expect.objectContaining({ id: EVENT_ID, locked: true })
+      );
+      expect(updated.update).toHaveBeenCalledWith({
+        locked: true,
+        ...(color === undefined ? {} : { color: 'BLUE' }),
+      });
+    }
+  );
+
+  it('rejects invalid update colors before reading or writing events', async () => {
+    const from = vi.fn();
     mocks.authorize.mockResolvedValue({
       sbAdmin: { from },
       userId: 'user-1',
       wsId: WS_ID,
     });
-
-    const response = await PUT(request('PUT', { locked: true }), params());
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(
-      expect.objectContaining({ id: EVENT_ID, locked: true })
-    );
-    expect(updated.update).toHaveBeenCalledWith({ locked: true });
+    const response = await PUT(request('PUT', { color: 'invalid' }), params());
+    expect(response.status).toBe(400);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it('preserves authorized DELETE response', async () => {
