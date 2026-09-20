@@ -56,6 +56,8 @@ void main() {
       when(
         () => repository.fetchLiveToken(
           wsId: 'ws',
+          chatId: any(named: 'chatId'),
+          forceFresh: any(named: 'forceFresh'),
           model: any(named: 'model'),
         ),
       ).thenAnswer((_) => token.future);
@@ -64,6 +66,7 @@ void main() {
           token: 'token',
           model: 'model',
           seedHistory: const [],
+          sessionHandle: any(named: 'sessionHandle'),
         ),
       ).thenAnswer((_) async {
         events.add(const AssistantLiveSocketReady());

@@ -217,7 +217,7 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
               ),
               IconButton(
                 tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => unawaited(Navigator.of(context).maybePop()),
                 icon: const Icon(Icons.close),
               ),
             ],

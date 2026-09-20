@@ -28,6 +28,8 @@ class CalendarCubit extends Cubit<CalendarState> {
   static final Map<String, _CalendarCacheEntry> _cache = {};
   String? _wsId;
   int _loadGeneration = 0;
+  final Map<String, int> _mutationVersions = {};
+  final Map<String, int> _refreshVersions = {};
 
   static Map<String, dynamic> _decodeCacheJson(Object? json) {
     if (json is! Map) {
@@ -232,6 +234,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
 
       if (!isCurrent()) return;
+      _refreshVersions[wsId] = (_refreshVersions[wsId] ?? 0) + 1;
       final nextState = state.copyWith(
         status: CalendarStatus.loaded,
         hasLoadedOnce: true,
@@ -416,7 +419,8 @@ class CalendarCubit extends Cubit<CalendarState> {
     if (endAt != null) data['end_at'] = endAt.toUtc().toIso8601String();
     if (color != null) data['color'] = color;
 
-    final previousEvents = state.events;
+    if (isClosed || _wsId != wsId) return;
+    final rollback = _captureRollback(wsId, eventId);
     // Optimistic local update.
     final updatedEvents = state.events.map((e) {
       if (e.id != eventId) return e;
@@ -434,20 +438,14 @@ class CalendarCubit extends Cubit<CalendarState> {
     try {
       await _repo.updateEvent(wsId, eventId, data);
     } on Exception catch (e) {
-      emit(
-        _storeAndReturn(
-          state.copyWith(
-            events: previousEvents,
-            error: e is ApiException ? e.message : e.toString(),
-          ),
-        ),
-      );
+      rollback(e);
     }
   }
 
   /// Deletes an event optimistically.
   Future<void> deleteEvent(String wsId, String eventId) async {
-    final previousEvents = state.events;
+    if (isClosed || _wsId != wsId) return;
+    final rollback = _captureRollback(wsId, eventId);
     emit(
       _storeAndReturn(
         state.copyWith(
@@ -459,16 +457,55 @@ class CalendarCubit extends Cubit<CalendarState> {
     try {
       await _repo.deleteEvent(wsId, eventId);
     } on Exception catch (e) {
-      // Rollback on failure.
-      emit(
-        _storeAndReturn(
-          state.copyWith(
-            events: previousEvents,
-            error: e is ApiException ? e.message : e.toString(),
-          ),
-        ),
-      );
+      rollback(e);
     }
+  }
+
+  void Function(Exception) _captureRollback(String wsId, String eventId) {
+    final userId = currentCacheUserId();
+    final cacheKey = CalendarCubit._memoryCacheKey(wsId);
+    final mutationKey = '$cacheKey::$eventId';
+    final version = (_mutationVersions[mutationKey] ?? 0) + 1;
+    _mutationVersions[mutationKey] = version;
+    final refreshVersion = _refreshVersions[wsId];
+    final previousIndex = state.events.indexWhere(
+      (event) => event.id == eventId,
+    );
+    final previousEvent = previousIndex < 0
+        ? null
+        : state.events[previousIndex];
+
+    return (error) {
+      if (userId != currentCacheUserId() ||
+          _mutationVersions[mutationKey] != version ||
+          _refreshVersions[wsId] != refreshVersion) {
+        return;
+      }
+      final active = !isClosed && _wsId == wsId;
+      final current = active ? state : CalendarCubit._cache[cacheKey]?.state;
+      if (current == null) return;
+      final events = [...current.events];
+      final index = events.indexWhere((event) => event.id == eventId);
+      if (previousEvent != null) {
+        if (index < 0) {
+          events.insert(previousIndex.clamp(0, events.length), previousEvent);
+        } else {
+          events[index] = previousEvent;
+        }
+      }
+      final message = error is ApiException
+          ? error.message.trim()
+          : error.toString();
+      final restored = current.copyWith(
+        events: events,
+        error: active ? (message.isEmpty ? error.toString() : message) : null,
+      );
+      CalendarCubit._cache[cacheKey] = _CalendarCacheEntry(
+        state: restored,
+        fetchedAt: DateTime.now(),
+      );
+      if (active) emit(restored);
+    };
   }
 
   CalendarState _storeAndReturn(CalendarState nextState) {
