@@ -125,3 +125,87 @@ it('counts cumulative bytes once across refreshes and connection replacement', a
   bytes = 20;
   expect((await read('open', 1, null, peer())).receivedBytesTotal).toBe(170);
 });
+
+it('correlates outgoing loss with remote receiver feedback and exposes incoming concealment', async () => {
+  const pc = {
+    connectionState: 'connected',
+    getReceivers: () => [],
+    getStats: async () =>
+      new Map([
+        [
+          'out',
+          {
+            type: 'outbound-rtp',
+            kind: 'audio',
+            remoteId: 'private-report',
+            jitter: 9,
+          },
+        ],
+        [
+          'private-report',
+          {
+            type: 'remote-inbound-rtp',
+            jitter: 0.045,
+            packetsLost: 7,
+            fractionLost: 0.1,
+          },
+        ],
+        [
+          'in',
+          {
+            type: 'inbound-rtp',
+            kind: 'audio',
+            jitter: 0.012,
+            packetsLost: 3,
+            concealedSamples: 4800,
+            concealmentEvents: 2,
+          },
+        ],
+      ]),
+  } as unknown as RTCPeerConnection;
+  const result = await readPeerDiagnostics(pc);
+  expect(result.streams[0]?.audioQuality).toEqual({
+    jitterMs: 45,
+    packetsLost: 7,
+    fractionLost: 0.1,
+    concealedSamples: null,
+    concealmentEvents: null,
+  });
+  expect(result.streams[1]?.audioQuality).toEqual({
+    jitterMs: 12,
+    packetsLost: 3,
+    fractionLost: null,
+    concealedSamples: 4800,
+    concealmentEvents: 2,
+  });
+  expect(JSON.stringify(result)).not.toContain('private-report');
+});
+
+it('keeps unsupported or invalid audio metrics unknown rather than reporting a healthy zero', async () => {
+  const pc = {
+    connectionState: 'connected',
+    getReceivers: () => [],
+    getStats: async () =>
+      new Map([
+        ['out', { type: 'outbound-rtp', kind: 'audio', remoteId: 'missing' }],
+        [
+          'in',
+          {
+            type: 'inbound-rtp',
+            kind: 'audio',
+            jitter: Number.NaN,
+            packetsLost: Infinity,
+          },
+        ],
+      ]),
+  } as unknown as RTCPeerConnection;
+  const result = await readPeerDiagnostics(pc);
+  expect(result.streams[0]?.audioQuality).toBeUndefined();
+  expect(result.streams[1]?.audioQuality).toEqual({
+    jitterMs: null,
+    packetsLost: null,
+    fractionLost: null,
+    concealedSamples: null,
+    concealmentEvents: null,
+  });
+});

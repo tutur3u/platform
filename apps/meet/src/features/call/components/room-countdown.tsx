@@ -8,6 +8,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
+import { useMeetingTimeZone } from './meeting-local-time';
+
 /** The ring counts down the time available when this device joins the room. */
 export function countdownState(deadline: number, started: number, now: number) {
   const remaining = Math.max(0, deadline - now);
@@ -19,6 +21,7 @@ export function countdownState(deadline: number, started: number, now: number) {
 export function RoomCountdown({ expiresAt }: { expiresAt?: string }) {
   const t = useTranslations('meet.call');
   const format = useFormatter();
+  const timeZone = useMeetingTimeZone();
   const [clock, setClock] = useState<{ started: number; now: number } | null>(
     null
   );
@@ -51,13 +54,16 @@ export function RoomCountdown({ expiresAt }: { expiresAt?: string }) {
           : t('room_time_expired');
   const label = remaining === null ? t('room_time_limit') : time;
   const deadlineLabel = t('room_deadline', {
-    time: format.dateTime(new Date(deadline), {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    }),
+    time: timeZone
+      ? format.dateTime(new Date(deadline), {
+          timeZone,
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          timeZoneName: 'short',
+        })
+      : '—',
   });
   const details = (
     <div className="space-y-1">

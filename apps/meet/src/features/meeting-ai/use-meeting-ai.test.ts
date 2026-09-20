@@ -151,3 +151,33 @@ it('finishes before the wall-clock server expiry even when there is no speech', 
   expect(hook.result.current.capturing).toBe(false);
   hook.unmount();
 });
+
+it('gives a queued clip a fresh retry window when its upload starts', async () => {
+  vi.useFakeTimers();
+  let release!: (value: { status: string }) => void;
+  mocks.upload.mockReturnValueOnce(
+    new Promise((resolve) => {
+      release = resolve;
+    })
+  );
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'));
+  await act(() => hook.result.current.start());
+  await act(async () => {
+    mocks.onChunk?.(new Blob(['first']), 0);
+    await vi.advanceTimersByTimeAsync(10_100);
+    mocks.onChunk?.(new Blob(['second']), 10);
+    await vi.advanceTimersByTimeAsync(10_000);
+    // Wall time advances while the prior upload occupies the queue.
+    vi.setSystemTime(Date.now() + 6 * 60_000);
+    release({ status: 'completed' });
+    await Promise.resolve();
+  });
+  await act(() => hook.result.current.finish());
+  expect(mocks.upload).toHaveBeenCalledTimes(2);
+  expect(mocks.update).toHaveBeenLastCalledWith(
+    'workspace',
+    'meeting',
+    expect.objectContaining({ captureIncomplete: false, expectedChunks: 2 })
+  );
+  hook.unmount();
+});

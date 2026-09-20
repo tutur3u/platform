@@ -174,11 +174,11 @@ export function useMeetingAi(
       pending.current++;
       setPendingChunks(pending.current);
       const recoverySignal = recovery.current.signal;
-      const deadline = Date.now() + 5 * 60_000;
       queue.current = queue.current.then(async () => {
         try {
           await recoverMeetChunk((signal) => uploadChunk({ data, signal }), {
-            deadline,
+            // Queued clips must get their own recovery window when uploaded.
+            deadline: Date.now() + 5 * 60_000,
             signal: recoverySignal,
             onRetry: () => {
               if (mounted.current) setRecovering(true);

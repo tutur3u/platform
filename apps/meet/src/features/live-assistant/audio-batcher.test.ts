@@ -66,3 +66,28 @@ it('cancels in-flight transport and returns a sequence fence before replacement 
   expect(deliver.mock.calls[0]?.[1]).toBeLessThan(fence);
   expect(deliver.mock.calls[1]?.[1]).toBeGreaterThan(fence);
 });
+
+it('preserves words queued behind slow room delivery and stamps transport time at dispatch', async () => {
+  vi.useFakeTimers();
+  let release!: () => void;
+  const deliver = vi
+    .fn()
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        })
+    )
+    .mockResolvedValue(undefined);
+  const failed = vi.fn();
+  const batcher = new LiveAudioBatcher(deliver, failed, 0);
+  batcher.push(btoa('\0'.repeat(24000)));
+  await Promise.resolve();
+  batcher.push(btoa('\u0001'.repeat(24000)));
+  await vi.advanceTimersByTimeAsync(6000);
+  release();
+  await batcher.drain();
+  expect(deliver).toHaveBeenCalledTimes(2);
+  expect(deliver.mock.calls[1]?.[2]).toBe(Date.now());
+  expect(failed).not.toHaveBeenCalled();
+});

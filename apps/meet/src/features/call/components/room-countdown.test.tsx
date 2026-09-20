@@ -12,6 +12,10 @@ import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../messages/en.json';
 import { countdownState, RoomCountdown } from './room-countdown';
 
+vi.mock('./meeting-local-time', () => ({
+  useMeetingTimeZone: () => 'Asia/Ho_Chi_Minh',
+}));
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
@@ -34,11 +38,7 @@ it('shows a compact countdown and exposes the localized deadline on click', () =
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-09-15T10:00:00Z'));
   const { container } = render(
-    <NextIntlClientProvider
-      locale="en"
-      timeZone="Asia/Ho_Chi_Minh"
-      messages={messages}
-    >
+    <NextIntlClientProvider locale="en" timeZone="UTC" messages={messages}>
       <TooltipProvider>
         <RoomCountdown expiresAt="2026-09-15T10:02:00Z" />
       </TooltipProvider>

@@ -74,7 +74,10 @@ const authProxy = createCentralizedAuthProxy({
   skipApiRoutes: true,
   excludeRootPath: true,
   isPublicPath: (pathname) =>
-    isPublicLegacyPlanPath(pathname) || !!normalizeMeetInvite(pathname),
+    isPublicLegacyPlanPath(pathname) ||
+    !!normalizeMeetInvite(pathname) ||
+    (pathname.endsWith('/preview') &&
+      !!normalizeMeetInvite(pathname.slice(0, -8))),
   mfa: { enabled: false },
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';

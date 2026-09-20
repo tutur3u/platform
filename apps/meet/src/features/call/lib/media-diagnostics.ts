@@ -33,6 +33,13 @@ export async function readPeerDiagnostics(
       packets: number;
       bytes: number;
       framesDecoded: number;
+      audioQuality?: {
+        jitterMs: number | null;
+        packetsLost: number | null;
+        fractionLost: number | null;
+        concealedSamples: number | null;
+        concealmentEvents: number | null;
+      };
     }> = [];
     const number = (value: unknown) =>
       typeof value === 'number' && Number.isFinite(value) ? value : 0;
@@ -47,12 +54,35 @@ export async function readPeerDiagnostics(
         stat.bytesReceived >= 0
       )
         onReceived?.(stat.id, stat.bytesReceived);
+      // Outgoing quality is reported by the SFU's receiver, not our local
+      // outbound counters. Keep identifiers only for correlation, never export them.
+      const report = sent ? stats.get(stat.remoteId) : stat;
+      const finite = (value: unknown): number | null =>
+        typeof value === 'number' && Number.isFinite(value) ? value : null;
+      const quality =
+        stat.kind === 'audio' &&
+        report &&
+        (!sent || report.type === 'remote-inbound-rtp')
+          ? {
+              audioQuality: {
+                jitterMs:
+                  finite(report.jitter) === null
+                    ? null
+                    : Math.max(0, report.jitter * 1000),
+                packetsLost: finite(report.packetsLost),
+                fractionLost: finite(report.fractionLost),
+                concealedSamples: finite(report.concealedSamples),
+                concealmentEvents: finite(report.concealmentEvents),
+              },
+            }
+          : {};
       streams.push({
         direction: sent ? 'sent' : 'received',
         kind: stat.kind,
         packets: number(sent ? stat.packetsSent : stat.packetsReceived),
         bytes: number(sent ? stat.bytesSent : stat.bytesReceived),
         framesDecoded: number(stat.framesDecoded),
+        ...quality,
       });
     }
     const tracks = pc.getReceivers().map(({ track }) => ({
