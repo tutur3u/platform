@@ -185,13 +185,19 @@ GitHub auto-builds:
   `github.enabled` set to `false` so GitHub Actions builds with `vercel build`
   and deploys prebuilt artifacts with `vercel deploy --prebuilt`.
 
-Keep Calendar cron definitions in `apps/calendar/vercel.json`; disabling Vercel
-GitHub builds must not remove the app-owned cron schedules.
+Vercel hosts the Calendar schedules in `apps/infrastructure/vercel.json`.
+Infrastructure authenticates the scheduler and forwards through the private
+Calendar gateway; Calendar validates the scheduler credential again.
 
 ## Provider Sync
 
-Calendar owns the provider-sync schedule in `apps/calendar/vercel.json`
-(`*/15 * * * *`). The cron wrapper invokes Calendar's workspace sync handler
+Infrastructure hosts the provider-sync schedule (`*/15 * * * *`). Both apps'
+proxies recognize validated cron credentials independently of browser sessions;
+invalid credentials still fail authentication. If hosted runs return 401 before
+Calendar logs a request, check the Infrastructure proxy and matching production
+`CRON_SECRET` configuration before investigating provider tokens.
+
+The Calendar cron wrapper invokes Calendar's workspace sync handler
 locally, preserving cron authentication, running locks, cooldown behavior and
 `calendar_sync_dashboard` audit rows. It must not send sync requests to the former
 Web owner through `INTERNAL_WEB_API_ORIGIN` or a protected preview URL.

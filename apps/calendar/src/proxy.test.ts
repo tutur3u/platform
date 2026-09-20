@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     getRequestHeadersWithResponseCookies: vi.fn(),
     guardApiProxyRequest: vi.fn(),
     hasAuthenticatedBearerToken: vi.fn(),
+    isTrustedProxyBypassRequest: vi.fn(),
     hasSupportedSupabaseAuthCookie: vi.fn(),
     hasWebAppSessionTokenFromRequest: vi.fn(),
     propagateAuthCookies: vi.fn(),
@@ -77,6 +78,9 @@ vi.mock('@tuturuuu/internal-api', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
+  isTrustedProxyBypassRequest: (
+    ...args: Parameters<typeof mocks.isTrustedProxyBypassRequest>
+  ) => mocks.isTrustedProxyBypassRequest(...args),
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
@@ -96,6 +100,13 @@ vi.mock('next-intl/middleware', () => ({
 describe('Calendar proxy verify-token handoff', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(false);
+    mocks.isTrustedProxyBypassRequest.mockReturnValue(false);
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
     mocks.authProxy.mockReset();
     mocks.authProxy.mockReturnValue(NextResponse.next());
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
@@ -107,6 +118,49 @@ describe('Calendar proxy verify-token handoff', () => {
     mocks.withForwardedInternalApiAuth.mockReturnValue({
       defaultHeaders: { authorization: 'Bearer app-session' },
     });
+  });
+
+  it('accepts a trusted scheduler without requiring a browser session', async () => {
+    mocks.isTrustedProxyBypassRequest.mockReturnValue(true);
+    mocks.refreshAppSessionForRequest.mockResolvedValue({ ok: false });
+    const request = new NextRequest(
+      'https://calendar.tuturuuu.com/api/cron/calendar/provider-sync',
+      {
+        headers: { authorization: 'Bearer scheduler-test-secret' },
+      }
+    );
+    const response = await proxy(request);
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.isTrustedProxyBypassRequest).toHaveBeenCalledWith(
+      request.nextUrl.pathname,
+      request.headers
+    );
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalled();
+  });
+
+  it.each([
+    '/api/cron/calendar/provider-sync',
+    '/api/cron/calendar/smart-schedule',
+  ])('rejects untrusted scheduler credentials at %s', async (path) => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({ ok: false });
+    const response = await proxy(
+      new NextRequest(`https://calendar.tuturuuu.com${path}`, {
+        headers: { authorization: 'Bearer forged-secret' },
+      })
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalled();
+  });
+
+  it('does not apply scheduler trust outside cron routes', async () => {
+    mocks.isTrustedProxyBypassRequest.mockReturnValue(true);
+    mocks.refreshAppSessionForRequest.mockResolvedValue({ ok: false });
+    const response = await proxy(
+      new NextRequest('https://calendar.tuturuuu.com/api/v1/workspaces')
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.isTrustedProxyBypassRequest).not.toHaveBeenCalled();
   });
 
   it('registers Calendar auth as Supabase-first', () => {
@@ -123,6 +177,7 @@ describe('Calendar proxy verify-token handoff', () => {
   it('refreshes product APIs in Supabase-first mode', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(null);
     mocks.hasAuthenticatedBearerToken.mockReturnValue(false);
+    mocks.isTrustedProxyBypassRequest.mockReturnValue(false);
     const request = new NextRequest(
       'https://calendar.tuturuuu.com/api/v1/calendar/events'
     );

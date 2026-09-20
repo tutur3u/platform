@@ -12,6 +12,7 @@ import {
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
+  isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
@@ -91,8 +92,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       LOCAL_AUTH_API_PREFIX
     );
     const hasBearerApiSession = hasAuthenticatedBearerToken(request.headers);
+    // Scheduler credentials authenticate independently of browser sessions.
+    // Keep the shared guard and route-level secret checks in place.
+    const hasTrustedCron =
+      request.nextUrl.pathname.startsWith('/api/cron/') &&
+      isTrustedProxyBypassRequest(request.nextUrl.pathname, request.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerApiSession
+      isLocalAuthApi || hasBearerApiSession || hasTrustedCron
         ? null
         : await refreshAppSessionForRequest(request, {
             sessionMode: 'supabase-first',
