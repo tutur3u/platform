@@ -21,7 +21,7 @@ class AssistantStarterPrompts extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 192),
+        SizedBox(height: MediaQuery.sizeOf(context).height < 600 ? 24 : 48),
         StaggeredEntrance(
           replayKey: 'assistant-starter-title-$replayToken',
           child: Text(
@@ -45,18 +45,35 @@ class AssistantStarterPrompts extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        for (var index = 0; index < prompts.length; index++) ...[
-          StaggeredEntrance(
-            replayKey:
-                'assistant-starter-${prompts[index].prompt}-$replayToken',
-            delay: Duration(milliseconds: 140 + (index * 70)),
-            child: _StarterPromptCard(
-              prompt: prompts[index],
-              onTap: () => onPromptSelected(prompts[index].prompt),
-            ),
-          ),
-          if (index < prompts.length - 1) const SizedBox(height: 12),
-        ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+            final useColumns = constraints.maxWidth >= 620 * textScale;
+            final width = useColumns
+                ? (constraints.maxWidth - 12) / 2
+                : constraints.maxWidth;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (var index = 0; index < prompts.length; index++)
+                  SizedBox(
+                    width: width,
+                    child: StaggeredEntrance(
+                      replayKey:
+                          'assistant-starter-'
+                          '${prompts[index].prompt}-$replayToken',
+                      delay: Duration(milliseconds: 140 + (index * 70)),
+                      child: _StarterPromptCard(
+                        prompt: prompts[index],
+                        onTap: () => onPromptSelected(prompts[index].prompt),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -128,8 +145,6 @@ class _StarterPromptCard extends StatelessWidget {
                   children: [
                     Text(
                       prompt.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleLarge?.copyWith(
                         color: prompt.textColor,
                         fontWeight: FontWeight.w900,
@@ -139,8 +154,6 @@ class _StarterPromptCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       prompt.caption,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: prompt.textColor.withValues(alpha: 0.8),
                         height: 1.34,
