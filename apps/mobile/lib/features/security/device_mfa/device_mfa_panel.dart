@@ -36,7 +36,7 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(_run(_refresh));
+    unawaited(_run(_refresh, blockDismissal: false));
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || _code == null) return;
       setState(() {
@@ -71,9 +71,12 @@ class _DeviceMfaPanelState extends State<DeviceMfaPanel>
     );
   }
 
-  Future<void> _run(Future<void> Function() action) async {
+  Future<void> _run(
+    Future<void> Function() action, {
+    bool blockDismissal = true,
+  }) async {
     _retry = action;
-    widget.onBusyChanged?.call(true);
+    widget.onBusyChanged?.call(blockDismissal);
     setState(() {
       _busy = true;
       _error = null;

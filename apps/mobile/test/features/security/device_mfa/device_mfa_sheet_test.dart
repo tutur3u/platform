@@ -22,7 +22,11 @@ void main() {
     );
   });
 
-  Future<void> open(WidgetTester tester, Size size) async {
+  Future<void> open(
+    WidgetTester tester,
+    Size size, {
+    bool settle = true,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -40,8 +44,30 @@ void main() {
     );
     expect(find.text('Device name'), findsNothing);
     await tester.tap(find.text('Set up'));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
   }
+
+  testWidgets('initial status loading remains dismissible', (tester) async {
+    final status =
+        Completer<({DeviceMfaRegistry registry, String? currentFactorId})>();
+    when(service.status).thenAnswer((_) => status.future);
+    await open(tester, const Size(390, 844), settle: false);
+    await tester.tap(find.byTooltip('Close authenticator'));
+    // Resolve while the exit transition is still mounted.
+    await tester.pump();
+    status.complete((
+      registry: const DeviceMfaRegistry(locked: false, devices: []),
+      currentFactorId: null,
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Device authenticator'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final size in [
     const Size(390, 844),

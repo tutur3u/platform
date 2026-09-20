@@ -10,7 +10,8 @@ Future<void> showDeviceMfaSheet(
   BuildContext context, {
   DeviceMfaService? service,
 }) async {
-  final busy = ValueNotifier(true);
+  final busy = ValueNotifier(false);
+  var active = true;
   try {
     await showAdaptiveSheet<void>(
       context: context,
@@ -24,12 +25,15 @@ Future<void> showDeviceMfaSheet(
           child: _DeviceMfaSheet(
             service: service,
             busy: isBusy,
-            onBusyChanged: (value) => busy.value = value,
+            onBusyChanged: (value) {
+              if (active) busy.value = value;
+            },
           ),
         ),
       ),
     );
   } finally {
+    active = false;
     busy.dispose();
   }
 }
