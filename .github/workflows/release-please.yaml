@@ -96,6 +96,7 @@ jobs:
             exit 0
           fi
 
+          node scripts/ci/normalize-release-notes.js origin/production
           npx --yes @biomejs/biome@2.5.13 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
 
           if git diff --quiet -- "${changed_files[@]}"; then
