@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -34,6 +35,28 @@ void main() {
       DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
           1000,
     );
+  });
+  test('Calendar deletion satisfies the authenticated JSON gateway', () async {
+    var requests = 0;
+    final httpClient = MockClient((request) async {
+      requests++;
+      expect(request.method, 'DELETE');
+      expect(request.url.path, '/api/v1/workspaces/ws/calendar/events/event');
+      expect(request.headers['Authorization'], 'Bearer access-a');
+      expect(request.headers['content-type'], startsWith('application/json'));
+      expect(request.body, '{}');
+      return http.Response('', 204);
+    });
+    final repository = CalendarRepository(
+      apiClient: ApiClient(
+        baseUrl: 'https://example.test',
+        httpClient: httpClient,
+        authClient: client,
+      ),
+    );
+    await repository.deleteEvent('ws', 'event');
+    expect(requests, 1);
+    repository.dispose();
   });
   test('never retries a rejected mutation under a different account', () async {
     var requests = 0;
