@@ -3,21 +3,32 @@ name: Test
 on:
   push:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' }}
+
 jobs:
   check-ci:
+    permissions:
+      contents: read
+      deployments: read
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: turbo-unit-tests.yaml
 
-  build:
-    name: Unit Tests
+  test-shards:
+    name: Unit test shard (${{ matrix.shard }})
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [24]
+        shard: [0, 1, 2, 3]
 
     env:
       # Configure production Supabase client
@@ -43,7 +54,7 @@ jobs:
       - name: Restore Turbo fallback cache
         uses: ./.github/actions/setup-turbo-fallback-cache
         with:
-          family: unit-tests
+          family: unit-tests-${{ matrix.shard }}
 
       - name: Use Node.js 24
         uses: actions/setup-node@v7
@@ -67,6 +78,17 @@ jobs:
         # otherwise-fast mocked unit tests during repository-wide test runs.
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
-          command: bun turbo:local run test --concurrency=4 --filter='!@tuturuuu/tanstack-web'
+          command: node scripts/ci/run-test-shard.js ${{ matrix.shard }} 4
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+  build:
+    name: Unit Tests (24)
+    needs: [check-ci, test-shards]
+    if: always() && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every unit-test shard
+        env:
+          TEST_RESULT: ${{ needs.test-shards.result }}
+        run: test "$TEST_RESULT" = success

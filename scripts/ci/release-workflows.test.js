@@ -582,7 +582,7 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
     path.join(repoRoot, '.github', 'workflows', 'codecov.yaml'),
     'utf8'
   );
-  const testJob = readWorkflowJobBlock('codecov.yaml', 'test');
+  const testJob = readWorkflowJobBlock('codecov.yaml', 'test-shards');
 
   assert.match(
     testJob,
@@ -590,7 +590,7 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
   );
   assert.match(
     testJob,
-    /command: bash scripts\/ci\/run-with-backoff\.sh bun turbo:local run test --concurrency=4 --filter='!@tuturuuu\/tanstack-web' -- --coverage/u
+    /command: bash scripts\/ci\/run-with-backoff\.sh node scripts\/ci\/run-test-shard\.js .* 4 --coverage/u
   );
   assert.match(testJob, /family: coverage/u);
   assert.match(testJob, /github\.event_name != 'pull_request'/u);

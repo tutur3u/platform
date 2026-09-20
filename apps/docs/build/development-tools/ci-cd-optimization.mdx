@@ -30,6 +30,41 @@ wired, and how to debug skip decisions.
   way, regardless of framework.
 </Note>
 
+## Parallel test validation
+
+Mobile analysis and four Flutter test shards run independently. The stable
+`build` check requires analysis and every shard to succeed; a cancelled or
+unexpectedly skipped shard fails the gate. Flutter's native `--total-shards=4`
+and zero-based `--shard-index` partition all test files, with two processes per
+runner. Format, static analysis and Bloc lint run once in the analysis job.
+
+TypeScript unit tests and coverage each use four workspace shards. The planner
+in `scripts/ci/test-shards.js` assigns every workspace with a `test` script
+(except the paused TanStack app) exactly once, putting larger suites first and
+balancing by test-file count. Counts only guide scheduling: each workspace still
+runs its complete configured Vitest suite, preserving isolation, discovery and
+coverage thresholds. New test workspaces join automatically. Each runner uses
+at most two Turbo tasks with two Vitest workers per task.
+
+Coverage artifacts retain their workspace paths. Only after all shards pass
+does the coverage gate download the complete set and upload once to Codecov.
+Shard-specific fallback-cache families prevent concurrent jobs from competing
+for one cache entry. Main and production runs are never cancelled by a newer
+push; superseded feature-branch runs are cancelled.
+
+Inspect a shard locally with `node scripts/ci/run-test-shard.js 0 4 --plan`.
+Execute it through `ttr resources run -- node scripts/ci/run-test-shard.js 0 4`
+(or append `--coverage`). Reproduce a Flutter shard with
+`flutter test --total-shards=4 --shard-index=0 --concurrency=2` from
+`apps/mobile`. Use the resource queue locally rather than launching CI-sized
+parallel runner groups on one machine.
+
+Measure optimization using actual Actions step start/end times and aggregate
+runner minutes. Compare cold runs separately from Turbo cache hits. The prior
+observed unit and coverage test steps took 15m07s and 16m27s; the mobile test
+step took 4m04s after analysis. New timings must be measured on the changed
+workflow; increasing shard count alone is not proof of a speedup.
+
 ## The Problem
 
 Before centralized gating, workflows ran on every push regardless of:

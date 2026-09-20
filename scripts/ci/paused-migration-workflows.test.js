@@ -67,8 +67,13 @@ test('shared TypeScript checks exclude the paused TanStack package', () => {
     'codecov.yaml',
   ]) {
     assert.match(
-      readWorkflow(workflowName),
-      /--filter='!@tuturuuu\/tanstack-web'/u,
+      workflowName === 'type-check.yaml'
+        ? readWorkflow(workflowName)
+        : fs.readFileSync(
+            path.join(REPO_ROOT, 'scripts/ci/test-shards.js'),
+            'utf8'
+          ),
+      /--filter='?!@tuturuuu\/tanstack-web'?/u,
       `${workflowName} must exclude @tuturuuu/tanstack-web`
     );
   }
