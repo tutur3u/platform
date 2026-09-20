@@ -56,6 +56,61 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   });
 
+  for (final phase in ['permission', 'directory', 'native start']) {
+    testWidgets('background cancels pending $phase', (tester) async {
+      final recorder = _Recorder();
+      final permission = Completer<bool>();
+      final directoryReady = Completer<Directory>();
+      final started = Completer<void>();
+      final directory = Directory.systemTemp.createTempSync('voice-cancel-');
+      addTearDown(() => directory.deleteSync(recursive: true));
+      when(recorder.hasPermission).thenAnswer(
+        (_) => phase == 'permission' ? permission.future : Future.value(true),
+      );
+      when(() => recorder.start(any(), path: any(named: 'path'))).thenAnswer((
+        call,
+      ) {
+        File(call.namedArguments[#path] as String).writeAsBytesSync([1, 2]);
+        return phase == 'native start' ? started.future : Future.value();
+      });
+      when(recorder.stop).thenAnswer((_) async => null);
+      when(recorder.dispose).thenAnswer((_) async {});
+      await tester.pumpApp(
+        Scaffold(
+          body: AssistantVoiceMessageSheet(
+            recorder: recorder,
+            temporaryDirectory: () => phase == 'directory'
+                ? directoryReady.future
+                : Future.value(directory),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Record'));
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      // Returning to the app must not revive the canceled native operation.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.runAsync(() async {
+        permission.complete(true);
+        directoryReady.complete(directory);
+        started.complete();
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+      });
+      await tester.pumpAndSettle();
+      expect(find.text('Stop'), findsNothing);
+      expect(find.text('Record'), findsOneWidget);
+      expect(find.text('Attach recording'), findsNothing);
+      expect(directory.listSync(), isEmpty);
+      if (phase == 'native start') {
+        verify(recorder.stop).called(1);
+      } else {
+        verifyNever(() => recorder.start(any(), path: any(named: 'path')));
+      }
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+  }
+
   testWidgets('native capture failure allows retry without attaching a file', (
     tester,
   ) async {

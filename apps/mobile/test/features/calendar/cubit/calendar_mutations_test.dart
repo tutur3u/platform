@@ -76,6 +76,42 @@ void main() {
     },
   );
 
+  for (final clearCache in [false, true]) {
+    test('replacement cubit protects cache (reset: $clearCache)', () async {
+      final response = Completer<void>();
+      when(
+        () => repository.updateEvent('origin', 'first', any()),
+      ).thenAnswer((_) => response.future);
+      final pending = cubit.updateEvent('origin', 'first', title: 'Pending');
+      await cubit.close();
+      if (clearCache) CalendarCubit.clearCache();
+      final replacement = CalendarCubit(calendarRepository: repository);
+      addTearDown(replacement.close);
+      when(
+        () => repository.getEvents(
+          'origin',
+          start: any(named: 'start'),
+          end: any(named: 'end'),
+        ),
+      ).thenAnswer((_) async => [first.copyWith(title: 'Replacement')]);
+      await replacement.loadEvents('origin', forceRefresh: true);
+      if (clearCache) {
+        when(
+          () => repository.updateEvent('origin', 'first', any()),
+        ).thenAnswer((_) async {});
+        await replacement.updateEvent('origin', 'first', title: 'Replacement');
+      }
+      response.completeError(
+        const ApiException(message: 'Denied', statusCode: 403),
+      );
+      await pending;
+      expect(
+        CalendarCubit.cachedStateForWorkspace('origin')!.events.single.title,
+        'Replacement',
+      );
+    });
+  }
+
   for (final deleting in [false, true]) {
     Future<void> startMutation(Completer<void> response) {
       if (deleting) {

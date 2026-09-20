@@ -26,10 +26,11 @@ class CalendarCubit extends Cubit<CalendarState> {
   static const CachePolicy _cachePolicy = CachePolicies.summary;
   static const _cacheTag = 'calendar:events';
   static final Map<String, _CalendarCacheEntry> _cache = {};
+  static int _cacheEpoch = 0;
   String? _wsId;
   int _loadGeneration = 0;
-  final Map<String, int> _mutationVersions = {};
-  final Map<String, int> _refreshVersions = {};
+  static final Map<String, int> _mutationVersions = {};
+  static final Map<String, int> _refreshVersions = {};
 
   static Map<String, dynamic> _decodeCacheJson(Object? json) {
     if (json is! Map) {
@@ -81,6 +82,9 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   static void clearCache() {
     _cache.clear();
+    _mutationVersions.clear();
+    _refreshVersions.clear();
+    _cacheEpoch++;
   }
 
   static Future<void> prewarm({
@@ -237,7 +241,8 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
 
       if (!isCurrent()) return;
-      _refreshVersions[wsId] = (_refreshVersions[wsId] ?? 0) + 1;
+      _refreshVersions[memoryCacheKey] =
+          (_refreshVersions[memoryCacheKey] ?? 0) + 1;
       final nextState = state.copyWith(
         status: CalendarStatus.loaded,
         hasLoadedOnce: true,
@@ -489,7 +494,12 @@ class CalendarCubit extends Cubit<CalendarState> {
     final mutationKey = '$cacheKey::$eventId';
     final version = (_mutationVersions[mutationKey] ?? 0) + 1;
     _mutationVersions[mutationKey] = version;
-    final refreshVersion = _refreshVersions[wsId];
+    final refreshVersion = _refreshVersions[cacheKey];
+    final epoch = _cacheEpoch;
+    final fetchedAt =
+        _cache[cacheKey]?.fetchedAt ??
+        state.lastUpdatedAt ??
+        DateTime.fromMillisecondsSinceEpoch(0);
     final previousIndex = state.events.indexWhere(
       (event) => event.id == eventId,
     );
@@ -498,9 +508,10 @@ class CalendarCubit extends Cubit<CalendarState> {
         : state.events[previousIndex];
 
     return (error) {
-      if (userId != currentCacheUserId() ||
+      if (epoch != _cacheEpoch ||
+          userId != currentCacheUserId() ||
           _mutationVersions[mutationKey] != version ||
-          _refreshVersions[wsId] != refreshVersion) {
+          _refreshVersions[cacheKey] != refreshVersion) {
         return;
       }
       final active = !isClosed && _wsId == wsId;
@@ -524,7 +535,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
       CalendarCubit._cache[cacheKey] = _CalendarCacheEntry(
         state: restored,
-        fetchedAt: DateTime.now(),
+        fetchedAt: fetchedAt,
       );
       if (active) emit(restored);
     };

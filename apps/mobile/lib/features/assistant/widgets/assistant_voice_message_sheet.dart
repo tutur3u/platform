@@ -36,6 +36,8 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
   bool _recording = false;
   bool _busy = false;
   bool _hasRecording = false;
+  bool _captureAllowed = true;
+  int _startGeneration = 0;
 
   @override
   void initState() {
@@ -45,36 +47,46 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if ((state == AppLifecycleState.paused ||
-            state == AppLifecycleState.hidden ||
-            state == AppLifecycleState.detached) &&
-        _recording) {
-      unawaited(_stop());
+    if (state == AppLifecycleState.resumed) _captureAllowed = true;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      _captureAllowed = false;
+      _startGeneration++;
+      if (_recording) unawaited(_stop());
     }
   }
 
   Future<void> _start() => _operation = _startRecording();
 
   Future<void> _startRecording() async {
-    if (_busy) return;
+    if (_busy || !_captureAllowed) return;
+    final generation = ++_startGeneration;
+    bool isCurrent() =>
+        mounted && _captureAllowed && generation == _startGeneration;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
-      if (!await _recorder.hasPermission()) {
+      final permitted = await _recorder.hasPermission();
+      if (!isCurrent()) return;
+      if (!permitted) {
         if (mounted) setState(() => _error = context.l10n.voicePermission);
         return;
       }
-      if (!mounted) return;
       final directory = await widget.temporaryDirectory();
-      if (!mounted) return;
+      if (!isCurrent()) return;
       final path =
           '${directory.path}/mira-voice-${DateTime.now().microsecondsSinceEpoch}.m4a';
       _path = path;
       await _recorder.start(const RecordConfig(numChannels: 1), path: path);
-      if (!mounted) {
-        await _recorder.stop();
+      if (!isCurrent()) {
+        try {
+          await _recorder.stop();
+        } finally {
+          await _deleteRecording();
+        }
         return;
       }
       setState(() {
@@ -193,6 +205,8 @@ class _VoiceMessageState extends State<AssistantVoiceMessageSheet>
 
   @override
   void dispose() {
+    _captureAllowed = false;
+    _startGeneration++;
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_cleanup());
     super.dispose();
