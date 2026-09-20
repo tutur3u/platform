@@ -1207,18 +1207,21 @@ long-running loop.
 
 Calendar jobs run every 15 minutes (provider sync) and six hours (smart
 scheduling) from `apps/web/cron.config.json`. The Docker scheduler sends these
-two fixed paths directly to `https://calendar.tuturuuu.com`; the old web-origin
-paths no longer have handlers. Other jobs continue using
+two fixed paths to the infrastructure app's `/api/cron/calendar/:job` gateway;
+the old web-origin paths no longer have handlers. Other jobs continue using
 `INTERNAL_WEB_API_ORIGIN`.
 
-Provision `CALENDAR_CRON_GATEWAY_SECRET` in the scheduler's server environment
-from the infrastructure vault's `mobile_calendar_gateway:v1` credential. It is
-sent only to the two fixed Calendar paths as `x-tuturuuu-calendar-gateway`,
-allowing the existing narrow hosting rule. `CRON_SECRET` (or
-`VERCEL_CRON_SECRET`) must also match Calendar's server configuration. Neither
-credential belongs in mobile builds. Missing hosting credentials fail closed;
-redirects are never followed with credentials. Verify actual successful job
-executions after rollout, rather than relying on the next-run estimate.
+The infrastructure gateway authenticates `CRON_SECRET` (or `VERCEL_CRON_SECRET`)
+before loading the existing encrypted `mobile_calendar_gateway:v1` credential.
+It forwards only provider sync and smart scheduling to the fixed Calendar origin,
+attaching the private hosting header and server cron authentication. Deploy the
+infrastructure gateway before promoting the scheduler change. The scheduler,
+infrastructure, and Calendar must share cron authentication configuration.
+No new hosting credential is copied into scheduler environments or mobile builds.
+Missing credentials fail closed; redirects are never followed with credentials.
+Verify actual successful job executions after rollout, rather than relying on
+the next-run estimate. The gateway has a four-minute upstream deadline and a
+bounded JSON response; failures remain visible to the scheduler.
 
 The Calendar cron handler invokes its local workspace sync handler directly.
 That handler selects active Google and Microsoft connections, refreshes provider

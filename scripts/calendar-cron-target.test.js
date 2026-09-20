@@ -4,29 +4,15 @@ const { resolveCronRequest } = require('./calendar-cron-target.js');
 
 const env = {
   CRON_SECRET: 'test-cron',
-  CALENDAR_CRON_GATEWAY_SECRET: 'a'.repeat(43),
   INTERNAL_WEB_API_ORIGIN: 'http://web-proxy:7803',
 };
 
 test('both Calendar jobs reach the owner with private server credentials', () => {
   for (const job of ['provider-sync', 'smart-schedule']) {
     const result = resolveCronRequest(`/api/cron/calendar/${job}`, env);
-    assert.equal(result.url.origin, 'https://calendar.tuturuuu.com');
+    assert.equal(result.url.origin, 'https://infrastructure.tuturuuu.com');
     assert.equal(result.headers.Authorization, 'Bearer test-cron');
-    assert.equal(result.headers['x-tuturuuu-calendar-gateway'], 'a'.repeat(43));
-  }
-});
-
-test('missing or malformed hosting credentials fail closed', () => {
-  for (const secret of [undefined, '', 'bad\nvalue']) {
-    assert.throws(
-      () =>
-        resolveCronRequest('/api/cron/calendar/provider-sync', {
-          ...env,
-          CALENDAR_CRON_GATEWAY_SECRET: secret,
-        }),
-      /not configured/
-    );
+    assert.equal(result.headers['x-tuturuuu-calendar-gateway'], undefined);
   }
 });
 
