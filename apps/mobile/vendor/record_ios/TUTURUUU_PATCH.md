@@ -6,3 +6,8 @@ an Objective-C exception that terminates the app when input is unavailable.
 Release the interruption observer on that failed setup path.
 
 Keep upstream licensing. Recheck this patch when upgrading record_ios.
+
+The upstream workspace-only resolution flag is removed because this licensed
+copy is a standalone path dependency. Verify `flutter pub get --no-example`
+inside this directory as well as dependency resolution from `apps/mobile`; CI
+recursively visits vendored pubspecs.
