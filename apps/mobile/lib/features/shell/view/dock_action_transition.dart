@@ -25,7 +25,16 @@ class DockActionTransition extends StatelessWidget {
         axis: Axis.horizontal,
         alignment: AlignmentDirectional.centerStart,
         sizeFactor: animation,
-        child: FadeTransition(opacity: animation, child: child),
+        child: FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: animation,
+            alignment: AlignmentDirectional.centerStart.resolve(
+              Directionality.of(context),
+            ),
+            child: child,
+          ),
+        ),
       ),
       layoutBuilder: (current, previous) => Row(
         mainAxisSize: MainAxisSize.min,

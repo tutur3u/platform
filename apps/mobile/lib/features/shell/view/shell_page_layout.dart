@@ -361,7 +361,7 @@ extension _ShellPageLayout on _ShellPageState {
                 fit: StackFit.passthrough,
                 children: [
                   for (final previous in previousChildren)
-                    Positioned.fill(child: IgnorePointer(child: previous)),
+                    ExcludeSemantics(child: IgnorePointer(child: previous)),
                   if (currentChild != null) currentChild,
                 ],
               ),

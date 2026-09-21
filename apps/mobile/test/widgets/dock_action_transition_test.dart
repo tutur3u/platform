@@ -54,6 +54,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('rounded action stays entirely inside its animated slot', (
+    tester,
+  ) async {
+    final show = ValueNotifier<bool>(false);
+    addTearDown(show.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Center(
+          child: ValueListenableBuilder<bool>(
+            valueListenable: show,
+            builder: (context, value, _) => DockActionTransition(
+              key: const Key('slot'),
+              identity: value,
+              child: value
+                  ? const SizedBox(key: Key('pill'), width: 140, height: 48)
+                  : const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      ),
+    );
+    void expectUnclippedPill() {
+      final slot = tester.renderObject<RenderBox>(
+        find.byKey(const Key('slot')),
+      );
+      final pill = tester.renderObject<RenderBox>(
+        find.byKey(const Key('pill')),
+      );
+      final bounds = (Offset.zero & slot.size).inflate(0.01);
+      expect(
+        bounds.contains(pill.localToGlobal(Offset.zero, ancestor: slot)),
+        isTrue,
+      );
+      expect(
+        bounds.contains(
+          pill.localToGlobal(
+            pill.size.bottomRight(Offset.zero),
+            ancestor: slot,
+          ),
+        ),
+        isTrue,
+      );
+    }
+
+    show.value = true;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
+    expectUnclippedPill();
+    await tester.pumpAndSettle();
+    show.value = false;
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
+    expectUnclippedPill();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('outgoing actions cannot be tapped; reduced motion skips exit', (
     tester,
   ) async {
