@@ -7,6 +7,8 @@ on:
       - .github/actions/setup-supabase-baseline/**
       - .github/workflows/supabase-baseline.yaml
   workflow_dispatch:
+env:
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
 permissions:
   contents: read
 concurrency:
@@ -16,6 +18,8 @@ jobs:
   cold-warm-corrupt:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      seed-epoch: ${{ steps.cold.outputs.seed-epoch }}
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-bun-with-retry
@@ -30,6 +34,13 @@ jobs:
       - name: Cold baseline from all migrations
         id: cold
         run: node scripts/ci/supabase-baseline.js prepare
+      - name: Export pristine baseline for a separate runner
+        uses: actions/upload-artifact@v7
+        with:
+          name: pristine-supabase-baseline
+          path: ${{ runner.temp }}/supabase-baseline
+          retention-days: 1
+          if-no-files-found: error
       - name: Verify cold setup and add disposable test data
         run: |
           test '${{ steps.cold.outputs.restored }}' = false
@@ -49,6 +60,38 @@ jobs:
         run: node scripts/ci/supabase-baseline.js prepare
       - name: Verify corrupt cache falls back to migrations
         run: test '${{ steps.corrupt.outputs.restored }}' = false
+      - name: Stop isolated test database
+        if: always()
+        run: node apps/database/scripts/run-supabase.js stop --no-backup
+
+  cross-runner-restore:
+    needs: cold-warm-corrupt
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_BASELINE_EPOCH: ${{ needs.cold-warm-corrupt.outputs.seed-epoch }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+      - uses: actions/download-artifact@v8
+        with:
+          name: pristine-supabase-baseline
+          path: ${{ runner.temp }}/supabase-baseline
+      - name: Restore baseline created on another runner
+        id: restored
+        run: node scripts/ci/supabase-baseline.js prepare
+      - name: Require a verified restore without migration replay
+        run: |
+          test '${{ steps.restored.outputs.restored }}' = true
+          test "$(docker exec supabase_db_tuturuuu psql -U postgres -d postgres -Atc "SELECT to_regclass('public.baseline_contract_mutation') IS NULL")" = t
       - name: Stop isolated test database
         if: always()
         run: node apps/database/scripts/run-supabase.js stop --no-backup
