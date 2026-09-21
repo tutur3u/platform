@@ -40,14 +40,14 @@ void registerShellViewportChecks(
         await pumpShell(tester);
         expect(
           find.descendant(
-            of: find.byType(CustomNavigationBar),
+            of: find.byType(MorphingNavigationBar),
             matching: find.byType(Text),
           ),
           findsNothing,
         );
         expect(find.byTooltip('Home'), findsOneWidget);
         expect(find.byTooltip('Assistant'), findsOneWidget);
-        final dock = tester.getRect(find.byType(CustomNavigationBar));
+        final dock = tester.getRect(find.byType(MorphingNavigationBar));
         expect(dock.height, lessThan(100));
         expect(
           find.byKey(const ValueKey('compact-shell-footer')),
