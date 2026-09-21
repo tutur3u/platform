@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
@@ -13,6 +14,33 @@ void main() {
     );
     expect(hasAssistantLiveWorkspaceAccess(shell.workspaceCredits), isTrue);
     expect(hasAssistantLiveWorkspaceAccess(shell.activeCredits), isFalse);
+  });
+
+  test('workspace plan remains Pro while credits are unavailable', () {
+    const shell = AssistantShellState(
+      workspace: Workspace(id: 'pro-workspace', tier: 'PRO'),
+    );
+    final eligible = hasAssistantLiveWorkspaceAccess(
+      shell.workspaceCredits,
+      workspaceTier: shell.workspace?.tier,
+    );
+    expect(eligible, isTrue);
+    final state = deriveAssistantLiveUiState(
+      shellState: shell,
+      liveState: const AssistantLiveState(),
+      isEligible: eligible,
+      isVisibleLiveSession: false,
+      showBlockedReason: false,
+    );
+    expect(state.workspaceTier, 'PRO');
+    expect(state.kind, AssistantLiveUiKind.available);
+    expect(
+      hasAssistantLiveWorkspaceAccess(
+        const AssistantCredits(tier: 'PRO'),
+        workspaceTier: 'FREE',
+      ),
+      isFalse,
+    );
   });
 
   group('deriveAssistantLiveUiState', () {

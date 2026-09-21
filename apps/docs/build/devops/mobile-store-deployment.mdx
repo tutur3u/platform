@@ -169,3 +169,18 @@ operation. Error messages distinguish network, session, rate-limit, service
 unavailability, and cancelled local verification without exposing provider
 payloads or credentials. Simulator biometric support varies by runtime; passing
 widget tests does not establish real-device biometric approval.
+
+## Live audio regression checks
+
+The mobile app overrides `record_ios` with the licensed local copy in
+`apps/mobile/vendor/record_ios`. The patch rejects zero-channel or zero-rate
+input formats before installing an audio tap, returning a recoverable platform
+error instead of an uncaught Core Audio exception. Keep this guard when updating
+the recording dependency and test unavailable inputs on the simulator, plus
+real microphone and headset routes on a physical device.
+
+Live chat history is read server-side only after verifying that the caller owns
+the chat. Test denied ownership and failed ownership lookup before any privileged
+message access. The seed includes at most the latest 200 messages in stable
+chronological order. Deploy the API fix before treating a mobile-only build as
+proof of a working Live session.

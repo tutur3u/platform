@@ -1230,7 +1230,10 @@ class _AssistantPageState extends State<AssistantPage> {
   }
 
   bool _hasLiveAccess(AssistantShellState shellState) {
-    return hasAssistantLiveWorkspaceAccess(shellState.workspaceCredits);
+    return hasAssistantLiveWorkspaceAccess(
+      shellState.workspaceCredits,
+      workspaceTier: shellState.workspace?.tier,
+    );
   }
 
   bool _isCurrentChatLive(
