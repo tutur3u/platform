@@ -25,52 +25,59 @@ class CustomNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    return SizedBox(
+      width: expandItems || minItemWidth == 0
+          ? null
+          : (minItemWidth * children.length + (compact ? 4 : 8)).clamp(
+              0.0,
+              MediaQuery.sizeOf(context).width - 24,
+            ),
+      child: Container(
+        padding: EdgeInsets.all(compact ? 2 : 4),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: expandItems ? MainAxisSize.max : MainAxisSize.min,
+            children: List.generate(children.length, (index) {
+              final child = children[index];
+              final isFirst = index == 0;
+              final isLast = index == children.length - 1;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4, vertical: compact ? 2 : 4),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: expandItems ? MainAxisSize.max : MainAxisSize.min,
-          children: List.generate(children.length, (index) {
-            final child = children[index];
-            final isFirst = index == 0;
-            final isLast = index == children.length - 1;
+              Key? itemKey;
+              if (child is shad.NavigationItem) {
+                itemKey = child.key;
+              }
 
-            Key? itemKey;
-            if (child is shad.NavigationItem) {
-              itemKey = child.key;
-            }
+              final isSelected = itemKey == selectedKey;
 
-            final isSelected = itemKey == selectedKey;
+              final item = Padding(
+                padding: EdgeInsets.only(
+                  left: isFirst ? 0 : 2,
+                  right: isLast ? 0 : 2,
+                ),
+                child: _CustomNavItem(
+                  key: itemKey,
+                  isFirst: isFirst,
+                  isLast: isLast,
+                  isSelected: isSelected,
+                  theme: theme,
+                  isDark: isDark,
+                  compact: compact,
+                  onTap: () => onSelected?.call(itemKey),
+                  child: child,
+                ),
+              );
 
-            final item = Padding(
-              padding: EdgeInsets.only(
-                left: isFirst ? 0 : 2,
-                right: isLast ? 0 : 2,
-              ),
-              child: _CustomNavItem(
-                key: itemKey,
-                isFirst: isFirst,
-                isLast: isLast,
-                isSelected: isSelected,
-                theme: theme,
-                isDark: isDark,
-                compact: compact,
-                onTap: () => onSelected?.call(itemKey),
-                child: child,
-              ),
-            );
+              if (expandItems || compact) {
+                return Expanded(child: item);
+              }
 
-            if (expandItems) {
-              return Expanded(child: item);
-            }
-
-            return ConstrainedBox(
-              constraints: BoxConstraints(minWidth: minItemWidth),
-              child: item,
-            );
-          }),
+              return ConstrainedBox(
+                constraints: BoxConstraints(minWidth: minItemWidth),
+                child: item,
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -137,7 +144,8 @@ class _CustomNavItem extends StatelessWidget {
   }
 
   BorderRadius _resolvedBorderRadius(BuildContext context) =>
-      compact ? BorderRadius.circular(14) : _getBorderRadius(context);
+      // The island has a 24px outer radius, a 1px border and a 2px inset.
+      compact ? BorderRadius.circular(21) : _getBorderRadius(context);
 
   BorderRadius _getBorderRadius(BuildContext context) {
     final isRtl = Directionality.of(context) == TextDirection.rtl;

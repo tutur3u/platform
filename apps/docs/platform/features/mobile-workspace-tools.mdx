@@ -24,6 +24,24 @@ Background warmups for optional products should also respect access state before
 
 Meet is a standard launcher module, with meeting search, scheduling, editing, and deletion. Workspace visibility flags still apply. Every launcher module includes an English and Vietnamese description.
 
+## Navigation preferences and recovery
+
+Phones and tablets share a compact floating icon dock. Leaving a mini-app returns
+to its Home or Apps launch screen. Root screens remain mounted with hidden
+animations paused, preserving search and scroll state. The brand control opens
+the Apps screen within the normal shell, with compact search and arrange actions. Settings
+contains the optional Apps dock toggle. In the picker, Customize exposes pin and
+drag controls; pinned apps sort first. Order and pins persist on the device and
+never bypass each module's visibility rules.
+
+Nova spins once when entering Assistant and remains static afterward. Loading
+indicators continue animating, while pull-to-refresh uses an opaque circular
+surface. Reduced-motion preferences disable spinning.
+
+Calendar forms and event details use opaque root-navigator sheets. Failed event
+edits or deletions restore the previous in-memory and cached list and expose the
+server error. Verify the next reload as well as the immediate rollback.
+
 ## Responsive Loading And Cache Verification
 
 Root tabs initialize on their first visit and retain their state afterward. Hidden

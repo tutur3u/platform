@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:mime/mime.dart';
 
 enum AssistantCreditSource { workspace, personal }
 
@@ -905,40 +906,5 @@ List<AssistantTaskInsight> _decodeTaskList(dynamic raw) {
       .toList();
 }
 
-String _mimeTypeFromExtension(String extension) {
-  switch (extension) {
-    case 'png':
-      return 'image/png';
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg';
-    case 'webp':
-      return 'image/webp';
-    case 'gif':
-      return 'image/gif';
-    case 'pdf':
-      return 'application/pdf';
-    case 'csv':
-      return 'text/csv';
-    case 'txt':
-      return 'text/plain';
-    case 'json':
-      return 'application/json';
-    case 'md':
-      return 'text/markdown';
-    case 'doc':
-      return 'application/msword';
-    case 'docx':
-      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case 'xls':
-      return 'application/vnd.ms-excel';
-    case 'xlsx':
-      return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    case 'ppt':
-      return 'application/vnd.ms-powerpoint';
-    case 'pptx':
-      return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-    default:
-      return 'application/octet-stream';
-  }
-}
+String _mimeTypeFromExtension(String extension) =>
+    lookupMimeType('attachment.$extension') ?? 'application/octet-stream';

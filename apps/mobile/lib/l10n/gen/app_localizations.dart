@@ -15378,6 +15378,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Security check'**
   String get securityCheckTitle;
+
+  /// No description provided for @appsCustomize.
+  ///
+  /// In en, this message translates to:
+  /// **'Arrange apps'**
+  String get appsCustomize;
+
+  /// No description provided for @appsPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin app'**
+  String get appsPin;
+
+  /// No description provided for @appsUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin app'**
+  String get appsUnpin;
+
+  /// No description provided for @appsReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to reorder'**
+  String get appsReorder;
+
+  /// No description provided for @voiceMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice message'**
+  String get voiceMessage;
+
+  /// No description provided for @voiceRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get voiceRecord;
+
+  /// No description provided for @voiceStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get voiceStop;
+
+  /// No description provided for @voicePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview recording'**
+  String get voicePreview;
+
+  /// No description provided for @voiceAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach recording'**
+  String get voiceAttach;
+
+  /// No description provided for @voicePermission.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow microphone access to record.'**
+  String get voicePermission;
+
+  /// No description provided for @voiceRecordingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not record audio. Please try again.'**
+  String get voiceRecordingError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

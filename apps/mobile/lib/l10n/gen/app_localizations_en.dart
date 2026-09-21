@@ -8040,4 +8040,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get securityCheckTitle => 'Security check';
+
+  @override
+  String get appsCustomize => 'Arrange apps';
+
+  @override
+  String get appsPin => 'Pin app';
+
+  @override
+  String get appsUnpin => 'Unpin app';
+
+  @override
+  String get appsReorder => 'Drag to reorder';
+
+  @override
+  String get voiceMessage => 'Voice message';
+
+  @override
+  String get voiceRecord => 'Record';
+
+  @override
+  String get voiceStop => 'Stop';
+
+  @override
+  String get voicePreview => 'Preview recording';
+
+  @override
+  String get voiceAttach => 'Attach recording';
+
+  @override
+  String get voicePermission => 'Allow microphone access to record.';
+
+  @override
+  String get voiceRecordingError => 'Could not record audio. Please try again.';
 }

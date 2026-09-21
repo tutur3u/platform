@@ -3274,5 +3274,16 @@
   "deviceMfaRateLimited": "Bạn đã thử quá nhiều lần. Hãy đợi một phút rồi thử lại.",
   "deviceMfaUnavailable": "Đăng ký trình xác thực tạm thời không khả dụng. Hãy thử lại sau ít phút.",
   "deviceMfaOffline": "Không thể kết nối với Tuturuuu. Kiểm tra kết nối và thử lại.",
-  "securityCheckTitle": "Kiểm tra bảo mật"
+  "securityCheckTitle": "Kiểm tra bảo mật",
+  "appsCustomize": "Sắp xếp ứng dụng",
+  "appsPin": "Ghim ứng dụng",
+  "appsUnpin": "Bỏ ghim ứng dụng",
+  "appsReorder": "Kéo để sắp xếp",
+  "voiceMessage": "Tin nhắn thoại",
+  "voiceRecord": "Ghi âm",
+  "voiceStop": "Dừng",
+  "voicePreview": "Nghe lại",
+  "voiceAttach": "Đính kèm bản ghi",
+  "voicePermission": "Cho phép truy cập micrô để ghi âm.",
+  "voiceRecordingError": "Không thể ghi âm. Vui lòng thử lại."
 }

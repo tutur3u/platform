@@ -18,7 +18,12 @@ extension _ShellPageNavigation on _ShellPageState {
       key: _ShellPageState._assistantKey,
       child: _buildCompactNavIcon(
         icon: Icons.auto_awesome_outlined,
-        image: const NovaLoadingIndicator(size: 24),
+        image: NovaLoadingIndicator(
+          key: ValueKey(_rootTabReplayTokens[Routes.assistant] ?? 0),
+          size: 24,
+          repeat: false,
+          play: widget.matchedLocation == Routes.assistant,
+        ),
         semanticLabel: l10n.navAssistant,
         itemIndex: 1,
       ),

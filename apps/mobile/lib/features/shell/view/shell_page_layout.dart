@@ -67,32 +67,44 @@ extension _ShellPageLayout on _ShellPageState {
   }
 
   Widget _buildGlobalBody() {
-    if (_isRootTabLocation(widget.matchedLocation)) {
-      return Builder(
-        builder: (bodyContext) => MediaQuery.removePadding(
-          context: bodyContext,
-          removeTop: true,
-          child: LazyIndexedStack(
-            index: _ShellPageState._calculateSelectedIndex(
-              widget.matchedLocation,
-            ),
-            builders: [
-              (_) => DashboardPage(
-                replayToken: _rootTabReplayTokens[Routes.home] ?? 0,
-              ),
-              (_) => AssistantPage(
-                replayToken: _rootTabReplayTokens[Routes.assistant] ?? 0,
-              ),
-              (_) => AppsHubPage(
-                replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
-              ),
-            ],
+    final rootVisible = _isRootTabLocation(widget.matchedLocation);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Offstage(
+          offstage: !rootVisible,
+          child: TickerMode(
+            enabled: rootVisible,
+            child: !_hasVisitedRoot
+                ? const SizedBox.shrink()
+                : Builder(
+                    builder: (bodyContext) => MediaQuery.removePadding(
+                      context: bodyContext,
+                      removeTop: true,
+                      child: LazyIndexedStack(
+                        index: _ShellPageState._calculateSelectedIndex(
+                          _lastRootLocation,
+                        ),
+                        builders: [
+                          (_) => DashboardPage(
+                            replayToken: _rootTabReplayTokens[Routes.home] ?? 0,
+                          ),
+                          (_) => AssistantPage(
+                            replayToken:
+                                _rootTabReplayTokens[Routes.assistant] ?? 0,
+                          ),
+                          (_) => AppsScreen(
+                            replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           ),
         ),
-      );
-    }
-
-    return _buildNormalizedChild();
+        if (!rootVisible) _buildNormalizedChild(),
+      ],
+    );
   }
 
   Widget _buildFloatingNavigationBar({
@@ -107,35 +119,43 @@ extension _ShellPageLayout on _ShellPageState {
     final theme = shad.Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
-            blurRadius: 40,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-            spreadRadius: -2,
-          ),
-        ],
-      ),
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeInOutCubic,
+      alignment: Alignment.bottomCenter,
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
+          color: theme.colorScheme.background,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.08),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+              blurRadius: 40,
+              offset: const Offset(0, 12),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+              spreadRadius: -2,
+            ),
+          ],
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.08),
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: child,
           ),
         ),
-        child: ClipRRect(borderRadius: BorderRadius.circular(24), child: child),
       ),
     );
   }
@@ -172,7 +192,7 @@ extension _ShellPageLayout on _ShellPageState {
         heightFactor: 1,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: maxWidth > 0 ? maxWidth : 0),
-          child: IntrinsicWidth(child: child),
+          child: child,
         ),
       ),
     );
@@ -227,8 +247,10 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
-  double _floatingNavBodyInset(BuildContext context) {
-    return 132 + MediaQuery.paddingOf(context).bottom;
+  double _floatingNavBodyInset() {
+    // 48px island + 12px bottom margin + 8px content gap. The caller adds
+    // the system safe area once; including it here creates a second gap.
+    return 68;
   }
 
   Widget _buildCompactLayout(
@@ -317,6 +339,7 @@ extension _ShellPageLayout on _ShellPageState {
             children: isMiniAppRoute ? miniItems : globalItems,
           )
         : CustomNavigationBar(
+            compact: true,
             key: navVariantKey,
             selectedKey: selectedKey,
             onSelected: (key) => useInjectedMiniNav
@@ -356,7 +379,8 @@ extension _ShellPageLayout on _ShellPageState {
                 alignment: Alignment.center,
                 fit: StackFit.passthrough,
                 children: [
-                  ...previousChildren,
+                  for (final previous in previousChildren)
+                    Positioned.fill(child: IgnorePointer(child: previous)),
                   if (currentChild != null) currentChild,
                 ],
               ),
@@ -390,7 +414,7 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalBody = _buildGlobalBody();
     final floatingNavInset = !isCompact && showBottomNav
-        ? _floatingNavBodyInset(context)
+        ? _floatingNavBodyInset()
         : 0.0;
 
     return shad.Scaffold(
@@ -602,7 +626,7 @@ extension _ShellPageLayout on _ShellPageState {
           ? _buildBodyWithFloatingNav(
               body: pageView,
               navigationBar: navigationBar,
-              bodyBottomInset: _floatingNavBodyInset(context),
+              bodyBottomInset: _floatingNavBodyInset(),
             )
           : pageView,
     );

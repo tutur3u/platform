@@ -26,7 +26,7 @@ extension _ShellPageInteractions on _ShellPageState {
 
     if (selected.id == 'back' &&
         registration.deepLinkBackRoute == Routes.apps) {
-      unawaited(_openAppsDrawerFromAppsTab());
+      unawaited(_returnToAppOrigin());
       return;
     }
     selected.onPressed?.call();
@@ -47,7 +47,7 @@ extension _ShellPageInteractions on _ShellPageState {
           'current=${_normalizeRouteLocation(widget.matchedLocation)}',
     );
     if (key == _ShellPageState._backToRootKey) {
-      await _openAppsDrawerFromAppsTab();
+      await _returnToAppOrigin();
       return;
     }
 
@@ -146,17 +146,15 @@ extension _ShellPageInteractions on _ShellPageState {
     unawaited(showAppsPicker(context, searchInitially: true));
   }
 
-  Future<void> _openAppsDrawerFromAppsTab() async {
-    final currentContext = context;
-    final appTabCubit = currentContext.read<AppTabCubit>();
-    _debugBack('rootNav.openAppsDrawer');
-    await appTabCubit.clearSelection();
-    if (!currentContext.mounted) return;
-    currentContext.go(Routes.home);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(showAppsPicker(context));
-    });
+  Future<void> _returnToAppOrigin() async {
+    final tabs = context.read<AppTabCubit>();
+    final origin = tabs.state.appOrigin;
+    await tabs.clearSelection();
+    await tabs.setLastTabRoute(origin);
+    if (mounted) context.go(origin);
   }
+
+  Future<void> _openAppsDrawerFromAppsTab() => showAppsPicker(context);
 
   Future<void> _onItemTapped(int index, BuildContext context) async {
     final appTabCubit = context.read<AppTabCubit>();

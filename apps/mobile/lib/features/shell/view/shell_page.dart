@@ -6,13 +6,11 @@ import 'package:flutter/material.dart'
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
-import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
@@ -68,7 +66,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
   static const ValueKey<String> _shellAvatarKey = ValueKey('shell-avatar');
   static const double _miniNavItemSpacing = 1;
-  static const double _floatingNavMinItemWidth = 96;
+  static const double _floatingNavMinItemWidth = 52;
   static const double _compactBottomNavHeight = 54;
   static const Duration _exitConfirmationWindow = Duration(seconds: 2);
   static const Duration _navSwitcherDuration = Duration(milliseconds: 320);
@@ -80,8 +78,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   );
   static const double _compactMiniBackButtonMinWidth = 52;
 
-  bool _usesCompactNavigation(BuildContext context) =>
-      context.isCompact || MediaQuery.sizeOf(context).height < 600;
+  bool _usesCompactNavigation(BuildContext context) => false;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   Timer? _longPressTimer;
@@ -93,6 +90,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   bool _showMiniNav = true;
   String? _lastLayeredLocation;
   final List<String> _routeHistory = [];
+  String _lastRootLocation = Routes.home;
+  bool _hasVisitedRoot = false;
   DateTime? _lastExitAttemptAt;
   bool _isHandlingBackNavigation = false;
   bool _isProcessingBackNavigation = false;
@@ -150,6 +149,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     unawaited(SystemNavigator.setFrameworkHandlesBack(true));
     _layerController = PageController(initialPage: 1);
+    _hasVisitedRoot = _isRootTabLocation(widget.matchedLocation);
+    if (_hasVisitedRoot) _lastRootLocation = widget.matchedLocation;
   }
 
   @override
@@ -179,6 +180,15 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant ShellPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final isRoot = _isRootTabLocation(widget.matchedLocation);
+    if (isRoot) {
+      _lastRootLocation = widget.matchedLocation;
+      _hasVisitedRoot = true;
+    } else if (_isRootTabLocation(oldWidget.matchedLocation)) {
+      unawaited(
+        context.read<AppTabCubit>().recordAppOrigin(oldWidget.matchedLocation),
+      );
+    }
     _incrementRootTabReplayTokenIfNeeded(
       oldLocation: oldWidget.matchedLocation,
       newLocation: widget.matchedLocation,
@@ -354,7 +364,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
     }
 
     if (Routes.isMiniAppRootLocation(currentLocation)) {
-      await _openAppsDrawerFromAppsTab();
+      await _returnToAppOrigin();
       return;
     }
 

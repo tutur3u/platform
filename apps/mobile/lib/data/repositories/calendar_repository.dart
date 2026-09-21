@@ -67,7 +67,8 @@ class CalendarRepository {
   }
 
   Future<void> deleteEvent(String wsId, String eventId) async {
-    await _api.deleteJson('${_basePath(wsId)}/$eventId');
+    // An explicit JSON body keeps DELETE compatible with the signed gateway.
+    await _api.deleteJson('${_basePath(wsId)}/$eventId', body: {});
   }
 
   void dispose() => _api.dispose();

@@ -3,9 +3,16 @@ import 'package:flutter/material.dart';
 export 'nova_refresh_indicator.dart';
 
 class NovaLoadingIndicator extends StatefulWidget {
-  const NovaLoadingIndicator({this.size = 56, super.key});
+  const NovaLoadingIndicator({
+    this.size = 56,
+    this.repeat = true,
+    this.play = true,
+    super.key,
+  });
 
   final double size;
+  final bool repeat;
+  final bool play;
 
   static const Duration _spinDuration = Duration(milliseconds: 680);
 
@@ -29,12 +36,16 @@ class _NovaLoadingIndicatorState extends State<NovaLoadingIndicator>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (!widget.play || MediaQuery.disableAnimationsOf(context)) {
       _controller
         ..stop()
         ..value = 0;
     } else if (!_controller.isAnimating) {
-      _controller.repeat();
+      if (widget.repeat) {
+        _controller.repeat();
+      } else {
+        _controller.forward();
+      }
     }
   }
 

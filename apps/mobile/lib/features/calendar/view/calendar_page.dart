@@ -201,7 +201,16 @@ class _CalendarViewState extends State<_CalendarView> {
                 unawaited(context.read<CalendarCubit>().loadEvents(wsId));
               }
             },
-            child: BlocBuilder<CalendarCubit, CalendarState>(
+            child: BlocConsumer<CalendarCubit, CalendarState>(
+              listenWhen: (previous, current) =>
+                  current.error != null && previous.error != current.error,
+              listener: (context, state) {
+                shad.showToast(
+                  context: Navigator.of(context, rootNavigator: true).context,
+                  builder: (context, overlay) =>
+                      shad.SurfaceCard(child: Text(state.error!)),
+                );
+              },
               builder: (context, state) {
                 if (state.status == CalendarStatus.loading &&
                     state.events.isEmpty) {

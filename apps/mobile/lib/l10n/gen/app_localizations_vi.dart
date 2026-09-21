@@ -8010,4 +8010,37 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get securityCheckTitle => 'Kiểm tra bảo mật';
+
+  @override
+  String get appsCustomize => 'Sắp xếp ứng dụng';
+
+  @override
+  String get appsPin => 'Ghim ứng dụng';
+
+  @override
+  String get appsUnpin => 'Bỏ ghim ứng dụng';
+
+  @override
+  String get appsReorder => 'Kéo để sắp xếp';
+
+  @override
+  String get voiceMessage => 'Tin nhắn thoại';
+
+  @override
+  String get voiceRecord => 'Ghi âm';
+
+  @override
+  String get voiceStop => 'Dừng';
+
+  @override
+  String get voicePreview => 'Nghe lại';
+
+  @override
+  String get voiceAttach => 'Đính kèm bản ghi';
+
+  @override
+  String get voicePermission => 'Cho phép truy cập micrô để ghi âm.';
+
+  @override
+  String get voiceRecordingError => 'Không thể ghi âm. Vui lòng thử lại.';
 }

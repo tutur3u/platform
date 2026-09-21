@@ -3270,5 +3270,16 @@
   "deviceMfaRateLimited": "Too many attempts. Wait a minute before trying again.",
   "deviceMfaUnavailable": "Authenticator registration is temporarily unavailable. Try again shortly.",
   "deviceMfaOffline": "Could not reach Tuturuuu. Check your connection and try again.",
-  "securityCheckTitle": "Security check"
+  "securityCheckTitle": "Security check",
+  "appsCustomize": "Arrange apps",
+  "appsPin": "Pin app",
+  "appsUnpin": "Unpin app",
+  "appsReorder": "Drag to reorder",
+  "voiceMessage": "Voice message",
+  "voiceRecord": "Record",
+  "voiceStop": "Stop",
+  "voicePreview": "Preview recording",
+  "voiceAttach": "Attach recording",
+  "voicePermission": "Allow microphone access to record.",
+  "voiceRecordingError": "Could not record audio. Please try again."
 }

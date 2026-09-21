@@ -7,6 +7,9 @@ import '../../../helpers/helpers.dart';
 
 void main() {
   for (final size in [
+    const Size(320, 720),
+    const Size(390, 844),
+    const Size(844, 390),
     const Size(768, 1024),
     const Size(1024, 768),
     const Size(1366, 1024),

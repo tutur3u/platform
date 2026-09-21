@@ -55,11 +55,13 @@ class AssistantComposerDock extends StatelessWidget {
     );
 
     return Container(
-      padding: EdgeInsets.fromLTRB(12, 8, 12, 4 + bottomInset),
+      key: const ValueKey('assistant-composer-surface'),
+      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.fromLTRB(12, 8, 12, 8 + bottomInset),
       decoration: BoxDecoration(
         color: navSurface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: separatorColor)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: separatorColor),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -139,19 +141,9 @@ class AssistantComposerDock extends StatelessWidget {
                   }
 
                   return _GhostActionButton(
-                    tooltip: liveUiState.isEligible
-                        ? liveState.isMicrophoneActive
-                              ? context.l10n.assistantLiveMute
-                              : context.l10n.assistantLiveListen
-                        : context.l10n.assistantLiveTierRequired,
+                    tooltip: context.l10n.voiceRecord,
                     onPressed: onMicrophoneTap,
-                    icon: liveState.isMicrophoneActive
-                        ? Icons.mic_rounded
-                        : Icons.mic_none_rounded,
-                    isActive:
-                        liveUiState.isEligible &&
-                        (liveState.isMicrophoneActive ||
-                            liveUiState.isVisibleLiveSession),
+                    icon: Icons.mic_none_rounded,
                   );
                 },
               ),

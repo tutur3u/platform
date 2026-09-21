@@ -29,6 +29,27 @@ class SettingsRepository {
   static const _pushPermissionPromptedPrefix =
       'push-notification-permission-prompted';
 
+  Future<List<String>> getAppOrder() async =>
+      (await SharedPreferences.getInstance()).getStringList('apps-order') ?? [];
+
+  Future<List<String>> getPinnedApps() async =>
+      (await SharedPreferences.getInstance()).getStringList('apps-pinned') ??
+      [];
+
+  Future<void> setAppOrder(List<String> ids) async {
+    await (await SharedPreferences.getInstance()).setStringList(
+      'apps-order',
+      ids,
+    );
+  }
+
+  Future<void> setPinnedApps(List<String> ids) async {
+    await (await SharedPreferences.getInstance()).setStringList(
+      'apps-pinned',
+      ids,
+    );
+  }
+
   Future<bool> getShowAppsTab() async =>
       (await SharedPreferences.getInstance()).getBool('show-apps-tab') ?? false;
 
@@ -155,6 +176,16 @@ class SettingsRepository {
   }
 
   /// Returns the last selected app route, or `null` if none saved.
+  Future<String?> getLastAppOrigin() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('last-app-origin');
+  }
+
+  Future<void> setLastAppOrigin(String route) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last-app-origin', route);
+  }
+
   Future<String?> getLastAppRoute() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_lastAppRouteKey);

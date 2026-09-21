@@ -365,9 +365,9 @@ Future<void> _pumpForTransitions(WidgetTester tester) async {
   }
 }
 
-void _expectAppsPickerOnHome(WidgetTester tester, GoRouter router) {
-  expect(router.routeInformationProvider.value.uri.path, Routes.home);
-  expect(find.byKey(const ValueKey('apps-picker-fullscreen')), findsOneWidget);
+void _expectAppsScreen(WidgetTester tester, GoRouter router) {
+  expect(router.routeInformationProvider.value.uri.path, Routes.apps);
+  expect(find.byKey(const ValueKey('apps-screen')), findsOneWidget);
 }
 
 Future<void> _verifyInjectedPickerExit(
@@ -395,5 +395,6 @@ Future<void> _verifyInjectedPickerExit(
   await tester.tap(find.byTooltip('Back'));
   await _pumpForTransitions(tester);
   expect(legacyBackCalled, isFalse);
-  _expectAppsPickerOnHome(tester, router);
+  expect(router.routeInformationProvider.value.uri.path, Routes.home);
+  expect(find.byKey(const ValueKey('apps-picker-fullscreen')), findsNothing);
 }

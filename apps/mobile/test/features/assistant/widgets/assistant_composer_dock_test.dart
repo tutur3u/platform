@@ -62,6 +62,13 @@ void main() {
     );
     await mount(AssistantChatStatus.restoring);
     await tester.pumpAndSettle();
+    final surface = tester.widget<Container>(
+      find.byKey(const ValueKey('assistant-composer-surface')),
+    );
+    final decoration = surface.decoration! as BoxDecoration;
+    expect(decoration.borderRadius, BorderRadius.circular(24));
+    expect((decoration.border! as Border).isUniform, isTrue);
+    expect(surface.clipBehavior, Clip.antiAlias);
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     expect(
       tester.widget<TextField>(find.byType(TextField)).onSubmitted,
