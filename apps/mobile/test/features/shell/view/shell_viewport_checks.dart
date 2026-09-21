@@ -19,7 +19,7 @@ void registerShellViewportChecks(
     const Size(874, 402),
   ]) {
     testWidgets(
-      'shell reserves content space and keeps a compact dock at $size',
+      'shell overlays full-height content with a compact dock at $size',
       (tester) async {
         tester.view
           ..devicePixelRatio = 1
@@ -64,9 +64,10 @@ void registerShellViewportChecks(
           ),
           findsOneWidget,
         );
-        // Clearance is physical, so explicit-padding lists also stay above it.
+        // The dock overlays the viewport; clearance lives in scroll padding.
         final body = tester.getRect(find.byType(AppsHubPage));
-        expect(dock.top - body.bottom, closeTo(8, 1));
+        expect(body.bottom, closeTo(size.height, 1));
+        expect(body.bottom, greaterThan(dock.bottom));
         expect(find.byTooltip('Apps'), findsWidgets);
         final bodyState = tester.state(find.byType(AppsHubPage));
         tester.view.viewInsets = const FakeViewPadding(bottom: 300);

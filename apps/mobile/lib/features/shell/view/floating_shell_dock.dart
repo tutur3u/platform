@@ -6,8 +6,9 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/dock_action_transition.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
-/// Owns the dock's clearance, including screens with explicit list padding.
-/// Clearance remains stable while scrolling so hiding never moves the content.
+/// Overlays the dock without shortening the page viewport.
+/// Pages consume bottom MediaQuery padding inside their scrollable content.
+/// Clearance stays stable while the dock hides so scroll positions never jump.
 class FloatingShellDock extends StatefulWidget {
   const FloatingShellDock({
     required this.location,
@@ -85,17 +86,13 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Padding(
-            padding: EdgeInsets.only(bottom: clearance),
-            child: MediaQuery(
-              data: active
-                  ? media.copyWith(
-                      padding: media.padding.copyWith(bottom: 0),
-                      viewPadding: media.viewPadding.copyWith(bottom: 0),
-                    )
-                  : media,
-              child: widget.child,
-            ),
+          MediaQuery(
+            data: active
+                ? media.copyWith(
+                    padding: media.padding.copyWith(bottom: clearance),
+                  )
+                : media,
+            child: widget.child,
           ),
           if (active)
             Positioned(

@@ -84,7 +84,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
                 horizontalPadding,
                 20,
                 horizontalPadding,
-                32,
+                32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
                 SettingsWorkspaceSection(
