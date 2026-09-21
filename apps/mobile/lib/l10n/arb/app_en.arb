@@ -3283,5 +3283,7 @@
   "voicePermission": "Allow microphone access to record.",
   "voiceRecordingError": "Could not record audio. Please try again.",
     "settingsGeneralGroup": "Personalize",
-    "settingsSupportGroup": "Help and account"
+    "settingsSupportGroup": "Help and account",
+    "mailMessageAppearance": "Message appearance",
+    "mailAppearanceOriginal": "Original"
 }

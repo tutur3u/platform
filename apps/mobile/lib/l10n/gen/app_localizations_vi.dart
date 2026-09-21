@@ -8049,4 +8049,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsSupportGroup => 'Trợ giúp và tài khoản';
+
+  @override
+  String get mailMessageAppearance => 'Giao diện thư';
+
+  @override
+  String get mailAppearanceOriginal => 'Nguyên bản';
 }

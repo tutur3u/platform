@@ -8079,4 +8079,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSupportGroup => 'Help and account';
+
+  @override
+  String get mailMessageAppearance => 'Message appearance';
+
+  @override
+  String get mailAppearanceOriginal => 'Original';
 }

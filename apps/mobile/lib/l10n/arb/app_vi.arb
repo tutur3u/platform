@@ -3287,5 +3287,7 @@
   "voicePermission": "Cho phép truy cập micrô để ghi âm.",
   "voiceRecordingError": "Không thể ghi âm. Vui lòng thử lại.",
     "settingsGeneralGroup": "Cá nhân hóa",
-    "settingsSupportGroup": "Trợ giúp và tài khoản"
+    "settingsSupportGroup": "Trợ giúp và tài khoản",
+    "mailMessageAppearance": "Giao diện thư",
+    "mailAppearanceOriginal": "Nguyên bản"
 }
