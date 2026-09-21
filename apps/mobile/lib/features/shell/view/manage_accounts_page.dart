@@ -169,7 +169,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
                 horizontalPadding,
                 20,
                 horizontalPadding,
-                32,
+                32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
                 StaggeredEntry(

@@ -83,7 +83,7 @@ class _SettingsWorkspaceMembersViewState
                 horizontalPadding,
                 20,
                 horizontalPadding,
-                32,
+                32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
                 FinancePanel(

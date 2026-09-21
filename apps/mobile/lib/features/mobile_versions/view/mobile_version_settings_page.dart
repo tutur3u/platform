@@ -123,7 +123,7 @@ class _MobileVersionSettingsPageState extends State<MobileVersionSettingsPage> {
                 horizontalPadding,
                 20,
                 horizontalPadding,
-                32,
+                32 + MediaQuery.paddingOf(context).bottom,
               ),
               children: [
                 _HeroCard(

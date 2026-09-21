@@ -19,17 +19,27 @@ void main() {
           body: FloatingShellDock(
             location: '/settings',
             bottomInset: 68,
-            navigation: const SizedBox(
-              key: Key('navigation'),
-              width: 160,
-              height: 60,
-              child: Text('Navigation'),
+            navigation: const Align(
+              heightFactor: 1,
+              child: SizedBox(
+                key: Key('navigation'),
+                width: 160,
+                height: 60,
+                child: Text('Navigation'),
+              ),
             ),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: List.generate(
-                30,
-                (i) => SizedBox(height: 70, child: Text('Row $i')),
+            child: Builder(
+              builder: (context) => ListView(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.paddingOf(context).bottom,
+                ),
+                children: List.generate(
+                  30,
+                  (i) => SizedBox(height: 70, child: Text('Row $i')),
+                ),
               ),
             ),
           ),
@@ -54,6 +64,25 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('scroll viewport continues behind and below floating dock', (
+    tester,
+  ) async {
+    await mount(tester);
+    final viewport = tester.getRect(find.byType(ListView));
+    final dock = tester.getRect(find.byKey(const Key('navigation')));
+    expect(viewport.bottom, 844);
+    expect(viewport.bottom, greaterThan(dock.top));
+    // Content remains hit-testable beside the island, down to the screen edge.
+    final position = tester
+        .state<ScrollableState>(find.byType(Scrollable))
+        .position;
+    await tester.dragFrom(const Offset(20, 835), const Offset(0, -100));
+    await tester.pumpAndSettle();
+    expect(position.pixels, greaterThan(0));
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+  });
 
   testWidgets('down scroll hides and idle restores without moving list', (
     tester,

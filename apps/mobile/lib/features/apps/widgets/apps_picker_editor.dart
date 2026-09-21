@@ -46,7 +46,12 @@ class AppsPickerEditor extends StatelessWidget {
     final cubit = context.watch<AppTabCubit>();
     final modules = arrangeApps(AppRegistry.modules(context), cubit);
     return ReorderableListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        8 + MediaQuery.paddingOf(context).bottom,
+      ),
       buildDefaultDragHandles: false,
       itemCount: modules.length,
       onReorderItem: (oldIndex, newIndex) {
