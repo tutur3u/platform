@@ -456,7 +456,12 @@ class _NowIndicatorState extends State<_NowIndicator> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final timeStr = DateFormat.jm().format(_now);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final timeStr =
+        (MediaQuery.alwaysUse24HourFormatOf(context)
+                ? DateFormat.Hm(locale)
+                : DateFormat.jm(locale))
+            .format(_now);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
