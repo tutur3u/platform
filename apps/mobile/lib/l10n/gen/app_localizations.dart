@@ -14791,6 +14791,18 @@ abstract class AppLocalizations {
   /// **'View formatted message'**
   String get mailViewOriginal;
 
+  /// No description provided for @mailMessageAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Message appearance'**
+  String get mailMessageAppearance;
+
+  /// No description provided for @mailAppearanceOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get mailAppearanceOriginal;
+
   /// No description provided for @mailDownload.
   ///
   /// In en, this message translates to:
@@ -15456,18 +15468,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help and account'**
   String get settingsSupportGroup;
-
-  /// No description provided for @mailMessageAppearance.
-  ///
-  /// In en, this message translates to:
-  /// **'Message appearance'**
-  String get mailMessageAppearance;
-
-  /// No description provided for @mailAppearanceOriginal.
-  ///
-  /// In en, this message translates to:
-  /// **'Original'**
-  String get mailAppearanceOriginal;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

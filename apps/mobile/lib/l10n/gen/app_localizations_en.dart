@@ -7748,6 +7748,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailViewOriginal => 'View formatted message';
 
   @override
+  String get mailMessageAppearance => 'Message appearance';
+
+  @override
+  String get mailAppearanceOriginal => 'Original';
+
+  @override
   String get mailDownload => 'Download or share attachment';
 
   @override
@@ -8079,10 +8085,4 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSupportGroup => 'Help and account';
-
-  @override
-  String get mailMessageAppearance => 'Message appearance';
-
-  @override
-  String get mailAppearanceOriginal => 'Original';
 }

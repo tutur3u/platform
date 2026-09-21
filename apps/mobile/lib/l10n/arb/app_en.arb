@@ -3173,6 +3173,8 @@
     "mailAiInstructions": "What would you like to say?",
     "mailGenerate": "Generate",
     "mailViewOriginal": "View formatted message",
+    "mailMessageAppearance": "Message appearance",
+    "mailAppearanceOriginal": "Original",
     "mailDownload": "Download or share attachment",
     "mailLoadImages": "Load remote images",
     "mailSettings": "Mail settings",
@@ -3283,7 +3285,5 @@
   "voicePermission": "Allow microphone access to record.",
   "voiceRecordingError": "Could not record audio. Please try again.",
     "settingsGeneralGroup": "Personalize",
-    "settingsSupportGroup": "Help and account",
-    "mailMessageAppearance": "Message appearance",
-    "mailAppearanceOriginal": "Original"
+    "settingsSupportGroup": "Help and account"
 }

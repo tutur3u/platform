@@ -7718,6 +7718,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailViewOriginal => 'Xem thư có định dạng';
 
   @override
+  String get mailMessageAppearance => 'Giao diện thư';
+
+  @override
+  String get mailAppearanceOriginal => 'Nguyên bản';
+
+  @override
   String get mailDownload => 'Tải xuống hoặc chia sẻ tệp';
 
   @override
@@ -8049,10 +8055,4 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsSupportGroup => 'Trợ giúp và tài khoản';
-
-  @override
-  String get mailMessageAppearance => 'Giao diện thư';
-
-  @override
-  String get mailAppearanceOriginal => 'Nguyên bản';
 }
