@@ -33,6 +33,21 @@ class RecorderStreamDelegate: NSObject, AudioRecordingStreamDelegate {
 
   func start(config: RecordConfig, recordEventHandler: RecordStreamHandler) throws {
     let engine = AVAudioEngine()
+    var started = false
+    var tapInstalled = false
+    var startupProcessor: AudioStreamProcessor?
+    defer {
+      if !started {
+        if let observer = m_interruptionObserver {
+          NotificationCenter.default.removeObserver(observer)
+          m_interruptionObserver = nil
+        }
+        if tapInstalled { engine.inputNode.removeTap(onBus: m_bus) }
+        engine.stop()
+        try? setVoiceProcessing(echoCancel: false, autoGain: false, audioEngine: engine)
+        startupProcessor?.dispose()
+      }
+    }
     m_interruptionObserver = try initAVAudioSession(config: config, manageAudioSession: m_manageAudioSession, queue: m_queue)
     try setVoiceProcessing(echoCancel: config.echoCancel, autoGain: config.autoGain, audioEngine: engine)
 
@@ -41,16 +56,13 @@ class RecorderStreamDelegate: NSObject, AudioRecordingStreamDelegate {
     // which Swift throws and Flutter's platform channel cannot catch.
     guard srcFormat.sampleRate.isFinite, srcFormat.sampleRate > 0,
           srcFormat.channelCount > 0 else {
-      if let observer = m_interruptionObserver {
-        NotificationCenter.default.removeObserver(observer)
-        m_interruptionObserver = nil
-      }
       throw RecorderError.error(
         message: "Microphone input is unavailable",
         details: "No valid input audio format. Reconnect the microphone and retry."
       )
     }
     let processor = try AudioStreamProcessor(config: config, srcFormat: srcFormat)
+    startupProcessor = processor
 
     engine.inputNode.installTap(
       onBus: m_bus,
@@ -59,19 +71,16 @@ class RecorderStreamDelegate: NSObject, AudioRecordingStreamDelegate {
     ) { [weak self] buffer, _ in
       self?.handleTap(buffer: buffer, recordEventHandler: recordEventHandler)
     }
+    tapInstalled = true
 
     engine.prepare()
-    do {
-      try engine.start()
-    } catch {
-      processor.dispose()
-      throw error
-    }
+    try engine.start()
 
     m_audioEngine = engine
     m_lock.withLock { m_processor = processor }
     self.config = config
     m_onRecord()
+    started = true
   }
 
   @discardableResult

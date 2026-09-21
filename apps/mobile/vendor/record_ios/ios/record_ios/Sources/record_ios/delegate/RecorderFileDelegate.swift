@@ -25,21 +25,36 @@ class RecorderFileDelegate: NSObject, AudioRecordingFileDelegate, AVAudioRecorde
   func start(config: RecordConfig, path: String) throws {
     try deleteFile(path: path)
 
+    var started = false
+    var startupRecorder: AVAudioRecorder?
+    defer {
+      if !started {
+        startupRecorder?.stop()
+        if let observer = m_interruptionObserver {
+          NotificationCenter.default.removeObserver(observer)
+          m_interruptionObserver = nil
+        }
+      }
+    }
+
     m_interruptionObserver = try initAVAudioSession(config: config, manageAudioSession: m_manageAudioSession, queue: m_queue)
 
     let url = URL(fileURLWithPath: path)
     let recorder = try AVAudioRecorder(url: url, settings: getOutputSettings(config: config))
 
+    startupRecorder = recorder
     recorder.delegate = self
     recorder.isMeteringEnabled = true
-    recorder.prepareToRecord()
-    recorder.record()
+    guard recorder.prepareToRecord(), recorder.record() else {
+      throw RecorderError.error(message: "Microphone recording could not start", details: "Audio recorder unavailable. Retry after checking the input device.")
+    }
 
     m_audioRecorder = recorder
     m_path = path
     self.config = config
 
     m_onRecord()
+    started = true
   }
 
   func stop() -> String? {
