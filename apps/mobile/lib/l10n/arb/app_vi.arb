@@ -3177,6 +3177,8 @@
     "mailAiInstructions": "Bạn muốn viết nội dung gì?",
     "mailGenerate": "Tạo nội dung",
     "mailViewOriginal": "Xem thư có định dạng",
+    "mailMessageAppearance": "Giao diện thư",
+    "mailAppearanceOriginal": "Nguyên bản",
     "mailDownload": "Tải xuống hoặc chia sẻ tệp",
     "mailLoadImages": "Hiển thị ảnh từ bên ngoài",
     "mailSettings": "Cài đặt thư",

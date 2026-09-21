@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -36,11 +37,39 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
   int _generation = 0;
   String? _document;
   InAppWebViewController? _controller;
+  MailMessageAppearance? _appearance;
+
+  MailMessageAppearance get _effectiveAppearance =>
+      MailAppearancePreference.instance.value ??
+      (Theme.of(context).brightness == Brightness.dark
+          ? MailMessageAppearance.dark
+          : MailMessageAppearance.light);
 
   @override
   void initState() {
     super.initState();
+    MailAppearancePreference.instance.addListener(_appearanceChanged);
+    unawaited(MailAppearancePreference.instance.load());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _appearanceChanged();
+  }
+
+  void _appearanceChanged() {
+    if (!mounted) return;
+    final next = _effectiveAppearance;
+    if (_appearance == next) return;
+    _appearance = next;
     unawaited(_prepare());
+  }
+
+  @override
+  void dispose() {
+    MailAppearancePreference.instance.removeListener(_appearanceChanged);
+    super.dispose();
   }
 
   @override
@@ -68,6 +97,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
           html: widget.html,
           loadImages: _images,
           inlineImages: widget.inlineImages,
+          appearance: _appearance ?? MailMessageAppearance.original,
         ),
       );
       if (mounted && generation == _generation) {
@@ -136,6 +166,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
             child: InAppWebView(
               key: ValueKey(generation),
               initialSettings: InAppWebViewSettings(
+                transparentBackground: true,
                 javaScriptEnabled: false,
                 incognito: true,
                 allowFileAccess: false,
@@ -181,6 +212,9 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
                 child: Text(context.l10n.mailViewOriginal),
               ),
             const Spacer(),
+            MailAppearanceControl(
+              appearance: _appearance ?? MailMessageAppearance.original,
+            ),
             IconButton(
               tooltip: context.l10n.mailLoadImages,
               onPressed: () {

@@ -3173,6 +3173,8 @@
     "mailAiInstructions": "What would you like to say?",
     "mailGenerate": "Generate",
     "mailViewOriginal": "View formatted message",
+    "mailMessageAppearance": "Message appearance",
+    "mailAppearanceOriginal": "Original",
     "mailDownload": "Download or share attachment",
     "mailLoadImages": "Load remote images",
     "mailSettings": "Mail settings",
