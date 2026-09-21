@@ -19,8 +19,31 @@ class CalendarCubit extends Cubit<CalendarState> {
   CalendarCubit({
     required CalendarRepository calendarRepository,
     CalendarState? initialState,
+    CalendarViewMode defaultViewMode = CalendarViewMode.agenda,
   }) : _repo = calendarRepository,
-       super(initialState ?? CalendarState(selectedDate: DateTime.now()));
+       _defaultViewMode = defaultViewMode,
+       super(
+         initialState?.hasSelectedView == true
+             ? initialState!
+             : (initialState ?? CalendarState(selectedDate: DateTime.now()))
+                   .copyWith(viewMode: defaultViewMode),
+       );
+
+  CalendarViewMode _defaultViewMode;
+
+  void updateDefaultView(CalendarViewMode mode) {
+    _defaultViewMode = mode;
+    if (!state.hasSelectedView) emit(state.copyWith(viewMode: mode));
+  }
+
+  CalendarState _restoreView(CalendarState cached) => cached.copyWith(
+    viewMode: state.hasSelectedView
+        ? state.viewMode
+        : cached.hasSelectedView
+        ? cached.viewMode
+        : _defaultViewMode,
+    hasSelectedView: state.hasSelectedView || cached.hasSelectedView,
+  );
 
   final CalendarRepository _repo;
   static const CachePolicy _cachePolicy = CachePolicies.summary;
@@ -150,7 +173,7 @@ class CalendarCubit extends Cubit<CalendarState> {
 
     if (forceRefresh) {
       if (cached != null && !hasVisibleData) {
-        emit(cached.state);
+        emit(_restoreView(cached.state));
       }
       emit(
         state.copyWith(
@@ -181,7 +204,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         diskCached!.data!,
         fetchedAt: diskCached.fetchedAt,
       );
-      emit(diskCached.data!);
+      emit(_restoreView(diskCached.data!));
       if (!forceRefresh && diskCached.isFresh) {
         return;
       }
@@ -189,7 +212,7 @@ class CalendarCubit extends Cubit<CalendarState> {
 
     if (cached != null && !hasVisibleData) {
       _rememberCachedState(wsId, cached.state, fetchedAt: cached.fetchedAt);
-      emit(cached.state);
+      emit(_restoreView(cached.state));
       if (!forceRefresh && isCalendarCacheFresh(cached.fetchedAt)) {
         return;
       }
@@ -379,7 +402,9 @@ class CalendarCubit extends Cubit<CalendarState> {
   }
 
   void setViewMode(CalendarViewMode mode) {
-    emit(_storeAndReturn(state.copyWith(viewMode: mode)));
+    emit(
+      _storeAndReturn(state.copyWith(viewMode: mode, hasSelectedView: true)),
+    );
   }
 
   void setFocusedMonth(DateTime month) {
@@ -551,6 +576,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       'selectedDate': state.selectedDate?.toIso8601String(),
       'focusedMonth': state.focusedMonth?.toIso8601String(),
       'viewMode': state.viewMode.name,
+      'hasSelectedView': state.hasSelectedView,
       'events': state.events
           .map((event) => event.toJson())
           .toList(growable: false),
@@ -591,6 +617,7 @@ class CalendarCubit extends Cubit<CalendarState> {
           ? DateTime.tryParse(json['lastUpdatedAt'] as String)
           : null,
       viewMode: viewMode,
+      hasSelectedView: json['hasSelectedView'] == true,
       selectedDate: json['selectedDate'] != null
           ? DateTime.tryParse(json['selectedDate'] as String)
           : null,

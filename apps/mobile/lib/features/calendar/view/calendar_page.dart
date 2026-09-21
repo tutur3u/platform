@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -28,6 +29,11 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+CalendarViewMode _defaultCalendarMode(BuildContext context) =>
+    MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin
+    ? CalendarViewMode.week
+    : CalendarViewMode.threeDays;
+
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
 
@@ -38,6 +44,7 @@ class CalendarPage extends StatelessWidget {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
           calendarRepository: CalendarRepository(),
+          defaultViewMode: _defaultCalendarMode(context),
           initialState: wsId != null
               ? CalendarCubit.cachedStateForWorkspace(wsId)
               : null,
@@ -71,6 +78,14 @@ class _CalendarViewState extends State<_CalendarView> {
           unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         }
       },
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    context.read<CalendarCubit>().updateDefaultView(
+      _defaultCalendarMode(context),
     );
   }
 
@@ -498,7 +513,7 @@ class _CalendarViewState extends State<_CalendarView> {
     if (_isCalendarTabSelected(mode)) {
       return mode;
     }
-    return CalendarViewMode.threeDays;
+    return _defaultCalendarMode(context);
   }
 
   String _calendarModeLabel(BuildContext context, CalendarViewMode mode) {
