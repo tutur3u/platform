@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/dock_action_transition.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 /// Owns the dock's clearance, including screens with explicit list padding.
@@ -150,76 +151,86 @@ class _DockActions extends StatelessWidget {
             .where((a) => a.inDock)
             .toList();
         final visibleCount = MediaQuery.sizeOf(context).width >= 840 ? 2 : 1;
-        return AnimatedSize(
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeInOutCubic,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(child: navigation),
-              for (final action in actions.take(visibleCount))
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Tooltip(
-                    message: action.tooltip ?? '',
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(48, 48),
-                        padding: EdgeInsets.symmetric(
-                          horizontal:
-                              MediaQuery.sizeOf(context).shortestSide >= 600
-                              ? 16
-                              : 12,
-                        ),
-                        shape: const StadiumBorder(),
-                      ),
-                      onPressed: action.enabled && !action.isLoading
-                          ? action.onPressed
-                          : null,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (action.isLoading)
-                            const NovaLoadingIndicator(size: 24)
-                          else
-                            Icon(
-                              action.icon,
-                              size: 24,
-                              semanticLabel: action.tooltip,
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(child: navigation),
+            DockActionTransition(
+              identity: Object.hashAll([
+                visibleCount,
+                MediaQuery.sizeOf(context).shortestSide >= 600,
+                for (final action in actions) ...[action.id, action.tooltip],
+              ]),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final action in actions.take(visibleCount))
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Tooltip(
+                        message: action.tooltip ?? '',
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(48, 48),
+                            padding: EdgeInsets.symmetric(
+                              horizontal:
+                                  MediaQuery.sizeOf(context).shortestSide >= 600
+                                  ? 16
+                                  : 12,
                             ),
-                          if (MediaQuery.sizeOf(context).shortestSide >=
-                              600) ...[
-                            const SizedBox(width: 8),
-                            Text(action.tooltip ?? ''),
-                          ],
+                            shape: const StadiumBorder(),
+                          ),
+                          onPressed: action.enabled && !action.isLoading
+                              ? action.onPressed
+                              : null,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (action.isLoading)
+                                const NovaLoadingIndicator(size: 24)
+                              else
+                                Icon(
+                                  action.icon,
+                                  size: 24,
+                                  semanticLabel: action.tooltip,
+                                ),
+                              if (MediaQuery.sizeOf(context).shortestSide >=
+                                  600) ...[
+                                const SizedBox(width: 8),
+                                Text(action.tooltip ?? ''),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (actions.length > visibleCount)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: PopupMenuButton<ShellActionSpec>(
+                        tooltip: MaterialLocalizations.of(
+                          context,
+                        ).showMenuTooltip,
+                        icon: const Icon(Icons.more_horiz),
+                        onSelected: (action) => action.onPressed?.call(),
+                        itemBuilder: (context) => [
+                          for (final action in actions.skip(visibleCount))
+                            PopupMenuItem(
+                              value: action,
+                              enabled: action.enabled && !action.isLoading,
+                              child: ListTile(
+                                leading: Icon(action.icon),
+                                title: Text(action.tooltip ?? ''),
+                                dense: true,
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-              if (actions.length > visibleCount)
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: PopupMenuButton<ShellActionSpec>(
-                    tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-                    icon: const Icon(Icons.more_horiz),
-                    onSelected: (action) => action.onPressed?.call(),
-                    itemBuilder: (context) => [
-                      for (final action in actions.skip(visibleCount))
-                        PopupMenuItem(
-                          value: action,
-                          enabled: action.enabled && !action.isLoading,
-                          child: ListTile(
-                            leading: Icon(action.icon),
-                            title: Text(action.tooltip ?? ''),
-                            dense: true,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
