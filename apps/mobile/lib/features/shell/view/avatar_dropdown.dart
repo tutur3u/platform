@@ -6,10 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
-import 'package:mobile/features/shell/view/account_switcher_sheet.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown_menu.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
@@ -55,103 +55,12 @@ class _AvatarDropdownState extends State<AvatarDropdown> {
         context.go(Routes.settings);
         return;
       case AvatarMenuAction.switchAccount:
-        await _showAccountSwitcher();
+        await showProfileAccountSwitcher(context);
         return;
       case AvatarMenuAction.logout:
         await _signOutCurrentAccount();
         return;
     }
-  }
-
-  Future<void> _showAccountSwitcher() async {
-    final authCubit = context.read<AuthCubit>();
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    await authCubit.syncCurrentSessionToStore();
-    if (!mounted) {
-      return;
-    }
-
-    final currentState = authCubit.state;
-    final accounts = [...currentState.accounts]
-      ..sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
-
-    if (accounts.isEmpty) {
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (toastContext, _) =>
-            shad.Alert(title: Text(toastContext.l10n.authNoStoredAccounts)),
-      );
-      return;
-    }
-
-    final selected = await showAccountSwitcherSheet(
-      context,
-      onAddAccount: _startAddAccountFlow,
-      onManageAccounts: _openManageAccountsPage,
-    );
-
-    if (!mounted || selected == null) {
-      return;
-    }
-
-    final latestState = authCubit.state;
-    if (selected == latestState.activeAccountId) {
-      return;
-    }
-
-    final success = await authCubit.switchAccount(selected);
-    if (!mounted) {
-      return;
-    }
-    if (!toastContext.mounted) {
-      return;
-    }
-
-    shad.showToast(
-      context: toastContext,
-      builder: (toastContext, _) => success
-          ? shad.Alert(title: Text(toastContext.l10n.authSwitchAccountSuccess))
-          : shad.Alert.destructive(
-              title: Text(
-                authCubit.state.error ??
-                    toastContext.l10n.authSwitchAccountFailed,
-              ),
-            ),
-    );
-  }
-
-  Future<void> _startAddAccountFlow() async {
-    final authCubit = context.read<AuthCubit>();
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final started = await authCubit.beginAddAccountFlow();
-    if (!mounted) {
-      return;
-    }
-    if (!started) {
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (toastContext, _) => shad.Alert.destructive(
-          title: Text(
-            authCubit.state.error ?? toastContext.l10n.authAddAccountFailed,
-          ),
-        ),
-      );
-      return;
-    }
-    context.go(Routes.addAccount);
-  }
-
-  Future<void> _openManageAccountsPage() async {
-    if (!mounted) {
-      return;
-    }
-    await context.push(Routes.profileAccounts);
   }
 
   Future<void> _signOutCurrentAccount() async {

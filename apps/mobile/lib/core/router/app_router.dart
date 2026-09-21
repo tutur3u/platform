@@ -35,6 +35,7 @@ import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
 import 'package:mobile/features/mobile_versions/view/mobile_version_settings_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
+import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/profile/view/profile_page.dart';
 import 'package:mobile/features/security/account/account_security_page.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_request_page.dart';
@@ -620,6 +621,10 @@ GoRouter createAppRouter(
           ),
           GoRoute(
             path: Routes.profileRoot,
+            builder: (context, state) => const ProfileOverviewPage(),
+          ),
+          GoRoute(
+            path: Routes.profileEdit,
             builder: (context, state) => const ProfilePage(),
           ),
         ],

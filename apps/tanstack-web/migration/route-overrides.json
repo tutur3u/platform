@@ -2443,6 +2443,11 @@
       "status": "legacy-next",
       "targetOwner": "tanstack-start",
       "note": "Public desktop downloads with fixed GitHub release assets, complete-release validation, provider SHA-256 digests, bilingual metadata and cached public metadata. Port the same safe unavailable state and download URL allowlist."
+    },
+    "api:/api/v1/workspaces/:wsId/profile-activity:apps/web/src/app/api/v1/workspaces/[wsId]/profile-activity/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Private-by-default profile activity; viewer and subject membership, explicit workspace consent, no personal aggregates, bounded pagination, and no-store responses. Next-owned pending Rust parity."
     }
   }
 }

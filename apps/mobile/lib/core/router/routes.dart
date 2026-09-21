@@ -20,6 +20,7 @@ abstract final class Routes {
   static const notifications = '/notifications';
   static const notificationsArchive = '/notifications/archive';
   static const profileRoot = '/profile';
+  static const profileEdit = '/profile/edit';
   static const profileAccounts = '/profile/accounts';
   static const tasks = '/tasks';
   static const habits = '/habits';

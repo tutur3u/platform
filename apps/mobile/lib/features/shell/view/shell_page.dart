@@ -15,14 +15,14 @@ import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
-import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
-import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/notifications/view/notifications_page.dart';
+import 'package:mobile/features/profile/view/profile_navigation_avatar.dart';
+import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
-import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -65,7 +65,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   static const ValueKey<String> _globalLayerKey = ValueKey('global-layer');
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
-  static const ValueKey<String> _shellAvatarKey = ValueKey('shell-avatar');
+  static const ValueKey<String> _notificationsKey = ValueKey('notifications');
+  static const ValueKey<String> _profileKey = ValueKey('profile');
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 52;
   static const double _compactBottomNavHeight = 54;
@@ -136,8 +137,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       return false;
     }
 
-    final appsStartsAt = renderBox.size.width * 2 / 3;
-    return event.localPosition.dx >= appsStartsAt;
+    final itemWidth = renderBox.size.width / 5;
+    return event.localPosition.dx >= itemWidth &&
+        event.localPosition.dx < itemWidth * 2;
   }
 
   @override
@@ -214,7 +216,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final location = widget.matchedLocation;
-    final activeModule = AppRegistry.moduleFromLocation(location);
+    final activeModule = _isRootTabLocation(location)
+        ? null
+        : AppRegistry.moduleFromLocation(location);
 
     return BackButtonListener(
       onBackButtonPressed: () async {
@@ -275,8 +279,12 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
                     context,
                     state,
                     activeModule: activeModule,
-                    injectedMiniNavRegistration: miniNavState
-                        .resolveForLocation(widget.matchedLocation),
+                    injectedMiniNavRegistration:
+                        _isRootTabLocation(widget.matchedLocation)
+                        ? null
+                        : miniNavState.resolveForLocation(
+                            widget.matchedLocation,
+                          ),
                   ),
                 );
               },
@@ -548,12 +556,16 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   }
 
   static int _indexForKey(Key? key) {
+    if (key == _notificationsKey) return 3;
+    if (key == _profileKey) return 4;
     if (key == _assistantKey) return 1;
     if (key == _appsKey || key is GlobalKey) return 2;
     return 0;
   }
 
   static int _calculateSelectedIndex(String location) {
+    if (location == Routes.notifications) return 3;
+    if (location == Routes.profileRoot) return 4;
     if (location.startsWith(Routes.assistant)) return 1;
     if (location.startsWith(Routes.apps)) return 2;
     if (AppRegistry.moduleFromLocation(location) != null) return 2;

@@ -2,7 +2,9 @@ part of 'shell_page.dart';
 
 extension _ShellPageLayout on _ShellPageState {
   void _syncCompactLayoutState({String? oldMatchedLocation}) {
-    final activeModule = AppRegistry.moduleFromLocation(widget.matchedLocation);
+    final activeModule = _isRootTabLocation(widget.matchedLocation)
+        ? null
+        : AppRegistry.moduleFromLocation(widget.matchedLocation);
     final wasMiniAppRoute =
         oldMatchedLocation != null &&
         AppRegistry.moduleFromLocation(oldMatchedLocation) != null;
@@ -95,6 +97,11 @@ extension _ShellPageLayout on _ShellPageState {
                           ),
                           (_) => AppsScreen(
                             replayToken: _rootTabReplayTokens[Routes.apps] ?? 0,
+                          ),
+                          (_) => const NotificationsPage(),
+                          (_) => ProfileOverviewPage(
+                            replayToken:
+                                _rootTabReplayTokens[Routes.profileRoot] ?? 0,
                           ),
                         ],
                       ),

@@ -101,6 +101,19 @@ GoRouter _buildRouter({
             builder: (context, state) => const _RoutePage(label: 'assistant'),
           ),
           GoRoute(
+            path: Routes.profileRoot,
+            builder: (context, state) => const _RoutePage(label: 'profile'),
+          ),
+          GoRoute(
+            path: Routes.notifications,
+            builder: (context, state) =>
+                const _RoutePage(label: 'notifications'),
+          ),
+          GoRoute(
+            path: Routes.settings,
+            builder: (context, state) => const _RoutePage(label: 'settings'),
+          ),
+          GoRoute(
             path: Routes.tasks,
             builder: (context, state) => const _RoutePage(label: 'tasks'),
           ),
