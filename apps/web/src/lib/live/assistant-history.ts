@@ -1,4 +1,5 @@
 import { resolveGatewayModelId } from '@tuturuuu/ai/credits/model-mapping';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
 
@@ -125,17 +126,26 @@ export async function loadAssistantLiveSeedHistory({
   chatId: string;
   userId: string;
 }) {
-  const { data, error } = await supabase
+  // Message reads are server-only. Verify the caller owns the parent before
+  // obtaining an admin client; never rely on a caller-supplied chat id alone.
+  const { data: ownedChat, error: ownershipError } = await supabase
+    .from('ai_chats')
+    .select('id')
+    .eq('id', chatId)
+    .eq('creator_id', userId)
+    .maybeSingle();
+  if (ownershipError) throw new Error(ownershipError.message);
+  if (!ownedChat) throw new Error('Live chat is not available');
+
+  const admin = await createAdminClient();
+  const { data, error } = await admin
     .from('ai_chat_messages')
-    .select('role, content, metadata, ai_chats!chat_id!inner(creator_id)')
-    .eq('chat_id', chatId)
-    .eq('ai_chats.creator_id', userId)
-    .order('created_at', { ascending: true });
+    .select('role, content, metadata')
+    .eq('chat_id', ownedChat.id)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(200);
 
-  if (error != null) {
-    throw new Error(error.message);
-  }
-
-  const rows = (data ?? []).map(({ ai_chats: _chat, ...message }) => message);
-  return buildLiveSeedHistory(rows);
+  if (error != null) throw new Error(error.message);
+  return buildLiveSeedHistory([...(data ?? [])].reverse());
 }

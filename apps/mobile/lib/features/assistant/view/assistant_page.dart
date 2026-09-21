@@ -1230,16 +1230,10 @@ class _AssistantPageState extends State<AssistantPage> {
   }
 
   bool _hasLiveAccess(AssistantShellState shellState) {
-    const premiumTiers = {'PLUS', 'PRO', 'ENTERPRISE'};
-    const liveFeatures = {
-      'voice_assistant',
-      'voice-assistant',
-      'live_assistant',
-      'live-assistant',
-    };
-    final tier = shellState.activeCredits.tier.toUpperCase();
-    return premiumTiers.contains(tier) ||
-        shellState.activeCredits.allowedFeatures.any(liveFeatures.contains);
+    return hasAssistantLiveWorkspaceAccess(
+      shellState.workspaceCredits,
+      workspaceTier: shellState.workspace?.tier,
+    );
   }
 
   bool _isCurrentChatLive(

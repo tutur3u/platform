@@ -3094,7 +3094,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantLiveModelBadge.
   ///
   /// In en, this message translates to:
-  /// **'Gemini 3.1 Flash Live'**
+  /// **'Gemini 3.8 Live'**
   String get assistantLiveModelBadge;
 
   /// No description provided for @assistantLiveMute.

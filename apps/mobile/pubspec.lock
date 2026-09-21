@@ -1861,12 +1861,11 @@ packages:
     source: hosted
     version: "2.2.0"
   record_ios:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: record_ios
-      sha256: "21d189f49a598af4697dac4cc9e48389ac0a1fb3e916622b5504a58d9b96313e"
-      url: "https://pub.dev"
-    source: hosted
+      path: "vendor/record_ios"
+      relative: true
+    source: path
     version: "2.1.1"
   record_linux:
     dependency: transitive

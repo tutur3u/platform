@@ -1545,7 +1545,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveListen => 'Bật micro';
 
   @override
-  String get assistantLiveModelBadge => 'Gemini 3.1 Flash Live';
+  String get assistantLiveModelBadge => 'Gemini 3.8 Live';
 
   @override
   String get assistantLiveMute => 'Tắt micro';

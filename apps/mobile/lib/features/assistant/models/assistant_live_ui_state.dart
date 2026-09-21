@@ -120,7 +120,8 @@ AssistantLiveUiState deriveAssistantLiveUiState({
   required bool isVisibleLiveSession,
   required bool showBlockedReason,
 }) {
-  final workspaceTier = shellState.workspaceCredits.tier;
+  final workspaceTier =
+      shellState.workspace?.tier ?? shellState.workspaceCredits.tier;
   final activeTier = shellState.activeCredits.tier;
 
   if (liveState.microphonePermission == AssistantLivePermissionState.denied ||
@@ -185,3 +186,23 @@ AssistantLiveUiState deriveAssistantLiveUiState({
     showBlockedReason: showBlockedReason,
   );
 }
+
+/// Live sessions are authorized against the current workspace on the server.
+/// Selecting personal chat credits must not change that workspace entitlement.
+bool hasAssistantLiveWorkspaceAccess(
+  AssistantCredits credits, {
+  String? workspaceTier,
+}) =>
+    const {
+      'PLUS',
+      'PRO',
+      'ENTERPRISE',
+    }.contains((workspaceTier ?? credits.tier).toUpperCase()) ||
+    credits.allowedFeatures.any(
+      const {
+        'voice_assistant',
+        'voice-assistant',
+        'live_assistant',
+        'live-assistant',
+      }.contains,
+    );

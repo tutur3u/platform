@@ -107,7 +107,7 @@ class AssistantLiveInfoSheetBody extends StatelessWidget {
                 label: l10n.assistantLiveWorkspaceTierLabel(
                   normalizeWorkspaceTier(liveUiState.workspaceTier),
                 ),
-                trailing: WorkspaceTierBadge(tier: liveUiState.activeTier),
+                trailing: WorkspaceTierBadge(tier: liveUiState.workspaceTier),
               ),
               const SizedBox(height: 8),
               _InfoTile(

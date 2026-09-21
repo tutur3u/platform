@@ -85,6 +85,8 @@ dev_dependencies:
 dependency_overrides:
   flutter_pcm_sound:
     path: vendor/flutter_pcm_sound
+  record_ios:
+    path: vendor/record_ios
 
 flutter_launcher_icons:
   android: true
