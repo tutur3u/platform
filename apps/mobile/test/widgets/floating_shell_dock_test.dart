@@ -122,6 +122,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Compose'), findsNothing);
     expect(find.byTooltip('Compose'), findsOneWidget);
+    tester.view.physicalSize = const Size(844, 390);
+    await tester.pumpAndSettle();
+    expect(find.text('Compose'), findsNothing);
+    tester.view.physicalSize = const Size(1194, 834);
+    await tester.pumpAndSettle();
+    expect(find.text('Compose'), findsOneWidget);
     await tester.tap(find.byType(FilledButton));
     expect(calls, 1);
     expect(tester.takeException(), isNull);

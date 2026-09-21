@@ -166,7 +166,8 @@ class _DockActions extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(48, 48),
                         padding: EdgeInsets.symmetric(
-                          horizontal: MediaQuery.sizeOf(context).width >= 600
+                          horizontal:
+                              MediaQuery.sizeOf(context).shortestSide >= 600
                               ? 16
                               : 12,
                         ),
@@ -186,7 +187,8 @@ class _DockActions extends StatelessWidget {
                               size: 24,
                               semanticLabel: action.tooltip,
                             ),
-                          if (MediaQuery.sizeOf(context).width >= 600) ...[
+                          if (MediaQuery.sizeOf(context).shortestSide >=
+                              600) ...[
                             const SizedBox(width: 8),
                             Text(action.tooltip ?? ''),
                           ],
