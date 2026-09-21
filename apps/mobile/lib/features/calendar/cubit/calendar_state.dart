@@ -12,6 +12,7 @@ class CalendarState extends Equatable {
     this.isRefreshing = false,
     this.lastUpdatedAt,
     this.viewMode = CalendarViewMode.agenda,
+    this.hasSelectedView = false,
     this.selectedDate,
     this.focusedMonth,
     this.events = const [],
@@ -26,6 +27,7 @@ class CalendarState extends Equatable {
   final bool isRefreshing;
   final DateTime? lastUpdatedAt;
   final CalendarViewMode viewMode;
+  final bool hasSelectedView;
   final DateTime? selectedDate;
   final DateTime? focusedMonth;
   final List<CalendarEvent> events;
@@ -85,6 +87,7 @@ class CalendarState extends Equatable {
     bool? isRefreshing,
     Object? lastUpdatedAt = _sentinel,
     CalendarViewMode? viewMode,
+    bool? hasSelectedView,
     Object? selectedDate = _sentinel,
     Object? focusedMonth = _sentinel,
     List<CalendarEvent>? events,
@@ -101,6 +104,7 @@ class CalendarState extends Equatable {
         ? this.lastUpdatedAt
         : lastUpdatedAt as DateTime?,
     viewMode: viewMode ?? this.viewMode,
+    hasSelectedView: hasSelectedView ?? this.hasSelectedView,
     selectedDate: selectedDate == _sentinel
         ? this.selectedDate
         : selectedDate as DateTime?,
@@ -123,6 +127,7 @@ class CalendarState extends Equatable {
     isRefreshing,
     lastUpdatedAt,
     viewMode,
+    hasSelectedView,
     selectedDate,
     focusedMonth,
     events,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/config/env.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -28,16 +29,23 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+CalendarViewMode _defaultCalendarMode(BuildContext context) =>
+    MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin
+    ? CalendarViewMode.week
+    : CalendarViewMode.threeDays;
+
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final defaultMode = _defaultCalendarMode(context);
     return BlocProvider(
       create: (context) {
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = CalendarCubit(
           calendarRepository: CalendarRepository(),
+          defaultViewMode: defaultMode,
           initialState: wsId != null
               ? CalendarCubit.cachedStateForWorkspace(wsId)
               : null,
@@ -71,6 +79,14 @@ class _CalendarViewState extends State<_CalendarView> {
           unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         }
       },
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    context.read<CalendarCubit>().updateDefaultView(
+      _defaultCalendarMode(context),
     );
   }
 
@@ -299,9 +315,8 @@ class _CalendarViewState extends State<_CalendarView> {
           onEventTap: (event) => _showEventDetail(context, event),
           onCreateAtTime: (time) => _createEvent(context, startTime: time),
           onDaySelected: (date) {
-            context.read<CalendarCubit>()
-              ..selectDate(date)
-              ..setViewMode(CalendarViewMode.day);
+            final cubit = context.read<CalendarCubit>()..selectDate(date);
+            unawaited(cubit.setViewMode(CalendarViewMode.day));
           },
           onSwipe: (delta) => _navigateDays(context, delta),
         );
@@ -313,9 +328,8 @@ class _CalendarViewState extends State<_CalendarView> {
           onEventTap: (event) => _showEventDetail(context, event),
           onCreateAtTime: (time) => _createEvent(context, startTime: time),
           onDaySelected: (date) {
-            context.read<CalendarCubit>()
-              ..selectDate(date)
-              ..setViewMode(CalendarViewMode.day);
+            final cubit = context.read<CalendarCubit>()..selectDate(date);
+            unawaited(cubit.setViewMode(CalendarViewMode.day));
           },
           onSwipe: (delta) => _navigateDays(context, delta),
         );
@@ -326,9 +340,8 @@ class _CalendarViewState extends State<_CalendarView> {
           events: state.events,
           firstDayOfWeek: firstDayOfWeek,
           onDaySelected: (date) {
-            context.read<CalendarCubit>()
-              ..selectDate(date)
-              ..setViewMode(CalendarViewMode.day);
+            final cubit = context.read<CalendarCubit>()..selectDate(date);
+            unawaited(cubit.setViewMode(CalendarViewMode.day));
           },
         );
       case CalendarViewMode.agenda:
@@ -338,9 +351,8 @@ class _CalendarViewState extends State<_CalendarView> {
           isLoadingMore: state.isLoadingMore,
           onEventTap: (event) => _showEventDetail(context, event),
           onDaySelected: (date) {
-            context.read<CalendarCubit>()
-              ..selectDate(date)
-              ..setViewMode(CalendarViewMode.day);
+            final cubit = context.read<CalendarCubit>()..selectDate(date);
+            unawaited(cubit.setViewMode(CalendarViewMode.day));
           },
           onLoadMore: () {
             final wsId = context
@@ -360,9 +372,8 @@ class _CalendarViewState extends State<_CalendarView> {
           events: state.events,
           firstDayOfWeek: firstDayOfWeek,
           onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>()
-              ..selectDate(date)
-              ..setViewMode(CalendarViewMode.month);
+            final cubit = context.read<CalendarCubit>()..selectDate(date);
+            unawaited(cubit.setViewMode(CalendarViewMode.month));
             final wsId = context
                 .read<WorkspaceCubit>()
                 .state
@@ -412,7 +423,8 @@ class _CalendarViewState extends State<_CalendarView> {
       selected: selected,
       callbackToken: '$id-${selected ? 'selected-' : ''}${mode.name}',
       onPressed: () {
-        final cubit = context.read<CalendarCubit>()..setViewMode(mode);
+        final cubit = context.read<CalendarCubit>();
+        unawaited(cubit.setViewMode(mode));
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         if (wsId != null) {
           unawaited(
@@ -471,7 +483,8 @@ class _CalendarViewState extends State<_CalendarView> {
           ? const Icon(Icons.check, size: 16)
           : const SizedBox(width: 16, height: 16),
       onPressed: (menuContext) {
-        final cubit = rootContext.read<CalendarCubit>()..setViewMode(mode);
+        final cubit = rootContext.read<CalendarCubit>();
+        unawaited(cubit.setViewMode(mode));
         final wsId = rootContext
             .read<WorkspaceCubit>()
             .state
@@ -498,7 +511,7 @@ class _CalendarViewState extends State<_CalendarView> {
     if (_isCalendarTabSelected(mode)) {
       return mode;
     }
-    return CalendarViewMode.threeDays;
+    return _defaultCalendarMode(context);
   }
 
   String _calendarModeLabel(BuildContext context, CalendarViewMode mode) {
