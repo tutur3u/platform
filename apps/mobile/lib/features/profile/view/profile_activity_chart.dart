@@ -52,6 +52,7 @@ class ProfileActivityChart extends StatelessWidget {
                       '${l10n.profileTrackedMinutes(seconds ~/ 60)}';
                   return Tooltip(
                     message: message,
+                    excludeFromSemantics: true,
                     triggerMode: TooltipTriggerMode.tap,
                     child: Semantics(
                       label: message,
