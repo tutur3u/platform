@@ -7,6 +7,7 @@ const {
   FORMAT,
   baselineKey,
   migrationVersions,
+  postgresImage,
   validateManifest,
 } = require('./supabase-baseline-key.js');
 function fixture(t) {
@@ -45,7 +46,7 @@ for (const file of [
     assert.notEqual(f.key(), before);
   });
 }
-for (const input of ['cliVersion', 'arch', 'platform', 'seedEpoch']) {
+for (const input of ['cliVersion', 'arch', 'platform', 'seedEpoch', 'image']) {
   test(`baseline invalidates on ${input}`, (t) => {
     const f = fixture(t);
     assert.notEqual(
@@ -115,4 +116,18 @@ test('baseline rejects symlinked inputs', (t) => {
     path.join(f.root, 'apps/database/supabase/seed.sql')
   );
   assert.throws(() => f.key(), /symlink/);
+});
+
+test('Postgres image follows the Supabase registry override', () => {
+  const services = [{ name: 'supabase/postgres', local: '17.6.1.167' }];
+  assert.equal(
+    postgresImage(services),
+    'public.ecr.aws/supabase/postgres:17.6.1.167'
+  );
+  assert.equal(
+    postgresImage(services, 'ghcr.io'),
+    'ghcr.io/supabase/postgres:17.6.1.167'
+  );
+  assert.throws(() => postgresImage(services, 'https://ghcr.io'), /Invalid/);
+  assert.throws(() => postgresImage([]), /Missing/);
 });

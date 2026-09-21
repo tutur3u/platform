@@ -6,6 +6,7 @@ const {
   FORMAT,
   baselineKey,
   migrationVersions,
+  postgresImage,
   validateManifest,
 } = require('./supabase-baseline-key.js');
 
@@ -39,11 +40,11 @@ function existsVolume(name) {
 }
 function identity() {
   const services = JSON.parse(cli('services', '-o', 'json'));
-  const postgres = services.find(
-    (service) => service.name === 'supabase/postgres'
+  const image = postgresImage(
+    services,
+    // biome-ignore lint/suspicious/noUndeclaredEnvVars: Supabase CLI image registry override used by CI.
+    process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY || undefined
   );
-  if (!postgres?.local || !/^[\w.-]+$/.test(postgres.local))
-    throw new Error('Missing Postgres version');
   const seedEpoch =
     // biome-ignore lint/suspicious/noUndeclaredEnvVars: Direct CI helper fixes its seed epoch for the job.
     process.env.SUPABASE_BASELINE_EPOCH ||
@@ -55,7 +56,9 @@ function identity() {
       process.env.GITHUB_ENV,
       `SUPABASE_BASELINE_EPOCH=${seedEpoch}\n`
     );
+  output('seed-epoch', seedEpoch);
   const key = baselineKey({
+    image,
     seedEpoch,
     root,
     cliVersion: cli('--version'),
@@ -63,7 +66,7 @@ function identity() {
     arch: process.arch,
     platform: process.platform,
   });
-  return { key, image: `public.ecr.aws/supabase/postgres:${postgres.local}` };
+  return { key, image };
 }
 function verifyHistory(container) {
   const actual = docker(
@@ -121,6 +124,7 @@ function prepare({ key, image }) {
   const manifestPath = path.join(directory, 'manifest.json');
   let restored = false;
   let createdVolume = false;
+  let restorePhase = 'manifest validation';
   const start = () =>
     cli('start', '--exclude', 'edge-runtime', '--exclude', 'functions');
   const cleanOwned = () => {
@@ -135,10 +139,13 @@ function prepare({ key, image }) {
       ) {
         throw new Error('Baseline integrity or input mismatch');
       }
+      restorePhase = 'Postgres image pull';
       docker('pull', image);
+      restorePhase = 'Postgres image identity';
       const imageId = docker('image', 'inspect', image, '--format', '{{.Id}}');
       if (manifest.imageId !== imageId)
         throw new Error('Postgres image digest changed');
+      restorePhase = 'database volume creation';
       docker(
         'volume',
         'create',
@@ -149,6 +156,7 @@ function prepare({ key, image }) {
         volume
       );
       createdVolume = true;
+      restorePhase = 'database archive extraction';
       docker(
         'run',
         '--rm',
@@ -164,14 +172,16 @@ function prepare({ key, image }) {
         '-ec',
         'tar -xzf /cache/database.tar.gz -C /baseline'
       );
+      restorePhase = 'Supabase service startup';
       start();
+      restorePhase = 'migration history verification';
       verifyHistory(container);
       restored = true;
       console.log('Supabase baseline restored and migration history verified.');
     }
   } catch {
     console.warn(
-      'Supabase baseline unavailable or invalid; rebuilding from migrations.'
+      `Supabase baseline restore failed during ${restorePhase}; rebuilding from migrations.`
     );
     if (createdVolume) cleanOwned();
   }
